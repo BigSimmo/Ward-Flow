@@ -3,12 +3,17 @@ import { describe, expect, it } from "vitest";
 import { meetingTvExtras } from "@/components/ward-management/bed-meeting/tv-derivations";
 import { bedMeetingSheet } from "@/components/ward-management/capacity/bed-meeting-derivations";
 import { closedWardsNote } from "@/components/ward-management/capacity/capacity-expected-occupancy";
-import { bedsFreeingTodayTotal, networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
+import {
+  bedKindBreakdown,
+  bedsFreeingTodayTotal,
+  networkWardRows,
+  type BedKindId,
+} from "@/components/ward-management/capacity/capacity-derivations";
 import { heldUpReleases } from "@/components/ward-management/capacity/capacity-held-up";
 import { expectedOccupancy } from "@/components/ward-management/capacity/expected-occupancy";
 import { edAccessRisk } from "@/components/ward-management/forecast/ed-access-risk";
 import { releaseText } from "@/components/ward-management/forecast/ed-access-risk-card";
-import { forecastByKind, isWaitingForBed } from "@/components/ward-management/forecast/forecast-by-kind";
+import { bedKindOfNeed, forecastByKind, isWaitingForBed } from "@/components/ward-management/forecast/forecast-by-kind";
 import { forecastBrief } from "@/components/ward-management/forecast/forecast-brief";
 import { forecastLevers } from "@/components/ward-management/forecast/forecast-levers";
 import { forecastReleaseAt } from "@/components/ward-management/forecast/forecast-release-date";
@@ -25,6 +30,7 @@ import {
   isFreeingToday,
   releasesExpectedToFree,
 } from "@/components/ward-management/ward-shared-figures";
+import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import { NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
 
 /**
@@ -187,23 +193,66 @@ describe("the ED access card uses the ward's ready beds (A16-07, 3.6)", () => {
     .filter(isWaitingForBed)
     .sort((a, b) => a.openedAt - b.openedAt || a.id.localeCompare(b.id));
 
-  it("never lists a person whose accepting ward shows a bed ready for their place in its line", () => {
+  // A ward's Ready beds of the kind this person needs, as the mismatch table splits them, never more
+  // than the ward's own Ready figure (Codex review on #1657: an open bed never serves a locked need).
+  const fittingReady = (unitId: string, kind: BedKindId) => {
+    const unit = seed.units.find((each) => each.id === unitId)!;
+    const ofKind =
+      bedKindBreakdown(kind, seed.movements, seed.units, seed.admissions, seed.referrals).wards.find(
+        (ward) => ward.unit.id === unitId,
+      )?.beds ?? 0;
+    return Math.min(ofKind, readyBedsNow(unit, seed.admissions, seed.bedReleases, holdsOf(seed)));
+  };
+  const lineOf = (movement: Movement) =>
+    waiting.filter(
+      (each) => each.acceptedUnitId === movement.acceptedUnitId && bedKindOfNeed(each) === bedKindOfNeed(movement),
+    );
+
+  it("never lists a person whose accepting ward shows a fitting bed ready for their place in its line", () => {
     const accepted = risk.atRisk.filter((row) => row.acceptedUnitName !== null);
     for (const row of accepted) {
       const movement = seed.movements.find((each) => each.id === row.movementId)!;
-      const unit = seed.units.find((each) => each.id === movement.acceptedUnitId)!;
-      const line = waiting.filter((each) => each.acceptedUnitId === unit.id);
-      const ready = readyBedsNow(unit, seed.admissions, seed.bedReleases, holdsOf(seed));
-      expect(line.indexOf(movement), row.movementId).toBe(row.ahead);
-      expect(row.ahead, `${row.movementId} has a ready bed at ${unit.name}`).toBeGreaterThanOrEqual(ready);
+      expect(lineOf(movement).indexOf(movement), row.movementId).toBe(row.ahead);
+      expect(row.ahead, `${row.movementId} has a fitting ready bed`).toBeGreaterThanOrEqual(
+        fittingReady(movement.acceptedUnitId!, bedKindOfNeed(movement)),
+      );
     }
-    // The first accepted person at a ward with a bed ready now is not at risk.
-    const firstServed = seed.units.flatMap((unit) => {
-      const first = waiting.find((each) => each.acceptedUnitId === unit.id);
-      return first && readyBedsNow(unit, seed.admissions, seed.bedReleases, holdsOf(seed)) > 0 ? [first.id] : [];
+    // The first accepted person of a kind at a ward with a fitting bed ready now is not at risk.
+    const firstServed = waiting.filter(
+      (each) =>
+        each.acceptedUnitId && lineOf(each)[0] === each && fittingReady(each.acceptedUnitId, bedKindOfNeed(each)) > 0,
+    );
+    expect(firstServed.length, "the seed has an accepted person with a fitting ward bed ready").toBeGreaterThan(0);
+    for (const each of firstServed) expect(risk.atRisk.map((row) => row.movementId)).not.toContain(each.id);
+  });
+
+  it("does not serve a person from a ready bed of another kind at their accepting ward", () => {
+    // An accepted adult in ED, inside the card's window, whose ward has ready beds of one kind only.
+    const target = waiting.find((each) => {
+      if (!each.acceptedUnitId || each.cohort !== "Adult" || !isWaitingInEd(each)) return false;
+      const passesAt = each.openedAt + seed.configuration.edAccessTargetMinutes;
+      if (passesAt <= NOW || passesAt > NOW + MINUTES_PER_DAY) return false;
+      const other: BedKindId = bedKindOfNeed(each) === "locked_adult" ? "open_adult" : "locked_adult";
+      return (
+        fittingReady(each.acceptedUnitId, bedKindOfNeed(each)) > 0 && fittingReady(each.acceptedUnitId, other) === 0
+      );
     });
-    expect(firstServed.length, "the seed has an accepted person with a ward bed ready").toBeGreaterThan(0);
-    for (const id of firstServed) expect(risk.atRisk.map((row) => row.movementId)).not.toContain(id);
+    // The seed must keep a case for this check; fail loudly rather than pass silently.
+    if (!target) expect.fail("the seed has no accepted adult in ED whose ward has ready beds of one kind only");
+    // Flip the bed kind they need, and take away that ward's releases, so only a wrong-kind bed is left.
+    const flipped: Movement = { ...target, security: target.security === "Secure" ? "Open" : "Secure" };
+    const flippedRisk = edAccessRisk(
+      seed.movements.map((each) => (each.id === target.id ? flipped : each)),
+      seed.units,
+      seed.bedReleases.filter((each) => each.unitId !== target.acceptedUnitId),
+      seed.admissions,
+      NOW,
+      seed.configuration.edAccessTargetMinutes,
+      seed.referrals,
+    );
+    const row = flippedRisk.atRisk.find((each) => each.movementId === target.id);
+    expect(row, "a ready bed of another kind does not serve them").toBeDefined();
+    expect(row!.slotAt).toBeNull();
   });
 
   it("says 'ahead in the line' only when someone is ahead", () => {
