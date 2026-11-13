@@ -188,24 +188,44 @@ describe("48-Hour Bed Movement Horizon (Gantt Chart)", () => {
     const trafficPanel = screen.getByRole("region", { name: "Today’s traffic" });
     const steps = within(trafficPanel).getByRole("group", { name: "Move the timeline" });
     const nowBtn = within(steps).getByRole("button", { name: "Now" });
-    const back = within(steps).getByRole("button", { name: /^Back \d+ hours$/u });
+    // The kit Button wraps an unavailable button for its reason, so each look re-queries it.
+    const back = () => within(steps).getByRole("button", { name: /^Back \d+ hours$/u });
     const forward = within(steps).getByRole("button", { name: /^Forward \d+ hours$/u });
 
     expect(nowBtn).toHaveAttribute("aria-pressed", "true");
     expect(nowBtn).toHaveAttribute("title", "Timeline marker at now");
-    expect(back, "the timeline cannot start before now").toBeDisabled();
+    // F-109 (A14-25): a step that cannot move keeps its tab stop and says why.
+    expect(back(), "the timeline cannot start before now").toHaveAttribute("aria-disabled", "true");
+    expect(back()).toHaveAccessibleDescription("Already at now");
+    fireEvent.click(back());
+    expect(nowBtn, "a press on the unavailable step changes nothing").toHaveAttribute("aria-pressed", "true");
 
     // Step forward
     fireEvent.click(forward);
     expect(nowBtn).toHaveAttribute("aria-pressed", "false");
     expect(nowBtn.getAttribute("title")).toMatch(/^Timeline marker at /u);
     expect(nowBtn).not.toHaveAttribute("title", "Timeline marker at now");
-    expect(back).toBeEnabled();
+    expect(back()).not.toHaveAttribute("aria-disabled");
+    expect(back()).not.toHaveAccessibleDescription();
 
     // Back to now
     fireEvent.click(nowBtn);
     expect(nowBtn).toHaveAttribute("aria-pressed", "true");
     expect(nowBtn).toHaveAttribute("title", "Timeline marker at now");
+  });
+
+  it("says why Forward is unavailable at the end of the range (F-109, A14-25)", () => {
+    renderMovementsScreen();
+    const trafficPanel = screen.getByRole("region", { name: "Today’s traffic" });
+    fireEvent.click(within(trafficPanel).getByRole("button", { name: "12h" }));
+    const steps = within(trafficPanel).getByRole("group", { name: "Move the timeline" });
+    const forward = () => within(steps).getByRole("button", { name: /^Forward \d+ hours$/u });
+    expect(forward()).not.toHaveAttribute("aria-disabled");
+    for (let press = 0; press < 48 && forward().getAttribute("aria-disabled") !== "true"; press += 1) {
+      fireEvent.click(forward());
+    }
+    expect(forward()).toHaveAttribute("aria-disabled", "true");
+    expect(forward()).toHaveAccessibleDescription("Already at the end");
   });
 
   it("opens a modal timeline, retains corridors and restores focus on Escape", () => {
@@ -224,7 +244,9 @@ describe("48-Hour Bed Movement Horizon (Gantt Chart)", () => {
     const dialog = screen.getByRole("dialog", { name: "Full screen movement timeline" });
     expect(dialog).toHaveAttribute("aria-modal", "true");
     expect(within(dialog).getByRole("complementary", { name: "Corridors" })).toBeInTheDocument();
-    expect(within(dialog).getByRole("button", { name: "Hide" })).toBeDisabled();
+    const hide = within(dialog).getByRole("button", { name: "Hide" });
+    expect(hide).toHaveAttribute("aria-disabled", "true");
+    expect(hide).toHaveAccessibleDescription("Close full screen first");
 
     // Restore
     fireEvent.keyDown(window, { key: "Escape" });

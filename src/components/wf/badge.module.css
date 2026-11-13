@@ -47,6 +47,14 @@
   padding-left: 0;
 }
 
+/* A neutral name tag (F-78): a health service's short name, "NMHS". No fill and no colour; ink-2
+   words on a line-2 hairline, so it never reads as a status or a button. */
+.tag {
+  color: var(--wf-ink-2);
+  background: none;
+  border-color: var(--wf-line-2);
+}
+
 .mono {
   font-family: var(--wf-mono);
   font-weight: 500;
@@ -91,5 +99,8 @@
   }
   .plain {
     border-color: transparent;
+  }
+  .tag {
+    border-color: CanvasText;
   }
 }

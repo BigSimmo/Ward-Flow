@@ -1137,7 +1137,6 @@ function WardPhoneList({
           <div key={group.key} className={styles.phoneGroup}>
             {group.label ? (
               <h2 className={styles.phoneGroupHead}>
-                <span className={styles.phoneGroupDot} data-service={group.key} aria-hidden="true" />
                 <span>{group.label}</span>
                 <span className={styles.phoneGroupShare}>
                   {beds > 0 ? `${Math.round((occupied / beds) * 100)}%` : ""}

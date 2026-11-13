@@ -653,11 +653,11 @@ describe("Kit CSS", () => {
     expect(button).toContain("@media (max-width: 46.4375rem)");
     expect(choice).toContain("@media (max-width: 46.4375rem)");
     // Kit standard (Josh, 31 Oct 2026: no 48px controls): a phone button shows at 40px and its
-    // invisible cover reaches 48px (4px above and below). Q295 (2 Nov 2026): a small one is drawn at
+    // invisible cover reaches 48px (5px above and below, from inside the 1px border). Q295 (2 Nov 2026): a small one is drawn at
     // 40px too, so it has no phone rule of its own that would draw it smaller.
     expect(block(phone(button), ".b:not([data-placement-action])")).toContain("height: 40px");
     expect(block(phone(button), ".b:not([data-placement-action])")).toContain("min-height: 40px");
-    expect(block(phone(button), ".b:not([data-placement-action])::after")).toContain("inset: -4px 0");
+    expect(block(phone(button), ".b:not([data-placement-action])::after")).toContain("inset: -5px 0");
     expect(phone(button)).not.toContain(".sm:not([data-placement-action])");
     // Placement decisions keep their full-size button, 48px on phones: the one exception (Josh, 31 Oct, 10:34).
     expect(block(button, ".b[data-placement-action]")).toContain("min-height: var(--wf-h-md)");

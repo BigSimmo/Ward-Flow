@@ -10,6 +10,22 @@
  *   corner, a soft translucent face), in place of tall full-width hero buttons. `.heroPills` lays two
  *   or three of them side by side.
  */
+@property --wf-row-fade-start {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes wfRowFadeStart {
+  0% {
+    --wf-row-fade-start: 0px;
+  }
+  10%,
+  100% {
+    --wf-row-fade-start: 28px;
+  }
+}
+
 @media (max-width: 46.4375rem) {
   .chipRow.chipRow {
     display: flex;
@@ -29,10 +45,36 @@
     touch-action: pan-x pan-y;
     overscroll-behavior-x: contain;
     scrollbar-width: none;
-    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
-    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    /* F-61 (PR E review, 13 Nov 2026): the start fade is 0 until the row scrolls (below), and a chip
+       reached by Tab scrolls clear of either fade. */
+    scroll-padding-inline: 28px;
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      black var(--wf-row-fade-start),
+      black calc(100% - 28px),
+      transparent
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      black var(--wf-row-fade-start),
+      black calc(100% - 28px),
+      transparent
+    );
     -webkit-mask-clip: no-clip;
     mask-clip: no-clip;
+  }
+  /* F-61: once scrolled away from the start the row fades there too. Scroll-driven: a row that does
+     not overflow, or a browser without scroll timelines, keeps the right-hand fade only. */
+  @supports (animation-timeline: scroll()) {
+    .chipRow.chipRow {
+      animation-name: wfRowFadeStart;
+      animation-duration: 1ms;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: scroll(self inline);
+    }
   }
   .chipRow.chipRow::-webkit-scrollbar {
     display: none;

@@ -373,13 +373,6 @@
   font-weight: 600;
 }
 
-.serviceDot {
-  flex: 0 0 auto;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-
 .why {
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);

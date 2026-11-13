@@ -9,7 +9,8 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardCommandDispatch, WardCommandOutcome } from "./ward-shared-client";
 import { confirmedWardCommand } from "./ward-command-completion";
 import type { Rejection } from "@/components/ward-management/ward-model";
-import { UNDO_WINDOW_MINUTES, UNDO_WINDOW_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
+import { UNDO_WINDOW_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
+import { undoWindowUntil, untilToastTitle } from "./ward-undo-until";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { roleLimitReason } from "@/components/ward-management/ward-role-permissions";
 import {
@@ -116,7 +117,8 @@ export type UndoableStep = {
   choices?: UndoStepChoices;
   /**
    * How long the toast's Undo stays offered, when not `UNDO_WINDOW_TOAST_MS`. D-187 (F-49): the toast
-   * says "Undo within 5 min", so by default it keeps Undo for that whole window, or until dismissed.
+   * names when the window ends ("Undo until 14:47", D-192), so by default it keeps Undo for that whole
+   * window, or until dismissed.
    */
   undoToastMs?: number;
 };
@@ -259,14 +261,15 @@ export function useUndoableStep({
       const limit = roleLimitReason(routeRole, undoType);
       sink.push({
         tone: "success",
-        title: pending.success,
         ...(limit
-          ? { body: `Undo: ${limit}` }
+          ? { title: pending.success, body: `Undo: ${limit}` }
           : {
               // Audit 24-7 (CT-10): the engine refuses Undo after its window, even while the toast is
-              // still on screen (its countdown pauses on hover), so the toast says the limit.
-              body: `Undo within ${UNDO_WINDOW_MINUTES} min.`,
+              // still on screen (its countdown pauses on hover), so the toast says the limit. D-192
+              // (shared design parts item 4): as one clock time, "Bed pulled · Undo until 14:47".
+              title: untilToastTitle(pending.success),
               undo: {
+                until: undoWindowUntil(nowRef.current),
                 durationMs: pending.undoToastMs ?? UNDO_WINDOW_TOAST_MS,
                 onUndo: () => takeBack(pending, build, watch, { success: pending.undone ?? "Undone. Back as it was." }),
               },

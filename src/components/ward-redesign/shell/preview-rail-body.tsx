@@ -99,21 +99,10 @@ import { useServiceScope } from "@/components/ward-management/shell/ward-service
  * - Selection is a slate tint with a fine edge. No bar or stripe on any edge (owner ruling Q-11).
  * - Status markers are round: a filled amber circle at or over 85%, a neutral ring under it.
  *
- * The chosen service still shows as a dot next to a WORD, never a bar (owner answer 52): open, it
- * reads "Service: South Metro"; closed, the dot keeps the short form ("South"). Under All services
+ * The chosen service shows as a WORD, never a bar (owner answer 52) and, since F-78, never a
+ * brand-colour dot: open, it reads "Service: South Metro"; closed, the short form ("South"). Under All services
  * it renders nothing at all, because there is no state to echo.
  */
-
-// Item 52's swatch key, mirroring `ed.module.css`'s own `data-svc` attribute-selector convention
-// rather than an inline colour, so the CSS stays the one place that names a token.
-const SERVICE_SWATCH_KEY: Record<HealthService, "north" | "south" | "east" | "wachs" | "cahs" | "private"> = {
-  "North Metro": "north",
-  "South Metro": "south",
-  "East Metro": "east",
-  WACHS: "wachs",
-  CAHS: "cahs",
-  Private: "private",
-};
 
 // The closed rail's short form. Metro is the only word ever dropped.
 const SERVICE_SHORT_LABEL: Record<HealthService, string> = {
@@ -741,12 +730,6 @@ export function PreviewRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
 
       {service ? (
         <p className={styles.serviceLine} data-testid="ward-rail-service">
-          <span
-            className={styles.serviceDot}
-            data-service={SERVICE_SWATCH_KEY[service]}
-            data-testid="ward-rail-service-dot"
-            aria-hidden="true"
-          />
           {shownOpen ? `Service: ${service}` : SERVICE_SHORT_LABEL[service]}
         </p>
       ) : null}

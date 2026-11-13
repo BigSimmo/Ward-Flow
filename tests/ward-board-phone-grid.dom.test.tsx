@@ -109,7 +109,8 @@ describe("phone bed grid", () => {
     expect(kinds.size).toBeGreaterThan(1);
   });
 
-  it("leaves the sheet open when Escape only dismisses a select inside it", () => {
+  // Spec item 5 (13 Nov 2026): Escape from a closed select closes the record, like any other control.
+  it("closes the record when Escape is pressed on a closed select inside it", () => {
     stubPhone(true);
     renderBoard();
     const tiles = within(screen.getByTestId("ward-board-beds")).getAllByRole("button");
@@ -121,8 +122,6 @@ describe("phone bed grid", () => {
     }, null);
     if (select === null) throw new Error("no bed record with a select");
     fireEvent.keyDown(select, { key: "Escape" });
-    expect(screen.getByTestId("ward-board-detail")).toBeInTheDocument();
-    fireEvent.keyDown(screen.getByRole("button", { name: "Close bed record" }), { key: "Escape" });
     expect(screen.queryByTestId("ward-board-detail")).toBeNull();
   });
 

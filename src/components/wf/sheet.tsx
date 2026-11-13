@@ -15,10 +15,9 @@ import { X } from "lucide-react";
 import { OverlayPortal } from "./overlay-root";
 import { cn } from "@/components/ui-primitives";
 import styles from "./sheet.module.css";
-import { modalFocusTargets } from "./focus-targets";
+import { handleModalKeyDown, openingFocusTarget } from "./use-modal-focus";
 import {
   canRestoreFocusTo,
-  isTopmostSheet,
   overlayOpener,
   popSheet,
   pushSheet,
@@ -284,49 +283,24 @@ export function Sheet({
       // button (it is absent, or inert inside the hidden header), so the dialog itself is the last
       // resort: focus always enters the sheet (v9 section 8).
       resolveTarget: () =>
-        initialFocusRef?.current ??
-        panelRef.current?.querySelector<HTMLElement>(SHEET_AUTOFOCUS_SELECTOR) ??
-        usableCloseButton(closeRef.current) ??
-        panelRef.current,
+        openingFocusTarget(
+          panelRef.current,
+          initialFocusRef?.current ??
+            panelRef.current?.querySelector<HTMLElement>(SHEET_AUTOFOCUS_SELECTOR) ??
+            usableCloseButton(closeRef.current),
+        ) ?? panelRef.current,
     });
 
+    // Spec item 5 (13 Nov 2026): the same Escape and Tab contract as every other kit overlay. Only
+    // the top-most layer reacts, so a stacked overlay (lightbox over the Evidence sheet) does not
+    // also close on one Escape or fight over the Tab trap.
     function onKeyDown(event: KeyboardEvent) {
-      // Only the top-most open Sheet reacts, so a stacked overlay (lightbox /
-      // table dialog over the Evidence sheet) does not also close on one Escape
-      // or fight over the Tab focus trap. Lower sheets registered their listener
-      // earlier and fire first, so they self-suppress here without needing to
-      // stop propagation.
-      if (!isTopmostSheet(sheetId)) return;
-      if (event.key === "Escape") {
-        // A field or nested picker may consume Escape before it reaches the sheet.
-        if (event.defaultPrevented) return;
-        if (event.target instanceof HTMLElement && event.target.tagName === "SELECT") return;
-        event.preventDefault();
-        onCloseRef.current();
-        return;
-      }
-      if (event.key !== "Tab") return;
-
-      // Actionable toasts belong to the top sheet's cycle, including on phones.
-      const focusable = modalFocusTargets(panelRef.current, true);
-      if (focusable.length === 0) return;
-
-      const activeElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-      const currentIndex = activeElement ? focusable.indexOf(activeElement) : -1;
-      const nextIndex =
-        currentIndex === -1
-          ? event.shiftKey
-            ? focusable.length - 1
-            : 0
-          : event.shiftKey
-            ? (currentIndex - 1 + focusable.length) % focusable.length
-            : (currentIndex + 1) % focusable.length;
-
-      // Move focus explicitly instead of relying on platform Tab preferences.
-      // Firefox can otherwise leave programmatically focused buttons out of the
-      // native sequence, which makes the modal trap inconsistent by browser.
-      event.preventDefault();
-      focusable[nextIndex].focus();
+      handleModalKeyDown(event, {
+        modalId: sheetId,
+        panel: panelRef.current,
+        onClose: () => onCloseRef.current(),
+        emptyTabPasses: true,
+      });
     }
 
     window.addEventListener("keydown", onKeyDown);

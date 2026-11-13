@@ -1,0 +1,49 @@
+/* Shared design parts item 7 (Josh, 13 Nov 2026): the one synthetic-data tag. A small neutral pill,
+   12px ink-2 on the surface with a line-2 hairline. Tokens only, no tone, no coloured edge. */
+.mark {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 22px;
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* A view's own slot for the mark: the first free place on the right of its top row. */
+.slot {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  margin-inline-start: auto;
+}
+
+/* A full-screen view that gave the mark no slot still draws it, in a strip of its own at the top. */
+.frameTop {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--wf-s-2) var(--wf-s-4) 0;
+}
+
+@media (forced-colors: active) {
+  .mark {
+    border-color: CanvasText;
+  }
+}

@@ -21,6 +21,7 @@ import { WardPhoneDesktopOnly } from "@/components/ward-management/shell/ward-ph
 import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-broadcast-banner";
 import { WardOfflineBanner, WardPracticeLine } from "@/components/ward-management/shell/ward-offline-banner";
 import { WardTrainingBanner } from "@/components/ward-management/shell/ward-training-banner";
+import { WardViewingAsBar } from "@/components/ward-management/shell/ward-viewing-as-bar";
 import { WardDowntimePackLine } from "@/components/ward-management/shell/ward-downtime-pack-line";
 import { WardSiteFeatureSwitchSync } from "@/components/ward-management/shell/ward-site-feature-switch-sync";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
@@ -293,6 +294,8 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                 (wf/band.ts) and watches, so a hero bands from under the banner when it arrives. */}
                   <div className={styles.trainingHolder} data-wf-bar-training="">
                     <WardTrainingBanner />
+                    {/* Shared design parts item 8: while See it as shows another desk, a slim line says so. */}
+                    <WardViewingAsBar />
                   </div>
                   <div className={styles.bannerHolder} data-wf-bar-notes="">
                     {/* SD-02 (Josh, 5 Nov 2026): lost device saving outranks every other note. */}

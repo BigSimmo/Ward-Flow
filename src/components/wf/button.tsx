@@ -40,8 +40,14 @@ type ButtonOwnProps = {
    * disabled style, and the reason as visible text beside the button (or a tooltip).
    */
   disabledReason?: string;
-  /** Where the reason shows. Inline text by default; `tooltip` where space is tight. */
-  reasonDisplay?: "inline" | "tooltip";
+  /**
+   * Where the reason shows. Inline text by default: a lock line under the button, right-aligned with
+   * it. `tooltip` where space is tight, with a pointer; on a phone or touch screen a tooltip never
+   * shows, so the reason is drawn as the same lock line there (shared design parts item 6). `page`
+   * when the page already draws the same reason in full nearby: the tooltip only, never a second
+   * drawn copy on a phone.
+   */
+  reasonDisplay?: "inline" | "tooltip" | "page";
   /**
    * Called when the button is pressed while `disabledReason` holds (the action itself still does
    * not run), so a form can show its error summary. Not called while loading.
@@ -148,20 +154,29 @@ export function Button(props: ButtonProps) {
 
   if (!off) return button;
 
-  if (reasonDisplay === "tooltip") {
+  if (reasonDisplay === "tooltip" || reasonDisplay === "page") {
+    // Shared design parts item 6 (Josh, 13 Nov 2026): the tip needs a pointer. On a phone width or a
+    // touch screen the drawn lock line shows instead (CSS only, so the server and the first paint
+    // agree); it is hidden from screen readers, which already have the reason.
     return (
-      <>
-        <Tooltip content={disabledReason!} presentationOnly>
+      <span className={styles.tipReason}>
+        <Tooltip content={disabledReason!} presentationOnly className={styles.reasonTip}>
           {button}
         </Tooltip>
         <SrOnly id={reasonId}>{disabledReason}</SrOnly>
-      </>
+        {reasonDisplay === "page" ? null : (
+          <span className={cx(styles.reason, styles.touchReason)} aria-hidden="true" data-touch-reason="">
+            <Icon icon={Lock} size={14} />
+            {disabledReason}
+          </span>
+        )}
+      </span>
     );
   }
 
   return (
     <span className={styles.withReason}>
-      <span className={styles.reason} id={reasonId}>
+      <span className={styles.reason} id={reasonId} data-wf-reason="">
         <Icon icon={Lock} size={14} />
         {disabledReason}
       </span>

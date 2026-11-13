@@ -1,4 +1,5 @@
 import { WardLoadingShape, type WardLoadingShapePaths } from "@/components/ward-management/shell/ward-loading-shape";
+import { wardLoadingShapeRows } from "@/components/ward-management/shell/ward-loading-shape-rows";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 import styles from "./loading.module.css";
@@ -21,13 +22,14 @@ const SHAPED_PAGES: WardLoadingShapePaths = {
  * prototype footer stays at the foot, so the page lands where the placeholder was.
  *
  * This boundary loads on every navigation, so it imports no kit barrel or navigation module: the
- * spinner is drawn by its own CSS (the kit Spinner's rule, copied) and the addresses are passed in.
+ * addresses are passed in. Shared design parts item 12 (Josh, 13 Nov 2026): no spinner; the status
+ * row carries the synthetic-data mark and the blocks hold grey rows shaped like the content.
  */
 export default function WardFlowLoading() {
   return (
     <main id="main-content" className={styles.main} aria-busy="true" data-testid="ward-flow-loading">
       <WardLoadingStatus />
-      <WardLoadingShape paths={SHAPED_PAGES} />
+      <WardLoadingShape paths={SHAPED_PAGES} rows={wardLoadingShapeRows()} />
       <WardPrototypeFooter />
     </main>
   );

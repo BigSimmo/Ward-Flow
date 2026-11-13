@@ -507,12 +507,24 @@
   initial-value: 0px;
 }
 
+/* F-61 (PR E review, 13 Nov 2026): a row scrolled away from its start fades there too. */
+@property --wf-row-fade-start {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
 @keyframes wfRowFade {
-  from {
+  0% {
     --wf-row-fade: 24px;
+    --wf-row-fade-start: 0px;
   }
-  to {
+  10% {
+    --wf-row-fade-start: 24px;
+  }
+  100% {
     --wf-row-fade: 0px;
+    --wf-row-fade-start: 24px;
   }
 }
 
@@ -521,8 +533,21 @@
   @media (prefers-reduced-motion: no-preference) {
     .chips {
       padding-inline-end: 24px;
-      -webkit-mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
-      mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
+      -webkit-mask-image: linear-gradient(
+        to right,
+        transparent 0,
+        black var(--wf-row-fade-start),
+        black calc(100% - var(--wf-row-fade)),
+        transparent 100%
+      );
+      mask-image: linear-gradient(
+        to right,
+        transparent 0,
+        black var(--wf-row-fade-start),
+        black calc(100% - var(--wf-row-fade)),
+        transparent 100%
+      );
+      scroll-padding-inline: 24px;
       /* Longhands (design audit, 5 Nov 2026): the CSS build folds `animation` and
          `animation-timeline` into one shorthand that Chrome rejects, which dropped the fade. */
       animation-name: wfRowFade;

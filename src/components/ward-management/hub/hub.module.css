@@ -744,7 +744,7 @@
   }
 }
 
-/* The kind switch pins under the stable header, full bleed on the canvas. */
+/* The kind switch, full bleed on the canvas. */
 .phoneKindBar {
   position: sticky;
   top: var(--wf-header-height, 3.5rem);
@@ -752,6 +752,15 @@
   margin: 0 calc(-1 * var(--wf-s-3)) var(--wf-s-1);
   padding: var(--wf-s-2) var(--wf-s-3);
   background: var(--wf-canvas);
+}
+
+/* Spec item 9 and audit A5-17 (F-61, PR E review, 13 Nov 2026): a phone keeps one pinned bar. The
+ * Places tab row (FolderTabs) stays pinned under the header, so this second bar (All, Wards, EDs,
+ * Teams) no longer pins over it; it scrolls away with the list, as Statistics' second bar does. */
+@media (max-width: 46.4375rem) {
+  .phoneKindBar {
+    position: static;
+  }
 }
 
 .phoneKindBar > div {

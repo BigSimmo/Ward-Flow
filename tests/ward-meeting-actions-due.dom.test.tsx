@@ -188,7 +188,8 @@ describe("bed meeting actions due on a record", () => {
     recordAction();
     fireEvent.click(screen.getByTestId("meeting-action-mark-done"));
     expect(screen.queryByTestId("meeting-actions-due")).not.toBeInTheDocument();
-    expect(await screen.findByText("Marked done: Book transport.")).toBeInTheDocument();
+    // D-192 (shared design parts item 4): the title loses its full stop; the kit adds " · Undo until HH:MM".
+    expect(await screen.findByText("Marked done: Book transport")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Undo/u }));
     expect(screen.getByTestId("refusals")).toHaveTextContent("0");
@@ -209,7 +210,7 @@ describe("bed meeting actions due on a record", () => {
     fireEvent.click(screen.getByTestId("record-with-undo"));
     expect(screen.getByTestId("refusals")).toHaveTextContent("0");
     expect(await screen.findByTestId("meeting-actions-due")).toHaveTextContent("Book transport");
-    expect(await screen.findByText("Chased.")).toBeInTheDocument();
+    expect(await screen.findByText("Chased")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Undo/u }));
     expect(screen.getByTestId("refusals")).toHaveTextContent("0");

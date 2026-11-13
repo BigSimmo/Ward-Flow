@@ -169,7 +169,9 @@ export function renderEdBoardTableRow(
           </span>
         ) : null}
       </span>
-      <span className={styles.a2Facts}>{referredFact}</span>
+      {/* D-192 (shared design parts item 9): the place wraps to two lines before any "…", so
+          "Bunbury Acute Psychiatric Unit" is never cut at 1440 or 1280. */}
+      <span className={`${styles.a2Facts} ${styles.a2Place}`}>{referredFact}</span>
     </>
   );
   const nextCell =
@@ -300,7 +302,8 @@ export function renderEdBoardTableRow(
             <EscalationLastOutcome movement={movement} step={waitStep.step} now={now} />
           </span>
         ) : null}
-        {/* Six features build (Josh's sign-off, 9 Nov 2026): the step's suggested next step, as a prompt.
+        {/* Six features build (Josh's sign-off, 9 Nov 2026): the step's next escalation step, as a prompt
+            (D-192: "Next escalation step", was "Suggested next step").
             3.1: once the step's own action is recorded, the journey's neutral words stand instead. */}
         {waitStep && waitStep.actionDone ? (
           <span className={styles.a2Sub} data-testid={`ward-ed-wait-journey-${movement.id}`}>
@@ -310,10 +313,10 @@ export function renderEdBoardTableRow(
           <span
             className={styles.a2Sub}
             data-testid={`ward-ed-wait-next-step-${movement.id}`}
-            title={`Suggested next step: ${waitStep.nextStep}`}
+            title={`Next escalation step: ${waitStep.nextStep}`}
           >
             <span aria-hidden="true">{waitStep.nextStepShort}</span>
-            <span className="sr-only">Suggested next step: {waitStep.nextStep}</span>
+            <span className="sr-only">Next escalation step: {waitStep.nextStep}</span>
           </span>
         ) : null}
         {/* Escalation calls (item 3, D-133): who to call at this step, and what happened. A closed

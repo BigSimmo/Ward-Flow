@@ -390,6 +390,29 @@
   max-width: 100%;
 }
 
+/* A segment with a count window (`ChoiceItem.window`): label and count, then the window word under
+   them in ink-3, so the segment keeps its width and nothing wraps (shared design parts item 2). */
+.segStack {
+  display: inline-grid;
+  justify-items: center;
+  row-gap: 2px;
+  padding-block: 4px;
+}
+
+.segMain {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.segWin > :first-child {
+  display: none;
+}
+
+.trk .segWin {
+  color: var(--wf-hero-ink-3);
+}
+
 /* Hook class on the Count inside segments, so the hero track can recolour it. */
 .k {
   flex: 0 0 auto;
@@ -539,26 +562,52 @@
 
 /* ── Edge fade for scrolling tabs and phone tracks (device audit, 11 Oct 2026) ─────────────────────
  * A clipped row fades at its end so the cut item reads as "scroll for more". Scroll-driven: full at
- * the start, none once scrolled to the end, and a row that does not overflow never fades. */
+ * the start, none once scrolled to the end, and a row that does not overflow never fades. F-61 (PR E
+ * review, 13 Nov 2026): once scrolled away from the start it fades at the start too, and the scroll
+ * padding keeps a focused item clear of both fades. */
 @property --wf-row-fade {
   syntax: "<length>";
   inherits: false;
   initial-value: 0px;
 }
 
+@property --wf-row-fade-start {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
 @keyframes wfRowFade {
-  from {
+  0% {
     --wf-row-fade: 24px;
+    --wf-row-fade-start: 0px;
   }
-  to {
+  10% {
+    --wf-row-fade-start: 24px;
+  }
+  100% {
     --wf-row-fade: 0px;
+    --wf-row-fade-start: 24px;
   }
 }
 
 @supports (animation-timeline: scroll()) {
   .tabs {
-    -webkit-mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
-    mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      black var(--wf-row-fade-start),
+      black calc(100% - var(--wf-row-fade)),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      black var(--wf-row-fade-start),
+      black calc(100% - var(--wf-row-fade)),
+      transparent 100%
+    );
+    scroll-padding-inline: 24px;
     /* Longhands (design audit, 5 Nov 2026): the CSS build folds `animation` and
        `animation-timeline` into one shorthand that Chrome rejects, which dropped the fade. */
     animation-name: wfRowFade;
@@ -573,8 +622,21 @@
   @supports (animation-timeline: scroll()) {
     .seg,
     .trk {
-      -webkit-mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
-      mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
+      -webkit-mask-image: linear-gradient(
+        to right,
+        transparent 0,
+        black var(--wf-row-fade-start),
+        black calc(100% - var(--wf-row-fade)),
+        transparent 100%
+      );
+      mask-image: linear-gradient(
+        to right,
+        transparent 0,
+        black var(--wf-row-fade-start),
+        black calc(100% - var(--wf-row-fade)),
+        transparent 100%
+      );
+      scroll-padding-inline: 24px;
       /* Longhands (design audit, 5 Nov 2026): the CSS build folds `animation` and
          `animation-timeline` into one shorthand that Chrome rejects, which dropped the fade. */
       animation-name: wfRowFade;
@@ -794,5 +856,112 @@
     content: "";
     position: absolute;
     inset: -4px 0;
+  }
+}
+
+/* ── Answer rows (spec item 15, C18, 13 Nov 2026) ─────────────────────────────────────────────────
+ * `Segmented layout="answers"`: a form answer, not a view switch. Each option is sized to its words
+ * and wraps inside itself before it could be cut; a long row wraps onto a second line. Four or more
+ * options are separate chips across the full width (6px gaps). On a phone, three or more become a
+ * one-per-line list of 40px rows with a radio mark, the chosen row tinted; the rows abut, so each
+ * row is its own 40px target with no extra cover. Two options stay a switch. */
+.seg.answers {
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
+.answers .segItem {
+  white-space: normal;
+  text-align: start;
+  line-height: var(--wf-lh-12);
+}
+
+.seg.answerChips {
+  display: flex;
+  width: 100%;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.answerChips .segItem {
+  border: 1px solid var(--wf-line-ctl);
+  background: var(--wf-surface);
+}
+
+.answerChips .segItem.segOn {
+  border-color: var(--wf-accent);
+  background: var(--wf-accent-tint);
+  box-shadow: none;
+}
+
+@media (max-width: 46.4375rem) {
+  .seg.answerList {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    width: 100%;
+    height: auto;
+    gap: 0;
+    padding: 0;
+    overflow: visible;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+    background-image: none;
+  }
+
+  .seg.answerList .segItem {
+    flex: 0 0 auto;
+    justify-content: flex-start;
+    gap: var(--wf-s-2);
+    min-height: var(--wf-phone-seg-item-h, 40px);
+    padding: 0 var(--wf-s-3);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    font-size: var(--wf-fs-13);
+    font-weight: 500;
+  }
+
+  .seg.answerList .segItem + .segItem {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .seg.answerList .segItem::after {
+    inset: 0;
+  }
+
+  .seg.answerList .segItem::before {
+    content: "";
+    flex: none;
+    box-sizing: border-box;
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid var(--wf-ink-3);
+    border-radius: 50%;
+  }
+
+  .seg.answerList .segItem.segOn {
+    background: var(--wf-accent-tint);
+    color: var(--wf-ink-1);
+    font-weight: 600;
+  }
+
+  .seg.answerList .segItem.segOn::before {
+    border-color: var(--wf-accent);
+    background: var(--wf-accent);
+    box-shadow: inset 0 0 0 2px var(--wf-surface);
+  }
+
+  .seg.answerList .segItem:first-child {
+    border-radius: calc(var(--wf-r-md) - 1px) calc(var(--wf-r-md) - 1px) 0 0;
+  }
+
+  .seg.answerList .segItem:last-child {
+    border-radius: 0 0 calc(var(--wf-r-md) - 1px) calc(var(--wf-r-md) - 1px);
   }
 }

@@ -315,31 +315,6 @@
   white-space: nowrap;
 }
 
-.serviceDot {
-  flex-shrink: 0;
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  /* Private has no service token; it keeps the neutral base colour. */
-  background: var(--wf-neutral);
-}
-
-.serviceDot[data-service="north"] {
-  background: var(--svc-north);
-}
-
-.serviceDot[data-service="south"] {
-  background: var(--svc-south);
-}
-
-.serviceDot[data-service="east"] {
-  background: var(--svc-east);
-}
-
-.serviceDot[data-service="wachs"] {
-  background: var(--svc-wachs);
-}
-
 /* ── Shift card ────────────────────────────────────────────────────────────────────────────── */
 
 .shiftCockpit {
@@ -1378,7 +1353,7 @@
   }
 }
 
-.appearancePillBtn[aria-pressed="true"] {
+.appearancePillBtn:is([aria-pressed="true"], [aria-checked="true"]) {
   border-color: var(--wf-accent);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--wf-accent) 30%, transparent);
 }
@@ -1422,10 +1397,20 @@
   border-radius: 50%;
 }
 
-.appearancePillBtn[aria-pressed="true"] .appearanceRadio {
+.appearancePillBtn:is([aria-pressed="true"], [aria-checked="true"]) .appearanceRadio {
   border-color: var(--wf-accent);
   background: var(--wf-accent);
   box-shadow: inset 0 0 0 2px var(--wf-surface-2);
+}
+
+/* Spec item 14: the pop-up's keys, one quiet line at its foot, under a hairline (approved picture). */
+.appearanceKeys {
+  margin: 0;
+  padding-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
 }
 
 .userCardWrap {

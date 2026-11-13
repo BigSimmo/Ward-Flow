@@ -110,8 +110,10 @@ test.describe("@mockup triage and risk", () => {
     await pickPerson(page);
     await expect(page).toHaveURL(/\/ward-flow\/people\/[^/]+\/triage$/);
     await expect(page.getByTestId("triage-risk-page")).toBeVisible();
-    // Nothing clinical pre-selected: only the two layout switches are set.
+    // Nothing clinical pre-selected: only the two layout switches are set. Scoped to the form, so
+    // the rail's Theme radio group (PR E, review E-11) is not counted as a clinical answer.
     const checked = await page
+      .getByTestId("triage-risk-page")
       .locator('[role="radio"][aria-checked="true"]')
       .evaluateAll((radios) => radios.map((radio) => radio.closest('[role="radiogroup"]')?.getAttribute("aria-label")));
     expect(checked.filter((group) => group !== "Mental state layout" && group !== "Past or current")).toEqual([]);

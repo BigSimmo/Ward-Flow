@@ -45,6 +45,8 @@ const BANNED: readonly Banned[] = [
     instead: "Pulled bed released after ...",
   },
   { id: "reserved time", pattern: /\breserved time\b/i, instead: "Pull time limit" },
+  // D-198 (13 Nov 2026): a bed kept for an incoming patient is pulled, never "reserved".
+  { id: "reserved bed", pattern: /\breserved bed\b/i, instead: "Pulled" },
   { id: "ready vacant", pattern: /\bready vacant\b/i, instead: "Ready" },
   // "Waitlist" as a noun or label, not only "the waitlist" (H-0847). Capitalised anywhere, or
   // lowercase next to a space; code values such as "waitlist" or `ward-waitlist-…` never count.
@@ -88,6 +90,14 @@ const BANNED: readonly Banned[] = [
   // #1476 review (5 Nov 2026): the §6 "Nobody, not No one" rule, now kept by this test.
   // The ED board mock-up copies under ward-redesign/ stay as drawn (D-91), so this rule skips them.
   { id: "No one", pattern: /\bNo one\b/, instead: "Nobody", skip: /^src\/components\/ward-redesign\// },
+  // D-192 (Josh, 13 Nov 2026): the ED wait step's label. Only the label: the steps themselves are
+  // unchanged. The approved mock-up copies under ward-redesign/ stay as drawn (D-91).
+  {
+    id: "Suggested next step",
+    pattern: /\bSuggested next step\b/,
+    instead: "Next escalation step",
+    skip: /^src\/components\/ward-redesign\//,
+  },
   // Australian spelling.
   {
     id: "US spelling",
@@ -123,6 +133,8 @@ const KNOWN_LEFTOVERS: Readonly<Record<string, Readonly<Record<string, number>>>
   "src/components/ward-management/statistics/statistics-claims-statistics-screen.ts": { blockers: 1 },
   // "Waitlist" as a verb in a refusal, which the word list allows; another branch owns the file.
   "src/components/ward-management/ward-flow-referral-answer-events.ts": { "the waitlist": 1 },
+  // D-198: the ED medical-deterioration safety line keeps its words until the clinical sitting rules on them.
+  "src/components/ward-management/ed/ed-medical-placement-controls.tsx": { "reserved bed": 1 },
   // Help search input data, never shown: "favorite" is a word people type, read as "favourite" (P9).
   "src/components/ward-management/help/ward-help-synonyms.ts": { "US spelling": 1 },
 };

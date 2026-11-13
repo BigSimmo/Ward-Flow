@@ -75,7 +75,6 @@ export function ServicePickerMock({ onClose }: { onClose: () => void }) {
 
   const option = (key: string, label: string, count: number, pressed: boolean, value: HealthService | null) => (
     <button key={key} type="button" className={styles.option} aria-pressed={pressed} onClick={() => choose(value)}>
-      <span className={styles.dot} data-service={key} aria-hidden="true" />
       <span className={styles.name}>{label}</span>
       {/* Mock-up: each count names its noun, so the foot line that explained it goes; a zero is a
           quiet figure in the same column as the others. */}

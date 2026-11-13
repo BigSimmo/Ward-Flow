@@ -12,7 +12,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { IconTile, buttonClass } from "@/components/wf";
+import { Button, FullScreenFrame, FullScreenMarkSlot, IconTile, buttonClass, useMediaQuery } from "@/components/wf";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -162,6 +162,10 @@ export function MovementHorizonGantt({
   const [zoom, setZoom] = useState<ZoomHours>(48);
   const [scrub, setScrub] = useState<number>(0);
   const [isEnlarged, setIsEnlarged] = useState<boolean>(false);
+  // Design parts item 7: where the full-screen synthetic-data tag sits, the first free place on the
+  // right. Up to 1100px the controls wrap under the title, so the title row has room (and on a phone
+  // the tag sits beside Service, by CSS); wider, the head row is full and the legend row takes it.
+  const markOnHead = useMediaQuery("(max-width: 68.75rem)");
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   const [activeCorridorTab, setActiveCorridorTab] = useState<CorridorTab>("accepted");
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
@@ -322,7 +326,10 @@ export function MovementHorizonGantt({
       : lanes.flatMap((lane) => lane.events).find((event) => event.id === selectedMovementId);
 
   return (
-    <div
+    // Shared design parts item 7: full screen covers the page footer, so the frame draws the
+    // synthetic-data mark (on the legend row, the first free place on the right).
+    <FullScreenFrame
+      enlarged={isEnlarged}
       ref={horizonRef}
       className={`${styles.horizonContainer}${isEnlarged ? ` ${styles.fullscreen}` : ""}`}
       data-testid="ward-movement-horizon"
@@ -342,6 +349,7 @@ export function MovementHorizonGantt({
               : `${visibleLanes.length} of ${lanes.length} receiving wards`}
           </span>
         </div>
+        {markOnHead ? <FullScreenMarkSlot /> : null}
 
         <div className={styles.phControls}>
           <div className={styles.serviceFilterWrap}>
@@ -389,15 +397,17 @@ export function MovementHorizonGantt({
           </div>
 
           <div className={styles.stepGroup} role="group" aria-label="Move the timeline">
-            <button
-              type="button"
-              className={buttonClass({ variant: "sec", size: "sm", iconOnly: true })}
+            {/* F-109 (A14-25): a step that cannot move says why, as a tip so the toolbar keeps its row. */}
+            <Button
+              variant="sec"
+              size="sm"
+              iconOnly
+              icon={ChevronLeft}
               aria-label={`Back ${scrubStep} hours`}
-              disabled={scrub === 0}
+              disabledReason={scrub === 0 ? "Already at now" : undefined}
+              reasonDisplay="tooltip"
               onClick={() => handleScrubberChange(Math.max(0, scrub - scrubStep))}
-            >
-              <ChevronLeft size={16} aria-hidden="true" />
-            </button>
+            />
             <button
               type="button"
               className={buttonClass({ variant: "sec", size: "sm" })}
@@ -407,15 +417,16 @@ export function MovementHorizonGantt({
             >
               Now
             </button>
-            <button
-              type="button"
-              className={buttonClass({ variant: "sec", size: "sm", iconOnly: true })}
+            <Button
+              variant="sec"
+              size="sm"
+              iconOnly
+              icon={ChevronRight}
               aria-label={`Forward ${scrubStep} hours`}
-              disabled={scrub >= zoom}
+              disabledReason={scrub >= zoom ? "Already at the end" : undefined}
+              reasonDisplay="tooltip"
               onClick={() => handleScrubberChange(Math.min(zoom, scrub + scrubStep))}
-            >
-              <ChevronRight size={16} aria-hidden="true" />
-            </button>
+            />
           </div>
 
           <div className={styles.zoomGroup} role="group" aria-label="Timeline zoom range">
@@ -442,17 +453,19 @@ export function MovementHorizonGantt({
           >
             {isEnlarged ? "Close full screen" : "Enlarge"}
           </button>
-          <button
-            type="button"
-            className={buttonClass({ variant: "ghost", size: "sm", className: styles.phBtn })}
+          <Button
+            variant="ghost"
+            size="sm"
+            className={styles.phBtn}
             id={`${baseId}-toggleHorizonDiagram`}
             aria-controls={diagramAreaId}
             aria-expanded={!isCollapsed}
-            disabled={isEnlarged}
+            disabledReason={isEnlarged ? "Close full screen first" : undefined}
+            reasonDisplay="tooltip"
             onClick={() => setIsCollapsed(!isCollapsed)}
           >
             {isCollapsed ? "Show" : "Hide"}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -494,6 +507,7 @@ export function MovementHorizonGantt({
                 Pull time passed
               </li>
             </ul>
+            {markOnHead ? null : <FullScreenMarkSlot />}
           </div>
 
           {/* Split Container: Gantt Grid + Side Corridor Register */}
@@ -911,7 +925,7 @@ export function MovementHorizonGantt({
           </div>
         </div>
       )}
-    </div>
+    </FullScreenFrame>
   );
 }
 

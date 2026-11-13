@@ -459,9 +459,19 @@ export type PopoverProps = {
   panelClassName?: string;
 };
 
+/** The chosen answer in a pop-up of choices: a checked radio or option, or a pressed toggle. */
+const POPOVER_CURRENT_CHOICE = [
+  '[role="radio"][aria-checked="true"]:not([disabled])',
+  '[role="menuitemradio"][aria-checked="true"]:not([disabled])',
+  '[role="option"][aria-selected="true"]:not([disabled])',
+  'input[type="radio"]:checked:not([disabled])',
+  'button[aria-pressed="true"]:not([disabled])',
+].join(", ");
+
 /**
  * Non-modal glass popover (filters, small pickers, pop-outs). Escape and an outside press close
- * it, and Escape returns focus to the trigger. Focus moves to the first control inside on open.
+ * it, and Escape returns focus to the trigger. Focus moves to the current choice inside on open
+ * (a checked radio, a selected option or a pressed toggle), else the first control.
  */
 export function Popover({ label, trigger, children, align = "start", className, panelClassName }: PopoverProps) {
   const panelId = useId();
@@ -512,10 +522,13 @@ export function Popover({ label, trigger, children, align = "start", className, 
     if (!open) return;
     skipReturnFocusRef.current = false;
     const panel = panelRef.current;
+    // Spec item 14 (C07, 13 Nov 2026): a pop-up of choices opens on its current choice, so arrows
+    // move from the answer already given; anything else opens on its first control.
+    const current = panel?.querySelector<HTMLElement>(POPOVER_CURRENT_CHOICE);
     const first = panel?.querySelector<HTMLElement>(
       'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
     );
-    (first ?? panel)?.focus({ preventScroll: true });
+    (current ?? first ?? panel)?.focus({ preventScroll: true });
   }, [open]);
 
   const onTriggerKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {

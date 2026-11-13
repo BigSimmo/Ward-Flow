@@ -931,6 +931,18 @@
   border: 0;
 }
 
+/* Spec item 17 (C32, 13 Nov 2026): the kit Field's row layout, on the same 5.25rem label column, so
+   the error and help sit under the box in the answer column at every width. */
+.fieldRow {
+  --wf-field-label-w: 5.25rem;
+  margin: 6px 0 0;
+}
+
+.fieldRow label {
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
 .formRow > :first-child label,
 .formLabel {
   color: var(--wf-ink-2);
@@ -979,6 +991,66 @@ fieldset.formRow {
   font: 500 var(--wf-fs-13) / 1 var(--wf-font);
   white-space: nowrap;
   cursor: pointer;
+}
+
+/* Spec item 15 (C18, 13 Nov 2026): answers size to their words and wrap; none is ever cut. */
+.choice {
+  flex-wrap: wrap;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.choiceItem {
+  height: auto;
+  min-height: 30px;
+  white-space: normal;
+  line-height: var(--wf-lh-13);
+}
+
+@media (max-width: 46.4375rem) {
+  /* Three or more answers: one per line, 40px rows with a radio mark, inside the answer column. */
+  .choice[data-answers="list"] {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+    border-color: var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+    overflow: hidden;
+  }
+
+  .choice[data-answers="list"] .choiceItem {
+    gap: var(--wf-s-2);
+    min-height: 40px;
+    border-radius: 0;
+  }
+
+  .choice[data-answers="list"] .choiceItem + .choiceItem {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .choice[data-answers="list"] .choiceItem::before {
+    content: "";
+    flex: none;
+    box-sizing: border-box;
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid var(--wf-ink-3);
+    border-radius: 50%;
+  }
+
+  .choice[data-answers="list"] .choiceItem:has(input:checked) {
+    background: var(--wf-accent-tint);
+    box-shadow: none;
+  }
+
+  .choice[data-answers="list"] .choiceItem:has(input:checked)::before {
+    border-color: var(--wf-accent);
+    background: var(--wf-accent);
+    box-shadow: inset 0 0 0 2px var(--wf-surface);
+  }
 }
 
 .choiceItem input,
@@ -1527,7 +1599,9 @@ fieldset.formRow {
 }
 
 .planSheet .formRow select,
-.planSheet .formRow input {
+.planSheet .formRow input,
+.planSheet .fieldRow select,
+.planSheet .fieldRow input {
   min-height: 44px;
 }
 
@@ -1866,7 +1940,9 @@ fieldset.formRow {
 @media (max-width: 46.4375rem) {
   .screen :global([data-testid="ward-out-of-area-days-away"]) > ul {
     margin-inline: 0;
-    padding: 0;
+    /* Keep the shared row's 4px top and bottom padding: it holds the cells' 48px tap cover inside
+       the row, so the row is never taller inside than out and cannot drag up and down on an iPhone. */
+    padding-inline: 0;
     overflow-x: visible;
     -webkit-mask-image: none;
     mask-image: none;
