@@ -12,7 +12,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { IconTile, buttonClass, useMediaQuery } from "@/components/wf";
+import { Button, IconTile, buttonClass, useMediaQuery } from "@/components/wf";
 import { FullScreenFrame, FullScreenMarkSlot } from "@/components/wf/full-screen-frame";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 
@@ -398,15 +398,17 @@ export function MovementHorizonGantt({
           </div>
 
           <div className={styles.stepGroup} role="group" aria-label="Move the timeline">
-            <button
-              type="button"
-              className={buttonClass({ variant: "sec", size: "sm", iconOnly: true })}
+            {/* F-109 (A14-25): a step that cannot move says why, as a tip so the toolbar keeps its row. */}
+            <Button
+              variant="sec"
+              size="sm"
+              iconOnly
+              icon={ChevronLeft}
               aria-label={`Back ${scrubStep} hours`}
-              disabled={scrub === 0}
+              disabledReason={scrub === 0 ? "Already at now" : undefined}
+              reasonDisplay="tooltip"
               onClick={() => handleScrubberChange(Math.max(0, scrub - scrubStep))}
-            >
-              <ChevronLeft size={16} aria-hidden="true" />
-            </button>
+            />
             <button
               type="button"
               className={buttonClass({ variant: "sec", size: "sm" })}
@@ -416,15 +418,16 @@ export function MovementHorizonGantt({
             >
               Now
             </button>
-            <button
-              type="button"
-              className={buttonClass({ variant: "sec", size: "sm", iconOnly: true })}
+            <Button
+              variant="sec"
+              size="sm"
+              iconOnly
+              icon={ChevronRight}
               aria-label={`Forward ${scrubStep} hours`}
-              disabled={scrub >= zoom}
+              disabledReason={scrub >= zoom ? "Already at the end" : undefined}
+              reasonDisplay="tooltip"
               onClick={() => handleScrubberChange(Math.min(zoom, scrub + scrubStep))}
-            >
-              <ChevronRight size={16} aria-hidden="true" />
-            </button>
+            />
           </div>
 
           <div className={styles.zoomGroup} role="group" aria-label="Timeline zoom range">
@@ -451,17 +454,19 @@ export function MovementHorizonGantt({
           >
             {isEnlarged ? "Close full screen" : "Enlarge"}
           </button>
-          <button
-            type="button"
-            className={buttonClass({ variant: "ghost", size: "sm", className: styles.phBtn })}
+          <Button
+            variant="ghost"
+            size="sm"
+            className={styles.phBtn}
             id={`${baseId}-toggleHorizonDiagram`}
             aria-controls={diagramAreaId}
             aria-expanded={!isCollapsed}
-            disabled={isEnlarged}
+            disabledReason={isEnlarged ? "Close full screen first" : undefined}
+            reasonDisplay="tooltip"
             onClick={() => setIsCollapsed(!isCollapsed)}
           >
             {isCollapsed ? "Show" : "Hide"}
-          </button>
+          </Button>
         </div>
       </div>
 
