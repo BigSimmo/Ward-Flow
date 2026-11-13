@@ -4,7 +4,7 @@
 import "@testing-library/jest-dom/vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { Button } from "@/components/wf/button";
@@ -108,5 +108,55 @@ describe("WhoDoesThis", () => {
     expect(line).toHaveAttribute("data-wf-who-does-this");
     const whoCss = readFileSync(path.join(process.cwd(), "src/components/wf/who-does-this.module.css"), "utf8");
     expect(whoCss).toMatch(/color: var\(--wf-ink-3\)/u);
+  });
+});
+
+describe("hidden tooltip reason and Escape", () => {
+  // Codex review on #1658: on a phone or touch screen the reason tip is hidden by CSS, so focusing
+  // the button must not leave an invisible tip that swallows the first Escape meant for a sheet.
+  it("lets Escape through when the tip's own styles hide it", () => {
+    const style = document.createElement("style");
+    style.textContent = "[data-testid='tooltip'] { display: none; }";
+    document.head.append(style);
+    let reached = 0;
+    const onWindowKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") reached += 1;
+    };
+    window.addEventListener("keydown", onWindowKey);
+    try {
+      render(
+        <Button disabledReason="Needs the bed pulled" reasonDisplay="tooltip">
+          Log booking
+        </Button>,
+      );
+      fireEvent.focus(screen.getByRole("button", { name: "Log booking" }));
+      expect(document.querySelector("[data-testid='tooltip']")).not.toBeNull();
+      fireEvent.keyDown(document, { key: "Escape" });
+      expect(reached).toBe(1);
+    } finally {
+      window.removeEventListener("keydown", onWindowKey);
+      style.remove();
+    }
+  });
+
+  it("still takes the first Escape when the tip is shown", () => {
+    let reached = 0;
+    const onWindowKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") reached += 1;
+    };
+    window.addEventListener("keydown", onWindowKey);
+    try {
+      render(
+        <Button disabledReason="Needs the bed pulled" reasonDisplay="tooltip">
+          Log booking
+        </Button>,
+      );
+      fireEvent.focus(screen.getByRole("button", { name: "Log booking" }));
+      fireEvent.keyDown(document, { key: "Escape" });
+      expect(reached).toBe(0);
+      expect(document.querySelector("[data-testid='tooltip']")).toBeNull();
+    } finally {
+      window.removeEventListener("keydown", onWindowKey);
+    }
   });
 });

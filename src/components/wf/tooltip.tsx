@@ -202,6 +202,10 @@ export function Tooltip({
     if (!visibleOpen) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
+      // A tip its own styles hide (a Button reason on a phone or touch screen, which draws the
+      // reason as a line instead) must not swallow Escape: let it close the sheet or dialog.
+      const tipEl = tooltipRef.current;
+      if (tipEl && window.getComputedStyle(tipEl).display === "none") return;
       event.stopPropagation();
       dismiss();
     };
