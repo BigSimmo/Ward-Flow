@@ -19,6 +19,9 @@ change (D-130). The signed-in site was not checked from the cloud, which cannot 
 - Turning it on is a Railway setting: `WARD_FRONT_DOOR=required`, `WARD_PASS_SECRET` (32 or more
   random characters) and, on the public demo, `WARD_DEMO_CODE`; then a restart. It costs nothing.
   It needs Josh's yes to set (AGENTS.md rule 3). Turning it off again is the same change.
+- The demo code does not cover the app's static build files (`/_next/static/`), so the app's code and
+  its invented sample data load without it. Before any real data, records must come from a signed-in
+  server, never from the app's own files.
 
 ## Question
 

@@ -2,7 +2,8 @@
 
 **Document Version:** 1.0.0  
 **Status:** DRAFT / PROTOTYPE GOVERNANCE BASELINE  
-**Policy Alignment:** WA Aboriginal Health and Wellbeing Framework 2015–2030; NSQHS Standards (Aboriginal & Torres Strait Islander User Guide)  
+**Who has been asked:** nobody. No organisation or person named in this charter has been approached, and none has endorsed or reviewed anything.  
+**Drafted with reference to:** WA Aboriginal Health and Wellbeing Framework 2015–2030; NSQHS Standards (Aboriginal & Torres Strait Islander User Guide)  
 **Authority Reference:** Owner Ruling R2-6 (_Aboriginal cultural safety review deferred by the owner; remains a mandatory gate before real-patient clinical use; closed to further builder questioning_)
 
 _Updated 2026-10-19 - corrected the scope of synthetic-data test evidence; Documentation owns. No consultation or sign-off refreshed._

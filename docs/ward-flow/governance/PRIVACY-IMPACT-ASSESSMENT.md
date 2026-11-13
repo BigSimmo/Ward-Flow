@@ -66,7 +66,7 @@ for the provider and region list. Each row needs a privacy officer view:
 | Copies and prints leave the system             | H-20, D-71 item 7                             | Decide before real data whether names may be copied   |
 | Breach                                         | Go/no-go section 3                            | [Breach plan](../pilot/breach-plan.md)                |
 | Aboriginal status display                      | H-24, D-6                                     | Not displayed until the cultural safety review        |
-| The sites open without sign-in                 | [Front door decision](FRONT-DOOR-DECISION.md) | Front door required before real data                  |
+| Front door off: site opens without sign-in     | [Front door decision](FRONT-DOOR-DECISION.md) | On for the demo (D-130); required before real data    |
 
 ## 6. Sign-off
 
