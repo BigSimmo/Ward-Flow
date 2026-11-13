@@ -43,7 +43,7 @@ import { useExecutiveStatistics } from "../statistics/executive-statistics-conte
  * a tap on its Live chip runs (`useLivePause`); it shows only on a page that can pause.
  */
 /** The world change waiting on its confirm: Reset demo, or a scenario card. */
-export type DemoConfirm = { kind: "reset" } | { kind: "load"; scenario: WardScenario };
+type DemoConfirm = { kind: "reset" } | { kind: "load"; scenario: WardScenario };
 type DemoConfirmHold = readonly [DemoConfirm | null, (next: DemoConfirm | null) => void];
 
 /**
