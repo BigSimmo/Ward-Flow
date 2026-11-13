@@ -1378,7 +1378,7 @@
   }
 }
 
-.appearancePillBtn[aria-pressed="true"] {
+.appearancePillBtn:is([aria-pressed="true"], [aria-checked="true"]) {
   border-color: var(--wf-accent);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--wf-accent) 30%, transparent);
 }
@@ -1422,10 +1422,18 @@
   border-radius: 50%;
 }
 
-.appearancePillBtn[aria-pressed="true"] .appearanceRadio {
+.appearancePillBtn:is([aria-pressed="true"], [aria-checked="true"]) .appearanceRadio {
   border-color: var(--wf-accent);
   background: var(--wf-accent);
   box-shadow: inset 0 0 0 2px var(--wf-surface-2);
+}
+
+/* Spec item 14: the pop-up's keys, one quiet line at its foot. */
+.appearanceKeys {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
 }
 
 .userCardWrap {

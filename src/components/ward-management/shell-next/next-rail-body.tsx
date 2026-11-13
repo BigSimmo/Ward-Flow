@@ -46,7 +46,7 @@ import {
   sentenceStart,
   viewingDeskLine,
 } from "@/components/ward-management/shell/ward-rail-helpers";
-import { Dot, SrOnly, durMinutes, useIsPhone } from "@/components/wf";
+import { Dot, Kbd, RadioGroup, SrOnly, durMinutes, useIsPhone } from "@/components/wf";
 import { setGlarePreference, setThemePreference } from "@/lib/theme-client";
 import {
   closeWardDrawer,
@@ -399,6 +399,13 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   const boardClock = formatInstant(now);
   const shiftProgress = computeShiftProgress(boardMinute);
   const appearanceRef = useRef<HTMLDivElement>(null);
+  // Opening Appearance moves focus to the current theme, so the keys act on the choices at once.
+  useEffect(() => {
+    if (!appearanceOpen) return;
+    appearanceRef.current
+      ?.querySelector<HTMLElement>('[role="radio"][aria-checked="true"]')
+      ?.focus({ preventScroll: true });
+  }, [appearanceOpen]);
   const alertsRef = useRef<HTMLDivElement>(null);
 
   // Every figure below comes from the derivation. Over-the-line words count places, never Alerts (#793).
@@ -1125,14 +1132,21 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
             >
               <div className={styles.appearancePopoverHead}>
                 <SunMoon aria-hidden="true" className={styles.appearancePopoverIcon} strokeWidth={1.75} />
-                <span>Theme</span>
+                <span id="ward-rail-theme-label">Theme</span>
               </div>
-              <div className={styles.appearancePills}>
+              {/* Spec item 14 (C07, 13 Nov 2026): a real radio group. Opening moves focus to the current
+                  choice, arrows move, Enter or Space picks, Escape closes and returns to Appearance. */}
+              <RadioGroup
+                className={styles.appearancePills}
+                aria-labelledby="ward-rail-theme-label"
+                selectOnMove={false}
+              >
                 {APPEARANCE_CHOICES.map((choice) => (
                   <button
                     key={choice.id}
                     type="button"
-                    aria-pressed={appearance === choice.id}
+                    role="radio"
+                    aria-checked={appearance === choice.id}
                     onClick={() => chooseAppearance(choice.id)}
                     className={styles.appearancePillBtn}
                   >
@@ -1152,7 +1166,10 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
                     </span>
                   </button>
                 ))}
-              </div>
+              </RadioGroup>
+              <p className={styles.appearanceKeys} aria-hidden="true">
+                <Kbd>Arrows</Kbd> move · <Kbd>Enter</Kbd> picks · <Kbd>Esc</Kbd> closes
+              </p>
             </div>
 
             <button
