@@ -239,7 +239,8 @@ is collecting** choose **Ambulance (St John)**. Type a synthetic number such as 
 
 > "Transport is booked by phone, as it is today, and the booking is recorded here: who is
 > collecting her, the CAD number and the estimated time. There is no link to an ambulance or
-> transport system. The app records the booking; it does not check it."
+> transport system. The app records the booking; it does not check it. Her move is inside one
+> hospital, so the booking is shown here to demonstrate the step."
 
 **Do:** point to the note under the header: "Demonstration state is saved on this device, except
 typed text." **From here, avoid reloads and typed addresses.**
@@ -249,8 +250,8 @@ typed text." **From here, avoid reloads and typed addresses.**
 opens. Press, in order, **Provider accepted job**, **Vehicle en route** and **Mark moving · patient
 collected**.
 
-**Do:** a check appears ("Mark moving for … ?") listing what is not recorded yet, here the Form 4A
-transport order. Under **Reason** choose **Paper copy sighted** and press **Mark moving, record
+**Do:** a check appears ("Mark moving for … ?") listing what is not recorded yet, here the transport
+or transfer order. Under **Reason** choose **Paper copy sighted** and press **Mark moving, record
 reason**.
 
 **Say:**
@@ -278,7 +279,7 @@ Press **Esc**, and point to "Arrived · transfer complete" on her page.
 
 **Do:** in the left-hand menu press **More**, then **All wards**, then **Open ward** on the
 **Dabakarn** card. Point to Keira in the bed grid, and to **Constant obs** in the ward's checks
-strip, which counts patients on constant observation (none on this ward just now).
+strip, which counts staff assigned to constant observation (none on this ward just now).
 
 **Say:**
 
@@ -334,6 +335,8 @@ clock** with **+15 min** and **+1 hour**, and the **Scenario** list. Close with 
 > This is a prototype on invented data. It is not clinical decision support. It has not been
 > through clinical safety, privacy or legal review, and it is not for clinical use. What we'd value
 > most from you is whether this matches how the work really happens, and what it gets wrong."
+
+**Do:** on any computer that is not yours, press **Leave the demo** before you walk away.
 
 ---
 
@@ -422,6 +425,12 @@ Do not claim:
 > "Country wards are on the same statewide map. A country legal extension is recorded as typed from
 > the paper; nothing is calculated. RFDS can be recorded as the carrier. Nothing specific to air
 > transport is built."
+
+**"What about the triage and risk form?"**
+
+> "It is a prototype form and is not in today's demo. Its suggestions, such as those drawn from
+> mental state or risk flags, are prompts a clinician accepts or changes. It does not score risk or
+> decide anything, and it has not been through clinical or regulatory review."
 
 **"What would it take to use this with real patients?"**
 
