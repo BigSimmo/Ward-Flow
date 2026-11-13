@@ -84,6 +84,11 @@ describe("Viewing as bar", () => {
     expect(screen.getByTestId("role")).toHaveTextContent("ward");
     const bar = screen.getByTestId("ward-viewing-as-bar");
     expect(bar).toHaveTextContent(/^Viewing as .+ · Nurse in charge/u);
+    // One line: the desk on view in bold, cut with an ellipsis (its full words in the title) so the
+    // way back always shows.
+    const desk = within(bar).getByText(/ · Nurse in charge$/u);
+    expect(desk.tagName).toBe("STRONG");
+    expect(desk.parentElement).toHaveAttribute("title", expect.stringMatching(/^Viewing as .+ · Nurse in charge$/u));
     fireEvent.click(within(bar).getByRole("button", { name: "Back to coordinator" }));
     expect(screen.getByTestId("role")).toHaveTextContent("coordinator");
     expect(navigation.push).toHaveBeenLastCalledWith("/ward-flow");

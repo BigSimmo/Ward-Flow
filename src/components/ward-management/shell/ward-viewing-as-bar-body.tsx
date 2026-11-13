@@ -2,7 +2,6 @@
 
 import { Eye } from "lucide-react";
 
-import { Button } from "@/components/wf";
 import { useExitDemoRole } from "@/components/ward-management/tools/ward-demo-roles";
 import { useDemoControlsAvailable } from "@/components/ward-management/ward-flow-raise";
 import { ACCESS_ROLE_LABELS } from "@/components/ward-management/ward-role-access";
@@ -25,12 +24,23 @@ export function WardViewingAsBarBody() {
   return (
     <div className={styles.bar} data-testid="ward-viewing-as-bar" data-print-hide>
       <Eye aria-hidden="true" className={styles.icon} size={16} strokeWidth={1.75} />
-      <p className={styles.text}>
-        Viewing as <strong>{place}</strong> · {ACCESS_ROLE_LABELS[access.role]}
+      <p className={styles.text} title={`Viewing as ${place} · ${ACCESS_ROLE_LABELS[access.role]}`}>
+        Viewing as{" "}
+        <strong>
+          {place} · {ACCESS_ROLE_LABELS[access.role]}
+        </strong>
       </p>
-      <Button size="sm" variant="sec" disabled={!enabled} onClick={exit} data-testid="ward-viewing-as-back">
+      {/* An underlined link at the right of the strip (approved picture), so it reads as the way back,
+          not another action. It stays a button: it changes the desk as well as the page. */}
+      <button
+        type="button"
+        className={styles.back}
+        disabled={!enabled}
+        onClick={exit}
+        data-testid="ward-viewing-as-back"
+      >
         Back to coordinator
-      </Button>
+      </button>
     </div>
   );
 }
