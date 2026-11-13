@@ -216,6 +216,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-196](#d-196-threads-decide-on-their-own-to-keep-work-moving-13-november-2026)                                                                        | Threads decide on their own to keep work moving                                        | Active                                           |
 | [D-197](#d-197-system-fixes-calls-taken-under-d-196-13-november-2026)                                                                                   | System-fixes calls taken under D-196                                                   | Active                                           |
 | [D-199](#d-199-ed-and-ward-phone-limits-raised-past-the-allowance-13-november-2026)                                                                     | ED and Ward phone limits raised past the allowance                                     | Active                                           |
+| [D-206](#d-206-codeql-storage-alerts-are-false-positives-for-the-demo-14-november-2026)                                                                 | CodeQL storage alerts are false positives for the demo                                 | Active                                           |
 
 ---
 
@@ -2383,3 +2384,10 @@ is inferred.
 - **Decision:** PR C (#1660) raises the ED page's phone script limit from 538.5 to 545.5 KB (+7.0) and the Ward page's from 618.2 to 625.4 KB (+7.2), past the 5 KB a pull request may add without asking (D-82, D-111).
 - **Why:** both pages' own code is the same size as main; the growth is the shared script every page loads (real fix and time-audit code), after a trim that took 6 to 20 KB off every page. The next lever, swapping `tailwind-merge`, is too large a change before the demo. Detail: `docs/script-budget-history/2026-11-13-pr-c-system-fixes.md`.
 - **Follow-up (14 November 2026, 12:46 AM AWST, 16:46 UTC):** Josh chose "Yes, raise Ward, ED, Referrals" on a second card in the Fixes thread, after the CI fixes added about 0.3 KB to the shared script (the Ward desk's bed seats, F-150). Final limits: ED 545.8 (+7.3), Ward 625.6 (+7.4), Referrals 595.3 (+5.4, past the 5 KB allowance).
+
+## D-206. CodeQL storage alerts are false positives for the demo (14 November 2026)
+
+- **Date:** 14 November 2026, 7:15 AM AWST (13 November, 23:15 UTC). D-200 is claimed by open PR #1658. D-201 is claimed by open PR #1658. D-202 is claimed by open PR #1658. D-203 is claimed by open PR #1659. D-204 is claimed by open PR #1656. D-205 is claimed by open PR #1659. **Decided by:** Josh, in the Fixes thread ("Go ahead with recommendations"), on the recommendation to dismiss these alerts.
+- **Decision:** the CodeQL "clear-text storage of sensitive information" alerts #35, #36, #37, #39, #40, #41, #50 and #51, and the "incomplete string escaping" alert #30, are dismissed on GitHub as false positives with the note "synthetic demo data only; revisit in privacy review before real data". Every other alert raised on PR C (#1660) is fixed in code in PR #1661.
+- **Why:** the prototype keeps its synthetic demo day, drafts, "since last look" snapshots, chosen service and mockup device in the browser's session or local storage by design; nothing stored is a password, token or real patient record. For #30, escaping backslashes would print doubled backslashes inside the code spans of `docs/skipped-tests-inventory.md`.
+- **Follow-up:** the privacy review required before any real data covers what the browser stores, for how long, and on shared ward PCs. A dismissal can be reopened.
