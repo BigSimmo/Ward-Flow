@@ -107,7 +107,7 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
                 <div className={styles.pair}>
                   <dt>Recorded legal form</dt>
                   <dd>
-                    {selectedPatientLegal.form.code} · {formExpiryLine(selectedPatientLegal.form, now)}
+                    {selectedPatientLegal.form.code} · {formExpiryLine(selectedPatientLegal.form, now, ctx.dayZero)}
                   </dd>
                 </div>
               )}

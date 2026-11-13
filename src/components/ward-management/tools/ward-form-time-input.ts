@@ -28,7 +28,7 @@ export function formatStatutoryDateTime(d: Date): string {
   const timeStr = d.toLocaleTimeString("en-AU", {
     hour: "2-digit",
     minute: "2-digit",
-    hour12: false,
+    hourCycle: "h23",
     timeZone: "Australia/Perth",
   });
   return `${dayStr}, ${timeStr}`;

@@ -8,7 +8,7 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { bedReleases, leaveBeds, wardMovements } from "@/components/ward-management/ward-movements";
-import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
+import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { serviceRollup } from "@/components/ward-management/ward-morning-rollup";
 import { edPressure } from "@/components/ward-management/ward-pressure";
 import { activeWardNetwork, allUnits, NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
@@ -369,17 +369,16 @@ describe("the ready figures say how many beds are pending, in the words each rol
     ).toBe(true);
   });
 
-  it("offers a coordinator the actionable count as well as the pending one", () => {
+  // D-179 item 8 and D-181 item 5 (Josh, 13 Nov 2026): Ready already leaves out a pending bed, and a
+  // pending bed may still be pulled, so the "N can be pulled into" clause is gone for every role.
+  it("tells a coordinator the pending count beside Ready, with no pull clause", () => {
     const sub = readySub("coordinator");
-    expect(sub).toMatch(/^\d+ can be pulled into · \d+ pending$/u);
+    expect(sub).toMatch(/^\d+ pending$/u);
   });
 
-  it("offers a ward the same, after its own name", () => {
+  it("tells a ward the same, after its own name", () => {
     const sub = readySub("ward", pendingUnit!.id);
-    expect(sub).toBe(
-      `${pendingUnit!.name} · ${openBedsNow(pendingUnit!, bedReleases)} can be pulled into · ` +
-        `${bedsPendingPreparation(pendingUnit!.id, bedReleases)} pending`,
-    );
+    expect(sub).toBe(`${pendingUnit!.name} · ${bedsPendingPreparation(pendingUnit!.id, bedReleases)} pending`);
   });
 
   it("offers an emergency department the pending count and NOT an action it does not have", () => {

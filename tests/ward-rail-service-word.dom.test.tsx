@@ -133,14 +133,15 @@ describe("board time in the top bar (A7)", () => {
         <WardBar />
       </WardFlowProvider>,
     );
-    const clocks = screen.getAllByLabelText(/Board time 10:42 AWST/i);
+    const clocks = screen.getAllByLabelText(/Board time 10:42/i);
     expect(clocks).toHaveLength(1);
     const clock = clocks[0]!;
     expect(clock).toHaveAttribute("data-testid", "ward-bar-demo-clock");
-    expect(clock).toHaveAccessibleName("Board time 10:42 AWST. Open demo controls");
+    expect(clock).toHaveAccessibleName("Board time 10:42. Open demo controls");
     expect(clock).toHaveTextContent("Board time");
     expect(clock).toHaveTextContent("10:42");
-    expect(clock).toHaveTextContent("AWST");
+    // RC 2.6 (F-113): the board clock is the demo's scripted time, so it carries no real-time zone label.
+    expect(clock).not.toHaveTextContent("AWST");
     expect(clock.textContent).not.toMatch(/\d{2}:\d{2}:\d{2}/);
   });
 });
@@ -152,7 +153,7 @@ describe("rail handover countdown", () => {
     renderRail(NOW_ANCHOR);
 
     // A7 (overall review, 20 Oct 2026): the demo clock lives in the top bar only, not the rail.
-    expect(screen.queryByLabelText(/Board time 10:42 AWST/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Board time 10:42/i)).not.toBeInTheDocument();
     expect(screen.queryByText("Live Time")).not.toBeInTheDocument();
 
     const countdown = screen.getByRole("link", { name: /Handover countdown:/i });

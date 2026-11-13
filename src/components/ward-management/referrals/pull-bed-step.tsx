@@ -14,7 +14,7 @@ import type { Instant } from "../ward-clock";
 import { wardRaise } from "../ward-flow-raise";
 import { useOptionalWardFlowSelect, useWardFlowClock } from "../ward-flow-provider";
 import type { Movement } from "../ward-model";
-import { UNDO_TOAST_MS } from "../ward-operational-defaults";
+import { BED_PULL_UNDO_TOAST_MS } from "../ward-operational-defaults";
 import type { WardCommandDispatch } from "../ward-shared-client";
 import { useWardCommandCompletion, wardCommandFailure } from "../ward/use-ward-command-completion";
 import type { AcceptedAwaitingPull } from "./accepted-awaiting-pull";
@@ -91,11 +91,12 @@ export type PullBedStep = {
 
 /**
  * The Pull the bed step. Render `sheet` once, open it with `setPulling(entry)`, and pass `kept` and
- * `undo` to the rows (`AcceptedPullRows`). A ward desk passes its own units as `ownUnitIds`, and the
- * sheet then acts for the ward pulled for when it is one of them (D-197 item 7).
+ * `undo` to the rows (`AcceptedPullRows`). Which desk may pull, and as which ward, is the form's own
+ * rule (`acceptedPullDesk`, D-197 item 7, review P4-9). With a host, the kept row and this toast are
+ * the pull's one Undo; the form offers none of its own (review P4-10).
  * Works outside a Ward Flow provider too (it then keeps no rows), so a page's tests can stub it.
  */
-export function usePullBedStep({ ownUnitIds }: { ownUnitIds?: readonly string[] } = {}): PullBedStep {
+export function usePullBedStep(): PullBedStep {
   const [pulling, setPullingState] = useState<AcceptedAwaitingPull | undefined>();
   const [kept, setKept] = useState<readonly PulledBed[]>([]);
   const focusAfter = useRef<string | null>(null);
@@ -191,7 +192,8 @@ export function usePullBedStep({ ownUnitIds }: { ownUnitIds?: readonly string[] 
         tone: "success",
         title: `Bed pulled at ${pulled.entry.unitName} for ${pulled.name}`,
         body: `Undo until ${until}`,
-        undo: { durationMs: UNDO_TOAST_MS, onUndo: () => undo(pulled) },
+        // Review P4-10: PR C's window, so the toast's Undo is offered as long as its words say.
+        undo: { durationMs: BED_PULL_UNDO_TOAST_MS, onUndo: () => undo(pulled) },
       });
       if (toastId !== undefined) pullToasts.current.set(pulled.entry.referral.id, toastId);
     },
@@ -218,13 +220,7 @@ export function usePullBedStep({ ownUnitIds }: { ownUnitIds?: readonly string[] 
       testId="home-pull-accepted-sheet"
       resolveReturnFocusTarget={resolveReturnFocusTarget}
     >
-      <PullAcceptedReferral
-        item={pulling}
-        onDone={close}
-        onPulled={flow ? onPulled : undefined}
-        onCancel={close}
-        actingUnitId={ownUnitIds?.includes(pulling.unitId) ? pulling.unitId : undefined}
-      />
+      <PullAcceptedReferral item={pulling} onDone={close} onPulled={flow ? onPulled : undefined} onCancel={close} />
     </Sheet>
   ) : null;
   const shown = flow ? kept.filter((pulled) => pullStillUndoable(flow.movements, pulled, now)) : [];

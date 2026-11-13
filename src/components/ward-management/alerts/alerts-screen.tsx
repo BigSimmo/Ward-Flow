@@ -182,6 +182,7 @@ function AlertsWorkspace() {
     "supportNotifications",
     "leaveBeds",
     "eventLog",
+    "dayZero",
   );
   const {
     movements,
@@ -229,10 +230,12 @@ function AlertsWorkspace() {
           plannedAdmissions,
           leaveBeds,
           stuckHandoverMinutes: configuration.transportBookedTargetMinutes,
+          dayZero: state.dayZero,
         },
         now,
       ).filter(isQueueItem),
     [
+      state.dayZero,
       movements,
       units,
       configuration,
@@ -517,7 +520,7 @@ function AlertsWorkspace() {
     return coordDesk ? all : all.filter((entry) => ownPullUnitIds?.includes(entry.unitId));
   }, [coordDesk, ownPullUnitIds, referrals, units, movements]);
   const { actNow: actCount, outstanding } = alertsNowFigures(inbox, toPull.length); // Q260: as the bell and Menu
-  const pull = useAcceptedPull({ ownUnitIds: ownPullUnitIds });
+  const pull = useAcceptedPull();
   // Wave 4 H5 (ruling item 3): a bed just pulled keeps its row with "Undo pull · until HH:MM".
   const keptPullRows =
     pull.kept.length === 0 ? null : (
@@ -925,6 +928,7 @@ function AlertsWorkspace() {
       ],
       activeBroadcast,
       now,
+      state.dayZero,
     );
     copyTextToClipboard(text).then(
       () => setBroadcastSuccessNotice(`Copied ${allEntries.length} alerts for handover.`),

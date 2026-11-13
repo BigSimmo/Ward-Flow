@@ -10,7 +10,7 @@ import {
   splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
+import type { RoleLimit } from "@/components/ward-management/ward-role-gate";
 import styles from "./patient-ward-change-card.module.css";
 
 export type WardChangeForm = "none" | "leave" | "discharge";
@@ -84,8 +84,8 @@ export function PatientWardChangeCard({
   refusal?: string;
   /** The save outcome verbatim: an uncertain save must not be presented as a definite refusal. */
   saveError?: string;
-  /** Why the route's role may not raise this event, or undefined. */
-  roleLimit: (eventType: WardFlowEventType) => string | undefined;
+  /** Why the route's role may not raise this event, or undefined; `null` leaves its button out (F-54). */
+  roleLimit: RoleLimit;
   /** v10 phone: the discharge date is the pinned bar's primary, so the chip row leaves it out. */
   dischargeInBar?: boolean;
   /**
@@ -104,7 +104,9 @@ export function PatientWardChangeCard({
 }) {
   const [time, setTime] = useState("");
   const [day, setDay] = useState(0);
-  const [kind, setKind] = useState<LeaveKind>("off_ward");
+  // A9-15 (Audit 9, Josh 13 Nov 2026: no clinical choice starts selected): no kind of leave and no
+  // return time is chosen until the nurse chooses them, and Record leave waits for both.
+  const [kind, setKind] = useState<LeaveKind | "">("");
   // #101 (Josh, 27 Oct 2026): for a patient on an order, the ward ticks that the treating
   // psychiatrist authorised the leave. Unticked is a warning, never a block. Opens unticked, and the
   // answer is saved on the leave.
@@ -112,7 +114,7 @@ export function PatientWardChangeCard({
   /* v10 Patient, phone: "Record a change" is a heading over a row of chips, and the form rises
    * as a bottom sheet with Cancel beside its one primary. Desktop and tablet keep the card. */
   const isPhone = useIsPhone();
-  // Phone leave: a preset return time is chosen up front (16:00, or the next one still ahead);
+  // Phone leave: a preset return time is chosen from the chips (none is chosen for the nurse, A9-15);
   // "Other time" opens the typed day and time.
   const [presetId, setPresetId] = useState<string | null>(null);
   const [customTime, setCustomTime] = useState(false);
@@ -123,16 +125,13 @@ export function PatientWardChangeCard({
     return at !== undefined && at > now;
   });
   const phonePresets = isPhone && form === "leave" && !customTime;
-  const preset = phonePresets
-    ? (futurePresets.find((option) => option.id === presetId) ??
-      futurePresets.find((option) => option.id === "16") ??
-      futurePresets[0])
-    : undefined;
+  const preset = phonePresets ? futurePresets.find((option) => option.id === presetId) : undefined;
   const parsed = preset ? typedTimeToInstant(preset.time, preset.day, now) : typedTimeToInstant(time, day, now);
   const future = parsed !== undefined && parsed > now;
   // Form rule (design audit, Josh's card 3, 5 Nov 2026), as on the bed drawer: a discharge time
   // that has passed warns and still saves as typed. A leave return time stays future-only.
-  const canSave = parsed !== undefined && (future || form === "discharge");
+  const canSave = parsed !== undefined && (future || form === "discharge") && (form !== "leave" || kind !== "");
+  // F-54 (A9-35): `null` is a change this desk can never record, so its button is left out.
   const leaveLimit = roleLimit("RECORD_LEAVE_BED");
   const edLimit = roleLimit("RECORD_AWAY_AT_EMERGENCY_DEPARTMENT");
   const dischargeLimit = roleLimit("UPDATE_EXPECTED_DISCHARGE");
@@ -143,6 +142,7 @@ export function PatientWardChangeCard({
     onFormChange(form === next ? "none" : next);
     setTime("");
     setDay(0);
+    setKind("");
     setAuthorised(false);
     setPresetId(null);
     setCustomTime(false);
@@ -150,30 +150,34 @@ export function PatientWardChangeCard({
 
   const chipRow = (
     <div className={styles.changeRow}>
-      <Button
-        className={styles.tap}
-        size="sm"
-        icon={DoorOpen}
-        aria-pressed={form === "leave"}
-        disabledReason={pending ? "Saving change…" : leaveLimit}
-        reasonDisplay="tooltip"
-        onClick={() => toggle("leave")}
-      >
-        Start leave
-      </Button>
-      <Button
-        className={styles.tap}
-        size="sm"
-        icon={Stethoscope}
-        disabledReason={pending ? "Saving change…" : edLimit}
-        reasonDisplay="tooltip"
-        onClick={() => {
-          if (!pending) onGoneToEd();
-        }}
-      >
-        Gone to ED
-      </Button>
-      {dischargeInBar ? null : (
+      {leaveLimit === null ? null : (
+        <Button
+          className={styles.tap}
+          size="sm"
+          icon={DoorOpen}
+          aria-pressed={form === "leave"}
+          disabledReason={pending ? "Saving change…" : leaveLimit}
+          reasonDisplay="tooltip"
+          onClick={() => toggle("leave")}
+        >
+          Start leave
+        </Button>
+      )}
+      {edLimit === null ? null : (
+        <Button
+          className={styles.tap}
+          size="sm"
+          icon={Stethoscope}
+          disabledReason={pending ? "Saving change…" : edLimit}
+          reasonDisplay="tooltip"
+          onClick={() => {
+            if (!pending) onGoneToEd();
+          }}
+        >
+          Gone to ED
+        </Button>
+      )}
+      {dischargeInBar || dischargeLimit === null ? null : (
         <Button
           className={styles.tap}
           size="sm"
@@ -186,7 +190,7 @@ export function PatientWardChangeCard({
           Discharge date
         </Button>
       )}
-      {onMarkAbsent ? (
+      {onMarkAbsent && absentLimit !== null ? (
         <Button
           className={styles.tap}
           size="sm"
@@ -210,8 +214,10 @@ export function PatientWardChangeCard({
       onSubmit={(event) => {
         event.preventDefault();
         if (pending || !canSave || parsed === undefined) return;
-        if (form === "leave") onRecordLeave(parsed, kind, leaveLegal?.onOrder ? authorised : undefined);
-        else onSaveDischarge(parsed);
+        if (form === "leave") {
+          if (kind === "") return;
+          onRecordLeave(parsed, kind, leaveLegal?.onOrder ? authorised : undefined);
+        } else onSaveDischarge(parsed);
       }}
     >
       {form === "leave" && leaveLegal ? (

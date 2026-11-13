@@ -5,7 +5,8 @@ import { ChevronLeft, ChevronRight, ChevronRight as RowChevron, ShieldCheck, Use
 import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
+import { capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
+import { pullHoldText } from "@/components/ward-management/ward-bed-hold";
 import {
   elapsedLabel,
   eligibilityWarning,
@@ -20,6 +21,7 @@ import {
   wardFacingGateDetail,
 } from "@/components/ward-management/ward-eligibility";
 import { BED_STATE_LABELS, bedStates, networkNamedHolds } from "@/components/ward-management/ward-bed-states";
+import { awaitingWardAnswer, isWaitlistReason } from "@/components/ward-management/ward-waitlist";
 import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
@@ -58,7 +60,6 @@ import {
   useIsPhone,
   PhoneSheet,
   ShowMoreRow,
-  SrOnly,
 } from "@/components/wf";
 import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-morning-rollup";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
@@ -77,6 +78,7 @@ import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { identityAbsenceNote } from "./ward-screen-derivations";
+import { WardAnswerCensus } from "./ward-answer-census";
 
 const ANSWER_ALERT_LINE = CLINICAL_VALUES.bedAlertLine.value; // the hero ring's signed alert line
 
@@ -103,14 +105,6 @@ export interface WardAnswerViewProps {
 /** A decline reason in the one list's wording (D-78); a value off the list shows as written. */
 /** Why Accept waits: the pull time limit starts with nothing chosen (Josh, 31 Oct 2026). */
 const HOLD_CHOICE_REASON = "Choose a pull time limit first";
-
-/** The census squares and their key are filled by bed state, with the same colour for each. */
-const CENSUS_FILL = {
-  ready: styles.fillReady,
-  pulled: styles.fillPulled,
-  closed: styles.fillClosed,
-  occupied: styles.fillOccupied,
-} as const;
 
 function declineReasonLabel(reason: DeclineReason): string {
   return DECLINE_REASON_LABELS[reason] ?? reason.replace(/_/g, " ");
@@ -193,10 +187,10 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   // Nothing pre-selected (Josh, 31 Oct 2026): Accept waits until the ward picks a pull time limit.
   const holdChosenFor = (movementId: string) => holdChoice?.movementId === movementId;
   const holdChoices = [
-    { extended: false, label: `${durMinutes(configuration.pullHoldMinutes)} standard` },
+    { extended: false, label: `${pullHoldText(configuration.pullHoldMinutes)} standard` },
     {
       extended: true,
-      label: `${durMinutes(configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES)} with extra travel`,
+      label: `${pullHoldText(configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES)} with extra travel`,
     },
   ];
   const { toastMessage, setToastMessage, triggerToast, toastDeclined } = useAnswerToast();
@@ -253,9 +247,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
         : movements
             .filter(
               (movement) =>
-                isOpen(movement) &&
-                movement.stage === "destination_review" &&
-                movement.referredUnitIds.includes(unit.id),
+                isOpen(movement) && movement.stage === "destination_review" && awaitingWardAnswer(movement, unit.id),
             )
             .sort((left, right) => left.openedAt - right.openedAt),
     [movements, unit],
@@ -279,7 +271,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
               const wardAnswers: Array<{
                 key: string;
                 movementId: string;
-                outcome: "Accepted in principle" | "Declined";
+                outcome: "Accepted in principle" | "Declined" | "Waitlisted";
                 at?: Instant;
                 reason?: DeclineReason;
               }> = [];
@@ -299,7 +291,8 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                   wardAnswers.push({
                     key: `${movement.id}-declined-${index}`,
                     movementId: movement.id,
-                    outcome: "Declined",
+                    // A9-05: "No suitable bed" puts the referral on this ward's wait list.
+                    outcome: isWaitlistReason(decline.reason) ? "Waitlisted" : "Declined",
                     at: decline.at,
                     reason: decline.reason,
                   });
@@ -336,9 +329,9 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   const states = bedStates(currentUnit, admissions, bedReleases, leaveBeds, holds);
   // The one occupancy figure (Occupied + Pulled, `ward-occupancy.ts`), the same as the Ward page.
   const occupancy = wardOccupancy([currentUnit], admissions, bedReleases);
-  // Owner ruling 2026-09-05: "ready" does not subtract a bed being made ready, so this sentence (the
-  // reducer's own `bedsPendingPreparation`) keeps a coordinator from pulling into a bed not yet made.
-  const pendingPreparation = bedsPendingPreparation(currentUnit.id, bedReleases);
+  // D-179 item 8 (Josh, 13 Nov 2026): Ready leaves out a bed still being made ready; it is counted
+  // on its own, from the same `bedStates` call, and may still be pulled (D-181 item 5).
+  const pendingPreparation = states.beingMadeReady;
   const heldIndex = incoming.findIndex((movement) => movement.id === answerSelection.id);
   const activeAnswerIndex =
     heldIndex >= 0 ? heldIndex : Math.min(answerSelection.index, Math.max(incoming.length - 1, 0));
@@ -1506,10 +1499,9 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                   {pendingPreparation > 0 ? (
                     <p className={styles.bedsPendingPreparation} data-testid="ward-answer-beds-pending">
                       <strong>
-                        {pendingPreparation} of the {states.ready} ready {states.ready === 1 ? "bed" : "beds"} at{" "}
-                        {unit.name} {pendingPreparation === 1 ? "is" : "are"} still being made ready.
+                        {states.ready} ready, {pendingPreparation} being made ready at {unit.name}.
                       </strong>{" "}
-                      Not offered until marked Ready.
+                      A bed being made ready is not counted as ready until it is marked Ready.
                     </p>
                   ) : null}
                   <form className={styles.capacityForm} onSubmit={submitCapacity} data-testid="ward-capacity-form">
@@ -1552,104 +1544,19 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
               "Census",
               `${states.occupied} occupied · ${states.ready} ready · ${states.pulled} pulled · ${states.closed} closed`,
               unit.beds,
-              <section className={styles.panel} aria-label={`${unit.name} Census`}>
-                <div className={styles.panelHeader}>
-                  <h2 className={styles.panelTitle}>Census</h2>
-                  <span className={styles.panelSub}>
-                    {unit.beds} beds · {states.ready} ready
-                  </span>
-                </div>
-                {pendingPreparation > 0 ? (
-                  <p className={styles.notice}>
-                    {pendingPreparation} of the {states.ready} ready {states.ready === 1 ? "bed" : "beds"} at{" "}
-                    {currentUnit.name} {pendingPreparation === 1 ? "is" : "are"} still being made ready.
-                  </p>
-                ) : null}
-                <div className={styles.bedGrid}>
-                  {Array.from({ length: unit.beds }, (_, i) => {
-                    const bedNum = String(i + 1).padStart(2, "0");
-                    // Counts drawn in the ruled order — Ready, Pulled, Closed, then Occupied — never
-                    // particular beds: no admission records a bed number.
-                    const isVacant = i < states.ready;
-                    const isPulled = !isVacant && i < states.ready + states.pulled;
-                    const isClosed = !isVacant && !isPulled && i < states.ready + states.pulled + states.closed;
-                    const statusLabel = isVacant
-                      ? "READY"
-                      : isPulled
-                        ? BED_STATE_LABELS.pulled
-                        : isClosed
-                          ? BED_STATE_LABELS.closed
-                          : "Inpatient";
-                    const cellClass = `${styles.bedCell} ${
-                      isVacant ? styles.vacant : isPulled ? styles.pulled : isClosed ? styles.closed : styles.occupied
-                    } ${styles.cell} ${CENSUS_FILL[isVacant ? "ready" : isPulled ? "pulled" : isClosed ? "closed" : "occupied"]}`;
-                    return (
-                      <button
-                        type="button"
-                        key={bedNum}
-                        className={cellClass}
-                        onClick={(e) => {
-                          if (!isVacant) {
-                            ignoreUnavailableActivation(e);
-                            return;
-                          }
-                          if (activeMovement) {
-                            openerRef.current = e.currentTarget;
-                            selectAnswer(activeAnswerIndex);
-                            setHoldChoice(undefined);
-                            setAcceptModalFor(activeMovement.id);
-                          }
-                        }}
-                        // Review 5 Nov 2026: counts in ruled order, not beds, so no bed number.
-                        aria-label={`Census square ${i + 1}: ${statusLabel}`}
-                        aria-describedby={isVacant ? undefined : `ward-answer-bed-reason-${unit.id}`}
-                        title={isVacant ? undefined : "Only a ready bed can take a request"}
-                        aria-disabled={!isVacant ? "true" : undefined}
-                      >
-                        <span>{statusLabel}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-                {/* Redesign: a key to the filled squares, with the same counts the hero shows. */}
-                <ul className={styles.legend} aria-label="Census key">
-                  {(
-                    [
-                      ["ready", states.ready],
-                      ["pulled", states.pulled],
-                      ["closed", states.closed],
-                      ["occupied", states.occupied],
-                    ] as const
-                  ).map(([state, count]) => (
-                    <li key={state} className={styles.legendItem}>
-                      <span className={`${styles.swatch} ${CENSUS_FILL[state]}`} aria-hidden="true" />
-                      {BED_STATE_LABELS[state]} <b className={styles.legendCount}>{count}</b>
-                    </li>
-                  ))}
-                </ul>
-                {/* The reason the greyed beds give (a disabled control always says why). */}
-                {/* Round 2: shown only while a request is open (it explains the greyed squares then);
-                    otherwise it stays for the squares' spoken description. */}
-                {activeMovement ? (
-                  <p id={`ward-answer-bed-reason-${unit.id}`} className={styles.bedGridReason}>
-                    Only a ready bed can take a request.
-                  </p>
-                ) : (
-                  <SrOnly id={`ward-answer-bed-reason-${unit.id}`}>Only a ready bed can take a request.</SrOnly>
-                )}
-                {/* Shift milieu and staffing balance. The ratio ("1 : 3 (Compliant)"), the shift name and a
-                  65/35 male-to-female split of the occupied count were typed in here (25 September
-                  2026 review). Ward Flow holds no staffing figures and this screen counts no one's
-                  sex, so both rows say so rather than show a number. */}
-                {/* Round 2: the "Not recorded: nurse ratio, gender mix" row held nothing, and the expected
-                    discharges figure lives once, in Confirm your beds. */}
-                <div className={styles.milieuList}>
-                  <div className={styles.milieuRow}>
-                    <span className={styles.milieuLabel}>Constant observation</span>
-                    <span className={styles.milieuValue}>{activeSpeciallingCount} active</span>
-                  </div>
-                </div>
-              </section>,
+              <WardAnswerCensus
+                unit={unit}
+                states={states}
+                requestOpen={Boolean(activeMovement)}
+                activeSpeciallingCount={activeSpeciallingCount}
+                onReadySquare={(e) => {
+                  if (!activeMovement) return;
+                  openerRef.current = e.currentTarget;
+                  selectAnswer(activeAnswerIndex);
+                  setHoldChoice(undefined);
+                  setAcceptModalFor(activeMovement.id);
+                }}
+              />,
             )}
 
             {/* Recent Answers (History Ledger) */}

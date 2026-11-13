@@ -13,6 +13,7 @@ import {
   type TribunalHearing,
 } from "@/components/ward-management/ward-patient-care-plans";
 import { recordExtrasFor } from "@/components/ward-management/patients/patient-record-extras";
+import { sampleIsoDay } from "@/components/ward-management/ward-sample-days";
 
 /** Care plans and safety flags (Josh, 9 Nov 2026, care plans and safety flags thread: defaults approved). */
 const NOW = 10 * 60 + 42;
@@ -23,6 +24,15 @@ describe("frequent presenter", () => {
     expect(isoDayOfDisplayDate("14 Jun 2026")).toBe("2026-06-14");
     expect(isoDayOfDisplayDate("Mar 2025")).toBeUndefined();
     expect(isoDayOfDisplayDate("31 Feb 2026")).toBeUndefined();
+  });
+
+  it("reads a typed Sept as September, and refuses other four-letter months (time audit D14)", () => {
+    expect(isoDayOfDisplayDate("14 Sept 2026")).toBe("2026-09-14");
+    expect(isoDayOfDisplayDate("14 sept 2026")).toBe("2026-09-14");
+    expect(isoDayOfDisplayDate("14 Sep 2026")).toBe("2026-09-14");
+    expect(isoDayOfDisplayDate("14 June 2026")).toBeUndefined();
+    expect(isoDayOfDisplayDate("14 Septe 2026")).toBeUndefined();
+    expect(edPresentationsInWindow([ed("1 Sept 2026")], "2026-11-09")).toBe(1);
   });
 
   it("counts only ED presentations within the last twelve months", () => {
@@ -50,8 +60,9 @@ describe("frequent presenter", () => {
   });
 
   it("tags the seeded examples", () => {
-    expect(edPresentationsInWindow(recordExtrasFor("PT-036")?.episodes, "2026-11-09")).toBe(4);
-    expect(edPresentationsInWindow(recordExtrasFor("PT-023")?.episodes, "2026-11-09")).toBe(4);
+    // The sample's dates move with the board day (root cause 2.3), so the window is read from it too.
+    expect(edPresentationsInWindow(recordExtrasFor("PT-036")?.episodes, sampleIsoDay(0))).toBe(4);
+    expect(edPresentationsInWindow(recordExtrasFor("PT-023")?.episodes, sampleIsoDay(0))).toBe(4);
   });
 });
 
@@ -123,7 +134,7 @@ describe("tribunal hearing date", () => {
 
   it("seeds one hearing that has passed without an outcome", () => {
     const pt002 = seedWardFlowStateAt(0).patients.find((p) => p.id === "PT-002")!;
-    expect(tribunalHearingPassedWithoutOutcome(pt002.tribunalHearing, "2026-11-09")).toBe(true);
+    expect(tribunalHearingPassedWithoutOutcome(pt002.tribunalHearing, sampleIsoDay(0))).toBe(true);
   });
 });
 

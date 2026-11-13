@@ -272,7 +272,14 @@ describe("reminders and the call log say where they are kept (root cause 5.2)", 
   });
 
   it("labels due reminders in Alerts on this device only", () => {
-    addReminder({ kind: "ward", targetId: "ward-c1", targetLabel: "Synthetic ward", reason: "Call back", dueAt: 0 });
+    addReminder({
+      kind: "ward",
+      targetId: "ward-c1",
+      targetLabel: "Synthetic ward",
+      reason: "Call back",
+      dueAt: 0,
+      dayZero: 0,
+    });
     render(<AlertsRemindersGroup now={10} />);
     expect(screen.getByTestId("ward-alerts-reminders")).toHaveTextContent(/on this device only/u);
   });

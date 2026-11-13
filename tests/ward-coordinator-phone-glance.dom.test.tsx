@@ -45,7 +45,7 @@ describe("Call and log", () => {
     expect(screen.queryByRole("textbox")).toBeNull();
     const stored = JSON.parse(window.localStorage.getItem("wf-mock-tools-call-log") ?? "[]");
     expect(stored).toHaveLength(1);
-    expect(Object.keys(stored[0]).sort()).toEqual(["at", "id", "outcome", "wardId", "wardLabel"]);
+    expect(Object.keys(stored[0]).sort()).toEqual(["at", "dayZero", "id", "outcome", "wardId", "wardLabel"]);
     expect(JSON.parse(window.localStorage.getItem("wf-mock-tools-reminders") ?? "[]")[0].reason).toBe("Call back");
   });
 });

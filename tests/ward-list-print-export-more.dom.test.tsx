@@ -100,7 +100,9 @@ describe("Leave page", () => {
     wrap(<WithLeave />);
     fireEvent.click(screen.getByRole("button", { name: "Print this list" }));
     expect(print).toHaveBeenCalledTimes(1);
-    expect(screen.getByTestId("ward-leave-print-scope").textContent).toMatch(/^Everyone on leave · As at .+ AWST/u);
+    expect(screen.getByTestId("ward-leave-print-scope").textContent).toMatch(
+      /^Everyone on leave · As at .+ demo time/u,
+    );
   });
 });
 

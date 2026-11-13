@@ -9,7 +9,7 @@ import { TransportCadToFollow } from "@/components/ward-management/transport/tra
 import { Check, Lock } from "lucide-react";
 
 import { Button, Icon, Select, StatusGlyph, Timeline, type TimelineItem } from "@/components/wf";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type ClockZoneLabel, type Instant } from "@/components/ward-management/ward-clock";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { type Movement, type Unit } from "@/components/ward-management/ward-model";
 import { uploadedFileLabel } from "@/components/ward-management/ward-uploaded-file";
@@ -96,6 +96,8 @@ export type OfficerJobDetailContext = {
   showToast: (msg: string) => void;
   toggleIdentityChecked: (movement: Movement) => void;
   unitFor: (movement: Movement) => Unit | undefined;
+  /** The board's clock words (`useClockZoneLabel`, F-113). */
+  zone: ClockZoneLabel;
 };
 
 /** v10 phone: the job sheet's four stage buttons, pinned to its foot; the next one is primary and
@@ -187,6 +189,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
     setDiversionReason,
     toggleIdentityChecked,
     unitFor,
+    zone,
   } = ctx;
   const transport = movement.transport;
   if (!transport) return null;
@@ -341,7 +344,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
           <StatusGlyph tone="warning" size={9} />
           <span>
             <strong>Arrival overdue.</strong> More than {LATE_ARRIVAL_GRACE_MINUTES}m past the ward ETA (
-            {formatInstantWithDay(eta, now)} AWST).
+            {formatInstantWithDay(eta, now)} {zone}).
           </span>
         </div>
       ) : null}
@@ -539,7 +542,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
           <div data-testid={`ward-officer-arrival-details-${movement.id}`}>
             <dt>Ward ETA</dt>
             <dd title={OPERATIONAL_DEFAULT_LABEL}>
-              {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} AWST ·{" "}
+              {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} {zone} ·{" "}
               {movement.arrivalDetails.mode} · late after{" "}
               {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES, now)}
             </dd>

@@ -63,7 +63,8 @@ describe("audited patient history facts", () => {
       admissionId: departed.id,
       openedAt: 100,
     } as Movement;
-    expect(record(movement, 220, [departed]).presentations[0].los).toBe("1h 0m");
+    // RC 2.5 (F-35): the patient page uses the one duration format, "1h 00m".
+    expect(record(movement, 220, [departed]).presentations[0].los).toBe("1h 00m");
   });
 
   it("retains declined and accepted ward answers after the outstanding queue empties", () => {

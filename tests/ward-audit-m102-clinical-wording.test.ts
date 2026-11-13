@@ -180,7 +180,8 @@ describe("M102: every on-screen abbreviation is in the Help glossary", () => {
   const onScreen = screenAbbreviations();
 
   it("sees abbreviations it already knows are glossed (positive control)", () => {
-    for (const known of ["ED", "UMRN", "AWST", "CTO"]) expect(onScreen.has(known), known).toBe(true);
+    // F-113 (RC 2.6): demo times now read "demo time", so AWST left the screen text; PIR stands in.
+    for (const known of ["ED", "UMRN", "PIR", "CTO"]) expect(onScreen.has(known), known).toBe(true);
   });
 
   it("glosses each one, or lists it for Josh in NOT_GLOSSED", () => {

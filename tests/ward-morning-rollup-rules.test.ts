@@ -4,7 +4,7 @@
 // unchanged in name, so the tests come back here beside the new file rather than replacing it.
 import { describe, expect, it } from "vitest";
 
-import {} from "@/components/ward-management/ward-bed-availability";
+import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import {
   CAPACITY_FIGURE_LABELS,
@@ -441,11 +441,19 @@ describe("ward-morning-rollup", () => {
    * so it must be identical whether or not any releases or leave beds exist at all. If a release
    * could ever reach it, these two would differ.
    */
-  it("never lets a release or a leave bed reach the headline figure", () => {
+  // D-179 item 8 (Josh, 13 Nov 2026): the one release that may move it is a bed still being made
+  // ready, which comes OFF Ready. Nothing ever adds to it.
+  it("never lets a release or a leave bed raise the headline figure; a bed being made ready lowers it", () => {
     const units = allUnits();
     const withReleases = serviceRollup(wardSites, units, bedReleases, leaveBeds, NOW_ANCHOR);
     const withNone = serviceRollup(wardSites, units, [], [], NOW_ANCHOR);
-    expect(withReleases.service.availableNow).toBe(withNone.service.availableNow);
+    const notPreparing = bedReleases.map((release) => ({ ...release, preparing: false }));
+    const pending = units.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, bedReleases), 0);
+    expect(pending).toBeGreaterThan(0);
+    expect(serviceRollup(wardSites, units, notPreparing, leaveBeds, NOW_ANCHOR).service.availableNow).toBe(
+      withNone.service.availableNow,
+    );
+    expect(withReleases.service.availableNow).toBe(withNone.service.availableNow - pending);
   });
 
   /**
@@ -470,7 +478,7 @@ describe("ward-morning-rollup", () => {
       // "Discharges held up", not "Blocked releases" — owner ruling 2026-09-06; then "Releases held
       // up, today and tomorrow" (decision 15, 26 Oct 2026), because "Discharges held up" is the
       // patient count. The label changed; the field name and the one-label-per-figure rule did not.
-      blockedToday: "Releases held up, today and tomorrow",
+      blockedToday: "Releases held up, due by tomorrow",
       // "Closed", not "Held" — 2026-09-01 ruling 5. "Held" now means only a bed kept for a patient
       // on leave; the empty bed a ward is not offering is Closed.
       held: "Closed",

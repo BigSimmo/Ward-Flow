@@ -80,7 +80,10 @@ export type BedMeetingDischarges = {
   dischargedToday: number;
   /** Beds due out today only, from the hero's own source (`bedsFreeingTodayTotal`). */
   freeingToday: number;
-  /** Held up among those due out today, so the sheet's subcount shares the figure's day. */
+  /**
+   * Held up among the rows due out today (`todayRows`). Not printed as a "held up" figure: held up
+   * on every screen is `heldUp`, due by tomorrow (D-191 item 5); this only checks the today rows.
+   */
   heldUpToday: number;
   /** Releases expected two or more days ahead — left out of today's figures, and said so. */
   beyondToday: number;
@@ -294,7 +297,7 @@ export function bedMeetingSheet(input: BedMeetingInput): BedMeetingSheet {
   };
 
   // Short — Capacity's hero selector, unchanged, over the whole network as Capacity's band reads it.
-  const kinds = bedKindGaps(movements, units, now, admissions, input.referrals ?? []);
+  const kinds = bedKindGaps(movements, units, now, admissions, input.referrals ?? [], bedReleases);
   const kindTotals = bedKindTotals(kinds);
   const short: BedMeetingShort = {
     gap: kindTotals.gap,

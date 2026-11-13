@@ -62,7 +62,7 @@ export function EdNextOverdue({ overdueCount, onNextOverdue }: { overdueCount: n
  * places people; this list only reads.
  */
 export function ReferralEdRaisedSection({ view, now }: { view: EdDeskView; now: Instant }) {
-  const { raised, departmentName, holdLabel } = view;
+  const { raised, departmentName } = view;
   const {
     referrals,
     units,
@@ -106,7 +106,6 @@ export function ReferralEdRaisedSection({ view, now }: { view: EdDeskView; now: 
                   acceptedUnitName: movement.acceptedUnitId ? unitName(movement.acceptedUnitId) : undefined,
                   fallback: edStageLabel(movement.stage),
                   referredTo: wardReferral ? referredToLabel(wardReferral.unitIds, unitName) : undefined,
-                  holdLabel,
                   now,
                 });
                 return (

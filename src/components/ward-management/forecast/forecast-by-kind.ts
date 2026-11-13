@@ -2,14 +2,19 @@
 //
 // Tomorrow and the day after for each bed type (forecasting build, Josh, 23 Oct 2026, screen 2).
 // The same buckets as `bedsForecast`, counted per bed type so a coordinator can see which kind of
-// bed will still be short, not only the network total.
+// bed will still be short, not only the network total. The total's low, likely and high add each
+// type's shortfall (D-191 item 6), and `bedsForecast` reads them from here.
 //
 // ⚠️ **COUNTED FROM RECORDS ONLY.** Beds ready now and people waiting come from `bedKindGaps`, the
 // mismatch table's own function, so "now" here is the table's figure. Releases are sorted into a
 // bed type by the ward's cohort and, on an adult ward, by the admission's recorded `bedKind`. A
 // planned admission is sorted by its booked age band and, for an adult, by its legal status:
 // detained under the Act needs a locked bed, anything else an open one. Nothing is predicted.
-import { bedKindGaps, type BedKindId } from "@/components/ward-management/capacity/capacity-derivations";
+import {
+  bedKindGaps,
+  combinedKindGap,
+  type BedKindId,
+} from "@/components/ward-management/capacity/capacity-derivations";
 import {
   patientsHoldingANamedBed,
   plannedAdmissionsStillNeedingABed,
@@ -29,6 +34,12 @@ export type KindForecast = {
   /** The mismatch table's two halves of `now`. */
   waiting: number;
   bedsThatFit: number;
+  /**
+   * Beds of this type still being made ready now (D-179 item 8): left out of `now` and
+   * `bedsThatFit`, but each will be ready within the window, so `low` counts it, as the network
+   * forecast's `beingMadeReady` does (`bedsForecast`). Older caller-built figures may omit this.
+   */
+  beingMadeReady?: number;
   low: number;
   likely: number;
   high: number;
@@ -103,6 +114,31 @@ export function isWaitingForBed(movement: Movement): boolean {
   );
 }
 
+export type ForecastGapTables = {
+  gaps: ReturnType<typeof bedKindGaps>;
+  gapsWithPreparing: ReturnType<typeof bedKindGaps>;
+};
+
+/**
+ * The two gap tables a by-type forecast starts from. They do not depend on the horizon, so a caller
+ * forecasting several days works them out once (the cross-mode audit replays every event).
+ */
+export function forecastGapTables(
+  units: readonly Unit[],
+  releases: readonly BedRelease[],
+  admissions: readonly Admission[],
+  movements: readonly Movement[],
+  now: Instant,
+  referrals: Parameters<typeof bedKindGaps>[4] = [],
+): ForecastGapTables {
+  return {
+    gaps: bedKindGaps([...movements], [...units], now, admissions, referrals, releases),
+    // The same table before beds still being made ready come off (D-179 item 8): the difference per
+    // type is that type's being-made-ready beds, so the ranges below add up to `bedsForecast`'s.
+    gapsWithPreparing: bedKindGaps([...movements], [...units], now, admissions, referrals),
+  };
+}
+
 export function forecastByKind(
   units: readonly Unit[],
   releases: readonly BedRelease[],
@@ -113,9 +149,11 @@ export function forecastByKind(
   plannedAdmissions: readonly PlannedAdmission[] = [],
   /** Referrals holding a named bed (WF-FIG-017); journeys' holds come from `movements`. */
   referrals: Parameters<typeof bedKindGaps>[4] = [],
+  /** The gap tables from `forecastGapTables` for the same inputs, when a caller asks for several horizons. */
+  tables: ForecastGapTables = forecastGapTables(units, releases, admissions, movements, now, referrals),
 ): ForecastByKind {
   const until = now + days * MINUTES_PER_DAY;
-  const gaps = bedKindGaps([...movements], [...units], now, admissions, referrals);
+  const { gaps, gapsWithPreparing } = tables;
   const openUnits = new Map(units.filter((unit) => !unit.isClosed).map((unit) => [unit.id, unit]));
   const admissionById = new Map(admissions.map((admission) => [admission.id, admission]));
   const expectedAt = (release: BedRelease) => forecastReleaseAt(release, admissionById.get(release.admissionId));
@@ -161,13 +199,15 @@ export function forecastByKind(
     const plannedAdmissionsOfKind = planned.filter((booking) => bedKindOfPlannedAdmission(booking) === id).length;
     const heldUp = due.length - clear.length;
     const overdue = clear.length - onTime.length;
-    const low = gap.gap + confirmed - plannedAdmissionsOfKind;
+    const beingMadeReady = gapsWithPreparing.find((row) => row.id === id)!.bedsThatFit - gap.bedsThatFit;
+    const low = gap.gap + beingMadeReady + confirmed - plannedAdmissionsOfKind;
     const likely = low + expected;
     return {
       id,
       now: gap.gap,
       waiting: gap.waiting,
       bedsThatFit: gap.bedsThatFit,
+      beingMadeReady,
       low,
       likely,
       high: likely + heldUp + overdue + plannedNotFlagged,
@@ -192,6 +232,7 @@ export function forecastByKind(
       now: 0,
       waiting: 0,
       bedsThatFit: 0,
+      beingMadeReady: 0,
       low: 0,
       likely: 0,
       high: 0,
@@ -204,7 +245,36 @@ export function forecastByKind(
       plannedAdmissions: 0,
     },
   );
+  // D-191 item 6 (Josh, 13 Nov 2026): "short" adds each bed type's shortfall and never subtracts a
+  // spare bed of another type. Now, low, likely and high all follow it (`combinedKindGap`), so the
+  // headline equals the sum of the per-type shortfalls printed beside it whenever any type is short.
+  // The network forecast (`bedsForecast`) takes its low, likely and high from here, so Capacity's
+  // Tomorrow, Home's beds gap card and this total stay one number (fixes thread, under D-196).
+  // Every other figure is a plain count and still sums the types.
+  total.now = combinedKindGap(kinds.map((kind) => kind.now));
+  total.low = combinedKindGap(kinds.map((kind) => kind.low));
+  total.likely = combinedKindGap(kinds.map((kind) => kind.likely));
+  total.high = combinedKindGap(kinds.map((kind) => kind.high));
   return { hours: days * 24, until, kinds, total };
+}
+
+/**
+ * The network range for each horizon, per bed type and combined by `combinedKindGap` (D-191 item 6),
+ * for `bedsForecast`'s `byKind`. The gap tables are worked out once for every horizon.
+ */
+export function forecastTotalsByKind(
+  units: readonly Unit[],
+  releases: readonly BedRelease[],
+  admissions: readonly Admission[],
+  movements: readonly Movement[],
+  now: Instant,
+  plannedAdmissions: readonly PlannedAdmission[] = [],
+  referrals: Parameters<typeof bedKindGaps>[4] = [],
+  /** The gap tables from `forecastGapTables` for the same inputs, when the caller already has them. */
+  tables: ForecastGapTables = forecastGapTables(units, releases, admissions, movements, now, referrals),
+): (days: number) => { low: number; likely: number; high: number } {
+  return (days) =>
+    forecastByKind(units, releases, admissions, movements, now, days, plannedAdmissions, referrals, tables).total;
 }
 
 /** "4 short", "3 spare that fit" or "even": one end of a range, in the mismatch table's words (WF-16). */

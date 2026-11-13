@@ -220,7 +220,7 @@ export function notWaitingMoreText(split: WaitingSplit): string | null {
  * OVERDUE BY TIER — the one tier-due rule (L4). Settings shows it ("Tier 1 overdue after 1h") and
  * the Referrals board applies it; every overdue marker on a waiting person reads it from here:
  * overdue once the wait reaches the tier's window, or the any-tier ceiling, whichever is sooner.
- * An unrecorded tier takes tier 3's window.
+ * An unrecorded tier takes tier 3's window (D-187, F-30: kept as it is; it reads "Tier not recorded").
  */
 export function tierOverdueAfterMinutes(urgency: number | undefined): number {
   const tier: 1 | 2 | 3 = urgency === 1 || urgency === 2 ? urgency : 3;

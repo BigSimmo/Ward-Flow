@@ -17,6 +17,7 @@ import {
   networkWardRows,
 } from "@/components/ward-management/capacity/capacity-derivations";
 import { capacityConfirmer } from "@/components/ward-management/capacity/capacity-confirmer";
+import { forecastTotalsByKind } from "@/components/ward-management/forecast/forecast-by-kind";
 import { shortNeed } from "@/components/ward-management/capacity/capacity-mismatch-band";
 import { gapWords } from "@/components/ward-management/capacity/capacity-range-line";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -49,7 +50,7 @@ const units = seed.units;
 // calls the production function with DIFFERENT arguments from the caller is testing a configuration
 // nothing ships: this file once read `networkWardRows(units, NOW)` while the screen passed
 // `bedReleases`, and two tests failed while both sides were individually correct.
-const gapRows = bedKindGaps(seed.movements, units, NOW, seed.admissions);
+const gapRows = bedKindGaps(seed.movements, units, NOW, seed.admissions, seed.referrals, seed.bedReleases);
 const gapTotals = bedKindTotals(gapRows);
 const networkRows = networkWardRows(units, NOW, seed.bedReleases, seed.admissions, seed.leaveBeds);
 const netTotals = networkTotals(networkRows);
@@ -752,6 +753,16 @@ describe("tomorrow's beds forecast", () => {
       seed.movements,
       NOW_ANCHOR,
       seed.plannedAdmissions,
+      [],
+      // Capacity's Tomorrow adds each bed type's shortfall (D-191 item 6, `capacity-model.ts`).
+      forecastTotalsByKind(
+        seed.units,
+        seed.bedReleases,
+        seed.admissions,
+        seed.movements,
+        NOW_ANCHOR,
+        seed.plannedAdmissions,
+      ),
     );
     const [tomorrow, twoDays] = forecast.horizons;
     expect(tomorrow, "the forecast has no 24 hour estimate").toBeDefined();

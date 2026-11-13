@@ -43,3 +43,8 @@ so this shrinks first loads without changing any screen. Measured on a local pro
 Referrals 588.0, Ward 621.5, Capacity 616.2, ED arm 676.9, Bed meeting 594.6, Statistics 636.0. No budget changes.
 A first attempt that lazy-loaded Home's pinned card moved shared code into Referrals and Statistics (+2 KB each)
 and was dropped.
+
+After merging PR C (#1660), provisional: routes this PR did not change (`/ward-flow/ed`, the movement page,
+Statistics) take PR C's limits. This PR's routes (Coordinator, Referrals, Ward, Capacity, `/ward-flow/ed/arm-ed`,
+Bed meeting) hold the higher of this PR's and PR C's limits until a fresh build is measured on the
+merged code; Capacity is expected to come back down from 662.4.

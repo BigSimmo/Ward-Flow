@@ -67,4 +67,27 @@ describe("Capacity forecast viewing baseline", () => {
     await flush();
     expect(window.sessionStorage.getItem(key)).toBe(saved);
   });
+
+  // Time audit follow-up to C3/G7 (13 Nov 2026): a look taken under yesterday's demo day 0 is from
+  // another demonstration, so today's forecast does not report "since you looked" against it.
+  it("does not compare with a look taken on an earlier demo day", async () => {
+    const yesterday = Date.UTC(2026, 10, 11, 16); // Perth midnight, 12 Nov 2026
+    const dayWrapper = (dayZero: number) =>
+      function DayWrapper({ children }: { children: ReactNode }) {
+        return (
+          <WardFlowProvider initialNow={NOW_ANCHOR} initialDayZero={dayZero}>
+            {children}
+          </WardFlowProvider>
+        );
+      };
+    const view = render(<ForecastView />, { wrapper: dayWrapper(yesterday) });
+    view.unmount();
+    await flush();
+    expect(lookKeys()).toHaveLength(1);
+    const reader = renderHook(
+      () => useForecastChange(useForecastModel(NOW_ANCHOR + 1), NOW_ANCHOR + 1, { remember: false }),
+      { wrapper: dayWrapper(yesterday + 86_400_000) },
+    );
+    expect(reader.result.current).toBeUndefined();
+  });
 });

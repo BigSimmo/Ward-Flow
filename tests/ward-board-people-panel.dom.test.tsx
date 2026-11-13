@@ -11,6 +11,7 @@ import {
 } from "@/components/ward-management/ward-admissions";
 import { TENTATIVE_DIAGNOSIS_BLOCKS } from "@/components/ward-management/ward-diagnosis";
 import { WARD_ADMISSIONS_ANCHOR, wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
+import { dayOf } from "@/components/ward-management/ward-clock";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { wardSites } from "@/components/ward-management/ward-sites";
@@ -46,6 +47,8 @@ function renderWardBoard(unitId: string) {
 /** The unit the panel was built and looked at on: 20 beds, 18 taken, one of them a pulled bed with
  *  no stay, one occupant confirmed AND blocked, and three people past the ward's own date. */
 const UNIT_ID = "rph-adult-secure";
+/** A ward whose seeded pulled beds are each held for a named ED stay (A16-13). */
+const PULLED_UNIT_ID = "sjgm-adult-open";
 
 /**
  * The one sentence that qualifies every diagnosis on this board, pinned as literal text.
@@ -178,11 +181,15 @@ describe("ward board people panel — what each person's entry states", () => {
   });
 
   it("gives a pulled bed no stay and no expected date, rather than a zero-day one", () => {
-    const pulled = occupantsFor(UNIT_ID).filter((admission) => daysInBed(admission, WARD_ADMISSIONS_ANCHOR) === null);
+    // A16-13 (13 Nov 2026): Dabakarn's pulled beds were held for nobody and are gone; SJGM Adult
+    // Open holds two pulled beds, each for a named ED stay.
+    const pulled = occupantsFor(PULLED_UNIT_ID).filter(
+      (admission) => daysInBed(admission, WARD_ADMISSIONS_ANCHOR) === null,
+    );
     // Non-vacuity: without a pulled occupant in the fixture this asserts nothing.
     expect(pulled.length).toBeGreaterThan(0);
 
-    const panel = panelIn(renderWardBoard(UNIT_ID).container);
+    const panel = panelIn(renderWardBoard(PULLED_UNIT_ID).container);
     expect(within(panel).getAllByText("No stay yet — not arrived")).toHaveLength(pulled.length);
     // A pulled admission carries no expected date in the fixture, and an absent date must read as
     // absent — never as "expected out in 0 days".
@@ -226,9 +233,12 @@ describe("ward board people panel — what each person's entry states", () => {
     // a passed date to zero and this panel deliberately does not, so a copy of that floor landing
     // here would silently render every overdue person as leaving within a day.
     for (const admission of past) {
-      const overdueDays = Math.floor((WARD_ADMISSIONS_ANCHOR - (admission.expectedDischargeAt ?? 0)) / (24 * 60));
+      // Perth calendar days (time audit T1), the same count the panel uses.
+      const overdueDays = dayOf(WARD_ADMISSIONS_ANCHOR) - dayOf(admission.expectedDischargeAt ?? 0);
       expect(panel.textContent).toContain(
-        `${overdueDays} day${overdueDays === 1 ? "" : "s"} past the ward's expected date`,
+        overdueDays === 0
+          ? "Expected out today"
+          : `${overdueDays} day${overdueDays === 1 ? "" : "s"} past the ward's expected date`,
       );
     }
   });

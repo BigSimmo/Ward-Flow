@@ -448,8 +448,10 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
                                 what a recorded `needed: false` means for booking; this states the
                                 fact and nothing else. Shown only while the answer is unrecorded and
                                 no transport exists, because re-recording belongs beside the
-                                recorded answer rather than as a second way to say the same thing. */}
-      {movement.transport === undefined && transportNeedState(movement) === "not_recorded" ? (
+                                recorded answer rather than as a second way to say the same thing.
+                                K37 (13 Nov 2026): the badge's Change records "needed", so the button
+                                shows again then, and "not needed" can be recorded once more. */}
+      {movement.transport === undefined && transportNeedState(movement) !== "not_needed" ? (
         <button
           type="button"
           data-testid={`ward-ed-no-transport-needed-${movement.id}`}

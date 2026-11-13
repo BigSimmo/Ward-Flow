@@ -131,11 +131,12 @@ export function CapacityWardSidebar({
   // Wave 4 (D-191, ruling 7): the shared bed squares replace the 4 Nov discharge colours (C4). A
   // discharge due later today and not held up is hatched; held up is said in words.
   const extra = wardExtras([row.unit], bedReleases, now).get(row.unit.id);
-  const prep = Math.min(row.pendingPreparation ?? 0, row.ready);
+  // D-179 item 8 (PR C): `row.ready` no longer counts a bed being made ready; those are
+  // `row.beingMadeReady`, drawn hollow.
   const squares = bedSquareCounts({
     beds: row.unit.beds,
-    ready: row.ready - prep,
-    prep,
+    ready: row.ready,
+    prep: row.beingMadeReady,
     dischargesToday: extra?.dischargesToday ?? 0,
     closed: row.closed,
   });

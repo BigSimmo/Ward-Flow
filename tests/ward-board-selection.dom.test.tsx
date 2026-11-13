@@ -212,7 +212,9 @@ describe("ward board selection — choosing a tile shows that tile's own occupan
 
   it("shows a pulled bed as a person with no stay, never as a zero-day one", async () => {
     const user = userEvent.setup();
-    const { container } = renderWardBoard(UNIT_ID);
+    // A16-13 (13 Nov 2026): Dabakarn's pulled beds were held for nobody and are gone; SJGM Adult
+    // Open holds two, each for a named ED stay.
+    const { container } = renderWardBoard("sjgm-adult-open");
 
     const button = tileButtonOfKind(container, "waiting");
     await user.click(button);

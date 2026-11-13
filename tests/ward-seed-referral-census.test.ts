@@ -38,7 +38,8 @@ function communityAddressingFor(referral: Referral, teamName: string) {
 }
 
 describe("K1 — seedWardFlowState() referral census (2026-09-17 pin)", () => {
-  const seeded = seedWardFlowState();
+  // A16-14: the legal-form worked examples (RF-RD06) are opt-in since 13 Nov 2026.
+  const seeded = seedWardFlowState("standard", { workedExamples: true });
   const { referrals } = seeded;
 
   it("seeds exactly 31 referrals — 21 literal RF- rows plus the nine Midland demonstration rows plus RF-RD06", () => {

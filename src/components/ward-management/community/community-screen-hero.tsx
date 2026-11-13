@@ -20,11 +20,12 @@ import { contactForTeam } from "@/components/ward-management/community/community
 import { communityRosterCounts } from "./community-screen-panels";
 import { DEMO_FIGURES } from "./team-2026/midland-demo";
 import { useMidlandDay } from "./team-2026/use-midland-demo";
-import type { ActiveTabType } from "./community-screen-helpers";
+import { nextHomeWhen, type ActiveTabType } from "./community-screen-helpers";
 import styles from "./community.module.css";
 import v6 from "./community-team-v6.module.css";
 import type { CommunityScreenView } from "./community-screen";
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
+import { dayOf, type Instant } from "@/components/ward-management/ward-clock";
 
 /**
  * The page's five sections, in the locked design's order (design/community-team-2026-11, Josh
@@ -40,6 +41,22 @@ export const SECTION_FIRST_LIST: Record<CommunityTeamSection, ActiveTabType | nu
   referrals: "tab-triage",
   clinicians: null,
 };
+
+/**
+ * "Leaving hospital in 7 days": a planned date on today or one of the next six Perth calendar days,
+ * so the week ends at midnight, not at this time next week, and a plan earlier today still counts
+ * (time audit, 13 Nov 2026; the same window as Statistics' "Discharges due within 7 days").
+ */
+export function leavingHospitalSoon<T extends { expectedDischargeAt: Instant | null }>(
+  admissions: readonly T[],
+  now: Instant,
+): T[] {
+  return admissions.filter((admission) => {
+    if (admission.expectedDischargeAt === null) return false;
+    const offset = dayOf(admission.expectedDischargeAt) - dayOf(now);
+    return offset >= 0 && offset < 7;
+  });
+}
 
 /** The desktop hero band (locked design, 1 Nov 2026): the caseload answer, four count chips and the at-a-glance strip. */
 export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView }) {
@@ -63,13 +80,11 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
   } = view;
   const caseloadCount = isDemoMode ? teamConfig.caseload : caseloadRows.length;
   const inHospital = isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length;
-  // Instants are minutes on the ward clock.
-  const weekAhead = now + 7 * 24 * 60;
   const planned = lists.expectedBack.filter(
     (admission): admission is typeof admission & { expectedDischargeAt: number } =>
       admission.expectedDischargeAt !== null && admission.expectedDischargeAt >= now,
   );
-  const leavingSoon = planned.filter((admission) => admission.expectedDischargeAt <= weekAhead);
+  const leavingSoon = leavingHospitalSoon(lists.expectedBack, now);
   const nextHome = [...planned].sort((a, b) => a.expectedDischargeAt - b.expectedDischargeAt)[0];
   const oldest = waitingReferrals[0];
   const hours = contactForTeam(team.name)?.publishedHours ?? null;
@@ -193,11 +208,8 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
                 <span>Next home</span>
                 {nextHome && nextHome.expectedDischargeAt !== null ? (
                   <b className={v6.glanceMono}>
-                    {(() => {
-                      // Elapsed wording, never a clock face (the page's rule).
-                      const days = Math.round((nextHome.expectedDischargeAt - now) / (24 * 60));
-                      return days <= 0 ? "Today" : days === 1 ? "Tomorrow" : `In ${days} days`;
-                    })()}
+                    {/* Elapsed wording, never a clock face (the page's rule). */}
+                    {nextHomeWhen(nextHome.expectedDischargeAt, now)}
                   </b>
                 ) : (
                   <b>None planned</b>

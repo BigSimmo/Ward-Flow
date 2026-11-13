@@ -1,0 +1,23 @@
+# 13 Nov 2026, system fixes (PR C, D-190)
+
+Nine limits are raised, on top of `main` at `ea4cd8b57` (after PR #1657):
+
+- Coordinator `/ward-flow`: 585.2 to 589.1
+- Referrals `/ward-flow/referrals`: 589.9 to 595.3 (+5.4, over the 5 KB allowance: Josh's yes, 13 Nov 2026 16:46Z, D-199 follow-up)
+- ED `/ward-flow/ed`: 538.5 to 545.8 (+7.3, over the 5 KB allowance: Josh's yes, 13 Nov 2026 15:37Z)
+- Ward `/ward-flow/ward/rph-adult-secure`: 618.2 to 625.6 (+7.4, over the 5 KB allowance: Josh's yes, 13 Nov 2026 15:37Z)
+- Movement `/ward-flow/movements/WF-001`: 616.9 to 621.5
+- ED board `/ward-flow/ed/arm-ed`: 677.9 to 680.6
+- Statistics `/ward-flow/statistics`: 636.4 to 640.6
+
+Capacity (660.3) and the bed meeting (594.6) end under their limits after the trim and are unchanged.
+
+Measured with a local `next build --webpack` (WARD_GATE_BUILD=1) and `scripts/check-script-budget.mjs` on main plus the PR C tree, before and after the trim in this PR. Each limit is the trimmed figure plus 0.2, except Referrals, held at exactly +5.0.
+
+Second push (13 Nov, after the CI fixes): the Ward desk's bed seats fix (F-150) adds about 0.3 KB to the shared script, and the by-bed-type tomorrow total (FM-8) is passed into the bed forecast by Capacity only, so the Ward page does not load it. ED and Ward end at +7.3 and +7.4. Referrals measures 595.1 (+5.2); Josh approved 595.3 (D-199 follow-up).
+
+Why it grew: the script every page shares grew by about 8.6 KB from PR B's head, from real fix code spread thinly: the one staff names list (A16-21), the closed-ward demo choice (A16-17), the seeded pull holds, sample days and working hours, seed growth, the server-away link guard (A4-05), the time-audit fixes (reducer, legal-time words, registration, month names, shared clock and bar) and the "not saved" note that now loads with the first page (A4-02).
+
+What was trimmed first (6 to 20 KB per route): the Ward page no longer pulls the answer view's feedback component; a split chunk shared by Referrals and the ED board no longer carries a second copy of Next's link helpers (two named chunks in `next.config.ts`); the patient and officer screens no longer pull the referral letter builder; the bed meeting, TV and board no longer pull the printed daily sheet or the board's stylesheet map (`board/ward-daily-sheet-model.ts`); the TV lock's stand-in host loads just after the page draws. `tests/ward-page-first-load-imports.test.ts` pins these.
+
+Tried and dropped: packing the error pages' shared helpers and icons (routes grew 1 to 3.5 KB); adding Next's lazy-load helpers to the shared group (copied icons three times). The largest lever left is `tailwind-merge` in the error pages (28 KB raw), too large a change before the demo.

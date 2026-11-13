@@ -394,7 +394,7 @@ describe("needs cards and the clearance checklist", () => {
     const needs = screen.getByTestId("ward-referral-needs");
     expect(needs).toHaveTextContent("ED needs");
     expect(within(needs).getByRole("group", { name: "Coming by" })).toBeInTheDocument();
-    expect(within(needs).getByLabelText("Expected arrival, AWST")).toBeInTheDocument();
+    expect(within(needs).getByLabelText("Expected arrival, demo time")).toBeInTheDocument();
   });
 
   it("accepts a known checklist and needs, and refuses ones the record does not know", () => {
@@ -512,7 +512,7 @@ describe("referral letter text", () => {
   it("names anything left blank once, at the top, rather than inventing it", () => {
     const text = referralLetterText(input, "10:46");
     // Audit 1 (CS-12): the synthetic line comes before the letter's heading.
-    expect(text.split("\n")[0]).toBe("Synthetic prototype. Draft 10:46 AWST.");
+    expect(text.split("\n")[0]).toBe("Synthetic prototype. Draft 10:46 demo time.");
     // RF2 (Josh, 4 Nov 2026): gaps are listed once and left out of the lines below.
     expect(text).toContain("Still to confirm: Reason, history and referrer contact.");
     expect(text).not.toContain("Reason:");

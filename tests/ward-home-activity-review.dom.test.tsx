@@ -17,8 +17,9 @@ import {
 } from "@/components/ward-management/coordinator/since-last-look";
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+
+import { WorkedExamplesOn, workedExamplesWorld } from "./helpers/ward-worked-examples-on";
 
 /**
  * Home's Activity panel (Home and Activity design, approved by Josh 31 Oct 2026): review is
@@ -30,6 +31,8 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * count the chip used to show.
  */
 const NOW = NOW_ANCHOR;
+// A16-14 (D-175 item 1): the seed's absence without leave at 10:07, the third change counted below,
+// is WL-RD07, a worked example that is off by default, so the picture and the screen both opt in.
 
 type World = ReturnType<typeof useWardFlow>;
 const probe: { world?: World } = {};
@@ -44,6 +47,7 @@ function WorldProbe() {
 function renderHome() {
   return render(
     <WardFlowProvider initialNow={NOW}>
+      <WorkedExamplesOn />
       <WorldProbe />
       <WardBar />
       <CoordinatorScreen />
@@ -53,9 +57,10 @@ function renderHome() {
 
 /** A remembered picture one hour into the shift, missing one referral and one ready bed. */
 function storeEarlierReview() {
-  const state = seedWardFlowState();
+  const state = workedExamplesWorld();
   const snapshot = takeLastLookSnapshot(
     {
+      worldGeneration: state.worldGeneration,
       scenario: state.scenario,
       referrals: state.referrals,
       movements: state.movements,

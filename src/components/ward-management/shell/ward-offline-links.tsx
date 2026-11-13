@@ -56,6 +56,94 @@ export function offlineCanOpen(
   return fetched.size > 1;
 }
 
+function pushOfflineNote(toast: ReturnType<typeof useOptionalToast>) {
+  toast?.push({
+    tone: "info",
+    title: WARD_OFFLINE_LINK_NOTICE,
+    body: "This page keeps working.",
+    skipOfflineNote: true,
+  });
+}
+
+/** How long the server check before a full page load may take before the server counts as away. */
+const SERVER_CHECK_TIMEOUT_MS = 5_000;
+
+/** True when the Ward Flow server answers its health check (`/api/health`, open without a sign-in). */
+function serverAnswers(timeoutMs: number = SERVER_CHECK_TIMEOUT_MS): Promise<boolean> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch("/api/health", { cache: "no-store", signal: controller.signal }).then(
+    (response) => {
+      clearTimeout(timer);
+      return response.ok;
+    },
+    () => {
+      clearTimeout(timer);
+      return false;
+    },
+  );
+}
+
+/**
+ * True after a server check failed, until one answers again. While it holds, an in-app link tap is
+ * treated as offline (below), which also checks the server again for the next tap.
+ */
+let serverAway = false;
+
+/** The parts of the browser's Navigation API `navigate` event read here. */
+type NavigateEventLike = Event & {
+  navigationType: string;
+  cancelable: boolean;
+  hashChange: boolean;
+  downloadRequest: string | null;
+  formData: FormData | null;
+  destination: { url: string; sameDocument: boolean };
+};
+
+/**
+ * Audit 4 A4-05 (13 Nov 2026): with the server away but the network up, the browser still reports a
+ * connection, so the guard below lets a menu tap through. The router's page fetch then fails and it
+ * falls back to a full page load, which lands on the browser's own error page and leaves the app.
+ *
+ * Where the browser has the Navigation API, a full page load to another Ward Flow page is held for a
+ * quick server check first. If the server answers, the load goes ahead. If not, the page stays and
+ * `onAway` shows the same note as offline. Router moves within the page, reloads, back and forward,
+ * downloads and form posts are left alone. Returns the clean-up.
+ */
+export function watchServerAwayNavigations(onAway: () => void): () => void {
+  const navigation = (window as unknown as { navigation?: EventTarget }).navigation;
+  if (!navigation) return () => {};
+  let passing: string | undefined;
+  let live = true;
+  function onNavigate(raw: Event) {
+    const event = raw as NavigateEventLike;
+    if (!event.cancelable || event.hashChange || event.downloadRequest !== null || event.formData) return;
+    if (event.navigationType !== "push" && event.navigationType !== "replace") return;
+    if (event.destination.sameDocument) return;
+    const url = new URL(event.destination.url);
+    if (url.origin !== window.location.origin) return;
+    if (passing === url.href) {
+      passing = undefined;
+      return;
+    }
+    event.preventDefault();
+    const replace = event.navigationType === "replace";
+    void serverAnswers().then((answers) => {
+      serverAway = !answers;
+      if (!live) return;
+      if (!answers) return onAway();
+      passing = url.href;
+      if (replace) window.location.replace(url.href);
+      else window.location.assign(url.href);
+    });
+  }
+  navigation.addEventListener("navigate", onNavigate);
+  return () => {
+    live = false;
+    navigation.removeEventListener("navigate", onNavigate);
+  };
+}
+
 /**
  * A1-18 (audit 13 Oct 2026): offline, a tap on an in-app link to another page made the router
  * fetch that page, fail, and fall back to a full load, which landed on the browser's own "No
@@ -63,14 +151,17 @@ export function offlineCanOpen(
  * this page and says why; this page keeps working from the session. Links within the same page,
  * new-tab links and modified clicks are left alone. Renders nothing.
  *
+ * A4-05: the same applies while the server is known to be away (`watchServerAwayNavigations`).
+ *
  * Q273: a page the router already holds in full (`offlineCanOpen`) opens as normal. For the rest
  * the note no longer promises the page will open later, because nothing remembers the tap.
  */
 export function WardOfflineLinks() {
   const toast = useOptionalToast();
+  useEffect(() => watchServerAwayNavigations(() => pushOfflineNote(toast)), [toast]);
   useEffect(() => {
     function onClick(event: MouseEvent) {
-      if (navigator.onLine !== false) return;
+      if (navigator.onLine !== false && !serverAway) return;
       if (event.defaultPrevented || event.button !== 0) return;
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const target = event.target instanceof Element ? event.target.closest("a[href]") : null;
@@ -83,12 +174,12 @@ export function WardOfflineLinks() {
       if (offlineCanOpen(target, url, performance.getEntriesByType("resource"), performance.now())) return;
       event.preventDefault();
       event.stopPropagation();
-      toast?.push({
-        tone: "info",
-        title: WARD_OFFLINE_LINK_NOTICE,
-        body: "This page keeps working.",
-        skipOfflineNote: true,
-      });
+      pushOfflineNote(toast);
+      // The server was away (A4-05): check again, so the next tap goes through once it answers.
+      if (navigator.onLine !== false)
+        void serverAnswers().then((answers) => {
+          serverAway = !answers;
+        });
     }
     document.addEventListener("click", onClick, true);
     return () => document.removeEventListener("click", onClick, true);

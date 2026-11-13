@@ -49,6 +49,10 @@ const FIXTURE_FILE = /(?:-seed\.ts|^ward-movements(?:-referrals)?\.ts)$/;
 const SYNTHETIC_DATA_FILES: Readonly<Record<string, string>> = {
   "ward-demo-network.ts": "synthetic demo network: invented waits and times for made-up records",
   "ward-demo-example-lists.ts": "synthetic example lists: invented discharge and stay times",
+  "ward-demo-planned-moves.ts":
+    "synthetic planned moves: an invented 08:00 to 17:00 window and two-day horizon (A16-20)",
+  "ward-sample-working-hours.ts":
+    "synthetic sample working day: the invented 08:00 to 17:00 window the sample builders share (A16-20)",
   "shell/ward-access-admin-store.ts": "synthetic access requests made a few hours before the demo clock",
   "live-build/ward-no-demo-data.ts": "the demo clock anchor (10:42), a made-up time",
 };
@@ -209,7 +213,6 @@ const ALLOWED: readonly Allowed[] = [
     n: 1,
     why: "fallback handover clock time (14:00) for ordering a record line",
   },
-  { file: "patients/patient-now-records.ts", expr: "min >= 1440", n: 1, why: "formatting: days rather than hours" },
   {
     file: "patients/patient-now-screen.tsx",
     expr: "14 * 60",

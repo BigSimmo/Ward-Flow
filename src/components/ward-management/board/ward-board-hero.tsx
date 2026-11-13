@@ -134,14 +134,14 @@ export function WardBoardHero(props: {
     const list = document.querySelector('[data-testid="ward-board-triage"] ul');
     if (list) list.scrollLeft = 0;
   }, [isPhone]);
-  // The ready figure always says how many of those beds are still being made ready.
+  // Beds still being made ready are counted apart from Ready (D-179 item 8) and said beside it.
   const pendingPreparation = props.pendingPreparation;
   // Each sentence keeps its own test id, as the old header's paragraphs did, inside one quiet line.
   const sentences: { testId: string; text: string }[] = [];
   if (pendingPreparation > 0)
     sentences.push({
       testId: "ward-board-pending-preparation",
-      text: `${pendingPreparation} of them ${pendingPreparation === 1 ? "is" : "are"} still being made ready, not yet offered.`,
+      text: `${pendingPreparation} more ${pendingPreparation === 1 ? "bed is" : "beds are"} being made ready, not counted as ready.`,
     });
   if (service !== null)
     sentences.push({

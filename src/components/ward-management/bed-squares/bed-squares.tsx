@@ -50,12 +50,6 @@ export type BedSquaresProps = {
   notes?: readonly BedSquaresNote[];
   size?: "map" | "board";
   figure?: "md" | "lg";
-  /**
-   * The head figure when it is not the solid squares: the current ready rule (owner ruling 5 Sep 2026)
-   * still counts a bed being made ready, so the figure stays the selector's and that bed is drawn
-   * hollow from inside it. Drop once PR C's F-26 takes those beds out of ready.
-   */
-  readyFigure?: number;
   head?: boolean;
   /** The tag straight after the words, not at the line's end (Ward "Every bed"). */
   tagAfter?: boolean;
@@ -196,14 +190,13 @@ export function BedSquares({
   notes = [],
   size = "map",
   figure = "md",
-  readyFigure,
   head = true,
   tagAfter = false,
   className,
   testId,
 }: BedSquaresProps) {
   const beds = BED_SQUARE_ORDER.reduce((sum, state) => sum + clamp(counts[state]), 0);
-  const ready = clamp(readyFigure ?? counts.ready);
+  const ready = clamp(counts.ready);
   return (
     <div
       className={cx(styles.bedSquares, size === "board" && styles.board, figure === "lg" && styles.lg, className)}

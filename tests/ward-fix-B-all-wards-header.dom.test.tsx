@@ -52,7 +52,10 @@ describe("All wards header (A16-05)", () => {
     // Still due later today and not held up: the sheet's own freeing-today count.
     expect(figure("ward-index-figure-discharges")).toBe(sheet.discharges.freeingToday);
     // The same selector as Capacity's hero, so the two pages never disagree.
-    const gap = bedKindTotals(bedKindGaps(seed.movements, seed.units, NOW_ANCHOR, seed.admissions, seed.referrals)).gap;
+    // PR C (P4-7): with the bed releases, as Capacity's hero reads it.
+    const gap = bedKindTotals(
+      bedKindGaps(seed.movements, seed.units, NOW_ANCHOR, seed.admissions, seed.referrals, seed.bedReleases),
+    ).gap;
     expect(figure("ward-index-figure-short")).toBe(Math.abs(gap));
     expect(screen.queryByText(/ready by/iu)).toBeNull();
   });

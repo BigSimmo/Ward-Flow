@@ -9,7 +9,8 @@ import {
 } from "@/components/ward-management/ward-clock";
 import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import { transportNeedState } from "@/components/ward-management/ward-derivations-transport";
-import { bedHold } from "@/components/ward-management/ward-bed-hold";
+import { bedHold, pulledWithoutLimitLabel } from "@/components/ward-management/ward-bed-hold";
+import { isHeldUpDueByTomorrow } from "@/components/ward-management/ward-held-up";
 import { heldUntilExtendedLabel } from "@/components/ward-management/ward-bed-hold-extension";
 import { deliveredAwaitingWard, movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
 import { originName } from "@/components/ward-management/ward-movement-origin";
@@ -141,7 +142,7 @@ export function arrivalRows({
           ? "Late"
           : hold
             ? (heldUntilExtendedLabel(movement, now) ?? hold.label)
-            : movementStatusLabel(movement));
+            : (pulledWithoutLimitLabel(movement) ?? movementStatusLabel(movement)));
     const first = [originName(movement), stageWords, bedWord(bed)].filter(Boolean).join(" · ");
     const transport = arrivalTransportLine(movement, now);
     const noBed = awaitingBed ? "No bed pulled" : bed ? undefined : "Bed not recorded";
@@ -209,8 +210,9 @@ export function needsALookRows(
 ): { rows: ComingRow[]; heldUp: number; pastDate: number; heldUpPastDate: number } {
   const byAdmission = (id: string | undefined) =>
     id === undefined ? undefined : beds.find((bed) => bed.admissionId === id);
+  // D-191 item 5 (PR C): held up is due by tomorrow, as the page's other held-up counts read it.
   const held = [...releases]
-    .filter((release) => release.blocker !== null)
+    .filter((release) => isHeldUpDueByTomorrow(release, now))
     .sort((left, right) => left.expectedAt - right.expectedAt);
   const seen = new Set<string>();
   let heldUpPastDate = 0;

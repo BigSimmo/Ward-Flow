@@ -57,8 +57,8 @@ export function BedsGapCard({ now, bedsReady, condensed }: { now: Instant; bedsR
   );
   // WF-FIG-017: a referral holding a named bed takes it off the beds that fit, as on Capacity.
   const rows = useMemo(
-    () => bedKindGaps(movements, units, now, admissions, referrals),
-    [movements, units, now, admissions, referrals],
+    () => bedKindGaps(movements, units, now, admissions, referrals, bedReleases),
+    [movements, units, now, admissions, referrals, bedReleases],
   );
   const totals = useMemo(() => bedKindTotals(rows), [rows]);
   const tomorrow = useMemo(

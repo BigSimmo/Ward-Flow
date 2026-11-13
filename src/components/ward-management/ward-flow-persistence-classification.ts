@@ -508,7 +508,9 @@ export const WARD_FLOW_TEXT_SAFE_EVENT_TYPES: ReadonlySet<WardFlowEvent["type"]>
  *   - **Array element types.** `REFER_TO_UNITS.unitIds: string[]` is outside it — a `string[]` field
  *     is not itself `string` or `unknown`, so it never reaches `IsWideString`/`IsWideUnknown`/the
  *     branded and template-literal checks below at all. Reviewed by hand instead: `unitIds` holds
- *     unit ids, membership-checked structurally elsewhere.
+ *     unit ids, membership-checked structurally elsewhere. `RAISE_REFERRAL.changedOnPull` (D-191)
+ *     is typed as the closed `PullFormField` union, and `changedOnPullRefusal` refuses any other
+ *     value or a repeat before anything is stored, so it carries no typed text.
  *   - **Nested objects other than `RAISE_REFERRAL`'s `draft`.** The recursion into `draft` is a named
  *     special case (`UnreviewedRaiseReferralDraftKeys` below), not a general walk — a future safe
  *     event with a DIFFERENT nested object carrying a typed-text field would compile silently onto

@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef } from "react";
 import type { CommandUndoType } from "../ward-command-metadata";
+import type { BedPullUndoTarget } from "../ward-bed-pull-undo";
 import { useOptionalToast } from "@/components/wf";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import type { WardCommandDispatch, WardCommandOutcome } from "../ward-shared-client";
@@ -49,6 +50,8 @@ export type WardMovementCheck = {
   attempted: string;
   outcome?: WardCommandOutcome;
   undo?: { movementId: string; unitId: string };
+  /** A9-02: the bed pull a successful PULL_PATIENT offers to undo. */
+  pull?: BedPullUndoTarget;
 };
 
 /** The Ward flow list's own commands, the only refusals its movement rows show (review: gitar). */

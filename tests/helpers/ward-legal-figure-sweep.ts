@@ -2520,7 +2520,9 @@ export function driveEveryEventAgainst(
   offenders: string[];
   finalState: WardFlowState;
 } {
-  let state = seedWardFlowState();
+  // A16-14 (D-175 item 1) made the Armadale worked examples opt-in. The sweep keeps them on, as the
+  // seed was before, so the Form 3D, 5A and 6A examples still give PULL_PATIENT and DECLINE a target.
+  let state = seedWardFlowState("standard", { workedExamples: true });
   const accepted = new Set<WardFlowEvent["type"]>();
   const offenders: string[] = [];
 

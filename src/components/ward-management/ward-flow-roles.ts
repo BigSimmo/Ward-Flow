@@ -77,3 +77,13 @@ export function roleOfRecordedLabel(label: string): WardFlowRole | null {
   if (current !== undefined) return current;
   return Object.hasOwn(EARLIER_ROLE_LABELS, label) ? EARLIER_ROLE_LABELS[label]! : null;
 }
+
+/**
+ * F-41 (A9-25): the words a screen prints for a recorded "by". A role key ("ed") reads as its
+ * label ("ED clinician"), an earlier role label as its current one, anything else as written.
+ */
+export function recordedByWords(by: string): string {
+  if (Object.hasOwn(WARD_FLOW_ROLE_LABELS, by)) return WARD_FLOW_ROLE_LABELS[by as WardFlowRole];
+  const role = roleOfRecordedLabel(by);
+  return role === null ? by : WARD_FLOW_ROLE_LABELS[role];
+}

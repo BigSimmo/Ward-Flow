@@ -65,8 +65,9 @@ describe("ward clock", () => {
     expect(formatElapsed(minutesUntil(NOW, NOW - 95))).toBe("1h 35m waiting");
     expect(formatElapsed(45)).toBe("45m waiting");
     // formatRemaining would call this "overdue"; formatElapsed must not, and must not go
-    // negative even if given a future instant by mistake.
-    expect(formatElapsed(-10)).toBe("0m waiting");
+    // negative even if given a future instant by mistake. RC 2.5 (F-35): nor may it read "0m
+    // waiting", which looks like a new arrival; it says the start time is in the future.
+    expect(formatElapsed(-10)).toBe("Start time is in the future");
   });
 
   it("measures elapsed minutes across two same-day readings without wrapping", () => {
@@ -212,9 +213,12 @@ describe("the clock knows what day it is, not only what time it is", () => {
 
   it("identifies saved output across a Perth year boundary without changing compact timestamps", () => {
     const zero = perthMidnight(2026, 11, 31);
-    expect(formatSheetMoment(0, zero, { includeYearAndZone: true })).toBe("Thu 31 Dec 2026, 00:00 AWST");
-    expect(formatSheetMoment(MINUTES_PER_DAY, zero, { includeYearAndZone: true })).toBe("Fri 1 Jan 2027, 00:00 AWST");
-    expect(formatSheetMoment(-1, zero, { includeYearAndZone: true })).toBe("Wed 30 Dec 2026, 23:59 AWST");
+    // RC 2.6 (F-113, D-190): the zone words are the caller's; left out, they are the local demo's.
+    expect(formatSheetMoment(0, zero, { includeYearAndZone: true })).toBe("Thu 31 Dec 2026, 00:00 demo time");
+    const signedIn = { includeYearAndZone: true, zone: "AWST" } as const;
+    expect(formatSheetMoment(0, zero, signedIn)).toBe("Thu 31 Dec 2026, 00:00 AWST");
+    expect(formatSheetMoment(MINUTES_PER_DAY, zero, signedIn)).toBe("Fri 1 Jan 2027, 00:00 AWST");
+    expect(formatSheetMoment(-1, zero, signedIn)).toBe("Wed 30 Dec 2026, 23:59 AWST");
     expect(formatSheetMoment(0, zero)).toBe("Thu 31 Dec, 00:00");
   });
 

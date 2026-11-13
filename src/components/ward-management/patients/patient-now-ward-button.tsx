@@ -4,7 +4,7 @@
 // while the ward cards load on their own (phone script budget).
 import Link from "next/link";
 import { Button, buttonClass } from "@/components/wf";
-import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
+import type { RoleLimit } from "@/components/ward-management/ward-role-gate";
 import type { NextStepAction } from "./patient-now-ward";
 
 /** The next step's one button: a link or a handler, greyed with the desk's reason when limited. */
@@ -16,11 +16,13 @@ export function PatientNextStepButton({
 }: {
   action: NextStepAction;
   primary: boolean;
-  roleLimit?: (event: WardFlowEventType) => string | undefined;
+  roleLimit?: RoleLimit;
   testId?: string;
 }) {
   const reason = action.event ? roleLimit?.(action.event) : undefined;
   const variant = primary ? "pri" : "sec";
+  // F-54 (A9-35): a step this desk can never take has no button here (DESIGN-SYSTEM.md, Actions).
+  if (reason === null) return null;
   if (reason)
     return (
       <Button icon={action.icon} disabledReason={reason} reasonDisplay="tooltip" data-testid={testId}>

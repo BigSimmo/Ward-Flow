@@ -7,7 +7,7 @@ import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward
 /*
  * S-1 (audit 13 Oct 2026): when the demonstration stops saving on this device, the shell says so with
  * a quiet note instead of losing the day silently on the next reload. Since 21 Oct 2026 typed text
- * stops the save only where its copy cannot be made safely (a typed date of birth here); otherwise
+ * stops the save only where its copy cannot be made safely (an unreadable event here); otherwise
  * a second note says typed text is not kept.
  */
 describe("Not saved on this device note (S-1)", () => {
@@ -27,7 +27,8 @@ describe("Not saved on this device note (S-1)", () => {
     vi.useRealTimers();
   });
 
-  it("stays hidden while the day saves, and shows once a typed date of birth stops saving", () => {
+  // A9-07 (Josh, 13 Nov 2026): a typed date of birth no longer stops saving; an unreadable event does.
+  it("stays hidden while the day saves, also after Add patient, and shows once saving stops", () => {
     render(
       <WardFlowProvider>
         <Capture />
@@ -52,6 +53,11 @@ describe("Not saved on this device note (S-1)", () => {
         familyName: "Synthetic",
         dateOfBirth: "1990-01-01",
       });
+    });
+    expect(screen.queryByTestId("ward-demo-not-saved")).toBeNull();
+
+    act(() => {
+      current!.dispatch({ type: "SYNTHETIC_UNCLASSIFIED_EVENT", role: "coordinator", now: current!.now } as never);
     });
     expect(screen.getByTestId("ward-demo-not-saved")).toHaveTextContent(
       "Demonstration state is not saved on this device",

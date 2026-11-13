@@ -123,13 +123,14 @@ export function journeyStages({
   );
 
   const today = dayOf(now);
-  // The ward page's "Due out, 7 days": on the ward (not pulled), with a date from now to six days on.
+  // The ward page's "Due out, 7 days": on the ward (not pulled), with a date from today to six days
+  // on, by calendar day (time audit T2).
   const planned = admissions.filter(
     (admission) =>
       admission.state !== "departed" &&
       admission.state !== "pulled" &&
       admission.expectedDischargeAt !== null &&
-      admission.expectedDischargeAt >= now &&
+      dayOf(admission.expectedDischargeAt) >= today &&
       dayOf(admission.expectedDischargeAt) - today < 7,
   );
   const plannedOn = (offset: number) =>
@@ -324,7 +325,11 @@ function JourneyRibbon({
                     } as CSSProperties
                   }
                 >
-                  <span className={styles.nodeCount}>{journeyFigureText(stage.count)}</span>
+                  {/* F-55 (A9-36): a worded count ("not shown") is set small on one line, so it is
+                      never cut to "not" behind the stage. */}
+                  <span className={styles.nodeCount} data-worded={journeyExactValue(stage.count) === null || undefined}>
+                    {journeyFigureText(stage.count)}
+                  </span>
                   <span className={styles.nodeBox} aria-hidden="true" />
                   <span className={styles.nodeLabel}>
                     <StatusGlyph tone={stage.tone} size={9} />

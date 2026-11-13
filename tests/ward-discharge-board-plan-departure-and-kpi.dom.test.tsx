@@ -100,7 +100,9 @@ describe("the discharge board's KPI captions no longer assert what the count doe
     // Discharges redesign (approved 31 Oct 2026): the card shows the one word "Held up" at every width;
     // its accessible name still says what it counts.
     expect(within(screen.getByTestId("ward-discharge-kpi-blocked")).getByText("Held up")).toBeInTheDocument();
-    expect(screen.getByTestId("ward-discharge-kpi-blocked")).toHaveAccessibleName(/^Held up \d+ \(Releases held up\)$/);
+    expect(screen.getByTestId("ward-discharge-kpi-blocked")).toHaveAccessibleName(
+      /^Held up \d+ \(Releases held up, any date\)$/,
+    );
     // "Confirmed today"/"Discharged today"/"Expected on round" are gone — none of the three
     // buckets is scoped to a calendar day or an invented "round" workflow.
     expect(screen.queryByText("Confirmed today")).not.toBeInTheDocument();

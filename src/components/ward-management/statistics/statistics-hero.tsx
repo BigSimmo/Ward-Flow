@@ -14,7 +14,13 @@ import { Download, type LucideIcon } from "lucide-react";
 
 import { Button, Card, CardHead, Hero, LiveChip, SrOnly, cx, folderTabClasses, useIsPhone } from "@/components/wf";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { calendarDateOf, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  formatInstant,
+  formatSheetMoment,
+  type ClockZoneLabel,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import type { StatisticsSection } from "./statistics-sections";
 
@@ -140,19 +146,17 @@ export type StatisticsHeroTop = {
   content: (tools: { exportFigures?: () => void }) => ReactNode;
 };
 
-/** Downloads the hero's figures as a CSV, stamped with the board's date and time. */
-export function downloadStatisticsFigures(exportFigures: StatisticsExport, now: Instant, dayZero: Date) {
+/** Downloads the hero's figures as a CSV, stamped with the board's date, time and zone words (F-113). */
+export function downloadStatisticsFigures(
+  exportFigures: StatisticsExport,
+  now: Instant,
+  dayZero: Date,
+  zone?: ClockZoneLabel,
+) {
   downloadCsv(
     `ward-flow-synthetic-${exportFigures.stem}-figures.csv`,
-    statisticsExportLines(
-      exportFigures,
-      `${calendarDateOf(now, dayZero).toLocaleDateString("en-AU", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        timeZone: "Australia/Perth",
-      })} ${formatInstant(now)} AWST`,
-    ),
+    // The sheet moment every other export is stamped with (time audit D13, 13 Nov 2026).
+    statisticsExportLines(exportFigures, formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone })),
   );
 }
 
@@ -236,6 +240,7 @@ function StatisticsHeroView({
   frame: { wardCount: number; dayZero: Date; liveNow: Instant };
 }) {
   const { wardCount, dayZero, liveNow } = frame;
+  const zone = useClockZoneLabel();
   const now = nowProp ?? liveNow;
   const isPhone = useIsPhone();
   // With chips (Summary) Export sits in the title row's action slot; with hero figures it leads
@@ -246,7 +251,7 @@ function StatisticsHeroView({
       size="sm"
       icon={Download}
       data-testid="ward-statistics-export"
-      onClick={() => downloadStatisticsFigures(exportFigures, now, dayZero)}
+      onClick={() => downloadStatisticsFigures(exportFigures, now, dayZero, zone)}
     >
       Export the figures
     </Button>
@@ -280,7 +285,9 @@ function StatisticsHeroView({
           }
         >
           {top.content({
-            exportFigures: exportFigures ? () => downloadStatisticsFigures(exportFigures, now, dayZero) : undefined,
+            exportFigures: exportFigures
+              ? () => downloadStatisticsFigures(exportFigures, now, dayZero, zone)
+              : undefined,
           })}
         </Hero>
         <StatisticsNav

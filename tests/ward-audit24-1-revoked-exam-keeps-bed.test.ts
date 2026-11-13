@@ -116,7 +116,7 @@ describe("audit 24-1 decision 3: a revoked examination before transport keeps th
     expect(f.state.rejections).toEqual([]);
     expect(f.allocatable()).toBe(allocatableBefore + 1);
     expect(f.state.admissions.some((a) => a.id === f.admissionId)).toBe(false);
-    expect(f.movement().closure?.reason).toBe("examination_revoked");
+    expect(f.movement().closure?.reason).toBe("Pulled bed released after the examination (no order made)");
   });
 
   it("Undo of the revoked examination restores the movement exactly", () => {

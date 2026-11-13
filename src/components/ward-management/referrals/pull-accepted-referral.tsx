@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type FormEvent } from "react";
+import { useId, useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 
 import { Badge, Button, DisabledReason, Field, Radio, Select, useOptionalToast } from "@/components/wf";
@@ -13,6 +13,11 @@ import { useWardCommandCompletion, wardCommandFailure } from "../ward/use-ward-c
 import { legalStatusMismatchWarning } from "../ward-eligibility";
 import { legalFormStatusWarning } from "../ward-legal-form-fit";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
+import { BED_PULL_UNDO_TOAST_MS } from "../ward-operational-defaults";
+import { BED_PULL_UNDONE, bedPullUndoEvent, nextPullTarget, startedJourneyPull } from "../ward-bed-pull-undo";
+import type { WardFlowEvent } from "../ward-flow-events";
+import type { WardCommandOutcome } from "../ward-shared-client";
+import { useUndoableStep } from "../use-undoable-step";
 import { useWardRaise } from "../ward-flow-raise";
 import { legalFormName, legalStatusFull, SELECTABLE_LEGAL_FORMS } from "../ward-legal-forms";
 import type { LegalStatus } from "../ward-model";
@@ -30,15 +35,20 @@ type RecordedObservationLevel = (typeof OBSERVATION_LEVELS)[number];
 import { usePatientOf } from "../ward-patient-name";
 import { acceptedAddressing } from "../ward-referrals";
 import { useRoleGate, useRouteRole } from "../ward-role-gate";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { allEmergencyDepartments } from "../ward-sites";
-import { LEGAL_STATUSES, recordedPullDetails, type AcceptedAwaitingPull } from "./accepted-ward-referral";
+import {
+  acceptedPullDesk,
+  LEGAL_STATUSES,
+  recordedPullDetails,
+  type AcceptedAwaitingPull,
+} from "./accepted-ward-referral";
+import { startsAcceptedJourneyAtEd } from "./accepted-awaiting-pull";
 import {
   acceptedDecisionAt,
   CHOOSE_INTERVAL_LINE,
   chooseFactsLine,
   clockText,
-  isPullDesk,
-  pullDeskName,
   pullFactSource,
   pullFactSourceText,
   pullFormChanges,
@@ -130,7 +140,6 @@ export function PullAcceptedReferral({
   onDone,
   onPulled,
   onCancel,
-  actingUnitId,
 }: {
   item: AcceptedAwaitingPull;
   /** Closes the step. */
@@ -142,19 +151,31 @@ export function PullAcceptedReferral({
   onPulled?: (pulled: PulledBed) => void;
   /** Shows a Cancel beside Pull the bed. */
   onCancel?: () => void;
-  /** The ward desk's own unit, which a ward desk must pass (the coordinator acts for any ward). */
-  actingUnitId?: string;
 }) {
   const { referral, unitId, unitName } = item;
   const baseId = useId();
-  const { movements } = useWardFlowSelect("movements");
+  const { movements, dispatch, rejections } = useWardFlowSelect("movements", "dispatch", "rejections");
   const now = useWardFlowClock();
-  const routeRole = useRouteRole();
-  const desk = isPullDesk(routeRole) ? routeRole : undefined;
-  const raise = useWardRaise(desk ?? "coordinator");
   const gate = useRoleGate();
+  const routeRole = useRouteRole();
+  // D-191 build answers (settling D-188): the accepting ward's desk or the coordinator pulls the
+  // bed, and the pull is recorded under that desk's role. Any other desk is refused below.
+  const access = useEffectiveWardAccess();
+  const pullDesk = acceptedPullDesk(routeRole, access, unitId);
+  const desk = "refusal" in pullDesk ? undefined : pullDesk.role;
+  const deskRole = desk ?? "coordinator";
+  // Review P4-9: one rule for who may pull. A ward desk acts as the ward that accepted (the desk rule
+  // refuses any other); the coordinator states no ward.
+  const actingAs = "actingUnitId" in pullDesk ? pullDesk.actingUnitId : undefined;
+  const raise = useWardRaise(deskRole);
   const completeCommand = useWardCommandCompletion();
   const toast = useOptionalToast();
+  // A9-02: the toast's Undo is pressed after this form has closed, so it reads the board as last seen.
+  const movementsRef = useRef(movements);
+  useLayoutEffect(() => {
+    movementsRef.current = movements;
+  }, [movements]);
+  const { offer: offerUndo } = useUndoableStep({ dispatch, rejections, now, routeRole: deskRole, toast });
   const patientOf = usePatientOf();
   const nameFor = usePatientNameDisplay();
   const who = patientOf(referral);
@@ -189,10 +210,10 @@ export function PullAcceptedReferral({
     : reopened?.id;
   const accepted = acceptedAddressing(referral);
   const destination = accepted?.destination.kind === "psychiatric_ward" ? accepted.destination : undefined;
-  const ed =
-    referral.source === "ed_medical"
-      ? allEmergencyDepartments().find((place) => place.siteCode === referral.originSiteCode)
-      : undefined;
+  // A9-13: the journey starts at the department the referral is recorded at, whatever its source.
+  const ed = startsAcceptedJourneyAtEd(referral.source)
+    ? allEmergencyDepartments().find((place) => place.siteCode === referral.originSiteCode)
+    : undefined;
   const mismatch =
     destination && legalStatus !== ""
       ? legalStatusMismatchWarning(destination.involuntaryBedNeeded, legalStatus)
@@ -222,7 +243,8 @@ export function PullAcceptedReferral({
   const statusSource = sourceOf("legalStatus", recorded.legalStatus !== undefined);
   const formSource = sourceOf("legalForm", recorded.legalFormCode !== undefined);
   const levelSource = sourceOf("observation", recordedLevel !== "");
-  // PR C (pull-step-api.md): the changed facts, ready for the pull's own record once its event holds them.
+  // The changed facts, stored on the pull's own stage change (`changedOnPull`, PR C), never on the
+  // person's record (D-188 point b).
   const changedFacts = pullFormChanges(changed);
 
   const missing: PullFact[] = [
@@ -233,14 +255,11 @@ export function PullAcceptedReferral({
   // D-188 point a: the ward-desk clinician (for its own ward) and the bed coordinator may pull.
   const refusal =
     (journeyStarted ? "The movement has started. Open it to pull the bed." : undefined) ??
-    (desk === undefined
-      ? `Only the ${pullDeskName("coordinator").toLowerCase()} or a ward desk can pull this bed`
-      : undefined) ??
-    (desk === "ward" && actingUnitId !== unitId ? `Only the ${unitName} desk can pull this bed` : undefined) ??
+    ("refusal" in pullDesk ? pullDesk.refusal : undefined) ??
     (item.movementId !== undefined && !reopened ? "The movement has changed. Open it to pull the bed." : undefined) ??
     (reopened ? undefined : gate("RAISE_REFERRAL").reason) ??
     gate("PULL_PATIENT").reason ??
-    (!destination || (referral.source === "ed_medical" && !ed)
+    (!destination || (startsAcceptedJourneyAtEd(referral.source) && !ed)
       ? "This referral has no accepted ward place to pull from"
       : undefined) ??
     (referral.source === "community" && !referral.sendingTeamName
@@ -259,21 +278,37 @@ export function PullAcceptedReferral({
     else start(true);
   }
 
-  /** Tells the host the bed is pulled (it keeps the row with its Undo), or says so in a toast. */
-  function pulledNow(pulledAt: number) {
+  /**
+   * Tells the host the bed is pulled (it keeps the row with its Undo and says the pull in its own
+   * toast), or, with no host, offers PR C's toast Undo for the whole Undo window (A9-02). One Undo
+   * per pull either way (review P4-10).
+   */
+  function pulledNow(pulledAt: number, undo: (at: number) => WardFlowEvent, outcome: WardCommandOutcome | undefined) {
     if (!desk) return;
-    const pulled: PulledBed = {
-      entry: item,
-      name,
-      desk,
-      ...(desk === "ward" ? { actingUnitId: unitId } : {}),
-      at: pulledAt,
-    };
-    if (onPulled) onPulled(pulled);
+    if (onPulled) {
+      onPulled({
+        entry: item,
+        name,
+        desk,
+        ...(actingAs === undefined ? {} : { actingUnitId: actingAs }),
+        at: pulledAt,
+      });
+      onDone();
+      return;
+    }
     // Pop-ups build (toast, round 2, 1 Nov 2026): a save confirmation names who it was for,
     // surname first through the name display (D-83), so discreet names still apply.
-    else toast?.push({ tone: "success", title: `Bed pulled at ${unitName} for ${name}` });
-    onDone();
+    offerUndo(
+      {
+        success: `Bed pulled at ${unitName} for ${name}`,
+        who: name,
+        undo,
+        undone: `${BED_PULL_UNDONE} The movement has started without the bed.`,
+        undoToastMs: BED_PULL_UNDO_TOAST_MS,
+        onAccepted: onDone,
+      },
+      outcome ? { completion: outcome } : undefined,
+    );
   }
 
   /** Review P4-1: pulls the bed again on the journey an Undo left open, with its recorded facts. */
@@ -281,13 +316,21 @@ export function PullAcceptedReferral({
     if (!desk) return;
     setMessage(undefined);
     const pulledAt = now;
+    // PR C's undo target: the movement's next stage change is this pull.
+    const target = nextPullTarget(movements, movementId, unitId, actingAs);
     completeCommand(
       `pull-again:${movementId}`,
-      () => raise("PULL_PATIENT", { movementId, unitId, ...(desk === "ward" ? { actingUnitId: unitId } : {}) }),
+      () =>
+        raise("PULL_PATIENT", { movementId, unitId, ...(actingAs === undefined ? {} : { actingUnitId: actingAs }) }),
       (outcome) => {
         const failure = wardCommandFailure(outcome);
         if (failure) setMessage(`The bed is not pulled. ${failure}`);
-        else pulledNow(pulledAt);
+        else
+          pulledNow(
+            pulledAt,
+            (at) => bedPullUndoEvent(deskRole, at, target ?? { movementId, unitId, stageIndex: -1 }),
+            outcome,
+          );
       },
     );
   }
@@ -309,6 +352,8 @@ export function PullAcceptedReferral({
           : observationAt(level);
     const keepsDueAt = recorded.legalFormDueAt !== undefined && legalForm === recorded.legalFormCode;
     const pulledAt = now;
+    // The referral's journeys before this tap, so its Undo finds the one this tap started.
+    const before = new Set(movements.filter((movement) => movement.referralId === referral.id).map(({ id }) => id));
     completeCommand(
       `pull-start:${referral.id}`,
       () =>
@@ -316,8 +361,9 @@ export function PullAcceptedReferral({
           ...(ed ? { edId: ed.id } : {}),
           referralId: referral.id,
           acceptedUnitId: unitId,
-          ...(desk === "ward" ? { actingUnitId: unitId } : {}),
+          ...(actingAs === undefined ? {} : { actingUnitId: actingAs }),
           ...(pullBed ? { pullBed: true } : {}),
+          ...(pullBed && changedFacts.length > 0 ? { changedOnPull: changedFacts } : {}),
           draft: {
             cohort: referral.ageBand,
             security: destination.secureBedNeeded ? "Secure" : "Open",
@@ -338,7 +384,21 @@ export function PullAcceptedReferral({
           setMessage(pullBed ? `The bed is not pulled and nothing has started. ${failure}` : failure);
           if (pullBed) setPullRefused(true);
         } else if (pullBed) {
-          pulledNow(pulledAt);
+          // A9-02 (PR C): the Undo finds the journey this tap started, once it is on the board.
+          let undoTarget: ReturnType<typeof startedJourneyPull>;
+          pulledNow(
+            pulledAt,
+            (at) => {
+              undoTarget ??= startedJourneyPull(movementsRef.current, referral.id, before, unitId);
+              const found = undoTarget ?? { movementId: "", unitId, stageIndex: -1 };
+              return bedPullUndoEvent(
+                deskRole,
+                at,
+                actingAs === undefined ? found : { ...found, actingUnitId: actingAs },
+              );
+            },
+            outcome,
+          );
         } else {
           setMessage("The movement has started without the bed. Open it to pull the bed.");
           setJourneyStarted(true);

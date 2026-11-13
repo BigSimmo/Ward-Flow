@@ -19,6 +19,7 @@ import { referralDestinationLabel } from "../ward-referrals";
 import {
   REFERRAL_INFORMATION_NEEDS,
   openInformationNeeds,
+  providedInformationNeeds,
   referralInformationNeedLabel,
   type ReferralInformationNeed,
 } from "./referral-information-needs";
@@ -68,6 +69,7 @@ export function WardInformationNeedsPicker({
   const save = useWardFormSave(`referral-needs:${entry.id}:${unitId}`);
   if (!enabled) return null;
   const waiting = openInformationNeeds(entry.informationNeeds);
+  const provided = providedInformationNeeds(entry.informationNeeds);
   const waitingIds = new Set(waiting.map((need) => need.need));
   const askable = REFERRAL_INFORMATION_NEEDS.filter((need) => !waitingIds.has(need.id));
   const askRefusal =
@@ -80,6 +82,19 @@ export function WardInformationNeedsPicker({
         <>
           <p className={styles.heading}>Waiting on the referrer</p>
           <NeedList needs={waiting} now={now} />
+        </>
+      ) : null}
+      {provided.length > 0 ? (
+        <>
+          <p className={styles.heading}>Provided by the referrer</p>
+          <ul className={styles.list} data-testid={`ward-referral-needs-provided-${entry.id}`}>
+            {provided.map((item) => (
+              <li key={`${item.need}-${item.at}`}>
+                <StatusGlyph tone="success" size={8} /> {referralInformationNeedLabel(item.need)}
+                <span className={styles.when}> · provided {formatInstantWithDay(item.metAt, now)}</span>
+              </li>
+            ))}
+          </ul>
         </>
       ) : null}
       {askable.length > 0 ? (

@@ -98,8 +98,8 @@ describe("the ED screen reads the coordinator-configured ED access target", () =
     });
 
     const screenText = document.body.textContent ?? "";
-    // splitDuration(720) === "12h 00m" — the governance banner and the table header both name it.
-    expect(screenText).toMatch(/12h 00m/);
+    // targetHoursText(720) === "12 hours": the access target is said in whole hours (time audit D4).
+    expect(screenText).toMatch(/Access target 12 hours/);
     expect(screenText).not.toMatch(/24-hour/);
     expect(screenText).not.toMatch(/24h target/);
   });

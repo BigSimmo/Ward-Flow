@@ -210,6 +210,12 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-185](#d-185-design-critique-v2-answers-and-the-brand-mark-for-the-demo-13-november-2026)                                                             | Design critique v2 answers and the brand mark for the demo                             | Active                                           |
 | [D-190](#d-190-the-six-pr-fix-plan-13-november-2026)                                                                                                    | The six-PR fix plan                                                                    | Active                                           |
 | [D-191](#d-191-home-ward-and-capacity-mock-ups-approved-13-november-2026)                                                                               | Home, Ward and Capacity mock-ups approved                                              | Active                                           |
+| [D-193](#d-193-checked-travel-times-wait-until-after-the-demo-13-november-2026)                                                                         | Checked travel times wait until after the demo                                         | Active                                           |
+| [D-194](#d-194-time-audit-answers-13-november-2026)                                                                                                     | Time audit answers                                                                     | Active                                           |
+| [D-195](#d-195-merge-each-pull-request-when-its-checks-pass-13-november-2026)                                                                           | Merge each pull request when its checks pass                                           | Active                                           |
+| [D-196](#d-196-threads-decide-on-their-own-to-keep-work-moving-13-november-2026)                                                                        | Threads decide on their own to keep work moving                                        | Active                                           |
+| [D-197](#d-197-system-fixes-calls-taken-under-d-196-13-november-2026)                                                                                   | System-fixes calls taken under D-196                                                   | Active                                           |
+| [D-199](#d-199-ed-and-ward-phone-limits-raised-past-the-allowance-13-november-2026)                                                                     | ED and Ward phone limits raised past the allowance                                     | Active                                           |
 
 ---
 
@@ -2307,3 +2313,73 @@ is inferred.
 - **Build answers (8:51 PM AWST):** both the ward-desk clinician and the ward coordinator may pull a bed, and the record names which one did. A change on the pull form stays on the pull, shown as "changed by …", and does not update the patient record. The person is named by desk role, since there are no personal sign-ins. Points 5 and 6 are built in the system-fixes pull request; the page waves relabel.
 - **Build defaults (8:56 PM AWST, "Yes to all recommendations and update coordinator"):** the Home, Ward and Capacity pull request makes no TV edits and builds the bed squares. The window word is dropped where the page title already says "now". The Home forecast line reads "Tomorrow N short · range … · From ward dates".
 - **Boundary:** synthetic data only. Sets no clinical value.
+
+## D-193. Checked travel times wait until after the demo (13 November 2026)
+
+- **Date:** 13 November 2026, 8:36 PM AWST (12:36 UTC). D-192 is claimed by open PR #1658, the shared design parts pull request. **Decided by:** Josh, in the Ward Flow project chat ("Please defer the travel times").
+- **Decision:**
+  1. No checked travel times are added before the demo. The app keeps showing only checked travel bands (D-174), so every pair reads as not checked and the Out of area page lists nobody as far from home, saying how many people have no travel time recorded.
+  2. Checks that need a travel band test that honest "not recorded" state instead of failing. They are not skipped or disabled. Their full paths come back when checked times are added.
+  3. This replaces the Fixes thread's recommendation to supply one checked time before the demo.
+- **Boundary:** sets no clinical value and adds no travel time.
+
+## D-194. Time audit answers (13 November 2026)
+
+- **Date:** 13 November 2026, 9:16 PM AWST (13:16 UTC). **Decided by:** Josh, "Yes to all recommendations" in the Ward Flow project chat, on the five calls from the thread "Audit and fix time handling".
+- **Decision:**
+  1. **ED wait ladder names (clinical, built in the clinical pull request):** the four values-register entries are renamed to match the D-108 ladder: 3 hours, step 1 "Ask wards"; 8 hours, step 2; 24 hours, step 3; 48 hours, step 4 "Tell the executive on call". The values do not change.
+  2. **TV legal board "Ending soon" (clinical, built in the clinical pull request):** it uses the signed 3-hour "due soon" value instead of an unsigned 24-hour window.
+  3. **Waits over 24 hours (clinical display rule, built in the clinical pull request):** they go back to neutral, per D-24, on the TV and the Delays board.
+  4. **"One shift" wording (clinical register wording, built in the clinical pull request):** the break-glass and cover lengths stay at 12 hours, and the words say "12 hours", not "one shift".
+  5. **Training clock (product, built in the system-fixes pull request):** the signed-in site keeps the scripted 10:42 clock, with +15 min in training, as intended under D-150. The header labels it "Training clock".
+- **Also (enforces D-93, no new ruling):** a legal "as typed" line shows the date, never "N days ago" or "in N days".
+- **Boundary:** no signed number changes.
+
+## D-195. Merge each pull request when its checks pass (13 November 2026)
+
+- **Date:** 13 November 2026, 9:29 PM AWST (13:29 UTC), with the plan changes approved at 9:41 PM AWST (13:41 UTC). **Decided by:** Josh, in the Ward Flow project chat: the direction at 9:29 PM, then "Yes to all recommendations" on the plan changes that follow from it (plan thread, fix-plan-all-issues.md "Critical path" and stress-test points 2, 6, 7 and 10).
+- **Decision:** the fix round has no calendar dates. Each pull request merges as soon as its build and checks pass, and Josh's sign-offs happen when each item is ready. The 22 November freeze (D-184) stays as the latest cut-off.
+  1. The shared design parts and the Home, Ward and Capacity pull requests arm auto-merge only together, at Josh's joint go. Until then, the shared design parts pull request is merge-ready, not armed.
+  2. Time-audit fixes go into the system-fixes pull request until its final test run starts.
+  3. F-101: the system-fixes pull request builds the Change button and the Undo timing; the clinical pull request adds the labels only.
+  4. There are two script walks on the clinical pull request's build before Josh's clinical go.
+  5. Audit prompts 18 and 11 run after the release that carries the last merge. Prompt 13 runs two days before the demo, and prompt 8 on the demo morning.
+- **Boundary:** every gate stays: tests, auto-merge only, no stacked pull requests, the D-number ledger and the release rule (only the daily release or Josh's "release now" moves the live site).
+
+## D-196. Threads decide on their own to keep work moving (13 November 2026)
+
+- **Date:** 13 November 2026, 9:49 PM AWST (13:49 UTC). **Decided by:** Josh, in the Ward Flow project chat: "can you tell all threads to work autonomously and make decisions on their own without me to keep work moving efficient and as fast as safely possible".
+- **Decision:** where a thread would normally ask Josh, it takes its own recommendation, records it (with a D-number where needed) and tells the coordinator in one line.
+- **Still Josh's:** clinical values and legal calls; his sign-off gates (the script re-check, the clinical go, the joint design go, "release now" and the release pause); anything irreversible or outward-facing; anything that would break a project rule.
+
+## D-197. System-fixes calls taken under D-196 (13 November 2026)
+
+- **Date:** 13 November 2026, 9:55 PM AWST (13:55 UTC). **Decided by:** the Fixes thread, under D-196. Each call is the thread's own recommendation; none sets or changes a clinical value or a legal rule. Josh can reverse any of them.
+- **Decision:**
+  1. **Undo messages that name no time** keep their short timer (about 8 seconds) for the demo. They promise no time, so they are honest, and longer timers would put more messages on a 1366 x 768 screen. Revisit after the demo.
+  2. **Reset** clears the Tools reminders and call log for the demo day.
+  3. **Reset wording (F-34):** Reset keeps the demo clock running; the confirm says it does not set the clock back to its start time.
+  4. **Midland Decline and Ask for more** keep saying they are not wired in the demo.
+  5. **The ward TV "Going out" panel** names its held-up count as "confirmed held up", using the by-tomorrow window (D-191).
+  6. **The clinical board's "Today" lane** uses the same by-tomorrow held-up window (D-191).
+  7. **The ward desk's Pull** on Home, Alerts and History arrives with the Home, Ward and Capacity redesign, not in the system fixes.
+  8. **Guard registers:** the new time constants are entered in the existing guard registers with their reasons.
+  9. **After the demo:** reserving space for the transport form's legal-reason field (F-106), and the duplicate-patient check on a given name alone (F-119, with the Add patient fixes).
+  10. **Network bed counts** stay visible to every desk as now; the counts are totals, not patient detail.
+  11. **Zone words:** the demo's board clock and the times it stamps say "demo time"; the signed-in site says "AWST" (F-113). Typed-time form labels follow the same rule, and the Help glossary says so.
+  12. **Community sample days** use the house day format ("Thu 23 Sep").
+  13. **The sample day's closed ward** is never one that open asks are waiting on (A16-17), and never a ward that already carries another adverse example.
+  14. **Worked examples** stay off until switched on in Tools (A16-14). The demo script's Setup step switches them on, so the demo is unchanged and a fresh board shows only the base day.
+  15. **Code seams:** the new shared date formatter (`wf/format`) and the offline boundary for the health check are entered in their registers as recorded.
+  16. **Month words:** dates keep the Australian "Sept" from the shared formatter.
+  17. **Comparison tables:** a "Dates met" cell whose two counts are both withheld reads "not shown", not "an unstated number of an unstated number met"; one withheld count keeps the F-55 sentence.
+  18. **Tomorrow's short** adds each bed kind's shortfall too, the same rule as today's (D-191 item 6), so the headline equals the sum of the kinds shown beside it and never nets off a spare youth bed (Audit G FM-8). This applies on Capacity (the network forecast and its scenarios). The Ward page's own tomorrow line keeps the plain sum for now, because it shows one ward, and the by-kind code would push it past its phone size limit; it follows after the demo.
+  19. **Ward page "Discharges today"** counts only open releases dated today; a past-date release stays under "Past date" (F-151, Audit G FS-1).
+- **Boundary:** clinical values, legal calls, Josh's sign-off gates, anything irreversible or outward-facing, and project-rule exceptions still go to Josh.
+
+## D-199. ED and Ward phone limits raised past the allowance (13 November 2026)
+
+- **Date:** 13 November 2026, 11:37 PM AWST (15:37 UTC). D-198 is claimed by open PR #1658. **Decided by:** Josh, choosing "Yes, raise ED and Ward by ~7 KB" on a decision card in the Fixes thread.
+- **Decision:** PR C (#1660) raises the ED page's phone script limit from 538.5 to 545.5 KB (+7.0) and the Ward page's from 618.2 to 625.4 KB (+7.2), past the 5 KB a pull request may add without asking (D-82, D-111).
+- **Why:** both pages' own code is the same size as main; the growth is the shared script every page loads (real fix and time-audit code), after a trim that took 6 to 20 KB off every page. The next lever, swapping `tailwind-merge`, is too large a change before the demo. Detail: `docs/script-budget-history/2026-11-13-pr-c-system-fixes.md`.
+- **Follow-up (14 November 2026, 12:46 AM AWST, 16:46 UTC):** Josh chose "Yes, raise Ward, ED, Referrals" on a second card in the Fixes thread, after the CI fixes added about 0.3 KB to the shared script (the Ward desk's bed seats, F-150). Final limits: ED 545.8 (+7.3), Ward 625.6 (+7.4), Referrals 595.3 (+5.4, past the 5 KB allowance).

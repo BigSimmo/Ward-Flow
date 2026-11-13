@@ -97,7 +97,6 @@ export function PhoneOverview({
                       <span id={`${detailIdBase}-${row.unit.id}`} className={styles.cardDetail}>
                         <BedSquares
                           counts={wardSquareCounts(ward, extras.get(ward.unit.id)?.dischargesToday ?? 0)}
-                          readyFigure={ward.ready}
                           tag={bedSquaresTag(ward.unit)}
                           notes={wardNotes(ward, rowOf.get(ward.unit.id), now, extras.get(ward.unit.id), false)}
                         />

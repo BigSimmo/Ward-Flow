@@ -1,6 +1,6 @@
 # Desk guide: Why can't I open this?
 
-<!-- last-checked: 2026-11-11 -->
+<!-- last-checked: 2026-11-13 -->
 
 Each desk opens only the screens its role allows. If you cannot open a screen, check the table for the roles that can, and ask the access admin if you need it.
 
@@ -43,3 +43,4 @@ Each desk opens only the screens its role allows. If you cannot open a screen, c
 | `seclusion`          | Bed coordinator, Bed manager (own place), Nurse in charge (own place)                                                                                                                                       |
 | `leave`              | Bed coordinator, Bed manager (own place), Nurse in charge (own place)                                                                                                                                       |
 | `settings`           | Bed coordinator, Bed manager (own place), Nurse in charge (own place), ED clinician (own place), Community team (own place), Transport officer (own place), Executive (own place), Access admin (own place) |
+| `about`              | Bed coordinator, Bed manager (own place), Nurse in charge (own place), ED clinician (own place), Community team (own place), Transport officer (own place), Executive (own place), Access admin (own place) |

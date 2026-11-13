@@ -92,6 +92,16 @@ function expectNobodyElseMoved(before: Map<string, string>, except: string) {
   }
 }
 
+// A9-14 (Josh, 13 Nov 2026): no destination starts chosen; the person chooses one first.
+function chooseCommunityDestination() {
+  fireEvent.click(
+    within(screen.getAllByTestId("drawer-leaving-dest")[0]).getByRole("button", {
+      name: "Discharged to the community",
+      hidden: true,
+    }),
+  );
+}
+
 describe("stable bed numbers (audit A1-1)", () => {
   it("seats each stay in the lowest bed free when it took one, so a later departure moves nobody", () => {
     const stays = [
@@ -177,6 +187,11 @@ describe("stable bed numbers (audit A1-1)", () => {
     renderWard();
     const card = document.querySelector(`[data-admission-id="${RELEASE.admissionId}"]`);
     fireEvent.click(card as HTMLElement);
+    // A9-14: nothing is chosen until the person chooses it, and the record waits for it.
+    expect(document.getElementById("drawer-leaving-summary")).toHaveTextContent(/Going to Not chosen yet/);
+    fireEvent.click(screen.getByRole("button", { name: /Record that they have left/i }));
+    expect(screen.queryByRole("dialog", { name: "Confirm discharge" })).toBeNull();
+    chooseCommunityDestination();
     fireEvent.click(screen.getByRole("button", { name: /Record that they have left/i }));
     const confirm = screen.getByRole("dialog", { name: "Confirm discharge" });
     expect(confirm).toHaveTextContent(/Going to Discharged to the community/);
@@ -196,6 +211,7 @@ describe("stable bed numbers (audit A1-1)", () => {
     const before = bedsByStay();
     const card = document.querySelector(`[data-admission-id="${RELEASE.admissionId}"]`);
     fireEvent.click(card as HTMLElement);
+    chooseCommunityDestination();
     // The destination is shown plainly before it is recorded.
     expect(document.getElementById("drawer-leaving-summary")).toHaveTextContent(/Going to Discharged to the community/);
     fireEvent.click(screen.getByRole("button", { name: /Record that they have left/i }));

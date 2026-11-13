@@ -36,6 +36,8 @@ function renderSection(pullExpiresAt: number | undefined, withPlan: boolean) {
     setShowArrivalTimeModal: () => undefined,
     setShowUploadFormsModal: () => undefined,
     uploadedForms: [],
+    // F-113: the local demo's clock words.
+    zone: "demo time",
   };
   return render(<>{renderArrivalSection(ctx)}</>);
 }
@@ -48,7 +50,7 @@ describe("Patient page arrival plan: the pull time limit stays (A-02)", () => {
     expect(banner).not.toHaveTextContent(/\b4h\b/);
     expect(screen.getByTestId("ward-patient-pull-hold-remaining")).toHaveAttribute("data-tone", "danger");
     const limit = screen.getByTestId("ward-patient-pull-time-limit");
-    expect(limit).toHaveTextContent(/^Passed at .+ AWST\. Pull expired 10m ago\. Move or release\.$/);
+    expect(limit).toHaveTextContent(/^Passed at .+ demo time\. Pull expired 10m ago\. Move or release\.$/);
   });
 
   it("reads the recorded expiry for an extra-travel pull, with no typed 4h", () => {
@@ -56,7 +58,7 @@ describe("Patient page arrival plan: the pull time limit stays (A-02)", () => {
     const banner = screen.getByTestId("ward-patient-pulled-banner");
     expect(banner).not.toHaveTextContent(/\b4h\b/);
     expect(screen.getByTestId("ward-patient-pull-time-limit")).toHaveTextContent(
-      /^Until .+ AWST\. Pull 5h 00m left\.$/,
+      /^Until .+ demo time\. Pull 5h 00m left\.$/,
     );
   });
 

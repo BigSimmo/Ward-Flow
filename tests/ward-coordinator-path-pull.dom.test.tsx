@@ -162,7 +162,8 @@ describe("Home: Act now and Referrals to decide (WS-02, WS-04)", () => {
     const rows = screen.getByTestId("home-accepted-to-pull");
     const row = rows.querySelector(`[data-referral-id="${first!.referral.id}"]`) as HTMLElement;
     expect(row).toHaveTextContent("Accepted, bed not pulled");
-    expect(row).toHaveTextContent(`${first!.unitName} accepted`);
+    // The site code may be spelt out on first use ("FSH (Fiona Stanley Hospital) Adult Secure").
+    expect(row).toHaveTextContent(`${first!.unitName.split(" ").slice(1).join(" ")} accepted`);
     // The row's title and its Pull the bed button both open the sheet.
     const pull = within(row)
       .getAllByRole("button", { name: /^Pull the bed for / })

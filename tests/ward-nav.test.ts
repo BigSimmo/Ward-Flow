@@ -85,6 +85,7 @@ import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
 import { TodaysReviewScreen } from "@/components/ward-management/review/todays-review-screen";
+import { AboutDemoScreen } from "@/components/ward-management/about/about-demo-screen";
 import { NightViewScreen } from "@/components/ward-management/night/night-view-screen";
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
 import { WeeklyReportScreen } from "@/components/ward-management/reports/weekly-report-screen";
@@ -574,10 +575,11 @@ const WARD_DYNAMIC_ROUTE_ORPHANS: ReadonlyMap<string, string> = new Map([
   ],
   [
     "/ward-flow/people/[patientId]",
-    // Denominator moved 18 → 40 → 43 with the sample-data / seed growth; the leading 0 is unchanged
+    // Denominator moved 18 → 40 → 43 → 104 → 106 with the sample-data / seed growth (106: F-148's two
+    // named planned admissions, D-191 item 13); the leading 0 is unchanged
     // and still means the same thing: a source scan finds no concrete `/people/<id>` href, because
     // the only route in builds links after a search query, never as a static list of everybody.
-    "0 of 104 instances reachable without state — a person is reached by searching for them, never " +
+    "0 of 106 instances reachable without state — a person is reached by searching for them, never " +
       "from a list of everybody. patient-search.tsx's people list is the only route in and it renders " +
       "nothing until a query is typed, which is the owner's flow rather than a gap: search for a " +
       "patient, and if nobody comes up, add them. Until 2026-08-30 those rows were inert <li>s, so the " +
@@ -586,7 +588,7 @@ const WARD_DYNAMIC_ROUTE_ORPHANS: ReadonlyMap<string, string> = new Map([
   [
     "/ward-flow/people/[patientId]/triage",
     // Triage and risk (7 Nov 2026): the same people as the record, reached the same way.
-    "0 of 104 instances reachable without state — a person's triage is reached from their record's " +
+    "0 of 106 instances reachable without state — a person's triage is reached from their record's " +
       "Triage action or by choosing them on Start a triage, whose search lists nobody until a query is " +
       "typed, so no concrete href names a person. The same owner's flow as the patient record above.",
   ],
@@ -1387,6 +1389,7 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/reports/chronology`, render: () => createElement(PatientChronologyScreen) },
   { route: `${ROUTE_PREFIX}/review`, render: () => createElement(TodaysReviewScreen) },
   { route: `${ROUTE_PREFIX}/night`, render: () => createElement(NightViewScreen) },
+  { route: `${ROUTE_PREFIX}/about`, render: () => createElement(AboutDemoScreen) },
 ];
 
 describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on the map)", () => {
@@ -1493,7 +1496,8 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
     // 47: Today's review (`/review`, Home notes 4, 9 Nov 2026).
     // 48: the Leave page (`/leave`, feature 23), 9 Nov 2026. Moved in both files together.
     // 49: the Night view (`/night`, feature plan item 29), 10 Nov 2026.
-    expect(RENDERABLE_ROUTES.length).toBe(49);
+    // 50: About this demo (`/about`, F-77, Audit 15 A15-25), 13 Nov 2026. Moved in both files together.
+    expect(RENDERABLE_ROUTES.length).toBe(50);
   });
 });
 

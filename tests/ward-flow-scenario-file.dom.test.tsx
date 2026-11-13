@@ -93,18 +93,22 @@ describe("demo scenario save and load", () => {
     expect(current!.patients.some((patient) => patient.givenName === "Josephine")).toBe(true);
     expect(current!.now).toBe(savedNow);
     expect(current!.worldGeneration).toBeGreaterThan(generationBefore);
-    // SD-01 (Josh, 5 Nov 2026): no safe copy of the loaded world can be made, so the last safe save
-    // (the reseed's) is kept as it was, never the loaded typed patient.
-    expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).toBe(seedSave);
+    // SD-01 (Josh, 5 Nov 2026): the loaded typed patient never reaches browser storage. Since A9-07
+    // (D-181 item 11) a typed date of birth is held as the placeholder, so the loaded world is saved
+    // as a safe copy with its typed text replaced, where it used to stop saving and keep the reseed's.
+    const typed = ["Josephine", "Typiste", "1990-01-01", "UMRN-TEST-001"];
+    const loadedSave = window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY);
+    expect(loadedSave).not.toBeNull();
+    for (const text of typed) expect(loadedSave).not.toContain(text);
     expect(seedSave).not.toContain("Josephine");
 
-    // A typed date of birth cannot become the placeholder and still pass the restore fence, so this
-    // loaded world stays unsaved, and a later safe event does not resurrect saving for it.
+    // A later safe event keeps saving, still with no typed text.
     act(() => {
       current!.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: current!.now, minutes: 5 });
     });
-    expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).toBe(seedSave);
-    expect(current!.savingOnDevice).toBe(false);
+    const laterSave = window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY);
+    for (const text of typed) expect(laterSave).not.toContain(text);
+    expect(current!.savingOnDevice).toBe(true);
   });
 
   it("keeps a loaded scenario through a refresh, with its typed text replaced", async () => {

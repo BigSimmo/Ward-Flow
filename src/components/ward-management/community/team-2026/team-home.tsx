@@ -14,6 +14,7 @@ import { DEMO_FIGURES, SENT, staffName } from "./midland-demo";
 import { useMidlandDay, useMidlandDemo } from "./use-midland-demo";
 import { perthClockTime } from "@/components/ward-management/ward-clock";
 import { openReferrals, recordMidlandContact, todaysMidlandContacts, useMidlandDecisions } from "./midland-decisions";
+import { useMidlandBoardMoment } from "./use-midland-board-moment";
 import { Initials } from "./parts";
 import { MIDLAND_ACT_NOW_ATTR } from "./midland-top";
 import t from "./team-2026.module.css";
@@ -137,7 +138,9 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
   const decisions = useMidlandDecisions();
   // Today's recorded contacts lead Today's log, with time and desk role; the Act-now row shows it is
   // done. A contact from an earlier day is not today's, so the follow-up comes back the next day.
-  const contacts = todaysMidlandContacts(decisions);
+  // The board's day, not the device's (time audit C5): a demo board on another day counts its own.
+  const boardMoment = useMidlandBoardMoment();
+  const contacts = todaysMidlandContacts(decisions, boardMoment);
   const cleoContact = contacts.find((c) => c.about === "a");
   // One open-referral set for the task list, the flow count and Awaiting your answer.
   const open = openReferrals(REFERRALS, decisions);
@@ -196,7 +199,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
                       whenSub="of 7"
                       action={cleoContact ? "Open" : "Record contact"}
                       primary={!cleoContact}
-                      go={() => (cleoContact ? go("hospital") : recordMidlandContact("a"))}
+                      go={() => (cleoContact ? go("hospital") : recordMidlandContact("a", boardMoment))}
                     />,
                     // An answered referral leaves the task list, as it leaves Awaiting your answer.
                     ...(sallowfieldOpen

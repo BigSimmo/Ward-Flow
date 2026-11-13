@@ -74,6 +74,7 @@ import { FORM_RECORDED_ENDED } from "@/components/ward-management/ward-legal-for
 import topTitle from "../shell/page-top-title.module.css";
 import styles from "./reports.module.css";
 import tabsStyles from "./downtime-pack-tabs.module.css";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 const NOT_RECORDED = "Not recorded";
 const OFFLINE_LABEL = "taken offline";
@@ -181,6 +182,7 @@ type SheetRow = { title: string; facts: Array<{ id: string; label: string; value
  * print copy still holds all four. Service rows read as group headers and ready counts are marked green.
  */
 export function DowntimePackScreen() {
+  const zone = useClockZoneLabel();
   const now = useWardFlowClock();
   const { dayZero, worldGeneration, shared, downtimePackPrints } = useWardFlowSelect(
     "dayZero",
@@ -273,7 +275,7 @@ export function DowntimePackScreen() {
     // The provenance names the pack's year and zone. A row from another year must say its own year.
     return year(instant) === year(pack?.generatedAt ?? now)
       ? reportMoment(instant, dayZero)
-      : formatSheetMoment(instant, dayZero, { includeYearAndZone: true });
+      : formatSheetMoment(instant, dayZero, { includeYearAndZone: true, zone });
   };
 
   if (pack === null) {
@@ -313,8 +315,8 @@ export function DowntimePackScreen() {
   // age runs from that sync, so it is never presented as freshly generated.
   const syncedAt = pack.offline ? pack.offline.lastSyncAt : pack.generatedAt;
   const provenance = pack.offline
-    ? `Taken offline ${formatSheetMoment(pack.generatedAt, dayZero, { includeYearAndZone: true })} · last updated ${syncedAt === null ? NOT_RECORDED.toLowerCase() : formatSheetMoment(syncedAt, dayZero, { includeYearAndZone: true })}`
-    : `Frozen ${formatSheetMoment(pack.generatedAt, dayZero, { includeYearAndZone: true })}`;
+    ? `Taken offline ${formatSheetMoment(pack.generatedAt, dayZero, { includeYearAndZone: true, zone })} · last updated ${syncedAt === null ? NOT_RECORDED.toLowerCase() : formatSheetMoment(syncedAt, dayZero, { includeYearAndZone: true, zone })}`
+    : `Frozen ${formatSheetMoment(pack.generatedAt, dayZero, { includeYearAndZone: true, zone })}`;
   const ageMinutes = syncedAt === null ? Infinity : Math.max(0, now - syncedAt);
   const stale = ageMinutes >= STALE_AFTER_MINUTES;
   const frozenAt = pack.offline
@@ -377,7 +379,7 @@ export function DowntimePackScreen() {
     <span data-testid="ward-downtime-generated">
       {pack.offline
         ? `Taken offline · last updated ${syncedAt === null ? NOT_RECORDED.toLowerCase() : at(syncedAt)} · next pack when the connection returns`
-        : `Taken ${formatSheetMoment(pack.generatedAt, dayZero, { includeYearAndZone: true })} · next pack ${nextPackAt}`}
+        : `Taken ${formatSheetMoment(pack.generatedAt, dayZero, { includeYearAndZone: true, zone })} · next pack ${nextPackAt}`}
     </span>
   );
   const staleText = !stale
@@ -639,7 +641,9 @@ export function DowntimePackScreen() {
             </tfoot>
           </table>
         </div>
-        <p className={styles.cardNote}>Ready includes beds being made ready. Occupied includes beds held for leave.</p>
+        <p className={styles.cardNote}>
+          Ready leaves out beds being made ready. Occupied includes beds held for leave.
+        </p>
         {missing.length > 0 ? (
           <ul className={styles.cardNote} data-testid="ward-downtime-awol">
             {missing.map(({ ward, line }) => (
@@ -992,7 +996,9 @@ export function DowntimePackScreen() {
             </PhoneSheet>
           </div>
           <div className={styles.printOnly} data-testid="ward-downtime-print-pack">
-            <p className={styles.printMeta}>Downtime pack · synthetic data · {provenance}. All row times are AWST.</p>
+            <p className={styles.printMeta}>
+              Downtime pack · synthetic data · {provenance}. All row times are {zone}.
+            </p>
             <p className={styles.printMeta}>{takenLine}</p>
             <p className={styles.printMeta} data-testid="ward-downtime-print-notice">
               {PRINT_NOTICE}
@@ -1027,7 +1033,7 @@ export function DowntimePackScreen() {
 
         {/* F-08: the printout says it holds invented records before its first table. */}
         <p className={cx(styles.printOnly, styles.printMeta)} data-testid="ward-downtime-print-provenance">
-          Downtime pack · {provenance}. All row times are AWST.
+          Downtime pack · {provenance}. All row times are {zone}.
         </p>
         <p className={cx(styles.printOnly, styles.printMeta)}>{takenLine}</p>
         <p className={cx(styles.printOnly, styles.printMeta)}>{PRINT_NOTICE}</p>

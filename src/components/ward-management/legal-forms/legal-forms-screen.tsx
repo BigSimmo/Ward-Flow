@@ -120,6 +120,7 @@ import { PhoneChecklist } from "./legal-forms-phone-checklist";
 import type { LegalFormDetailsSave } from "./legal-form-details";
 import styles from "./legal-forms.module.css";
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 /**
  * FORMS (renamed from Legal forms, owner 9 Oct 2026; built from the approved v4 mockup). Live work for each
@@ -178,6 +179,7 @@ export function LegalFormsScreen(props: WorkspaceProps = {}) {
 }
 
 function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: WorkspaceProps) {
+  const zone = useClockZoneLabel();
   const thresholds = useDueSoonThresholds();
   usePrintableDisclosures();
 
@@ -330,7 +332,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
     setTell({ party, key: first?.key ?? null });
   };
 
-  const handover = handoverLines(withDeadline, now, nameOf, CHART_WINDOW_MINUTES);
+  const handover = handoverLines(withDeadline, now, nameOf, CHART_WINDOW_MINUTES, dayZero);
 
   const openRecord = (movementId?: string) => {
     // An explicit subject wins; the generic entry resumes its unsent synthetic draft.
@@ -528,7 +530,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
       "summary",
       `${nameOf(selected)} (${umrnOf(selected)})\n${
         selected.legalForm ? legalFormName(selected.legalForm) : "Voluntary"
-      }\n${legalDeadlineText(selected, now)}`,
+      }\n${legalDeadlineText(selected, now, dayZero)}`,
     );
   };
 
@@ -563,7 +565,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
       listPopulation,
       { umrnOf, edName: edNameOf, wardName: wardNameOf, now, dayZero },
       {
-        asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
+        asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone }),
         scope:
           "Legal forms; everyone on a form on the list, including admitted on a form, expiry typed first (highlights do not narrow it)",
       },

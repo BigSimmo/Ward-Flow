@@ -1,5 +1,6 @@
 import type { BedRelease, DeclineReason, Movement, Unit } from "@/components/ward-management/ward-model";
 import { releaseBand } from "@/components/ward-management/ward-bed-availability";
+import { isHeldUpDueByTomorrow } from "@/components/ward-management/ward-held-up";
 import { dayOf, type Instant } from "@/components/ward-management/ward-clock";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
@@ -95,19 +96,27 @@ export function wardActNowCount({
  * and Expected there, then later.
  */
 export function wardFlowReleaseGroup(release: BedRelease, now: Instant): "held" | "past" | "today" | "later" {
-  if (release.blocker) return "held";
+  // D-191 item 5 (Josh, 13 Nov 2026): the Held up group is due by tomorrow; a held-up release dated
+  // later sits under Later, its row still saying "Held up".
+  if (isHeldUpDueByTomorrow(release, now)) return "held";
   if (dayOf(release.expectedAt) < dayOf(now)) return "past";
   return releaseBand(release, now) !== "beyond-today" ? "today" : "later";
 }
 
 /**
- * The discharges the "Discharges today" summary counts: unblocked releases past their date or due
- * today, never tomorrow. Its total and its confirmed count both come from this one list (Codex
+ * The discharges the "Discharges today" summary counts: open, unblocked releases whose expected date
+ * is today (the board's day, `dayOf(now)`), never a past date, tomorrow or later. A past date is not
+ * a discharge today: it stays under "Past date" in Ward flow and in the needs-a-look figures (F-151,
+ * Audit G FS-1: a ward with none due today read "2 discharges today"). Held up is counted apart, due
+ * by tomorrow (`isHeldUpDueByTomorrow`, D-191 item 5), and the day matches the "Beds freeing today"
+ * rule (`isFreeingToday`). Its total and its confirmed count both come from this one list (Codex
  * review on #1383), so a confirmed discharge later in the week cannot hide one still to confirm.
  */
 export function wardDischargesDueToday(releases: readonly BedRelease[], now: Instant): BedRelease[] {
-  return releases.filter((release) => {
-    const group = wardFlowReleaseGroup(release, now);
-    return group === "past" || (group === "today" && releaseBand(release, now) !== "tomorrow");
-  });
+  return releases.filter(
+    (release) =>
+      release.state !== "discharged" &&
+      dayOf(release.expectedAt) === dayOf(now) &&
+      wardFlowReleaseGroup(release, now) === "today",
+  );
 }

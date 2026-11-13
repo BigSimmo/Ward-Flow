@@ -249,6 +249,7 @@ export function handoverLines(
   now: Instant,
   nameOf: (movement: Movement) => string,
   windowMinutes: number,
+  dayZero?: Date,
 ): string[] {
   return movements
     .filter((movement) => {
@@ -260,7 +261,7 @@ export function handoverLines(
     .sort((a, b) => (a.legalForm?.dueAt ?? 0) - (b.legalForm?.dueAt ?? 0))
     .map((movement) => {
       const dueAt = currentLegalDueAt(movement)!;
-      return `${dueAt < now ? "Passed · " : ""}${typedTimeLine(dueAt, now)} Form ${movement.legalForm!.code}, ${nameOf(movement)}`;
+      return `${dueAt < now ? "Passed · " : ""}${typedTimeLine(dueAt, now, dayZero)} Form ${movement.legalForm!.code}, ${nameOf(movement)}`;
     });
 }
 

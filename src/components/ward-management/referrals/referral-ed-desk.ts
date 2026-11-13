@@ -4,8 +4,7 @@
 // Every other desk gets `edDesk: false` and an empty list, so the board's ED branches are no-ops.
 import { useMemo } from "react";
 
-import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
-import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
@@ -45,16 +44,10 @@ export function useEdDeskReferrals(movements: readonly Movement[], now: Instant)
   const edDesk = access.role === "ed";
   const edId = edDesk && access.scope.kind === "ed" ? access.scope.edId : undefined;
   const departmentName = (edId === undefined ? undefined : edShortName(edById(edId))) || "this ED";
-  const { configuration } = useWardFlowSelect("configuration");
   const raised = useMemo(() => (edDesk ? openRaisedFromEd(movements, edId) : []), [edDesk, movements, edId]);
   const oldest = raised[0];
   const oldestWait =
     oldest === undefined ? undefined : durMinutes(Math.max(now - (oldest.referredAt ?? oldest.openedAt), 0));
-  // The configured pull hold, said as the ED board says it.
-  const holdLabel =
-    configuration.pullHoldMinutes % 60 === 0
-      ? `${configuration.pullHoldMinutes / 60}h`
-      : splitDuration(configuration.pullHoldMinutes);
   const eyebrow = `Referrals · ${departmentName}`;
   const heroTitle = raised.length > 0 ? `${raised.length} raised from this ED` : "Nothing raised from this ED is open";
   const phoneHero = (asked: number): EdDeskHero | undefined =>
@@ -68,7 +61,7 @@ export function useEdDeskReferrals(movements: readonly Movement[], now: Instant)
           asked,
         }
       : undefined;
-  return { edDesk, departmentName, raised, oldestWait, holdLabel, eyebrow, heroTitle, phoneHero };
+  return { edDesk, departmentName, raised, oldestWait, eyebrow, heroTitle, phoneHero };
 }
 
 export type EdDeskView = ReturnType<typeof useEdDeskReferrals>;

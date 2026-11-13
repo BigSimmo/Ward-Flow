@@ -81,7 +81,8 @@ export function rowSentence(row: BedKindGap): string {
 export function totalsSentence(totals: { waiting: number; bedsThatFit: number; gap: number }): string {
   const magnitude = Math.abs(totals.gap);
   if (totals.gap < 0) {
-    return `Across all four bed kinds, ${totals.waiting} people are waiting and only ${totals.bedsThatFit} beds fit any of their needs — ${magnitude} short overall.`;
+    // D-191 item 6: the shortfalls of each kind added, so a spare bed of another kind is not taken off.
+    return `Across all four bed kinds, ${totals.waiting} people are waiting for ${totals.bedsThatFit} beds that fit — ${magnitude} short overall, adding each kind's shortfall.`;
   }
   if (totals.gap === 0) {
     return `Across all four bed kinds, ${totals.waiting} people are waiting and exactly ${totals.bedsThatFit} beds fit — net available capacity today.`;

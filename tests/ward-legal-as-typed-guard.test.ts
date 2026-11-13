@@ -11,7 +11,11 @@ import {
   typedTimePhrase,
 } from "../src/components/ward-management/legal-forms/legal-time-as-typed";
 import { legalFormReadinessLine } from "../src/components/ward-management/movements/movement-workspace-derivations";
-import { DEFAULT_DUE_SOON_THRESHOLDS } from "../src/components/ward-management/ward-clock";
+import {
+  DEFAULT_DUE_SOON_THRESHOLDS,
+  MINUTES_PER_DAY,
+  perthMidnight,
+} from "../src/components/ward-management/ward-clock";
 import { buildActionInbox } from "../src/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
 import { currentLegalDueAt } from "../src/components/ward-management/legal-forms/legal-form-progression";
@@ -36,6 +40,11 @@ const WARD_DIR = "src/components/ward-management";
 
 /** Every formatter that turns minutes into "1h 05m", "2d 3h" or "58m". */
 const DURATION_CALL = /\b(?:formatRemaining|splitDuration|durText|durMinutes|minutesText|formatElapsed)\s*\(/;
+/**
+ * The relative day formatter: "15:42, 3 days ago" and "15:42, in 2 days" are an age and a countdown
+ * (time audit D1, 13 Nov 2026). A legal time goes through `typedClock`, which prints the date instead.
+ */
+const RELATIVE_DAY_CALL = /\bformatInstantWithDay\s*\(/;
 /** Names that hold a legal form's typed time, or minutes worked out from it. */
 const LEGAL_TIME = /legalForm|legalDue|LegalDue|deadline|Deadline|\bdueIn\b|formDue/;
 /** Helpers and wording that only ever existed to count down to a legal time. */
@@ -75,7 +84,8 @@ function offendingLines(text: string): string[] {
   return codeLines(text)
     .filter(
       ({ code }) =>
-        (DURATION_CALL.test(code) && LEGAL_TIME.test(code)) || RETIRED.some((pattern) => pattern.test(code)),
+        ((DURATION_CALL.test(code) || RELATIVE_DAY_CALL.test(code)) && LEGAL_TIME.test(code)) ||
+        RETIRED.some((pattern) => pattern.test(code)),
     )
     .map(({ line, code }) => `${line}: ${code.trim()}`);
 }
@@ -105,12 +115,15 @@ describe("legal form times only as typed: source", () => {
       '    return { value: durMinutes(now - movement.legalForm.dueAt), state: "Overdue" };',
       "    ? `${formCode} passed its deadline ${splitDuration(Math.abs(remaining))} ago`",
       "              <span className={styles.clockBig}>{leftText(movement, now)}</span>",
+      '    facts.push(["Form due", formatInstantWithDay(movement.legalForm.dueAt, now)]);',
+      "  if (row.formDueAt !== undefined) return `Form due ${formatInstantWithDay(row.formDueAt, now)}`;",
     ]) {
       expect(offendingLines(offender), offender).toHaveLength(1);
     }
     // Times that are not legal keep their counts.
     expect(offendingLines("  return formatRemaining(minutesUntil(pullExpiresAt, now));")).toEqual([]);
     expect(offendingLines("      when: `waiting ${splitDuration(Math.max(now - m.openedAt, 0))}`,")).toEqual([]);
+    expect(offendingLines("    return `Pull ends ${formatInstantWithDay(hold.expiresAt, now)}`;")).toEqual([]);
   });
 
   it("formats no legal time as a duration anywhere under the ward directory", () => {
@@ -149,23 +162,39 @@ describe("legal form times only as typed: what screens show", () => {
   const dueAt = typed.legalForm.dueAt!;
   const before = dueAt - 75;
   const after = dueAt + 75;
+  const dayZero = perthMidnight(2026, 10, 13);
 
   it("words the typed time with no count, before and after it", () => {
-    expect(typedTimeLine(dueAt, before)).toMatch(/^Ends \S+.* as typed$/);
-    expect(typedTimeLine(dueAt, after)).toMatch(/^Ended \S+.* as typed$/);
-    expect(typedTimePhrase(dueAt, after)).toMatch(/^ended /);
-    expect(formTimeAsTyped(typed.legalForm, before)).toMatch(new RegExp(`^Form ${typed.legalForm.code}\\b.* · ends `));
-    expect(formTimeAsTyped({ ...typed.legalForm, dueAt: undefined }, before)).toMatch(/no expiry recorded/);
+    expect(typedTimeLine(dueAt, before, dayZero)).toMatch(/^Ends \S+.* as typed$/);
+    expect(typedTimeLine(dueAt, after, dayZero)).toMatch(/^Ended \S+.* as typed$/);
+    expect(typedTimePhrase(dueAt, after, dayZero)).toMatch(/^ended /);
+    expect(formTimeAsTyped(typed.legalForm, before, dayZero)).toMatch(
+      new RegExp(`^Form ${typed.legalForm.code}\\b.* · ends `),
+    );
+    expect(formTimeAsTyped({ ...typed.legalForm, dueAt: undefined }, before, dayZero)).toMatch(/no expiry recorded/);
+  });
+
+  it("words a typed time days away with its date, never an age or a countdown (D1)", () => {
+    for (const now of [dueAt - 3 * MINUTES_PER_DAY, dueAt + 3 * MINUTES_PER_DAY]) {
+      for (const day of [dayZero, undefined]) {
+        const line = typedTimeLine(dueAt, now, day);
+        expect(line).toMatch(/ as typed$/);
+        expect(line).not.toMatch(COUNT_IN_TEXT);
+        expect(line).not.toMatch(/\bin \d+ days?\b/);
+      }
+      expect(typedTimeLine(dueAt, now, dayZero)).toMatch(/^End(?:s|ed) \w{3} \d{1,2} \w{3} \d{2}:\d{2} as typed$/);
+    }
   });
 
   it("shows the typed time, not a count, on every shared surface", () => {
-    for (const now of [before, after]) {
+    // Three days either side too: the typed time then carries its date, never "3 days ago" (D1).
+    for (const now of [before, after, dueAt - 3 * MINUTES_PER_DAY, dueAt + 3 * MINUTES_PER_DAY]) {
       const surfaces: Record<string, string | undefined> = {
-        "Patient page and Forms (formTimeLeft)": formTimeLeft(typed, now, DEFAULT_DUE_SOON_THRESHOLDS)?.text,
-        "Forms focus panel (legalDeadlineText)": legalDeadlineText(typed, now),
-        "ED board (formExpiryLine)": formExpiryLine(typed.legalForm, now),
-        "Movement readiness (legalFormReadinessLine)": legalFormReadinessLine(typed.legalForm, now),
-        "Home queue (waitFactors)": waitFactors(typed, now, DEFAULT_DUE_SOON_THRESHOLDS).find(
+        "Patient page and Forms (formTimeLeft)": formTimeLeft(typed, now, DEFAULT_DUE_SOON_THRESHOLDS, dayZero)?.text,
+        "Forms focus panel (legalDeadlineText)": legalDeadlineText(typed, now, dayZero),
+        "ED board (formExpiryLine)": formExpiryLine(typed.legalForm, now, dayZero),
+        "Movement readiness (legalFormReadinessLine)": legalFormReadinessLine(typed.legalForm, now, dayZero),
+        "Home queue (waitFactors)": waitFactors(typed, now, DEFAULT_DUE_SOON_THRESHOLDS, dayZero).find(
           (factor) => factor.label === FORM_TIMING_FACTOR_LABEL,
         )?.detail,
       };

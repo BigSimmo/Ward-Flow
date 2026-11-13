@@ -73,7 +73,7 @@ export function PersonPanel({
   /** Note 8, issue 4: the tab a person opens on when another part of the page asks (default Summary). */
   initialTab?: "summary" | "wards";
 }) {
-  const { referrals, setFocusMovementId } = useWardFlowSelect("referrals", "setFocusMovementId");
+  const { referrals, setFocusMovementId, dayZero } = useWardFlowSelect("referrals", "setFocusMovementId", "dayZero");
   const patientOf = usePatientOf();
   const escalationGate = useRoleGate()("RECORD_ESCALATION");
   // Role views (`waiting-desk-words.ts`): "on you" is said from the desk's side. A ward desk does not
@@ -283,7 +283,7 @@ export function PersonPanel({
             <div className={styles.grow}>
               <b>
                 {typedStanding.word ? <Glyph tone={typedStanding.tone} /> : null}
-                {`${legalFormName(legalForm)} ${typedTimePhrase(typedEnd, now).replace(/ as typed$/, "")}`}
+                {`${legalFormName(legalForm)} ${typedTimePhrase(typedEnd, now, dayZero).replace(/ as typed$/, "")}`}
               </b>
               <span className={styles.mute}>
                 As typed on the form{standingSuffix(typedStanding)} <LegalLimitsNotChecked variant="tag" />

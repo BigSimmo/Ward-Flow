@@ -3,8 +3,33 @@
  * Q260 review (#1296): split out of `accepted-ward-referral.ts`, which re-exports them, so the
  * shell bundle carries these two queries and not the pull sheet's legal-form wording beside them.
  */
-import type { Movement, Referral, Unit } from "../ward-model";
+import type { Movement, Referral, ReferralSource, Unit } from "../ward-model";
 import { acceptedAddressing } from "../ward-referrals";
+import { allEmergencyDepartments } from "../ward-sites";
+
+/**
+ * A9-13: the sources whose referral is made from inside an emergency department, so an accepted
+ * journey starts at the department the referral is recorded at: an ED referral, and a person the
+ * ambulance brought in. A community referral starts at its referring service (D-76). Other
+ * sources (GP, crisis service, another hospital) do not say the person is in an ED, so they keep
+ * the ward board's pull until a ruling says where their journey starts.
+ */
+export function startsAcceptedJourneyAtEd(source: ReferralSource): boolean {
+  return source === "ed_medical" || source === "ambulance";
+}
+
+/**
+ * A9-13: an accepted referral the coordinator can start a journey from in one step, so a bed
+ * pulled for it is the one kind of pull every screen reads (a movement), never a referral hold
+ * only the ward's board sees. Mirrors RAISE_REFERRAL's direct continuation.
+ */
+export function startsAcceptedJourney(referral: Pick<Referral, "source" | "originSiteCode">): boolean {
+  if (referral.source === "community" || referral.source === "ed_medical") return true;
+  return (
+    startsAcceptedJourneyAtEd(referral.source) &&
+    allEmergencyDepartments().some((department) => department.siteCode === referral.originSiteCode)
+  );
+}
 
 /**
  * S-9 (audit 13 Oct 2026): accepting a referral into a ward pulls no bed and creates no movement
@@ -48,7 +73,7 @@ function releasedPullJourney(movement: PullJourney): boolean {
 /**
  * WS-02 (workflow speed audit, 26 Oct 2026): every referral a ward has accepted that still has no
  * bed pulled, oldest decision first. Only the referrals a journey can start from directly: an ED
- * referral or a community referral (D-76), accepted on a ward arm that its referrer has not
+ * referral, a community referral (D-76), or one recorded at an emergency department (A9-13), accepted on a ward arm that its referrer has not
  * withdrawn, with no bed held on that arm and no live journey raised from it. A journey that closed
  * "did not proceed" does not count, as `RAISE_REFERRAL` allows a new one then. Nor does a journey
  * whose pull was undone and that waits for a bed again (review P4-1): the item then names it.
@@ -60,7 +85,7 @@ export function acceptedReferralsAwaitingPull(
 ): AcceptedAwaitingPull[] {
   return referrals
     .flatMap((referral) => {
-      if (referral.source !== "ed_medical" && referral.source !== "community") return [];
+      if (!startsAcceptedJourney(referral)) return [];
       const accepted = acceptedAddressing(referral);
       if (!accepted || accepted.destination.kind !== "psychiatric_ward" || accepted.withdrawnAt !== undefined)
         return [];

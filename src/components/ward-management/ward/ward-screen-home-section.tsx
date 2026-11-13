@@ -74,7 +74,7 @@ type WardScreenHomeSectionProps = {
   recentAnswers: {
     key: string;
     movementId: string;
-    outcome: "Accepted" | "Declined";
+    outcome: "Accepted" | "Declined" | "Waitlisted";
     at?: number | undefined;
     reason?: DeclineReason | undefined;
   }[];

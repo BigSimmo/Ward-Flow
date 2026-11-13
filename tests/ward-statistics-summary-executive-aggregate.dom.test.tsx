@@ -132,7 +132,8 @@ describe("Summary's executive aggregate view", () => {
     data.networkDetails.blocked.total = { kind: "withheld" };
     summary(data);
     expect(screen.getByTestId("ward-statistics-discharges-today-count")).toHaveTextContent("fewer than 5");
-    expect(screen.getByTestId("ward-statistics-refused-so-far-value")).toHaveTextContent("not shown");
+    // F-55 (A9-36): a withheld count inside a sentence reads "an unstated number", not "not shown".
+    expect(screen.getByTestId("ward-statistics-refused-so-far-value")).toHaveTextContent("an unstated number");
     const count = screen.getByTestId(`ward-statistics-blocked-discharge-${first.reason}-count`);
     expect(count).toHaveTextContent("fewer than 5");
     expect(count.parentElement!.parentElement!.querySelector('[style*="width:"]')).toBeNull();

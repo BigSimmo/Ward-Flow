@@ -43,9 +43,11 @@ import { referralQueueOrder } from "@/components/ward-management/ward-referrals"
 
 const SEED = seedWardFlowState();
 const WARD = SEED.units[0]!;
-// A queued referral with its ward arm addressed to this ward, as the scoped ward desk receives it.
+// A queued referral with its ward arm addressed to this ward, as the scoped ward desk receives it:
+// only its own ward lines (scoping drops the rest). A16-14 (D-175 item 1) took the worked example
+// RF-RD06 out of the default seed, and the first queued ward referral left (RF-011) also asks an ED.
 const queuedSource = referralQueueOrder(SEED.referrals).find((referral) =>
-  referral.destinations.some((arm) => arm.destination.kind === "psychiatric_ward"),
+  referral.destinations.every((arm) => arm.destination.kind === "psychiatric_ward"),
 )!;
 const TO_WARD: Referral = {
   ...queuedSource,

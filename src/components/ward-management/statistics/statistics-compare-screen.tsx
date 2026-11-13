@@ -36,7 +36,8 @@ import { allWardStatistics, wardStatistics, type WardStatistics } from "@/compon
 import { axisMax } from "./statistics-axis";
 import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { downloadCsv } from "./statistics-csv";
-import { formatSheetMoment } from "@/components/ward-management/ward-clock";
+import { formatSheetMoment, type ClockZoneLabel } from "@/components/ward-management/ward-clock";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 import { edWaitFigures } from "./statistics-ed-waits";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { FlushRow, FlushStack } from "./statistics-layout";
@@ -55,12 +56,14 @@ import styles from "./statistics-v6.module.css";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
 import type { ExecutiveReportingFoundation } from "./executive-statistics-contract";
 import {
+  countInSentence,
   ExecutiveStatisticsUnavailable,
   exactStatisticsCount,
   releasedCountText,
   statisticsCountText,
   type StatisticsCount,
 } from "./statistics-small-numbers";
+import { SMALL_NUMBER_NOT_SHOWN } from "../ward-access-scope";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 
@@ -89,10 +92,11 @@ export function StatisticsCompareScreen(props: CompareScreenProps = {}) {
   const control = useExecutiveStatisticsControl();
   const data = useExecutiveStatistics();
   const access = useEffectiveWardAccess();
+  const zone = useClockZoneLabel();
   if (control.executive || access.role === "executive")
     return data ? (
       <ComparePresentation
-        model={executiveComparisonModel(data)}
+        model={executiveComparisonModel(data, zone)}
         paused={control.paused}
         onTogglePause={control.togglePause ?? undefined}
       />
@@ -124,7 +128,8 @@ function OperationalCompareScreen({
   // D-115: a bed named for an accepted referral is not ready.
   const namedHolds = [...movements, ...referrals];
   const now = live.now;
-  const asAt = formatSheetMoment(now, live.state.dayZero, { includeYearAndZone: true });
+  const zone = useClockZoneLabel();
+  const asAt = formatSheetMoment(now, live.state.dayZero, { includeYearAndZone: true, zone });
   const admissions = admissionsOverride ?? liveAdmissions;
   const units = unitsOverride ?? liveUnits;
   const emergencyDepartments = edsOverride ?? allEmergencyDepartments();
@@ -242,7 +247,7 @@ const comparisonStatistics = (statistics: WardStatistics): ComparisonStatistics 
   },
 });
 
-function executiveComparisonModel(data: ExecutiveReportingFoundation): ComparisonModel {
+function executiveComparisonModel(data: ExecutiveReportingFoundation, zone: ClockZoneLabel): ComparisonModel {
   const units: ComparisonUnit[] = data.wards.map((ward) => ({
     id: ward.id,
     name: ward.name,
@@ -294,7 +299,10 @@ function executiveComparisonModel(data: ExecutiveReportingFoundation): Compariso
       longestMinutes: ed.longestWaitMinutes,
     })),
     now: data.network.asAt.now,
-    asAt: formatSheetMoment(data.network.asAt.now, new Date(data.network.asAt.dayZero), { includeYearAndZone: true }),
+    asAt: formatSheetMoment(data.network.asAt.now, new Date(data.network.asAt.dayZero), {
+      includeYearAndZone: true,
+      zone,
+    }),
   };
 }
 
@@ -1341,8 +1349,14 @@ const WARD_COLUMNS: readonly CompareColumn<WardColumnRow>[] = [
       if (exactStatisticsCount(dischargeDateOutcomes.consideredCount) === 0) return cannotBeFormed("none yet");
       // Met and missed add up to the total shown, so met is withheld when missed could be worked back.
       const { met, consideredCount } = dischargeDateOutcomes;
+      // Both withheld: the cell says so once, as every other withheld cell does, not "an unstated
+      // number of an unstated number met" (D-197).
+      if (typeof met !== "number" && typeof consideredCount !== "number") return { text: SMALL_NUMBER_NOT_SHOWN };
       if (typeof met !== "number" || typeof consideredCount !== "number")
-        return { text: `${statisticsCountText(met)} of ${statisticsCountText(consideredCount)} met` };
+        // F-55 (A9-36): one sentence for withheld counts, as the ward page words it.
+        return {
+          text: `${countInSentence(statisticsCountText(met))} of ${countInSentence(statisticsCountText(consideredCount))} met`,
+        };
       const [metShown] = words.parts([met, consideredCount - met]);
       return { text: `${metShown} of ${words.small(consideredCount)} met` };
     },

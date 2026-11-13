@@ -139,6 +139,7 @@ import { AccessRecordPanel, PeopleSection, ResultsSection } from "./patient-sear
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { rememberReturnRow, rowWithAttribute, useReturnedView, useReturnToPlace } from "../use-return-to-place";
 import { aboriginalOrTorresStraitIslanderIdentityLabel } from "@/components/ward-management/ward-patient-aboriginal-status";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 // Moved to `patient-search-sections.tsx`; re-exported so existing importers keep working.
 export { ResultsSection };
@@ -228,6 +229,7 @@ interface UnifiedCaseloadPatient {
 }
 
 export function PatientSearchPage() {
+  const zone = useClockZoneLabel();
   const thresholds = useDueSoonThresholds();
   const {
     movements,
@@ -520,7 +522,7 @@ export function PatientSearchPage() {
             legalExpires = FORM_RECORDED_ENDED;
           } else if (movementDueAt !== undefined) {
             // Legal times only as typed (31 Oct 2026): never a running "1h 15m overdue".
-            legalExpires = typedTimeLine(movementDueAt, now);
+            legalExpires = typedTimeLine(movementDueAt, now, dayZero);
           } else {
             legalExpires = "No due time recorded";
           }
@@ -933,7 +935,7 @@ export function PatientSearchPage() {
       stateRows,
       { wardName: (unitId) => units.find((unit) => unit.id === unitId)?.name ?? unitId },
       {
-        asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
+        asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone }),
         scope: narrowed
           ? "Patients; the rows on screen, with the current search, filters and state applied"
           : "Patients; everyone on the list, no search or filter applied",
@@ -1420,6 +1422,7 @@ export function PatientSearchPage() {
                 rows={census.rows}
                 closedToday={census.closedToday}
                 now={now}
+                dayZero={dayZero}
                 highlight={highlight}
                 highlightCounts={highlightCounts}
                 onSelect={jumpToRow}

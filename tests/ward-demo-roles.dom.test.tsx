@@ -278,6 +278,12 @@ describe("Roles within the existing Demo selector", () => {
     expect(proof()).toHaveAttribute("data-generation", generation);
     fireEvent.click(screen.getByTestId("ward-tools-demo-reset"));
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Reset demo" }));
+    // F-65 (A12-03, A14-17, approved by Josh 13 Nov 2026): Reset demo puts the tab back on the bed
+    // coordinator's desk and ends the role demo; the scenario stays.
+    expect(proof()).toHaveAttribute("data-role", "coordinator");
+    expect(proof()).toHaveAttribute("data-scenario", scenario);
+    expect(screen.queryByRole("button", { name: "Exit role demo" })).toBeNull();
+    choose("ED clinician");
     expect(proof()).toHaveAttribute("data-role", "ed");
     fireEvent.click(screen.getByRole("button", { name: "Exit role demo" }));
     expect(proof()).toHaveAttribute("data-role", "coordinator");

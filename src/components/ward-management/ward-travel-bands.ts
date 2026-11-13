@@ -31,74 +31,60 @@ export type TravelBand = (typeof TRAVEL_BANDS)[number];
 export type TravelBandTable = Readonly<Partial<Record<HomeRegion, Readonly<Partial<Record<string, TravelBand>>>>>>;
 
 /**
- * TRUE while every band in `SYNTHETIC_TRAVEL_BANDS` is invented — which it is today, and will
- * remain until somebody measures real travel times and replaces the values below.
+ * One band someone has CHECKED, with who checked it and when. This is the only shape a band can
+ * take on its way to a screen.
  *
- * Flipping this to `false` is a governance act, not a tidy-up. It asserts that the table no
- * longer carries invented placeholders, and it TURNS OFF the guard in
- * `tests/ward-travel-bands.test.ts` that forbids any home region being recorded at every site in
- * the network. That guard exists only because a suspiciously complete table of INVENTED values is
- * how a placeholder starts reading as a checked fact. Once the values are checked, completeness is
- * a virtue, and the guard would instead be pressuring somebody to withhold real data to keep a
- * test green — which is worse than the fill-in it guards against. Flip the flag in the same change
- * that replaces the values; never before, and never to make a test pass.
+ * Audit 16 (A16-04, root cause R7), Josh approved 13 Nov 2026: the app shows only bands someone has
+ * checked, and every other pair reads as not recorded. The old table, filled in by list position on
+ * purpose, told a man in Murdoch that Fiona Stanley was three hours away. It is gone from the app;
+ * tests keep their own invented table in `tests/helpers/ward-test-travel-bands.ts` and never need a
+ * shown value to be wrong.
  *
- * Deliberately a boolean and nothing else. A count, a date, a proportion or a threshold here would
- * be a figure this phase must not author, and would need a provenance record of its own.
+ * `checkedBy` names the person or role who checked the band, as Josh gives it. `checkedOn` is the
+ * day it was checked, written `YYYY-MM-DD`. A band with neither is not a checked band and has no
+ * place in `CHECKED_TRAVEL_BANDS`.
  */
-export const TRAVEL_BANDS_ARE_INVENTED: boolean = true;
+export interface CheckedTravelBand {
+  readonly homeRegion: HomeRegion;
+  /** A site code from `ward-sites.ts`, such as the code of the hospital the unit sits in. */
+  readonly siteCode: string;
+  readonly band: TravelBand;
+  readonly checkedBy: string;
+  readonly checkedOn: string;
+}
 
-/** SYNTHETIC. Every band below is invented, exactly like every bed number in `ward-sites.ts`.
- *  Nobody has measured or checked the real travel time between any WA region and any hospital in
- *  this table, and no value here was chosen to resemble one — the pairs recorded were chosen to
- *  exercise the four bands, the sparse case and the whole-region gap. Not every pair is recorded,
- *  and an unrecorded pair is `undefined` — never a default, never the nearest band, never
- *  "unknown means far".
+/**
+ * WHERE JOSH'S CHECKED BANDS GO. One entry per home region and hospital site pair, each saying who
+ * checked it and on what day. Nothing else in the app holds a band, so adding an entry here is the
+ * whole change that makes it show.
  *
- *  HOW THE VALUES WERE PICKED, so a later reader does not mistake them for research. No map,
- *  atlas, search or recollection of Western Australian geography was consulted. Which pairs are
- *  recorded was chosen for coverage: every band live, at least one site unrecorded inside a
- *  recorded region, at least one whole region unrecorded that a seeded referral uses, and at
- *  least two units sharing one band. Which band each recorded pair got was then decided
- *  mechanically by LIST POSITION — the band at index (region's position in `HOME_REGIONS` plus
- *  the site's position in `wardSites`) modulo the number of bands — so that no step of the
- *  authoring could smuggle in a judgement about how far anywhere actually is. Some results read
- *  as obviously wrong for the real places named. That is the point, and it is safer than a table
- *  that reads as though somebody checked it.
+ * Empty on purpose: as of 13 Nov 2026 nobody has checked a band, so every pair reads "Travel time
+ * not recorded". Do not copy a value in from the test table, from a map lookup an agent did, or
+ * from `reference/ward-reference-distances.ts` (metropolitan road distances between hospitals,
+ * which say nothing about how far a person lives from one). An entry is added only when Josh gives
+ * or signs it.
  *
- *  Replacing these values with checked ones is a change to this object and nothing else.
- *
- *  ONE EXCEPTION to the list-position rule (clinical audit round 2, S-22): the Perth
- *  Metropolitan row. The mechanical rule told an Armadale patient that Armadale's own unit was
- *  "Reachable only by air", which read to a clinical auditor as a defect, not a placeholder. ARM
- *  and SCGH are now Under an hour. FSH keeps its mechanical value only because the out-of-area
- *  ledger tests need one recorded out-of-area pair at an FSH unit; it is the same kind of oddity
- *  and waits on the owner's call. The values are still invented. */
-export const SYNTHETIC_TRAVEL_BANDS: TravelBandTable = {
-  "Perth Metropolitan": {
-    RPH: "under_an_hour",
-    SCGH: "under_an_hour",
-    FSH: "three_hours_or_more",
-    ARM: "under_an_hour",
-    FRE: "under_an_hour",
-  },
-  "South West": {
-    RPH: "three_hours_or_more",
-    SCGH: "air_transport_only",
-    BUN: "three_hours_or_more",
-  },
-  "Great Southern": {
-    ALB: "three_hours_or_more",
-  },
-  "Mid West": {
-    FSH: "under_an_hour",
-    GER: "under_an_hour",
-  },
-  Pilbara: {
-    SCGH: "one_to_three_hours",
-  },
-  Kimberley: {
-    RPH: "one_to_three_hours",
-    BRM: "three_hours_or_more",
-  },
-};
+ * Example of the shape, not a value (do not uncomment it as written):
+ *   { homeRegion: "Perth Metropolitan", siteCode: "XXX", band: "under_an_hour",
+ *     checkedBy: "Name or role", checkedOn: "YYYY-MM-DD" },
+ */
+export const CHECKED_TRAVEL_BANDS: readonly CheckedTravelBand[] = [];
+
+/** The sparse lookup table built from a list of bands. A pair not in the list is `undefined`. */
+export function travelBandTable(
+  entries: readonly Pick<CheckedTravelBand, "homeRegion" | "siteCode" | "band">[],
+): TravelBandTable {
+  const table: Partial<Record<HomeRegion, Partial<Record<string, TravelBand>>>> = {};
+  for (const entry of entries) {
+    const row = (table[entry.homeRegion] ??= {});
+    row[entry.siteCode] = entry.band;
+  }
+  return table;
+}
+
+/**
+ * The table every screen reads, through `ward-distance.ts` and nowhere else. It is built ONLY from
+ * `CHECKED_TRAVEL_BANDS`, so no invented band can reach a screen: an unchecked pair is simply
+ * absent and reads as not recorded.
+ */
+export const SHOWN_TRAVEL_BANDS: TravelBandTable = travelBandTable(CHECKED_TRAVEL_BANDS);

@@ -63,8 +63,8 @@ export function MismatchPopup({
   const patientOf = usePatientOf();
   const canOpen = useCanOpenHref();
   const detail = useMemo(
-    () => (row ? bedKindBreakdown(row.id, movements, [...units], admissions, referrals) : null),
-    [row, movements, units, admissions, referrals],
+    () => (row ? bedKindBreakdown(row.id, movements, [...units], admissions, referrals, bedReleases) : null),
+    [row, movements, units, admissions, referrals, bedReleases],
   );
   // Option B (Josh, 8 Nov 2026): drive times sit on the wards that fit, measured from the ED where
   // most of these people wait (ties: the longest wait), until the coordinator picks another.

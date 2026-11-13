@@ -16,6 +16,7 @@ import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provid
 import { calendarDateOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { originName } from "@/components/ward-management/ward-movement-origin";
+import { recordedByWords } from "@/components/ward-management/ward-flow-roles";
 import { STAGES } from "./patient-now-records";
 import styles from "./patient-journey-timeline.module.css";
 
@@ -26,7 +27,7 @@ const LONG_LIST = 8;
 const FIRST_ROWS = 6;
 
 /** The movement's recorded events, newest first. Copied from the History tab's `movementEvents`. */
-function journeyEvents(movement: Movement, unitName: (id: string) => string | undefined): JourneyEvent[] {
+export function journeyEvents(movement: Movement, unitName: (id: string) => string | undefined): JourneyEvent[] {
   const events: JourneyEvent[] = [
     { at: movement.openedAt, tone: "neutral", text: `Opened at ${originName(movement) ?? "an origin not recorded"}` },
   ];
@@ -62,20 +63,24 @@ function journeyEvents(movement: Movement, unitName: (id: string) => string | un
     events.push({
       at: change.at,
       tone: "info",
-      text: `${STAGES.find((s) => s.id === change.to)?.label ?? change.to}, by ${change.by}`,
+      text: `${STAGES.find((s) => s.id === change.to)?.label ?? change.to}, by ${recordedByWords(change.by)}`,
     });
   // Feature 11: each extension of the current pull's hold, as the History tab lists it.
   for (const extension of movement.pullExtensions ?? [])
     events.push({
       at: extension.at,
       tone: "info",
-      text: `Bed pull extended by ${extension.minutes / 60} h, by ${extension.by}`,
+      text: `Bed pull extended by ${extension.minutes / 60} h, by ${recordedByWords(extension.by)}`,
     });
   for (const unwind of movement.unwinds) {
     if (unwind.kind !== "pull_released" && unwind.kind !== "acceptance_withdrawn") continue;
     const ward = unwind.unitId === undefined ? undefined : (unitName(unwind.unitId) ?? unwind.unitId);
     const fact = unwind.kind === "pull_released" ? "Pulled bed released" : "Acceptance withdrawn";
-    events.push({ at: unwind.at, tone: "closed", text: `${fact}${ward ? `, ${ward}` : ""}, by ${unwind.by}` });
+    events.push({
+      at: unwind.at,
+      tone: "closed",
+      text: `${fact}${ward ? `, ${ward}` : ""}, by ${recordedByWords(unwind.by)}`,
+    });
   }
   const job = movement.transport;
   if (job?.acceptedAt !== undefined) events.push({ at: job.acceptedAt, tone: "info", text: "Transport accepted" });

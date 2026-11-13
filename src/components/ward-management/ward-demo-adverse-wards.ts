@@ -40,3 +40,28 @@ export function adverseExampleWard<T extends Pick<Unit, "id" | "name">>(
   if (preferred && mayCarryAdverseExample(preferred) && fits(preferred)) return preferred;
   return units.find((unit) => mayCarryAdverseExample(unit) && fits(unit));
 }
+
+/**
+ * The ward the seeded staff request goes on (feature 10, `ward-demo-example-lists.ts`): the first
+ * ward the rule allows. Shared so the loop-checks overlay can keep its closed ward off it.
+ */
+export function staffRequestExampleWard<T extends Pick<Unit, "id" | "name">>(units: readonly T[]): T | undefined {
+  return adverseExampleWard(units);
+}
+
+/**
+ * The wards that get an invented incident from the example lists (`addRestrictivePractice` in
+ * `ward-demo-example-lists.ts`): every secure ward with no record yet but the first, when the rule
+ * allows it. Shared so the loop-checks overlay can keep its closed ward off them.
+ */
+export function incidentExampleWardIds(
+  units: readonly Pick<Unit, "id" | "name" | "lockedBeds" | "restrictivePractice">[],
+): Set<string> {
+  const secure = units.filter((unit) => unit.lockedBeds !== 0 && !unit.restrictivePractice);
+  return new Set(
+    secure
+      .slice(1)
+      .filter(mayCarryAdverseExample)
+      .map((unit) => unit.id),
+  );
+}

@@ -5,23 +5,23 @@ import type { Instant } from "../ward-clock";
 import { minuteOfDay } from "../ward-clock";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "../ward-flow-roles";
 import type { Movement } from "../ward-model";
+import { PULL_FORM_FIELDS, type PullFormField } from "../ward-model-movement-parts";
 import { UNDO_WINDOW_MINUTES } from "../ward-operational-defaults";
 import type { AcceptedAwaitingPull } from "./accepted-awaiting-pull";
 
 /** The desks that may pull a bed (D-188 point a): the ward-desk clinician and the coordinator. */
 type PullDesk = Extract<WardFlowRole, "coordinator" | "ward">;
 
-export function isPullDesk(role: string): role is PullDesk {
-  return role === "coordinator" || role === "ward";
-}
-
 /** The desk named by role, never a person (D-188 point c): "Bed coordinator", "Nurse in charge". */
-export function pullDeskName(desk: PullDesk): string {
+function pullDeskName(desk: PullDesk): string {
   return WARD_FLOW_ROLE_LABELS[desk];
 }
 
-/** The three facts the movement carries. */
-export type PullFact = "legalStatus" | "legalForm" | "observation";
+/**
+ * The three facts the movement carries: PR C's `PullFormField`, the names the pull's own record
+ * (`RAISE_REFERRAL.changedOnPull`) takes, so the form sends its changes without a mapping.
+ */
+export type PullFact = PullFormField;
 
 /**
  * Where a fact on the form came from, as its label line says it (D-188):
@@ -44,11 +44,11 @@ export function pullFactSourceText(source: PullFactSource): string {
 
 /**
  * The facts the desk changed from the record, in form order. D-188 point b: the change stays on the
- * pull and never updates the person's record. PR C stores this on the pull (see pull-step-api.md);
- * until then it shows on the open form only.
+ * pull and never updates the person's record. The form sends it as `RAISE_REFERRAL.changedOnPull`,
+ * which PR C stores on the pull's own stage change (`stageChanges[].changedOnPull`).
  */
 export function pullFormChanges(changed: Readonly<Record<PullFact, boolean>>): PullFact[] {
-  return (["legalStatus", "legalForm", "observation"] as const).filter((fact) => changed[fact]);
+  return PULL_FORM_FIELDS.filter((fact) => changed[fact]);
 }
 
 const FACT_WORDS: Record<PullFact, string> = {

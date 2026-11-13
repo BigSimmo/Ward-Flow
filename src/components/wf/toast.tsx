@@ -2,8 +2,10 @@
 
 import { X } from "lucide-react";
 import {
+  type ComponentType,
   type CSSProperties,
   type HTMLAttributes,
+  type LazyExoticComponent,
   type ReactNode,
   Suspense,
   lazy,
@@ -58,8 +60,27 @@ export type ToastChoices = {
   onChoose: (id: string) => void | false;
 };
 
-/** Loaded only when a toast offers choices (D-148), so the buttons and kit menu stay off the first load. */
-const ToastChoicesSlot = lazy(() => import("./toast-choices-entry"));
+/**
+ * Loaded only when a toast offers choices (D-148), so the buttons and kit menu stay off the first load.
+ * Audit 4 A4-08 (13 Nov 2026): a failed fetch no longer throws to the page. That toast shows without
+ * its choices (it keeps its own action), and the next toast with choices fetches the code again.
+ */
+function loadChoicesSlot(): LazyExoticComponent<ComponentType<ToastChoicesSlotProps>> {
+  return lazy<ComponentType<ToastChoicesSlotProps>>(() =>
+    import("./toast-choices-entry").catch(() => {
+      toastChoicesSlot = loadChoicesSlot();
+      return { default: NoChoices };
+    }),
+  );
+}
+type ToastChoicesSlotProps = { choices: ToastChoices; onDone?: () => void };
+const NoChoices: ComponentType<ToastChoicesSlotProps> = () => null;
+let toastChoicesSlot = loadChoicesSlot();
+/** The current choices slot: read at render, so a toast after a failed fetch tries again. */
+function ToastChoicesSlotNow(props: ToastChoicesSlotProps) {
+  const Slot = toastChoicesSlot;
+  return <Slot {...props} />;
+}
 
 export type ToastNextStep = {
   label: string;
@@ -264,7 +285,7 @@ export function ToastView({
       {undo && phase === "running" ? (
         // Words for reduced motion only; hidden from the live region so it never reads a running tally.
         <span className={cx(styles.toastMeta, styles.undoWords)} aria-hidden="true" data-undo-left="">
-          {secondsLeft}s left
+          {secondsLeft >= 60 ? `${Math.ceil(secondsLeft / 60)} min left` : `${secondsLeft}s left`}
         </span>
       ) : null}
       {action ? (
@@ -306,7 +327,7 @@ export function ToastView({
       ) : null}
       {choices && (!undo || phase === "running") ? (
         <Suspense fallback={null}>
-          <ToastChoicesSlot choices={choices} onDone={onClose} />
+          <ToastChoicesSlotNow choices={choices} onDone={onClose} />
         </Suspense>
       ) : null}
       {undo ? <UndoButton undo={undo} phase={phase} finish={finish} primary={primary === "undo"} /> : null}

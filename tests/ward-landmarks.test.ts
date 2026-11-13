@@ -102,6 +102,7 @@ import { SettingsScreen } from "@/components/ward-management/settings/settings-s
 import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
 import { TodaysReviewScreen } from "@/components/ward-management/review/todays-review-screen";
+import { AboutDemoScreen } from "@/components/ward-management/about/about-demo-screen";
 import { NightViewScreen } from "@/components/ward-management/night/night-view-screen";
 import { WeeklyReportScreen } from "@/components/ward-management/reports/weekly-report-screen";
 import { StatisticsServicesIndexScreen } from "@/components/ward-management/statistics/statistics-services-index";
@@ -320,6 +321,7 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/reports/chronology`, render: () => createElement(PatientChronologyScreen) },
   { route: `${ROUTE_PREFIX}/review`, render: () => createElement(TodaysReviewScreen) },
   { route: `${ROUTE_PREFIX}/night`, render: () => createElement(NightViewScreen) },
+  { route: `${ROUTE_PREFIX}/about`, render: () => createElement(AboutDemoScreen) },
   // Ward Flow sign-in screen (R09: sibling mockup route verified for landmark and heading contracts).
   { route: SIGN_IN_ROUTE, render: () => createElement(WardFlowSignInScreen) },
 ];

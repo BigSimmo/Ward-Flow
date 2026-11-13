@@ -560,6 +560,12 @@ function ReferralSheet({
   const { REFERRALS, STAFF } = useMidlandDemo();
   const r = index === null ? null : REFERRALS[index]!;
   const { accept, say: note } = useAnswer(r?.n ?? "", r?.id);
+  // F-53 (C28, design critique v2): the chosen case manager goes with Accept, as on the wide page
+  // (`team-referrals.tsx`). The choice belongs to the referral it was made on.
+  const [pick, setPick] = useState<{ referral: string; staffId: string } | null>(null);
+  const referralKey = r ? (r.id ?? r.n) : "";
+  const staffId = pick?.referral === referralKey ? pick.staffId : "";
+  const caseManager = STAFF.find((s) => s.id === staffId)?.name;
   return (
     <PhoneSheet
       open={r !== null}
@@ -570,7 +576,7 @@ function ReferralSheet({
       primary={{
         label: "Accept for Midland",
         onAction: () => {
-          if (r) accept(`Accepted for Midland`);
+          if (r) accept(caseManager ? `Accepted. Case manager: ${caseManager}` : "Accepted, not allocated yet");
           onClose();
         },
       }}
@@ -641,7 +647,11 @@ function ReferralSheet({
           <label className={p.pick}>
             <span>Case manager</span>
             <span className={p.field}>
-              <select defaultValue="">
+              <select
+                value={staffId}
+                onChange={(event) => setPick({ referral: referralKey, staffId: event.target.value })}
+                data-testid="ward-community-phone-demo-case-manager"
+              >
                 <option value="">Allocate later</option>
                 {STAFF.filter((s) => s.load).map((s) => (
                   <option key={s.id} value={s.id}>

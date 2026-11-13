@@ -23,6 +23,7 @@ import {
   shownAgeFrom,
 } from "@/components/ward-management/alerts/alerts-model";
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import alertStyles from "@/components/ward-management/alerts/alerts.module.css";
 import { withSendingTeam } from "@/components/ward-management/referrals/referral-sending-team";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
@@ -116,7 +117,11 @@ function alertWhere({ subject }: QueueEntry): string {
  * The time beside an alert row: the age ("10m"), then only what the words add ("overdue", "since
  * 10:37", "Time not recorded"). A passed legal form shows its typed time, never an age since it.
  */
-function alertAge(entry: QueueEntry, now: Instant): { age: string | undefined; ageNote: string } {
+function alertAge(
+  entry: QueueEntry,
+  now: Instant,
+  dayZero: Date | undefined,
+): { age: string | undefined; ageNote: string } {
   const legalEnded = legalTypedEnd(entry.item);
   const ageFrom = shownAgeFrom(entry.item, entry.raised);
   const age = ageFrom === undefined ? undefined : minutesText(Math.max(0, now - ageFrom));
@@ -124,7 +129,7 @@ function alertAge(entry: QueueEntry, now: Instant): { age: string | undefined; a
   const overdue = entry.raised === undefined ? null : extractOverdue(entry.item.detail);
   const ageNote =
     legalEnded !== undefined
-      ? typedTimeLine(legalEnded, now)
+      ? typedTimeLine(legalEnded, now, dayZero)
       : entry.raised === undefined
         ? "Time not recorded"
         : overdue
@@ -136,12 +141,13 @@ function alertAge(entry: QueueEntry, now: Instant): { age: string | undefined; a
 }
 
 function DeskAlertRow({ entry, now, handlers }: { entry: QueueEntry; now: Instant; handlers: QueueHandlers }) {
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   const { subject } = entry;
   const where = alertWhere(entry);
   const owner = isYours(entry) ? undefined : `With ${ownerShort(entry.owner)}`;
   const state = entry.seen ? `Acknowledged ${formatInstantWithDay(entry.seen.at, now)}` : undefined;
   const extra = [owner, state].filter(Boolean).join(" · ") || undefined;
-  const { age, ageNote } = alertAge(entry, now);
+  const { age, ageNote } = alertAge(entry, now, dayZero);
   return (
     <HomeRow
       data={{ "data-alert-id": entry.item.id, "data-movement-id": entry.item.movementId || undefined }}
@@ -174,11 +180,12 @@ function referralTo(referral: Referral, units: readonly Unit[]): string {
 }
 
 function PhoneAlertRow({ entry, now, handlers }: { entry: QueueEntry; now: Instant; handlers: QueueHandlers }) {
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   const { subject } = entry;
   const legalEnded = legalTypedEnd(entry.item);
   // FS-8 (home-390 mock): the age keeps its words ("10m overdue", "5m since 10:37", "Time not
   // recorded"), as on the desk. A passed legal form's typed time still takes a line of its own.
-  const { age, ageNote } = legalEnded === undefined ? alertAge(entry, now) : { age: undefined, ageNote: "" };
+  const { age, ageNote } = legalEnded === undefined ? alertAge(entry, now, dayZero) : { age: undefined, ageNote: "" };
   return (
     <PhoneRow
       data={{ "data-alert-id": entry.item.id, "data-movement-id": entry.item.movementId || undefined }}
@@ -193,7 +200,7 @@ function PhoneAlertRow({ entry, now, handlers }: { entry: QueueEntry; now: Insta
       line={alertWhere(entry)}
       age={age}
       ageNote={ageNote || undefined}
-      note={legalEnded !== undefined ? typedTimeLine(legalEnded, now) : undefined}
+      note={legalEnded !== undefined ? typedTimeLine(legalEnded, now, dayZero) : undefined}
       owner={isYours(entry) ? undefined : ownerShort(entry.owner)}
       // FS-8: the row's own step (Release pulled bed, Find a bed), the same as the desk row's.
       action={<AlertAction entry={entry} handlers={handlers} />}

@@ -141,6 +141,14 @@ function AboutCard({
           </Link>
         ) : null}
       </p>
+      {/* F-77 (A15-25): what the demo is, what this browser keeps and sends, how to leave. */}
+      <p className={styles.cardNote}>
+        <Info size={14} aria-hidden="true" />
+        Invented records, what this browser keeps, how to leave
+        <Link className={styles.inlineLink} href="/ward-flow/about" data-testid="settings-about-demo-link">
+          About this demo
+        </Link>
+      </p>
       {process.env.NODE_ENV !== "production" ? (
         <p className={styles.cardNote}>
           <BookOpen size={14} aria-hidden="true" />

@@ -4,7 +4,7 @@
 // facts and the stage strip. Split out of `patient-now-screen.tsx`, which renders it with the values
 // it has already derived.
 import { isTierOverdue, tierOverdueAfterMinutes } from "../ward-shared-figures";
-import { TIER_QUALIFIER } from "../ward-priority";
+import { TIER_NOT_RECORDED, TIER_QUALIFIER } from "../ward-priority";
 import { securityWord, type Security } from "../ward-model-vocabulary";
 
 /*
@@ -12,7 +12,7 @@ import { securityWord, type Security } from "../ward-model-vocabulary";
  * uses the tier key's words ("T1 most urgent") and the bed type is its own chip.
  */
 function tierChipText(tier: 1 | 2 | 3 | undefined): string {
-  return tier === undefined ? "Tier not recorded" : `T${tier} ${TIER_QUALIFIER[tier]}`;
+  return tier === undefined ? TIER_NOT_RECORDED : `T${tier} ${TIER_QUALIFIER[tier]}`;
 }
 
 function bedTypeChipText(security: Security | undefined): string {
@@ -24,7 +24,8 @@ import { PatientFlightHeader } from "./patient-flight-header";
 import { absenceStepsFor } from "@/components/ward-management/ward-model";
 import { type Patient } from "@/components/ward-management/ward-patients";
 import { dayLabel, type PatientStatusContext } from "./patient-status-card";
-import { type PatientNowRecord, STAGES, clock, dur } from "./patient-now-records";
+import { type PatientNowRecord, STAGES, clock } from "./patient-now-records";
+import { formatSince } from "@/components/ward-management/ward-clock";
 import styles from "./patient-now.module.css";
 import {
   Badge,
@@ -264,7 +265,12 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
      figure is one the page already showed. */
   const movementTop = isLiveBedflow && liveMovement ? liveMovement : undefined;
   const overTarget = movementTop ? isTierOverdue(urgencyTier, now - movementTop.openedAt) : false;
-  const targetWords = `over T${urgencyTier} target (${tierOverdueAfterMinutes(urgencyTier) / 60}h)`;
+  // D-187 (F-30): no tier keeps tier 3's window but never reads as "T3" (or "Tundefined").
+  const targetHours = `${tierOverdueAfterMinutes(urgencyTier) / 60}h`;
+  const targetWords =
+    urgencyTier === undefined
+      ? `over target (${targetHours}), ${TIER_NOT_RECORDED.toLowerCase()}`
+      : `over T${urgencyTier} target (${targetHours})`;
   const clear = movementTop ? clearToMove(mode, statusContext) : undefined;
   const movementFigures =
     movementTop && clear ? (
@@ -279,7 +285,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
               label: overTarget ? (isPhone ? targetWords : `since opened · ${targetWords}`) : "since opened",
               tone: overTarget ? "warning" : undefined,
             },
-            { id: "clear", value: clear.clear, unit: ` of ${clear.of}`, label: "clear to move" },
+            { id: "clear", value: clear.clear, unit: ` of ${clear.of}`, label: clear.label },
             ...(movementTimeLeft && !glance
               ? [
                   {
@@ -389,7 +395,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
             ? [
                 {
                   id: "absent",
-                  value: dur(Math.max(0, now - absence.since)),
+                  value: formatSince(absence.since, now),
                   label: `absent since ${clock(absence.since)}`,
                   tone: "warning" as const,
                 },
@@ -527,7 +533,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                     ? [
                         {
                           key: "absent",
-                          value: dur(Math.max(0, now - stayLeaveBed.absentWithoutLeave.since)),
+                          value: formatSince(stayLeaveBed.absentWithoutLeave.since, now),
                           label: "Absent",
                           tone: "danger" as const,
                         },
@@ -542,7 +548,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                       ? [
                           {
                             key: "away",
-                            value: dur(Math.max(0, now - awaySince)),
+                            value: formatSince(awaySince, now),
                             label: "At ED",
                             tone: "warning" as const,
                           },
@@ -601,7 +607,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                 <span className={styles.v6HeroFact}>
                   <Clock size={14} strokeWidth={1.75} aria-hidden="true" />
                   <strong className={styles.v6HeroWait}>
-                    {dur(Math.max(0, now - stayLeaveBed.absentWithoutLeave.since))}
+                    {formatSince(stayLeaveBed.absentWithoutLeave.since, now)}
                   </strong>
                   absent since {clock(stayLeaveBed.absentWithoutLeave.since)}
                 </span>

@@ -29,12 +29,13 @@ it("identifies the full Perth date in chronology headings and recorded timestamp
   chronology();
   const table = screen.getByTestId("ward-chronology-table");
   const dayHead = table.querySelector('th[scope="rowgroup"]');
-  expect(dayHead?.textContent).toMatch(/\b20\d\d AWST/);
+  // RC 2.6 (F-113, D-190): the local demo's scripted clock reads "demo time", never AWST.
+  expect(dayHead?.textContent).toMatch(/\b20\d\d demo time/);
   const recorded = table.querySelectorAll("[data-chronology-recorded]");
   expect(recorded.length).toBeGreaterThan(0);
   expect(
     Array.from(recorded).every(
-      (cell) => cell.textContent === "Not recorded" || /\b20\d\d, \d{2}:\d{2} AWST/.test(cell.textContent ?? ""),
+      (cell) => cell.textContent === "Not recorded" || /\b20\d\d, \d{2}:\d{2} demo time/.test(cell.textContent ?? ""),
     ),
   ).toBe(true);
 });
@@ -65,7 +66,7 @@ it("retains every existing event detail in phone print order instead of only the
       "Reason",
     ]);
     expect(within(event).getByText("Recorded").nextElementSibling?.textContent).toMatch(
-      /Not recorded|\b20\d\d, \d{2}:\d{2} AWST/,
+      /Not recorded|\b20\d\d, \d{2}:\d{2} demo time/,
     );
   }
 });

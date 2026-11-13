@@ -14,11 +14,13 @@ import type { WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { UNDO_WINDOW_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 
 /**
  * P069, approved by Josh in chat, Oct 27, 2026, 10:02 PM AWST: "P069: yes, approve the Arrived at
  * ward confirm and toast exactly as shown, with 10 s Undo", and at 11:36 PM AWST: "P069: show the
- * action only for no-transport pulls, no engine change". Synthetic seed data only.
+ * action only for no-transport pulls, no engine change". D-187 (Josh, 13 Nov 2026) replaced the 10 s:
+ * the toast says "Undo within 5 min", so Undo now lasts the whole window. Synthetic seed data only.
  */
 const NOW = NOW_ANCHOR;
 
@@ -79,7 +81,7 @@ function renderFor(needed: boolean) {
 }
 
 describe("Arrived at ward on a pulled-bed alert (P069)", () => {
-  it("asks first with the approved wording, records the arrival, and offers Undo for 10 s", async () => {
+  it("asks first with the approved wording, records the arrival, and offers Undo for the whole Undo window (D-187)", async () => {
     const { unitName } = renderFor(false);
     expect(screen.getByTestId("stage")).toHaveTextContent("pulled");
     fireEvent.click(screen.getByRole("button", { name: "Arrived at ward" }));
@@ -93,7 +95,7 @@ describe("Arrived at ward on a pulled-bed alert (P069)", () => {
     expect(screen.getByTestId("stage")).not.toHaveTextContent("pulled");
     expect(await screen.findByText(`Synthetic patient arrived at ${unitName}`)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Undo/ })).toBeInTheDocument();
-    expect(screen.getByText("10s left")).toBeInTheDocument();
+    expect(screen.getByText(`${UNDO_WINDOW_MINUTES} min left`)).toBeInTheDocument();
   });
 
   it("Cancel records nothing", () => {

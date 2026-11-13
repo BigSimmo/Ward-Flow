@@ -62,11 +62,11 @@ export function bedSquares(card: HTMLElement): HTMLElement[] {
 
 /**
  * The squares of one kind, read from the state each square carries (`data-s`, shared bed squares
- * v1, wave 4). "ready" counts the beds the ready figure counts, so a bed being made ready (drawn
- * hollow, still inside `bedStates().ready` until F-26) is one; "used" is every in-use square, the
- * hatched "discharge today" ones included.
+ * v1, wave 4). Since D-179 item 8 (PR C) "ready" counts only Ready squares; a bed being made ready
+ * is its own hollow square ("preparing"). "used" is every in-use square, the hatched "discharge
+ * today" ones included.
  */
-export function bedSquaresOf(card: HTMLElement, kind: "ready" | "used" | "closed"): HTMLElement[] {
-  const states = { ready: ["ready", "prep"], used: ["free", "use"], closed: ["closed"] }[kind];
+export function bedSquaresOf(card: HTMLElement, kind: "ready" | "preparing" | "used" | "closed"): HTMLElement[] {
+  const states = { ready: ["ready"], preparing: ["prep"], used: ["free", "use"], closed: ["closed"] }[kind];
   return bedSquares(card).filter((square) => states.includes(square.dataset.s ?? ""));
 }

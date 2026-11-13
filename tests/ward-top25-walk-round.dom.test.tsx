@@ -254,6 +254,33 @@ describe("phone fast round (WH4)", () => {
     expect(screen.getByRole("region", { name: "Bed 02, 2 of 2" })).toBeTruthy();
   });
 
+  it("leaves history alone when the page goes with the card open, so a desk switch is not undone", () => {
+    const back = vi.spyOn(window.history, "back").mockImplementation(() => undefined);
+    try {
+      const view = render(<Harness bedList={withFacts} />);
+      fireEvent.click(screen.getByRole("button", { name: "Start the round" }));
+      expect((window.history.state as Record<string, unknown> | null)?.wardWalkRound).toBe(true);
+      view.unmount();
+      expect(back).not.toHaveBeenCalled();
+    } finally {
+      back.mockRestore();
+      window.history.replaceState({}, "");
+    }
+  });
+
+  it("steps back over its own entry when the card is closed", () => {
+    const back = vi.spyOn(window.history, "back").mockImplementation(() => undefined);
+    try {
+      render(<Harness bedList={withFacts} />);
+      fireEvent.click(screen.getByRole("button", { name: "Start the round" }));
+      fireEvent.click(screen.getByRole("button", { name: "Close, back to the round" }));
+      expect(back).toHaveBeenCalledTimes(1);
+    } finally {
+      back.mockRestore();
+      window.history.replaceState({}, "");
+    }
+  });
+
   it("closes the card on the browser's Back", () => {
     render(<Harness bedList={withFacts} />);
     fireEvent.click(screen.getByRole("button", { name: "Start the round" }));

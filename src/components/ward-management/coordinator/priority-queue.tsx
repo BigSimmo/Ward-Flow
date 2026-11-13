@@ -17,12 +17,7 @@ import {
   FormalName,
   GroupHead,
 } from "@/components/wf";
-import {
-  formatInstantWithDay,
-  type Instant,
-  isClockBreached,
-  splitDuration,
-} from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant, isClockBreached } from "@/components/ward-management/ward-clock";
 import { changeReasonLabels } from "@/components/ward-management/ward-change-reasons";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import {
@@ -37,6 +32,7 @@ import { defaultWardConfiguration } from "@/components/ward-management/ward-conf
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { PULL_NO_LIMIT_RECORDED, pullHoldText } from "@/components/ward-management/ward-bed-hold";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-service-scope-bar";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
@@ -187,6 +183,7 @@ export function PriorityQueue({
     "movements",
     "bedReleases",
     "plannedAdmissions",
+    "dayZero",
   );
   const cldEnabled = useWardFeatureFlag("top25-criteria-led-discharge");
   const turnaroundLabel = (preference: TurnaroundPriority | undefined) => {
@@ -195,7 +192,7 @@ export function PriorityQueue({
       ? `Turnaround candidate: bed clearing via ${live.source === "cld" ? "criteria-led discharge" : "confirmed departure"}`
       : null;
   };
-  const holdLabel = pullHoldMinutes % 60 === 0 ? `${pullHoldMinutes / 60}h` : splitDuration(pullHoldMinutes);
+  const holdLabel = pullHoldText(pullHoldMinutes);
   const patientOf = usePatientOf();
   // A2-20: initials plus UMRN on a phone when Discreet names is on; the name everywhere else.
   const nameFor = usePatientNameDisplay();
@@ -212,7 +209,7 @@ export function PriorityQueue({
     const selected = movement.id === selectedId;
     const who = patientOf(movement);
     const originEd = movement.originEdId === undefined ? undefined : edsById.get(movement.originEdId);
-    const factors = waitFactors(movement, now, dueSoonThresholds);
+    const factors = waitFactors(movement, now, dueSoonThresholds, turnaroundState?.dayZero);
     const legalDueAt = currentLegalDueAt(movement);
     const legalBreached = legalDueAt !== undefined && isClockBreached(legalDueAt, now);
     const legalFactor = factors.find((factor) => factor.label === FORM_TIMING_FACTOR_LABEL);
@@ -352,14 +349,17 @@ export function PriorityQueue({
               ) : (
                 <span className={styles.queueMark} data-testid={`ward-queue-transit-eta-${movement.id}`}>
                   <StatusGlyph tone="info" size={9} />
-                  In transit, bed pulled for {holdLabel} · {arrivalMode}
+                  {/* D-187 (F-46): a pull with no limit recorded says so, never the default. */}
+                  In transit, bed pulled{" "}
+                  {movement.pullExpiresAt === undefined ? `· ${PULL_NO_LIMIT_RECORDED}` : `for ${holdLabel}`} ·{" "}
+                  {arrivalMode}
                 </span>
               )
             ) : movement.stage === "pulled" ? (
               <span className={styles.queueMark} data-testid={`ward-queue-transit-hold-${movement.id}`}>
                 <StatusGlyph tone="warning" size={9} />
                 {/* F-24 (phone review, Oct 2026): plain words for a pulled bed and its hold. */}
-                Bed pulled for {holdLabel}
+                Bed pulled {movement.pullExpiresAt === undefined ? `· ${PULL_NO_LIMIT_RECORDED}` : `for ${holdLabel}`}
               </span>
             ) : null}
           </span>
@@ -375,6 +375,7 @@ export function PriorityQueue({
           <Timer
             at={movement.openedAt * MS_PER_MINUTE}
             now={now * MS_PER_MINUTE}
+            wholeMinutes
             direction="waiting"
             hideDirection
             className={styles.queueTimer}

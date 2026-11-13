@@ -1,7 +1,6 @@
 import { DEMONSTRATION_DAY_LABEL } from "./ward-sites";
-import { formatInstantWithDay, PERTH_UTC_OFFSET_MS } from "./ward-clock";
-
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+import { clockZoneLabel, formatInstantWithDay, PERTH_UTC_OFFSET_MS, type ClockZoneLabel } from "./ward-clock";
+import { monthIndexOfShort } from "@/components/ward-management/ward-month-names";
 
 /** Parse explicit ISO dates without accepting a device-local zone or normalising impossible dates. */
 function explicitIsoTime(raw: unknown): number | undefined {
@@ -43,7 +42,7 @@ export function isSyntheticReferralTimelineBase(value: unknown): value is string
 /** The sole canonical scenario day, expressed as an explicit Perth midnight. */
 export function seededReferralTimelineBase(): string {
   const [day, month, year] = DEMONSTRATION_DAY_LABEL.split(" ");
-  const monthIndex = MONTHS.indexOf(month!);
+  const monthIndex = monthIndexOfShort(month!);
   const base = `${year}-${String(monthIndex + 1).padStart(2, "0")}-${day?.padStart(2, "0")}T00:00:00+08:00`;
   if (!isSyntheticReferralTimelineBase(base)) throw new Error("Invalid canonical demonstration day");
   return base;
@@ -53,26 +52,38 @@ export function seededReferralTimelineBase(): string {
  * Generated target times follow the demonstration's day zero only with explicit seed provenance.
  * User-entered unmarked timestamps retain their absolute calendar day. Neither input is mutated.
  */
+function displayedIntakeMoment(
+  raw: string | undefined,
+  target: { syntheticTimelineBase?: string },
+  dayZero: Date | undefined,
+): { displayed: number; zero: Date } | undefined {
+  const at = explicitIsoTime(raw);
+  if (at === undefined) return undefined;
+  if (target.syntheticTimelineBase !== undefined && !isSyntheticReferralTimelineBase(target.syntheticTimelineBase))
+    return undefined;
+  // A reader outside the provider has no moved clock: it falls back to the canonical demonstration day.
+  const zero = dayZero instanceof Date ? dayZero : new Date(seededReferralTimelineBase());
+  if (!Number.isFinite(zero.getTime())) return undefined;
+  let displayed = at;
+  if (target.syntheticTimelineBase !== undefined)
+    displayed = zero.getTime() + (at - Date.parse(target.syntheticTimelineBase));
+  return Number.isFinite(displayed) ? { displayed, zero } : undefined;
+}
+
 export function formatReferralIntakeTime(
   raw: string | undefined,
   target: { syntheticTimelineBase?: string },
   dayZero: Date | undefined,
   relativeTo?: number,
+  /** The board's clock words (`useClockZoneLabel`, F-113): "AWST" signed in, "demo time" in the demo. */
+  zone: ClockZoneLabel = clockZoneLabel(false),
 ): string {
-  const at = explicitIsoTime(raw);
-  if (at === undefined) return "Time not recorded";
-  if (target.syntheticTimelineBase !== undefined && !isSyntheticReferralTimelineBase(target.syntheticTimelineBase))
-    return "Time not recorded";
-  // A reader outside the provider has no moved clock: it falls back to the canonical demonstration day.
-  const zero = dayZero instanceof Date ? dayZero : new Date(seededReferralTimelineBase());
-  if (!Number.isFinite(zero.getTime())) return "Time not recorded";
-  let displayed = at;
-  if (target.syntheticTimelineBase !== undefined)
-    displayed = zero.getTime() + (at - Date.parse(target.syntheticTimelineBase));
+  const moment = displayedIntakeMoment(raw, target, dayZero);
+  if (moment === undefined) return "Time not recorded";
+  const { displayed, zero } = moment;
   const date = new Date(displayed);
-  if (!Number.isFinite(date.getTime())) return "Time not recorded";
   if (relativeTo !== undefined)
-    return `${formatInstantWithDay((displayed - zero.getTime()) / 60_000, relativeTo)} AWST`;
+    return `${formatInstantWithDay((displayed - zero.getTime()) / 60_000, relativeTo)} ${zone}`;
   const dateWords = date.toLocaleDateString("en-AU", {
     day: "numeric",
     month: "short",
@@ -82,8 +93,26 @@ export function formatReferralIntakeTime(
   const timeWords = date.toLocaleTimeString("en-AU", {
     hour: "2-digit",
     minute: "2-digit",
-    hour12: false,
+    hourCycle: "h23",
     timeZone: "Australia/Perth",
   });
-  return `${dateWords}, ${timeWords} AWST`;
+  return `${dateWords}, ${timeWords} ${zone}`;
+}
+
+/**
+ * An expected time from a referral letter (medical clearance), with "(passed)" once it is earlier than
+ * the board's `now`, so a pending clearance whose expected time has gone by does not read as still
+ * ahead (time audit G6, 13 Nov 2026). Plain words beside the time; the time itself is unchanged.
+ */
+export function referralIntakeExpected(
+  raw: string | undefined,
+  target: { syntheticTimelineBase?: string },
+  dayZero: Date | undefined,
+  now: number,
+  zone: ClockZoneLabel = clockZoneLabel(false),
+): string {
+  const text = formatReferralIntakeTime(raw, target, dayZero, now, zone);
+  const moment = displayedIntakeMoment(raw, target, dayZero);
+  if (moment === undefined) return text;
+  return (moment.displayed - moment.zero.getTime()) / 60_000 < now ? `${text} (passed)` : text;
 }

@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 
 import { useAccessShellRole } from "@/components/ward-management/shell/ward-access-store";
+import { onWardDemoReset } from "@/components/ward-management/ward-browser-data";
 import { WARD_SHELL_ROLE, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 
 import type { DeskRole } from "./workstation-desks";
@@ -42,6 +43,11 @@ export function dispatchPersonaSyncForRole(role: DeskRole, deskId?: string, desk
   for (const listener of listeners) listener();
   window.dispatchEvent(new CustomEvent<{ role: DeskRole }>(WARD_PERSONA_SYNC_EVENT, { detail: { role } }));
 }
+
+// F-65: Reset demo returns the tab to the bed coordinator, so the rail's person follows (A14-17).
+onWardDemoReset(({ desk }) => {
+  if (desk) dispatchPersonaSyncForRole("coordinator");
+});
 
 /**
  * Whose role the shell is being used as. A non-coordinator desk (role access on) is its own role;

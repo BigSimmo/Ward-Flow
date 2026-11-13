@@ -8,6 +8,7 @@ import { outOfAreaLedger } from "../ward-referrals-out-of-area";
 import { strandedFlags, strandedPromptText } from "../ward-stranded";
 import { isWaitingInEd } from "../ward-ed-presence";
 import { closedBedsPastReview } from "../ward-bed-closure-review";
+import { PULL_NO_LIMIT_RECORDED } from "../ward-bed-hold";
 import type { BedMeetingAction, BedMeetingSubject } from "./bed-meeting-actions";
 
 /**
@@ -77,10 +78,23 @@ export function bedMeetingAgenda(
 
   const holds = open
     // Every held bed, soonest to run out first: no invented cut-off decides which ones matter.
-    .filter((movement) => movement.stage === "pulled" && movement.pullExpiresAt !== undefined)
-    .sort((a, b) => a.pullExpiresAt! - b.pullExpiresAt! || a.id.localeCompare(b.id))
+    // D-187 (F-46): a pull with no limit recorded is still a held bed; it comes last and says so.
+    .filter((movement) => movement.stage === "pulled")
+    .sort(
+      (a, b) =>
+        (a.pullExpiresAt ?? Number.POSITIVE_INFINITY) - (b.pullExpiresAt ?? Number.POSITIVE_INFINITY) ||
+        a.id.localeCompare(b.id),
+    )
     .map((movement) => {
-      const left = movement.pullExpiresAt! - now;
+      if (movement.pullExpiresAt === undefined)
+        return {
+          subject: movementSubject(movement),
+          record: movement,
+          ...(movement.acceptedUnitId !== undefined ? { unitId: movement.acceptedUnitId } : {}),
+          detail: "Pulled bed",
+          value: PULL_NO_LIMIT_RECORDED,
+        };
+      const left = movement.pullExpiresAt - now;
       return {
         subject: movementSubject(movement),
         record: movement,

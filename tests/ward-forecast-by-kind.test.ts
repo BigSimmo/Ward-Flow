@@ -9,6 +9,7 @@ import {
   bedKindOfBed,
   bedKindOfPlannedAdmission,
   forecastByKind,
+  forecastTotalsByKind,
   kindRangeWord,
 } from "@/components/ward-management/forecast/forecast-by-kind";
 import type { Admission, PlannedAdmission } from "@/components/ward-management/ward-admissions";
@@ -54,7 +55,17 @@ describe("forecastByKind", () => {
   });
 
   it("adds up to the network forecast for tomorrow and the day after", () => {
-    const network = bedsForecast(units, bedReleases, wardAdmissions, wardMovements, NOW_ANCHOR, wardPlannedAdmissions);
+    // The network forecast Capacity shows takes the by-type totals (D-191 item 6, `capacity-model.ts`).
+    const network = bedsForecast(
+      units,
+      bedReleases,
+      wardAdmissions,
+      wardMovements,
+      NOW_ANCHOR,
+      wardPlannedAdmissions,
+      [],
+      forecastTotalsByKind(units, bedReleases, wardAdmissions, wardMovements, NOW_ANCHOR, wardPlannedAdmissions),
+    );
     for (const days of [1, 2]) {
       const byKind = forecastByKind(
         units,

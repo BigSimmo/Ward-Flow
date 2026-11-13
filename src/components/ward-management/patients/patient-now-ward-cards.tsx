@@ -3,13 +3,13 @@
 import { History, ListChecks } from "lucide-react";
 import { Button, Card, CardHead, Meter, StatusGlyph } from "@/components/wf";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
-import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
 import type { NextStep, StayProgress } from "./patient-now-ward";
 import { dischargeReadiness, recentStayEvents } from "./patient-now-ward-recent";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import styles from "./patient-now-ward-cards.module.css";
 import { PatientNextStepButton } from "./patient-now-ward-button";
+import type { RoleLimit } from "@/components/ward-management/ward-role-gate";
 
 /**
  * Next step first (Josh, 3 Nov 2026): one card leading Now with the single thing due and one button.
@@ -23,7 +23,7 @@ export function PatientNextStepCard({
 }: {
   step: NextStep;
   quiet?: boolean;
-  roleLimit?: (event: WardFlowEventType) => string | undefined;
+  roleLimit?: RoleLimit;
 }) {
   return (
     <Card
@@ -40,7 +40,8 @@ export function PatientNextStepCard({
         </h2>
         <p className={styles.nextDetail}>{step.detail}</p>
       </div>
-      {step.action ? (
+      {/* F-54 (A9-35): no empty button slot when this desk can never take the step. */}
+      {step.action && !(step.action.event && roleLimit?.(step.action.event) === null) ? (
         <div className={styles.nextAction}>
           <PatientNextStepButton
             action={step.action}

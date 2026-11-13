@@ -18,7 +18,8 @@ import { allUnits } from "@/components/ward-management/ward-sites";
 
 const dayZero = new Date("2026-12-30T16:00:00Z"); // Midnight on 31 December in Perth.
 const now = 1445;
-const stamp = "1 Jan 2027, 00:05 AWST";
+// F-113 (RC 2.6): the local demo's board clock is "demo time", never AWST.
+const stamp = "1 Jan 2027, 00:05 demo time";
 const wrap = (children: ReactNode) => (
   <WardFlowProvider initialNow={now} initialDayZero={dayZero.getTime()}>
     {children}
@@ -29,7 +30,7 @@ afterEach(cleanup);
 
 describe("saved print provenance", () => {
   it("distinguishes years and preserves conservative standalone fallbacks", () => {
-    expect(asAtStamp(5, dayZero).time).toContain("31 Dec 2026, 00:05 AWST");
+    expect(asAtStamp(5, dayZero).time).toContain("31 Dec 2026, 00:05 demo time");
     expect(asAtStamp(now, dayZero).time).toContain(stamp);
     expect(asAtStamp(now).time).toBe("00:05");
     expect(asAtStamp(now, new Date(Number.NaN))).toEqual(asAtStamp(now));
@@ -66,7 +67,7 @@ describe("saved print provenance", () => {
     expect(text).toContain("waiting referrals");
   });
 
-  it("includes the year and AWST in the existing discharge print scope", () => {
+  it("includes the year and the clock words in the existing discharge print scope", () => {
     const { container } = render(wrap(<DischargeBoard />));
     expect(container.querySelector("main > p")?.textContent).toContain(stamp);
   });

@@ -789,7 +789,9 @@ test.describe("@mockup Ward shell bar — item 43: the unwired primary action's 
 
 // Offline Tools crash (22 Oct 2026): opening Tools for the first time with no connection threw the
 // failed code fetch to the route error boundary, and the whole page became "Something went wrong".
-test("@mockup Tools opened offline shows Try again, then opens on Try again once back online", async ({
+// A4-07 (13 Nov 2026): the stand-in tries again by itself when the connection returns, so Tools
+// opens without a press; Try again once online is covered in tests/ward-load-retry.dom.test.tsx.
+test("@mockup Tools opened offline shows Try again, then opens by itself once back online", async ({
   page,
   context,
 }) => {
@@ -809,11 +811,10 @@ test("@mockup Tools opened offline shows Try again, then opens on Try again once
   expect(tryAgain?.height, "Try again is under the 44px tap floor").toBeGreaterThanOrEqual(44);
   await expect(page.getByTestId("ward-bar")).toBeVisible();
 
-  // Try again while still offline keeps the line; once back online it draws the sheet.
+  // Try again while still offline keeps the line; once back online the sheet draws by itself.
   await retry.getByRole("button", { name: "Try again" }).click();
   await expect(retry).toContainText("Tools did not load");
   await context.setOffline(false);
-  await retry.getByRole("button", { name: "Try again" }).click();
   await expect(tools.getByRole("heading", { name: "Look up" })).toBeVisible();
   await expect(retry).toHaveCount(0);
 });
@@ -843,8 +844,8 @@ test("@mockup the Tasks and Referrals drawers opened offline show Try again and 
   await expect(tasks.getByTestId("ward-load-retry")).toContainText("Alerts did not load");
   await expect(page.getByText("Something went wrong")).toHaveCount(0);
 
+  // A4-07: back online, the drawer loads by itself (no Try again press to race).
   await context.setOffline(false);
-  await tasks.getByRole("button", { name: "Try again" }).click();
   await expect(tasks.getByRole("button", { name: /^Close (tasks|alerts) panel$/u })).toBeVisible();
   await expect(tasks.getByTestId("ward-load-retry")).toHaveCount(0);
 });

@@ -88,6 +88,10 @@ describe("Pull the bed: an edit on the form leaves the record unchanged (D-188, 
     const journey = current!.movements.find((movement) => movement.referralId === first!.referral.id);
     expect(journey?.stage).toBe("pulled");
     expect(journey?.observation.level).not.toBe("general");
+    // PR C's changedOnPull: the changed fact is named on the pull's own stage change, and only there.
+    const pull = journey?.stageChanges.findLast((change) => change.to === "pulled");
+    expect(pull?.changedOnPull).toEqual(["observation"]);
+    expect(journey?.stageChanges.filter((change) => change.changedOnPull !== undefined)).toHaveLength(1);
 
     // The record is untouched: the referral, every patient and every movement that existed before.
     expect(current!.referrals.find((r) => r.id === first!.referral.id)).toEqual(referralBefore);

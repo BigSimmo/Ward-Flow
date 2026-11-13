@@ -6,6 +6,7 @@
 // with the demo clock through `ward-reanchor.ts` like every other instant.
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
+import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 
 /** The share of the time from arrival to the next recorded step that passes before the referral. */
 const REFERRED_SHARE = 0.4;
@@ -22,7 +23,13 @@ function nextRecordedStep(movement: Movement, anchor: Instant): Instant {
     ...transportTimes,
     movement.leftDepartmentAt ?? anchor,
     movement.closure?.at ?? anchor,
-    movement.pullExpiresAt ?? anchor,
+    // A16-13: the pull itself is a recorded step, so an acceptance never lands after the bed was
+    // pulled. A seeded pull runs for the signed hold plus any recorded extensions.
+    movement.pullExpiresAt === undefined
+      ? anchor
+      : movement.pullExpiresAt -
+          defaultWardConfiguration().pullHoldMinutes -
+          (movement.pullExtensions ?? []).reduce((total, extension) => total + extension.minutes, 0),
   );
 }
 
@@ -40,8 +47,14 @@ export function withDemoStageTimes(movements: readonly Movement[], anchor: Insta
     if (movement.acceptedUnitId === undefined || movement.stage === "accepted_awaiting_bed") return movement;
     const limit = nextRecordedStep(movement, anchor);
     if (limit - movement.openedAt < 4) return movement;
+    // Time audit G2: a referral comes before its acceptance, so a recorded acceptance bounds it.
+    const referLimit = Math.min(limit, movement.acceptedAt ?? limit);
     const referredAt =
-      movement.referredAt ?? movement.openedAt + Math.max(1, Math.round((limit - movement.openedAt) * REFERRED_SHARE));
+      movement.referredAt ??
+      Math.min(
+        referLimit,
+        movement.openedAt + Math.max(1, Math.round((referLimit - movement.openedAt) * REFERRED_SHARE)),
+      );
     if (referredAt >= limit) return movement;
     const acceptedAt =
       movement.acceptedAt ?? referredAt + Math.max(1, Math.round((limit - referredAt) * ACCEPTED_SHARE));

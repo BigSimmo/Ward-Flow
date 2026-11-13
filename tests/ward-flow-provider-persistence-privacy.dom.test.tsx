@@ -87,13 +87,15 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
   /*
    * Josh, 21 Oct 2026 (fix plan item 2, option A): a typed-text dispatch no longer stops the save. The
    * session keeps saving a copy with every typed value replaced by TYPED_TEXT_NOT_KEPT, so a refresh
-   * keeps every other change. Saving still stops where that copy cannot be made safely (a typed
-   * patient's date of birth, below). Typed text never reaches storage either way.
+   * keeps every other change. Saving still stops where that copy cannot be made safely (an event
+   * whose typed text cannot be read, below). Typed text never reaches storage either way.
    */
   describe("typed-text events keep saving everything except the typed text, on DISPATCH", () => {
     // SD-01 (Josh, 5 Nov 2026): when no safe copy can be made, the last safe save is KEPT, not
     // deleted. It never held typed text, so nothing typed reaches storage either way.
-    it("stops saving once ADD_PATIENT carrying a typed date of birth is dispatched, and keeps the last safe save", async () => {
+    // A9-07 (Josh, 13 Nov 2026): a typed date of birth no longer stops saving (it is held as the
+    // placeholder), so the lock here comes from an event whose typed text cannot be read.
+    it("stops saving once a dispatch the copy cannot read is made, and keeps the last safe save", async () => {
       const { unmount } = render(
         <WardFlowProvider>
           <Capture />
@@ -111,23 +113,12 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
       expect(window.sessionStorage.getItem("ward-flow:demo-save-current")).toBe("1");
 
       act(() => {
-        current!.dispatch({
-          type: "ADD_PATIENT",
-          role: "coordinator",
-          now: current!.now,
-          umrn: "UMRN-TEST-001",
-          givenName: "Josephine",
-          familyName: "Typiste",
-          dateOfBirth: "1990-01-01",
-        });
+        current!.dispatch({ type: "SYNTHETIC_UNCLASSIFIED_EVENT", role: "coordinator", now: current!.now } as never);
       });
-      // The earlier safe save survives unchanged, holds none of the typed values, and is marked as no
-      // longer the latest, so its restore says later changes may not have been saved.
-      expect(storedWithout("Josephine", "Typiste", "UMRN-TEST-001", "1990-01-01")).toBe(safeSave);
+      // The earlier safe save survives unchanged and is marked as no longer the latest, so its
+      // restore says later changes may not have been saved.
+      expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).toBe(safeSave);
       expect(window.sessionStorage.getItem("ward-flow:demo-save-current")).toBeNull();
-      // A patient really was added — this is a genuine acceptance, so the "even a rejected one
-      // locks" property is left to its own test below rather than conflated with this one.
-      expect(current!.patients.some((patient) => patient.givenName === "Josephine")).toBe(true);
 
       // The lock outlives the triggering dispatch: a later ALLOWLISTED event writes nothing, let
       // alone a payload containing the typed name.
@@ -148,9 +139,7 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
           <Capture />
         </WardFlowProvider>,
       );
-      expect(current!.patients.some((patient) => patient.givenName === "Josephine")).toBe(false);
       expect(readStoredState()?.state.clockOffsetMinutes).toBe(5);
-      storedWithout("Josephine", "Typiste", "UMRN-TEST-001", "1990-01-01");
     });
 
     // Item #17: typed text held while nothing saves (a refused copy, or failed storage) asks before a
@@ -200,15 +189,7 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
         </WardFlowProvider>,
       );
       act(() => {
-        current!.dispatch({
-          type: "ADD_PATIENT",
-          role: "coordinator",
-          now: current!.now,
-          umrn: "UMRN-TEST-004",
-          givenName: "Josephine",
-          familyName: "Typiste",
-          dateOfBirth: "1990-01-01",
-        });
+        current!.dispatch({ type: "SYNTHETIC_UNCLASSIFIED_EVENT", role: "coordinator", now: current!.now } as never);
       });
       expect(current!.savingOnDevice).toBe(false);
       expect(refreshPrevented()).toBe(true);
@@ -737,6 +718,10 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
           dateOfBirth: "1985-05-05",
         });
       });
+      // A9-07: the person is saved with placeholders; an unreadable dispatch then locks saving.
+      act(() => {
+        current!.dispatch({ type: "SYNTHETIC_UNCLASSIFIED_EVENT", role: "coordinator", now: current!.now } as never);
+      });
       expectLockedKeepingSafeSave();
       expect(current!.patients.some((patient) => patient.givenName === TYPED_GIVEN_NAME)).toBe(true);
 
@@ -782,6 +767,10 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
           familyName: "Draft",
           dateOfBirth: "1985-05-05",
         });
+      });
+      // A9-07: the person is saved with placeholders; an unreadable dispatch then locks saving.
+      act(() => {
+        current!.dispatch({ type: "SYNTHETIC_UNCLASSIFIED_EVENT", role: "coordinator", now: current!.now } as never);
       });
       expectLockedKeepingSafeSave();
 
@@ -832,6 +821,10 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
           dateOfBirth: "1985-05-05",
         });
       });
+      // A9-07: the person is saved with placeholders; an unreadable dispatch then locks saving.
+      act(() => {
+        current!.dispatch({ type: "SYNTHETIC_UNCLASSIFIED_EVENT", role: "coordinator", now: current!.now } as never);
+      });
       expectLockedKeepingSafeSave();
       const worldGenerationBefore = current!.worldGeneration;
       const rejectionsBefore = current!.rejections.length;
@@ -876,6 +869,10 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
           dateOfBirth: "1985-05-05",
         });
       });
+      // A9-07: the person is saved with placeholders; an unreadable dispatch then locks saving.
+      act(() => {
+        current!.dispatch({ type: "SYNTHETIC_UNCLASSIFIED_EVENT", role: "coordinator", now: current!.now } as never);
+      });
       expectLockedKeepingSafeSave();
       const worldGenerationBefore = current!.worldGeneration;
 
@@ -915,6 +912,10 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
           familyName: "Draft",
           dateOfBirth: "1985-05-05",
         });
+      });
+      // A9-07: the person is saved with placeholders; an unreadable dispatch then locks saving.
+      act(() => {
+        current!.dispatch({ type: "SYNTHETIC_UNCLASSIFIED_EVENT", role: "coordinator", now: current!.now } as never);
       });
       expectLockedKeepingSafeSave();
       const worldGenerationBefore = current!.worldGeneration;

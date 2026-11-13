@@ -158,12 +158,14 @@ describe("ShortlistPanel's ward detail block", () => {
     // notEmpty  = max(19 - 3, 0) = 16
     // blocked   = min(max(0, 0), 16) = 0
     // occupied  = max(16 - 0, 0) = 16
-    // Bed states (R-B-05): one seeded pulled patient (AD-ARMA-16) sits inside that 16, so
-    // Pulled 1 and Occupied 15; the empty bed the ward is not offering is Closed 1.
-    expect(within(detail).getByText("Ready 2")).toBeInTheDocument();
-    expect(within(detail).getByText("Pulled 1")).toBeInTheDocument();
+    // Bed states (R-B-05): A16-13 (13 Nov 2026) turned Moodjar's one pulled bed, held for nobody
+    // (AD-ARMA-16), into a person who arrived this morning, so Pulled 0 and Occupied 16; the empty
+    // bed the ward is not offering is Closed 1. D-179 item 8 (13 Nov 2026): one of the two offered
+    // beds is being made ready, so Ready is 1 and that bed is counted on its own.
+    expect(within(detail).getByText("Ready 1")).toBeInTheDocument();
+    expect(within(detail).getByText("Pulled 0")).toBeInTheDocument();
     expect(within(detail).getByText("Closed 1")).toBeInTheDocument();
-    expect(within(detail).getByText("Occupied 15")).toBeInTheDocument();
+    expect(within(detail).getByText("Occupied 16")).toBeInTheDocument();
 
     // CHANGED 25 September 2026: Moodjar's Confirmed/Expected figures are no longer pinned by the
     // hand-authored WR-008 (owner ruling 2026-09-25 removed it) — this unit's occupied admissions
@@ -177,14 +179,10 @@ describe("ShortlistPanel's ward detail block", () => {
     // The discharged release `PrepareDischargedRelease` just flagged is the only one made ready on
     // this unit, so `bedsPendingPreparation` reads 1 for this unit alone.
     const pending = screen.getByTestId("ward-shortlist-ward-detail-pending-arm-adult-open");
-    expect(pending).toHaveTextContent("1 of the ready bed is still being made ready");
-
-    // 🔴 The Ready figure asserted above (2) is untouched by that pending count — nothing here
-    // subtracts 1 from it. The preparation note is its own separate line, never folded into the
-    // Ready chip's own number.
+    expect(pending).toHaveTextContent("1 more bed is being made ready, not counted as ready");
   });
 
-  it("never subtracts the pending count from Ready, and renders no preparation note when nothing is pending", () => {
+  it("renders no preparation note when nothing is pending", () => {
     renderWardDetail("rph-adult-secure");
 
     const detail = screen.getByTestId("ward-shortlist-ward-detail-rph-adult-secure");
@@ -195,11 +193,12 @@ describe("ShortlistPanel's ward detail block", () => {
     // notEmpty  = max(20 - 2, 0) = 18
     // blocked   = min(max(0, 0), 18) = 0
     // occupied  = max(18 - 0, 0) = 18
-    // Bed states (R-B-05): two seeded pulled patients (AD-RPHS-03, AD-RPHS-16) sit inside that 18.
+    // Bed states (R-B-05): A16-13 (13 Nov 2026) turned the two pulled beds held for nobody
+    // (AD-RPHS-03, AD-RPHS-16) into people who arrived this morning, so all 18 are Occupied.
     expect(within(detail).getByText("Ready 1")).toBeInTheDocument();
-    expect(within(detail).getByText("Pulled 2")).toBeInTheDocument();
+    expect(within(detail).getByText("Pulled 0")).toBeInTheDocument();
     expect(within(detail).getByText("Closed 1")).toBeInTheDocument();
-    expect(within(detail).getByText("Occupied 16")).toBeInTheDocument();
+    expect(within(detail).getByText("Occupied 18")).toBeInTheDocument();
 
     // CHANGED 25 September 2026: Ward 2K's Confirmed/Expected figures are no longer pinned by the
     // hand-authored WR-001 (owner ruling 2026-09-25 removed it) — read from the fixture at runtime
@@ -221,11 +220,12 @@ describe("ShortlistPanel's ward detail block", () => {
     renderWardDetail("arm-adult-open", emptyBed);
 
     const detail = screen.getByTestId("ward-shortlist-ward-detail-arm-adult-open");
-    // The first test's Ready 2 / Pulled 1, with one Ready bed now held for a named patient.
-    expect(within(detail).getByText("Ready 1")).toBeInTheDocument();
-    expect(within(detail).getByText("Pulled 2")).toBeInTheDocument();
+    // The first test's two offered beds, one now held for a named patient. The other is the bed
+    // being made ready, so none is Ready (D-179 item 8).
+    expect(within(detail).getByText("Ready 0")).toBeInTheDocument();
+    expect(within(detail).getByText("Pulled 1")).toBeInTheDocument();
     expect(within(detail).getByText("Closed 1")).toBeInTheDocument();
-    expect(within(detail).getByText("Occupied 15")).toBeInTheDocument();
+    expect(within(detail).getByText("Occupied 16")).toBeInTheDocument();
   });
 
   it("renders no ward detail block at all when no ward can be resolved", () => {

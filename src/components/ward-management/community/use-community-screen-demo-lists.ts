@@ -13,7 +13,10 @@ import {
   DEMO_COMMUNITY_INPATIENTS,
   DEMO_COMMUNITY_EGRESS,
   DEMO_COMMUNITY_CASELOAD,
+  demoCaseloadAt,
+  demoEgressAt,
 } from "./community-demo-cohort";
+import type { Instant } from "@/components/ward-management/ward-clock";
 import { originIsEdOrCrisis } from "./community-screen-helpers";
 import type { CaseloadFilter, TriageFilter, InpatientFilter, EgressFilter } from "./community-screen-helpers";
 
@@ -23,12 +26,17 @@ export function useCommunityScreenDemoLists({
   inpatientFilter,
   egressFilter,
   caseloadFilter,
+  now,
+  dayZero,
 }: {
   teamId: string;
   triageFilter: TriageFilter;
   inpatientFilter: InpatientFilter;
   egressFilter: EgressFilter;
   caseloadFilter: CaseloadFilter;
+  /** The board's clock: the sample times' words and the follow-up state follow it (F-33). */
+  now: Instant;
+  dayZero: Date;
 }) {
   // Review finding 3 (12 Nov 2026): Accept or Decline on a sample row takes it off this page's
   // sample list (with Undo), so the row and every count follow. Nothing is saved anywhere.
@@ -69,12 +77,13 @@ export function useCommunityScreenDemoLists({
     return i.category === inpatientFilter;
   });
 
-  const demoVisibleEgress = DEMO_COMMUNITY_EGRESS.filter((e) => {
+  const demoEgress = DEMO_COMMUNITY_EGRESS.map((row) => demoEgressAt(row, now, dayZero));
+  const demoVisibleEgress = demoEgress.filter((e) => {
     if (egressFilter === "all") return true;
     return e.status === egressFilter;
   });
 
-  const demoVisibleCaseload = DEMO_COMMUNITY_CASELOAD.filter((c) => {
+  const demoVisibleCaseload = DEMO_COMMUNITY_CASELOAD.map((row) => demoCaseloadAt(row, now, dayZero)).filter((c) => {
     if (caseloadFilter === "all") return true;
     if (caseloadFilter === "5A") return c.statutoryStatus.includes("5A");
     if (caseloadFilter === "5B") return c.statutoryStatus.includes("5B");
@@ -88,6 +97,7 @@ export function useCommunityScreenDemoLists({
     demoTeamReferrals,
     demoVisibleReferrals,
     demoVisibleInpatients,
+    demoEgress,
     demoVisibleEgress,
     demoVisibleCaseload,
     answerDemoReferral,

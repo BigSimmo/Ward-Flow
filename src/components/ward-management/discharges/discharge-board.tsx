@@ -97,6 +97,7 @@ import { DischargeChecklistTag } from "./discharge-checklist-tag";
 import { followUpWithinWindowCheck } from "./discharge-follow-up-check";
 import { useAskOverdueWards } from "./discharge-message-ward";
 import { OnBehalfReasonForm } from "../on-behalf-reason-form-lazy";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 /**
  * Task 6, spec D9: the discharge and egress board. A coordinator's whole reason to open this
@@ -136,6 +137,7 @@ export function DischargeBoard({ initialAdmissionId }: { initialAdmissionId?: st
 }
 
 function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: string }) {
+  const zone = useClockZoneLabel();
   const base = useDischargeWorkspaceState({ initialAdmissionId });
   useOpenGroupsForPrint(base.setPhoneGroupsOpen, GROUP_ORDER);
   /* Josh, 30 Oct: on Now the barrier panel and the day chart count bed releases, the list's
@@ -326,7 +328,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
         (value) => value !== "all",
       ),
       recordedDays: RECORDED_DAYS,
-      asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
+      asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone }),
       at: (instant) => formatSheetMoment(instant, dayZero),
       wardName: (unitId) =>
         unitLabel(
@@ -428,6 +430,8 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
         data-testid="ward-discharge-record-departure"
         disabled={departure.unanswered}
         onClick={() => {
+          // F-45: the button stays disabled until a destination is chosen; this guard keeps the type honest.
+          if (departureDestination === "") return;
           const who = linkedReleaseRecord ? recordName(linkedReleaseRecord) : "The person";
           const admissionId = detailRelease.admissionId;
           const completion = recordWardDeparture(
@@ -571,7 +575,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
           {population === "records"
             ? ` · ${identity === "all" ? "All records" : identity === "linked" ? "Linked patient" : "Missing or unavailable"}`
             : ""}
-          {" · "}As of {formatSheetMoment(now, dayZero, { includeYearAndZone: true })}
+          {" · "}As of {formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone })}
         </p>
         <Hero
           // Page tops (Josh, 9 Nov 2026): one plain title, as Home's; the place leads the spoken heading, the h1.
@@ -850,7 +854,10 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
           />
         ) : null}
         {/* Feature 6 (9 Nov 2026): stays whose expected date has slipped past the flag, most slipped first.
-            A row with no bed release flagged yet still opens, on the stay's discharge record. */}
+            A row opens its bed release when that release is on the Now list. Otherwise (no release yet, or
+            one due in 2+ days that the list leaves out) it opens the stay's discharge record in the drawer,
+            and the page stays on Now (walk C item 6). A14-12: the Now drawer only opened a release in view,
+            and only Admission records opened a record, so both used to show the error. */}
         {guarded.status === "allowed" && population === "releases" ? (
           <DischargeSlippingList
             records={visibleRecords}
@@ -860,11 +867,14 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
               const release = s.bedReleases.find(
                 (candidate) => candidate.admissionId === admissionId && candidate.state !== "discharged",
               );
-              if (release) openReleaseOn(release.id, opener, "milestones");
-              else {
-                const record = visibleRecords.find((candidate) => candidate.admissionId === admissionId);
-                if (record) openRecord(record, opener);
+              if (release && base.visibleReleaseIds.includes(release.id)) {
+                openReleaseOn(release.id, opener, "milestones");
+                return;
               }
+              const record = visibleRecords.find((candidate) => candidate.admissionId === admissionId);
+              if (!record) return;
+              // Walk C item 6 (F-107): the record opens in the drawer and the page stays on Now.
+              openRecord(record, opener);
             }}
           />
         ) : null}
@@ -1379,7 +1389,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                               >
                                 {phoneGroupsOpen[key]
                                   ? "Show fewer"
-                                  : `Show ${shownGroups[key].length - groupCap(key)} more ${(key === "discharged-today" ? "discharged" : GROUP_TITLES[key]).toLowerCase()}`}
+                                  : `Show ${shownGroups[key].length - groupCap(key)} more ${(key === "discharged-today" ? "discharged" : key === "blocked" ? HELD_UP : GROUP_TITLES[key]).toLowerCase()}`}
                               </ShowMoreRow>
                             </td>
                           </tr>

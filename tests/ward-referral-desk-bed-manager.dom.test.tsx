@@ -31,8 +31,13 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { referralQueueOrder } from "@/components/ward-management/ward-referrals";
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
 import { NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites";
+import { WorkedExamplesOn } from "./helpers/ward-worked-examples-on";
 
-const SEED = seedWardFlowState();
+// A16-14 (Josh, 13 Nov 2026): the only queued referral a site bed manager can see on the standard day
+// is a worked example (RF-RD06), and those are now off until the presenter switches them on. The desk
+// is rendered with them on, the same way the Tools, Demo switch does, and the sites are chosen from
+// that same world.
+const SEED = seedWardFlowState("standard", { workedExamples: true });
 const QUEUED_IDS = new Set(referralQueueOrder(SEED.referrals).map(({ id }) => id));
 const bedManagerAt = (siteCode: string): WardAccess => ({ role: "bed_manager", scope: { kind: "site", siteCode } });
 const linesAt = (siteCode: string) =>
@@ -72,6 +77,7 @@ function renderAs(access: WardAccess | null) {
   });
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <WorkedExamplesOn />
       <WardAccessScope>
         <ReferralBoard />
       </WardAccessScope>

@@ -4,6 +4,9 @@ import { useState, type ReactNode } from "react";
 import { Button } from "@/components/wf";
 import { ClosureChoice, REVIEW_AFTER_CHOICES } from "../ward-closure-choice";
 import styles from "./ward-bed-dossier-drawer.module.css";
+import { activeClosedBeds } from "@/components/ward-management/ward-ready-beds";
+import type { Unit } from "@/components/ward-management/ward-model";
+import { wardClosureReasonLabel } from "../ward-bed-closure-reason";
 
 /**
  * H-0978 / WS-15 (workflow speed audit, Josh 26 Oct 2026, "Close the exact bed"): an empty bed's
@@ -93,4 +96,22 @@ export function BedClosureControls({
       {children}
     </>
   );
+}
+
+/**
+ * C03 (design critique v2, Josh 13 Nov 2026): a closed bed with nobody in it opens as the bed and
+ * its closure, never as an empty patient record. The words are the bed list's own ("Closed until it
+ * is reopened", with the review line) and the bed board's ("Not offered"); the reason is the one
+ * chosen on closing (D-148), or says none was.
+ */
+export function closedBedWords(
+  unit: Unit,
+  bedNumber: number,
+  reviewLine: string | undefined,
+): { state: string; reason: string } {
+  const mark = activeClosedBeds(unit).find((each) => each.bedNumber === bedNumber);
+  return {
+    state: reviewLine ? `Closed until reopened · ${reviewLine}` : "Closed until it is reopened",
+    reason: mark?.reason ? wardClosureReasonLabel(mark.reason) : "No reason recorded",
+  };
 }

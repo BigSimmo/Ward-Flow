@@ -19,7 +19,7 @@ import { bedsForecast } from "./beds-forecast";
 import { bedMapWards, groupBedMapWardsByService } from "./bed-map";
 import { isConfirmationFresh } from "./capacity-gap-words";
 import { shiftConfirmations, unchangedConfirmations } from "./shift-confirmations";
-import { forecastByKind } from "@/components/ward-management/forecast/forecast-by-kind";
+import { forecastByKind, forecastTotalsByKind } from "@/components/ward-management/forecast/forecast-by-kind";
 import { horizonDays, sevenDayHorizon } from "@/components/ward-management/forecast/forecast-horizon";
 import { useForecastModel } from "@/components/ward-management/forecast/use-forecast-model";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -69,8 +69,8 @@ export function useCapacityModel() {
   // WF-FIG-017 (Josh, 7 Nov 2026): a bed held by name is held, not free, on every figure here.
   const reservations = useMemo(() => [...movements, ...referrals], [movements, referrals]);
   const gapRows = useMemo(
-    () => bedKindGaps(movements, units, now, admissions, referrals),
-    [movements, units, now, admissions, referrals],
+    () => bedKindGaps(movements, units, now, admissions, referrals, bedReleases),
+    [movements, units, now, admissions, referrals, bedReleases],
   );
   const gapTotals = useMemo(() => bedKindTotals(gapRows), [gapRows]);
   const tomorrowByKind = useMemo(
@@ -78,7 +78,18 @@ export function useCapacityModel() {
     [units, bedReleases, admissions, movements, now, planned, referrals],
   );
   const forecast = useMemo(
-    () => bedsForecast(units, bedReleases, admissions, movements, now, planned, referrals),
+    () =>
+      bedsForecast(
+        units,
+        bedReleases,
+        admissions,
+        movements,
+        now,
+        planned,
+        referrals,
+        // D-191 item 6: Capacity's Tomorrow sits beside its types, so short adds each type's shortfall.
+        forecastTotalsByKind(units, bedReleases, admissions, movements, now, planned, referrals),
+      ),
     [units, bedReleases, admissions, movements, now, planned, referrals],
   );
   const networkRows = useMemo(

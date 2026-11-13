@@ -17,7 +17,13 @@ import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-man
 import { bedStates, readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { openEdJourneys } from "@/components/ward-management/ward-shared-figures";
-import { formatInstant, minutesUntil, splitDuration } from "@/components/ward-management/ward-clock";
+import {
+  clockZoneLabel,
+  formatInstant,
+  minutesUntil,
+  splitDuration,
+  type ClockZoneLabel,
+} from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import {
@@ -31,6 +37,7 @@ import {
 } from "@/components/ward-management/statistics/executive-statistics-context";
 import { releasedCountText } from "@/components/ward-management/statistics/statistics-small-numbers";
 import styles from "./ward-tool-messages.module.css";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 /**
  * Tools mock-up, Messages (Q318 + Q324): replaces "Copy bed summary". A segmented choice picks the
@@ -165,6 +172,7 @@ function occupancyLine(percent: number, inUse: number, beds: number): string {
 
 function operationalMessage(id: Exclude<MessageId, "summary">, input: BedSummaryInput): Message {
   const f = operationalFigures(input);
+  const zone = input.zone ?? clockZoneLabel(false);
   const readyLine = `Ready beds: ${f.readyTotal} of ${f.beds}${f.pending > 0 ? `, ${f.pending} pending preparation` : ""}.`;
   const readyByServiceLine = `Ready by service: ${f.readyByService || "none"}.`;
   const waitingLine = `Open ED movements: ${f.waiting.total}${f.waitingByService ? ` (${f.waitingByService})` : ""}.`;
@@ -172,7 +180,7 @@ function operationalMessage(id: Exclude<MessageId, "summary">, input: BedSummary
   const longestLine = `Longest wait: ${f.longest ?? "none open"}.`;
   if (id === "escalation") {
     return {
-      title: `Mental health bed escalation at ${f.at} AWST`,
+      title: `Mental health bed escalation at ${f.at} ${zone}`,
       groups: [
         { heading: "Beds", lines: [occupancyLine(f.occupancy, f.inUse, f.beds), readyLine] },
         { heading: "ED", lines: [waitingLine, stillLine, longestLine] },
@@ -183,7 +191,7 @@ function operationalMessage(id: Exclude<MessageId, "summary">, input: BedSummary
   }
   if (id === "meeting") {
     return {
-      title: `Bed meeting update at ${f.at} AWST`,
+      title: `Bed meeting update at ${f.at} ${zone}`,
       groups: [
         { heading: "Beds", lines: [readyLine, readyByServiceLine, `Pulled, awaiting arrival: ${f.pulled}.`] },
         {
@@ -196,7 +204,7 @@ function operationalMessage(id: Exclude<MessageId, "summary">, input: BedSummary
     };
   }
   return {
-    title: `Mental health beds for ED at ${f.at} AWST`,
+    title: `Mental health beds for ED at ${f.at} ${zone}`,
     groups: [
       {
         heading: "Beds",
@@ -211,7 +219,7 @@ function operationalMessage(id: Exclude<MessageId, "summary">, input: BedSummary
 type ExecutiveReport = NonNullable<ReturnType<typeof useExecutiveStatistics>>;
 
 /** The executive desk reads its released report only, so its small numbers stay hidden. */
-function executiveMessage(id: MessageId, report: ExecutiveReport): Message {
+function executiveMessage(id: MessageId, report: ExecutiveReport, zone: ClockZoneLabel): Message {
   const { network } = report;
   const scope = network.scope.kind === "service" ? network.scope.service : "Whole network";
   const services = report.services.filter(
@@ -221,7 +229,7 @@ function executiveMessage(id: MessageId, report: ExecutiveReport): Message {
     // Today's executive bed summary, word for word (the sheet's ExecutiveBedSummary).
     const preparing = (beds: { beingMadeReady: number }) =>
       beds.beingMadeReady > 0
-        ? ` (${beds.beingMadeReady} of the ready ${beds.beingMadeReady === 1 ? "bed is" : "beds are"} still being made ready)`
+        ? ` (and ${beds.beingMadeReady} ${beds.beingMadeReady === 1 ? "bed" : "beds"} being made ready)`
         : "";
     return {
       title: `${scope} · synthetic prototype`,
@@ -258,7 +266,7 @@ function executiveMessage(id: MessageId, report: ExecutiveReport): Message {
     const occupancy = occupancyPercent({ beds: network.beds.total, inUse: network.beds.inUse });
     const occupancyLineText = occupancyLine(occupancy, network.beds.inUse, network.beds.total);
     return {
-      title: `${scope} bed escalation at ${at} AWST`,
+      title: `${scope} bed escalation at ${at} ${zone}`,
       groups: [
         {
           heading: "Beds",
@@ -271,7 +279,7 @@ function executiveMessage(id: MessageId, report: ExecutiveReport): Message {
   }
   if (id === "meeting") {
     return {
-      title: `${scope} bed meeting update at ${at} AWST`,
+      title: `${scope} bed meeting update at ${at} ${zone}`,
       groups: [
         { heading: "Beds", lines: [readyLine, `Pulled, awaiting arrival: ${network.beds.pulled}.`] },
         { heading: "By service", lines: byService },
@@ -280,7 +288,7 @@ function executiveMessage(id: MessageId, report: ExecutiveReport): Message {
     };
   }
   return {
-    title: `${scope} beds for ED at ${at} AWST`,
+    title: `${scope} beds for ED at ${at} ${zone}`,
     groups: [
       { heading: "By service", lines: byService },
       { heading: "ED", lines: waitingLines },
@@ -397,6 +405,7 @@ function OperationalMessages() {
   const now = useWardFlowClock();
   const thresholds = useDueSoonThresholds();
   const network = useWardNetwork();
+  const zone = useClockZoneLabel();
   const [choice, setChoice] = useState<MessageId>("summary");
   const input: BedSummaryInput = {
     units,
@@ -408,6 +417,7 @@ function OperationalMessages() {
     now,
     thresholds,
     network,
+    zone,
   };
   const message = choice === "summary" ? summaryMessage(bedSummaryText(input)) : operationalMessage(choice, input);
   return <MessagesView message={message} choice={choice} onChoice={setChoice} />;
@@ -415,9 +425,10 @@ function OperationalMessages() {
 
 function ExecutiveMessages() {
   const report = useExecutiveStatistics();
+  const zone = useClockZoneLabel();
   const [choice, setChoice] = useState<MessageId>("summary");
   if (!report) return <p role="status">Messages are unavailable until this report is ready.</p>;
-  return <MessagesView message={executiveMessage(choice, report)} choice={choice} onChoice={setChoice} />;
+  return <MessagesView message={executiveMessage(choice, report, zone)} choice={choice} onChoice={setChoice} />;
 }
 
 export function ToolMessages({ onNavigate }: { onNavigate: () => void }) {

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { Button, Card, CardBody, CardHead, useToast } from "@/components/wf";
-import { UNDO_TOAST_MS, UNDO_WINDOW_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { UNDO_WINDOW_MINUTES, UNDO_WINDOW_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
@@ -150,7 +150,8 @@ function ArchiveConfirm({
       title: `${displayName}'s record archived.`,
       body: `Undo within ${UNDO_WINDOW_MINUTES} min.`,
       undo: {
-        durationMs: UNDO_TOAST_MS,
+        // D-187 (F-49): kept for the whole window the body names.
+        durationMs: UNDO_WINDOW_TOAST_MS,
         onUndo: () => {
           // The same fences as useUndoableStep: no Undo after a workspace or role change, or before the board is ready.
           if (outcome.isCurrent && !outcome.isCurrent()) {

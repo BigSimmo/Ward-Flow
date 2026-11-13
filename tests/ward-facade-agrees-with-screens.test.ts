@@ -226,7 +226,7 @@ function bedReleased(state: WardFlowState): WardFlowState {
   });
   expect(release, "no un-discharged bed release found on an admission free of any linked movement").toBeDefined();
   const admission = state.admissions.find((a) => a.id === release!.admissionId)!;
-  return mutate(
+  const left = mutate(
     state,
     {
       type: "RECORD_LEAVING",
@@ -239,6 +239,19 @@ function bedReleased(state: WardFlowState): WardFlowState {
       leavingDestination: "transferred-to-another-psychiatric-ward",
     },
     "record a patient leaving so their bed release completes",
+  );
+  // D-179 item 8: the freed bed is being made ready, which is not Ready, until the ward marks it so.
+  return mutate(
+    left,
+    {
+      type: "SET_BED_PREPARATION",
+      role: "ward",
+      now: NOW,
+      releaseId: release!.id,
+      actingUnitId: admission.unitId,
+      preparing: false,
+    },
+    "mark the freed bed ready",
   );
 }
 

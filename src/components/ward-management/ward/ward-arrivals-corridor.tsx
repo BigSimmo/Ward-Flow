@@ -14,7 +14,6 @@ import type {
   TransportExceptionGap,
   TransportExceptionReason,
 } from "@/components/ward-management/ward-model";
-import { ARRIVAL_MODE_LABELS } from "@/components/ward-management/ward-model";
 import { legalFormNowWords } from "@/components/ward-management/ward-legal-form-progression";
 import {
   RELEASE_PULL_REASONS,
@@ -39,6 +38,7 @@ const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
 import { arrivalGaps } from "@/components/ward-management/ward-transport-checks";
+import { arrivalTransportFallbackLine, arrivalTransportTag } from "./ward-arrival-transport-words";
 import {
   patientIdentityLine,
   resolveSubjectPatient,
@@ -48,6 +48,7 @@ import { useUndoableStep } from "@/components/ward-management/use-undoable-step"
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { pullBlockedReason } from "./ward-pull-blocked";
 import { ExtendHoldControl } from "@/components/ward-management/ward-extend-hold";
+import { PULL_NO_LIMIT_RECORDED } from "@/components/ward-management/ward-bed-hold";
 import { observationSummary } from "@/components/ward-management/ward-observation";
 import { communityOriginLabel, originName } from "@/components/ward-management/ward-movement-origin";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
@@ -232,7 +233,6 @@ export function WardArrivalsCorridor({
           {accepted.map((movement) => {
             const patientInfo = resolvePatientIdentity(movement);
             const eta = movement.arrivalDetails?.estimatedArrivalAt;
-            const transportMode = movement.arrivalDetails?.mode;
             const notice = restrictionNotice(movement, unit);
             const eligibilityIssue = eligibilityWarning(movement, unit, now);
             const readmission = wardCopyReadmission(movement);
@@ -317,7 +317,7 @@ export function WardArrivalsCorridor({
                       </span>
                     ) : null}
                     <span className={styles.statusTag} data-type="mode">
-                      {transportMode ? ARRIVAL_MODE_LABELS[transportMode] : "Transport not set"}
+                      {arrivalTransportTag(movement)}
                     </span>
                     {/* D-80: the ward's copy carries the flag once it has accepted the person. */}
                     {readmission ? (
@@ -395,11 +395,13 @@ export function WardArrivalsCorridor({
                     <span>
                       {movement.stage === "pulled" && movement.pullExpiresAt !== undefined
                         ? `Bed pull ${formatRemaining(minutesUntil(movement.pullExpiresAt, now))}`
-                        : deliveredAwaitingWard(movement) && movement.transport?.arrivedAt !== undefined
-                          ? `Arrived at ward at ${formatInstantWithDay(movement.transport.arrivedAt, now)}, confirm arrival`
-                          : movement.transport?.collectedAt !== undefined
-                            ? `Collected from ED at ${formatInstantWithDay(movement.transport.collectedAt, now)}`
-                            : "Transport moving according to state protocol"}
+                        : movement.stage === "pulled"
+                          ? `Bed pull · ${PULL_NO_LIMIT_RECORDED}` // D-187 (F-46)
+                          : deliveredAwaitingWard(movement) && movement.transport?.arrivedAt !== undefined
+                            ? `Arrived at ward at ${formatInstantWithDay(movement.transport.arrivedAt, now)}, confirm arrival`
+                            : movement.transport?.collectedAt !== undefined
+                              ? `Collected from ED at ${formatInstantWithDay(movement.transport.collectedAt, now)}`
+                              : arrivalTransportFallbackLine(movement)}
                     </span>
                   </div>
                 </div>

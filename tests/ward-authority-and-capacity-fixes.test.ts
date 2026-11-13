@@ -390,7 +390,7 @@ describe("Option B: Flow & Capacity Discrepancy Safeguards", () => {
 
       // 1. Stage transition and closure
       expect(mvAfter.closure?.outcome).toBe("did_not_proceed");
-      expect(mvAfter.closure?.reason).toBe("examination outcome revoked");
+      expect(mvAfter.closure?.reason).toBe("Examination recorded (no order made)");
 
       // 2. referredUnitIds and acceptedUnitId cleared (S1-5)
       expect(mvAfter.referredUnitIds).toEqual([]);

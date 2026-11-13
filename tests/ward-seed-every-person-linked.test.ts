@@ -131,7 +131,8 @@ function openRecordConflicts(state: SeedState): string[] {
 }
 
 describe("every seeded person links to a real patient (audit T8, expected red until T0-T3 fold)", () => {
-  const state = seedWardFlowState();
+  // A16-14: the legal-form worked examples are opt-in since 13 Nov 2026; check them too.
+  const state = seedWardFlowState("standard", { workedExamples: true });
   const { movements, referrals, admissions, patients } = state;
 
   // A guard that ran over an empty population would pass for the wrong reason.

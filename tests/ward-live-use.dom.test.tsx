@@ -4,10 +4,15 @@ import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ToastDeviceSaveContext, ToastProvider, useToast } from "@/components/wf/toast-provider";
-import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import {
+  WARD_FLOW_DEMO_STORAGE_KEY,
+  WardFlowProvider,
+  useWardFlow,
+} from "@/components/ward-management/ward-flow-provider";
 import { LiveChip, WfServerPhoneProvider, guessPhoneFromRequest, useIsPhone } from "@/components/wf";
 import { WARD_OFFLINE_LINK_NOTICE, WardOfflineLinks } from "@/components/ward-management/shell/ward-offline-links";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
+import { TYPED_TEXT_NOT_KEPT } from "@/components/ward-management/ward-flow-typed-text-ledger";
 
 /*
  * Live use on poor signal (audit 13 Oct 2026, Josh): A1-17 the first paint matches the phone
@@ -112,7 +117,9 @@ describe("Codex P1 (PR #267): the offline note only claims a save that is really
     expect(screen.getByTestId("toast")).not.toHaveTextContent(WARD_OFFLINE_SAVED_NOTE);
   });
 
-  it("drops the note from the moment typed text stops the ward demonstration saving", () => {
+  // A9-07 (D-181 item 11): a typed date of birth no longer stops saving; a copy with it replaced is
+  // kept. The toast pushed with the typed text still claims nothing; the next kept save earns it back.
+  it("claims no save on the toast pushed with typed text, then only once the replaced copy is kept", () => {
     window.sessionStorage.clear();
     setOnline(false);
     let flow: ReturnType<typeof useWardFlow> | undefined;
@@ -155,7 +162,12 @@ describe("Codex P1 (PR #267): the offline note only claims a save that is really
     const after = screen.getAllByTestId("toast").find((node) => node.textContent?.includes("After"));
     expect(after).toBeDefined();
     expect(after).not.toHaveTextContent(WARD_OFFLINE_SAVED_NOTE);
-    expect(toastApi!.savesOnDevice?.()).toBe(false);
+    const kept = window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY);
+    expect(kept).not.toBeNull();
+    expect(kept).not.toContain("UMRN-TEST-267");
+    expect(kept).not.toContain("1990-01-01");
+    expect(kept).toContain(TYPED_TEXT_NOT_KEPT);
+    expect(toastApi!.savesOnDevice?.()).toBe(true);
     window.sessionStorage.clear();
   });
 });

@@ -463,7 +463,8 @@ describe("historical seed exceptions and bounded recovery conflicts", () => {
     expect(unitAfter?.arrivalCapacityConflicts ?? []).toHaveLength(0);
     expect(unitAfter?.empty.value).toBe(0);
   });
-  it("retains a legitimate authored moving journey without inventing an admission", () => {
+  // A9-08 (13 Nov 2026): the arrival now records the person's stay, one new admission, still valid.
+  it("retains a legitimate authored moving journey and records exactly one arrived stay", () => {
     const state = seedWardFlowState();
     const movement = state.movements.find(
       (row) => row.stage === "moving" && !row.admissionId && row.transport?.collectedAt !== undefined,
@@ -477,7 +478,9 @@ describe("historical seed exceptions and bounded recovery conflicts", () => {
       actingUnitId: movement.acceptedUnitId,
     });
     expect(next.rejections).toEqual([]);
-    expect(next.admissions).toBe(state.admissions);
+    expect(next.admissions.slice(0, state.admissions.length)).toEqual(state.admissions);
+    expect(next.admissions).toHaveLength(state.admissions.length + 1);
+    expect(next.admissions.at(-1)).toMatchObject({ movementId: movement.id, state: "occupied" });
     expect(valid(next)).toBe(true);
   });
   it("does not accept invented conflict records as authority for an excess census", () => {

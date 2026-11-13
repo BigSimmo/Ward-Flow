@@ -485,9 +485,10 @@ const AROUND: readonly Around[] = [
       },
       {
         device: "desk",
-        target: id("ward-out-of-area-table"),
+        // An empty list draws one line saying why in place of the table (D-193: only checked travel times show).
+        target: [id("ward-out-of-area-table"), id("ward-out-of-area-empty")],
         title: "The list",
-        body: "Each person's home region, placement and discharge date.",
+        body: "Each person's home region, placement and discharge date. When nobody is listed, one line says why.",
       },
       {
         device: "desk",
@@ -692,9 +693,10 @@ const AROUND: readonly Around[] = [
         body: "How the list is ordered: act now first, then waiting, oldest first in each.",
       },
       {
-        target: id("ward-alerts-forecast"),
+        // With no forecast line today the group is not drawn, so the Forecast filter stands in.
+        target: [id("ward-alerts-forecast"), { sel: '[data-testid="ward-alerts-filters"] button', text: "Forecast" }],
         title: "Forecast",
-        body: "Forecast lines set in Settings: beds likely to be short tomorrow, the ED access target and a worse forecast.",
+        body: "Forecast lines set in Settings: beds likely to be short tomorrow, the ED access target and a worse forecast. With none today, the Forecast filter shows 0.",
       },
     ],
   },

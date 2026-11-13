@@ -31,6 +31,22 @@ governance sign-off before real patient use (D-54).
 - **Forecast alerts and the handover prompt (D-122):** on 10 Nov 2026 Josh ruled that this page lists
   every value that flags or escalates. The three forecast alert rules and the rail's "Handover Due"
   prompt joined the table at the figures they already ran on, synthetic until signed.
+- **Software limits listed after the demo (D-176 item 6, pack F3; F-96):** two limits the app already
+  runs on, listed here as facts so the register is complete. Neither is a clinical threshold, neither
+  is in the table below, and neither is signed by this listing.
+  - **Undo window, 5 minutes.** How long a recorded decision or bed move can still be undone. Source:
+    `export const UNDO_WINDOW_MINUTES = 5;` in `src/components/ward-management/ward-operational-defaults.ts`
+    ("A software safety window, not a clinical or legal limit"). An Undo message that says "Undo within 5
+    min" stays for the whole window (`UNDO_WINDOW_TOAST_MS`, D-187): a bed pull, Arrived at ward,
+    archive and every step toast. A message that names no time stays for 8 seconds (`UNDO_TOAST_MS = 8000`).
+  - **Wards asked at once, normally 3.** A coordinator normally asks up to three wards at once; a fourth
+    needs a recorded reason (a warning, never a refusal). Source: `export const PARALLEL_REFERRAL_CAP = 3;`
+    in `src/components/ward-management/ward-model.ts`, the default for the Settings value
+    `parallelReferralCap` (`ward-configuration.ts`). The reasons offered are in `REFERRAL_CAP_REASONS`
+    (`ward-change-reasons.ts`).
+- **SMHMR (D-176 item 4, pack D1):** the form-number prefix of WA's statewide standardised mental health
+  documents, as on the triage form (SMHMR900). The letters are not expanded. It names a form, not a
+  value; the glossary carries the same line.
 - **Dormant (D-122):** `bedHoldReview` (2 hours) is signed but nothing in the app reads it. It is kept
   and marked dormant in its source, not deleted.
 - Mental Health Act periods are not here, and Ward Flow holds none (D-70, which replaced D-29). The

@@ -12,12 +12,15 @@ import {
  * The ward's bed states, as ruled (R-B-05, 2026-09-04, "option 2"; R-B-09 "Ready, everywhere";
  * 2026-09-01 ruling 5 "the box currently called Held becomes Closed").
  *
- * Four boxes that add up to the ward's beds — **Ready · Pulled · Closed · Occupied** — and two
- * markers shown beside them that are beds ALREADY COUNTED inside the four, never a fifth box:
+ * Five boxes that add up to the ward's beds — **Ready · Being made ready · Pulled · Closed ·
+ * Occupied** — and one marker shown beside them that is beds ALREADY COUNTED inside Occupied:
  *
- * - `beingMadeReady` records discharged beds still preparing; it can remain true when a later
- *   ward observation closes the offered Ready count. Nothing is subtracted from Ready (2026-09-01: the
- *   ward's figure must not lurch as cleaning starts and stops; only the pull is refused).
+ * - `beingMadeReady` (Josh, 13 Nov 2026, D-179 item 8 and D-181 item 5): Ready no longer includes a
+ *   bed still being made ready. It comes off Ready and is counted and shown on its own ("1 ready,
+ *   1 being made ready"). This replaces the 5 September 2026 ruling that such a bed stays offered
+ *   and counted in Ready. Only beds the ward is offering come off Ready: a released bed the ward
+ *   has since stopped offering already sits in Closed and is not counted twice. Such a bed may
+ *   still be pulled (`PULL_PATIENT` reads `pulledBedAvailability`, not this Ready).
  * - `onLeave` is inside Occupied. A leave bed is a note, not a bed, and adding it would count the
  *   same bed twice. "Held" is the word for this one ("a patient is ON LEAVE, their bed is HELD").
  *
@@ -35,7 +38,10 @@ export type BedStateCounts = {
   pulled: number;
   closed: number;
   occupied: number;
-  /** Released beds still being made ready; a marker, never added to the physical bed partition. */
+  /**
+   * Released beds still being made ready, taken off Ready (D-179 item 8): a box of its own, so
+   * `ready + beingMadeReady + pulled + closed + occupied === unit.beds`.
+   */
   beingMadeReady: number;
   /** Inside `occupied`: beds held for a patient who is on leave. */
   onLeave: number;
@@ -84,12 +90,16 @@ export function bedStates(
   const namedFromClosed = Math.min(named - namedFromReady, capacity.held - pulledFromEmpty);
   const pulledFromOccupied = Math.min(seededPulled, capacity.occupied);
   const occupied = capacity.occupied - pulledFromOccupied;
+  // D-179 item 8: a bed still being made ready is not Ready. Named holds and pulls are taken off
+  // the clean beds first, so a bed already pulled is never also counted as being made ready.
+  const offered = ready - namedFromReady;
+  const beingMadeReady = Math.min(bedsPendingPreparation(unit.id, bedReleases), offered);
   return {
-    ready: ready - namedFromReady,
+    ready: offered - beingMadeReady,
     pulled: pulledFromEmpty + pulledFromAvailable + pulledFromOccupied + namedFromReady + namedFromClosed,
     closed: capacity.held - pulledFromEmpty - namedFromClosed + capacity.blocked,
     occupied,
-    beingMadeReady: bedsPendingPreparation(unit.id, bedReleases),
+    beingMadeReady,
     onLeave: Math.min(leaveBeds.filter((bed) => bed.unitId === unit.id).length, occupied),
   };
 }
@@ -167,6 +177,7 @@ export const BED_STATE_DETAILS = {
   pulled: "Allocated to a named patient who has not arrived yet",
   closed: "Physically empty, but the ward is not offering it",
   occupied: "Someone is in it",
-  beingMadeReady: "Released and still being made ready; may not currently be offered as Ready",
+  beingMadeReady:
+    "Released and still being made ready: not counted as Ready, but a patient can still be pulled into it",
   onLeave: "Already counted in Occupied: held for a patient on leave",
 } as const;

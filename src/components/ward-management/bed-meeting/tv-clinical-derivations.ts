@@ -19,6 +19,7 @@ import {
   formRecordedEnded,
   NEXT_FORM_TO_RECORD,
 } from "@/components/ward-management/ward-legal-form-progression";
+import { HELD_UP_BY_TOMORROW_LABEL, isHeldUpDueByTomorrow } from "@/components/ward-management/ward-held-up";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { riskFlagLabel } from "@/components/ward-management/referrals/referral-risk-flags";
@@ -69,6 +70,11 @@ export type WardClinicalRow = {
   plan: ClinicalFact | null;
   arrivedToday: boolean;
   goingToday: boolean;
+  /**
+   * D-197 item 6: for "Held up · by tomorrow, or overdue". Held up by tomorrow (D-191 item 5, the
+   * rule `heldUpStayKeys` counts with) or past the expected date, and not going home today.
+   */
+  stuck: boolean;
   /** Attention items for the handover board, worded for the wall. */
   attention: { group: HandoverGroup; text: string; tone: ClinicalTone }[];
 };
@@ -80,7 +86,7 @@ export const HANDOVER_GROUPS = [
   { id: "obs", title: "Constant observation" },
   { id: "arrivals", title: "Arriving or new today" },
   { id: "going", title: "Going home today" },
-  { id: "stuck", title: "Held up or overdue" },
+  { id: "stuck", title: `${HELD_UP_BY_TOMORROW_LABEL}, or overdue` },
 ] as const;
 type HandoverGroup = (typeof HANDOVER_GROUPS)[number]["id"];
 
@@ -89,6 +95,8 @@ type RecordInputs = {
   referrals: readonly Referral[];
   patients: readonly Patient[];
   plannedAdmissions?: readonly PlannedAdmission[];
+  /** The board's day 0, so a typed legal time on another day prints its date (D1, D-93). */
+  dayZero?: Date;
 };
 
 /** The referrer's risk ticks for a journey, as words. The referral's own copy wins over the officer copy. */
@@ -108,7 +116,12 @@ function obsFact(observation: Observation | undefined): ClinicalFact {
 const HOURS_24 = 24 * 60;
 
 /** A legal form's line for the wall: the status, then the form and its end time as typed. */
-function legalFact(status: string | undefined, movement: Movement | undefined, now: Instant): ClinicalFact | null {
+function legalFact(
+  status: string | undefined,
+  movement: Movement | undefined,
+  now: Instant,
+  dayZero: Date | undefined,
+): ClinicalFact | null {
   const form = movement?.legalForm;
   if (!form) return status ? { text: status } : null;
   const progression = formProgression(movement);
@@ -125,7 +138,7 @@ function legalFact(status: string | undefined, movement: Movement | undefined, n
   if (dueAt === undefined) return { text: head };
   const left = dueAt - now;
   return {
-    text: `${head}. ${typedTimeLine(dueAt, now)}`,
+    text: `${head}. ${typedTimeLine(dueAt, now, dayZero)}`,
     tone: left <= 0 ? "danger" : left <= HOURS_24 ? "warning" : undefined,
   };
 }
@@ -167,11 +180,13 @@ export function wardClinicalRows(input: WardClinicalInputs): WardClinicalRow[] {
         },
         admission,
       );
-      const legal = legalFact(status ?? movement?.legalStatus, movement, now);
+      const legal = legalFact(status ?? movement?.legalStatus, movement, now, input.dayZero);
       const release = bedReleases.find(
         (record) => record.admissionId === admission.id && record.state !== "discharged",
       );
       const blockReason = release?.blocker ?? admission.blockReason ?? null;
+      // D-191 item 5: held up means due by tomorrow; a later blocker stays on the row's plan line only.
+      const heldUpByTomorrow = release !== undefined && isHeldUpDueByTomorrow(release, now);
       const pastDate = !pulled && isPastExpectedDischarge(admission, now);
       const expected = admission.expectedDischargeAt;
       const goingToday =
@@ -198,7 +213,8 @@ export function wardClinicalRows(input: WardClinicalInputs): WardClinicalRow[] {
         };
       } else if (leave) {
         where = "leave";
-        const late = leave.expectedReturn <= now;
+        // Late once the time has passed, as the patient pages count it (time audit T9).
+        const late = leave.expectedReturn < now;
         whereabouts = {
           text: `${leave.kind === "medical_trip" ? "Medical trip" : "On leave"}, ${late ? "was due back" : "due back"} ${formatInstantWithDay(leave.expectedReturn, now)}`,
           tone: late ? "danger" : undefined,
@@ -245,6 +261,7 @@ export function wardClinicalRows(input: WardClinicalInputs): WardClinicalRow[] {
         plan,
         arrivedToday,
         goingToday,
+        stuck: !goingToday && (heldUpByTomorrow || pastDate),
         attention: [],
       };
       row.attention = attentionFor(row, leave, now);
@@ -273,7 +290,7 @@ function attentionFor(row: WardClinicalRow, leave: LeaveBed | undefined, now: In
       tone: undefined,
     });
   if (row.goingToday) items.push({ group: "going", text: row.plan?.text ?? "Home today", tone: undefined });
-  if (row.plan?.tone && !row.goingToday) items.push({ group: "stuck", text: row.plan.text, tone: row.plan.tone });
+  if (row.stuck && row.plan) items.push({ group: "stuck", text: row.plan.text, tone: row.plan.tone ?? "warning" });
   return items;
 }
 
@@ -362,7 +379,7 @@ export function edClinicalRows(input: EdClinicalInputs): EdClinicalRow[] | undef
         waitMinutes,
         band,
         urgency: movement.urgency as 1 | 2 | 3,
-        legal: legalFact(movement.legalStatus, movement, now),
+        legal: legalFact(movement.legalStatus, movement, now, input.dayZero),
         underForm: isUnderAForm(movement),
         reviewed: movement.examination !== undefined,
         noBedYet: accepted === undefined,

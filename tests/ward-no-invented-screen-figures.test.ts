@@ -306,6 +306,30 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     file: /^front-door\/front-door-pass-client\.ts$/,
     name: /^END_PASS_DEADLINE_MS$/,
   },
+  {
+    id: "server-away-check-timeout",
+    why: "Audit 4 A4-05 (13 Nov 2026): how long the quick server check before a full page load may take before the server counts as away and the offline note shows; network deadline, never shown, not a clinical limit.",
+    file: /^shell\/ward-offline-links\.tsx$/,
+    name: /^SERVER_CHECK_TIMEOUT_MS$/,
+  },
+  {
+    id: "tv-lock-fallback-wait",
+    why: "F-65 (A14-24): how long a browser locked as a TV waits for its TV view to draw its own Unlock before the stand-in Unlock shows; a UI wait, never shown, not a clinical limit.",
+    file: /^bed-meeting\/tv-lock-fallback-host\.tsx$/,
+    name: /^TV_LOCK_FALLBACK_WAIT_MS$/,
+  },
+  {
+    id: "demo-planned-move-window",
+    why: "Synthetic demo data (owner, 26 Sept 2026; A16-20, 13 Nov 2026): the 48-hour window the seed's sample planned move times stay inside; demo record times, like the seed files, never a limit.",
+    file: /^ward-demo-planned-moves\.ts$/,
+    name: /^HORIZON_MINUTES$/,
+  },
+  {
+    id: "demo-network-pull-timing",
+    why: "Synthetic demo data (A16-13, 13 Nov 2026): when the demo network's sample acceptances and pulls are timed against each journey, and how far ahead its lapsing hold's limit falls; demo record times, like the seed files, never a limit. The hold itself is read from the configuration.",
+    file: /^ward-demo-network\.ts$/,
+    name: /^(?:ACCEPTED_AFTER_ARRIVAL|PULLED_AFTER_ACCEPTANCE|LAPSING_HOLD_LEFT)_MINUTES$/,
+  },
 ];
 
 export const BREACH = /\bbreach(?:es|ed|ing)?\b/i;

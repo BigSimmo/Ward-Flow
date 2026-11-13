@@ -4,12 +4,13 @@ import { PATIENT_KEY_PREFIX } from "./referral-patient-key";
 import { useMemo } from "react";
 import { formTitleForCode } from "@/lib/form-register";
 import { useOptionalWardFlow } from "@/components/ward-management/ward-flow-provider";
-import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import { involuntaryBedNeededForLegalStatus } from "@/components/ward-management/ward-eligibility";
 import { SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
-import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { calendarDateOf, type Instant } from "@/components/ward-management/ward-clock";
+import { MONTH_SHORT } from "@/components/ward-management/ward-month-names";
 import { bedStates, networkNamedHolds } from "@/components/ward-management/ward-bed-states";
+import { typedClock } from "@/components/ward-management/ward-legal-time-as-typed";
 import {
   RECORDED_SEXES,
   type AtsCategory,
@@ -218,6 +219,24 @@ export const SAMPLE_PATIENTS: Record<string, { destType: string }> = {
  */
 export const NO_PATIENT_KEY = "none";
 
+/**
+ * A9-11: a ward referral requests transport only when the referrer chose a vehicle. Transport left
+ * "Not chosen" ("") or "Family or carer" asks for none.
+ */
+export function transportRequested(destType: DrawerCategory, transport: string): boolean {
+  return destType === "ward" && transport !== "" && transport !== "carer" && transport !== "Family or carer";
+}
+
+/**
+ * A9-10 (Josh, 13 Nov 2026, Q2: no clinical choice starts selected): the bed security a referral
+ * opens with is what the record says, and nothing when the record says nothing. Never "Open".
+ */
+export function recordedBedSecurity(recorded: string): "Secure" | "Open" | "" {
+  const word = recorded.trim().toLowerCase();
+  if (word.includes("secure") || word === "locked") return "Secure";
+  return word === "open" ? "Open" : "";
+}
+
 /** A registered person with no open movement is picked by this key, `patient:<id>`. */
 export { PATIENT_KEY_PREFIX };
 
@@ -273,7 +292,8 @@ export function sampleProfile(
       // A registered person with no ED stay has no legal status on record here; never assume one.
       legalStatus: NOT_RECORDED,
       recordedExpiry: "not recorded",
-      security: "Open",
+      // A9-10 (Q2 ruling, 13 Nov 2026): nothing recorded, so bed security starts unanswered.
+      security: "",
       initials: `${registered.givenName.charAt(0)}${registered.familyName.charAt(0)}`.toUpperCase(),
       cohort: NOT_RECORDED,
       suburb: registered.suburb ?? "",
@@ -292,7 +312,8 @@ export function sampleProfile(
       origin: NOT_RECORDED,
       legalStatus: NOT_RECORDED,
       recordedExpiry: "not recorded",
-      security: "Open",
+      // A9-10 (Q2 ruling, 13 Nov 2026): nothing recorded, so bed security starts unanswered.
+      security: "",
       initials: "",
       cohort: NOT_RECORDED,
       suburb: "",
@@ -312,7 +333,8 @@ export function sampleProfile(
       origin: NOT_RECORDED,
       legalStatus: NOT_RECORDED,
       recordedExpiry: "not recorded",
-      security: "Open",
+      // A9-10 (Q2 ruling, 13 Nov 2026): nothing recorded, so bed security starts unanswered.
+      security: "",
       initials: "UR",
       cohort: NOT_RECORDED,
       suburb: "",
@@ -339,7 +361,8 @@ export function sampleProfile(
       originName(movement) ??
       NOT_RECORDED,
     legalStatus: movement.legalForm ? `Form ${movement.legalForm.code}` : movement.legalStatus,
-    recordedExpiry: dueAt === undefined ? "not recorded" : `${formatInstantWithDay(dueAt, now)}, clinician-entered`,
+    recordedExpiry:
+      dueAt === undefined ? "not recorded" : `${typedClock(dueAt, now, record.dayZero)}, clinician-entered`,
     security: movement.security,
     initials: info.initials,
     cohort: movement.cohort,
@@ -370,7 +393,7 @@ export type WardCapacityRecord = {
   pulledBeds: number;
   /** `bedStates().closed` — physically empty, but the ward is not offering it. */
   closedBeds: number;
-  /** Of `readyBeds`, how many are still being made ready. */
+  /** Beside `readyBeds`, never inside it: how many are still being made ready (D-179 item 8). */
   pendingPreparation?: number;
 };
 
@@ -410,7 +433,8 @@ export function useWardCapacity(): WardCapacityRecord[] {
         readyBeds: states.ready,
         pulledBeds: states.pulled,
         closedBeds: states.closed,
-        pendingPreparation: bedsPendingPreparation(unit.id, [...bedReleases]),
+        // D-179 item 8: the beds taken off `readyBeds` above, from the same `bedStates` call.
+        pendingPreparation: states.beingMadeReady,
       };
     });
   }, [units, bedReleases, admissions, leaveBeds, movements, referrals]);
@@ -471,7 +495,7 @@ export const DESTINATION_LABELS: Record<DrawerCategory, string> = {
   ed: "ED psychiatry",
 };
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTHS = MONTH_SHORT;
 
 /** "1991-09-17" as "17 Sep 1991"; anything else is shown as recorded. */
 export function formatDob(value: string): string {

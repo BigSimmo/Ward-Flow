@@ -317,8 +317,8 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
   // "Short" is Capacity's figure from the same selector (`bedKindTotals` over `bedKindGaps`), relabelled
   // only: PR C owns the rule (ruling 6, never net a spare youth bed).
   const bedGap = useMemo(
-    () => bedKindTotals(bedKindGaps(movements, units, now, admissions, referrals)).gap,
-    [movements, units, now, admissions, referrals],
+    () => bedKindTotals(bedKindGaps(movements, units, now, admissions, referrals, bedReleases)).gap,
+    [movements, units, now, admissions, referrals, bedReleases],
   );
   const staleCount = heroRows.filter((row) => row.stale).length;
   // Page tops (Josh, 9 Nov 2026): the counts confirmed this shift, the same pill and words as Capacity.
@@ -1102,13 +1102,15 @@ function WardCard({
  * and the table. The card's own line ("1 ready of 20") is the head, so the squares draw without one;
  * the note line says pulled, held up and the rest in words (a pulled bed is no longer hatched: the
  * hatch means "may move"). The squares are decorative; the card's line, the sheet's figures and the
- * table's Ready column say the counts. Being made ready stays inside Ready until PR C's F-26.
+ * table's Ready column say the counts. Since D-179 item 8 (PR C) a bed being made ready is off
+ * Ready and drawn as its own hollow square.
  */
 function WardBedSquares({ row, className, notes = true }: { row: WardRow; className?: string; notes?: boolean }) {
   const { unit, states } = row;
   const counts = bedSquareCounts({
     beds: unit.beds,
     ready: row.ready,
+    prep: states.beingMadeReady,
     dischargesToday: row.dischargesToday,
     closed: states.closed,
   });
@@ -1174,7 +1176,11 @@ function WardProfileFacts({
       {row.pendingPreparation > 0 ? (
         <>
           <dt>Being made ready</dt>
-          <dd>{row.pendingPreparation} of the ready beds</dd>
+          <dd>
+            {row.pendingPreparation === 1
+              ? "1 bed, not counted as ready"
+              : `${row.pendingPreparation} beds, not counted as ready`}
+          </dd>
         </>
       ) : null}
       {showStaff ? (

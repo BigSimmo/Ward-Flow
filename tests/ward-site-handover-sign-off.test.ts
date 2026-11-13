@@ -272,15 +272,30 @@ describe("Q63: open checks inform, and an unanswered bed call is named and stays
     };
     const checks = siteSignOffChecks(state, "RPH", NOW);
     expect(checks[0]).toEqual({ id: "bed_numbers", open: 1, ids: [rphA!.id], of: 2 });
-    // The seed's two RPH blockers were last confirmed on earlier days.
-    expect(checks[1]?.ids).toEqual(["AD-RPHS-01", "AD-RPHS-15"]);
+    // The seed's one RPH blocker was last confirmed on an earlier day. (AD-RPHS-15's typed
+    // "Awaiting clean" left the seed with A16-06: that reason is for an empty bed only, D-181 item 6.)
+    expect(checks[1]?.ids).toEqual(["AD-RPHS-01"]);
     expect(checks[2]?.open).toBe(0);
     expect(checks[3]?.open).toBe(0);
   });
 
   it("counts a blocker as reviewed only when it is recorded again, not when its release changes", () => {
     const listed = () => siteBlockersNotReviewedToday(state, "RPH", NOW).map((row) => row.admissionId);
-    let state: WardFlowState = seed;
+    // A second RPH stay held up on an earlier day, so reviewing one blocker is seen not to clear another.
+    const other = seed.admissions.find(
+      (admission) =>
+        rph.some((unit) => unit.id === admission.unitId) &&
+        admission.state === "occupied" &&
+        admission.id !== "AD-RPHS-01" &&
+        !admission.blockReason,
+    )!;
+    let state: WardFlowState = {
+      ...seed,
+      admissions: seed.admissions.map((admission) =>
+        admission.id === other.id ? { ...admission, blockReason: "Awaiting transport" } : admission,
+      ),
+    };
+    expect(listed()).toContain(other.id);
     const release = state.bedReleases.find(
       (row) => row.admissionId === "AD-RPHS-01" && row.state !== "discharged" && row.blocker !== null,
     )!;
@@ -308,7 +323,7 @@ describe("Q63: open checks inform, and an unanswered bed call is named and stays
     });
     expect(state.rejections).toEqual([]);
     expect(listed()).not.toContain("AD-RPHS-01");
-    expect(listed()).toContain("AD-RPHS-15");
+    expect(listed()).toContain(other.id);
   });
 });
 

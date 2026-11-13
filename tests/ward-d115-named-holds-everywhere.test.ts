@@ -18,7 +18,9 @@ import { activeWardNetwork, NOW_ANCHOR, wardSites } from "@/components/ward-mana
  * Find a bed, Call log), the rail's service alerts, Search and the ward peek used to count it as
  * ready. Synthetic seed data only.
  */
-// The ward board's "Place here": RF-005 accepted into rph-older-adult bed 1 (as the one-number test).
+// The ward board's "Place here": RF-005 accepted into bty-older-adult bed 1. It was rph-older-adult
+// until A16-13 (13 Nov 2026) made that ward's bed pulled for nobody an arrival, then scgh-older-adult,
+// until that ward became the sample day's closed ward (no ward carries two adverse examples).
 const seed = seedWardFlowState();
 const state = wardFlowReducer(seed, {
   type: "ACCEPT_REFERRAL",
@@ -26,8 +28,8 @@ const state = wardFlowReducer(seed, {
   now: NOW_ANCHOR,
   referralId: "RF-005",
   destinationKind: "psychiatric_ward",
-  unitId: "rph-older-adult",
-  actingUnitId: "rph-older-adult",
+  unitId: "bty-older-adult",
+  actingUnitId: "bty-older-adult",
   bedNumber: 1,
 } as Parameters<typeof wardFlowReducer>[1]);
 const holds = [...state.movements, ...state.referrals];
@@ -40,7 +42,7 @@ const named = state.units.filter(
 describe("D-115 item 3: a named bed is not ready on the Tools sheet, rail or Search", () => {
   it("the accepted referral names an otherwise ready bed, so the case is reached", () => {
     expect(state.rejections.length, "the acceptance was taken").toBe(seed.rejections.length);
-    expect(named.map((unit) => unit.id)).toContain("rph-older-adult");
+    expect(named.map((unit) => unit.id)).toContain("bty-older-adult");
   });
 
   it("Copy bed summary states the ready count with the named holds left out", () => {

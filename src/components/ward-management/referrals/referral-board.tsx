@@ -18,7 +18,12 @@ import {
   referralPresentationLists,
 } from "@/components/ward-management/ward-partial-view-presenters";
 import { presentationDecidedAt, outcomeLabel } from "./referral-board-model";
-import { acceptedReferralsAwaitingPull, acceptedWardOf, type AcceptedAwaitingPull } from "./accepted-ward-referral";
+import {
+  acceptedPullDesk,
+  acceptedReferralsAwaitingPull,
+  acceptedWardOf,
+  type AcceptedAwaitingPull,
+} from "./accepted-ward-referral";
 import { CopyNotesButton } from "./copy-notes-button";
 import { referralAcceptanceNotesText } from "@/components/ward-management/referral-notes-text";
 import { ChevronLeft, ChevronRight, FileText, ListOrdered, TriangleAlert, UserRound } from "lucide-react";
@@ -95,6 +100,7 @@ import { BedsStrip, HeroTools, LiveDecisionClock, personLine } from "./referral-
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { WardDeskEmptyQueue, useWardDeskPlace } from "./referral-ward-desk";
+import { wardDeskAnswerCount } from "./home-ward-offers";
 import desk from "./referral-desk.module.css";
 import panel from "./referral-panel.module.css";
 import { PatientTab, TimelineTab } from "./referral-panel-tabs";
@@ -134,6 +140,7 @@ import { ListExportButton } from "@/components/ward-management/ward-list-export-
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { recordIdFromParam } from "@/components/ward-management/shell/ward-record-address";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 /** The tier due times' status, read from the clinical values file so it changes when they are signed. */
 const DUE_TIMES_NOTE = allClinicalValuesSigned([
@@ -204,6 +211,7 @@ export function ReferralBoard({
   /** Opens on History rather than the queue (the redesign preview draws it this way). */
   historyOpenOnLoad?: boolean;
 } = {}) {
+  const zone = useClockZoneLabel();
   const [historyOpen, setHistoryOpen] = useState(historyOpenOnLoad);
   // D-80: the site bed manager reads its site's referral lines and answers none of them.
   const routeRole = useRouteRole();
@@ -374,7 +382,7 @@ export function ReferralBoard({
         at: (instant) => formatSheetMoment(instant, dayZero),
       },
       {
-        asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
+        asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone }),
         scope: "Referral queue; every referral in this desk's queue, regardless of highlights",
       },
     );
@@ -415,6 +423,8 @@ export function ReferralBoard({
     : undefined;
   // ROLE BRANCH (ward): with nothing queued and nothing open, the decision pane would be an empty panel.
   const wardEmpty = wardDesk && queued.length === 0;
+  // A9-30 (F-27): the ward's one "to answer" count, offers straight to the ward included.
+  const wardAnswerCount = wardDesk ? wardDeskAnswerCount(queued.length, movements, referrals) : queued.length;
   const emptyWardQueue = wardEmpty && selectedReferral === undefined && !leftNotice;
   // WS-03: an accepted referral with no bed pulled, which the coordinator can pull here in one step.
   const awaitingPull = useMemo(
@@ -425,10 +435,6 @@ export function ReferralBoard({
   const edQueueEmpty = edDesk && queued.length === 0;
   const edDetailHidden = edQueueEmpty && selectedReferral === undefined;
   const selectedToPull = awaitingPull.find((entry) => entry.referral.id === selectedReferral?.id);
-  // D-197 item 7: the ward desk pulls the bed here too, for its own ward's acceptance only.
-  const ownPullUnitIds = wardDesk && access.scope.kind === "ward" ? access.scope.unitIds : undefined;
-  const canPullHere = (entry: AcceptedAwaitingPull) =>
-    routeRole === "coordinator" || (routeRole === "ward" && ownPullUnitIds?.includes(entry.unitId) === true);
   const selectedPatientInfo = resolveSubjectPatient(selectedReferral, resolverState);
   const selectedReadyUnits =
     selectedReferral && sender.referralFor(selectedReferral) === undefined
@@ -595,8 +601,10 @@ export function ReferralBoard({
           >
             Open movement
           </Link>
-        ) : readOnly ? null : selectedToPull && canPullHere(selectedToPull) ? (
-          // WS-03: the coordinator (or the accepting ward's desk) pulls the bed here in one step.
+        ) : readOnly ? null : selectedToPull &&
+          !("refusal" in acceptedPullDesk(routeRole, access, selectedToPull.unitId)) ? (
+          // WS-03: the bed is pulled here in one step, with the recorded details. D-191 build
+          // answers: by the coordinator or the ward desk of the ward that accepted.
           <Button
             size="md"
             variant="pri"
@@ -860,7 +868,7 @@ export function ReferralBoard({
               // and no Beds ready (a figure for placing, which this desk does not do).
               eyebrow={siteScope ? `Referrals · ${siteScope.siteCode} wards · read only` : undefined}
               showBeds={!siteManager}
-              count={queued.length}
+              count={wardAnswerCount}
               oldest={oldestClocks ? durMinutes(oldestClocks.sinceReferral) : undefined}
               median={
                 medianDecision === undefined ? undefined : (
@@ -917,10 +925,10 @@ export function ReferralBoard({
           <div className={styles.v6HeroWrap} data-testid="ward-referral-kpis">
             <Hero
               {...deskHeroWords({
-                queuedCount: queued.length,
+                queuedCount: wardDesk ? wardAnswerCount : queued.length,
                 ed: edDesk ? edDeskView : undefined,
                 community,
-                ward: wardDesk ? { name: ownWardName, empty: wardEmpty } : undefined,
+                ward: wardDesk ? { name: ownWardName, empty: wardAnswerCount === 0 } : undefined,
                 site: siteManager ? { name: siteName, empty: siteEmpty } : undefined,
                 oldest: oldestClocks ? durMinutes(oldestClocks.sinceReferral) : undefined,
                 medianDecision,
@@ -1057,7 +1065,9 @@ export function ReferralBoard({
                     }
                   />
                 )}
-                {wardEmpty ? <WardDeskEmptyQueue wardName={ownWardName} movements={movements} /> : null}
+                {wardEmpty && wardAnswerCount === 0 ? (
+                  <WardDeskEmptyQueue wardName={ownWardName} movements={movements} />
+                ) : null}
                 <WardOffersTable
                   movements={movements}
                   referrals={referrals}
@@ -1492,11 +1502,7 @@ export function ReferralBoard({
             description="Check the details, then pull the bed."
             testId="ward-referral-pull-sheet"
           >
-            <PullAcceptedReferral
-              item={pulling}
-              onDone={() => setPulling(undefined)}
-              actingUnitId={ownPullUnitIds?.includes(pulling.unitId) ? pulling.unitId : undefined}
-            />
+            <PullAcceptedReferral item={pulling} onDone={() => setPulling(undefined)} />
           </Sheet>
         ) : null}
 

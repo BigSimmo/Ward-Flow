@@ -340,22 +340,33 @@ export function patientAgeYears(patient: Pick<Patient, "dateOfBirth">, today: Da
   return age;
 }
 
-/** Cohort label derived from date of birth. */
+/**
+ * D-181 item 11 (Josh, 13 Nov 2026): what a person counts as when their record gives no age, such
+ * as a typed date of birth held on this device as the "Typed text not kept" placeholder. Never
+ * Adult: an unreadable date used to fall through every band test and land on Adult.
+ */
+export const AGE_NOT_RECORDED = "Age not recorded";
+
+/** Cohort label derived from date of birth, or `AGE_NOT_RECORDED` when the date gives no age. */
 export function patientCohort(
   dateOfBirth: string,
   today: Date | string | number = new Date(),
-): "Adult" | "Older adult" | "Youth" {
+): "Adult" | "Older adult" | "Youth" | typeof AGE_NOT_RECORDED {
   const now = typeof today === "string" || typeof today === "number" ? new Date(today) : today;
   const age = patientAgeYears({ dateOfBirth }, now);
+  if (!/^\d{4}-\d{2}-\d{2}/u.test(dateOfBirth) || !Number.isFinite(age) || age < 0) return AGE_NOT_RECORDED;
   if (age < YOUTH_AGE_BAND_UNDER_YEARS) return "Youth";
   if (age >= OLDER_ADULT_AGE_BAND_FROM_YEARS) return "Older adult";
   return "Adult";
 }
 
 /** True when a record's age group fits the date of birth on that day. A Youth band also fits an
- *  18 to 24 year old, because youth services may accept people up to 24 (Josh, 27 Oct 2026). */
+ *  18 to 24 year old, because youth services may accept people up to 24 (Josh, 27 Oct 2026).
+ *  With no age recorded (D-181 item 11) nothing on the record contradicts the band, so it is not
+ *  flagged or refused; no band is guessed from it either. */
 export function cohortFitsAge(band: string, dateOfBirth: string, today: Date): boolean {
   const recorded = patientCohort(dateOfBirth, today);
+  if (recorded === AGE_NOT_RECORDED) return true;
   if (band === recorded) return true;
   return (
     band === "Youth" &&

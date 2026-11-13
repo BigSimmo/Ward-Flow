@@ -1,5 +1,7 @@
 import { referralIntakeError, type ReferralIntakeDetails } from "./referrals/referral-submission";
+import { LEGAL_STATUS_NOT_YET_RECORDED } from "./referrals/referral-send-warnings";
 import { isDischargeCriterion } from "./ward-discharge-criteria";
+import { SELECTABLE_LEGAL_FORMS } from "./ward-legal-forms";
 import { isSyntheticReferralTimelineBase } from "./ward-referral-seed-time";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
@@ -29,11 +31,11 @@ import {
  *    (`ward-flow-typed-text-ledger.ts`). Any string anywhere in the world that equals one, or
  *    contains one of at least `MIN_CONTAINED_LENGTH` characters, is replaced: an audit summary or a
  *    nested record that quotes typed text is caught even if no field list names it.
- * 3. **Default deny.** The copy is refused, and the caller stops saving as before, if any object key
- *    still carries a typed value, or if the copy would not pass the same restore fence a refresh
- *    applies (`isValidStoredWardFlowState`). A typed date of birth or initials cannot become the
- *    placeholder without failing that fence, so a session holding them stops saving, exactly as
- *    every typed session did before.
+ * 3. **Default deny.** The copy is refused if any object key still carries a typed value, or if the
+ *    copy would not pass the same restore fence a refresh applies (`isValidStoredWardFlowState`).
+ *    The caller then writes nothing more for that day and keeps its last safe save, marked as not
+ *    the latest. Since A9-07 no typed-text event in `tests/ward-flow-typed-text-scrub.test.ts` reaches
+ *    this (its `STOPS_SAVING` list is empty); it stays as the fail-safe.
  *
  * The fixture's own prose is kept where the fixture put it: it ships in the bundle, so it is not a
  * disclosure, and blanking it made every restored history read as missing (Opus finding F3,
@@ -187,6 +189,8 @@ interface FixtureText {
   places: ReadonlySet<string>;
   /** Every seeded string, wherever it sits: what pass 2 leaves alone (see `effectiveLedger`). */
   strings: ReadonlySet<string>;
+  /** Every object key the seeded worlds use: code, never typed, so never a key leak. */
+  keys: ReadonlySet<string>;
 }
 
 let fixtureText: { from: FixtureWorlds; text: FixtureText; worlds: readonly WardFlowState[] } | undefined;
@@ -207,6 +211,7 @@ function fixtureEntries(worlds: FixtureWorlds): FixtureText {
   if (fixtureText?.from === worlds) return fixtureText.text;
   const places = new Set<string>();
   const strings = new Set<string>();
+  const keys = new Set<string>();
   const visit = (value: unknown, place: string[]): void => {
     if (typeof value === "string") {
       places.add(placed(place, value));
@@ -214,11 +219,14 @@ function fixtureEntries(worlds: FixtureWorlds): FixtureText {
     } else if (Array.isArray(value))
       value.forEach((entry, index) => visit(entry, [...place, entryPlace(entry, index)]));
     else if (value && typeof value === "object")
-      for (const [key, entry] of Object.entries(value)) visit(entry, [...place, key]);
+      for (const [key, entry] of Object.entries(value)) {
+        keys.add(key);
+        visit(entry, [...place, key]);
+      }
   };
   const seeded = worlds();
   for (const world of seeded) visit(world, []);
-  const text = { places, strings };
+  const text = { places, strings, keys };
   fixtureText = { from: worlds, text, worlds: seeded };
   return text;
 }
@@ -282,6 +290,22 @@ function reanchoredFixtureTargets(
 const NO_TARGETS: ReadonlyMap<string, ReanchoredFixtureTarget> = new Map();
 
 /**
+ * F-66 (RC 5.4, 13 Nov 2026): a new referral's legal status is picked from the drawer's list
+ * (Voluntary, a form, or "Not yet recorded"), never typed, so it is kept. Replacing it made a
+ * Voluntary referral read as not voluntary after a reload, because only the exact word "Voluntary"
+ * clears the involuntary-capable bed rule (`involuntaryBedNeededForLegalStatus`). Anything else in
+ * the field (a carried or tampered value) is still replaced.
+ */
+const PICKED_REFERRAL_LEGAL_STATUSES: ReadonlySet<string> = new Set([
+  "Voluntary",
+  LEGAL_STATUS_NOT_YET_RECORDED,
+  ...SELECTABLE_LEGAL_FORMS.map((form) => `Form ${form.code}`),
+]);
+function isPickedReferralLegalStatus(value: string): boolean {
+  return PICKED_REFERRAL_LEGAL_STATUSES.has(value);
+}
+
+/**
  * Pass 1 alone: every typed field that is not fixture text becomes the placeholder. `loadedWorld`
  * adds the mixed fields, for a world whose typed values this session never saw.
  */
@@ -302,7 +326,8 @@ export function scrubTypedTextFields(state: WardFlowState, worlds: FixtureWorlds
       value.trim() === "" ||
       fixture.has(placed(place, value)) ||
       (target?.value === value && target.base === parent?.syntheticTimelineBase) ||
-      (path.at(-1) === "criterion" && isDischargeCriterion(value))
+      (path.at(-1) === "criterion" && isDischargeCriterion(value)) ||
+      (path.at(-1) === "legalStatus" && isPickedReferralLegalStatus(value))
     );
   };
   // `path` matches the field rules (`[]` for any array position); `place` finds the fixture's own text.
@@ -447,10 +472,13 @@ function ledgerMatcher(typed: ReadonlySet<string>): LedgerMatcher {
   };
 }
 
-/** One typed value as pass 2 holds it, or `undefined` when it is blank or fixture text. */
+/**
+ * One typed value as pass 2 holds it, or `undefined` when it is blank, fixture text or a legal status
+ * picked from the referral list (F-66: list words ship in the bundle, so they disclose nothing).
+ */
 function effectiveTyped(value: string, fixture: ReadonlySet<string>): string | undefined {
   const normalised = normaliseTypedText(value);
-  return normalised === "" || fixture.has(normalised) ? undefined : normalised;
+  return normalised === "" || fixture.has(normalised) || isPickedReferralLegalStatus(value) ? undefined : normalised;
 }
 
 /**
@@ -471,8 +499,9 @@ function effectiveLedger(ledger: TypedTextLedger, worlds: FixtureWorlds): Set<st
 }
 
 /**
- * The world as it may be written to this device, or `null` when it cannot be written safely and the
- * caller must stop saving and clear what is stored.
+ * The world as it may be written to this device, or `null` when it cannot be written safely. On
+ * `null` the caller writes nothing more for this day and keeps the last safe save, only marking it as
+ * not the latest (`keepLastSafeDemoSave`, SD-01 and SD-07); it never clears what is stored (F-114).
  */
 export function redactTypedTextForDevice(
   state: WardFlowState,
@@ -490,13 +519,20 @@ function redactWithMatcher(
   loadedWorld: boolean,
 ): WardFlowState | null {
   let keyLeak = false;
+  // A9-07 (13 Nov 2026): a string that is exactly fixture text ships in the bundle, so it discloses
+  // nothing typed and stays. Without this a typed value that is a common phrase ("Community team",
+  // the referrer's prefilled role) replaced fixed-list fixture values that contain it, the copy
+  // failed the restore fence and every later save on the device stopped. Likewise a key the seeded
+  // worlds use is code ("syntheticTimelineBase" holds a typed "Synthetic"), not a typed key.
+  const { strings: fixture, keys: fixtureKeys } = fixtureEntries(worlds);
   const replaceValues = (value: unknown): unknown => {
-    if (typeof value === "string") return matchesLedger(value) ? TYPED_TEXT_NOT_KEPT : value;
+    if (typeof value === "string")
+      return matchesLedger(value) && !fixture.has(normaliseTypedText(value)) ? TYPED_TEXT_NOT_KEPT : value;
     if (Array.isArray(value)) return value.map(replaceValues);
     if (value && typeof value === "object")
       return Object.fromEntries(
         Object.entries(value).map(([key, entry]) => {
-          if (matchesLedger(key)) keyLeak = true;
+          if (matchesLedger(key) && !fixtureKeys.has(key)) keyLeak = true;
           return [key, replaceValues(entry)];
         }),
       );

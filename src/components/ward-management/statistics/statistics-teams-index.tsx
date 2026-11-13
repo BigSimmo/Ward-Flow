@@ -24,7 +24,7 @@ import {
   communityMembershipResolution,
 } from "@/components/ward-management/community/community-derivations";
 import { bedIsOccupied } from "@/components/ward-management/ward-admissions";
-import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
+import { isDueWithinDays } from "./statistics-dates";
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { mapClinicToServiceAndHospital } from "@/components/ward-management/tools/ward-catchment-mapping";
 
@@ -136,10 +136,7 @@ function OperationalTeamsIndex() {
       inBed: figures.admitted.kind === "measured" ? figures.admitted.value : null,
       withDate: figures.expected.kind === "measured" ? figures.expected.value : null,
       dueOutWeek: lists.expectedBack.filter(
-        (admission) =>
-          admission.expectedDischargeAt !== null &&
-          admission.expectedDischargeAt >= now &&
-          admission.expectedDischargeAt < now + 7 * MINUTES_PER_DAY,
+        (admission) => admission.expectedDischargeAt !== null && isDueWithinDays(admission.expectedDischargeAt, now, 7),
       ).length,
     };
   });

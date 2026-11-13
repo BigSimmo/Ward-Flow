@@ -102,7 +102,8 @@ describe("Capacity for a signed-in executive (WF-06)", () => {
     );
     expect(screen.getByTestId("ward-capacity-executive-closed")).toHaveTextContent(`${beds.closed} Closed · now`);
     expect(screen.getByTestId("ward-capacity-executive-as-at")).toHaveTextContent(
-      /^As at \d\d:\d\d · bed counts only, no patient details$/u,
+      // PR C's time words (C owns time wording): day, year, clock and the clock's zone label.
+      /^As at \w{3} \d{1,2} \w+ \d{4}, \d\d:\d\d (demo time|AWST) · bed counts only, no patient details$/u,
     );
     const band = screen.getByTestId("ward-capacity-executive-services");
     expect(band).toHaveTextContent(/By service · now/u);
@@ -111,6 +112,10 @@ describe("Capacity for a signed-in executive (WF-06)", () => {
         new RegExp(`^${service.service} ${service.beds.ready} ready .*in use · ${service.beds.closed} closed$`, "u"),
       );
     const table = screen.getByRole("table", { name: /Beds by ward/u });
+    // F-51 (PR C): eight ward rows, then Show more; the totals row still counts every ward.
+    expect(within(table).getAllByTestId("bed-squares-strip")).toHaveLength(Math.min(data.wards.length, 8));
+    const more = screen.queryByRole("button", { name: /^Show \d+ more$/u });
+    if (more) fireEvent.click(more);
     expect(within(table).getAllByRole("rowheader").length).toBeGreaterThanOrEqual(data.wards.length);
     expect(within(table).getAllByTestId("bed-squares-strip")).toHaveLength(data.wards.length);
     expect(screen.getByTestId("ward-capacity-executive-total")).toHaveTextContent(
@@ -121,13 +126,17 @@ describe("Capacity for a signed-in executive (WF-06)", () => {
     const buttons = within(main)
       .queryAllByRole("button")
       .map((button) => button.getAttribute("aria-label") ?? button.textContent);
-    expect(buttons.filter((name) => !/pause|resume|live/iu.test(name ?? ""))).toEqual([]);
+    // The list's own Show more / Show fewer (F-51) changes what is shown, not the record.
+    expect(buttons.filter((name) => !/pause|resume|live|^Show (\d+ more|fewer)$/iu.test(name ?? ""))).toEqual([]);
   });
 
   it("orders the services as the coordinator's bed map does: North, East, South, WACHS, Private", () => {
     renderReport();
     const populated = new Set(data.wards.map((ward) => ward.service));
     const expected = wardServiceOrder.filter((service) => populated.has(service));
+    // F-51 (PR C): eight ward rows, then Show more; open every row before reading the groups.
+    const more = screen.queryByRole("button", { name: /^Show \d+ more$/u });
+    if (more) fireEvent.click(more);
     const table = screen.getByRole("table", { name: /Beds by ward/u });
     const drawn = [...table.querySelectorAll<HTMLElement>("tbody[data-testid]")].map((group) =>
       (group.dataset.testid ?? "").replace("ward-capacity-executive-group-", ""),

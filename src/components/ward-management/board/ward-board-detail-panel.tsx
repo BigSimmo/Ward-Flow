@@ -30,6 +30,7 @@ import { calendarDateOf, MINUTES_PER_DAY, type Instant } from "@/components/ward
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
+import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { parseReleaseDayInstant } from "@/components/ward-management/ward/release-day";
 import styles from "./board.module.css";
@@ -69,7 +70,12 @@ function bedClassTitle(kind: Tile["kind"]): string {
 
 /** One status tag in the head (D-94: tone lives in the tag, never in a banner or stripe). */
 function recordTag(tile: Tile, occupant: Occupant | null): ReactNode {
-  if (tile.kind === "empty") return <StatusPill tone="success">Free</StatusPill>;
+  if (tile.kind === "empty")
+    return tile.preparing ? (
+      <StatusPill tone="neutral">{BED_STATE_LABELS.beingMadeReady}</StatusPill>
+    ) : (
+      <StatusPill tone="success">Free</StatusPill>
+    );
   if (tile.kind === "closed") return <StatusPill tone="closed">Closed</StatusPill>;
   if (tile.kind !== "occupied" && tile.kind !== "waiting")
     return <StatusPill tone="neutral">Out of service</StatusPill>;
@@ -628,7 +634,9 @@ export function WardBoardDetailPanel({
               {selectedTile.kind === "waiting"
                 ? "Named for an accepted referral or an incoming patient. Not ready for anyone else."
                 : selectedTile.kind === "empty"
-                  ? `Free bed, one of ${emptyTileCount}.`
+                  ? selectedTile.preparing
+                    ? "Empty and still being made ready. Not counted as ready, but a patient can still be pulled into it."
+                    : `Free bed, one of ${emptyTileCount}.`
                   : selectedTile.kind === "closed"
                     ? `Closed bed, one of ${closedTileCount}.`
                     : `Out of service, one of ${blockedTileCount}.`}

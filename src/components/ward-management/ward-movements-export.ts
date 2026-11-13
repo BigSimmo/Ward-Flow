@@ -1,5 +1,5 @@
 // Lives at the ward root (not in movements/) so Movements reaching the legal-forms export words adds no screen-to-screen import (M139 import map).
-import { formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
+import { formatSheetMoment, type ClockZoneLabel, type Instant } from "@/components/ward-management/ward-clock";
 import { legalEndAsTyped, legalFormWords } from "@/components/ward-management/legal-forms/legal-forms-export";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -78,6 +78,8 @@ export function exportMovementsList(o: {
   readonly units: readonly Unit[];
   readonly now: Instant;
   readonly dayZero: Date;
+  /** The board's clock words (`useClockZoneLabel`, F-113). */
+  readonly zone?: ClockZoneLabel;
 }): void {
   const ctx: MovementsExportContext = {
     umrnOf: (movement) => resolveSubjectPatient(movement, { patients: o.patients, referrals: o.referrals }).umrn,
@@ -93,7 +95,7 @@ export function exportMovementsList(o: {
     dayZero: o.dayZero,
   };
   downloadCsv("ward-flow-synthetic-movements.csv", movementsExportLines(o.movements, ctx), {
-    asAt: formatSheetMoment(o.now, o.dayZero, { includeYearAndZone: true }),
+    asAt: formatSheetMoment(o.now, o.dayZero, { includeYearAndZone: true, zone: o.zone }),
     scope: o.resolved
       ? "Movements, Resolved today; every movement closed today in this view's service"
       : "Movements; every movement on the worklist in this view's service (highlights and search do not narrow it)",

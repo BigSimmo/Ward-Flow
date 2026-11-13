@@ -175,7 +175,13 @@ describe("Ward board: a live re-sort under the finger", () => {
   /** A new arrival with the longest stay lands on the ward, and the rest arrive in reverse. */
   const resort: Adjust = (value) => {
     const template = value.admissions.find((admission) => admission.id === "AD-RPHS-15")!;
-    const inserted = { ...template, id: INSERTED, arrivedAt: template.arrivedAt! - 60 * 24 * 30 };
+    // A16-12 (13 Nov 2026): each ward's stays are rearranged, so the longest is read from the ward.
+    const longest = Math.min(
+      ...value.admissions
+        .filter((admission) => admission.unitId === UNIT)
+        .map((admission) => admission.arrivedAt ?? Infinity),
+    );
+    const inserted = { ...template, id: INSERTED, arrivedAt: longest - 60 * 24 * 30 };
     return { ...value, admissions: [inserted, ...[...value.admissions].reverse()] };
   };
   const tileOf = (key: string) => document.getElementById(tileDomId(key))!;

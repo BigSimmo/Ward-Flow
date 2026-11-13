@@ -105,7 +105,15 @@ describe("Remind me (Q323)", () => {
     >[];
     expect(stored).toHaveLength(1);
     // Only list-picked fields are kept: no free text and no patient detail.
-    expect(Object.keys(stored[0]!).sort()).toEqual(["dueAt", "id", "kind", "reason", "targetId", "targetLabel"]);
+    expect(Object.keys(stored[0]!).sort()).toEqual([
+      "dayZero",
+      "dueAt",
+      "id",
+      "kind",
+      "reason",
+      "targetId",
+      "targetLabel",
+    ]);
     expect(stored[0]!.kind).toBe("movement");
     // The label names where the movement starts, never the person (D-39).
     // An exact place label from the synthetic ED list, so a stored name cannot pass.

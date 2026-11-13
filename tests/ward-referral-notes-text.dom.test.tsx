@@ -80,7 +80,9 @@ describe("acceptance notes", () => {
       SYNTHETIC_COPY_LINE,
       "Ward Flow acceptance: Synthetic, Person.",
       `Referral ${referral.id} accepted by ${ward!.name}, ${formatInstantWithDay(accepted.decidedAt!, now)}.`,
-      accepted.heldBedNumber === undefined ? "Bed: no bed held yet." : `Bed: bed ${accepted.heldBedNumber} held.`,
+      accepted.heldBedNumber === undefined
+        ? "Bed: no numbered bed pulled yet."
+        : `Bed: bed ${accepted.heldBedNumber} pulled.`,
       `Urgency: Tier ${referral.urgency}.`,
     ]);
     expectNoTypedText(text);
@@ -110,7 +112,7 @@ describe("transfer notes", () => {
     expect(lines[0]).toBe(SYNTHETIC_COPY_LINE);
     expect(lines[1]).toBe("Ward Flow transfer: Synthetic, Person.");
     expect(lines[2]).toBe(`From ${edById(movement.originEdId)!.name} to ${ward.name}.`);
-    expect(lines).toContain("Bed: bed 4 held.");
+    expect(lines).toContain("Bed: bed 4 pulled.");
     expect(lines).toContain("Transport: Not yet requested.");
     expect(lines).toContain(`Arrival plan: Ambulance (St John), expected ${formatInstantWithDay(now + 45, now)}.`);
     expect(lines).toContain(`Legal status: ${movement.legalStatus}.`);

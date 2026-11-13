@@ -7,6 +7,7 @@ import { AlarmClock } from "lucide-react";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { InboxSnoozeEntry } from "@/components/ward-management/ward-inbox-snooze";
 import { snoozedLine } from "@/components/ward-management/inbox-snooze-control";
 import { Button, Count, StatusGlyph, buttonClass, type WfTone } from "@/components/wf";
@@ -173,11 +174,11 @@ function Who({ entry }: { entry: QueueEntry }) {
 }
 
 /** "10m overdue" under "10m" says the time twice; the note keeps only what it adds. */
-function ageNoteFor(entry: QueueEntry, age: string | undefined, now: Instant): string {
+function ageNoteFor(entry: QueueEntry, age: string | undefined, now: Instant, dayZero: Date | undefined): string {
   // A snoozed alert says when it comes back, even a legal one with a typed end.
   if (entry.snooze) return snoozedLine(entry.snooze, now);
   const ended = legalTypedEnd(entry.item);
-  if (ended !== undefined) return typedTimeLine(ended, now);
+  if (ended !== undefined) return typedTimeLine(ended, now, dayZero);
   if (entry.raised === undefined) return "Time not recorded";
   const overdue = extractOverdue(entry.item.detail);
   if (!overdue) return `since ${formatInstantWithDay(entry.raised, now)}`;
@@ -199,6 +200,7 @@ export function AlertRow({
   maxAge?: number;
   handlers: QueueHandlers;
 }) {
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   const { subject } = entry;
   const where = subject.to ? `${subject.to}, from ${subject.from}` : subject.from;
   const state = entry.snooze ? undefined : stateLine(entry, now);
@@ -248,7 +250,7 @@ export function AlertRow({
       </span>
       <span className={homeStyles.hrowAge}>
         {age === undefined ? null : <span className={homeStyles.mono}>{age}</span>}
-        <span>{ageNoteFor(entry, age, now)}</span>
+        <span>{ageNoteFor(entry, age, now, dayZero)}</span>
       </span>
       <span className={homeStyles.hrowAction}>
         <RowAction entry={entry} handlers={handlers} />
@@ -269,6 +271,7 @@ export function AlertCard({
   maxAge: number;
   handlers: QueueHandlers;
 }) {
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   const state = stateLine(entry, now);
   const route = entry.subject.to ? `${entry.subject.from} to ${entry.subject.to}` : entry.subject.from;
   const ageFrom = shownAgeFrom(entry.item, entry.raised);
@@ -282,7 +285,7 @@ export function AlertCard({
         {ageFrom !== undefined ? (
           <span className={`${styles.mono} ${styles.quiet}`}>{minutesText(Math.max(0, now - ageFrom))}</span>
         ) : ended !== undefined ? (
-          <span className={styles.quiet}>{typedTimeLine(ended, now)}</span>
+          <span className={styles.quiet}>{typedTimeLine(ended, now, dayZero)}</span>
         ) : null}
       </span>
       <span className={styles.cardLine}>
@@ -390,6 +393,7 @@ export function AlertWho({ name, umrn }: { name: string; umrn: string | undefine
 
 /** Phone row (v10) for one alert: the title opens the alert's sheet. */
 export function AlertPhoneRow({ entry, now, handlers }: { entry: QueueEntry; now: Instant; handlers: QueueHandlers }) {
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   const route = entry.subject.to ? `${entry.subject.from} to ${entry.subject.to}` : entry.subject.from;
   const ageFrom = shownAgeFrom(entry.item, entry.raised);
   const ended = legalTypedEnd(entry.item);
@@ -405,7 +409,7 @@ export function AlertPhoneRow({ entry, now, handlers }: { entry: QueueEntry; now
         ageFrom !== undefined
           ? minutesText(Math.max(0, now - ageFrom))
           : ended !== undefined
-            ? typedTimeLine(ended, now)
+            ? typedTimeLine(ended, now, dayZero)
             : ""
       }
       owner={entry.mine ? "You" : ownerShort(entry.owner, false)}

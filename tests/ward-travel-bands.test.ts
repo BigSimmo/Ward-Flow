@@ -17,17 +17,21 @@ import {
 import { HOME_REGIONS, type HomeRegion, type Referral, type Unit } from "../src/components/ward-management/ward-model";
 import { referrals } from "../src/components/ward-management/ward-movements";
 import { wardSites } from "../src/components/ward-management/ward-sites";
-import { SYNTHETIC_TRAVEL_BANDS, TRAVEL_BANDS_ARE_INVENTED } from "../src/components/ward-management/ward-travel-bands";
+
+// A16-04 (Josh, 13 Nov 2026): the app shows only checked bands, and none are checked yet. The
+// mechanism tests below need bands, so they run on the tests' own invented table, never on a value
+// a screen shows. The guards on the shown table itself are in
+// `tests/ward-fix-E-travel-bands-shown.test.ts`, which does not load this helper.
+import { TEST_TRAVEL_BANDS } from "./helpers/ward-test-travel-bands";
 
 /**
  * Phase 8 Task 1. What this file may and may not assert, because getting that boundary wrong is
  * the whole risk of the phase.
  *
- * `SYNTHETIC_TRAVEL_BANDS` sits beside REAL hospital names and every value in it is invented.
- * Nobody has measured or checked the travel time between any Western Australian region and any
- * hospital in that table, and the values were chosen to exercise the four bands rather than to
- * resemble geography. The day somebody replaces them with checked figures, replacing that one
- * file's values must be the whole change.
+ * `TEST_TRAVEL_BANDS` (tests only, never shown) sits beside REAL hospital names and every value in
+ * it is invented. Nobody has measured or checked the travel time between any Western Australian
+ * region and any hospital in that table, and the values were chosen to exercise the four bands
+ * rather than to resemble geography. The app shows only the checked bands in `ward-travel-bands.ts`.
  *
  * So NO test here may assert a specific band for a specific place. A test reading
  * `expect(travelBand("Kimberley", "RPH")).toBe("three_hours_or_more")` would quietly promote an
@@ -44,9 +48,7 @@ const SITE_CODES = wardSites.map((site) => site.code);
 const ALL_UNITS: Unit[] = wardSites.flatMap((site) => site.units);
 
 /** A region the fixture records nothing at all for — the whole-region gap. */
-const REGIONS_WITH_NO_BANDS: HomeRegion[] = HOME_REGIONS.filter(
-  (region) => SYNTHETIC_TRAVEL_BANDS[region] === undefined,
-);
+const REGIONS_WITH_NO_BANDS: HomeRegion[] = HOME_REGIONS.filter((region) => TEST_TRAVEL_BANDS[region] === undefined);
 
 /** Home regions a seeded referral actually uses, so the gap wording renders in the seeded data. */
 const SEEDED_HOME_REGIONS: HomeRegion[] = [
@@ -56,44 +58,30 @@ const SEEDED_HOME_REGIONS: HomeRegion[] = [
 /** Every (region, site) pair the fixture records, flattened. */
 const RECORDED_PAIRS: { region: HomeRegion; siteCode: string; band: TravelBand }[] = HOME_REGIONS.flatMap((region) =>
   SITE_CODES.flatMap((siteCode) => {
-    const band = SYNTHETIC_TRAVEL_BANDS[region]?.[siteCode];
+    const band = TEST_TRAVEL_BANDS[region]?.[siteCode];
     return band === undefined ? [] : [{ region, siteCode, band }];
   }),
 );
 
 /** Every (region, site) pair the fixture leaves unrecorded — the gaps, counted. */
 const UNRECORDED_PAIRS: { region: HomeRegion; siteCode: string }[] = HOME_REGIONS.flatMap((region) =>
-  SITE_CODES.flatMap((siteCode) =>
-    SYNTHETIC_TRAVEL_BANDS[region]?.[siteCode] === undefined ? [{ region, siteCode }] : [],
-  ),
+  SITE_CODES.flatMap((siteCode) => (TEST_TRAVEL_BANDS[region]?.[siteCode] === undefined ? [{ region, siteCode }] : [])),
 );
-
-/** Any home region for which the fixture records a band at EVERY site in the network. */
-const COMPLETELY_MAPPED_REGIONS: HomeRegion[] = HOME_REGIONS.filter((region) =>
-  SITE_CODES.every((siteCode) => SYNTHETIC_TRAVEL_BANDS[region]?.[siteCode] !== undefined),
-);
-
-/**
- * The strict completeness guard runs only while the bands are marked invented. Its title carries
- * the reason either way, so a skipped run says so in the reporter rather than simply vanishing —
- * a guard nobody notices has gone is not a guard.
- */
-const COMPLETENESS_GUARD_TITLE = TRAVEL_BANDS_ARE_INVENTED
-  ? "records no home region at every site, while the bands are marked invented"
-  : "SKIPPED — no completeness guard: TRAVEL_BANDS_ARE_INVENTED is false, so the bands are no longer marked invented";
 
 const WARD_DIR = join(process.cwd(), "src", "components", "ward-management");
 const MODULE_FILES = ["ward-distance.ts", "ward-travel-bands.ts"];
 
 /**
- * Source with comments removed, so a digit in prose ("Phase 8", "the four bands") is not mistaken
- * for a written-down figure. Neither module contains a `//` or `/*` sequence inside a string
- * literal, so the naive strip is exact for these two files.
+ * Source with comments and string literals removed, so a digit in prose ("Phase 8", "the four
+ * bands") or in a checked band's `checkedOn` date is not mistaken for a written-down figure.
+ * Neither module contains a `//` or `/*` sequence inside a string literal, so the naive strip is
+ * exact for these two files.
  */
 function codeWithoutComments(fileName: string): string {
   return readFileSync(join(WARD_DIR, fileName), "utf8")
     .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/\/\/.*$/gm, "");
+    .replace(/\/\/.*$/gm, "")
+    .replace(/"(?:[^"\\\n]|\\.)*"/g, '""');
 }
 
 describe("travel bands", () => {
@@ -105,8 +93,8 @@ describe("travel bands", () => {
 
     // A region the table DOES record, at a site it does not — the inner lookup misses.
     const partialPair = HOME_REGIONS.flatMap((region) => {
-      if (SYNTHETIC_TRAVEL_BANDS[region] === undefined) return [];
-      const missing = SITE_CODES.find((siteCode) => SYNTHETIC_TRAVEL_BANDS[region]?.[siteCode] === undefined);
+      if (TEST_TRAVEL_BANDS[region] === undefined) return [];
+      const missing = SITE_CODES.find((siteCode) => TEST_TRAVEL_BANDS[region]?.[siteCode] === undefined);
       return missing === undefined ? [] : [{ region, siteCode: missing }];
     })[0];
     expect(partialPair, "the fixture must leave at least one site unrecorded within a recorded region").toBeDefined();
@@ -217,7 +205,10 @@ describe("travel bands", () => {
     // reads like a caveat while having dropped the part that does the work. Each is therefore
     // pinned as a WHOLE string against an independent copy — never a prefix, never a fragment,
     // never a `toContain`.
-    expect(SYNTHETIC_TRAVEL_TIMES_NOTICE).toBe("Travel times are invented and unchecked. Do not rely on them.");
+    // A16-04: only checked bands are shown, so the notice says that rather than "invented".
+    expect(SYNTHETIC_TRAVEL_TIMES_NOTICE).toBe(
+      "Only travel times someone has checked are shown. The rest read as not recorded.",
+    );
     expect(INVENTED_OUT_OF_AREA_THRESHOLD_NOTICE).toBe(
       "Out of area here means three hours or more from home, or reachable only by air. This prototype " +
         "invented that line. Nobody has checked whether Western Australian mental health services already " +
@@ -238,29 +229,10 @@ describe("travel bands", () => {
     }
   });
 
-  it.skipIf(!TRAVEL_BANDS_ARE_INVENTED)(COMPLETENESS_GUARD_TITLE, () => {
-    // THE claim that closes "the table is deliberately incomplete". It stands alone, in its own
-    // test, and first in the file's ordering of this property, because the companion claim below
-    // ("at least one pair is unrecorded") is mathematically near-vacuous — a hundred and fifty-odd
-    // gaps against zero — and would mask this one if they shared a body.
-    //
-    // A suspiciously complete table of INVENTED values is how a placeholder starts reading as a
-    // checked fact: filling a gap is exactly the pressure that sends an author to a map.
-    //
-    // It is gated on `TRAVEL_BANDS_ARE_INVENTED` rather than written as an unconditional rule,
-    // and the reason is the incentive, not the red. Nothing about the table's shape distinguishes
-    // an invented fill-in from a measured one, so an unconditional version would eventually fire
-    // on somebody entering REAL travel times — on a test named for leaving the table incomplete.
-    // The natural way to get back to green would be to not record the real data. A test that
-    // pressures somebody into withholding checked data is worse than the fill-in it guards
-    // against. The flag makes that moment a deliberate flag flip instead of a mystifying failure.
-    expect(COMPLETELY_MAPPED_REGIONS, "a home region is recorded at every site in the network").toEqual([]);
-  });
-
   it("reads every unrecorded pair as a gap, never as a band", () => {
     // The gaps are gaps in the LOOKUP, not merely in the literal: nothing invents a band for an
     // unrecorded pair on the way out. The length check is a non-vacuity precondition for the loop
-    // beneath it — proof that it iterates at all — and is not doing the work of the guard above.
+    // beneath it — proof that it iterates at all.
     expect(UNRECORDED_PAIRS.length, "the fixture records every possible pair, so this loop is empty").toBeGreaterThan(
       0,
     );
@@ -294,7 +266,7 @@ describe("travel bands", () => {
     // Derived from `wardSites`, not from the pair list — a typo in a fixture key would otherwise
     // sit in the table answering `undefined` forever with nothing to notice it.
     for (const region of HOME_REGIONS) {
-      for (const siteCode of Object.keys(SYNTHETIC_TRAVEL_BANDS[region] ?? {})) {
+      for (const siteCode of Object.keys(TEST_TRAVEL_BANDS[region] ?? {})) {
         expect(SITE_CODES, `${siteCode} is not a site code in this network`).toContain(siteCode);
       }
     }

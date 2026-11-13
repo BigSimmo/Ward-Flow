@@ -3,6 +3,7 @@
  * the person needs to be seen by, counted from the reviewed time with the tier's window. Arithmetic
  * only: it never suggests a tier, and F (recontact) and G (no action) have no time. Synthetic data.
  */
+import { MONTH_SHORT } from "@/components/ward-management/ward-month-names";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 
 import type { Tier } from "./triage-record";
@@ -19,7 +20,7 @@ const WINDOW: Readonly<Partial<Record<Tier, number>>> = {
   E: CLINICAL_VALUES.triageUrgencyE.value * DAY,
 };
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTHS = MONTH_SHORT;
 
 /**
  * "DD/MM/YYYY HH:MM" as a wall-clock time held in UTC fields, or null when it is not a whole, real

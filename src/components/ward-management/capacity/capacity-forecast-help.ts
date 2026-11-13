@@ -67,8 +67,8 @@ export function helpItems(levers: readonly ForecastLever[], rows: readonly Netwo
 
 export function tagText(item: HelpItem): string {
   if (item.kind === "stale_counts") return "check";
-  // A bed being made ready already counts as ready (owner, 1 Sep 2026), so finishing it is a task,
-  // not an uplift to tomorrow's figure.
+  // A bed being made ready is not Ready now (D-179 item 8), but tomorrow's range already counts it
+  // (`beingMadeReady` in `bedsForecast`), so finishing it is a task, not an uplift to that figure.
   if (item.kind === "being_made_ready") return "task";
   return item.uplift > 0 ? `up to +${item.uplift}` : "range only";
 }

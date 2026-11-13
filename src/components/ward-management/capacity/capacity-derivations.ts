@@ -143,6 +143,7 @@ function readySupply(
   units: Unit[],
   admissions: readonly Admission[],
   reservations: readonly ReservationReferral[],
+  bedReleases: readonly BedRelease[],
 ): { unit: Unit; ready: number; held: HeldByKind }[] {
   const movements = reservations.filter((row): row is Movement => "stage" in row);
   const others = reservations.filter((row): row is BaseReservationReferral => !("stage" in row));
@@ -152,7 +153,8 @@ function readySupply(
     const locked = kinds.filter((kind) => kind === "locked").length;
     return {
       unit,
-      ready: bedStates(unit, admissions, [], [], reservations).ready,
+      // D-179 item 8: a bed still being made ready is not a ready bed that fits.
+      ready: bedStates(unit, admissions, [...bedReleases], [], reservations).ready,
       held: { locked, open: kinds.length - locked },
     };
   });
@@ -165,6 +167,7 @@ export function bedKindGaps(
   now: Instant,
   admissions: readonly Admission[] = [],
   referrals: readonly ReservationReferral[] = [],
+  bedReleases: readonly BedRelease[] = [],
 ): BedKindGap[] {
   // `now` is accepted for parity with every other Ward Flow derivation and because a caller
   // computing `movements`/`units` upstream typically already has it — `isOpen` itself does not
@@ -174,7 +177,7 @@ export function bedKindGaps(
   // A pulled bed is already removed from allocatable supply. Counting its journey as demand
   // again would show a shortfall for a person who already holds that bed (as in the forecast).
   const waitingForBed = movements.filter(waitsForBed);
-  const supply = readySupply(units, admissions, [...movements, ...referrals]);
+  const supply = readySupply(units, admissions, [...movements, ...referrals], bedReleases);
 
   return ROWS.map(({ id, need, who }) => {
     const waiting = waitingForBed.filter(
@@ -200,34 +203,47 @@ export function bedKindBreakdown(
   units: Unit[],
   admissions: readonly Admission[] = [],
   referrals: readonly ReservationReferral[] = [],
+  bedReleases: readonly BedRelease[] = [],
 ): { waiting: Movement[]; wards: { unit: Unit; beds: number }[] } {
   const waiting = movements
     .filter((movement) => waitsForBed(movement) && bedKindOfMovement(movement.cohort, movement.security) === kind)
     .sort((x, y) => x.openedAt - y.openedAt);
-  const wards = readySupply(units, admissions, [...movements, ...referrals])
+  const wards = readySupply(units, admissions, [...movements, ...referrals], bedReleases)
     .map(({ unit, ready, held }) => ({ unit, beds: bedsOfKindAtUnit(unit, kind, ready, held) }))
     .filter((entry) => entry.beds > 0)
     .sort((x, y) => byServiceThenName(x.unit, y.unit));
   return { waiting, wards };
 }
 
-/** The "All four together" row. Sums the rows — never recomputed independently, so the total can
- *  never disagree with what is sitting above it. */
+/**
+ * The bed kinds' gaps as one figure (Josh, 13 Nov 2026, D-191 item 6): "short" adds each bed kind's
+ * shortfall and never takes off a spare bed of another kind, because a spare youth bed does not
+ * take an adult waiting for a locked bed. Only when no kind is short do the spare beds add up.
+ * Negative is short, positive is spare, as on each row. No threshold is involved.
+ */
+export function combinedKindGap(gaps: readonly number[]): number {
+  const short = gaps.reduce((sum, gap) => sum + Math.min(0, gap), 0);
+  return short < 0 ? short : gaps.reduce((sum, gap) => sum + gap, 0);
+}
+
+/** The "All four together" row. Waiting and beds that fit sum the rows; the gap is
+ *  `combinedKindGap` of the rows' gaps, so it is never recomputed from the totals and a spare bed of
+ *  one kind never nets off another kind's shortfall (D-191 item 6). */
 export function bedKindTotals(rows: BedKindGap[]): { waiting: number; bedsThatFit: number; gap: number } {
-  return rows.reduce(
-    (totals, row) => ({
-      waiting: totals.waiting + row.waiting,
-      bedsThatFit: totals.bedsThatFit + row.bedsThatFit,
-      gap: totals.gap + row.gap,
-    }),
-    { waiting: 0, bedsThatFit: 0, gap: 0 },
-  );
+  return {
+    waiting: rows.reduce((sum, row) => sum + row.waiting, 0),
+    bedsThatFit: rows.reduce((sum, row) => sum + row.bedsThatFit, 0),
+    gap: combinedKindGap(rows.map((row) => row.gap)),
+  };
 }
 
 export type NetworkWardRow = {
   unit: Unit;
-  /** Ready beds from the same `bedStates` partition as Pulled, Closed and Occupied. */
+  /** Ready beds from the same `bedStates` partition as Pulled, Closed and Occupied. Never includes a
+   *  bed still being made ready (D-179 item 8). */
   ready: number;
+  /** `bedStates().beingMadeReady`: beds taken off Ready because they are still being made ready. */
+  beingMadeReady: number;
   /** Of `ready`, how many are locked. */
   lockedReady: number;
   /**
@@ -329,18 +345,10 @@ export type NetworkWardRow = {
    *  ward-sourced figure, not `unit.empty` (the feed's). */
   confirmedAt: Instant;
   /**
-   * 🔴 **BEDS THAT ARE FREE BUT NOT YET USABLE — the count `ready` deliberately does NOT subtract.**
-   *
-   * Owner ruling 2026-09-05, after Ward Lead measured that "Ready" counted beds the application
-   * itself refuses to admit a patient into: `ward-flow-reducer.ts` rejects `PULL_PATIENT` with
-   * *"every free bed at X is still being made ready"*. At the seeded anchor `arm-adult-open` shows
-   * Ready 2 while only 1 is pullable, because `WR-008` is discharged and still being cleaned. A
-   * coordinator commits two patients and the second is refused at the moment of action, after the
-   * ward has already been told.
-   *
-   * ⚠️ **THE RULING WAS EXPLICITLY *NOT* TO CHANGE THE NUMBER.** An earlier ruling of his avoids the
-   * figure lurching as cleaning starts and stops, so `ready` stays exactly as it was and this sits
-   * BESIDE it: "Ready 2 · 1 still being made ready". Do not subtract this from `ready`.
+   * Beds still being made ready (`bedsPendingPreparation`), said beside Ready: "1 ready, 1 being
+   * made ready". Since D-179 item 8 (Josh, 13 Nov 2026) `ready` no longer includes them; this
+   * replaces the 5 September 2026 ruling that kept them in Ready. They may still be pulled (D-181
+   * item 5). Every record is counted here; `beingMadeReady` is the part the ward was offering.
    *
    * `undefined` without `releases`, never 0 — same reasoning as `freeing` above. "Nothing is being
    * cleaned" and "we were not told" are different facts and only one of them is safe to imply.
@@ -513,6 +521,7 @@ function networkWardRow(unit: Unit, inputs: NetworkWardInputs): NetworkWardRow {
   return {
     unit,
     ready: states.ready,
+    beingMadeReady: states.beingMadeReady,
     lockedReady: Math.min(lockedBedsFree(unit), states.ready),
     freeing: releases === undefined ? undefined : (freeingByUnit.get(unit.id) ?? 0),
     dischargesDueToday: dischargesDueToday(unit.id, admissions, now),
@@ -525,9 +534,7 @@ function networkWardRow(unit: Unit, inputs: NetworkWardInputs): NetworkWardRow {
     occupied: states.occupied,
     onLeave: states.onLeave,
     surge: wardSurge(unit, cap),
-    // `bedsPendingPreparation` is the reducer's OWN helper — the same function whose result gates
-    // PULL_PATIENT — so the screen and the refusal cannot disagree about which beds are still
-    // being made ready.
+    // Every bed still being made ready, from the one shared helper (D-179 item 8).
     pendingPreparation: releases === undefined ? undefined : bedsPendingPreparation(unit.id, releases),
     confirmedAt: unit.allocatable.confirmedAt,
     // `releases ?? []` only because `unitCapacity` takes them for its `potential` field, which this

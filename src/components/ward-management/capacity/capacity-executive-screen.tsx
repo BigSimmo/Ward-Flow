@@ -24,8 +24,11 @@ import {
   HeroPill,
   HeroTop,
   LiveChip,
+  ShowMoreRow,
   SrOnly,
   cx,
+  foldHidden,
+  foldLimit,
   tableClasses,
   useIsPhone,
 } from "@/components/wf";
@@ -46,7 +49,8 @@ import type { ExecutiveReportingFoundation } from "@/components/ward-management/
 import { occupancyText } from "@/components/ward-management/statistics/statistics-occupancy";
 import { ExecutiveStatisticsUnavailable } from "@/components/ward-management/statistics/statistics-small-numbers";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { formatInstant } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatSheetMoment } from "@/components/ward-management/ward-clock";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import pageTop from "@/components/ward-management/page-top-title.module.css";
 
@@ -62,6 +66,8 @@ const EXECUTIVE_KEY: readonly BedSquareState[] = ["ready", "prep", "use", "close
 
 /** Phone: the first two service groups open, the rest folded (notes item 7). */
 const PHONE_OPEN_GROUPS = 2;
+/** F-51 (C01, design critique v2, PR C): the kit's list rule, eight ward rows then Show more (DESIGN-SYSTEM.md). */
+const WARDS_FIRST = 8;
 
 /** "Label · window": the window in quiet ink (count labels, shared spec 2). PR E swap: WindowWord / the `window` prop. */
 function CountLabel({ label, window }: { label: string; window: string }) {
@@ -113,25 +119,34 @@ function inUseText(beds: { total: number; inUse: number }): string {
 }
 
 export function ExecutiveCapacityScreen() {
+  const zone = useClockZoneLabel();
   const data = useExecutiveStatistics();
   const { paused, togglePause } = useExecutiveStatisticsControl();
   const isPhone = useIsPhone();
   // The skip link and the prototype disclosure stay even while the report is absent.
+  // A9-17 (PR C): inside the page wrapper, so it never draws unstyled.
   if (!data)
     return (
-      <main id="main-content" data-testid="ward-capacity-executive-unavailable">
-        <ExecutiveStatisticsUnavailable />
-        <WardPrototypeFooter testId="ward-capacity-executive-footer" note={FOOTER_NOTE} />
-      </main>
+      <div className={styles.screen} data-ward-design="redesign-2026-10">
+        <main id="main-content" className={styles.main} data-testid="ward-capacity-executive-unavailable">
+          <ExecutiveStatisticsUnavailable />
+          <WardPrototypeFooter testId="ward-capacity-executive-footer" note={FOOTER_NOTE} />
+        </main>
+      </div>
     );
   const { network } = data;
   // The counts are as at the report's time, which a held report keeps while the board clock moves.
   const asAt = formatInstant(network.asAt.now);
+  // The pill takes PR C's time words (C owns time wording): day, year and the clock's zone label.
+  const asAtMoment = formatSheetMoment(network.asAt.now, new Date(network.asAt.dayZero), {
+    includeYearAndZone: true,
+    zone,
+  });
   const beds = network.beds;
   const groups = serviceGroups(data);
   const wardCount = data.wards.length;
   return (
-    <div className={styles.screen} data-testid="ward-capacity-executive-screen">
+    <div className={styles.screen} data-ward-design="redesign-2026-10" data-testid="ward-capacity-executive-screen">
       <main id="main-content" className={styles.main} data-testid="ward-capacity-executive">
         <Hero
           level={1}
@@ -185,7 +200,7 @@ export function ExecutiveCapacityScreen() {
             pill={
               <HeroPill
                 testId="ward-capacity-executive-as-at"
-                text={`As at ${asAt} · bed counts only, no patient details${paused ? " · report paused" : ""}`}
+                text={`As at ${asAtMoment} · bed counts only, no patient details${paused ? " · report paused" : ""}`}
               />
             }
             band={
@@ -255,6 +270,19 @@ function Num({ children }: { children: ReactNode }) {
   return <td className={cx(tableClasses.num, styles.num)}>{children}</td>;
 }
 
+/** The service groups holding only the first `rows` wards, in order; a group left empty is dropped. */
+function cutGroups(groups: readonly ServiceGroup[], rows: number): ServiceGroup[] {
+  const out: ServiceGroup[] = [];
+  let left = rows;
+  for (const group of groups) {
+    if (left <= 0) break;
+    const wards = group.wards.slice(0, left);
+    left -= wards.length;
+    out.push({ ...group, wards });
+  }
+  return out;
+}
+
 function ExecutiveTable({
   groups,
   total,
@@ -264,76 +292,97 @@ function ExecutiveTable({
   total: ExecutiveReportingFoundation["network"]["beds"];
   wardCount: number;
 }) {
+  // F-51 (PR C): eight ward rows, then Show more; the totals row still adds up every ward. The cut
+  // runs across the service groups in order, and a group with no row left is not drawn.
+  const [allWards, setAllWards] = useState(false);
+  const shown = allWards ? wardCount : foldLimit(wardCount, WARDS_FIRST);
+  const hidden = foldHidden(wardCount, WARDS_FIRST);
+  const shownGroups = cutGroups(groups, shown);
   return (
-    // The table may be wider than a tablet's column: it scrolls sideways and is reachable by keyboard.
-    <div className={styles.tableWrap} role="region" aria-label="Beds by ward, scrolls sideways" tabIndex={0}>
-      <table className={cx(tableClasses.table, styles.table)} aria-labelledby="ward-capacity-executive-beds">
-        <thead>
-          <tr>
-            <th scope="col">Ward</th>
-            <th scope="col" className={styles.squaresCell}>
-              <SrOnly>Bed picture</SrOnly>
-            </th>
-            <th scope="col" className={tableClasses.num}>
-              Ready
-            </th>
-            <th scope="col" className={tableClasses.num}>
-              Being made ready
-            </th>
-            <th scope="col" className={tableClasses.num}>
-              In use
-            </th>
-            <th scope="col" className={tableClasses.num}>
-              Closed
-            </th>
-            <th scope="col" className={tableClasses.num}>
-              Beds
-            </th>
-          </tr>
-        </thead>
-        {groups.map(({ service, wards }) => (
-          <tbody key={service.service} data-testid={`ward-capacity-executive-group-${service.service}`}>
-            <tr className={styles.groupRow}>
-              <th scope="rowgroup" colSpan={7}>
-                {service.service}{" "}
-                <span className={styles.ink3}>
-                  · {wards.length} {wards.length === 1 ? "ward" : "wards"} · {inUseText(service.beds)} in use
-                </span>
+    <>
+      {/* The table may be wider than a tablet's column: it scrolls sideways and is reachable by keyboard. */}
+      <div className={styles.tableWrap} role="region" aria-label="Beds by ward, scrolls sideways" tabIndex={0}>
+        <table
+          id="ward-capacity-executive-rows"
+          className={cx(tableClasses.table, styles.table)}
+          aria-labelledby="ward-capacity-executive-beds"
+        >
+          <thead>
+            <tr>
+              <th scope="col">Ward</th>
+              <th scope="col" className={styles.squaresCell}>
+                <SrOnly>Bed picture</SrOnly>
+              </th>
+              <th scope="col" className={tableClasses.num}>
+                Ready
+              </th>
+              <th scope="col" className={tableClasses.num}>
+                Being made ready
+              </th>
+              <th scope="col" className={tableClasses.num}>
+                In use
+              </th>
+              <th scope="col" className={tableClasses.num}>
+                Closed
+              </th>
+              <th scope="col" className={tableClasses.num}>
+                Beds
               </th>
             </tr>
-            {wards.map((ward) => (
-              <tr key={ward.id}>
-                <th scope="row">
-                  <span className={styles.wardName}>{ward.name}</span>
-                  <span className={styles.wardTag}>{executiveWardTag(ward)}</span>
+          </thead>
+          {shownGroups.map(({ service, wards }) => (
+            <tbody key={service.service} data-testid={`ward-capacity-executive-group-${service.service}`}>
+              <tr className={styles.groupRow}>
+                <th scope="rowgroup" colSpan={7}>
+                  {service.service}{" "}
+                  <span className={styles.ink3}>
+                    · {wards.length} {wards.length === 1 ? "ward" : "wards"} · {inUseText(service.beds)} in use
+                  </span>
                 </th>
-                <td className={styles.squaresCell}>
-                  <BedSquaresStrip counts={wardSquares(ward)} />
-                </td>
-                <Num>{ward.beds.ready}</Num>
-                <Num>{ward.beds.beingMadeReady}</Num>
-                <Num>{ward.beds.inUse}</Num>
-                <Num>{ward.beds.closed}</Num>
-                <Num>{ward.beds.total}</Num>
               </tr>
-            ))}
-          </tbody>
-        ))}
-        <tfoot>
-          <tr className={styles.totalRow} data-testid="ward-capacity-executive-total">
-            <th scope="row">
-              All {wardCount} {wardCount === 1 ? "ward" : "wards"}
-            </th>
-            <td />
-            <Num>{total.ready}</Num>
-            <Num>{total.beingMadeReady}</Num>
-            <Num>{total.inUse}</Num>
-            <Num>{total.closed}</Num>
-            <Num>{total.total}</Num>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
+              {wards.map((ward) => (
+                <tr key={ward.id}>
+                  <th scope="row">
+                    <span className={styles.wardName}>{ward.name}</span>
+                    <span className={styles.wardTag}>{executiveWardTag(ward)}</span>
+                  </th>
+                  <td className={styles.squaresCell}>
+                    <BedSquaresStrip counts={wardSquares(ward)} />
+                  </td>
+                  <Num>{ward.beds.ready}</Num>
+                  <Num>{ward.beds.beingMadeReady}</Num>
+                  <Num>{ward.beds.inUse}</Num>
+                  <Num>{ward.beds.closed}</Num>
+                  <Num>{ward.beds.total}</Num>
+                </tr>
+              ))}
+            </tbody>
+          ))}
+          <tfoot>
+            <tr className={styles.totalRow} data-testid="ward-capacity-executive-total">
+              <th scope="row">
+                All {wardCount} {wardCount === 1 ? "ward" : "wards"}
+              </th>
+              <td />
+              <Num>{total.ready}</Num>
+              <Num>{total.beingMadeReady}</Num>
+              <Num>{total.inUse}</Num>
+              <Num>{total.closed}</Num>
+              <Num>{total.total}</Num>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      {hidden > 0 ? (
+        <ShowMoreRow
+          onClick={() => setAllWards((was) => !was)}
+          expanded={allWards}
+          controls="ward-capacity-executive-rows"
+        >
+          {allWards ? "Show fewer" : `Show ${hidden} more`}
+        </ShowMoreRow>
+      ) : null}
+    </>
   );
 }
 

@@ -27,7 +27,7 @@
  * - Deliberately not a `<form>`: Enter inside a field must not submit a half-answered booking.
  * - The host keeps the answers until its save is accepted, and passes `pending` and `error` back.
  */
-import { useEffect, useRef, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { useEffect, useLayoutEffect, useRef, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { Button, Field, Select, StatusGlyph, TextInput } from "@/components/wf";
 import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -287,6 +287,28 @@ export function TransportBookingForm({
     );
   }, [legalNow, onAnswers]);
 
+  // Audit 4 A4-06 (13 Nov 2026): a half-filled booking is unsaved work, so a reload Ward Flow starts
+  // itself (the new-version Reload, `unsavedWorkHoldsReload`) waits, as for every guarded form.
+  // The legal answer is left out: it may be filled in when the form opens.
+  const answered =
+    answers.provider !== undefined ||
+    answers.escortRequired !== undefined ||
+    answers.cadNumber.trim() !== "" ||
+    answers.estimatedTime.trim() !== "" ||
+    answers.estimatedDay !== undefined ||
+    legalReason !== "";
+  useEffect(() => {
+    if (!answered) return;
+    const hold = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", hold);
+    return () => window.removeEventListener("beforeunload", hold);
+  }, [answered]);
+
+  const statusRef = useHeightThatNeverShrinks<HTMLDivElement>();
+  const holdRef = useHeightThatNeverShrinks<HTMLParagraphElement>();
   const set = (patch: Partial<TransportBookingAnswers>) => onAnswers((current) => ({ ...current, ...patch }));
   const cadProblem = answers.cadNumber.trim() ? cadNumberProblem(answers.cadNumber) : undefined;
   const missing = transportAnswersMissing(answers, now);
@@ -317,31 +339,35 @@ export function TransportBookingForm({
 
   return (
     <div className={styles.form} aria-busy={pending || undefined}>
-      {/* Redesign (Josh, 31 Oct 2026): what is still to answer sits first, with a link to the first
+      {/* F-106 (A14-P2): the lines at the top shrink as answers are given, which moved every control
+          below them 25 to 50 px between presses. Their box keeps the tallest height it has had. */}
+      <div ref={statusRef} className={styles.status}>
+        {/* Redesign (Josh, 31 Oct 2026): what is still to answer sits first, with a link to the first
           one. Once everything is answered it says so, and Save is the next step. */}
-      {leftNames.length > 0 ? (
-        <p className={styles.left} data-testid={tid("left")} role="status">
-          <span>
-            <strong>{answersLeftWords(leftNames)}</strong>: {leftNames.join(", ")}
-          </span>
-          <button type="button" className={styles.leftFix} onClick={goToFirstLeft}>
-            Add {leftNames[0]}
-          </button>
-        </p>
-      ) : (
-        <p className={styles.allAnswered} data-testid={tid("left")} role="status">
-          <StatusGlyph tone="success" size={9} />
-          Every required answer given. Check them, then save.
-        </p>
-      )}
-      {/* W32 (Josh's card 3, 5 Nov 2026): the estimated time warns, never blocks. */}
-      {warningNames.length > 0 ? (
-        <p className={styles.left} data-testid={`${tid("left")}-warnings`}>
-          <span>
-            <StatusGlyph tone="warning" size={9} /> Not recorded: {warningNames.join(", ")}. You can still save.
-          </span>
-        </p>
-      ) : null}
+        {leftNames.length > 0 ? (
+          <p className={styles.left} data-testid={tid("left")} role="status">
+            <span>
+              <strong>{answersLeftWords(leftNames)}</strong>: {leftNames.join(", ")}
+            </span>
+            <button type="button" className={styles.leftFix} onClick={goToFirstLeft}>
+              Add {leftNames[0]}
+            </button>
+          </p>
+        ) : (
+          <p className={styles.allAnswered} data-testid={tid("left")} role="status">
+            <StatusGlyph tone="success" size={9} />
+            Every required answer given. Check them, then save.
+          </p>
+        )}
+        {/* W32 (Josh's card 3, 5 Nov 2026): the estimated time warns, never blocks. */}
+        {warningNames.length > 0 ? (
+          <p className={styles.left} data-testid={`${tid("left")}-warnings`}>
+            <span>
+              <StatusGlyph tone="warning" size={9} /> Not recorded: {warningNames.join(", ")}. You can still save.
+            </span>
+          </p>
+        ) : null}
+      </div>
 
       {/* The person is named by the screen around the form (popup title, sheet or panel). */}
       <Field label="Who is collecting" id={did("provider")}>
@@ -372,7 +398,18 @@ export function TransportBookingForm({
         label="CAD transport number"
         id={did("cad")}
         error={cadProblem ? <span data-testid={tid("cad-problem")}>{cadNumberSentence(cadProblem)}</span> : undefined}
-        help="Read it off the call with the provider."
+        // F-106 (A14-P2): "CAD to follow" takes the help line's place instead of adding a line under
+        // the box, so choosing who collects does not push the questions below it down.
+        help={
+          transportCadToFollow(answers) ? (
+            <span className={styles.warn} data-testid={tid("cad-to-follow")}>
+              <StatusGlyph tone="warning" size={9} />
+              No CAD number yet: CAD to follow.
+            </span>
+          ) : (
+            "Read it off the call with the provider."
+          )
+        }
       >
         <TextInput
           data-testid={tid("cad")}
@@ -384,12 +421,6 @@ export function TransportBookingForm({
           onChange={(event) => set({ cadNumber: event.target.value })}
         />
       </Field>
-      {transportCadToFollow(answers) ? (
-        <p className={styles.warn} data-testid={tid("cad-to-follow")}>
-          <StatusGlyph tone="warning" size={9} />
-          No CAD number yet: CAD to follow.
-        </p>
-      ) : null}
 
       <div className={styles.timeRow}>
         <div className={styles.timeCol}>
@@ -444,10 +475,23 @@ export function TransportBookingForm({
           </span>
         </fieldset>
       </div>
-      {holdEnd !== undefined ? (
-        <p className={styles.warn} data-testid={tid("hold")}>
-          <StatusGlyph tone="warning" size={9} />
-          Arrives after the pull time limit ends at {clockText(holdEnd)}. Extend the pull or rebook.
+      {/* F-106 (A14-P2): with a pull time limit the warning can come and go as the time is picked
+          (+30m), so its line is kept as an empty slot while it is not needed and nothing below moves. */}
+      {record?.pullExpiresAt !== undefined ? (
+        <p
+          ref={holdRef}
+          className={holdEnd !== undefined ? styles.warn : `${styles.warn} ${styles.slotEmpty}`}
+          data-testid={holdEnd !== undefined ? tid("hold") : `${tid("hold")}-slot`}
+          aria-hidden={holdEnd === undefined || undefined}
+        >
+          {holdEnd !== undefined ? (
+            <>
+              <StatusGlyph tone="warning" size={9} />
+              Arrives after the pull time limit ends at {clockText(holdEnd)}. Extend the pull or rebook.
+            </>
+          ) : (
+            "\u00a0"
+          )}
         </p>
       ) : null}
 
@@ -578,6 +622,21 @@ export function TransportBookingForm({
       ) : null}
     </div>
   );
+}
+
+/**
+ * F-106 (A14-P2): an element that keeps the tallest height it has had in this form, so a line that
+ * goes away as an answer is given leaves its space and the next control stays under the pointer.
+ */
+function useHeightThatNeverShrinks<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const height = element.offsetHeight;
+    if (height > (Number.parseFloat(element.style.minHeight) || 0)) element.style.minHeight = `${height}px`;
+  });
+  return ref;
 }
 
 /**

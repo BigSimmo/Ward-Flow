@@ -21,7 +21,13 @@ import {
 } from "./handover-model";
 import styles from "./handover-refined.module.css";
 
-export type ColumnContext = { now: Instant; cutoff: Instant; readyBeds: (unitId: string) => number };
+export type ColumnContext = {
+  now: Instant;
+  cutoff: Instant;
+  readyBeds: (unitId: string) => number;
+  /** The board's day 0, so a typed form time on another day prints its date (D1, D-93). */
+  dayZero?: Date;
+};
 
 export type HandoverColumnId = "pt" | "st" | "wait" | "route" | "lo" | "legal" | "obs" | "due" | "next" | "dec" | "tr";
 
@@ -171,7 +177,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
     width: 92,
     mono: true,
     cell: (row, ctx) => {
-      const due = dueParts(row, ctx.now);
+      const due = dueParts(row, ctx.now, ctx.dayZero);
       return due ? (
         <span className={styles.two}>
           <b className={`${styles.mono} ${styles.nowrap}`}>
@@ -189,7 +195,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
         off
       );
     },
-    paper: (row, ctx) => dueShort(row, ctx.now) ?? "",
+    paper: (row, ctx) => dueShort(row, ctx.now, ctx.dayZero) ?? "",
   },
   {
     // U1 (site review, 12 Oct 2026): the action never truncates, so Next step takes the widest share

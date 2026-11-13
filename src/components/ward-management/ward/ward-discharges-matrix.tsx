@@ -5,6 +5,7 @@ import Link from "next/link";
 import styles from "./ward-discharges-matrix.module.css";
 import type { Unit, BedRelease, LeaveBed } from "@/components/ward-management/ward-model";
 import { bedReleaseStateLabels, BED_RELEASE_BLOCKED_LABEL } from "@/components/ward-management/ward-derivations";
+import { HELD_UP_BY_TOMORROW_LABEL } from "@/components/ward-management/ward-held-up";
 import { handoverScopeValue } from "@/components/ward-management/handover/handover-page";
 import {
   formatInstant,
@@ -50,7 +51,9 @@ export function WardDischargesMatrix({
       {/* Header */}
       <div className={styles.panelHead}>
         <div className={styles.headingGroup}>
-          <h2 className={styles.title}>Discharges, Departures &amp; Barrier Resolution Matrix</h2>
+          {/* A9-30 (F-27, 13 Nov 2026): a plain title, and the counts below say "today", because they
+              count today's discharges (`releasesCountedToday`) while Ward flow counts every date. */}
+          <h2 className={styles.title}>Discharges today</h2>
         </div>
       </div>
 
@@ -62,7 +65,7 @@ export function WardDischargesMatrix({
           data-active={subTab === "all"}
           onClick={() => startTransition(() => setSubTab("all"))}
         >
-          All discharges ({releasesCountedToday.length + unitLeaveBeds.length})
+          All today ({releasesCountedToday.length + unitLeaveBeds.length})
         </button>
         <button
           type="button"
@@ -70,7 +73,7 @@ export function WardDischargesMatrix({
           data-active={subTab === "scheduled"}
           onClick={() => startTransition(() => setSubTab("scheduled"))}
         >
-          Planned discharges ({releasesCountedToday.length})
+          Planned today ({releasesCountedToday.length})
         </button>
         <button
           type="button"
@@ -86,7 +89,7 @@ export function WardDischargesMatrix({
           data-active={subTab === "barriers"}
           onClick={() => startTransition(() => setSubTab("barriers"))}
         >
-          Held up ({blockedReleases.length})
+          {HELD_UP_BY_TOMORROW_LABEL} ({blockedReleases.length})
         </button>
         <button
           type="button"
@@ -201,9 +204,11 @@ export function WardDischargesMatrix({
       {/* Discharge Barriers Stream */}
       {(subTab === "all" || subTab === "barriers") && (
         <div className={styles.dischargeStream}>
-          <div className={styles.streamHeading}>Held up ({blockedReleases.length})</div>
+          <div className={styles.streamHeading}>
+            {HELD_UP_BY_TOMORROW_LABEL} ({blockedReleases.length})
+          </div>
           {blockedReleases.length === 0 ? (
-            <p className={styles.placeholder}>Nothing held up.</p>
+            <p className={styles.placeholder}>Nothing held up due by tomorrow.</p>
           ) : (
             blockedReleases.map((release) => (
               <div
