@@ -1112,6 +1112,19 @@ select {
   outline-offset: 2px;
 }
 
+/* Spec item 5 (13 Nov 2026): a box or sheet that opens on its heading (`tabindex="-1"`, F-103) and a
+   scroll-only body that takes a tab stop (a named region, F-57) draw the kit's 2px focus ring in
+   light, dark and on the phone sheet, never the browser's own outline. The body's ring sits inside
+   its edge, where the box's clip cannot cut it. No weight, so a part's own focus rule still wins. */
+:where(:is(h1, h2, h3, h4, h5, h6, [role="heading"])[tabindex="-1"]):focus-visible {
+  outline: 2px solid var(--wf-focus-ring, var(--focus));
+  outline-offset: 2px;
+}
+:where([role="region"][tabindex="0"]):focus-visible {
+  outline: 2px solid var(--wf-focus-ring, var(--focus));
+  outline-offset: -2px;
+}
+
 :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea, select):focus-visible {
   /* Hairline on the field edge, not an inset accent rectangle. The previous
      inset offset plus solid `--focus` read as a default browser ring and, on

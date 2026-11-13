@@ -94,6 +94,11 @@
   color: var(--wf-hero-ink-2);
 }
 
+/* D-192 (shared design parts item 6): the quiet "who does this" line when nothing is for this desk. */
+.next.next .nextWho {
+  color: var(--wf-hero-ink-3);
+}
+
 @media (max-width: 743px) {
   .next.next {
     padding: var(--wf-s-3) var(--wf-s-4);

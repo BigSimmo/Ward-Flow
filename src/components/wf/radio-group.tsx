@@ -2,10 +2,16 @@
 
 import { useLayoutEffect, useRef, type ComponentPropsWithoutRef } from "react";
 
-type RadioGroupProps = Omit<ComponentPropsWithoutRef<"div">, "role">;
+type RadioGroupProps = Omit<ComponentPropsWithoutRef<"div">, "role"> & {
+  /**
+   * Arrow keys pick as they move (the default, as native radios do). `false` moves focus only and
+   * Enter or Space picks, for a choice that changes the whole screen (the theme pop-up, spec item 14).
+   */
+  selectOnMove?: boolean;
+};
 
 /** Keyboard behaviour for existing, styled button radios. Native radio inputs need no wrapper. */
-export function RadioGroup({ children, onKeyDown, ...props }: RadioGroupProps) {
+export function RadioGroup({ children, onKeyDown, selectOnMove = true, ...props }: RadioGroupProps) {
   const ref = useRef<HTMLDivElement>(null);
   const radios = (root: HTMLDivElement) =>
     Array.from(root.querySelectorAll<HTMLButtonElement>('button[role="radio"]')).filter(
@@ -20,7 +26,12 @@ export function RadioGroup({ children, onKeyDown, ...props }: RadioGroupProps) {
     if (!root) return;
     const all = radios(root);
     const enabled = all.filter(available);
-    const stop = enabled.find((button) => button.getAttribute("aria-checked") === "true") ?? enabled[0];
+    // While moving without picking, the focused choice holds the stop so Tab leaves from there.
+    const focused = enabled.find((button) => button === document.activeElement);
+    const stop =
+      (selectOnMove ? undefined : focused) ??
+      enabled.find((button) => button.getAttribute("aria-checked") === "true") ??
+      enabled[0];
     for (const button of all) button.tabIndex = button === stop ? 0 : -1;
   });
 
@@ -46,8 +57,9 @@ export function RadioGroup({ children, onKeyDown, ...props }: RadioGroupProps) {
         else if (event.key === "End") next = enabled.length - 1;
         else return;
         event.preventDefault();
+        if (!selectOnMove) for (const button of enabled) button.tabIndex = button === enabled[next] ? 0 : -1;
         enabled[next]!.focus();
-        enabled[next]!.click();
+        if (selectOnMove) enabled[next]!.click();
       }}
     >
       {children}

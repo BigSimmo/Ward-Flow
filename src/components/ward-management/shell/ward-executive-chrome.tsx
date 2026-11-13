@@ -28,7 +28,7 @@ import { releasedCountText, ExecutiveStatisticsUnavailable } from "../statistics
 import { WardHelpHost } from "../help/ward-help-host";
 import { WARD_CAPACITY_HREF, WARD_REFERRAL_INTAKE_HREF } from "../ward-nav";
 import { useWardHelpRow } from "../help/ward-help-link";
-import { applyAppearance, applyGlare } from "./ward-bar";
+import { AppearanceRadioGroup, appearanceChoice } from "./ward-appearance-choices";
 import { WardBarBack } from "./ward-bar-controls";
 import { wardBarRouteTitle, SERVICE_SWATCH_KEY } from "./ward-bar-model";
 import { WardBarFrame, WardRailFrame } from "./ward-chrome-frame";
@@ -738,7 +738,6 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
                     aria-expanded={panel === "scope"}
                     onClick={() => setPanel("scope")}
                   >
-                    <span className={bar.scopeDot} aria-hidden="true" />
                     <span className={bar.scopeBadgeLabel}>{displayedScope}</span>
                     <ChevronDown className={bar.scopeCaret} aria-hidden="true" />
                   </button>
@@ -1046,30 +1045,15 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
         title="Appearance"
         returnFocusRef={appearanceTrigger}
       >
-        <div className={rail.appearancePills}>
-          {(["auto", "light", "dark"] as const).map((value) => (
-            <button
-              key={value}
-              type="button"
-              className={rail.appearancePillBtn}
-              aria-pressed={!preferences.glare && preferences.appearance === value}
-              onClick={() => {
-                applyGlare(false);
-                applyAppearance(value);
-              }}
-            >
-              {value === "auto" ? "Auto" : value === "light" ? "Light" : "Dark"}
-            </button>
-          ))}
-          <button
-            type="button"
-            className={rail.appearancePillBtn}
-            aria-pressed={preferences.glare}
-            onClick={() => applyGlare(true)}
-          >
-            Bright light
-          </button>
-        </div>
+        {/* Review E-11: the rail's radio group. The current choice takes the sheet's opening focus;
+            arrows move, Enter or Space picks, Escape closes and returns to Appearance. */}
+        <AppearanceRadioGroup
+          value={appearanceChoice(preferences)}
+          className={rail.appearancePills}
+          buttonClassName={rail.appearancePillBtn}
+          aria-label="Theme"
+          sheetAutofocus
+        />
       </Sheet>
       {panel === "demo" && <ExecutiveDemoMenu onClose={close} />}
       <WardHelpHost />

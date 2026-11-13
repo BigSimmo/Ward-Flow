@@ -87,7 +87,7 @@ const OFFLINE_EXCEPTIONS: Readonly<Record<string, string>> = {
  * Plain <button disabled> outside the kit, 10 Nov 2026, across 40 files. Exact: lower it when one moves
  * onto the kit's Button (which carries its reason); never raise it.
  */
-const RAW_DISABLED = 79;
+const RAW_DISABLED = 77;
 
 /**
  * Raw role="alert" outside the kit, 10 Nov 2026, across 80 files. Exact: lower it when one moves onto

@@ -22,6 +22,7 @@ import { ReferralBoard } from "@/components/ward-management/referrals/referral-b
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { REFERRAL_DECLINE_REASONS } from "@/components/ward-management/ward-model";
 import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
 
 function renderBoard() {
@@ -64,6 +65,18 @@ describe("Referrals v10: Accept then Undo", () => {
     });
     expect(queueIds()).toEqual(before);
     expect(screen.getByText("Decision undone")).toBeInTheDocument();
+  });
+
+  it("names the destination that declined, not the whole referral (F-109, A14-18)", () => {
+    renderBoard();
+    fireEvent.click(screen.getByTestId("ward-referral-board-select-RF-005"));
+    fireEvent.click(screen.getByTestId("ward-referral-match-decline-open"));
+    fireEvent.click(screen.getByTestId(`ward-referral-match-phone-decline-${REFERRAL_DECLINE_REASONS[0]}`));
+    fireEvent.click(screen.getByTestId("ward-referral-match-decline"));
+
+    const toast = screen.getByRole("button", { name: "Undo" }).closest("[data-undo]");
+    expect(toast).toHaveTextContent(/^Psychiatric ward declined · /u);
+    expect(toast).not.toHaveTextContent("Referral declined");
   });
 });
 

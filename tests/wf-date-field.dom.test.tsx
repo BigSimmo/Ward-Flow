@@ -6,8 +6,12 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import {
+  DATE_FIELD_ERROR,
   DateField,
   DateTimeField,
+  Field,
+  TIME_FIELD_ERROR,
+  TimeField,
   isoDateAsTyped,
   parseTypedDate,
   parseTypedTime,
@@ -172,5 +176,102 @@ describe("kit typed date and time (DD/MM/YYYY plus HH:MM)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Load" }));
     expect(date).toHaveValue("12/03/2026");
     expect(time).toHaveValue("08:30");
+  });
+});
+
+// Spec item 13 (C05, 13 Nov 2026): an impossible typed date or time says so under the box.
+describe("default error words under the kit date and time boxes", () => {
+  function Pair({ dateError }: { dateError?: string }) {
+    const [date, setDate] = useState("");
+    const [time, setTime] = useState("");
+    return (
+      <>
+        <Field label="Date" hint="DD/MM/YYYY" error={dateError}>
+          <DateField value={date} onValueChange={setDate} />
+        </Field>
+        <Field label="Time" hint="HH:MM">
+          <TimeField value={time} onValueChange={setTime} />
+        </Field>
+      </>
+    );
+  }
+
+  it("shows the default words in the Field, tied to the box, and clears them once fixed", () => {
+    render(<Pair />);
+    const date = screen.getByRole("textbox", { name: "Date" });
+    const time = screen.getByRole("textbox", { name: "Time" });
+    expect(screen.queryByRole("alert")).toBeNull();
+    fireEvent.change(date, { target: { value: "31/02/2026" } });
+    fireEvent.change(time, { target: { value: "25:70" } });
+    const dateError = screen.getByText(DATE_FIELD_ERROR);
+    const timeError = screen.getByText(TIME_FIELD_ERROR);
+    expect(DATE_FIELD_ERROR).toBe("Type a real date, DD/MM/YYYY");
+    expect(date).toHaveAttribute("aria-invalid", "true");
+    expect(date.getAttribute("aria-describedby")?.split(" ")).toContain(dateError.id);
+    expect(time.getAttribute("aria-describedby")?.split(" ")).toContain(timeError.id);
+    fireEvent.change(date, { target: { value: "28/02/2026" } });
+    expect(screen.queryByText(DATE_FIELD_ERROR)).toBeNull();
+  });
+
+  // F-139 (PR E review): unfinished text says so once the person leaves the box, never while typing.
+  it("marks an unfinished date on leaving the box, and clears it once typing resumes", () => {
+    render(<Pair />);
+    const date = screen.getByRole("textbox", { name: "Date" });
+    for (const unfinished of ["1/1/26", "1/1", "31/10/202"]) {
+      fireEvent.change(date, { target: { value: unfinished } });
+      expect(screen.queryByText(DATE_FIELD_ERROR)).toBeNull();
+      expect(date).not.toHaveAttribute("aria-invalid", "true");
+      fireEvent.blur(date);
+      expect(screen.getByText(DATE_FIELD_ERROR)).toBeInTheDocument();
+      expect(date).toHaveAttribute("aria-invalid", "true");
+      expect(date.getAttribute("aria-describedby")?.split(" ")).toContain(screen.getByText(DATE_FIELD_ERROR).id);
+    }
+    fireEvent.change(date, { target: { value: "1/1/202" } });
+    expect(screen.queryByText(DATE_FIELD_ERROR)).toBeNull();
+    fireEvent.change(date, { target: { value: "1/1/2026" } });
+    fireEvent.blur(date);
+    expect(screen.queryByText(DATE_FIELD_ERROR)).toBeNull();
+    fireEvent.change(date, { target: { value: "" } });
+    fireEvent.blur(date);
+    expect(screen.queryByText(DATE_FIELD_ERROR)).toBeNull();
+    expect(date).not.toHaveAttribute("aria-invalid", "true");
+  });
+
+  it("marks an unfinished date in a date-and-time pair on leaving the date box", () => {
+    render(<DateTimeField label="Written" data-testid="pair" />);
+    const date = screen.getByTestId("pair-date");
+    fireEvent.change(date, { target: { value: "1/1/26" } });
+    expect(screen.queryByText(DATE_FIELD_ERROR)).toBeNull();
+    fireEvent.blur(date);
+    expect(screen.getByText(DATE_FIELD_ERROR)).toBeInTheDocument();
+    expect(date).toHaveAttribute("aria-invalid", "true");
+    fireEvent.change(date, { target: { value: "1/1/2026" } });
+    expect(screen.queryByText(DATE_FIELD_ERROR)).toBeNull();
+  });
+
+  it("lets the caller's own words win", () => {
+    render(<Pair dateError="Date written cannot be in the future" />);
+    fireEvent.change(screen.getByRole("textbox", { name: "Date" }), { target: { value: "31/02/2026" } });
+    expect(screen.getByText("Date written cannot be in the future")).toBeInTheDocument();
+    expect(screen.queryByText(DATE_FIELD_ERROR)).toBeNull();
+  });
+
+  it("draws its own line outside a Field, and one line under a date-and-time pair", () => {
+    function Bare() {
+      const [time, setTime] = useState("");
+      return <TimeField aria-label="Bare time" value={time} onValueChange={setTime} />;
+    }
+    const { unmount } = render(<Bare />);
+    const box = screen.getByRole("textbox", { name: "Bare time" });
+    fireEvent.change(box, { target: { value: "2:30 pm" } });
+    expect(box.getAttribute("aria-describedby")).toBe(screen.getByText(TIME_FIELD_ERROR).id);
+    unmount();
+
+    render(<DateTimeField label="Written" data-testid="pair" />);
+    fireEvent.change(screen.getByTestId("pair-date"), { target: { value: "31/02/2026" } });
+    fireEvent.change(screen.getByTestId("pair-time"), { target: { value: "25:70" } });
+    expect(screen.getAllByRole("alert")).toHaveLength(1);
+    expect(screen.getByText(DATE_FIELD_ERROR)).toBeInTheDocument();
+    expect(screen.getByTestId("pair-time")).toHaveAttribute("aria-describedby", screen.getByText(DATE_FIELD_ERROR).id);
   });
 });

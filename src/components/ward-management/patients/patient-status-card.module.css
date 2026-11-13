@@ -493,6 +493,32 @@
   border-radius: var(--wf-r-ctl);
 }
 
+/* Design parts item 6: a button's drawn lock line takes its own line under the row, full width and
+   right-aligned, so a long reason ("ED or coordinator only. Ask the bed coordinator to do this.")
+   never widens the action column and squeezes the value and its line to one letter a line. The
+   button stays in the right column; the action and the kit's reason wrapper step aside for this. */
+.cell[data-ph-quiet] .action:has(:is([data-touch-reason], [data-wf-reason])),
+.cell[data-ph-quiet] .action:has(:is([data-touch-reason], [data-wf-reason])) > * {
+  display: contents;
+}
+
+.cell[data-ph-quiet]
+  .action:has(:is([data-touch-reason], [data-wf-reason]))
+  > *
+  > :not(:is([data-touch-reason], [data-wf-reason])) {
+  grid-column: 2;
+  grid-row: 1 / span 4;
+  align-self: center;
+}
+
+.cell[data-ph-quiet] .action :is([data-touch-reason], [data-wf-reason]) {
+  grid-column: 1 / -1;
+  justify-self: end;
+  max-width: 100%;
+  margin-top: var(--wf-s-1);
+  text-align: end;
+}
+
 .phFoot {
   margin: 0;
   padding: 10px var(--wf-s-3);
@@ -654,4 +680,9 @@
 .card[data-rows] .cell[data-hot] .iconChip {
   background: var(--wf-surface);
   color: var(--wf-ink-2);
+}
+
+/* D-192 (shared design parts item 6): the "who does this" foot line under the gates. */
+.whoFoot {
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
 }

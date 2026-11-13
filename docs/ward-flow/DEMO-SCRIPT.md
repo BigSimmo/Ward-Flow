@@ -52,12 +52,12 @@ demo code out for up to 10 minutes, and a shared venue network counts as one add
    Time Act 2 and the Close as you go. In the audit run the Close ran past its 30 seconds and
    Act 2 had the least room, so trim your own words there first.
 4. As the audience sits down (not earlier), press the **Board time** clock in the header. **Tools**
-   opens at **Scenario and clock**; scroll down inside the panel if **Reset demo** is not showing (on
-   a laptop screen it is at the bottom of the panel). Check the scenario is **Standard day**, and pick
-   it first if it is not: Reset demo reloads whichever scenario is loaded. Check **Worked examples**
-   shows the button **Hide worked examples** (they are on for the demo). If it says **Show worked
-   examples**, press it, then **Show worked examples** in the box. Reset demo keeps them on. Press
-   **Reset demo**, then **Reset demo** again in the "Reset the demo?" box. Press **Esc**.
+   opens at **Scenario and clock**, with **Demo clock** and **Reset demo** at the top of the panel and
+   **Scenario** below them. Check the scenario is **Standard day**, and pick it first if it is not:
+   Reset demo reloads whichever scenario is loaded. Check **Worked examples** shows the button **Hide
+   worked examples** (they are on for the demo). If it says **Show worked examples**, press it, then
+   **Show worked examples** in the box. Reset demo keeps them on. Press **Reset demo**, then **Reset
+   demo** again in the "Reset the demo?" box. Press **Esc**.
 5. Touch the app within 15 minutes of starting, and click somewhere harmless now and then while you
    wait for the room. If the screen is covered after 15 minutes untouched ("Locked after 15 minutes
    without use"), press **Carry on**; nothing is lost.
@@ -65,7 +65,8 @@ demo code out for up to 10 minutes, and a shared venue network counts as one add
 **About the clock.** A new tab opens at 10:42 on today's date and keeps running in real time. Reset
 demo takes off any time you added with **+15 min** or **+1 hour**, but not the real time that has
 passed: after a 40-minute rehearsal the board reads about 11:20. That is
-fine; say it is a demonstration clock, not the time now. If you want a 10:42 start, close every
+fine; say it is a demonstration clock, not the time now. **Pause** beside the **Demo clock** holds board time if you need to stop
+mid-act; press **Resume** before carrying on. If you want a 10:42 start, close every
 Ward Flow tab and open the demo in one new tab just before the audience arrives, then Reset demo (a
 new tab opened while another Ward Flow tab is open takes that tab's clock). A reload does not put a
 drifted clock back: open a new tab. Do not reload after midnight: the demo starts a fresh day and
@@ -91,10 +92,11 @@ scrolls inside itself.
   loads can be ignored.
 
 If something goes wrong after the bed pull: press **Undo** on the "Bed pulled" message. The message
-says "Undo within 5 min" and stays for the five minutes unless you close it with its **X**. After
-that, press the **Destination** row, **Release bed pull**, choose
-**Pull made in error**, then **Release pull**. Or press the **Board time** clock, **Reset demo**, and
-start again from Act 2. Acts 1 and 2 change nothing.
+ends "Undo until" and a clock time five minutes after the pull, and stays until then unless you
+close it with its **X**. Until that time, the **Destination and placement** panel also keeps **Undo
+pull** under its "Bed pulled · … left" line. After that, press the **Destination** row, **Release bed
+pull**, choose **Pull made in error**, then **Release pull**. Or press the **Board time** clock,
+**Reset demo**, and start again from Act 2. Acts 1 and 2 change nothing.
 
 If the code screen says "Too many tries", someone on the same network has typed wrong codes. A
 presenter already inside is not affected. Open the demo from another network (a phone hotspot), or
@@ -231,7 +233,8 @@ person chooses (until then the button reads "Choose a ward first"). Do not press
 
 **Do:** go back to Keira's page with the browser's **Back** button. On the **Bed** row press **Pull
 the bed**. The **Destination and placement** panel opens. Press **Pull the bed** in the panel. A
-"Bed pulled" message appears with **Undo**, which stays for five minutes. Press **Esc**.
+"Bed pulled" message appears with **Undo**, ending "Undo until" and a clock time five minutes on.
+Press **Esc**.
 
 **Say:**
 
@@ -283,8 +286,8 @@ is collecting** choose **Ambulance (St John)**. Type a synthetic number such as 
 except typed text." **From here, avoid reloads and typed addresses.**
 
 **Do:** press **Mark handover ready** (**Placement steps** now lights step 5 of seven). The
-"Handover ready" and "Bed pulled" messages each stay for five minutes and sit over the
-**Destination** row on a 1366 x 768 screen: press the **X** on each. Then press the **Destination**
+"Handover ready" and "Bed pulled" messages each stay for five minutes, at the bottom right of the
+screen. If they cover the **Destination** row, press the **X** on each. Then press the **Destination**
 row ("Dabakarn accepted · bed pulled"); scroll down a little first if it is not in view. The **Destination and placement** panel opens. Press, in order, **Provider
 accepted job**, **Vehicle en route** and **Mark moving · patient collected**.
 
@@ -477,15 +480,16 @@ If someone wants it in writing, **Settings** has an **About this demo** page tha
 > mental state or risk flags, are prompts a clinician accepts or changes. It does not score risk or
 > decide anything, and it has not been through clinical or regulatory review."
 
-**"It says Suggested."**
+**"It says Needs you."** (or **"It says Suggested."**)
 
-> "That list is the coordinator's own jobs and who to ring next, from fixed steps. It never suggests
-> a ward or a patient; the ward list is in a fixed order and a person chooses."
+> "That list is now headed 'Needs you': the coordinator's own jobs and who to ring next, from fixed
+> steps. The ED's 'Next escalation step' is a fixed step too. Nothing suggests a ward or a patient;
+> the ward list is in a fixed order and a person chooses."
 
 **"Is that a forecast?"**
 
-> "It is arithmetic on dates the wards have already recorded, shown with its range. Nothing is
-> modelled or learned."
+> "It is arithmetic on dates the wards have already recorded, which is why Home's link says 'From
+> ward dates'. It is shown with its range. Nothing is modelled or learned."
 
 **"What does Tier 1, most urgent mean?"**
 
@@ -516,7 +520,7 @@ Keep this beside you. Each row is a press to avoid on the day, why, and what to 
 | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | Anything but **Esc** in Keira's ED panel, above all **Record no transport needed** | Act 4's **Log booking** disappears                                                | **Change** on her Transport row brings it back; otherwise **Reset demo**, restart from Act 2 |
 | **Mark absent** on Keira's page after arrival                                      | Dabakarn shows her absent without leave                                           | **Record return** on her page                                                                |
-| **See it as** in Tools, or any other desk                                          | The desk changes. The other desks are not ready to show                           | **Board time** clock, then **Bed coordinator**, or **Reset demo**                            |
+| **See it as** in Tools, or any other desk                                          | The desk changes. The other desks are not ready to show                           | **Back to coordinator**, in the bar at the top, or **Reset demo**                            |
 | **Open patient** in the ED panel as a way to her page                              | It opens an ED side panel instead                                                 | Press **/**, type `Keira`, **Enter**                                                         |
 | The phone numbers on her page                                                      | They are dial links                                                               | Close the chooser. Use the copy button beside each                                           |
 | Browser zoom                                                                       | The left-hand menu loses its words                                                | Zoom back to 100% (**Ctrl+0**)                                                               |
@@ -532,15 +536,14 @@ Keep this beside you. Each row is a press to avoid on the day, why, and what to 
 | **Ask for review**, and **Ask** (a ward to confirm its beds) on Capacity           | Each records in one click: Undo for five minutes, or none on **Ask**. Not Keira   | Leave it. Reset demo clears it                                                               |
 | **Pin**, and the ED tiles on Home                                                  | Both outlive Reset demo. Harmless                                                 | Press again to clear                                                                         |
 | Inside **Triage**                                                                  | Its see-by windows are unsigned                                                   | **Back**                                                                                     |
-| **Enlarge** on the ED board, or the full-screen timeline                           | No synthetic-data marker while enlarged                                           | **Esc**                                                                                      |
 | Reload to fix the clock                                                            | A reload does not put a drifted clock back                                        | Close every Ward Flow tab, open one new tab, then **Reset demo**                             |
 
 Things that happen without a wrong press:
 
-- **Reset demo** is not showing in Tools: scroll down inside the panel.
 - The screen is covered after 15 minutes untouched: press **Carry on**.
-- Undo has gone after a pull (it lasts five minutes, or until you close the message): press the
-  **Destination** row, **Release bed pull**, choose **Pull made in error**, then **Release pull**.
+- You closed the "Bed pulled" message: until its "Undo until" time, press the **Destination** row,
+  then **Undo pull**. After that time, press the **Destination** row, **Release bed pull**, choose
+  **Pull made in error**, then **Release pull**.
 - Keira has left **Later today**: press **/**, type `Keira`, press **Enter**.
 - The CAD number was forgotten in Act 4: carry on. The booking saves without it.
 - Already known and still true: Keira's form lines can disagree between the ED board and her page,

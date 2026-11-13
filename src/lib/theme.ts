@@ -53,6 +53,16 @@ export const LEGACY_WARD_APPEARANCE_KEY = "ward-flow-appearance";
 export const THEME_BOOTSTRAP_SCRIPT = `(function(){var K="${THEME_STORAGE_KEY}",L="${LEGACY_WARD_APPEARANCE_KEY}",t=null;try{t=localStorage.getItem(K);var w=localStorage.getItem(L);if(t!=="light"&&t!=="dark"&&(w==="light"||w==="dark")){t=w;localStorage.setItem(K,w);try{document.cookie="${THEME_COOKIE_NAME}="+w+"; path=/; max-age=31536000; SameSite=Lax"+(location.protocol==="https:"?"; Secure":"");}catch(e){/* cookie blocked - storage still holds the pin */}}if(w!==null)localStorage.removeItem(L);}catch(e){/* storage blocked (private/partitioned) - fall through to the cookie, then the OS preference */}if(t!=="light"&&t!=="dark"){t=null;try{var m=document.cookie.match(/(?:^|; )${THEME_COOKIE_NAME}=(light|dark)(?:;|$)/);if(m)t=m[1];}catch(e){/* cookie access blocked (sandboxed frame) - the OS preference below applies */}}var r=document.documentElement,q=null;try{q=window.matchMedia("(prefers-color-scheme: dark)");}catch(e){/* no matchMedia - treat the OS as light */}function paint(d){r.classList.toggle("dark",d);var c=d?"${APP_THEME_COLORS.dark}":"${APP_THEME_COLORS.light}";document.querySelectorAll('meta[name="theme-color"]').forEach(function(x){x.setAttribute("content",c);});}if(r.setAttribute){if(t)r.setAttribute("data-theme",t);else r.removeAttribute("data-theme");}paint(t?t==="dark":!!(q&&q.matches));try{q.addEventListener("change",function(){if(!r.getAttribute("data-theme"))paint(q.matches);});}catch(e){/* old browser - Auto follows the OS on the next load */}})();`;
 
 /**
+ * Shared design parts item 12 (Josh, 13 Nov 2026; F-62): in dark mode the first frame flashed white
+ * for about a second, before the stylesheets arrived. This tiny style sits in the document head, so
+ * the very first paint already has the dark canvas and dark form controls: from the server's pinned
+ * `data-theme`/`.dark` (the cookie), or from the OS when nothing is pinned. A light pin keeps a light
+ * first frame on a dark OS. `:where()` keeps it at zero specificity, so the real stylesheets win as
+ * soon as they load. The dark fill is the browser bar colour, so the bar and the canvas agree.
+ */
+export const FIRST_PAINT_STYLE = `:where(html){color-scheme:light dark}:where(html[data-theme="light"]){color-scheme:light}:where(html.dark,html[data-theme="dark"]){color-scheme:dark;background-color:${APP_THEME_COLORS.dark}}@media (prefers-color-scheme:dark){:where(html:not([data-theme="light"]):not([data-mode="glare"])){color-scheme:dark;background-color:${APP_THEME_COLORS.dark}}}`;
+
+/**
  * Glare mode: a separate on/off preference for ward PCs by bright windows. On sets
  * `data-mode="glare"` on <html>, which the v9 token layer styles. Off is the absence of a stored
  * value. It is independent of the light/dark choice.

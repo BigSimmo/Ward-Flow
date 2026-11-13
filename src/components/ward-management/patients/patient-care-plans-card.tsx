@@ -17,6 +17,7 @@ import {
   Segmented,
   TextInput,
   TimeField,
+  WhoDoesThis,
 } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import type { WardFlowEvent, WardFlowRole } from "../ward-flow-events";
@@ -49,6 +50,7 @@ import type { Movement } from "../ward-model";
 import { createPatientResolver } from "../ward-patient-resolver";
 import { supportNotificationSubjects } from "../ward-support-notifications";
 import { recordedDayPassed } from "./patient-date-passed";
+import { whoDoesThisLine } from "../ward-who-does-this";
 import styles from "./patient-care-plans-card.module.css";
 
 // `never`: this desk can never take the action, so its control is left out (F-54, A9-35).
@@ -155,6 +157,19 @@ export function PatientCarePlansCard({
   const hearingGate = gate("RECORD_TRIBUNAL_HEARING");
   const outcomeGate = gate("RECORD_TRIBUNAL_OUTCOME");
   const culturalGate = gate("SET_CULTURAL_SUPPORT_REQUEST");
+  // D-192 (shared design parts item 6): the card shows values only for what this desk can never
+  // record, and one quiet foot line names who records them.
+  const whoDoesThis = whoDoesThisLine(
+    role,
+    (
+      [
+        ["RECORD_CARE_PLAN", planGate],
+        ["RECORD_TRIBUNAL_HEARING", hearingGate],
+        ["RECORD_TRIBUNAL_OUTCOME", hearing && !hearing.outcome ? outcomeGate : undefined],
+        ["SET_CULTURAL_SUPPORT_REQUEST", culturalGate],
+      ] as const
+    ).flatMap(([eventType, stepGate]) => (stepGate?.never ? [eventType] : [])),
+  );
 
   function open(next: "plan" | "hearing") {
     setProblem(null);
@@ -582,6 +597,7 @@ export function PatientCarePlansCard({
             </dd>
           </div>
         </dl>
+        {whoDoesThis ? <WhoDoesThis className={styles.whoFoot}>{whoDoesThis}</WhoDoesThis> : null}
       </CardBody>
     </Card>
   );

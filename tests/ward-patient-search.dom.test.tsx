@@ -1129,6 +1129,9 @@ describe("Third Edition dropdown filters and yield strip", () => {
     fireEvent.change(screen.getByLabelText("Wait band"), { target: { value: "under6" } });
 
     const resetBtn = screen.getByTestId("ward-patient-search-reset-filters");
+    // Spec item 9 (13 Nov 2026): the accessible name starts with the visible words.
+    expect(resetBtn.getAttribute("aria-label")).toMatch(/^Reset \(\d+\), /u);
+    expect(resetBtn.getAttribute("aria-label")?.startsWith(resetBtn.textContent ?? "")).toBe(true);
     fireEvent.click(resetBtn);
 
     expect(screen.getByLabelText(SEARCH_LABEL)).toHaveValue("");

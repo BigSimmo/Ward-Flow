@@ -82,7 +82,9 @@ describe("A9-02: Home Act now pull offers Undo for the whole window", () => {
     expect(journey().stage).toBe("pulled");
 
     const toast = await undoToast(/^Bed pulled at /u);
-    expect(toast).toHaveTextContent(`Undo within ${UNDO_WINDOW_MINUTES} min.`);
+    // D-192 (shared design parts item 4): one clock time, no "Undo within" and no countdown.
+    expect(toast).toHaveTextContent(/ · Undo until \d{2}:\d{2}/u);
+    expect(toast).not.toHaveTextContent("Undo within");
     expect(toast.style.getPropertyValue("--wf-undo-ms")).toBe(WINDOW_MS);
     fireEvent.click(within(toast).getByRole("button", { name: "Undo" }));
     await waitFor(() => expect(journey().stage).not.toBe("pulled"));
@@ -116,7 +118,9 @@ describe("A9-02: the ward bed board pull offers the same Undo", () => {
     expect(stage()).toBe("pulled");
 
     const toast = await undoToast(/^Bed pulled for /u);
-    expect(toast).toHaveTextContent(`Undo within ${UNDO_WINDOW_MINUTES} min.`);
+    // D-192 (shared design parts item 4): one clock time, no "Undo within" and no countdown.
+    expect(toast).toHaveTextContent(/ · Undo until \d{2}:\d{2}/u);
+    expect(toast).not.toHaveTextContent("Undo within");
     expect(toast.style.getPropertyValue("--wf-undo-ms")).toBe(WINDOW_MS);
     fireEvent.click(within(toast).getByRole("button", { name: "Undo" }));
     await waitFor(() => expect(stage()).not.toBe("pulled"));

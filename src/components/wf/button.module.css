@@ -270,20 +270,63 @@
 }
 
 /* Disabled with a visible reason. */
-/* Narrow panels (lane E's Transport job panel, Josh 31 Oct 2026): the button keeps its whole label
-   and the reason wraps onto more lines instead of being cut; when both cannot share a line, the pair
-   drops to two rows. Nothing is hidden. */
+/* Shared design parts item 6 (Josh, 13 Nov 2026): the lock line sits under the button, right-aligned
+   with it ("not yet" keeps the dashed button and says why underneath). The reason comes first in the
+   markup, so it is read before the button; the column is reversed to draw it below. Narrow panels
+   (lane E's Transport job panel, Josh 31 Oct 2026): the button keeps its whole label and the reason
+   wraps onto more lines instead of being cut. Nothing is hidden. */
 .withReason {
   display: inline-flex;
+  flex-direction: column-reverse;
   flex-wrap: wrap;
-  align-items: center;
-  gap: var(--wf-s-2);
+  align-items: flex-end;
+  gap: var(--wf-s-1);
   min-width: 0;
   max-width: 100%;
 }
 
 .withReason > button {
   flex: none;
+}
+
+.withReason > .reason {
+  flex: 0 1 auto;
+  justify-content: flex-end;
+  text-align: end;
+}
+
+/* A tooltip reason: the button alone with a pointer (the wrapper adds no box); on a phone width or a
+   touch screen the same lock line is drawn under the button, and the tip never opens. */
+.tipReason {
+  display: contents;
+}
+
+/* Doubled so it outranks `.reason { display: inline-flex }` further down (item 6: with a mouse the
+   line drew at the left under the value); the touch rule below has the same weight and comes later. */
+.touchReason.touchReason {
+  display: none;
+}
+
+@media (max-width: 46.4375rem), (pointer: coarse) {
+  .tipReason {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--wf-s-1);
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .tipReason > .touchReason {
+    display: inline-flex;
+    flex: 0 1 auto;
+    justify-content: flex-end;
+    text-align: end;
+  }
+
+  .reasonTip.reasonTip {
+    display: none;
+  }
 }
 
 .reason {
@@ -315,13 +358,14 @@
     width: 40px;
     min-width: 40px;
   }
+  /* The cover starts inside the 1px border, so 5px each way makes the 40px button a 48px target. */
   .b:not([data-placement-action])::after {
     content: "";
     position: absolute;
-    inset: -4px 0;
+    inset: -5px 0;
   }
   .iconOnly:not([data-placement-action])::after {
-    inset: -4px;
+    inset: -5px;
   }
 }
 

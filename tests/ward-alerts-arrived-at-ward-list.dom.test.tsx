@@ -21,7 +21,6 @@ import type { WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { UNDO_WINDOW_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 
 /**
  * P069 in the real Alerts list. Recording the arrival closes the "Bed pull expired" alert, so the alert
@@ -106,7 +105,8 @@ describe("Arrived at ward from the real Alerts list (P069)", () => {
 
     // The toast and its Undo outlive the alert.
     expect(await screen.findByText(/ arrived at /)).toBeInTheDocument();
-    expect(screen.getByText(`${UNDO_WINDOW_MINUTES} min left`)).toBeInTheDocument();
+    // D-192 (shared design parts item 4): one clock time in the words, no "min left" countdown.
+    expect(screen.getByText(/^· Undo until \d{2}:\d{2}$/u)).toBeInTheDocument();
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: /Undo/ }));
     });

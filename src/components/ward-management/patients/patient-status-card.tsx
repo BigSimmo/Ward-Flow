@@ -4,7 +4,8 @@ import { withLoadRetry } from "@/components/ward-management/load-retry";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { BedSingle, Clock, DoorOpen, FileBadge, Send, Stethoscope, Ambulance, UserRound, Users } from "lucide-react";
-import { Button, StatusGlyph, useIsPhone, type WfTone } from "@/components/wf";
+import { Button, StatusGlyph, useIsPhone, type WfTone, WhoDoesThis } from "@/components/wf";
+import { whoDoesThisLine } from "../ward-who-does-this";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
   absenceStepsFor,
@@ -88,7 +89,13 @@ type StatusAction =
       /** The words when pinned in the phone bar, away from its row ("Record search done"). */
       pinnedLabel?: string;
     }
-  | { kind: "unavailable"; label: string; reason: string };
+  | {
+      kind: "unavailable";
+      label: string;
+      /** Why not yet, drawn under the button (design parts item 6). A step this desk can never take is
+       * left out instead, with a WhoDoesThis line naming who does it. */
+      reason: string;
+    };
 
 export interface PatientStatus {
   tone: WfTone;
@@ -106,6 +113,11 @@ export interface PatientStatus {
    * one primary only when no gate holds it, and on a phone it is pinned in the action bar.
    */
   next?: StatusAction;
+  /**
+   * D-192 (shared design parts item 6): the steps on this card this desk can never take, left out of
+   * the cells, so one quiet foot line names who takes them.
+   */
+  neverSteps?: WardFlowEventType[];
 }
 
 /** One checklist row: done or not, when, and at most one action. */
@@ -287,7 +299,9 @@ function transportCell(
     owner: "ED nurse in charge",
     tone: "neutral",
     value: "Not booked",
-    sub: ready ? "Book by phone, then log it" : `Needs ${waitingFor}`,
+    // Design parts item 6: the lock line under Log booking says what it waits for, so the row's own
+    // line keeps its hint rather than saying it twice.
+    sub: "Book by phone, then log it",
     action: ready
       ? {
           kind: "button",
@@ -341,6 +355,7 @@ export function buildPatientStatus(
 ): PatientStatus {
   const status = statusFor(mode, ctx, summary);
   const limit = ctx.roleLimit;
+  const neverSteps: WardFlowEventType[] = [];
   const limited = (action: StatusAction | undefined): StatusAction | undefined => {
     if (summary !== undefined && action?.kind === "button" && action.onClick === ctx.onOpenPlacement) {
       if (mode !== "held" || !acceptedPlacementAllowed) return undefined;
@@ -351,14 +366,21 @@ export function buildPatientStatus(
     if (action?.kind !== "button" || action.event === undefined) return action;
     const reason = limit?.(action.event);
     // F-54 (A9-35): an action this desk can never take is left out (DESIGN-SYSTEM.md, Actions).
-    if (reason === null) return undefined;
+    if (reason === null) {
+      if (!neverSteps.includes(action.event)) neverSteps.push(action.event);
+      return undefined;
+    }
     return reason ? { kind: "unavailable", label: action.label, reason } : action;
   };
+  const cells = status.cells.map((cell) => ({ ...cell, action: limited(cell.action) }));
+  const rows = status.rows?.map((row) => ({ ...row, action: limited(row.action) }));
+  const next = limited(status.next);
   return {
     ...status,
-    cells: status.cells.map((cell) => ({ ...cell, action: limited(cell.action) })),
-    rows: status.rows?.map((row) => ({ ...row, action: limited(row.action) })),
-    next: limited(status.next),
+    cells,
+    rows,
+    next,
+    ...(neverSteps.length > 0 ? { neverSteps } : {}),
   };
 }
 
@@ -997,7 +1019,7 @@ export function statusCardFocusTargets(card: HTMLElement | null): HTMLElement[] 
 function CellAction({ action, primary }: { action: StatusAction; primary: boolean }): ReactNode {
   if (action.kind === "unavailable")
     return (
-      <Button size="sm" disabledReason={action.reason} reasonDisplay="tooltip">
+      <Button size="sm" disabledReason={action.reason}>
         {action.label}
       </Button>
     );
@@ -1090,6 +1112,8 @@ export function PatientStatusCard({
     status.rows?.find((r) => !r.done && r.action?.kind === "button")?.key ??
     status.cells.find((c) => !c.clear && c.action?.kind === "button" && !c.action.secondary)?.key;
   const progress = mode === "ward" ? stayProgress(context.admission, context.now) : null;
+  // D-192 (shared design parts item 6): who takes the steps this desk never sees a button for.
+  const whoDoesThis = status.neverSteps ? whoDoesThisLine(routeRole, status.neverSteps) : undefined;
   const word = status.meterWord ?? "clear";
   /*
    * v10 Patient, Phone: "Its one primary is pinned in a sticky action bar and is not repeated in
@@ -1272,6 +1296,7 @@ export function PatientStatusCard({
             }
           />
         ) : null}
+        {whoDoesThis ? <WhoDoesThis className={styles.whoFoot}>{whoDoesThis}</WhoDoesThis> : null}
         {progress ? <PatientStayProgress progress={progress} /> : null}
         {children}
         {phoneQuiet ? <p className={styles.phFoot}>{phoneFoot ?? status.meta}</p> : null}

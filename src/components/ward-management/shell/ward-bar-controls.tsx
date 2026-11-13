@@ -27,7 +27,6 @@ import {
   NOT_WIRED_SUFFIX,
   SERVICE_SCOPE_NOTE,
   SERVICE_SCOPE_SHEET_LINE,
-  SERVICE_SWATCH_KEY,
   type WardBarPopoverId,
 } from "./ward-bar-model";
 import styles from "./ward-bar.module.css";
@@ -234,7 +233,6 @@ export function WardBarServiceSelector({
           }
         }}
       >
-        <span className={styles.scopeDot} aria-hidden="true" />
         <span className={styles.scopeBadgeLabel}>{deskPlace ?? activeServiceBadgeLabel}</span>
         {!isFixedJurisdiction && <ChevronDown className={styles.scopeCaret} aria-hidden="true" strokeWidth={1.75} />}
         <span className="sr-only">{deskPlace ?? activeServiceBadgeLabel}</span>
@@ -292,7 +290,6 @@ export function WardBarServiceSelector({
             aria-pressed={service === null}
             onClick={() => selectService(null)}
           >
-            <span className={styles.serviceDot} data-service="statewide" aria-hidden="true" />
             {/* shell-23 (13 Oct 2026): one word. The header says Statewide, so the option does too. */}
             <span className={styles.serviceName}>Statewide</span>
             <ServiceWaitingCount count={allWaitingCount} />
@@ -309,7 +306,6 @@ export function WardBarServiceSelector({
               aria-pressed={service === candidate}
               onClick={() => selectService(candidate)}
             >
-              <span className={styles.serviceDot} data-service={SERVICE_SWATCH_KEY[candidate]} aria-hidden="true" />
               <span className={styles.serviceName}>{candidate}</span>
               <ServiceWaitingCount count={waiting.byService.get(candidate) ?? 0} />
               <Check className={styles.serviceCheck} aria-hidden="true" data-visible={service === candidate} />

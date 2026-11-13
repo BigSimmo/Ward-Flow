@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 const guard = vi.hoisted(() => ({
   path: "/ward-flow/statistics",
@@ -293,12 +294,41 @@ describe("the real layout's authenticated executive branch", () => {
     expect(screen.getAllByTestId("ward-rail-bed-alert-row")).toHaveLength(report.services.length);
     fireEvent.keyDown(document, { key: "Escape" });
     fireEvent.click(screen.getByTestId("ward-rail-appearance-toggle"));
-    fireEvent.click(within(screen.getByTestId("ward-executive-appearance")).getByRole("button", { name: "Dark" }));
+    fireEvent.click(within(screen.getByTestId("ward-executive-appearance")).getByRole("radio", { name: "Dark" }));
     expect(document.documentElement).toHaveAttribute("data-theme", "dark");
     fireEvent.keyDown(document, { key: "Escape" });
     fireEvent.click(screen.getByTestId("ward-rail-help"));
     await waitFor(() => expect(screen.getByTestId("ward-help-sheet")).toBeInTheDocument());
     expect(guard.raw).not.toHaveBeenCalled();
+  });
+  it("makes Appearance the rail's radio group: opens on the current choice, arrows move, Enter picks, Escape returns", async () => {
+    // Review E-11 (F-140): the same kit part and focus rule as the live rail's Appearance pop-up.
+    const user = userEvent.setup();
+    await openLayout();
+    const toggle = screen.getByTestId("ward-rail-appearance-toggle");
+    await user.click(toggle);
+    const sheet = screen.getByTestId("ward-executive-appearance");
+    const group = within(sheet).getByRole("radiogroup", { name: "Theme" });
+    expect(within(sheet).queryAllByRole("button", { pressed: true })).toHaveLength(0);
+    const current = group.querySelector<HTMLElement>('[role="radio"][aria-checked="true"]');
+    expect(current).not.toBeNull();
+    await waitFor(() => expect(current).toHaveFocus());
+
+    // Earlier cases may leave a theme chosen, so aim two choices on from whichever is current.
+    const radios = within(group).getAllByRole("radio");
+    const target = radios[(radios.indexOf(current!) + 2) % radios.length]!;
+    await user.keyboard("{ArrowRight}{ArrowRight}");
+    expect(target).toHaveFocus();
+    expect(target).toHaveAttribute("aria-checked", "false");
+    expect(current).toHaveAttribute("aria-checked", "true");
+    expect(radios.filter((radio) => radio.tabIndex === 0)).toEqual([target]);
+    await user.keyboard("{Enter}");
+    expect(target).toHaveAttribute("aria-checked", "true");
+    expect(current).toHaveAttribute("aria-checked", "false");
+
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("radiogroup", { name: "Theme" })).toBeNull());
+    await waitFor(() => expect(toggle).toHaveFocus());
   });
   it("retains the real phone entry, protected Activity, Settings and server role switch", async () => {
     guard.phone = true;

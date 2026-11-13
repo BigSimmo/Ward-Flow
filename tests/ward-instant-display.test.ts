@@ -119,6 +119,14 @@ const MAY_ASSERT_TODAY = new Map([
     "Patient chronology phone list (11 Oct 2026): every row sits under its day-group heading, so the row still names the day.",
   ],
   [
+    "stepAt + UNDO_WINDOW_MINUTES",
+    "Undo until (D-192 item 4, 13 Nov 2026): the time is at most five minutes after the step, and the message and row Undo are shown only until then, so the clock face always means the next few minutes.",
+  ],
+  [
+    "stamped",
+    'Print attribution (F-109, A14-23, 13 Nov 2026): the clock is followed by "board time" and the day words from formatInstantWithDay, so the line still names the day.',
+  ],
+  [
     "selectedPatient.openedAtInstant",
     "Patient search Latest timeline: the clock sits in the time column and withDay adds the day from formatInstantWithDay to the event text beside it, so the row still names the day.",
   ],

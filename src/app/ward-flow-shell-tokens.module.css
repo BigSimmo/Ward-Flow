@@ -147,41 +147,41 @@
   --danger-soft: #f8e6e2;
   --danger-ink: #973121;
 
-  /* WA Health Service Provider Official Brand Palette */
-  --svc-east: #00825e; /* EMHS: Primary Green - #00825e */
-  --svc-east-bg: #ecfdf5;
-  --svc-east-border: #a7f3d0;
-  --svc-east-ink: #065f46;
+  /* F-78: health services are named, never coloured. These legacy names are neutral aliases. */
+  --svc-east: var(--wf-ink-3);
+  --svc-east-bg: var(--wf-track);
+  --svc-east-border: var(--wf-line-2);
+  --svc-east-ink: var(--wf-ink-2);
 
-  --svc-north: #990057; /* NMHS: Primary Red (Ruby/Magenta) - #990057 */
-  --svc-north-bg: #fdf2f8;
-  --svc-north-border: #fbcfe8;
-  --svc-north-ink: #831843;
+  --svc-north: var(--wf-ink-3);
+  --svc-north-bg: var(--wf-track);
+  --svc-north-border: var(--wf-line-2);
+  --svc-north-ink: var(--wf-ink-2);
 
-  --svc-south: #5a2476; /* SMHS: Primary Purple - #5a2476 */
-  --svc-south-bg: #faf5ff;
-  --svc-south-border: #e9d5ff;
-  --svc-south-ink: #581c87;
+  --svc-south: var(--wf-ink-3);
+  --svc-south-bg: var(--wf-track);
+  --svc-south-border: var(--wf-line-2);
+  --svc-south-ink: var(--wf-ink-2);
 
-  --svc-wachs: #005b94; /* WACHS: Primary Blue - #005b94 */
-  --svc-wachs-bg: #f0f9ff;
-  --svc-wachs-border: #bae6fd;
-  --svc-wachs-ink: #0369a1;
+  --svc-wachs: var(--wf-ink-3);
+  --svc-wachs-bg: var(--wf-track);
+  --svc-wachs-border: var(--wf-line-2);
+  --svc-wachs-ink: var(--wf-ink-2);
 
-  --svc-cahs: #0076be; /* CAHS: Primary Blue - #0076be */
-  --svc-cahs-bg: #f0f9ff;
-  --svc-cahs-border: #bae6fd;
-  --svc-cahs-ink: #026aa7;
+  --svc-cahs: var(--wf-ink-3);
+  --svc-cahs-bg: var(--wf-track);
+  --svc-cahs-border: var(--wf-line-2);
+  --svc-cahs-ink: var(--wf-ink-2);
 
-  --svc-statewide: #005b38; /* WA Health / Statewide: corporate green - #005b38 */
-  --svc-statewide-bg: #ecfdf5;
-  --svc-statewide-border: #a7f3d0;
-  --svc-statewide-ink: #065f46;
+  --svc-statewide: var(--wf-ink-3);
+  --svc-statewide-bg: var(--wf-track);
+  --svc-statewide-border: var(--wf-line-2);
+  --svc-statewide-ink: var(--wf-ink-2);
 
-  --svc-private: #475569; /* Private & Contracted Facilities */
-  --svc-private-bg: #f8fafc;
-  --svc-private-border: #cbd5e1;
-  --svc-private-ink: #334155;
+  --svc-private: var(--wf-ink-3);
+  --svc-private-bg: var(--wf-track);
+  --svc-private-border: var(--wf-line-2);
+  --svc-private-ink: var(--wf-ink-2);
 
   --lift: 0 1px 1px rgba(30, 48, 66, 0.05), 0 14px 30px -22px rgba(30, 48, 66, 0.45);
   --hl: rgba(255, 255, 255, 0.9);
@@ -289,40 +289,40 @@
     --danger-soft: #33201b;
     --danger-ink: #ffa08e;
 
-    --svc-east: #34d399;
-    --svc-east-bg: rgba(16, 185, 129, 0.15);
-    --svc-east-border: rgba(52, 211, 153, 0.3);
-    --svc-east-ink: #6ee7b7;
+    --svc-east: var(--wf-ink-3);
+    --svc-east-bg: var(--wf-track);
+    --svc-east-border: var(--wf-line-2);
+    --svc-east-ink: var(--wf-ink-2);
 
-    --svc-north: #f472b6;
-    --svc-north-bg: rgba(219, 39, 119, 0.15);
-    --svc-north-border: rgba(244, 114, 182, 0.3);
-    --svc-north-ink: #fbcfe8;
+    --svc-north: var(--wf-ink-3);
+    --svc-north-bg: var(--wf-track);
+    --svc-north-border: var(--wf-line-2);
+    --svc-north-ink: var(--wf-ink-2);
 
-    --svc-south: #c084fc;
-    --svc-south-bg: rgba(168, 85, 247, 0.15);
-    --svc-south-border: rgba(192, 132, 252, 0.3);
-    --svc-south-ink: #e9d5ff;
+    --svc-south: var(--wf-ink-3);
+    --svc-south-bg: var(--wf-track);
+    --svc-south-border: var(--wf-line-2);
+    --svc-south-ink: var(--wf-ink-2);
 
-    --svc-wachs: #38bdf8;
-    --svc-wachs-bg: rgba(14, 165, 233, 0.15);
-    --svc-wachs-border: rgba(56, 189, 248, 0.3);
-    --svc-wachs-ink: #bae6fd;
+    --svc-wachs: var(--wf-ink-3);
+    --svc-wachs-bg: var(--wf-track);
+    --svc-wachs-border: var(--wf-line-2);
+    --svc-wachs-ink: var(--wf-ink-2);
 
-    --svc-cahs: #a5d8ff;
-    --svc-cahs-bg: rgba(2, 106, 167, 0.15);
-    --svc-cahs-border: rgba(56, 189, 248, 0.3);
-    --svc-cahs-ink: #bae6fd;
+    --svc-cahs: var(--wf-ink-3);
+    --svc-cahs-bg: var(--wf-track);
+    --svc-cahs-border: var(--wf-line-2);
+    --svc-cahs-ink: var(--wf-ink-2);
 
-    --svc-statewide: #a3d9b8;
-    --svc-statewide-bg: rgba(16, 185, 129, 0.15);
-    --svc-statewide-border: rgba(52, 211, 153, 0.3);
-    --svc-statewide-ink: #6ee7b7;
+    --svc-statewide: var(--wf-ink-3);
+    --svc-statewide-bg: var(--wf-track);
+    --svc-statewide-border: var(--wf-line-2);
+    --svc-statewide-ink: var(--wf-ink-2);
 
-    --svc-private: #94a3b8;
-    --svc-private-bg: rgba(100, 116, 139, 0.15);
-    --svc-private-border: rgba(148, 163, 184, 0.3);
-    --svc-private-ink: #e2e8f0;
+    --svc-private: var(--wf-ink-3);
+    --svc-private-bg: var(--wf-track);
+    --svc-private-border: var(--wf-line-2);
+    --svc-private-ink: var(--wf-ink-2);
 
     --lift: 0 1px 1px rgba(0, 0, 0, 0.4), 0 16px 34px -22px rgba(0, 0, 0, 0.95);
     --hl: rgba(255, 255, 255, 0.06);
@@ -384,40 +384,40 @@
   --danger: #ff8b76;
   --danger-soft: #33201b;
   --danger-ink: #ffa08e;
-  --svc-east: #34d399;
-  --svc-east-bg: rgba(16, 185, 129, 0.15);
-  --svc-east-border: rgba(52, 211, 153, 0.3);
-  --svc-east-ink: #6ee7b7;
+  --svc-east: var(--wf-ink-3);
+  --svc-east-bg: var(--wf-track);
+  --svc-east-border: var(--wf-line-2);
+  --svc-east-ink: var(--wf-ink-2);
 
-  --svc-north: #f472b6;
-  --svc-north-bg: rgba(219, 39, 119, 0.15);
-  --svc-north-border: rgba(244, 114, 182, 0.3);
-  --svc-north-ink: #fbcfe8;
+  --svc-north: var(--wf-ink-3);
+  --svc-north-bg: var(--wf-track);
+  --svc-north-border: var(--wf-line-2);
+  --svc-north-ink: var(--wf-ink-2);
 
-  --svc-south: #c084fc;
-  --svc-south-bg: rgba(168, 85, 247, 0.15);
-  --svc-south-border: rgba(192, 132, 252, 0.3);
-  --svc-south-ink: #e9d5ff;
+  --svc-south: var(--wf-ink-3);
+  --svc-south-bg: var(--wf-track);
+  --svc-south-border: var(--wf-line-2);
+  --svc-south-ink: var(--wf-ink-2);
 
-  --svc-wachs: #38bdf8;
-  --svc-wachs-bg: rgba(14, 165, 233, 0.15);
-  --svc-wachs-border: rgba(56, 189, 248, 0.3);
-  --svc-wachs-ink: #bae6fd;
+  --svc-wachs: var(--wf-ink-3);
+  --svc-wachs-bg: var(--wf-track);
+  --svc-wachs-border: var(--wf-line-2);
+  --svc-wachs-ink: var(--wf-ink-2);
 
-  --svc-cahs: #a5d8ff;
-  --svc-cahs-bg: rgba(2, 106, 167, 0.15);
-  --svc-cahs-border: rgba(56, 189, 248, 0.3);
-  --svc-cahs-ink: #bae6fd;
+  --svc-cahs: var(--wf-ink-3);
+  --svc-cahs-bg: var(--wf-track);
+  --svc-cahs-border: var(--wf-line-2);
+  --svc-cahs-ink: var(--wf-ink-2);
 
-  --svc-statewide: #a3d9b8;
-  --svc-statewide-bg: rgba(16, 185, 129, 0.15);
-  --svc-statewide-border: rgba(52, 211, 153, 0.3);
-  --svc-statewide-ink: #6ee7b7;
+  --svc-statewide: var(--wf-ink-3);
+  --svc-statewide-bg: var(--wf-track);
+  --svc-statewide-border: var(--wf-line-2);
+  --svc-statewide-ink: var(--wf-ink-2);
 
-  --svc-private: #94a3b8;
-  --svc-private-bg: rgba(100, 116, 139, 0.15);
-  --svc-private-border: rgba(148, 163, 184, 0.3);
-  --svc-private-ink: #e2e8f0;
+  --svc-private: var(--wf-ink-3);
+  --svc-private-bg: var(--wf-track);
+  --svc-private-border: var(--wf-line-2);
+  --svc-private-ink: var(--wf-ink-2);
 
   --lift: 0 1px 1px rgba(0, 0, 0, 0.4), 0 16px 34px -22px rgba(0, 0, 0, 0.95);
   --hl: rgba(255, 255, 255, 0.06);
@@ -457,34 +457,34 @@
     --danger: var(--wf-danger-ink);
     --danger-ink: var(--wf-danger-ink);
     --danger-soft: var(--wf-act-tint);
-    --svc-east: var(--wf-svc-east);
-    --svc-east-bg: color-mix(in srgb, var(--svc-east) 8%, var(--wf-surface));
-    --svc-east-border: var(--svc-east);
-    --svc-east-ink: var(--svc-east);
-    --svc-north: var(--wf-svc-north);
-    --svc-north-bg: color-mix(in srgb, var(--svc-north) 8%, var(--wf-surface));
-    --svc-north-border: var(--svc-north);
-    --svc-north-ink: var(--svc-north);
-    --svc-south: var(--wf-svc-south);
-    --svc-south-bg: color-mix(in srgb, var(--svc-south) 8%, var(--wf-surface));
-    --svc-south-border: var(--svc-south);
-    --svc-south-ink: var(--svc-south);
-    --svc-wachs: var(--wf-svc-wachs);
-    --svc-wachs-bg: color-mix(in srgb, var(--svc-wachs) 8%, var(--wf-surface));
-    --svc-wachs-border: var(--svc-wachs);
-    --svc-wachs-ink: var(--svc-wachs);
-    --svc-cahs: var(--wf-svc-cahs);
-    --svc-cahs-bg: color-mix(in srgb, var(--svc-cahs) 8%, var(--wf-surface));
-    --svc-cahs-border: var(--svc-cahs);
-    --svc-cahs-ink: var(--svc-cahs);
-    --svc-statewide: var(--wf-svc-statewide);
-    --svc-statewide-bg: color-mix(in srgb, var(--svc-statewide) 8%, var(--wf-surface));
-    --svc-statewide-border: var(--svc-statewide);
-    --svc-statewide-ink: var(--svc-statewide);
-    --svc-private: var(--wf-svc-private);
-    --svc-private-bg: color-mix(in srgb, var(--svc-private) 8%, var(--wf-surface));
-    --svc-private-border: var(--svc-private);
-    --svc-private-ink: var(--svc-private);
+    --svc-east: var(--wf-ink-3);
+    --svc-east-bg: var(--wf-track);
+    --svc-east-border: var(--wf-line-2);
+    --svc-east-ink: var(--wf-ink-2);
+    --svc-north: var(--wf-ink-3);
+    --svc-north-bg: var(--wf-track);
+    --svc-north-border: var(--wf-line-2);
+    --svc-north-ink: var(--wf-ink-2);
+    --svc-south: var(--wf-ink-3);
+    --svc-south-bg: var(--wf-track);
+    --svc-south-border: var(--wf-line-2);
+    --svc-south-ink: var(--wf-ink-2);
+    --svc-wachs: var(--wf-ink-3);
+    --svc-wachs-bg: var(--wf-track);
+    --svc-wachs-border: var(--wf-line-2);
+    --svc-wachs-ink: var(--wf-ink-2);
+    --svc-cahs: var(--wf-ink-3);
+    --svc-cahs-bg: var(--wf-track);
+    --svc-cahs-border: var(--wf-line-2);
+    --svc-cahs-ink: var(--wf-ink-2);
+    --svc-statewide: var(--wf-ink-3);
+    --svc-statewide-bg: var(--wf-track);
+    --svc-statewide-border: var(--wf-line-2);
+    --svc-statewide-ink: var(--wf-ink-2);
+    --svc-private: var(--wf-ink-3);
+    --svc-private-bg: var(--wf-track);
+    --svc-private-border: var(--wf-line-2);
+    --svc-private-ink: var(--wf-ink-2);
     --hl: transparent;
     --focus: var(--wf-focus-ring);
   }
@@ -572,35 +572,34 @@
     --danger-soft: #f8e6e2;
     --danger-ink: #973121;
 
-    /* Service colours match the light theme on paper, including chips printed from dark. */
-    --svc-east: #00825e;
-    --svc-east-bg: #ecfdf5;
-    --svc-east-border: #a7f3d0;
-    --svc-east-ink: #065f46;
-    --svc-north: #990057;
-    --svc-north-bg: #fdf2f8;
-    --svc-north-border: #fbcfe8;
-    --svc-north-ink: #831843;
-    --svc-south: #5a2476;
-    --svc-south-bg: #faf5ff;
-    --svc-south-border: #e9d5ff;
-    --svc-south-ink: #581c87;
-    --svc-wachs: #005b94;
-    --svc-wachs-bg: #f0f9ff;
-    --svc-wachs-border: #bae6fd;
-    --svc-wachs-ink: #0369a1;
-    --svc-cahs: #0076be;
-    --svc-cahs-bg: #f0f9ff;
-    --svc-cahs-border: #bae6fd;
-    --svc-cahs-ink: #026aa7;
-    --svc-statewide: #005b38;
-    --svc-statewide-bg: #ecfdf5;
-    --svc-statewide-border: #a7f3d0;
-    --svc-statewide-ink: #065f46;
-    --svc-private: #475569;
-    --svc-private-bg: #f8fafc;
-    --svc-private-border: #cbd5e1;
-    --svc-private-ink: #334155;
+    --svc-east: var(--wf-ink-3);
+    --svc-east-bg: var(--wf-track);
+    --svc-east-border: var(--wf-line-2);
+    --svc-east-ink: var(--wf-ink-2);
+    --svc-north: var(--wf-ink-3);
+    --svc-north-bg: var(--wf-track);
+    --svc-north-border: var(--wf-line-2);
+    --svc-north-ink: var(--wf-ink-2);
+    --svc-south: var(--wf-ink-3);
+    --svc-south-bg: var(--wf-track);
+    --svc-south-border: var(--wf-line-2);
+    --svc-south-ink: var(--wf-ink-2);
+    --svc-wachs: var(--wf-ink-3);
+    --svc-wachs-bg: var(--wf-track);
+    --svc-wachs-border: var(--wf-line-2);
+    --svc-wachs-ink: var(--wf-ink-2);
+    --svc-cahs: var(--wf-ink-3);
+    --svc-cahs-bg: var(--wf-track);
+    --svc-cahs-border: var(--wf-line-2);
+    --svc-cahs-ink: var(--wf-ink-2);
+    --svc-statewide: var(--wf-ink-3);
+    --svc-statewide-bg: var(--wf-track);
+    --svc-statewide-border: var(--wf-line-2);
+    --svc-statewide-ink: var(--wf-ink-2);
+    --svc-private: var(--wf-ink-3);
+    --svc-private-bg: var(--wf-track);
+    --svc-private-border: var(--wf-line-2);
+    --svc-private-ink: var(--wf-ink-2);
 
     --lift: none;
     --hl: transparent;

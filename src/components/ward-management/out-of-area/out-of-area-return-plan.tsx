@@ -127,10 +127,12 @@ function ChoicePills<T extends string>({
   onChange: (value: T) => void;
   testId?: string;
 }) {
+  // Spec item 15 (C18, 13 Nov 2026): three or more answers list one per line on a phone, where they
+  // do not fit beside the label column.
   return (
     <fieldset className={styles.formRow} data-testid={testId}>
       <legend className={styles.formLabel}>{legend}</legend>
-      <span className={styles.choice}>
+      <span className={styles.choice} data-answers={options.length >= 3 ? "list" : undefined}>
         {options.map((option) => (
           <label key={option.value} className={styles.choiceItem}>
             <input
@@ -408,7 +410,7 @@ export function ReturnPlan({
                     : `No shorter travel recorded for ${entry.admission.homeRegion}`}
                 </p>
               )}
-              <Field label={options.length ? "Other" : "Hospital"} className={styles.formRow}>
+              <Field label={options.length ? "Other" : "Hospital"} layout="row" className={styles.fieldRow}>
                 <Select
                   data-testid="ward-out-of-area-repat-home-hospital"
                   value={optionCodes.has(draft.homeHospital) ? "" : draft.homeHospital}
@@ -543,7 +545,7 @@ export function ReturnPlan({
                 title={PLAN_STEPS[2].title}
                 left={missing.filter((m) => PLAN_STEPS[2].answers.includes(m as never))}
               />
-              <Field label="CAD number" className={styles.formRow} error={cadError}>
+              <Field label="CAD number" layout="row" className={styles.fieldRow} error={cadError}>
                 <TextInput
                   data-testid="ward-out-of-area-repat-cad"
                   className={styles.mono}
@@ -553,7 +555,7 @@ export function ReturnPlan({
                   onChange={(event) => onDraft({ cadNumber: event.target.value })}
                 />
               </Field>
-              <Field label="Depart" className={styles.formRow} error={departError}>
+              <Field label="Depart" layout="row" className={styles.fieldRow} error={departError}>
                 <TextInput
                   icon={Clock}
                   inputMode="numeric"

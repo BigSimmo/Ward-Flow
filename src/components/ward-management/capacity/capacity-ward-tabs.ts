@@ -29,11 +29,13 @@ export function useCapacityWardTabs(unitId: string | undefined): {
   return {
     tabs: [
       { id: "ward", label: "Ward" },
-      // D-191 item 5: Discharges keeps "any date", so the tab names that window (F-105).
+      // D-191 item 5 and shared design parts item 2: Discharges keeps "any date", every open release
+      // as on the ward page, and the tab names that window as a quiet word (F-105).
       {
         id: "discharges",
-        label: "Discharges · any date",
+        label: "Discharges",
         count: unitId ? openBedReleases(bedReleases, unitId).length : 0,
+        window: "any date",
       },
     ],
     tab: chosen.unitId === unitId ? chosen.tab : "ward",

@@ -7,10 +7,11 @@
   min-width: 0;
 }
 
+/* Item 12 (13 Nov 2026): the track fill, which reads on the canvas and on a surface alike. */
 .block {
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-lg);
-  background: var(--wf-surface-2);
+  background: var(--wf-track);
   min-width: 0;
 }
 

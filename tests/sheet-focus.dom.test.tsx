@@ -48,7 +48,9 @@ function panelOf(title: string) {
   return heading?.closest('[role="dialog"]') as HTMLElement;
 }
 
-it("keeps the sheet open when a picker consumes Escape or a native select owns it", () => {
+// Spec item 5 (13 Nov 2026): a closed native select no longer swallows Escape; an open one's list
+// takes Escape itself in the browser, so the first Escape closes the list and the next the sheet.
+it("keeps the sheet open when a picker consumes Escape, and closes it from a closed native select", () => {
   const onClose = vi.fn();
   const { getByRole } = render(
     <Sheet open onClose={onClose} title="Picker sheet">
@@ -60,10 +62,11 @@ it("keeps the sheet open when a picker consumes Escape or a native select owns i
     </Sheet>,
   );
   fireEvent.keyDown(getByRole("textbox"), { key: "Escape" });
-  fireEvent.keyDown(getByRole("combobox"), { key: "Escape" });
   expect(onClose).not.toHaveBeenCalled();
-  fireEvent.keyDown(getByRole("button", { name: "Ordinary control" }), { key: "Escape" });
+  fireEvent.keyDown(getByRole("combobox"), { key: "Escape" });
   expect(onClose).toHaveBeenCalledTimes(1);
+  fireEvent.keyDown(getByRole("button", { name: "Ordinary control" }), { key: "Escape" });
+  expect(onClose).toHaveBeenCalledTimes(2);
 });
 
 it("locks the desktop work column until the last stacked sheet closes and preserves its position", () => {

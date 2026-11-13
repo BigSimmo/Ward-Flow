@@ -104,11 +104,20 @@ function roleNameInSentence(role: WardFlowRole): string {
  */
 export function roleOwnerHint(role: WardFlowRole, eventType: WardFlowEventType): string | undefined {
   if (canDispatch(role, eventType)) return;
+  const list = roleOwnerNames(role, eventType);
+  return list ? `Ask the ${list} to do this.` : undefined;
+}
+
+/**
+ * Who, other than `role`, takes `eventType`, as words inside a sentence ("bed coordinator", "nurse in
+ * charge or ED clinician"), by the WF-20 rule: the bed coordinator alone when it owns the step.
+ * Undefined when nobody else does. Shared by the lock line and the "who does this" foot line (D-192).
+ */
+export function roleOwnerNames(role: WardFlowRole, eventType: WardFlowEventType): string | undefined {
   const owners = EVENT_ROLE[eventType].filter((owner) => owner !== "demo" && owner !== role);
   if (owners.length === 0) return;
   const names = (owners.includes("coordinator") ? ["coordinator" as const] : owners).map(roleNameInSentence);
-  const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} or ${names.at(-1)}`;
-  return `Ask the ${list} to do this.`;
+  return names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} or ${names.at(-1)}`;
 }
 
 export function withOwnerHint(reason: string, role: WardFlowRole, eventType: WardFlowEventType): string {

@@ -1,7 +1,9 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import type { ReactNode } from "react";
 
+import type { WardLoadingShapeRows } from "./ward-loading-shape-rows";
 import styles from "./ward-loading-shape.module.css";
 
 type Shape = "home" | "capacity" | "waiting" | "plain";
@@ -30,7 +32,7 @@ function Block({ className }: { className?: string }) {
 }
 
 /** Home: hero band, ED strip, then My List beside Beds that fit and Placement. */
-function HomeShape() {
+function HomeShape({ list }: { list: ReactNode }) {
   return (
     <>
       <Block className={styles.band} />
@@ -40,7 +42,7 @@ function HomeShape() {
         ))}
       </div>
       <div className={styles.columns}>
-        <Block className={styles.list} />
+        {list}
         <div className={styles.side}>
           <Block className={styles.fit} />
           <Block className={styles.place} />
@@ -51,7 +53,7 @@ function HomeShape() {
 }
 
 /** Capacity: hero band, the five mismatch cards in one row, then the bed forecast. */
-function CapacityShape() {
+function CapacityShape({ forecast }: { forecast: ReactNode }) {
   return (
     <>
       <Block className={styles.band} />
@@ -60,13 +62,13 @@ function CapacityShape() {
           <Block key={key} className={styles.mismatch} />
         ))}
       </div>
-      <Block className={styles.forecast} />
+      {forecast}
     </>
   );
 }
 
 /** Waiting: the short band, the daily check line, four blocker cards, then the list beside its side column. */
-function WaitingShape() {
+function WaitingShape({ table }: { table: ReactNode }) {
   return (
     <>
       <Block className={styles.bandShort} />
@@ -77,7 +79,7 @@ function WaitingShape() {
         ))}
       </div>
       <div className={`${styles.columns} ${styles.wide}`}>
-        <Block className={styles.table} />
+        {table}
         <div className={styles.side}>
           <Block className={styles.fit} />
           <Block className={styles.place} />
@@ -91,22 +93,24 @@ function WaitingShape() {
  * Loading state (pop-state-loading, approved by Josh 31 Oct 2026): the shared placeholder's grey
  * blocks take the shape of the page that is on its way, so Home, Capacity and Waiting land where
  * the blocks were instead of jumping. Every other page keeps today's plain two blocks. Decoration
- * only: the placeholder's "Loading page" status says what is happening.
+ * only: the placeholder's "Loading page" status says what is happening. Item 12 (13 Nov 2026): the
+ * list-shaped blocks hold grey rows (`WardLoadingRows`); the others are filled with the track. The
+ * server draws those rows (`wardLoadingShapeRows`) and passes them in, so they add no client code.
  */
-export function WardLoadingShape({ paths }: { paths: WardLoadingShapePaths }) {
+export function WardLoadingShape({ paths, rows }: { paths: WardLoadingShapePaths; rows: WardLoadingShapeRows }) {
   const shape = shapeOf(usePathname() ?? "", paths);
   return (
     <div className={styles.blocks} aria-hidden="true" data-shape={shape}>
       {shape === "home" ? (
-        <HomeShape />
+        <HomeShape list={rows.home} />
       ) : shape === "capacity" ? (
-        <CapacityShape />
+        <CapacityShape forecast={rows.capacity} />
       ) : shape === "waiting" ? (
-        <WaitingShape />
+        <WaitingShape table={rows.waiting} />
       ) : (
         <>
           <Block className={styles.plain} />
-          <Block className={styles.plainTall} />
+          {rows.plain}
         </>
       )}
     </div>

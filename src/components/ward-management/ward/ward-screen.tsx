@@ -915,7 +915,14 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           },
         );
       };
-      toast?.push(bedPulledToast(who, roleLimitReason(pullRole, "RELEASE_PULL"), pull && (() => onUndoPull(pull))));
+      toast?.push(
+        bedPulledToast(
+          who,
+          roleLimitReason(pullRole, "RELEASE_PULL"),
+          pull && (() => onUndoPull(pull)),
+          nowRef.current,
+        ),
+      );
       focusWardArrival(check.movementId);
     }
     if (!refused && check.undo && toast) {

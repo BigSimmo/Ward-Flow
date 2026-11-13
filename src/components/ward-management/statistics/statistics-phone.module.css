@@ -322,11 +322,10 @@
 /* Device sweep R1-19/R2-12 (24 Oct 2026): the phone track is painted inside a square 48px band, so
  * an inset shadow on the band drew a faint square frame round the rounded track. Only the canvas
  * ring that hides the list scrolling under the pinned track stays. */
+/* Spec item 9 (13 Nov 2026): only one bar sticks at a time. The page's tab row stays pinned, so this
+ * second bar (By hospital / By ward) no longer pins over it; it scrolls away with the list. */
 .segPinned {
-  position: sticky;
-  top: calc(var(--wf-header-height, 3.5rem) + var(--wf-s-2));
-  z-index: 6;
-  box-shadow: 0 0 0 var(--wf-s-2) var(--wf-canvas);
+  position: static;
 }
 
 /* Design regression review (26 Oct 2026): the kit paints the phone track inside a transparent 48px
@@ -337,10 +336,6 @@
   -webkit-mask-image: none;
   mask-image: none;
   background-color: var(--wf-canvas);
-}
-
-:global(body:has([data-scrolled="true"])) .segPinned {
-  top: calc(3.25rem + var(--wf-s-2));
 }
 
 /* Device audit 11 Oct 2026: the range is a small "Now" pill; Shift, 7 and 30 days stay Preview

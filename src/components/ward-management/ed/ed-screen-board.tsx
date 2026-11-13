@@ -5,7 +5,7 @@
 // 15 Oct 2026).
 import { Maximize2, Minimize } from "lucide-react";
 import type { ReactNode } from "react";
-import { PortraitRail, SearchField, Segmented } from "@/components/wf";
+import { PortraitRail, SearchField, Segmented, FullScreenFrame, FullScreenMarkSlot } from "@/components/wf";
 import { EdBoardChips } from "./ed-board-chips";
 import { EdNeedsYou } from "./ed-needs-you";
 import { renderEdBoardRow } from "./ed-screen-board-row";
@@ -42,7 +42,11 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
   // Handover mock-up (Josh, 1 Nov 2026): the wider-screen table is the department's handover table.
   if (boardTable && !isTabletPortrait) return <EdHandoverBoard ctx={ctx} />;
   return (
-    <section
+    // D-192 (shared design parts item 7, F-39): the handover view and larger screen mode carry the
+    // synthetic-data mark, in the title row left of the exit control.
+    <FullScreenFrame
+      as="section"
+      enlarged={fullscreenBoard}
       aria-label="This department's patients"
       data-pane="board"
       className={`${styles.panel} ${styles.full} ${styles.listSection}${!boardTable && fullscreenBoard ? ` ${styles.fullscreenBoard}` : ""}`}
@@ -51,6 +55,7 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
       <div className={styles.ph}>
         <h2>ED psychiatry</h2>
         <div className={styles.phActions}>
+          <FullScreenMarkSlot />
           <button
             type="button"
             className={styles.fullscreenToggleBtn}
@@ -223,6 +228,6 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
           );
         })()
       )}
-    </section>
+    </FullScreenFrame>
   );
 }

@@ -202,7 +202,7 @@ export function NightViewScreen() {
                   <span className={styles.rowTitle}>{step.label}</span>
                   {/* 3.1: no "Ask wards" when everyone at this step already has it recorded. */}
                   {step.count > 0 && step.actionDoneCount === step.count ? null : (
-                    <span className={styles.rowSub}>Suggested next step: {step.nextStep}</span>
+                    <span className={styles.rowSub}>Next escalation step: {step.nextStep}</span>
                   )}
                 </span>
                 <span className={styles.count}>
