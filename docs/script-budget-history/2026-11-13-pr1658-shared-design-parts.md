@@ -8,7 +8,7 @@ Every limit is raised, on top of `main` at `ea4cd8b` (after PR #1657 merged), ea
 - Ward `/ward-flow/ward/rph-adult-secure`: 618.2 to 621.6 (+3.4)
 - Movement `/ward-flow/movements/WF-001`: 616.9 to 618.5 (+1.6)
 - Capacity `/ward-flow/capacity`: 662.4 to 666.0 (+3.6)
-- ED site `/ward-flow/ed/arm-ed`: 677.9 to 681.9 (+4.0)
+- ED site `/ward-flow/ed/arm-ed`: 677.9 to 682.2 (+4.3). Raised 0.3 KB more on 13 Nov 16:40Z: the coverage-gap fixes (Appearance radios, demo confirm hold, timeline reasons) measured just over 681.9 KB in CI.
 - Bed meeting `/ward-flow/bed-meeting`: 596.3 to 599.0 (+2.7)
 - Statistics `/ward-flow/statistics`: 636.4 to 639.1 (+2.7)
 
