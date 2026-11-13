@@ -108,7 +108,7 @@ wait up to 10 minutes and try again.
 | -   | 10:30-11:00 | Home                                         | Close                                             |
 
 The patient is **Keira Pellingworth, UM100045** (synthetic): at Royal Perth Hospital ED, accepted by
-Dabakarn and waiting for a bed. Her Form 3B ended at the examination, and the next form is not
+Dabakarn and waiting for a bed. Her Form 3B is still shown as recorded, and the next form is not
 recorded yet.
 
 ---
