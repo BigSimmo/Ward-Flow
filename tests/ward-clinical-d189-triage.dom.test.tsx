@@ -56,7 +56,7 @@ describe("the patient card's triage row (A9-29, A9-20(b))", () => {
   it("names the desk that signed and offers Start another triage once one is signed", () => {
     triages.current = [signedBy("ed")];
     render(<PatientTriageCard patientId="PT-SYN-1" />);
-    expect(screen.getByTestId("patient-triage-signed")).toHaveTextContent(/ by Sr M\. Gallagher$/u);
+    expect(screen.getByTestId("patient-triage-signed")).toHaveTextContent(/ by ED clinician$/u);
     expect(screen.getByTestId("patient-triage-start")).toHaveTextContent(/^Start another triage$/u);
   });
 });
@@ -75,7 +75,7 @@ function formFor(state: TriageState): FormApi {
     openSummary: vi.fn(),
     now: NOW,
     jump: vi.fn(),
-    reviewer: "K. Vance RN",
+    reviewer: "Nurse in charge",
   };
 }
 
@@ -130,10 +130,10 @@ describe("F-80 (D-189 item 5): crisis numbers render as copy-only text", () => {
       },
     };
     const { container } = render(
-      <SummaryDocument form={formFor(state)} signed={{ at: "09/11/2026 11:00", by: "K. Vance RN" }} />,
+      <SummaryDocument form={formFor(state)} signed={{ at: "09/11/2026 11:00", by: "Nurse in charge" }} />,
     );
     expect(container).toHaveTextContent(`${lifeline.phone} (Not checked)`);
     expect(container.querySelector("a[href^='tel:'], a[href^='callto:'], a[href^='sms:']")).toBeNull();
-    expect(container).toHaveTextContent("Signed 09/11/2026 11:00 by K. Vance RN");
+    expect(container).toHaveTextContent("Signed 09/11/2026 11:00 by Nurse in charge");
   });
 });

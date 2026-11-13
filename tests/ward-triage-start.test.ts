@@ -138,7 +138,7 @@ describe("a new triage", () => {
   it("names the chosen person in the summary and says there is no referral", () => {
     const model = summaryModel(state);
     expect(model.name).toBe("Ridgewell, Ada");
-    expect(model.keyLine).toContain("Dr S. Orlenby");
+    expect(model.keyLine).toContain("Bed coordinator");
     expect(summaryText(model)).toMatch(/\nReferral: None\n/);
   });
 
@@ -179,8 +179,8 @@ describe("a previous triage, read from a signed record", () => {
     expect(last.urgencyText).toBe("C within 12 hours");
     expect(last.legal).toBe("Community treatment order");
     expect(last.review).toBe("72 hours");
-    // A9-29: the record was signed on the ward desk, so it names the ward persona, not a fixed clinician.
-    expect(last.label).toMatch(/^Last triage · \d{2} [A-Z][a-z]{2} · K\. Vance RN$/);
+    // A9-29 and go question 4: the record was signed on the ward desk, so it names that desk.
+    expect(last.label).toMatch(/^Last triage · \d{2} [A-Z][a-z]{2} · Nurse in charge$/);
   });
 
   it("puts that triage on the person, so the next one compares with it", () => {
@@ -221,7 +221,7 @@ describe("the document", () => {
     const text = summaryText(summaryModel(state));
     expect(text).toMatch(/\nCurrent: not known: /);
     expect(text).toMatch(/\(carried from 12 Oct, not re-checked\)/);
-    expect(text).toMatch(/\nNot signed\. Reviewer: Dr S\. Orlenby/);
+    expect(text).toMatch(/\nNot signed\. Reviewer: Bed coordinator/);
   });
 });
 

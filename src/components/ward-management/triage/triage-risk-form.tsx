@@ -388,7 +388,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
   const routeRole = useRouteRole();
   // Raised by name as this desk at the board clock, as every screen does (tests/ward-flow-raise.test.ts).
   const raise = useWardRaise(routeRole);
-  // A9-29: the desk that signs is the desk that raises the signing, so the form names its persona.
+  // A9-29 and go question 4: the desk that signs is the desk that raises the signing, named by its own name.
   // Once signed, every surface (chip, rail, document, copied summary and handover) names the signer
   // saved with the entry, never the desk open now.
   const deskReviewer = signerName(routeRole);

@@ -41,40 +41,43 @@ const record = (by: TriageSignedRecord["by"]): TriageSignedRecord => ({
 const DAY_ZERO = demoDayZero(new Date("2026-11-07T04:00:00Z"));
 
 describe("A9-29: a signed triage names the desk that signed it, from the record", () => {
-  it("reads each desk's persona, and the demonstration control's role", () => {
-    expect(signerName("ward")).toBe("K. Vance RN");
-    expect(signerName("ed")).toBe("Sr M. Gallagher");
-    expect(signerName("coordinator")).toBe(DESK_PERSONAS.coordinator.name);
+  // Go question 4 (Josh, 14 Nov 2026): the desk's own name, never its sample persona.
+  it("reads each desk's own name, never its sample persona", () => {
+    expect(signerName("ward")).toBe("Nurse in charge");
+    expect(signerName("ed")).toBe("ED clinician");
+    expect(signerName("coordinator")).toBe("Bed coordinator");
     expect(signerName("demo")).toBe("Demonstration control");
-    expect(DEFAULT_REVIEWER).toBe(DESK_PERSONAS.coordinator.name);
+    expect(DEFAULT_REVIEWER).toBe("Bed coordinator");
+    for (const persona of Object.values(DESK_PERSONAS))
+      for (const role of ["ward", "ed", "coordinator"] as const) expect(signerName(role)).not.toBe(persona.name);
   });
 
   it("names the ward desk in the previous-triage label, the summary, the iSoBAR and the patient card", () => {
     const signed = record("ward");
     const last = previousTriageFrom(signed, DAY_ZERO);
-    expect(last.label).toMatch(/ · K\. Vance RN$/u);
-    expect(last.by).toBe("K. Vance RN");
+    expect(last.label).toMatch(/ · Nurse in charge$/u);
+    expect(last.by).toBe("Nurse in charge");
 
     const by = { at: "07/11/2026 10:42", by: signerName(signed.by) };
     const state = blankTriage(EXAMPLE_PERSON);
-    expect(summaryModel(state, by).keyLine).toMatch(/ · K\. Vance RN$/u);
-    expect(summaryText(summaryModel(state, by))).toContain("Signed 07/11/2026 10:42 by K. Vance RN");
-    expect(isbarText(state, by)).toMatch(/\nI Identify: K\. Vance RN · /u);
-    expect(triageSignedLine(signed, DAY_ZERO)).toMatch(/^Signed \d{2} [A-Z][a-z]{2} \d{2}:\d{2} by K\. Vance RN$/u);
+    expect(summaryModel(state, by).keyLine).toMatch(/ · Nurse in charge$/u);
+    expect(summaryText(summaryModel(state, by))).toContain("Signed 07/11/2026 10:42 by Nurse in charge");
+    expect(isbarText(state, by)).toMatch(/\nI Identify: Nurse in charge · /u);
+    expect(triageSignedLine(signed, DAY_ZERO)).toMatch(/^Signed \d{2} [A-Z][a-z]{2} \d{2}:\d{2} by Nurse in charge$/u);
   });
 
   it("names the ED desk when the ED desk signed", () => {
     const signed = record("ed");
-    expect(previousTriageFrom(signed, DAY_ZERO).label).toMatch(/ · Sr M\. Gallagher$/u);
-    expect(triageSignedLine(signed, DAY_ZERO)).toMatch(/ by Sr M\. Gallagher$/u);
+    expect(previousTriageFrom(signed, DAY_ZERO).label).toMatch(/ · ED clinician$/u);
+    expect(triageSignedLine(signed, DAY_ZERO)).toMatch(/ by ED clinician$/u);
   });
 
   it("names the desk filling in an unsigned triage as its reviewer", () => {
     const state = blankTriage(EXAMPLE_PERSON);
     expect(summaryText(summaryModel(state, undefined, signerName("ward")))).toContain(
-      "Not signed. Reviewer: K. Vance RN",
+      "Not signed. Reviewer: Nurse in charge",
     );
-    expect(isbarText(state, undefined, signerName("ed"))).toMatch(/\nI Identify: Sr M\. Gallagher · /u);
+    expect(isbarText(state, undefined, signerName("ed"))).toMatch(/\nI Identify: ED clinician · /u);
   });
 });
 

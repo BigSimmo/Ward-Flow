@@ -174,8 +174,8 @@ describe("staff names (A16-02, A16-21, A15-06)", () => {
       if (persona.role !== "Demo desk") expect(STAFF_FORMS.has(persona.name), persona.name).toBe(true);
     expect(DESK_PERSONAS.coordinator.name).toBe(SIGNED_IN_COORDINATOR_NAME);
     expect(SETTINGS_DEMO_PROFILE.name).toBe(SIGNED_IN_COORDINATOR_NAME);
-    // A9-29: a triage names the desk that signed it, so the coordinator desk signs as this persona.
-    expect(signerName("coordinator")).toBe(SIGNED_IN_COORDINATOR_NAME);
+    // Go question 4 (Josh, 14 Nov 2026): a triage names the desk that signed it, not its persona.
+    expect(signerName("coordinator")).toBe("Bed coordinator");
   });
 });
 

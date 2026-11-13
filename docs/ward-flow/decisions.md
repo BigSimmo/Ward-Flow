@@ -220,6 +220,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-196](#d-196-threads-decide-on-their-own-to-keep-work-moving-13-november-2026)                                                                        | Threads decide on their own to keep work moving                                        | Active                                           |
 | [D-197](#d-197-system-fixes-calls-taken-under-d-196-13-november-2026)                                                                                   | System-fixes calls taken under D-196                                                   | Active                                           |
 | [D-199](#d-199-ed-and-ward-phone-limits-raised-past-the-allowance-13-november-2026)                                                                     | ED and Ward phone limits raised past the allowance                                     | Active                                           |
+| [D-204](#d-204-a-signed-triage-shows-the-desks-name-14-november-2026)                                                                                   | A signed triage shows the desk's name                                                  | Active                                           |
 
 ---
 
@@ -2462,3 +2463,10 @@ is inferred.
 - **Decision:** PR C (#1660) raises the ED page's phone script limit from 538.5 to 545.5 KB (+7.0) and the Ward page's from 618.2 to 625.4 KB (+7.2), past the 5 KB a pull request may add without asking (D-82, D-111).
 - **Why:** both pages' own code is the same size as main; the growth is the shared script every page loads (real fix and time-audit code), after a trim that took 6 to 20 KB off every page. The next lever, swapping `tailwind-merge`, is too large a change before the demo. Detail: `docs/script-budget-history/2026-11-13-pr-c-system-fixes.md`.
 - **Follow-up (14 November 2026, 12:46 AM AWST, 16:46 UTC):** Josh chose "Yes, raise Ward, ED, Referrals" on a second card in the Fixes thread, after the CI fixes added about 0.3 KB to the shared script (the Ward desk's bed seats, F-150). Final limits: ED 545.8 (+7.3), Ward 625.6 (+7.4), Referrals 595.3 (+5.4, past the 5 KB allowance).
+
+## D-204. A signed triage shows the desk's name (14 November 2026)
+
+- **Date:** 14 November 2026, 7:05 AM AWST (13 November, 23:05 UTC). D-200 is claimed by open PR #1658. D-201 is claimed by open PR #1658. D-202 is claimed by open PR #1658. D-203 is claimed by open PR #1659. **Decided by:** Josh, "Yes to all recommendations above. Defer 2 and 3" in the Ward Flow project chat, answering the coordinator's post whose first item recommended that a signed triage show the desk's name instead of the nurse persona's name (go question 4 for the held clinical PR).
+- **Decision:** a signed triage, its summary, its iSoBAR "Identify" line, the patient card's "Signed … by" line and an unsigned triage's "Reviewer" name the desk by its own name ("Bed coordinator", "ED clinician", "Nurse in charge"), never the desk's sample persona. This changes how D-189 item 9(f) (A9-29) is shown; the signer is still read from the saved record's desk.
+- **Still open:** the words for fit to travel recorded as "Not cleared" (go question 2). The held clinical PR keeps its hold until Josh says "lift the hold".
+- **Boundary:** synthetic data only. No clinical value, threshold or rule changes. Built in the held clinical PR (#1656).
