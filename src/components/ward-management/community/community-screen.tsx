@@ -101,6 +101,7 @@ import { CommunityFollowUpReplies } from "./community-follow-up-replies";
 import { CommunityScreenCaseloadTab } from "./community-screen-caseload-tab";
 import { MIDLAND_DEMO_TEAM, REFERRALS as MIDLAND_REFERRALS } from "./team-2026/midland-demo";
 import { openReferrals, recordMidlandContact, useMidlandDecisions } from "./team-2026/midland-decisions";
+import { useMidlandBoardMoment } from "./team-2026/use-midland-board-moment";
 import { MidlandTeamSections } from "./team-2026/midland-sections";
 import {
   CommunityScreenTransportBookDialog,
@@ -299,6 +300,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     dispatch,
     shared,
     worldGeneration,
+    dayZero,
   } = useWardFlowSelect(
     "admissions",
     "notices",
@@ -311,6 +313,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     "dispatch",
     "shared",
     "worldGeneration",
+    "dayZero",
   );
   const liveReferrals = useCommunityScopedReferrals();
   // Live audit item 6 (11 Nov 2026): the signed-in shared workspace (a shared build, or a signed-in
@@ -319,6 +322,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     useContext(SharedSessionContext) !== null || process.env.NEXT_PUBLIC_WARD_SHARED_ENABLED === "true";
   const sentByAnyTeam = useCommunitySentReferrals();
   const now = useWardFlowClock();
+  const midlandBoardMoment = useMidlandBoardMoment();
   const raise = useWardRaise("community");
   // D-39: one lookup per render, so the resolver's index cache holds across every notice line.
   const umrnLookup = useMemo(
@@ -439,7 +443,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     generation: worldGeneration,
     shared,
     onAccepted: (source) => {
-      if (!sharedWorkspace && MIDLAND_DEMO_TEAM.test(teamId)) recordMidlandContact("team");
+      if (!sharedWorkspace && MIDLAND_DEMO_TEAM.test(teamId)) recordMidlandContact("team", midlandBoardMoment);
       if (source === "modal") setActiveModalType((current) => (current === "contact" ? null : current));
       else setToastMessage("Team contact logged. This does not record patient or referral contact.");
     },
@@ -465,11 +469,20 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     demoTeamReferrals,
     demoVisibleReferrals,
     demoVisibleInpatients,
+    demoEgress,
     demoVisibleEgress,
     demoVisibleCaseload,
     answerDemoReferral,
     restoreDemoReferral,
-  } = useCommunityScreenDemoLists({ teamId, triageFilter, inpatientFilter, egressFilter, caseloadFilter });
+  } = useCommunityScreenDemoLists({
+    teamId,
+    triageFilter,
+    inpatientFilter,
+    egressFilter,
+    caseloadFilter,
+    now,
+    dayZero,
+  });
   // Review finding 3 (12 Nov 2026): a sample row's Accept or Decline takes it off the sample list,
   // with Undo on the toast, as the real list's decision does. The sample list keeps nothing.
   const answerSampleReferral = useCallback(
@@ -1069,6 +1082,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     demoVisibleReferrals,
     answerSampleReferral,
     demoVisibleInpatients,
+    demoEgress,
     demoVisibleEgress,
     demoVisibleCaseload,
     handleCompleteContact,

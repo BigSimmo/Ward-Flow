@@ -9,6 +9,8 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { referrals } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
+import { WorkedExamplesOn } from "./helpers/ward-worked-examples-on";
+
 /**
  * Live walkthrough, 25 September 2026: Command's "Referral placement" panel showed the raw record
  * id ("PT-RD06") where the Referral board shows the patient's name. The panel now names the patient
@@ -21,6 +23,8 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 function openReferral(referralId: string) {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
+      {/* A16-14: RF-RD06 is a legal-form worked example, opt-in since 13 Nov 2026. */}
+      <WorkedExamplesOn />
       <CoordinatorScreen />
     </WardFlowProvider>,
   );

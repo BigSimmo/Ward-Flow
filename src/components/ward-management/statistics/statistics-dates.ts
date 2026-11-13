@@ -1,7 +1,8 @@
 import { calendarDateOf, dayOf, perthCalendarDay } from "@/components/ward-management/ward-clock";
+import { MONTH_SHORT } from "@/components/ward-management/ward-month-names";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTHS = MONTH_SHORT;
 
 /** "Thu", the weekday an instant falls on. */
 export function weekdayOf(instant: number, dayZero: Date): string {
@@ -20,6 +21,17 @@ export function dateOf(instant: number, dayZero: Date): string {
  */
 export function isPastDate(instant: number, now: number): boolean {
   return dayOf(instant) < dayOf(now);
+}
+
+/**
+ * True when a planned date falls on today or one of the next `days - 1` calendar days: the "due"
+ * bucket, by Perth calendar day like `isPastDate`, so a date earlier today is due today rather
+ * than in neither bucket, and a 7-day window ends at midnight, not at this time next week (time
+ * audit T2, 13 Nov 2026).
+ */
+export function isDueWithinDays(instant: number, now: number, days: number): boolean {
+  const offset = dayOf(instant) - dayOf(now);
+  return offset >= 0 && offset < days;
 }
 
 /** "in 2d", "today" or "3d ago": how far an instant's day is from today. */

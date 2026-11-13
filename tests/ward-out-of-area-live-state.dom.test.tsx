@@ -17,6 +17,10 @@ import { allUnits } from "@/components/ward-management/ward-sites";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
+// A16-04: the app shows only travel bands someone has checked (none yet). This file tests a
+// mechanism that needs bands, so importing this swaps in the tests' own invented table.
+import "./helpers/ward-test-travel-bands";
+
 /**
  * ⚠️ A FIXED, NON-ZERO ANCHOR OFFSET — the condition under which this defect exists and the one
  * every other DOM test in this project removes.

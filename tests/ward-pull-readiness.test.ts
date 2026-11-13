@@ -13,15 +13,9 @@ const NOW = NOW_ANCHOR;
 
 /*
  * WHY THIS FILE EXISTS. Owner ruling, 2026-09-01: "A pull cannot occur unless the bed is actually
- * available and open, not pending (i.e. being cleaned)."
- *
- * Before it, a patient could be pulled to a bed that was still being cleaned. `PULL_PATIENT` refused only
- * when `allocatable` hit zero, and `availableNow` reads no readiness field at all — which
- * `ward-bed-availability.ts` documented as deliberate, reasoning that a bed being prepared is still
- * worth counting because the pull takes hours anyway. The owner overruled that reasoning.
- *
- * ⚠️ THE TEST THAT WOULD PASS ON A WRONG VALUE HERE is one asserting a screen says "pending". That is
- * satisfied by a label. Every assertion below is about a STATE TRANSITION being refused.
+ * available and open, not pending (i.e. being cleaned)." Josh replaced it on 13 Nov 2026 (D-181
+ * item 5, with D-179 item 8): a bed being made ready is no longer counted as Ready, is shown on its
+ * own, and MAY STILL BE PULLED. Every assertion below is about the state transition, not a label.
  */
 
 function seeded() {
@@ -78,7 +72,7 @@ function allFreeBedsBeingPrepared(state: WardFlowState, unitId: string): WardFlo
   return { ...state, bedReleases: [...state.bedReleases, ...prepared] };
 }
 
-describe("a patient cannot be pulled to a bed that is not ready", () => {
+describe("a bed being made ready may still be pulled (D-181 item 5)", () => {
   const UNIT = "rph-adult-secure";
   const MOVEMENT = "WF-009";
 
@@ -100,11 +94,10 @@ describe("a patient cannot be pulled to a bed that is not ready", () => {
     expect(next.movements.find((m) => m.id === MOVEMENT)?.stage).toBe("pulled");
   });
 
-  it("REFUSES the pull when every free bed is still being made ready", () => {
+  it("PULLS when every free bed is still being made ready (D-181 item 5)", () => {
     const state = allFreeBedsBeingPrepared(acceptedAt(UNIT, MOVEMENT), UNIT);
     const unit = unitOf(state, UNIT);
-    // The ward still claims beds it can staff — so a refusal here cannot be the allocatable check.
-    expect(unit.allocatable.value).toBeGreaterThan(0);
+    // Non-vacuity: every free bed is being made ready, so none is Ready.
     expect(bedsPendingPreparation(UNIT, state.bedReleases)).toBeGreaterThan(0);
     expect(openBedsNow(unit, state.bedReleases)).toBe(0);
 
@@ -117,37 +110,11 @@ describe("a patient cannot be pulled to a bed that is not ready", () => {
       actingUnitId: UNIT,
     });
 
-    expect(next.rejections).toHaveLength(1);
-    expect(next.rejections[0]?.reason).toContain("still being made ready");
-    // The transition did NOT happen. This is the assertion a label-based test cannot make.
-    expect(next.movements.find((m) => m.id === MOVEMENT)?.stage).toBe("accepted_awaiting_bed");
+    expect(next.rejections).toHaveLength(0);
+    expect(next.movements.find((m) => m.id === MOVEMENT)?.stage).toBe("pulled");
   });
 
-  it("leaves the ward's own numbers alone while refusing", () => {
-    /*
-     * The owner was asked directly whether a bed being cleaned should DROP the ward's number or only
-     * REFUSE the pull, and chose the refusal: the ward has not changed what it can staff, so its
-     * figures must not lurch as cleaning starts and stops. This pins that choice.
-     */
-    const state = allFreeBedsBeingPrepared(acceptedAt(UNIT, MOVEMENT), UNIT);
-    const before = unitOf(state, UNIT);
-
-    const next = wardFlowReducer(state, {
-      type: "PULL_PATIENT",
-      role: "ward",
-      now: NOW,
-      movementId: MOVEMENT,
-      unitId: UNIT,
-      actingUnitId: UNIT,
-    });
-    const after = unitOf(next, UNIT);
-
-    expect(after.allocatable.value).toBe(before.allocatable.value);
-    expect(after.empty.value).toBe(before.empty.value);
-  });
-
-  it("refuses a coordinator's pull too, not only a ward's", () => {
-    // The role was widened to ward + coordinator by the same ruling. Readiness is not role-dependent.
+  it("lets a coordinator pull into a bed being made ready too", () => {
     const state = allFreeBedsBeingPrepared(acceptedAt(UNIT, MOVEMENT), UNIT);
 
     const next = wardFlowReducer(state, {
@@ -158,8 +125,8 @@ describe("a patient cannot be pulled to a bed that is not ready", () => {
       unitId: UNIT,
     });
 
-    expect(next.rejections).toHaveLength(1);
-    expect(next.rejections[0]?.reason).toContain("still being made ready");
+    expect(next.rejections).toHaveLength(0);
+    expect(next.movements.find((m) => m.id === MOVEMENT)?.stage).toBe("pulled");
   });
 
   it("lets a coordinator pull when the bed IS open, so the widened role actually works", () => {

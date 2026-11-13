@@ -59,9 +59,12 @@ const NOW = NOW_ANCHOR;
  * passed**: the tempting wrong fix — *when the movement has no `admissionId`, search the ward for a
  * pulled admission and mark that one* — found nothing to steal on that ward, so it changed nothing
  * and the guard stayed green. ⚠️ **A guard that cannot fail on the repair it exists to forbid is the
- * defect it was written to prevent.** `WF-014` lands on Ward 2K, which does hold one.
+ * defect it was written to prevent.** `WF-014` landed on Dabakarn, which held one until 13 Nov 2026,
+ * when A16-13 turned Dabakarn's pulled beds held for nobody into people who had arrived. `WF-031`
+ * lands on SJGS Adult Open, which holds `WF-029`'s pulled bed: same sex, so the tempting fix would
+ * steal it.
  */
-const HAND_AUTHORED = "WF-014";
+const HAND_AUTHORED = "WF-031";
 
 function arrive(state: WardFlowState, movementId: string): WardFlowState {
   return wardFlowReducer(state, {
@@ -113,7 +116,7 @@ describe("the two arrivedAt fields are allowed to disagree", () => {
     ).toBeUndefined();
   });
 
-  it("writes the transport arrival and leaves the absent admission exactly alone (audit 2026-09-25 §3 items 2, 5, 6)", () => {
+  it("writes the transport arrival and takes over no existing admission (audit 2026-09-25 §3 items 2, 5, 6; A9-08)", () => {
     const before = seedWardFlowState("standard");
     const after = arrive(before, HAND_AUTHORED);
     const moved = movement(after, HAND_AUTHORED);
@@ -136,9 +139,14 @@ describe("the two arrivedAt fields are allowed to disagree", () => {
       (admission) =>
         admission.arrivedAt === NOW && before.admissions.find((was) => was.id === admission.id)?.arrivedAt !== NOW,
     );
-    expect(gainedArrival, "no admission should be fabricated for a hand-authored movement with none").toHaveLength(0);
-    expect(after.admissions, "the admission list itself must be untouched").toEqual(before.admissions);
-    expect(moved.admissionId, "the movement must not gain an admissionId it never had").toBeUndefined();
+    // A9-08 (Audit 9, approved by Josh 13 Nov 2026): the arrived person now gets their own new stay,
+    // made at arrival. No existing admission is taken over (the pulled one on this ward stays put).
+    expect(after.admissions.slice(0, before.admissions.length), "existing admissions must be untouched").toEqual(
+      before.admissions,
+    );
+    expect(gainedArrival, "exactly one new stay, the arrived person's own").toHaveLength(1);
+    expect(gainedArrival[0]).toMatchObject({ id: moved.admissionId, movementId: HAND_AUTHORED, state: "occupied" });
+    expect(before.admissions.some((was) => was.id === gainedArrival[0].id)).toBe(false);
   });
 
   it("🔴 and the bed does NOT become free because nobody is recorded as arriving", () => {

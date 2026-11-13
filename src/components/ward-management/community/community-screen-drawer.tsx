@@ -160,7 +160,8 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
     </span>
   ) : isReferral ? (
     <span id="refDrawerUrgencyBadge" className={cx(d.chip, d.chipStrong)}>
-      {selectedReferral ? urgencyTierLabel(selectedReferral.urgency) : "Urgency not recorded"}
+      {/* D-187 (F-30): a referral with no tier reads "Tier not recorded", as everywhere else. */}
+      {urgencyTierLabel(selectedReferral?.urgency)}
     </span>
   ) : null;
 

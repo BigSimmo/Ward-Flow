@@ -450,7 +450,7 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
                       <span className={styles.lstWhy}>
                         {/* Legal times only as typed (31 Oct 2026): never "passed … ago" or "… away". */}
                         {legal.form
-                          ? `${legalFormNowWords(m)}. ${legal.ended ? `${FORM_RECORDED_ENDED}.` : due === null || due === undefined ? "No deadline is recorded against it." : `${typedTimeLine(due, now)}.`}`
+                          ? `${legalFormNowWords(m)}. ${legal.ended ? `${FORM_RECORDED_ENDED}.` : due === null || due === undefined ? "No deadline is recorded against it." : `${typedTimeLine(due, now, ctx.dayZero)}.`}`
                           : `${m.legalStatus}. Form not recorded.`}
                       </span>
                     </span>

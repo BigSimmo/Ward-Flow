@@ -43,9 +43,10 @@ const COMMUNITY_DIR = "src/components/ward-management/community";
  */
 const DELIBERATE_DATE_STAMPS: Readonly<Record<string, number>> = {
   // Community team list CSV (Josh approved the CSV preamble, PR #634): the generation time is
-  // stamped from the device clock with `new Date().toLocaleString`, because a directory is
-  // reference data rather than a held ward snapshot.
-  [`${COMMUNITY_DIR}/community-index.tsx`]: 2,
+  // stamped with formatSheetMoment (imported once, called once) on the board clock, as every other
+  // export is (time audit D8, 13 Nov 2026); one `new Date()` gives the device's Perth day outside a
+  // provider, where there is no board.
+  [`${COMMUNITY_DIR}/community-index.tsx`]: 3,
   // Catchment counts print (Josh approved the saved-output stamps, PR #632): the "As at"
   // line uses formatSheetMoment, imported once and called once.
   [`${COMMUNITY_DIR}/community-screen-modals.tsx`]: 2,

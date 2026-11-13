@@ -72,7 +72,8 @@ export function watchWardPwaWorker(container: ServiceWorkerContainer, notices: (
     // never replay it.
     reloadRequested = false;
     // #1577: the same check the crash reload makes (`useReloadWhenOnline`). A form, an unsent or
-    // queued change, or unwritten local work holds the reload and offers it again for later.
+    // queued change, or unwritten local work holds the reload and offers it again for later. A
+    // half-filled transport booking counts too (Audit 4 A4-06): its form raises the same signal.
     if (offered && unsavedWorkHoldsReload()) {
       show(offered, true);
       return;

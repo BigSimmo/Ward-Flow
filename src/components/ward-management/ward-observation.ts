@@ -26,7 +26,7 @@ export const OBSERVATION_LEVELS = ["general", "intermittent", "within_sight", "a
  * person records a level, they do not pick "not recorded". It counts no staff, as the absent level
  * did before; how an unrecorded level should be treated clinically is Josh's call (none proposed).
  */
-const OBSERVATION_NOT_RECORDED = "not_recorded";
+export const OBSERVATION_NOT_RECORDED = "not_recorded";
 /** A level a person can record. */
 type RecordedObservationLevel = (typeof OBSERVATION_LEVELS)[number];
 export type ObservationLevel = RecordedObservationLevel | typeof OBSERVATION_NOT_RECORDED;

@@ -1044,7 +1044,7 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
     ];
     const cockpit = readFileSync(`${WARD_DIR}/movements/movement-workspace-cockpit.tsx`, "utf8");
     expect(cockpit).toContain('from "@/components/ward-management/movements/movement-workspace-derivations"');
-    expect(cockpit).toContain("legalFormReadinessLine(patient.legalForm, now)");
+    expect(cockpit).toContain("legalFormReadinessLine(patient.legalForm, now, dayZero)");
     const recordedWithoutDeadline = wardMovements
       .flatMap((movement) => (movement.legalForm ? [movement.legalForm] : []))
       .find((form) => form.dueAt === undefined);
@@ -1132,7 +1132,7 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
     // shared helper, never "passed its deadline … ago" (tests/ward-legal-as-typed-guard.test.ts).
     expect(
       readFileSync(`${WARD_DIR}/coordinator/shortlist-panel.tsx`, "utf8").includes(
-        "formTimeAsTyped(movement.legalForm, now)",
+        "formTimeAsTyped(movement.legalForm, now, dayZero)",
       ),
       "the shortlist breach line was deleted or no longer reads the typed time",
     ).toBe(true);

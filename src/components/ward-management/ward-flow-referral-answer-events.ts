@@ -464,6 +464,14 @@ export function reduceReferralAnswerEvent(
       if (event.intake !== undefined) {
         const error = referralIntakeError(event.intake) ?? referrerPhoneError(event.intake.referrer.phone);
         if (error) return reject(state, event, `RECEIVE_REFERRAL: ${error}`);
+        // A9-06: only a referral to community teams alone may go without the charts.
+        if (event.intake.chartsNotNeeded && kinds.some((kind) => kind !== "community_team")) {
+          return reject(
+            state,
+            event,
+            "RECEIVE_REFERRAL: Attach the medication and observation charts, or mark them to follow.",
+          );
+        }
         // Finding 40 (Josh, 27 Oct 2026): "Catchment not known" is for a ward or ED referral only.
         if (event.intake.catchment.notKnown && kinds.includes("community_team")) {
           return reject(

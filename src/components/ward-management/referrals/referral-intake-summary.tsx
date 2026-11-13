@@ -12,9 +12,12 @@ import { ReferralDocumentLinks } from "./referral-document-links";
 import styles from "./ward-referral-drawer.module.css";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { formatReferralIntakeTime } from "../ward-referral-seed-time";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
+import { referralExpectedTime } from "./referral-expected-time";
 
 export function ReferralIntakeSummary({ intake }: { intake?: ReferralIntakeDetails }) {
   const board = useOptionalWardFlowSelect("now", "dayZero");
+  const zone = useClockZoneLabel();
   if (!intake) return null;
   return (
     <details className={styles.refCard}>
@@ -28,7 +31,7 @@ export function ReferralIntakeSummary({ intake }: { intake?: ReferralIntakeDetai
           <strong>Medical clearance</strong>
           {intake.medicalClearance.cleared
             ? "Cleared"
-            : `Pending · expected ${formatReferralIntakeTime(intake.medicalClearance.expectedAt, intake.medicalClearance, board?.dayZero, board?.now)}`}
+            : `Pending · expected ${referralExpectedTime(intake.medicalClearance.expectedAt, intake.medicalClearance, board?.dayZero, board?.now, zone)}`}
         </span>
         {!intake.medicalClearance.cleared && (
           <span>
@@ -73,14 +76,14 @@ export function ReferralIntakeSummary({ intake }: { intake?: ReferralIntakeDetai
         {intake.needs && (
           <span>
             <strong>{intake.needs.kind === "community" ? "Follow-up needs" : "ED needs"}</strong>
-            {referralNeedsWords(intake.needs).join(", ") || "None recorded"}
+            {referralNeedsWords(intake.needs, zone).join(", ") || "None recorded"}
           </span>
         )}
         {intake.arrival && (
           <span>
             <strong>Proposed arrival</strong>
             {transportLabel(intake.arrival.transport)} ·{" "}
-            {formatReferralIntakeTime(intake.arrival.estimatedAt, intake.arrival, board?.dayZero, board?.now)}
+            {formatReferralIntakeTime(intake.arrival.estimatedAt, intake.arrival, board?.dayZero, board?.now, zone)}
             {intake.arrival.reference ? ` · ${intake.arrival.reference}` : ""}
           </span>
         )}

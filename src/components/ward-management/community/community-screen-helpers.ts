@@ -18,7 +18,8 @@ import {
 import { elapsedDaysPhrase } from "@/components/ward-management/community/community-elapsed";
 import { withSendingTeam } from "@/components/ward-management/referrals/referral-sending-team";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import { daysBetween, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { dayOf, type Instant } from "@/components/ward-management/ward-clock";
+import { typedClock } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import type {
   CommunityScopedAddressing,
   CommunityScopedReferral,
@@ -199,17 +200,25 @@ export function expectedBackLabel(admission: Admission, now: Instant): string {
     // here because that is a behaviour change and D-47 is a wording ruling.
     return "No expected date set";
   }
+  // Perth calendar days, so "earlier today" and "later today" mean today (time audit D2).
   if (now > expected) {
-    const days = daysBetween(expected, now);
+    const days = dayOf(now) - dayOf(expected);
     return days === 0
       ? "Expected discharge was earlier today"
       : `Expected discharge was ${elapsedDaysPhrase(days)} ago`;
   }
   if (now < expected) {
-    const days = daysBetween(now, expected);
+    const days = dayOf(expected) - dayOf(now);
     return days === 0 ? "Expected discharge is later today" : `Expected discharge in ${elapsedDaysPhrase(days)}`;
   }
   return "Expected discharge is today";
+}
+
+/** The hero's "Next home" day: Today, Tomorrow or In N days by Perth calendar day, never a rounded
+ *  24-hour count that called 08:00 tomorrow "Today" at 20:00 (time audit D3, 13 Nov 2026). */
+export function nextHomeWhen(expected: Instant, now: Instant): string {
+  const days = dayOf(expected) - dayOf(now);
+  return days <= 0 ? "Today" : days === 1 ? "Tomorrow" : `In ${days} days`;
 }
 
 /**
@@ -226,7 +235,8 @@ export function departureLabel(admission: Admission, now: Instant): string {
   if (leftAt === null || !Number.isFinite(leftAt) || !Number.isFinite(now)) {
     return "Left this ward; the departure time was not recorded";
   }
-  const days = Math.max(daysBetween(leftAt, now), 0);
+  // Perth calendar days, so "earlier today" means today (time audit D2).
+  const days = Math.max(dayOf(now) - dayOf(leftAt), 0);
   return days === 0 ? "Left this ward earlier today" : `Left this ward ${elapsedDaysPhrase(days)} ago`;
 }
 
@@ -315,9 +325,9 @@ export function caseloadStatutoryFormCode(row: CaseloadRow): string | undefined 
 function caseloadRecordedExpiryAt(row: CaseloadRow): Instant | undefined {
   return row.legalForm?.dueAt;
 }
-export function caseloadRecordedExpiryLabel(row: CaseloadRow, now: Instant): string {
+export function caseloadRecordedExpiryLabel(row: CaseloadRow, now: Instant, dayZero: Date | undefined): string {
   const expiresAt = caseloadRecordedExpiryAt(row);
-  return expiresAt !== undefined ? formatInstantWithDay(expiresAt, now) : "No expiry recorded";
+  return expiresAt !== undefined ? typedClock(expiresAt, now, dayZero) : "No expiry recorded";
 }
 export function caseloadRowsForTeam(
   referrals: readonly CommunityScopedReferral[],

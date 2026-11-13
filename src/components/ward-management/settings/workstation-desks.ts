@@ -44,7 +44,7 @@ export type Desk = {
   occupied?: number;
   closed?: number;
   beds?: number;
-  /** Inside `ready`: beds still being made ready, which a pull is refused against. */
+  /** Beside `ready`, never inside it: beds still being made ready (D-179 item 8). */
   pendingPreparation?: number;
   confirmedAt?: Instant;
   stale?: boolean;

@@ -26,11 +26,14 @@ describe("Settings: when this device last received an alert (A8-07)", () => {
     vi.unstubAllGlobals();
   });
 
-  it("says today, yesterday or the date, in 24-hour time", () => {
-    const now = new Date(2026, 10, 10, 16, 0);
-    expect(lastPushLine(new Date(2026, 10, 10, 14, 5), now)).toBe("Last alert on this device: 14:05 today.");
-    expect(lastPushLine(new Date(2026, 10, 9, 9, 30), now)).toBe("Last alert on this device: 09:30 yesterday.");
-    expect(lastPushLine(new Date(2026, 10, 3, 14, 5), now)).toBe("Last alert on this device: 14:05, 3 Nov.");
+  it("says today, yesterday or the date, in 24-hour Perth time", () => {
+    // Perth times, whatever the test machine's zone (time audit D9).
+    const now = new Date("2026-11-10T16:00:00+08:00");
+    expect(lastPushLine(new Date("2026-11-10T14:05:00+08:00"), now)).toBe("Last alert on this device: 14:05 today.");
+    expect(lastPushLine(new Date("2026-11-09T09:30:00+08:00"), now)).toBe(
+      "Last alert on this device: 09:30 yesterday.",
+    );
+    expect(lastPushLine(new Date("2026-11-03T14:05:00+08:00"), now)).toBe("Last alert on this device: 14:05, 3 Nov.");
     expect(lastPushLine(null, now)).toBe("No alert received on this device yet.");
   });
 

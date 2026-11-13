@@ -16,6 +16,7 @@ import {
   notModifiedUpdate,
   onDeviceClock,
   sentence,
+  serverClockLead,
   untilAborted,
   withoutChartContent,
 } from "./ward-shared-client-helpers";
@@ -258,6 +259,12 @@ export class SharedWorkspaceClient {
       this.settle(pending.commandId, "failed", saveProblem("sessionEndedWhileSaving"));
   }
   private disposed = false;
+  /** The server clock's lead over this device in its latest answer that said (C2); 0 until then. */
+  private serverLead = 0;
+  /** A moment on the server's clock, moved onto this device's, as `onDeviceClock` moves the access deadline. */
+  toDeviceClock(serverMs: number): number {
+    return serverMs - this.serverLead;
+  }
   private busy = false;
   /** Tier 1 item 1: saves held in memory (D-18) after a dropped connection, sent once a read succeeds. */
   private offlineHold = false;
@@ -701,7 +708,10 @@ export class SharedWorkspaceClient {
       });
       if (path === "/v1/workspace/commands") this.saveAnswered = true;
       if (this.disposed || roleSignal.aborted) throw new Error("Connection closed");
-      const value = onDeviceClock(await response.json().catch(() => null), Date.now());
+      const parsed = await response.json().catch(() => null);
+      const deviceNow = Date.now();
+      this.serverLead = serverClockLead(parsed, deviceNow) ?? this.serverLead;
+      const value = onDeviceClock(parsed, deviceNow);
       current();
       if (this.disposed || roleSignal.aborted) throw new Error("Connection closed");
       const noRole = response.status === 403 && (value?.code === "no-role" || value?.error === NO_ROLE);

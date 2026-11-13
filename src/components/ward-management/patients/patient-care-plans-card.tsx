@@ -51,7 +51,8 @@ import { supportNotificationSubjects } from "../ward-support-notifications";
 import { recordedDayPassed } from "./patient-date-passed";
 import styles from "./patient-care-plans-card.module.css";
 
-type Gate = (eventType: WardFlowEvent["type"]) => { allowed: boolean; reason?: string };
+// `never`: this desk can never take the action, so its control is left out (F-54, A9-35).
+type Gate = (eventType: WardFlowEvent["type"]) => { allowed: boolean; reason?: string; never?: boolean };
 
 const OCCASION_LABEL: Record<CarerToldMoment["occasion"], string> = {
   admission: "Admission",
@@ -248,7 +249,7 @@ export function PatientCarePlansCard({
         title="Care and safety"
         level={3}
         action={
-          form === "plan" ? null : (
+          form === "plan" || planGate.never ? null : (
             <Button
               size="sm"
               variant="sec"
@@ -489,15 +490,17 @@ export function PatientCarePlansCard({
                 </span>
               ) : (
                 <span className={styles.inline}>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => open("hearing")}
-                    disabledReason={hearingGate.allowed ? undefined : hearingGate.reason}
-                  >
-                    {hearing ? "New hearing date" : "Record hearing date"}
-                  </Button>
-                  {hearing && !hearing.outcome ? (
+                  {hearingGate.never ? null : (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => open("hearing")}
+                      disabledReason={hearingGate.allowed ? undefined : hearingGate.reason}
+                    >
+                      {hearing ? "New hearing date" : "Record hearing date"}
+                    </Button>
+                  )}
+                  {hearing && !hearing.outcome && !outcomeGate.never ? (
                     <span className={styles.outcomeGroup}>
                       <span className={styles.quietInline}>Outcome</span>
                       {TRIBUNAL_OUTCOMES.map((outcome) => (
@@ -555,20 +558,27 @@ export function PatientCarePlansCard({
           <div data-testid="ward-patient-cultural-support">
             <dt>Cultural support</dt>
             <dd>
-              <ListPicker
-                label="Asked for by the person or family"
-                value={patient.culturalSupportRequested ?? "none"}
-                options={[
-                  { value: "none", label: "Not requested" },
-                  ...CULTURAL_SUPPORT_REQUESTS.map((request) => ({ value: request, label: `${request} requested` })),
-                ]}
-                onChange={(next) => {
-                  const choice = (next ?? "none") as CulturalSupportRequest | "none";
-                  if (choice !== (patient.culturalSupportRequested ?? "none")) setCultural(choice);
-                }}
-                disabledReason={culturalGate.allowed ? undefined : culturalGate.reason}
-                testId="ward-patient-cultural-support-picker"
-              />
+              {culturalGate.never ? (
+                // F-54 (A9-35): a desk that can never record it reads the answer, with no picker.
+                <span data-testid="ward-patient-cultural-support-value">
+                  {patient.culturalSupportRequested ? `${patient.culturalSupportRequested} requested` : "Not requested"}
+                </span>
+              ) : (
+                <ListPicker
+                  label="Asked for by the person or family"
+                  value={patient.culturalSupportRequested ?? "none"}
+                  options={[
+                    { value: "none", label: "Not requested" },
+                    ...CULTURAL_SUPPORT_REQUESTS.map((request) => ({ value: request, label: `${request} requested` })),
+                  ]}
+                  onChange={(next) => {
+                    const choice = (next ?? "none") as CulturalSupportRequest | "none";
+                    if (choice !== (patient.culturalSupportRequested ?? "none")) setCultural(choice);
+                  }}
+                  disabledReason={culturalGate.allowed ? undefined : culturalGate.reason}
+                  testId="ward-patient-cultural-support-picker"
+                />
+              )}
             </dd>
           </div>
         </dl>

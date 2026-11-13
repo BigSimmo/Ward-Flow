@@ -147,7 +147,7 @@ describe("approved four-tab referral drawer journey", () => {
     const locations = screen.getByRole("list", { name: "Destinations" });
     const first = within(locations).getByRole("checkbox", { name: /Dabakarn/ });
     fireEvent.click(first);
-    expect(screen.getByLabelText("Arrival, AWST")).toBeVisible();
+    expect(screen.getByLabelText("Arrival, demo time")).toBeVisible();
     // The seeded referrals already carry authored intakes, so count from that baseline.
     const baseline = Number(screen.getByTestId("submitted-count").textContent);
     fireEvent.click(screen.getByRole("button", { name: "Send referral" }));
@@ -251,7 +251,7 @@ describe("errors mark and move to the field at fault (DA-12)", () => {
 });
 
 describe("an ED referral's expected arrival time (PR #1474 review)", () => {
-  const arrival = () => screen.getByLabelText("Expected arrival, AWST");
+  const arrival = () => screen.getByLabelText("Expected arrival, demo time");
   const nextFromReferral = () => fireEvent.click(screen.getAllByRole("button", { name: /^Next, /u }).at(-1)!);
 
   it("holds the referral while a typed arrival is not a real 24-hour time, and lets an empty one through", () => {

@@ -55,7 +55,7 @@ const paths = [
   {
     kind: "deterioration",
     open: "Record medical deterioration",
-    confirm: "Confirm deterioration and release reservation",
+    confirm: "Confirm deterioration and release the pulled bed",
     success: "Allocation cancelled; referral paused",
     event: "RECORD_ED_MEDICAL_DETERIORATION",
   },

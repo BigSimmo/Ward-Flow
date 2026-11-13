@@ -49,7 +49,7 @@ const units = seed.units;
 // calls the production function with DIFFERENT arguments from the caller is testing a configuration
 // nothing ships: this file once read `networkWardRows(units, NOW)` while the screen passed
 // `bedReleases`, and two tests failed while both sides were individually correct.
-const gapRows = bedKindGaps(seed.movements, units, NOW, seed.admissions);
+const gapRows = bedKindGaps(seed.movements, units, NOW, seed.admissions, seed.referrals, seed.bedReleases);
 const gapTotals = bedKindTotals(gapRows);
 const networkRows = networkWardRows(units, NOW, seed.bedReleases, seed.admissions, seed.leaveBeds);
 const netTotals = networkTotals(networkRows);

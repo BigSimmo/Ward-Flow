@@ -189,16 +189,20 @@ describe("bedKindTotals", () => {
   it("sums the rows rather than recomputing independently", () => {
     const rows = bedKindGaps(wardMovements, allUnits(), NOW);
     const totals = bedKindTotals(rows);
+    const short = rows.reduce((sum, row) => sum + Math.min(0, row.gap), 0);
     expect(totals).toEqual({
       waiting: rows.reduce((sum, row) => sum + row.waiting, 0),
       bedsThatFit: rows.reduce((sum, row) => sum + row.bedsThatFit, 0),
-      gap: rows.reduce((sum, row) => sum + row.gap, 0),
+      // D-191 item 6 (Josh, 13 Nov 2026): short adds each kind's shortfall, never netting a spare.
+      gap: short < 0 ? short : rows.reduce((sum, row) => sum + row.gap, 0),
     });
   });
 
-  it("keeps gap consistent with bedsThatFit minus waiting at the total level too", () => {
+  it("keeps gap equal to bedsThatFit minus waiting while no spare bed sits beside a shortfall", () => {
     const rows = bedKindGaps(wardMovements, allUnits(), NOW);
-    const totals = bedKindTotals(rows);
+    const shortOnly = rows.map((row) => ({ ...row, bedsThatFit: Math.min(row.bedsThatFit, row.waiting) }));
+    shortOnly.forEach((row) => (row.gap = row.bedsThatFit - row.waiting));
+    const totals = bedKindTotals(shortOnly);
     expect(totals.gap).toBe(totals.bedsThatFit - totals.waiting);
   });
 });

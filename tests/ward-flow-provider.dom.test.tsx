@@ -63,8 +63,9 @@ describe("WardFlowProvider", () => {
     // day. Every other seeded wait caps at about sixteen hours, so until they existed the day-scale
     // clock work had nothing on the fixture to display.
     // 50 -> 61: the 17 Sept sample-data addition, WF-021..WF-031.
-    // The current fixture includes 17 explicit rulings demonstrations on top of those 60.
-    expect(screen.getByTestId("movements")).toHaveTextContent("77");
+    // The 17 rulings demonstrations are off by default since A16-14 (D-175 item 1): a presenter
+    // switch, so the Standard day is the 60 ordinary movements.
+    expect(screen.getByTestId("movements")).toHaveTextContent("60");
     // Was 22 before Phase 7 (spec "The front door") added `bty-youth` (East Metropolitan Youth
     // Unit) to the fixture in `ward-sites.ts`.
     // Back to 22 on 26 Sept 2026: Kununurra has no ward (owner-approved ward facts).
@@ -277,8 +278,8 @@ describe("WardFlowProvider", () => {
       // (defect 3b) — the state itself now lives at `.state`, not at the payload's own top level.
       const parsed = JSON.parse(stored!);
       // 50 -> 61: the 17 Sept sample-data addition, WF-021..WF-031.
-      // Includes the 17 explicit rulings demonstrations as well as the ordinary fixture.
-      expect(parsed.state.movements).toHaveLength(77);
+      // A16-14 (D-175 item 1): the 17 rulings demonstrations are off by default, so 60.
+      expect(parsed.state.movements).toHaveLength(60);
 
       fireEvent.click(screen.getByRole("button", { name: "advance" }));
       const updated = window.sessionStorage.getItem("ward-flow-demo-state-v1");

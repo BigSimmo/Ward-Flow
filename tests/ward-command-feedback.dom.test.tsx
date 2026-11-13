@@ -7,6 +7,7 @@ import { ToastProvider, type ToastInput } from "@/components/wf";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
+import { UNDO_WINDOW_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
 const event = { type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now: 642, unitId: "ward-test" } as const;
 const acceptedRecord = {
   kind: "step" as const,
@@ -179,7 +180,8 @@ it.each(["retry", "expire"] as const)(
         expect(original).not.toBeInTheDocument();
       } else {
         act(() => {
-          vi.advanceTimersByTime(5999);
+          // D-187 (F-49): the window is the whole Undo window; 2 s of it ran before the blocked press.
+          vi.advanceTimersByTime(UNDO_WINDOW_TOAST_MS - 2001);
         });
         expect(screen.getByRole("button", { name: "Undo" })).toBe(undo);
         act(() => {

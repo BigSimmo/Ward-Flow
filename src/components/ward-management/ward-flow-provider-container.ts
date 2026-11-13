@@ -130,9 +130,17 @@ export function wardFlowContainerReducer(
  * leaves `worldGeneration`, and so both, unchanged.
  */
 const MAX_CLIENT_EVENT_LOG_ENTRIES = 1000;
-/** Every scenario's seed: its prose ships in the bundle, so the typed-text copy keeps it. */
+/**
+ * Every scenario's seed: its prose ships in the bundle, so the typed-text copy keeps it. A16-14 made
+ * the worked examples opt-in, so each scenario is listed with them as well, first: that world holds
+ * every record of the plain one, and a scenario's lookup finds it. Without it, a typed-text copy
+ * replaced the worked examples' own seeded text (RF-RD06's referral form) once they were shown.
+ */
 export const fixtureWorlds = (offsetMinutes = 0) =>
-  WARD_SCENARIOS.map((scenario) => seedWardFlowStateAt(offsetMinutes, scenario));
+  WARD_SCENARIOS.flatMap((scenario) => [
+    seedWardFlowStateAt(offsetMinutes, scenario, { workedExamples: true }),
+    seedWardFlowStateAt(offsetMinutes, scenario),
+  ]);
 
 export function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: WardFlowEvent): WardFlowContainer {
   const nextWorld = wardFlowReducer(container.world, event);

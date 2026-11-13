@@ -6,6 +6,7 @@
  */
 
 import { SYNTHETIC_COPY_LINE } from "@/components/ward-management/ward-clipboard";
+import { clockZoneLabel, type ClockZoneLabel } from "@/components/ward-management/ward-clock";
 import type { FollowableChartKind, ReferralChart } from "./referral-submission";
 
 export type ReferralTextInput = {
@@ -40,9 +41,6 @@ export type ReferralTextInput = {
 };
 
 const NOT_RECORDED = "Not recorded";
-
-/** The letter's own header words: the first line of every Ward Flow copy, kept in `ward-clipboard`. */
-export { SYNTHETIC_COPY_LINE };
 
 function value(text: string): string {
   return text.trim() || NOT_RECORDED;
@@ -134,8 +132,15 @@ function sentenceList(labels: readonly string[]): string {
   return lower.length > 1 ? `${lower.slice(0, -1).join(", ")} and ${lower.at(-1)}` : (lower[0] ?? "");
 }
 
-/** The copy text: answered fields only, missing ones named once at the top. */
-export function referralLetterText(input: ReferralTextInput, draftedAt: string): string {
+/**
+ * The copy text: answered fields only, missing ones named once at the top. `zone` is the board's
+ * clock words (`useClockZoneLabel`, F-113): "AWST" signed in, "demo time" in the demo.
+ */
+export function referralLetterText(
+  input: ReferralTextInput,
+  draftedAt: string,
+  zone: ClockZoneLabel = clockZoneLabel(false),
+): string {
   const model = referralLetterModel(input);
   const answered = (rows: readonly ReferralLetterRow[]) =>
     rows.filter((item) => !item.missing).map((item) => `${item.label}: ${item.value}`);
@@ -145,7 +150,7 @@ export function referralLetterText(input: ReferralTextInput, draftedAt: string):
     .join(" · ");
   const referrer = [model.referrer.name, model.referrer.role, model.referrer.phone].filter(Boolean).join(", ");
   return [
-    `${SYNTHETIC_COPY_LINE} Draft ${draftedAt} AWST.`,
+    `${SYNTHETIC_COPY_LINE} Draft ${draftedAt} ${zone}.`,
     model.title.toUpperCase(),
     ...(model.toConfirm.length ? [`Still to confirm: ${sentenceList(model.toConfirm)}.`] : []),
     "",

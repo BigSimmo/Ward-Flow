@@ -71,7 +71,7 @@ describe("ED medical placement controls through the real provider", () => {
     fireEvent.click(within(controls).getByRole("button", { name: "Cancel" }));
     expect(state().unit.empty).toEqual(before.unit.empty);
     fireEvent.click(within(controls).getByRole("button", { name: "Record medical deterioration" }));
-    fireEvent.click(within(controls).getByRole("button", { name: "Confirm deterioration and release reservation" }));
+    fireEvent.click(within(controls).getByRole("button", { name: "Confirm deterioration and release the pulled bed" }));
     const after = state();
     expect(after.movement.medicalDeterioration.resumedAt).toBeUndefined();
     expect(after.movement.acceptedUnitId).toBeUndefined();
@@ -85,7 +85,7 @@ describe("ED medical placement controls through the real provider", () => {
   it("reports premature re-clearance refusal and requires a new placement after fresh clearance", () => {
     const controls = openControls();
     fireEvent.click(within(controls).getByRole("button", { name: "Record medical deterioration" }));
-    fireEvent.click(within(controls).getByRole("button", { name: "Confirm deterioration and release reservation" }));
+    fireEvent.click(within(controls).getByRole("button", { name: "Confirm deterioration and release the pulled bed" }));
     const clear = () => {
       fireEvent.click(within(controls).getByRole("button", { name: "Record medically cleared" }));
       fireEvent.click(within(controls).getByRole("button", { name: "Confirm medically cleared" }));
@@ -111,7 +111,7 @@ describe("ED medical placement controls through the real provider", () => {
     expect(within(controls).getByRole("button", { name: "Record medical deterioration" })).toBeEnabled();
     const offered = state().unit.allocatable.value;
     fireEvent.click(within(controls).getByRole("button", { name: "Record medical deterioration" }));
-    fireEvent.click(within(controls).getByRole("button", { name: "Confirm deterioration and release reservation" }));
+    fireEvent.click(within(controls).getByRole("button", { name: "Confirm deterioration and release the pulled bed" }));
     expect(state().movement.admissionId).toBeUndefined();
     expect(state().unit.allocatable.value).toBe(offered + 1);
     expect(within(controls).queryByRole("button", { name: "Record medical deterioration" })).not.toBeInTheDocument();

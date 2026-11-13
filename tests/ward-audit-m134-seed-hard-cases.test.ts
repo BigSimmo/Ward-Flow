@@ -23,6 +23,11 @@ import { tribunalHearingPassedWithoutOutcome } from "@/components/ward-managemen
 import { admissionReadmissionFlag, createReadmissionIndex } from "@/components/ward-management/ward-readmission";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
+// A16-04: the app shows only travel bands someone has checked (none yet). This file tests a
+// mechanism that needs bands, so importing this swaps in the tests' own invented table.
+import "./helpers/ward-test-travel-bands";
+import { sampleIsoDay } from "@/components/ward-management/ward-sample-days";
+
 type State = ReturnType<typeof seedWardFlowState>;
 type Patient = State["patients"][number];
 type Admission = State["admissions"][number];
@@ -62,9 +67,8 @@ const stayObservationStaff = (state: State, admission: Admission) => {
   );
 };
 
-// The demo day the other audit files use, so the age and tribunal cases do not drift with the wall clock.
+// The demo day the other audit files use, so the age cases do not drift with the wall clock.
 const today = new Date(Date.UTC(2026, 10, 10, 2, 42)); // 10:42 AWST, 10 Nov 2026
-const todayIso = today.toISOString().slice(0, 10);
 
 /** Each hard case and how many seed records hold it. */
 const SCENARIOS: Record<string, (state: State) => number> = {
@@ -99,7 +103,8 @@ const SCENARIOS: Record<string, (state: State) => number> = {
   "secure placement": (s) => s.movements.filter((m) => m.security === "Secure").length,
   "out of area stay": (s) => outOfAreaLedger(s.admissions, s.units, NOW_ANCHOR).entries.length,
   "tribunal hearing date passed with no outcome": (s) =>
-    s.patients.filter((p) => tribunalHearingPassedWithoutOutcome(p.tribunalHearing, todayIso)).length,
+    // The seeded hearing date moves with the board day (root cause 2.3), so it is read against that day.
+    s.patients.filter((p) => tribunalHearingPassedWithoutOutcome(p.tribunalHearing, sampleIsoDay(0))).length,
   "frequent presenter (care plan)": (s) =>
     s.patients.filter((p) => (p.carePlans ?? []).some((plan) => /frequent presenter/iu.test(plan.type))).length,
   "readmission within the readmission window": (s) => {
@@ -157,7 +162,9 @@ const SCENARIOS: Record<string, (state: State) => number> = {
 const KNOWN_GAPS: string[] = [];
 
 describe("M134 the synthetic seed holds every hard case", () => {
-  const state = applyHardCasesOverlay(seedWardFlowState(), NOW_ANCHOR);
+  // A16-14 (13 Nov 2026): the legal-form worked examples are opt-in too, and they hold the Form 6
+  // case, so the hard-cases world is built with both switched on.
+  const state = applyHardCasesOverlay(seedWardFlowState("standard", { workedExamples: true }), NOW_ANCHOR);
   const counts = Object.fromEntries(Object.entries(SCENARIOS).map(([name, find]) => [name, find(state)]));
 
   it("lists the cases the audit named", () => {

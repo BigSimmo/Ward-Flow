@@ -1,6 +1,11 @@
 import { expect, test, type Locator, type Page } from "playwright/test";
 
-import { OUT_OF_AREA_BANDS, TRAVEL_BAND_LABELS, travelBand } from "@/components/ward-management/ward-distance";
+import {
+  NOT_RECORDED_LABEL,
+  SYNTHETIC_TRAVEL_TIMES_NOTICE,
+  TRAVEL_BAND_LABELS,
+  travelBand,
+} from "@/components/ward-management/ward-distance";
 import { unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import { HOME_REGIONS, type UrgencyLevel } from "@/components/ward-management/ward-model";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -264,9 +269,10 @@ const WRONG_AGE_UNIT_ID = "rph-older-adult";
 // four days before anybody ran the browser suite. Cross-checked against `SEEDED_QUEUED_IDS` right
 // after that set is declared, so the two hand-authored facts cannot drift apart in silence again.
 //
-// SEVEN since 2026-09-22: RF-RD06 arrives with the rulings-demo overlay (`BOARD_SEED_REFERRALS`
-// below). Tier 2, raised 55 min before the anchor, so it leads tier 2 on longest wait.
-const SEEDED_QUEUED = 7;
+// SEVEN from 2026-09-22 (RF-RD06 arrived with the rulings-demo overlay), and SIX again since
+// A16-14 (13 Nov 2026): the overlay's worked examples are off by default and switched on by the
+// presenter, so the ordinary day the browser loads holds no RF-RD06.
+const SEEDED_QUEUED = 6;
 // Seven since 2026-09-01, not six: RF-007 was split into a ward-only referral and RF-010, a
 // community-only one accepted by a clinic 24 days before the anchor. So the decided section gained
 // a row and the queued section did not. Updated deliberately here rather than found later —
@@ -459,7 +465,7 @@ const REVIEWED_ACCEPTING = 1;
 // the very function it exists to check. The order is copied from the independent pin in
 // `tests/ward-referral-model.test.ts` ("orders the real fixture's queued referrals by waiting
 // time, longest first"), so a divergence between the two pins can be found by reading.
-const SEEDED_QUEUED_IDS = new Set(["RF-015", "RF-014", "RF-RD06", "RF-011", "RF-001", "RF-009", "RF-005"]);
+const SEEDED_QUEUED_IDS = new Set(["RF-015", "RF-014", "RF-011", "RF-001", "RF-009", "RF-005"]);
 if (SEEDED_QUEUED_IDS.size !== SEEDED_QUEUED) {
   throw new Error(
     `SEEDED_QUEUED is ${SEEDED_QUEUED} and SEEDED_QUEUED_IDS now holds ${SEEDED_QUEUED_IDS.size} ids. Update ` +
@@ -469,30 +475,23 @@ if (SEEDED_QUEUED_IDS.size !== SEEDED_QUEUED) {
 }
 
 /**
- * Phase 8, Task 10. A (home region, unit) pair the synthetic table puts OUT OF AREA, searched out
- * of the fixture rather than named.
- *
- * Naming one would be a test asserting that a particular real hospital is a particular distance
- * from a particular real region — the exact thing D8-8 rule 2 forbids, because every value in
- * `SYNTHETIC_TRAVEL_BANDS` is an invented placeholder chosen mechanically by list position and the
- * owner must be able to replace them without a test going red. Searching means this either keeps
- * working across that replacement or fails loudly, by name, at the assertion in the journey.
+ * D-181 item 7 (Josh, 13 Nov 2026; A16-04): travel times read "not recorded" until Josh supplies
+ * checked times, so no (home region, unit) pair is out of area on screen and the far-acceptance
+ * journey this file used to drive has nothing far to accept. Its replacement below takes a unit
+ * with NO checked band from a home region and checks the screens say so.
  *
  * Forensic beds, sex-designated beds and wards with nothing allocatable are skipped, because each
- * would decline the referral for a reason that has nothing to do with distance. Everything past
- * that is read off the SCREEN rather than predicted here: the journey takes whichever accept
- * control the far group actually offers and names the unit from that control's own label, so the
- * matching rules under test are never used to compute the expectation they are being checked
- * against. All this search fixes is which home region and age band get typed into the form.
+ * would decline the referral for a reason that has nothing to do with distance. The accept control
+ * is still read off the SCREEN, so the matching rules under test never compute their own
+ * expectation. All this search fixes is which home region and age band get typed into the form.
  */
-const FAR_PLACEMENT = (() => {
+const UNCHECKED_PLACEMENT = (() => {
   for (const homeRegion of HOME_REGIONS) {
     for (const unit of allUnits()) {
-      const band = travelBand(homeRegion, unit.siteCode);
-      if (!band || !OUT_OF_AREA_BANDS.includes(band)) continue;
+      if (travelBand(homeRegion, unit.siteCode) !== undefined) continue;
       if (unit.forensic || unit.sexDesignation !== "Undesignated") continue;
       if (unit.allocatable.value <= 0) continue;
-      return { homeRegion, unit, band };
+      return { homeRegion, unit };
     }
   }
   return undefined;
@@ -993,37 +992,27 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
    * hand-maintained alternations in `playwright.config.ts` AND to `scripts/ci-change-scope.mjs`,
    * and a spec absent from any of them silently never runs.
    *
-   * WHERE THIS DEPARTS FROM THE BRIEF, and why. The brief asked for "accept at a far unit, record
-   * its arrival, and see it on the out-of-area ledger". The middle and last steps are impossible
-   * BY DESIGN, and asking for them predates the screens: `ACCEPT_REFERRAL` creates no `Movement`
-   * and no `Admission` (the board says exactly that in its own words, asserted in the journey
-   * above), and `OutOfAreaBoard` reads `wardAdmissions` — a seed no `WardFlowEvent` writes to. So
-   * there is no arrival to record for a referral, and nothing done on these screens can add anyone
-   * to that ledger. Rather than skip the step or fake it, this journey PINS that: the referral it
-   * accepts at a far unit must NOT appear on the ledger afterwards, and the ledger must say why in
-   * its own provenance sentence. An impossible step becomes a guarded property (D8-9).
+   * D-181 item 7 (Josh, 13 Nov 2026; A16-04): only travel times someone has checked are shown, and
+   * none is checked yet, so this journey no longer accepts at a "far" unit (there is none on
+   * screen). It checks the not-recorded state instead: every accepting ward reads "Travel time not
+   * recorded", no band label shows, and the out-of-area ledger lists nobody and says it is for want
+   * of a travel time. When Josh supplies checked times this journey goes red by name and is
+   * rewritten round them; the far-acceptance mechanism itself is covered by the unit tests that load
+   * `tests/helpers/ward-test-travel-bands.ts`.
    *
-   * NOTHING HERE PINS A BAND TO A PLACE. D8-8 rule 2 forbids a test asserting that some named
-   * hospital is three hours from some named region: every value in `SYNTHETIC_TRAVEL_BANDS` is an
-   * invented placeholder, and a test pinning one would turn the owner's future correction into a
-   * test failure. The far region and the far unit are therefore SEARCHED out of the fixture at
-   * module scope and named nowhere. That search is SETUP, not assertion — the assertions it feeds
-   * are absolute — and if the fixture ever holds no such pair this fails loudly by name instead of
-   * quietly testing a near unit.
+   * Still true from D8-9: `ACCEPT_REFERRAL` creates no `Movement` and no `Admission`, so an
+   * accepted referral is never on the ledger; nothing here pins a band to a place (D8-8 rule 2).
+   * The ledger table's column and geometry checks that lived here need a ledger with rows; with no
+   * checked band the table does not render, so they wait for checked times.
    */
-  /*
-   * Re-driven 8 October 2026: the far referral is raised in the referral slide-out, addressed to the
-   * far unit by name — the slide-out names wards rather than asking the whole network — and every
-   * step after it stands as written.
-   */
-  test("a referral accepted at a unit the fixture puts out of area does not reach the out-of-area ledger, which says why", async ({
+  test("with no checked travel times, a referral's wards read not recorded and an accepted referral does not reach the out-of-area ledger", async ({
     page,
   }) => {
     expect(
-      FAR_PLACEMENT,
-      "fixture assumption: no (home region, acceptable unit) pair in the synthetic table is out of area, so this journey cannot test a far acceptance at all",
+      UNCHECKED_PLACEMENT,
+      "fixture assumption: some acceptable unit has no checked travel band from some home region",
     ).toBeDefined();
-    const { homeRegion, unit, band } = FAR_PLACEMENT!;
+    const { homeRegion, unit } = UNCHECKED_PLACEMENT!;
 
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto("/ward-flow/referrals", { waitUntil: "load" });
@@ -1039,13 +1028,9 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     // which opens the slide-out in place over the board.
     await openNewReferralFromBoard(page);
     // Age band and home region are what this journey is actually about; the rest are answered
-    // because R2.1 requires every question to be, and the `FAR_PLACEMENT` search has already
+    // because R2.1 requires every question to be, and the `UNCHECKED_PLACEMENT` search has already
     // excluded sex-designated and forensic units, so none of them changes the acceptance below.
-    // Answered "yes" here (the journey above answers "no") — confirmed by re-running
-    // `referralEligibility` for this exact (ageBand, homeRegion) pair with the acuity gate both
-    // ways: `FAR_PLACEMENT.unit` (`arm-adult-open`) is staffed for high-acuity nursing
-    // (`highAcuityCapacity: 2`) and remains the far band group's only accepting unit either way, so
-    // "yes" exercises the gate's other branch without changing which unit this journey accepts at.
+    // Answered "yes" here (the journey above answers "no"), so the acuity gate's other branch runs.
     //
     // The slide-out lists only wards whose beds match the chosen bed security, so the security is
     // read off the far unit itself: an open bed when it has one, otherwise a secure bed. No
@@ -1075,58 +1060,40 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     // viewport changes, with the referral still selected.
     await page.setViewportSize({ width: 769, height: 900 });
 
-    // The sentence saying the times are invented, on the screen where the acceptance is taken.
-    const farPanel = page.getByTestId("ward-referral-match-panel");
-    await expect(page.getByTestId("ward-referral-match-synthetic-notice")).toBeVisible();
-    const more = farPanel.getByRole("button", { name: /^Show \d+ more with a bed ready$/ });
+    // D-181 item 7: no checked travel time, so the panel says so once, and every ward that accepts
+    // reads "Travel time not recorded" rather than a band.
+    const panel = page.getByTestId("ward-referral-match-panel");
+    await expect(page.getByTestId("ward-referral-match-synthetic-notice")).toHaveText(SYNTHETIC_TRAVEL_TIMES_NOTICE);
+    const more = panel.getByRole("button", { name: /^Show \d+ more with a bed ready$/ });
     if (await more.count()) await more.click();
+    const accepting = panel.locator('[data-testid^="ward-referral-match-phone-cand-"][data-kind="yes"]');
+    await expect(accepting.first(), "no ward accepts this referral, so there is no acceptance to make").toBeVisible();
+    for (const row of await accepting.all()) await expect(row).toContainText(NOT_RECORDED_LABEL);
+    for (const label of Object.values(TRAVEL_BAND_LABELS)) await expect(panel).not.toContainText(label);
 
-    // D-77: each ward's row names its travel band in words. The ward is taken from a FITTING row
-    // whose band is this out-of-area band, so "far" is a property of what the screen showed rather
-    // than a claim this test makes about a named hospital. The unit's name then comes off that row.
-    const farRow = farPanel
-      .locator('[data-testid^="ward-referral-match-phone-cand-"][data-kind="yes"]')
-      .filter({ hasText: TRAVEL_BAND_LABELS[band] })
-      .first();
-    await expect(farRow, `no ${band} ward accepts this referral, so there is no far acceptance to make`).toBeVisible();
-    await farRow.click();
-    const farAccept = page.getByTestId("ward-referral-match-phone-accept");
-    const acceptLabel = ((await farAccept.textContent()) ?? "").trim();
+    await accepting.first().click();
+    const accept = page.getByTestId("ward-referral-match-phone-accept");
+    await expect(accept).toHaveText(/^Accept at .+/u);
+    const acceptLabel = ((await accept.textContent()) ?? "").trim();
     expect(acceptLabel, "the accept control's label no longer names the unit").toMatch(/^Accept at .+/);
     const acceptedUnitName = acceptLabel.replace(/^Accept at /, "");
-
-    await farAccept.click();
+    await accept.click();
     await expect(page.getByTestId("ward-referral-match-rejection")).toHaveCount(0);
     await expect(page.getByTestId("ward-referral-match-decided")).toHaveText(`Accepted at ${acceptedUnitName}.`);
-    await expectNoReloadSince(page, "accepting at the far unit");
+    await expectNoReloadSince(page, "accepting the referral");
 
-    // The referral opens in the kit drawer (drawer review, 6 Nov 2026), a sheet over the rail on a
-    // phone. A phone user closes it with its own control before reaching for the rail, and so does
-    // this journey, then proves it is gone.
+    // A phone user closes the drawer with its own control before reaching for the rail.
     await page.getByRole("button", { name: "Close referral detail (Esc)", exact: true }).click();
     await expect(page.getByTestId("ward-referral-detail")).toHaveCount(0);
 
-    // On to the ledger, through the coordinator's own rail rather than a typed URL.
-    //
-    // 🔴 **ONE TAP, NOT THREE, SINCE 2026-09-11** — for the reason `goToBoardViaPhoneRail` above
-    // records at length: `ClinicalRail`'s phone drawer (and its "Open Ward Flow menu" button) is
-    // not mounted anywhere in `src/` any more, and the third-edition rail puts the same links on
-    // the phone screen rather than behind a button. This still navigates by tapping a real rail
-    // link at 375px, which is what "through the coordinator's own rail" was asserting.
-    // Back to phone width (v10 note above): the ledger half runs on the phone, as it always has.
+    // On to the ledger, through the coordinator's own rail rather than a typed URL (see
+    // `goToBoardViaPhoneRail` for why one tap reaches it, and `openRailSheetIfNeeded` for More pages).
     await page.setViewportSize({ width: 375, height: 812 });
     const ledgerRail = page.getByTestId("ward-rail");
     await expect(
       ledgerRail.or(page.getByTestId("ward-bar-phone-menu")).filter({ visible: true }),
       "the shell rail or the bar's phone Menu must be on the phone screen",
     ).toHaveCount(1);
-    // "Out of area" is in the "Oversight" group of the owner-requested grouped rail
-    // (2026-09-13, `shell/ward-rail.tsx`'s `RAIL_GROUPS`), which is not inline below 1000px — see
-    // `goToBoardViaPhoneRail`'s own comment on the same drift. Open "More pages" first if it is
-    // there to open.
-    // The sheet portals to `document.body` (`components/wf/sheet.tsx`'s `Sheet`, default
-    // `portal={true}`), so its content sits outside `ledgerRail`'s own DOM subtree once open —
-    // looked up from `page`, unscoped, once that is the case.
     if (await openRailSheetIfNeeded(page, ledgerRail)) {
       await page.getByRole("link", { name: /^Out of area\b/u }).click();
     } else {
@@ -1135,189 +1102,16 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     await expect(page.getByTestId("ward-out-of-area-board")).toBeVisible({ timeout: 15_000 });
     await expectNoReloadSince(page, "navigating to the out-of-area ledger");
 
-    // The invented-threshold sentence, WHOLE and on screen — not truncated, not behind a tooltip,
-    // not a fragment.
-    //
-    // ⚠️ RETARGETED 2026-09-17. The third-edition visual upgrade (883ecfdfb4, 2026-09-16) rebuilt
-    // this board's "Travel definition" panel with its OWN two-piece notice — a short threshold
-    // sentence plus a nested `ward-out-of-area-synthetic-notice` disclaimer span — rather than
-    // reusing the shared `INVENTED_OUT_OF_AREA_THRESHOLD_NOTICE` constant (that constant is still
-    // rendered verbatim, unchanged, on the statistics-compare screen). Comparing against the
-    // exact current text below, rather than the now-unrelated shared constant, so a future
-    // rewording that silently drops the "invented and unvalidated" disclaimer is still caught —
-    // and asserting on both the whole paragraph and the nested span keeps that non-substring
-    // discipline the original comment called for.
-    // In the clean functional view, explanatory and synthetic notices have been removed
-    await expect(page.getByTestId("ward-out-of-area-threshold-notice")).toHaveCount(0);
-    await expect(page.getByTestId("ward-out-of-area-synthetic-notice")).toHaveCount(0);
-
-    // D8-9, and the reason the brief's "record its arrival" step does not exist: nothing done on
-    // these screens reaches this ledger, and the ledger says so in its own words.
-    /*
-     * Phase 8, Task 10 fix round (F3). NON-VACUITY FLOOR, before the two absence pins below.
-     *
-     * `toHaveCount(0)` on `ward-out-of-area-row-<id>` proves nothing on its own: rename the
-     * row/card testid scheme and it goes green having established only that a testid nobody uses
-     * matches nothing. Same shape as the route-scan sanity check at the top of
-     * `tests/ward-nav.test.ts` — pin what must be PRESENT before trusting what must be ABSENT.
-     *
-     * So: the ledger must be rendering rows and cards under exactly the prefixes the absence pins
-     * use, and the two layouts must be showing the same set of people (the table above 40rem, the
-     * cards below it — a coordinator on a phone sees only the second, so a floor that reached only
-     * the table would leave half the assertion unfloored).
-     */
-    // Option A (10 Oct 2026): below 48rem the board renders only its phone card list, and from
-    // 48rem up only the table, so each layout is floored and pinned at a width that shows it. This
-    // journey is at phone width here; the table half runs at 769px further down.
-    const ledgerCards = page.locator('[data-testid^="ward-out-of-area-card-"]');
-    const ledgerCardCount = await ledgerCards.count();
-    expect(
-      ledgerCardCount,
-      "the ledger renders no card under `ward-out-of-area-card-`, so the absence assertions below would pass against a testid scheme that no longer exists",
-    ).toBeGreaterThan(0);
-
-    /*
-     * And what the ledger renders is what the ledger promises. Every card must carry the label of
-     * one of `OUT_OF_AREA_BANDS` — the constant is this prototype's whole definition of far. Two
-     * sources: the board's own filter decides which people are listed, the exported list decides
-     * which bands count as far. Each card names its band in full for screen readers, so the full
-     * label is in its text.
-     */
-    const outOfAreaLabels = OUT_OF_AREA_BANDS.map((b) => TRAVEL_BAND_LABELS[b]);
-    const cardTexts = await ledgerCards.allTextContents();
-    expect(
-      cardTexts.filter((text) => !outOfAreaLabels.some((label) => text.includes(label))),
-      "the out-of-area ledger is listing somebody whose travel band is not one this prototype calls out of area",
-    ).toEqual([]);
-
-    await expect(page.getByTestId(`ward-out-of-area-card-${raisedId}`)).toHaveCount(0);
-    /*
-     * ⚠️ THE SENTENCE CHANGED BECAUSE THE BEHAVIOUR DID, AND CHOOSING THE REPLACEMENT IS THE WHOLE
-     * OF THIS EDIT.
-     *
-     * This pinned "Nothing done on these screens adds anyone to this list or takes anyone off it"
-     * until 2026-08-30. That promise was retired at `74253c367`: the board now reads live state, so
-     * a patient who ARRIVES during the session IS added straight away. The old sentence had become
-     * false and the screen correctly stopped saying it.
-     *
-     * ⚠️ **The re-baseline trap, avoided deliberately.** The obvious repair is to paste whatever the
-     * screen now prints, and the new copy offers a longer, more specific-sounding candidate — the
-     * emergency-department pathway records no home region. **That sentence is true and it is not why
-     * OUR referral is absent.** The referral raised by this journey is missing from the ledger
-     * because it has NOT ARRIVED; nobody is in a bed. Pinning the home-region clause would leave a
-     * green test asserting the wrong reason, which is worse than the red one, because nothing would
-     * ever say so again.
-     *
-     * So the assertion pins the clause that carries "why" FOR THIS JOURNEY. The two counts above
-     * prove the referral is absent; this proves the screen says why it is absent.
-     *
-     * ⚠️ RETARGETED AGAIN, 2026-09-17. The provenance paragraph was rewritten (same redesign that
-     * restructured the out-of-area threshold notice above into its own two-piece form) to: "This is
-     * not a live statewide count. It uses this prototype's seeded records. People who have left
-     * their bed or have not arrived are excluded. A recorded arrival is added during the session;
-     * arrivals from the emergency-department pathway have no home region and join the unbanded
-     * count above." Avoiding the SAME re-baseline trap the paragraph above warns about: the new
-     * copy's home-region/ED clause is true and is still not why OUR referral is missing — it has
-     * not arrived, nobody is in a bed. "have not arrived are excluded" is the clause that carries
-     * that specific reason in the new wording, so that is what is pinned, not the whole paragraph.
-     */
-    await expect(page.getByTestId("ward-out-of-area-provenance")).toHaveCount(0);
-
-    /*
-     * Phase 8, Task 10. The ledger's table, at the narrowest width it is ever used at.
-     *
-     * Found by looking, and invisible to every other check on this branch. Just above the 40rem
-     * card/table swap, the table's own `min-width` was wider than the space the shell leaves it,
-     * so `Since arrival` — this screen's second headline fact, and the one Task 5 reformatted from
-     * an unreadable `5041h 30m` into days — sat entirely outside its `overflow-x: auto` scroller
-     * with nothing on screen saying so. Measured before the fix at a 641px viewport: scroller
-     * client width 499px against a table 608px wide, the last column's right edge at 715px against
-     * the scroller's at 606px. Every DOM assertion passed throughout, because the cell was in the
-     * document the whole time; it was simply not on the screen.
-     *
-     * A real browser is the only place this can be checked — jsdom has no layout, so no Vitest
-     * suite here can tell a column that is off-screen from one that is not. Asserted as geometric
-     * containment rather than as a stylesheet value, so it goes on holding whatever the table's
-     * widths, the shell's padding or the icon rail become.
-     */
-    // Option A (10 Oct 2026): 769px is the narrowest width that shows the table rather than the
-    // phone card list (the swap is at 48rem), so that is now the narrowest width it is used at.
+    // A16-04: with no checked travel time nobody is shown as far from home. Our referral has not
+    // arrived, so it is not on the ledger either way. The phone lists nobody; from 769px the empty
+    // list says that is for want of a travel time, never that nobody is far.
+    await expect(page.locator('[data-testid^="ward-out-of-area-card-"]')).toHaveCount(0);
     await page.setViewportSize({ width: 769, height: 900 });
-    const tableScroll = page.getByTestId("ward-out-of-area-table");
-    await expect(tableScroll, "the ledger is not showing its table at 769px").toBeVisible();
-
-    // The table half of the floor and pins above: the same people as the cards, every travel band
-    // one this prototype calls far (the full label is the travel line's title), and not our referral.
-    const ledgerRows = page.locator('[data-testid^="ward-out-of-area-row-"]');
-    await expect(ledgerRows, "the ledger's phone cards and its table are not showing the same people").toHaveCount(
-      ledgerCardCount,
+    await expect(page.getByTestId("ward-out-of-area-empty")).toHaveText(
+      /^Nobody is shown as far from home\. \d+ (?:person has|people have) no travel time recorded\.$/u,
     );
-    const renderedBands = await ledgerRows.evaluateAll((rows) =>
-      rows.map((row) => row.children[1]?.querySelector("[title]")?.getAttribute("title") ?? ""),
-    );
-    expect(
-      [...new Set(renderedBands)].filter((b) => !outOfAreaLabels.includes(b)),
-      "the out-of-area ledger is listing somebody whose travel band is not one this prototype calls out of area",
-    ).toEqual([]);
-    await expect(page.getByTestId(`ward-out-of-area-row-${raisedId}`)).toHaveCount(0);
-
-    /*
-     * PRESENCE BEFORE CONTAINMENT — whole-branch review, W1.
-     *
-     * The geometric check below measures whether a column ESCAPES its scroller. It says nothing
-     * about whether the column is there at all, and two ways of removing one pass it silently:
-     * delete the `th`/`td` pair and there is simply less to measure, or set `display: none` on it
-     * and the cell keeps a zero-sized rect whose `right` is 0, which can never exceed the
-     * scroller's. `Since arrival` — this screen's second headline fact — was pinned nowhere in the
-     * repository; a grep returned only the component and comments about it. F3's band-subset check
-     * further up reads `row.children[2]`, which incidentally pins the first three columns'
-     * positions, so column four was the unpinned one.
-     *
-     * `toHaveText` with an array pins the count, the order and the spelling in a single assertion.
-     * It does NOT close the hiding case, and the per-header `toBeVisible` loop below is not
-     * decoration: the review that raised this expected `toHaveText` to read only visible text, and
-     * it does not — Playwright compares `textContent` unless told otherwise, so a `th` carrying
-     * `display: none` still supplies its text. MEASURED, not assumed: with
-     * `style={{ display: "none" }}` on a header of the sibling discharges table, the array
-     * assertion alone passed. `toBeVisible` is the matcher that fails for `display: none`,
-     * `visibility: hidden` and a zero-size box alike, which is the whole class the geometric check
-     * below cannot see.
-     *
-     * Nothing below is relaxed to make room for these — together they close deletion, reordering,
-     * renaming and hiding, and neither adds a matcher that could later be loosened.
-     */
-    // Device audit 11 Oct 2026 (`out-of-area-board.tsx`'s `planVaries`): Return shows only while the
-    // return-plan state differs between people, since a column where every row reads the same adds
-    // nothing. The other five stay pinned exactly; Return, when present, must sit fifth.
-    const ledgerHeaders = tableScroll.locator("thead th");
-    const returnShown = (await ledgerHeaders.filter({ hasText: /^Return$/u }).count()) > 0;
-    const LEDGER_COLUMNS = ["Patient", "Home region", "Placement", "Discharge", "Return", "Days away"].filter(
-      (column) => returnShown || column !== "Return",
-    );
-    await expect(
-      ledgerHeaders,
-      "the out-of-area ledger's table no longer carries exactly these columns, in this order",
-    ).toHaveText(LEDGER_COLUMNS);
-    for (const [index, column] of LEDGER_COLUMNS.entries()) {
-      await expect(
-        ledgerHeaders.nth(index),
-        `the out-of-area ledger's \`${column}\` column is in the document but not on the screen`,
-      ).toBeVisible();
-    }
-
-    const clipped = await tableScroll.evaluate((scroll) => {
-      const right = scroll.getBoundingClientRect().right;
-      return [...scroll.querySelectorAll("thead th, tbody tr:first-child td")]
-        .filter((cell) => cell.getBoundingClientRect().right > right + 1)
-        .map(
-          (cell) =>
-            `${(cell.textContent ?? "").trim()} (right edge ${Math.round(cell.getBoundingClientRect().right)} vs scroller ${Math.round(right)})`,
-        );
-    });
-    expect(
-      clipped,
-      "column(s) of the out-of-area table are off the screen at 769px, reachable only by scrolling sideways inside the table",
-    ).toEqual([]);
+    await expect(page.locator('[data-testid^="ward-out-of-area-row-"]')).toHaveCount(0);
+    await expect(page.getByTestId("ward-out-of-area-table")).toHaveCount(0);
   });
 
   /**

@@ -519,8 +519,8 @@ function EdPresentation({
           </div>
         </div>
         <p className={detail.note} data-testid="ward-stat-ed-clearance-count">
-          Based on {small(model.clearance.count)} {model.clearance.count === 1 ? "journey" : "journeys"} with a recorded
-          clearance, timed from arrival.
+          Based on {small(model.clearance.count)} {model.clearance.count === 1 ? "movement" : "movements"} with a
+          recorded clearance, timed from arrival.
           {model.clearance.medianMinutes === null ? ` A median needs ${CLEARANCE_MEDIAN_MIN_JOURNEYS}.` : ""}
         </p>
       </CardBody>
@@ -708,7 +708,7 @@ function EdPresentation({
       {edCountsDesk ? null : (
         <p className={styles.muted} data-testid="ward-statistics-ed-population">
           {stillInEdShown} still in ED · {inTransitShown} in transit
-          <span className="sr-only"> or with a recorded departure</span>. Times run from journey opening.
+          <span className="sr-only"> or with a recorded departure</span>. Times run from movement opening.
         </p>
       )}
       {isPhone && countsOnly ? (

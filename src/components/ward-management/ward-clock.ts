@@ -1,4 +1,5 @@
 import { DUE_SOON_MINUTES, DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { FUTURE_START_TEXT } from "@/components/wf/format";
 /**
  * Minutes elapsed since midnight on the synthetic operating day.
  *
@@ -223,7 +224,7 @@ export function perthDayLabel(instant: Instant, dayZero: Date): string {
 export function formatSheetMoment(
   instant: Instant,
   dayZero: Date,
-  options: { includeYearAndZone?: boolean } = {},
+  options: { includeYearAndZone?: boolean; zone?: ClockZoneLabel } = {},
 ): string {
   // No comma after the weekday, the one rule for every written day (Josh, 5 Nov 2026, CL-4).
   const day = perthDateText(calendarDateOf(instant, dayZero), {
@@ -232,7 +233,22 @@ export function formatSheetMoment(
     month: "short",
     ...(options.includeYearAndZone ? { year: "numeric" as const } : {}),
   });
-  return `${day}, ${formatInstant(instant)}${options.includeYearAndZone ? " AWST" : ""}`;
+  return `${day}, ${formatInstant(instant)}${options.includeYearAndZone ? ` ${options.zone ?? clockZoneLabel(false)}` : ""}`;
+}
+
+/**
+ * RC 2.6 (F-113, D-190, 13 Nov 2026): the words written after a clock face to say which clock it is.
+ *
+ * The signed-in workspace runs on the real Perth clock, so its times are "AWST". The local demo
+ * runs on a scripted board clock (it opens at 10:42 and can be stepped), so calling its times AWST
+ * claimed a real time zone for a time nobody's watch shows; there they read "demo time". Every
+ * zone label is this one call, never a typed "AWST", so the two can never disagree. Screens read it
+ * with `useClockZoneLabel()`; calculations take it as a parameter (the React Compiler rule above).
+ */
+export type ClockZoneLabel = "AWST" | "demo time";
+
+export function clockZoneLabel(signedIn: boolean): ClockZoneLabel {
+  return signedIn ? "AWST" : "demo time";
 }
 
 export function formatInstantWithDay(instant: Instant, now: Instant): string {
@@ -332,11 +348,14 @@ export function daysBetween(from: Instant, to: Instant): number {
  * own by switching to a day count; every other screen kept calling this and kept the defect. Fixing
  * it here is what makes a wait longer than a day readable everywhere at once.
  */
-export function splitDuration(rawMinutes: number) {
+export function splitDuration(rawMinutes: number): string {
   // Round first: an average (a total divided by a count) is rarely whole, and `% 60` passes the
   // fraction straight through ("4h 57.88659793814435m"). Rounding before the split also means a
   // value like 59.6 becomes "1h 00m", never "60m".
   const totalMinutes = Math.round(rawMinutes);
+  // RC 2.5 (F-35, 13 Nov 2026): the sign is handled here, once. A negative length used to run
+  // through the floor and modulo below and print minus 90 minutes as "-30m".
+  if (totalMinutes < 0) return `-${splitDuration(-totalMinutes)}`;
   if (totalMinutes >= MINUTES_PER_DAY) {
     const days = Math.floor(totalMinutes / MINUTES_PER_DAY);
     const hours = Math.floor((totalMinutes % MINUTES_PER_DAY) / 60);
@@ -358,7 +377,16 @@ export function formatRemaining(minutes: number) {
  * and must not be reused for elapsed time, which has no deadline to be overdue against.
  */
 export function formatElapsed(minutes: number) {
-  return `${splitDuration(Math.max(minutes, 0))} waiting`;
+  if (minutes < 0) return FUTURE_START_TEXT;
+  return `${splitDuration(minutes)} waiting`;
+}
+
+/** RC 2.5 (F-35): the one future-start wording, kept in the wf kit so `dur` and `Timer` share it. */
+export { FUTURE_START_TEXT };
+
+/** Time since `start`, in `splitDuration`'s units, or `FUTURE_START_TEXT` when `start` is after `now`. */
+export function formatSince(start: Instant, now: Instant): string {
+  return start > now ? FUTURE_START_TEXT : splitDuration(now - start);
 }
 
 /**

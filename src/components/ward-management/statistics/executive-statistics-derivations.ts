@@ -26,7 +26,7 @@ import {
   communityMembershipResolution,
 } from "../community/community-derivations";
 import { communityFigures } from "./statistics-community-figures";
-import { isPastDate } from "./statistics-dates";
+import { isDueWithinDays, isPastDate } from "./statistics-dates";
 import { OUT_OF_AREA_BANDS, TRAVEL_BAND_LABELS } from "../ward-distance";
 import { outOfAreaLedger } from "../ward-referrals";
 import { siteByCode } from "../ward-sites";
@@ -81,7 +81,6 @@ export function executiveWardSummary(ward: PublicWard, input: ExecutivePrivateIn
         (row) =>
           row.state !== "pulled" &&
           row.expectedDischargeAt !== null &&
-          row.expectedDischargeAt >= now &&
           dayOf(row.expectedDischargeAt) === dayOf(now) + offset,
       ).length,
     ),
@@ -90,11 +89,7 @@ export function executiveWardSummary(ward: PublicWard, input: ExecutivePrivateIn
     "due:week",
     currentRows.filter(
       (row) =>
-        row.state !== "pulled" &&
-        row.expectedDischargeAt !== null &&
-        row.expectedDischargeAt >= now &&
-        dayOf(row.expectedDischargeAt) >= dayOf(now) &&
-        dayOf(row.expectedDischargeAt) < dayOf(now) + 7,
+        row.state !== "pulled" && row.expectedDischargeAt !== null && isDueWithinDays(row.expectedDischargeAt, now, 7),
     ).length,
   );
   release.partition(
@@ -541,10 +536,7 @@ export function executiveTeams(input: ExecutivePrivateInput, release: ExecutiveC
       const expected = baseFigure("expected", figures.expected);
       const noDate = figure("noDate", lists.currentlyAdmitted.length - lists.expectedBack.length);
       const due = lists.expectedBack.filter(
-        (row) =>
-          row.expectedDischargeAt !== null &&
-          row.expectedDischargeAt >= input.now &&
-          row.expectedDischargeAt < input.now + 7 * MINUTES_PER_DAY,
+        (row) => row.expectedDischargeAt !== null && isDueWithinDays(row.expectedDischargeAt, input.now, 7),
       ).length;
       const dueOutWeek = figure("dueOutWeek", due);
       const pastDate = figure(
@@ -771,7 +763,6 @@ export function executiveSites(
           row.state !== "pulled" &&
           row.expectedDischargeAt !== null &&
           Number.isFinite(row.expectedDischargeAt) &&
-          row.expectedDischargeAt >= input.now &&
           dayOf(row.expectedDischargeAt) === dayOf(input.now),
       ).length,
     );
@@ -917,8 +908,7 @@ export function executiveJourney(
       row.state !== "departed" &&
       row.state !== "pulled" &&
       row.expectedDischargeAt !== null &&
-      row.expectedDischargeAt >= input.now &&
-      dayOf(row.expectedDischargeAt) - dayOf(input.now) < 7,
+      isDueWithinDays(row.expectedDischargeAt, input.now, 7),
   );
   const plannedTotal = c("planned", planned.length);
   const plannedToday = c(

@@ -13,7 +13,7 @@ export function ReferralLetterDocument({
   stamp,
 }: {
   readonly input: ReferralTextInput;
-  /** "Draft 10:42 AWST" before sending, or "RF-024 · sent 10:47 AWST" after. */
+  /** "Draft 10:42 demo time" before sending, or "RF-024 · sent 10:47 demo time" after ("AWST" signed in, F-113). */
   readonly stamp: string;
 }) {
   const model = referralLetterModel(input);

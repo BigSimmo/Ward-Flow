@@ -10,6 +10,10 @@ import { seedWardFlowState, type RepatriationRecord } from "@/components/ward-ma
 import { BED_MEETING_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { outOfAreaLedger } from "@/components/ward-management/ward-referrals";
 
+// A16-04: the app shows only travel bands someone has checked (none yet). This file tests a
+// mechanism that needs bands, so importing this swaps in the tests' own invented table.
+import "./helpers/ward-test-travel-bands";
+
 // A night shift runs past midnight, so This shift can hold a departure that fell yesterday.
 const at = (estimatedAt: number) => ({ estimatedAt }) as RepatriationRecord;
 

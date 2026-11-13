@@ -13,11 +13,7 @@ import {
   LEAVING_DESTINATIONS,
   type LeavingDestination,
 } from "@/components/ward-management/ward-admissions";
-import {
-  bedsPendingPreparation,
-  capacityBreakdown,
-  capacityBreakdownLists,
-} from "@/components/ward-management/ward-bed-availability";
+import { capacityBreakdown, capacityBreakdownLists } from "@/components/ward-management/ward-bed-availability";
 import type { BreakdownRow } from "@/components/ward-management/count-breakdown-model";
 import { leaveStays, releaseStays, stayBreakdownRows } from "@/components/ward-management/count-breakdown-rows";
 import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
@@ -41,7 +37,7 @@ import { useServiceScope } from "@/components/ward-management/shell/ward-service
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 
-import { asAtStamp } from "./ward-daily-sheet";
+import { asAtStamp } from "./ward-daily-sheet-model";
 import { StrandedPrompts, WardForecastShare } from "./stranded-prompts";
 import { strandedFlags } from "@/components/ward-management/ward-stranded";
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
@@ -61,6 +57,7 @@ import {
   findUnit,
   movementForBoardArrival,
   outgoingToday,
+  pulledTileTiming,
   tileDomId,
   type BoardFilter,
   type BoardOrder,
@@ -494,20 +491,13 @@ export function WardBoard({
   // D-115 item 3: beds named for an open journey or an accepted referral are spoken for, as on Home,
   // Statistics, the TV and print. The ward-scoped inbox, never the full referral array.
   const namedHolds = [...movements, ...(wardReferralInbox?.(unit.id) ?? [])];
-  const available = headlineAvailable(unit, admissions, bedReleases, [...leaveBeds], now, namedHolds);
-  // 🔴 THE FIGURE ABOVE IS CORRECT AND MUST NOT CHANGE. `availableNow` deliberately subtracts
-  // nothing for a preparation note: asked in September whether a bed being cleaned should drop the
-  // ward's number or merely refuse the pull, the owner chose the refusal, because the ward has not
-  // changed what it can staff and its figures must not lurch as cleaning starts and stops. So the
-  // defect this closes was never a wrong number — it was a correct number printed without the
-  // sentence that makes it safe to act on, while the reducer refuses PULL_PATIENT with "every free
-  // bed at X is still being made ready". Do not reach for the subtraction; it looks like the honest
-  // fix and would silently reverse an owner ruling with every test still green.
-  // Walkthrough D7 (25 Sept 2026): read the LIVE releases, because a preparation note is recorded
-  // on a release in state; the rebuilt list above never carries one, so "being cleaned" never showed.
-  const pendingPreparation = bedsPendingPreparation(unit.id, [...(liveBedReleases ?? [])]);
-  const constraint = constraintSentence(unit, admissions, bedReleases, [...leaveBeds], now, namedHolds);
-  const tiles = buildTiles(unit, admissions, bedReleases, now, { leaveBeds, holds: namedHolds });
+  // D-179 item 8: Ready leaves out a bed still being made ready, which only the LIVE releases record
+  // (the rebuilt list above never carries a preparation note). `bedStates` reads releases for that
+  // alone, so every Ready figure and tile on this board reads the live list.
+  const readyReleases = liveBedReleases ? [...liveBedReleases] : bedReleases;
+  const available = headlineAvailable(unit, admissions, readyReleases, [...leaveBeds], now, namedHolds);
+  const constraint = constraintSentence(unit, admissions, readyReleases, [...leaveBeds], now, namedHolds);
+  const tiles = buildTiles(unit, admissions, readyReleases, now, { leaveBeds, holds: namedHolds });
   // Read straight back out, purely to say how many closed tiles are on screen in the footnote below
   // — never re-derived. `buildTiles` already clamped this into the physically-empty pool; the
   // footnote must describe exactly what got drawn, not a second, unclamped copy of the figure.
@@ -587,7 +577,7 @@ export function WardBoard({
   const breakdown = capacityBreakdown(unit, [...bedReleases], [...leaveBeds], now);
   // The ruled Closed figure (`ward-bed-states.ts`), the same call `buildTiles` draws its closed
   // tiles from. `breakdown.held` is NOT this figure: it still counts a live pull's empty bed.
-  const states = bedStates(unit, admissions, [...bedReleases], [...leaveBeds], namedHolds);
+  const states = bedStates(unit, admissions, [...readyReleases], [...leaveBeds], namedHolds);
   const incoming = buildIncoming(unit, admissions, movements, now);
   const outgoing = outgoingToday(unit, bedReleases, outgoingBasis, now);
   // Item 18: with transport still pending, "They have left" also asks whether they are waiting for it.
@@ -641,7 +631,8 @@ export function WardBoard({
           (tile.pastDate || tile.awayAtEd || (occupant !== undefined && occupant.blockReason !== null))
         );
       case "ready":
-        return tile.kind === "empty";
+        // D-179 item 8: a bed still being made ready is not Ready.
+        return tile.kind === "empty" && !tile.preparing;
       case "quiet":
         return tile.kind === "occupied" && occupant !== undefined && occupant.expectedDays === null;
       case "all":
@@ -663,7 +654,7 @@ export function WardBoard({
 
   for (const tile of tiles) {
     if (tile.kind === "blocked") blockedTileCount++;
-    if (tile.kind === "empty") emptyTileCount++;
+    if (tile.kind === "empty" && !tile.preparing) emptyTileCount++;
 
     const isLook = tileMatchesFilter(tile, "look");
     const isReady = tileMatchesFilter(tile, "ready");
@@ -858,7 +849,8 @@ export function WardBoard({
         // mono "Discharge" floated over the buttons on phone).
         when: "",
         chip: daysPast > 0 ? `${daysPast}d overdue` : "Due today",
-        text: `${isConfirmed ? "Confirmed out" : "Expected out"} today, still here.${blockerPhrase}`,
+        // Calendar days (time audit T1): "today" only when the date is today.
+        text: `${isConfirmed ? "Confirmed out" : "Expected out"} ${daysPast > 0 ? `${daysPast} day${daysPast === 1 ? "" : "s"} ago` : "today"}, still here.${blockerPhrase}`,
         acts: [
           { word: "They have left", say: "would release this bed and make it ready" },
           { word: "Record hold-up", tone: "warn", say: "would record what is holding this discharge up" },
@@ -910,8 +902,7 @@ export function WardBoard({
       selectableKey: person.key,
       label: "Pulled bed",
       tone: null,
-      when: person.bedGoneHours !== null ? `${person.bedGoneHours}h ago` : "Today",
-      chip: person.bedGoneHours !== null ? `${person.bedGoneHours}h travelling` : "Pulled",
+      ...pulledTileTiming(person.bedGoneHours),
       text: `Pulled for ${nameFor(person.key)}, not yet arrived.`,
       // "Release the bed" removed 2026-09-25 (owner decision, Q5, bed-release-link plan): it
       // dispatched RELEASE_BED against "the first live release on the unit", the same guess-by-ward
@@ -1200,7 +1191,7 @@ export function WardBoard({
           constraint={constraint}
           incoming={incoming.length}
           outgoing={outgoing.length}
-          pendingPreparation={pendingPreparation}
+          pendingPreparation={states.beingMadeReady}
           pulledIn={pulledIn.length}
           service={service}
           site={site}

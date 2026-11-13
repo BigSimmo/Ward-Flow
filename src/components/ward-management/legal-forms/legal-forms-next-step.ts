@@ -24,7 +24,7 @@ export type NextStep = {
   detail: string;
 };
 
-export function nextStep(movement: Movement, now: Instant): NextStep {
+export function nextStep(movement: Movement, now: Instant, dayZero?: Date): NextStep {
   const code = movement.legalForm?.code;
   const form = code ? `Form ${code}` : "The form";
   // Gap list item 5: a form a person recorded as ended asks for nothing more on this page.
@@ -50,7 +50,7 @@ export function nextStep(movement: Movement, now: Instant): NextStep {
     return {
       action: "extend",
       title: "Extend or record the next form",
-      detail: `${form} ${typedTimePhrase(dueAt, now)}.`,
+      detail: `${form} ${typedTimePhrase(dueAt, now, dayZero)}.`,
     };
   }
   if (isOwnedLegalFormCode(code) && hasGap(movement, "written")) {

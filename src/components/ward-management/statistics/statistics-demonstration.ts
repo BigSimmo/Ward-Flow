@@ -279,8 +279,8 @@ export function generateDemonstrationSeries(
 
   /*
    * 🔴 **THE CLOCK IS QUANTISED TO THE DAY, AND WITHOUT THAT THE INVENTED HISTORY REDREW ITSELF
-   * EVERY REAL MINUTE.** `WardFlowProvider` runs `setInterval(…, 30_000)` and computes
-   * `now = NOW_ANCHOR + anchorOffset + elapsedWallClockMinutes + clockOffset`, so `now` advances on
+   * EVERY REAL MINUTE.** `WardFlowProvider` re-renders at the top of each minute (`useWardMinuteTick`)
+   * and computes `now = NOW_ANCHOR + anchorOffset + elapsedWallClockMinutes + clockOffset`, so `now` advances on
    * its own while somebody is looking at the page. The screens call this function in their render
    * body, so every minute boundary produced a different seed and **all thirty points were redrawn
    * as a different random walk** — not shifted, not extended: different.

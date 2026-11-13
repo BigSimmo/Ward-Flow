@@ -1,6 +1,8 @@
 import { INBOX_CATEGORIES } from "./ward-inbox-reducer";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
-import { numberedBedKind } from "./ward-bed-designation";
+import { lockedBedsFree, numberedBedKind, openBedsFree } from "./ward-bed-designation";
+import type { Admission } from "./ward-admissions";
+import { emptyCareJourney } from "./ward-care-journey";
 import { finiteInstant, type AuditDecision } from "./ward-audit";
 import { journeySentByKind } from "@/components/ward-management/ward-journey-sender";
 import { communityTeamById, communityTeamSlug } from "@/components/ward-management/community/community-derivations";
@@ -470,7 +472,21 @@ export function reduceTransportEvent(
       // mix (`bedStates`), so its arrival takes no second bed. Before this, arriving one moved
       // Occupied up by two and Ready down by one (release gate, 15 Oct 2026).
       const bedAlreadyCounted = linkedAdmission?.movementId === null;
-      const isBedTurnaround = !bedAlreadyCounted && unit.empty.value <= 0;
+      // A9-08 (Audit 9, 13 Nov 2026): a journey can reach `moving` with no pulled stay. Its arrival
+      // takes a ready bed as a pull would and records a named stay in it. Before this it only moved
+      // the empty count, so a closed bed read as an unnamed occupied one. With no ready bed it waits
+      // for one, as an arrival on a full ward does, and never takes a closed bed.
+      const unpulled = linkedAdmission === undefined;
+      const freeLocked = lockedBedsFree(unit);
+      const freeOpen = openBedsFree(unit);
+      // Ready is never above Empty (`boundedBedAvailability`). A ward whose allocatable count is
+      // above an empty count of zero has no ready bed, so that arrival is one capacity conflict and
+      // takes no allocatable bed too; otherwise the departure that resolves the conflict would never
+      // give that bed back (journey review, 13 Nov 2026).
+      const readyBedForUnpulled = unpulled && unit.empty.value > 0 && freeLocked + freeOpen > 0;
+      const unpulledBedKind: "locked" | "open" =
+        movement.security === "Secure" ? (freeLocked > 0 ? "locked" : "open") : freeOpen > 0 ? "open" : "locked";
+      const isBedTurnaround = !bedAlreadyCounted && (unit.empty.value <= 0 || (unpulled && !readyBedForUnpulled));
 
       // Owner ruling 2026-09-25: occupant counts follow gender (recorded sex for a non-binary person).
       const arriverSex = mixSexOf(movement.gender, movement.sex);
@@ -516,7 +532,17 @@ export function reduceTransportEvent(
 
       const updatedUnit: Unit = {
         ...unit,
-        empty: bedAlreadyCounted ? unit.empty : { ...unit.empty, value: Math.max(0, unit.empty.value - 1) },
+        empty:
+          bedAlreadyCounted || (unpulled && !readyBedForUnpulled)
+            ? unit.empty
+            : { ...unit.empty, value: Math.max(0, unit.empty.value - 1) },
+        // A9-08: the ready bed an unpulled arrival takes leaves the allocatable figures, as a pull's does.
+        ...(readyBedForUnpulled
+          ? {
+              allocatable: { ...unit.allocatable, value: unit.allocatable.value - 1 },
+              allocatableLocked: unit.allocatableLocked - (unpulledBedKind === "locked" ? 1 : 0),
+            }
+          : {}),
         sexMix: updatedSexMix,
         ...(isBedTurnaround
           ? {
@@ -567,13 +593,15 @@ export function reduceTransportEvent(
        * stay clock starts.
        *
        * The admission is looked up by id, never by unit and state: two people pulled to one ward is
-       * ordinary. A hand-authored seed movement has no `admissionId`; no occupant is fabricated for
-       * it.
+       * ordinary. Since A9-08 (13 Nov 2026) a journey with no pulled stay (no `admissionId`, as on
+       * a hand-authored seed movement) gets a new named occupied stay here, in a ready bed when the
+       * ward has one; a pulled stay is never replaced or guessed from the ward's other stays.
        */
       const pulledAdmission =
         movement.admissionId === undefined ? undefined : findAdmission(withUnit, movement.admissionId);
       let withPerson: WardFlowState;
-      // Audit §3 items 2, 5, 6: an absent admission is left alone, never invented.
+      // Audit §3 items 2, 5, 6: a linked stay is used only when found by id. A9-08 replaced "an
+      // absent admission is never invented": with no linked stay, the unpulled branch below makes one.
       if (pulledAdmission && pulledAdmission.state === "pulled") {
         const { bedNumber: _previousNumber, ...withoutBedNumber } = pulledAdmission;
         void _previousNumber;
@@ -606,6 +634,59 @@ export function reduceTransportEvent(
           ...(heldBedNumber === undefined ? {} : { bedNumber: heldBedNumber }),
           ...(isBedTurnaround ? { blockReason: "Awaiting clean" } : {}),
         });
+      } else if (unpulled) {
+        // A9-08: the named stay a pull would have made, arriving now. The reserved bed is used only
+        // where it is still free; otherwise the ward's seating places it, never in a closed bed.
+        const reservedBedFree =
+          reservedBed !== undefined &&
+          bedNumberRefusal(withUnit, unit, reservedBed, undefined) === null &&
+          heldBedRefusal(withUnit, unit, reservedBed, movement.id, movement.referralId) === null
+            ? reservedBed
+            : undefined;
+        const referral = movement.referralId ? findReferral(withUnit, movement.referralId) : undefined;
+        const arrivedStay: Admission = {
+          id: `AD-ARR-${String(withUnit.admissionSequence + 1).padStart(2, "0")}`,
+          unitId: unit.id,
+          observation: movement.observation,
+          ...(movement.observationChanges === undefined
+            ? {}
+            : { observationChanges: [...movement.observationChanges] }),
+          highAcuity: movement.highAcuity,
+          referralId: referral?.id ?? null,
+          movementId: movement.id,
+          patientId: patientId ?? null,
+          sex: movement.sex,
+          gender: movement.gender,
+          homeRegion: referral?.homeRegion ?? null,
+          tentativeDiagnosis: movement.tentativeDiagnosis ?? null,
+          bedKind: unpulledBedKind,
+          ...(reservedBedFree === undefined ? {} : { bedNumber: reservedBedFree }),
+          state: "occupied",
+          pulledAt: event.now,
+          arrivedAt: event.now,
+          awayAtEmergencyDepartmentSince: null,
+          expectedDischargeAt: null,
+          dischargeDateMoves: 0,
+          dischargeDateSetAt: null,
+          dischargeDateSetBy: null,
+          dischargeConfirmedAt: null,
+          dischargeConfirmedBy: null,
+          blockReason: isBedTurnaround ? "Awaiting clean" : null,
+          leavingDestination: null,
+          leftAt: null,
+          followUp: null,
+          careJourney: emptyCareJourney(),
+          dischargeBarrier: null,
+          dischargeCriteria: null,
+          stepDownCandidate: false,
+        };
+        updatedMovement.admissionId = arrivedStay.id;
+        updatedMovement.allocatedBed = arrivedStay.id;
+        withPerson = {
+          ...withUnit,
+          admissions: [...withUnit.admissions, arrivedStay],
+          admissionSequence: withUnit.admissionSequence + 1,
+        };
       } else {
         withPerson = withUnit;
       }

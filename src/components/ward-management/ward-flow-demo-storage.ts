@@ -95,17 +95,54 @@ export function readDemoStateLater(dayZero: Date, mountedAtAbsolute: number, raw
 }
 
 let typedTextScrub: typeof import("./ward-flow-typed-text-scrub") | undefined;
+let typedTextScrubLoading: Promise<typeof import("./ward-flow-typed-text-scrub")> | undefined;
 
 /**
  * The device copy of a session holding typed text (`ward-flow-typed-text-scrub.ts`) loads on demand,
  * like the saved-session read: it carries the restore fence and the typed-text reader
  * (`ward-flow-typed-text-ledger.ts`), which the first screen does not need.
+ *
+ * Audit 4 A4-02 (13 Nov 2026): a failed load is not final. One load runs at a time, and a failed one
+ * is forgotten, so the next save attempt or the connection's return (`useTypedTextScrubRetry`) loads
+ * it again instead of saving stopping for the rest of the day.
  */
 export function loadTypedTextScrub(): Promise<typeof import("./ward-flow-typed-text-scrub")> {
+  if (typedTextScrub) return Promise.resolve(typedTextScrub);
   // The copy compares against every scenario's seed (`fixtureWorlds`), so it needs their networks.
-  return Promise.all([import("./ward-flow-typed-text-scrub"), loadScenarioNetworks()]).then(
-    ([module]) => (typedTextScrub = module),
+  typedTextScrubLoading ??= Promise.all([import("./ward-flow-typed-text-scrub"), loadScenarioNetworks()]).then(
+    ([module]) => {
+      typedTextScrubLoading = undefined;
+      return (typedTextScrub = module);
+    },
+    (error: unknown) => {
+      typedTextScrubLoading = undefined;
+      throw error;
+    },
   );
+  return typedTextScrubLoading;
+}
+
+/**
+ * While the typed-text copy's code has failed to load (`failed`), loads it again each time the browser
+ * comes back online, and calls `onLoaded` once it arrives so the waiting save is written (A4-02).
+ */
+export function useTypedTextScrubRetry(failed: boolean, onLoaded: () => void): void {
+  useEffect(() => {
+    if (!failed) return;
+    let live = true;
+    const retry = () =>
+      void loadTypedTextScrub().then(
+        () => {
+          if (live) onLoaded();
+        },
+        () => {},
+      );
+    window.addEventListener("online", retry);
+    return () => {
+      live = false;
+      window.removeEventListener("online", retry);
+    };
+  }, [failed, onLoaded]);
 }
 
 type TypedTextHeld = {

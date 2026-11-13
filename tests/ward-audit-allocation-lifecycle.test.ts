@@ -254,135 +254,150 @@ describe("new bed allocations after capacity reconfirmation", () => {
 
 // Real reducer events establish the reservation/preparation overlap before either allocation gate.
 describe("unreserved beds still being made ready", () => {
-  it.each(["pull", "planned"] as const)("does not allocate a preparing bed through %s after reconfirmation", (kind) => {
-    let before = seedWardFlowState();
-    let plannedAdmissionId: string | undefined;
-    if (kind === "planned") {
-      before = send(before, {
-        type: "BOOK_PLANNED_ADMISSION",
-        role: "coordinator",
-        now: NOW,
-        initials: "AB",
-        sex: "Female",
-        gender: "Female",
-        reason: "respite",
-        unitId: UNIT,
-        expectedArrivalAt: NOW + 10,
-        expectedStayDays: 7,
-        legalStatus: "Voluntary",
-        ageBand: "Adult",
-        calendarDate: "2026-11-02",
-      });
-      plannedAdmissionId = before.plannedAdmissions.at(-1)!.id;
-    }
-    for (let index = 0; index < 2; index++) {
-      let departed: WardFlowState | undefined;
-      for (const admission of before.admissions.filter((a) => a.unitId === UNIT && a.state === "occupied")) {
-        const candidate = wardFlowReducer(before, {
-          type: "RECORD_LEAVING",
+  // D-179 item 8 and D-181 item 5 (Josh, 13 Nov 2026): a bed being made ready is off Ready and counted
+  // on its own, and may still be PULLED. A planned admission is not a pull, so it still waits.
+  it.each(["pull", "planned"] as const)(
+    "allocates a preparing bed through %s only by a pull, after reconfirmation",
+    (kind) => {
+      let before = seedWardFlowState();
+      let plannedAdmissionId: string | undefined;
+      if (kind === "planned") {
+        before = send(before, {
+          type: "BOOK_PLANNED_ADMISSION",
+          role: "coordinator",
+          now: NOW,
+          initials: "AB",
+          sex: "Female",
+          gender: "Female",
+          reason: "respite",
+          unitId: UNIT,
+          expectedArrivalAt: NOW + 10,
+          expectedStayDays: 7,
+          legalStatus: "Voluntary",
+          ageBand: "Adult",
+          calendarDate: "2026-11-02",
+        });
+        plannedAdmissionId = before.plannedAdmissions.at(-1)!.id;
+      }
+      for (let index = 0; index < 2; index++) {
+        let departed: WardFlowState | undefined;
+        for (const admission of before.admissions.filter((a) => a.unitId === UNIT && a.state === "occupied")) {
+          const candidate = wardFlowReducer(before, {
+            type: "RECORD_LEAVING",
+            role: "ward",
+            actingUnitId: UNIT,
+            now: NOW,
+            admissionId: admission.id,
+            leavingDestination: "transferred-to-another-psychiatric-ward",
+          });
+          if (candidate.rejections.length === before.rejections.length) {
+            departed = candidate;
+            break;
+          }
+        }
+        expect(departed, "an occupied stay with a permitted recorded departure").toBeDefined();
+        before = departed!;
+        expectRestorable(before);
+      }
+      expect(before.units.find((u) => u.id === UNIT)!.empty.value).toBe(7);
+      const confirm = () => {
+        const unit = before.units.find((u) => u.id === UNIT)!;
+        before = send(before, {
+          type: "CONFIRM_CAPACITY",
           role: "ward",
           actingUnitId: UNIT,
-          now: NOW,
-          admissionId: admission.id,
-          leavingDestination: "transferred-to-another-psychiatric-ward",
+          unitId: UNIT,
+          now: NOW + 1,
+          expectedRevision: unit.allocatable.revision ?? 0,
+          value: 7,
         });
-        if (candidate.rejections.length === before.rejections.length) {
-          departed = candidate;
-          break;
-        }
-      }
-      expect(departed, "an occupied stay with a permitted recorded departure").toBeDefined();
-      before = departed!;
-      expectRestorable(before);
-    }
-    expect(before.units.find((u) => u.id === UNIT)!.empty.value).toBe(7);
-    const confirm = () => {
-      const unit = before.units.find((u) => u.id === UNIT)!;
-      before = send(before, {
-        type: "CONFIRM_CAPACITY",
-        role: "ward",
-        actingUnitId: UNIT,
-        unitId: UNIT,
-        now: NOW + 1,
-        expectedRevision: unit.allocatable.revision ?? 0,
-        value: 7,
-      });
-    };
-    confirm();
-    const movementIds: string[] = [];
-    for (let index = 0; index < 7; index++) {
-      before = send(before, { type: "RAISE_REFERRAL", role: "ed", now: NOW + 1, edId: "jhc-ed", draft });
-      const movementId = before.movements.at(-1)!.id;
-      movementIds.push(movementId);
-      before = send(before, { type: "REFER_TO_UNITS", role: "coordinator", now: NOW + 1, movementId, unitIds: [UNIT] });
-      before = send(before, {
-        type: "ACCEPT_IN_PRINCIPLE",
-        role: "ward",
-        actingUnitId: UNIT,
-        now: NOW + 1,
-        movementId,
-        unitId: UNIT,
-      });
-      if (index < 5)
+      };
+      confirm();
+      const movementIds: string[] = [];
+      for (let index = 0; index < 7; index++) {
+        before = send(before, { type: "RAISE_REFERRAL", role: "ed", now: NOW + 1, edId: "jhc-ed", draft });
+        const movementId = before.movements.at(-1)!.id;
+        movementIds.push(movementId);
         before = send(before, {
-          type: "PULL_PATIENT",
+          type: "REFER_TO_UNITS",
+          role: "coordinator",
+          now: NOW + 1,
+          movementId,
+          unitIds: [UNIT],
+        });
+        before = send(before, {
+          type: "ACCEPT_IN_PRINCIPLE",
           role: "ward",
           actingUnitId: UNIT,
           now: NOW + 1,
           movementId,
           unitId: UNIT,
         });
-    }
-    confirm();
-    expectRestorable(before);
-    const boxes = (state: WardFlowState) =>
-      bedStates(
-        state.units.find((u) => u.id === UNIT)!,
-        state.admissions,
-        state.bedReleases,
-        state.leaveBeds,
-        [],
-      );
-    expect(boxes(before)).toMatchObject({ ready: 2, beingMadeReady: 2 });
-    const allocate: WardFlowEvent =
-      kind === "pull"
-        ? {
+        if (index < 5)
+          before = send(before, {
             type: "PULL_PATIENT",
             role: "ward",
             actingUnitId: UNIT,
-            now: NOW + 10,
-            movementId: movementIds[5],
+            now: NOW + 1,
+            movementId,
             unitId: UNIT,
-          }
-        : {
-            type: "CONVERT_PLANNED_ADMISSION",
-            role: "coordinator",
-            now: NOW + 10,
-            unitId: UNIT,
-            plannedAdmissionId: plannedAdmissionId!,
-          };
-    const refused = wardFlowReducer(before, allocate);
-    expect(refused.rejections).toHaveLength(before.rejections.length + 1);
-    expect(refused.rejections.at(-1)?.reason).toMatch(/still being made ready/);
-    for (const key of ["units", "admissions", "movements", "plannedAdmissions"] as const)
-      expect(refused[key]).toEqual(before[key]);
-    const releaseId = before.bedReleases.find((r) => r.unitId === UNIT && r.state === "discharged" && r.preparing)!.id;
-    const prepared = send(before, {
-      type: "SET_BED_PREPARATION",
-      role: "ward",
-      actingUnitId: UNIT,
-      now: NOW + 2,
-      releaseId,
-      preparing: false,
-    });
-    expect(boxes(prepared)).toMatchObject({ ready: 2, beingMadeReady: 1 });
-    const allocated = send(prepared, allocate);
-    expect(boxes(allocated)).toMatchObject({ ready: 1, beingMadeReady: 1 });
-    expectRestorable(allocated);
-    if (kind === "pull") {
-      const again = wardFlowReducer(allocated, { ...allocate, movementId: movementIds[6] } as WardFlowEvent);
-      expect(again.rejections).toHaveLength(allocated.rejections.length + 1);
-      expect(again.rejections.at(-1)?.reason).toMatch(/still being made ready/);
-    }
-  });
+          });
+      }
+      confirm();
+      expectRestorable(before);
+      const boxes = (state: WardFlowState) =>
+        bedStates(
+          state.units.find((u) => u.id === UNIT)!,
+          state.admissions,
+          state.bedReleases,
+          state.leaveBeds,
+          [],
+        );
+      expect(boxes(before)).toMatchObject({ ready: 0, beingMadeReady: 2 });
+      const allocate: WardFlowEvent =
+        kind === "pull"
+          ? {
+              type: "PULL_PATIENT",
+              role: "ward",
+              actingUnitId: UNIT,
+              now: NOW + 10,
+              movementId: movementIds[5],
+              unitId: UNIT,
+            }
+          : {
+              type: "CONVERT_PLANNED_ADMISSION",
+              role: "coordinator",
+              now: NOW + 10,
+              unitId: UNIT,
+              plannedAdmissionId: plannedAdmissionId!,
+            };
+      const refused = wardFlowReducer(before, allocate);
+      if (kind === "pull") {
+        // D-181 item 5: the pull goes ahead into a bed still being made ready.
+        expect(refused.rejections).toHaveLength(before.rejections.length);
+        expect(boxes(refused)).toMatchObject({ ready: 0, beingMadeReady: 1 });
+        expectRestorable(refused);
+        return;
+      }
+      expect(refused.rejections).toHaveLength(before.rejections.length + 1);
+      expect(refused.rejections.at(-1)?.reason).toMatch(/still being made ready/);
+      for (const key of ["units", "admissions", "movements", "plannedAdmissions"] as const)
+        expect(refused[key]).toEqual(before[key]);
+      const releaseId = before.bedReleases.find(
+        (r) => r.unitId === UNIT && r.state === "discharged" && r.preparing,
+      )!.id;
+      const prepared = send(before, {
+        type: "SET_BED_PREPARATION",
+        role: "ward",
+        actingUnitId: UNIT,
+        now: NOW + 2,
+        releaseId,
+        preparing: false,
+      });
+      expect(boxes(prepared)).toMatchObject({ ready: 1, beingMadeReady: 1 });
+      const allocated = send(prepared, allocate);
+      expect(boxes(allocated)).toMatchObject({ ready: 0, beingMadeReady: 1 });
+      expectRestorable(allocated);
+    },
+  );
 });

@@ -4,6 +4,7 @@ import { COMMUNITY_TEAMS } from "./ward-teams";
 import type { WardAccess, WardAccessScope, PlaceLookup } from "./ward-role-access";
 import { unitInScope, edInScope } from "./ward-role-access";
 import { edById, siteByCode } from "./ward-sites";
+import { perthIsoDay } from "./ward-clock";
 
 /** A bounded source desk, not a clinical encounter or a general access grant. */
 export type PatientRegistrationScope = { kind: "ed" | "ward" | "team" | "site" | "service"; placeId: string };
@@ -102,4 +103,25 @@ export function registrationIsInScope(
     case "service":
       return scope.kind === "service" && scope.service === registration.placeId;
   }
+}
+
+/**
+ * The latest date of birth that can be stored: `today`'s Perth calendar day, or the caller's demo
+ * day when that is a real calendar day before it (H-0372: the demo day can only tighten the bound).
+ * RC 2.6 (F-113, 13 Nov 2026): Add patient checks against THIS bound too. It used to check the demo
+ * day alone, so with the demo clock stepped past midnight the form accepted a date the engine refused.
+ */
+export function latestDateOfBirth(today: Date, demoDay?: unknown): string {
+  const realDay = perthIsoDay(today);
+  return isCalendarDay(demoDay) && demoDay < realDay ? demoDay : realDay;
+}
+
+/** A real "YYYY-MM-DD" calendar date. Here, not in the registration reducer slice, so Add patient
+ *  can share the engine's bound without loading that lazy slice (`ward-reducer-lazy-slices`). */
+export function isCalendarDay(value: unknown): value is string {
+  const match = typeof value === "string" ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(value) : null;
+  if (!match) return false;
+  const [year, month, day] = match.slice(1).map(Number) as [number, number, number];
+  const read = new Date(Date.UTC(year, month - 1, day));
+  return read.getUTCFullYear() === year && read.getUTCMonth() === month - 1 && read.getUTCDate() === day;
 }

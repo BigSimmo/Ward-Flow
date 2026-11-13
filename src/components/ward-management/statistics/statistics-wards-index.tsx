@@ -627,7 +627,7 @@ function WardsIndexView({
                 ) : null
               }
             >
-              Ready includes beds being made ready · stays count whole days since arrival
+              Ready leaves out beds being made ready · stays count whole days since arrival
             </Foot>
           </StatCard>
 

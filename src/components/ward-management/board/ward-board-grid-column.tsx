@@ -373,12 +373,18 @@ export function WardBoardGridColumn({
                     <span className={styles.bedNote}>Empty, not offered.</span>
                   </>
                 )}
-                {tile.kind === "empty" && (
-                  <>
-                    <span className={styles.bedState}>Ready</span>
-                    <span className={styles.bedNote}>Empty and offered.</span>
-                  </>
-                )}
+                {tile.kind === "empty" &&
+                  (tile.preparing ? (
+                    <>
+                      <span className={styles.bedState}>{BED_STATE_LABELS.beingMadeReady}</span>
+                      <span className={styles.bedNote}>Empty, not ready yet.</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className={styles.bedState}>Ready</span>
+                      <span className={styles.bedNote}>Empty and offered.</span>
+                    </>
+                  ))}
                 {/* Selection in WORDS, beside the heavier edge that carries it visually. A sheet
                         that has made no decision must not show a filled element — a fill reads as a
                         decision taken — and a weight alone is a mark a greyscale reader can miss. */}

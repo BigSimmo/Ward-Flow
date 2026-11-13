@@ -771,7 +771,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
         <div className={styles.shiftCockpit}>
           <div
             className={styles.shiftCockpitTop}
-            title={`Board time ${boardClock} AWST. Shift ${shiftProgress.percent}% through. Shift times are ${OPERATIONAL_DEFAULT_LABEL}`}
+            title={`Board time ${boardClock}. Shift ${shiftProgress.percent}% through. Shift times are ${OPERATIONAL_DEFAULT_LABEL}`}
           >
             {/* Josh, 31 Oct 2026: the person's name stays on the shift card, and wraps in full. */}
             <span className={styles.shiftAvatar} aria-hidden="true">
@@ -1278,7 +1278,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
           <p className={styles.menuContextCell}>
             <span className={styles.menuContextLabel}>Board time</span>
             <span className={styles.menuContextValue}>
-              <strong>{boardClock}</strong> AWST
+              <strong>{boardClock}</strong>
             </span>
           </p>
           {!showHandover ? null : handoverCardLinks ? (

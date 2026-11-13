@@ -18,6 +18,10 @@ import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management
 import { outOfAreaLedger } from "@/components/ward-management/ward-referrals";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 
+// A16-04: the app shows only travel bands someone has checked (none yet). This file tests a
+// mechanism that needs bands, so importing this swaps in the tests' own invented table.
+import "./helpers/ward-test-travel-bands";
+
 const COMPLETE_SEND_DRAFT: RepatDraft = {
   homeHospital: "RPH",
   receivingWardAgreed: undefined,

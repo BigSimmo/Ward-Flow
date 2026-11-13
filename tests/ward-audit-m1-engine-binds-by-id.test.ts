@@ -106,7 +106,9 @@ describe("every patient action changes the record it names, whatever the list or
       let lastNewSeed = FIRST_SEED;
       for (let seed = FIRST_SEED; seed <= LAST_SEED && failures.length === 0; seed += 1) {
         const random = seededRandom(seed);
-        let state = seedWardFlowState(WARD_SCENARIOS[seed % WARD_SCENARIOS.length]);
+        // A16-14 (D-175 item 1): the worked examples are off by default; this coverage run keeps them
+        // on, as before, so the involuntary arrivals a Tell record (and its Undo) needs are there.
+        let state = seedWardFlowState(WARD_SCENARIOS[seed % WARD_SCENARIOS.length], { workedExamples: true });
         for (let step = 0; step < STEPS; step += 1) {
           const event = nextEvent(state, random, step, seed, STEPS);
           const next = wardFlowReducer(state, event);

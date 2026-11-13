@@ -1,4 +1,5 @@
 import { expect, test } from "playwright/test";
+import { CHECKED_TRAVEL_BANDS } from "@/components/ward-management/ward-travel-bands";
 import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
 /**
@@ -161,9 +162,13 @@ const OWNED_TABLES: readonly { readonly testId: string; readonly columns: number
  * A table that renders only in some state is likewise absent from the count rather than silently
  * absent from the check, which is why the figure is printed on every run.
  */
+/** The Out of area page and its placement table (see the travel-time note below). */
+const OUT_OF_AREA_ROUTE = "/ward-flow/out-of-area";
+const OUT_OF_AREA_TESTID = "ward-out-of-area-table";
+
 const ROUTES = [
   OWNED,
-  "/ward-flow/out-of-area",
+  OUT_OF_AREA_ROUTE,
   "/ward-flow/escalation",
   "/ward-flow/discharges",
   "/ward-flow/referrals",
@@ -175,9 +180,18 @@ const ROUTES = [
  * The table used for the instrument's two-method cross-check. It is somebody else's screen and this
  * file asserts NOTHING about its design — only that two unrelated ways of measuring it land on the
  * same number, which is a fact about the probe rather than about the table.
+ *
+ * Josh 13 Nov 2026: travel times deferred until after the demo. The Out of area page shows its
+ * table only for people with a CHECKED travel band (`CHECKED_TRAVEL_BANDS`, A16-04), and none is
+ * checked yet, so the page shows its "no travel time recorded" note and no table. Until bands are
+ * checked the sweep asserts that note on the route, and the instrument cross-check runs on the
+ * referral board's live queued table instead, another screen's table this file asserts nothing
+ * about. Restore: nothing to edit; once `CHECKED_TRAVEL_BANDS` holds bands, the cross-check and the
+ * deliberately-inert exemption below return to the out-of-area table by themselves.
  */
-const CROSS_CHECK_ROUTE = "/ward-flow/out-of-area";
-const CROSS_CHECK_TESTID = "ward-out-of-area-table";
+const TRAVEL_BANDS_CHECKED = CHECKED_TRAVEL_BANDS.length > 0;
+const CROSS_CHECK_ROUTE = TRAVEL_BANDS_CHECKED ? OUT_OF_AREA_ROUTE : "/ward-flow/referrals";
+const CROSS_CHECK_TESTID = TRAVEL_BANDS_CHECKED ? OUT_OF_AREA_TESTID : "ward-referral-board-queued-table";
 
 /** A width no ward table's content could coincidentally produce, so a match cannot be luck. */
 const SENTINEL_PX = 1234;
@@ -211,6 +225,15 @@ test.describe("@mockup every ward table's threshold still describes the table it
       await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
       if (route === OWNED) {
         for (const radio of await page.getByRole("radio", { name: "Data" }).all()) await radio.click();
+      }
+      // Josh 13 Nov 2026: travel times deferred until after the demo. With no checked band the page
+      // must say nobody is shown and how many have no travel time, never draw an empty table.
+      // Restore: this branch stops applying once checked travel times are added.
+      if (route === OUT_OF_AREA_ROUTE && !TRAVEL_BANDS_CHECKED) {
+        await expect(page.getByTestId("ward-out-of-area-empty")).toHaveText(
+          /^Nobody is shown as far from home\. [1-9]\d* (?:person has|people have) no travel time recorded\.$/u,
+        );
+        await expect(page.getByTestId(OUT_OF_AREA_TESTID)).toHaveCount(0);
       }
 
       const measured: Measured[] = await page.evaluate(
@@ -307,7 +330,12 @@ test.describe("@mockup every ward table's threshold still describes the table it
     // meaningless for a threshold check) rather than counted here. The floor stays a real one — 4,
     // not 0 — so a sweep that regressed to reaching nothing still fails loudly here rather than
     // reporting a clean estate.
-    expect(tablesWalked, "the sweep reached no ward tables at all, so nothing below was checked").toBeGreaterThan(4);
+    // Josh 13 Nov 2026: travel times deferred until after the demo. The out-of-area table is one of
+    // those 5 and is not drawn while no travel band is checked, so the floor drops by exactly that
+    // one table, and only until checked travel times are added.
+    expect(tablesWalked, "the sweep reached no ward tables at all, so nothing below was checked").toBeGreaterThan(
+      TRAVEL_BANDS_CHECKED ? 4 : 3,
+    );
 
     /*
      * 🔴 **THE INSTRUMENT CHECK, AND IT IS DELIBERATELY NOT AN `every()` OVER A DESIGN DECISION.**
@@ -495,7 +523,10 @@ test.describe("@mockup every ward table's threshold still describes the table it
     // 2026-09-25: 5fc6a5f664 made the ledger's headers uppercase, tracked and nowrap, so the header
     // row now sets this table's floor (~490px) above its 30rem pin. The pin is left in place as a
     // backstop; the real line is the geometric check at 641px in ui-ward-referrals.spec.ts.
-    const KNOWN_DELIBERATELY_INERT = new Set<string>(["ward-out-of-area-table"]);
+    // Josh 13 Nov 2026: travel times deferred until after the demo. The table is not drawn while no
+    // band is checked, so the exemption would name nothing and its own anti-vacuity check below
+    // would fail on a stale entry; it applies again, unchanged, once checked travel times are added.
+    const KNOWN_DELIBERATELY_INERT = new Set<string>(TRAVEL_BANDS_CHECKED ? [OUT_OF_AREA_TESTID] : []);
 
     // Anti-vacuity floor, same discipline as the display:none exemption above: the set must be
     // hitting exactly the table it names, or it has either gone stale (nothing left to exempt) or

@@ -40,7 +40,8 @@ export function referralAcceptanceNotesText(
     SYNTHETIC_COPY_LINE,
     `Ward Flow acceptance: ${context.patientName}.`,
     `Referral ${referral.id} accepted by ${ward}${when}.`,
-    `Bed: ${accepted.heldBedNumber === undefined ? "no bed held yet" : `bed ${accepted.heldBedNumber} held`}.`,
+    // F-91 (K23): a bed for an incoming patient is pulled, never "held" (a leave bed's word).
+    `Bed: ${accepted.heldBedNumber === undefined ? "no numbered bed pulled yet" : `bed ${accepted.heldBedNumber} pulled`}.`,
     `Urgency: Tier ${referral.urgency}.`,
   ].join("\n");
 }
@@ -70,7 +71,8 @@ export function movementTransferNotesText(
     `Ward Flow transfer: ${context.patientName}.`,
     `From ${from} to ${to}.`,
     `Stage: ${stageCopy[movement.stage].label}.`,
-    `Bed: ${movement.heldBedNumber === undefined ? "no bed held yet" : `bed ${movement.heldBedNumber} held`}.`,
+    // F-91 (K23): a bed for an incoming patient is pulled, never "held" (a leave bed's word).
+    `Bed: ${movement.heldBedNumber === undefined ? "no numbered bed pulled yet" : `bed ${movement.heldBedNumber} pulled`}.`,
     // The transport job and the arrival plan are separate records: a job can be booked with no
     // plan, and a cancelled job leaves the plan in place, so each gets its own line.
     `Transport: ${transportStatusLabel(movement.transport)}.`,

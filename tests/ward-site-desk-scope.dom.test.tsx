@@ -64,17 +64,18 @@ describe("the larger-screen card comes after the role check (WF-12)", () => {
     expect(screen.getByText(/needs a larger screen/u)).toBeInTheDocument();
   });
 
-  it("opens on its own site's health service, not the whole state", () => {
+  it("opens on its own site, not the whole state", () => {
     as({ role: "bed_manager", scope: { kind: "site", siteCode: "FSH" } });
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <BedMeetingTvScreen />
       </WardFlowProvider>,
     );
-    const service = siteByCode("FSH")?.service;
-    expect(service).toBeTruthy();
-    // Page tops (9 Nov 2026): the heading reads "Bed meeting", with the service read after it.
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(`Bed meeting · ${service}`);
+    const site = siteByCode("FSH");
+    expect(site).toBeTruthy();
+    // Page tops (9 Nov 2026): the heading reads "Bed meeting", with the place read after it. A9-16
+    // (Q12, Josh 13 Nov 2026): for a site bed manager that place is the site, not its service.
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(`Bed meeting · ${site!.name}`);
     expect(screen.getByRole("heading", { level: 1 })).not.toHaveTextContent("Bed meeting · All services");
   });
 });

@@ -1,4 +1,5 @@
 import { isRecoverableReferralDraft } from "./referral-draft-validation";
+import { splitDuration } from "../ward-clock";
 import { referralDraftMemory } from "./referral-draft-lifecycle";
 export { clearReferralDraftSession } from "./referral-draft-lifecycle";
 
@@ -284,10 +285,12 @@ export function draftFingerprint(draft: unknown): string {
 /** How long after the last keystroke the draft is kept. */
 export const REFERRAL_DRAFT_AUTOSAVE_MS = 500;
 
-/** "just now", "4m ago", "1h 05m ago": the age of a kept draft. */
+/**
+ * "just now", "4m ago", "1h 05m ago", "1d 6h ago": the age of a kept draft, in the shared
+ * `splitDuration` units (RC 2.5, F-35: it used to hand-roll hours, so a day-old draft read "30h 00m").
+ * Real device time, so a clock set back reads "just now" rather than a negative age.
+ */
 export function referralDraftAgeText(keptAt: number, nowMs: number): string {
   const minutes = Math.floor(Math.max(nowMs - keptAt, 0) / 60_000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  return `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, "0")}m ago`;
+  return minutes < 1 ? "just now" : `${splitDuration(minutes)} ago`;
 }

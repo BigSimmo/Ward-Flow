@@ -54,8 +54,9 @@ const QUESTIONS: readonly QuestionDefinition[] = [
   },
   {
     id: "reserved",
-    heading: "Bed reserved",
-    phrases: /^(?:bed reserved|reserved beds?)$/,
+    // F-91 (K23): the heading says pulled; the older phrases still find it.
+    heading: "Bed pulled",
+    phrases: /^(?:bed pulled|pulled beds?|bed reserved|reserved beds?)$/,
     test: (row) => row.bedReserved === true,
   },
   {

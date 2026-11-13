@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Segmented } from "@/components/wf";
+import { Button, Segmented, StatusGlyph } from "@/components/wf";
 import { dayOf, formatInstantWithDay, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ward-management/ward-observation";
 import styles from "./ward-bed-dossier-drawer.module.css";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
+import { useKeepLayoutDraft, useKeptLayoutDraft } from "@/components/ward-management/use-layout-draft";
 import { ChoiceChips } from "./ward-bed-dossier-bits";
 
 const LEVEL_CHOICES = OBSERVATION_LEVELS.map((level) => ({ id: level, label: levelOptionLabel(level) }));
@@ -44,12 +45,28 @@ function reviewInputs(reviewAt: Instant | null, now: Instant): { time: string; d
   return { time, day: offset === 1 ? "tomorrow" : "today" };
 }
 
-/** The level as the drawer row reads it: "Intermittent, every 15 minutes. Review 14:00". */
+/** C19: an open observation form's unsaved entries, kept across the phone and wide layouts. */
+type ObservationDraft = {
+  level: ObservationLevel;
+  interval: number;
+  reviewTime: string;
+  reviewDay: "today" | "tomorrow";
+  reviewEdited: boolean;
+  openedToken: string | undefined;
+};
+
+/** True when the recorded review time has passed (time audit T7): shown as "was due", in warning tone. */
+export function observationReviewPassed(observation: Observation, now: Instant): boolean {
+  return observation.reviewAt !== null && observation.reviewAt < now;
+}
+
+/** The level as the drawer row reads it: "Intermittent, every 15 minutes. Review 14:00", or
+ *  "... Review was due 14:00" once that time has passed, so a missed review never reads as ahead. */
 export function observationWithReview(observation: Observation, now: Instant): string {
   const summary = observationSummary(observation);
-  return observation.reviewAt === null
-    ? summary
-    : `${summary}. Review ${formatInstantWithDay(observation.reviewAt, now)}`;
+  if (observation.reviewAt === null) return summary;
+  const lead = observationReviewPassed(observation, now) ? "Review was due" : "Review";
+  return `${summary}. ${lead} ${formatInstantWithDay(observation.reviewAt, now)}`;
 }
 
 /**
@@ -64,6 +81,7 @@ export function WardObservationControl({
   editingToken,
   onSave,
   showCurrent = true,
+  draftKey,
 }: {
   observation: Observation;
   now: Instant;
@@ -73,20 +91,28 @@ export function WardObservationControl({
   onSave?: (next: Observation, expected?: string) => ReturnType<WardCommandDispatch>;
   /** False where a row above already states the level, as in the bed drawer. */
   showCurrent?: boolean;
+  /** C19: names this stay's form so its unsaved entries survive the phone and wide layouts swapping. */
+  draftKey?: string;
 }) {
-  const [open, setOpen] = useState(false);
+  // C19: the twin form in the other layout, open at the moment the screen crossed the phone width.
+  const kept = useKeptLayoutDraft<ObservationDraft>(draftKey);
+  const [open, setOpen] = useState(kept !== undefined);
   // Audit CS3-01: an open observation form is checked against the board it opened on.
   useHoldOpenForm(open);
-  const [level, setLevel] = useState<ObservationLevel>(observation.level);
+  const [level, setLevel] = useState<ObservationLevel>(kept?.level ?? observation.level);
   const [interval, setIntervalMinutes] = useState<number>(
-    observation.intervalMinutes ?? INTERMITTENT_INTERVAL_MINUTES[0],
+    kept?.interval ?? observation.intervalMinutes ?? INTERMITTENT_INTERVAL_MINUTES[0],
   );
-  const [reviewTime, setReviewTime] = useState("");
-  const [reviewDay, setReviewDay] = useState<"today" | "tomorrow">("today");
-  const [reviewEdited, setReviewEdited] = useState(false);
+  const [reviewTime, setReviewTime] = useState(kept?.reviewTime ?? "");
+  const [reviewDay, setReviewDay] = useState<"today" | "tomorrow">(kept?.reviewDay ?? "today");
+  const [reviewEdited, setReviewEdited] = useState(kept?.reviewEdited ?? false);
   const [error, setError] = useState<string | null>(null);
   // A colleague's change made while this is open is refused by the server, not overwritten.
-  const [openedToken, setOpenedToken] = useState<string>();
+  const [openedToken, setOpenedToken] = useState<string | undefined>(kept?.openedToken);
+  useKeepLayoutDraft<ObservationDraft>(
+    draftKey,
+    open ? { level, interval, reviewTime, reviewDay, reviewEdited, openedToken } : undefined,
+  );
   // Audit 24-3 SV-4: the control stays open with its choices until the level is accepted.
   const recording = useWardFormSave("observation");
 
@@ -118,6 +144,7 @@ export function WardObservationControl({
     <div className={styles.cardInner} data-testid="ward-observation-control">
       {showCurrent ? (
         <p className={styles.meta} data-testid="ward-observation-current">
+          {observationReviewPassed(observation, now) ? <StatusGlyph tone="warning" /> : null}{" "}
           {observationWithReview(observation, now)}
         </p>
       ) : null}

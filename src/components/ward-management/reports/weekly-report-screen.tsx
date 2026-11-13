@@ -37,6 +37,7 @@ import {
 import type { WardConfiguration } from "@/components/ward-management/ward-configuration";
 import styles from "./reports.module.css";
 import weekly from "./weekly-report.module.css";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 const WAITING_HREF = "/ward-flow/waiting";
 
@@ -304,6 +305,7 @@ function WeeklyReportView({
   readmissions?: { arrivals: number; readmitted: number };
   heatmap?: (isPhone: boolean) => ReactNode;
 }) {
+  const zone = useClockZoneLabel();
   const isPhone = useIsPhone();
   const figures = usePilotFigures(pilot);
   usePageSettingsConfiguration(configuration);
@@ -326,7 +328,7 @@ function WeeklyReportView({
   const hoursText = `${Math.round(report.edWaits.targetMinutes / 60)}h`;
   const occupancyText = report.occupancy.averagePercent === null ? "—" : `${report.occupancy.averagePercent}%`;
   const weekRange = `${dateOf(week.start, dayZero)} to ${dateOf(week.end - 1, dayZero)}`;
-  const outputMoment = (at: Instant) => formatSheetMoment(at, dayZero, { includeYearAndZone: true });
+  const outputMoment = (at: Instant) => formatSheetMoment(at, dayZero, { includeYearAndZone: true, zone });
   // Expected dates set after the week began leave the week only partly measured (audit stats-11).
   const delayedFrom = report.delayedDischarge.recordedFrom;
   const delayedUnknown = delayedFrom !== null && delayedFrom >= week.countedEnd;

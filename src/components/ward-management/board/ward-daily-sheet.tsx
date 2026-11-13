@@ -14,26 +14,28 @@ import {
   useModalFocus,
   type WfTone,
 } from "@/components/wf";
-import { dayOf, formatInstant, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
+import type { Instant } from "@/components/ward-management/ward-clock";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { WARD_ADMISSIONS_ANCHOR, wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { useOptionalWardFlowSelect, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import {
-  admissionsForUnit,
-  bedIsOccupied,
-  daysInBed,
-  isPastExpectedDischarge,
-  stayBand,
-  stayDayNumber,
-  type Admission,
-} from "@/components/ward-management/ward-admissions";
+import { admissionsForUnit } from "@/components/ward-management/ward-admissions";
 import { arrowTargets, sinceYesterday } from "@/components/ward-management/ward-board-derivations";
 import { releaseBand } from "@/components/ward-management/ward-bed-availability";
+import { derivedBedReleases } from "@/components/ward-management/ward-discharge-dates";
+import { HELD_UP_WINDOW } from "@/components/ward-management/ward-held-up";
 import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-morning-rollup";
 
 import styles from "./ward-daily-sheet.module.css";
 import { WardShiftSummaryCard } from "./ward-shift-summary-card";
 import { LocalSettingsNote } from "@/components/ward-management/shell/local-settings-note";
+import {
+  asAtStamp,
+  dailySheetGroups,
+  dailySheetPeople,
+  heldUpStayKeys,
+  type DailySheetPerson,
+} from "./ward-daily-sheet-model";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /**
@@ -61,135 +63,14 @@ import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard
  * Stated on the sheet itself, so nobody reads its absence as "there is nothing to update".
  */
 
-/** One row on the sheet's person groups. A structural subset of the board's own `Occupant`, named
- *  here so this component states exactly what it reads rather than importing a wider type and
- *  quietly gaining fields. Nothing in it identifies a person: the record holds no name, no date of
- *  birth and no bed, and the sheet must never look as though it does. */
-export type DailySheetPerson = {
-  key: string;
-  days: number | null;
-  /** Which day of the stay today is, arrival day = Day 1. An ORDINAL, unlike `days`. */
-  dayNumber: number | null;
-  bandLabel: string | null;
-  pastDate: boolean;
-  sex: string;
-  /** `null` for an admission created by an ED arrival - Task 17, 2026-08-30. The sheet says so in
-   *  words; it never omits the person and never guesses a region. */
-  homeRegion: string | null;
-  /**
-   * Whole hours at an emergency department, or `null` while the person is on the ward.
-   *
-   * **On the sheet as well as the tile, and the sheet is the half that matters more.** The tile
-   * was fixed first and left the paper: a patient at an ED still printed as an ordinary occupant,
-   * with a day count and a discharge plan and nothing saying they were not on the ward. **This
-   * sheet is read aloud at handover**, which is exactly the moment somebody asks "and where is
-   * she?" — and until this, nobody on the page could answer.
-   *
-   * The paper is also the artefact that leaves the room. A screen is re-read; a printed sheet is
-   * carried to a meeting and believed.
-   */
-  awayAtEdHours: number | null;
-  expectedDays: number | null;
-  blockReason: string | null;
-};
-
-export type DailySheetGroups = {
-  /** Recorded as held up by something — `BED_RELEASE_BLOCKERS`, an owner-approved list about the
-   *  BED, never about the person. */
-  heldUp: DailySheetPerson[];
-  /** Past the ward's own revisable expected date. Carries no legal or contractual weight. */
-  overdue: DailySheetPerson[];
-  /** Nobody has said when this person is expected to leave. Kept as its own group rather than
-   *  folded into "overdue": an absent plan and a passed plan are different facts, and a meeting
-   *  does different things about them. */
-  noDate: DailySheetPerson[];
-  /**
-   * Off the ward at an emergency department, and its own group for a measured reason.
-   *
-   * **A line on the person's row was not enough, and the measurement is why.** The other three
-   * groups are exceptions — stuck, overdue, no date — so a patient who is away but has an ordinary
-   * discharge plan and no blocker falls into NONE of them and never printed at all. Measured, not
-   * reasoned: the sheet showed **1 of 2** people away on the ward that has them.
-   *
-   * So being off the ward is its own exception, which is what it always was — it is exactly the
-   * question a handover asks ("and where is she?") and exactly the one the sheet could not answer.
-   *
-   * A person can appear here AND in another group, on purpose, the same way somebody both stuck
-   * and overdue appears twice: both facts are true and a meeting acts on both.
-   */
-  awayFromWard: DailySheetPerson[];
-};
-
-/**
- * D19's three "attention" groups, partitioned out of the rows the board already built.
- *
- * **A partition of the SAME array the board renders, not a re-derivation.** `pastDate` is
- * `isPastExpectedDischarge`'s answer and `expectedDays` is the board's own day arithmetic; this
- * function only reads them. Recomputing either from instants here would create a second opinion
- * about whether somebody is overdue, on the one page whose whole job is to be quoted out loud.
- *
- * The groups OVERLAP by design and each says so on screen: somebody can be both held up and past
- * their date, and dropping them from one group to avoid printing them twice would hide exactly the
- * person a flow meeting most needs to discuss. Order is the incoming order, which the board has
- * already sorted soonest-expected-out first — a stable, total order, so the sheet does not
- * reshuffle between two prints of the same picture.
- */
-export function dailySheetGroups(people: readonly DailySheetPerson[]): DailySheetGroups {
-  return {
-    heldUp: people.filter((person) => person.blockReason !== null),
-    overdue: people.filter((person) => person.pastDate),
-    noDate: people.filter((person) => person.expectedDays === null),
-    awayFromWard: people.filter((person) => person.awayAtEdHours !== null),
-  };
-}
-
-/** The sheet's person rows for one ward, from its occupied beds. Shared with the ward TV view so
- *  the two read the same rows. */
-export function dailySheetPeople(admissions: readonly Admission[], unitId: string, now: Instant): DailySheetPerson[] {
-  return admissionsForUnit(admissions, unitId)
-    .filter(bedIsOccupied)
-    .map((admission) => ({
-      key: admission.id,
-      days: daysInBed(admission, now),
-      dayNumber: stayDayNumber(admission, now),
-      bandLabel: stayBand(admission, now)?.label ?? null,
-      pastDate: isPastExpectedDischarge(admission, now),
-      sex: admission.sex,
-      homeRegion: admission.homeRegion,
-      awayAtEdHours:
-        admission.awayAtEmergencyDepartmentSince === null
-          ? null
-          : Math.max(0, Math.floor((now - admission.awayAtEmergencyDepartmentSince) / 60)),
-      expectedDays:
-        admission.expectedDischargeAt != null && Number.isFinite(admission.expectedDischargeAt)
-          ? Math.floor((admission.expectedDischargeAt - now) / 1440)
-          : null,
-      blockReason: admission.blockReason,
-    }));
-}
-
-/**
- * Stamp the same synthetic instant as the figures. A provider origin allows a complete date,
- * year and AWST on saved output. Standalone consumers retain the demonstration-day fallback
- * when no valid calendar origin is available. Never substitute the wall clock for this instant.
- */
-export function asAtStamp(now: Instant, dayZero?: Date): { time: string | null; dayNote: string } {
-  const time = Number.isFinite(now)
-    ? dayZero !== undefined && Number.isFinite(dayZero.getTime())
-      ? formatSheetMoment(now, dayZero, { includeYearAndZone: true })
-      : formatInstant(now)
-    : null;
-  // A non-finite instant yields no day either: `dayOf(NaN)` is `NaN`, and "day NaN" is exactly the
-  // kind of stamp this function's own doc comment refuses. No time, no day, same branch.
-  const day = time === null ? null : dayOf(now) + 1;
-  return {
-    time,
-    dayNote:
-      day === null
-        ? "synthetic figures — not a record of any real day"
-        : `day ${day} of this demonstration — synthetic figures, not a record of any real day`,
-  };
-}
+export {
+  asAtStamp,
+  dailySheetGroups,
+  dailySheetPeople,
+  heldUpStayKeys,
+  type DailySheetGroups,
+  type DailySheetPerson,
+} from "./ward-daily-sheet-model";
 
 /** Master audit M7 (D-129): the stamp's line while the shared reads are frozen. */
 function staleStampWords(since: number | undefined): string {
@@ -249,8 +130,14 @@ function SheetPerson({ person, testId, tone }: { person: DailySheetPerson; testI
         {person.blockReason !== null && <p className={styles.rowLine}>Held up by: {person.blockReason}.</p>}
         {person.pastDate && person.expectedDays !== null && (
           <p className={styles.rowLine}>
-            <span style={TNUM}>{-person.expectedDays}</span> day
-            {person.expectedDays === -1 ? "" : "s"} past the ward&apos;s expected date.
+            {person.expectedDays >= 0 ? (
+              "Expected out earlier today."
+            ) : (
+              <>
+                <span style={TNUM}>{-person.expectedDays}</span> day
+                {person.expectedDays === -1 ? "" : "s"} past the ward&apos;s expected date.
+              </>
+            )}
           </p>
         )}
       </div>
@@ -426,6 +313,7 @@ export function WardDailySheet({
   // Prefer the provider's live admissions when this sheet is opened from ward-screen's unit-only
   // path; the frozen seed is only a last resort for isolated renders without a provider.
   const liveFlow = useOptionalWardFlowSelect("admissions", "bedReleases", "dayZero");
+  const zone = useClockZoneLabel();
   const liveAdmissions = liveFlow?.admissions;
   const liveBedReleases = liveFlow?.bedReleases;
   const admissionSource = liveAdmissions ?? wardAdmissions;
@@ -482,10 +370,16 @@ export function WardDailySheet({
   const resolvedOutgoingBasis =
     outgoingBasisLabel ?? (liveOutgoingCount !== null ? CAPACITY_FIGURE_LABELS.confirmedToday : "Expected");
 
-  const groups = dailySheetGroups(resolvedPeople);
+  // D-191 item 5: held up is due by tomorrow, read from the live releases the Ward page counts.
+  // An isolated render with no provider reads the releases its admissions give.
+  const heldUpStays = useMemo(
+    () => heldUpStayKeys(liveBedReleases ?? derivedBedReleases([...admissionSource], currentNow), currentNow),
+    [liveBedReleases, admissionSource, currentNow],
+  );
+  const groups = dailySheetGroups(resolvedPeople, heldUpStays);
   const incomingTotal = resolvedIncomingPulled + resolvedIncomingWaitlisted;
 
-  const resolvedTimestamp = shiftTimestamp ?? (now !== undefined ? asAtStamp(now, liveFlow?.dayZero).time : null);
+  const resolvedTimestamp = shiftTimestamp ?? (now !== undefined ? asAtStamp(now, liveFlow?.dayZero, zone).time : null);
   // Master audit M7 (D-129): the standalone sheet's stamp says so too while reads are frozen.
   const freshness = useLiveFreshness(!isEmbedded);
   const staleLine = !isEmbedded && isNotUpdating(freshness) ? staleStampWords(freshness.since) : null;
@@ -654,10 +548,10 @@ export function WardDailySheet({
           heading="Who is stuck"
           headingId={`${baseId}-ward-daily-sheet-stuck-heading`}
           testId="ward-daily-sheet-stuck"
-          emptyText="Nobody on this ward is recorded as held up."
+          emptyText={`Nobody on this ward is recorded as held up with a discharge due ${HELD_UP_WINDOW}.`}
           people={groups.heldUp}
           tone="danger"
-          note="Reasons are about the bed, from a fixed list."
+          note={`Held up with a discharge due ${HELD_UP_WINDOW}. Reasons are about the bed, from a fixed list.`}
         />
 
         <SheetGroup
@@ -778,9 +672,10 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
   const canCopy = useSyncExternalStore(subscribeNever, clipboardAvailable, () => false);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const flow = useOptionalWardFlowSelect("dayZero");
+  const zone = useClockZoneLabel();
   const wardName = sheetProps.unit?.name ?? null;
   const title = wardName === null ? "Shift brief" : `${wardName} shift brief`;
-  const stamp = sheetProps.now !== undefined ? asAtStamp(sheetProps.now, flow?.dayZero) : null;
+  const stamp = sheetProps.now !== undefined ? asAtStamp(sheetProps.now, flow?.dayZero, zone) : null;
   // Master audit M7 (D-129): while the shared reads are frozen, the printed brief says since when.
   const freshness = useLiveFreshness();
   const staleLine = isNotUpdating(freshness) ? staleStampWords(freshness.since) : null;

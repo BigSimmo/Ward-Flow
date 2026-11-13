@@ -3,7 +3,7 @@
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Pause, Play } from "lucide-react";
 import { cx } from "./cx";
-import { clk, dur } from "./format";
+import { clk, dur, FUTURE_START_TEXT } from "./format";
 import { SrOnly } from "./primitives";
 import { StatusGlyph } from "./status-glyph";
 import { useIsPhone } from "./use-is-phone";
@@ -305,6 +305,7 @@ type TimerDirection = "waiting" | "in" | "left" | "overdue" | "ago" | "away" | "
 
 const COUNTDOWN: TimerDirection[] = ["in", "left"];
 const MINUTE = 60_000;
+const HOUR = 60 * MINUTE;
 const DEFAULT_FLAG_WORDS = { soon: "Due soon", over: "Overdue" };
 
 export type TimerProps = {
@@ -318,6 +319,11 @@ export type TimerProps = {
   thresholds?: { dueSoon?: number; overdue?: number };
   /** Shared clock from a parent list, so one timer drives every row. */
   now?: number;
+  /**
+   * `now` is a clock that moves once a minute (the board clock), so the value is whole minutes: "5m",
+   * "0m", never "5m 00s" or "0s", seconds that clock cannot know (time audit D6, 13 Nov 2026).
+   */
+  wholeMinutes?: boolean;
   /** Freezes the value (Live chip paused). */
   paused?: boolean;
   /** Offline: marks the value as an estimate. */
@@ -349,6 +355,7 @@ export function Timer({
   direction,
   thresholds,
   now: nowProp,
+  wholeMinutes = false,
   paused = false,
   estimate = false,
   chip = false,
@@ -375,6 +382,9 @@ export function Timer({
   }
 
   const shownDirection: TimerDirection = countdown && ms < 0 ? "overdue" : direction;
+  // RC 2.5 (F-35): a time since a start that is still ahead is a record fault, said in words. It
+  // used to print the size of the gap, so a mistyped future arrival read as a real wait.
+  const futureStart = !countdown && ms < 0;
   const wordFirst = shownDirection === "in";
   const word = hideDirection ? (
     <SrOnly>{shownDirection}</SrOnly>
@@ -397,9 +407,18 @@ export function Timer({
         </span>
       ) : null}
       <span role="timer" className={cx(styles.value, chip && styles.chip)}>
-        {wordFirst ? word : null}
-        <span className={styles.digits}>{dur(ms)}</span>
-        {wordFirst ? null : word}
+        {futureStart ? (
+          FUTURE_START_TEXT
+        ) : (
+          <>
+            {wordFirst ? word : null}
+            {/* Overdue is the size of the gap past the deadline: `dur` keeps a sign, so pass the size. */}
+            <span className={styles.digits}>
+              {wholeMinutes && Math.abs(ms) < HOUR ? `${Math.floor(Math.abs(ms) / MINUTE)}m` : dur(Math.abs(ms))}
+            </span>
+            {wordFirst ? null : word}
+          </>
+        )}
         {estimate ? <span className={styles.word}>est.</span> : null}
       </span>
     </span>

@@ -54,6 +54,7 @@ import {
   type PaperMeasurements,
 } from "./handover-print-pagination";
 import styles from "./handover-print-sheet.module.css";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 /* ------------------------------------------------------------------ options */
 
@@ -199,6 +200,7 @@ export function HandoverPrintSheet({
   now,
 }: HandoverPrintSheetProps) {
   const baseId = useId();
+  const zone = useClockZoneLabel();
   // Master audit M7: while the shared reads are frozen, every printed page says since when.
   const freshness = useLiveFreshness();
   const landscape = options.orientation === "landscape";
@@ -279,8 +281,8 @@ export function HandoverPrintSheet({
   ];
 
   const prepared = dayZero
-    ? formatSheetMoment(preparedAt ?? now, dayZero, { includeYearAndZone: true })
-    : `${formatInstantWithDay(preparedAt ?? now, now)} ${sheetDate} AWST`.trim();
+    ? formatSheetMoment(preparedAt ?? now, dayZero, { includeYearAndZone: true, zone })
+    : `${formatInstantWithDay(preparedAt ?? now, now)} ${sheetDate} ${zone}`.trim();
   const meta = `${scopeLabel} · ${shiftLabel} · ${densityLabel} columns${anyHighlight ? " · highlighted rows marked" : ""}`;
 
   const header = (pageNumber: number) => (
@@ -381,7 +383,7 @@ export function HandoverPrintSheet({
       return (
         <tr key={`i-${item.row.id}`} data-paper-item={paperItemKey(item)} className={styles.ib2}>
           <td colSpan={columns.length}>
-            {isbarLines(item.row, ctx.now, ctx.readyBeds)
+            {isbarLines(item.row, ctx.now, ctx.readyBeds, ctx.dayZero)
               .slice(1)
               .map((line) => (
                 <span key={line.key}>

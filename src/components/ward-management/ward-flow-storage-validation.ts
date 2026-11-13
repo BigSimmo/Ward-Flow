@@ -42,6 +42,7 @@ import {
   SUPPORT_SERVICE_TYPES,
   TRANSPORT_LEGAL_STATUSES,
   TRANSPORT_PROVIDERS,
+  PULL_FORM_FIELDS,
 } from "./ward-model";
 import { BROADCAST_ANSWER_LABELS } from "./alerts/ward-broadcast-model";
 import { validateConfiguration } from "./ward-configuration";
@@ -161,7 +162,8 @@ const NESTED_KEY_RULES = new Map<string, z.ZodMiniType>([
   ["withdrawnReferrals", history({ unitId: text, reason: text })],
   ["referralAnswerHistory", history({ unitId: text, answer: z.enum(["waitlisted", "declined", "withdrawn"]) })],
   ["unwinds", history({ kind: text, by: text, reason: text })],
-  ["stageChanges", history({ to: text, by: text })],
+  // D-191: a pull's entry may name the pull form facts its desk changed, from the fixed list only.
+  ["stageChanges", history({ to: text, by: text, changedOnPull: z.optional(z.array(z.enum(PULL_FORM_FIELDS))) })],
   // `by` is a role key: an arbitrary string such as "__proto__" would reach the role label lookup.
   [
     "escalations",
@@ -261,7 +263,9 @@ const patient = z.catchall(
     umrn: text,
     givenName: text,
     familyName: text,
-    dateOfBirth: text.check(z.regex(/^\d{4}-\d{2}-\d{2}$/)),
+    // A9-07 (Josh, 13 Nov 2026): a typed date of birth is held in the device copy as the placeholder
+    // (D-18), so adding a person no longer stops saving. A typed date itself is still refused.
+    dateOfBirth: z.union([z.literal(TYPED_TEXT_NOT_KEPT), text.check(z.regex(/^\d{4}-\d{2}-\d{2}$/))]),
     communityTreatmentOrder: z.optional(
       z.strictObject({
         form: z.literal("5A"),

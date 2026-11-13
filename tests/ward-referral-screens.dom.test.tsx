@@ -78,6 +78,11 @@ import { installMatchMediaStub } from "./setup/jsdom.setup";
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 import { markBroomeForensicForThisFile } from "./helpers/ward-made-up-forensic-ward";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+
+// A16-04: the app shows only travel bands someone has checked (none yet). This file tests a
+// mechanism that needs bands, so importing this swaps in the tests' own invented table.
+import "./helpers/ward-test-travel-bands";
+
 /**
  * D-77 (change 3, Josh 21 Oct 2026). The match view is one list on every width: three groups
  * ("Fits, bed ready", "Fits, no bed now", "Needs review"), each a radiogroup of one row per ward.
@@ -256,15 +261,16 @@ async function openHistory() {
 describe("ReferralBoard", () => {
   it("renders the real fixture's queued referrals longest wait first (Decision D-32)", () => {
     renderBoard();
-    // Raised before the anchor: RF-015 4,500 min, RF-014 150, RF-RD06 55 (rulings demo overlay),
-    // RF-011 50, RF-001 40, RF-009 35, RF-005 20. See tests/ward-referral-model.test.ts for the
+    // Raised before the anchor: RF-015 4,500 min, RF-014 150, RF-011 50, RF-001 40, RF-009 35,
+    // RF-005 20. RF-RD06 (a legal-form worked example) is off by default since A16-14, 13 Nov 2026.
+    // See tests/ward-referral-model.test.ts for the
     // pure-function proof this table order is built on, including the urgency tie-break.
     const table = screen.getByTestId("ward-referral-board-queued-table");
     const ids = within(table)
       .getAllByRole("row")
       .slice(1) // drop the header row
       .map((row) => row.getAttribute("data-referral-id"));
-    expect(ids).toEqual(["RF-015", "RF-014", "RF-RD06", "RF-011", "RF-001", "RF-009", "RF-005"]);
+    expect(ids).toEqual(["RF-015", "RF-014", "RF-011", "RF-001", "RF-009", "RF-005"]);
   });
 
   /**
@@ -450,7 +456,6 @@ describe("ReferralBoard", () => {
     expect(cards.map((card) => card.getAttribute("data-testid"))).toEqual([
       "ward-referral-board-card-select-RF-015",
       "ward-referral-board-card-select-RF-014",
-      "ward-referral-board-card-select-RF-RD06",
       "ward-referral-board-card-select-RF-011",
       "ward-referral-board-card-select-RF-001",
       "ward-referral-board-card-select-RF-009",

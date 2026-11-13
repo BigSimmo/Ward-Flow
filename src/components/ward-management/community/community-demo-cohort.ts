@@ -6,7 +6,15 @@
 
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { formTitleForCode } from "@/lib/form-register";
-import { splitDuration } from "@/components/ward-management/ward-clock";
+import {
+  dayOf,
+  formatInstant,
+  MINUTES_PER_DAY,
+  perthDateLabel,
+  perthDayLabel,
+  splitDuration,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 
 function makeWaitLabel(minutes: number, isAlert = false): string {
   const dur = splitDuration(minutes);
@@ -46,19 +54,93 @@ export interface DemoInpatient {
   mdtStatus: string;
 }
 
-export interface DemoEgress {
+/**
+ * RC 2.3 (F-33, D-174 and D-175 item 1, 13 Nov 2026): every sample time on the community lists is
+ * an instant on the board's own clock, counted from day 0 (the demo's opening day), and its words
+ * are worked out from the board's `now` and `dayZero` when shown. They used to be typed text
+ * ("Today 10:00", "Due today 15:00", "Yesterday 14:00", "19 Sep"), which never moved: past
+ * midnight, or on any day but the one they were typed for, they said the wrong day, and a follow-up
+ * typed as due today stayed amber after its time had passed.
+ */
+const sampleAt = (day: number, hours = 0, minutes = 0): Instant => day * MINUTES_PER_DAY + hours * 60 + minutes;
+
+function relativeDay(instant: Instant, now: Instant): number {
+  return dayOf(instant) - dayOf(now);
+}
+
+/** "Today 10:00", "Yesterday 14:00", "Tomorrow 10:00" or "Thu 23 Sep 11:00". */
+function sampleMomentText(instant: Instant, now: Instant, dayZero: Date): string {
+  const offset = relativeDay(instant, now);
+  const day =
+    offset === 0 ? "Today" : offset === -1 ? "Yesterday" : offset === 1 ? "Tomorrow" : perthDayLabel(instant, dayZero);
+  return `${day} ${formatInstant(instant)}`;
+}
+
+/** "today", "tomorrow", "yesterday" or "Thu 23 Sep", for a date with no time. */
+function sampleDayText(instant: Instant, now: Instant, dayZero: Date): string {
+  const offset = relativeDay(instant, now);
+  if (offset === 0) return "today";
+  if (offset === 1) return "tomorrow";
+  if (offset === -1) return "yesterday";
+  return perthDayLabel(instant, dayZero);
+}
+
+type EgressStatus = "overdue" | "today" | "upcoming";
+
+/** A sample discharge as authored: its times are board instants, its words are worked out. */
+export interface DemoEgressSeed {
   id: string;
   patientId: string;
   patientDetails: string;
   dischargingUnit: string;
-  dischargeDatePlan: string;
+  /** When the discharge happened or is planned. */
+  dischargeAt: Instant;
   destination: string;
-  status: "overdue" | "today" | "upcoming";
-  kpiStatusLabel: string;
-  kpiTone: "danger" | "warn" | "neutral" | "good";
+  /** When the post-discharge follow-up is due. */
+  followUpDueAt: Instant;
   assignedCoordinator: string;
   actionLabel: string;
   isPrimaryAction: boolean;
+}
+
+export interface DemoEgress extends DemoEgressSeed {
+  dischargeDatePlan: string;
+  status: EgressStatus;
+  kpiStatusLabel: string;
+  kpiTone: "danger" | "warn" | "neutral" | "good";
+}
+
+/** A sample discharge's words and its follow-up state, from the board's own clock. */
+export function demoEgressAt(row: DemoEgressSeed, now: Instant, dayZero: Date): DemoEgress {
+  const dischargeDay = relativeDay(row.dischargeAt, now);
+  const dischargeDatePlan =
+    dischargeDay < -1
+      ? `Discharged ${-dischargeDay}d ago (${perthDayLabel(row.dischargeAt, dayZero)})`
+      : `${sampleMomentText(row.dischargeAt, now, dayZero)}${dischargeDay > 0 ? " (planned)" : ""}`;
+  const dueDay = relativeDay(row.followUpDueAt, now);
+  if (row.followUpDueAt < now)
+    return {
+      ...row,
+      dischargeDatePlan,
+      status: "overdue",
+      kpiStatusLabel: "Overdue (priority follow-up)",
+      kpiTone: "danger",
+    };
+  if (dueDay === 0)
+    return {
+      ...row,
+      dischargeDatePlan,
+      status: "today",
+      kpiStatusLabel: `Due today ${formatInstant(row.followUpDueAt)}`,
+      kpiTone: "warn",
+    };
+  return {
+    ...row,
+    dischargeDatePlan,
+    status: "upcoming",
+    kpiStatusLabel: dueDay === 1 ? "Due tomorrow" : `Due in ${dueDay} days`,
+    kpiTone: "neutral",
+  };
 }
 
 export interface DemoCaseloadRow {
@@ -71,8 +153,33 @@ export interface DemoCaseloadRow {
   tier: string;
   category: "cto" | "high" | "depot" | "all";
   keyClinician: string;
+  lastContactAt: Instant;
+  /** Where the last contact was: "home", "clinic" or "telehealth". */
+  lastContactPlace: string;
+  /** The next review: a named review on a day ("Tribunal review"), at a time and place, or in a month. */
+  nextReview: { label?: string; at: Instant; place?: string; shows: "day" | "time" | "month" };
+}
+
+export interface DemoCaseloadView extends Omit<DemoCaseloadRow, "nextReview"> {
   lastContact: string;
   nextReview: string;
+}
+
+/** A caseload row's contact and review words, from the board's own clock (F-33). */
+export function demoCaseloadAt(row: DemoCaseloadRow, now: Instant, dayZero: Date): DemoCaseloadView {
+  const review = row.nextReview;
+  const when =
+    review.shows === "time"
+      ? sampleMomentText(review.at, now, dayZero)
+      : review.shows === "month"
+        ? perthDateLabel(review.at, dayZero, { month: "short", year: "numeric" })
+        : sampleDayText(review.at, now, dayZero);
+  const nextReview = [review.label, when].filter(Boolean).join(" ") + (review.place ? ` (${review.place})` : "");
+  return {
+    ...row,
+    lastContact: `${sampleMomentText(row.lastContactAt, now, dayZero)} (${row.lastContactPlace})`,
+    nextReview,
+  };
 }
 
 export interface DemoStaff {
@@ -412,17 +519,15 @@ export const DEMO_COMMUNITY_INPATIENTS: DemoInpatient[] = [
   },
 ];
 
-export const DEMO_COMMUNITY_EGRESS: DemoEgress[] = [
+export const DEMO_COMMUNITY_EGRESS: DemoEgressSeed[] = [
   {
     id: "EGR-01",
     patientId: "PT-3891",
     patientDetails: "F 41y",
     dischargingUnit: "Demonstration ward",
-    dischargeDatePlan: "Discharged 2d ago (19 Sep)",
+    dischargeAt: sampleAt(-2, 10),
     destination: "Supported accommodation",
-    status: "overdue",
-    kpiStatusLabel: "Overdue (priority follow-up)",
-    kpiTone: "danger",
+    followUpDueAt: sampleAt(-1, 15),
     assignedCoordinator: "Dr S. Chen",
     actionLabel: "Urgent outreach",
     isPrimaryAction: true,
@@ -432,11 +537,9 @@ export const DEMO_COMMUNITY_EGRESS: DemoEgress[] = [
     patientId: "PT-4102",
     patientDetails: "M 31y",
     dischargingUnit: "Demonstration ward",
-    dischargeDatePlan: "Today 10:00",
+    dischargeAt: sampleAt(0, 10),
     destination: "Private residence",
-    status: "today",
-    kpiStatusLabel: "Due today 15:00",
-    kpiTone: "warn",
+    followUpDueAt: sampleAt(0, 15),
     assignedCoordinator: "RN T. Bradley",
     actionLabel: "Confirm contact",
     isPrimaryAction: true,
@@ -446,11 +549,9 @@ export const DEMO_COMMUNITY_EGRESS: DemoEgress[] = [
     patientId: "PT-3712",
     patientDetails: "M 59y",
     dischargingUnit: "Demonstration ward",
-    dischargeDatePlan: "Today 11:30",
+    dischargeAt: sampleAt(0, 11, 30),
     destination: "Community step-down",
-    status: "today",
-    kpiStatusLabel: "Due today 16:30",
-    kpiTone: "warn",
+    followUpDueAt: sampleAt(0, 16, 30),
     assignedCoordinator: "SW M. Davies",
     actionLabel: "Confirm contact",
     isPrimaryAction: true,
@@ -460,11 +561,9 @@ export const DEMO_COMMUNITY_EGRESS: DemoEgress[] = [
     patientId: "PT-3419",
     patientDetails: "F 71y",
     dischargingUnit: "Demonstration ward",
-    dischargeDatePlan: "Tomorrow 14:00 (planned)",
+    dischargeAt: sampleAt(1, 14),
     destination: "Respite aged care",
-    status: "upcoming",
-    kpiStatusLabel: "Due in 2 days",
-    kpiTone: "neutral",
+    followUpDueAt: sampleAt(2, 14),
     assignedCoordinator: "OT E. Wilson",
     actionLabel: "Pre-discharge check",
     isPrimaryAction: false,
@@ -474,11 +573,9 @@ export const DEMO_COMMUNITY_EGRESS: DemoEgress[] = [
     patientId: "PT-3304",
     patientDetails: "M 48y",
     dischargingUnit: "Armadale Adult Open",
-    dischargeDatePlan: "23 Sep 11:00 (planned)",
+    dischargeAt: sampleAt(2, 11),
     destination: "Private residence",
-    status: "upcoming",
-    kpiStatusLabel: "Due in 3 days",
-    kpiTone: "neutral",
+    followUpDueAt: sampleAt(3, 11),
     assignedCoordinator: "RN K. Vance",
     actionLabel: "Review plan",
     isPrimaryAction: false,
@@ -488,11 +585,9 @@ export const DEMO_COMMUNITY_EGRESS: DemoEgress[] = [
     patientId: "PT-2980",
     patientDetails: "M 62y",
     dischargingUnit: "RPH Adult Open",
-    dischargeDatePlan: "24 Sep 10:00 (planned)",
+    dischargeAt: sampleAt(3, 10),
     destination: "Independent living",
-    status: "upcoming",
-    kpiStatusLabel: "Due in 4 days",
-    kpiTone: "neutral",
+    followUpDueAt: sampleAt(4, 10),
     assignedCoordinator: "RN C. Davis",
     actionLabel: "Review plan",
     isPrimaryAction: false,
@@ -526,8 +621,9 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 1 assertive outreach",
     category: "cto",
     keyClinician: "RN K. Vance",
-    lastContact: "Yesterday 14:00 (home)",
-    nextReview: "Tomorrow 10:00 (depot clinic)",
+    lastContactAt: sampleAt(-1, 14),
+    lastContactPlace: "home",
+    nextReview: { at: sampleAt(1, 10), place: "depot clinic", shows: "time" },
   },
   {
     id: "CL-02",
@@ -539,8 +635,9 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 1 assertive outreach",
     category: "cto",
     keyClinician: "RN T. Bradley",
-    lastContact: "20 Sep 11:30 (clinic)",
-    nextReview: "Tribunal review 28 Sep",
+    lastContactAt: sampleAt(-1, 11, 30),
+    lastContactPlace: "clinic",
+    nextReview: { label: "Tribunal review", at: sampleAt(7), shows: "day" },
   },
   {
     id: "CL-03",
@@ -552,8 +649,9 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 2 case management",
     category: "depot",
     keyClinician: "Dr S. Chen",
-    lastContact: "19 Sep 15:00 (telehealth)",
-    nextReview: "Depot injection 23 Sep",
+    lastContactAt: sampleAt(-2, 15),
+    lastContactPlace: "telehealth",
+    nextReview: { label: "Depot injection", at: sampleAt(2), shows: "day" },
   },
   {
     id: "CL-04",
@@ -565,8 +663,9 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 2 case management",
     category: "cto",
     keyClinician: "RN C. Davis",
-    lastContact: "18 Sep 09:30 (home)",
-    nextReview: "CTO expiry 12 Oct 2026",
+    lastContactAt: sampleAt(-3, 9, 30),
+    lastContactPlace: "home",
+    nextReview: { label: "CTO expiry", at: sampleAt(21), shows: "day" },
   },
   {
     id: "CL-05",
@@ -578,8 +677,9 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 1 crisis monitoring",
     category: "high",
     keyClinician: "Dr K. Rao",
-    lastContact: "17 Sep 16:00 (clinic)",
-    nextReview: "Consultant review 22 Sep",
+    lastContactAt: sampleAt(-4, 16),
+    lastContactPlace: "clinic",
+    nextReview: { label: "Consultant review", at: sampleAt(1), shows: "day" },
   },
   {
     id: "CL-06",
@@ -591,8 +691,9 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 3 maintenance",
     category: "depot",
     keyClinician: "RN K. Vance",
-    lastContact: "15 Sep 10:00 (clinic)",
-    nextReview: "Depot injection 25 Sep",
+    lastContactAt: sampleAt(-6, 10),
+    lastContactPlace: "clinic",
+    nextReview: { label: "Depot injection", at: sampleAt(4), shows: "day" },
   },
   {
     id: "CL-07",
@@ -604,8 +705,9 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 1 assertive outreach",
     category: "cto",
     keyClinician: "Dr S. Chen",
-    lastContact: "18 Sep 11:00 (clinic)",
-    nextReview: "CTO review 15 Oct 2026",
+    lastContactAt: sampleAt(-3, 11),
+    lastContactPlace: "clinic",
+    nextReview: { label: "CTO review", at: sampleAt(24), shows: "day" },
   },
   {
     id: "CL-08",
@@ -617,8 +719,9 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 2 case management",
     category: "depot",
     keyClinician: "SW M. Davies",
-    lastContact: "14 Sep 14:00 (home)",
-    nextReview: "Depot clinic 28 Sep",
+    lastContactAt: sampleAt(-7, 14),
+    lastContactPlace: "home",
+    nextReview: { label: "Depot clinic", at: sampleAt(7), shows: "day" },
   },
   {
     id: "CL-09",
@@ -630,8 +733,9 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 1 assertive outreach",
     category: "high",
     keyClinician: "OT E. Wilson",
-    lastContact: "19 Sep 10:00 (clinic)",
-    nextReview: "Tribunal review 30 Sep",
+    lastContactAt: sampleAt(-2, 10),
+    lastContactPlace: "clinic",
+    nextReview: { label: "Tribunal review", at: sampleAt(9), shows: "day" },
   },
   {
     id: "CL-10",
@@ -643,8 +747,9 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 3 maintenance",
     category: "all",
     keyClinician: "RN C. Davis",
-    lastContact: "12 Sep 15:00 (telehealth)",
-    nextReview: "6-month review Nov 2026",
+    lastContactAt: sampleAt(-9, 15),
+    lastContactPlace: "telehealth",
+    nextReview: { label: "6-month review", at: sampleAt(45), shows: "month" },
   },
   {
     id: "CL-11",
@@ -656,8 +761,9 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 2 case management",
     category: "all",
     keyClinician: "RN K. Vance",
-    lastContact: "16 Sep 09:00 (clinic)",
-    nextReview: "Next appt 29 Sep",
+    lastContactAt: sampleAt(-5, 9),
+    lastContactPlace: "clinic",
+    nextReview: { label: "Next appt", at: sampleAt(8), shows: "day" },
   },
   {
     id: "CL-12",
@@ -669,8 +775,9 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 1 assertive outreach",
     category: "cto",
     keyClinician: "Dr K. Rao",
-    lastContact: "Yesterday 16:00 (clinic)",
-    nextReview: "Depot clinic 24 Sep",
+    lastContactAt: sampleAt(-1, 16),
+    lastContactPlace: "clinic",
+    nextReview: { label: "Depot clinic", at: sampleAt(3), shows: "day" },
   },
   {
     id: "CL-13",
@@ -682,8 +789,9 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 2 case management",
     category: "cto",
     keyClinician: "RN T. Bradley",
-    lastContact: "17 Sep 11:00 (home)",
-    nextReview: "CTO review 05 Nov 2026",
+    lastContactAt: sampleAt(-4, 11),
+    lastContactPlace: "home",
+    nextReview: { label: "CTO review", at: sampleAt(45), shows: "day" },
   },
   {
     id: "CL-14",
@@ -695,8 +803,9 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 3 maintenance",
     category: "depot",
     keyClinician: "RN C. Davis",
-    lastContact: "11 Sep 10:00 (clinic)",
-    nextReview: "Depot clinic 25 Sep",
+    lastContactAt: sampleAt(-10, 10),
+    lastContactPlace: "clinic",
+    nextReview: { label: "Depot clinic", at: sampleAt(4), shows: "day" },
   },
   {
     id: "CL-15",
@@ -708,8 +817,9 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 1 assertive outreach",
     category: "high",
     keyClinician: "Dr S. Chen",
-    lastContact: "19 Sep 14:00 (clinic)",
-    nextReview: "MDT review 26 Sep",
+    lastContactAt: sampleAt(-2, 14),
+    lastContactPlace: "clinic",
+    nextReview: { label: "MDT review", at: sampleAt(5), shows: "day" },
   },
   {
     id: "CL-16",
@@ -721,8 +831,9 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 2 case management",
     category: "cto",
     keyClinician: "SW M. Davies",
-    lastContact: "18 Sep 15:00 (home)",
-    nextReview: "CTO review 18 Nov 2026",
+    lastContactAt: sampleAt(-3, 15),
+    lastContactPlace: "home",
+    nextReview: { label: "CTO review", at: sampleAt(58), shows: "day" },
   },
   {
     id: "CL-17",
@@ -734,8 +845,9 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 3 maintenance",
     category: "all",
     keyClinician: "OT E. Wilson",
-    lastContact: "10 Sep 11:00 (telehealth)",
-    nextReview: "Annual review Dec 2026",
+    lastContactAt: sampleAt(-11, 11),
+    lastContactPlace: "telehealth",
+    nextReview: { label: "Annual review", at: sampleAt(75), shows: "month" },
   },
   {
     id: "CL-18",
@@ -747,8 +859,9 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 1 assertive outreach",
     category: "cto",
     keyClinician: "RN T. Bradley",
-    lastContact: "20 Sep 09:00 (clinic)",
-    nextReview: "Tribunal review 02 Oct",
+    lastContactAt: sampleAt(-1, 9),
+    lastContactPlace: "clinic",
+    nextReview: { label: "Tribunal review", at: sampleAt(11), shows: "day" },
   },
 ];
 

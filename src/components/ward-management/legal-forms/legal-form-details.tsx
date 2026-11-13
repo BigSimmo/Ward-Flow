@@ -4,9 +4,10 @@ import { useState } from "react";
 import { useWardFormSave } from "../use-ward-form-save";
 import type { WardCommandDispatch } from "../ward-shared-client";
 import { useWardDraftAcceptance } from "../use-ward-draft-acceptance";
+import { useKeepLayoutDraft, useKeptLayoutDraft } from "../use-layout-draft";
 
 import { Button, DateField, Field, ListPicker, parseTypedDate, Segmented } from "@/components/wf";
-import type { Instant } from "@/components/ward-management/ward-clock";
+import { calendarDateOf, type Instant, perthIsoDay } from "@/components/ward-management/ward-clock";
 import type {
   LegalFormConsentState,
   LegalFormCopyState,
@@ -55,15 +56,23 @@ export type LegalFormDetailsSave = {
 
 const NOT_RECORDED = "Not recorded";
 
-/** The Perth calendar day of a recorded review date, as the ISO value the date box holds. */
+/** C19: an open details form's unsaved entries, kept across the phone and wide layouts. */
+type DetailsDraft = {
+  madeBy: string | null;
+  copyGiven: string;
+  endedBy: string | null;
+  consent: string;
+  review: string;
+  reviewUnread: boolean;
+};
+
+/**
+ * The Perth calendar day of a recorded review date, as the ISO value the date box holds. From the
+ * clock's own helpers, not a Canadian locale's date order, which no standard promises (time audit D12).
+ */
 function isoDay(instant: Instant | undefined, dayZero: Date): string {
   if (instant === undefined) return "";
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Australia/Perth",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(new Date(dayZero.getTime() + instant * 60_000));
+  return perthIsoDay(calendarDateOf(instant, dayZero));
 }
 
 /** DD/MM/YYYY for reading. */
@@ -85,15 +94,22 @@ export function LegalFormDetailsSection({
   onSave: (details: LegalFormDetailsSave, onAccepted: () => void) => ReturnType<WardCommandDispatch>;
 }) {
   const form = movement.legalForm;
-  const [editing, setEditing] = useState(false);
-  const [madeBy, setMadeBy] = useState<string | null>(form?.madeBy ?? null);
-  const [copyGiven, setCopyGiven] = useState<string>(form?.copyGiven ?? "not_recorded");
-  const [endedBy, setEndedBy] = useState<string | null>(form?.endedBy ?? null);
-  const [consent, setConsent] = useState<string>(form?.consent ?? "not_recorded");
-  const [review, setReview] = useState(isoDay(form?.reviewBy, dayZero));
+  // C19: the twin form in the other layout, open at the moment the screen crossed the phone width.
+  const draftKey = `legal-details:${movement.id}`;
+  const kept = useKeptLayoutDraft<DetailsDraft>(draftKey);
+  const [editing, setEditing] = useState(kept !== undefined);
+  const [madeBy, setMadeBy] = useState<string | null>(kept ? kept.madeBy : (form?.madeBy ?? null));
+  const [copyGiven, setCopyGiven] = useState<string>(kept?.copyGiven ?? form?.copyGiven ?? "not_recorded");
+  const [endedBy, setEndedBy] = useState<string | null>(kept ? kept.endedBy : (form?.endedBy ?? null));
+  const [consent, setConsent] = useState<string>(kept?.consent ?? form?.consent ?? "not_recorded");
+  const [review, setReview] = useState(kept?.review ?? isoDay(form?.reviewBy, dayZero));
   // Text in the date box that is not yet a real day. It never counts as blank, so a typo cannot clear
   // a recorded review date.
-  const [reviewUnread, setReviewUnread] = useState(false);
+  const [reviewUnread, setReviewUnread] = useState(kept?.reviewUnread ?? false);
+  useKeepLayoutDraft<DetailsDraft>(
+    draftKey,
+    editing ? { madeBy, copyGiven, endedBy, consent, review, reviewUnread } : undefined,
+  );
   const command = useWardFormSave(`legal-details:${movement.id}`);
   const acceptDraft = useWardDraftAcceptance(
     JSON.stringify([madeBy, copyGiven, endedBy, consent, review, reviewUnread]),

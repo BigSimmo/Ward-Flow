@@ -362,7 +362,7 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
                     </td>
                     <td>{referralPurposeLabel(destination.purpose)}</td>
                     <td>{eta === undefined ? "Not recorded" : formatInstantWithDay(eta, now)}</td>
-                    <td className={handover.listMono}>{formatElapsed(Math.max(0, now - referral.raisedAt))}</td>
+                    <td className={handover.listMono}>{formatElapsed(now - referral.raisedAt)}</td>
                     <td className={handover.alignEnd}>
                       <button
                         type="button"

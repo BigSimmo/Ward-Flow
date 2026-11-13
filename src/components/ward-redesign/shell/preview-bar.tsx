@@ -1069,13 +1069,12 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
         <WardDemoClockPopover
           className={styles.demoClock}
           testId="ward-bar-demo-clock"
-          title={`Board time ${liveClockFace} AWST${online ? "" : ". Offline"}`}
-          aria-label={`Board time ${liveClockFace} AWST${online ? "" : ". Offline"}`}
+          title={`Board time ${liveClockFace}${online ? "" : ". Offline"}`}
+          aria-label={`Board time ${liveClockFace}${online ? "" : ". Offline"}`}
         >
           <span className={styles.demoClockDot} data-offline={online ? undefined : "true"} aria-hidden="true" />
           <span className={styles.demoClockLabel}>Board time</span>
           <span className={styles.demoClockTime}>{liveClockFace}</span>
-          <span className={styles.demoClockTz}>AWST</span>
         </WardDemoClockPopover>
       </div>
 

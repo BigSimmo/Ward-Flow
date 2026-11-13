@@ -29,13 +29,18 @@ import { referralQueueOrder } from "@/components/ward-management/ward-referrals"
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
 import { NOW_ANCHOR, unitById } from "@/components/ward-management/ward-sites";
 
+import { WorkedExamplesOn } from "./helpers/ward-worked-examples-on";
+
 /** Role access plan v2 (D-80): the site bed manager reads Referrals and Discharges in its own name. */
 const SEED = seedWardFlowState();
 const bedManagerAt = (siteCode: string): WardAccess => ({ role: "bed_manager", scope: { kind: "site", siteCode } });
-const QUEUED_IDS = new Set(referralQueueOrder(SEED.referrals).map(({ id }) => id));
+// A16-14 (D-175 item 1): with the worked examples off, no queued referral names a ward, so no site
+// bed manager's lines hold one; the queued referral this reads is the worked example RF-RD06.
+const EXAMPLES_SEED = seedWardFlowState("standard", { workedExamples: true });
+const QUEUED_IDS = new Set(referralQueueOrder(EXAMPLES_SEED.referrals).map(({ id }) => id));
 // A site whose own lines include a referral still in the queue.
-const QUEUED_SITE = [...new Set(SEED.units.map((unit) => unit.siteCode))].find((siteCode) =>
-  scopeWardFlowState(SEED, bedManagerAt(siteCode), {
+const QUEUED_SITE = [...new Set(EXAMPLES_SEED.units.map((unit) => unit.siteCode))].find((siteCode) =>
+  scopeWardFlowState(EXAMPLES_SEED, bedManagerAt(siteCode), {
     now: NOW_ANCHOR,
     places: wardPlaceLookup(SEED.units),
   }).state.referrals.some(({ id }) => QUEUED_IDS.has(id)),
@@ -61,9 +66,10 @@ function LastOpening() {
   return <output data-testid="last-opening">{last ? `${last.actor.role}:${last.outcome}` : "none"}</output>;
 }
 
-function renderScoped(children: ReactNode) {
+function renderScoped(children: ReactNode, { workedExamples = false }: { workedExamples?: boolean } = {}) {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
+      {workedExamples ? <WorkedExamplesOn /> : null}
       <WardAccessScope>{children}</WardAccessScope>
       <LastOpening />
     </WardFlowProvider>,
@@ -95,7 +101,7 @@ describe("the site bed manager's Referrals board (D-80)", () => {
   it("opens a referral to read and offers no action control", async () => {
     expect(QUEUED_SITE).toBeDefined();
     deskAs(bedManagerAt(QUEUED_SITE));
-    renderScoped(<ReferralBoard />);
+    renderScoped(<ReferralBoard />, { workedExamples: true });
     const { id, detail } = await openFirstReferral();
 
     expect(within(detail).getByTestId("ward-referral-read-only")).toHaveTextContent(

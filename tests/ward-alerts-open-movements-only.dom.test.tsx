@@ -83,6 +83,10 @@ describe("the alerts screen scopes buildActionInbox to open movements only", () 
    * Clinical owner ruling, 14 Oct 2026: the fixture's waiting patient with no eligible bed (WF-308)
    * notifies the bed coordinator as an act-now row, so the figures are 11 and 10. WF-009 raises no
    * row: one of its wards failed only a prior decline, so the coordinator can still refer there.
+   * A16-13 (13 Nov 2026): each seeded pull now dates from its own ED stay, so three pulls that had
+   * lapsed by this offset now run past it, and the figures are 9 and 8.
+   * A9-13 (D-181 item 12): two ambulance referrals accepted at an ED (RF-008, RF-019) now join the
+   * accepted-with-no-bed-pulled rows, so the figures are 11 and 10.
    */
   it("counts and shows the alert while the movement is still open", () => {
     renderScreen();
@@ -93,9 +97,9 @@ describe("the alerts screen scopes buildActionInbox to open movements only", () 
 
     expect(
       actNowFigure(),
-      // Q111 (1 Nov 2026): the figure includes the fixture's one accepted referral with no bed pulled.
-      "WF-014's breach plus the fixture's other act-now items must read 12 while it is still open",
-    ).toBe(12);
+      // Q111 (1 Nov 2026), A9-13: the figure includes the fixture's three accepted referrals with no bed pulled.
+      "WF-014's breach plus the fixture's other act-now items must read 11 while it is still open",
+    ).toBe(11);
   });
 
   it("drops the alert, and excludes the movement from the count, once it closes", () => {
@@ -112,6 +116,6 @@ describe("the alerts screen scopes buildActionInbox to open movements only", () 
     expect(
       actNowFigure(),
       "the Act now figure did not drop by one once the breached movement closed, so it still counts WF-014",
-    ).toBe(11);
+    ).toBe(10);
   });
 });

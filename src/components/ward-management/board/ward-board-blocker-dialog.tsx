@@ -4,7 +4,7 @@
 // out of ward-board-work-band.tsx; WardBoard still owns the page state and the save path.
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
-import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
+import { holdUpReasonsFor, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import type { ActionToast } from "@/components/ward-management/ward-action-toast";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
@@ -22,6 +22,13 @@ import blocker from "./ward-board-blocker-dialog.module.css";
  * Confirm stays unavailable ("Choose a reason first") until then. Mount it per open, so no reason
  * carries over from the last one.
  */
+/**
+ * A16-06: the hold-up here goes on this person's own live release, which names somebody still in
+ * the bed (a released bed is refused), so only the reasons for an occupied bed are offered.
+ * The lists are signed (D-181 item 6, `BED_RELEASE_BLOCKER_BED_STATE`).
+ */
+const OCCUPIED_BED_REASONS = holdUpReasonsFor("occupied");
+
 export function WardBoardBlockerDialog({
   item,
   blockerDialogRef,
@@ -103,7 +110,7 @@ export function WardBoardBlockerDialog({
         {item.text ? <p className={blocker.subject}>{item.text}</p> : null}
         <fieldset className={blocker.options}>
           <legend className={blocker.legend}>What is holding up the discharge?</legend>
-          {BED_RELEASE_BLOCKERS.map((b) => (
+          {OCCUPIED_BED_REASONS.map((b) => (
             <Radio
               key={b}
               className={blocker.option}

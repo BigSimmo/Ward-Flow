@@ -7,11 +7,11 @@ import { PhoneListRow, Segmented, ShowMoreRow, StatusGlyph, cx } from "@/compone
 import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import { MINUTES_PER_DAY, dayOf } from "@/components/ward-management/ward-clock";
+import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { heldBedLabel, type LeaveBed, type Unit } from "@/components/ward-management/ward-model";
 import { BED_MAP_LABELS, type BedMap } from "./statistics-bed-map";
 import { PhoneBody, PhoneList, phoneBodyStyles as phone } from "./statistics-phone-parts";
-import { dateOf, isPastDate } from "./statistics-dates";
+import { dateOf, isDueWithinDays, isPastDate } from "./statistics-dates";
 import { PeopleNotListed } from "./statistics-small-numbers";
 import { BED_LEGEND, StayKey, bandIndexOf, bedColumns } from "./statistics-ward-compact-bed-map";
 import compact from "./statistics-ward-compact.module.css";
@@ -77,8 +77,7 @@ export function WardPhone({
       (admission) =>
         admission.state !== "pulled" &&
         admission.expectedDischargeAt !== null &&
-        admission.expectedDischargeAt >= now &&
-        dayOf(admission.expectedDischargeAt) < dayOf(now) + 7,
+        isDueWithinDays(admission.expectedDischargeAt, now, 7),
     )
     .sort((a, b) => (a.expectedDischargeAt ?? 0) - (b.expectedDischargeAt ?? 0));
   const heldUp = current.filter((admission) => admission.blockReason !== null).sort(byStay);

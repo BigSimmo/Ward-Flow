@@ -166,6 +166,16 @@ export function examinationOutcomeShort(outcome: ExaminationOutcome | string): s
   return EXAMINATION_OUTCOME_SHORT[outcome as ExaminationOutcome] ?? outcome.replace(/_/g, " ");
 }
 
+/**
+ * F-15 (A3-4): the in-sentence wording, "no order made", for the reasons and notices the engine
+ * writes when an examination closes a record or a pulled bed is released after one. The same words
+ * as the chip, lower-cased as `ed-screen-model.ts` already does, so no saved reason or notice
+ * carries the stored code. An unknown code reads as itself.
+ */
+export function examinationOutcomeInSentence(outcome: ExaminationOutcome | string): string {
+  return examinationOutcomeShort(outcome).toLowerCase();
+}
+
 /** The list wording, "No order made, does not proceed". An unknown code reads as itself. */
 export function examinationOutcomeLabel(outcome: ExaminationOutcome | string): string {
   return EXAMINATION_OUTCOME_LABEL[outcome as ExaminationOutcome] ?? outcome.replace(/_/g, " ");

@@ -7,10 +7,10 @@ import {
   type Admission,
 } from "@/components/ward-management/ward-admissions";
 import { observationSummary } from "@/components/ward-management/ward-observation";
-import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { lockedBedsFree, openBedsFree, numberedBedKind } from "@/components/ward-management/ward-bed-designation";
 import { OVERRIDE_REASONS, RELEASE_PULL_REASONS } from "@/components/ward-management/ward-change-reasons";
 import { heldUnitAuthorisationRefusal } from "@/components/ward-management/ward-held-legal-check";
+import { examinationOutcomeInSentence } from "@/components/ward-management/ward-legal-forms";
 import { pulledBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import {
@@ -232,24 +232,12 @@ export function reducePlacementEvent(
           `no Ready bed remains at ${unit.name} (allocatable ${unit.allocatable.value}, physically empty ${unit.empty.value})`,
         );
       }
-      /**
-       * A pull is refused against a bed that is not ready (owner ruling): "A pull cannot occur
-       * unless the bed is actually available and open, not pending (i.e. being cleaned)". The
-       * refusal lives here, not on a screen, so the transition itself cannot happen. `availableNow`
-       * is deliberately unchanged: the owner chose refusing the pull over dropping the ward's
-       * number.
-       *
-       * Only when preparation is the cause: a refusal must state the reason that actually applies,
-       * not hijack the no-free-bed case.
+      /*
+       * D-181 item 5 (Josh, 13 Nov 2026): a bed still being made ready may still be pulled. It is
+       * counted apart from Ready (`bedStates`, D-179 item 8) but stays inside `pullReady` above, so
+       * the pull is not refused for it. This replaces the 1 September 2026 refusal ("A pull cannot
+       * occur unless the bed is actually available and open, not pending").
        */
-      const pending = bedsPendingPreparation(unit.id, state.bedReleases);
-      if (pending > 0 && pullReady <= pending) {
-        return reject(
-          state,
-          event,
-          `every free bed at ${unit.name} is still being made ready (${pending} pending); a patient cannot be pulled to a bed that is not open`,
-        );
-      }
       /**
        * A pull for somebody needing one-to-one observation is refused when the ward has nobody left
        * to watch them (owner ruling 1). `eligibility()`'s `specialling` gate only asks whether the
@@ -677,7 +665,13 @@ export function reducePlacementEvent(
         closure: movement.closure ?? {
           at: event.now,
           outcome: "did_not_proceed",
-          reason: isRevokedExamHold || awaitingRelease ? "examination_revoked" : "bed_released",
+          // F-15 (A3-4): plain words, never the stored outcome code or a raw key.
+          reason:
+            isRevokedExamHold || awaitingRelease
+              ? examinationOutcome
+                ? `Pulled bed released after the examination (${examinationOutcomeInSentence(examinationOutcome)})`
+                : "Pulled bed released after the examination"
+              : "Pulled bed released",
         },
       };
       return replaceMovement(withoutHeldBed, movement.id, released);

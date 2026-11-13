@@ -112,6 +112,8 @@ export const ROUTE_COMPONENTS = [
   { route: "/", folder: "coordinator", react: "coordinator/coordinator-screen.tsx" },
   // WF-42: typed URL opens the Activity panel then settles on home.
   { route: "/activity", folder: "coordinator", react: null },
+  // F-77 (13 Nov 2026): what the demo is, synthetic data, not clinical decision support.
+  { route: "/about", folder: "about", react: "about/about-demo-screen.tsx" },
   { route: "/alerts", folder: "alerts", react: "alerts/alerts-screen.tsx" },
   { route: "/bed-meeting", folder: "bed-meeting", react: "bed-meeting/bed-meeting-tv.tsx" },
   { route: "/bed-meeting/agenda", folder: "bed-meeting", react: "bed-meeting/bed-meeting-agenda-screen.tsx" },

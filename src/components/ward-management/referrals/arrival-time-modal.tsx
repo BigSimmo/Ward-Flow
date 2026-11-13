@@ -26,6 +26,8 @@ import { useDirtyStateGuard } from "../use-dirty-state-guard";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { patientIdentityLine } from "@/components/ward-management/ward-patient-resolver";
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
+import { TYPED_TEXT_NOT_KEPT } from "@/components/ward-management/ward-flow-demo-storage-constants";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 /**
  * Late when an arrival plan exists, now is more than the late-arrival grace period past that
@@ -81,6 +83,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
   const { dispatch, configuration } = useWardFlowSelect("dispatch", "configuration");
   const identity = patientIdentityLine(usePatientOf()(movement));
   const now = useWardFlowClock();
+  const zone = useClockZoneLabel();
   const baseId = useId();
   // Feature 11: the route's role must be one that may set arrival details (`ward-role-permissions.ts`).
   const saveGate = useRoleGate()("SET_ARRIVAL_DETAILS");
@@ -95,9 +98,16 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
   // WT-06 (walk-through, 26 Oct 2026): the CAD number logged with the transport booking is offered
   // here rather than asked again. Live jobs only; a cancelled booking's number is not carried.
   const liveJob = movement.transport?.cancelledAt === undefined ? movement.transport : undefined;
-  const bookedCad = liveJob?.cadNumber?.trim() || undefined;
-  const cadFromBooking = movement.arrivalDetails?.trackingNumber === undefined && bookedCad !== undefined;
-  const [trackingNumber, setTrackingNumber] = useState(movement.arrivalDetails?.trackingNumber ?? bookedCad ?? "");
+  // F-66 (RC 5.4): after a reload the demo shows a typed number as "Typed text not kept on this
+  // device". That placeholder is not a number, so it is never offered here or saved back as one.
+  const knownNumber = (value: string | undefined) => {
+    const trimmed = value?.trim();
+    return trimmed && trimmed !== TYPED_TEXT_NOT_KEPT ? trimmed : undefined;
+  };
+  const bookedCad = knownNumber(liveJob?.cadNumber);
+  const recordedTracking = knownNumber(movement.arrivalDetails?.trackingNumber);
+  const cadFromBooking = recordedTracking === undefined && bookedCad !== undefined;
+  const [trackingNumber, setTrackingNumber] = useState(recordedTracking ?? bookedCad ?? "");
   // The ETA is the recorded one, else the booking's estimate, else blank. Nothing is guessed.
   const recordedEta = movement.arrivalDetails?.estimatedArrivalAt ?? liveJob?.estimatedAt;
   const etaFromBooking = movement.arrivalDetails === undefined && liveJob?.estimatedAt !== undefined;
@@ -253,7 +263,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
                 <CircleAlert size={18} className={styles.lateIcon} aria-hidden="true" />
                 <span>
                   Arrival is more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past the estimated ward time (
-                  {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} AWST). They have not been
+                  {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} {zone}). They have not been
                   marked arrived.
                 </span>
               </div>
@@ -310,7 +320,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
               <div className={styles.label}>
                 Estimated time of arrival (ETA):{" "}
                 <strong>
-                  {etaMinutes === undefined ? "Not set" : `${formatInstantWithDay(etaMinutes, now)} AWST`}
+                  {etaMinutes === undefined ? "Not set" : `${formatInstantWithDay(etaMinutes, now)} ${zone}`}
                 </strong>
                 {etaFromBooking && !etaText.trim() ? " (from the transport booking)" : null}
               </div>

@@ -44,6 +44,7 @@ import {
   type Instant,
 } from "@/components/ward-management/ward-clock";
 import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
@@ -83,6 +84,7 @@ import {
   type ReturnStatus,
   currentReturnMovement,
   DEPART_TIME_NOT_RECORDED,
+  outOfAreaEmptyLine,
 } from "./out-of-area-model";
 import { OutOfAreaPhone, type PhonePerson } from "./out-of-area-phone";
 import { returnEarlyFlagOf } from "./return-early";
@@ -197,6 +199,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     "returnEarlyFlags",
   );
   const now = useWardFlowClock();
+  const zone = useClockZoneLabel();
   const isPhone = useIsPhone();
   const repatriations: RepatriationRecord[] = liveRepatriations ?? [];
 
@@ -640,7 +643,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     }
     try {
       downloadCsv("ward-flow-synthetic-out-of-area.csv", lines, {
-        asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
+        asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone }),
         scope:
           "Out-of-area admissions; the complete current ledger, regardless of search, highlights or the selected tab",
       });
@@ -817,6 +820,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
               </Hero>
             }
             people={phonePeople}
+            emptyLine={outOfAreaEmptyLine(notBanded)}
             query={searchQuery}
             onQuery={setSearchQuery}
             anyHighlight={anyHighlight}
@@ -1061,7 +1065,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                 </div>
                 {entries.length === 0 ? (
                   <p className={styles.emptyNote} data-testid="ward-out-of-area-empty">
-                    Nobody on these records is in a bed far from home.
+                    {outOfAreaEmptyLine(notBanded)}
                   </p>
                 ) : (
                   <WardTable

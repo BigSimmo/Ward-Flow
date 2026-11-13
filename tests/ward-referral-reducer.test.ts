@@ -31,7 +31,8 @@ import { exactlyAtTheLimit, FIXTURE_HISTORY, oneCharacterTooLong } from "./helpe
 const NOW = NOW_ANCHOR;
 
 function seeded() {
-  return seedWardFlowState();
+  // A16-14: the legal-form worked examples (RF-RD06) are opt-in since 13 Nov 2026.
+  return seedWardFlowState("standard", { workedExamples: true });
 }
 
 function referral(state: WardFlowState, id: string): Referral {

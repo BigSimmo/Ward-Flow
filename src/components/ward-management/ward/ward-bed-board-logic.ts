@@ -17,13 +17,14 @@ export type BoardBed = Pick<BedItem, "bedNumber" | "status" | "designation" | "h
 
 /**
  * The Bed board's ready figure, one rule for the header and each pod (integration QA, 3 Nov 2026):
- * a Ready tile not held for a placed person. A bed still being made ready stays in Ready and is
- * noted beside it (owner ruling 2026-09-05, never subtracted). Read from the tiles, so a placement
- * lowers the figure as soon as the bed shows the person.
+ * a Ready tile not held for a placed person. A bed still being made ready is not Ready and is
+ * counted beside it (D-179 item 8, Josh 13 Nov 2026). Read from the tiles, so a placement lowers
+ * the figure as soon as the bed shows the person.
  */
 export function boardReadyCounts(beds: readonly BoardBed[]): { ready: number; beingMadeReady: number } {
-  const ready = beds.filter((bed) => bed.status === "ready" && bed.heldFor === undefined);
-  return { ready: ready.length, beingMadeReady: ready.filter((bed) => bed.preparing).length };
+  const free = beds.filter((bed) => bed.status === "ready" && bed.heldFor === undefined);
+  const beingMadeReady = free.filter((bed) => bed.preparing).length;
+  return { ready: free.length - beingMadeReady, beingMadeReady };
 }
 
 /** A free bed, not held for anyone, not still being made ready, and locked when the referral needs a secure bed on a mixed ward. */

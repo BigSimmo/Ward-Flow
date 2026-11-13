@@ -69,8 +69,8 @@ export function useCapacityModel() {
   // WF-FIG-017 (Josh, 7 Nov 2026): a bed held by name is held, not free, on every figure here.
   const reservations = useMemo(() => [...movements, ...referrals], [movements, referrals]);
   const gapRows = useMemo(
-    () => bedKindGaps(movements, units, now, admissions, referrals),
-    [movements, units, now, admissions, referrals],
+    () => bedKindGaps(movements, units, now, admissions, referrals, bedReleases),
+    [movements, units, now, admissions, referrals, bedReleases],
   );
   const gapTotals = useMemo(() => bedKindTotals(gapRows), [gapRows]);
   const tomorrowByKind = useMemo(

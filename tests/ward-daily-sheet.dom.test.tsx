@@ -38,6 +38,7 @@ import {
 import { MINUTES_PER_DAY, formatInstant, wallClockNow } from "@/components/ward-management/ward-clock";
 import { derivedBedReleases } from "@/components/ward-management/ward-discharge-dates";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { heldUpDueByTomorrow } from "@/components/ward-management/ward-held-up";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { wardSites } from "@/components/ward-management/ward-sites";
@@ -428,7 +429,8 @@ describe("dailySheetGroups — a partition of the board's rows, never a second d
       { ...base, key: "undated", expectedDays: null },
       { ...base, key: "plain" },
     ];
-    const groups = dailySheetGroups(people);
+    // D-191 item 5: who is held up by tomorrow arrives as stay keys from the shared rule.
+    const groups = dailySheetGroups(people, new Set(["held"]));
     expect(groups.heldUp.map((person) => person.key)).toEqual(["held"]);
     expect(groups.overdue.map((person) => person.key)).toEqual(["past"]);
     expect(groups.noDate.map((person) => person.key)).toEqual(["undated"]);
@@ -444,7 +446,7 @@ describe("dailySheetGroups — a partition of the board's rows, never a second d
       expectedDays: -4,
       blockReason: "Awaiting clean",
     };
-    const groups = dailySheetGroups([both]);
+    const groups = dailySheetGroups([both], new Set(["both"]));
     expect(groups.heldUp).toHaveLength(1);
     expect(groups.overdue).toHaveLength(1);
   });
@@ -453,7 +455,7 @@ describe("dailySheetGroups — a partition of the board's rows, never a second d
     // The board sorts soonest-expected-out first and the sheet must not reshuffle: two prints of
     // one picture have to be the same sheet.
     const people = ["a", "b", "c"].map((key) => ({ ...base, key, pastDate: true }));
-    expect(dailySheetGroups(people).overdue.map((person) => person.key)).toEqual(["a", "b", "c"]);
+    expect(dailySheetGroups(people, new Set()).overdue.map((person) => person.key)).toEqual(["a", "b", "c"]);
   });
 });
 
@@ -464,7 +466,15 @@ describe("every count on the sheet is POSSIBLE for this ward, not merely compute
       renderWardBoard(unitId);
       const inBeds = occupantsOf(unitId);
 
-      const expectedHeldUp = inBeds.filter((admission) => admission.blockReason !== null).length;
+      // D-191 item 5 (Josh, 13 Nov 2026): held up is due by tomorrow, by the shared rule over the
+      // releases these admissions give, so a blocker on a later discharge is not in the group.
+      const heldUpIds = new Set(
+        heldUpDueByTomorrow(derivedBedReleases(wardAdmissions, WARD_ADMISSIONS_ANCHOR), WARD_ADMISSIONS_ANCHOR).map(
+          (release) => release.admissionId,
+        ),
+      );
+      const expectedHeldUp = inBeds.filter((admission) => heldUpIds.has(admission.id)).length;
+      expect(expectedHeldUp).toBeLessThanOrEqual(inBeds.filter((admission) => admission.blockReason !== null).length);
       const expectedOverdue = inBeds.filter((admission) =>
         isPastExpectedDischarge(admission, WARD_ADMISSIONS_ANCHOR),
       ).length;

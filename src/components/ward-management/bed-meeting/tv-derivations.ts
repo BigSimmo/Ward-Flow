@@ -1,8 +1,9 @@
 import {
   dailySheetGroups,
   dailySheetPeople,
+  heldUpStayKeys,
   type DailySheetPerson,
-} from "@/components/ward-management/board/ward-daily-sheet";
+} from "@/components/ward-management/board/ward-daily-sheet-model";
 import {
   bedMeetingSheet,
   type BedMeetingCapacity,
@@ -44,7 +45,7 @@ import {
   movementBelongsToService,
   unitHealthService,
 } from "@/components/ward-management/ward-service-scope";
-import { allEmergencyDepartments, edById, edShortName } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, edById, edShortName, siteByCode } from "@/components/ward-management/ward-sites";
 import { waitlistStands } from "@/components/ward-management/ward-waitlist";
 import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
 import { deliveredAwaitingWard, movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
@@ -68,8 +69,11 @@ export type TvJourneyRow = {
   name: string;
   where: string;
   stage: string;
-  /** Since the journey opened, shown as "8h 00m waiting"; a transit time is in `stage`. */
-  waitMinutes: number;
+  /**
+   * Since the journey opened, shown as "8h 00m waiting"; a transit time is in `stage`. `null` for a
+   * stay waitlisted with no journey (C16): nothing records when it started, so no wait is shown.
+   */
+  waitMinutes: number | null;
 };
 
 type TvInputs = {
@@ -88,7 +92,7 @@ type TvInputs = {
 };
 
 function byWaitThenId(a: TvJourneyRow, b: TvJourneyRow): number {
-  return b.waitMinutes - a.waitMinutes || a.id.localeCompare(b.id);
+  return (b.waitMinutes ?? -1) - (a.waitMinutes ?? -1) || a.id.localeCompare(b.id);
 }
 
 /**
@@ -152,7 +156,7 @@ type WardTvGoingRow = BedMeetingDischargeRow & { person: DailySheetPerson | unde
 export type WardTvSheet = {
   unit: Unit;
   capacity: BedMeetingCapacity;
-  /** Ready beds still being made ready: counted in `capacity.ready`, never subtracted, always said. */
+  /** Beds still being made ready: not in `capacity.ready` (D-179 item 8), always said beside it. */
   pendingPreparation: number;
   bedCount: TvBedCountAge;
   /**
@@ -162,12 +166,16 @@ export type WardTvSheet = {
   incoming: { total: number; onTheWay: number };
   /** Asked of this ward and not yet answered by anyone. */
   askedCount: number;
-  /** Everyone heading for this ward: the ones waiting on its answer first, then the accepted, each longest first. */
+  /**
+   * Everyone heading for this ward: the ones waiting on its answer first, then the accepted, each longest first.
+   * Every stay counted in `incoming.total` has a row here (C16), so the panel never says nobody under a count.
+   */
   coming: { rows: TvJourneyRow[]; more: number };
   /** D-115: confirmed discharges only, as the ward board's "Going out today and tomorrow" counts them. */
   discharges: BedMeetingDischarges;
   going: WardTvGoingRow[];
   occupied: number;
+  /** D-191 item 5: the people held up by tomorrow, one for each stay the Ward page counts held up. */
   heldUp: DailySheetPerson[];
   overdue: DailySheetPerson[];
   noDate: number;
@@ -185,8 +193,15 @@ function comingIn(admissions: readonly Admission[], unitId: string): Admission[]
   );
 }
 
-export function wardTvSheet(input: TvInputs & { unit: Unit }): WardTvSheet {
-  const { unit, movements, bedReleases, admissions, leaveBeds, now, thresholds, nameOf, namedHolds } = input;
+export function wardTvSheet(
+  input: TvInputs & {
+    unit: Unit;
+    /** C16: the name for a stay with no open journey; without it the row says "Patient for this ward". */
+    nameOfStay?: (admissionId: string) => string;
+  },
+): WardTvSheet {
+  const { unit, movements, bedReleases, admissions, leaveBeds, now, thresholds, nameOf, namedHolds, nameOfStay } =
+    input;
   const sheet = bedMeetingSheet({
     units: [unit],
     movements,
@@ -207,13 +222,34 @@ export function wardTvSheet(input: TvInputs & { unit: Unit }): WardTvSheet {
     stage: stageText(movement, stage, now),
     waitMinutes: elapsedOpenMinutes(movement, now),
   });
-  const incoming = open
-    .filter((movement) => movement.acceptedUnitId === unit.id)
-    .map((movement) => row(movement, ED_STAGE_LABELS[movement.stage]))
-    .sort(byWaitThenId);
+  const acceptedHere = open.filter((movement) => movement.acceptedUnitId === unit.id);
   // D-115: the board's own list, so the two screens print one "Coming in".
   const arriving = comingIn(admissions, unit.id);
   const arrivingMovementIds = new Set(arriving.map((admission) => admission.movementId));
+  // C16 (design critique v2, Josh 13 Nov 2026): everyone counted in "Coming in" is listed in the
+  // panel. A stay with no open journey here (a waitlisted stay, a pull from a Community referral)
+  // was counted in the headline but missing from the list, which then read "Nobody ... accepted".
+  const listedAdmissionIds = new Set(acceptedHere.flatMap((movement) => movement.admissionId ?? []));
+  const stayRows = arriving
+    .filter(
+      (admission) =>
+        !listedAdmissionIds.has(admission.id) && !acceptedHere.some((movement) => movement.id === admission.movementId),
+    )
+    .map((admission): TvJourneyRow => ({
+      id: admission.id,
+      name: nameOfStay?.(admission.id) || "Patient for this ward",
+      where: "",
+      // The ward board's own words for these two states (`ward-board-flow-column.tsx`).
+      stage: admission.state === "pulled" ? ED_STAGE_LABELS.pulled : "Waiting, no bed given",
+      waitMinutes:
+        admission.state === "pulled" && admission.pulledAt !== null && Number.isFinite(admission.pulledAt)
+          ? Math.max(0, now - admission.pulledAt)
+          : null,
+    }));
+  const incoming = [
+    ...acceptedHere.map((movement) => row(movement, ED_STAGE_LABELS[movement.stage])),
+    ...stayRows,
+  ].sort(byWaitThenId);
   const onTheWay = open.filter(
     (movement) =>
       arrivingMovementIds.has(movement.id) &&
@@ -240,7 +276,8 @@ export function wardTvSheet(input: TvInputs & { unit: Unit }): WardTvSheet {
     .sort(byWaitThenId);
   const coming = [...asked, ...incoming];
   const people = dailySheetPeople(admissions, unit.id, now);
-  const groups = dailySheetGroups(people);
+  // D-191 item 5 (F-105): the held-up list is the stays held up by tomorrow, as the Ward page counts.
+  const groups = dailySheetGroups(people, heldUpStayKeys(bedReleases, now));
   return {
     unit,
     capacity: sheet.capacity,
@@ -368,6 +405,32 @@ export function tvServiceParam(service: HealthService | null): string {
   return service === null ? "all" : healthServiceAcronym(service).toLowerCase();
 }
 
+/** A site bed manager's bed meeting: that site's name, code, service and wards. */
+export type TvSiteScope = { siteCode: string; name: string; service: HealthService; units: Unit[] };
+
+/**
+ * A9-16 (Q12, Josh 13 Nov 2026): a site bed manager's bed meeting TV shows only that site, and its
+ * title says so. That desk's workspace holds only its own site's people (D-80), so the network's
+ * ready beds set against them read as spare beds that are not there. The wards are the site's own,
+ * as on that desk's Capacity (`capacity-model.ts`). `undefined` for every other desk, and for a
+ * site this network does not have.
+ */
+export function tvSiteScope(
+  access: { role: string; scope: { kind: string; siteCode?: string } },
+  units: readonly Unit[],
+): TvSiteScope | undefined {
+  if (access.role !== "bed_manager" || access.scope.kind !== "site" || access.scope.siteCode === undefined)
+    return undefined;
+  const site = siteByCode(access.scope.siteCode);
+  if (!site) return undefined;
+  return {
+    siteCode: site.code,
+    name: site.name,
+    service: site.service,
+    units: units.filter((unit) => unit.siteCode === site.code),
+  };
+}
+
 /** One health service's line on the state screen, every figure from that service's own bed meeting sheet. */
 type TvServiceRow = {
   service: HealthService;
@@ -400,7 +463,7 @@ export type MeetingTvExtras = {
    * says so, because that meeting decides what its own service can take.
    */
   gaps: BedKindGap[];
-  /** Ready beds in scope still being made ready: counted in the ready figure, never subtracted, always said. */
+  /** Beds in scope still being made ready: not in the ready figure (D-179 item 8), always said beside it. */
   pendingPreparation: number;
   bedCount: TvBedCountAge;
 };
@@ -466,7 +529,7 @@ export function meetingTvExtras(input: MeetingInputs): MeetingTvExtras {
   return {
     services: service === null ? tvHealthServices(units).map((each) => serviceRow(input, each)) : [],
     wards: service === null ? [] : serviceWardRows(input, scopedUnits),
-    gaps: bedKindGaps(scopedMovements, scopedUnits, now, input.admissions, input.namedHolds ?? []),
+    gaps: bedKindGaps(scopedMovements, scopedUnits, now, input.admissions, input.namedHolds ?? [], bedReleases),
     pendingPreparation: scopedUnits.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, bedReleases), 0),
     bedCount: bedCountAge(scopedUnits, now),
   };

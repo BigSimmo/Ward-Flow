@@ -154,12 +154,12 @@ describe.each([
     );
     render(drawer(bed(), onUpdateBlocker));
     openEditor();
-    chooseChip("Held up by", "Awaiting clean");
+    chooseChip("Held up by", "Awaiting pharmacy");
     fireEvent.click(screen.getByRole("button", { name: "Save hold-up" }));
     await act(async () => {});
-    expect(onUpdateBlocker).toHaveBeenCalledWith("adm-blocker", "Awaiting clean");
+    expect(onUpdateBlocker).toHaveBeenCalledWith("adm-blocker", "Awaiting pharmacy");
     expect(screen.getByRole("button", { name: "Save hold-up" })).toBeInTheDocument();
-    expect(chosenChip("Held up by")).toBe("Awaiting clean");
+    expect(chosenChip("Held up by")).toBe("Awaiting pharmacy");
     expect(screen.getByTestId("ward-blocker-error")).not.toBeEmptyDOMElement();
   });
 });
@@ -212,7 +212,8 @@ async function recordBlockerOnScreen(control: ReturnType<typeof commands>) {
   const drawerEl = await screen.findByTestId("bed-telemetry-drawer");
   fireEvent.click(within(drawerEl).getByRole("tab", { name: "Leaving" }));
   fireEvent.click(getBedStep("Record hold-up", drawerEl));
-  chooseChip("Held up by", "Awaiting clean", drawerEl);
+  // A16-06: "Awaiting clean" is an empty-bed reason (draft split), so it is not offered here.
+  chooseChip("Held up by", "Awaiting pharmacy", drawerEl);
   fireEvent.click(within(drawerEl).getByRole("button", { name: "Save hold-up" }));
   expect(control.record).toHaveBeenCalledTimes(1);
   const sent = control.record.mock.calls[0]![0];
@@ -225,7 +226,7 @@ async function recordBlockerOnScreen(control: ReturnType<typeof commands>) {
   });
   expect((outcome as WardCommandOutcome | undefined)?.status).toBe("accepted");
   expect(within(drawerEl).queryByRole("button", { name: "Save hold-up" })).toBeNull();
-  expect(drawerEl).toHaveTextContent(/Today:\s*Awaiting clean/i);
+  expect(drawerEl).toHaveTextContent(/Today:\s*Awaiting pharmacy/i);
   return sent;
 }
 

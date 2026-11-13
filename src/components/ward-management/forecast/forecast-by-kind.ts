@@ -9,7 +9,11 @@
 // bed type by the ward's cohort and, on an adult ward, by the admission's recorded `bedKind`. A
 // planned admission is sorted by its booked age band and, for an adult, by its legal status:
 // detained under the Act needs a locked bed, anything else an open one. Nothing is predicted.
-import { bedKindGaps, type BedKindId } from "@/components/ward-management/capacity/capacity-derivations";
+import {
+  bedKindGaps,
+  combinedKindGap,
+  type BedKindId,
+} from "@/components/ward-management/capacity/capacity-derivations";
 import {
   patientsHoldingANamedBed,
   plannedAdmissionsStillNeedingABed,
@@ -29,6 +33,12 @@ export type KindForecast = {
   /** The mismatch table's two halves of `now`. */
   waiting: number;
   bedsThatFit: number;
+  /**
+   * Beds of this type still being made ready now (D-179 item 8): left out of `now` and
+   * `bedsThatFit`, but each will be ready within the window, so `low` counts it, as the network
+   * forecast's `beingMadeReady` does (`bedsForecast`). Older caller-built figures may omit this.
+   */
+  beingMadeReady?: number;
   low: number;
   likely: number;
   high: number;
@@ -115,7 +125,10 @@ export function forecastByKind(
   referrals: Parameters<typeof bedKindGaps>[4] = [],
 ): ForecastByKind {
   const until = now + days * MINUTES_PER_DAY;
-  const gaps = bedKindGaps([...movements], [...units], now, admissions, referrals);
+  const gaps = bedKindGaps([...movements], [...units], now, admissions, referrals, releases);
+  // The same table before beds still being made ready come off (D-179 item 8): the difference per
+  // type is that type's being-made-ready beds, so the ranges below add up to `bedsForecast`'s.
+  const gapsWithPreparing = bedKindGaps([...movements], [...units], now, admissions, referrals);
   const openUnits = new Map(units.filter((unit) => !unit.isClosed).map((unit) => [unit.id, unit]));
   const admissionById = new Map(admissions.map((admission) => [admission.id, admission]));
   const expectedAt = (release: BedRelease) => forecastReleaseAt(release, admissionById.get(release.admissionId));
@@ -161,13 +174,15 @@ export function forecastByKind(
     const plannedAdmissionsOfKind = planned.filter((booking) => bedKindOfPlannedAdmission(booking) === id).length;
     const heldUp = due.length - clear.length;
     const overdue = clear.length - onTime.length;
-    const low = gap.gap + confirmed - plannedAdmissionsOfKind;
+    const beingMadeReady = gapsWithPreparing.find((row) => row.id === id)!.bedsThatFit - gap.bedsThatFit;
+    const low = gap.gap + beingMadeReady + confirmed - plannedAdmissionsOfKind;
     const likely = low + expected;
     return {
       id,
       now: gap.gap,
       waiting: gap.waiting,
       bedsThatFit: gap.bedsThatFit,
+      beingMadeReady,
       low,
       likely,
       high: likely + heldUp + overdue + plannedNotFlagged,
@@ -192,6 +207,7 @@ export function forecastByKind(
       now: 0,
       waiting: 0,
       bedsThatFit: 0,
+      beingMadeReady: 0,
       low: 0,
       likely: 0,
       high: 0,
@@ -204,6 +220,11 @@ export function forecastByKind(
       plannedAdmissions: 0,
     },
   );
+  // D-191 item 6 (Josh, 13 Nov 2026): today's gap adds each kind's shortfall and never nets off a
+  // spare bed of another kind, the same figure as `bedKindTotals`. low, likely and high still sum
+  // the kinds so they match the network forecast (`bedsForecast`) that Capacity's Tomorrow reads;
+  // moving both to the same rule is a forecast change left for Josh (fix package W report).
+  total.now = combinedKindGap(kinds.map((kind) => kind.now));
   return { hours: days * 24, until, kinds, total };
 }
 

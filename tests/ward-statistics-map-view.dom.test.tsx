@@ -12,7 +12,7 @@ vi.mock("next/link", () => ({
 }));
 
 import { lensValue, siteFigures, StatisticsMapView } from "@/components/ward-management/statistics/statistics-map-view";
-import { unitCapacity } from "@/components/ward-management/ward-derivations";
+import { networkNamedHolds, totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -47,6 +47,7 @@ function figuresAtAnchor() {
       bedReleases: state.bedReleases,
       leaveBeds: state.leaveBeds,
       movements: state.movements,
+      referrals: state.referrals,
       now: NOW_ANCHOR,
     }),
   };
@@ -63,7 +64,14 @@ describe("Summary, Map view", () => {
 
   it("site figures add up to the network's own ready beds and ED waits", () => {
     const { state, sites } = figuresAtAnchor();
-    const ready = state.units.reduce((sum, unit) => sum + unitCapacity(unit, state.bedReleases).available, 0);
+    // D-179 item 8 and D-181 item 5: Ready leaves out a bed still being made ready and a bed named for
+    // an incoming patient, so the map adds up to the one Ready figure every screen prints.
+    const ready = totalReadyBedsNow(
+      state.units,
+      state.admissions,
+      state.bedReleases,
+      networkNamedHolds(state.movements, state.referrals),
+    );
     expect(sites.reduce((sum, site) => sum + lensValue(site, "beds"), 0)).toBe(ready);
     const waiting = allEmergencyDepartments().reduce(
       (sum, ed) => sum + edWaitFigures(state.movements, ed.id, NOW_ANCHOR).onTheList,

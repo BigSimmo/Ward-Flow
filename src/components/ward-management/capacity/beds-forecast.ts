@@ -45,6 +45,11 @@ type BedsForecastHorizon = {
   until: Instant;
   /** Beds ready now across the network, using the table/map partition of observations and reservations. */
   readyNow: number;
+  /**
+   * Beds being made ready now (`bedStates().beingMadeReady`). Not Ready (D-179 item 8), so not in
+   * `readyNow`, but each will be ready within the window, so the ranges below count it.
+   */
+  beingMadeReady: number;
   /** Confirmed discharges due in the window, from today onwards, that nothing is holding up. */
   confirmed: number;
   /** Expected (not yet confirmed) discharges due in the window, from today onwards, that nothing is holding up. */
@@ -72,9 +77,9 @@ type BedsForecastHorizon = {
   plannedAdmissions: number;
   /** `waitingForBed + plannedAdmissions`: beds the window must find for people known now. */
   bedsNeeded: number;
-  /** `readyNow + confirmed - bedsNeeded`: only discharges the ward has confirmed. */
+  /** `readyNow + beingMadeReady + confirmed - bedsNeeded`: only discharges the ward has confirmed. */
   low: number;
-  /** `readyNow + confirmed + expected - bedsNeeded`: the headline figure. */
+  /** `readyNow + beingMadeReady + confirmed + expected - bedsNeeded`: the headline figure. */
   likely: number;
   /** `likely + heldUp + overdue + plannedNotFlagged`: everything on record goes ahead. */
   high: number;
@@ -111,7 +116,10 @@ export function bedsForecast(
   // WF-FIG-017 (Josh, 7 Nov 2026): a bed held by name is not free, so the journeys and referrals
   // go in as the reservations `bedStates` takes off Ready.
   const reservations = [...movements, ...referrals];
-  const readyNow = openUnits.reduce((sum, unit) => sum + bedStates(unit, admissions, [], [], reservations).ready, 0);
+  // D-179 item 8: Ready leaves out a bed still being made ready, as on Home; it is counted apart.
+  const states = openUnits.map((unit) => bedStates(unit, admissions, releases, [], reservations));
+  const readyNow = states.reduce((sum, each) => sum + each.ready, 0);
+  const beingMadeReady = states.reduce((sum, each) => sum + each.beingMadeReady, 0);
   const openUnitIds = new Set(openUnits.map((unit) => unit.id));
   // A booked person who already holds a named bed is out of Ready once; never count the booking too.
   const namedBedHolders = patientsHoldingANamedBed(openUnits, admissions, reservations);
@@ -151,13 +159,14 @@ export function bedsForecast(
       namedBedHolders,
     ).length;
     const bedsNeeded = waitingForBed + planned;
-    const low = readyNow + confirmed - bedsNeeded;
+    const low = readyNow + beingMadeReady + confirmed - bedsNeeded;
     const likely = low + expected;
     const high = likely + heldUp + overdue + plannedNotFlagged;
     return {
       hours,
       until,
       readyNow,
+      beingMadeReady,
       confirmed,
       expected,
       heldUp,

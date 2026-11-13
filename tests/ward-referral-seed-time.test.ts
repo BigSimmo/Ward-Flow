@@ -21,27 +21,27 @@ describe("explicit seed intake time provenance", () => {
     expect(isSyntheticReferralTimelineBase(new Date(base).toISOString())).toBe(true);
   });
 
-  it("projects a marked seed target onto the current demonstration day and prints AWST", () => {
-    expect(formatReferralIntakeTime(seededTime(12 * 60 + 42), target(), dayZero)).toBe("24 Oct 2026, 12:42 AWST");
+  it("projects a marked seed target onto the current demonstration day and prints the demo clock words", () => {
+    expect(formatReferralIntakeTime(seededTime(12 * 60 + 42), target(), dayZero)).toBe("24 Oct 2026, 12:42 demo time");
     // The UTC string's clock face is 04:42, but the represented Perth time is 12:42.
     expect(seededTime(12 * 60 + 42)).toContain("T04:42:00.000Z");
   });
 
   it("preserves tomorrow and negative day offsets rather than truncating to a clock face", () => {
-    expect(formatReferralIntakeTime(seededTime(1440 + 65), target(), dayZero)).toBe("25 Oct 2026, 01:05 AWST");
-    expect(formatReferralIntakeTime(seededTime(-30), target(), dayZero)).toBe("23 Oct 2026, 23:30 AWST");
-    expect(formatReferralIntakeTime(seededTime(0), target(), dayZero)).toBe("24 Oct 2026, 00:00 AWST");
+    expect(formatReferralIntakeTime(seededTime(1440 + 65), target(), dayZero)).toBe("25 Oct 2026, 01:05 demo time");
+    expect(formatReferralIntakeTime(seededTime(-30), target(), dayZero)).toBe("23 Oct 2026, 23:30 demo time");
+    expect(formatReferralIntakeTime(seededTime(0), target(), dayZero)).toBe("24 Oct 2026, 00:00 demo time");
   });
 
   it("offers a compact clock while retaining another-day wording", () => {
-    expect(formatReferralIntakeTime(seededTime(742), target(), dayZero, 642)).toBe("12:22 AWST");
-    expect(formatReferralIntakeTime(seededTime(1440 + 65), target(), dayZero, 642)).toBe("01:05 tomorrow AWST");
-    expect(formatReferralIntakeTime(seededTime(-30), target(), dayZero, 642)).toBe("23:30 yesterday AWST");
+    expect(formatReferralIntakeTime(seededTime(742), target(), dayZero, 642)).toBe("12:22 demo time");
+    expect(formatReferralIntakeTime(seededTime(1440 + 65), target(), dayZero, 642)).toBe("01:05 tomorrow demo time");
+    expect(formatReferralIntakeTime(seededTime(-30), target(), dayZero, 642)).toBe("23:30 yesterday demo time");
   });
 
   it("keeps unmarked user dates absolute and accepts minute precision from the drawer", () => {
-    expect(formatReferralIntakeTime("2026-08-15T12:42+08:00", {}, dayZero)).toBe("15 Aug 2026, 12:42 AWST");
-    expect(formatReferralIntakeTime("2026-10-25T04:42:00.000Z", {}, dayZero)).toBe("25 Oct 2026, 12:42 AWST");
+    expect(formatReferralIntakeTime("2026-08-15T12:42+08:00", {}, dayZero)).toBe("15 Aug 2026, 12:42 demo time");
+    expect(formatReferralIntakeTime("2026-10-25T04:42:00.000Z", {}, dayZero)).toBe("25 Oct 2026, 12:42 demo time");
   });
 
   it("rejects malformed provenance and impossible dates rather than guessing a date or time zone", () => {
@@ -88,7 +88,7 @@ describe("explicit seed intake time provenance", () => {
         restored.referrals[0].intake.arrival,
         dayZero,
       ),
-    ).toBe("25 Oct 2026, 01:05 AWST");
+    ).toBe("25 Oct 2026, 01:05 demo time");
     expect(
       referralIntakeError({
         ...intake,

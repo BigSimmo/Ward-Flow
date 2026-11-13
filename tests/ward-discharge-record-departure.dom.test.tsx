@@ -56,6 +56,9 @@ describe("Record departure from the release sheet", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(firstRecordRow(screen.getByTestId("ward-discharge-group-confirmed"))!);
+    fireEvent.change(screen.getByTestId("ward-discharge-departure-destination"), {
+      target: { value: "discharged-to-the-community" },
+    });
     fireEvent.click(screen.getByTestId("ward-discharge-record-departure"));
     // With no ward desk selected the sheet is read as the coordinator, so the departure is its own.
     expect(screen.getByTestId("last-step-role").textContent).toBe("coordinator");
@@ -88,7 +91,9 @@ describe("Record departure from the release sheet", () => {
     );
     fireEvent.keyDown(peek, { key: "Escape" });
     const destination = screen.getByTestId("ward-discharge-departure-destination");
-    expect(destination).toHaveValue("discharged-to-the-community");
+    // F-45 (Josh, 13 Nov 2026): no destination starts selected, and the record waits for one.
+    expect(destination).toHaveValue("");
+    expect(screen.getByTestId("ward-discharge-record-departure")).toBeDisabled();
     fireEvent.change(destination, { target: { value: "transferred-to-a-general-hospital" } });
     fireEvent.click(screen.getByTestId("ward-discharge-record-departure"));
 
@@ -109,6 +114,9 @@ describe("Record departure from the release sheet", () => {
     const row = firstRecordRow(screen.getByTestId("ward-discharge-group-confirmed"));
     const [before] = probe();
     fireEvent.click(row!);
+    fireEvent.change(screen.getByTestId("ward-discharge-departure-destination"), {
+      target: { value: "discharged-to-the-community" },
+    });
     fireEvent.click(screen.getByTestId("ward-discharge-record-departure"));
     expect(probe()).toEqual([before - 1, 0]);
 
@@ -175,7 +183,11 @@ describe("Record discharge asks about transport while it is still to come (item 
     const row = document.querySelector(`[data-release-id="${releaseId}"]`) as HTMLElement;
     fireEvent.click(row);
     const record = screen.getByTestId("ward-discharge-record-departure");
-    // Nothing is chosen for them: the departure waits for an answer.
+    // Nothing is chosen for them: no destination (F-45), and then the transport answer.
+    expect(record).toBeDisabled();
+    fireEvent.change(screen.getByTestId("ward-discharge-departure-destination"), {
+      target: { value: "discharged-to-the-community" },
+    });
     expect(record).toBeDisabled();
     const transport = screen.getByTestId("ward-discharge-departure-transport");
     fireEvent.click(within(transport).getByRole("radio", { name: "Still waiting" }));

@@ -77,6 +77,7 @@ import {
   capacityRowsSpoken,
   compactPipPlace,
   RailOccupancyRing,
+  RailReadyLine,
 } from "../shell-next/next-rail-parts";
 import { useBarScrolled, useBandScrolled } from "./ward-bar-scroll";
 import {
@@ -179,10 +180,14 @@ function servicePercent(service: ExecutiveService) {
 
 /**
  * The capacity card's figures for this desk, from the public report only (the new frame, Josh,
- * 30-31 Oct 2026): occupancy rows first, as the other desks' rail card shows them (Metro and the
- * fullest service statewide; a service desk reads its own service), then the beds ready now.
+ * 30-31 Oct 2026): occupancy rows first, as the other desks' rail card shows them, then the beds
+ * ready now. A9-26 (F-27, 13 Nov 2026): statewide, the rows are the three fullest health services,
+ * fullest first, with Metro as a whole on the foot line (`metroFoot`), as `deskCapacityRows` builds
+ * them for every other network desk (H2, Josh, 3 Nov 2026). It used to show Metro and the fullest
+ * service only, so "2 at or over 85% full" counted the Metro total as a place and left out a
+ * service at 85% that the page beside it listed. A service desk still reads its own service.
  */
-function executiveCapacity(report: ExecutiveReportingFoundation) {
+export function executiveCapacity(report: ExecutiveReportingFoundation) {
   const scope = report.network.scope;
   const services = report.services
     .filter((service) => scope.kind === "statewide" || service.service === scope.service)
@@ -195,28 +200,33 @@ function executiveCapacity(report: ExecutiveReportingFoundation) {
   const metroBeds = metro.reduce((sum, service) => sum + service.beds.total, 0);
   const metroInUse = metro.reduce((sum, service) => sum + service.beds.inUse, 0);
   const metroPercent = metroBeds > 0 ? Math.round((metroInUse / metroBeds) * 1000) / 10 : null;
+  const ranked: CapacityRow[] = services.slice(0, 3).map((service, index) => ({
+    key: service.service,
+    name: service.service,
+    counts: index === 0 ? `${service.service}, the fullest health service` : `${service.service}'s wards`,
+    percent: servicePercent(service),
+  }));
+  const metroRow: CapacityRow = {
+    key: "metro",
+    name: "Metro",
+    counts: "the metropolitan health services' wards",
+    percent: metroPercent,
+  };
   const rows: CapacityRow[] =
     scope.kind === "service"
       ? [{ key: "own", name: scope.service, counts: `${scope.service}'s beds`, percent: metroPercent }]
-      : [
-          { key: "metro", name: "Metro", counts: "the metropolitan health services' wards", percent: metroPercent },
-          ...(hottest
-            ? [
-                {
-                  key: hottest.service,
-                  name: hottest.service,
-                  counts: `${hottest.service}, the fullest health service`,
-                  percent: servicePercent(hottest),
-                },
-              ]
-            : []),
-        ];
+      : ranked.length > 0
+        ? ranked
+        : [metroRow];
+  // The foot line's Metro figure, only when Metro is not already a row.
+  const metroFoot = rows.some((row) => row.key === "metro" || row.key === "own") ? null : metroPercent;
   const readyBeds = report.network.beds.ready;
   return {
     services,
     hottest,
     rows,
     overLine: overLineLabel(rows),
+    metroFoot,
     readyBeds,
     readyLabel: `${readyBeds} ${readyBeds === 1 ? "bed" : "beds"} ready now`,
     note: scope.kind === "service" ? `for ${scope.service}` : "across the whole network",
@@ -252,7 +262,7 @@ function ExecutiveMenuCapacityCard({
   canOpen: (href: string) => boolean;
   onGo: () => void;
 }) {
-  const { rows, overLine, readyBeds, note } = executiveCapacity(report);
+  const { rows, overLine, metroFoot, readyBeds, note } = executiveCapacity(report);
   const body = (
     <>
       <span className={rail.alertsHead}>
@@ -266,6 +276,11 @@ function ExecutiveMenuCapacityCard({
         <CapacityRowLine key={row.key} row={row} />
       ))}
       <span className={rail.capacityReady}>
+        {metroFoot === null ? null : (
+          <>
+            Metro <b>{formatOccupancyPercent(metroFoot)}</b>,{" "}
+          </>
+        )}
         <b>{readyBeds}</b> {readyBeds === 1 ? "bed" : "beds"} ready now, {note}
       </span>
     </>
@@ -301,14 +316,15 @@ function ExecutiveBedAlerts({ report }: { report: ExecutiveReportingFoundation }
       document.removeEventListener("pointerdown", outside);
     };
   }, [open]);
-  const { services, hottest, rows, overLine, readyLabel, readyBeds, note } = executiveCapacity(report);
+  const { services, hottest, rows, overLine, metroFoot, readyLabel, readyBeds, note } = executiveCapacity(report);
   if (!hottest) return null;
   const firstRow = rows[0];
   // Bed alerts stay about capacity (Josh, 30 Oct 2026), as on the other desks' rail: occupancy rows
   // with their meters and the 85% tick, the count over the line in words, then the ready beds.
   // R1-N01 (axe label-content-name-mismatch): the name reads the card's visible words in order
   // first, then which places are over the line, as the other desks' card does (CB-3).
-  const spoken = `Bed alerts: ${overLine.label}. ${capacityRowsSpoken(rows)}, ${readyLabel}, ${note}.${capacityRowsOver(rows)}`;
+  const metroSpoken = metroFoot === null ? "" : `, Metro ${formatOccupancyPercent(metroFoot)}`;
+  const spoken = `Bed alerts: ${overLine.label}. ${capacityRowsSpoken(rows)}${metroSpoken}, ${readyLabel}, ${note}.${capacityRowsOver(rows)}`;
   return (
     <div className={rail.alertsContainer} ref={container}>
       <button
@@ -353,7 +369,7 @@ function ExecutiveBedAlerts({ report }: { report: ExecutiveReportingFoundation }
           ))}
         </span>{" "}
         <span className={rail.capacityReady} aria-hidden="true">
-          <b>{readyBeds}</b> {readyBeds === 1 ? "bed" : "beds"} ready now
+          <RailReadyLine metro={metroFoot} ready={readyBeds} />
         </span>
       </button>
       {open && (
@@ -739,11 +755,11 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
               <WardDemoClockPopover
                 className={bar.demoClock}
                 testId="ward-bar-demo-clock"
-                title={`Board time ${clock} AWST${online ? "" : ". Offline"}`}
+                title={`Board time ${clock}${online ? "" : ". Offline"}`}
               >
                 <span className={bar.demoClockDot} data-offline={online ? undefined : "true"} aria-hidden="true" />
                 <span className={bar.demoClockLabel}>Board time</span>{" "}
-                <span className={bar.demoClockTime}>{clock}</span> <span className={bar.demoClockTz}>AWST</span>
+                <span className={bar.demoClockTime}>{clock}</span>
               </WardDemoClockPopover>
               {/* The shell's synthetic-data marker for screen readers (visually hidden, so no pill shows). */}
               <span

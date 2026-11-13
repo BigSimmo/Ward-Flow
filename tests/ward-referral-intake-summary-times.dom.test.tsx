@@ -57,10 +57,10 @@ describe("referral intake summary times", () => {
       </WardFlowProvider>,
     );
     expect(screen.getByText("Medical clearance").parentElement).toHaveTextContent(
-      /^Medical clearancePending · expected 14:30 AWST$/,
+      /^Medical clearancePending · expected 14:30 demo time$/,
     );
     expect(screen.getByText("Proposed arrival").parentElement).toHaveTextContent(
-      /^Proposed arrivalAmbulance · 09:00 tomorrow AWST$/,
+      /^Proposed arrivalAmbulance · 09:00 tomorrow demo time$/,
     );
     expect(document.body).not.toHaveTextContent("2026-10");
   });
@@ -112,7 +112,7 @@ describe("referral drawer submitted details", () => {
     } as unknown as WardReferralDrawerState;
     render(<ReferralConfirmation s={s} />);
     const arrival = screen.getByText("Proposed arrival").parentElement!;
-    expect(arrival).toHaveTextContent(/09:00 tomorrow AWST$/);
+    expect(arrival).toHaveTextContent(/09:00 tomorrow demo time$/);
     expect(arrival).not.toHaveTextContent("2026-10-25");
   });
 });

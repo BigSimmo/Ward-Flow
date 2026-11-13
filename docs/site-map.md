@@ -10,6 +10,7 @@ See also [`ward-flow/SCREEN-MAP.md`](ward-flow/SCREEN-MAP.md), which pairs each 
 - `/sign-in` - Route discovered from app directory Source: `src/app/sign-in/page.tsx`.
 - `/ward-flow` - Route discovered from app directory Source: `src/app/ward-flow/page.tsx`.
 - `/ward-flow-sign-in` - Route discovered from app directory Source: `src/app/ward-flow-sign-in/page.tsx`.
+- `/ward-flow/about` - Route discovered from app directory Source: `src/app/ward-flow/about/page.tsx`.
 - `/ward-flow/activity` - Route discovered from app directory Source: `src/app/ward-flow/activity/page.tsx`.
 - `/ward-flow/alerts` - Route discovered from app directory Source: `src/app/ward-flow/alerts/page.tsx`.
 - `/ward-flow/bed-meeting` - Route discovered from app directory Source: `src/app/ward-flow/bed-meeting/page.tsx`.

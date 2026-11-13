@@ -7,6 +7,7 @@
 import { rankByNameStart } from "@/components/ward-management/referrals/referral-patient-rank";
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import { calendarDateOf, perthCalendarDay } from "@/components/ward-management/ward-clock";
+import { MONTH_SHORT } from "@/components/ward-management/ward-month-names";
 
 import {
   FACTOR_NAME,
@@ -49,7 +50,7 @@ export type WorldPersonInput = {
 
 const NOT_RECORDED = "Not recorded";
 const SEX_WORD: Readonly<Record<string, string>> = { M: "Male", F: "Female" };
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
+const MONTHS = MONTH_SHORT;
 const LEGAL_NAME: Readonly<Record<string, string>> = Object.fromEntries(LEGAL);
 const REVIEW_NAME: Readonly<Record<string, string>> = Object.fromEntries(REVIEW);
 

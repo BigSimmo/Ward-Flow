@@ -219,13 +219,15 @@ const serverLook = () => null;
  * so the person's own actions there are not reported back as news. Alerts only reads it.
  */
 export function useForecastChange(model: ForecastModel, now: Instant, { remember }: { remember: boolean }) {
-  const { scenario, worldGeneration } = useWardFlowSelect("scenario", "worldGeneration");
+  const { scenario, worldGeneration, dayZero } = useWardFlowSelect("scenario", "worldGeneration", "dayZero");
   const account = useContext(SharedAccessContext);
   const localAllowed = !account || Boolean(account.workspaceId);
   const userId = account?.actorId ?? "local-demo";
   const access = useEffectiveWardAccess();
   const deskIdentity = JSON.stringify([account?.workspaceId ?? "local-demo", access.role, access.scope]);
-  const key = `${FORECAST_LAST_LOOK_STORAGE_KEY}:${encodeURIComponent(userId)}:${encodeURIComponent(deskIdentity)}`;
+  // Keyed by the demo's day 0 as the track record is (time audit C3/G7): a look from an earlier demo
+  // day is from another demonstration, never "since you looked".
+  const key = `${FORECAST_LAST_LOOK_STORAGE_KEY}:${encodeURIComponent(userId)}:${encodeURIComponent(deskIdentity)}:${dayZero?.getTime() ?? "undated"}`;
   noteWardSessionAccount(account);
   const current = useMemo(
     () => takeForecastLook({ scenario, worldGeneration, userId }, model.tomorrow, now),
@@ -298,13 +300,22 @@ function readLocal(key: string): string | null {
 }
 
 /**
+ * One person's key for one world: scenario, reseed and the demo's day 0. Time audit C3/G7 (13 Nov
+ * 2026): a fresh demonstration starts at the same reseed every day, so without the day 0 yesterday's
+ * session was read as today's and the track record compared two different demonstrations.
+ */
+function worldKey(base: string, actor: string, scope: string, scenario: string, generation: number, dayZero?: Date) {
+  return `${base}:${encodeURIComponent(actor)}${scope}:${scenario}:${generation}:${dayZero?.getTime() ?? "undated"}`;
+}
+
+/**
  * P-5 (fresh audit 26 Oct 2026): each reseed or scenario switch starts a new key, so the keys this
  * person wrote for earlier worlds are removed when the current one is written. Otherwise the local
  * demo, which no sign-out ever sweeps, collected one set per reset with no bound. Another person's
  * keys on a shared device are left alone.
  */
 function dropEarlierWorlds(key: string) {
-  const person = `${key.split(":").slice(0, -2).join(":")}:`;
+  const person = `${key.split(":").slice(0, -3).join(":")}:`;
   try {
     const stale: string[] = [];
     for (let index = 0; index < window.localStorage.length; index += 1) {
@@ -324,7 +335,7 @@ function dropEarlierWorlds(key: string) {
  * desk's shared history is the one shown, and the browser's copy is only the fallback.
  */
 export function useForecastHistory(model: ForecastModel, now: Instant) {
-  const { scenario, worldGeneration } = useWardFlowSelect("scenario", "worldGeneration");
+  const { scenario, worldGeneration, dayZero } = useWardFlowSelect("scenario", "worldGeneration", "dayZero");
   const account = useContext(SharedAccessContext);
   const localAllowed = !account || Boolean(account.workspaceId);
   const access = useEffectiveWardAccess();
@@ -332,8 +343,16 @@ export function useForecastHistory(model: ForecastModel, now: Instant) {
     account || access.role !== "coordinator" || access.scope.kind !== "statewide"
       ? `:${encodeURIComponent(JSON.stringify([account?.workspaceId ?? "local-demo", access.role, access.scope]))}`
       : "";
-  // A reseed restarts the demo days, so it starts a fresh history rather than comparing two worlds.
-  const key = `${FORECAST_HISTORY_STORAGE_KEY}:${encodeURIComponent(account?.actorId ?? "local-demo")}${scope}:${scenario}:${worldGeneration}`;
+  // A reseed or a new demo day restarts the demo days, so it starts a fresh history rather than
+  // comparing two worlds.
+  const key = worldKey(
+    FORECAST_HISTORY_STORAGE_KEY,
+    account?.actorId ?? "local-demo",
+    scope,
+    scenario,
+    worldGeneration,
+    dayZero,
+  );
   const stored = useSyncExternalStore(subscribeHistory, () => (localAllowed ? readLocal(key) : null), serverLook);
   const history = useMemo(() => parseForecastHistory(stored), [stored]);
   const entry = useMemo(() => historyEntry(now, model.tomorrow.total.now, model.tomorrow.total), [now, model.tomorrow]);
@@ -412,7 +431,7 @@ function subscribeMissReasons(onChange: () => void) {
  * here assigns one.
  */
 export function useForecastMissReasons() {
-  const { scenario, worldGeneration } = useWardFlowSelect("scenario", "worldGeneration");
+  const { scenario, worldGeneration, dayZero } = useWardFlowSelect("scenario", "worldGeneration", "dayZero");
   const account = useContext(SharedAccessContext);
   const localAllowed = !account || Boolean(account.workspaceId);
   const access = useEffectiveWardAccess();
@@ -420,7 +439,14 @@ export function useForecastMissReasons() {
     account || access.role !== "coordinator" || access.scope.kind !== "statewide"
       ? `:${encodeURIComponent(JSON.stringify([account?.workspaceId ?? "local-demo", access.role, access.scope]))}`
       : "";
-  const key = `${FORECAST_MISS_REASONS_STORAGE_KEY}:${encodeURIComponent(account?.actorId ?? "local-demo")}${scope}:${scenario}:${worldGeneration}`;
+  const key = worldKey(
+    FORECAST_MISS_REASONS_STORAGE_KEY,
+    account?.actorId ?? "local-demo",
+    scope,
+    scenario,
+    worldGeneration,
+    dayZero,
+  );
   const stored = useSyncExternalStore(subscribeMissReasons, () => (localAllowed ? readLocal(key) : null), serverLook);
   const local = useMemo(() => parseForecastMissReasons(stored), [stored]);
   const { state: shared, sendReason, refresh } = useSharedForecastHistory(worldGeneration);

@@ -26,6 +26,10 @@ import { OutOfAreaBoard } from "@/components/ward-management/out-of-area/out-of-
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { ShortlistPanel } from "@/components/ward-management/coordinator/shortlist-panel";
 
+// A16-04: the app shows only travel bands someone has checked (none yet). This file tests a
+// mechanism that needs bands, so importing this swaps in the tests' own invented table.
+import "./helpers/ward-test-travel-bands";
+
 const STAY = "synthetic-return-stay";
 const DIRECTORY = buildOnCallDirectory();
 const homeHospital = siteDirectory[0]!.code;

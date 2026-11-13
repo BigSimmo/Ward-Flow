@@ -1,7 +1,7 @@
 "use client";
 
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { CalendarClock, ChevronRight, Clock, List, Lock, Map as MapIcon, Stethoscope, X } from "lucide-react";
 
@@ -15,7 +15,10 @@ import {
   StatusGlyph,
   cx,
   durMinutes,
+  rememberOpener,
+  returnFocusToOpener,
   type ChoiceItem,
+  type FocusOpener,
 } from "@/components/wf";
 import {
   edStatisticsHref,
@@ -159,15 +162,15 @@ const leftToday = (admission: Admission, now: Instant) =>
   admission.leftAt !== null && dayOf(admission.leftAt) === dayOf(now) && !endedInWardTransfer(admission);
 
 /**
- * Due later today: still on the ward (not pulled, not departed) with a written discharge date later
- * today. The ward page's Expected discharges uses the same rule for its first day.
+ * Due today: still on the ward (not pulled, not departed) with a written discharge date today, by
+ * Perth calendar day, so a date earlier today that has not happened yet still counts (time audit
+ * T2, 13 Nov 2026). The ward page's Expected discharges uses the same rule for its first day.
  */
-const dueLaterToday = (admission: Admission, now: Instant) =>
+const dueToday = (admission: Admission, now: Instant) =>
   admission.state !== "departed" &&
   admission.state !== "pulled" &&
   admission.expectedDischargeAt !== null &&
   Number.isFinite(admission.expectedDischargeAt) &&
-  admission.expectedDischargeAt >= now &&
   dayOf(admission.expectedDischargeAt) === dayOf(now);
 
 /**
@@ -218,7 +221,7 @@ export function siteFigures({
         pct: occupancyPercent({ beds: unit.beds, inUse: occupied }),
         pctText: occupancyText({ beds: unit.beds, inUse: occupied }),
         dischargedToday: onWard.filter((admission) => leftToday(admission, now)).length,
-        dueToday: onWard.filter((admission) => dueLaterToday(admission, now)).length,
+        dueToday: onWard.filter((admission) => dueToday(admission, now)).length,
         meanStay: wardStatistics(unit.id, [...admissions], now).averageLengthOfStayDays,
       };
     });
@@ -330,7 +333,7 @@ const lensStatus = (site: PresentedSiteFigures, lens: MapLens): WaMapNode["statu
 const lensAria = (site: PresentedSiteFigures, lens: MapLens): string => {
   if (!applies(site, lens)) return `${site.name}, ${lens === "ed" ? "no ED" : "no ward"}`;
   if (lens === "beds")
-    return `${site.name}: ${site.ready} ready beds, ${site.beds > 0 ? `${site.pctText} in use` : site.pctText.toLowerCase()}${site.wardsOverLine ? `, ${site.wardsOverLine} ${site.wardsOverLine === 1 ? "ward" : "wards"} at or over ${BED_ALERT_THRESHOLD_PERCENT}%` : ""}`;
+    return `${site.name}: ${site.ready} ready ${site.ready === 1 ? "bed" : "beds"}, ${site.beds > 0 ? `${site.pctText} in use` : site.pctText.toLowerCase()}${site.wardsOverLine ? `, ${site.wardsOverLine} ${site.wardsOverLine === 1 ? "ward" : "wards"} at or over ${BED_ALERT_THRESHOLD_PERCENT}%` : ""}`;
   if (lens === "ed") {
     // WF-17: times stay exact, but do not pair an exact longest wait with a withheld people count.
     const waitingExact = exactStatisticsCount(site.edWaiting) !== null;
@@ -343,7 +346,7 @@ const lensAria = (site: PresentedSiteFigures, lens: MapLens): string => {
     return `${site.name} ED: ${statisticsCountText(site.edWaiting)} open ED movements${longest}${over}`;
   }
   if (lens === "dis")
-    return `${site.name}: ${statisticsCountText(site.dischargedToday)} discharged today, ${statisticsCountText(site.dueToday)} due later today${exactStatisticsCount(site.blocked) !== 0 ? `, ${statisticsCountText(site.blocked)} blocked` : ""}`;
+    return `${site.name}: ${statisticsCountText(site.dischargedToday)} discharged today, ${statisticsCountText(site.dueToday)} due today${exactStatisticsCount(site.blocked) !== 0 ? `, ${statisticsCountText(site.blocked)} blocked` : ""}`;
   return `${site.name}: average stay ${site.meanStay === null ? "none" : `${site.meanStay.toFixed(1)} days`}, ${statisticsCountText(site.longStays)} over 3 months`;
 };
 
@@ -540,6 +543,14 @@ function MapPresentation({
   const canOpen = useCanOpenHref();
   const [selected, setSelected] = useState<string | null>(null);
   const [highlighted, setHighlighted] = useState<string | null>(null);
+  // F-57 (C17): closing the site card gives focus back to the map site that opened it.
+  const siteOpener = useRef<FocusOpener | null>(null);
+  const closeSite = () => {
+    const opener = siteOpener.current;
+    setSelected(null);
+    if (!returnFocusToOpener(opener) && selected !== null)
+      document.querySelector<SVGGElement>(`[data-site="${selected}"]`)?.focus({ preventScroll: true });
+  };
 
   const lensInfo = LENSES.find((item) => item.id === lens) ?? LENSES[0]!;
   const lensItems: ChoiceItem<MapLens>[] = [
@@ -590,7 +601,7 @@ function MapPresentation({
         : lens === "dis"
           ? [
               { value: String(statisticsCountText(network.dischargedToday)), label: "Gone today" },
-              { value: String(statisticsCountText(network.dueToday)), label: "Due later today" },
+              { value: String(statisticsCountText(network.dueToday)), label: "Due today" },
               {
                 value: String(statisticsCountText(network.blocked)),
                 label: "Held up",
@@ -668,14 +679,19 @@ function MapPresentation({
               nodes={nodes}
               selected={selected}
               highlighted={highlighted}
-              onSelect={(code) => setSelected((current) => (current === code ? null : code))}
+              onSelect={(code) => {
+                // The map's site or Country chip pressed; a pointer press may leave focus on the page.
+                const active = document.activeElement;
+                siteOpener.current = active && active !== document.body ? rememberOpener(active as HTMLElement) : null;
+                setSelected((current) => (current === code ? null : code));
+              }}
               label={`${lensInfo.label} by site`}
             />
           </CardBody>
         </StatCard>
 
         <Follow stack={chosen !== undefined} className={styles.side}>
-          {chosen ? <SiteCard site={chosen} lens={lens} onClose={() => setSelected(null)} /> : null}
+          {chosen ? <SiteCard site={chosen} lens={lens} onClose={closeSite} /> : null}
           <StatCard
             id="map-rank"
             icon={List}
@@ -968,7 +984,6 @@ function BelowMap({
           (admission) =>
             admission.expectedDischargeAt !== null &&
             Number.isFinite(admission.expectedDischargeAt) &&
-            admission.expectedDischargeAt >= now &&
             dayOf(admission.expectedDischargeAt) === today + offset,
         ).length,
       };

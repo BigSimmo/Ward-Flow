@@ -3,7 +3,7 @@ import { bedsPendingPreparation, capacityBreakdown } from "../ward-bed-availabil
 import { readyBedsNow } from "../ward-bed-states";
 import { unitHealthService } from "../ward-service-scope";
 import { openEdJourneys } from "../ward-shared-figures";
-import { type DueSoonThresholds, formatInstant } from "../ward-clock";
+import { clockZoneLabel, type ClockZoneLabel, type DueSoonThresholds, formatInstant } from "../ward-clock";
 import { HEALTH_SERVICES, type HealthService } from "../ward-model";
 import type { WardNetwork } from "../ward-sites";
 import type { useWardFlow } from "../ward-flow-provider";
@@ -17,6 +17,8 @@ export type BedSummaryInput = Pick<
   now: number;
   thresholds: DueSoonThresholds;
   network: WardNetwork;
+  /** The board's clock words (`useClockZoneLabel`, F-113); the demo's "demo time" when not given. */
+  zone?: ClockZoneLabel;
 };
 
 /**
@@ -33,6 +35,7 @@ export type BedSummaryInput = Pick<
  */
 export function bedSummaryText(input: BedSummaryInput): string {
   const { units, admissions, movements, referrals, bedReleases, leaveBeds, now, thresholds, network } = input;
+  const zone = input.zone ?? clockZoneLabel(false);
   // D-115 item 3: a bed named for an open journey or accepted referral is not ready.
   const holds = [...movements, ...referrals];
   const ready = new Map<HealthService, number>(HEALTH_SERVICES.map((service) => [service, 0]));
@@ -78,7 +81,7 @@ export function bedSummaryText(input: BedSummaryInput): string {
     .join(", ");
 
   return [
-    `Mental health bed summary at ${formatInstant(now)} AWST`,
+    `Mental health bed summary at ${formatInstant(now)} ${zone}`,
     `Ready beds: ${readyTotal} of ${beds}${pendingTotal > 0 ? `, ${pendingTotal} pending preparation` : ""}.`,
     byService ? `Ready by service: ${byService}.` : "Ready by service: none.",
     `Open ED movements: ${waiting.total}${waitingByService ? ` (${waitingByService})` : ""}.`,

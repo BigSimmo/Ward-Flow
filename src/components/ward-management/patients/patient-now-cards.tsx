@@ -143,6 +143,7 @@ export function PatientLegalNowCard({
 }) {
   const legalId = useId();
   const thresholds = useDueSoonThresholds();
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   // Access audit (31 Oct 2026): a desk that cannot open Legal forms (the site bed manager) gets no link.
   const canOpenHref = useCanOpenHref();
   const canRecordForm = movement !== undefined && canOpenHref(recordFormHref(movement.id));
@@ -162,7 +163,7 @@ export function PatientLegalNowCard({
     // prompts "Next form to record", with no form number.
     const position = currentLegalPosition(movement);
     const progression = position.nextForm;
-    const expiry = now !== undefined ? formTimeLeft(movement, now, thresholds) : undefined;
+    const expiry = now !== undefined ? formTimeLeft(movement, now, thresholds, dayZero) : undefined;
     rows.push({
       tone: position.ended ? "neutral" : expiry && expiry.standing !== "later" ? expiry.tone : "success",
       code: `Form ${movement.legalForm.code}`,

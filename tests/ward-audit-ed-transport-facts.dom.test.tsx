@@ -20,7 +20,8 @@ const withoutBooking: Movement = {
 const withBooking: Movement = { ...withoutBooking, transport: state.movements.find((m) => m.transport)!.transport };
 afterEach(cleanup);
 function Facts({ movement }: { movement: Movement }) {
-  const row = { movement } as EdBoardRowModel;
+  // K37 (13 Nov 2026): the row's Change control names its person, so the row carries one (synthetic).
+  const row = { movement, patientInfo: { displayName: "Synthetic Person" } } as EdBoardRowModel;
   return renderEdRowFacts(row, {
     now: NOW_ANCHOR,
     units: state.units,

@@ -29,7 +29,8 @@ function arrivedAtWardOffered(movement: Movement): boolean {
 
 /**
  * "Arrived at ward" on a pulled-bed alert (P069). Asks first, records the existing arrival event and
- * offers Undo for 10 s through the existing transport-step undo. Renders nothing outside a provider.
+ * offers Undo for the whole Undo window (D-187) through the existing transport-step undo. Renders
+ * nothing outside a provider.
  *
  * The toast is published from the click itself, like the P019 Release button, and not from a
  * `useUndoableStep` owned by this control: recording the arrival closes the alert, so the alert

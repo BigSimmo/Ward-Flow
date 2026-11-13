@@ -375,8 +375,9 @@ export function WardGlobalSearch({
             limitPerGroup: Number.POSITIVE_INFINITY,
             plannedAdmissions,
             admissions: wardFlow?.admissions,
+            dayZero: wardFlow?.dayZero,
           }),
-    [trimmed, patients, movements, units, referrals, now, plannedAdmissions, wardFlow?.admissions],
+    [trimmed, patients, movements, units, referrals, now, plannedAdmissions, wardFlow?.admissions, wardFlow?.dayZero],
   );
 
   const literalPerson = patients.some((patient) =>

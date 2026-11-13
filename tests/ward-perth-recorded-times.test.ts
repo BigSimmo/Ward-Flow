@@ -31,7 +31,7 @@ describe.each(ZONES)("Perth recorded times in a %s browser", (zone) => {
     expect(perthClockTime(LATE_THURSDAY)).toBe("23:30");
     expect(perthWeekdayTime(LATE_THURSDAY)).toBe("Thu 23:30");
     const push = vi.fn(() => "t");
-    expect(noticeDraftKept({ push }, true, LATE_THURSDAY)).toBe("Draft saved at 23:30");
+    expect(noticeDraftKept({ push }, true, 0, LATE_THURSDAY)).toBe("Draft saved at 23:30");
   });
 
   it("counts a Thursday-night contact as yesterday on Friday morning in Perth (CL-3)", () => {

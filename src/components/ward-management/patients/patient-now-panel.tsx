@@ -2,6 +2,7 @@
 
 // The patient page's Now tab: the status card and the one next step for the patient's mode. Split
 // out of `patient-now-screen.tsx`, which renders it with the values and handlers it has derived.
+import { cadNumberLine } from "@/components/ward-management/ward-cad-number";
 import { scrollWardPageToTop } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -14,7 +15,11 @@ import { type Patient } from "@/components/ward-management/ward-patients";
 import { absenceVoluntary, type PatientStatusContext } from "./patient-status-card";
 import type { LeaveKind, WardChangeForm } from "./patient-ward-change-card";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
-import { requiredRoleForPermission, useDeskRoleSwitch } from "@/components/ward-management/ward-role-gate";
+import {
+  requiredRoleForPermission,
+  roleLimitFrom,
+  useDeskRoleSwitch,
+} from "@/components/ward-management/ward-role-gate";
 import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
 import { PatientLastSeenCard, PatientLeaveCard, PatientLegalNowCard, PatientWhyCard } from "./patient-now-cards";
 import { type PatientNowRecord, clock } from "./patient-now-records";
@@ -212,7 +217,8 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
         confirmHref: confirmHref && canOpenHref(confirmHref) ? confirmHref : undefined,
       })
     : null;
-  const stepLimit = (eventType: WardFlowEventType) => gate(eventType).reason;
+  // F-54 (A9-35): `null` for a step this desk can never take, so its button is left out.
+  const stepLimit = roleLimitFrom(gate);
   // Phone: the pinned bar carries the page's one filled button. On the ward that is the next step
   // itself; on leave, absent or at ED the status card pins the same action. The card's button is
   // then the quiet secondary, never a second filled one.
@@ -241,7 +247,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
         dischargeInBar={wardStepInBar && nextStep?.key === "set-discharge"}
         refusal={wardRefusal}
         saveError={wardSaveError}
-        roleLimit={(eventType) => gate(eventType).reason}
+        roleLimit={stepLimit}
         leaveLegal={leaveLegal}
       />
     ) : null;
@@ -436,7 +442,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
                 title="Transport"
                 sub={
                   isTransportBooked
-                    ? `${displayProvider}${displayCadNumber ? ` · CAD ${displayCadNumber}` : ""}`
+                    ? `${displayProvider}${displayCadNumber ? ` · ${cadNumberLine(displayCadNumber)}` : ""}`
                     : "Not booked · booking, arrival plan, documents"
                 }
                 onOpen={() => setNowSheet("transport")}

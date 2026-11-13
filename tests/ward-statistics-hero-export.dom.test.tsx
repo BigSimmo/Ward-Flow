@@ -14,6 +14,7 @@ import { StatisticsHero } from "@/components/ward-management/statistics/statisti
 import { StatisticsScreen } from "@/components/ward-management/statistics/statistics-screen";
 import { StatisticsWardScreen } from "@/components/ward-management/statistics/statistics-ward-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
@@ -132,6 +133,10 @@ describe("Statistics hero: Export the figures", () => {
       </WardFlowProvider>,
     );
     const { csv } = await exportedCsv(screen.getByTestId("ward-statistics-export"));
-    expect(csv).toContain('"As at","20/10/2026 01:01 AWST"');
+    // The sheet moment every export uses (time audit D13): "Tue 20 Oct 2026, 01:01" and its zone.
+    expect(csv).toContain(
+      `"As at","${formatSheetMoment(1440 + 61, new Date("2026-10-18T16:00:00Z"), { includeYearAndZone: true })}"`,
+    );
+    expect(csv).toContain("Tue 20 Oct 2026, 01:01");
   });
 });

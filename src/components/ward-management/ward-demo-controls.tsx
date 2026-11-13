@@ -51,14 +51,12 @@ function WardDemoClockView({
   const freshness = useLiveFreshness();
   const stateWords =
     freshness.state === "offline" ? "Offline" : freshness.state === "stale" ? notUpdatingWords(freshness.since) : null;
-  const name = stateWords
-    ? `${stateWords}. Board time ${clockText} AWST`
-    : (ariaLabel ?? `Board time ${clockText} AWST`);
+  const name = stateWords ? `${stateWords}. Board time ${clockText}` : (ariaLabel ?? `Board time ${clockText}`);
   return (
     <button
       type="button"
       className={className}
-      title={stateWords ? name : (title ?? `Board time ${clockText} AWST`)}
+      title={stateWords ? name : (title ?? `Board time ${clockText}`)}
       aria-label={`${name}. Open demo controls`}
       data-testid={testId}
       data-freshness={stateWords ? freshness.state : undefined}
@@ -72,7 +70,7 @@ function WardDemoClockView({
       ) : (
         (children ?? (
           <>
-            <span>Board time</span> <b>{clockText}</b> <span>AWST</span>
+            <span>Board time</span> <b>{clockText}</b>
           </>
         ))
       )}

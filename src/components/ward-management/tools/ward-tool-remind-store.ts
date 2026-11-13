@@ -5,9 +5,12 @@
  * from a list (a ward, a bed number, a movement's record number, a fixed reason), so nothing a
  * person types is ever stored. Emptied at sign-out. Prototype only: synthetic data.
  */
+import { useMemo } from "react";
+
 import { createBrowserStore } from "@/lib/client-store-factory";
-import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
+import { onWardDemoReset, onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
 import type { Instant } from "@/components/ward-management/ward-clock";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
 /**
  * Root cause 5.2 (Josh approved, 13 Nov 2026, Q8): reminders and the call log are kept in this
@@ -30,6 +33,8 @@ export type Reminder = {
   reason: RemindReason;
   /** Board clock time it is due. */
   dueAt: Instant;
+  /** The demo's day 0 (epoch ms) that `dueAt` counts from (time audit C4). */
+  dayZero: number;
 };
 
 const KEY = "wf-mock-tools-reminders";
@@ -47,6 +52,7 @@ function isReminder(value: unknown): value is Reminder {
     typeof r.targetId === "string" &&
     typeof r.targetLabel === "string" &&
     typeof r.dueAt === "number" &&
+    typeof r.dayZero === "number" &&
     (REMIND_REASONS as readonly unknown[]).includes(r.reason)
   );
 }
@@ -78,12 +84,20 @@ onWardSessionEnd(() => {
   if (typeof window !== "undefined") set(EMPTY);
 });
 
+// D-197 item 2: Reset demo clears the demo day's reminders too. The day 0 is the calendar day and a
+// reset keeps it (D-197 item 3), so the day filter alone would show them again after a reset.
+onWardDemoReset(() => {
+  if (typeof window === "undefined") return;
+  load();
+  set(EMPTY);
+});
+
 function subscribe(onChange: () => void) {
   listeners.add(onChange);
   return () => listeners.delete(onChange);
 }
 
-export const useReminders = createBrowserStore(
+const useStoredReminders = createBrowserStore(
   subscribe,
   () => {
     load();
@@ -92,10 +106,30 @@ export const useReminders = createBrowserStore(
   EMPTY,
 );
 
+/**
+ * Time audit C4 (13 Nov 2026): the demo's day 0 in epoch ms, or `undefined` outside a provider.
+ * Board instants count from it, so an entry kept from another day 0 is from another demo day.
+ */
+export function useDemoDayZero(): number | undefined {
+  return useOptionalWardFlowSelect("dayZero")?.dayZero.getTime();
+}
+
+/** Only the entries taken under this day 0; outside a provider (some tests) every entry. */
+export function onDemoDay<T extends { dayZero: number }>(entries: readonly T[], dayZero: number | undefined) {
+  return dayZero === undefined ? entries : entries.filter((entry) => entry.dayZero === dayZero);
+}
+
+/** This demo day's reminders. An earlier day's stay hidden, and go when the next one is saved. */
+export function useReminders(): readonly Reminder[] {
+  const stored = useStoredReminders();
+  const dayZero = useDemoDayZero();
+  return useMemo(() => onDemoDay(stored, dayZero), [stored, dayZero]);
+}
+
 export function addReminder(input: Omit<Reminder, "id">): void {
   load();
   const id = `r-${Date.now().toString(36)}-${reminders.length}`;
-  set([...reminders, { ...input, id }].sort((left, right) => left.dueAt - right.dueAt));
+  set([...onDemoDay(reminders, input.dayZero), { ...input, id }].sort((left, right) => left.dueAt - right.dueAt));
 }
 
 export function removeReminder(id: string): void {

@@ -35,6 +35,7 @@ import {
   type Instant,
   MINUTES_PER_DAY,
 } from "@/components/ward-management/ward-clock";
+import { typedClock } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { acceptedReferralAwaitingMovement, isOpen } from "@/components/ward-management/ward-derivations";
 import type { LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import {
@@ -369,7 +370,7 @@ export function buildCensus(state: {
       legalSub: legalPosition.ended
         ? FORM_RECORDED_ENDED
         : legalPosition.dueAt !== undefined
-          ? `Due ${formatInstantWithDay(legalPosition.dueAt, now)}`
+          ? `Due ${typedClock(legalPosition.dueAt, now, dayZero)}`
           : form
             ? "No due time"
             : "No form",
@@ -499,9 +500,10 @@ export function buildCensus(state: {
         where: "Not in hospital",
         whereSub: who.communityTeam ?? "No team recorded",
         to: unit?.name ?? "Ward not recorded",
-        toSub: pulled ? "Bed reserved" : "On the waiting list",
+        // F-91 (K23): a bed for an incoming patient is pulled, never "reserved".
+        toSub: pulled ? "Bed pulled" : "On the waiting list",
         bedReserved: pulled,
-        next: pulled ? "Bed reserved" : "On the waiting list",
+        next: pulled ? "Bed pulled" : "On the waiting list",
         nextWho: "Ward",
         glyph: pulled ? "done" : "wait",
         legal: shortLegal(legalOnRecord(admission)),
@@ -510,7 +512,7 @@ export function buildCensus(state: {
         formDueAt: null,
         waitMinutes: null,
         timeText: since === null ? "" : durMinutes(since),
-        timeSub: since === null ? "" : "reserved",
+        timeSub: since === null ? "" : "pulled",
         longWait: false,
         pastExpected: false,
         awayAtEd: false,
@@ -518,7 +520,7 @@ export function buildCensus(state: {
         acceptedUnitName: unit?.name ?? null,
         timeline:
           since !== null && admission.pulledAt !== null
-            ? [{ at: admission.pulledAt, glyph: "done", text: `Bed reserved on ${unit?.name ?? "the ward"}` }]
+            ? [{ at: admission.pulledAt, glyph: "done", text: `Bed pulled on ${unit?.name ?? "the ward"}` }]
             : [],
         placeText: foldPatientSearchText(`${unit?.name ?? ""} ${unit?.siteCode ?? ""} ${siteName(unit?.siteCode)}`),
       });

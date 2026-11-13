@@ -8,7 +8,7 @@
 //
 // 🔴 METROPOLITAN ONLY. There is no regional pair here, so this can never fill
 // `ward-travel-bands.ts`, which maps WA HOME REGIONS (Kimberley, Pilbara, Mid West, Great
-// Southern) to sites. Those bands stay invented and `TRAVEL_BANDS_ARE_INVENTED` stays true.
+// Southern) to sites. A band there is shown only once someone has checked it (A16-04).
 //
 // 🔴 INDICATIVE, NOT CLINICAL. No traffic, no peak, no ambulance behaviour, no handover. The ED pin
 // is the hospital campus, not its door. Show `REFERENCE_DISTANCE_CAVEAT` wherever one is rendered.

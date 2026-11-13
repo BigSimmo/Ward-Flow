@@ -9,7 +9,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardCommandDispatch, WardCommandOutcome } from "./ward-shared-client";
 import { confirmedWardCommand } from "./ward-command-completion";
 import type { Rejection } from "@/components/ward-management/ward-model";
-import { UNDO_TOAST_MS, UNDO_WINDOW_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { UNDO_WINDOW_MINUTES, UNDO_WINDOW_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { roleLimitReason } from "@/components/ward-management/ward-role-permissions";
 import {
@@ -62,6 +62,8 @@ type Pending = {
   choices?: UndoStepChoices;
   /** Runs once this step is accepted, in place of its toast: a choice's undo before its redo. */
   then?: () => void;
+  /** See `UndoableStep.undoToastMs`. */
+  undoToastMs?: number;
 };
 
 /**
@@ -112,6 +114,11 @@ export type UndoableStep = {
   who?: string;
   /** D-148: an optional follow-up choice on the success toast. */
   choices?: UndoStepChoices;
+  /**
+   * How long the toast's Undo stays offered, when not `UNDO_WINDOW_TOAST_MS`. D-187 (F-49): the toast
+   * says "Undo within 5 min", so by default it keeps Undo for that whole window, or until dismissed.
+   */
+  undoToastMs?: number;
 };
 
 /** The refusal's words, led by the person's name when the words do not already name them. */
@@ -139,7 +146,7 @@ export type UndoableStepOptions = {
 /**
  * **v10 pass 3: dispatch a step, then offer Undo on the toast** (PASS2-ENGINE.md "Wiring Undo").
  * `run(event, { success, undo })` dispatches at once; when the engine accepts it the toast shows
- * `success` with Undo for `UNDO_TOAST_MS`, and Undo dispatches `undo(now)`. A refusal, of the step
+ * `success` with Undo for `UNDO_WINDOW_TOAST_MS` (D-187), and Undo dispatches `undo(now)`. A refusal, of the step
  * or of its undo, shows the engine's own reason. Nothing is held back: leaving the page keeps the
  * step, and the engine still allows its undo for `UNDO_WINDOW_MINUTES`.
  */
@@ -247,7 +254,7 @@ export function useUndoableStep({
       }
       if (watch.seq === undefined && !pending.outcome && pending.guard !== false) {
         watchersRef.current.add(watch);
-        setTimeout(() => watchersRef.current.delete(watch), UNDO_TOAST_MS);
+        setTimeout(() => watchersRef.current.delete(watch), pending.undoToastMs ?? UNDO_WINDOW_TOAST_MS);
       }
       const limit = roleLimitReason(routeRole, undoType);
       sink.push({
@@ -260,7 +267,7 @@ export function useUndoableStep({
               // still on screen (its countdown pauses on hover), so the toast says the limit.
               body: `Undo within ${UNDO_WINDOW_MINUTES} min.`,
               undo: {
-                durationMs: UNDO_TOAST_MS,
+                durationMs: pending.undoToastMs ?? UNDO_WINDOW_TOAST_MS,
                 onUndo: () => takeBack(pending, build, watch, { success: pending.undone ?? "Undone. Back as it was." }),
               },
               ...(pending.choices ? { choices: toastChoices(pending, pending.choices, build, watch) } : {}),
@@ -319,6 +326,7 @@ export function useUndoableStep({
               undo: pending.undo,
               undone: pending.undone,
               who: pending.who,
+              undoToastMs: pending.undoToastMs,
             }),
         }),
     };

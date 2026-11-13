@@ -19,7 +19,6 @@ import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { RELEASE_LOOKAHEAD_DAYS, targetText, type EdAccessRiskRow } from "./ed-access-risk";
 import { BED_KIND_LABEL } from "./forecast-by-kind";
-import { shortBlocker } from "./forecast-levers";
 import { FORECAST_METHOD_LINE } from "@/components/ward-management/ward-forecast-method";
 import { useForecastModel } from "./use-forecast-model";
 import styles from "./forecast.module.css";
@@ -36,10 +35,10 @@ export function releaseText(row: EdAccessRiskRow, now: Instant, showWards: boole
   }
   const when = formatInstantWithDay(row.nextRelease.at, now);
   const where = showWards && row.acceptedUnitName ? ` at ${row.nextRelease.unitName}` : "";
-  const held = row.nextRelease.blocker ? `, held up for ${shortBlocker(row.nextRelease.blocker).toLowerCase()}` : "";
   // A16-07 (3.6): the line is said only when someone is ahead; the first in line has nobody.
+  // F-24: the release named is one the line counts, so it is never held up.
   const ahead = row.ahead > 0 ? ` ${aheadText(row.ahead)}` : "";
-  return `Next ${kind} release ${when}${where}${held}.${ahead}`;
+  return `Next ${kind} release ${when}${where}.${ahead}`;
 }
 
 /** "1 person ahead in the line", "3 people ahead in the line". */

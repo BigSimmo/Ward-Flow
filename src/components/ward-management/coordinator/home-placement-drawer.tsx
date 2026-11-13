@@ -216,7 +216,6 @@ export function HomePlacementDrawer({
               onSelectUnit={onSelectUnit}
               dispatch={flow.dispatch}
               parallelReferralCap={flow.configuration.parallelReferralCap}
-              pullHoldMinutes={flow.configuration.pullHoldMinutes}
               onRefer={(unitIds) => onRefer(movement, unitIds)}
             />
           </div>

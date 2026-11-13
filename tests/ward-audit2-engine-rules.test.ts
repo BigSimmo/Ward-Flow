@@ -16,7 +16,8 @@ function send(state: WardFlowState, event: Record<string, unknown>) {
   const refused = next.rejections.length > state.rejections.length;
   return { next, refused, reason: refused ? (next.rejections.at(-1)?.reason ?? "") : "" };
 }
-const fresh = () => seedWardFlowState();
+// A16-14: the legal-form worked examples (RF-RD06 among them) are opt-in since 13 Nov 2026.
+const fresh = () => seedWardFlowState("standard", { workedExamples: true });
 const movement = (state: WardFlowState, id: string) => state.movements.find((candidate) => candidate.id === id)!;
 const unit = (state: WardFlowState, id: string) => state.units.find((candidate) => candidate.id === id)!;
 const close = (state: WardFlowState, unitId: string) =>

@@ -108,6 +108,7 @@ import {
   OVERRIDE_SIGN_OFF_NAME_MAX,
   type OverrideSignOff,
   type CapacityRefreshRequest,
+  changedOnPullRefusal,
 } from "@/components/ward-management/ward-model";
 import type {
   MovementId,
@@ -118,6 +119,7 @@ import type {
   MovementStage,
   Notice,
   NoticeKind,
+  PullFormField,
   Referral,
   WardReferralDestination,
   Rejection,
@@ -139,7 +141,7 @@ import {
   referrals,
   wardMovements,
 } from "@/components/ward-management/ward-movements";
-import { applyRulingsDemoOverlay } from "@/components/ward-management/ward-rulings-demo";
+import { applyRulingsDemoOverlay, workedExamplesShown } from "@/components/ward-management/ward-rulings-demo";
 
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import {
@@ -184,7 +186,7 @@ import { type SupportNotificationRecord } from "@/components/ward-management/war
 import { applyLoopChecksDemoOverlay } from "./ward-loop-checks-demo";
 import { applyWaitlistDemoOverlay } from "./ward-demo-waitlist";
 import { reduceReviewReadyEvent } from "./ward-flow-review-ready-events";
-import { applyIntakeWindowDemoOverlay } from "./capacity/ward-intake-window-demo";
+import { withSeedCalendarDays, withSeedClockFaceRecords } from "./ward-seed-clock";
 // S6 example data (3 Nov 2026): no demo list opens empty. A live shared build swaps in a no-op.
 import { applyExampleListsOverlay } from "@/components/ward-management/ward-demo-example-lists";
 import { stepUndoSubjectId, subjectId } from "./ward-flow-subject-id";
@@ -547,7 +549,18 @@ export {
  * night. `RESET_SCENARIO` reloads the scenario that is loaded (overall review, 20 Oct 2026: Josh
  * accepted "reset to the scenario that is loaded"), so Reset demo does what its confirm says.
  */
-export function seedWardFlowState(scenario: WardScenario = "standard"): WardFlowState {
+export function seedWardFlowState(
+  scenario: WardScenario = "standard",
+  options: { workedExamples?: boolean } = {},
+): WardFlowState {
+  return withSeedClockFaceRecords(seedAuthoredWorld(scenario, options), NOW_ANCHOR);
+}
+
+/** The seed before its clock-face records (time audit G1, `ward-seed-clock.ts`). */
+function seedAuthoredWorld(
+  scenario: WardScenario,
+  { workedExamples = false }: { workedExamples?: boolean },
+): WardFlowState {
   // The EMHS demo and surge scenarios bring their own wards and linked patients
   // (`ward-demo-network.ts`), and none of the standard night's rulings-demo overlay.
   const network = scenarioNetwork(scenario);
@@ -596,13 +609,13 @@ export function seedWardFlowState(scenario: WardScenario = "standard"): WardFlow
     plannedAdmissionSequence: 0,
   };
   // Closing the loop, package D (24 Oct 2026): a few synthetic marks so each record shows in the demo.
-  const demo = network ? seed : applyLoopChecksDemoOverlay(applyRulingsDemoOverlay(seed, NOW_ANCHOR), NOW_ANCHOR);
-  // Feature item 13: a few synthetic intake windows set this morning.
-  const withWindows = network ? demo : applyIntakeWindowDemoOverlay(demo, NOW_ANCHOR);
-  return applyExampleListsOverlay(
-    network ? withWindows : applyWaitlistDemoOverlay(withWindows, NOW_ANCHOR),
-    NOW_ANCHOR,
-  );
+  // A16-14 (Josh, 13 Nov 2026): the legal-form worked examples are opt-in, as the hard cases are,
+  // so the ordinary day's headlines come from ordinary people. The presenter switches them on.
+  const withExamples = workedExamples ? applyRulingsDemoOverlay(seed, NOW_ANCHOR) : seed;
+  const demo = network ? seed : applyLoopChecksDemoOverlay(withExamples, NOW_ANCHOR);
+  // Feature item 13's intake windows and the staff request belong to a clock face, so they are
+  // added after any reseed shift (`withSeedClockFaceRecords`, time audit G1).
+  return applyExampleListsOverlay(network ? demo : applyWaitlistDemoOverlay(demo, NOW_ANCHOR), NOW_ANCHOR);
 }
 
 /**
@@ -614,8 +627,20 @@ export function seedWardFlowState(scenario: WardScenario = "standard"): WardFlow
  * application code never reaches around it. Offset zero still returns a copy, so the pinned and
  * live paths differ only in the offset.
  */
-export function seedWardFlowStateAt(offsetMinutes: number, scenario: WardScenario = "standard"): WardFlowState {
-  return shiftInstants(seedWardFlowState(scenario), offsetMinutes);
+export function seedWardFlowStateAt(
+  offsetMinutes: number,
+  scenario: WardScenario = "standard",
+  options: { workedExamples?: boolean } = {},
+): WardFlowState {
+  // Time audit G1: calendar-day fields move by whole Perth days and clock-face records (tonight's
+  // intake windows, the shift's staff request) are built from the board's own now.
+  const now = NOW_ANCHOR + offsetMinutes;
+  const moved = withSeedCalendarDays(
+    shiftInstants(seedAuthoredWorld(scenario, options), offsetMinutes),
+    NOW_ANCHOR,
+    now,
+  );
+  return withSeedClockFaceRecords(moved, now);
 }
 
 /**
@@ -1520,9 +1545,12 @@ export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): War
 function raiseAndPullBed(state: WardFlowState, event: Extract<WardFlowEvent, { type: "RAISE_REFERRAL" }>) {
   const raise: typeof event = { ...event };
   delete raise.pullBed;
+  delete raise.changedOnPull;
   const refuse = (reason: string) =>
     appendAudit(state, reject(state, event, reason), event, { outcome: "denied", reasonCode: "transition" });
   if (event.acceptedUnitId === undefined) return refuse("Pulling the bed needs the ward that accepted");
+  const changedRefusal = event.changedOnPull === undefined ? null : changedOnPullRefusal(event.changedOnPull);
+  if (changedRefusal) return refuse(changedRefusal);
   const started = wardFlowReducer(state, raise);
   const journey = started.movements.find(
     (movement) => movement.referralId === event.referralId && !state.movements.some(({ id }) => id === movement.id),
@@ -1537,7 +1565,28 @@ function raiseAndPullBed(state: WardFlowState, event: Extract<WardFlowEvent, { t
     ...(event.actingUnitId === undefined ? {} : { actingUnitId: event.actingUnitId }),
   });
   const refusal = pulled.rejections.at(-1);
-  return refusal === started.rejections.at(-1) || refusal === undefined ? pulled : refuse(refusal.reason);
+  if (refusal !== started.rejections.at(-1) && refusal !== undefined) return refuse(refusal.reason);
+  return withChangedOnPull(pulled, journey.id, event.changedOnPull);
+}
+
+/**
+ * D-191 (Josh, 13 Nov 2026): names the pull form's changed facts on the pull's own `to: "pulled"`
+ * stage change, whose `by` (the desk's role) and `at` already say who pulled and when. Only that
+ * entry gains the list: the movement's legal status, form and observation level stay as recorded.
+ */
+function withChangedOnPull(
+  state: WardFlowState,
+  movementId: string,
+  changedOnPull: readonly PullFormField[] | undefined,
+): WardFlowState {
+  if (changedOnPull === undefined || changedOnPull.length === 0) return state;
+  const movement = state.movements.find(({ id }) => id === movementId);
+  const last = movement?.stageChanges.at(-1);
+  if (!movement || last?.to !== "pulled") return state;
+  return replaceMovement(state, movementId, {
+    ...movement,
+    stageChanges: [...movement.stageChanges.slice(0, -1), { ...last, changedOnPull: [...changedOnPull] }],
+  });
 }
 
 /** Gives back a movement's pulled bed, its admission and its referral's named hold; safe to call
@@ -1690,6 +1739,8 @@ export function reduceClinicalEvent(
       return seedWardFlowStateAt(
         event.now - state.clockOffsetMinutes - NOW_ANCHOR,
         WARD_SCENARIOS.includes(state.scenario) ? state.scenario : "standard",
+        // A16-14: a reset keeps the worked examples if the presenter had switched them on.
+        { workedExamples: workedExamplesShown(state) },
       );
 
     case "SET_SCENARIO": {
@@ -1699,7 +1750,9 @@ export function reduceClinicalEvent(
         decision.reasonCode = "invalid-payload";
         return reject(state, event, `SET_SCENARIO scenario must be chosen from WARD_SCENARIOS`);
       }
-      return seedWardFlowStateAt(event.now - state.clockOffsetMinutes - NOW_ANCHOR, event.scenario);
+      return seedWardFlowStateAt(event.now - state.clockOffsetMinutes - NOW_ANCHOR, event.scenario, {
+        workedExamples: event.workedExamples === true,
+      });
     }
 
     case "ADVANCE_CLOCK": {

@@ -42,6 +42,7 @@ import {
   type Instant,
 } from "@/components/ward-management/ward-clock";
 import { openEdJourneys } from "@/components/ward-management/ward-shared-figures";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 import { readyBedsNow, totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { edJourneyWaitFigures as edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
 import {
@@ -133,6 +134,7 @@ import { FixedQuestionsCard, WaitingStagesCard } from "@/components/ward-managem
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
 import {
+  countInSentence,
   ExecutiveStatisticsUnavailable,
   statisticsCountText,
   exactStatisticsCount,
@@ -182,6 +184,7 @@ export function StatisticsScreen(props: StatisticsInputs = {}) {
 function ExecutiveStatisticsScreen() {
   const data = useExecutiveStatistics();
   const control = useExecutiveStatisticsControl();
+  const zone = useClockZoneLabel();
   if (!data) return <ExecutiveStatisticsUnavailable />;
   const { network, networkDetails: details } = data;
   const scopeLabel = network.scope.kind === "statewide" ? "whole network" : network.scope.service;
@@ -273,7 +276,7 @@ function ExecutiveStatisticsScreen() {
         capacity: (
           <StatisticsCapacityChart
             aggregate={data}
-            asAt={formatSheetMoment(now, dayZero, { includeYearAndZone: true })}
+            asAt={formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone })}
             scopeLabel={scopeLabel}
           />
         ),
@@ -311,6 +314,7 @@ function OperationalStatisticsScreen({
     configuration,
   } = live.state;
   const now = live.now;
+  const zone = useClockZoneLabel();
   const { countsOnly: countsOnlyGrant } = useStatisticsCounts();
   const isPhone = useIsPhone();
   // Role view (site bed manager, D-80): hero, wards and ED tables read its own site; the service card keeps
@@ -498,7 +502,7 @@ function OperationalStatisticsScreen({
       slots={{
         capacity: (
           <StatisticsCapacityChart
-            asAt={formatSheetMoment(now, dayZero, { includeYearAndZone: true })}
+            asAt={formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone })}
             units={units}
             bedReleases={sourceBedReleases}
             admissions={sourceAdmissions}
@@ -753,8 +757,13 @@ function StatisticsSummaryView({
       unit={arrivals.averageMinutes === null ? undefined : "average"}
       sub={
         <>
-          <span data-testid="ward-statistics-arrival-measured-count">{small(arrivals.measuredCount)}</span> measured ·{" "}
-          <span data-testid="ward-statistics-arrival-ended-count">{small(arrivals.endedCount)}</span> ended · shortest{" "}
+          {/* F-55 (A9-36): a withheld count reads "an unstated number", not "not shown measured". */}
+          <span data-testid="ward-statistics-arrival-measured-count">
+            {countInSentence(small(arrivals.measuredCount))}
+          </span>{" "}
+          measured ·{" "}
+          <span data-testid="ward-statistics-arrival-ended-count">{countInSentence(small(arrivals.endedCount))}</span>{" "}
+          ended · shortest{" "}
           <span data-testid="ward-statistics-arrival-shortest">
             {arrivals.shortestMinutes === null ? "Not recorded" : splitDuration(arrivals.shortestMinutes)}
           </span>

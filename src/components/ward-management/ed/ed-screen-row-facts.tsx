@@ -2,15 +2,17 @@
 
 // A board row's facts, its on-the-board controls and its expanded cards. Split out of
 // `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
-import { StatusGlyph } from "@/components/wf";
+import { Button, StatusGlyph } from "@/components/wf";
 import Link from "next/link";
 import {
   examinationBedHeldNotice,
   examinationRevokedWhileBedHeld,
 } from "@/components/ward-management/ward-derivations";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { PULL_NO_LIMIT_RECORDED } from "@/components/ward-management/ward-bed-hold";
 import { examinationOutcomeShort } from "@/components/ward-management/ward-legal-forms";
 import { currentLegalPosition, legalFormNowWords } from "@/components/ward-management/ward-legal-form-progression";
+import { typedClock } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { movementReadmissionFlag } from "@/components/ward-management/ward-readmission";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
@@ -21,6 +23,7 @@ import {
 } from "@/components/ward-management/referrals/arrival-time-modal";
 import { EdAdmissionChecklist } from "./ed-admission-checklist";
 import { referralBoardHref } from "./ed-bed-search-step";
+import { wardAskedWords } from "@/components/ward-management/referrals/referral-information-needs";
 import { EdPlanPicker } from "./ed-board-controls";
 import { PresentationCell } from "./ed-handover-cells";
 import { EdMedicalPlacementControls } from "./ed-medical-placement-controls";
@@ -45,7 +48,12 @@ export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
     cmhtBlocked,
     acceptedUnit,
   } = row;
-  const { now, units, readmissionIndex, holdLabel } = ctx;
+  const { now, units, readmissionIndex } = ctx;
+  const linkedReferral =
+    movement.referralId === undefined
+      ? undefined
+      : ctx.referrals.find((referral) => referral.id === movement.referralId);
+  const wardAsked = linkedReferral ? wardAskedWords(linkedReferral) : undefined;
   // 1.1 (K1) and A1: the one current legal position; the typed end in force is gone once a person
   // records the form ended.
   const legalDueAt = currentLegalPosition(movement).dueAt;
@@ -74,7 +82,28 @@ export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
       </span>
       {!movement.transport && movement.transportNeed?.needed === false ? (
         <span className={styles.sub} data-testid={`ward-ed-no-transport-badge-${movement.id}`}>
-          No transport needed
+          No transport needed{" "}
+          {/* K37 (Josh, 13 Nov 2026): re-recording sits beside the recorded answer. Change records that
+              transport is needed, which brings back Log transport booking here and Log booking on the
+              patient page. No confirm step; the toast offers Undo. */}
+          <Button
+            variant="ghost"
+            size="sm"
+            data-testid={`ward-ed-no-transport-change-${movement.id}`}
+            aria-label={`Change no transport needed for ${row.patientInfo.displayName}`}
+            onClick={() =>
+              ctx.recordEdStep({
+                type: "RECORD_TRANSPORT_NEED",
+                role: "ed",
+                now,
+                movementId: movement.id,
+                actingPlaceId: ctx.thisEdId,
+                needed: true,
+              })
+            }
+          >
+            Change
+          </Button>
         </span>
       ) : null}
       {movement.arrivalDetails ? (
@@ -107,7 +136,11 @@ export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
           )
         ) : (
           <span className={styles.transitBadge} data-testid={`ward-ed-transit-badge-${movement.id}`}>
-            ⏱ Transit: {holdLabel} pull time limit (
+            {/* D-187 (F-46): this pull's own recorded limit, or that none is recorded; never the default. */}⏱ Transit:{" "}
+            {movement.pullExpiresAt !== undefined
+              ? `pull time limit ${formatInstantWithDay(movement.pullExpiresAt, now)}`
+              : `pull ${PULL_NO_LIMIT_RECORDED.toLowerCase()}`}{" "}
+            (
             {movement.arrivalDetails.modeOfArrival ??
               (movement.arrivalDetails.mode ? arrivalModeLabel(movement.arrivalDetails.mode) : "Transit")}
             )
@@ -126,7 +159,7 @@ export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
             <span data-testid={`ward-ed-form-expiry-${movement.id}`}>{formExpiryText}</span>
           ) : (
             <>
-              <span aria-hidden="true">{formatInstantWithDay(legalDueAt, now)}</span>
+              <span aria-hidden="true">{typedClock(legalDueAt, now, ctx.dayZero)}</span>
               <span className="sr-only" data-testid={`ward-ed-form-expiry-${movement.id}`}>
                 {formExpiryText}
               </span>
@@ -203,7 +236,7 @@ export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
             className={styles.cardMeta}
             data-testid={`ward-ed-legal-form-expiry-history-${movement.id}`}
           >
-            {`Extension recorded ${formatInstantWithDay(entry.at, now)}: new expiry ${formatInstantWithDay(entry.dueAt, now)}`}
+            {`Extension recorded ${formatInstantWithDay(entry.at, now)}: new expiry ${typedClock(entry.dueAt, now, ctx.dayZero)}`}
           </p>
         ))}
     </>
@@ -229,6 +262,12 @@ export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
             .map((unitId) => units.find((unit) => unit.id === unitId)?.name ?? "Unit not recorded")
             .join(" · ")}
           {movement.referredAt === undefined && <span className="sr-only"> · referral time not recorded</span>}
+        </div>
+      ) : null}
+      {/* F-41 (A9-32): a ward waiting on this desk shows on the row, linked to the referral. */}
+      {wardAsked && movement.referralId !== undefined ? (
+        <div className={styles.sub} data-testid={`ward-ed-ward-asked-${movement.id}`}>
+          <Link href={referralBoardHref(movement.referralId)}>{wardAsked}</Link>
         </div>
       ) : null}
     </>
@@ -431,7 +470,9 @@ export function renderEdRowExpandedCards(row: EdBoardRowModel, ctx: EdScreenCont
           <div>
             <dt>Legal</dt>
             <dd>
-              {rowLegal.form ? `${rowLegal.formWords}, ${formExpiryLine(rowLegal.form, now)}` : movement.legalStatus}
+              {rowLegal.form
+                ? `${rowLegal.formWords}, ${formExpiryLine(rowLegal.form, now, ctx.dayZero)}`
+                : movement.legalStatus}
             </dd>
           </div>
           <div>

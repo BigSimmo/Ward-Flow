@@ -92,6 +92,16 @@ describe("next step, stay progress and readiness from the recorded stay", () => 
     expect(stayProgress(stay({}), NOW_ANCHOR)?.headline).toBe("Day 7");
   });
 
+  it("counts days past the expected date by calendar day (time audit D2)", () => {
+    const dayStart = Math.floor(NOW_ANCHOR / MINUTES_PER_DAY) * MINUTES_PER_DAY;
+    // 22:00 yesterday read at 01:00 today: yesterday, never "today".
+    const lateYesterday = stayProgress(stay({ expectedDischargeAt: dayStart - 2 * 60 }), dayStart + 60);
+    expect(lateYesterday?.note).toBe("1 day past the expected date");
+    // 01:00 today read at 10:42: earlier today.
+    const earlierToday = stayProgress(stay({ expectedDischargeAt: dayStart + 60 }), NOW_ANCHOR);
+    expect(earlierToday?.note).toBe("Past the expected time today");
+  });
+
   it("shows readiness as recorded ticks, never a score", () => {
     const rows = dischargeReadiness(stay({}), { ...seed.patients[0]!, catchmentCommunityTeam: undefined }, new Date(0));
     expect(rows.map((row) => row.key)).toEqual(["date", "team", "contact"]);
