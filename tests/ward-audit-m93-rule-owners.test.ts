@@ -58,12 +58,10 @@ const DESCRIBERS = new Set(
 // Screens that compare a legal status with "Voluntary" themselves (10 Nov 2026). May only shrink.
 const KNOWN_LEGAL_STATUS_COPIES = [
   "coordinator/shortlist-panel.tsx",
-  "delays/delays-board-rows.tsx",
   "ed/ed-preview.tsx",
   "ed/ed-screen-desktop.tsx",
   "ed/ed-screen-person-sheet.tsx",
   "movements/movement-workflow-actions.tsx",
-  "movements/movements-stage-row.tsx",
   "patients/patient-documents-tab.tsx",
   "patients/patient-now-cards.tsx",
   "referrals/ward-referral-drawer-referral-step.tsx",

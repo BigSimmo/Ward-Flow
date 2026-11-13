@@ -165,3 +165,7 @@ review-flag kind), `ward-derivations.ts` (`expectFlagKindFor`), `ward-flow-recor
 answer for every `LegalStatus` value, proved per site and through `wardFlowReducer` by
 `tests/ward-clinical-d186-named-rules.test.ts`. No handler, payload, guard outcome or place scope changed; digests
 refreshed.
+
+Cited line numbers in the same PR's changed sources were then moved to follow its own edits (64 citations, in
+`actions.json` and `event-dispositions.json`), each mapped line by line from main `92630b1e` so it points at the same
+code text. Only `line` values changed. Two REFER citations into `ward-flow-referral-send-events.ts` (lines 1277 and 1285) were already past the file's end on main and are left for a separate fix.
