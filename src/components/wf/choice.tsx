@@ -230,9 +230,9 @@ export type SegmentedProps<T extends string> = {
 };
 
 /** Answer rows of this many options or more list one per line on a phone (spec item 15). */
-export const ANSWER_LIST_MIN = 3;
+const ANSWER_LIST_MIN = 3;
 /** Answer rows of this many options or more become separate wrapping chips (spec item 15). */
-export const ANSWER_CHIPS_MIN = 4;
+const ANSWER_CHIPS_MIN = 4;
 
 /**
  * Segmented control: `radiogroup` with roving tabindex, counts in `.k`. When items carry `href`

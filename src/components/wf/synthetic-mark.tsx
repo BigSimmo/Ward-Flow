@@ -2,7 +2,7 @@ import { cx } from "./cx";
 import styles from "./synthetic-mark.module.css";
 
 /** What the mark says in full, on hover and to a screen reader. */
-export const SYNTHETIC_MARK_FULL = "Synthetic data, not a medical record";
+const SYNTHETIC_MARK_FULL = "Synthetic data, not a medical record";
 
 /**
  * Shared design parts item 7 (Josh, 13 Nov 2026; F-39): the one synthetic-data tag for every
