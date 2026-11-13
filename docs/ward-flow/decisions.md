@@ -2305,4 +2305,5 @@ is inferred.
   12. Arrival rows keep the legal tag as recorded, in the fix round's wording (clinical wording).
   13. Planned admissions get full synthetic names (F-148).
 - **Build answers (8:51 PM AWST):** both the ward-desk clinician and the ward coordinator may pull a bed, and the record names which one did. A change on the pull form stays on the pull, shown as "changed by …", and does not update the patient record. The person is named by desk role, since there are no personal sign-ins. Points 5 and 6 are built in the system-fixes pull request; the page waves relabel.
+- **Build defaults (8:56 PM AWST, "Yes to all recommendations and update coordinator"):** the Home, Ward and Capacity pull request makes no TV edits and builds the bed squares. The window word is dropped where the page title already says "now". The Home forecast line reads "Tomorrow N short · range … · From ward dates".
 - **Boundary:** synthetic data only. Sets no clinical value.
