@@ -356,19 +356,6 @@
   padding-left: var(--wf-s-6);
   padding-right: var(--wf-s-6);
 }
-/* Shared design parts item 7: the synthetic-data mark ends the filter row, under Exit full screen. */
-.handover[data-enlarged="true"] .handoverFilters {
-  display: flex;
-  align-items: center;
-}
-.handover[data-enlarged="true"] .handoverFilters > :first-child {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-.handover[data-enlarged="true"] .handoverFilters > .handoverMark {
-  flex: none;
-  padding-left: 0;
-}
 .handover[data-enlarged="true"] .handoverTable th {
   top: 73px;
 }
