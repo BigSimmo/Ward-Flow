@@ -181,6 +181,7 @@ export const TRANSPORT_EXCEPTION_GAPS = [
   "legal_status_differs",
   "transport_order_missing",
   "fit_to_travel_missing",
+  "fit_to_travel_not_cleared",
 ] as const;
 export type TransportExceptionGap = (typeof TRANSPORT_EXCEPTION_GAPS)[number];
 export const TRANSPORT_EXCEPTION_REASONS = ["paper_sighted", "treating_team_confirmed", "urgent_to_follow"] as const;

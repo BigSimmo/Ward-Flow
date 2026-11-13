@@ -60,7 +60,8 @@ describe("the fixture", () => {
 describe("the gaps the screens ask about", () => {
   it("asks fit to travel until clearance is recorded as cleared", () => {
     expect(fitToTravelGaps(undefined)).toEqual(["fit_to_travel_missing"]);
-    expect(fitToTravelGaps({ cleared: false })).toEqual(["fit_to_travel_missing"]);
+    // D-207: recorded as not cleared has its own line.
+    expect(fitToTravelGaps({ cleared: false })).toEqual(["fit_to_travel_not_cleared"]);
     expect(fitToTravelGaps({ cleared: true })).toEqual([]);
   });
 

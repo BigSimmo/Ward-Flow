@@ -40,6 +40,8 @@ export const TRANSPORT_EXCEPTION_GAP_LABELS: Record<TransportExceptionGap, strin
   // says so (`ward-transport-paperwork.ts`).
   transport_order_missing: `Transport or transfer order not uploaded · ${TRANSPORT_PAPERWORK_STATUS_WORDS}`,
   fit_to_travel_missing: "Fit to travel not recorded",
+  // D-205: clearance recorded as not cleared is its own line, never "not recorded".
+  fit_to_travel_not_cleared: "Fit to travel: not cleared",
 };
 
 /** The step an exception was recorded at, in words: one label per step, never "Booked" for all. */
@@ -171,7 +173,7 @@ export function collectionGaps(
 ): TransportExceptionGap[] {
   const gaps: TransportExceptionGap[] = [];
   if (transportOrderGap(movement, units)) gaps.push("transport_order_missing");
-  if (movement.medicalClearance?.cleared !== true) gaps.push("fit_to_travel_missing");
+  gaps.push(...fitToTravelGaps(movement.medicalClearance));
   return gaps;
 }
 
@@ -183,7 +185,9 @@ export function collectionGaps(
 export type FitToTravelClearance = Pick<NonNullable<Movement["medicalClearance"]>, "cleared"> | undefined;
 
 export function fitToTravelGaps(clearance: FitToTravelClearance): TransportExceptionGap[] {
-  return clearance?.cleared === true ? [] : ["fit_to_travel_missing"];
+  if (clearance === undefined) return ["fit_to_travel_missing"];
+  // D-205: assessed and not cleared says so, not that the fact is missing.
+  return clearance.cleared === true ? [] : ["fit_to_travel_not_cleared"];
 }
 
 /**
@@ -205,7 +209,7 @@ export function handoverReadyGaps(
  */
 export function arrivalGaps(movement: Pick<Movement, "transport" | "medicalClearance">): TransportExceptionGap[] {
   if (movement.transport?.collectedAt !== undefined) return [];
-  return movement.medicalClearance?.cleared === true ? [] : ["fit_to_travel_missing"];
+  return fitToTravelGaps(movement.medicalClearance);
 }
 
 /**
