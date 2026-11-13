@@ -679,7 +679,7 @@ export function HubScreen() {
             {selected.authorised === false ? (
               <span className={styles.flagPill}>
                 <StatusGlyph tone="warning" size={8} />
-                Not authorised — voluntary admissions only
+                Not set up for involuntary admissions (demo) — voluntary admissions only
               </span>
             ) : null}
             {deskSite !== undefined ? null : (

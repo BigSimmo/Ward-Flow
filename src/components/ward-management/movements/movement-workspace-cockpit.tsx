@@ -867,8 +867,8 @@ export function MovementWorkspaceCockpit({
                 </dl>
                 {destinationNoLongerLawful(patient, units) ? (
                   <p className={styles.candidateRisk}>
-                    {destinationNoLongerLawful(patient, units)?.name} is not authorised to receive this patient under
-                    their current status. The acceptance predates the status change.
+                    {destinationNoLongerLawful(patient, units)?.name} is not set up for involuntary admissions (demo),
+                    which this patient&apos;s current status needs. The acceptance predates the status change.
                   </p>
                 ) : null}
               </div>

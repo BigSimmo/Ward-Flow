@@ -293,7 +293,7 @@ export function CapacityWardSidebar({
                 rows={[
                   ["Sex designation", row.unit.sexDesignation],
                   ["Gender mix", `Female ${row.unit.sexMix.Female} · Male ${row.unit.sexMix.Male}`],
-                  ["Authorised hospital", row.unit.authorised ? "Yes" : "No"],
+                  ["Set up for involuntary admissions (demo)", row.unit.authorised ? "Yes" : "No"],
                 ]}
               />
             </div>

@@ -176,7 +176,7 @@ function riskTile({ riskFlags, riskFlagsWhen, riskNotShared }: PatientGlanceProp
       key: "risk",
       icon: Flag,
       label: "Risk",
-      value: riskFlags ? "None flagged" : "None recorded",
+      value: "None recorded",
       quiet: true,
       sub: riskFlags ? source : undefined,
     };
