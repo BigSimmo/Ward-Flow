@@ -544,6 +544,22 @@ a.cellBody {
   color: var(--wf-hero-success);
 }
 
+@property --wf-row-fade-start {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes wfRowFadeStart {
+  0% {
+    --wf-row-fade-start: 0px;
+  }
+  10%,
+  100% {
+    --wf-row-fade-start: 36px;
+  }
+}
+
 /* Phone: chips and cells run to the screen's edges, scroll sideways under a soft fade and snap per
    item; chips keep a 48px tap area; the act button may use its short label. */
 @media (max-width: 46.4375rem) {
@@ -573,8 +589,36 @@ a.cellBody {
     scroll-padding-right: 48px;
     scroll-snap-type: x proximity;
     scrollbar-width: none;
-    -webkit-mask-image: linear-gradient(90deg, black calc(100% - 36px), transparent);
-    mask-image: linear-gradient(90deg, black calc(100% - 36px), transparent);
+    /* F-61 (PR E review, 13 Nov 2026): the start fade is 0 until the row scrolls (below). */
+    -webkit-mask-image: linear-gradient(
+      90deg,
+      transparent 0,
+      black var(--wf-row-fade-start),
+      black calc(100% - 36px),
+      transparent
+    );
+    mask-image: linear-gradient(
+      90deg,
+      transparent 0,
+      black var(--wf-row-fade-start),
+      black calc(100% - 36px),
+      transparent
+    );
+  }
+
+  /* F-61: once scrolled away from the start the row fades there too, and a chip focused or snapped
+     from the keyboard stops clear of that fade, as it does at the right. Scroll-driven: a row that
+     does not overflow, or a browser without scroll timelines, keeps the right-hand fade only. */
+  @supports (animation-timeline: scroll()) {
+    .chips,
+    .cells {
+      scroll-padding-left: 48px;
+      animation-name: wfRowFadeStart;
+      animation-duration: 1ms;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: scroll(self inline);
+    }
   }
 
   /* While a chip's menu is open it is pinned to the window below the row (wf/menu usePanelFit). The

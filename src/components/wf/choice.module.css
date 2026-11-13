@@ -562,26 +562,52 @@
 
 /* ── Edge fade for scrolling tabs and phone tracks (device audit, 11 Oct 2026) ─────────────────────
  * A clipped row fades at its end so the cut item reads as "scroll for more". Scroll-driven: full at
- * the start, none once scrolled to the end, and a row that does not overflow never fades. */
+ * the start, none once scrolled to the end, and a row that does not overflow never fades. F-61 (PR E
+ * review, 13 Nov 2026): once scrolled away from the start it fades at the start too, and the scroll
+ * padding keeps a focused item clear of both fades. */
 @property --wf-row-fade {
   syntax: "<length>";
   inherits: false;
   initial-value: 0px;
 }
 
+@property --wf-row-fade-start {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
 @keyframes wfRowFade {
-  from {
+  0% {
     --wf-row-fade: 24px;
+    --wf-row-fade-start: 0px;
   }
-  to {
+  10% {
+    --wf-row-fade-start: 24px;
+  }
+  100% {
     --wf-row-fade: 0px;
+    --wf-row-fade-start: 24px;
   }
 }
 
 @supports (animation-timeline: scroll()) {
   .tabs {
-    -webkit-mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
-    mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      black var(--wf-row-fade-start),
+      black calc(100% - var(--wf-row-fade)),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      black var(--wf-row-fade-start),
+      black calc(100% - var(--wf-row-fade)),
+      transparent 100%
+    );
+    scroll-padding-inline: 24px;
     /* Longhands (design audit, 5 Nov 2026): the CSS build folds `animation` and
        `animation-timeline` into one shorthand that Chrome rejects, which dropped the fade. */
     animation-name: wfRowFade;
@@ -596,8 +622,21 @@
   @supports (animation-timeline: scroll()) {
     .seg,
     .trk {
-      -webkit-mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
-      mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
+      -webkit-mask-image: linear-gradient(
+        to right,
+        transparent 0,
+        black var(--wf-row-fade-start),
+        black calc(100% - var(--wf-row-fade)),
+        transparent 100%
+      );
+      mask-image: linear-gradient(
+        to right,
+        transparent 0,
+        black var(--wf-row-fade-start),
+        black calc(100% - var(--wf-row-fade)),
+        transparent 100%
+      );
+      scroll-padding-inline: 24px;
       /* Longhands (design audit, 5 Nov 2026): the CSS build folds `animation` and
          `animation-timeline` into one shorthand that Chrome rejects, which dropped the fade. */
       animation-name: wfRowFade;
