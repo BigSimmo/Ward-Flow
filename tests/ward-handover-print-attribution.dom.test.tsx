@@ -114,11 +114,12 @@ it("prints the current desk and full place on every sheet, using the copy genera
   expect(stamps().length).toBeGreaterThan(1);
   for (const stamp of stamps()) {
     expect(stamp).toHaveTextContent("Prepared for printing by Nurse in charge, Mabu Liyan / Broome Mental Health Unit");
-    expect(stamp).toHaveTextContent(`at ${formatInstant(earlier)} yesterday. Synthetic data.`);
+    expect(stamp).toHaveTextContent(`at ${formatInstant(earlier)} board time yesterday. Synthetic data.`);
   }
   const print = vi.spyOn(window, "print").mockImplementation(() => {
     // flushSync must update the paper before the native print dialog is opened.
-    for (const stamp of stamps()) expect(stamp).toHaveTextContent(`at ${formatInstant(NOW_ANCHOR)}. Synthetic data.`);
+    for (const stamp of stamps())
+      expect(stamp).toHaveTextContent(`at ${formatInstant(NOW_ANCHOR)} board time. Synthetic data.`);
   });
   fireEvent.click(screen.getByRole("button", { name: "Print or save PDF" }));
   expect(print).toHaveBeenCalledOnce();
