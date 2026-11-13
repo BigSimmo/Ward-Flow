@@ -27,6 +27,9 @@ describe("withLoadRetry after the connection returns (A4-07)", () => {
     const Lazy = dynamic(withLoadRetry(load, "Tools did not load"), { loading: () => null });
     render(<Lazy label="Tools" />);
     expect(await screen.findByRole("alert")).toHaveTextContent(CONNECTION_LINE);
+    // The stand-in listens for "online" from an effect that runs after the alert is drawn. On a
+    // loaded runner the alert can be found first (PR C CI, shard 1), so let the effect run.
+    await act(async () => {});
 
     await act(async () => {
       window.dispatchEvent(new Event("online"));
@@ -79,6 +82,7 @@ describe("withLoadRetry after the connection returns (A4-07)", () => {
       </>,
     );
     expect(await screen.findAllByRole("alert")).toHaveLength(2);
+    await act(async () => {});
     await act(async () => {
       window.dispatchEvent(new Event("online"));
     });
