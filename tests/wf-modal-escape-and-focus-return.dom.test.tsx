@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { useRef, useState, type ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -11,8 +11,8 @@ import { isTopmostSheet, popSheet, pushSheet } from "@/components/wf/sheet-focus
 /*
  * Spec items 5 and 16 (shared design parts, 13 Nov 2026): Escape closes the top layer even from a
  * closed drop-down; a box that would open on a drop-down opens on its heading; a scroll-only dialog
- * body is a named stop; focus returns to the next row, else the heading, when the opener has left
- * the page; and a layer that re-registers keeps its place in the one modal stack.
+ * body is a named stop; and a layer that re-registers keeps its place in the one modal stack. (Focus
+ * after the opener leaves the page is PR C's, F-57.)
  */
 
 beforeEach(() => {
@@ -157,90 +157,6 @@ describe("a dialog body that only scrolls", () => {
       </Dialog>,
     );
     expect(screen.queryByRole("region")).toBeNull();
-  });
-});
-
-describe("focus return when the opener has left the page", () => {
-  function Rows({ fallbackHeading = true }: { fallbackHeading?: boolean }) {
-    const [rows, setRows] = useState(["Ashby", "Cadwaller", "Dunmore"]);
-    const [openFor, setOpenFor] = useState<string | null>(null);
-    return (
-      <section>
-        {fallbackHeading ? <h2>Act now</h2> : null}
-        <ul>
-          {rows.map((name) => (
-            <li key={name}>
-              <span>{name}</span>
-              <button type="button">Details for {name}</button>
-              <button type="button" onClick={() => setOpenFor(name)}>
-                Pull for {name}
-              </button>
-            </li>
-          ))}
-        </ul>
-        <Layer name="Pull the bed" open={openFor !== null} onClose={() => setOpenFor(null)} focusOnOpen="immediate">
-          <button
-            type="button"
-            onClick={() => {
-              setRows((current) => current.filter((name) => name !== openFor));
-              setOpenFor(null);
-            }}
-          >
-            Pull
-          </button>
-        </Layer>
-      </section>
-    );
-  }
-
-  it("moves to the same control on the next row", () => {
-    render(<Rows />);
-    const opener = screen.getByRole("button", { name: "Pull for Ashby" });
-    opener.focus();
-    fireEvent.click(opener);
-    fireEvent.click(screen.getByRole("button", { name: "Pull" }));
-    expect(screen.queryByRole("button", { name: "Pull for Ashby" })).toBeNull();
-    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Pull for Cadwaller" }));
-  });
-
-  it("moves to the section heading when no row is left", () => {
-    function Single() {
-      const [shown, setShown] = useState(true);
-      const [open, setOpen] = useState(false);
-      return (
-        <section>
-          <h2>Accepted, bed not pulled</h2>
-          <div>
-            {shown ? (
-              <button type="button" onClick={() => setOpen(true)}>
-                Pull the bed
-              </button>
-            ) : null}
-          </div>
-          <Layer name="Pull sheet" open={open} onClose={() => setOpen(false)} focusOnOpen="immediate">
-            <button
-              type="button"
-              onClick={() => {
-                setShown(false);
-                setOpen(false);
-              }}
-            >
-              Confirm pull
-            </button>
-          </Layer>
-        </section>
-      );
-    }
-    render(<Single />);
-    const opener = screen.getByRole("button", { name: "Pull the bed" });
-    opener.focus();
-    fireEvent.click(opener);
-    fireEvent.click(screen.getByRole("button", { name: "Confirm pull" }));
-    const heading = screen.getByRole("heading", { name: "Accepted, bed not pulled" });
-    expect(document.activeElement).toBe(heading);
-    expect(heading).toHaveAttribute("tabindex", "-1");
-    act(() => heading.blur());
-    expect(heading).not.toHaveAttribute("tabindex");
   });
 });
 

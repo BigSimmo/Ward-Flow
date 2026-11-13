@@ -15,7 +15,6 @@ import { X } from "lucide-react";
 import { OverlayPortal } from "./overlay-root";
 import { cn } from "@/components/ui-primitives";
 import styles from "./sheet.module.css";
-import { focusOpenerPlace, rememberOpenerPlace } from "./focus-opener";
 import { handleModalKeyDown, openingFocusTarget } from "./use-modal-focus";
 import {
   canRestoreFocusTo,
@@ -261,7 +260,6 @@ export function Sheet({
     if (!open) return;
 
     const previousActiveElement = overlayOpener();
-    const openerPlace = rememberOpenerPlace(previousActiveElement);
     const restoreTimers = restoreTimersRef.current;
     // A close-then-reopen inside one frame leaves this instance's own restore
     // scheduled; left pending it pulls focus back to the opener mid-open.
@@ -324,16 +322,7 @@ export function Sheet({
         // The shell's fallback only ever picks up focus that has fallen to the page.
         const fallbacks =
           lost && allowFallback ? Array.from(document.querySelectorAll<HTMLElement>("[data-wf-focus-fallback]")) : [];
-        const candidates = restoreCandidates();
-        for (const target of candidates) {
-          if (!canRestoreFocusTo(target)) continue;
-          target.focus({ preventScroll: true });
-          if (document.activeElement === target) return true;
-        }
-        // Spec item 5: the opener left the page with its row, so the row now in its place, else the
-        // heading above it, takes focus before the shell's fallback.
-        if (lost && candidates.length === 0 && focusOpenerPlace(openerPlace, canRestoreFocusTo)) return true;
-        for (const target of fallbacks) {
+        for (const target of [...restoreCandidates(), ...fallbacks]) {
           if (!canRestoreFocusTo(target)) continue;
           target.focus({ preventScroll: true });
           if (document.activeElement === target) return true;

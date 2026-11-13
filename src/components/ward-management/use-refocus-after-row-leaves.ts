@@ -1,14 +1,12 @@
 "use client";
 
 import { useEffect, useRef, type RefObject } from "react";
-import { focusForHandover } from "@/components/wf/focus-opener";
 
 /**
  * RB-N01 / NB-02 / A1K-04: a button that closes its own row (Done, Accept) leaves with the row, which
  * drops keyboard focus to the page. Call `mark(index)` as the row's button is pressed; once the rows
  * next change and focus has been lost, focus goes to the same button on the row now in that place (or the
- * last one), else to `fallback`. A refused step keeps its row and focus, so nothing moves. Every kit
- * overlay applies the same rule by itself when its opener leaves the page (`focusOpenerPlace`).
+ * last one), else to `fallback`. A refused step keeps its row and focus, so nothing moves.
  */
 export function useRefocusAfterRowLeaves({
   list,
@@ -36,8 +34,13 @@ export function useRefocusAfterRowLeaves({
       return;
     }
     const region = fallback?.current;
+    if (!region) return;
     // A heading or region takes focus only for this hand-over, so it never joins the tab order.
-    if (region) focusForHandover(region);
+    if (!region.hasAttribute("tabindex")) {
+      region.setAttribute("tabindex", "-1");
+      region.addEventListener("blur", () => region.removeAttribute("tabindex"), { once: true });
+    }
+    region.focus();
   }, [rowsKey, list, selector, fallback]);
   return (index: number) => {
     marked.current = index;

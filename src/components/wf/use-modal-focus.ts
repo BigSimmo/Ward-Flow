@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useId, useRef, type RefObject } from "react";
 import { modalFocusTargets } from "./focus-targets";
-import { focusOpenerPlace, rememberOpenerPlace } from "./focus-opener";
 import {
   canRestoreFocusTo,
   isTopmostSheet,
@@ -211,7 +210,6 @@ export function useModalFocus({
   useEffect(() => {
     if (!open) return;
     const opener = overlayOpener();
-    const openerPlace = rememberOpenerPlace(opener);
     const openPanel = panelRef.current;
     const capture = keyPhase === "capture";
 
@@ -274,14 +272,7 @@ export function useModalFocus({
         active === document.body ||
         !active.isConnected ||
         Boolean(openPanel?.isConnected && openPanel.contains(active));
-      if (!focusFell) return;
-      if (target) {
-        if (canRestoreFocusTo(target)) target.focus({ preventScroll: true });
-        return;
-      }
-      // The opener left the page with its row (the action removed it): the row now in its place,
-      // else the heading above it, rather than the page body.
-      focusOpenerPlace(openerPlace, canRestoreFocusTo);
+      if (target && focusFell && canRestoreFocusTo(target)) target.focus({ preventScroll: true });
     };
   }, [
     open,
