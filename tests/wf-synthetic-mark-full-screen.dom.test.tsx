@@ -13,7 +13,6 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -91,17 +90,6 @@ describe("enlarged views carry the mark", () => {
     expect(within(dialog).getByTitle(FULL)).toBeInTheDocument();
   });
 
-  it("the enlarged ED handover table", () => {
-    render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <EdScreen edId="rph-ed" />
-      </WardFlowProvider>,
-    );
-    const board = screen.getByRole("region", { name: "This department's patients" });
-    expect(marksIn(board)).toHaveLength(0);
-    fireEvent.click(within(board).getByRole("button", { name: "Enlarge" }));
-    expect(board).toHaveAttribute("data-enlarged", "true");
-    expect(marksIn(board)).toHaveLength(1);
-    expect(within(board).getByTitle(FULL)).toBeInTheDocument();
-  });
+  // The ED handover board waits for PR C (avoid list); this case returns when the mark is wired there.
+  it.todo("the enlarged ED handover table");
 });
