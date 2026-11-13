@@ -192,6 +192,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-167](#d-167-the-triage-page-has-a-left-sign-off-nav-and-joined-section-steps-13-november-2026)                                                       | The Triage page has a left sign-off nav and joined section steps                       | Active                                           |
 | [D-168](#d-168-the-demo-script-follows-the-13-november-pre-demo-audit-13-november-2026)                                                                 | The demo script follows the 13 November pre-demo audit                                 | Active                                           |
 | [D-169](#d-169-demo-script-wording-follows-the-hard-questions-audit-13-november-2026)                                                                   | Demo script wording follows the hard questions audit                                   | Active                                           |
+| [D-171](#d-171-hosted-database-brought-to-schema-18-migrations-017-and-018-13-november-2026)                                                            | Hosted database brought to schema 18 (migrations 017 and 018)                          | Active                                           |
 | [D-172](#d-172-the-community-desks-ed-heads-up-stays-as-built-in-d-154-13-november-2026)                                                                | The community desk's ED heads-up stays as built in D-154                               | Active                                           |
 
 ---
@@ -2086,9 +2087,16 @@ is inferred.
   3. **Cost:** the answer in the room is that there is no price today.
 - **Boundary:** documentation only. Changes no app behaviour, clinical rule or permission. Gives no regulatory, legal or clinical view. Approves no release.
 
+## D-171. Hosted database brought to schema 18 (migrations 017 and 018) (13 November 2026)
+
+- **Date:** 13 November 2026, 1:34 PM AWST (05:34 UTC). **Decided by:** Josh, choosing "Apply 017 then 018" on a decision card in the Ward Flow project thread "Audit Ward Flow performance". He had said "Go ahead" to applying migration 018 after PR #1624 merged (11 November). D-170 is claimed by open PR #1650.
+- **Finding:** the hosted Ward Flow Supabase database (project `zakzoemeedfepxcstsou`) was still at schema 16. Migration 017 (Help remembered by account, 4 November) had never been applied, so 018 could not go on alone.
+- **Decision:** apply 017 and then 018 together, after the release carrying PR #1624 was live (the backend refuses a schema newer than it knows). This was done at 05:37 UTC in one transaction under advisory lock `782322`, with a starting-version check, the checksum-verified migration files and the runtime grants, as `migrate-supabase.mjs` does. Afterwards: schema 18, the four new indexes present, the runtime role can read, add and update `account_preferences` but not delete, browser roles have no access, and row security is on.
+- **Boundary:** synthetic data only. Schema and grants only, with rollback files 018 then 017. No release, Railway or clinical change.
+
 ## D-172. The community desk's ED heads-up stays as built in D-154 (13 November 2026)
 
-- **Date:** 13 November 2026, 1:46 PM AWST (05:46 UTC). **Decided by:** Josh, "Ok yes to all recommendations" in the Ward Flow project chat. The recommendation for the community desk ED heads-up (PR #1606, item 46) was to leave it as it is. Numbered D-172 because D-170 and D-171 are taken by open PRs #1650 and #1651. The two other answers in the same message, on Legal forms Print and Export and on an ended This-shift staff request, were already recorded as D-157 and D-158 on 12 November and are built on main.
+- **Date:** 13 November 2026, 1:46 PM AWST (05:46 UTC). **Decided by:** Josh, "Ok yes to all recommendations" in the Ward Flow project chat. The recommendation for the community desk ED heads-up (PR #1606, item 46) was to leave it as it is. Numbered D-172 because D-170 is taken by open PR #1650 and D-171 by PR #1651. The two other answers in the same message, on Legal forms Print and Export and on an ended This-shift staff request, were already recorded as D-157 and D-158 on 12 November and are built on main.
 - **Decision:** the item 46 "Your patients in ED" card stays as D-154 built it. A community team desk in local mode gets the narrow scoped list (UMRN, ED name and recorded time for its open-episode patients). In shared mode the server still sends no such list, so a shared community desk's card stays empty. Sending the list from `scopeWardFlowState`, the way D-152 sends `diversionReturns`, is not built now.
 - **Why:** the shared-mode gap fails closed and exposes nothing extra. Widening what the community role receives from the server is a privacy change (D-14, D-87) that can wait for real-data planning.
 - **Boundary:** synthetic data only. No code change. Item 46 with real data still needs the D-87 privacy review. Approves no merge or release.
