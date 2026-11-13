@@ -1,4 +1,5 @@
 import { WardLoadingShape, type WardLoadingShapePaths } from "@/components/ward-management/shell/ward-loading-shape";
+import { wardLoadingShapeRows } from "@/components/ward-management/shell/ward-loading-shape-rows";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 import styles from "./loading.module.css";
@@ -28,7 +29,7 @@ export default function WardFlowLoading() {
   return (
     <main id="main-content" className={styles.main} aria-busy="true" data-testid="ward-flow-loading">
       <WardLoadingStatus />
-      <WardLoadingShape paths={SHAPED_PAGES} />
+      <WardLoadingShape paths={SHAPED_PAGES} rows={wardLoadingShapeRows()} />
       <WardPrototypeFooter />
     </main>
   );

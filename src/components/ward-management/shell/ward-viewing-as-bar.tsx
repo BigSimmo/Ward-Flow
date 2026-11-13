@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
 
-import { useDemoRoleSession } from "@/components/ward-management/tools/ward-demo-role-session";
+import { useDemoRoleSession } from "@/components/ward-management/tools/ward-demo-role-session-store";
 
 /**
  * Shared design parts item 8 (13 Nov 2026): while See it as shows another desk, every page says so
