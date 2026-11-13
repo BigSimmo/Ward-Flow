@@ -324,6 +324,10 @@
   /* An inline-flex box stops the link's underline reaching its words; take it from the link, so
      "In use" reads as a link like the other two figures (home mock-up). */
   text-decoration: inherit;
+  /* On the baseline, this box made its line 16.5px, so the hero ended on a half pixel and the folder
+     sheet's edges blended with the slate into grey lines through the stage pills and under the
+     tabs (check B5, 820 and 390). Top-aligned, the line stays 16px, as the other two figures. */
+  vertical-align: top;
 }
 
 /*
