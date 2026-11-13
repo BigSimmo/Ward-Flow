@@ -29,6 +29,7 @@ const green = {
   BACKEND_REUSED: "false",
   UNIT_REUSED: "false",
   COVERAGE_REUSED: "false",
+  SWEEP_ONLY: "false",
   BROWSER_REUSED: "false",
   RELEASE_REUSED: "false",
   BUILD_REUSED: "false",
@@ -93,5 +94,21 @@ describe("required gate with independent reuse evidence", () => {
     expect(verdict({ ...green, DRAFT: "true" })).not.toBe(0);
     expect(verdict({ ...green, UNIT_SCOPE: "" })).not.toBe(0);
     expect(verdict({ ...green, UNIT_REUSED: "unknown" })).not.toBe(0);
+    expect(verdict({ ...green, SWEEP_ONLY: "unknown" })).not.toBe(0);
+  });
+
+  it("accepts a main sweep-only run: fresh unit shards with the pull request's coverage reused", () => {
+    const sweep = { ...green, SWEEP_ONLY: "true", COVERAGE_REUSED: "true", COVERAGE_RESULT: "skipped" };
+    expect(verdict(sweep)).toBe(0);
+    for (const changes of [
+      { GITHUB_EVENT_NAME: "pull_request" },
+      { GITHUB_REF: "refs/heads/other" },
+      { REUSE_RESULT: "failure" },
+      { UNIT_REUSED: "true", UNIT_RESULT: "skipped" },
+      { COVERAGE_REUSED: "false", COVERAGE_RESULT: "success" },
+      { UNIT_RESULT: "failure" },
+    ])
+      expect(verdict({ ...sweep, ...changes })).not.toBe(0);
+    expect(verdict({ ...green, COVERAGE_REUSED: "true", COVERAGE_RESULT: "skipped" })).not.toBe(0);
   });
 });
