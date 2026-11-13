@@ -53,6 +53,9 @@ import styles from "./pull-accepted-referral.module.css";
 /** The form's own "No form" answer, kept apart from "not answered yet" (""). */
 const NO_FORM = "none";
 
+/** Review G-1: an undone journey with no level recorded has the level chosen on the movement first. */
+const REOPENED_NO_LEVEL_LINE = "Choose an observation level on the movement first";
+
 /** A fact's source on its label line: the record's name, "Not recorded", or who changed it. */
 function SourceLine({ id, source }: { id: string; source: PullFactSource }) {
   return (
@@ -245,6 +248,8 @@ export function PullAcceptedReferral({
       : undefined) ??
     (referral.ageBand === undefined ? "This referral has no age band recorded" : undefined) ??
     (reopened ? undefined : chooseFactsLine(missing)) ??
+    // D-188 (tightened again 13 Nov, every pull): a journey with no level recorded is not pulled here.
+    (reopened && !observationIsRecorded(reopened.observation) ? REOPENED_NO_LEVEL_LINE : undefined) ??
     (!reopened && level === "intermittent" && intervalMinutes === "" ? CHOOSE_INTERVAL_LINE : undefined);
 
   function pull(event: FormEvent<HTMLFormElement>) {

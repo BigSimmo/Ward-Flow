@@ -32,3 +32,14 @@ moves onto their own tab, which always starts closed, so both now load on first 
 tomorrow" helpers moved to `capacity-forecast-help.ts` so the Forecast card no longer pulls the chart
 in. The Ward page's pull step bed choice (`ward-pull-bed-choice-sheet.tsx`) loads when Confirm
 arrival opens it. Capacity dropped about 48 KB; Ward about 1.5 KB.
+
+## Trim after the review fixes (13 Nov 2026, evening)
+
+The review fixes put Home at 591.0 KB, over its limit. Unused class names were removed from Home's and the
+referral board's style modules (`coordinator/home.module.css`, `home-cards.module.css`, `referrals/referrals.module.css`,
+`referral-board.module.css`, `referral-panel.module.css`); each name was checked as read nowhere in `src`, and the
+two shortlist rules the overlay test guards were kept. Every class name a module exports ships in the page script,
+so this shrinks first loads without changing any screen. Measured on a local production build: Home 589.4,
+Referrals 588.0, Ward 621.5, Capacity 616.2, ED arm 676.9, Bed meeting 594.6, Statistics 636.0. No budget changes.
+A first attempt that lazy-loaded Home's pinned card moved shared code into Referrals and Statistics (+2 KB each)
+and was dropped.

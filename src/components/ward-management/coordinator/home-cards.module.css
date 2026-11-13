@@ -17,18 +17,6 @@
 .okInk {
   color: var(--wf-success-ink);
 }
-.muted {
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-  color: var(--wf-ink-3);
-}
-.kicker {
-  font-size: var(--wf-fs-12);
-  font-weight: 600;
-  letter-spacing: var(--wf-tr-caps);
-  text-transform: uppercase;
-  color: var(--wf-ink-3);
-}
 .srOnly {
   position: absolute;
   width: 1px;
@@ -87,42 +75,7 @@
   line-height: var(--wf-lh-13);
   color: var(--wf-ink-2);
 }
-
-.promptBody {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--wf-s-2);
-  margin: 0;
-  padding: var(--wf-s-4);
-  border-top: 1px solid var(--wf-line);
-  font-size: var(--wf-fs-13);
-  line-height: var(--wf-lh-13);
-  color: var(--wf-ink-2);
-}
-.promptIcon {
-  flex: none;
-  color: var(--wf-ink-3);
-}
 /* The next person to place, on the card itself: their name and alert, Open at the right. */
-.nextUp {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wf-s-3);
-  padding: var(--wf-s-3) var(--wf-s-4);
-  border-top: 1px solid var(--wf-line);
-  color: var(--wf-ink-1);
-}
-.nextOpen {
-  flex: none;
-}
-.nextText {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
 
 /* The disclosure footer keeps the page's side margin, as on every other page. */
 .footer.footer {
@@ -138,11 +91,6 @@
 
 /* Final check (30 Oct 2026): in the placement region, a referral's "Tier 3 · least urgent" tag uses
    the normal font on a phone, as on desktop, not the monospace. */
-@media (max-width: 46.4375rem) {
-  .referralPlacement [data-testid^="ward-referral-placement"] [class*="_tierBadge"] {
-    font-family: var(--wf-font);
-  }
-}
 
 /* Beds that fit, folded while someone is chosen: Capacity and a chevron that opens the table. */
 .foldActions {

@@ -179,7 +179,7 @@ fold rule; the refresh dispatch is unchanged. `ward/ward-answer-view.tsx` (ACCEP
 Review P4-1 (same PR): after Undo pull, the journey stays open at "accepted, awaiting a bed", so the accepted
 referral is listed again with that journey's id. `referrals/pull-accepted-referral.tsx` then sends PULL_PATIENT on that
 journey (`movementId`, `unitId`, and `actingUnitId` for the ward desk) instead of RAISE_REFERRAL, with the facts it
-recorded when it started shown read-only. The RAISE_REFERRAL payload and its guards are unchanged; the RAISE_REFERRAL
+recorded when it started shown read-only. A journey that records no observation level is refused there ("Choose an observation level on the movement first", review G-1). The RAISE_REFERRAL payload and its guards are unchanged; the RAISE_REFERRAL
 digest was refreshed. Evidence: `tests/ward-pull-bed-step.dom.test.tsx` (Undo, row back, pull again), run locally.
 
 Review P4-2 (D-188 tightened, same PR): the All arrivals tab's Pull the bed in `ward/ward-screen.tsx` now goes through
