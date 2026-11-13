@@ -171,15 +171,36 @@ describe("staff needed requests", () => {
     const startOf = (state: WardFlowState) =>
       state.staffRequests!.filter((record) => record.unitId === UNIT).at(-1)!.shiftStartAt;
     const atNow = staffRequestShiftStart("this_shift", savedAt);
-    // Pressed too long before the save, a far-off time, the other shift's start and a bad number.
+    // A far-off time, the other shift's start and a bad number.
     for (const shiftStartAt of [
-      staffRequestShiftStart("this_shift", boundary - 1),
       NOW_ANCHOR + 10_000,
       staffRequestShiftStart("next_shift", savedAt),
       Number.NaN,
     ]) {
       expect(startOf(wardFlowReducer(seed, ask({ now: savedAt, shiftStartAt })))).toBe(atNow);
     }
+  });
+
+  it("refuses an ended This shift even when the save lands after the tolerance (#1633, #1636)", () => {
+    const boundary = shiftEndInstant(NOW_ANCHOR);
+    const chosen = staffRequestShiftStart("this_shift", boundary - 1);
+    for (const savedAt of [boundary + 1, boundary + STAFF_REQUEST_SHIFT_TOLERANCE_MINUTES + 1, boundary + 60]) {
+      const after = wardFlowReducer(seed, ask({ shift: "this_shift", now: savedAt, shiftStartAt: chosen }));
+      expect(refused(seed, after)).toBe(true);
+      expect(after.rejections.at(-1)?.reason).toBe("This shift has already ended. Choose this shift or next shift again");
+    }
+    // Next shift across the same boundary, and an omitted choice, are unchanged.
+    const savedAt = boundary + STAFF_REQUEST_SHIFT_TOLERANCE_MINUTES + 1;
+    expect(refused(seed, wardFlowReducer(seed, ask({ shift: "this_shift", now: savedAt })))).toBe(false);
+    expect(
+      refused(
+        seed,
+        wardFlowReducer(
+          seed,
+          ask({ shift: "next_shift", now: boundary + 1, shiftStartAt: staffRequestShiftStart("next_shift", boundary - 1) }),
+        ),
+      ),
+    ).toBe(false);
   });
 
   it("lets the shared command carry the chosen shift start as a number only", () => {
