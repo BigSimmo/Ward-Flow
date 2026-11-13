@@ -63,48 +63,36 @@ describe("ACKNOWLEDGE_INBOX_ITEM", () => {
     expect(after.some((item) => item.id === inboxItemId)).toBe(true);
   });
 
-  it("is not idempotent: a second acknowledgement is a distinct fact, not a duplicate collapsed away", () => {
-    const state = seeded();
-    const inboxItemId = firstRealInboxItemId();
-    const onceAcknowledged = wardFlowReducer(state, {
-      type: "ACKNOWLEDGE_INBOX_ITEM",
-      role: "coordinator",
-      now: NOW,
-      inboxItemId,
-    });
-    const twiceAcknowledged = wardFlowReducer(onceAcknowledged, {
-      type: "ACKNOWLEDGE_INBOX_ITEM",
-      role: "coordinator",
-      now: NOW,
-      inboxItemId,
-    });
-    expect(twiceAcknowledged.rejections).toEqual([]);
-    expect(twiceAcknowledged.inboxAcknowledgements[inboxItemId]).toHaveLength(2);
-  });
-
-  /**
-   * 🔴 THE TIMING TRAP. `ADVANCE_CLOCK` is the only thing that moves `now` independently, so two
-   * dispatches in the same render carry the identical `at`. A join, sort or dedup keyed on `at`
-   * alone would collapse these two into one and silently drop the second acknowledger's record —
-   * this asserts both survive as two distinct array entries, identified by their position in the
-   * append-only array rather than by `at`.
-   */
-  it("keeps two same-instant acknowledgements distinct — never joined or deduplicated by `at`", () => {
+  it("is idempotent: same-instant repeated dispatches produce identical state without duplicate records", () => {
     const state = seeded();
     const inboxItemId = firstRealInboxItemId();
     const event: WardFlowEvent = { type: "ACKNOWLEDGE_INBOX_ITEM", role: "coordinator", now: NOW, inboxItemId };
 
-    // Two dispatches, no ADVANCE_CLOCK between them — both events land at exactly NOW.
-    const afterFirst = wardFlowReducer(state, event);
-    const afterSecond = wardFlowReducer(afterFirst, event);
+    const first = wardFlowReducer(state, event);
+    const second = wardFlowReducer(first, event);
 
-    const history = afterSecond.inboxAcknowledgements[inboxItemId];
-    expect(history).toHaveLength(2);
-    expect(history[0].at).toBe(NOW);
-    expect(history[1].at).toBe(NOW);
-    // Same instant, same role — and still two entries, not one. Distinctness comes from array
-    // position, never from the timestamp.
-    expect(history[0]).not.toBe(history[1]);
+    expect(second).toBe(first);
+    expect(second.inboxAcknowledgements[inboxItemId]).toHaveLength(1);
+  });
+
+  it("records subsequent acknowledgements at different timestamps as distinct records", () => {
+    const state = seeded();
+    const inboxItemId = firstRealInboxItemId();
+    const first = wardFlowReducer(state, {
+      type: "ACKNOWLEDGE_INBOX_ITEM",
+      role: "coordinator",
+      now: NOW,
+      inboxItemId,
+    });
+    const second = wardFlowReducer(first, {
+      type: "ACKNOWLEDGE_INBOX_ITEM",
+      role: "coordinator",
+      now: NOW + 60,
+      inboxItemId,
+    });
+    expect(second.inboxAcknowledgements[inboxItemId]).toHaveLength(2);
+    expect(second.inboxAcknowledgements[inboxItemId][0].at).toBe(NOW);
+    expect(second.inboxAcknowledgements[inboxItemId][1].at).toBe(NOW + 60);
   });
 
   it("is refused for a role EVENT_ROLE does not permit", () => {

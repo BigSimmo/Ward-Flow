@@ -74,9 +74,7 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     const atRest = screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent);
     expect(atRest[0]).toMatch(/^\d+ open ED journeys, \d+ beds? ready$/u);
     // Open ED journeys retain accountability through transit; the queue can also contain ward/community origins.
-    expect(screen.getByTestId("ward-home-ed-population")).toHaveTextContent(
-      /^\d+ still in ED · \d+ in transit or recorded departure · Limited demo coverage$/u,
-    );
+    expect(screen.getByTestId("ward-home-ed-population")).toHaveTextContent(/^\d+ still in ED · \d+ in transit$/u);
     expect(atRest.slice(1)).toEqual(["ED pressure", "Priority queue", "Beds that fit", "Placement"]);
     expect(screen.queryByTestId("ward-placement-top-of-queue")).not.toBeInTheDocument();
     expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();

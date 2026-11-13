@@ -45,6 +45,12 @@
     ".claude/**",
     ".next-playwright/**",
     "scripts/archive/**",
-    "docs/ward-flow/control/evidence/**"
+    "docs/ward-flow/control/evidence/**",
+    "mockup-backup-*",
+    "mockups/**",
+    "_pc-backup-*",
+    "_pc-backup-*/**",
+    "tests/e2e-swarm/**",
+    "tests/adversarial-*.test.ts"
   ]
 }

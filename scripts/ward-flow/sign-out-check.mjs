@@ -8,9 +8,10 @@
 // (not yet in main) whose changes since main touch the file. Exit 1 if any clash, so
 // you stop and tell the coordinator before editing.
 import { execFile, execFileSync } from "node:child_process";
-import { readdirSync, readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import os from "node:os";
 
@@ -18,6 +19,7 @@ const git = (argv) => execFileSync("git", argv, { encoding: "utf8", stdio: ["ign
 const root = git(["rev-parse", "--show-toplevel"]);
 const {
   approvedTakeoverFiles,
+  isCanonicalWardFlowRemote,
   isPublicWardFlowCheckout,
   scopedActiveSignOutLines,
   signOutConflicts,
@@ -165,7 +167,19 @@ if (process.argv[2] === "--stale") {
   process.exit(0);
 }
 
-const files = process.argv.slice(2).map((file) => file.replace(/\\/g, "/").replace(/^\.\//, ""));
+// Explicit, reviewed input only: normal hooks do not supply these arguments. A checksum
+// pins reviewed bytes; it is not proof of approval. Admission needs separate owner authority.
+const args = process.argv.slice(2);
+let historicalAck;
+if (args[0] === "--historical-path-ack") {
+  if (args[2] !== "--sha256" || !/^[a-f0-9]{64}$/.test(args[3] ?? "") || args.length < 5) {
+    console.error("sign-out-check: expected --historical-path-ack <file> --sha256 <reviewed checksum> <paths>.");
+    process.exit(2);
+  }
+  historicalAck = { file: args[1], sha256: args[3] };
+  args.splice(0, 4);
+}
+const files = args.map((file) => file.replace(/\\/g, "/").replace(/^\.\//, ""));
 if (files.length === 0) {
   console.log("Usage: sign-out-check.mjs <file> [<file> ...] | --stale");
   process.exit(2);
@@ -173,6 +187,10 @@ if (files.length === 0) {
 const current = git(["branch", "--show-current"]);
 const signOutText = readSignOutText();
 const approved = approvedTakeoverFiles(signOutText, current, root);
+if (historicalAck && approved.has(".githooks/pre-commit")) {
+  console.error("sign-out-check: historical acknowledgement cannot be combined with a takeover of its hook path.");
+  process.exit(1);
+}
 const toCheck = files.filter((file) => !approved.has(file));
 for (const file of files) if (approved.has(file)) console.log(`APPROVED TAKEOVER  ${file}`);
 if (toCheck.length === 0) {
@@ -189,6 +207,29 @@ if (signedOut.length) {
 // No branch can have changed a requested path if no task commit outside the line touched it.
 // This common case avoids opening every historical branch for a new file.
 requireLine();
+let acknowledged;
+try {
+  if (historicalAck) acknowledged = validateHistoricalAck(historicalAck);
+} catch (error) {
+  console.error(`sign-out-check: historical acknowledgement rejected: ${error.message}`);
+  process.exit(1);
+}
+function verifyAcknowledgementStillCurrent() {
+  if (!acknowledged) return;
+  try {
+    acknowledged.assertStable();
+    const latest = readSignOutText();
+    if (approvedTakeoverFiles(latest, current, root).has(".githooks/pre-commit")) {
+      throw new Error("a hook takeover appeared while checking history");
+    }
+    if (signOutConflicts(toCheck, latest, current, root).length) {
+      throw new Error("an active owner appeared while checking history");
+    }
+  } catch (error) {
+    console.error(`sign-out-check: historical acknowledgement rejected: ${error.message}`);
+    process.exit(1);
+  }
+}
 const history = git([
   "--literal-pathspecs",
   "log",
@@ -222,6 +263,7 @@ function formatSignOutHint(targetFiles) {
 }
 
 if (!history) {
+  verifyAcknowledgementStillCurrent();
   console.log(`sign-out-check: no clash for ${toCheck.length} file(s); no unfolded task commit touches them.`);
   formatSignOutHint(toCheck);
   process.exit(0);
@@ -256,10 +298,17 @@ async function scan() {
   }
 }
 await Promise.all(Array.from({ length: Math.min(4, unfolded.length) }, scan));
+verifyAcknowledgementStillCurrent();
 const touching = [];
+let acknowledgedCount = 0;
 for (const [index, branch] of unfolded.entries()) {
-  for (const file of toCheck) if (changedByBranch[index].has(file)) touching.push({ file, branch });
+  for (const file of toCheck) {
+    if (!changedByBranch[index].has(file)) continue;
+    if (acknowledged?.covers(branch, file)) acknowledgedCount++;
+    else touching.push({ file, branch });
+  }
 }
+if (acknowledgedCount) console.log(`ACKNOWLEDGED HISTORY  .githooks/pre-commit  on ${acknowledgedCount} exact refs; active ownership remains checked.`);
 
 for (const { file, branch } of touching) console.log(`ALSO CHANGED  ${file}  on unfolded branch ${branch}`);
 if (touching.length === 0) {
@@ -269,3 +318,131 @@ if (touching.length === 0) {
 }
 console.log("sign-out-check: clash found. Tell the coordinator before editing these files.");
 process.exit(1);
+
+function validateHistoricalAck(input) {
+  const target = ".githooks/pre-commit";
+  const fail = (message) => { throw new Error(message); };
+  const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
+  const objectId = (value) => typeof value === "string" && /^[a-f0-9]{40}$/.test(value);
+  const checksum = (value) => typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
+  const requiredRefs = new Set([
+    "backup/20261002-local-main-before-polish", "backup/20261002-main-before-final-polish",
+    "backup/20261002-main-before-preserved-polish", "backup/local-main-historical-20261003",
+    "backup/stash-2-20261004", "codex/chat-community-design-c53c", "codex/chat-outstanding-local-fold-bc23",
+    "codex/chat-ward-rules-repair-7a69", "codex/chat-workflow-final-efficiency-9034",
+    "codex/chat-workflow-remediation-6181", "codex/docs-rules-repair-20261002", "codex/multisystem-repair-20261001",
+    "codex/polish-final-preserve-20261002", "codex/polish-gate-baseline-20261002", "codex/polish-local-fold-20261002",
+    "codex/polish-main-preserve-20261002", "codex/ward-validation-repair-20261002",
+    "codex/workflow-remediation-main-6181", "ward/ag-policy-softening-20261003", "ward/antigravity-docs-repair-20261003",
+  ].map((ref) => `refs/heads/${ref}`));
+  const boundedFile = (file) => {
+    const info = statSync(file);
+    if (!info.isFile() || info.size > 262_144) fail("evidence must be a regular file no larger than 256 KiB");
+    const bytes = readFileSync(file);
+    if (bytes.length > 262_144) fail("evidence grew beyond 256 KiB");
+    return bytes;
+  };
+  const bytes = boundedFile(input.file);
+  if (sha256(bytes) !== input.sha256) fail("record checksum mismatch");
+  const record = JSON.parse(bytes.toString("utf8"));
+  if (!standaloneWardFlow || record.repository !== "BigSimmo/Ward-Flow") fail("repository identity mismatch");
+  if (record.version !== 1 || record.state !== "approved-for-admission") fail("record is not approved for admission");
+  if (record.path !== target || !toCheck.includes(target)) fail("acknowledgement is only for the exact hook path");
+  if (!objectId(record.main) || !objectId(record.mainBlob)) fail("invalid main fingerprint");
+  if (!checksum(record.source?.guard) || !checksum(record.source?.parser)) fail("invalid source fingerprint");
+  if (!Array.isArray(record.workingHookSha256) || record.workingHookSha256.length < 1 ||
+      record.workingHookSha256.length > 2 || !record.workingHookSha256.every(checksum)) fail("invalid working-hook fingerprint");
+  if (typeof record.approvalReference !== "string" || !record.approvalReference.trim()) fail("missing approval reference");
+  if (typeof record.reviewEvidence?.file !== "string" || !checksum(record.reviewEvidence?.sha256)) fail("invalid review evidence");
+  if (!Array.isArray(record.refs) || record.refs.length !== requiredRefs.size) fail("expected exactly the twenty reviewed refs");
+  const env = { ...process.env, GIT_NO_REPLACE_OBJECTS: "1", GIT_GRAFT_FILE: process.platform === "win32" ? "NUL" : os.devNull };
+  const run = (argv, stdin) => execFileSync("git", argv, {
+    cwd: root, env, input: stdin, encoding: "utf8", timeout: 30_000, maxBuffer: 4 * 1024 * 1024,
+    stdio: ["pipe", "pipe", "pipe"],
+  }).trim();
+  const cache = new Map();
+  const cached = (argv) => {
+    const key = JSON.stringify(argv);
+    if (!cache.has(key)) cache.set(key, run(argv));
+    return cache.get(key);
+  };
+  const patchIds = new Map();
+  const patchId = (commit) => {
+    if (!patchIds.has(commit)) {
+      const patch = cached(["show", "--format=", "--no-ext-diff", "--no-textconv", "--binary", commit, "--", target]);
+      const id = run(["patch-id", "--stable"], patch).split(/\s+/)[0];
+      if (!objectId(id)) fail("empty or invalid patch evidence");
+      patchIds.set(commit, id);
+    }
+    return patchIds.get(commit);
+  };
+  const tips = () => new Map(run(["for-each-ref", "--format=%(refname) %(objectname)", ...requiredRefs])
+    .split("\n").map((line) => line.split(" ")));
+  const assertStable = () => {
+    if (sha256(boundedFile(input.file)) !== input.sha256) fail("record changed during admission");
+    if (!isCanonicalWardFlowRemote(run(["remote", "get-url", "origin"])) ||
+        !isCanonicalWardFlowRemote(run(["remote", "get-url", "--push", "origin"]))) fail("repository identity changed");
+    const selected = ["refs/remotes/origin/main", "refs/heads/main"].find((ref) => {
+      try { run(["rev-parse", "--verify", "--quiet", `${ref}^{commit}`]); return true; }
+      catch (error) { if (error.status === 1) return false; throw error; }
+    });
+    // Bind the commit, not a spelling: an equivalent offline fallback stays valid.
+    if (!selected || run(["rev-parse", selected]) !== record.main || run(["rev-parse", LINE]) !== record.main) fail("main changed");
+    if (run(["rev-parse", `${record.main}:${target}`]) !== record.mainBlob) fail("main hook blob changed");
+    if (sha256(readFileSync(fileURLToPath(import.meta.url))) !== record.source.guard ||
+        sha256(readFileSync(path.join(root, "scripts/pre-commit-checks.mjs"))) !== record.source.parser) fail("guard source changed");
+    if (!record.workingHookSha256.includes(sha256(readFileSync(path.join(root, target))))) fail("working hook changed");
+    if (sha256(boundedFile(record.reviewEvidence.file)) !== record.reviewEvidence.sha256) fail("review evidence changed");
+    const currentTips = tips();
+    for (const item of record.refs) if (currentTips.get(item.ref) !== item.tip) fail(`ref tip changed or missing: ${item.ref}`);
+  };
+  const seen = new Set();
+  const uniqueCommits = new Set();
+  const uniqueMerges = new Set();
+  for (const item of record.refs) {
+    if (!requiredRefs.has(item.ref) || seen.has(item.ref) || !objectId(item.tip) || !objectId(item.blob)) fail("invalid or duplicate ref binding");
+    seen.add(item.ref);
+    if (!Array.isArray(item.patches) || item.patches.length < 1 || item.patches.length > 6) fail("invalid patch list");
+    for (const patch of item.patches) {
+      if (!objectId(patch.commit) || !objectId(patch.patchId) || !objectId(patch.mainCommit)) fail("invalid patch binding");
+      uniqueCommits.add(patch.commit);
+    }
+    if (item.merges !== undefined && !Array.isArray(item.merges)) fail("invalid merge evidence");
+    if ((item.merges ?? []).length > 6) fail("more than the reviewed merge evidence");
+    for (const merge of item.merges ?? []) {
+      if (!objectId(merge.commit) || !objectId(merge.blob) || !Array.isArray(merge.parents) ||
+          merge.parents.length < 2 || merge.parents.length > 4 || !merge.parents.every(objectId) ||
+          !merge.parents.includes(merge.inheritedFrom)) fail("invalid merge binding");
+      uniqueMerges.add(merge.commit);
+    }
+  }
+  if (uniqueCommits.size > 6) fail("more than the six reviewed historical hook commits");
+  if (uniqueMerges.size > 6) fail("more than the six reviewed historical merges");
+  assertStable();
+  for (const item of record.refs) {
+    if (cached(["rev-parse", `${item.tip}:${target}`]) !== item.blob) fail("historical hook blob mismatch");
+    const mergeHistory = cached(["log", "--full-history", "--merges", "--format=%H", `${record.main}..${item.tip}`, "--", target]).split("\n").filter(Boolean);
+    const merges = item.merges ?? [];
+    if (mergeHistory.length !== merges.length || new Set(merges.map((merge) => merge.commit)).size !== mergeHistory.length) fail("unreviewed merge history");
+    for (const merge of merges) {
+      const parents = cached(["rev-list", "--parents", "-n", "1", merge.commit]).split(" ").slice(1);
+      if (!mergeHistory.includes(merge.commit) || JSON.stringify(parents) !== JSON.stringify(merge.parents) ||
+          cached(["rev-parse", `${merge.commit}:${target}`]) !== merge.blob ||
+          cached(["rev-parse", `${merge.inheritedFrom}:${target}`]) !== merge.blob) fail("novel or mismatched merge evidence");
+    }
+    const history = cached(["log", "--full-history", "--no-merges", "--format=%H", `${record.main}..${item.tip}`, "--", target]).split("\n").filter(Boolean);
+    if (history.length !== item.patches.length || new Set(item.patches.map((patch) => patch.commit)).size !== history.length) fail("incomplete patch evidence");
+    for (const patch of item.patches) {
+      if (!history.includes(patch.commit) || patchId(patch.commit) !== patch.patchId) fail("historical patch evidence mismatch");
+      cached(["merge-base", "--is-ancestor", patch.mainCommit, record.main]);
+      if (patch.disposition === "equivalent") {
+        if (patchId(patch.mainCommit) !== patch.patchId) fail("patch is not equivalent to its main evidence");
+      } else if (patch.disposition === "superseded") {
+        if (item.ref !== "refs/heads/ward/ag-policy-softening-20261003" || patch.decision !== "superseded-do-not-import" ||
+            !objectId(patch.mainPatchId) || patchId(patch.mainCommit) !== patch.mainPatchId ||
+            typeof patch.reason !== "string" || !patch.reason.trim()) fail("invalid supersession evidence");
+      } else fail("unknown patch disposition");
+    }
+  }
+  return { assertStable, covers: (branch, file) => file === target && seen.has(`refs/heads/${branch}`) };
+}

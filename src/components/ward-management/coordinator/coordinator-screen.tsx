@@ -633,8 +633,7 @@ export function CoordinatorScreen() {
   // The queue may also contain ward/community origins, so its population is broader than ED journeys.
   const notWaitingMeta = (
     <span data-testid="ward-home-ed-population">
-      {edJourneys.stillInEd} still in ED · {edJourneys.inTransit} in transit or recorded departure · Limited demo
-      coverage
+      {edJourneys.stillInEd} still in ED · {edJourneys.inTransit} in transit
     </span>
   );
   const bedsReady = counts.capacity?.value ?? 0;
@@ -779,16 +778,8 @@ export function CoordinatorScreen() {
             titleMeta={
               isPhone ? (
                 <>
-                  {/* The physical split stays beside the journey total on every screen size. */}
-                  {notWaitingMeta ? (
-                    <>
-                      {notWaitingMeta}
-                      <br />
-                    </>
-                  ) : null}
-                  {`Prototype data, invented records${
-                    statewideOccupancy !== null ? ` · ${statewideOccupancy.toFixed(1)}% in use` : ""
-                  }`}
+                  {notWaitingMeta}
+                  {statewideOccupancy !== null ? ` · ${statewideOccupancy.toFixed(1)}% in use` : ""}
                 </>
               ) : (
                 (notWaitingMeta ?? undefined)

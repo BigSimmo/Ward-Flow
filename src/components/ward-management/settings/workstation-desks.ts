@@ -172,8 +172,11 @@ export function deskRoleLabel(role: DeskRole | WardFlowRole): string {
  * Which desk the current route is. Ward, ED, team and officer routes name their own desk; every
  * other route is the coordinator's (`wardChromeRole`), except the community index, which is a list
  * of teams rather than one team's desk.
+ *
+ * Global routes (alerts, discharges, referrals) resolve to sessionDeskId if provided or stored
+ * in sessionStorage, preserving workstation desk identity across alerts and reports.
  */
-export function currentDeskId(pathname: string): string | null {
+export function currentDeskId(pathname: string, sessionDeskId?: string | null): string | null {
   const segment = (pattern: RegExp) => {
     const match = pattern.exec(pathname);
     return match ? decodeURIComponent(match[1]) : null;
@@ -183,6 +186,25 @@ export function currentDeskId(pathname: string): string | null {
   if (role === "ward") return segment(/\/(?:ward|board)\/([^/?#]+)/);
   if (role === "community") return segment(/\/community\/([^/?#]+)/);
   if (role === "officer") return OFFICER_DESK_ID;
+  if (sessionDeskId) return sessionDeskId;
+  if (typeof window !== "undefined" && window.sessionStorage) {
+    try {
+      const explicit = window.sessionStorage.getItem("ward_flow_workstation_desk");
+      if (explicit) return explicit;
+      const rawAccess = window.sessionStorage.getItem("wardflow:access-desk-v1");
+      if (rawAccess) {
+        const parsed = JSON.parse(rawAccess);
+        if (parsed?.scope?.kind === "ward" && Array.isArray(parsed.scope.unitIds) && parsed.scope.unitIds[0]) {
+          return parsed.scope.unitIds[0];
+        }
+        if (parsed?.scope?.kind === "ed" && typeof parsed.scope.edId === "string") {
+          return parsed.scope.edId;
+        }
+      }
+    } catch {
+      // storage blocked
+    }
+  }
   return COORDINATOR_DESK_ID;
 }
 

@@ -7,6 +7,7 @@ import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useOptionalWardFlowSelect, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
+import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { siteDirectory } from "@/components/ward-management/ward-sites";
 
 import {
@@ -60,7 +61,10 @@ export function HomeServiceReturnPanel({
   presetHospital?: string;
 }) {
   const records = useOptionalWardFlowSelect("homeServiceReturns")?.homeServiceReturns;
-  const raise = useWardRaise("coordinator");
+  const routeRole = useRouteRole();
+  const raise = useWardRaise(routeRole);
+  const gate = useRoleGate();
+  const returnGate = gate("RECORD_HOME_SERVICE_RETURN");
   const now = useWardFlowClock();
   const ids = useId();
   const record = homeServiceReturnOf(records, admissionId);
@@ -78,7 +82,7 @@ export function HomeServiceReturnPanel({
   const showRequestForm = !record || askAgain || record.answer === "declined";
 
   const requestReturn = () => {
-    if (!hospital) return;
+    if (!hospital || !returnGate.allowed) return;
     raise("RECORD_HOME_SERVICE_RETURN", {
       admissionId,
       step: "requested",
@@ -93,7 +97,7 @@ export function HomeServiceReturnPanel({
   };
 
   const recordAnswer = () => {
-    if (!answer) return;
+    if (!answer || !returnGate.allowed) return;
     raise("RECORD_HOME_SERVICE_RETURN", {
       admissionId,
       step: "answered",
@@ -181,9 +185,15 @@ export function HomeServiceReturnPanel({
             </select>
           </span>
           <ReviewDaySelect id={`${ids}-review-request`} value={reviewDays} onChange={setReviewDays} />
-          <Button type="submit" size="sm" disabled={!hospital}>
+          <Button
+            type="submit"
+            size="sm"
+            disabled={!hospital || !returnGate.allowed}
+            disabledReason={!returnGate.allowed ? returnGate.reason : undefined}
+          >
             Record return requested
           </Button>
+          {!returnGate.allowed ? returnGate.note : null}
         </form>
       ) : (
         <form
@@ -227,13 +237,26 @@ export function HomeServiceReturnPanel({
           </fieldset>
           <ReviewDaySelect id={`${ids}-review-answer`} value={reviewDays} onChange={setReviewDays} />
           <span className={styles.actions}>
-            <Button type="submit" size="sm" disabled={!answer}>
+            <Button
+              type="submit"
+              size="sm"
+              disabled={!answer || !returnGate.allowed}
+              disabledReason={!returnGate.allowed ? returnGate.reason : undefined}
+            >
               Record home service answer
             </Button>
-            <Button type="button" size="sm" variant="ghost" onClick={() => setAskAgain(true)}>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={!returnGate.allowed}
+              disabledReason={!returnGate.allowed ? returnGate.reason : undefined}
+              onClick={() => setAskAgain(true)}
+            >
               Ask another service
             </Button>
           </span>
+          {!returnGate.allowed ? returnGate.note : null}
         </form>
       )}
     </section>

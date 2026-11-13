@@ -37,8 +37,9 @@ function defaultWaitTimeoutFor(mode) {
   return mode === "exclusive" ? defaultExclusiveWaitTimeoutMs : defaultSharedWaitTimeoutMs;
 }
 
-function processIsAlive(pid) {
+function processIsAlive(pid, { allowSentinel = true } = {}) {
   if (!Number.isInteger(pid) || pid <= 0) return false;
+  if (!allowSentinel && (pid === legacySentinelProcessId || pid === 4 || pid === 1)) return false;
   try {
     process.kill(pid, 0);
     return true;
@@ -162,7 +163,13 @@ function ownerDirectoryIsStale(directory, isAlive = processIsAlive) {
   if (registeredWorkIsActive(directory, owner?.token)) return false;
   if (!owner) return pathIsOldEnough(directory, incompleteLockGraceMs);
   // An old heartbeat is diagnostic, never permission to reclaim a live owner.
-  return !isAlive(owner.pid);
+  const pidToCheck =
+    owner.coordinator || owner.pid === legacySentinelProcessId ? (owner.holderPid ?? owner.pid) : owner.pid;
+  if (pidToCheck === legacySentinelProcessId || pidToCheck === 4 || pidToCheck === 1) {
+    // Sentinel itself is never a live runner; check directory mtime or consider stale
+    return pathIsOldEnough(directory, incompleteLockGraceMs);
+  }
+  return !isAlive(pidToCheck);
 }
 
 function coordinatorPaths(lockPath) {
@@ -420,7 +427,9 @@ export function acquireHeavyRunLock({
       throw new Error("The inherited Database heavyweight-run lease does not match this repository.");
     }
     const owner = readOwner(inheritedPath);
-    if (owner?.token !== inheritedToken || !processIsAlive(owner.pid)) {
+    const pidToCheck =
+      owner?.coordinator || owner?.pid === legacySentinelProcessId ? (owner?.holderPid ?? owner?.pid) : owner?.pid;
+    if (owner?.token !== inheritedToken || !processIsAlive(pidToCheck, { allowSentinel: false })) {
       throw new Error("The inherited Database heavyweight-run lease is no longer owned by a live parent process.");
     }
     if (mode === "exclusive" && owner.mode !== "exclusive")

@@ -17,9 +17,10 @@ import type { Unit } from "@/components/ward-management/ward-model";
  *  locked and open figures take each closed bed off its own kind (`lockedBedsFree`, `openBedsFree`). */
 export function boundedBedAvailability(unit: Unit): { effectiveEmpty: number; available: number; held: number } {
   const isClosed = Boolean(unit.isClosed);
-  const effectiveEmpty = Math.max(0, unit.empty.value);
+  const effectiveEmpty = Math.max(0, unit.empty?.value ?? 0);
   const closedBeds = activeClosedBeds(unit).length;
-  const available = isClosed ? 0 : Math.max(0, Math.min(unit.allocatable.value, effectiveEmpty) - closedBeds);
+  const allocatable = unit.allocatable?.value ?? effectiveEmpty;
+  const available = isClosed ? 0 : Math.max(0, Math.min(allocatable, effectiveEmpty) - closedBeds);
   const held = Math.max(effectiveEmpty - available, 0);
   return { effectiveEmpty, available, held };
 }

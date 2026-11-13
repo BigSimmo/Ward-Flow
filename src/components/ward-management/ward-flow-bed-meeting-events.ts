@@ -94,6 +94,8 @@ export function reduceBedMeetingEvent(
       );
       break;
     }
+    default:
+      return state;
   }
 
   decision.outcome = "accepted";

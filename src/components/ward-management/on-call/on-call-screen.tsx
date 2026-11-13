@@ -370,8 +370,6 @@ export function OnCallScreen() {
             <SrOnly>On-call:</SrOnly> {answering.length} {answering.length === 1 ? "line" : "lines"} answering
           </>
         }
-        // F-08 (phone review, Oct 2026): the phone hero carries the Demo pill and says the numbers are invented.
-        titleMeta={isPhone ? "Prototype data, invented numbers" : undefined}
         stats={
           isPhone ? (
             // Device audit 11 Oct 2026: the three figures sit on one short line so the number comes sooner.

@@ -98,12 +98,40 @@ function setUp() {
 }
 
 describe("the coordinator banner", () => {
-  it("extends and then stands down the live alert", () => {
+  it("extends and then stands down the live alert via confirmation modal", () => {
     const alert = setUp();
     fireEvent.click(screen.getByTestId("ward-broadcast-extend"));
     const current = () => flow!.broadcastAlerts.find((entry) => entry.id === alert.id)!;
     expect(current().expiresAt).toBe(alert.expiresAt + DEFAULT_BROADCAST_EXTENSION_MINUTES);
+
     fireEvent.click(screen.getByTestId("ward-broadcast-stand-down"));
+    expect(screen.getByRole("dialog", { name: /Confirm Alert Stand-Down/i })).toBeInTheDocument();
+
+    const confirmBtn = screen.getByTestId("ward-broadcast-confirm-stand-down");
+    expect(confirmBtn).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText(/Clinician name/i), { target: { value: "Dr Sarah Jenkins" } });
+    expect(confirmBtn).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText(/Reason for stand-down/i), {
+      target: { value: "Statewide capacity pressure resolved" },
+    });
+    expect(confirmBtn).not.toBeDisabled();
+
+    fireEvent.click(confirmBtn);
     expect(current().status).toBe("stood_down");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("cancels stand down modal without deactivating the alert", () => {
+    const alert = setUp();
+    fireEvent.click(screen.getByTestId("ward-broadcast-stand-down"));
+    expect(screen.getByRole("dialog", { name: /Confirm Alert Stand-Down/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("ward-broadcast-cancel-stand-down"));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    const current = () => flow!.broadcastAlerts.find((entry) => entry.id === alert.id)!;
+    expect(current().status).not.toBe("stood_down");
   });
 });

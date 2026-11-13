@@ -76,6 +76,7 @@ import { fileURLToPath } from "node:url";
 
 const ZERO_SHA = "0000000000000000000000000000000000000000";
 const MAIN_REMOTE_REF = "refs/remotes/origin/main";
+export const DEFAULT_CHILD_TIMEOUT_MS = 60_000;
 // First verified public Ward-Flow main after the repository split. A remote URL
 // alone cannot identify a checkout: the old Database clone can be repointed.
 export const WARD_FLOW_IDENTITY_ANCHOR = "e735c1f8d34df005becf720b96752626a4f1dcc8";
@@ -188,14 +189,17 @@ export function directMainPushVerdict(stdinText, env = process.env) {
     : { name: "direct-main-push", ok: true };
 }
 
-function runGit(args, cwd = PROJECT_ROOT) {
-  return execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+function runGit(args, cwd = PROJECT_ROOT, timeout = DEFAULT_CHILD_TIMEOUT_MS) {
+  return execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout }).trim();
 }
 
-function tryGit(args, cwd = PROJECT_ROOT) {
+export function tryGit(args, cwd = PROJECT_ROOT, { failClosed = false } = {}) {
   try {
     return runGit(args, cwd);
-  } catch {
+  } catch (error) {
+    if (failClosed || error?.code === "ETIMEDOUT" || error?.signal === "SIGTERM") {
+      throw error;
+    }
     return undefined;
   }
 }
@@ -243,6 +247,7 @@ function isAncestor(ancestor, descendant, cwd = PROJECT_ROOT) {
       cwd,
       env: { ...process.env, GIT_GRAFT_FILE: devNull },
       stdio: "ignore",
+      timeout: DEFAULT_CHILD_TIMEOUT_MS,
     });
     return true;
   } catch {
@@ -322,13 +327,16 @@ export function changedFilesForRange(range, cwd = PROJECT_ROOT) {
         ? `${MAIN_REMOTE_REF}...${range.localSha}`
         : undefined;
   let out = spec
-    ? tryGit(["diff", "--name-only", spec], cwd)
-    : tryGit(["show", "--name-only", "--pretty=format:", range.localSha], cwd);
+    ? tryGit(["diff", "--name-only", spec], cwd, { failClosed: true })
+    : tryGit(["show", "--name-only", "--pretty=format:", range.localSha], cwd, { failClosed: true });
   if (out === undefined && !existingRemote && hasOriginMain) {
     // Three-dot scope requires a merge base. Orphan branches and ancestry-
     // incomplete clones can have origin/main without one; conservatively compare
     // the endpoint trees so a Git error cannot become "no changed files".
-    out = tryGit(["diff", "--name-only", `${MAIN_REMOTE_REF}..${range.localSha}`], cwd);
+    out = tryGit(["diff", "--name-only", `${MAIN_REMOTE_REF}..${range.localSha}`], cwd, { failClosed: true });
+  }
+  if (out === undefined) {
+    throw new Error(`Failed to compute changed files for commit ${range.localSha}: git diff/show failed`);
   }
   if (!out) return [];
   return out
@@ -455,13 +463,6 @@ export function wardFlowPushVerdict({
 
   // Case 1: Pushing Ward Flow to origin/main (catastrophic fold to production)
   if (targetsMain && isWardFlowOperation) {
-    if (env.CONFIRM_WARD_FLOW_PUSH_TO_MAIN === "I_CONFIRM_FOLD_TO_ORIGIN_MAIN") {
-      return {
-        block: false,
-        reason: "confirmed-by-env",
-        warning: "CRITICAL: Pushing Ward Flow to origin/main confirmed via CONFIRM_WARD_FLOW_PUSH_TO_MAIN override.",
-      };
-    }
     return {
       block: true,
       reason: "ward-flow-push-to-main",
@@ -485,18 +486,13 @@ export function wardFlowPushVerdict({
         (derivesFromWardLine
           ? `The pushed commits sit on the local Ward Flow line (${WARD_LINE_BRANCH}), which no remote has.\n\n`
           : "") +
-        `To proceed only under explicit operator override authorization, you MUST run:\n` +
-        `  CONFIRM_WARD_FLOW_PUSH_TO_MAIN="I_CONFIRM_FOLD_TO_ORIGIN_MAIN" git push ...\n` +
         `================================================================================`,
     };
   }
 
   // Case 2: Direct push to origin/main (bypasses PR review & auto-deploys)
   if (targetsMain && !isWardFlowOperation) {
-    if (
-      env.CONFIRM_PUSH_TO_MAIN === "I_CONFIRM_PUSH_TO_MAIN" ||
-      env.CONFIRM_WARD_FLOW_PUSH_TO_MAIN === "I_CONFIRM_FOLD_TO_ORIGIN_MAIN"
-    ) {
+    if (env.CONFIRM_PUSH_TO_MAIN === "I_CONFIRM_PUSH_TO_MAIN") {
       return {
         block: false,
         reason: "confirmed-by-env",
@@ -521,10 +517,7 @@ export function wardFlowPushVerdict({
 
   // Case 3: Pushing Ward Flow to remote non-main branch
   if (!targetsMain && isWardFlowOperation) {
-    if (
-      env.CONFIRM_WARD_FLOW_PUSH_TO_MAIN === "I_CONFIRM_FOLD_TO_ORIGIN_MAIN" ||
-      env.CONFIRM_WARD_FLOW_REMOTE === "I_CONFIRM_WARD_FLOW_REMOTE"
-    ) {
+    if (env.CONFIRM_WARD_FLOW_REMOTE === "I_CONFIRM_WARD_FLOW_REMOTE") {
       return {
         block: false,
         reason: "confirmed-by-env",
@@ -560,34 +553,6 @@ export function wardFlowPushVerdict({
   }
 
   return { block: false, reason: "safe" };
-}
-
-export function wardFlowPushGuard(pushedBranches, ranges, changedFiles, currentBranch, options = {}) {
-  const env = options.env ?? process.env;
-  const derivesFromWardLine = options.derivesFromWardLine ?? false;
-  const verdict = wardFlowPushVerdict({
-    pushedBranches,
-    ranges,
-    changedFiles,
-    currentBranch,
-    derivesFromWardLine,
-    env,
-  });
-  if (verdict.block) {
-    return {
-      name: "ward-flow-push",
-      ok: false,
-      message: verdict.message,
-    };
-  }
-  if (verdict.warning) {
-    return {
-      name: "ward-flow-push",
-      ok: true,
-      note: verdict.warning,
-    };
-  }
-  return { name: "ward-flow-push", ok: true };
 }
 
 /**
@@ -1006,8 +971,13 @@ function checkPushedCommit(prettierBin, sha, files) {
     const archive = execFileSync("git", ["archive", "--format=tar", sha], {
       stdio: ["ignore", "pipe", "pipe"],
       maxBuffer: 1024 * 1024 * 1024,
+      timeout: DEFAULT_CHILD_TIMEOUT_MS,
     });
-    execFileSync("tar", ["-xf", "-", "-C", dir], { input: archive, stdio: ["pipe", "ignore", "pipe"] });
+    execFileSync("tar", ["-xf", "-", "-C", dir], {
+      input: archive,
+      stdio: ["pipe", "ignore", "pipe"],
+      timeout: DEFAULT_CHILD_TIMEOUT_MS,
+    });
   } catch (error) {
     detachSignals();
     cleanupFormatCheckout(dir);
@@ -1200,6 +1170,7 @@ function runPrettierCheck(prettierBin, cwd, args) {
     execFileSync(process.execPath, [prettierBin, "--check", "--ignore-unknown", ...args], {
       cwd,
       stdio: ["ignore", "pipe", "pipe"],
+      timeout: DEFAULT_CHILD_TIMEOUT_MS,
     });
     return { verdict: "formatted" };
   } catch (error) {
@@ -1389,7 +1360,10 @@ export function needsRepoWideLint(changedFiles) {
  * describe unrelated content — fail closed rather than false-pass/false-block.
  */
 export function pushedTipMatchesHead(ranges, headSha = tryGit(["rev-parse", "HEAD"])) {
-  if (!headSha || !Array.isArray(ranges) || ranges.length === 0) return { ok: true };
+  if (!headSha) {
+    return { ok: false, message: "static guard could not resolve HEAD commit (git rev-parse HEAD failed)" };
+  }
+  if (!Array.isArray(ranges) || ranges.length === 0) return { ok: true };
   // Only branch tips are checked against HEAD. Tag / note / other refs have
   // object SHAs that are not the commit checked out in the working tree.
   const branchRanges = ranges.filter(
@@ -1485,6 +1459,7 @@ function runStaticCheck(root, script, forwarded, label) {
         cwd: root,
         encoding: "utf8",
         stdio: ["ignore", "pipe", "pipe"],
+        timeout: DEFAULT_CHILD_TIMEOUT_MS,
         env: {
           ...process.env,
           HEAVY_RUN_WAIT_TIMEOUT_MS: String(STATIC_GUARD_LOCK_WAIT_MS),
@@ -1494,7 +1469,7 @@ function runStaticCheck(root, script, forwarded, label) {
     return { ok: true };
   } catch (error) {
     const output = `${error?.stdout ?? ""}${error?.stderr ?? ""}`.trim();
-    if (isCoordinatorBusyResult(error) || isCoordinatorBusyOutput(output) || isCoordinatorBusyOutput(error?.message)) {
+    if (error?.status === HEAVY_RUN_ADMISSION_BUSY_EXIT) {
       return { ok: true, busy: true, output: output || String(error?.message ?? error) };
     }
     return { ok: false, label, output, neverLaunched: isNeverLaunchedFailure(error, output) };
@@ -1546,12 +1521,13 @@ export function staticGuard(changedFiles, options = {}) {
       name: "static",
       ok: false,
       message:
+        tipCheck.message ||
         `static guard reads the working tree at HEAD (${tipCheck.headSha}), ` +
-        `but this push tip is ${tipCheck.tipSha}` +
-        (tipCheck.localRef ? ` (${tipCheck.localRef})` : "") +
-        `.\n` +
-        `  Check out the tip being pushed, then push again.\n` +
-        `  To push anyway: SKIP_STATIC_GUARD=1 git push`,
+          `but this push tip is ${tipCheck.tipSha}` +
+          (tipCheck.localRef ? ` (${tipCheck.localRef})` : "") +
+          `.\n` +
+          `  Check out the tip being pushed, then push again.\n` +
+          `  To push anyway: SKIP_STATIC_GUARD=1 git push`,
     };
   }
 
@@ -1693,28 +1669,33 @@ function main() {
   if (process.argv.includes("--self-test")) {
     return selfTest();
   }
-  const remoteResult = wardFlowRemoteVerdict(process.argv[3]);
-  if (!remoteResult.ok) process.exit(report([remoteResult]));
-  const checkoutResult = wardFlowCheckoutVerdict();
-  if (!checkoutResult.ok) process.exit(report([checkoutResult]));
-  const stdin = readStdinSync();
-  const mainResult = directMainPushVerdict(stdin);
-  if (!mainResult.ok) process.exit(report([mainResult]));
-  const ranges = parsePushRanges(stdin);
-  if (ranges.length === 0) process.exit(0); // deletion-only push or nothing to do
-  const branch = currentBranch();
-  const pushedBranches = pushedBranchNames(ranges, branch);
-  const forcePushBranches = forcePushedBranchNames(ranges);
-  const changedFiles = collectChangedFiles(ranges);
-  // formatGuard reads the pushed blobs; the static gate only needs the paths.
-  const results = [
-    remoteResult,
-    autoMergeGuard(pushedBranches, forcePushBranches),
-    inFlightCiGuard(pushedBranches, ranges),
-    formatGuard(collectChangedBlobs(ranges)),
-    staticGuard(changedFiles, { ranges }),
-  ];
-  process.exit(report(results));
+  try {
+    const remoteResult = wardFlowRemoteVerdict(process.argv[3]);
+    if (!remoteResult.ok) process.exit(report([remoteResult]));
+    const checkoutResult = wardFlowCheckoutVerdict();
+    if (!checkoutResult.ok) process.exit(report([checkoutResult]));
+    const stdin = readStdinSync();
+    const mainResult = directMainPushVerdict(stdin);
+    if (!mainResult.ok) process.exit(report([mainResult]));
+    const ranges = parsePushRanges(stdin);
+    if (ranges.length === 0) process.exit(0); // deletion-only push or nothing to do
+    const branch = currentBranch();
+    const pushedBranches = pushedBranchNames(ranges, branch);
+    const forcePushBranches = forcePushedBranchNames(ranges);
+    const changedFiles = collectChangedFiles(ranges);
+    // formatGuard reads the pushed blobs; the static gate only needs the paths.
+    const results = [
+      remoteResult,
+      autoMergeGuard(pushedBranches, forcePushBranches),
+      inFlightCiGuard(pushedBranches, ranges),
+      formatGuard(collectChangedBlobs(ranges)),
+      staticGuard(changedFiles, { ranges }),
+    ];
+    process.exit(report(results));
+  } catch (error) {
+    console.error("\n[guard-push] Push blocked (internal check error):\n  " + (error?.message || error) + "\n");
+    process.exit(1);
+  }
 }
 
 function readStdinSync() {
@@ -1916,62 +1897,31 @@ function selfTest() {
   assert(isWardFlowBranch("codex/task-ward-flow-live-state-20260831") === true, "ward branch detected");
   assert(isWardFlowBranch("feature-auth") === false, "non-ward branch not detected as ward");
 
-  // verdicts:
+  // direct-main-push verdicts
   assert(
-    wardFlowPushVerdict({
-      pushedBranches: ["main"],
-      changedFiles: ["src/components/ward-management/search/patient-search.tsx"],
-      env: {},
-    }).block === true,
-    "ward file push to main is blocked",
+    directMainPushVerdict("refs/heads/feature abc refs/heads/feature def\n").ok === true,
+    "feature branch push is allowed without confirmation",
   );
   assert(
-    wardFlowPushVerdict({
-      pushedBranches: ["main"],
-      changedFiles: ["src/components/ward-management/search/patient-search.tsx"],
-      env: { CONFIRM_WARD_FLOW_PUSH_TO_MAIN: "I_CONFIRM_FOLD_TO_ORIGIN_MAIN" },
-    }).block === false,
-    "confirmed ward push to main is unblocked with override",
+    directMainPushVerdict("refs/heads/main abc refs/heads/main def\n", {}).ok === false,
+    "direct push to main is blocked without confirmation",
   );
   assert(
-    wardFlowPushVerdict({
-      pushedBranches: ["main"],
-      changedFiles: ["src/lib/search.ts"],
-      env: {},
-    }).block === true,
-    "direct non-ward push to main is blocked",
+    directMainPushVerdict("refs/heads/main abc refs/heads/main def\n", {
+      CONFIRM_PUSH_TO_MAIN: "I_CONFIRM_PUSH_TO_MAIN",
+    }).ok === true,
+    "direct push to main is allowed with CONFIRM_PUSH_TO_MAIN override",
   );
   assert(
-    wardFlowPushVerdict({
-      pushedBranches: ["main"],
-      changedFiles: ["src/lib/search.ts"],
-      env: { CONFIRM_PUSH_TO_MAIN: "I_CONFIRM_PUSH_TO_MAIN" },
-    }).block === false,
-    "confirmed direct non-ward push to main is allowed",
+    directMainPushVerdict(
+      "refs/heads/feature abc refs/heads/feature def\nrefs/heads/main abc refs/heads/main def\n",
+      {},
+    ).ok === false,
+    "multi-ref push containing main is blocked without confirmation",
   );
   assert(
-    wardFlowPushVerdict({
-      pushedBranches: ["feature/my-branch"],
-      changedFiles: ["src/components/ward-management/search/patient-search.tsx"],
-      env: {},
-    }).block === true,
-    "ward push to remote non-main branch is blocked without confirmation",
-  );
-  assert(
-    wardFlowPushVerdict({
-      pushedBranches: ["feature/my-branch"],
-      changedFiles: ["src/components/ward-management/search/patient-search.tsx"],
-      env: { CONFIRM_WARD_FLOW_REMOTE: "I_CONFIRM_WARD_FLOW_REMOTE" },
-    }).block === false,
-    "ward push to remote non-main branch allowed with CONFIRM_WARD_FLOW_REMOTE",
-  );
-  assert(
-    wardFlowPushVerdict({
-      pushedBranches: ["feature/my-branch"],
-      changedFiles: ["src/lib/search.ts"],
-      env: {},
-    }).block === false,
-    "regular feature branch push with non-ward files is unblocked",
+    directMainPushVerdict(`refs/heads/main ${ZERO_SHA} refs/heads/main abc\n`, {}).ok === false,
+    "deletion of refs/heads/main is blocked without confirmation",
   );
 
   if (process.exitCode !== 1) console.error("[guard-push] self-test passed");

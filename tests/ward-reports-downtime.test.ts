@@ -52,6 +52,22 @@ describe("downtimePack", () => {
     }
   });
 
+  it("populates an inpatient census for active occupied admissions with patient identity, legal status, and obs level", () => {
+    const { state, pack } = packFor();
+    const occupied = state.admissions.filter((a) => a.state === "occupied");
+    expect(pack.census).toBeDefined();
+    if (!pack.census) throw new Error("pack.census is undefined");
+    expect(pack.census.length).toBe(occupied.length);
+    for (const line of pack.census) {
+      expect(line.unitName).toBeTruthy();
+      expect(line.bedNumber).toBeTruthy();
+      expect(line.patientName).toBeTruthy();
+      expect(line.umrn).toBeTruthy();
+      expect(line.legalStatus).toBeTruthy();
+      expect(line.observationLevel).toBeTruthy();
+    }
+  });
+
   it("keeps the ED queue to open movements still in the department, longest wait first per ED", () => {
     const { state, pack } = packFor();
     const open = new Set<string>(state.movements.filter(isOpen).map((movement) => movement.id));

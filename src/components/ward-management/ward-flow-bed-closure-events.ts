@@ -118,5 +118,8 @@ export function reduceBedClosureEvent(
       };
       return replaceUnit(state, unit.id, closed);
     }
+    default:
+      return state;
   }
+  return state;
 }

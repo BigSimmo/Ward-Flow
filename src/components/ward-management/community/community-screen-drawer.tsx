@@ -12,7 +12,7 @@ import { referralWaitLine } from "@/components/ward-management/referrals/referra
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { patientIdentityLine } from "@/components/ward-management/ward-patient-resolver";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
-import { patientDisplayName } from "@/components/ward-management/ward-patients";
+import { formatDateOfBirth, patientDisplayName } from "@/components/ward-management/ward-patients";
 import styles from "./community.module.css";
 import { NOT_RECORDED_IN_WARD_FLOW, unitName } from "./community-screen-helpers";
 import type { CommunityScreenView } from "./community-screen";
@@ -174,7 +174,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                       <div>
                         <b>DOB:</b>{" "}
                         <span id="pxDobAge" className={styles.mono}>
-                          {selectedPatient.dateOfBirth}
+                          {formatDateOfBirth(selectedPatient.dateOfBirth)}
                         </span>
                       </div>
                       <div>

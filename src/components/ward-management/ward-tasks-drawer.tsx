@@ -22,7 +22,17 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useId, useRef, useState, type Dispatch, type MouseEvent, type RefObject } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useTransition,
+  type Dispatch,
+  type MouseEvent,
+  type RefObject,
+} from "react";
 import { WARD_ALERTS_HREF, WARD_HOME_HREF, WARD_NAV, WARD_VIEWS } from "@/components/ward-management/ward-nav";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -435,9 +445,13 @@ export function WardTasksDrawer({
   const [taskFilter, setTaskFilter] = useState<TaskFilter>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [sortMode, setSortMode] = useState<DueSortMode>("default");
+  const [isPending, startTransition] = useTransition();
 
   function acknowledge(inboxItemId: string) {
-    dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role, now, inboxItemId });
+    if (isPending) return;
+    startTransition(() => {
+      dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role, now, inboxItemId });
+    });
   }
 
   function complete(inboxItemId: string) {
@@ -457,8 +471,11 @@ export function WardTasksDrawer({
   }
 
   function acknowledgeAllFacts() {
-    visibleUnacknowledged.forEach((item) => {
-      dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role, now, inboxItemId: item.id });
+    if (isPending) return;
+    startTransition(() => {
+      visibleUnacknowledged.forEach((item) => {
+        dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role, now, inboxItemId: item.id });
+      });
     });
   }
 
@@ -871,6 +888,8 @@ export function WardTasksDrawer({
               ) : isFact ? (
                 <button
                   type="button"
+                  disabled={isPending}
+                  aria-disabled={isPending}
                   className={`${styles.btn} ${isExpanded && !latestAck && escalating !== item.id ? styles.btnPrimary : ""}`}
                   onClick={() => {
                     acknowledge(item.id);
@@ -1335,7 +1354,13 @@ export function WardTasksDrawer({
             <span id={`${sectionId}-summary`}>Seen is not resolved</span>
           )}
           {visibleUnacknowledged.length > 0 ? (
-            <button type="button" className={styles.btn} onClick={acknowledgeAllFacts}>
+            <button
+              type="button"
+              disabled={isPending}
+              aria-disabled={isPending}
+              className={styles.btn}
+              onClick={acknowledgeAllFacts}
+            >
               <UserCheck aria-hidden="true" />
               Acknowledge visible
               <span className={styles.count}>{visibleUnacknowledged.length}</span>

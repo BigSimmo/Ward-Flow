@@ -22,10 +22,9 @@ import type { Unit } from "@/components/ward-management/ward-model";
 import { wardPlaceFor } from "@/components/ward-management/ward-place";
 
 /**
- * The eight coordinator-level mode ids.
+ * The five coordinator-level mode ids.
  *
- * ⚠️ **THIS COMMENT USED TO SAY "the eight coordinator-level views, ordered as the rail and the
- * panel present them", AND BY 2026-09-05 THAT WAS FALSE IN BOTH HALVES.** MERGE 01 folded the
+ * MERGE 01 folded the
  * priority queue and the exceptions inbox into `DelaysScreen`, and MERGE 03 folded the vehicle
  * tracker into `MovementsScreen`. `WARD_VIEWS` has listed SIX ever since; `exceptions` and
  * `transport` are presented nowhere and are not views at all. The sentence describing this file's
@@ -47,7 +46,7 @@ import { wardPlaceFor } from "@/components/ward-management/ward-place";
  * ⚠️ **`queue` BECAME `delays` AND `exceptions` WAS RETIRED ON 2026-09-06.** MERGE 01 pointed the
  * queue entry at `/delays` and relabelled it "Delays" while leaving its ID as `queue` — so the
  * single source of truth for ward destinations carried an id naming a screen that had stopped
- * existing, and `ward-sidebar.dom.test.tsx` had a comment explaining the discrepancy rather than a
+ * existing rather than a
  * reason for it. `exceptions` is gone outright: nothing renders it anywhere in `src` or `tests`.
  *
  * ⚠️ **THE ROUTES `/queue` AND `/exceptions` ARE UNTOUCHED AND MUST STAY.** They are `redirect()`
@@ -89,17 +88,12 @@ export type WardViewItem = {
 };
 
 /**
- * The eight views, moved here from eight hand-written `<Link>` blocks inside
- * `WardModeNavigation`. Those blocks were literal so that a source-text regex in
- * `tests/ward-management.test.ts` could read the hrefs back, and so that
- * `tests/route-reachability.test.ts`'s literal-href AST scan could see them. Neither reason
- * survives: that reachability test's `staticPageRoutes` excludes every `/mockups/**` route
- * outright (Ward Flow's sandbox move), and the mode-href test now reads this array directly,
- * which is a stronger check than a regex over a function body.
+ * The five views, moved here from hand-written `<Link>` blocks inside `WardModeNavigation`.
+ * `tests/ward-nav.test.ts` now reads this array directly.
  *
  * The move is what makes a labelled sidebar possible at all. A panel and a drawer that render
  * labelled links cannot read a rail's icon-only JSX, so leaving the views in JSX would have
- * meant a second hand-maintained list of the same eight destinations — the precise defect this
+ * meant a second hand-maintained list of the same destinations — the precise defect this
  * file was created to end.
  *
  * ⚠️ SEVEN, NOT EIGHT, as of MERGE 01 (owner-approved 2026-09-05). `queue` and `exceptions` used
@@ -256,7 +250,7 @@ export function bedMeetingTvHref(view: { ward?: string; ed?: string; service?: s
  * typed into prose is a claim that falsifies itself the first time the seed changes.)
  *
 
- * `board` — the specialist boards that sit outside the eight views.
+ * `board` — the specialist boards that sit outside the five views.
  */
 
 export const WARD_NAV: readonly WardNavItem[] = [
@@ -430,7 +424,7 @@ export const WARD_ADD_PERSON_HREF = "/ward-flow/people/new";
 
 /**
  * Static Ward Flow routes intentionally absent from `WARD_VIEWS` and `WARD_NAV`, each with the
- * reason it is exempt — mirrors `REACHABILITY_ALLOWLIST` in `tests/route-reachability.test.ts`.
+ * reason it is exempt.
  * Every key must be a real static route under `src/app/ward-flow/` (checked by
  * `tests/ward-nav.test.ts`, which fails on a stale entry) and must never also appear in a nav
  * array — a route belongs in exactly one of the two.
@@ -797,7 +791,6 @@ export function resolveWardScreenTitle(pathname: string, units: readonly Unit[] 
   if (isUnder("/ward-flow/waiting") || isUnder("/ward-flow/delays") || normalized === "/ward-flow/queue")
     return "Waiting";
   if (isUnder("/ward-flow/capacity")) return "Capacity";
-  if (isUnder("/ward-flow/network")) return "Network";
   if (isUnder("/ward-flow/governance")) return "Governance";
   if (normalized === "/ward-flow/reports/downtime") return "Downtime pack";
   if (normalized === "/ward-flow/reports/chronology") return "Patient chronology";

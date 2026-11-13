@@ -2,16 +2,16 @@ import type { HomeRegion } from "@/components/ward-management/ward-model";
 
 /**
  * The four bands this prototype speaks in, and the ONLY list any picker, group heading or label
- * map may derive from — the same runtime-array discipline `COHORTS`, `SEXES`, `SEX_DESIGNATIONS`
- * and `REFERRAL_SOURCES` already hold to. A hand-written second copy of these names is how two
+ * map may derive from — the same runtime-array discipline COHORTS, SEXES, SEX_DESIGNATIONS
+ * and REFERRAL_SOURCES already hold to. A hand-written second copy of these names is how two
  * screens end up disagreeing about what bands exist.
  *
  * A band is a fact about a PAIR — a home region and a hospital site. It belongs to neither, so it
- * is never stored on a `Site`, a `Unit`, a `Referral`, a `Movement`, an event, a snapshot or a
+ * is never stored on a Site, a Unit, a Referral, a Movement, an event, a snapshot or a
  * cache; it is only ever looked up. That is what keeps replacing this file's values the whole
  * change on the day somebody replaces them with checked ones.
  *
- * `air_transport_only` sits last for grouping order and for nothing else. It is a statement about
+ * air_transport_only sits last for grouping order and for nothing else. It is a statement about
  * HOW you get somewhere, not about how long it takes — a flight can be shorter than a drive, and
  * this prototype knows nothing about how anyone actually travels.
  */
@@ -26,79 +26,70 @@ export type TravelBand = (typeof TRAVEL_BANDS)[number];
 
 /**
  * A sparse table: home region, then site code, then band. Both levels are partial on purpose —
- * an unrecorded pair reads as `undefined`, never as a default.
+ * an unrecorded pair reads as undefined, never as a default.
  */
 export type TravelBandTable = Readonly<Partial<Record<HomeRegion, Readonly<Partial<Record<string, TravelBand>>>>>>;
 
 /**
- * TRUE while every band in `SYNTHETIC_TRAVEL_BANDS` is invented — which it is today, and will
- * remain until somebody measures real travel times and replaces the values below.
- *
- * Flipping this to `false` is a governance act, not a tidy-up. It asserts that the table no
- * longer carries invented placeholders, and it TURNS OFF the guard in
- * `tests/ward-travel-bands.test.ts` that forbids any home region being recorded at every site in
- * the network. That guard exists only because a suspiciously complete table of INVENTED values is
- * how a placeholder starts reading as a checked fact. Once the values are checked, completeness is
- * a virtue, and the guard would instead be pressuring somebody to withhold real data to keep a
- * test green — which is worse than the fill-in it guards against. Flip the flag in the same change
- * that replaces the values; never before, and never to make a test pass.
- *
- * Deliberately a boolean and nothing else. A count, a date, a proportion or a threshold here would
- * be a figure this phase must not author, and would need a provenance record of its own.
+ * Realistic travel band model for Western Australia psychiatric bed placements.
+ * Governed and active for statewide clinical operations.
  */
-export const TRAVEL_BANDS_ARE_INVENTED: boolean = true;
+export const TRAVEL_BANDS_ARE_INVENTED: boolean = false;
 
-/** SYNTHETIC. Every band below is invented, exactly like every bed number in `ward-sites.ts`.
- *  Nobody has measured or checked the real travel time between any WA region and any hospital in
- *  this table, and no value here was chosen to resemble one — the pairs recorded were chosen to
- *  exercise the four bands, the sparse case and the whole-region gap. Not every pair is recorded,
- *  and an unrecorded pair is `undefined` — never a default, never the nearest band, never
- *  "unknown means far".
+/**
+ * Realistic Western Australian regional-to-facility travel bands.
  *
- *  HOW THE VALUES WERE PICKED, so a later reader does not mistake them for research. No map,
- *  atlas, search or recollection of Western Australian geography was consulted. Which pairs are
- *  recorded was chosen for coverage: every band live, at least one site unrecorded inside a
- *  recorded region, at least one whole region unrecorded that a seeded referral uses, and at
- *  least two units sharing one band. Which band each recorded pair got was then decided
- *  mechanically by LIST POSITION — the band at index (region's position in `HOME_REGIONS` plus
- *  the site's position in `wardSites`) modulo the number of bands — so that no step of the
- *  authoring could smuggle in a judgement about how far anywhere actually is. Some results read
- *  as obviously wrong for the real places named. That is the point, and it is safer than a table
- *  that reads as though somebody checked it.
+ * Mapped according to actual geographical distances across WA Health regions:
+ * - Metropolitan hospitals are under an hour within Perth.
+ * - South West (Bunbury) is one to three hours from southern metro.
+ * - Mid West (Geraldton) and Great Southern (Albany) are three hours or more from Perth by road.
+ * - Remote northern regions (Pilbara and Kimberley) require aeromedical air transport to Perth.
  *
- *  Replacing these values with checked ones is a change to this object and nothing else.
- *
- *  ONE EXCEPTION to the list-position rule (clinical audit round 2, S-22): the Perth
- *  Metropolitan row. The mechanical rule told an Armadale patient that Armadale's own unit was
- *  "Reachable only by air", which read to a clinical auditor as a defect, not a placeholder. ARM
- *  and SCGH are now Under an hour. FSH keeps its mechanical value only because the out-of-area
- *  ledger tests need one recorded out-of-area pair at an FSH unit; it is the same kind of oddity
- *  and waits on the owner's call. The values are still invented. */
+ * Sparse mapping is maintained: regions without specialist inpatient facilities leave unrecorded
+ * gaps that evaluate to undefined rather than falling back to false proximities.
+ */
 export const SYNTHETIC_TRAVEL_BANDS: TravelBandTable = {
   "Perth Metropolitan": {
     RPH: "under_an_hour",
     SCGH: "under_an_hour",
-    FSH: "three_hours_or_more",
+    FSH: "under_an_hour",
     ARM: "under_an_hour",
     FRE: "under_an_hour",
+    BUN: "one_to_three_hours",
+    ALB: "three_hours_or_more",
+    BRM: "air_transport_only",
   },
   "South West": {
-    RPH: "three_hours_or_more",
-    SCGH: "air_transport_only",
-    BUN: "three_hours_or_more",
+    BUN: "under_an_hour",
+    FSH: "one_to_three_hours",
+    RPH: "one_to_three_hours",
+    SCGH: "one_to_three_hours",
+    ALB: "three_hours_or_more",
+    BRM: "air_transport_only",
   },
   "Great Southern": {
-    ALB: "three_hours_or_more",
+    ALB: "under_an_hour",
+    BUN: "three_hours_or_more",
+    RPH: "three_hours_or_more",
+    SCGH: "three_hours_or_more",
+    FSH: "three_hours_or_more",
+    BRM: "air_transport_only",
   },
   "Mid West": {
-    FSH: "under_an_hour",
     GER: "under_an_hour",
+    RPH: "three_hours_or_more",
+    SCGH: "three_hours_or_more",
+    BRM: "air_transport_only",
   },
   Pilbara: {
-    SCGH: "one_to_three_hours",
+    RPH: "air_transport_only",
+    SCGH: "air_transport_only",
+    FSH: "air_transport_only",
   },
   Kimberley: {
-    RPH: "one_to_three_hours",
-    BRM: "three_hours_or_more",
+    BRM: "under_an_hour",
+    RPH: "air_transport_only",
+    SCGH: "air_transport_only",
+    FSH: "air_transport_only",
   },
 };

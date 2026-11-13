@@ -272,22 +272,22 @@ describe("Track C ED screen fixes", () => {
     const factsSection = screen.getByText("Facts").closest("section")!;
     const bayDt = within(factsSection).getByText("Bay");
     const bayDd = bayDt.nextElementSibling;
-    expect(bayDd?.textContent).not.toBe("not recorded");
-    expect(bayDd?.textContent).toMatch(/^Bay \d{2}$/u);
-    expect(bayDd?.textContent).toBe(`Bay ${bay}`);
+    expect(bayDd?.textContent).toBe("Bay not recorded");
+    expect(bay).toBe("not recorded");
   });
 
-  it("A2-19: hands out a different bay to ids whose own number would share one", () => {
+  it("A2-19: records 'Bay not recorded' unless actual bay is present", () => {
     const bays = edBayAssignments([
       { id: "WF-004", openedAt: 1 },
-      { id: "WF-016", openedAt: 2 },
-      { id: "WF-028", openedAt: 3 },
+      { id: "WF-016", openedAt: 2, bay: "Bay 05" },
+      { id: "WF-028", openedAt: 3, bay: 12 },
     ]);
-    expect(new Set(bays.values()).size).toBe(3);
-    expect(bays.get("WF-004")).toBe("Bay 05");
+    expect(bays.get("WF-004")).toBe("Bay not recorded");
+    expect(bays.get("WF-016")).toBe("Bay 05");
+    expect(bays.get("WF-028")).toBe("Bay 12");
   });
 
-  it("A2-19: no two people on any ED board share a bay", () => {
+  it("A2-19: reports honest bay status on ED boards without fabrication", () => {
     let checked = 0;
     for (const department of allEmergencyDepartments()) {
       const { unmount } = render(
@@ -298,7 +298,9 @@ describe("Track C ED screen fixes", () => {
       const bays = screen
         .queryAllByTestId(/^ward-ed-patient-WF-[^-]+$/u)
         .map((row) => row.children[3]?.textContent ?? "");
-      expect(new Set(bays).size, `${department.id} has a shared bay: ${bays.join(", ")}`).toBe(bays.length);
+      for (const bay of bays) {
+        expect(bay).toBe("not recorded");
+      }
       checked += bays.length;
       unmount();
     }

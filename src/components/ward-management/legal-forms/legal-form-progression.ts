@@ -35,7 +35,10 @@ export function formProgression(movement: Movement | undefined): FormProgression
 
 /** The finite recorded expiry still in force; ended forms retain their expiry only as history. */
 export function currentLegalDueAt(movement: Movement): Instant | undefined {
-  if (formProgression(movement) !== undefined) return undefined;
+  const progression = formProgression(movement);
+  if (progression !== undefined && (progression.endedWhen !== "at arrival" || movement.examination !== undefined)) {
+    return undefined;
+  }
   const dueAt = movement.legalForm?.dueAt;
   // Restored null times must stay unwritten, never become midnight through arithmetic coercion.
   return typeof dueAt === "number" && Number.isFinite(dueAt) ? dueAt : undefined;

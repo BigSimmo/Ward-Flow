@@ -1270,5 +1270,8 @@ export function reduceReferralSendEvent(
       decision.reasonCode = "none";
       return replaceMovement(state, movement.id, updated);
     }
+    default:
+      return state;
   }
+  return state;
 }

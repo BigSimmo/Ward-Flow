@@ -168,5 +168,8 @@ export function reduceReferralFollowUpEvent(
         ),
       });
     }
+    default:
+      return state;
   }
+  return state;
 }

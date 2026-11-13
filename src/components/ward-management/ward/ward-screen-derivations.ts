@@ -120,9 +120,11 @@ export function wardBedRoster({
 
   const rawBeds = Array.from({ length: unit.beds }, (_, i) => {
     const bedNumber = i + 1;
-    const designation: "Locked" | "Open" | undefined = isMixed ? (i < lockedBeds ? "Locked" : "Open") : undefined;
+    // D-21 / Issue 07: Do not assign positional locked/open chips to individual bed tiles on mixed wards.
+    // The aggregate count is kept on the header via designationSummary(unit).
+    const designation: "Locked" | "Open" | undefined = undefined;
     const podId = isMixed ? (i < lockedBeds ? "locked" : "open") : "all";
-    const podLabel = isMixed ? `${unit.name} ${designation} Beds` : unit.name;
+    const podLabel = unit.name;
     const isHdu = false;
 
     // v10 "counts agree": the tiles follow the ruled four bed states (`bedStates`), the same
@@ -386,18 +388,15 @@ export function wardBedRoster({
     .map((bed, index) => {
       const bedNumber = bedNumbers[index];
       const preparingReleaseId = bed.status === "ready" ? preparingByBed.get(bedNumber) : undefined;
-      const designation: "Locked" | "Open" | undefined = isMixed
-        ? bedNumber <= lockedBeds
-          ? "Locked"
-          : "Open"
-        : undefined;
+      // D-21 / Issue 07: Mixed wards do not affix positional chips to individual bed tiles.
+      const designation: "Locked" | "Open" | undefined = undefined;
       return {
         ...bed,
         bedNumber,
         bedLabel: `Bed ${String(bedNumber).padStart(2, "0")}`,
         designation,
         podId: isMixed ? (bedNumber <= lockedBeds ? "locked" : "open") : "all",
-        podLabel: isMixed ? `${unit.name} ${designation} Beds` : unit.name,
+        podLabel: unit.name,
         heldFor: bed.status === "ready" ? heldBeds.find((held) => held.bed === bedNumber)?.name : undefined,
         preparing: preparingReleaseId !== undefined,
         preparingReleaseId,

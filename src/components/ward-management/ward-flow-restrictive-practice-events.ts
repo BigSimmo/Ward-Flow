@@ -135,6 +135,8 @@ export function reduceRestrictivePracticeEvent(
       next = { ...record, seclusionRoom: { status: event.status, at: event.now, by } };
       break;
     }
+    default:
+      return state;
   }
 
   decision.outcome = "accepted";

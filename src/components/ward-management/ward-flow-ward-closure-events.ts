@@ -77,5 +77,8 @@ export function reduceWardClosureEvent(
       delete reopened.admissionsClosure;
       return replaceUnit(state, unit.id, reopened);
     }
+    default:
+      return state;
   }
+  return state;
 }

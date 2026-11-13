@@ -1077,3 +1077,41 @@
   margin: 0;
   color: var(--wf-ink-2);
 }
+
+@page {
+  size: A4 landscape;
+  margin: 10mm;
+}
+
+@media print {
+  thead {
+    display: table-header-group;
+  }
+
+  tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .packTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10.5pt;
+  }
+
+  .packTable thead {
+    display: table-header-group;
+  }
+
+  .packTable tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .packTable th,
+  .packTable td {
+    border: 1px solid var(--wf-ink-4, #ccc);
+    padding: 4px 8px;
+  }
+}
+

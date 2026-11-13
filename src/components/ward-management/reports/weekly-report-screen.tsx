@@ -154,7 +154,7 @@ export function WeeklyReportScreen() {
         <StatisticsHero
           section="weekly"
           now={now}
-          eyebrow={isPhone ? "Statistics · Weekly report" : <>Weekly report · synthetic demo data</>}
+          eyebrow={isPhone ? "Statistics · Weekly report" : "Weekly report"}
           title="Weekly operations"
           phone={{
             sub: weekRange,

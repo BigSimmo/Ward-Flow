@@ -42,4 +42,9 @@ describe("v10 pass 2 shell", () => {
     expect(isPhoneDesktopOnlyPath(`${governance!}/registers`)).toBe(false);
     expect(isPhoneDesktopOnlyPath(WARD_ADD_PERSON_HREF)).toBe(false);
   });
+
+  it("resolves retired /ward-flow/network route title to Home", () => {
+    expect(resolveWardScreenTitle("/ward-flow/network")).toBe("Home");
+    expect(resolveWardScreenTitle("/ward-flow/network/")).toBe("Home");
+  });
 });

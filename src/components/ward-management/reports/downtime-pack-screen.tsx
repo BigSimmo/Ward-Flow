@@ -52,6 +52,7 @@ import {
   lastDowntimePack,
   markDowntimePackHandled,
   subscribeDowntimePack,
+  type DowntimeCensusLine,
   type DowntimePack,
   type DowntimeWard,
 } from "./downtime-pack";
@@ -73,9 +74,10 @@ const KEEP_A_COPY =
 /** How long "Taking snapshot" shows before the new time, so the change is seen. */
 const TAKING_MS = 450;
 
-type Section = "beds" | "ed" | "moves" | "forms";
+type Section = "beds" | "census" | "ed" | "moves" | "forms";
 const SECTION_IDS: Record<Section, string> = {
   beds: "downtime-beds",
+  census: "downtime-census",
   ed: "downtime-ed",
   moves: "downtime-moves",
   forms: "downtime-legal",
@@ -250,7 +252,7 @@ export function DowntimePackScreen() {
         <main id="main-content" className={styles.main} aria-busy={unavailable ? undefined : true}>
           <Hero
             level={1}
-            eyebrow="Downtime pack · synthetic data"
+            eyebrow="Downtime pack"
             title="Downtime pack"
             titleMeta={unavailable ? "Snapshot unavailable" : "Taking snapshot"}
           />
@@ -652,6 +654,57 @@ export function DowntimePackScreen() {
           </div>
         )}
       </Card>
+
+      <Card aria-labelledby="downtime-census-title" id={SECTION_IDS.census} className={styles.packCard}>
+        <CardHead
+          id="downtime-census-title"
+          icon={Users}
+          title="Active inpatient census"
+          aside={
+            <span className={styles.headMeta}>
+              <b>{pack.census?.length ?? 0}</b> occupied
+            </span>
+          }
+        />
+        {!pack.census || pack.census.length === 0 ? (
+          <p className={styles.cardNote}>0 occupied beds recorded when the pack was taken.</p>
+        ) : (
+          <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Inpatient census table">
+            <table
+              className={`${tableClasses.table} ${styles.table} ${styles.packTable}`}
+              data-testid="ward-downtime-census"
+            >
+              <caption className={styles.srOnly}>Inpatient census table, synthetic</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Ward</th>
+                  <th scope="col" className={styles.num}>
+                    Bed
+                  </th>
+                  <th scope="col">Patient</th>
+                  <th scope="col">UMRN</th>
+                  <th scope="col">Legal status</th>
+                  <th scope="col">Observation level</th>
+                  <th scope="col">Special requirements</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pack.census.map((line: DowntimeCensusLine, idx) => (
+                  <tr key={`${line.unitId}-${line.bedNumber}-${idx}`}>
+                    <th scope="row">{line.unitName}</th>
+                    <td className={styles.num}>{line.bedNumber}</td>
+                    <td>{line.patientName}</td>
+                    <td className={styles.time}>{line.umrn}</td>
+                    <td>{line.legalStatus}</td>
+                    <td>{line.observationLevel}</td>
+                    <td>{line.specialRequirements || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
     </>
   );
 
@@ -665,7 +718,7 @@ export function DowntimePackScreen() {
               className={styles.downtimePhoneHero}
               // F-08 (phone review, Oct 2026): the synthetic marker, as the desktop eyebrow carries it. A
               // frozen pack takes no Demo pill, whose pulse would read as live.
-              eyebrow="Downtime pack · synthetic data"
+              eyebrow="Downtime pack"
               title={pack.offline ? `Frozen, ${frozenAt}` : `Frozen at ${frozenAt}`}
               sub={`${reportDay(pack.generatedAt, dayZero)} · next pack ${pack.offline ? "when online" : nextPackAt}`}
               // Ops-20 (13 Oct 2026): the counts sit once, in the section control below; the hero
@@ -852,7 +905,7 @@ export function DowntimePackScreen() {
       <main id="main-content" className={styles.main}>
         <Hero
           level={1}
-          eyebrow="Downtime pack · synthetic data"
+          eyebrow="Downtime pack"
           title="Downtime pack"
           titleMeta={
             <span className={styles.frozen} data-testid="ward-downtime-frozen">
@@ -911,6 +964,7 @@ export function DowntimePackScreen() {
           {(
             [
               ["beds", "Beds"],
+              ["census", "Census"],
               ["ed", "ED queue"],
               ["moves", "Pending moves"],
               ["forms", "Legal forms"],

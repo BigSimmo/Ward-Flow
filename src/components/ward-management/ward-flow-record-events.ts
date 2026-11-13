@@ -793,8 +793,16 @@ export function reduceRecordedFactEvent(
        * of the secure units can take him"` is a real blocker (`tests/ward-priority.test.ts`), which
        * `/^none/i` would swallow. This set does not interpret English.
        */
+      const exactMatch = BLOCKERS_MEANING_NOTHING_IS_BLOCKING.find((inactive) => inactive === blocker);
+      if (exactMatch !== undefined) {
+        return reject(
+          state,
+          event,
+          `"${blocker}" is a "nothing is blocking" sentinel, not an active blocker — use CLEAR_MOVEMENT_BLOCKER to say nothing is holding this up`,
+        );
+      }
       const nearMiss = BLOCKERS_MEANING_NOTHING_IS_BLOCKING.find(
-        (inactive) => inactive.toLowerCase() === blocker.toLowerCase() && inactive !== blocker,
+        (inactive) => inactive.toLowerCase() === blocker.toLowerCase(),
       );
       if (nearMiss !== undefined) {
         return reject(

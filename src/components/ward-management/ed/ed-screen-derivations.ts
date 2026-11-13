@@ -30,12 +30,12 @@ import { foldPatientSearchText } from "@/components/ward-management/ward-patient
 import { activeTaskItems, inboxItemsForRole } from "@/components/ward-management/ward-act-now-items";
 import {
   ANSWERED_VISIBLE_CAP,
+  BAY_NOT_RECORDED,
   bayText,
   edBayAssignments,
   type EdStepEvent,
   isEdInitiatedWithdrawal,
   movementMedicalClearance,
-  seedBayNumber,
   waitLine,
 } from "./ed-screen-model";
 import { edDepartmentTimelineEvents, formatTimelineExamOutcome, type TimelineEvent } from "./ed-screen-timeline";
@@ -153,7 +153,7 @@ export function deriveEdScreen({
         isEdInitiatedWithdrawal(movement)),
   );
   const bayById = edBayAssignments(patients);
-  const patientBay = (id: string) => bayById.get(id) ?? bayText(seedBayNumber(id));
+  const patientBay = (id: string) => bayById.get(id) ?? BAY_NOT_RECORDED;
 
   /**
    * THE INBOX. Two fields, never one — `edId` AND `purpose`.

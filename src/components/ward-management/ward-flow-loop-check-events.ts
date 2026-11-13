@@ -193,7 +193,10 @@ export function reduceLoopCheckEvent(
       };
       return helpers.replaceUnit(state, unit.id, closed);
     }
+    default:
+      return state;
   }
+  return state;
 }
 
 /** A ward acts only for a move it accepted. Claim, not proof, as the closure events. */

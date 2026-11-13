@@ -101,5 +101,8 @@ export function reduceReferralOwnerEvent(
         contactLog: [...(referral.contactLog ?? []), { contact: recorded, outcome: event.outcome, at: event.now, by }],
       });
     }
+    default:
+      return state;
   }
+  return state;
 }

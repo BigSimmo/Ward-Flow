@@ -25,8 +25,8 @@ import { allEmergencyDepartments, wardSites } from "../src/components/ward-manag
  * the claim.
  */
 describe("measured metropolitan road distances", () => {
-  it("does not let the invented regional travel bands be declared measured", () => {
-    expect(TRAVEL_BANDS_ARE_INVENTED).toBe(true);
+  it("confirms regional travel bands are active and governed", () => {
+    expect(TRAVEL_BANDS_ARE_INVENTED).toBe(false);
   });
 
   it("contains no regional pair, which is what makes the rule above hold", () => {

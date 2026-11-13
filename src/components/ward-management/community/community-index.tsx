@@ -461,7 +461,6 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
               <SrOnly>Community:</SrOnly> <b className={styles.heroFigure}>{allTeams.length}</b> names
             </>
           }
-          titleMeta={isPhone ? "Recorded names, not verified services" : undefined}
           stats={
             isPhone ? (
               // v10 phone: three figures on hairlines, value over label.

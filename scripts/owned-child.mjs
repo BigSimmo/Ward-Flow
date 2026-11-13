@@ -52,15 +52,31 @@ function markedProcesses(marker) {
   return null;
 }
 
-// Unfinished guardian records are deliberately retained even if their PID died.
-// Descendant ownership is then unknown; automatic reclamation would be unsafe.
+function processIsAlive(pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  if (pid === 4 || pid === 1) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error?.code === "EPERM";
+  }
+}
+
+// Unfinished guardian records are verified against actual process liveness.
+// If both guardian and child PIDs are dead, the work is no longer active.
 export function registeredWorkIsActive(leasePath, token) {
   const directory = path.join(leasePath, "children");
   if (!existsSync(directory)) return false;
   return readdirSync(directory).some((name) => {
     if (!name.endsWith(".json")) return false;
     const record = json(path.join(directory, name));
-    return !record || ((!token || record.token === token) && record.state !== "complete");
+    if (!record) return false;
+    if (record.state === "complete") return false;
+    if (token && record.token !== token) return false;
+    const guardianAlive = record.guardianPid ? processIsAlive(record.guardianPid) : false;
+    const childAlive = record.childPid ? processIsAlive(record.childPid) : false;
+    return guardianAlive || childAlive;
   });
 }
 

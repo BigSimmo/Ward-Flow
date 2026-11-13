@@ -95,6 +95,9 @@ export function BannerBody({
   const kind = broadcastKind(alert);
   const [choosing, setChoosing] = useState<BroadcastAnswer | null>(null);
   const [changing, setChanging] = useState(false);
+  const [confirmingStandDown, setConfirmingStandDown] = useState(false);
+  const [clinicianName, setClinicianName] = useState("");
+  const [standDownReason, setStandDownReason] = useState("");
   const isPhone = useIsPhone();
   const deskInScope = useDeskInScope();
   const isRed = tone === "act_now";
@@ -282,7 +285,12 @@ export function BannerBody({
             </Button>
           ) : null}
           {lifecycle?.standDown ? (
-            <Button size="sm" variant="ghost" onClick={lifecycle.standDown} data-testid="ward-broadcast-stand-down">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setConfirmingStandDown(true)}
+              data-testid="ward-broadcast-stand-down"
+            >
               Stand down
             </Button>
           ) : null}
@@ -307,6 +315,107 @@ export function BannerBody({
             .join(". ")}
           .
         </p>
+      ) : null}
+
+      {confirmingStandDown ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="stand-down-dialog-title"
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              background: "var(--wf-surface, #fff)",
+              color: "var(--wf-text, #111827)",
+              padding: "1.5rem",
+              borderRadius: "0.5rem",
+              maxWidth: "480px",
+              width: "90%",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+            }}
+          >
+            <h3
+              id="stand-down-dialog-title"
+              style={{ marginTop: 0, marginBottom: "0.75rem", fontSize: "1.125rem", fontWeight: 600 }}
+            >
+              Confirm Alert Stand-Down
+            </h3>
+            <p style={{ fontSize: "0.875rem", color: "var(--wf-muted, #4b5563)", marginBottom: "1rem" }}>
+              Standing down a broadcast alert immediately deactivates it across all desks. Please confirm your identity
+              and clinical reason.
+            </p>
+            <div style={{ marginBottom: "1rem" }}>
+              <label
+                htmlFor="stand-down-clinician"
+                style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, marginBottom: "0.25rem" }}
+              >
+                Clinician name
+              </label>
+              <input
+                id="stand-down-clinician"
+                data-testid="ward-broadcast-stand-down-clinician"
+                type="text"
+                value={clinicianName}
+                onChange={(e) => setClinicianName(e.target.value)}
+                placeholder="e.g. Dr Smith (Duty Consultant)"
+                style={{ width: "100%", padding: "0.5rem", borderRadius: "0.375rem", border: "1px solid #ccc" }}
+              />
+            </div>
+            <div style={{ marginBottom: "1.25rem" }}>
+              <label
+                htmlFor="stand-down-reason"
+                style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, marginBottom: "0.25rem" }}
+              >
+                Reason for stand-down
+              </label>
+              <textarea
+                id="stand-down-reason"
+                data-testid="ward-broadcast-stand-down-reason"
+                value={standDownReason}
+                onChange={(e) => setStandDownReason(e.target.value)}
+                placeholder="e.g. Surge resolved, normal operations resumed"
+                rows={3}
+                style={{ width: "100%", padding: "0.5rem", borderRadius: "0.375rem", border: "1px solid #ccc" }}
+              />
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
+              <Button
+                size="sm"
+                variant="ghost"
+                data-testid="ward-broadcast-cancel-stand-down"
+                onClick={() => {
+                  setConfirmingStandDown(false);
+                  setClinicianName("");
+                  setStandDownReason("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                data-testid="ward-broadcast-confirm-stand-down"
+                disabled={!clinicianName.trim() || !standDownReason.trim()}
+                onClick={() => {
+                  lifecycle?.standDown?.();
+                  setConfirmingStandDown(false);
+                  setClinicianName("");
+                  setStandDownReason("");
+                }}
+              >
+                Confirm stand down
+              </Button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </section>
   );

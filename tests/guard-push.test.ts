@@ -49,7 +49,9 @@ import {
   isWardFlowBranch,
   isWardFlowFile,
   wardFlowPushVerdict,
-  wardFlowPushGuard,
+  directMainPushVerdict,
+  tryGit,
+  DEFAULT_CHILD_TIMEOUT_MS,
   derivesFromUnpushedWardLine,
   WARD_LINE_BRANCH,
 } from "../scripts/guard-push.mjs";
@@ -501,6 +503,11 @@ describe("static guard scope selection", () => {
     ).toBe(false);
   });
 
+  it("restricts busy detection to exit code 75 and does not treat prose 'retry shortly' as busy", () => {
+    const error = { status: 1, stdout: "error TS2322: retry shortly", stderr: "" };
+    expect(error.status === HEAVY_RUN_ADMISSION_BUSY_EXIT).toBe(false);
+  });
+
   it("escalates to repo-wide lint when eslint policy changes", () => {
     expect(isEslintPolicyFile("eslint.config.mjs")).toBe(true);
     expect(isEslintPolicyFile("eslint-rules/no-hardcoded-hex.mjs")).toBe(true);
@@ -944,7 +951,7 @@ describe("Ward Flow / origin:main push guard", () => {
     expect(isMainBranch("feature/main-sync")).toBe(false);
   });
 
-  it("blocks any push of Ward Flow files to origin/main unless explicitly confirmed", () => {
+  it("blocks any push of Ward Flow files to origin/main", () => {
     const blocked = wardFlowPushVerdict({
       pushedBranches: ["main"],
       changedFiles: ["src/components/ward-management/patients/add-patient.tsx"],
@@ -953,15 +960,6 @@ describe("Ward Flow / origin:main push guard", () => {
     expect(blocked.block).toBe(true);
     expect(blocked.reason).toBe("ward-flow-push-to-main");
     expect(blocked.message).toContain("WARD FLOW CANNOT BE FOLDED OR PUSHED TO ORIGIN/MAIN");
-    expect(blocked.message).toContain('CONFIRM_WARD_FLOW_PUSH_TO_MAIN="I_CONFIRM_FOLD_TO_ORIGIN_MAIN"');
-
-    const unblocked = wardFlowPushVerdict({
-      pushedBranches: ["main"],
-      changedFiles: ["src/components/ward-management/patients/add-patient.tsx"],
-      env: { CONFIRM_WARD_FLOW_PUSH_TO_MAIN: "I_CONFIRM_FOLD_TO_ORIGIN_MAIN" },
-    });
-    expect(unblocked.block).toBe(false);
-    expect(unblocked.warning).toContain("CONFIRM_WARD_FLOW_PUSH_TO_MAIN");
   });
 
   it("blocks direct push of non-ward files to origin/main without explicit confirmation", () => {
@@ -1010,15 +1008,6 @@ describe("Ward Flow / origin:main push guard", () => {
     });
     expect(verdict.block).toBe(false);
     expect(verdict.reason).toBe("safe");
-
-    const guardResult = wardFlowPushGuard(
-      ["codex/rag-improvement"],
-      [],
-      ["src/lib/rag/rerank.ts"],
-      "codex/rag-improvement",
-      { env: {} },
-    );
-    expect(guardResult.ok).toBe(true);
   });
 });
 
@@ -1122,35 +1111,45 @@ describe("Ward Flow push guard — remote-ref and current-branch detection paths
     expect(unblocked.block).toBe(false);
   });
 
-  // Documents CURRENT behaviour only (owner has not ruled on whether this coupling is
-  // wanted — see scripts/guard-push.mjs guard-0 header and CONTEXT in the brief that
-  // added this test). wardFlowPushVerdict's Case 2 and Case 3 branches each accept
-  // EITHER their own CONFIRM_* value OR the Case-1 value
-  // (CONFIRM_WARD_FLOW_PUSH_TO_MAIN=I_CONFIRM_FOLD_TO_ORIGIN_MAIN). That means a single
-  // override meant for "fold Ward Flow to origin/main" also unlocks an unrelated direct
-  // push to main (Case 2) and an unrelated Ward Flow push to a feature branch (Case 3).
-  // If a future owner decision narrows this, update/remove this test alongside that
-  // change — do not let it silently start asserting the opposite of what it names.
-  it("documents current behaviour: the Case-1 override value also unlocks Case 2 and Case 3", () => {
-    // Case 2: a direct, non-ward push to origin/main — unlocked by the Case-1 value.
-    const case2 = wardFlowPushVerdict({
-      pushedBranches: ["main"],
-      changedFiles: ["src/lib/search.ts"],
-      currentBranch: "codex/generic-fix",
-      env: { CONFIRM_WARD_FLOW_PUSH_TO_MAIN: "I_CONFIRM_FOLD_TO_ORIGIN_MAIN" },
-    });
-    expect(case2.block).toBe(false);
-    expect(case2.reason).toBe("confirmed-by-env");
+});
 
-    // Case 3: a Ward Flow push to a remote non-main branch — unlocked by the Case-1 value.
-    const case3 = wardFlowPushVerdict({
-      pushedBranches: ["codex/feature-test"],
-      changedFiles: ["src/components/ward-management/search/patient-search.tsx"],
-      currentBranch: "codex/feature-test",
-      env: { CONFIRM_WARD_FLOW_PUSH_TO_MAIN: "I_CONFIRM_FOLD_TO_ORIGIN_MAIN" },
-    });
-    expect(case3.block).toBe(false);
-    expect(case3.reason).toBe("confirmed-by-env");
+describe("directMainPushVerdict", () => {
+  it("blocks direct push to main without confirmation", () => {
+    const stdin = `refs/heads/feature abc refs/heads/main def\n`;
+    expect(directMainPushVerdict(stdin, {}).ok).toBe(false);
+  });
+  it("allows direct push to main with CONFIRM_PUSH_TO_MAIN", () => {
+    const stdin = `refs/heads/main abc refs/heads/main def\n`;
+    expect(directMainPushVerdict(stdin, { CONFIRM_PUSH_TO_MAIN: "I_CONFIRM_PUSH_TO_MAIN" }).ok).toBe(true);
+  });
+  it("allows pushes to feature branches without confirmation", () => {
+    const stdin = `refs/heads/my-feature abc refs/heads/my-feature def\n`;
+    expect(directMainPushVerdict(stdin, {}).ok).toBe(true);
+  });
+  it("blocks multi-ref push containing main without confirmation", () => {
+    const stdin = `refs/heads/feature abc refs/heads/feature def\nrefs/heads/main abc refs/heads/main def\n`;
+    expect(directMainPushVerdict(stdin, {}).ok).toBe(false);
+  });
+  it("blocks deletion of refs/heads/main without confirmation", () => {
+    const stdin = `refs/heads/main ${ZERO} refs/heads/main abc\n`;
+    expect(directMainPushVerdict(stdin, {}).ok).toBe(false);
+  });
+});
+
+describe("tryGit safety and timeouts", () => {
+  it("fails closed when failClosed option is specified on git error", () => {
+    expect(() => tryGit(["nonexistent-git-subcommand-xyz"], process.cwd(), { failClosed: true })).toThrow();
+  });
+  it("returns undefined on expected non-zero exits when failClosed is false", () => {
+    expect(tryGit(["rev-parse", "--verify", "--quiet", "refs/nonexistent/ref"], process.cwd())).toBeUndefined();
+  });
+  it("exports DEFAULT_CHILD_TIMEOUT_MS as 60000ms", () => {
+    expect(DEFAULT_CHILD_TIMEOUT_MS).toBe(60_000);
+  });
+  it("fails closed in pushedTipMatchesHead when headSha is not resolved", () => {
+    const res = pushedTipMatchesHead([{ localSha: "abc", localRef: "refs/heads/feature" }], "");
+    expect(res.ok).toBe(false);
+    expect(res.message).toContain("static guard could not resolve HEAD commit");
   });
 });
 

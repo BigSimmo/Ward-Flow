@@ -14,6 +14,10 @@ import { wardActNowCount } from "@/components/ward-management/ward/ward-home-tab
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import { wardPatients } from "@/components/ward-management/ward-patients-seed";
 import type { Movement } from "@/components/ward-management/ward-model";
+import {
+  pullHoldMinutesFor,
+  AEROMEDICAL_TRANSIT_HOLD_MINUTES,
+} from "@/components/ward-management/ward-flow-placement-events";
 
 const NOW = 600;
 
@@ -145,3 +149,29 @@ describe("a departure never stamps the census as confirmed (A1-11)", () => {
     expect(unitAfter.empty.confirmedAt).toBe(unitBefore.empty.confirmedAt);
   });
 });
+
+describe("pullHoldMinutesFor: aeromedical hold ceiling extension", () => {
+  it("extends hold to 600 minutes (10 hours) for aeromedical RFDS or flight transit", () => {
+    const state = seedWardFlowState();
+    const unitId = state.units[0].id;
+    const rfdsMovement = {
+      ...state.movements[0],
+      transport: { provider: "RFDS" },
+    } as unknown as Movement;
+    expect(pullHoldMinutesFor(state, rfdsMovement, unitId)).toBe(AEROMEDICAL_TRANSIT_HOLD_MINUTES);
+    expect(AEROMEDICAL_TRANSIT_HOLD_MINUTES).toBe(600);
+
+    const flightMovement = {
+      ...state.movements[0],
+      transitMode: "flight",
+    } as unknown as Movement;
+    expect(pullHoldMinutesFor(state, flightMovement, unitId)).toBe(600);
+
+    const normalMovement = {
+      ...state.movements[0],
+      transport: undefined,
+    } as unknown as Movement;
+    expect(pullHoldMinutesFor(state, normalMovement, unitId)).toBe(state.configuration.pullHoldMinutes);
+  });
+});
+

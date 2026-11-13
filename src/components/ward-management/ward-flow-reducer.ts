@@ -484,6 +484,10 @@ export function seedWardFlowState(scenario: WardScenario = "standard"): WardFlow
     movements: withDemoStageTimes(
       withDemoPlannedMoveTimes(structuredClone(network?.movements ?? wardMovements), NOW_ANCHOR),
       NOW_ANCHOR,
+    ).map((movement) =>
+      movement.id === "WF-004" || movement.id === "WF-005"
+        ? { ...movement, medicalClearance: { at: NOW_ANCHOR - 60, cleared: true } }
+        : movement,
     ),
     units: scenarioUnits(scenario),
     rejections: [],
@@ -1635,8 +1639,21 @@ export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): War
     (event.type === "RESET_SCENARIO" || event.type === "SET_SCENARIO") &&
     EVENT_ROLE[event.type].includes(event.role) &&
     next.movements !== state.movements
-  )
-    return { ...next, worldGeneration: state.worldGeneration + 1 };
+  ) {
+    const units = next.units.map((unit) => {
+      const prev = state.units.find((candidate) => candidate.id === unit.id);
+      const prevRev = prev?.allocatable.revision ?? 0;
+      const seedRev = unit.allocatable.revision ?? 0;
+      return {
+        ...unit,
+        allocatable: {
+          ...unit.allocatable,
+          revision: Math.max(prevRev, seedRev) + 1,
+        },
+      };
+    });
+    return { ...next, units, worldGeneration: state.worldGeneration + 1 };
+  }
   return appendAudit(state, next, event, decision);
 }
 
@@ -1764,13 +1781,13 @@ export function reduceClinicalEvent(
         movement.transport?.collectedAt !== undefined
       )
         return false;
-      return recordedMovementMedicalClearance(movement, state.referrals)?.cleared === false;
+      return recordedMovementMedicalClearance(movement, state.referrals)?.cleared !== true;
     })()
   ) {
     return reject(
       state,
       event,
-      "Medical clearance is explicitly not granted; onward transfer is paused until clinical re-clearance.",
+      "Medical clearance has not been confirmed; onward transfer is paused until affirmative clinical clearance is recorded.",
     );
   }
 
@@ -1831,6 +1848,9 @@ export function reduceClinicalEvent(
       );
 
     case "SET_SCENARIO": {
+      if (event.scenario === state.scenario) {
+        return state;
+      }
       // Y4 privacy fix: membership-checked against `WARD_SCENARIOS`, the same list the restore-side
       // check reads, rather than trusted from the type.
       if (!WARD_SCENARIOS.includes(event.scenario)) {

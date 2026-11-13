@@ -31,12 +31,6 @@ else
 fi
 
 staged_files=$(git diff --cached --name-only --diff-filter=ACMRDT)
-working_files=$(
-  {
-    git diff --name-only --diff-filter=ACMRDT
-    git ls-files --others --exclude-standard
-  } | sort -u
-)
 
 # --- Ward Flow generated indexes ------------------------------------------------
 # Three documents are GENERATED from sources that move: the screen map, the rules
@@ -154,6 +148,14 @@ fi
 
 # Generators read the working tree. Refuse to combine staged inputs with other
 # unstaged inputs that could make the generated docs describe the wrong commit.
+# Only the legacy fallback reads working inputs. The staged adapter exits above.
+working_files=$(
+  {
+    git diff --name-only --diff-filter=ACMRDT
+    git ls-files --others --exclude-standard
+  } | sort -u
+)
+
 mixed_inputs=""
 if [ "$sync_sitemap" = "1" ]; then
   mixed_inputs=$(printf '%s\n' "$working_files" | grep -E '^(src/app/|mockups/|scripts/generate-site-map\.ts$)' || true)

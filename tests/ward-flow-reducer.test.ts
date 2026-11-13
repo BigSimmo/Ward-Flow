@@ -29,9 +29,12 @@ function seeded() {
   // read it) — no test in this file asserts on WF-009's gender being unset.
   return {
     ...state,
-    movements: state.movements.map((candidate) =>
-      candidate.id === "WF-009" ? { ...candidate, gender: "Male" as const } : candidate,
-    ),
+    movements: state.movements.map((candidate) => {
+      const withGender = candidate.id === "WF-009" ? { ...candidate, gender: "Male" as const } : candidate;
+      return withGender.medicalClearance
+        ? withGender
+        : { ...withGender, medicalClearance: { at: NOW - 60, cleared: true } };
+    }),
   };
 }
 
@@ -1373,17 +1376,61 @@ describe("scenario selection", () => {
     expect(next.scenario).toBe("standard");
   });
 
+  it("SET_SCENARIO returns state unchanged without inflating worldGeneration if event.scenario === state.scenario", () => {
+    const initial = seedWardFlowState("standard");
+    const initialGen = initial.worldGeneration;
+    const same = wardFlowReducer(initial, {
+      type: "SET_SCENARIO",
+      role: "demo",
+      now: NOW,
+      scenario: "standard",
+    });
+    expect(same).toBe(initial);
+    expect(same.worldGeneration).toBe(initialGen);
+  });
+
+  it("RESET_SCENARIO advances allocatable revision so stale capacity drafts are rejected", () => {
+    const initial = seedWardFlowState("standard");
+    const unitId = initial.units[0].id;
+    const preRev = initial.units[0].allocatable.revision ?? 0;
+
+    const reset = wardFlowReducer(initial, {
+      type: "RESET_SCENARIO",
+      role: "demo",
+      now: NOW,
+    });
+    const resetUnit = reset.units.find((u) => u.id === unitId)!;
+    expect(resetUnit.allocatable.revision).toBe(preRev + 1);
+
+    const staleDraft = wardFlowReducer(reset, {
+      type: "CONFIRM_CAPACITY",
+      role: "ward",
+      now: NOW,
+      unitId,
+      actingUnitId: unitId,
+      expectedRevision: preRev,
+      value: 4,
+    });
+    expect(staleDraft.rejections).toHaveLength(1);
+    expect(staleDraft.rejections[0].reason).toContain("is stale");
+  });
+
   it("puts the loaded scenario back to its start on RESET_SCENARIO (overall review, 20 Oct 2026)", () => {
     let state = seeded();
     state = wardFlowReducer(state, { type: "SET_SCENARIO", role: "demo", now: NOW, scenario: "scarce" });
     expect(state.scenario).toBe("scarce");
     const fresh = state;
     state = wardFlowReducer(state, { type: "ADVANCE_CLOCK", role: "demo", now: NOW, minutes: 60 });
-
     const reset = wardFlowReducer(state, { type: "RESET_SCENARIO", role: "demo", now: NOW + 60 });
     expect(reset.scenario).toBe("scarce");
     expect(reset.clockOffsetMinutes).toBe(0);
-    expect(reset.units).toEqual(fresh.units);
+    // Issue 02: allocatable revisions advance on RESET_SCENARIO to reject stale capacity drafts
+    expect(reset.units).toEqual(
+      fresh.units.map((u) => ({
+        ...u,
+        allocatable: { ...u.allocatable, revision: (u.allocatable.revision ?? 0) + 1 },
+      })),
+    );
   });
 
   it("falls back to the standard night when the loaded scenario is unknown", () => {
@@ -1449,7 +1496,15 @@ describe("arrival capacity floor", () => {
           legalFormCode: null,
         },
       });
-      return { raised, id: raised.movements[raised.movements.length - 1].id };
+      const movementId = raised.movements[raised.movements.length - 1].id;
+      const cleared = wardFlowReducer(raised, {
+        type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE",
+        role: "ed",
+        now: NOW,
+        movementId,
+        cleared: true,
+      });
+      return { raised: cleared, id: movementId };
     };
     const unitOf = (state: ReturnType<typeof seeded>) => state.units.find((unit) => unit.id === "rph-adult-secure")!;
 
@@ -1821,7 +1876,7 @@ describe("release and cancel", () => {
       { type: "TRANSPORT_EN_ROUTE", role: "officer" },
       { type: "PATIENT_COLLECTED", role: "officer" },
     ] as const;
-    let inFlight = seedWardFlowState();
+    let inFlight = seeded();
     for (const step of steps) {
       inFlight = wardFlowReducer(inFlight, { ...step, now: NOW_ANCHOR, movementId } as never);
     }

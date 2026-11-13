@@ -11,6 +11,10 @@ import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { legalFormOrdered } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
 import { observationSummary } from "@/components/ward-management/ward-observation";
+import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { stayLegalShort } from "@/components/ward-management/ward-stay-legal";
+import type { Patient } from "@/components/ward-management/ward-patients";
+import type { Referral } from "@/components/ward-management/ward-model";
 
 /**
  * DOWNTIME PACK — a frozen, printable snapshot of the network for when the system is unavailable:
@@ -66,10 +70,22 @@ type DowntimeLegalLine = {
   typedExpiryAt: Instant | null;
 };
 
+export type DowntimeCensusLine = {
+  unitId: string;
+  unitName: string;
+  bedNumber: string;
+  patientName: string;
+  umrn: string;
+  legalStatus: string;
+  observationLevel: string;
+  specialRequirements?: string;
+};
+
 export type DowntimePack = {
   generatedAt: Instant;
   wards: DowntimeWard[];
   totals: BedStateCounts & { beds: number; pendingPreparation: number };
+  census?: DowntimeCensusLine[];
   edQueue: DowntimeEdLine[];
   pendingMoves: DowntimeMoveLine[];
   legalForms: DowntimeLegalLine[];
@@ -99,6 +115,8 @@ export type DowntimePackInput = {
   movements: Movement[];
   now: Instant;
   identify: (movement: Movement) => string;
+  patients?: readonly Patient[];
+  referrals?: readonly Referral[];
 };
 
 /** "Armadale ED", one line in a printed row; the full name only when no short name exists. */
@@ -190,10 +208,89 @@ export function downtimePack(input: DowntimePackInput): DowntimePack {
     typedExpiryAt: finiteOrNull(movement.legalForm?.dueAt),
   }));
 
+  const bedUnitIds = new Set(bedUnits.map((u) => u.id));
+  const occupiedAdmissions = admissions.filter(
+    (admission) => admission.state === "occupied" && bedUnitIds.has(admission.unitId),
+  );
+
+  const census: DowntimeCensusLine[] = occupiedAdmissions
+    .map((admission) => {
+      const unit = units.find((u) => u.id === admission.unitId);
+      const resolved = resolveSubjectPatient(admission, {
+        movements,
+        patients: input.patients,
+        referrals: input.referrals,
+      });
+
+      let patientName =
+        resolved.displayName &&
+        resolved.displayName !== "Unknown person" &&
+        resolved.displayName !== "Name not recorded"
+          ? resolved.displayName
+          : "";
+      let umrn = resolved.umrn && resolved.umrn !== "UMRN not recorded" ? resolved.umrn : "";
+
+      if ((!patientName || !umrn) && (admission.movementId || admission.id)) {
+        const m = movements.find((cand) => cand.id === admission.movementId || cand.admissionId === admission.id);
+        if (m) {
+          const idStr = identify(m);
+          if (idStr) {
+            const parts = idStr.split(" · ");
+            if (parts.length >= 2) {
+              if (!patientName) patientName = parts[0]!;
+              if (!umrn) umrn = parts[1]!;
+            } else if (!patientName) {
+              patientName = idStr;
+            }
+          }
+        }
+      }
+
+      if (!patientName) patientName = resolved.displayName || "Patient name not recorded";
+      if (!umrn) umrn = resolved.umrn || "UMRN not recorded";
+
+      const legal =
+        stayLegalShort(admission, {
+          movements,
+        }) ?? "Voluntary";
+
+      const obsLevel =
+        typeof (admission as unknown as { observation: unknown }).observation === "string"
+          ? String((admission as unknown as { observation: string }).observation).charAt(0).toUpperCase() +
+            String((admission as unknown as { observation: string }).observation).slice(1)
+          : admission.observation
+            ? observationSummary(admission.observation)
+            : "General";
+      const bedNumber =
+        admission.bedNumber !== undefined
+          ? String(admission.bedNumber)
+          : admission.bedKind
+            ? `${admission.bedKind === "locked" ? "Secure" : "Open"} bed`
+            : "Unassigned";
+
+      return {
+        unitId: admission.unitId,
+        unitName: unit?.name ?? admission.unitId,
+        bedNumber,
+        patientName,
+        umrn,
+        legalStatus: legal,
+        observationLevel: obsLevel,
+        specialRequirements: admission.highAcuity ? "High acuity" : undefined,
+      };
+    })
+    .sort(
+      (a, b) =>
+        a.unitName.localeCompare(b.unitName) ||
+        (Number(a.bedNumber) || 0) - (Number(b.bedNumber) || 0) ||
+        a.bedNumber.localeCompare(b.bedNumber),
+    );
+
   return {
     generatedAt: now,
     wards,
     totals,
+    census,
     edQueue,
     pendingMoves,
     legalForms,

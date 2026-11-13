@@ -335,6 +335,10 @@ export function reduceInboxEvent(
       decision.reasonCode = "none";
       const acknowledgement: InboxAcknowledgement = { at: event.now, by: WARD_FLOW_ROLE_LABELS[event.role] };
       const existing = state.inboxAcknowledgements[inboxItemId] ?? [];
+      const isDuplicate = existing.some((ack) => ack.by === acknowledgement.by && ack.at === acknowledgement.at);
+      if (isDuplicate) {
+        return state;
+      }
       return {
         ...state,
         inboxAcknowledgements: { ...state.inboxAcknowledgements, [inboxItemId]: [...existing, acknowledgement] },

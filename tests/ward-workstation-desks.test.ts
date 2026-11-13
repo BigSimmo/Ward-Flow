@@ -82,6 +82,17 @@ describe("current desk is the route", () => {
   ])("%s", (pathname, expected) => {
     expect(currentDeskId(pathname)).toBe(expected);
   });
+
+  it("resolves sessionDeskId or sessionStorage desk on global routes", () => {
+    expect(currentDeskId("/ward-flow/alerts", "rph-adult-secure")).toBe("rph-adult-secure");
+    expect(currentDeskId("/ward-flow/alerts")).toBe(COORDINATOR_DESK_ID);
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem("ward_flow_workstation_desk", "scgh-adult-open");
+      expect(currentDeskId("/ward-flow/alerts")).toBe("scgh-adult-open");
+      window.sessionStorage.removeItem("ward_flow_workstation_desk");
+      expect(currentDeskId("/ward-flow/alerts")).toBe(COORDINATOR_DESK_ID);
+    }
+  });
 });
 
 describe("what a desk can do comes from EVENT_ROLE", () => {

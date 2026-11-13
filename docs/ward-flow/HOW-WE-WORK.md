@@ -5,7 +5,7 @@ hands back Ward Flow work.** Written 17 September 2026; repository and integrati
 updated 2 October 2026. The current repository's `AGENTS.md` governs operational safeguards;
 this guide supersedes older process notes within that boundary. Start at [`README.md`](README.md).
 
-_Updated 2026-10-26 - a line-cap fix never changes on-screen words (Josh, 26 Oct, decision list item 36); phone size limits may rise up to 5 KB per screen per PR without asking (D-82); 2026-10-23 - align saving guidance and mockup navigation with D-72, D-74 and D-75, checked against source at `fe67b59670ccbf2d4c88156a3f3982624b0b82e9`; Documentation owns._
+_Updated 2026-11-03 - autonomous exact-file document handoffs and isolated takeovers, preserving ownership and integration safeguards; 2026-10-26 - a line-cap fix never changes on-screen words (Josh, 26 Oct, decision list item 36); phone size limits may rise up to 5 KB per screen per PR without asking (D-82); 2026-10-23 - align saving guidance and mockup navigation with D-72, D-74 and D-75, checked against source at `fe67b59670ccbf2d4c88156a3f3982624b0b82e9`; Documentation owns._
 
 > **The current rules are in this `BigSimmo/Ward-Flow` repository's `AGENTS.md`**, and Josh's
 > standing rulings are in [`decisions.md`](decisions.md). Where this file differs from `AGENTS.md`,
@@ -63,12 +63,11 @@ mockup only after Josh explicitly approves that mockup. See the [recorded decisi
   Missing/unreadable logs fail closed on every host. Isolated Cloud work follows
   [Cloud ownership](../agents/cloud-ownership.md): establish actual checkout/file ownership and
   record the environment boundary, unavailable other-host state and checkpoint before editing.
-  A local log never proves desktop/global clearance. An overlap needs the other owner's release or Josh's explicit scoped
-  takeover approval. For a takeover, record each exact file as
-  `path/to/file (approved takeover by Josh: <scope>)` on your own line, preserve the other session's
-  edits and reconcile them through the authorised integration process. A folder-wide marker does not grant a takeover.
+  A local log never proves desktop/global clearance. An overlap needs the other owner's genuine exact-file release or applicable scoped takeover authority. Josh's standing permission of 3 November 2026 covers routine exact-file document handoffs and isolated takeovers within the authorised task's existing project, purpose and audience; do not ask again solely because a document is claimed. Prefer supported owner coordination and release. Otherwise preserve a recoverable current version and prepare in isolation, recording each exact file as
+  `path/to/file (approved takeover by Josh: standing document permission 3 November 2026; original task <task ID>; exact routine scope <scope>)`
+  on your own claim line. Cite the current request separately when it supplies authority outside the standing permission; never invent fresh owner consent. A folder-wide marker does not grant a takeover. Follow [Cloud ownership's document handoff procedure](../agents/cloud-ownership.md#routine-document-handoffs): one integrator reconciles original/latest/proposed versions, rechecks content and claims immediately before serial integration, and uses a supported write lock/version precondition where available. Silence never releases work; a claim is not an atomic lock.
   Once the exact task ownership is handed back or integrated, append `RELEASED <date> | <owner> | <branch> | <reason>; repo=BigSimmo/Ward-Flow` to the shared
-  append-only log. That releases every claim on the branch; to release only some files, add a `files=<path>, <path>` field before the reason. The single-user interactive exception (`SKIP_SIGNOUT_GUARD=1`, an explicit per-commit opt-in) is defined in [AGENTS.md hard rule 7](../../AGENTS.md#hard-rules).
+  append-only log. That releases every earlier claim on the branch; to release only some files, add a `files=<path>, <path>` field before the reason. Even `files=` clears those paths across all earlier claims on that branch, regardless of the owner field: verify every affected claim is owned by or explicitly cleared with the releasing coordinator. Never manufacture another owner's release. The single-user interactive exception (`SKIP_SIGNOUT_GUARD=1`, an explicit per-commit opt-in) is defined in [AGENTS.md hard rule 7](../../AGENTS.md#hard-rules).
 - Reuse dependencies only from a trusted checkout of the same Ward Flow commit and lockfile.
   Never link to the old Database checkout; follow the current repository setup instructions.
 - Within an approved task a thread edits and commits freely on its own branch. It does not touch

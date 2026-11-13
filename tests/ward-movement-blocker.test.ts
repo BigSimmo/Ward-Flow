@@ -59,7 +59,25 @@ describe("Movement.blocker — free prose, and it must stay that way", () => {
     const seeded = seedWardFlowState();
     const target = anOpenMovement(seeded);
 
-    for (const value of MUST_STAY_EXPRESSIBLE) {
+    // The two "nothing is blocking" sentinels are refused by RECORD_MOVEMENT_BLOCKER to prevent
+    // subverting clear semantics, directing the caller to CLEAR_MOVEMENT_BLOCKER instead.
+    for (const sentinel of ["None — in transit", "None — handover complete"] as const) {
+      const next = wardFlowReducer(seeded, {
+        type: "RECORD_MOVEMENT_BLOCKER",
+        role: "coordinator",
+        now: NOW,
+        movementId: target.id,
+        blocker: sentinel,
+      });
+      expect(next.rejections, `"${sentinel}" was accepted as an active blocker`).toHaveLength(1);
+      expect(next.rejections[0]?.reason).toContain("CLEAR_MOVEMENT_BLOCKER");
+    }
+
+    // The three free-prose blockers stay expressible via RECORD_MOVEMENT_BLOCKER.
+    const activeProse = MUST_STAY_EXPRESSIBLE.filter(
+      (v) => v !== "None — in transit" && v !== "None — handover complete",
+    );
+    for (const value of activeProse) {
       const next = wardFlowReducer(seeded, {
         type: "RECORD_MOVEMENT_BLOCKER",
         role: "coordinator",
@@ -117,16 +135,13 @@ describe("Movement.blocker — free prose, and it must stay that way", () => {
       role: "coordinator",
       now: NOW,
       movementId: target.id,
-      blocker: "  None — in transit  ",
+      blocker: "  Awaiting single-room clean  ",
     });
 
     expect(next.rejections).toHaveLength(0);
-    expect(movement(next, target.id).blocker).toBe("None — in transit");
-    // The reason the trim matters: `hasActiveBlocker` in ward-priority.ts trims before matching its
-    // "nothing is blocking" shapes, so an untrimmed store would still have been inactive — but a
-    // consumer comparing two identical statements for equality would not have seen them as equal.
+    expect(movement(next, target.id).blocker).toBe("Awaiting single-room clean");
     const factors = waitFactors(movement(next, target.id), NOW, DEFAULT_DUE_SOON_THRESHOLDS);
-    expect(factors.map((factor) => factor.label)).not.toContain("Active blocker");
+    expect(factors.map((factor) => factor.label)).toContain("Active blocker");
   });
 
   it("refuses a closed movement rather than describing an obstruction to something that is over", () => {
@@ -244,7 +259,14 @@ describe("Movement.blocker — the staleness that made it wrong on screen", () =
     expect(next.rejections).toHaveLength(0);
     const created = next.movements[next.movements.length - 1];
     if (!created) throw new Error("RAISE_REFERRAL created no movement");
-    return { state: next, movementId: created.id };
+    const cleared = wardFlowReducer(next, {
+      type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE",
+      role: "ed",
+      now: NOW,
+      movementId: created.id,
+      cleared: true,
+    });
+    return { state: cleared, movementId: created.id };
   }
 
   it("still says 'Awaiting coordinator referral' at creation, because at creation that is true", () => {
@@ -494,6 +516,21 @@ describe("Movement.blocker — clearing is represented, never guessed at", () =>
     ).not.toContain("Active blocker");
   });
 
+  it("refuses exact matches of BLOCKERS_MEANING_NOTHING_IS_BLOCKING with guidance to use CLEAR_MOVEMENT_BLOCKER", () => {
+    const { state, target } = seededTarget();
+    for (const sentinel of BLOCKERS_MEANING_NOTHING_IS_BLOCKING) {
+      const next = wardFlowReducer(state, {
+        type: "RECORD_MOVEMENT_BLOCKER",
+        role: "coordinator",
+        now: NOW,
+        movementId: target.id,
+        blocker: sentinel,
+      });
+      expect(next.rejections, `Sentinel "${sentinel}" was accepted`).toHaveLength(1);
+      expect(next.rejections[0]?.reason).toContain("CLEAR_MOVEMENT_BLOCKER");
+    }
+  });
+
   /**
    * ⚠️ THE TEST THAT PINS THE RECOGNISER ITSELF, and it exists because the first version of this
    * file did NOT. Reverting `hasActiveBlocker` to its old case-sensitive pattern left every other
@@ -716,6 +753,7 @@ describe("the transport legs restate what is holding a movement up", () => {
     dispatch({ type: "REFER_TO_UNITS", role: "coordinator", now: NOW + 10, movementId, unitIds: [unit.id] });
     dispatch({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", now: NOW + 20, movementId, unitId: unit.id });
     dispatch({ type: "PULL_PATIENT", role: "ward", now: NOW + 30, movementId, unitId: unit.id });
+    dispatch({ type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE", role: "ed", now: NOW + 35, movementId, cleared: true });
     dispatch({
       type: "BOOK_TRANSPORT",
       role: "ed",

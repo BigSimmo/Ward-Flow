@@ -844,19 +844,47 @@ export function reducePlacementEvent(
       }
       return appendNotices(next, notices);
     }
+    default:
+      return state;
   }
+  return state;
+}
+
+export const AEROMEDICAL_TRANSIT_HOLD_MINUTES = 600;
+
+function isAeromedicalOrRegionalTransfer(movement: Movement): boolean {
+  const provider = movement.transport?.provider;
+  const arrivalMode =
+    (movement as { arrivalPlan?: { mode?: string } }).arrivalPlan?.mode ??
+    (movement as { arrivalDetails?: { mode?: string } }).arrivalDetails?.mode;
+  const transitMode = (movement as { transitMode?: string }).transitMode;
+  return (
+    provider === "RFDS" ||
+    arrivalMode === "rfds" ||
+    transitMode === "flight" ||
+    transitMode === "regional_road"
+  );
 }
 
 /**
  * D-72: the configured pull hold, plus `EXTRA_TRAVEL_HOLD_MINUTES` when the acceptance that still
  * stands at this ward asked for the extra-travel hold. See `Movement.extendedHoldAt`.
+ * Extended to 600 minutes (10 hours) for aeromedical / RFDS / regional road transfers.
  */
-function pullHoldMinutesFor(state: WardFlowState, movement: Movement, unitId: string): number {
+export function pullHoldMinutesFor(state: WardFlowState, movement: Movement, unitId: string): number {
+  if (isAeromedicalOrRegionalTransfer(movement)) {
+    return AEROMEDICAL_TRANSIT_HOLD_MINUTES;
+  }
+  const base =
+    typeof (movement as { pullHoldMinutes?: number }).pullHoldMinutes === "number"
+      ? (movement as { pullHoldMinutes?: number }).pullHoldMinutes!
+      : state.configuration.pullHoldMinutes;
   const extended =
-    movement.extendedHoldAt !== undefined &&
-    movement.acceptedAt === movement.extendedHoldAt &&
-    movement.acceptedUnitId === unitId;
-  return state.configuration.pullHoldMinutes + (extended ? EXTRA_TRAVEL_HOLD_MINUTES : 0);
+    (movement as { extraTravelHold?: boolean }).extraTravelHold ||
+    (movement.extendedHoldAt !== undefined &&
+      movement.acceptedAt === movement.extendedHoldAt &&
+      movement.acceptedUnitId === unitId);
+  return base + (extended ? EXTRA_TRAVEL_HOLD_MINUTES : 0);
 }
 
 /** D-76: the referrer told about a released bed is the origin ED, or the referring community team. */

@@ -246,13 +246,20 @@ export function handoverLines(
       const dueAt = currentLegalDueAt(movement);
       if (dueAt === undefined) return false;
       const left = minutesUntil(dueAt, now);
-      return left >= 0 && left <= windowMinutes;
+      return left <= windowMinutes;
     })
-    .sort((a, b) => (a.legalForm?.dueAt ?? 0) - (b.legalForm?.dueAt ?? 0))
-    .map(
-      (movement) =>
-        `${formatInstantWithDay(movement.legalForm!.dueAt!, now)} Form ${movement.legalForm!.code}, ${nameOf(movement)}`,
-    );
+    .sort(
+      (a, b) => (currentLegalDueAt(a) ?? a.legalForm?.dueAt ?? 0) - (currentLegalDueAt(b) ?? b.legalForm?.dueAt ?? 0),
+    )
+    .map((movement) => {
+      const dueAt = currentLegalDueAt(movement) ?? movement.legalForm!.dueAt!;
+      const left = minutesUntil(dueAt, now);
+      if (left < 0) {
+        const hoursAgo = Math.max(1, Math.round(Math.abs(left) / 60));
+        return `⚠️ EXPIRED [${hoursAgo}h ago]: Form ${movement.legalForm!.code}, ${nameOf(movement)}`;
+      }
+      return `${formatInstantWithDay(dueAt, now)} Form ${movement.legalForm!.code}, ${nameOf(movement)}`;
+    });
 }
 
 /** Typed date and time to an Instant, counted from the provider's `dayZero`. No duration is added. */

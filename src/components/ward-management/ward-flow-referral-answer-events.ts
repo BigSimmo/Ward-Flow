@@ -1405,5 +1405,8 @@ export function reduceReferralAnswerEvent(
       }
       return appendNotices(next, notices);
     }
+    default:
+      return state;
   }
+  return state;
 }

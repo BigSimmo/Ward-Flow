@@ -26,6 +26,7 @@ import {
   openBedsNow,
 } from "../src/components/ward-management/ward-bed-availability";
 import { unitCapacity } from "../src/components/ward-management/ward-derivations";
+import type { Admission } from "../src/components/ward-management/ward-admissions";
 import { bedReleases, leaveBeds } from "../src/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
@@ -126,4 +127,35 @@ describe("the two capacity derivations agree, unit by unit", () => {
       ).toBe(Math.max(0, ready - pending));
     },
   );
+});
+
+describe("unitCapacity decoupling and cleaning transparency (Tier 2 Feature 10)", () => {
+  it("derives occupied count directly from active occupied admissions when admissions are provided", () => {
+    const unit = units[0];
+    const syntheticAdmissions: Admission[] = [
+      { id: "adm-1", unitId: unit.id, state: "occupied" },
+      { id: "adm-2", unitId: unit.id, state: "occupied" },
+      { id: "adm-3", unitId: unit.id, state: "departed" },
+      { id: "adm-other", unitId: "other-unit", state: "occupied" },
+    ] as Admission[];
+
+    const withAdmissions = unitCapacity(unit, { admissions: syntheticAdmissions, bedReleases: [] });
+    expect(withAdmissions.occupied).toBe(2);
+
+    // Without admissions, derives from arithmetic subtraction
+    const withoutAdmissions = unitCapacity(unit, []);
+    const expectedFromArithmetic = Math.max(unit.beds - Math.min(unit.empty.value, unit.beds), 0);
+    expect(withoutAdmissions.occupied).toBe(expectedFromArithmetic);
+  });
+
+  it("transparently exposes cleaning bed capacity and immediate availability", () => {
+    const unit = units.find((u) => bedsPendingPreparation(u.id, bedReleases) > 0)!;
+    const pendingCleaning = bedsPendingPreparation(unit.id, bedReleases);
+    expect(pendingCleaning).toBeGreaterThan(0);
+
+    const cap = unitCapacity(unit, bedReleases);
+    expect(cap.bedsPendingPreparation).toBe(pendingCleaning);
+    expect(cap.availableNow).toBe(Math.max(0, cap.available - pendingCleaning));
+    expect(cap.availableAfterCleaning).toBe(cap.available);
+  });
 });

@@ -13,6 +13,8 @@ import {
 } from "@/components/ward-management/ward-model";
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import { siteByCode } from "@/components/ward-management/ward-sites";
+import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
+import type { Admission } from "@/components/ward-management/ward-admissions";
 
 /**
  * WHETHER THIS PATIENT NEEDS TRANSPORT — three states, owner ruling R-2026-09-04-C.
@@ -177,7 +179,28 @@ export function transportLeg(transport: TransportJob | undefined): TransportLeg 
  * reducer state where one is available, or the raw fixture for a check that has no reducer state
  * at all (`tests/ward-capacity-reconciliation.test.ts`, `tests/ward-model.test.ts`).
  */
-export function unitCapacity(unit: Unit, bedReleases: BedRelease[]) {
+export type UnitCapacityOptions = {
+  readonly admissions?: readonly Admission[];
+  readonly bedReleases?: readonly BedRelease[];
+};
+
+export function unitCapacity(
+  unit: Unit,
+  bedReleasesOrOptions?: readonly BedRelease[] | UnitCapacityOptions,
+  options?: UnitCapacityOptions,
+) {
+  const bedReleases: readonly BedRelease[] = Array.isArray(bedReleasesOrOptions)
+    ? bedReleasesOrOptions
+    : bedReleasesOrOptions && typeof bedReleasesOrOptions === "object" && "bedReleases" in bedReleasesOrOptions && Array.isArray(bedReleasesOrOptions.bedReleases)
+      ? bedReleasesOrOptions.bedReleases
+      : [];
+
+  const admissions: readonly Admission[] | undefined = Array.isArray(bedReleasesOrOptions)
+    ? options?.admissions
+    : bedReleasesOrOptions && typeof bedReleasesOrOptions === "object" && "admissions" in bedReleasesOrOptions
+      ? bedReleasesOrOptions.admissions
+      : options?.admissions;
+
   const { effectiveEmpty, available, held } = boundedBedAvailability(unit);
   const notEmpty = Math.max(unit.beds - effectiveEmpty, 0);
   // Owner ruling 2026-09-25: out-of-service beds are not recorded anywhere in the model
@@ -185,10 +208,17 @@ export function unitCapacity(unit: Unit, bedReleases: BedRelease[]) {
   // say "Not recorded" where they used to print this count. Kept as a field so every consumer's
   // arithmetic and bar layout stay as they were.
   const blocked = 0;
-  const occupied = Math.max(notEmpty - blocked, 0);
+  // Derive occupied count directly from active admissions when supplied, decoupling from arithmetic
+  // subtraction to prevent phantom occupied bed drift.
+  const occupied = admissions
+    ? admissions.filter((a) => a.unitId === unit.id && a.state === "occupied").length
+    : Math.max(notEmpty - blocked, 0);
   // Physical overflow beds are not recorded. A gender-count disagreement cannot prove surge.
   // Actual arrivals with a conflicting empty observation are separately disclosed below.
   const surge = Math.max(0, occupied - unit.beds);
+
+  const cleaningBeds = bedsPendingPreparation(unit.id, bedReleases as BedRelease[]);
+  const availableNow = Math.max(0, available - cleaningBeds);
 
   return {
     available,
@@ -209,6 +239,10 @@ export function unitCapacity(unit: Unit, bedReleases: BedRelease[]) {
     blocked,
     occupied,
     surge,
+    // Transparency for beds undergoing cleaning/preparation:
+    bedsPendingPreparation: cleaningBeds,
+    availableNow,
+    availableAfterCleaning: available,
   };
 }
 

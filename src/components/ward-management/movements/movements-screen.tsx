@@ -807,14 +807,9 @@ export function MovementsScreen() {
               </span>
             }
             titleMeta={
-              // F-08 (phone review, Oct 2026): the phone hero says its records are invented, as Home does.
-              isPhone ? (
-                "Prototype data, invented records"
-              ) : (
-                <span className={flow.heroTitleMeta}>
-                  {movingCount} moving · {closedToday.length} resolved today · {activeCorridorCount} active corridors
-                </span>
-              )
+              <span className={flow.heroTitleMeta}>
+                {movingCount} moving · {closedToday.length} resolved today · {activeCorridorCount} active corridors
+              </span>
             }
             aside={
               <div className={flow.heroAside}>
