@@ -1,5 +1,4 @@
 import { DUE_SOON_MINUTES, DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
-import { FUTURE_START_TEXT } from "@/lib/time-words";
 /**
  * Minutes elapsed since midnight on the synthetic operating day.
  *
@@ -382,7 +381,14 @@ export function formatElapsed(minutes: number) {
 }
 
 /** RC 2.5 (F-35): the one future-start wording, kept in the wf kit so `dur` and `Timer` share it. */
-export { FUTURE_START_TEXT };
+/**
+ * RC 2.5 (F-35, 13 Nov 2026): what a time since a start reads when the start is still in the
+ * future, a mistyped arrival for example. It used to be clamped and read "0m", which looks like a
+ * new arrival. The words are about the record, not the person. The kit keeps the same words
+ * (`wf/format.ts`), since neither side may import the other (ward-flow-seam); a test holds the two
+ * copies equal (ward-fix-AI-time-words).
+ */
+export const FUTURE_START_TEXT = "Start time is in the future";
 
 /** Time since `start`, in `splitDuration`'s units, or `FUTURE_START_TEXT` when `start` is after `now`. */
 export function formatSince(start: Instant, now: Instant): string {

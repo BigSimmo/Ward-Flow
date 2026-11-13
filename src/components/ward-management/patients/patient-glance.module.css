@@ -101,6 +101,13 @@
   cursor: pointer;
 }
 
+/* The patient page clears every button's minimum height on a fine pointer
+   (`.screen[data-ward-design="v6"] button` in patient-now.module.css, specificity 0-2-1), which
+   took this one back to 20px. The doubled class outranks it for this button only. */
+.act .actButton.actButton {
+  min-block-size: var(--wf-target-min);
+}
+
 .actButton[aria-disabled="true"] {
   color: var(--wf-hero-ink-2);
   cursor: not-allowed;

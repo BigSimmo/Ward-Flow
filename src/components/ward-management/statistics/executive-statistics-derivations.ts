@@ -161,15 +161,17 @@ export function executiveWardSummary(ward: PublicWard, input: ExecutivePrivateIn
   const onLeave = occupiedRows.filter((row) => leaveIds.has(row.id)).length;
   const inBed = occupiedRows.length - onLeave;
   const pulled = currentRows.filter((row) => row.state === "pulled").length;
+  // D-179 item 8: bedStates already keeps a bed being made ready off Ready (`beds.beingMadeReady`),
+  // so only the rest of the beds still to prepare come out of Closed. Taking them off Ready again
+  // drew one ready bed too few per bed being made ready.
   const pendingPreparation = bedsPendingPreparation(unit.id, input.bedReleases);
-  const prepFromReady = Math.min(pendingPreparation, ward.beds.ready);
-  const prepFromClosed = Math.min(pendingPreparation - prepFromReady, ward.beds.closed);
+  const prepFromClosed = Math.min(Math.max(0, pendingPreparation - ward.beds.beingMadeReady), ward.beds.closed);
   const bedMapCounts = {
     occupied: Math.max(0, ward.beds.occupied - ward.beds.onLeave),
     leave: ward.beds.onLeave,
     pulled: ward.beds.pulled,
-    ready: ward.beds.ready - prepFromReady,
-    prep: prepFromReady + prepFromClosed,
+    ready: ward.beds.ready,
+    prep: ward.beds.beingMadeReady + prepFromClosed,
     closed: ward.beds.closed - prepFromClosed,
   };
   const unplacedBedMapRecords = c(

@@ -10,7 +10,7 @@ import {
   MINUTES_PER_DAY,
   perthMidnight,
 } from "@/components/ward-management/ward-clock";
-import { dur, durMinutes } from "@/components/wf/format";
+import { dur, durMinutes, FUTURE_START_TEXT as KIT_FUTURE_START_TEXT } from "@/components/wf/format";
 import { pullHoldText } from "@/components/ward-management/ward-bed-hold";
 import { referralDraftAgeText } from "@/components/ward-management/referrals/referral-draft-cache";
 import { referralLetterText } from "@/components/ward-management/referrals/referral-letter";
@@ -89,6 +89,8 @@ describe("F-35: one duration format, signed", () => {
     expect(durMinutes(-90)).toBe("-1h 30m");
     expect(dur(18 * MIN)).toBe("18m");
     expect(FUTURE_START_TEXT).toBe("Start time is in the future");
+    // The kit and the engine's clock each keep a copy (neither may import the other): one wording.
+    expect(KIT_FUTURE_START_TEXT).toBe(FUTURE_START_TEXT);
   });
 
   it("says a kept draft's age in the shared units, a day as days", () => {

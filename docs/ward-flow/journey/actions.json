@@ -6115,7 +6115,7 @@
         {
           "path": "src/components/ward-management/ed/ed-medical-placement-controls.tsx",
           "line": 148,
-          "sha256": "85f14cbf06b9c2af9c24996694eac470439b4bf5aa2ec65cb3605ecad6e57985"
+          "sha256": "a76e9b87a2c90a8b073127f053f9edfb1564ba33df31810fcf37811af78e6519"
         },
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",

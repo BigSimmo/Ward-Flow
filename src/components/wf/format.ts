@@ -9,8 +9,9 @@ const DAY = 24 * HOUR;
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-/** RC 2.5 (F-35): the words for a start still in the future, kept in `src/lib/time-words.ts`. */
-export { FUTURE_START_TEXT } from "@/lib/time-words";
+/** RC 2.5 (F-35): the words for a start still in the future. The engine's clock keeps the same words
+ * (`ward-clock.ts`); the kit may not import ward code, and a test holds the two copies equal. */
+export const FUTURE_START_TEXT = "Start time is in the future";
 
 /**
  * Duration in milliseconds as `43s`, `5m 03s`, `52m`, `7h 05m`, `5h` or `1d 2h`. A whole hour is the

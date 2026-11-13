@@ -233,7 +233,7 @@ export function EdMedicalPlacementControls({
               </legend>
               <p>
                 {confirmation.kind === "deterioration"
-                  ? "Medical Deterioration - ED Resuscitation Required. Cancel the allocation, release the pulled bed, cancel any uncollected transport and pause psychiatric placement?"
+                  ? "Medical Deterioration - ED Resuscitation Required. Cancel the allocation, release the reserved bed, cancel any uncollected transport and pause psychiatric placement?"
                   : confirmation.kind === "cleared"
                     ? "Record the clinician's medical clearance now? After deterioration this must be a fresh record; it does not restore the old allocation."
                     : "Record that medical clearance is not granted? This blocks onward transfer without releasing the pulled bed."}
@@ -246,7 +246,7 @@ export function EdMedicalPlacementControls({
                 onClick={confirm}
               >
                 {confirmation.kind === "deterioration"
-                  ? "Confirm deterioration and release the pulled bed"
+                  ? "Confirm deterioration and release reservation"
                   : confirmation.kind === "cleared"
                     ? "Confirm medically cleared"
                     : "Confirm not medically cleared"}
