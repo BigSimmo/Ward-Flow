@@ -123,7 +123,7 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
             type="button"
             role="tab"
             id="ward-ed-cleared-tab"
-            aria-label={`Medical clearance, ${clearedPatients.length === 0 ? "none" : clearedPatients.length}`}
+            aria-label={`Med Clear, ${clearedPatients.length === 0 ? "none" : clearedPatients.length}. Medical clearance`}
             aria-selected={departmentListTab === "cleared"}
             aria-controls="ward-ed-cleared-panel"
             tabIndex={departmentListTab === "cleared" ? 0 : -1}
@@ -171,7 +171,7 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
             type="button"
             role="tab"
             id="ward-ed-referred-tab"
-            aria-label="Referred · Still to be moved"
+            aria-label={`Referred, ${outbox.length + answeredAll.length === 0 ? "none" : outbox.length + answeredAll.length}. Still to be moved`}
             aria-selected={departmentListTab === "referred"}
             aria-controls="ward-ed-outbox-panel"
             tabIndex={departmentListTab === "referred" ? 0 : -1}
