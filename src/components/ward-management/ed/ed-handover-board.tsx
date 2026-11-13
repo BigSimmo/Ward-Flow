@@ -8,6 +8,7 @@
 import { ChevronDown, Maximize2, Minimize2 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Button, PortraitRail, SearchField, Segmented, StatusGlyph } from "@/components/wf";
+import { FullScreenFrame, FullScreenMarkSlot } from "@/components/wf/full-screen-frame";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { EdBoardChips } from "./ed-board-chips";
 import { EdNeedsYou } from "./ed-needs-you";
@@ -170,7 +171,11 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
         : "In current order";
 
   return (
-    <section
+    // Shared design parts item 7: the enlarged table covers the page footer, so the frame draws the
+    // synthetic-data mark (on the filter row, under Exit full screen).
+    <FullScreenFrame
+      as="section"
+      enlarged={fullscreenBoard}
       aria-label="This department's patients"
       data-pane="board"
       className={`${styles.panel} ${styles.full} ${styles.listSection} ${handover.handover}`}
@@ -232,6 +237,7 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
       </div>
       <div className={handover.handoverFilters}>
         <EdBoardChips ctx={ctx} />
+        <FullScreenMarkSlot className={handover.handoverMark} />
       </div>
       <div className={handover.handoverKey}>
         <TierBarsKey />
@@ -270,6 +276,6 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
           {sheet}
         </>
       )}
-    </section>
+    </FullScreenFrame>
   );
 }

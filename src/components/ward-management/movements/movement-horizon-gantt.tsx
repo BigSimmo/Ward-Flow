@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { IconTile, buttonClass } from "@/components/wf";
+import { FullScreenFrame, FullScreenMarkSlot } from "@/components/wf/full-screen-frame";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -322,7 +323,10 @@ export function MovementHorizonGantt({
       : lanes.flatMap((lane) => lane.events).find((event) => event.id === selectedMovementId);
 
   return (
-    <div
+    // Shared design parts item 7: full screen covers the page footer, so the frame draws the
+    // synthetic-data mark (on the legend row, the first free place on the right).
+    <FullScreenFrame
+      enlarged={isEnlarged}
       ref={horizonRef}
       className={`${styles.horizonContainer}${isEnlarged ? ` ${styles.fullscreen}` : ""}`}
       data-testid="ward-movement-horizon"
@@ -494,6 +498,7 @@ export function MovementHorizonGantt({
                 Pull time passed
               </li>
             </ul>
+            <FullScreenMarkSlot />
           </div>
 
           {/* Split Container: Gantt Grid + Side Corridor Register */}
@@ -911,7 +916,7 @@ export function MovementHorizonGantt({
           </div>
         </div>
       )}
-    </div>
+    </FullScreenFrame>
   );
 }
 
