@@ -23,7 +23,7 @@ import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { openBedReleases } from "@/components/ward-management/ward-bed-availability";
 import { countCellText, freeingCellText, type NetworkWardRow } from "./capacity-derivations";
 import local from "./capacity-page.module.css";
-import { BedSquaresStrip, bedSquareCounts } from "@/components/ward-management/bed-squares/bed-squares";
+import { BedSquaresStrip, bedSquareCounts } from "@/components/ward-management/bed-squares";
 import { wardExtras } from "./capacity-bed-map-cards";
 import { DayBars } from "./capacity-day-bars";
 import { wardDayBars } from "./capacity-bed-forecast";
@@ -136,7 +136,7 @@ export function CapacityWardSidebar({
   const squares = bedSquareCounts({
     beds: row.unit.beds,
     ready: row.ready,
-    prep: row.beingMadeReady,
+    beingMadeReady: row.beingMadeReady,
     dischargesToday: extra?.dischargesToday ?? 0,
     closed: row.closed,
   });

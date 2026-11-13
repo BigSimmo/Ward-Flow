@@ -45,7 +45,7 @@ import {
 import { AcceptedPullRows, useAcceptedPull } from "./accepted-pull-rows";
 import { HomeRow, PhoneRow } from "./home-rows";
 import styles from "./home-list.module.css";
-import { originPlace, shortPlace } from "./origin-place";
+import { originPlace, shortPlace } from "@/components/ward-management/origin-place";
 
 const CallSheet = dynamic(
   withLoadRetry(() => import("./call-sheet").then((m) => m.CallSheet)),

@@ -142,7 +142,7 @@ function read(paths: string[]) {
  * 🔴 **THE DECLARATION SURFACE IS WIDER THAN THE FILE TYPE, AND THIS GUARD LEARNED THAT TWICE.**
  *
  * A custom property can also be declared at RUNTIME, from a JSX inline style — and the bed squares
- * do exactly that: `bed-squares/bed-squares.tsx` sets `--sq-n` per ward from its bed count, which
+ * do exactly that: `bed-squares.tsx` sets `--sq-n` per ward from its bed count, which
  * `bed-squares.module.css` then reads as `repeat(var(--sq-n, 1), …)` (the old bed strip's
  * `--strip-*` widths did the same until wave 4, D-191, replaced it). **Those are per-row values that cannot live in a stylesheet: one
  * declared value would be one strip for every ward.** (The hub's own `--bar-*` widths, the first

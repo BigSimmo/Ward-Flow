@@ -21,7 +21,6 @@ export type WardHeroTopInput = {
   states: BedStateCounts;
   now: number;
   isPhone: boolean;
-  pendingPreparation: number;
   /** Wave 4 (ruling 9): accepted people coming to this ward, the Arrivals · today figure. */
   arrivalsToday: number;
   openArrivals: () => void;
@@ -47,7 +46,6 @@ export function wardHeroTopParts({
   states,
   now,
   isPhone,
-  pendingPreparation,
   arrivalsToday,
   openArrivals,
   actNowCount,
@@ -60,6 +58,9 @@ export function wardHeroTopParts({
   pickBedFilter,
   openShiftTodo,
 }: WardHeroTopInput) {
+  // D-179 item 8: the beds still being made ready, said beside Ready (`bedStates` fills it from
+  // `bedsPendingPreparation`), as the Ward answer and the shortlist say it.
+  const pendingPreparation = states.beingMadeReady;
   const wardFigures = (
     <HeroFigures
       label="Ward capacity"

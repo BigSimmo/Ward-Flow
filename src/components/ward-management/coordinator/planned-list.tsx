@@ -266,7 +266,7 @@ function TomorrowFoot({ now, forecast }: { now: Instant; forecast: AccessForecas
               <b className={styles.figure}>{forecast.total}</b> reach {forecast.target} in ED by tomorrow unless placed
             </dt>
             <dd>
-              by {formatInstant(forecast.at)} · {forecast.atEd} at {forecastEdName(forecast.edId)} ·{" "}
+              by {formatInstantWithDay(forecast.at, now)} · {forecast.atEd} at {forecastEdName(forecast.edId)} ·{" "}
               <Link href={edHref(forecast.edId)} className={styles.link}>
                 See who
               </Link>

@@ -13,7 +13,7 @@ vi.mock("next/link", () => ({
 
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import { AcceptedPullRows, useAcceptedPull } from "@/components/ward-management/coordinator/accepted-pull-rows";
-import { originPlace } from "@/components/ward-management/coordinator/origin-place";
+import { originPlace } from "@/components/ward-management/origin-place";
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { PullAcceptedReferral } from "@/components/ward-management/referrals/pull-accepted-referral";
 import {
@@ -21,7 +21,7 @@ import {
   pullFactSource,
   pullFactSourceText,
   pullFormChanges,
-} from "@/components/ward-management/referrals/pull-bed-facts";
+} from "@/components/ward-management/pull-bed-facts";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { buttonClass, ToastProvider } from "@/components/wf";

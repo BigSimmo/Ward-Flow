@@ -12,7 +12,7 @@ import {
   bedSquaresTag,
   type BedSquareCounts,
   type BedSquareState,
-} from "@/components/ward-management/bed-squares/bed-squares";
+} from "@/components/ward-management/bed-squares";
 import type { Unit } from "@/components/ward-management/ward-model";
 import type { BedItem } from "./ward-bed-tone";
 import styles from "./ward-every-bed-squares.module.css";

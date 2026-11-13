@@ -472,6 +472,15 @@ export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
     reason: "Workstation desks in the fixed service order; 'rank' here is the service's place in a fixed list.",
   },
   {
+    file: "capacity/capacity-executive-screen.tsx",
+    match: "(a, b) => serviceRank(a) - serviceRank(b)",
+    list: "wards",
+    key: "fixed health service order (wardServiceOrder: North, East, South, WACHS, CAHS, Private)",
+    order: "fixed order",
+    reason:
+      "Executive capacity report (PR #1659): its service groups of wards follow the coordinator's bed map order, the health service's place in a fixed list, never a count; the report is read-only, with no pick, pull or ask action (D-71, D-126).",
+  },
+  {
     file: "ward/ward-walk-round.tsx",
     match: "left.bedNumber - right.bedNumber",
     list: "beds",

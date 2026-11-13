@@ -11,7 +11,7 @@ import {
   bedSquaresNotes,
   bedSquaresTag,
   type BedSquaresNote,
-} from "@/components/ward-management/bed-squares/bed-squares";
+} from "@/components/ward-management/bed-squares";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { isFreeingToday } from "@/components/ward-management/ward-releases-expected-to-free";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
@@ -311,7 +311,7 @@ export function wardSquareCounts(ward: BedMapWard, dischargesToday: number) {
   return bedSquareCounts({
     beds: ward.unit.beds,
     ready: ward.ready,
-    prep: ward.beingMadeReady,
+    beingMadeReady: ward.beingMadeReady,
     dischargesToday,
     closed: ward.closed,
   });

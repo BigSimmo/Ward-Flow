@@ -17,7 +17,7 @@ import dynamic from "next/dynamic";
 
 import { useOptionalToast } from "@/components/wf";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
-import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { observationEditingToken } from "@/components/ward-management/ward-flow-observation-events";
@@ -207,7 +207,7 @@ export function useWardPullThenArrive(unitId: string, raise: WardRaise, screen: 
     const until = pulled ? pulled.at + UNDO_WINDOW_MINUTES : undefined;
     if (!pulled || until === undefined || now > until) return null;
     return {
-      label: `Undo pull · until ${formatInstant(until)}`,
+      label: `Undo pull · until ${formatInstantWithDay(until, now)}`,
       run: () =>
         complete(
           `pull-undo:${movementId}`,

@@ -74,23 +74,20 @@ const clamp = (n: number) => (Number.isFinite(n) && n > 0 ? Math.floor(n) : 0);
 /**
  * Squares from ward figures. `beds` is the ward's bed total; what is not ready, being made ready,
  * freeing today or closed is in use. Discharges today can never colour more squares than are in use.
+ * `beingMadeReady` is the shared figure of that name (`bedStates`, from `bedsPendingPreparation`),
+ * drawn as hollow squares beside Ready rather than counted in it (D-179 item 8).
  */
-export function bedSquareCounts({
-  beds,
-  ready,
-  prep = 0,
-  dischargesToday = 0,
-  closed = 0,
-}: {
+export function bedSquareCounts(figures: {
   beds: number;
   ready: number;
-  prep?: number;
+  beingMadeReady?: number;
   dischargesToday?: number;
   closed?: number;
 }): BedSquareCounts {
+  const { beds, ready, dischargesToday = 0, closed = 0 } = figures;
   const total = clamp(beds);
   const readyN = Math.min(clamp(ready), total);
-  const prepN = Math.min(clamp(prep), total - readyN);
+  const prepN = Math.min(clamp(figures.beingMadeReady ?? 0), total - readyN);
   const closedN = Math.min(clamp(closed), total - readyN - prepN);
   const inUse = total - readyN - prepN - closedN;
   const free = Math.min(clamp(dischargesToday), inUse);

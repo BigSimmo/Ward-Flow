@@ -29,7 +29,7 @@ import {
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { Menu, Segmented, ShowMoreRow, StatusGlyph } from "@/components/wf";
-import { BedSquares, bedSquaresNotes, bedSquaresTag } from "@/components/ward-management/bed-squares/bed-squares";
+import { BedSquares, bedSquaresNotes, bedSquaresTag } from "@/components/ward-management/bed-squares";
 import redesign from "./ward-board-panels.module.css";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 

@@ -4,7 +4,7 @@ import { useId } from "react";
 import { ChevronRight } from "lucide-react";
 
 import { Card, CardHead } from "@/components/wf";
-import { BedSquares, bedSquaresTag } from "@/components/ward-management/bed-squares/bed-squares";
+import { BedSquares, bedSquaresTag } from "@/components/ward-management/bed-squares";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { closedBedsPastReview } from "@/components/ward-management/ward-bed-closure-review";
 import type { BedRelease } from "@/components/ward-management/ward-model";

@@ -222,7 +222,6 @@ describe("Checking strip words (wave 4 mock-up)", () => {
       states: { ready: 0, occupied: 0 } as BedStateCounts,
       now: NOW_ANCHOR,
       isPhone: false,
-      pendingPreparation: 0,
       arrivalsToday: 0,
       openArrivals: () => undefined,
       actNowCount: 0,

@@ -40,7 +40,7 @@ import {
   bedSquareCounts,
   bedSquaresNotes,
   type BedSquareState,
-} from "@/components/ward-management/bed-squares/bed-squares";
+} from "@/components/ward-management/bed-squares";
 import {
   useExecutiveStatistics,
   useExecutiveStatisticsControl,
@@ -94,7 +94,7 @@ function wardSquares(ward: ExecutiveWard) {
   return bedSquareCounts({
     beds: ward.beds.total,
     ready: ward.beds.ready,
-    prep: ward.beds.beingMadeReady,
+    beingMadeReady: ward.beds.beingMadeReady,
     closed: ward.beds.closed,
   });
 }

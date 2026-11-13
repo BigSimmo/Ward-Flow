@@ -58,12 +58,7 @@ import type { HealthService, Unit } from "@/components/ward-management/ward-mode
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
-import {
-  BedSquares,
-  BedSquaresKey,
-  bedSquareCounts,
-  bedSquaresNotes,
-} from "@/components/ward-management/bed-squares/bed-squares";
+import { BedSquares, BedSquaresKey, bedSquareCounts, bedSquaresNotes } from "@/components/ward-management/bed-squares";
 import {
   bedKindGaps,
   bedKindTotals,
@@ -1110,7 +1105,7 @@ function WardBedSquares({ row, className, notes = true }: { row: WardRow; classN
   const counts = bedSquareCounts({
     beds: unit.beds,
     ready: row.ready,
-    prep: states.beingMadeReady,
+    beingMadeReady: states.beingMadeReady,
     dischargesToday: row.dischargesToday,
     closed: states.closed,
   });

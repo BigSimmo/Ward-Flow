@@ -1,12 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import {
-  BedSquares,
-  BedSquaresKey,
-  bedSquareCounts,
-  bedSquaresNotes,
-} from "@/components/ward-management/bed-squares/bed-squares";
+import { BedSquares, BedSquaresKey, bedSquareCounts, bedSquaresNotes } from "@/components/ward-management/bed-squares";
 
 /**
  * Bed squares, shared pattern v1 (wave 4, ruling 7, D-191): one ward's beds as squares in state
@@ -15,7 +10,7 @@ import {
  */
 describe("BedSquares", () => {
   it("draws one square per bed in state order and says the head in words", () => {
-    const counts = bedSquareCounts({ beds: 20, ready: 1, prep: 1, dischargesToday: 2, closed: 1 });
+    const counts = bedSquareCounts({ beds: 20, ready: 1, beingMadeReady: 1, dischargesToday: 2, closed: 1 });
     expect(counts).toEqual({ ready: 1, prep: 1, free: 2, use: 15, closed: 1 });
     render(
       <BedSquares
@@ -70,7 +65,7 @@ describe("BedSquares", () => {
 
   it("shows the solid squares as the ready figure; a bed being made ready is drawn beside it", () => {
     // D-179 item 8 (PR C): a bed being made ready is not Ready, so the figure is the solid squares.
-    const counts = bedSquareCounts({ beds: 10, ready: 1, prep: 1 });
+    const counts = bedSquareCounts({ beds: 10, ready: 1, beingMadeReady: 1 });
     render(<BedSquares counts={counts} testId="sq" />);
     expect(screen.getByTestId("sq-ready").textContent).toBe("1");
     expect(screen.getByTestId("sq").textContent).toContain("1ready of 10 beds");

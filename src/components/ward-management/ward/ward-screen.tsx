@@ -1945,7 +1945,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     states,
     now,
     isPhone,
-    pendingPreparation,
     // Review F-3: only people expected today, the same rule the Arrivals list uses.
     arrivalsToday: arrivalsExpectedToday(accepted, now).length,
     openArrivals: () => showHome("ward-flow"),

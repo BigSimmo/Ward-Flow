@@ -235,9 +235,11 @@ describe("Ward pulls ask for an observation level the record does not hold (D-18
     fireEvent.click(within(group).getByRole("radio", { name: observationLevelName("intermittent") }));
     expect(pull()).toHaveAttribute("aria-disabled", "true");
     expect(step).toHaveTextContent("Choose how often to check");
-    const interval = within(step).getByTestId("ward-pull-then-arrive-interval") as HTMLSelectElement;
-    const minutes = Number(interval.options[interval.options.length - 1]!.value);
-    fireEvent.change(interval, { target: { value: String(minutes) } });
+    const intervals = within(within(step).getByTestId("ward-pull-then-arrive-interval")).getAllByRole("radio");
+    expect(intervals.every((choice) => !(choice as HTMLInputElement).checked)).toBe(true);
+    const last = intervals[intervals.length - 1] as HTMLInputElement;
+    const minutes = Number(last.value);
+    fireEvent.click(last);
     await act(async () => {
       fireEvent.click(pull());
     });

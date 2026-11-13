@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Badge, Button, DisabledReason, Field, Radio, Select, useOptionalToast } from "@/components/wf";
 
 import { minutesText } from "../alerts/alerts-model";
-import { originPlace } from "../coordinator/origin-place";
+import { originPlace } from "../origin-place";
 import { movementHref } from "../shell/ward-facade";
 import { usePatientNameDisplay } from "../settings/discreet-names";
 import { useWardCommandCompletion, wardCommandFailure } from "../ward/use-ward-command-completion";
@@ -55,7 +55,7 @@ import {
   type PullFact,
   type PullFactSource,
   type PulledBed,
-} from "./pull-bed-facts";
+} from "../pull-bed-facts";
 import { withSendingTeam } from "./referral-sending-team";
 
 import styles from "./pull-accepted-referral.module.css";

@@ -46,6 +46,7 @@ The test fails when a test mocks a module not in this list. Add it here, and to 
 @/components/ward-management/patients/patient-record-extras
 @/components/ward-management/patients/patient-status-card
 @/components/ward-management/preload-when-idle
+@/components/ward-management/referrals/accepted-ward-referral
 @/components/ward-management/referrals/pull-accepted-referral
 @/components/ward-management/referrals/referral-history-corrections
 @/components/ward-management/reports/downtime-pack

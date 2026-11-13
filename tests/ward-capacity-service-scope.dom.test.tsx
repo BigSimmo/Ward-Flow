@@ -64,7 +64,11 @@ function renderScreen() {
 function expectWholeNetworkHero() {
   const figures = screen.getByRole("group", { name: "Network beds" });
   expect(within(figures).getByTestId("capacity-hero-ready")).toHaveTextContent(
-    new RegExp(`^${netTotals.ready}\\s*/ ${netTotals.beds}\\s*Ready · now$`, "u"),
+    // D-179 item 8: the beds still being made ready are said beside Ready.
+    new RegExp(
+      `^${netTotals.ready}\\s*/ ${netTotals.beds}\\s*Ready · now${netTotals.pendingPreparation ? `, ${netTotals.pendingPreparation} being made ready` : ""}$`,
+      "u",
+    ),
   );
   expect(netTotals.ready, "the network and South Metro could not be told apart").not.toBe(scopedReady);
 }

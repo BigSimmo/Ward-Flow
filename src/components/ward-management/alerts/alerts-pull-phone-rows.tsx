@@ -4,7 +4,7 @@
 // layout as every other act-now alert, with Pull bed as their one action under the lines. The desk
 // keeps Home's shared rows (`AcceptedPullRows`); the sheet stays with `useAcceptedPull`.
 
-import { originPlace } from "@/components/ward-management/coordinator/origin-place";
+import { originPlace } from "@/components/ward-management/origin-place";
 import type { AcceptedAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { withSendingTeam } from "@/components/ward-management/referrals/referral-sending-team";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";

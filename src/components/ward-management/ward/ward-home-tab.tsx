@@ -51,7 +51,7 @@ import {
   type ComingRow,
 } from "./ward-coming-and-going-rows";
 import { WardEverySquares, bedSquareFor } from "./ward-every-bed-squares";
-import { BedSquare, BedSquaresKey } from "@/components/ward-management/bed-squares/bed-squares";
+import { BedSquare, BedSquaresKey } from "@/components/ward-management/bed-squares";
 import { useWardTomorrowOutlook } from "./ward-home-outlook";
 import {
   Button,

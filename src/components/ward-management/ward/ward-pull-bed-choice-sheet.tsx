@@ -9,7 +9,7 @@
 import { useState, type FormEvent } from "react";
 import { Lock } from "lucide-react";
 
-import { Button, Field, Radio, Select, Sheet } from "@/components/wf";
+import { Button, Radio, Sheet } from "@/components/wf";
 import type { Movement } from "@/components/ward-management/ward-model";
 import {
   INTERMITTENT_INTERVAL_MINUTES,
@@ -19,12 +19,8 @@ import {
   observationLevelName,
   type Observation,
 } from "@/components/ward-management/ward-observation";
-import { CHOOSE_INTERVAL_LINE } from "@/components/ward-management/referrals/pull-bed-facts";
-import {
-  chooseFactsLine,
-  pullFactSource,
-  pullFactSourceText,
-} from "@/components/ward-management/referrals/pull-bed-facts";
+import { CHOOSE_INTERVAL_LINE } from "@/components/ward-management/pull-bed-facts";
+import { chooseFactsLine, pullFactSource, pullFactSourceText } from "@/components/ward-management/pull-bed-facts";
 import { boardBedFits, fitReason, type BoardBed, type BoardPick } from "./ward-bed-board-logic";
 import styles from "./ward-pull-then-arrive.module.css";
 
@@ -151,20 +147,27 @@ export function PullBedChoiceSheet({
               ))}
             </div>
             {level === "intermittent" ? (
-              <Field label="Check every" className={styles.interval}>
-                <Select
-                  value={intervalMinutes}
-                  onChange={(event) => setIntervalMinutes(event.target.value === "" ? "" : Number(event.target.value))}
-                  data-testid="ward-pull-then-arrive-interval"
-                >
-                  <option value="">Choose how often</option>
+              // Q36: kit radio choices, like the level above, rather than a browser drop-down; nothing
+              // is chosen until the person picks one (D-187 "Intermittent blank").
+              <fieldset
+                className={`${styles.fieldset} ${styles.interval}`}
+                data-testid="ward-pull-then-arrive-interval"
+              >
+                <legend className={styles.legend}>Check every</legend>
+                <div className={styles.choices}>
                   {INTERMITTENT_INTERVAL_MINUTES.map((minutes) => (
-                    <option key={minutes} value={minutes}>
-                      {minutes} minutes
-                    </option>
+                    <Radio
+                      key={minutes}
+                      className={styles.choice}
+                      name={`ward-pull-interval-${movement.id}`}
+                      value={String(minutes)}
+                      checked={intervalMinutes === minutes}
+                      onChange={() => setIntervalMinutes(minutes)}
+                      label={`${minutes} minutes`}
+                    />
                   ))}
-                </Select>
-              </Field>
+                </div>
+              </fieldset>
             ) : null}
           </fieldset>
         ) : null}

@@ -66,6 +66,7 @@
     "tests/ward-bar-fill-only-edges.test.ts",
     "tests/ward-bar-single-row-stress.dom.test.tsx",
     "tests/ward-bar-zero-is-reachable.test.ts",
+    "tests/ward-bed-meeting-sheet-page-count.test.ts",
     "tests/ward-bed-meeting-sheet.dom.test.tsx",
     "tests/ward-bed-meeting-tv.dom.test.tsx",
     "tests/ward-bed-release-names-admission.test.ts",

@@ -7,8 +7,8 @@
 import { minutesText } from "@/components/ward-management/alerts/alerts-model";
 import alertStyles from "@/components/ward-management/alerts/alerts.module.css";
 import type { AcceptedAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
-import { acceptedDecisionAt, type PulledBed } from "@/components/ward-management/referrals/pull-bed-facts";
-import { usePullBedStep } from "@/components/ward-management/referrals/pull-bed-step";
+import { acceptedDecisionAt, type PulledBed } from "@/components/ward-management/pull-bed-facts";
+import { usePullBedStep } from "@/components/ward-management/pull-bed-step";
 import { withSendingTeam } from "@/components/ward-management/referrals/referral-sending-team";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -18,7 +18,7 @@ import { Button } from "@/components/wf";
 import { AcceptedPullPhoneRow } from "./accepted-pull-phone-row";
 import { HomeRow } from "./home-rows";
 import styles from "./home-list.module.css";
-import { originPlace } from "./origin-place";
+import { originPlace } from "@/components/ward-management/origin-place";
 import { PulledBedRow } from "./pulled-bed-row";
 
 /**

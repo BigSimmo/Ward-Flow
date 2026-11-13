@@ -227,6 +227,9 @@ describe("5. Live Target Screen Component Mounts", () => {
     // v6: the hero carries the Live chip with its pause control. Page tops (Josh, 9 Nov 2026): the
     // counts are hero figures, the first the network's ready beds. Wave 4 (D-191): "Ready · now".
     expect(screen.getByRole("button", { name: /pause demo updates$/ })).toBeDefined();
-    expect(within(hud).getByTestId("capacity-hero-ready")).toHaveTextContent(/^\d+\s*\/ \d+\s*Ready · now$/u);
+    expect(within(hud).getByTestId("capacity-hero-ready")).toHaveTextContent(
+      // D-179 item 8: the beds still being made ready are said beside Ready.
+      /^\d+\s*\/ \d+\s*Ready · now(?:, \d+ being made ready)?$/u,
+    );
   });
 });

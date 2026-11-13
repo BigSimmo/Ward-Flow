@@ -1,13 +1,13 @@
 // Pull the bed form (wave 4, D-188 as settled by Josh 13 Nov 2026): the words and small rules the
 // form and its kept row share. Pure functions only; nothing here raises an event.
 
-import type { Instant } from "../ward-clock";
-import { minuteOfDay } from "../ward-clock";
-import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "../ward-flow-roles";
-import type { Movement } from "../ward-model";
-import { PULL_FORM_FIELDS, type PullFormField } from "../ward-model-movement-parts";
-import { UNDO_WINDOW_MINUTES } from "../ward-operational-defaults";
-import type { AcceptedAwaitingPull } from "./accepted-awaiting-pull";
+import type { Instant } from "./ward-clock";
+import { minuteOfDay } from "./ward-clock";
+import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "./ward-flow-roles";
+import type { Movement } from "./ward-model";
+import { PULL_FORM_FIELDS, type PullFormField } from "./ward-model-movement-parts";
+import { UNDO_WINDOW_MINUTES } from "./ward-operational-defaults";
+import type { AcceptedAwaitingPull } from "./referrals/accepted-awaiting-pull";
 
 /** The desks that may pull a bed (D-188 point a): the ward-desk clinician and the coordinator. */
 type PullDesk = Extract<WardFlowRole, "coordinator" | "ward">;

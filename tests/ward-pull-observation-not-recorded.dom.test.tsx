@@ -27,7 +27,7 @@ vi.mock("@/components/ward-management/referrals/accepted-ward-referral", async (
 
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { PullAcceptedReferral } from "@/components/ward-management/referrals/pull-accepted-referral";
-import { CHOOSE_INTERVAL_LINE } from "@/components/ward-management/referrals/pull-bed-facts";
+import { CHOOSE_INTERVAL_LINE } from "@/components/ward-management/pull-bed-facts";
 import { INTERMITTENT_INTERVAL_MINUTES } from "@/components/ward-management/ward-observation";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";

@@ -63,7 +63,11 @@ describe("Capacity for the bed coordinator", () => {
     // Page tops (Josh, 9 Nov 2026): the ready beds are the hero's first figure, and the mismatch by
     // bed type is the hero's band.
     expect(screen.getByTestId("capacity-hero-ready")).toHaveTextContent(
-      new RegExp(`^${totals.ready}\\s*/ ${totals.beds}\\s*Ready · now$`, "u"),
+      // D-179 item 8: the beds still being made ready are said beside Ready.
+      new RegExp(
+        `^${totals.ready}\\s*/ ${totals.beds}\\s*Ready · now${totals.pendingPreparation ? `, ${totals.pendingPreparation} being made ready` : ""}$`,
+        "u",
+      ),
     );
     expect(screen.getByTestId("capacity-mismatch")).toHaveTextContent("By bed type · now");
     // Wave 4 (D-191, ruling 8): the forecast is a rail card; the chart opens in its drawer.
@@ -125,7 +129,11 @@ describe("Capacity for a site bed manager", () => {
     expect(screen.getByRole("group", { name: `${siteName} beds` })).toBeInTheDocument();
     expect(screen.getAllByText(siteName).length).toBeGreaterThan(0);
     expect(screen.getByTestId("capacity-hero-ready")).toHaveTextContent(
-      new RegExp(`^${totals.ready}\\s*/ ${totals.beds}\\s*Ready · now$`, "u"),
+      // D-179 item 8: the beds still being made ready are said beside Ready.
+      new RegExp(
+        `^${totals.ready}\\s*/ ${totals.beds}\\s*Ready · now${totals.pendingPreparation ? `, ${totals.pendingPreparation} being made ready` : ""}$`,
+        "u",
+      ),
     );
     expect(screen.getByRole("heading", { name: "Other sites" })).toBeInTheDocument();
     expect(screen.getByText(/Other sites show beds, never the people in them\./)).toBeInTheDocument();

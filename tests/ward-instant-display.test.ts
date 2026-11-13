@@ -73,6 +73,10 @@ const MAY_ASSERT_TODAY = new Map([
   ["boardNow", "On-call page top (9 Nov 2026): the Live pill's age, the board's current instant under another name"],
   ["props.now", "Bed board page top (9 Nov 2026): the Live pill's age, the current instant passed down"],
   ["view.now", "Community page top (9 Nov 2026): the Live pill's age, the view's current instant"],
+  [
+    "network.asAt.now",
+    "Executive capacity report (PR #1659): the report's own current instant, which a paused report holds; the Beds by ward card's clock sits under the hero pill that prints the same instant with its day, year and zone (formatSheetMoment).",
+  ],
   ["MORNING_HANDOVER_MINUTES", "08:00 of the day being shown, a constant time of day rather than a point in history"],
   [
     "DAY_SHIFT_END_MINUTE",

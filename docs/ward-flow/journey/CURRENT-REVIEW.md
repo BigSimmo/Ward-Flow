@@ -186,3 +186,14 @@ Review P4-2 (D-188 tightened, same PR): the All arrivals tab's Pull the bed in `
 the Ward step's `pullAndKeep`, which asks for an observation level when the journey records none and then sends the
 existing RECORD_OBSERVATION_LEVEL before PULL_PATIENT. No dispatch in `ward/ward-screen.tsx` changed; its digests were
 refreshed. Evidence: `tests/ward-pull-then-arrive.dom.test.tsx`, run locally.
+
+Merge of main (PR C, #1660) into the same PR, 13 November 2026: `ward/ward-screen.tsx`, `ward/ward-answer-view.tsx`,
+`alerts/alerts-screen.tsx`, `referrals/pull-accepted-referral.tsx` and `capacity/capacity-ward-drawer.tsx` were each
+changed on both sides. Each dispatch site in the merged files was compared with both parents and matches one of them
+unchanged: this PR's pull-again (PULL_PATIENT on the reopened journey) and pull-then-arrive paths, and PR C's toast
+Undo (`bedPullUndoEvent`, RELEASE_PULL), wait-list answer (A9-05) and pull-desk rule (`actingUnitId` from
+`acceptedPullDesk`). No payload or guard changed in the merge; the 24 affected digests and their lines were refreshed.
+After the merge, the import-map guard pass moved `pull-bed-facts.ts`, `pull-bed-step.tsx`, `origin-place.ts` and
+`bed-squares.tsx` to the ward-management root. That changed only imports in `referrals/pull-accepted-referral.tsx` and
+`capacity/capacity-ward-drawer.tsx` (and the bed-squares input name `beingMadeReady`), and removed one unused hero
+prop in `ward/ward-screen.tsx`. No dispatch changed; those 15 digests were refreshed again.

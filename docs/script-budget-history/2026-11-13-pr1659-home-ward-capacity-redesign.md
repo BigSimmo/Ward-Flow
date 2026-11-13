@@ -48,3 +48,11 @@ After merging PR C (#1660), provisional: routes this PR did not change (`/ward-f
 Statistics) take PR C's limits. This PR's routes (Coordinator, Referrals, Ward, Capacity, `/ward-flow/ed/arm-ed`,
 Bed meeting) hold the higher of this PR's and PR C's limits until a fresh build is measured on the
 merged code; Capacity is expected to come back down from 662.4.
+
+Measured on a local production build of the merged code (this PR plus PR C, after the guard fixes that moved
+`bed-squares.tsx`, `origin-place.ts`, `pull-bed-facts.ts` and `pull-bed-step.tsx` to the ward-management root):
+Home 593.6, Referrals 594.3, ED 545.5, Ward 626.5, Movement 621.4, Capacity 614.6, ED arm 679.5, Bed meeting 593.1,
+Statistics 643.4. Three limits rise, each within 5 KB of main's (PR C's) limit, after the trim above: Home 589.1 to
+594.1 (PR C's ready and pull-desk wiring on top of this PR's Home), Ward 625.6 to 627.5, Statistics 640.6 to 644.5
+(shared code regrouped by the merge; Statistics itself is unchanged here, and D-202 allows it past 5 KB if a trim
+fails). Bed meeting returns to main's 596.3. Capacity keeps main's 662.4.

@@ -295,13 +295,9 @@ export function lastFreedToday(
   now: Instant,
 ): string | undefined {
   const today = discharged
-    .filter(
-      (release) =>
-        release.confirmedAt !== undefined &&
-        formatInstantWithDay(release.confirmedAt, now) === formatInstant(release.confirmedAt),
-    )
+    .filter((release) => release.confirmedAt !== undefined && dayOf(release.confirmedAt) === dayOf(now))
     .sort((left, right) => right.confirmedAt - left.confirmedAt)[0];
   if (!today) return undefined;
   const bed = beds.find((item) => item.preparingReleaseId === today.id || item.admissionId === today.admissionId);
-  return `${bedWord(bed) ?? "A bed"} freed ${formatInstant(today.confirmedAt)}.`;
+  return `${bedWord(bed) ?? "A bed"} freed ${formatInstantWithDay(today.confirmedAt, now)}.`;
 }

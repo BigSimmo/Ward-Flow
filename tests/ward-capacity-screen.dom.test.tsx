@@ -188,8 +188,11 @@ describe("the Capacity screen", () => {
     const totalReady = netTotals.ready;
     expect(totalReady, "no ready bed in the fixture — this guard proved nothing").toBeGreaterThan(0);
     renderScreen();
-    // Wave 4 (D-191): the count label carries its window, "Ready · now".
-    expect(heroReady()).toBe(`${totalReady}/ ${netTotals.beds} Ready · now`);
+    // Wave 4 (D-191): the count label carries its window, "Ready · now". D-179 item 8: the beds
+    // still being made ready are said beside it, as the Ward hero says them.
+    expect(heroReady()).toBe(
+      `${totalReady}/ ${netTotals.beds} Ready · now${netTotals.pendingPreparation ? `, ${netTotals.pendingPreparation} being made ready` : ""}`,
+    );
   });
 
   it("renders exactly the four bed-type tiles the derivations return, each with its own real waiting and beds-that-fit", () => {

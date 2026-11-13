@@ -32,7 +32,7 @@ import { MismatchPopup } from "./capacity-mismatch-popup";
 import type { CapacityModel } from "./capacity-model";
 import { waitingHref } from "../delays/waiting-href";
 import type { SiteEdWaiting } from "./capacity-site-ed";
-import { formatInstant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import styles from "./capacity-page.module.css";
 import pageTop from "@/components/ward-management/page-top-title.module.css";
 
@@ -214,7 +214,16 @@ export function CapacityHero({
                 id: "ready",
                 value: totals.ready,
                 unit: `/ ${totals.beds}`,
-                label: <span className={styles.figLabel}>Ready{win("now")}</span>,
+                // D-179 item 8: Ready leaves out beds still being made ready, which are said beside it,
+                // as the Ward hero says it (`networkTotals` sums each row's `pendingPreparation`).
+                label: (
+                  <span className={styles.figLabel}>
+                    Ready{win("now")}
+                    {totals.pendingPreparation ? (
+                      <span data-testid="capacity-hero-being-made-ready">{`, ${totals.pendingPreparation} being made ready`}</span>
+                    ) : null}
+                  </span>
+                ),
                 testId: "capacity-hero-ready",
                 // Item 5: the wards the figure sums (`networkTotals` over these rows), each with its ready beds.
                 renderPress: (press) => (
@@ -274,9 +283,9 @@ export function CapacityHero({
                     {confirmations.confirmed} of {confirmations.total}
                   </b>{" "}
                   counts confirmed
-                  <span className={styles.heroWin}> · since {formatInstant(confirmations.since)}</span>
+                  <span className={styles.heroWin}> · since {formatInstantWithDay(confirmations.since, now)}</span>
                   {firstToConfirm
-                    ? ` · ${firstToConfirm.name} last at ${formatInstant(firstToConfirm.allocatable.confirmedAt)}`
+                    ? ` · ${firstToConfirm.name} last at ${formatInstantWithDay(firstToConfirm.allocatable.confirmedAt, now)}`
                     : null}
                 </>
               }

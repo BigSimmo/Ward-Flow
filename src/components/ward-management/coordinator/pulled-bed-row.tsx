@@ -5,13 +5,13 @@
 // list like its neighbours.
 
 import alertStyles from "@/components/ward-management/alerts/alerts.module.css";
-import { clockText, pullUndoUntil, type PulledBed } from "@/components/ward-management/referrals/pull-bed-facts";
-import { PULLED_ROW_ATTRIBUTE } from "@/components/ward-management/referrals/pull-bed-step";
+import { clockText, pullUndoUntil, type PulledBed } from "@/components/ward-management/pull-bed-facts";
+import { PULLED_ROW_ATTRIBUTE } from "@/components/ward-management/pull-bed-step";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { Badge, Button, StatusGlyph } from "@/components/wf";
 
 import styles from "./home-list.module.css";
-import { originPlace } from "./origin-place";
+import { originPlace } from "@/components/ward-management/origin-place";
 
 export function PulledBedRow({
   pulled,

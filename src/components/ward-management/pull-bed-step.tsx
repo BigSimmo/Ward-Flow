@@ -9,15 +9,15 @@ import dynamic from "next/dynamic";
 
 import { Sheet, useOptionalToast } from "@/components/wf";
 
-import { withLoadRetry } from "../load-retry";
-import type { Instant } from "../ward-clock";
-import { wardRaise } from "../ward-flow-raise";
-import { useOptionalWardFlowSelect, useWardFlowClock } from "../ward-flow-provider";
-import type { Movement } from "../ward-model";
-import { BED_PULL_UNDO_TOAST_MS } from "../ward-operational-defaults";
-import type { WardCommandDispatch } from "../ward-shared-client";
-import { useWardCommandCompletion, wardCommandFailure } from "../ward/use-ward-command-completion";
-import type { AcceptedAwaitingPull } from "./accepted-awaiting-pull";
+import { withLoadRetry } from "./load-retry";
+import type { Instant } from "./ward-clock";
+import { wardRaise } from "./ward-flow-raise";
+import { useOptionalWardFlowSelect, useWardFlowClock } from "./ward-flow-provider";
+import type { Movement } from "./ward-model";
+import { BED_PULL_UNDO_TOAST_MS } from "./ward-operational-defaults";
+import type { WardCommandDispatch } from "./ward-shared-client";
+import { useWardCommandCompletion, wardCommandFailure } from "./ward/use-ward-command-completion";
+import type { AcceptedAwaitingPull } from "./referrals/accepted-awaiting-pull";
 import {
   clockText,
   pulledMovement,
@@ -29,7 +29,7 @@ import {
 
 // WS-03: the one-step pull loads only when someone opens it.
 const PullAcceptedReferral = dynamic(
-  withLoadRetry(() => import("./pull-accepted-referral").then((m) => m.PullAcceptedReferral)),
+  withLoadRetry(() => import("./referrals/pull-accepted-referral").then((m) => m.PullAcceptedReferral)),
   { loading: () => null },
 );
 
