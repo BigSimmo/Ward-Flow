@@ -1350,7 +1350,7 @@ Source-contract SHA256: d9fc9c54f1720e55b53987b9511b5ff26ca71d11e1019d81eca7fa9d
   effects: No departure, bed release or clinical eligibility decision is performed; typed patient-specific payloads follow the typed-text persistence boundary.
   tests: tests/ward-criteria-led-discharge.test.ts
   Reviewed source: src/components/ward-management/ward-flow-bed-events.ts:755; SHA256 09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954
-  Reviewed source: src/components/ward-management/ward-discharge-criteria.ts:271; SHA256 61d0fbc46e495568898db3b80dfbedf331d5be51530f4722468d0b175765e9a5
+  Reviewed source: src/components/ward-management/ward-discharge-criteria.ts:270; SHA256 61d0fbc46e495568898db3b80dfbedf331d5be51530f4722468d0b175765e9a5
   Reviewed source: src/components/ward-management/ward-flow-events.ts:2132; SHA256 8a2438031d11683d8648960b9d12ffd41eda8a351a21b1b50037bfd2ab59dde4
   Reviewed source: src/components/ward-management/ward-access-state.ts:709; SHA256 6749082a89387b340bc0b52cfe76a13f8375532e44cbbcdf17a85d696c94e703
 - RECORD_ED_MEDICAL_DETERIORATION — modelled; event roles: ed, coordinator
@@ -1447,7 +1447,7 @@ Source-contract SHA256: d9fc9c54f1720e55b53987b9511b5ff26ca71d11e1019d81eca7fa9d
   guards: Each detail is from its list; reviewBy is a finite time; consent only for a Form 6B.
   effects: Replaces the form's details with the merged values; other form fields are unchanged.
   tests: tests/ward-legal-form-gap-items.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-record-events.ts:100; SHA256 cba036c7a855d0877b0e066893d9f3ac46105f9cc632efe968b5d6559e39dbdc
+  Reviewed source: src/components/ward-management/ward-flow-record-events.ts:101; SHA256 cba036c7a855d0877b0e066893d9f3ac46105f9cc632efe968b5d6559e39dbdc
   Reviewed source: src/components/ward-management/ward-flow-record-legal-events.ts:222; SHA256 00105e89a350aa48ec39ce66907880bb7863bbc4cff2f4f31fc02ba659f1c6d9
 - RECORD_COUNTRY_EXTENSION — diagram-reviewed; event roles: ed, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
