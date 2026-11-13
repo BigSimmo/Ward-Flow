@@ -21,15 +21,17 @@ import { useOwnUnits } from "./use-own-units";
  */
 export function useTakeDowntimePack(): (options?: { shiftChangeAt?: Instant | null }) => void {
   const now = useWardFlowClock();
-  const { units, admissions, bedReleases, leaveBeds, movements, worldGeneration, shared } = useWardFlowSelect(
-    "units",
-    "admissions",
-    "bedReleases",
-    "leaveBeds",
-    "movements",
-    "worldGeneration",
-    "shared",
-  );
+  const { units, admissions, bedReleases, leaveBeds, movements, referrals, worldGeneration, shared } =
+    useWardFlowSelect(
+      "units",
+      "admissions",
+      "bedReleases",
+      "leaveBeds",
+      "movements",
+      "referrals",
+      "worldGeneration",
+      "shared",
+    );
   // Beds of the desk's own wards only (issue #628): another ward's stays are not in this desk's
   // records. Every ward still names a destination.
   const bedUnits = useOwnUnits(units);
@@ -71,6 +73,7 @@ export function useTakeDowntimePack(): (options?: { shiftChangeAt?: Instant | nu
         bedReleases,
         leaveBeds,
         movements,
+        referrals,
         now,
         // Surname first (D-83): "Family, Given · UMRN", the one identity line (bug list row 17).
         identify: (subject) => patientIdentityLine(patientOf(subject)),
@@ -90,6 +93,7 @@ export function useTakeDowntimePack(): (options?: { shiftChangeAt?: Instant | nu
       bedReleases,
       leaveBeds,
       movements,
+      referrals,
       now,
       patientOf,
       worldGeneration,

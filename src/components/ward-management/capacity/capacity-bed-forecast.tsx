@@ -341,7 +341,8 @@ function helpItems(levers: readonly ForecastLever[], rows: readonly NetworkWardR
     lever.kind === "clear_held_up"
       ? {
           kind: lever.kind,
-          title: `Chase ${plural(lever.beds, "held-up discharge", "held-up discharges")}`,
+          // A16-25: due by tomorrow (overdue included), unlike the hero's held-up count on any date.
+          title: `Chase ${plural(lever.beds, "held-up discharge", "held-up discharges")} due by tomorrow`,
           uplift: lever.likelyUplift,
           detail: tallyBarriers(lever.reasons)
             .map((entry) => `${entry.label} ${entry.count}`)
@@ -356,9 +357,11 @@ function helpItems(levers: readonly ForecastLever[], rows: readonly NetworkWardR
           }
         : {
             kind: lever.kind,
-            title: `Review ${plural(lever.beds, "overdue discharge", "overdue discharges")}`,
+            // A16-19: what it counts, so it does not read against Discharges' "dates overdue", which
+            // also holds the held-up ones and closed wards' dates.
+            title: `Review ${plural(lever.beds, "overdue discharge", "overdue discharges")} not held up`,
             uplift: 0,
-            detail: "Dates passed: they widen the range only",
+            detail: "Open wards only. Dates passed: they widen the range only",
           },
   );
   const stale = rows.filter((row) => !isConfirmationFresh(row.unit, now));

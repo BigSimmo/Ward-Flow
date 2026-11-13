@@ -4,22 +4,33 @@
  * TR4 (3 Nov 2026): the providers' numbers beside Log booking, so the officer does not leave the
  * dialog to find them. Every number is synthetic, from the ACMA range set aside for fiction
  * ((08) 5550 xxxx), and the block says so. Copy puts the number on the clipboard; nothing dials.
+ * A15-29 (13 Nov 2026): the numbers and hours are read from the On-call directory's rows, so a
+ * provider never has a second, different number here.
  */
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import type { TransportProvider, TravelMode } from "@/components/ward-management/ward-model";
+import { directoryEntryById, windowText } from "@/components/ward-management/on-call/on-call-directory";
 
 import own from "./officer-booking-contacts.module.css";
 import styles from "./officer.module.css";
 
-const CONTACTS: readonly { provider: TravelMode; number: string; hours: string }[] = [
-  { provider: "Patient transport service", number: "(08) 5550 0141", hours: "24 hours" },
-  { provider: "Mental Health Transport", number: "(08) 5550 0172", hours: "24 hours" },
-  { provider: "Ambulance (St John)", number: "(08) 5550 0118", hours: "24 hours" },
-  { provider: "RFDS", number: "(08) 5550 0190", hours: "Country transfers" },
+/** Each provider a booking can name, and its On-call directory row. */
+export const PROVIDER_DIRECTORY_IDS: readonly { provider: TravelMode; id: string }[] = [
+  { provider: "Patient transport service", id: "sw-pts" },
+  { provider: "Mental Health Transport", id: "sw-mhtx" },
+  { provider: "Ambulance (St John)", id: "sw-sja" },
+  { provider: "RFDS", id: "sw-rfds" },
 ];
+
+const CONTACTS: readonly { provider: TravelMode; number: string; hours: string }[] = PROVIDER_DIRECTORY_IDS.flatMap(
+  ({ provider, id }) => {
+    const line = directoryEntryById(id)?.lines[0];
+    return line?.number ? [{ provider, number: line.number, hours: windowText(line.window) }] : [];
+  },
+);
 
 /** The synthetic number for a provider named on a booking, if the list has one. */
 function providerNumber(provider: string | undefined): string | undefined {

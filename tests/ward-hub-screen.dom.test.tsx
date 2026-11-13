@@ -300,7 +300,7 @@ describe("Ward Flow Master Search Hub — a directory with no bed figures of its
     expect(preview.queryByText(/^beds$/iu)).not.toBeInTheDocument();
     expect(preview.queryByRole("link", { name: /capacity.s bed map/iu })).not.toBeInTheDocument();
     const unitId =
-      hubEntries({ units: allUnits(), bedReleases: [], now: NOW_ANCHOR, sites: wardSites }).find(
+      hubEntries({ units: allUnits(), bedReleases: [], now: NOW_ANCHOR, sites: wardSites, namedHolds: [] }).find(
         (entry) => entry.name === "Mental Health Unit",
       )?.id ?? "";
     expect(preview.getByRole("link", { name: /^refer here$/iu })).toHaveAttribute(
@@ -821,7 +821,13 @@ describe("Ward Flow Master Search Hub — the owner's activity sentence", () => 
 describe("Ward Flow Master Search Hub — the statistics link ward/ED gain, and community never does", () => {
   // The same source `hubEntries()` itself reads (`allUnits()`, `bedReleases: []`) — never a second,
   // hand-typed list of ward/ED/community names that could drift from the real fixture.
-  const ALL_ENTRIES = hubEntries({ units: allUnits(), bedReleases: [], now: NOW_ANCHOR, sites: wardSites });
+  const ALL_ENTRIES = hubEntries({
+    units: allUnits(),
+    bedReleases: [],
+    now: NOW_ANCHOR,
+    sites: wardSites,
+    namedHolds: [],
+  });
   const WARD_ENTRIES = ALL_ENTRIES.filter((entry) => entry.kind === "ward");
   const ED_ENTRIES = ALL_ENTRIES.filter((entry) => entry.kind === "ed");
   const COMMUNITY_ENTRIES = ALL_ENTRIES.filter((entry) => entry.kind === "community");
@@ -941,9 +947,13 @@ describe("Ward Flow Master Search Hub — the preview and Enter follow what the 
 
     fireEvent.change(search(), { target: { value: "Dabakarn" } });
     expect(previewName(), "the pinned place stayed highlighted while the list showed another").toMatch(/Dabakarn/);
-    const href = hubEntries({ units: allUnits(), bedReleases: [], now: NOW_ANCHOR, sites: wardSites }).find(
-      (entry) => entry.name === "Dabakarn",
-    )?.href;
+    const href = hubEntries({
+      units: allUnits(),
+      bedReleases: [],
+      now: NOW_ANCHOR,
+      sites: wardSites,
+      namedHolds: [],
+    }).find((entry) => entry.name === "Dabakarn")?.href;
     expect(href).toBeTruthy();
     fireEvent.keyDown(search(), { key: "Enter" });
     expect(router.push).toHaveBeenCalledTimes(1);
@@ -1016,9 +1026,13 @@ describe("Ward Flow Master Search Hub — fold ids and fact lists stay valid for
   it("keeps only dt and dd inside each row of a ward's fact list", () => {
     renderHub();
     fireEvent.click(categoryRadio("ward"));
-    const ward = hubEntries({ units: allUnits(), bedReleases: [], now: NOW_ANCHOR, sites: wardSites }).find(
-      (entry) => entry.kind === "ward" && entry.confirmedAt !== undefined,
-    );
+    const ward = hubEntries({
+      units: allUnits(),
+      bedReleases: [],
+      now: NOW_ANCHOR,
+      sites: wardSites,
+      namedHolds: [],
+    }).find((entry) => entry.kind === "ward" && entry.confirmedAt !== undefined);
     expect(ward, "no ward in the sample has a confirmed count, so the Confirmed row is not tested").toBeTruthy();
     clickRow(ward!.name);
     expect(screen.getByRole("button", { name: "Ask to confirm" })).toBeInTheDocument();

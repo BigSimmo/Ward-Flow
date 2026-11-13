@@ -197,6 +197,19 @@ describe("the register's community-team contact detail", () => {
     }
   });
 
+  it("holds the suburb only, never a street address (A15-16, Josh, 13 Nov 2026)", () => {
+    let withSuburb = 0;
+    for (const name of REFERENCE_TEAM_NAMES) {
+      const detail = referenceTeamDetail(name)!;
+      expect(Object.keys(detail), name).not.toContain("address");
+      if (detail.suburb === null) continue;
+      withSuburb += 1;
+      expect(detail.suburb, name).not.toMatch(/\d|,|\b(?:Street|Road|Avenue|Drive|Parade|Highway|Hospital|Block)\b/u);
+    }
+    expect(withSuburb, "no team has a suburb, so this case checks nothing").toBeGreaterThan(10);
+    expect(referenceTeamDetail("Midland Community Mental Health Service")?.suburb).toBe("Midland");
+  });
+
   it("leaves no real Perth phone number in the reference pack or catchment notes, spaced or not", () => {
     // Perth landlines are 8 digits starting 6 or 9; the invented range starts 5550.
     const perthNumber = /(?<![\w.])(?:\(08\) ?|08 ?)?[69]\d{3} ?\d{4}(?!\w)/gu;

@@ -81,7 +81,8 @@ export type CancelTransportReason = (typeof CANCEL_TRANSPORT_REASONS)[number];
  * quoted verbatim in the build brief and not this session's language to change.
  */
 export const STOP_TRANSPORT_REASONS = [
-  "The examination was revoked",
+  // D-170 item 3 (Josh, 13 Nov 2026): an examination has an outcome and is never "revoked".
+  "The examination made no order",
   "The referral was withdrawn",
   "The receiving ward can no longer take the patient",
   // #154 (Josh, 27 Oct 2026). `STOP_TRANSPORT` tells a sending ward to record the absence.

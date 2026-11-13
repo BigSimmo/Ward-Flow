@@ -4,7 +4,7 @@ import { FORM_RECORDED_ENDED } from "@/components/ward-management/ward-legal-for
 import type { Movement } from "@/components/ward-management/ward-model";
 import { downloadCsv } from "@/components/ward-management/ward-csv";
 
-import { currentLegalDueAt, formProgressionPhrase, legalFormEnd } from "./legal-form-progression";
+import { currentLegalPosition, formProgressionPhrase } from "./legal-form-progression";
 
 /** Where and when the file was taken, as `downloadCsv` writes it above the rows. */
 export type ListExportProvenance = NonNullable<Parameters<typeof downloadCsv>[2]>;
@@ -12,20 +12,22 @@ export type ListExportProvenance = NonNullable<Parameters<typeof downloadCsv>[2]
 /**
  * Export (feature 44) for Legal forms and Movements: a form's end exactly as typed, with its date so
  * the file reads the same tomorrow ("Ends Tue 11 Nov, 15:42 as typed"). Never a countdown or a time
- * worked out from it (D-93, D-70). A form that ended at arrival or the examination, or that a person
- * recorded as ended, says so in the words the screens, TV and printouts use (M17, D-125, D-127).
+ * worked out from it (D-93, D-70). A form a person recorded as ended says so in the words the
+ * screens, TV and printouts use (M17, D-125); nothing is inferred from the examination or arrival (A1).
  */
 export function legalEndAsTyped(
   movement: Pick<Movement, "legalForm" | "legalStatus" | "examination" | "closure">,
   now: Instant,
   dayZero: Date,
 ): string {
-  if (!movement.legalForm) return "No form recorded";
-  const end = legalFormEnd(movement);
-  if (end?.kind === "progressed") return formProgressionPhrase(end.progression);
-  if (end?.kind === "recorded") return FORM_RECORDED_ENDED;
-  const typed = currentLegalDueAt(movement as Movement);
-  if (typed === undefined) return "No expiry recorded from the form";
+  // 1.1 and A1: the one current position. A recorded end first; then the typed end, which stays in
+  // force after the examination or arrival; the next-form phrase only when no end was typed.
+  const legal = currentLegalPosition(movement);
+  if (!legal.form) return "No form recorded";
+  if (legal.ended) return FORM_RECORDED_ENDED;
+  const typed = legal.dueAt;
+  if (typed === undefined)
+    return legal.nextForm ? formProgressionPhrase(legal.nextForm) : "No expiry recorded from the form";
   return `${isClockBreached(typed, now) ? "Ended" : "Ends"} ${formatSheetMoment(typed, dayZero)} as typed`;
 }
 

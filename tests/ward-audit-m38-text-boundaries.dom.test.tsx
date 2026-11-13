@@ -143,13 +143,13 @@ describe("M38 boundary figures on the Bed board", () => {
   };
 
   it("a ward of 0 beds shows four zeros", () => {
-    const counts = bedStates(ward(0, 0, 0), [], [], []);
+    const counts = bedStates(ward(0, 0, 0), [], [], [], []);
     sane(counts, 0);
     expect(counts).toMatchObject({ ready: 0, pulled: 0, closed: 0, occupied: 0 });
   });
 
   it("a full ward of 60 beds shows 60 occupied and no Ready bed", () => {
-    const counts = bedStates(ward(60, 0, 0), [], [], []);
+    const counts = bedStates(ward(60, 0, 0), [], [], [], []);
     sane(counts, 60);
     expect(counts.occupied).toBe(60);
     expect(counts.ready).toBe(0);
@@ -171,7 +171,7 @@ describe("M38 boundary figures on the Bed board", () => {
       ...ward(6, 6, 6),
       closedBeds: Array.from({ length: 6 }, (_, i) => ({ bedNumber: i + 1, at: NOW_ANCHOR, by: "ward" })),
     };
-    const counts = bedStates(unit, [], [], []);
+    const counts = bedStates(unit, [], [], [], []);
     sane(counts, 6);
     expect(counts.ready).toBe(0);
   });

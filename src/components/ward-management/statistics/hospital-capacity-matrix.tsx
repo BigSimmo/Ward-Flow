@@ -94,7 +94,7 @@ export function HospitalCapacityMatrix({
       const states = bedStates(u, admissions, bedReleases, leaveBeds, holds);
       // W-12 (fresh audit 26 Oct 2026): the one occupancy rule, Occupied + Pulled, as every page prints it.
       // D-115: occupancy stays the beds taken by a stay, so it is read without the named holds.
-      const unheld = holds.length === 0 ? states : bedStates(u, admissions, bedReleases, leaveBeds);
+      const unheld = holds.length === 0 ? states : bedStates(u, admissions, bedReleases, leaveBeds, []);
       const occRate = occupancyPercent({ beds: u.beds, inUse: unheld.occupied + unheld.pulled });
       const status: StatusKey = states.ready <= 0 ? "none" : occRate >= BED_ALERT_THRESHOLD_PERCENT ? "near" : "has";
       return {

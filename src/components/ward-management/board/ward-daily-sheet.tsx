@@ -151,7 +151,7 @@ export function dailySheetPeople(admissions: readonly Admission[], unitId: strin
     .map((admission) => ({
       key: admission.id,
       days: daysInBed(admission, now),
-      dayNumber: stayDayNumber(daysInBed(admission, now)),
+      dayNumber: stayDayNumber(admission, now),
       bandLabel: stayBand(admission, now)?.label ?? null,
       pastDate: isPastExpectedDischarge(admission, now),
       sex: admission.sex,

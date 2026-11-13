@@ -39,7 +39,9 @@ describe("cross-mode calculations after synthetic event sequences", () => {
         const now = nowFor(state, step);
         const label = `seed=${seed}, step=${step}, action=${event.type}`;
         const rows = networkWardRows(state.units, now, state.bedReleases, state.admissions, state.leaveBeds);
-        const boxes = state.units.map((unit) => bedStates(unit, state.admissions, state.bedReleases, state.leaveBeds));
+        const boxes = state.units.map((unit) =>
+          bedStates(unit, state.admissions, state.bedReleases, state.leaveBeds, []),
+        );
         const sum = (key: "ready" | "pulled" | "occupied" | "closed") =>
           boxes.reduce((total, box) => total + box[key], 0);
         for (const key of ["ready", "pulled", "occupied", "closed"] as const) {

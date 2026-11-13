@@ -23,7 +23,9 @@ export function occupiedBeds(
   // wardBedUseFigures / wardBedsInUse). Leave is only a marker inside Occupied.
   return units.reduce(
     (sum, unit) => {
-      const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+      // Hold-free on purpose, as `wardBedsInUse` and Home's occupancy count it: this is beds taken
+      // by a stay. Ready is never read here; a screen printing Ready uses `networkBedStates`.
+      const states = bedStates(unit, admissions, bedReleases, leaveBeds, []);
       const inUse = states.occupied + states.pulled;
       return {
         beds: sum.beds + unit.beds,

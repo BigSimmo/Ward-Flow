@@ -135,7 +135,8 @@ export function wardHeroTopParts({
         },
         {
           id: "obs",
-          label: "Constant obs",
+          // Root-cause fix 3.5: this counts staff, not patients (one person on two-staff constant is 2).
+          label: "Constant obs staff",
           value: staffedSpecialling,
           ariaLabel: `Staff on constant observation: ${staffedSpecialling}`,
         },

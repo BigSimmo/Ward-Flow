@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
 
 import { STANDARD_WARD_SITES } from "@/components/ward-management/ward-sites";
-import { wardFormsHeld } from "@/components/ward-management/wards/ward-index";
 import { officialForms } from "@/lib/form-register";
 
 /**
  * AN INPATIENT WARD MAY NOT LIST A COMMUNITY TREATMENT ORDER AMONG THE FORMS IT HOLDS.
  *
- * `ward-index.tsx` gives every authorised ward a forms line, derived since October 2026 by
+ * `ward-index.tsx` gave every authorised ward a forms line, derived from October 2026 by
  * `wardFormsHeld` from the unit's `authorised` and `forensic` flags (it was a hand-typed `mhaForms`
- * string per ward before) — the Mental Health Act 2014 authorities
- * under which that unit holds people. It renders on the ward profile as "WA MHA 2014 · {forms}".
+ * string per ward before). D-170 item 7 (Josh, 13 Nov 2026) dropped that "Forms held" row, so
+ * `tests/ward-fix-D-ward-profile.dom.test.tsx` now opens every authorised ward's profile and checks
+ * it lists no standing form at all. This file keeps the register checks that guard is built on.
  *
  * ⚠️ **WHY THIS FILE EXISTS, 2026-09-18.** All 24 ward entries and the unknown-ward fallback named
  * **Form 5A**. The register titles 5A "Community Treatment Order" — an order for treatment **in the
@@ -39,13 +39,6 @@ import { officialForms } from "@/lib/form-register";
  * standing list of authorities.
  */
 
-/** The forms line each authorised unit in the standard network shows on its profile. */
-function declaredFormLines(): string[] {
-  return STANDARD_WARD_SITES.flatMap((site) => site.units)
-    .filter((unit) => unit.authorised)
-    .map((unit) => wardFormsHeld(unit).join(", "));
-}
-
 /**
  * The community-order codes, read from the register rather than typed here, so that adding a new
  * one to `form-register.ts` extends this guard rather than silently escaping it.
@@ -55,8 +48,6 @@ const COMMUNITY_ORDER_CODES = officialForms
   .map((form) => form.code);
 
 describe("ward register MHA authorities", () => {
-  const formLines = declaredFormLines();
-
   it("reads the register's community-order category at all, so an empty list cannot pass everything", () => {
     // Without this, renaming the category in form-register.ts would empty COMMUNITY_ORDER_CODES and
     // leave every assertion below passing over nothing to look for.
@@ -67,37 +58,8 @@ describe("ward register MHA authorities", () => {
     ).toBeGreaterThanOrEqual(4);
   });
 
-  it("still declares ward authorities at all, so a deletion cannot make this file vacuous", () => {
-    expect(
-      formLines.length,
-      `the standard network yields ${formLines.length} authorised forms lines; it carried 25 when ` +
-        "this guard was written. A large drop means the register was gutted, not that it became safe.",
-    ).toBeGreaterThanOrEqual(20);
-  });
-
-  it("names no community treatment order on any inpatient ward", () => {
-    const offenders = formLines.flatMap((line) =>
-      COMMUNITY_ORDER_CODES.filter((code) => new RegExp(`\\bForm ${code}\\b`, "u").test(line)).map(
-        (code) => `${code} in "${line}"`,
-      ),
-    );
-    expect(
-      offenders,
-      "a ward lists a community treatment order among the authorities it holds people under. " +
-        "Every entry in this register is an inpatient unit, so the authority is Form 6A " +
-        "(Inpatient treatment order in authorised hospital). Correct the entry — never widen " +
-        "this guard to accept it.",
-    ).toEqual([]);
-  });
-
-  it("names the inpatient treatment order, so the correction is present rather than merely absent", () => {
-    // The assertion above passes just as well if every forms line were emptied. This one fails
-    // in that case, and fails again if a later edit quietly drops 6A back out.
-    const withInpatientOrder = formLines.filter((line) => /\bForm 6A\b/u.test(line));
-    expect(
-      withInpatientOrder.length,
-      "no ward names Form 6A. The inpatient treatment order is the authority almost every unit " +
-        "here holds people under; its total absence means the register is describing something else.",
-    ).toBeGreaterThanOrEqual(20);
+  it("still covers the standard network, so an emptied register cannot make this file vacuous", () => {
+    const units = STANDARD_WARD_SITES.flatMap((site) => site.units);
+    expect(units.filter((unit) => unit.authorised).length).toBeGreaterThanOrEqual(20);
   });
 });

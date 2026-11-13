@@ -5,7 +5,8 @@
  * discharge, never names a patient and never pairs anyone with the bed. Only the ward decides when a
  * patient leaves. Synthetic data only.
  */
-import { dayOf, type Instant } from "@/components/ward-management/ward-clock";
+import type { Instant } from "@/components/ward-management/ward-clock";
+import { isFreeingToday } from "@/components/ward-management/ward-shared-figures";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
 import { bedKindOfBed } from "@/components/ward-management/forecast/forecast-by-kind";
@@ -41,8 +42,9 @@ export function dischargesThatFree(
   const admissionById = new Map(admissions.map((admission) => [admission.id, admission]));
   const rows: FreeingDischarge[] = [];
   for (const release of releases ?? []) {
-    // A discharged bed is already free and already counted as ready.
-    if (release.state === "discharged" || dayOf(release.expectedAt) !== dayOf(now)) continue;
+    // A discharged bed is already free and already counted as ready; a time already passed is
+    // overdue, not freeing (A16-05): the shared rule Capacity's "Beds freeing today" counts.
+    if (!isFreeingToday(release, now)) continue;
     const unit = wardsById.get(release.unitId);
     if (!unit || bedKindOfBed(unit, admissionById.get(release.admissionId)) !== kind) continue;
     rows.push({

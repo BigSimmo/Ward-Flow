@@ -26,6 +26,7 @@ import {
 } from "@/components/ward-management/ward-movement-bed-hold";
 import { isOpen, unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { siteByCode } from "@/components/ward-management/ward-sites";
+import { isFreeingToday } from "@/components/ward-management/ward-shared-figures";
 import { byServiceThenName } from "@/components/ward-management/ward-derivations-shortlist";
 import type {
   Cohort,
@@ -439,7 +440,7 @@ type NetworkWardInputs = {
   reservations: readonly ReservationReferral[];
   freeingByUnit: Map<string, number>;
 };
-/** WF-16 shared source: release plans due today (not the forecast next-24h discharge count). */
+/** WF-16 shared source: release plans still due later today (not the forecast next-24h discharge count). */
 function releasesFreeingToday(releases: BedRelease[] | undefined, now: Instant): Map<string, number> {
   const freeingByUnit = new Map<string, number>();
   for (const release of releases ?? []) {
@@ -448,8 +449,9 @@ function releasesFreeingToday(releases: BedRelease[] | undefined, now: Instant):
     // "discharged"] — there is no "released" and no "cancelled", and I wrote both before checking.
     // A discharged bed is already free and already counted in `ready`; counting it again here
     // would double-count the same bed on the same row.
-    if (release.state === "discharged") continue;
-    if (dayOf(release.expectedAt) !== dayOf(now)) continue;
+    // A16-05: the shared rule (`isFreeingToday`) also leaves out a time earlier today that has
+    // already passed: that release is overdue, as Discharges counts it, not about to free a bed.
+    if (!isFreeingToday(release, now)) continue;
     freeingByUnit.set(release.unitId, (freeingByUnit.get(release.unitId) ?? 0) + 1);
   }
   return freeingByUnit;

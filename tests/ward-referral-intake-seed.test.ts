@@ -29,8 +29,9 @@ describe("complete synthetic referral form content", () => {
         expect(referral.intake!.reasonForReferral.length).toBeGreaterThan(20);
         expect(referral.intake!.reasonForReferral).toContain("Risk summary:");
         expect(referral.intake!.legalStatus.length).toBeGreaterThan(0);
-        expect(referral.intake!.referrer.email).toMatch(/\.invalid$/);
-        expect(referral.intake!.referrer.phone).toBe("08 5550 0156");
+        expect(referral.intake!.referrer.email).toMatch(/@example\.invalid$/);
+        // A15-19: each invented clinician has their own number from the intake block (2000 to 2099).
+        expect(referral.intake!.referrer.phone).toMatch(/^08 5550 20\d{2}$/);
         expect(referral.destinations.every((entry) => entry.referredAt !== undefined)).toBe(true);
       }
     }

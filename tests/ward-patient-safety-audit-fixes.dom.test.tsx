@@ -39,18 +39,22 @@ describe("Record details says each fact once", () => {
     expect(pane.queryByText("Placement gender")).not.toBeInTheDocument();
   });
 
-  it("shows both legal statuses, named apart, when they differ", () => {
+  // A16-09 (Josh, 13 Nov 2026): one current legal status in every view. When the stay and the
+  // patient record differ, the stay's status is the one shown, never two lines.
+  it("shows one legal status, the stay's, when the stay and the patient record differ", () => {
     const other = open.legalStatus === "Voluntary" ? "Involuntary inpatient" : "Voluntary";
     const pane = renderDetails(open, { ...patient, legalStatus: other as Patient["legalStatus"] });
-    expect(pane.getByText("Movement legal status")).toBeInTheDocument();
-    expect(pane.getByText("Patient legal status")).toBeInTheDocument();
+    expect(pane.getByText("Legal status")).toBeInTheDocument();
+    expect(pane.getByText(open.legalStatus)).toBeInTheDocument();
+    expect(pane.queryByText("Movement legal status")).not.toBeInTheDocument();
+    expect(pane.queryByText("Patient legal status")).not.toBeInTheDocument();
   });
 
-  it("keeps the patient's legal status row when only the movement has one recorded", () => {
+  it("shows the stay's status, and no second row, when only the stay has one recorded", () => {
     const pane = renderDetails(open, { ...patient, legalStatus: undefined });
-    expect(pane.getByText("Movement legal status")).toBeInTheDocument();
-    expect(pane.getByText("Patient legal status")).toBeInTheDocument();
-    expect(pane.queryByText("Legal status")).not.toBeInTheDocument();
+    expect(pane.getByText("Legal status")).toBeInTheDocument();
+    expect(pane.getByText(open.legalStatus)).toBeInTheDocument();
+    expect(pane.queryByText("Patient legal status")).not.toBeInTheDocument();
   });
 
   it("writes the date of birth as DD/MM/YYYY, the header's format", () => {

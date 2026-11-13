@@ -73,6 +73,9 @@ never-build list or guarded, but the adviser should confirm the list is complete
    count as decision support?
 4. If a health service runs Ward Flow, who is the manufacturer for TGA purposes?
 5. Is anything in section 3 missing?
+6. Do the triage and risk form, its safety plan builder and its suggestion chips ("Suggested from
+   mental state", "Suggested from risk flags", which add an item only when a person clicks one)
+   count as decision support? Section 2 reasons only about beds, waits, referrals and transport.
 
 ## 5. Record
 

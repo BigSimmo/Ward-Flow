@@ -5,10 +5,12 @@
 import { StatusGlyph } from "@/components/wf";
 import Link from "next/link";
 import {
-  EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE,
+  examinationBedHeldNotice,
   examinationRevokedWhileBedHeld,
 } from "@/components/ward-management/ward-derivations";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { examinationOutcomeShort } from "@/components/ward-management/ward-legal-forms";
+import { currentLegalPosition, legalFormNowWords } from "@/components/ward-management/ward-legal-form-progression";
 import { movementReadmissionFlag } from "@/components/ward-management/ward-readmission";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
@@ -44,6 +46,9 @@ export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
     acceptedUnit,
   } = row;
   const { now, units, readmissionIndex, holdLabel } = ctx;
+  // 1.1 (K1) and A1: the one current legal position; the typed end in force is gone once a person
+  // records the form ended.
+  const legalDueAt = currentLegalPosition(movement).dueAt;
   /* Facts every board row carries. On the board table they sit in the row (the
                    person sheet then leaves them out, so each appears once); on phone, in the sheet. */
   const readmissionFact = (
@@ -116,15 +121,12 @@ export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
   const formExpiryFacts = (
     <>
       {formExpiryText !== undefined && (
-        <span
-          className={movement.legalForm?.dueAt === undefined ? "sr-only" : styles.compactExpiry}
-          title={formExpiryText}
-        >
-          {movement.legalForm?.dueAt === undefined ? (
+        <span className={legalDueAt === undefined ? "sr-only" : styles.compactExpiry} title={formExpiryText}>
+          {legalDueAt === undefined ? (
             <span data-testid={`ward-ed-form-expiry-${movement.id}`}>{formExpiryText}</span>
           ) : (
             <>
-              <span aria-hidden="true">{formatInstantWithDay(movement.legalForm.dueAt, now)}</span>
+              <span aria-hidden="true">{formatInstantWithDay(legalDueAt, now)}</span>
               <span className="sr-only" data-testid={`ward-ed-form-expiry-${movement.id}`}>
                 {formExpiryText}
               </span>
@@ -159,7 +161,7 @@ export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
         <ul className={styles.sub} data-testid={`ward-ed-examination-history-${movement.id}`}>
           {movement.supersededExaminations.map((record, index) => (
             <li key={index}>
-              {`Earlier examination · ${record.outcome.replace(/_/g, " ")} — ${formatInstantWithDay(record.at, now)}`}
+              {`Earlier examination · ${examinationOutcomeShort(record.outcome)} — ${formatInstantWithDay(record.at, now)}`}
             </li>
           ))}
         </ul>
@@ -170,7 +172,7 @@ export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
           data-testid={`ward-ed-examination-revoked-flag-${movement.id}`}
           data-level="warning"
         >
-          {EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE}
+          {examinationBedHeldNotice(movement)}
         </div>
       ) : null}
     </>
@@ -322,9 +324,7 @@ export function renderEdRowControls(row: EdBoardRowModel, ctx: EdScreenContext, 
    */
   const formControl = (
     <>
-      <span data-testid={`ward-ed-form-pill-${movement.id}`}>
-        {movement.legalForm ? `Form ${movement.legalForm.code}` : "No form recorded"}
-      </span>
+      <span data-testid={`ward-ed-form-pill-${movement.id}`}>{legalFormNowWords(movement) ?? "No form recorded"}</span>
       {boardTable ? null : formExpiryFacts}
     </>
   );
@@ -381,6 +381,8 @@ export function renderEdRowControls(row: EdBoardRowModel, ctx: EdScreenContext, 
 export function renderEdRowExpandedCards(row: EdBoardRowModel, ctx: EdScreenContext) {
   const { movement, item, patientInfo } = row;
   const { now, referrals, thisEdId, journeyEventsFor, planDrafts, setPlanDrafts, patientBay } = ctx;
+  // 1.1 (K1): the one current legal position for this row's Legal line.
+  const rowLegal = currentLegalPosition(movement);
   return (
     <>
       <EdMedicalPlacementControls movementId={movement.id} actingPlaceId={thisEdId} />
@@ -429,9 +431,7 @@ export function renderEdRowExpandedCards(row: EdBoardRowModel, ctx: EdScreenCont
           <div>
             <dt>Legal</dt>
             <dd>
-              {movement.legalForm
-                ? `Form ${movement.legalForm.code}, ${formExpiryLine(movement.legalForm, now)}`
-                : movement.legalStatus}
+              {rowLegal.form ? `${rowLegal.formWords}, ${formExpiryLine(rowLegal.form, now)}` : movement.legalStatus}
             </dd>
           </div>
           <div>

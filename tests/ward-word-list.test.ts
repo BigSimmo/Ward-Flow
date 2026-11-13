@@ -237,3 +237,26 @@ describe("one word per idea on screen (docs/ward-flow/word-list.md)", () => {
     expect(missing, "add these Help glossary words to docs/ward-flow/word-list.md in bold").toEqual([]);
   });
 });
+
+/**
+ * Clinical check pack E1 (Josh, 13 Nov 2026): the Criminal Law (Mental Impairment) Act 2023 is always
+ * written in full, never shortened. Unlike the banned phrases above this reads every code line (not
+ * only visible text), so no constant, label or key carries the short form either. Comments may still
+ * explain the history. Moved here from `tests/ward-fix-D-wording-and-wait-step.test.ts` so the one
+ * whole-tree wording scan stays in one file.
+ */
+describe("the Criminal Law (Mental Impairment) Act is never shortened (E1)", () => {
+  it("names no CLMA, CLMI, CLMIA or CLMI Act on any code line in the ward tree", () => {
+    const files = sourceFiles(join(SOURCE_ROOT, "components", "ward-management"));
+    expect(files.length).toBeGreaterThan(200);
+    const offenders = files.flatMap((file) =>
+      readFileSync(file, "utf8")
+        .split("\n")
+        .map((code, index) => ({ line: index + 1, code }))
+        .filter(({ code }) => !/^\s*(?:\/\/|\/?\*|\{\s*\/\*)/.test(code))
+        .filter(({ code }) => /\bCLM(?:A|I|IA)\b|CLMI Act/u.test(code))
+        .map(({ line, code }) => `${file}:${line}: ${code.trim()}`),
+    );
+    expect(offenders).toEqual([]);
+  });
+});

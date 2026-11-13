@@ -124,12 +124,15 @@ sub-labels under those four, in order: **Referred**, **Review**, **Accepted**, *
 | **PAS**           | Patient administration system, the hospital's admissions and bed record.                  |
 | **PSOLIS**        | Psychiatric Services Online Information System, WA's mental health record.                |
 | **RN**            | Registered nurse.                                                                         |
-| **SMHMR**         | State Mental Health Medical Record, WA's standard mental health forms.                    |
+| **SMHMR**         | The form-number prefix for WA's statewide standardised mental health documents.           |
 | **SW**            | Social worker.                                                                            |
 | Sign in, sign out | Never log in or log out.                                                                  |
 
 **Bed coordinator** is the coordinator's name on every screen (Josh, 26 October 2026, A19). Do not say
 "flow coordinator" or "bed manager" for this role. "Bed flow coordinator" stays only as an on-call title.
+
+**Criminal Law (Mental Impairment) Act 2023** is always written in full, never as an abbreviation such as
+"CLMA" (Josh, clinical check pack E1, 13 November 2026). It is a WA Act, in operation from 1 September 2024.
 
 ## Screens, figures and urgency
 

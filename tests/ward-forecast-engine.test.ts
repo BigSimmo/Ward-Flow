@@ -211,7 +211,7 @@ describe("edAccessRisk", () => {
       acceptedUnitId: unit.id,
       closure: undefined,
     };
-    const postponed = edAccessRisk([movement], [unit], [release], [stay], now, 120);
+    const postponed = edAccessRisk([movement], [unit], [release], [stay], now, 120, []);
     expect(postponed.atRisk).toHaveLength(1);
     expect(postponed.atRisk[0]).toMatchObject({ slotAt: now + 3 * MINUTES_PER_DAY, nextRelease: null });
     const broughtForward = edAccessRisk(
@@ -221,10 +221,11 @@ describe("edAccessRisk", () => {
       [{ ...stay, expectedDischargeAt: now + 180 }],
       now,
       120,
+      [],
     );
     expect(broughtForward.atRisk[0]).toMatchObject({ slotAt: now + 180, nextRelease: { at: now + 180 } });
     expect(
-      edAccessRisk([movement], [unit], [release], [{ ...stay, expectedDischargeAt: now + 60 }], now, 120).atRisk,
+      edAccessRisk([movement], [unit], [release], [{ ...stay, expectedDischargeAt: now + 60 }], now, 120, []).atRisk,
     ).toEqual([]);
   });
 
@@ -238,7 +239,7 @@ describe("edAccessRisk", () => {
   });
 
   it("lists only people who pass the target in the next day before a bed in line for them", () => {
-    const risk = edAccessRisk(wardMovements, units, bedReleases, wardAdmissions, now, 24 * 60);
+    const risk = edAccessRisk(wardMovements, units, bedReleases, wardAdmissions, now, 24 * 60, []);
     for (const row of risk.atRisk) {
       expect(row.passesAt).toBeGreaterThan(now);
       expect(row.passesAt).toBeLessThanOrEqual(now + MINUTES_PER_DAY);
@@ -252,7 +253,7 @@ describe("edAccessRisk", () => {
     const inEd = wardMovements.filter(
       (movement) => isWaitingForBed(movement) && isWaitingInEd(movement) && movement.openedAt < now,
     );
-    const risk = edAccessRisk(wardMovements, units, bedReleases, wardAdmissions, now, 1);
+    const risk = edAccessRisk(wardMovements, units, bedReleases, wardAdmissions, now, 1, []);
     expect(risk.alreadyOver).toBe(inEd.length);
     expect(risk.atRisk).toHaveLength(0);
   });
@@ -286,7 +287,7 @@ describe("since you looked", () => {
 
 describe("brief and alerts", () => {
   const levers = forecastLevers(units, bedReleases, wardAdmissions, now);
-  const risk = edAccessRisk(wardMovements, units, bedReleases, wardAdmissions, now, 24 * 60);
+  const risk = edAccessRisk(wardMovements, units, bedReleases, wardAdmissions, now, 24 * 60, []);
 
   it("writes the four brief lines from fixed templates", () => {
     const brief = forecastBrief(tomorrow, levers, risk, (id) => `ED ${id}`);
@@ -296,7 +297,7 @@ describe("brief and alerts", () => {
 
   // H-0361: a target that is not a whole number of hours is stated as Settings gives it.
   it("states a 4h 30m access target as it is set, never rounded to whole hours", () => {
-    const halfHour = edAccessRisk(wardMovements, units, bedReleases, wardAdmissions, now, 4 * 60 + 30);
+    const halfHour = edAccessRisk(wardMovements, units, bedReleases, wardAdmissions, now, 4 * 60 + 30, []);
     const ed = forecastBrief(tomorrow, levers, halfHour, (id) => `ED ${id}`).find((line) => line.label === "ED waits")!;
     expect(ed.text).toContain("4h 30m access target");
     expect(ed.text).not.toMatch(/\b[45] hours\b/);

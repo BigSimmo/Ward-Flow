@@ -39,7 +39,7 @@ describe("WF-16 shared figure sources", () => {
 
   it("wardBedUseFigures matches bedStates and wardBedsInUse / wardOccupiedBeds", () => {
     for (const unit of units.slice(0, 8)) {
-      const states = bedStates(unit, admissions, [...bedReleases], []);
+      const states = bedStates(unit, admissions, [...bedReleases], [], []);
       const figures = wardBedUseFigures(unit, admissions, bedReleases);
       expect(figures.occupied).toBe(states.occupied);
       expect(figures.pulled).toBe(states.pulled);
@@ -65,9 +65,11 @@ describe("WF-16 shared figure sources", () => {
   });
 
   it("Beds freeing today counts today's open discharge plans, the same figure as the ward cards", () => {
-    // Worked out here from the records, not through the helper under test.
+    // Worked out here from the records, not through the helper under test. A16-05: a time already
+    // passed is overdue, not freeing, so it is left out as Discharges counts it.
     const open = bedReleases.filter(
-      (release) => release.state !== "discharged" && dayOf(release.expectedAt) === dayOf(now),
+      (release) =>
+        release.state !== "discharged" && release.expectedAt >= now && dayOf(release.expectedAt) === dayOf(now),
     );
     expect(open.length, "the seed has discharges planned today").toBeGreaterThan(0);
     expect(bedsFreeingTodayTotal(bedReleases, now)).toBe(open.length);
@@ -96,7 +98,7 @@ describe("WF-16 shared figure sources", () => {
     for (const row of gaps) {
       expect(row.gap).toBe(row.bedsThatFit - row.waiting);
     }
-    const readyAll = units.reduce((sum, unit) => sum + bedStates(unit, admissions, [...bedReleases], []).ready, 0);
+    const readyAll = units.reduce((sum, unit) => sum + bedStates(unit, admissions, [...bedReleases], [], []).ready, 0);
     const fitTotal = gaps.reduce((sum, row) => sum + row.bedsThatFit, 0);
     // Ready-that-fit is at most all ready; often stricter.
     expect(fitTotal).toBeLessThanOrEqual(readyAll);

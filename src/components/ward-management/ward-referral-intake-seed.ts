@@ -3,6 +3,7 @@ import type { ReferralIntakeDetails, ReferralContact } from "./referrals/referra
 import type { Movement, Referral } from "./ward-model";
 import type { ReferralDossier } from "./ward-referral-dossier-seed";
 import { seededReferralTimelineBase } from "./ward-referral-seed-time";
+import { demoLandline } from "./demo-phone-numbers";
 
 type IntakeContext = { movement?: Movement; dossier?: ReferralDossier };
 type SeedContext = {
@@ -172,8 +173,10 @@ function syntheticContact(key: string): ReferralContact {
     name: `Synthetic clinician ${index + 1}`,
     role: "Demo referring clinician",
     location: "Synthetic assessment service",
-    email: `clinician-${index + 1}@ward-flow.invalid`,
-    phone: "08 5550 0156",
+    // A15-18 and A15-19 (13 Nov 2026): the reserved example.invalid domain, and each invented
+    // clinician's own number from this file's block, so no number sits under two names.
+    email: `clinician-${index + 1}@example.invalid`,
+    phone: demoLandline("referralIntake", index),
   };
 }
 

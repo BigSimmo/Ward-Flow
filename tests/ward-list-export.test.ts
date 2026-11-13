@@ -52,6 +52,7 @@ describe("ED handover export", () => {
       2,
       "Voluntary",
       "Not recorded",
+      "",
       "Coordinator finding a ward",
     ]);
     expectNoName(lines);

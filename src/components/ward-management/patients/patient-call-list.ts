@@ -12,7 +12,7 @@ import type { HealthService } from "@/components/ward-management/ward-model";
 /**
  * Who to call, with a number (device audit 11 Oct 2026, Patient: "show the number and a 48px round
  * call button like On-call"). Every number comes from the On-call directory, whose numbers are all
- * mocks in the unassigned (08) 0000 exchange; nothing here dials. A row whose place has no line in
+ * invented, in the (08) 5550 fiction range (A15-14); nothing here dials. A row whose place has no line in
  * the directory says so rather than inventing one.
  */
 

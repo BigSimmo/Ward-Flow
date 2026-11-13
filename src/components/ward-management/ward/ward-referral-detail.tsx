@@ -6,6 +6,7 @@ import { Button, Drawer, durMinutes } from "@/components/wf";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { DemoPhoneNumber } from "@/components/ward-management/demo-phone-number";
 import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";
 import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
 import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
@@ -32,7 +33,7 @@ import {
 } from "@/components/ward-management/referrals/referral-submission";
 import { documentLabel } from "@/components/ward-management/referrals/referral-document-links";
 import { riskFlagLabel } from "@/components/ward-management/referrals/referral-risk-flags";
-import { referralFit, type ReferralFit } from "./ward-referral-fit";
+import { FIT_NOT_CHECKED_LINE, referralFit, type ReferralFit } from "./ward-referral-fit";
 import styles from "./ward-referral-detail.module.css";
 
 const NOT_RECORDED = "Not recorded on this referral.";
@@ -277,7 +278,7 @@ export function WardReferralDetail({
           <div>
             {fit.patientIssues.length === 0 ? (
               <>
-                <strong>Fits this ward.</strong> All {fit.patientTotal} patient checks pass.
+                <strong>Passes the {fit.patientTotal} bed checks.</strong> {FIT_NOT_CHECKED_LINE}
               </>
             ) : (
               <>
@@ -372,9 +373,8 @@ export function WardReferralDetail({
               ]}
             />
             <div className={styles.actions}>
-              <a className={styles.action} href={`tel:${referrer.phone.replace(/\s/gu, "")}`}>
-                Call referrer
-              </a>
+              {/* A15-14: a demo number copies, it does not dial. */}
+              <DemoPhoneNumber number={referrer.phone} label="Copy referrer's number" className={styles.action} />
             </div>
           </>
         ) : (
@@ -536,7 +536,7 @@ export function WardReferralDetailDrawer({
     <Drawer
       open
       onClose={onClose}
-      title={identity.displayName}
+      title={identity.formalName}
       description={`Referral to ${unit.name}`}
       footer={
         <ReferralDetailFooter movementId={movement.id} blocked={blocked} onDecline={onDecline} onAccept={onAccept} />

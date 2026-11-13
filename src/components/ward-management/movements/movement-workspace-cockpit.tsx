@@ -91,7 +91,7 @@ import { candidateReason, eligibility, gateMark } from "@/components/ward-manage
 import {
   destinationNoLongerLawful,
   examinationRevokedWhileBedHeld,
-  EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE,
+  examinationBedHeldNotice,
   isOpen,
   isStoppedTransportAwaitingRelease,
   movementHealthService,
@@ -101,7 +101,7 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { communityTeamById } from "@/components/ward-management/community/community-derivations";
-import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
+import { examinationOutcomeShort, legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
 import { typedClock } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import {
   attentionItems,
@@ -355,7 +355,7 @@ export function MovementWorkspaceCockpit({
       label: `Referral to ${unitName(withdrawal.unitId)} · ${withdrawalReasonLabels[withdrawal.reason]}`,
     })),
     ...(patient.examination
-      ? [{ at: patient.examination.at, label: `Examined · ${patient.examination.outcome.replaceAll("_", " ")}` }]
+      ? [{ at: patient.examination.at, label: `Examined · ${examinationOutcomeShort(patient.examination.outcome)}` }]
       : []),
     ...escalations.map((entry) => ({ at: entry.at, label: `Escalated to ${entry.contact}` })),
     ...(patient.acceptedAt !== undefined && patient.acceptedUnitId !== undefined
@@ -1289,7 +1289,7 @@ export function MovementWorkspaceCockpit({
                   data-testid="ward-console-examination-revoked-flag"
                   data-level="warning"
                 >
-                  {EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE}
+                  {examinationBedHeldNotice(movement)}
                 </p>
               ) : null}
               {!open ? (

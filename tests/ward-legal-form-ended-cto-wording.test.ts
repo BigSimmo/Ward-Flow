@@ -14,6 +14,7 @@ import type { Movement } from "@/components/ward-management/ward-model";
  * and the order is then recorded as ended. #1621 made the Legal forms line check the recorded end
  * before the neutral D-127 arrival wording; every other output now reads the same order through
  * `legalFormEnd`, so none says "On Form 5A at arrival" for an ended order. Synthetic records only.
+ * A1 (13 Nov 2026): nothing ends at arrival by itself any more; only a recorded end ends a form.
  */
 const NOW = 10 * 60;
 
@@ -32,7 +33,8 @@ describe("an arrived community treatment order recorded as ended", () => {
   for (const code of ["5A", "5B"]) {
     it(`Form ${code}: the recorded end wins over the arrival wording`, () => {
       const ended = arrivedOn(code, "revoked");
-      expect(formProgression(ended)?.ended).toBe(false);
+      // A1: a recorded end asks for no next form, and nothing else is inferred.
+      expect(formProgression(ended)).toBeUndefined();
       expect(legalFormEnd(ended)).toEqual({ kind: "recorded" });
       expect(legalDeadlineText(ended, NOW)).toBe("Form ended");
       expect(legalEndAsTyped(ended, NOW, new Date("2026-10-19T00:00:00Z"))).toBe(FORM_RECORDED_ENDED);
@@ -40,14 +42,16 @@ describe("an arrived community treatment order recorded as ended", () => {
 
     it(`Form ${code}: still neutral at arrival when no end is recorded (D-127)`, () => {
       const open = arrivedOn(code);
-      expect(legalFormEnd(open)).toMatchObject({ kind: "progressed", progression: { ended: false } });
+      expect(legalFormEnd(open)).toEqual({ kind: "progressed", progression: { formCode: code, when: "at arrival" } });
       expect(legalEndAsTyped(open, NOW, new Date("2026-10-19T00:00:00Z"))).toBe(`On Form ${code} at arrival`);
     });
   }
 
-  it("a form that ended at arrival still reads as ended at arrival, even when also recorded as ended", () => {
+  // A1 (Josh, 13 Nov 2026): arrival no longer ends a transfer form by itself, so a recorded end is
+  // the only end, and it reads the same as every other recorded end.
+  it("a transfer form recorded as ended reads as recorded ended, never as ended at arrival", () => {
     const ended = arrivedOn("4C", "revoked");
-    expect(legalFormEnd(ended)).toMatchObject({ kind: "progressed", progression: { ended: true } });
-    expect(legalEndAsTyped(ended, NOW, new Date("2026-10-19T00:00:00Z"))).toBe("Form 4C ended at arrival");
+    expect(legalFormEnd(ended)).toEqual({ kind: "recorded" });
+    expect(legalEndAsTyped(ended, NOW, new Date("2026-10-19T00:00:00Z"))).toBe(FORM_RECORDED_ENDED);
   });
 });

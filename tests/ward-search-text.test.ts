@@ -23,10 +23,10 @@ describe("search text (search and forms review, 31 Oct 2026)", () => {
   });
 
   it("reads a number typed with spaces as one number, matched on digits", () => {
-    expect(fieldsMatchEveryWord("0000 1001", ["08 0000 1001"])).toBe(true);
-    expect(fieldsMatchEveryWord("(08) 0000-1001", ["08 0000 1001"])).toBe(true);
+    expect(fieldsMatchEveryWord("5550 1001", ["08 5550 1001"])).toBe(true);
+    expect(fieldsMatchEveryWord("(08) 5550-1001", ["08 5550 1001"])).toBe(true);
     expect(fieldsMatchEveryWord("UM 100001", ["UM100001"])).toBe(true);
-    expect(fieldsMatchEveryWord("0000 1999", ["08 0000 1001"])).toBe(false);
+    expect(fieldsMatchEveryWord("5550 1999", ["08 5550 1001"])).toBe(false);
   });
 
   it("ignores category words, and a query of only category words matches nothing", () => {
@@ -79,8 +79,8 @@ describe("header search matching", () => {
 describe("contacts and suburbs in the header search", () => {
   it("finds an on-call contact by role words or by its number typed with spaces", () => {
     expect(searchContacts("bed flow coordinator", undefined).map((c) => c.entry.id)).toContain("sw-bfc");
-    expect(searchContacts("0000 1001", undefined).map((c) => c.entry.id)).toContain("sw-bfc");
-    expect(searchContacts("0000 1001", undefined)[0]?.number).toBe("08 0000 1001");
+    expect(searchContacts("5550 1001", undefined).map((c) => c.entry.id)).toContain("sw-bfc");
+    expect(searchContacts("5550 1001", undefined)[0]?.number).toBe("08 5550 1001");
   });
 
   it("allows a contact's near spelling only when the header search lets it", () => {
@@ -113,7 +113,7 @@ describe("contacts and suburbs in the header search", () => {
   it("returns contacts and suburbs from the engine", () => {
     const result = searchWardFlow({ query: "Morley", patients: [], movements: [], units });
     expect(result.suburbs.map((s) => s.suburb)).toEqual(["Morley"]);
-    expect(searchWardFlow({ query: "0000 1001", patients: [], movements: [], units }).contacts.length).toBeGreaterThan(
+    expect(searchWardFlow({ query: "5550 1001", patients: [], movements: [], units }).contacts.length).toBeGreaterThan(
       0,
     );
   });

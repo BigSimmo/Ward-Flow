@@ -39,7 +39,8 @@ function apply(state: WardFlowState, event: Composed) {
 const refusedWith = (before: WardFlowState, after: WardFlowState) =>
   after.rejections.length > before.rejections.length ? after.rejections.at(-1)!.reason : undefined;
 const unitOf = (state: WardFlowState) => state.units.find((unit) => unit.id === WARD)!;
-const board = (state: WardFlowState) => bedStates(unitOf(state), state.admissions, state.bedReleases, state.leaveBeds);
+const board = (state: WardFlowState) =>
+  bedStates(unitOf(state), state.admissions, state.bedReleases, state.leaveBeds, []);
 const reload = (state: WardFlowState) => {
   const stored = JSON.parse(JSON.stringify(state)) as WardFlowState;
   expect(isValidStoredWardFlowState(stored), "the changed state is accepted on reload").toBe(true);

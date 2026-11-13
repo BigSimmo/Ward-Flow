@@ -92,7 +92,7 @@ function computeForecastParts(
     levers: forecastLevers(units, bedReleases, admissions, now),
     blockers: blockerGroups(units, admissions),
     notCounted: notYetCounted(units, leaveBeds, repatriations, admissions),
-    risk: edAccessRisk(movements, units, bedReleases, admissions, now, edAccessTargetMinutes),
+    risk: edAccessRisk(movements, units, bedReleases, admissions, now, edAccessTargetMinutes, referrals),
   };
 }
 

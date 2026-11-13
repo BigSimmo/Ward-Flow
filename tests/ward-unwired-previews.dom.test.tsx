@@ -106,8 +106,8 @@ describe.each(BUILDS)("a %s build", (build, shown) => {
     const card = within(within(drawer).getByTestId(`ward-task-${item.id}`).closest("li")!);
     fireEvent.click(card.getByRole("button", { name: "Contact" }));
     const contacts = within(card.getByTestId(`ward-task-contacts-${item.id}`));
-    expect(contacts.getAllByText(/^08 0000 \d{4}$/u).length).toBeGreaterThan(0);
-    expect(contacts.queryAllByRole("button", { name: /^Call .*, 08 0000 \d{4}$/u }).length > 0).toBe(shown);
+    expect(contacts.getAllByText(/^08 5550 \d{4}$/u).length).toBeGreaterThan(0);
+    expect(contacts.queryAllByRole("button", { name: /^Call .*, 08 5550 \d{4}$/u }).length > 0).toBe(shown);
   });
 
   it("records the ED arrival checklist's search and chart in every build, never Not wired", () => {
@@ -183,7 +183,7 @@ describe.each(BUILDS)("deleted unwired controls, a %s build", (build) => {
       </WardFlowClockContext.Provider>,
     );
     const panel = within(screen.getByTestId("ward-on-call-role-panel"));
-    expect(panel.queryAllByRole("button", { name: /^Call 08 0000/u })).toHaveLength(0);
+    expect(panel.queryAllByRole("button", { name: /^Call 08 5550/u })).toHaveLength(0);
     expect(panel.getAllByRole("button", { name: /^Copy .*number$/u }).length).toBeGreaterThan(0);
   });
 

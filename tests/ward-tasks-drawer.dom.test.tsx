@@ -308,7 +308,7 @@ describe("task workspace state filters and actions", () => {
     fireEvent.click(within(card).getByRole("button", { name: "Contact" }));
     const contacts = within(card).getByTestId(`ward-task-contacts-${item.id}`);
     expect(within(contacts).getByText("ED mental health liaison")).toBeInTheDocument();
-    expect(within(contacts).getAllByText(/^08 0000 \d{4}$/u).length).toBeGreaterThan(0);
+    expect(within(contacts).getAllByText(/^08 5550 \d{4}$/u).length).toBeGreaterThan(0);
     fireEvent.click(within(contacts).getByRole("button", { name: "Open patient contacts" }));
     expect(onSelectMovement).toHaveBeenLastCalledWith(item.movementId, "contact");
     fireEvent.click(within(card).getByRole("button", { name: "Escalate" }));
@@ -318,7 +318,7 @@ describe("task workspace state filters and actions", () => {
       expect(within(card).getByRole("button", { name: pick })).toBeTruthy();
       expect(within(escalationList).getByText(pick)).toBeTruthy();
     }
-    expect(within(escalationList).getAllByText(/^08 0000 \d{4}$/u).length).toBeGreaterThan(0);
+    expect(within(escalationList).getAllByText(/^08 5550 \d{4}$/u).length).toBeGreaterThan(0);
     fireEvent.change(within(card).getByRole("textbox"), { target: { value: "Duty coordinator" } });
     fireEvent.click(within(card).getByRole("button", { name: "Record escalation" }));
     expect(dispatch).toHaveBeenCalledWith(

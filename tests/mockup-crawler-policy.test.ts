@@ -23,6 +23,10 @@ describe("public mockup crawler policy", () => {
       "/ward-flow/:path*",
       "/ward-flow-sign-in",
       "/:file([^/]+\\.html)",
+      // A15-03 (13 Nov 2026): the manifest, install screenshots and app images skip the door.
+      "/manifest.webmanifest",
+      "/screenshots/:path*",
+      "/icons/:path*",
     ]);
     for (const rule of robotsRules)
       expect(rule.headers).toContainEqual({ key: "X-Robots-Tag", value: "noindex, nofollow" });

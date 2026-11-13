@@ -1,7 +1,7 @@
 import { dayOf, type Instant } from "@/components/ward-management/ward-clock";
-import { bedStates } from "@/components/ward-management/ward-bed-states";
+import { bedStates, networkNamedHolds, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
+import type { BedRelease, LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 
 /**
  * Leave, shared by the Tools sheet's "Leave due" and the Leave page (feature 23, Josh 9 Nov 2026).
@@ -26,8 +26,10 @@ export function leaveBedLabels(
   admissions: readonly Admission[],
   bedReleases: BedRelease[],
   leaveBeds: readonly LeaveBed[],
+  /** The named holds (`networkNamedHolds`), so Ready here is the board's and Capacity's (3.4). */
+  namedHolds: readonly ReservationReferral[],
 ): Map<string, string> {
-  const ready = bedStates(unit, admissions, bedReleases, leaveBeds).ready;
+  const ready = bedStates(unit, admissions, bedReleases, leaveBeds, namedHolds).ready;
   const labels = new Map<string, string>();
   unitLeave.forEach((leave, index) => {
     const recorded = admissions.find((admission) => admission.id === leave.admissionId)?.bedNumber;
@@ -79,6 +81,8 @@ export function leaveTrackerRows(
     units: readonly Unit[];
     admissions: readonly Admission[];
     bedReleases: BedRelease[];
+    movements: readonly Movement[];
+    referrals: readonly Referral[];
   },
   now: Instant,
   includeUnit: (unitId: string) => boolean,
@@ -89,7 +93,14 @@ export function leaveTrackerRows(
     if (!includeUnit(unit.id)) continue;
     const unitLeave = input.leaveBeds.filter((leave) => leave.unitId === unit.id);
     if (unitLeave.length === 0) continue;
-    const labels = leaveBedLabels(unit, unitLeave, input.admissions, input.bedReleases, input.leaveBeds);
+    const labels = leaveBedLabels(
+      unit,
+      unitLeave,
+      input.admissions,
+      input.bedReleases,
+      input.leaveBeds,
+      networkNamedHolds(input.movements, input.referrals),
+    );
     for (const leave of unitLeave) {
       rows.push({
         id: leave.id,

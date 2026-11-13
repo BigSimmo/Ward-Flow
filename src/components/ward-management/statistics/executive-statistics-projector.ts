@@ -105,7 +105,7 @@ export function projectExecutiveNetworkStatistics(
       ...scoped.referrals,
     ]);
     // Occupancy stays hold-free ("beds taken by a stay"), as every other Statistics screen counts it.
-    const unheld = bedStates(unit, scoped.admissions, scoped.bedReleases, scoped.leaveBeds);
+    const unheld = bedStates(unit, scoped.admissions, scoped.bedReleases, scoped.leaveBeds, []);
     return {
       id: unit.id,
       name: unit.name,

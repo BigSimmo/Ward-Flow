@@ -32,7 +32,11 @@ describe("referralFit", () => {
     );
     expect(fit.patientPassed).toBe(7);
     expect(fit.patientTotal).toBe(7);
-    expect(patientFitLine(fit)).toBe("Fits this ward. All 7 patient checks pass.");
+    expect(patientFitLine(fit)).toBe(
+      "Passes the 7 bed checks. Recorded risks, escort need and medical clearance are not part of these checks.",
+    );
+    // Root-cause 6.1 guard: never claim a full fit the check did not make.
+    expect(patientFitLine(fit)).not.toMatch(/fits this ward/iu);
     expect(wardStateLine(fit, now, unit)).toBe("Your bed count is 5 h old and shows no free bed.");
     expect(fit.wardIssues.map((issue) => issue.gate)).toEqual(["capacity_freshness", "allocatable_bed"]);
   });

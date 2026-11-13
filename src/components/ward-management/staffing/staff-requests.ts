@@ -171,6 +171,16 @@ export function reduceStaffRequest(state: WardFlowState, event: StaffRequestEven
       !reasons.every((reason) => STAFF_REQUEST_REASONS.includes(reason))
     )
       return reject(state, event, "REQUEST_WARD_STAFF needs one or more reasons chosen from the list");
+    // #1633, #1636 (D-158): a "This shift" choice whose shift has already ended is refused before
+    // chosenShiftStart can swap it for the new shift, however long the save took to arrive.
+    if (
+      event.shift === "this_shift" &&
+      typeof event.shiftStartAt === "number" &&
+      Number.isFinite(event.shiftStartAt) &&
+      event.shiftStartAt < staffRequestShiftStart("this_shift", event.now) &&
+      event.now >= staffRequestEndsAt({ shiftStartAt: event.shiftStartAt })
+    )
+      return reject(state, event, "This shift has already ended. Choose this shift or next shift again");
     const shiftStartAt = chosenShiftStart(event);
     // D-158: a "This shift" pressed just before the shift ends, and saved just after, would
     // otherwise keep the ended shift — accepted, immediately not open, and unable to be closed.

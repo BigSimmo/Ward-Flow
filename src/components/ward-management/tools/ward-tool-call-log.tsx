@@ -21,7 +21,7 @@ import {
   foldLimit,
 } from "@/components/wf";
 import { addCallLog, removeCallLog, useCallLog, type CallOutcome } from "./ward-tool-call-log-store";
-import { addReminder, wardNames } from "./ward-tool-remind-store";
+import { addReminder, DEVICE_ONLY_LABEL, wardNames } from "./ward-tool-remind-store";
 import remind from "./ward-tool-remind-me.module.css";
 import styles from "./ward-tool-call-log.module.css";
 
@@ -205,6 +205,9 @@ export function ToolCallLog() {
         <h4 className={remind.label} id="call-log-yours">
           Your calls
         </h4>
+        <p className={remind.note} data-testid="call-log-device-only">
+          {DEVICE_ONLY_LABEL}. Not part of the shared record.
+        </p>
         {log.length === 0 ? (
           <p className={remind.quiet}>None logged.</p>
         ) : (
@@ -233,8 +236,7 @@ export function ToolCallLog() {
           </ul>
         )}
         <p className={remind.note}>
-          Saved in this browser for your own follow-up. It does not change the ward&apos;s bed figures; only the ward
-          confirms those.
+          For your own follow-up. It does not change the ward&apos;s bed figures; only the ward confirms those.
         </p>
       </section>
     </div>

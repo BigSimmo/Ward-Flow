@@ -7,6 +7,7 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { Dialog, DisabledReason } from "@/components/wf";
 import { MOVEMENT_STAGES, type Movement } from "@/components/ward-management/ward-model";
 import { edShortName } from "@/components/ward-management/ward-sites";
+import { currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
 import { movementReferralLink, transportNeedState } from "@/components/ward-management/ward-derivations";
 import { canSetArrivalPlan } from "@/components/ward-management/referrals/arrival-time-modal";
 import type { EdBoardRowModel } from "./ed-screen-board-row";
@@ -283,7 +284,7 @@ function edUnavailableLines(row: EdBoardRowModel, ctx: EdScreenContext) {
       waitsOnExam && !examBlocked && (ctx.boardTable || row.primaryAction !== "exam") ? recordExam : undefined,
       waitsOnExam
         ? {
-            why: `${movement.legalForm ? `On Form ${movement.legalForm.code}` : `Recorded as ${movement.legalStatus.toLowerCase()}`}, so a community referral needs the outcome first.`,
+            why: `${currentLegalPosition(movement).form ? `On ${currentLegalPosition(movement).formWords}` : `Recorded as ${movement.legalStatus.toLowerCase()}`}, so a community referral needs the outcome first.`,
             next: `ED clinician, ${edName}`,
           }
         : undefined,

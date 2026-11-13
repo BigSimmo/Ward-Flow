@@ -15,13 +15,14 @@ import { calendarDateOf, perthCalendarDay, perthClockTime } from "@/components/w
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WARD_TRIAGE_NEW_HREF } from "@/components/ward-management/ward-nav";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
+import { SIGNED_IN_COORDINATOR_NAME } from "@/components/ward-management/ward-staff-names-seed";
 
 import { triageHrefFor } from "./triage-href";
 import { LEGAL, REVIEW, TIER_LONG, triagesFor, type TriageSignedRecord } from "./triage-record";
 import styles from "./patient-triage-card.module.css";
 
 /** The signed-in synthetic clinician who signs, as the form names them (`SIGNED_IN`). */
-const REVIEWER = "Dr S. Chen";
+const REVIEWER = SIGNED_IN_COORDINATOR_NAME;
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
 const LEGAL_NAME: Readonly<Record<string, string>> = Object.fromEntries(LEGAL);
 const REVIEW_NAME: Readonly<Record<string, string>> = Object.fromEntries(REVIEW);

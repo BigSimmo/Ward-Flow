@@ -1,5 +1,7 @@
 import type { Movement, Referral } from "../ward-model";
 import { encodeRecordAddress } from "../shell/ward-record-address";
+import type { EdJourneyState } from "../ward-ed-wait-steps";
+import { stageCopy } from "../ward-stage-copy";
 
 /**
  * The ward referral still waiting on an answer for this person, if any: the newest referral for
@@ -45,18 +47,57 @@ export function referredToLabel(unitIds: readonly string[], unitName: (unitId: s
  * accepted or held; `undefined` otherwise, leaving the board's usual order.
  */
 export function edBedSearchStep(
-  movement: Pick<Movement, "examination" | "edOutcome" | "closure" | "acceptedUnitId" | "referredUnitIds" | "stage">,
+  movement: Pick<
+    Movement,
+    "examination" | "edOutcome" | "closure" | "acceptedUnitId" | "referredUnitIds" | "stage" | "transport"
+  >,
   hasOpenWardReferral: boolean,
 ): "refer" | "underway" | undefined {
   if (movement.examination?.outcome !== "inpatient_order") return undefined;
-  if (movement.edOutcome !== undefined || movement.closure) return undefined;
-  if (
-    hasOpenWardReferral ||
-    movement.acceptedUnitId !== undefined ||
-    movement.referredUnitIds.length > 0 ||
-    movement.stage === "pulled"
-  ) {
-    return "underway";
+  const journey = edJourneyState(movement, hasOpenWardReferral);
+  if (journey === "closed" || journey === "left") return undefined;
+  return journey === "not_asked" ? "refer" : "underway";
+}
+
+/**
+ * 3.1 (K6, approved 13 Nov 2026): where this person's journey stands, the one reading both the row's
+ * "Waiting on a ward" (`edBedSearchStep`) and the ED wait step (`edWaitStep`'s second input) take,
+ * so the step never says "Ask wards" beside "Accepted". It reads only what is recorded.
+ */
+export function edJourneyState(
+  movement: Pick<Movement, "edOutcome" | "closure" | "acceptedUnitId" | "referredUnitIds" | "stage" | "transport">,
+  hasOpenWardReferral: boolean,
+): EdJourneyState {
+  if (movement.closure) return "closed";
+  if (movement.edOutcome !== undefined) return "left";
+  if (movement.transport !== undefined && movement.transport.cancelledAt === undefined) return "transport_booked";
+  if (movement.stage === "pulled" || movement.stage === "handover_ready" || movement.stage === "moving")
+    return "pulled";
+  if (movement.acceptedUnitId !== undefined) return "accepted";
+  if (hasOpenWardReferral || movement.referredUnitIds.length > 0) return "asked";
+  return "not_asked";
+}
+
+/**
+ * The journey's neutral words, shown in place of a wait step's suggested next step once that step's
+ * action is recorded. Each is wording the ED screens already use: the row's "Withdrawn", "Left the
+ * department" and "Waiting on a ward", the timeline's "Transport booked", and the stage names.
+ */
+export function edJourneyWords(journey: EdJourneyState): string | undefined {
+  switch (journey) {
+    case "closed":
+      return "Withdrawn";
+    case "left":
+      return "Left the department";
+    case "transport_booked":
+      return "Transport booked";
+    case "pulled":
+      return stageCopy.pulled.label;
+    case "accepted":
+      return stageCopy.accepted_awaiting_bed.label;
+    case "asked":
+      return "Waiting on a ward";
+    case "not_asked":
+      return undefined;
   }
-  return "refer";
 }

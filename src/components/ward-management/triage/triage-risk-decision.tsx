@@ -108,6 +108,7 @@ export function DecisionBody({ form }: { form: FormApi }) {
             <Icon icon={Clock} size={14} />
             <span>
               See by <b>{due.when}</b>.{" "}
+              {due.unsigned ? <b data-testid="triage-see-by-unsigned">Window not signed. </b> : null}
               {due.when === "Now"
                 ? "Immediate response."
                 : "Counted from the reviewed time with this tier's window. Shown on the banner too."}

@@ -8,7 +8,7 @@ A ward and bed-coordination prototype for mental health services: referrals, pat
 
 **All patient data is synthetic. This is a development prototype, not an approved system for real patient care.** Never enter real patient information.
 
-[Open the hosted prototype](https://ward-flow-production.up.railway.app/ward-flow).
+[Open the hosted prototype](https://ward-flow-production.up.railway.app/ward-flow). It asks for a demo code.
 
 ## Quick start
 

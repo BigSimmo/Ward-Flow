@@ -32,13 +32,16 @@ export const ON_THE_WARD_NOUN = "On the ward";
  *
  * ⚠️ Pass the admissions. Without them a live pull (which leaves its bed physically empty) is not
  * counted; with an empty list this reduces exactly to the capacity model's occupied figure.
+ *
+ * Named holds are left out here on purpose (the explicit `[]` to `bedStates`): this is the beds
+ * taken by a stay, as every occupancy percentage reads it. Ready is never read from here.
  */
 export function wardBedsInUse(
   unit: Unit,
   admissions: readonly Admission[],
   bedReleases: readonly BedRelease[],
 ): number {
-  const states = bedStates(unit, admissions, [...bedReleases], []);
+  const states = bedStates(unit, admissions, [...bedReleases], [], []);
   return states.occupied + states.pulled;
 }
 
@@ -51,7 +54,7 @@ export function wardOccupiedBeds(
   admissions: readonly Admission[],
   bedReleases: readonly BedRelease[],
 ): number {
-  return bedStates(unit, admissions, [...bedReleases], []).occupied;
+  return bedStates(unit, admissions, [...bedReleases], [], []).occupied;
 }
 
 /** Occupied, Pulled and In use from one `bedStates` call so the three figures cannot drift (WF-16). */
@@ -60,7 +63,7 @@ export function wardBedUseFigures(
   admissions: readonly Admission[],
   bedReleases: readonly BedRelease[],
 ): { occupied: number; pulled: number; inUse: number } {
-  const states = bedStates(unit, admissions, [...bedReleases], []);
+  const states = bedStates(unit, admissions, [...bedReleases], [], []);
   return {
     occupied: states.occupied,
     pulled: states.pulled,

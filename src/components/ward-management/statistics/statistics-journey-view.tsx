@@ -408,7 +408,7 @@ function OperationalJourneyView({
         occupied: 0,
         inUse: 0,
       };
-      const unheld = bedStates(unit, admissions, bedReleases, leaveBeds);
+      const unheld = bedStates(unit, admissions, bedReleases, leaveBeds, []);
       row.inUse += unheld.occupied + unheld.pulled;
       row.wards += 1;
       row.beds += unit.beds;

@@ -29,6 +29,8 @@ export type ConfirmRequest = {
   confirmLabel: string;
   /** The safe choice. "Keep editing" by default. */
   cancelLabel?: string;
+  /** The confirm button's tone. "danger" by default; "default" when confirming loses nothing. */
+  confirmTone?: "default" | "danger";
 };
 
 type Pending = ConfirmRequest & { resolve: (confirmed: boolean) => void };
@@ -138,7 +140,11 @@ export function ConfirmHost({
       // Escape and a press outside keep the work. No close cross: it would be a second "keep" answer.
       closable={false}
       secondary={[{ label: request?.cancelLabel ?? "Keep editing", onAction: () => answer(false), autoFocus: true }]}
-      primary={{ label: request?.confirmLabel ?? "", onAction: () => answer(true), tone: "danger" }}
+      primary={{
+        label: request?.confirmLabel ?? "",
+        onAction: () => answer(true),
+        tone: request?.confirmTone ?? "danger",
+      }}
       data-testid="wf-confirm-dialog"
     />
   );

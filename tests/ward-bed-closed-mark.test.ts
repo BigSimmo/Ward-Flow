@@ -53,7 +53,7 @@ const setBedClosed = (state: WardFlowState, unitId: string, bedNumber: number, c
 
 const unitOf = (state: WardFlowState, unitId: string) => state.units.find((unit) => unit.id === unitId)!;
 const readyOf = (state: WardFlowState, unitId: string) =>
-  bedStates(unitOf(state, unitId), state.admissions, state.bedReleases, state.leaveBeds).ready;
+  bedStates(unitOf(state, unitId), state.admissions, state.bedReleases, state.leaveBeds, []).ready;
 
 describe("SET_BED_CLOSED", () => {
   it("closes the exact empty bed, refuses an occupied one, and reopens it", () => {

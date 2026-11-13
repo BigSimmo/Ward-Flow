@@ -38,6 +38,7 @@ import {
 import { MINUTES_PER_DAY, formatInstant, wallClockNow } from "@/components/ward-management/ward-clock";
 import { derivedBedReleases } from "@/components/ward-management/ward-discharge-dates";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { wardSites } from "@/components/ward-management/ward-sites";
 
@@ -660,7 +661,9 @@ describe("what the sheet may never show", () => {
   it("states the headline figure once on the page, in the heading, and not again on the sheet", () => {
     renderWardBoard(UNIT_ID);
     const releases = derivedBedReleases([...wardAdmissions], WARD_ADMISSIONS_ANCHOR);
-    const unit = allUnits.find((candidate) => candidate.id === UNIT_ID) as Unit;
+    // The seeded unit, not the bare site list: the board renders the seed, and A15-27 (Josh,
+    // 13 Nov 2026) put the demo's one closed bed on this ward (`ward-loop-checks-demo.ts`).
+    const unit = seedWardFlowState().units.find((candidate) => candidate.id === UNIT_ID) as Unit;
     const available = headlineAvailable(unit, wardAdmissions, releases, [], WARD_ADMISSIONS_ANCHOR);
 
     // The heading block above the sheet carries it, from `headlineAvailable`.
@@ -702,28 +705,28 @@ describe("the day lead is an ordinal, never the duration", () => {
       0,
     );
 
-    expect(stayDayNumber(daysInBed(justArrived, WARD_ADMISSIONS_ANCHOR))).toBe(1);
+    expect(stayDayNumber(justArrived, WARD_ADMISSIONS_ANCHOR)).toBe(1);
   });
 
   it("numbers every real stay in the fixture one higher than its duration, and never zero", () => {
-    const durations = wardAdmissions
+    // Seeded arrivals sit earlier in the day than the 10:42 anchor, so at the anchor the Perth
+    // calendar day (fix 2.4) is still exactly one more than the whole 24-hour periods.
+    const stays = wardAdmissions
       .filter(bedIsOccupied)
-      .map((admission) => daysInBed(admission, WARD_ADMISSIONS_ANCHOR))
-      .filter((days): days is number => days !== null);
+      .map((admission) => ({ admission, days: daysInBed(admission, WARD_ADMISSIONS_ANCHOR) }))
+      .filter((stay): stay is { admission: (typeof wardAdmissions)[number]; days: number } => stay.days !== null);
     // Floor the population walked, not the failures found.
-    expect(durations.length, "no occupied beds walked — this guard would pass by looking at nothing").toBeGreaterThan(
-      50,
-    );
-    for (const days of durations) {
-      expect(stayDayNumber(days)).toBe(days + 1);
-      expect(stayDayNumber(days)).not.toBe(0);
+    expect(stays.length, "no occupied beds walked — this guard would pass by looking at nothing").toBeGreaterThan(50);
+    for (const { admission, days } of stays) {
+      expect(stayDayNumber(admission, WARD_ADMISSIONS_ANCHOR)).toBe(days + 1);
+      expect(stayDayNumber(admission, WARD_ADMISSIONS_ANCHOR)).not.toBe(0);
     }
   });
 
   it("has no day number at all when there is no stay, rather than Day 1", () => {
     // A bed given away to somebody who has not arrived has no day of stay. Numbering it Day 1 would
     // present a person as having arrived somewhere they have not reached.
-    expect(stayDayNumber(null)).toBeNull();
+    expect(stayDayNumber({ arrivedAt: null }, WARD_ADMISSIONS_ANCHOR)).toBeNull();
   });
 });
 
@@ -767,7 +770,7 @@ describe("the sheet's printed day number is the ordinal, checked against the see
         `${admission}: the sheet printed "Day ${printed[1]}" for a stay of ${duration} whole days. ` +
           "The lead is an ordinal — arrival day is Day 1 — so it must be one greater than the duration. " +
           'Printing the duration itself is the defect that put "Day 0" on the sheet.',
-      ).toBe(stayDayNumber(duration));
+      ).toBe(stayDayNumber(byKey.get(admission)!, WARD_ADMISSIONS_ANCHOR));
       checked += 1;
     }
 

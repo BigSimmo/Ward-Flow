@@ -25,7 +25,28 @@ export type EdWaitStep = {
   nextStep: string;
   /** The same step in two or three words, for the narrow wait column. */
   nextStepShort: string;
+  /**
+   * 3.1 (K6, Josh 13 Nov 2026): the step's own action is already recorded on the journey, so screens
+   * show the journey's neutral words instead of `nextStep` and offer no call for it. Step 1 ("Ask
+   * wards") is done once a ward was asked or accepted, a bed pulled, transport booked, or the stay
+   * closed. Steps 2 to 4 are calls; only a closed stay or a recorded ED outcome ends them. Always
+   * false when the caller passes no journey.
+   */
+  actionDone: boolean;
 };
+
+/**
+ * Where the person's ED journey stands, as `edJourneyState` (`ed/ed-bed-search-step.ts`) reads it:
+ * the same facts the row's "Waiting on a ward" comes from, so the step and the row cannot disagree.
+ */
+export type EdJourneyState = "closed" | "left" | "transport_booked" | "pulled" | "accepted" | "asked" | "not_asked";
+
+/** Whether this journey state already records the step's own action (the thresholds are untouched). */
+function stepActionDone(step: EdWaitStep["step"], journey: EdJourneyState | undefined): boolean {
+  if (journey === undefined || journey === "not_asked") return false;
+  if (journey === "closed" || journey === "left") return true;
+  return step === 1;
+}
 
 /**
  * Suggested next step per wait step. Josh signed off these defaults on 9 Nov 2026 (D-108). They are prototype wording, not WA Health
@@ -57,8 +78,12 @@ function hoursWords(minutes: number): string {
   return `over ${Number.isInteger(hours) ? hours : hours.toFixed(1)} ${hours === 1 ? "hour" : "hours"}`;
 }
 
-/** The wait step for a time in the department, or `undefined` below the first threshold. */
-export function edWaitStep(minutesInDepartment: number): EdWaitStep | undefined {
+/**
+ * The wait step for a time in the department, or `undefined` below the first threshold. The step
+ * itself comes from the minutes alone; `journey`, the second input (3.1), only says whether the
+ * step's own action is already recorded (`actionDone`). Screens that show `nextStep` or a call pass it.
+ */
+export function edWaitStep(minutesInDepartment: number, journey?: EdJourneyState): EdWaitStep | undefined {
   if (!Number.isFinite(minutesInDepartment)) return undefined;
   const match = STEP_THRESHOLDS.find((threshold) => minutesInDepartment >= threshold.fromMinutes);
   if (!match) return undefined;
@@ -67,5 +92,6 @@ export function edWaitStep(minutesInDepartment: number): EdWaitStep | undefined 
     label: `Step ${match.step}, ${hoursWords(match.fromMinutes)}`,
     nextStep: ED_WAIT_NEXT_STEPS[match.step],
     nextStepShort: ED_WAIT_NEXT_STEPS_SHORT[match.step],
+    actionDone: stepActionDone(match.step, journey),
   };
 }

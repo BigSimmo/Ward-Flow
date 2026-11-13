@@ -43,7 +43,7 @@ const holding: Movement = {
   allocatedBed: undefined,
   closure: undefined,
 };
-const before = bedStates(unit, [], [], []);
+const before = bedStates(unit, [], [], [], []);
 const held = bedStates(unit, [], [], [], [holding]);
 
 describe("named reservations on Capacity (WF-FIG-017)", () => {

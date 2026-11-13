@@ -517,7 +517,7 @@ export function WardHomeTab({
     // The occupant's name is shown on the tile, so a screen reader hears it too.
     const spokenState = [
       stateWord,
-      days ? `day ${bed.stayDays}` : "",
+      days ? `${bed.stayDays} days in bed` : "",
       // A tile showing the short CLD chip is read out in full; otherwise the CLD state is added.
       bed.criteriaLedChip && note === bed.criteriaLedChip.label ? bed.criteriaLedChip.phrase : note,
       bed.criteriaLedChip && note !== bed.criteriaLedChip.label ? bed.criteriaLedChip.phrase : "",

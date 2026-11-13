@@ -63,6 +63,10 @@ export function PlannedList({
         <ol className={styles.plainList} aria-label="Planned for the rest of the shift">
           {shown.map((row, index) => (
             <Fragment key={row.id}>
+              {row.past && index === 0 ? <li className={styles.afterShift}>Past planned time · not done yet</li> : null}
+              {!row.past && !row.later && shown[index - 1]?.past ? (
+                <li className={styles.afterShift}>Rest of your shift</li>
+              ) : null}
               {row.later && !shown[index - 1]?.later ? (
                 <li className={styles.afterShift}>After your shift · later today</li>
               ) : null}

@@ -134,7 +134,7 @@ function collectedWithRevokedExamination(state: WardFlowState) {
 describe("stopping a collected transport — WLQ-38 (owner, 2026-09-15)", () => {
   describe.each(["ed", "coordinator"] as const)("%s stops a collected journey", (role) => {
     it(
-      'stops with "The examination was revoked": the bed stays held (owner answer 8), ' +
+      'stops with "The examination made no order": the bed stays held (owner answer 8), ' +
         "movement closed, the WLQ-4 blocker replaced by the stop-hold blocker, ward notified, " +
         "and arrival refused afterwards",
       () => {
@@ -148,7 +148,7 @@ describe("stopping a collected transport — WLQ-38 (owner, 2026-09-15)", () => 
           role,
           now: NOW + 8,
           movementId,
-          reason: "The examination was revoked",
+          reason: "The examination made no order",
           whereabouts: "At another emergency department",
         });
 
@@ -164,7 +164,7 @@ describe("stopping a collected transport — WLQ-38 (owner, 2026-09-15)", () => 
         expect(after.admissionId).toBeDefined();
         // Movement closed.
         expect(after.closure?.outcome).toBe("did_not_proceed");
-        expect(after.closure?.reason).toBe("The examination was revoked");
+        expect(after.closure?.reason).toBe("The examination made no order");
         expect(after.closure?.at).toBe(NOW + 8);
         // The WLQ-4 blocker is replaced by the newer, more specific "stop held the bed" sentence —
         // an ACTIVE blocker, not "None — …", because a release decision is still outstanding.
@@ -175,7 +175,7 @@ describe("stopping a collected transport — WLQ-38 (owner, 2026-09-15)", () => 
         // also cancelled.
         expect(after.transport?.stoppedAt).toBe(NOW + 8);
         expect(after.transport?.stoppedBy).toBe(role);
-        expect(after.transport?.stopReason).toBe("The examination was revoked");
+        expect(after.transport?.stopReason).toBe("The examination made no order");
         expect(after.transport?.stoppedWhereabouts).toBe("At another emergency department");
         expect(after.transport?.cancelledAt).toBe(NOW + 8);
         // The receiving ward is notified.
@@ -190,7 +190,7 @@ describe("stopping a collected transport — WLQ-38 (owner, 2026-09-15)", () => 
         expect(officerNotice?.to).toEqual({ role: "officer" });
         expect(officerNotice?.about.movementId).toBe(movementId);
         expect(officerNotice?.sentence).toBe(
-          `Transport for ${movementId} was stopped (The examination was revoked). Where the patient is now: At another emergency department.`,
+          `Transport for ${movementId} was stopped (The examination made no order). Where the patient is now: At another emergency department.`,
         );
 
         // PATIENT_ARRIVED is refused afterwards — closure alone does this (TransportJob's own doc
@@ -214,7 +214,7 @@ describe("stopping a collected transport — WLQ-38 (owner, 2026-09-15)", () => 
       role: "ward",
       now: NOW + 8,
       movementId,
-      reason: "The examination was revoked",
+      reason: "The examination made no order",
       whereabouts: TRANSPORT_WHEREABOUTS[0],
     });
     expect(next.rejections.length).toBeGreaterThan(withBlocker.rejections.length);
@@ -303,7 +303,7 @@ describe("stopping a collected transport — WLQ-38 (owner, 2026-09-15)", () => 
       role: "ed",
       now: NOW + 8,
       movementId,
-      reason: "The examination was revoked",
+      reason: "The examination made no order",
       whereabouts: TRANSPORT_WHEREABOUTS[0],
     });
     expect(stopped.rejections.length).toBeGreaterThan(arrived.rejections.length);
@@ -317,7 +317,7 @@ describe("stopping a collected transport — WLQ-38 (owner, 2026-09-15)", () => 
       role: "ed",
       now: NOW,
       movementId: "MV-NOT-A-REAL-ONE",
-      reason: "The examination was revoked",
+      reason: "The examination made no order",
       whereabouts: TRANSPORT_WHEREABOUTS[0],
     });
     expect(next.rejections).toHaveLength(1);
@@ -334,7 +334,7 @@ describe("releasing a bed STOP_TRANSPORT left held — owner answer 8 (second ro
       role: "coordinator",
       now: NOW + 8,
       movementId,
-      reason: "The examination was revoked",
+      reason: "The examination made no order",
       whereabouts: TRANSPORT_WHEREABOUTS[0],
     });
     expect(stopped.rejections, "STOP_TRANSPORT was itself refused, so nothing below holds").toHaveLength(0);

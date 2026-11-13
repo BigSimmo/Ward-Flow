@@ -42,7 +42,7 @@ describe("audit 24-4: Handover held and header bed alerts read the shared bed st
         const label = `${scenario} seed ${seed} step ${step}`;
 
         const pulled = state.units.reduce(
-          (sum, unit) => sum + bedStates(unit, state.admissions, state.bedReleases, state.leaveBeds).pulled,
+          (sum, unit) => sum + bedStates(unit, state.admissions, state.bedReleases, state.leaveBeds, []).pulled,
           0,
         );
         const handoverHeld = state.units.reduce(
@@ -87,7 +87,9 @@ describe("audit 24-4: Handover held and header bed alerts read the shared bed st
     const state = seedWardFlowState("standard");
     for (const unit of state.units) {
       const ward = toHandoverWard(unit, state.admissions, nowFor(state, 0), state.bedReleases);
-      expect(ward.held, unit.name).toBe(bedStates(unit, state.admissions, state.bedReleases, state.leaveBeds).pulled);
+      expect(ward.held, unit.name).toBe(
+        bedStates(unit, state.admissions, state.bedReleases, state.leaveBeds, []).pulled,
+      );
     }
   });
 });

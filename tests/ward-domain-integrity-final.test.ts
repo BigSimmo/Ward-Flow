@@ -111,7 +111,7 @@ describe("WF-INV-01 coordinator transfer capacity", () => {
     const receiving = state.units.find((u) => u.id === target.id)!;
     expect(receiving.empty.value).toBe(remaining);
     expect(receiving.allocatable.value).toBe(reconfirm ? remaining : remaining - 1);
-    expect(bedStates(receiving, state.admissions, state.bedReleases, state.leaveBeds).ready).toBe(accepted ? 1 : 0);
+    expect(bedStates(receiving, state.admissions, state.bedReleases, state.leaveBeds, []).ready).toBe(accepted ? 1 : 0);
     const after = wardFlowReducer(state, care(state, "arrived"));
     if (accepted) {
       expect(after.rejections).toEqual(state.rejections);

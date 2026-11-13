@@ -14,6 +14,7 @@ import {
 } from "@/components/ward-management/ward-clock";
 import { SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
 import type { BedRelease } from "@/components/ward-management/ward-model";
+import { releasesExpectedToFree } from "@/components/ward-management/ward-releases-expected-to-free";
 
 /** Day shift end on the board clock, read from the one shift pattern (H-0759), as the sidebar countdown does. */
 export const DAY_SHIFT_END_MINUTE = SHIFT_PATTERN[0].endMinute;
@@ -51,13 +52,11 @@ export function shiftEndInstant(now: Instant): Instant {
 /**
  * This ward's discharges still to happen that are expected by the end of the current shift. The
  * one population behind the ward hero's "Ready by" figure, its bed filter and the Decisions
- * projection, so those numbers cannot drift apart.
+ * projection, so those numbers cannot drift apart. A16-05: the shared `releasesExpectedToFree`
+ * rule, as All wards and the meeting sheet count it, so a date already passed (overdue) is left out.
  */
 export function releasesDueByShiftEnd(bedReleases: readonly BedRelease[], unitId: string, now: Instant): BedRelease[] {
-  const shiftEnd = shiftEndInstant(now);
-  return bedReleases.filter(
-    (release) => release.unitId === unitId && release.state !== "discharged" && release.expectedAt <= shiftEnd,
-  );
+  return releasesExpectedToFree(bedReleases, now, shiftEndInstant(now), new Set([unitId]));
 }
 
 /**

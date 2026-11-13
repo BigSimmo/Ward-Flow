@@ -583,7 +583,7 @@ export const REFERRALS = [
       ["Midland discharge summary", "3 pages · Mar 2020 · this team"],
     ],
     contacts: [
-      ["Referrer", "Castell, Dr Mira", "GP · Midvale Family Practice", "08 5550 0144"],
+      ["Referrer", "Castell, Dr Mira", "GP · Midvale Family Practice", "08 5550 0544"],
       ["Carer", "Sallowfield, Ellen", "Daughter · visits twice a week", "0491 570 158"],
     ],
     checks: [
@@ -647,7 +647,7 @@ export const REFERRALS = [
       ["Medical clearance and bloods", "1 page · Sun 1 Nov"],
     ],
     contacts: [
-      ["Referrer", "Ito, Dr Sam", "ED registrar · RPH", "08 5550 0230"],
+      ["Referrer", "Ito, Dr Sam", "ED registrar · RPH", "08 5550 0530"],
       ["Carer", "Quillon, Arash", "Husband · Dari speaker", "0491 570 157"],
     ],
     checks: [
@@ -706,7 +706,7 @@ export const REFERRALS = [
       ["Midland closure summary", "2 pages · Jun 2023 · this team"],
     ],
     contacts: [
-      ["Referrer", "Lindqvist, Dr Pia", "Consultant · Moodjar", "08 5550 0371"],
+      ["Referrer", "Lindqvist, Dr Pia", "Consultant · Moodjar", "08 5550 0571"],
       ["Carer", "Rendlesham, Hugo", "Brother · lives with him", "0491 570 159"],
     ],
     checks: [
@@ -820,7 +820,7 @@ export const EXTRA: Record<string, ReferralExtra> = {
     later: "Allocate later",
     people: [
       ["Client", "Quillon, Hattie", "Mobile · Dari speaker", "0491 570 156"],
-      ["GP", "Farouk, Dr Amina", "Midvale Medical Centre", "08 5550 0412"],
+      ["GP", "Farouk, Dr Amina", "Midvale Medical Centre", "08 5550 0512"],
     ],
   },
   r3: {
@@ -851,7 +851,7 @@ export const EXTRA: Record<string, ReferralExtra> = {
     ],
     later: "Allocate later",
     people: [
-      ["Client", "Rendlesham, Otto", "On Moodjar until Thu 5 Nov", "08 5550 0370"],
+      ["Client", "Rendlesham, Otto", "On Moodjar until Thu 5 Nov", "08 5550 0570"],
       ["GP", "Whitcombe, Dr Jon", "Swan View Medical", "08 5550 0588"],
     ],
   },

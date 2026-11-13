@@ -27,7 +27,7 @@ import { wardServiceOrder } from "@/components/ward-management/ward-derivations"
 import { allEmergencyDepartments, allUnits, NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
 import { HOME_REGIONS } from "@/components/ward-management/ward-model";
 
-const ENTRIES = hubEntries({ units: allUnits(), bedReleases: [], now: NOW_ANCHOR, sites: wardSites });
+const ENTRIES = hubEntries({ units: allUnits(), bedReleases: [], now: NOW_ANCHOR, sites: wardSites, namedHolds: [] });
 
 function entryById(id: string): HubEntry {
   const found = ENTRIES.find((entry) => entry.id === id);

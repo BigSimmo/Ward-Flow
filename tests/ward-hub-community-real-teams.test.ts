@@ -34,7 +34,7 @@ import { wardSites } from "@/components/ward-management/ward-sites";
  * This compares against the list itself.
  */
 function communityEntries() {
-  return hubEntries({ units: allUnits(), bedReleases, now: NOW_ANCHOR, sites: wardSites }).filter(
+  return hubEntries({ units: allUnits(), bedReleases, now: NOW_ANCHOR, sites: wardSites, namedHolds: [] }).filter(
     (entry) => entry.kind === "community",
   );
 }

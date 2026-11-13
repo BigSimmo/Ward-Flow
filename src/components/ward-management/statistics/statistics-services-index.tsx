@@ -7,7 +7,7 @@ import { BarList, Donut, HeroStat, PhoneListRow, SrOnly, StatusGlyph, cx, useIsP
 import { serviceStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
-import { bedStates } from "@/components/ward-management/ward-bed-states";
+import { bedStates, networkNamedHolds } from "@/components/ward-management/ward-bed-states";
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import { wardBedsInUse } from "@/components/ward-management/ward-occupancy";
 import { allEmergencyDepartments, siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
@@ -155,7 +155,8 @@ function OperationalServicesIndex() {
     const siteCodes = new Set(siteDirectory.filter((site) => site.service === service).map((site) => site.code));
     const serviceUnits = units.filter((unit) => siteCodes.has(unit.siteCode));
     const rows = serviceUnits.map((unit) => {
-      const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+      // A16-25 (3.4): a bed named for an incoming patient is held, as on Capacity.
+      const states = bedStates(unit, admissions, bedReleases, leaveBeds, networkNamedHolds(movements, referrals));
       // The one occupancy count (Occupied + Pulled, ward-occupancy.ts), as Overview and Wards read it.
       const inUse = wardBedsInUse(unit, admissions, bedReleases);
       return { unit, states, inUse, rate: unit.beds > 0 ? Math.round((inUse / unit.beds) * 100) : 0 };

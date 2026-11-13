@@ -1,7 +1,8 @@
 "use client";
 
-// The patient record dialog opened from a list name, a Needs you item or "Open patient". Split out
-// of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
+// The patient record dialog opened from a list name, a Needs you item or the person sheet's "Where
+// their time went". Split out of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
+// A12-04 (Josh, 13 Nov 2026): the sheet's "Open patient" now opens the patient page instead.
 import { useId } from "react";
 import { elapsedLabel } from "@/components/ward-management/ward-derivations";
 import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
@@ -21,11 +22,13 @@ import { EdObservationControl } from "./ed-observation-control";
 import { EdCrewTimesSlot } from "./ed-crew-times-slot";
 import type { EdScreenContext } from "./ed-screen-context";
 import { formExpiryLine, movementMedicalClearance, outstandingItem } from "./ed-screen-model";
+import { currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
 import { edStageLabel } from "./ed-referral-status";
 import { observationEditingToken } from "@/components/ward-management/ward-flow-observation-events";
 import styles from "./ed.module.css";
 
 export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext; selectedPatient: Movement }) {
+  const selectedPatientLegal = currentLegalPosition(selectedPatient);
   const {
     now,
     department,
@@ -99,11 +102,12 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
           <section className={styles.pxBlock}>
             <h3>Where they are up to</h3>
             <dl className={styles.pairs}>
-              {selectedPatient.legalForm && (
+              {/* 1.1 (K1): the one current legal position, as every other screen reads it. */}
+              {selectedPatientLegal.form && (
                 <div className={styles.pair}>
                   <dt>Recorded legal form</dt>
                   <dd>
-                    {selectedPatient.legalForm.code} · {formExpiryLine(selectedPatient.legalForm, now)}
+                    {selectedPatientLegal.form.code} · {formExpiryLine(selectedPatientLegal.form, now)}
                   </dd>
                 </div>
               )}

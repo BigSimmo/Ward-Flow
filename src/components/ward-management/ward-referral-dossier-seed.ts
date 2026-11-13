@@ -86,7 +86,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
         { label: "Breath alcohol", status: "done", detail: "0.000" },
         { label: "Observations", status: "done", detail: "Stable, within normal range" },
       ],
-      contact: "Dr Orla Linforth, ED registrar · 08 5550 0201",
+      contact: "Dr Orla Linforth, ED registrar · 08 5550 0701",
     },
     physicalHealth: [
       { label: "Conditions", detail: "AF, type 2 diabetes, CKD stage 3a, osteoarthritis" },
@@ -112,7 +112,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
     supports: [
       {
         label: "NOK",
-        detail: "Petra Winterthorn, daughter · 08 5550 0301. Knows about the referral and supports admission.",
+        detail: "Petra Winterthorn, daughter · 08 5550 0801. Knows about the referral and supports admission.",
       },
       { label: "Carer role", detail: "Main carer for his wife, who has dementia and is now in respite." },
     ],
@@ -120,7 +120,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
       name: "Dr Kalan Moongate",
       role: "Psychiatry liaison registrar",
       location: "Emergency department",
-      phone: "08 5550 0101",
+      phone: "08 5550 0601",
       email: "kalan.moongate@example.org",
     },
     arrival: [
@@ -157,7 +157,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
         { label: "Breath alcohol", status: "done", detail: "0.000" },
         { label: "Observations", status: "done", detail: "Stable" },
       ],
-      contact: "Dr Maren Glasswell, ED consultant · 08 5550 0202",
+      contact: "Dr Maren Glasswell, ED consultant · 08 5550 0702",
     },
     physicalHealth: [
       { label: "Conditions", detail: "Recent AKI, now resolved. Hypertension. Benign prostatic hyperplasia." },
@@ -178,14 +178,14 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
     workingDiagnosis: "Bipolar affective disorder, current episode manic without psychotic features.",
     history: "Three previous manic admissions, last in 2021. Stable on lithium until this year.",
     supports: [
-      { label: "NOK", detail: "Kalan Sallowfield, son · 08 5550 0302. Holds enduring power of attorney." },
+      { label: "NOK", detail: "Kalan Sallowfield, son · 08 5550 0802. Holds enduring power of attorney." },
       { label: "Living", detail: "Lives alone in a unit. Son visits daily." },
     ],
     referrer: {
       name: "Dr Junia Huntmire",
       role: "Psychiatry liaison registrar",
       location: "Emergency department",
-      phone: "08 5550 0102",
+      phone: "08 5550 0602",
       email: "junia.huntmire@example.org",
     },
     arrival: [
@@ -222,7 +222,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
         { label: "Breath alcohol", status: "done", detail: "0.000" },
         { label: "Observations", status: "done", detail: "Stable after fluids" },
       ],
-      contact: "Dr Nolan Inkstone, ED registrar · 08 5550 0203",
+      contact: "Dr Nolan Inkstone, ED registrar · 08 5550 0703",
     },
     physicalHealth: [
       { label: "Conditions", detail: "Asthma, mild" },
@@ -241,14 +241,14 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
     },
     workingDiagnosis: "First episode psychosis. Differential is cannabis induced psychotic disorder.",
     supports: [
-      { label: "NOK", detail: "Petra Loxbury, sister · 08 5550 0303. Lives interstate." },
+      { label: "NOK", detail: "Petra Loxbury, sister · 08 5550 0803. Lives interstate." },
       { label: "Living", detail: "Lives alone. Works part time in retail." },
     ],
     referrer: {
       name: "Dr Reya Jorrowfen",
       role: "Psychiatry liaison registrar",
       location: "Emergency department",
-      phone: "08 5550 0103",
+      phone: "08 5550 0603",
       email: "reya.jorrowfen@example.org",
     },
     arrival: [
@@ -290,7 +290,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
         { label: "Breath alcohol", status: "done", detail: "0.000" },
         { label: "Observations", status: "done", detail: "Stable" },
       ],
-      contact: "Dr Sabine Kellbourne, ED registrar · 08 5550 0204",
+      contact: "Dr Sabine Kellbourne, ED registrar · 08 5550 0704",
     },
     physicalHealth: [
       { label: "Conditions", detail: "Obesity, prediabetes" },
@@ -309,14 +309,14 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
     workingDiagnosis: "Schizophrenia, acute relapse with persecutory delusions.",
     history: "Diagnosed 2002. Four admissions, two to secure care. Under a community team on depot.",
     supports: [
-      { label: "NOK", detail: "Quinta Shalecroft, mother · 08 5550 0304. Asks that the brother is not given updates." },
+      { label: "NOK", detail: "Quinta Shalecroft, mother · 08 5550 0804. Asks that the brother is not given updates." },
       { label: "Living", detail: "Lives with his mother." },
     ],
     referrer: {
       name: "Dr Lark Pallowmere",
       role: "Consultant psychiatrist, liaison",
       location: "Emergency department",
-      phone: "08 5550 0104",
+      phone: "08 5550 0604",
       email: "lark.pallowmere@example.org",
     },
     arrival: [
@@ -353,7 +353,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
         { label: "Breath alcohol", status: "not_indicated" },
         { label: "Observations", status: "done", detail: "Stable" },
       ],
-      contact: "Dr Calder Moongate, medical registrar · 08 5550 0205",
+      contact: "Dr Calder Moongate, medical registrar · 08 5550 0705",
     },
     physicalHealth: [
       { label: "Conditions", detail: "Paracetamol hepatotoxicity, resolving" },
@@ -373,14 +373,14 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
     workingDiagnosis: "Adjustment disorder with depressed mood. Emotionally unstable personality traits.",
     history: "Two previous overdoses, no admissions.",
     supports: [
-      { label: "NOK", detail: "Fiora Flint, mother · 08 5550 0305. Lives in the South West." },
+      { label: "NOK", detail: "Fiora Flint, mother · 08 5550 0805. Lives in the South West." },
       { label: "Living", detail: "Was staying with her former partner. Now without accommodation." },
     ],
     referrer: {
       name: "Dr Tansy Quenfold",
       role: "Psychiatry liaison registrar",
       location: "Medical ward",
-      phone: "08 5550 0105",
+      phone: "08 5550 0605",
       email: "tansy.quenfold@example.org",
     },
     arrival: [
@@ -417,7 +417,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
         { label: "Breath alcohol", status: "done", detail: "0.000" },
         { label: "Observations", status: "done", detail: "Stable" },
       ],
-      contact: "Dr Bramwen Linforth, ED registrar · 08 5550 0206",
+      contact: "Dr Bramwen Linforth, ED registrar · 08 5550 0706",
     },
     physicalHealth: [
       { label: "Conditions", detail: "Nil significant" },
@@ -436,14 +436,14 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
     },
     workingDiagnosis: "Major depressive disorder, single episode, severe without psychotic features.",
     supports: [
-      { label: "NOK", detail: "Delia Kestrelworth, partner · 08 5550 0306" },
+      { label: "NOK", detail: "Delia Kestrelworth, partner · 08 5550 0806" },
       { label: "Living", detail: "Lives with her partner. No children." },
     ],
     referrer: {
       name: "Dr Eamon Ferrowmoor",
       role: "Psychiatry liaison registrar",
       location: "Emergency department",
-      phone: "08 5550 0106",
+      phone: "08 5550 0606",
       email: "eamon.ferrowmoor@example.org",
     },
     arrival: [
@@ -480,7 +480,7 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
         { label: "Breath alcohol", status: "done", detail: "0.000" },
         { label: "Observations", status: "done", detail: "Heart rate settling" },
       ],
-      contact: "Dr Orla Norrowfield, ED registrar · 08 5550 0207",
+      contact: "Dr Orla Norrowfield, ED registrar · 08 5550 0707",
     },
     physicalHealth: [
       { label: "Conditions", detail: "Hepatitis C, treated 2023" },
@@ -496,14 +496,14 @@ const SEEDED_DOSSIERS: Record<string, ReferralDossier> = {
     workingDiagnosis: "Methamphetamine induced psychotic disorder. Differential is schizophrenia.",
     history: "One previous admission for drug induced psychosis in 2024.",
     supports: [
-      { label: "NOK", detail: "Sabine Duskwell, mother · 08 5550 0307" },
+      { label: "NOK", detail: "Sabine Duskwell, mother · 08 5550 0807" },
       { label: "Living", detail: "Lives with his mother." },
     ],
     referrer: {
       name: "Dr Gareth Moongate",
       role: "Psychiatry liaison registrar",
       location: "Emergency department",
-      phone: "08 5550 0107",
+      phone: "08 5550 0607",
       email: "gareth.moongate@example.org",
     },
     arrival: [

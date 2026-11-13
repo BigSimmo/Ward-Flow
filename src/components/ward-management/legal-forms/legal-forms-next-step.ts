@@ -1,7 +1,7 @@
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
 
-import { formProgression, formProgressionPhrase } from "./legal-form-progression";
+import { formProgression, formProgressionPhrase, NEXT_FORM_TO_RECORD } from "./legal-form-progression";
 import { currentLegalDueAt, isLegalDeadlineBreached } from "./legal-forms-derivations";
 import { hasGap, isOwnedLegalFormCode, type RecordGap } from "./legal-forms-view";
 import { typedTimePhrase } from "./legal-time-as-typed";
@@ -36,11 +36,12 @@ export function nextStep(movement: Movement, now: Instant): NextStep {
       detail: "Record the next form here when it is made.",
     };
   }
+  // D-170 item 1: "Next form to record", with no form number; the form stays as recorded (A1).
   const progression = formProgression(movement);
   if (progression) {
     return {
       action: "next-form",
-      title: `Record Form ${progression.nextCode}`,
+      title: NEXT_FORM_TO_RECORD,
       detail: `${formProgressionPhrase(progression)}.`,
     };
   }

@@ -638,8 +638,8 @@ export function reduceRecordedFactEvent(
             { role: "ward", placeId: movement.acceptedUnitId },
             { movementId: movement.id, unitId: movement.acceptedUnitId },
             transportAlreadyCommitted
-              ? `The examination for ${movement.id} was revoked after transport was booked. The bed stays pulled until a person decides whether to release it.`
-              : `The examination for ${movement.id} was revoked. The bed stays pulled until a person decides whether to release it.`,
+              ? `The examination for ${movement.id} made no order after transport was booked. The bed stays pulled until a person decides whether to release it.`
+              : `The examination for ${movement.id} made no order. The bed stays pulled until a person decides whether to release it.`,
           ),
         ]);
       }
@@ -679,7 +679,8 @@ export function reduceRecordedFactEvent(
             { movementId: movement.id, unitId: acceptingUnitId },
             // Audit 24-1 decision 3: a revoked examination reaches this closing path only when no
             // bed is held, so this notice never claims a release.
-            `The examination for ${movement.id} was revoked. The patient is not coming.`,
+            // D-170 item 3: "The examination made no order. The patient is not coming."
+            `The examination for ${movement.id} made no order. The patient is not coming.`,
           ),
         );
       }

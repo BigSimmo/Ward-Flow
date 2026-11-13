@@ -13,7 +13,8 @@ import {
   splitDuration,
 } from "@/components/ward-management/ward-clock";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
-import { legalFormName } from "@/components/ward-management/ward-legal-forms";
+import { examinationOutcomeShort, legalFormName } from "@/components/ward-management/ward-legal-forms";
+import { FORM_RECORDED_ENDED } from "@/components/ward-management/ward-legal-form-ended";
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import {
@@ -559,7 +560,7 @@ export function outstandingItem(movement: Movement): OutstandingItem {
           : "A further examination was ordered and has not yet been recorded.",
     };
   }
-  const outcomeWords = movement.examination.outcome.replace(/_/g, " ");
+  const outcomeWords = examinationOutcomeShort(movement.examination.outcome).toLowerCase();
   if (movement.legalForm) {
     // `legalFormName` resolves the official title from the code, and shows a code the register
     // does not list as the bare code.
@@ -591,6 +592,9 @@ export function outstandingItem(movement: Movement): OutstandingItem {
  * typed.
  */
 export function formExpiryLine(legalForm: LegalForm, now: Instant): string {
+  // 1.1 (K1) and A1: a form a person recorded as ended says so on every ED surface, as the Forms
+  // page, downtime pack and handover do; its old typed end is history, never shown as live.
+  if (legalForm.endedBy !== undefined) return `${FORM_RECORDED_ENDED}.`;
   if (legalForm.dueAt === undefined) return "No expiry recorded from the form.";
   // Legal times only as typed (Josh, 31 Oct 2026): "Ends Mon 09:00 as typed" or "Ended … as typed",
   // never "(3h 20m left)" or "(passed 1h 05m ago)".
@@ -609,7 +613,8 @@ export function formExpiryWarning(
   now: Instant,
   thresholds: DueSoonThresholds,
 ): string | undefined {
-  if (legalForm.dueAt === undefined) return undefined;
+  // A form a person recorded as ended raises no expiry warning (1.1): its typed end is history.
+  if (legalForm.endedBy !== undefined || legalForm.dueAt === undefined) return undefined;
   const state = clockState(legalForm.dueAt, now, thresholds);
   if (state === "breached") return "Warning: past the expiry written on the form. Check the form.";
   if (state === "critical" || state === "due") return "Warning: the expiry written on the form is close.";

@@ -81,9 +81,10 @@ import { BedsGapCard, HomePlacementDrawer, HomeReleaseSheet, MyListCard } from "
 import list from "./home-list.module.css";
 import flowStyles from "./home-flow.module.css";
 import { HomePinnedCard } from "./home-pinned-card";
+import { homeActNowAnswer } from "./home-act-now-words";
 import { HomeSinceBanner } from "./home-since-banner-lazy";
 import { HomeOutageCatchUp } from "./home-outage-catch-up-lazy";
-import { PACK_OLD_AFTER_MINUTES, wardsWithOldPack } from "@/components/ward-management/ward-downtime-pack-prints";
+import { oldPackCounts, oldPackWords, wardsWithOldPack } from "@/components/ward-management/ward-downtime-pack-prints";
 import Link from "next/link";
 import catchUpStyles from "./home-outage-catch-up.module.css";
 import heroStyles from "./home-hero.module.css";
@@ -727,7 +728,8 @@ export function CoordinatorScreen() {
   const heroNext: HeroNextStep =
     nextActCount > 0
       ? {
-          answer: `${nextActCount} ${nextActCount === 1 ? "needs" : "need"} a person now${nextScope}`,
+          // A9-04: names the accepted referrals with no bed pulled, which Handover's Act now leaves out.
+          answer: homeActNowAnswer(nextActCount, toPull.length, nextScope),
           action: {
             label: actPressed ? "Show all" : "Show act now",
             pressed: actPressed,
@@ -760,22 +762,28 @@ export function CoordinatorScreen() {
   // stale or a ward is not reporting (every size since the sticky header redesign, 9 Nov 2026).
   // Batch 4 item 24 (Josh approved the drawing 11 Nov 2026, D-142): a pointer to the wards whose
   // outage pack is old or never printed. The list itself lives once, on the Downtime pack screen.
-  const oldPacks = wardsWithOldPack(
-    downtimePackPrints,
-    checkedUnits.map((unit) => unit.id),
-    now,
-  ).length;
+  // Root-cause fix 3.3 (Josh, 13 Nov 2026): "never printed" and "over 24h old" are counted and worded
+  // apart. Like the rest of this line, the count is the chosen service's wards, and the line says so.
+  const packWords = oldPackWords(
+    oldPackCounts(
+      wardsWithOldPack(
+        downtimePackPrints,
+        checkedUnits.map((unit) => unit.id),
+        now,
+      ),
+    ),
+  );
   const bedChecks = staleBedCounts + wardsNotReporting > 0;
   const packPointer =
-    oldPacks > 0 ? (
+    packWords !== "" ? (
       <Link href="/ward-flow/reports/downtime" className={catchUpStyles.pointer} data-testid="home-next-old-packs">
-        {oldPacks} outage {oldPacks === 1 ? "pack" : "packs"} over {Math.round(PACK_OLD_AFTER_MINUTES / 60)}h old
+        {packWords}
       </Link>
     ) : null;
   const checkingLine =
     bedChecks || packPointer ? (
       <span data-testid="home-next-checking">
-        Checking:{" "}
+        Checking{nextScope}:{" "}
         {bedChecks ? (
           <>
             {staleBedCounts} stale bed {staleBedCounts === 1 ? "count" : "counts"}, {wardsNotReporting}{" "}

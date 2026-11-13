@@ -524,22 +524,6 @@
   color: var(--wf-ink-1);
 }
 
-.formChips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.formChip {
-  padding: 1px 6px;
-  border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-xs);
-  font-family: var(--wf-mono);
-  font-size: var(--wf-fs-12);
-  color: var(--wf-ink-2);
-  white-space: nowrap;
-}
-
 /* Table */
 /* The table scrolls sideways at every width rather than cutting off its right-hand columns
    (layout sweep WARD-01, 25 Oct 2026). */

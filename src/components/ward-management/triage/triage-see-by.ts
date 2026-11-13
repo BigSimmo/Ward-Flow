@@ -45,7 +45,23 @@ export type SeeBy = {
   when: string;
   /** "B, within 2 hours of review at 10:42". */
   basis: string;
+  /** True while the tier's window is still unsigned in the values register (clinical check pack C6). */
+  unsigned: boolean;
 };
+
+/** The register entry behind each tier's window; A is immediate and has no entry. */
+const WINDOW_VALUE = {
+  B: CLINICAL_VALUES.triageUrgencyB,
+  C: CLINICAL_VALUES.triageUrgencyC,
+  D: CLINICAL_VALUES.triageUrgencyD,
+  E: CLINICAL_VALUES.triageUrgencyE,
+} as const;
+
+/** Whether a tier's window is still unsigned. Josh, 13 Nov 2026 (clinical check pack C6): show it. */
+export function seeByWindowUnsigned(urgency: Tier): boolean {
+  const entry = (WINDOW_VALUE as Partial<Record<Tier, { status: string }>>)[urgency];
+  return entry !== undefined && entry.status !== "signed";
+}
 
 /**
  * The see-by time for an urgency and a reviewed time ("DD/MM/YYYY HH:MM", wall clock). `today` is
@@ -56,7 +72,7 @@ export function seeBy(urgency: Tier | null, reviewed: string, today: Date, long:
   if (!urgency) return null;
   const window = WINDOW[urgency];
   if (window === undefined) return null;
-  if (window === 0) return { when: "Now", basis: `A, ${long.toLowerCase()}` };
+  if (window === 0) return { when: "Now", basis: `A, ${long.toLowerCase()}`, unsigned: false };
   const start = parseStamp(reviewed);
   if (!start) return null;
   const at = new Date(start.getTime() + window);
@@ -71,5 +87,9 @@ export function seeBy(urgency: Tier | null, reviewed: string, today: Date, long:
       ? `${clock} tomorrow`
       : `${WEEKDAYS[at.getUTCDay()]} ${at.getUTCDate()} ${MONTHS[at.getUTCMonth()]} ${clock}`;
   const reviewedClock = `${two(start.getUTCHours())}:${two(start.getUTCMinutes())}`;
-  return { when: day, basis: `${urgency}, ${long.toLowerCase()} of review at ${reviewedClock}` };
+  return {
+    when: day,
+    basis: `${urgency}, ${long.toLowerCase()} of review at ${reviewedClock}`,
+    unsigned: seeByWindowUnsigned(urgency),
+  };
 }

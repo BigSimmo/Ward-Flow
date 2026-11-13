@@ -6,6 +6,7 @@
  * and there is no low, medium or high rating and no computed score.
  */
 import type { Tier } from "./triage-record";
+import { SIGNED_IN_COORDINATOR_NAME } from "@/components/ward-management/ward-staff-names-seed";
 
 // The closed lists a signed triage records are kept with the record (`triage-record.ts`), so the
 // reducer, the stored-state check and the patient record read them without this file.
@@ -705,7 +706,7 @@ export const SOURCES = ["Person", "Family or carer", "GP", "Records", "Police", 
  * triage carries forward flags alone and every typed answer is written fresh.
  */
 export type PreviousTriage = {
-  /** "Last triage · 07 Nov · Dr S. Chen". */
+  /** "Last triage · 07 Nov · Dr S. Orlenby". */
   label: string;
   /** "07 Nov", for "Carried from 07 Nov". */
   when: string;
@@ -769,7 +770,7 @@ export type TriagePerson = {
 };
 
 /** The signed-in clinician in the synthetic world, who reviews and signs. */
-export const SIGNED_IN = "Dr S. Chen";
+export const SIGNED_IN = SIGNED_IN_COORDINATOR_NAME;
 
 /** Where each PSOLIS field went on this form. Copy and the summary write the exact PSOLIS value for each pick-list. */
 export const PSOLIS_FIELD_MAP = [

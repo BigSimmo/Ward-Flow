@@ -2580,6 +2580,31 @@
   }
 }
 
+/* Audit A5-01 (13 Nov 2026): on a laptop-height window the clock card and the Bed alerts card took
+   the top 353px of the open rail, so the menu scrolled inside itself (1366x648 showed Home, Capacity
+   and Movements only). Under 850px tall the Bed alerts card folds to its one-line pill: the place rows
+   and the ready line step aside, and so does the "Bed alerts" word, which the card's spoken name
+   still starts with. The card still opens the full list. */
+@media screen and (min-width: 62.5625rem) and (max-height: 53.0625rem) {
+  .rail[data-rail="open"] .capacityPulseStrip .capacityFold,
+  .rail[data-rail="open"] .capacityPulseStrip .alertsEyebrow {
+    display: none;
+  }
+}
+
+/* Under 700px tall (1366x648, a 1366x768 laptop with the browser's bars) the folded card alone still
+   left More below the fold, so each counted row drops its quiet second line ("beds ready now"). The
+   count stays beside the name, and the row's spoken name and hover title still say the words. */
+@media screen and (min-width: 62.5625rem) and (max-height: 43.75rem) {
+  .rail[data-rail="open"] .railState {
+    display: none;
+  }
+
+  .rail[data-rail="open"] .railLink[data-two-line="true"] {
+    min-height: var(--wf-h-md);
+  }
+}
+
 /* When summaries and utilities fill a short desktop window, scroll the complete rail instead
    of squeezing its navigation to a few pixels. Pop-outs escape that scrollport beside the rail. */
 @media screen and (min-width: 62.5625rem) and (max-height: 32rem) {

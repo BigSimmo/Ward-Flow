@@ -8,7 +8,8 @@ import { Check } from "lucide-react";
 import { splitDuration } from "@/components/ward-management/ward-clock";
 import { LegalFormNextStep, LegalFormSummary } from "@/components/ward-management/legal-forms/legal-form-card";
 import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
-import { JourneyStrip, PhoneSheet } from "@/components/wf";
+import { currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
+import { Button, JourneyStrip, PhoneSheet } from "@/components/wf";
 import { CardSafetyTagsLazy as CardSafetyTags } from "@/components/ward-management/patients/card-safety-tags-lazy";
 import { edJourneyStages } from "./ed-journey";
 import { edRowReferralStatus, edStageLabel } from "./ed-referral-status";
@@ -56,7 +57,7 @@ export function renderEdPersonSheet(
   },
 ): ReactNode {
   const { movement, minutesInDepartment, patientInfo, nextAction, destinationLabel } = row;
-  const { now, referrals, dayZero, department, isPhone, setSelectedPatientId } = ctx;
+  const { now, referrals, dayZero, department, isPhone, setSelectedPatientId, openPatientPage } = ctx;
   const { patientExtras, formControl, clearedControl, reviewControl, destinationContent, referralLink } = controls;
   // Change 2 (D-77): where the referral stands replaces the Destination line while one is under way.
   const referral = edRowReferralStatus(row, ctx);
@@ -75,11 +76,13 @@ export function renderEdPersonSheet(
       placement={isPhone ? "bottom" : "right"}
       className={styles.phoneSheet}
       data-testid={`ward-ed-phone-sheet-${movement.id}`}
+      // A12-04 (Josh, 13 Nov 2026): "Open patient" opens the patient page, as on All EDs. The
+      // department's time record keeps its own button, "Where their time went", below.
       secondary={{
         label: "Open patient",
         onAction: () => {
           closeSheet();
-          setSelectedPatientId(movement.id);
+          openPatientPage?.(patientInfo.patient?.id ?? movement.id);
         },
       }}
       primary={
@@ -120,7 +123,7 @@ export function renderEdPersonSheet(
           <dt>Form</dt>
           {/* Audit 1 (CS-14, Josh 20 Oct): "None" only for a voluntary person; otherwise not recorded. */}
           <dd>
-            {movement.legalForm
+            {currentLegalPosition(movement).form
               ? legalStatusShort(movement)
               : movement.legalStatus === "Voluntary"
                 ? "None"
@@ -172,6 +175,19 @@ export function renderEdPersonSheet(
           formatDuration={splitDuration}
           label="Time in the department"
         />
+        {/* A12-04: the department's time record (crew times, observation level, arrival plan),
+            which "Open patient" opened before it went to the patient page. */}
+        <Button
+          variant="ghost"
+          size="sm"
+          data-testid={`ward-ed-time-record-${movement.id}`}
+          onClick={() => {
+            closeSheet();
+            setSelectedPatientId(movement.id);
+          }}
+        >
+          Where their time went
+        </Button>
       </section>
       <dl className={styles.phoneSheetPairs}>
         <div>

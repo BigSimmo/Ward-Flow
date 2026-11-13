@@ -7,14 +7,15 @@ import { ChevronDown } from "lucide-react";
 import type { BedItem } from "./ward-bed-tone";
 import { Button, ChipGroup, FilterChip, Menu, StatusGlyph, buttonClass, cx, type WfTone } from "@/components/wf";
 
+import { NEXT_FORM_TO_RECORD } from "@/components/ward-management/ward-legal-form-progression";
 import styles from "./ward-bed-dossier-drawer.module.css";
 import { useOptionalRouter } from "./ward-screen-helpers";
 
 /** Shortens "Form 6A Involuntary inpatient" to "Form 6A" for the fact tile; the full label stays in Overview. */
 export function shortLegal(label: string | undefined): string {
   if (!label) return "Not recorded";
-  // WT-03: "Form 6A not recorded (Form 1A ended ...)" keeps its "not recorded" on the tile.
-  if (label.includes(" not recorded (")) return label.split(" (")[0]!;
+  // WT-03, D-170 item 1: "Next form to record (On Form 1A at arrival)" keeps its prompt on the tile.
+  if (label.startsWith(`${NEXT_FORM_TO_RECORD} (`)) return NEXT_FORM_TO_RECORD;
   // Redesign: the tile keeps one short line, so a community treatment order reads "CTO" (full words in Overview).
   if (label.startsWith("Community treatment order")) return "CTO";
   return label.startsWith("Form ") ? label.split(" ").slice(0, 2).join(" ") : label;

@@ -218,9 +218,9 @@ describe("the saved workspace scoped to a desk", () => {
     };
     expect(weeklyCounts(response.state)).toEqual(weeklyCounts(world.state));
     for (const unit of world.state.units) {
-      expect(bedStates(unit, response.state.admissions, response.state.bedReleases, response.state.leaveBeds)).toEqual(
-        bedStates(unit, world.state.admissions, world.state.bedReleases, world.state.leaveBeds),
-      );
+      expect(
+        bedStates(unit, response.state.admissions, response.state.bedReleases, response.state.leaveBeds, []),
+      ).toEqual(bedStates(unit, world.state.admissions, world.state.bedReleases, world.state.leaveBeds, []));
     }
     expect(scopeWorld(world, STATEWIDE_COORDINATOR, at)).toBe(world);
     expect(world.state.movements[0].blocker).toBe(marker);

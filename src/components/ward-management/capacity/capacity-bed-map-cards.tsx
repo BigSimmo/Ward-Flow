@@ -30,7 +30,11 @@ const HIGHLIGHTS: readonly { id: Highlight; label: string; test: (row: NetworkWa
     { id: "stale", label: "Count not confirmed", test: (_row, fresh) => !fresh },
   ];
 
-/** Services open on first view: the two with the most wards a metro coordinator moves between. */
+/**
+ * Services open on first view: the two with the most wards a metro coordinator moves between.
+ * C11: counted among groups that hold wards, so a site bed manager's own service (the only group
+ * with wards on that desk) opens rather than two empty ones ahead of it in network order.
+ */
 const OPEN_FIRST = 2;
 
 /**
@@ -117,7 +121,14 @@ export function BedMapCards({
       ? []
       : mapGroups.filter((group) => group.wards.some((ward) => lit(ward.unit.id, id))).map((group) => group.service);
   const [open, setOpen] = useState(
-    () => new Set([...mapGroups.slice(0, OPEN_FIRST).map((group) => group.service), ...groupsLitBy(highlight)]),
+    () =>
+      new Set([
+        ...mapGroups
+          .filter((group) => group.wards.length > 0)
+          .slice(0, OPEN_FIRST)
+          .map((group) => group.service),
+        ...groupsLitBy(highlight),
+      ]),
   );
   const [openedFor, setOpenedFor] = useState(highlight);
   if (openedFor !== highlight) {

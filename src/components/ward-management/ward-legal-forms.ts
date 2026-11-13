@@ -1,5 +1,9 @@
-import type { LegalForm, Movement } from "@/components/ward-management/ward-model";
+import type { ExaminationOutcome, LegalForm, Movement } from "@/components/ward-management/ward-model";
 import { formTitleForCode } from "@/lib/form-register";
+import {
+  currentLegalPosition,
+  legalFormNowWords,
+} from "@/components/ward-management/legal-forms/legal-form-progression";
 
 /**
  * The legal forms a clinician may choose from, and how a form names itself on screen.
@@ -72,7 +76,7 @@ export const CONTINUATION_LEGAL_FORMS: readonly LegalForm[] = [...SELECTABLE_LEG
 export function countryExtensionEligible(movement: Movement): boolean {
   const region =
     movement.legalForm?.region ?? (movement.legalClock?.code === "1A" ? movement.legalClock.region : undefined);
-  return !movement.closure && movement.legalForm?.code === "1A" && region === "country";
+  return !movement.closure && currentLegalPosition(movement).form?.code === "1A" && region === "country";
 }
 
 /**
@@ -121,11 +125,48 @@ const LEGAL_STATUS_SHORT: Record<Movement["legalStatus"], string> = {
 };
 
 export function legalStatusShort(movement: Pick<Movement, "legalForm" | "legalStatus">): string {
-  if (movement.legalForm) return `Form ${movement.legalForm.code}`;
+  // 1.1 (K1) and A1: the one current legal position, so the chip on Movements and Delays rows reads
+  // "Form 3B ended" once a person records the end, as every other screen does.
+  const form = legalFormNowWords(movement);
+  if (form) return form;
   return LEGAL_STATUS_SHORT[movement.legalStatus] ?? movement.legalStatus;
 }
 
 /** The same status in full: the register's form name, or the recorded status as written. */
 export function legalStatusFull(movement: Pick<Movement, "legalForm" | "legalStatus">): string {
-  return movement.legalForm ? legalFormName(movement.legalForm) : movement.legalStatus;
+  // The form's name only: a recorded end has its own line wherever this shows (the chip's short words,
+  // the printed pack's "Recorded as ended"), so it is not said twice.
+  const legal = currentLegalPosition(movement);
+  return legal.form ? legalFormName(legal.form) : movement.legalStatus;
+}
+
+/**
+ * D-170 item 3 (Josh, 13 Nov 2026): how an examination outcome reads on screen. An examination has
+ * an outcome; it is never "revoked". The stored code `"revoked"` is unchanged (saved records keep
+ * it); only the words change, and every screen takes them from here. `EXAMINATION_OUTCOME_LABEL` is
+ * the list wording (the outcome picker and the timeline); `examinationOutcomeShort` is the chip and
+ * in-sentence wording.
+ */
+export const EXAMINATION_OUTCOME_LABEL: Record<ExaminationOutcome, string> = {
+  inpatient_order: "Inpatient treatment order",
+  community_order: "Community treatment order",
+  revoked: "No order made, does not proceed",
+  further_examination_ordered: "Further examination ordered",
+};
+
+const EXAMINATION_OUTCOME_SHORT: Record<ExaminationOutcome, string> = {
+  inpatient_order: "Inpatient treatment order",
+  community_order: "Community treatment order",
+  revoked: "No order made",
+  further_examination_ordered: "Further examination ordered",
+};
+
+/** "No order made", "Inpatient treatment order": the chip wording. An unknown code reads as itself. */
+export function examinationOutcomeShort(outcome: ExaminationOutcome | string): string {
+  return EXAMINATION_OUTCOME_SHORT[outcome as ExaminationOutcome] ?? outcome.replace(/_/g, " ");
+}
+
+/** The list wording, "No order made, does not proceed". An unknown code reads as itself. */
+export function examinationOutcomeLabel(outcome: ExaminationOutcome | string): string {
+  return EXAMINATION_OUTCOME_LABEL[outcome as ExaminationOutcome] ?? outcome.replace(/_/g, " ");
 }

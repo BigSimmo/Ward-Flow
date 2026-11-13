@@ -5,6 +5,11 @@
 import type { KeyboardEvent } from "react";
 import { formatElapsed, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import {
+  currentLegalPosition,
+  FORM_RECORDED_ENDED,
+  legalFormNowWords,
+} from "@/components/ward-management/ward-legal-form-progression";
 import { OPERATIONAL_DEFAULT_LABEL } from "@/components/ward-management/ward-operational-defaults";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import {
@@ -118,7 +123,7 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
             type="button"
             role="tab"
             id="ward-ed-cleared-tab"
-            aria-label={`Medical clearance, ${clearedPatients.length === 0 ? "none" : clearedPatients.length}`}
+            aria-label={`Med Clear, ${clearedPatients.length === 0 ? "none" : clearedPatients.length}. Medical clearance`}
             aria-selected={departmentListTab === "cleared"}
             aria-controls="ward-ed-cleared-panel"
             tabIndex={departmentListTab === "cleared" ? 0 : -1}
@@ -166,7 +171,7 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
             type="button"
             role="tab"
             id="ward-ed-referred-tab"
-            aria-label="Referred · Still to be moved"
+            aria-label={`Referred, ${outbox.length + answeredAll.length === 0 ? "none" : outbox.length + answeredAll.length}. Still to be moved`}
             aria-selected={departmentListTab === "referred"}
             aria-controls="ward-ed-outbox-panel"
             tabIndex={departmentListTab === "referred" ? 0 : -1}
@@ -405,15 +410,20 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
           ) : (
             <ul className={styles.lst}>
               {underFormPatients.map((m) => {
-                const due = m.legalForm?.dueAt;
+                // 1.1 (K1): the one current legal position; a form a person recorded as ended has no
+                // typed end in force and reads "Form 3B ended".
+                const legal = currentLegalPosition(m);
+                const due = legal.dueAt;
                 const tone = due === null || due === undefined ? "quiet" : due < now ? "danger" : "good";
-                const stamp = !m.legalForm
+                const stamp = !legal.form
                   ? "form not recorded"
-                  : due === null || due === undefined
-                    ? "no deadline"
-                    : due < now
-                      ? `passed ${formatInstantWithDay(due, now)}`
-                      : `due ${formatInstantWithDay(due, now)}`;
+                  : legal.ended
+                    ? FORM_RECORDED_ENDED.toLowerCase()
+                    : due === null || due === undefined
+                      ? "no deadline"
+                      : due < now
+                        ? `passed ${formatInstantWithDay(due, now)}`
+                        : `due ${formatInstantWithDay(due, now)}`;
                 const patientInfo = resolveSubjectPatient(m, {
                   patients: registryPatients,
                   referrals,
@@ -439,8 +449,8 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
                       </span>
                       <span className={styles.lstWhy}>
                         {/* Legal times only as typed (31 Oct 2026): never "passed … ago" or "… away". */}
-                        {m.legalForm
-                          ? `Form ${m.legalForm.code}. ${due === null || due === undefined ? "No deadline is recorded against it." : `${typedTimeLine(due, now)}.`}`
+                        {legal.form
+                          ? `${legalFormNowWords(m)}. ${legal.ended ? `${FORM_RECORDED_ENDED}.` : due === null || due === undefined ? "No deadline is recorded against it." : `${typedTimeLine(due, now)}.`}`
                           : `${m.legalStatus}. Form not recorded.`}
                       </span>
                     </span>

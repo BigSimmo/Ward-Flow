@@ -249,7 +249,12 @@ function PackUploadDialog({
             <span>
               <strong>{file ? file.name : "Choose a file"}</strong>
               <span>
-                {file ? `${Math.max(1, Math.round(file.size / 1024))} KB` : "PDF or photo of the signed form"}
+                {/* C15: an empty file reads as empty, not "1 KB". */}
+                {file
+                  ? file.size === 0
+                    ? "Empty file"
+                    : `${Math.max(1, Math.round(file.size / 1024))} KB`
+                  : "PDF or photo of the signed form"}
               </span>
             </span>
             <input
@@ -284,7 +289,9 @@ function PackUploadDialog({
                 ? undefined
                 : needsCode && code === undefined
                   ? "Choose the form and a file first."
-                  : "Choose a file first."
+                  : file && file.size === 0
+                    ? "This file is empty. Choose another file."
+                    : "Choose a file first."
             }
             onClick={() => {
               if (!ready || !file) return;

@@ -13,6 +13,7 @@ import { edRowReferralStatus } from "./ed-referral-status";
 import type { EdScreenContext } from "./ed-screen-context";
 import { edWaitTone } from "./ed-screen-model";
 import { noFormWords } from "@/components/ward-management/ward-legal-status";
+import { legalFormNowWords } from "@/components/ward-management/ward-legal-form-progression";
 import styles from "./ed.module.css";
 import foldRow from "./ed-phone-fold.module.css";
 
@@ -179,7 +180,8 @@ export function renderEdBoardPhoneRow(
             ? []
             : [
                 // Audit CS3-04: the desktop rule, "No form" only for a recorded Voluntary status.
-                movement.legalForm ? `Form ${movement.legalForm.code}` : noFormWords(movement.legalStatus),
+                // 1.1 (K1): the one current legal position ("Form 3B", or "Form 3B ended" once recorded).
+                legalFormNowWords(movement) ?? noFormWords(movement.legalStatus),
                 medicalClearance === undefined
                   ? "Clearance pending"
                   : medicalClearance.cleared

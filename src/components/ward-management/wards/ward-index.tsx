@@ -40,7 +40,8 @@ import {
   useOptionalToast,
 } from "@/components/wf";
 import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
-import { bedStates } from "@/components/ward-management/ward-bed-states";
+import { bedStates, networkNamedHolds } from "@/components/ward-management/ward-bed-states";
+import { releasesExpectedToFree } from "@/components/ward-management/ward-shared-figures";
 import {
   designationSummary,
   lockedBedsFree,
@@ -57,9 +58,7 @@ import { remainingSpeciallingCapacity } from "@/components/ward-management/ward-
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService, Unit } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
-import { SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
-import { officialForms } from "@/lib/form-register";
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
 import { BedStrip, BedStripLegend } from "@/components/ward-management/wards/bed-strip";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -90,82 +89,12 @@ import pageTop from "@/components/ward-management/page-top-title.module.css";
  */
 
 /**
- * What each ward admits, as a plain description. It carries no legal claim: the forms a ward holds
- * are read from the unit itself (`wardFormsHeld`), never typed here. The table once also carried a
- * nurse unit manager's name, extension and paging handle for every ward and a made-up fallback for
- * unknown wards; those were invented and are gone. A ward missing from this table shows no
- * description rather than a substituted one.
+ * D-170 item 7 and check pack E1 (Josh, 13 Nov 2026): the ward profile carries no "Admits" lines
+ * and no "Forms held" row. The "Admits" sentences were invented and sat under real ward names; they
+ * come back only when a service supplies its own words, with a source and date. "Forms held" gave
+ * every authorised ward the same list from one yes/no flag, with a forensic chip; both are gone.
+ * `tests/ward-fix-D-ward-profile.dom.test.tsx` keeps them out.
  */
-const WARD_ADMITS: Readonly<Record<string, string>> = {
-  "rph-adult-secure":
-    "Inner-city high-acuity crisis assessment, severe behavioural disturbance, and complex dual diagnosis.",
-  "rph-older-adult":
-    "Specialised psychogeriatric inpatient unit for acute organic and functional psychiatric disorders in older adults.",
-  "scgh-adult-open": "General acute psychiatric admissions for NMHS catchment with co-morbid acute medical complexity.",
-  "scgh-older-adult": "Sub-acute geriatric mental health rehabilitation and severe BPSD management for older adults.",
-  "fsh-adult-secure":
-    "High-dependency acute assessment and psychiatric intensive care for southern metropolitan corridor.",
-  "fsh-older-adult":
-    "Specialised psychogeriatric assessment and dementia-related behavioural support for Rockingham-Kwinana.",
-  "arm-adult-open":
-    "Acute inpatient psychiatric care for south-east metropolitan catchment under WA Mental Health Act.",
-  "sjgm-adult-open":
-    "Eastern corridor acute adult admissions, emergency department liaison transfers, and crisis beds.",
-  "rgh-adult-secure": "South-west metropolitan acute mental health admissions and emergency liaison transfers.",
-  "fre-adult-open":
-    "South-west coastal corridor acute psychiatric intake, multidisciplinary stabilisation, and crisis care.",
-  "fre-older-adult": "Older adult acute psychogeriatric intake and behavioural management for Fremantle catchment.",
-  "bty-adult-secure": "Secure high-dependency containment, crisis stabilisation, and psychiatric intensive nursing.",
-  "bty-older-adult":
-    "Older adult assessment, diagnostic workup, and community transition planning for Eastern Hills catchment.",
-  "bty-youth": "Specialised youth early psychosis intervention and recovery program for young adults aged 16–24.",
-  "gry-adult-secure": "Adults 18–64 requiring intensive psychiatric containment and high-dependency nursing.",
-  "gry-older-adult":
-    "Older adults 65+ experiencing acute neuropsychiatric decompensation, behavioural BPSD, or late-onset psychosis.",
-  "alb-adult-open":
-    "Regional adult psychiatric unit for Great Southern region with telemetry link to Perth State Bed Desk.",
-  "bun-adult-open": "Regional high-dependency acute psychiatric intake and assessment for South West WA.",
-  "brm-adult-secure":
-    "Kimberley regional acute culturally-grounded mental health inpatient unit with RFDS coordination.",
-  "ger-adult-open": "Midwest regional acute psychiatric intake, stabilisation, and crisis admissions.",
-  "sjgs-adult-open":
-    "Private adult voluntary inpatient stabilisation, mood disorder therapies, and anxiety treatment programs.",
-  "sjgs-adult-secure": "Private secure high-dependency crisis stabilisation and psychiatric care.",
-  // Legacy aliases for backward compatibility with mockups
-  "armadale-adult":
-    "Acute inpatient psychiatric care for south-east metropolitan catchment under WA Mental Health Act.",
-  "midland-adult": "Eastern corridor acute adult admissions, emergency department liaison transfers, and crisis beds.",
-  "fremantle-adult-open":
-    "South-west coastal corridor acute psychiatric intake, multidisciplinary stabilisation, and crisis care.",
-  "graylands-dorrington": "Adults 18–64 requiring intensive psychiatric containment and high-dependency nursing.",
-};
-
-export const VOLUNTARY_ONLY_LABEL = "Voluntary only";
-export const CLMA_LABEL = "CLMA";
-
-const COMMUNITY_ORDER_CODES = new Set(
-  officialForms.filter((form) => form.category === "Community treatment orders").map((form) => form.code),
-);
-
-/**
- * The legal forms a ward holds, read from the unit rather than typed per ward.
- *
- * - A unit that is not authorised under the Mental Health Act holds voluntary patients only, so it
- *   lists no involuntary form at all.
- * - An authorised unit lists the codes the intake picker offers (`SELECTABLE_LEGAL_FORMS`), less
- *   any community treatment order: Form 5A is an order for treatment in the community, never an
- *   inpatient authority (`tests/ward-register-inpatient-form-codes.test.ts`).
- * - CLMA is listed only on an authorised forensic unit.
- *
- * The model records no finer per-unit authority, so every authorised unit shows the same codes.
- */
-export function wardFormsHeld(unit: Pick<Unit, "authorised" | "forensic">): string[] {
-  if (!unit.authorised) return [VOLUNTARY_ONLY_LABEL];
-  const forms = SELECTABLE_LEGAL_FORMS.filter((form) => !COMMUNITY_ORDER_CODES.has(form.code)).map(
-    (form) => `Form ${form.code}`,
-  );
-  return unit.forensic ? [...forms, CLMA_LABEL] : forms;
-}
 
 export type ServiceFilter = "all" | HealthService;
 type StatusFilter = "all" | "has-ready" | "full" | "stale";
@@ -249,7 +178,8 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
     movements,
     admissions,
     leaveBeds,
-  } = useWardFlowSelect("units", "bedReleases", "movements", "admissions", "leaveBeds");
+    referrals,
+  } = useWardFlowSelect("units", "bedReleases", "movements", "admissions", "leaveBeds", "referrals");
   const units = unitsOverride ?? liveUnits;
   const { worldGeneration } = useWardFlowSelect("worldGeneration");
   const raise = useWardRaise("coordinator");
@@ -313,11 +243,13 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
+  // A16-25 (3.4): a bed named for an incoming patient is held here as on Capacity, not Ready.
+  const namedHolds = useMemo(() => networkNamedHolds(movements, referrals), [movements, referrals]);
   const rows: WardRow[] = useMemo(
     () =>
       units.map((unit) => {
         const site = siteByCode(unit.siteCode);
-        const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+        const states = bedStates(unit, admissions, bedReleases, leaveBeds, namedHolds);
         const breakdown = capacityBreakdown(unit, bedReleases, leaveBeds, now);
         const incoming = movements.filter(
           (movement) =>
@@ -341,7 +273,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
           specialling: Math.max(0, unit.speciallingCapacity - remainingSpeciallingCapacity(unit, admissions)),
         };
       }),
-    [units, admissions, bedReleases, leaveBeds, movements, now],
+    [units, admissions, bedReleases, leaveBeds, movements, namedHolds, now],
   );
 
   const services = useMemo(
@@ -361,11 +293,12 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
   const totalOccupied = heroRows.reduce((sum, row) => sum + Math.round(row.occupancy * row.unit.beds), 0);
   const readyNow = heroRows.reduce((sum, row) => sum + row.ready, 0);
   const shiftEnd = shiftEndInstant(now);
-  const freeingByShiftEnd = bedReleases.filter(
-    (release) =>
-      release.state !== "discharged" &&
-      release.expectedAt <= shiftEnd &&
-      heroUnits.some((unit) => unit.id === release.unitId),
+  // A16-05: the shared rule, so a discharge date already passed (overdue) is never added to Ready.
+  const freeingByShiftEnd = releasesExpectedToFree(
+    bedReleases,
+    now,
+    shiftEnd,
+    new Set(heroUnits.map((unit) => unit.id)),
   ).length;
   const pulled = heroRows.reduce((sum, row) => sum + row.states.pulled, 0);
   const staleCount = heroRows.filter((row) => row.stale).length;
@@ -1129,7 +1062,7 @@ function WardCard({
   );
 }
 
-/** The ward's profile: who it admits, its security and the forms it holds. Side panel and phone sheet. */
+/** The ward's profile: its cohort and security. Side panel and phone sheet. */
 function WardProfileFacts({
   row,
   showStaff = false,
@@ -1139,8 +1072,6 @@ function WardProfileFacts({
   showStaff?: boolean;
 }) {
   const { unit } = row;
-  const admits = WARD_ADMITS[unit.id];
-  const forms = wardFormsHeld(unit);
   return (
     <dl className={styles.profileFacts}>
       <dt>Cohort</dt>
@@ -1162,20 +1093,6 @@ function WardProfileFacts({
           <dd>{row.specialling}</dd>
         </>
       ) : null}
-      {admits ? (
-        <>
-          <dt>Admits</dt>
-          <dd>{admits}</dd>
-        </>
-      ) : null}
-      <dt>Forms held</dt>
-      <dd className={styles.formChips}>
-        {forms.map((form) => (
-          <span key={form} className={styles.formChip}>
-            {form}
-          </span>
-        ))}
-      </dd>
     </dl>
   );
 }

@@ -19,7 +19,7 @@ import {
   gateMark,
   wardFacingGateDetail,
 } from "@/components/ward-management/ward-eligibility";
-import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
+import { BED_STATE_LABELS, bedStates, networkNamedHolds } from "@/components/ward-management/ward-bed-states";
 import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
@@ -328,11 +328,12 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   }
 
   const currentUnit = unit;
-  const site = siteByCode(currentUnit.siteCode);
   const capacity = unitCapacity(currentUnit, bedReleases);
   const breakdown = capacityBreakdown(currentUnit, bedReleases, leaveBeds, now);
   // The ruled four boxes for the census grid below; "Held" is kept for a leave bed only.
-  const states = bedStates(currentUnit, admissions, bedReleases, leaveBeds);
+  // A16-25 (3.4): the ward's named holds, as its board counts them, so Ready matches Capacity.
+  const holds = networkNamedHolds(movements, wardReferralInbox?.(currentUnit.id) ?? []);
+  const states = bedStates(currentUnit, admissions, bedReleases, leaveBeds, holds);
   // The one occupancy figure (Occupied + Pulled, `ward-occupancy.ts`), the same as the Ward page.
   const occupancy = wardOccupancy([currentUnit], admissions, bedReleases);
   // Owner ruling 2026-09-05: "ready" does not subtract a bed being made ready, so this sentence (the
@@ -535,7 +536,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
         >
           <StatusGlyph tone={pass === total ? "success" : "warning"} size={10} />
           <span className={styles.phoneFoldText}>
-            <span className={styles.phoneFoldTitle}>{pass === total ? "Fits this ward" : "Check the gates"}</span>
+            <span className={styles.phoneFoldTitle}>{pass === total ? "Passes bed checks" : "Check the gates"}</span>
             <span className={styles.phoneFoldLine}>
               <span className={styles.phoneGatesCount}>
                 {pass}/{total}
@@ -617,7 +618,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
           eyebrow={
             isPhone
               ? `Ward answer · ${unit.name}`
-              : `Ward answer · ${site?.name ?? unit.siteCode}${unitHealthService(unit) ? ` · ${unitHealthService(unit)}` : ""}`
+              : `Ward answer · ${siteByCode(unit.siteCode)?.name ?? unit.siteCode}${unitHealthService(unit) ? ` · ${unitHealthService(unit)}` : ""}`
           }
           // One title on every device (device audit, 11 Oct 2026; the build guide's "Nothing to answer").
           title={

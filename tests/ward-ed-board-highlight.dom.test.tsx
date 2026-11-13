@@ -107,7 +107,7 @@ describe("ED page — clearance and review stay readable on a laptop (overall re
     const row = rows()[0]!;
     const checks = within(row).getByTestId(/^ward-ed-row-checks-/u);
     const trigger = within(checks).getByRole("button", {
-      name: /^Checks for .+: (\d checks? open|Checks done|Exam revoked)$/u,
+      name: /^Checks for .+: (\d checks? open|Checks done|No order made|Community treatment order)$/u,
     });
     expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
     // Medical clearance tracker (Josh sign-off, 9 Nov 2026): the clearance line leads.
