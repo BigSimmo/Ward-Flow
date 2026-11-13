@@ -158,13 +158,17 @@ a.figLink::after,
   font-weight: 550;
 }
 
+/* Spec item 9 (13 Nov 2026): the sub-line wraps to two lines before any "…", so a link in it stays
+   in view. */
 .actSub {
+  display: -webkit-box;
   margin: 0;
   overflow: hidden;
   font: 400 var(--wf-fs-12) / 16px var(--wf-font);
   color: var(--wf-hero-ink-3);
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .actButton.actButton {
@@ -266,20 +270,27 @@ a.figLink::after,
   max-width: 100%;
   min-height: 30px;
   margin: 0;
-  padding: 0 12px;
+  /* Spec item 9: half the one-line height, so one line is still a pill and two lines read as a
+     rounded box rather than a stretched capsule. */
+  padding: 5px 12px;
   border: 1px solid var(--wf-on-hero-line);
-  border-radius: var(--wf-r-pill);
+  border-radius: 15px;
   background: var(--wf-on-hero-fill);
   color: var(--wf-on-hero-ink, var(--wf-hero-ink-2));
   font: 500 var(--wf-fs-13) / 18px var(--wf-font);
   white-space: nowrap;
 }
 
-/* One line (QA, 9 Nov 2026): the words end in an ellipsis on a narrow phone; the action keeps its size. */
+/* Spec item 9 (13 Nov 2026, was one line from QA 9 Nov): the words wrap to two lines before any
+   "…" on a narrow phone, so "5h old" is never hidden; the action keeps its size and place. */
 .pillText {
+  display: -webkit-box;
   min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .pillDot {
@@ -613,6 +624,19 @@ a.cellBody {
     min-height: 40px;
   }
 
+  /* Spec item 9: band cells keep their 40px face; the cover reaches 48px inside the row's padding. */
+  button.cellBody,
+  a.cellBody {
+    position: relative;
+  }
+
+  button.cellBody::after,
+  a.cellBody::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+
   a.figLink,
   .figButton,
   .bandAsideLink,
@@ -621,9 +645,23 @@ a.cellBody {
     margin: -12px -8px;
   }
 
+  /* Spec item 9 (13 Nov 2026): every phone control is drawn 40px with a 48px tap cover. "Ask" was
+     42px (its 18px line plus the padding above); it is drawn 40px like the figure links. */
+  .pillAction {
+    padding-block: 11px;
+    margin-block: -11px;
+  }
+
   a.figLink::after,
-  .figButton::after {
-    content: none;
+  .figButton::after,
+  .pillAction::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+
+  .pillAction {
+    position: relative;
   }
 }
 

@@ -432,7 +432,11 @@ export function BedMeetingSheetLauncher({
                   Close
                 </Button>
               </div>
-              <BedMeetingSheetView sheet={buildSheet()} now={now} {...(actions ? { actions } : {})} />
+              {/* Spec item 5 (F-57, 13 Nov 2026): the sheet holds nothing to press, so it is a named stop
+                  of its own and arrow keys scroll the overlay around it. */}
+              <div tabIndex={0} role="region" aria-label="Bed meeting sheet, scroll with arrow keys">
+                <BedMeetingSheetView sheet={buildSheet()} now={now} {...(actions ? { actions } : {})} />
+              </div>
             </div>
           </div>,
           document.body,

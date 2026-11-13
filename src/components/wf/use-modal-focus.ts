@@ -63,6 +63,98 @@ function firstControlIn(panel: HTMLElement | null) {
   return modalFocusTargets(panel, false, false)[0] ?? null;
 }
 
+/** The panel's own heading: what `aria-labelledby` names, else its first heading. */
+function panelHeading(panel: HTMLElement | null): HTMLElement | null {
+  if (!panel) return null;
+  const labelledBy = panel.getAttribute("aria-labelledby")?.split(/\s+/)[0];
+  const named = labelledBy ? panel.ownerDocument.getElementById(labelledBy) : null;
+  if (named && panel.contains(named)) return named;
+  return panel.querySelector<HTMLElement>('h1, h2, h3, h4, h5, h6, [role="heading"]');
+}
+
+/**
+ * Spec item 5 (F-103, 13 Nov 2026): a box whose opening focus would land on a drop-down opens on its
+ * heading instead (`tabindex="-1"`), so the first keys pressed do not change an answer and Tab
+ * then reaches the close button and the drop-down in page order. Any other target is kept.
+ */
+export function openingFocusTarget(panel: HTMLElement | null, target: HTMLElement | null): HTMLElement | null {
+  if (!(target instanceof HTMLSelectElement)) return target;
+  const heading = panelHeading(panel);
+  if (!heading) return target;
+  if (!heading.hasAttribute("tabindex")) heading.setAttribute("tabindex", "-1");
+  return heading;
+}
+
+export type ModalKeyOptions = {
+  /** The layer's id in the sheet stack: only the top layer acts. */
+  modalId: string;
+  panel: HTMLElement | null;
+  onClose: () => void;
+  closeOnEscape?: boolean;
+  /** `capture` stops the event, for a modal over a screen with its own window-level keys. */
+  capture?: boolean;
+  /** Extra live subtrees whose controls stay in the Tab cycle (a guided interaction). */
+  interactionRoots?: readonly HTMLElement[];
+};
+
+/**
+ * The one Escape and Tab contract for every kit overlay (`useModalFocus` and `Sheet`). Only the top
+ * layer reacts. Escape closes it unless something inside already handled the key; a closed native
+ * drop-down no longer swallows it (an open one's list takes Escape itself in the browser, so the
+ * first Escape closes the list and the next closes the box). Tab and Shift+Tab wrap inside the panel
+ * and any actionable toast.
+ */
+export function handleModalKeyDown(event: KeyboardEvent, options: ModalKeyOptions): void {
+  const { modalId, panel, onClose, closeOnEscape = true, capture = false, interactionRoots = [] } = options;
+  // Only the top layer reacts: a dialog over a drawer closes alone, and the drawer's own Tab
+  // trap stays out of the way.
+  if (!isTopmostSheet(modalId)) return;
+  if (event.key === "Escape") {
+    if (!closeOnEscape) {
+      // A layer that ignores Escape still owns it in the capture phase, so the screen behind
+      // (the idle lock's, for one) cannot act on it either.
+      if (capture) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+      return;
+    }
+    // In the bubble phase a menu or field inside the panel that handled Escape has said so.
+    if (event.defaultPrevented) return;
+    event.preventDefault();
+    if (capture) event.stopImmediatePropagation();
+    onClose();
+    return;
+  }
+  if (event.key !== "Tab") return;
+  const roots = interactionRoots.filter((root) => root.isConnected);
+  // A target may itself be the button. Its parent supplies the shared visibility/disabled
+  // filtering, then containment keeps every unrelated sibling out of the Tab cycle.
+  const focusable = [
+    ...new Set([
+      ...modalFocusTargets(panel, true),
+      ...roots.flatMap((root) => modalFocusTargets(root.parentElement).filter((element) => root.contains(element))),
+    ]),
+  ];
+  // Move focus explicitly rather than trusting the platform's Tab order, which varies by
+  // browser for programmatically focused buttons.
+  event.preventDefault();
+  if (capture) event.stopImmediatePropagation();
+  if (focusable.length === 0) {
+    panel?.focus();
+    return;
+  }
+  const active = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  const index = active ? focusable.indexOf(active) : -1;
+  const next =
+    index === -1
+      ? event.shiftKey
+        ? focusable.length - 1
+        : 0
+      : (index + (event.shiftKey ? -1 : 1) + focusable.length) % focusable.length;
+  focusable[next].focus();
+}
+
 /**
  * The one modal focus contract shared by `Dialog`, `PhoneSheet` and every hand-built Ward modal.
  * While `open`, the layer joins the shared sheet stack (`sheet-focus`), so the page behind is inert
@@ -129,10 +221,13 @@ export function useModalFocus({
     const resolveTarget = () => {
       const panel = panelRef.current;
       return (
-        initialFocusRef?.current ??
-        panel?.querySelector<HTMLElement>(SHEET_AUTOFOCUS_SELECTOR) ??
-        (hasFallback ? fallbackFocusRef?.current : firstControlIn(panel)) ??
-        panel
+        openingFocusTarget(
+          panel,
+          initialFocusRef?.current ??
+            panel?.querySelector<HTMLElement>(SHEET_AUTOFOCUS_SELECTOR) ??
+            (hasFallback ? fallbackFocusRef?.current : firstControlIn(panel)) ??
+            null,
+        ) ?? panel
       );
     };
     if (focusOnOpen === "immediate") {
@@ -148,56 +243,15 @@ export function useModalFocus({
     });
 
     function onKeyDown(event: KeyboardEvent) {
-      // Only the top layer reacts: a dialog over a drawer closes alone, and the drawer's own Tab
-      // trap stays out of the way.
-      if (!isTopmostSheet(modalId)) return;
-      if (event.key === "Escape") {
-        if (!closeOnEscapeRef.current) {
-          // A layer that ignores Escape still owns it in the capture phase, so the screen behind
-          // (the idle lock's, for one) cannot act on it either.
-          if (capture) {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-          }
-          return;
-        }
-        // In the bubble phase a menu or field inside the panel that handled Escape has said so.
-        if (event.defaultPrevented) return;
-        if (event.target instanceof HTMLElement && event.target.tagName === "SELECT") return;
-        event.preventDefault();
-        if (capture) event.stopImmediatePropagation();
-        onCloseRef.current();
-        return;
-      }
-      if (event.key !== "Tab") return;
-      const panel = panelRef.current;
-      const roots =
-        interactionRootsRef.current?.filter((root): root is HTMLElement => Boolean(root?.isConnected)) ?? [];
-      // A target may itself be the button. Its parent supplies the shared visibility/disabled
-      // filtering, then containment keeps every unrelated sibling out of the Tab cycle.
-      const focusable = [
-        ...new Set([
-          ...modalFocusTargets(panel, true),
-          ...roots.flatMap((root) => modalFocusTargets(root.parentElement).filter((element) => root.contains(element))),
-        ]),
-      ];
-      // Move focus explicitly rather than trusting the platform's Tab order, which varies by
-      // browser for programmatically focused buttons.
-      event.preventDefault();
-      if (capture) event.stopImmediatePropagation();
-      if (focusable.length === 0) {
-        panel?.focus();
-        return;
-      }
-      const active = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-      const index = active ? focusable.indexOf(active) : -1;
-      const next =
-        index === -1
-          ? event.shiftKey
-            ? focusable.length - 1
-            : 0
-          : (index + (event.shiftKey ? -1 : 1) + focusable.length) % focusable.length;
-      focusable[next].focus();
+      handleModalKeyDown(event, {
+        modalId,
+        panel: panelRef.current,
+        onClose: () => onCloseRef.current(),
+        closeOnEscape: closeOnEscapeRef.current,
+        capture,
+        interactionRoots:
+          interactionRootsRef.current?.filter((root): root is HTMLElement => Boolean(root?.isConnected)) ?? [],
+      });
     }
 
     window.addEventListener("keydown", onKeyDown, capture);

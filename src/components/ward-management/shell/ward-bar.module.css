@@ -4277,9 +4277,10 @@
     font-size: var(--wf-fs-14);
   }
 
-  /* Frosted slate: 94% of the band's foot colour over a soft blur, so the page shows faintly through. */
-  /* The blur sits on a layer behind the bar, never on the bar: a filter on the bar itself would
-     pin the phone menu's fixed dock to the bar instead of the screen. */
+  /* Spec item 9 (13 Nov 2026): the pinned header is solid slate (the band's foot colour), so no row
+     shows through it and it meets a pinned tab row as one band. It was frosted (94% over a blur).
+     The fill sits on a layer behind the bar, never on the bar: a filter on the bar itself would pin
+     the phone menu's fixed dock to the bar instead of the screen. */
   .bar.bar.bar[data-band="ink"][data-scrolled="true"] {
     background: transparent;
     border-bottom-color: transparent;
@@ -4295,9 +4296,7 @@
     z-index: -1;
     border: 0;
     border-radius: 0;
-    background: color-mix(in srgb, var(--wf-hero-2) 94%, transparent);
-    -webkit-backdrop-filter: blur(24px) saturate(1.5);
-    backdrop-filter: blur(24px) saturate(1.5);
+    background: var(--wf-hero-2);
     pointer-events: none;
   }
 

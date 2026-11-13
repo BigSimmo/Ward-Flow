@@ -220,7 +220,19 @@ export type SegmentedProps<T extends string> = {
    */
   disabledReason?: string;
   className?: string;
+  /**
+   * `track` (the default): one switch, options side by side. `answers`: a form answer row (spec item
+   * 15, C18, 13 Nov 2026). Each option is sized to its words and wraps, never cut mid-word; four or
+   * more options become separate chips across the full width; on a phone three or more become a
+   * one-per-line list of 40px rows with a radio mark. Two options stay a switch.
+   */
+  layout?: "track" | "answers";
 };
+
+/** Answer rows of this many options or more list one per line on a phone (spec item 15). */
+export const ANSWER_LIST_MIN = 3;
+/** Answer rows of this many options or more become separate wrapping chips (spec item 15). */
+export const ANSWER_CHIPS_MIN = 4;
 
 /**
  * Segmented control: `radiogroup` with roving tabindex, counts in `.k`. When items carry `href`
@@ -236,6 +248,7 @@ export function Segmented<T extends string>({
   unavailable = false,
   disabledReason,
   className,
+  layout = "track",
 }: SegmentedProps<T>) {
   const reasonId = useId();
   const off = Boolean(disabledReason);
@@ -247,6 +260,9 @@ export function Segmented<T extends string>({
     variant === "hero" ? styles.trk : styles.seg,
     size === "md" && styles.md,
     (unavailable || off) && styles.unavailable,
+    layout === "answers" && styles.answers,
+    layout === "answers" && items.length >= ANSWER_CHIPS_MIN && styles.answerChips,
+    layout === "answers" && items.length >= ANSWER_LIST_MIN && styles.answerList,
     className,
   );
   const main = (item: ChoiceItem<T>) => (

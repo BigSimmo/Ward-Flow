@@ -21,6 +21,10 @@ export const tableClasses = {
   get th() {
     return styles.th;
   },
+  /** On a cell's text: wraps to two lines, then "…" (spec item 9, names and places). */
+  get twoLines() {
+    return styles.twoLines;
+  },
   /** On a `tr`: the act-now row's thin red full edge, no fill. */
   get actNow() {
     return styles.actNow;

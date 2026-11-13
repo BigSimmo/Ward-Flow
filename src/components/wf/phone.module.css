@@ -470,10 +470,14 @@
   color: var(--wf-ink-1);
 }
 
+/* Spec item 9 (13 Nov 2026): the second line wraps to two lines before any "…", like the name. */
 .rowMeta {
+  display: -webkit-box;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: break-word;
   font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   color: var(--wf-ink-3);
 }
