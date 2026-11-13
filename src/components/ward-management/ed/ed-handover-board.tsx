@@ -7,7 +7,15 @@
 // by time in the department; and an Enlarge button that gives the table the whole screen.
 import { ChevronDown, Maximize2, Minimize2 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-import { Button, PortraitRail, SearchField, Segmented, StatusGlyph, FullScreenFrame, FullScreenMarkSlot } from "@/components/wf";
+import {
+  Button,
+  PortraitRail,
+  SearchField,
+  Segmented,
+  StatusGlyph,
+  FullScreenFrame,
+  FullScreenMarkSlot,
+} from "@/components/wf";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { EdBoardChips } from "./ed-board-chips";
 import { EdNeedsYou } from "./ed-needs-you";
