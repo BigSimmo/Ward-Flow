@@ -1420,13 +1420,15 @@
   clip-path: inset(50%);
 }
 
-/* Phone: the service row is slim 32px pills that fade before the Status and order button. */
+/* Phone: the service row is pills that fade before the Status and order button. Spec item 9
+   (13 Nov 2026): every phone control is drawn 40px with a 48px tap cover, so the pills and the
+   button are 40px faces (they were 32px), and each cover reaches 48px without showing. */
 @media (max-width: 46.4375rem) {
   .phoneFilterRow > .phoneFilterButton {
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    min-height: 32px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
     border-radius: 999px;
   }
 
@@ -1438,17 +1440,17 @@
     gap: 6px;
   }
 
-  /* 32px faces; an invisible cover keeps each tap area 48px tall. */
+  /* 40px faces; an invisible cover keeps each tap area 48px tall. */
   .phoneServices.phoneServices :global([role="radio"]) {
-    height: 32px;
-    min-height: 32px;
-    padding: 0 11px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0 12px;
     border-radius: 999px;
     font-size: var(--wf-fs-13);
   }
 
   .phoneServices.phoneServices :global([role="radio"])::after {
-    inset: -8px 0;
+    inset: -4px 0;
   }
 }
 

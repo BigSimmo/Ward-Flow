@@ -71,7 +71,8 @@
 }
 
 .nav.nav {
-  --wf-bar-frost: color-mix(in srgb, var(--wf-hero-2) 94%, transparent);
+  /* Spec item 9 (13 Nov 2026): a pinned tab row has a solid surface behind it, nothing shows through. */
+  --wf-bar-frost: var(--wf-hero-2);
   /* How far the row reaches past the page's side padding; folder-tabs.tsx measures and sets it. */
   --wf-folder-bleed: var(--wf-s-4);
   --wf-folder-rise: 66px;
@@ -155,13 +156,11 @@
   /* Down past the row by the sheet's pinned corner (12px), so the slate shows round its corners. */
   height: max(100%, calc(var(--wf-folder-row, 46px) + 12px));
   display: none;
-  /* The same frosted slate as the pinned header (ward-bar.module.css), so the two read as one. */
+  /* The same solid slate as the pinned header (ward-bar.module.css), so the two read as one band. */
   background: linear-gradient(
     var(--wf-bar-frost, var(--wf-hero-2)) 0 calc(var(--wf-folder-row, 46px) + 12px),
     var(--wf-page-canvas, var(--wf-canvas)) 0
   );
-  -webkit-backdrop-filter: blur(24px) saturate(1.5);
-  backdrop-filter: blur(24px) saturate(1.5);
 }
 
 .back::after {
@@ -288,13 +287,13 @@
     background-color: var(--wf-hero-2);
   }
 
-  /* Pinned, they carry the frosted slate as it looks over the page (solid, so the eye sees no seam
-     and a contrast check still finds the slate rather than the canvas). */
+  /* Pinned, they carry the same solid slate as the band behind them (spec item 9), so the row is one
+     edge-to-edge band and a contrast check finds the slate rather than the canvas. */
   .nav[data-docked]
     .switch.switch.switch.switch
     > :not([aria-checked="true"], [aria-selected="true"], [aria-current="page"], [aria-current="true"]),
   .nav[data-docked] .more.more.more.more:not(:hover) {
-    background-color: color-mix(in srgb, var(--wf-hero-2) 94%, var(--wf-page-canvas, var(--wf-canvas)));
+    background-color: var(--wf-hero-2);
   }
 }
 
