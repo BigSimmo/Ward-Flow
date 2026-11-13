@@ -7,8 +7,8 @@ Every limit is raised, on top of `main` at `ea4cd8b` (after PR #1657 merged), ea
 - ED `/ward-flow/ed`: 538.5 to 540.1 (+1.6)
 - Ward `/ward-flow/ward/rph-adult-secure`: 618.2 to 621.6 (+3.4)
 - Movement `/ward-flow/movements/WF-001`: 616.9 to 618.5 (+1.6)
-- Capacity `/ward-flow/capacity`: 662.4 to 666.0 (+3.6)
-- ED site `/ward-flow/ed/arm-ed`: 677.9 to 682.2 (+4.3). Raised 0.3 KB more on 13 Nov 16:40Z: the coverage-gap fixes (Appearance radios, demo confirm hold, timeline reasons) measured just over 681.9 KB in CI.
+- Capacity `/ward-flow/capacity`: 662.4 to 666.4 (+4.0)
+- ED site `/ward-flow/ed/arm-ed`: 677.9 to 676.9 (-1.0)
 - Bed meeting `/ward-flow/bed-meeting`: 596.3 to 599.0 (+2.7)
 - Statistics `/ward-flow/statistics`: 636.4 to 639.1 (+2.7)
 
@@ -21,3 +21,5 @@ Why it grew: the shared kit parts every screen uses carry the D-192 behaviour. C
 What was trimmed first, about 0.6 to 0.9 KB on every route: the loading placeholder's grey rows are drawn by the server and passed into the client shape, so the boundary that loads on every navigation no longer carries them; the dialog-only scroll body hook has its own file, so every hero and phone figure strip stopped carrying it; and the See it as session store has its own file, so the app frame's Viewing as gate no longer loads the role switching code.
 
 Second step, same PR: the fixes that make the built screens match the approved pictures (count and window on one line, the not-yet reason drawn on the patient card, the synthetic tag placed by width on the full-screen timeline) added 0.5 to 1.0 KB on three routes. Measured: Referrals 589.0, Ward 619.0, ED site 678.8; each limit is the measurement plus 0.2. Every rise stays within 5 KB of `main`.
+
+Third step, 13 Nov 17:47Z, measured in CI: Capacity 666.2 KB (the Sheet's Tab pass-through and kit barrel fixes), so its limit is 666.4. The ED site page measured 676.7 KB, below `main`, so its limit is lowered to 676.9.
