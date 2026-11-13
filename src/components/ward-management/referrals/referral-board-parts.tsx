@@ -558,7 +558,10 @@ export function referralTimeline(
       text: `Raised by ${REFERRAL_SOURCE_WORDS[referral.source]}, ${siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode ?? ORIGIN_NOT_RECORDED}`,
     },
   ];
-  if (referral.triagedAt !== undefined) entries.push({ at: referral.triagedAt, tone: "info", text: "Triaged" });
+  // A16-11: the referring service's triage time, named so it never reads against the ATS category
+  // or the patient record's own signed triages, which are separate records.
+  if (referral.triagedAt !== undefined)
+    entries.push({ at: referral.triagedAt, tone: "info", text: "Triaged at the referring service" });
   if (summary !== undefined) {
     if (presentation.decidedAt !== null && (presentation.state !== "queued" || presentation.withdrawn))
       entries.push({

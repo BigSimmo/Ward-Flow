@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 import { apiMutationCsrfVerdict, isCsrfGuardedApiRequest } from "@/lib/api-csrf";
 import { DEVELOPER_AREA_HEADER, DEVELOPER_AREA_PATH_HEADER, isDeveloperGatedPath } from "@/lib/developer-area/headers";
@@ -69,6 +69,16 @@ const staticRouteRedirects: Record<string, string> = {
   "/ward-flow/exceptions": "/ward-flow/waiting",
   "/ward-flow/delays": "/ward-flow/waiting",
   "/ward-flow/statistics/overview": "/ward-flow/statistics",
+  // /ward-flow/patients was never a route: the patient finder is /ward-flow/search. People type it,
+  // so it goes there rather than to a Page not found.
+  "/ward-flow/patients": "/ward-flow/search",
+  // The old /ward-flow/transport address (MERGE 03, shell-19) goes to the officer's page here,
+  // before any render: its page.tsx redirect() ran after loading.tsx had streamed, so a phone saw
+  // the placeholder for seconds first (phone load audit, 10 Nov 2026). page.tsx stays as the
+  // backstop the redirect-stub guards read. A15-21 (13 Nov 2026): both lived in next.config.ts
+  // `redirects()`, which Next runs before this proxy, so they answered before the door with no
+  // security headers.
+  "/ward-flow/transport": "/ward-flow/transport/officer",
 };
 
 /**
@@ -149,6 +159,18 @@ export async function proxy(request: NextRequest) {
 
   const movedTarget = movedRouteTarget(pathname);
 
+  // A15-21 (13 Nov 2026): the door answers before any old-address redirect, so an old address tells
+  // a visitor without a pass nothing. A moved /mockups address meets the door at its new address,
+  // so sign-in still returns the visitor to the screen they asked for.
+  let doorRequest = request;
+  if (movedTarget) {
+    const url = request.nextUrl.clone();
+    url.pathname = movedTarget;
+    doorRequest = new NextRequest(url, { headers: request.headers });
+  }
+  const door = await frontDoorVerdict(doorRequest);
+  if (door) return withCsp(door);
+
   if (movedTarget) {
     const url = request.nextUrl.clone();
     url.pathname = movedTarget;
@@ -162,9 +184,6 @@ export async function proxy(request: NextRequest) {
     url.pathname = redirectTarget;
     return withCsp(NextResponse.redirect(url));
   }
-
-  const door = await frontDoorVerdict(request);
-  if (door) return withCsp(door);
 
   // A1K-05 and H-0195 (Josh, 27 Oct 2026): a malformed Ward Flow address is a real 404. Next fails
   // decoding a bad percent-encoding in a dynamic segment before the page runs (a bare 500), so

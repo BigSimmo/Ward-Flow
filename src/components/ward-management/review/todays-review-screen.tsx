@@ -42,7 +42,8 @@ import styles from "./todays-review.module.css";
 
 const FILTERS: { id: ReviewFilter; label: string }[] = [
   { id: "all", label: "All" },
-  { id: "decline", label: "Declines" },
+  // C21: this chip counts one line per declining ward; the hero's Declines counts every decline.
+  { id: "decline", label: "Wards declining" },
   { id: "override", label: "Overrides" },
   { id: "problem", label: "Problems" },
   { id: "stopped", label: "Stopped by the app" },
@@ -277,7 +278,9 @@ export function TodaysReviewScreen() {
           <span className={styles.todoTitle}>
             {todo.count} {todo.count === 1 ? "problem" : "problems"} still open
           </span>
-          <span className={styles.todoDetail}>Each one is also in My list. Hand over any you will not clear.</span>
+          <span className={styles.todoDetail}>
+            Each one is also in Needs you on Home. Hand over any you will not clear.
+          </span>
         </span>
         <Link href={HANDOVER_HREF} className={`${buttonClass({ variant: "sec", size: "sm" })} ${styles.todoAction}`}>
           Open Handover

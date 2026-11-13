@@ -363,8 +363,9 @@
 }
 
 /* Tap to call (Josh, 3 Nov 2026): the number is the link, in accent ink, with the Copy beside it. */
+/* A15-14: the number is plain text now (copy only), so it no longer looks like a link. */
 .tel {
-  color: var(--wf-accent-ink);
+  color: inherit;
   font-weight: 600;
   text-decoration: none;
   min-height: 24px;

@@ -43,6 +43,8 @@ owns._
 2. Check the footer starts "Synthetic prototype" and says "Not approved for clinical use".
 3. Rehearse once from start to finish **in this same tab**, so every page's code is already loaded
    for the real run. Do not press **Lock** on the TV view: the lock survives Reset demo.
+   Time Act 2 and the Close as you go. In the audit run the Close ran past its 30 seconds and
+   Act 2 had the least room, so trim your own words there first.
 4. As the audience sits down (not earlier), press the **Board time** clock in the header. **Tools**
    opens at **Scenario and clock**. Check the scenario is **Standard day**, and pick it first if it
    is not: Reset demo reloads whichever scenario is loaded. Press **Reset demo**, then **Reset demo**
@@ -313,7 +315,7 @@ Pick two of these three if time is short. None of them needs typing.
 
 **A. The ward sees the full referral before it answers.** In the left-hand menu press **More**,
 then **All wards**, and press **Open ward** on **SJGM Adult Open**. Under
-**Awaiting your answer**, press **Saoirse Loxbury** (synthetic). The full referral opens: reason,
+**Awaiting your answer**, press **Loxbury, Saoirse** (synthetic). The full referral opens: reason,
 risk, legal, observation, medical clearance, physical health, medications, referrer, arrival and
 documents. Close it with **Esc**. Do not accept or decline.
 
@@ -462,7 +464,7 @@ Do not claim:
 | 3   | Referrals, Coldharbour, Cyril (Place tab) | Show 1 more with a bed ready; choose a ward (do not accept); Esc; browser Back; Pull the bed, Pull the bed; Esc                               |
 | 4   | Keira's page                              | Record clearance; Log booking; Mark handover ready; Destination row; Provider accepted job, Vehicle en route, Mark moving · patient collected |
 | 5   | Destination and placement                 | Confirm arrival · receiving ward, Confirm arrival; Esc; More, All wards, Open ward (Dabakarn)                                                 |
-| 6   | SJGM Adult Open; More, Legal forms; clock | Saoirse Loxbury, Esc; Seclusion tab; Board time, Demo clock                                                                                   |
+| 6   | SJGM Adult Open; More, Legal forms; clock | Loxbury, Saoirse, Esc; Seclusion tab; Board time, Demo clock                                                                                  |
 | -   | Home                                      | -                                                                                                                                             |
 
 Before every run, as the audience sits down: **Board time** clock, **Reset demo**, confirm. Avoid

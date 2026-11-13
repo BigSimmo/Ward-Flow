@@ -9,7 +9,6 @@ import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard
 import type { CallRow } from "./patient-call-list";
 import type { PatientMode } from "./patient-mode";
 import { PatientStatusCard, type PatientStatusContext } from "./patient-status-card";
-import { telHref } from "./patient-now-ward";
 import styles from "./patient-now-layouts.module.css";
 
 /**
@@ -179,8 +178,8 @@ export function PatientNowLayout({
 /* ---------------- Who to call ---------------- */
 
 function PatientCallCard({ rows, title = "Who to call" }: { rows: CallRow[]; title?: string }) {
-  // Josh, 3 Nov 2026: each number is tap to call (a tel: link) with a small Copy beside it. The
-  // numbers are synthetic, in the unassigned (08) 0000 exchange.
+  // A15-14 (Josh, 13 Nov 2026): demo numbers are copy only. Each number is plain text with a small
+  // Copy beside it, and nothing dials. The numbers are invented, in the (08) 5550 fiction range.
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [failedKey, setFailedKey] = useState<string | null>(null);
   function copy(row: CallRow, number: string) {
@@ -208,14 +207,9 @@ function PatientCallCard({ rows, title = "Who to call" }: { rows: CallRow[]; tit
               </span>
               <span className={styles.callNumber}>
                 {row.number ? (
-                  <a
-                    className={`${styles.mono} ${styles.tel}`}
-                    href={telHref(row.number)}
-                    aria-label={`Call ${row.name}, ${row.number}`}
-                    data-testid="ward-patient-call-number"
-                  >
+                  <span className={`${styles.mono} ${styles.tel}`} data-testid="ward-patient-call-number">
                     {row.number}
-                  </a>
+                  </span>
                 ) : (
                   <span className={styles.callRole}>No line held</span>
                 )}

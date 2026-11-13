@@ -1,12 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import { CalendarDays, DoorOpen } from "lucide-react";
 import type { WfTone } from "@/components/wf";
-import {
-  daysInBed,
-  isPastExpectedDischarge,
-  stayDayNumber,
-  type Admission,
-} from "@/components/ward-management/ward-admissions";
+import { isPastExpectedDischarge, stayDayNumber, type Admission } from "@/components/ward-management/ward-admissions";
 import { ABSENCE_STEP_BAR_LABELS, ABSENCE_STEP_LABELS, absenceStepsFor } from "@/components/ward-management/ward-model";
 import {
   dayOf,
@@ -184,7 +179,7 @@ export type StayProgress = {
 
 export function stayProgress(admission: Admission | undefined, now: Instant): StayProgress | null {
   if (!admission || admission.arrivedAt === null) return null;
-  const day = stayDayNumber(daysInBed(admission, now));
+  const day = stayDayNumber(admission, now);
   if (day === null) return null;
   const expected = admission.expectedDischargeAt;
   if (expected === null || !Number.isFinite(expected))
@@ -211,9 +206,4 @@ export function stayProgress(admission: Admission | undefined, now: Instant): St
     note,
     past,
   };
-}
-
-/** A tel: address for a synthetic number, digits and a leading plus only. */
-export function telHref(number: string): string {
-  return `tel:${number.replace(/[^\d+]/gu, "")}`;
 }

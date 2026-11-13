@@ -790,7 +790,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
         ),
         phoneCreate("New referral, New triage, Log a delay, Update a bed and Add patient"),
         phoneDock(
-          `Home, Referrals${f.referralsWaiting === undefined ? "" : ` with ${f.referralsWaiting} awaiting a decision`}, Alerts and Activity.`,
+          `Home, Capacity, Alerts and Tools. Referrals${f.referralsWaiting === undefined ? "" : `, with ${f.referralsWaiting} awaiting a decision,`} is in the menu.`,
         ),
         step(
           "Finding your way",

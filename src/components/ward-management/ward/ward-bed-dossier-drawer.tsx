@@ -766,7 +766,7 @@ export function WardBedDossierDrawer({
           isOccupied={isOccupied}
           isAwayAtEd={isAwayAtEd}
           tone={tone}
-          stayDays={stayDays}
+          stayDay={stayDays === null ? null : stayDayNumber(admission, now)}
           observation={observation}
           expectedPlan={
             <>
@@ -837,7 +837,8 @@ export function WardBedDossierDrawer({
   // day), a soft pill for where the stay is, the three facts a nurse checks first, the reason they
   // have not left, and the plan to leave as recorded steps.
   const status = isOccupied ? stayStatus(bedItem, expectedPlan) : null;
-  const stayFigure = stayDays === null ? "Not recorded" : `Day ${stayDayNumber(stayDays)}`;
+  const stayDay = stayDays === null ? null : stayDayNumber(admission, now);
+  const stayFigure = stayDay === null ? "Not recorded" : `Day ${stayDay}`;
   const stepNow =
     admission?.state === "occupied"
       ? bedItem?.dischargeConfirmed === true

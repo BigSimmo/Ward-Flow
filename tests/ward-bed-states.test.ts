@@ -15,7 +15,7 @@ describe("bed states: Ready, Pulled, Closed, Occupied", () => {
   it("adds up to every ward's beds, across the whole synthetic network", () => {
     const mismatched = allUnits()
       .map((unit) => {
-        const s = bedStates(unit, wardAdmissions, [], leaveBeds);
+        const s = bedStates(unit, wardAdmissions, [], leaveBeds, []);
         return { unitId: unit.id, beds: unit.beds, sum: s.ready + s.pulled + s.closed + s.occupied };
       })
       .filter((row) => row.sum !== row.beds);
@@ -25,11 +25,11 @@ describe("bed states: Ready, Pulled, Closed, Occupied", () => {
   it("counts every seeded pulled patient as Pulled, taken out of Occupied rather than Closed", () => {
     const seeded = wardAdmissions.filter((admission) => admission.state === "pulled");
     expect(seeded.length).toBeGreaterThan(0);
-    const total = allUnits().reduce((sum, unit) => sum + bedStates(unit, wardAdmissions, [], leaveBeds).pulled, 0);
+    const total = allUnits().reduce((sum, unit) => sum + bedStates(unit, wardAdmissions, [], leaveBeds, []).pulled, 0);
     expect(total).toBe(seeded.length);
     for (const unit of allUnits()) {
       const capacity = unitCapacity(unit, []);
-      const states = bedStates(unit, wardAdmissions, [], leaveBeds);
+      const states = bedStates(unit, wardAdmissions, [], leaveBeds, []);
       expect(states.closed, unit.id).toBe(capacity.held);
       expect(states.ready, unit.id).toBe(capacity.available);
     }
@@ -37,7 +37,7 @@ describe("bed states: Ready, Pulled, Closed, Occupied", () => {
 
   it("a live pull moves one bed from Ready to Pulled and leaves Closed alone", () => {
     const unit = allUnits().find((candidate) => unitCapacity(candidate, []).available > 0)!;
-    const before = bedStates(unit, [], [], []);
+    const before = bedStates(unit, [], [], [], []);
     // What PULL_PATIENT does to the unit: allocatable down by one, the bed still physically empty.
     const pulledUnit: Unit = { ...unit, allocatable: { ...unit.allocatable, value: unit.allocatable.value - 1 } };
     const admission = {
@@ -46,7 +46,7 @@ describe("bed states: Ready, Pulled, Closed, Occupied", () => {
       state: "pulled",
       movementId: "WF-099",
     } as unknown as Admission;
-    const after = bedStates(pulledUnit, [admission], [], []);
+    const after = bedStates(pulledUnit, [admission], [], [], []);
     expect(after.ready).toBe(before.ready - 1);
     expect(after.pulled).toBe(before.pulled + 1);
     expect(after.closed).toBe(before.closed);
@@ -66,8 +66,8 @@ describe("bed states: Ready, Pulled, Closed, Occupied", () => {
       state: "pulled",
       movementId: "WF-098",
     } as unknown as Admission;
-    const before = bedStates(pulledUnit, [], [], []);
-    const after = bedStates(pulledUnit, [admission], [], []);
+    const before = bedStates(pulledUnit, [], [], [], []);
+    const after = bedStates(pulledUnit, [admission], [], [], []);
     expect(after.pulled).toBe(before.pulled + 1);
     expect(after.ready).toBe(before.ready - 1);
     expect(after.ready + after.pulled + after.closed + after.occupied).toBe(unit.beds);
@@ -75,7 +75,7 @@ describe("bed states: Ready, Pulled, Closed, Occupied", () => {
 
   it("keeps the two markers inside the boxes they belong to", () => {
     for (const unit of allUnits()) {
-      const s = bedStates(unit, wardAdmissions, [], leaveBeds);
+      const s = bedStates(unit, wardAdmissions, [], leaveBeds, []);
       expect(s.beingMadeReady).toBeLessThanOrEqual(s.ready);
       expect(s.onLeave).toBeLessThanOrEqual(s.occupied);
     }

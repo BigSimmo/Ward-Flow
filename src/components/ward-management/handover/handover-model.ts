@@ -38,7 +38,7 @@ import { declineReasonLabels } from "@/components/ward-management/movements/move
 import { bedStates, readyBedsNow, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 import { communityOriginLabel, sourceWardName } from "@/components/ward-management/ward-movement-origin";
-import { currentLegalDueAt, formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
+import { currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
 import type { SenderMovementPartialView } from "@/components/ward-management/ward-partial-view-contract";
 import { SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
 import { coordinatorOwnsAcceptedAwaitingBed } from "@/components/ward-management/ward-shared-figures";
@@ -295,9 +295,10 @@ export function toHandoverRow(
     owner: recordedOwner || "No owner recorded",
     ownerShort: OWNER_SHORT[recordedOwner] ?? (recordedOwner || "No owner recorded"),
     legalStatus: movement.legalStatus,
-    formCode: movement.legalForm?.code,
-    formDueAt: currentLegalDueAt(movement),
-    formEnded: movement.legalForm?.endedBy !== undefined || formProgression(movement)?.ended === true,
+    // 1.1 and A1: the one current legal position; ended only when a person recorded it.
+    formCode: currentLegalPosition(movement).form?.code,
+    formDueAt: currentLegalPosition(movement).dueAt,
+    formEnded: currentLegalPosition(movement).ended,
     destinationStatus:
       accepted === undefined && movement.referredUnitIds.length === 0
         ? sender === null

@@ -4,14 +4,14 @@ import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { allUnits, NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
 import { serviceRollup } from "@/components/ward-management/ward-morning-rollup";
 
-const base = allUnits().find((unit) => unit.cohort === "Adult" && bedStates(unit, [], [], []).ready > 1)!;
+const base = allUnits().find((unit) => unit.cohort === "Adult" && bedStates(unit, [], [], [], []).ready > 1)!;
 const cell = (units: Parameters<typeof bedsReadySummary>[0], label: string) =>
   bedsReadySummary(units, [], [], NOW_ANCHOR).cells.find((c) => c.label === label)!.value;
 
 describe("Referrals hero: beds ready statewide", () => {
   it("counts a unit without authorisation, since it still takes voluntary admissions", () => {
     expect(base, "the fixture has no adult unit with two ready beds").toBeDefined();
-    const ready = bedStates(base, [], [], []).ready;
+    const ready = bedStates(base, [], [], [], []).ready;
     expect(cell([{ ...base, authorised: false }], "Adult")).toBe(ready);
   });
 

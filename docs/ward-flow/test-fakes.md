@@ -41,7 +41,10 @@ The test fails when a test mocks a module not in this list. Add it here, and to 
 @/components/ward-management/help/ward-help-store
 @/components/ward-management/help/ward-tour-facts
 @/components/ward-management/help/ward-tour-more-steps
+@/components/ward-management/night-view-figures
 @/components/ward-management/patients/patient-now-screen
+@/components/ward-management/patients/patient-record-extras
+@/components/ward-management/patients/patient-status-card
 @/components/ward-management/preload-when-idle
 @/components/ward-management/referrals/pull-accepted-referral
 @/components/ward-management/referrals/referral-history-corrections

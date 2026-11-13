@@ -7,7 +7,8 @@ import {
   FORM_RECORDED_ENDED,
   formProgressionPhrase,
   legalFormEnd,
-} from "../legal-forms/legal-form-progression";
+  NEXT_FORM_TO_RECORD,
+} from "../ward-legal-form-progression";
 
 import { Check, CircleCheck, CircleAlert, ChevronDown, ChevronUp, Info } from "lucide-react";
 import Link from "next/link";
@@ -249,7 +250,7 @@ function legalFormLine(movement: Movement, now: Instant) {
   // The recorded end is read before the neutral 5A/5B arrival wording, as the Legal forms page reads it.
   const end = legalFormEnd(movement);
   if (end?.kind === "progressed") {
-    return `${formProgressionPhrase(end.progression)}; Form ${end.progression.nextCode} to record`;
+    return `${formProgressionPhrase(end.progression)}; ${NEXT_FORM_TO_RECORD.toLowerCase()}`;
   }
   if (end?.kind === "recorded") return `${formCode} · ${FORM_RECORDED_ENDED.toLowerCase()}`;
   const dueAt = currentLegalDueAt(movement);

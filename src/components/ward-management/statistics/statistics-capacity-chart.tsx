@@ -147,7 +147,8 @@ export function StatisticsCapacityChart(props: CapacityInput) {
             inUse: ward.beds.inUse,
           }))
       : props.units!.map((unit) => {
-          const unheld = bedStates(unit, props.admissions ?? [], props.bedReleases!, props.leaveBeds ?? []);
+          // Hold-free on purpose: in use is the beds taken by a stay, never the Ready figure.
+          const unheld = bedStates(unit, props.admissions ?? [], props.bedReleases!, props.leaveBeds ?? [], []);
           return {
             id: unit.id,
             name: unit.name,

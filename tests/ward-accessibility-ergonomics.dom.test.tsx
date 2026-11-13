@@ -243,8 +243,8 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
   });
 
   // Forms (9 Oct 2026): "Record a form" opens a sheet from the hero, so focus moves into the
-  // dialog and returns when it closes. Redesign (Josh, 31 Oct 2026): the movement comes first, so
-  // focus starts on its picker.
+  // dialog and returns when it closes. A12-08 (Josh, 13 Nov 2026): focus starts on the box's
+  // heading, not the Movement picker, so Escape closes the box at once.
   describe("5. LegalFormsScreen Record a form focus", () => {
     it("moves focus from the hero's Record a form button into the Record a form dialog", async () => {
       render(
@@ -260,7 +260,9 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
       fireEvent.click(recordBtn);
 
       const dialog = screen.getByRole("dialog", { name: "Record a form" });
-      await waitFor(() => expect(document.activeElement).toBe(within(dialog).getByLabelText("Movement")));
+      await waitFor(() =>
+        expect(document.activeElement).toBe(within(dialog).getByRole("heading", { name: "Record a form" })),
+      );
     });
   });
 

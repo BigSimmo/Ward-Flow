@@ -51,6 +51,9 @@ function bench(): WardFlowState {
     empty: { ...base.empty, value: 5, confirmedAt: NOW },
     allocatable: { ...base.allocatable, value: 5, confirmedAt: NOW },
     allocatableLocked: 2,
+    // A15-27 (Josh, 13 Nov 2026): the demo's one closed bed now sits on this generic-label ward
+    // (`ward-loop-checks-demo.ts`); this bench states its own closed beds, which are none.
+    closedBeds: [],
   };
   const of = (security: Movement["security"]) =>
     seeded.movements.filter((candidate) => candidate.cohort === unit.cohort && candidate.security === security);

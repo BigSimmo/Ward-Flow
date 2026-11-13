@@ -10,6 +10,7 @@ import Link from "next/link";
 import { elapsedLabel, isOpen, referralForMovement, stageCopy } from "@/components/ward-management/ward-derivations";
 import { MOVEMENT_STAGES } from "@/components/ward-management/ward-model";
 import type { Movement, Referral, ReferralState, Unit } from "@/components/ward-management/ward-model";
+import { legalFormNowWords } from "@/components/ward-management/ward-legal-form-progression";
 import {
   declinedAddressings,
   referralState,
@@ -195,9 +196,9 @@ function legalStatutoryInfo(legalStatus: string) {
   };
 }
 
-/** A movement's own legal record: its form when one is recorded, otherwise its status. */
+/** A movement's own legal record: its form when one is recorded, otherwise its status (1.1: one reading). */
 function movementLegalStatus(movement: Movement): string {
-  return movement.legalForm ? `Form ${movement.legalForm.code}` : movement.legalStatus;
+  return legalFormNowWords(movement) ?? movement.legalStatus;
 }
 
 /** The legal pill's colour. Only a voluntary status wears the voluntary colour. */

@@ -82,42 +82,41 @@ describe("Time not written group order (A3-6, owner 20 Oct 2026)", () => {
 });
 
 describe("form moves on after examination or arrival (S-6)", () => {
-  it("names Form 6A once an inpatient order is recorded or a person on an order arrives", () => {
+  // A1 and D-170 item 1 (Josh, 13 Nov 2026): the form shows as recorded until a person records that
+  // it ended, and the next form is "Next form to record", with no number. Nothing is inferred from the
+  // examination or the arrival.
+  it("prompts the next form to record, with no number, once an inpatient order is recorded or a person on an order arrives", () => {
     const examined = movement({
       legalStatus: "Referred for psychiatric examination",
       legalForm: { code: "1A", kind: "examination" },
       examination: { at: NOW, outcome: "inpatient_order" },
     });
     expect(formProgression(examined)).toEqual({
-      endedCode: "1A",
-      endedWhen: "at the examination",
-      nextCode: "6A",
-      ended: true,
+      formCode: "1A",
+      when: "at the examination",
     });
     const arrived = movement({
       legalStatus: "Involuntary inpatient",
       legalForm: { code: "4C", kind: "transport" },
       closure: { at: NOW, outcome: "arrived", reason: "arrived" },
     });
-    expect(formProgression(arrived)?.endedWhen).toBe("at arrival");
-    expect(formProgressionPhrase(formProgression(arrived)!)).toBe("Form 4C ended at arrival");
+    expect(formProgression(arrived)?.when).toBe("at arrival");
+    expect(formProgressionPhrase(formProgression(arrived)!)).toBe("On Form 4C at arrival");
     expect(formProgression({ ...arrived, legalForm: { code: "6A", kind: "detention" } } as Movement)).toBeUndefined();
     expect(formProgression({ ...arrived, legalStatus: "Voluntary" } as Movement)).toBeUndefined();
   });
 
-  it("still names Form 6A when a person on a community treatment order arrives (M117, D-123)", () => {
+  it("still prompts the next form when a person on a community treatment order arrives (M117, D-123)", () => {
     for (const code of ["5A", "5B"]) {
       const arrivedOnCto = movement({
         legalStatus: "Involuntary inpatient",
         legalForm: { code },
         closure: { at: NOW, outcome: "arrived", reason: "arrived" },
       });
-      // D-127: arrival alone does not end a community treatment order, so the wording stays neutral.
+      // D-127 and A1: arrival alone does not end a community treatment order, so the wording stays neutral.
       expect(formProgression(arrivedOnCto)).toEqual({
-        endedCode: code,
-        endedWhen: "at arrival",
-        nextCode: "6A",
-        ended: false,
+        formCode: code,
+        when: "at arrival",
       });
       expect(formProgressionPhrase(formProgression(arrivedOnCto)!)).toBe(`On Form ${code} at arrival`);
       expect(formProgressionShort(formProgression(arrivedOnCto)!)).toBe("On this form at arrival");
@@ -127,10 +126,8 @@ describe("form moves on after examination or arrival (S-6)", () => {
         examination: { at: NOW, outcome: "inpatient_order" },
       });
       expect(formProgression(examinedOnCto)).toEqual({
-        endedCode: code,
-        endedWhen: "at the examination",
-        nextCode: "6A",
-        ended: true,
+        formCode: code,
+        when: "at the examination",
       });
     }
     for (const code of ["6A", "6B", "6C"]) {
@@ -143,10 +140,10 @@ describe("form moves on after examination or arrival (S-6)", () => {
     }
   });
 
-  it("keeps an ended form's typed expiry as history on Forms and Delays, never in force or overdue", () => {
+  it("keeps a recorded-ended form's typed expiry as history on Forms and Delays, never in force or overdue", () => {
     const ended = movement({
       legalStatus: "Involuntary inpatient",
-      legalForm: { code: "4C", kind: "transport", dueAt: NOW - 30 },
+      legalForm: { code: "4C", kind: "transport", dueAt: NOW - 30, endedBy: "replaced" },
       examination: { at: NOW - 60, outcome: "inpatient_order" },
     });
     expect(ended.legalForm?.dueAt, "the record keeps the typed time").toBe(NOW - 30);
@@ -160,8 +157,8 @@ describe("form moves on after examination or arrival (S-6)", () => {
       group.movements.some((row) => row.id === ended.id),
     )?.cause;
     expect(cause).not.toBe("legal_breached");
-    // Without the examination the same typed time is overdue.
-    const live = { ...ended, examination: undefined } as Movement;
+    // A1: without a recorded end the same typed time is overdue, even after the examination.
+    const live = { ...ended, legalForm: { code: "4C", kind: "transport", dueAt: NOW - 30 } } as Movement;
     expect(isLegalDeadlineBreached(live, NOW)).toBe(true);
     expect(legalDeadlineMinutes(live, NOW)).toBe(-30);
   });

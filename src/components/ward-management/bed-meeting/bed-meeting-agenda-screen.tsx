@@ -504,8 +504,8 @@ function BedMeetingAgenda() {
                 // a meeting runs, so Stop and Next are the only meeting controls.
                 bedMeetingTvOn && !running
                   ? {
-                      label: "Start meeting",
-                      phoneLabel: "Start",
+                      // C08: it opens the TV view, so it says so; the guided meeting is Run meeting.
+                      label: "Open on TV",
                       href: bedMeetingTvHref(),
                       testId: "agenda-start-meeting",
                     }

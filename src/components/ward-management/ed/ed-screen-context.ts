@@ -37,6 +37,12 @@ type EdScreenRecords = {
   boardTable: boolean;
   needsRailSlides: boolean;
   recordEdStep: (event: EdStepEvent) => void;
+  /**
+   * Opens the patient page for a registry patient id, or the movement id where none is linked
+   * (A12-04). Optional only because the redesign mock-up's board builds this context too and keeps
+   * its forked sheet's own wiring; the live ED board always sets it.
+   */
+  openPatientPage?: (patientId: string) => void;
   submitReferral: (event: FormEvent<HTMLFormElement>) => void;
   referralFieldsDisabled?: boolean;
   referralSaveMessage?: string;

@@ -39,7 +39,7 @@ import { HEALTH_SERVICES } from "../src/components/ward-management/ward-model";
  *
  * The owner asked for the On-call page to carry contact records and the time each is available
  * until. They are MOCKS, and the last case below is what keeps them so: every number the directory
- * renders is built by one function as `08 0000` plus a serial (an unassigned exchange that cannot
+ * renders is built by one function as `08 5550` plus a serial (the ACMA fiction range, which cannot
  * reach anyone) and every email by one function on the reserved `.invalid` domain. **No literal
  * number or address is written in the source, so the source scan above is unchanged and still
  * applies in full.** The screen has no tel or mail link, and Call copies and says it is not wired.
@@ -263,13 +263,13 @@ describe("the on-call screen holds no people and nothing to ring", () => {
     const numbers = entries.flatMap((entry) => entry.lines.map((line) => line.number));
     const emails = entries.flatMap((entry) => (entry.email ? [entry.email] : []));
     expect(numbers.length, "the directory holds no lines, so this case checks nothing").toBeGreaterThan(50);
-    expect(MOCK_NUMBER_PREFIX).toBe(["08", "0000"].join(" "));
+    expect(MOCK_NUMBER_PREFIX).toBe(["08", "5550"].join(" "));
     for (const number of numbers) {
       if (!SHOW_MOCK_CONTACTS) {
         expect(number).toBeNull();
         continue;
       }
-      expect(number, `${String(number)} is not in the unassigned mock range`).toMatch(/^08 0000 \d{4}$/u);
+      expect(number, `${String(number)} is not in the 08 5550 fiction range`).toMatch(/^08 5550 \d{4}$/u);
     }
     // With SHOW_MOCK_CONTACTS off every slot is null, so only held numbers must be unique.
     const held = numbers.filter((number) => number !== null);

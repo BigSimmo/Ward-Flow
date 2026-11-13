@@ -97,10 +97,23 @@ export function ExpectedOccupancyTable({
       ) : null}
       <p className={styles.note}>
         Likely beds taken: beds taken now, less recorded discharges, plus booked admissions. People waiting without a
-        ward are not counted.
+        ward are not counted.{closedWardsNote(units)}
       </p>
     </section>
   );
+}
+
+/**
+ * A16-25: a closed ward counts as no capacity here (clinical owner ruling, 14 Oct 2026), so the total
+ * has fewer beds than the network figure on the rest of the page ("250/294" beside 304 beds). Said
+ * in the note, so the two totals do not read as a mistake.
+ */
+export function closedWardsNote(units: readonly Unit[]): string {
+  const closed = units.filter((unit) => unit.isClosed);
+  if (closed.length === 0) return "";
+  const beds = closed.reduce((sum, unit) => sum + unit.beds, 0);
+  const wards = closed.length === 1 ? "1 closed ward" : `${closed.length} closed wards`;
+  return ` The total leaves out ${wards} (${beds} ${beds === 1 ? "bed" : "beds"}).`;
 }
 
 /** Wards shown before "Show all": the design system's eight rows. */

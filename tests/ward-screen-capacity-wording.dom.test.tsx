@@ -129,7 +129,7 @@ describe("the ward screen's word for min(allocatable, empty)", () => {
     expect(breakdown).not.toHaveTextContent(`Ready ${capacity.available}`);
     // The empty bed the ward is not offering is "Closed" (2026-09-01 ruling 5), never "Held".
     const seed = seedWardFlowState();
-    const closed = bedStates(unit, seed.admissions, seed.bedReleases, seed.leaveBeds).closed;
+    const closed = bedStates(unit, seed.admissions, seed.bedReleases, seed.leaveBeds, []).closed;
     expect(breakdown).toHaveTextContent(`Closed ${closed}`);
     expect(breakdown).not.toHaveTextContent("Held");
 

@@ -1,5 +1,7 @@
+"use client";
+
 import type { CSSProperties, ReactNode } from "react";
-import { DEMONSTRATION_DAY_LABEL } from "@/components/ward-management/ward-sites";
+import { useWardSharedSave } from "./ward-shared-save-context";
 import styles from "./ward-prototype-footer.module.css";
 
 export interface WardPrototypeFooterProps {
@@ -20,16 +22,24 @@ const PROTOTYPE_BADGE = (
     Synthetic prototype
   </span>
 );
-const PHONE_TAIL = (
+/**
+ * The clock the board runs on, from the mode (root-cause fix 2.3, approved by Josh 13 Nov 2026). The
+ * public demo runs a scripted board clock; the signed-in site runs on real Perth time (D-150). The
+ * footer used to say "Demo board clock · scenario set on 15 Aug 2026" everywhere, from a fixed label,
+ * so it named a date the board no longer shows and claimed a demo clock on the signed-in site too.
+ * The signed-in site is the one that provides the shared save context.
+ */
+export function footerClockWords(signedIn: boolean): string {
+  return signedIn ? "Real Perth time" : "Demo board clock";
+}
+
+const phoneTail = (clock: string) => (
   <span className={styles.phoneTail}>
-    <span>Demo board clock ·</span> <span>invented records ·</span> <span>not for clinical use</span>
+    <span>{clock} ·</span> <span>invented records ·</span> <span>not for clinical use</span>
   </span>
 );
-const AUTHORITY_PILL = (
-  <span
-    className={styles.authorityPill}
-    title={`Ward Flow prototype · demo board clock · scenario set on ${DEMONSTRATION_DAY_LABEL} · synthetic only`}
-  >
+const authorityPill = (clock: string) => (
+  <span className={styles.authorityPill} title={`Ward Flow prototype · ${clock.toLowerCase()} · synthetic only`}>
     <svg
       className={styles.authorityIcon}
       viewBox="0 0 16 16"
@@ -49,13 +59,8 @@ const AUTHORITY_PILL = (
   </span>
 );
 
-export function WardPrototypeFooter({
-  testId,
-  note = `Demo board clock · scenario set on ${DEMONSTRATION_DAY_LABEL} · synthetic demonstration figures · Not approved for clinical use`,
-  extra,
-  style,
-  className,
-}: WardPrototypeFooterProps) {
+export function WardPrototypeFooter({ testId, note, extra, style, className }: WardPrototypeFooterProps) {
+  const clock = footerClockWords(useWardSharedSave() !== null);
   return (
     <footer
       className={`${styles.footer}${className ? ` ${className}` : ""}`}
@@ -67,14 +72,14 @@ export function WardPrototypeFooter({
         {PROTOTYPE_BADGE}
         {/* Phone (v10): the footer is one quiet line, the badge then this tail; the note below is
             kept for screen readers. Hidden above phone. */}
-        {PHONE_TAIL}
+        {phoneTail(clock)}
         <span className={styles.footerNote} data-ward-type-floor="banner">
-          {note}
+          {note ?? `${clock} · synthetic demonstration figures · Not approved for clinical use`}
         </span>
       </div>
       <div className={styles.rightGroup}>
         {extra}
-        {AUTHORITY_PILL}
+        {authorityPill(clock)}
       </div>
     </footer>
   );

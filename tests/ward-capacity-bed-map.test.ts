@@ -47,7 +47,7 @@ describe("bedMapWards — the bed map's per-ward figures", () => {
     const wards = bedMapWards(units, bedReleases, wardAdmissions, leaveBeds);
     expect(wards.length).toBe(units.length);
     for (const ward of wards) {
-      const states = bedStates(ward.unit, wardAdmissions, bedReleases, leaveBeds);
+      const states = bedStates(ward.unit, wardAdmissions, bedReleases, leaveBeds, []);
       expect(ward.ready, ward.unit.id).toBe(unitCapacity(ward.unit, bedReleases).available);
       expect(ward.ready, ward.unit.id).toBe(states.ready);
       expect(ward.pulled, ward.unit.id).toBe(states.pulled);

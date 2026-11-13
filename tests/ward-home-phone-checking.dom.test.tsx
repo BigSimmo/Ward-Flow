@@ -30,10 +30,12 @@ describe("phone Home Checking line", () => {
       </WardFlowProvider>,
     );
     // Batch 4 item 24 (D-142): the line ends with a pointer to the old outage packs, when any.
+    // Root-cause fix 3.3: packs never printed are counted and worded apart from packs over 24h old.
     const line = screen.getByTestId("home-next-checking");
     expect(line.textContent).toMatch(
-      /^Checking: \d+ stale bed counts?, \d+ wards? not reporting(, \d+ outage packs? over 24h old)?$/,
+      /^Checking: \d+ stale bed counts?, \d+ wards? not reporting(, \d+ outage packs? never printed)?(, \d+ over 24h old)?$/,
     );
+    expect(screen.getByTestId("home-next-old-packs")).toHaveTextContent(/^\d+ outage packs? never printed$/);
     expect(screen.getAllByTestId("home-next-checking")).toHaveLength(1);
     expect(line.closest("[data-wf-hero-next]")).not.toBeNull();
     expect(screen.queryByTestId("wf-checking-foot")).not.toBeInTheDocument();

@@ -19,6 +19,7 @@ import { calendarDateOf, demoDayZero } from "@/components/ward-management/ward-c
 import { destinationUnit, isOpen, stageCopy } from "@/components/ward-management/ward-derivations";
 import { useOptionalWardFlow } from "@/components/ward-management/ward-flow-provider";
 import type { Movement, MovementStage, Unit } from "@/components/ward-management/ward-model";
+import { legalFormNowWords } from "@/components/ward-management/ward-legal-form-progression";
 import { patientAgeYears, patientListName, type Patient } from "@/components/ward-management/ward-patients";
 import {
   movementUmrn,
@@ -281,10 +282,10 @@ function MovementPreview({
             </dd>
           </>
         ) : null}
-        {movement.legalForm ? (
+        {legalFormNowWords(movement) ? (
           <>
             <dt>Form</dt>
-            <dd>Form {movement.legalForm.code} recorded</dd>
+            <dd>{legalFormNowWords(movement)} recorded</dd>
           </>
         ) : null}
         <dt>Owner</dt>

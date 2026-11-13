@@ -401,7 +401,8 @@ describe("emergency department intake picker", () => {
     fireEvent.click(screen.getByTestId(`ward-ed-row-name-${FIRST_RAISED_ID}`));
     const outstanding = screen.getByTestId(`ward-ed-outstanding-${FIRST_RAISED_ID}`);
     expect(outstanding).toHaveAttribute("data-kind", "form");
-    expect(outstanding).toHaveTextContent("examination recorded (inpatient order)");
+    // D-170 item 3: the outcome in the shared list words, so no screen spells it its own way.
+    expect(outstanding).toHaveTextContent("examination recorded (inpatient treatment order)");
   });
 
   // S-7 (audit 13 Oct 2026): "Record outcome" (discharge or community follow-up) was the primary
@@ -1229,7 +1230,7 @@ describe("emergency department — repeat examination (owner item 7)", () => {
 
     expect(screen.getByRole("radio", { name: "Inpatient treatment order" })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "Community treatment order" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Revoked — does not proceed" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "No order made, does not proceed" })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "Further examination ordered" })).toBeInTheDocument();
   });
 
@@ -1250,7 +1251,7 @@ describe("emergency department — repeat examination (owner item 7)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save outcome" }));
 
     const history = screen.getByTestId(`ward-ed-examination-history-${FIRST_RAISED_ID}`);
-    expect(history).toHaveTextContent("further examination ordered");
+    expect(history).toHaveTextContent("Further examination ordered");
 
     // Not offered a third time: the current outcome (inpatient order) settles the record.
     expect(screen.getByTestId(`ward-ed-examine-toggle-${FIRST_RAISED_ID}`)).toHaveAttribute("aria-disabled", "true");
@@ -1288,11 +1289,11 @@ describe("emergency department — repeat examination (owner item 7)", () => {
     fireEvent.click(screen.getByTestId(`ward-ed-handover-${revokedId}`));
 
     fireEvent.click(screen.getByTestId(`ward-ed-examine-toggle-${revokedId}`));
-    fireEvent.click(screen.getByRole("radio", { name: "Revoked — does not proceed" }));
+    fireEvent.click(screen.getByRole("radio", { name: "No order made, does not proceed" }));
     fireEvent.click(screen.getByRole("button", { name: "Save outcome" }));
 
     const flag = screen.getByTestId(`ward-ed-examination-revoked-flag-${revokedId}`);
-    expect(flag).toHaveTextContent("The examination was revoked and this movement still has a bed pulled.");
+    expect(flag).toHaveTextContent("The examination made no order and this movement still has a bed pulled.");
 
     // A second, freshly pulled movement with NO examination must not show the flag — the
     // anti-vacuity half: a flag that always renders would pass the assertion above for the

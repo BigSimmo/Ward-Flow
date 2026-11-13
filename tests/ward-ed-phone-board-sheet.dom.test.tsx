@@ -2,6 +2,12 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+const push = vi.fn();
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({ push, replace: vi.fn(), back: vi.fn(), forward: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() }),
+}));
+
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
     <a href={href} {...rest}>
@@ -18,12 +24,14 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * v10 ED page, phone: the board is a priority list of compact rows (tier, name, one meta line, the
  * wait and the next step). A row opens the person sheet, which pins "Open patient" and the next
  * step, and lists every other action the row offered, so nothing is lost by dropping the row's
- * action strip. The inline forms open inside the sheet.
+ * action strip. The inline forms open inside the sheet. A12-04 (Josh, 13 Nov 2026): "Open patient"
+ * opens the patient page, as on All EDs; the department's time record has its own button.
  */
 
 const original = typeof window !== "undefined" ? window.matchMedia : undefined;
 
 beforeEach(() => {
+  push.mockClear();
   window.matchMedia = ((query: string) => ({
     matches: query === "(max-width: 46.4375rem)",
     media: query,
@@ -84,7 +92,8 @@ describe("ED board on phone", () => {
     for (const name of ["Edit presentation", "Edit plan", "Record outcome", "Withdraw referral"]) {
       expect(within(actions).getByRole("button", { name })).toBeTruthy();
     }
-    // The sheet is the record, so the group leaves out View patient record (Open patient is below).
+    // The sheet is the record, so the group leaves out View patient record (Open patient, in the
+    // footer, goes to the patient page; Where their time went opens the department's record).
     expect(within(actions).queryByRole("button", { name: "View patient record" })).toBeNull();
     // Change 2 (D-77): the pinned next step is Record exam, so the list does not offer it again.
     expect(within(actions).queryByRole("button", { name: "Record examination" })).toBeNull();
@@ -107,7 +116,7 @@ describe("ED board on phone", () => {
     expect(outcome.getAttribute("aria-expanded")).toBe("true");
   });
 
-  it("Open patient closes the sheet", () => {
+  it("Open patient closes the sheet and opens the patient page, not the ED record", () => {
     const rows = renderPhoneBoard();
     const id = rows[0].dataset.testid!.replace("ward-ed-patient-", "");
     fireEvent.click(within(rows[0]).getByRole("button"));
@@ -115,5 +124,21 @@ describe("ED board on phone", () => {
       within(screen.getByTestId(`ward-ed-phone-sheet-${id}`)).getByRole("button", { name: "Open patient" }),
     );
     expect(screen.queryByTestId(`ward-ed-phone-sheet-${id}`)).toBeNull();
+    expect(push).toHaveBeenCalledTimes(1);
+    expect(push.mock.calls[0][0]).toMatch(/^\/ward-flow\/people\/[^/]+$/u);
+    expect(screen.queryByRole("button", { name: "Close patient details" })).toBeNull();
+  });
+
+  it("Where their time went closes the sheet and opens the ED record", () => {
+    const rows = renderPhoneBoard();
+    const id = rows[0].dataset.testid!.replace("ward-ed-patient-", "");
+    fireEvent.click(within(rows[0]).getByRole("button"));
+    fireEvent.click(
+      within(screen.getByTestId(`ward-ed-phone-sheet-${id}`)).getByRole("button", { name: "Where their time went" }),
+    );
+    expect(screen.queryByTestId(`ward-ed-phone-sheet-${id}`)).toBeNull();
+    expect(push).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Close patient details", hidden: true })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Where their time went", hidden: true })).toBeTruthy();
   });
 });

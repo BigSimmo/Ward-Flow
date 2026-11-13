@@ -673,6 +673,31 @@ button.stat:hover .statV {
   .tbl .cUpd .lg {
     align-items: baseline;
   }
+
+  /* Audit A5-07 (13 Nov 2026): the wait column is 7.5rem, and "15h 52m in ED" needs about 114px of
+     its 100px, so the cell cut it to "15h 52m in EI" with no "…". The figure keeps line 1 and "in ED"
+     or "since referral · …" takes its own line under it, wrapping rather than being cut. */
+  .tbl .cWait {
+    padding-block: var(--wf-s-1);
+    white-space: normal;
+  }
+
+  .tbl .cWait .wt {
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+    row-gap: 0;
+    min-width: 0;
+  }
+
+  .tbl .cWait .wt > .lg {
+    display: block;
+    flex-basis: 100%;
+    min-width: 0;
+    font-family: var(--wf-font);
+    font-weight: 500;
+    color: var(--wf-ink-2);
+    white-space: normal;
+  }
 }
 
 .tbl th {
@@ -2390,7 +2415,16 @@ button.gLaneL:hover {
 
   /* Audit A4 (5 Nov 2026): the wait figure stays whole on line 1 and "in ED" or "since referral"
      wraps under it, rather than the column cutting it ("15h 52m in E"). */
+  /* Audit A5-07 (13 Nov 2026): the in-transit row's label is long ("since referral · 15h 52m in
+     ED"). A wait that could not shrink took that label's width, so the 6rem column showed only
+     "since re" and the figure sat off its right edge. It now shrinks to the column and wraps. */
+  .r .cWait,
+  .r .wcell {
+    min-width: 0;
+  }
+
   .r .wt {
+    flex: 0 1 auto;
     flex-wrap: wrap;
     justify-content: flex-end;
     min-width: 0;

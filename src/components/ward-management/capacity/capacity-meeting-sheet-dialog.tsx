@@ -41,7 +41,8 @@ export function BedMeetingSheetDialog({
     {
       label: "Beds freeing today",
       value: discharges.freeingToday,
-      sub: `${discharges.heldUpToday} held up`,
+      // A16-25: the same day as the figure above it, said, so it never reads against "held up" elsewhere.
+      sub: `${discharges.heldUpToday} held up today`,
     },
     { label: "Pulled", value: capacity.pulled, sub: `${capacity.closed} closed` },
   ];

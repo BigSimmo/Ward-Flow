@@ -272,7 +272,7 @@ export function MovementDrawer({
     : movement.legalStatus
       ? `${movement.legalStatus} · No legal form recorded`
       : "No legal form recorded";
-  // A form that ended at the examination or on arrival has history, not a deadline (S-6).
+  // A form a person recorded as ended has history, not a deadline (S-6, A1: never inferred).
   const legalWhen =
     dueAt === undefined
       ? movement.legalForm

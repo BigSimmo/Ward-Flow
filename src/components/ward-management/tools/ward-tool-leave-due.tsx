@@ -6,6 +6,7 @@ import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-managemen
 import Link from "next/link";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { leaveBedLabels, leaveDueToday } from "@/components/ward-management/leave/leave-tracker";
+import { networkNamedHolds } from "@/components/ward-management/ward-bed-states";
 import { WARD_LEAVE_HREF } from "@/components/ward-management/ward-nav";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
@@ -17,11 +18,13 @@ type DueRow = { id: string; bedLabel: string; dueAt: Instant; overdue: boolean }
 type DueWard = { unitId: string; name: string; rows: DueRow[] };
 
 function useLeaveDue(): { wards: DueWard[]; absent: number } {
-  const { leaveBeds, units, admissions, bedReleases } = useWardFlowSelect(
+  const { leaveBeds, units, admissions, bedReleases, movements, referrals } = useWardFlowSelect(
     "leaveBeds",
     "units",
     "admissions",
     "bedReleases",
+    "movements",
+    "referrals",
   );
   const now = useWardFlowClock();
   const access = useEffectiveWardAccess();
@@ -33,7 +36,14 @@ function useLeaveDue(): { wards: DueWard[]; absent: number } {
       const unitLeave = leaveBeds.filter((leave) => leave.unitId === unit.id);
       const due = unitLeave.filter((leave) => leaveDueToday(leave, now));
       if (due.length === 0) continue;
-      const labels = leaveBedLabels(unit, unitLeave, admissions, bedReleases, leaveBeds);
+      const labels = leaveBedLabels(
+        unit,
+        unitLeave,
+        admissions,
+        bedReleases,
+        leaveBeds,
+        networkNamedHolds(movements, referrals),
+      );
       wards.push({
         unitId: unit.id,
         name: names.get(unit.id) ?? unit.name,
@@ -54,7 +64,7 @@ function useLeaveDue(): { wards: DueWard[]; absent: number } {
       wards: wards.sort((left, right) => Number(own.has(right.unitId)) - Number(own.has(left.unitId))),
       absent,
     };
-  }, [leaveBeds, units, admissions, bedReleases, now, access]);
+  }, [leaveBeds, units, admissions, bedReleases, movements, referrals, now, access]);
 }
 
 /** Leave beds due back today, for the Tools row count. */

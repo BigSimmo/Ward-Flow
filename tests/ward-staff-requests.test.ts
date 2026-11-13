@@ -49,7 +49,8 @@ describe("staff needed requests", () => {
   const seed = seedWardFlowState();
 
   it("seeds one synthetic open request, and the seed passes the stored-state check", () => {
-    expect(openStaffRequests(seed, NOW_ANCHOR).map((record) => record.unitId)).toEqual(["scgh-adult-open"]);
+    // A15-27 (13 Nov 2026): the seeded request sits on a generic-label ward, never a real ward name.
+    expect(openStaffRequests(seed, NOW_ANCHOR).map((record) => record.unitId)).toEqual(["rph-older-adult"]);
     expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(seed)))).toBe(true);
     // A stored request holding typed text is refused.
     const typed = JSON.parse(JSON.stringify(seed)) as WardFlowState;
@@ -172,11 +173,7 @@ describe("staff needed requests", () => {
       state.staffRequests!.filter((record) => record.unitId === UNIT).at(-1)!.shiftStartAt;
     const atNow = staffRequestShiftStart("this_shift", savedAt);
     // A far-off time, the other shift's start and a bad number.
-    for (const shiftStartAt of [
-      NOW_ANCHOR + 10_000,
-      staffRequestShiftStart("next_shift", savedAt),
-      Number.NaN,
-    ]) {
+    for (const shiftStartAt of [NOW_ANCHOR + 10_000, staffRequestShiftStart("next_shift", savedAt), Number.NaN]) {
       expect(startOf(wardFlowReducer(seed, ask({ now: savedAt, shiftStartAt })))).toBe(atNow);
     }
   });
@@ -187,7 +184,9 @@ describe("staff needed requests", () => {
     for (const savedAt of [boundary + 1, boundary + STAFF_REQUEST_SHIFT_TOLERANCE_MINUTES + 1, boundary + 60]) {
       const after = wardFlowReducer(seed, ask({ shift: "this_shift", now: savedAt, shiftStartAt: chosen }));
       expect(refused(seed, after)).toBe(true);
-      expect(after.rejections.at(-1)?.reason).toBe("This shift has already ended. Choose this shift or next shift again");
+      expect(after.rejections.at(-1)?.reason).toBe(
+        "This shift has already ended. Choose this shift or next shift again",
+      );
     }
     // Next shift across the same boundary, and an omitted choice, are unchanged.
     const savedAt = boundary + STAFF_REQUEST_SHIFT_TOLERANCE_MINUTES + 1;
@@ -197,7 +196,11 @@ describe("staff needed requests", () => {
         seed,
         wardFlowReducer(
           seed,
-          ask({ shift: "next_shift", now: boundary + 1, shiftStartAt: staffRequestShiftStart("next_shift", boundary - 1) }),
+          ask({
+            shift: "next_shift",
+            now: boundary + 1,
+            shiftStartAt: staffRequestShiftStart("next_shift", boundary - 1),
+          }),
         ),
       ),
     ).toBe(false);

@@ -15,7 +15,8 @@ import {
 } from "@/components/ward-management/ward-alerts-figures";
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
-import { isOpen, unitCapacity } from "@/components/ward-management/ward-derivations";
+import { isOpen } from "@/components/ward-management/ward-derivations";
+import { networkNamedHolds, totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { SNOOZE_REASON_IDS } from "@/components/ward-management/ward-inbox-snooze";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
@@ -204,7 +205,13 @@ describe("the shared figures agree on the seed (hero, chip, badge and list)", ()
   it("beds ready: Home's hero and the Statistics ready count read one figure", () => {
     const home = wardNavCounts({ ...state, now, sites: wardSites, thresholds: DEFAULT_DUE_SOON_THRESHOLDS }).capacity
       ?.value;
-    const statistics = state.units.reduce((sum, unit) => sum + unitCapacity(unit, state.bedReleases).available, 0);
+    // A16-25 (3.4): Statistics reads Ready through `bedStates` with the network's named holds.
+    const statistics = totalReadyBedsNow(
+      state.units,
+      state.admissions,
+      state.bedReleases,
+      networkNamedHolds(state.movements, state.referrals),
+    );
     expect(home, "the seed has ready beds").toBeGreaterThan(0);
     expect(home).toBe(statistics);
   });

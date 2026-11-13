@@ -138,7 +138,9 @@ describe("operational forms wait for their own recorded outcome", () => {
       examination: undefined,
       legalForm: { ...movement.legalForm!, code: "1A" as const, dueAt: NOW_ANCHOR - 5 },
     };
-    const figures = (ended: boolean) =>
+    // Clinical check pack A1 (Josh, 13 Nov 2026): a form counts until a person records it ended. An
+    // examination outcome alone no longer ends it.
+    const figures = (record: "open" | "examined" | "ended") =>
       standingFigures(
         {
           ...state,
@@ -147,15 +149,19 @@ describe("operational forms wait for their own recorded outcome", () => {
           movements: [
             {
               ...current,
-              ...(ended ? { examination: { at: NOW_ANCHOR - 10, outcome: "inpatient_order" as const } } : {}),
+              ...(record === "examined"
+                ? { examination: { at: NOW_ANCHOR - 10, outcome: "inpatient_order" as const } }
+                : {}),
+              ...(record === "ended" ? { legalForm: { ...current.legalForm, endedBy: "replaced" as const } } : {}),
             },
           ],
         },
         DEFAULT_DUE_SOON_THRESHOLDS,
         activeWardNetwork(),
       );
-    expect(figures(false).find((figure) => figure.key === "passed")?.value).toBe("1");
-    expect(figures(true).find((figure) => figure.key === "passed")?.value).toBe("0");
+    expect(figures("open").find((figure) => figure.key === "passed")?.value).toBe("1");
+    expect(figures("examined").find((figure) => figure.key === "passed")?.value).toBe("1");
+    expect(figures("ended").find((figure) => figure.key === "passed")?.value).toBe("0");
   });
 
   it("keeps a planned booking form open when unrelated data refreshes before its command answers", () => {

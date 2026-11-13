@@ -8,6 +8,7 @@
 import { cadNumberProblem, providerNeedsCadNumber } from "@/components/ward-management/ward-cad-number";
 import { minuteOfDayFromClockText, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
+import { legalFormNowWords } from "@/components/ward-management/legal-forms/legal-form-progression";
 import {
   TRANSPORT_EXCEPTION_GAPS,
   TRANSPORT_EXCEPTION_REASONS,
@@ -22,7 +23,8 @@ import {
 
 export const TRANSPORT_EXCEPTION_GAP_LABELS: Record<TransportExceptionGap, string> = {
   legal_status_differs: "Transport status differs from Legal now",
-  transport_order_missing: "Form 4A transport order not uploaded",
+  // D-170 item 5: no form number. The check still looks for an uploaded Form 4A (1.5 is open).
+  transport_order_missing: "Transport or transfer order not uploaded",
   fit_to_travel_missing: "Fit to travel not recorded",
 };
 
@@ -42,10 +44,14 @@ export function legalNowTransportStatus(movement: Pick<Movement, "legalStatus">)
   return movement.legalStatus === "Voluntary" ? "voluntary" : "involuntary";
 }
 
-/** Legal now in words for the booking form: the status and the form in force, if any. */
+/**
+ * Legal now in words for the booking form: the status and the form, from the one current legal
+ * position (1.1, K1): the form as recorded, or "Form 3B ended" once a person records its end.
+ */
 export function legalNowText(movement: Pick<Movement, "legalStatus" | "legalForm">): string {
   if (movement.legalStatus === undefined) return "Legal status not recorded";
-  return movement.legalForm ? `${movement.legalStatus}, Form ${movement.legalForm.code}` : movement.legalStatus;
+  const form = legalFormNowWords(movement);
+  return form ? `${movement.legalStatus}, ${form}` : movement.legalStatus;
 }
 
 /** True when a booked transport status disagrees with Legal now. */

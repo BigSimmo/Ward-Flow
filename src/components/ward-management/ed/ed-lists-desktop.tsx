@@ -15,6 +15,11 @@ import { askForBedFromReferral, EdInboxDecline } from "./ed-screen-inbox";
 import { recordedEdDeparture } from "@/components/ward-management/ward-ed-presence";
 import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { formTitleForCode } from "@/lib/form-register";
+import {
+  currentLegalPosition,
+  FORM_RECORDED_ENDED,
+  legalFormNowWords,
+} from "@/components/ward-management/ward-legal-form-progression";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { ReferralIntakeSummary } from "@/components/ward-management/referrals/referral-intake-summary";
 import { psychReviewStage } from "./ed-psych-review";
@@ -407,23 +412,27 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
             <tbody>
               {underFormPatients.map((m) => {
                 const person = who(m);
-                const due = m.legalForm?.dueAt;
+                // 1.1 (K1): the one current legal position; no typed end in force once recorded ended.
+                const legal = currentLegalPosition(m);
+                const due = legal.dueAt;
                 return (
                   <tr key={m.id}>
                     <td>{name(m.id, person.formalName, person.umrn)}</td>
                     <td className={handover.listMono}>{patientBay(m.id).replace(/^Bay /, "")}</td>
                     <td>
-                      {m.legalForm ? (
+                      {legal.form ? (
                         <>
-                          <span className={handover.listTag}>Form {m.legalForm.code}</span>{" "}
-                          <span className={handover.listQuiet}>{formTitleForCode(m.legalForm.code)}</span>
+                          <span className={handover.listTag}>{legalFormNowWords(m)}</span>{" "}
+                          <span className={handover.listQuiet}>{formTitleForCode(legal.form.code)}</span>
                         </>
                       ) : (
                         <span className={handover.listQuiet}>{m.legalStatus}. Form not recorded.</span>
                       )}
                     </td>
                     <td>
-                      {due === undefined || due === null ? (
+                      {legal.ended ? (
+                        <span className={handover.listQuiet}>{FORM_RECORDED_ENDED}</span>
+                      ) : due === undefined || due === null ? (
                         <span className={handover.listQuiet}>Not recorded</span>
                       ) : (
                         <span>

@@ -1,4 +1,9 @@
 import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import {
+  DESK_PERSONA_STAFF,
+  SIGNED_IN_COORDINATOR_NAME,
+  staffEmail,
+} from "@/components/ward-management/ward-staff-names-seed";
 
 /**
  * The demo profile Settings shows in its profile band (Workspaces, PR #134), held once so the
@@ -20,14 +25,15 @@ export type WorkspaceProfile = {
 
 export const SETTINGS_DEMO_PROFILE: WorkspaceProfile = {
   // Q226 (design review, 2 Nov 2026): one spelling of the signed-in name, the master's.
-  name: "Dr S. Chen",
-  initials: "SC",
+  // A15-06 (13 Nov 2026): the persona from the one staff name list.
+  name: SIGNED_IN_COORDINATOR_NAME,
+  initials: "SO",
   role: CHROME_ROLE_LABELS.coordinator,
   location: "Perth Central Desk",
   // Audit 2 E-06: the fictitious 08 5550 range in international form, which the synthetic-data
   // guard (`src/lib/synthetic-data-guard.ts`) does not mistake for a real WA number.
-  phone: "+61 8 5550 0142",
-  email: "s.chen@example.org",
+  phone: "+61 8 5550 0242",
+  email: staffEmail(DESK_PERSONA_STAFF.coordinator),
 };
 
 /** Synthetic, like the coordinator's: the same fictional 08 5550 range and example domain. */
@@ -37,7 +43,7 @@ const ED_DEMO_PROFILE: WorkspaceProfile = {
   initials: "MG",
   role: CHROME_ROLE_LABELS.ed,
   location: "Emergency department",
-  phone: "+61 8 5550 0167",
+  phone: "+61 8 5550 0267",
   email: "m.gallagher@example.org",
 };
 
@@ -46,7 +52,7 @@ const COMMUNITY_DEMO_PROFILE: WorkspaceProfile = {
   initials: "LH",
   role: CHROME_ROLE_LABELS.community,
   location: "Community mental health team",
-  phone: "+61 8 5550 0183",
+  phone: "+61 8 5550 0283",
   email: "l.hart@example.org",
 };
 
@@ -55,7 +61,7 @@ const WARD_DEMO_PROFILE: WorkspaceProfile = {
   initials: "KV",
   role: CHROME_ROLE_LABELS.ward,
   location: "Ward nurse in charge",
-  phone: "+61 8 5550 0175",
+  phone: "+61 8 5550 0275",
   email: "k.vance@example.org",
 };
 

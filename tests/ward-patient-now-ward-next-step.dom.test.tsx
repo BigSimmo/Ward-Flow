@@ -6,7 +6,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
 }));
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
-import { patientNextStep, stayProgress, telHref } from "@/components/ward-management/patients/patient-now-ward";
+import { patientNextStep, stayProgress } from "@/components/ward-management/patients/patient-now-ward";
 import { dischargeReadiness, recentStayEvents } from "@/components/ward-management/patients/patient-now-ward-recent";
 import type { PatientStatusContext } from "@/components/ward-management/patients/patient-status-card";
 import type { Admission } from "@/components/ward-management/ward-admissions";
@@ -99,7 +99,7 @@ describe("next step, stay progress and readiness from the recorded stay", () => 
     expect(rows[0]).toMatchObject({ done: false, label: "Date not confirmed", detail: "No discharge date set" });
   });
 
-  it("lists only the last 24 hours, newest first, and makes a tel: address from a synthetic number", () => {
+  it("lists only the last 24 hours, newest first", () => {
     const events = recentStayEvents({
       admission: stay({
         arrivedAt: NOW_ANCHOR - 2 * MINUTES_PER_DAY,
@@ -114,7 +114,6 @@ describe("next step, stay progress and readiness from the recorded stay", () => 
       "Discharge date confirmed",
       expect.stringMatching(/^Discharge date (set for|moved to) /u),
     ]);
-    expect(telHref("08 0000 4410")).toBe("tel:0800004410");
   });
 });
 

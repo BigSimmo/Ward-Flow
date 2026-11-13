@@ -32,6 +32,7 @@ import { TasksQuickJumps } from "./ward-tasks-quick-jumps";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { StatusGlyph, buttonClass, durMinutes, type WfTone } from "@/components/wf";
 import { typedClock } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import { currentLegalPosition } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { callRows, type CallRow, type CallTarget } from "./patients/patient-call-list";
 import { edHealthService } from "./ward-service-scope";
 import { resolveSubjectPatient } from "./ward-patient-resolver";
@@ -220,10 +221,12 @@ function rowTiming(
       stateTone: "danger",
     };
   }
-  if (movement && /legal/i.test(item.title) && movement.legalForm?.dueAt !== undefined) {
+  // 1.1 (K1): the typed end still in force, from the one current legal position.
+  const legalDueAt = movement ? currentLegalPosition(movement).dueAt : undefined;
+  if (movement && /legal/i.test(item.title) && legalDueAt !== undefined) {
     // Legal times only as typed (31 Oct 2026): the typed clock time, never a count past it.
     return {
-      value: typedClock(movement.legalForm.dueAt, now),
+      value: typedClock(legalDueAt, now),
       state: "Ended, as typed",
       tone: "danger",
       stateTone: "danger",
@@ -268,8 +271,9 @@ function rowDetail(
     const unit = units?.find((candidate) => candidate.id === movement.acceptedUnitId);
     return `${unit?.name ?? "The pulled bed"}: the pull time limit passed at ${formatInstantWithDay(movement.pullExpiresAt, now)}`;
   }
-  if (movement && /legal/i.test(item.title) && movement.legalForm?.dueAt !== undefined) {
-    return `Form ${movement.legalForm.code} recorded due time ${formatInstantWithDay(movement.legalForm.dueAt, now)} has passed`;
+  const legal = movement ? currentLegalPosition(movement) : undefined;
+  if (movement && legal && /legal/i.test(item.title) && legal.dueAt !== undefined) {
+    return `${legal.formWords} recorded due time ${formatInstantWithDay(legal.dueAt, now)} has passed`;
   }
   return item.detail.replace(`${item.movementId} · `, "");
 }

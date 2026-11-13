@@ -11,6 +11,7 @@
 // says what this is: the earliest release on record, not a bed for this person.
 import { bedKindGaps, type BedKindId } from "@/components/ward-management/capacity/capacity-derivations";
 import { type Admission } from "@/components/ward-management/ward-admissions";
+import { readyBedsNow, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import { dayOf, MINUTES_PER_DAY, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import type { BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
@@ -35,6 +36,12 @@ export type EdAccessRiskRow = {
   minutesLeft: number;
   /** When the bed this person's place in the line reaches is due. Null when the line runs out. */
   slotAt: Instant | null;
+  /**
+   * People before this person in their line (A16-07, 3.6): the accepting ward's line when a ward
+   * has accepted them, else everyone waiting for this bed kind. 0 for the first in line, so the card
+   * says "ahead in the line" only when someone is.
+   */
+  ahead: number;
   /** The earliest release of the right kind on record (at the accepting ward when there is one). */
   nextRelease: EdAccessRelease | null;
   acceptedUnitName: string | null;
@@ -63,12 +70,15 @@ export function edAccessRisk(
   admissions: readonly Admission[],
   now: Instant,
   targetMinutes: number,
+  /** Referrals that may hold a named bed (3.6): the same named holds Capacity and the ward read. */
+  referrals: readonly ReservationReferral[],
   horizonMinutes = MINUTES_PER_DAY,
 ): EdAccessRisk {
   const open = new Map(units.filter((unit) => !unit.isClosed).map((unit) => [unit.id, unit]));
   const admissionById = new Map(admissions.map((admission) => [admission.id, admission]));
   const expectedAt = (release: BedRelease) => forecastReleaseAt(release, admissionById.get(release.admissionId));
-  const gaps = bedKindGaps([...movements], [...units], now, admissions);
+  const gaps = bedKindGaps([...movements], [...units], now, admissions, referrals);
+  const namedHolds: readonly ReservationReferral[] = [...movements, ...referrals];
   const pending = releases
     .filter(
       (release) =>
@@ -83,6 +93,7 @@ export function edAccessRisk(
 
   const waiting = movements.filter(isWaitingForBed).sort((a, b) => a.openedAt - b.openedAt || a.id.localeCompare(b.id));
   const slotOf = new Map<string, Instant | null>();
+  const aheadOf = new Map<string, number>();
   for (const gap of gaps) {
     const slots: Instant[] = [
       ...Array.from({ length: Math.max(0, gap.bedsThatFit) }, () => now),
@@ -90,7 +101,26 @@ export function edAccessRisk(
     ];
     waiting
       .filter((movement) => bedKindOfNeed(movement) === gap.id)
-      .forEach((movement, place) => slotOf.set(movement.id, slots[place] ?? null));
+      .forEach((movement, place) => {
+        slotOf.set(movement.id, slots[place] ?? null);
+        aheadOf.set(movement.id, place);
+      });
+  }
+  // A16-07 (Audit 16, 13 Nov 2026): a person a ward has accepted waits for THAT ward's beds. Its
+  // line is the people it has accepted, in the same order, served first by the beds the ward shows
+  // as Ready now (`readyBedsNow`, with the same named holds), then by its own releases. So the card
+  // never quotes a discharge in two days while the ward shows a bed ready for them now.
+  for (const unit of open.values()) {
+    const line = waiting.filter((movement) => movement.acceptedUnitId === unit.id);
+    if (line.length === 0) continue;
+    const readyNow = readyBedsNow(unit, admissions, releases, namedHolds);
+    const wardReleases = pending
+      .filter((entry) => entry.release.unitId === unit.id && entry.release.blocker === null)
+      .map((entry) => entry.at);
+    line.forEach((movement, place) => {
+      slotOf.set(movement.id, place < readyNow ? now : (wardReleases[place - readyNow] ?? null));
+      aheadOf.set(movement.id, place);
+    });
   }
 
   const inEd = waiting.filter(isWaitingInEd);
@@ -127,6 +157,7 @@ export function edAccessRisk(
       passesAt,
       minutesLeft: passesAt - now,
       slotAt,
+      ahead: aheadOf.get(movement.id) ?? 0,
       nextRelease: first
         ? {
             unitId: first.release.unitId,

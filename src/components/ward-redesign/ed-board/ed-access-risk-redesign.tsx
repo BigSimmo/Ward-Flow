@@ -16,33 +16,15 @@ import { useMemo } from "react";
 import { buttonClass, StatusGlyph, useIsPhone } from "@/components/wf";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
-import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
-import {
-  RELEASE_LOOKAHEAD_DAYS,
-  targetText,
-  type EdAccessRiskRow,
-} from "@/components/ward-management/forecast/ed-access-risk";
+import { targetText, type EdAccessRiskRow } from "@/components/ward-management/forecast/ed-access-risk";
+// One sentence for both cards (A16-07): "ahead in the line" only when someone is.
+import { releaseText } from "@/components/ward-management/forecast/ed-access-risk-card";
 import { BED_KIND_LABEL } from "@/components/ward-management/forecast/forecast-by-kind";
-import { shortBlocker } from "@/components/ward-management/forecast/forecast-levers";
 import { useForecastModel } from "@/components/ward-management/forecast/use-forecast-model";
 import styles from "@/components/ward-management/forecast/forecast.module.css";
 import redesign from "./ed-board-redesign.module.css";
-
-function releaseText(row: EdAccessRiskRow, now: Instant, showWards: boolean): string {
-  const kind = BED_KIND_LABEL[row.kind].toLowerCase();
-  const lookahead = `the next ${RELEASE_LOOKAHEAD_DAYS} days`;
-  if (!row.nextRelease) {
-    const declined = row.declines > 0 ? ` Declined by ${row.declines} ${row.declines === 1 ? "ward" : "wards"}.` : "";
-    return row.acceptedUnitName && showWards
-      ? `Accepted at ${row.acceptedUnitName}. No release there in ${lookahead}.${declined}`
-      : `No ${kind} release due in ${lookahead}.${declined}`;
-  }
-  const when = formatInstantWithDay(row.nextRelease.at, now);
-  const where = showWards && row.acceptedUnitName ? ` at ${row.nextRelease.unitName}` : "";
-  const held = row.nextRelease.blocker ? `, held up for ${shortBlocker(row.nextRelease.blocker).toLowerCase()}` : "";
-  return `Next ${kind} release ${when}${where}${held}. Others are ahead in the line.`;
-}
 
 export function EdAccessRiskCard({ edId, now }: { edId?: string; now: Instant }) {
   const { risk } = useForecastModel(now);

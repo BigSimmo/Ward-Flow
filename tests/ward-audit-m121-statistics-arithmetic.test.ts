@@ -89,7 +89,7 @@ describe("M121 hand-worked figures", () => {
     const { units, admissions, bedReleases, leaveBeds, movements } = seed;
     const totals = units.reduce(
       (sum, unit) => {
-        const states = bedStates(unit, admissions, [...bedReleases], leaveBeds);
+        const states = bedStates(unit, admissions, [...bedReleases], leaveBeds, []);
         return {
           beds: sum.beds + unit.beds,
           occupied: sum.occupied + states.occupied,

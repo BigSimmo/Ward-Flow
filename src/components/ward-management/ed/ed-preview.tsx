@@ -6,6 +6,7 @@ import { BedSingle, ChevronLeft, ChevronRight, FileText, Hourglass, LogIn } from
 
 import { Button, FactGrid, Icon, StatusGlyph, buttonClass, useIsPhone } from "@/components/wf";
 import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
+import { legalFormNowWords } from "@/components/ward-management/ward-legal-form-progression";
 import { splitDuration } from "@/components/ward-management/ward-clock";
 import { edHref, raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 
@@ -103,7 +104,7 @@ export function EdPreview({
                       </>
                     ) : null}
                     {person.stage}
-                    {person.movement.legalForm ? ` · Form ${person.movement.legalForm.code}` : ""}
+                    {legalFormNowWords(person.movement) ? ` · ${legalFormNowWords(person.movement)}` : ""}
                     {person.destination ? ` · ${person.destination}` : ""}
                   </span>
                 </span>
@@ -192,7 +193,7 @@ export function EdLanePicked({ person, row }: { person: EdPerson; row: EdRow }) 
       <b className={styles.pickedName}>{person.name}</b>
       <span className={styles.meta}>
         {row.short} · {person.stage}
-        {person.movement.legalForm ? ` · Form ${person.movement.legalForm.code}` : ""}
+        {legalFormNowWords(person.movement) ? ` · ${legalFormNowWords(person.movement)}` : ""}
         {person.destination ? ` · ${person.destination}` : ""}
       </span>
       <span className={styles.longest}>

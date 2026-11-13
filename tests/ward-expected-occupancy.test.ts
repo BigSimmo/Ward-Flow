@@ -49,7 +49,7 @@ describe("expectedOccupancy", () => {
     } as unknown as PlannedAdmission;
     const { rows, total } = expectedOccupancy([unit], releases, [] as Admission[], NOW, [booking]);
     const row = rows[0]!;
-    const states = bedStates(unit, [], releases, []);
+    const states = bedStates(unit, [], releases, [], []);
     const taken = states.occupied + states.pulled;
     expect(row.takenNow).toBe(taken);
     expect(row.horizons.map((h) => h.hours)).toEqual([24, 48, 72]);

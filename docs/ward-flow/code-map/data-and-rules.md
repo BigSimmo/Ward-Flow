@@ -10,7 +10,7 @@ and the removed contention brief noted in place. Back to [the code map index](RE
 Physical ED wait counts use `ward-ed-presence.ts` to exclude ward-origin transfers and stop at
 recorded collection or departure. The ED accountability board retains journeys in transit.
 Weekly ED rows count placement journeys in the week each first crosses the target, not unique people.
-Current legal warnings use `currentLegalDueAt` in `legal-forms/legal-form-progression.ts`, which
+Current legal warnings use `currentLegalDueAt` in `ward-legal-form-progression.ts`, which
 excludes ended authority; recorded historical expiry fields remain available.
 Capacity presentation uses the same `bedStates` Ready partition for the network table, map,
 bed-kind supply and forecast when admissions are supplied, and excludes already allocated journeys

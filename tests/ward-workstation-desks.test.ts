@@ -26,7 +26,13 @@ import { wardSites } from "@/components/ward-management/ward-sites";
  */
 const seed = seedWardFlowState();
 const desks = workstationDesks({
-  hub: hubEntries({ units: seed.units, bedReleases: seed.bedReleases, now: NOW_ANCHOR, sites: wardSites }),
+  hub: hubEntries({
+    units: seed.units,
+    bedReleases: seed.bedReleases,
+    now: NOW_ANCHOR,
+    sites: wardSites,
+    namedHolds: [],
+  }),
   eds: edHomeSummaries(seed.movements, NOW_ANCHOR, 1440),
   movements: seed.movements,
 });
@@ -134,7 +140,13 @@ describe("one desk for a service the owner ruled is one (Q202)", () => {
 
   it("keeps a desk signed in as another spelling on its own name, and finds the kept desk by any spelling", () => {
     const own = workstationDesks({
-      hub: hubEntries({ units: seed.units, bedReleases: seed.bedReleases, now: NOW_ANCHOR, sites: wardSites }),
+      hub: hubEntries({
+        units: seed.units,
+        bedReleases: seed.bedReleases,
+        now: NOW_ANCHOR,
+        sites: wardSites,
+        namedHolds: [],
+      }),
       eds: edHomeSummaries(seed.movements, NOW_ANCHOR, 1440),
       movements: seed.movements,
       ownTeam: "Armadale (Mead)",

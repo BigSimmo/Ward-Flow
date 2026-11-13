@@ -46,10 +46,13 @@ describe("same-version browser restore observation migration", () => {
     expect(result.saved?.state.clockOffsetMinutes).toBe(17);
     expect(result.saved?.state.movements).toHaveLength(legacy.state.movements.length);
     expect(result.saved?.state.admissions).toHaveLength(legacy.state.admissions.length);
-    for (const row of [...result.saved!.state.movements, ...result.saved!.state.admissions]) {
+    // Root-cause fix 3.5 (Josh, 13 Nov 2026): the old flag read `true` as Constant within sight and
+    // `false` as Not recorded, since "no one-to-one" never recorded General.
+    const legacyRows = [...legacy.state.movements, ...legacy.state.admissions] as { specialling: boolean }[];
+    [...result.saved!.state.movements, ...result.saved!.state.admissions].forEach((row, index) => {
       expect("specialling" in row).toBe(false);
-      expect(["general", "within_sight"]).toContain(row.observation.level);
-    }
+      expect(row.observation.level).toBe(legacyRows[index]!.specialling ? "within_sight" : "not_recorded");
+    });
   });
   it("continues to restore a current valid save", () => {
     const result = tryReadDemoState(dayZero, savedAt + 1, JSON.stringify(payload()));

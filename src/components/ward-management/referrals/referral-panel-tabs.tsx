@@ -13,12 +13,12 @@
 
 import { useState, type ReactNode } from "react";
 import { HOME_REGION_NOT_RECORDED, ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
-import { Phone } from "lucide-react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Referral, Unit } from "@/components/ward-management/ward-model";
 import { referralClocks } from "@/components/ward-management/ward-referrals";
 import { siteByCode } from "@/components/ward-management/ward-sites";
+import { DemoPhoneNumber } from "@/components/ward-management/demo-phone-number";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { formatReferralIntakeTime } from "@/components/ward-management/ward-referral-seed-time";
 import {
@@ -122,7 +122,9 @@ export function PatientTab({
         )}
         <dl className={s.cells}>
           <div>
-            <dt>Triage</dt>
+            {/* A16-11: this is the ATS category, not whether triage happened. The Timeline's "Triaged"
+                line is the referral's triaged time, a separate record, so the two never read as a clash. */}
+            <dt>ATS category</dt>
             <dd>{referral.atsCategory !== undefined ? `ATS ${referral.atsCategory}` : "Not recorded"}</dd>
           </div>
           <div>
@@ -204,10 +206,14 @@ export function PatientTab({
             </span>
           </span>
           {intake?.referrer.phone ? (
-            <a className={s.call} href={`tel:${intake.referrer.phone.replace(/\s+/g, "")}`}>
-              <Phone size={13} aria-hidden="true" />
-              <span className={s.mono}>{intake.referrer.phone}</span>
-            </a>
+            // A15-14: a demo number copies, it does not dial.
+            <DemoPhoneNumber
+              number={intake.referrer.phone}
+              who="the referrer"
+              className={s.call}
+              numberClassName={s.mono}
+              phoneIcon
+            />
           ) : (
             // PR15: an absent number is said to be absent, never left blank or invented.
             <span>Direct contact not recorded</span>

@@ -70,6 +70,7 @@ function takePack() {
     bedReleases: state.bedReleases,
     leaveBeds: state.leaveBeds,
     movements: state.movements,
+    referrals: state.referrals,
     now: NOW_ANCHOR,
     identify: () => SYNTHETIC_NAME,
   });

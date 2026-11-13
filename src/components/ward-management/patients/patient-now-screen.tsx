@@ -122,7 +122,7 @@ import {
   BLANK_TRANSPORT_BOOKING,
   type TransportBookingSubmission,
 } from "@/components/ward-management/transport/transport-booking-form";
-import { formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
+import { formProgression } from "@/components/ward-management/ward-legal-form-progression";
 import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
 import {
   requiredRoleForPermission,
@@ -138,6 +138,7 @@ import { type PatientNowRecord, STAGES, clock, dur, fillTemplate } from "./patie
 import styles from "./patient-now.module.css";
 import { PatientArchivePanel } from "./patient-archive-panel";
 import { PatientGlance, patientStateTag } from "./patient-glance";
+import { bookedPlannedAdmissionFor, openReferralFor, openReferralSentTo } from "./patient-open-work";
 import { referralSafetyFacts } from "./patient-referral-safety";
 import { patientCareJourney } from "./patient-care-journey";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -196,6 +197,7 @@ export function PatientNowScreen({
     dayZero,
     rejections,
     worldGeneration,
+    plannedAdmissions,
   } = useWardFlowSelect(
     "patients",
     "movements",
@@ -207,6 +209,7 @@ export function PatientNowScreen({
     "dayZero",
     "rejections",
     "worldGeneration",
+    "plannedAdmissions",
   );
   const now = useWardFlowClock();
   // The held bed review warning sits behind its own flag: paused by D-65, on by default since 20 Oct 2026.
@@ -782,6 +785,10 @@ export function PatientNowScreen({
   const wardRefusal = edReturnRefusal ? undefined : wardRejection?.reason;
 
   const acceptedWardFor = acceptedWardReferralFor(livePatient?.id, referrals, units, { movements, admissions });
+  // A16-11 (Josh, 13 Nov 2026): a referral awaiting an answer and a booked planned admission are open
+  // work, so a person with only those is never "Not active".
+  const openReferral = acceptedWardFor ? undefined : openReferralFor(livePatient?.id, referrals);
+  const plannedBooking = bookedPlannedAdmissionFor(livePatient?.id, plannedAdmissions);
   const statusContext: PatientStatusContext = {
     awolHoldReview,
     movement: liveMovement,
@@ -800,6 +807,19 @@ export function PatientNowScreen({
       ? {
           unitName: acceptedWardFor.unitName,
           boardHref: openable(`/ward-flow/ward/${encodeURIComponent(acceptedWardFor.unitId)}?tab=board`),
+        }
+      : undefined,
+    openReferral: openReferral
+      ? {
+          sentTo: openReferralSentTo(openReferral),
+          owner: openReferral.communityOnly ? "Community team" : openReferral.wards > 0 ? "Ward" : "Receiving service",
+          raisedAt: openReferral.raisedAt,
+        }
+      : undefined,
+    plannedAdmission: plannedBooking
+      ? {
+          unitName: units.find((unit) => unit.id === plannedBooking.unitId)?.name ?? "a ward not recorded",
+          expectedArrivalAt: plannedBooking.expectedArrivalAt,
         }
       : undefined,
     transportHref: openable(
@@ -1034,6 +1054,12 @@ export function PatientNowScreen({
     mode,
     movement: liveMovement,
     communityActive: Boolean(ctoInForce || activeCommunityEpisode),
+    openWork:
+      acceptedWardFor || plannedBooking || (openReferral && !openReferral.communityOnly)
+        ? "bed"
+        : openReferral
+          ? "community"
+          : undefined,
   });
   // PT1 round 3 (Josh, 3 Nov 22:29Z): the patient's journey in six plain steps, from the record.
   const careSteps = patientCareJourney({
@@ -1047,7 +1073,8 @@ export function PatientNowScreen({
     day: (at) => dayLabel(at, dayZero).replace(",", ""),
   });
   // The band's typed expiry for the form in force, for a ward stay as well as a live placement. A form
-  // that ended at arrival or at the examination has no expiry in force (currentLegalDueAt).
+  // a person recorded as ended has no expiry in force (currentLegalDueAt, A1); a form with a next form
+  // to record shows that prompt on the band instead.
   const bandTimeLeft =
     glanceMovement && !formProgression(glanceMovement) ? formTimeLeft(glanceMovement, now, thresholds) : undefined;
   const glance = (

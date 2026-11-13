@@ -36,6 +36,7 @@ import {
 } from "@/components/wf";
 import { edHomeSummaries } from "@/components/ward-management/ed/ed-home-derivations";
 import { hubEntries } from "@/components/ward-management/hub/hub-derivations";
+import { networkNamedHolds } from "@/components/ward-management/ward-bed-states";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { isOpen as isOpenMovement } from "@/components/ward-management/ward-derivations";
 import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
@@ -141,7 +142,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
   const baseId = useId();
   const network = useWardNetwork();
   // The whole workspace, not the desk's scoped one: this drawer is the demo's way to change desk.
-  const { movements, units, bedReleases, admissions, leaveBeds, focusMovementId, configuration } =
+  const { movements, units, bedReleases, admissions, leaveBeds, referrals, focusMovementId, configuration } =
     useUnscopedWardFlow();
   // The patient in focus is named from the desk's own scoped workspace (review on PR #330), so a
   // restricted desk never sees the UMRN of someone outside its care here.
@@ -176,7 +177,15 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
   const { statewide, sites, teams } = useMemo(
     () =>
       workstationDesks({
-        hub: hubEntries({ units, bedReleases, admissions, leaveBeds, now, sites: network.sites }),
+        hub: hubEntries({
+          units,
+          bedReleases,
+          admissions,
+          leaveBeds,
+          namedHolds: networkNamedHolds(movements, referrals),
+          now,
+          sites: network.sites,
+        }),
         eds: edHomeSummaries(movements, now, configuration.edAccessTargetMinutes),
         movements,
         ownTeam: currentAccess.scope.kind === "team" ? currentAccess.scope.teamName : undefined,
@@ -187,6 +196,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
       admissions,
       leaveBeds,
       movements,
+      referrals,
       now,
       configuration.edAccessTargetMinutes,
       network,

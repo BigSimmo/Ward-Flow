@@ -32,7 +32,7 @@ function ReferralDrawerLoading() {
     <Drawer
       open
       onClose={props.onClose}
-      title={props.identity.displayName}
+      title={props.identity.formalName}
       description={`Referral to ${props.unit.name}`}
     >
       <p role="status" data-testid="ward-referral-drawer-loading">
@@ -82,7 +82,7 @@ export function AwaitingIdentity({
         aria-haspopup="dialog"
         onClick={onOpen}
       >
-        {person.displayName}
+        {person.formalName}
         <span className={styles.awaitingNameHint}>View referral</span>
       </button>
       <span className={styles.awaitingMeta}>

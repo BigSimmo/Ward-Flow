@@ -63,9 +63,15 @@ export function referralFit(gates: readonly GateResult[], unit: Unit, now: Insta
   };
 }
 
-/** The one-line patient sentence for a card. */
+/**
+ * What the fit check does not read (root-cause review 6.1, wording approved by Josh 13 Nov 2026).
+ * Whether any of these becomes a fit check is Josh's clinical call; none is added here.
+ */
+export const FIT_NOT_CHECKED_LINE = "Recorded risks, escort need and medical clearance are not part of these checks.";
+
+/** The one-line patient sentence for a card: names what was checked, never claims a full fit. */
 export function patientFitLine(fit: ReferralFit): string {
-  if (fit.patientIssues.length === 0) return `Fits this ward. All ${fit.patientTotal} patient checks pass.`;
+  if (fit.patientIssues.length === 0) return `Passes the ${fit.patientTotal} bed checks. ${FIT_NOT_CHECKED_LINE}`;
   return `Does not fit this ward. ${fit.patientIssues.join(" ")}`;
 }
 

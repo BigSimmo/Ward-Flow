@@ -42,7 +42,7 @@ import {
   type WardAccessScope,
   accessIsWholeNetwork,
 } from "@/components/ward-management/ward-role-access";
-import { GENERAL_OBSERVATION } from "@/components/ward-management/ward-observation";
+import { NOT_RECORDED_OBSERVATION } from "@/components/ward-management/ward-observation";
 import { WAITLIST_INSTEAD_OF_DECLINE_REASONS } from "@/components/ward-management/ward-legal-clock";
 import { acceptedAddressing, referralState } from "@/components/ward-management/ward-referrals";
 
@@ -810,7 +810,8 @@ function datesOnlyAdmission(admission: Admission): Admission {
     dischargeConfirmedAt: admission.dischargeConfirmedAt,
     leftAt: admission.leftAt,
     leavingDestination: admission.leavingDestination,
-    observation: GENERAL_OBSERVATION,
+    // Hidden from this desk, so the level is not shown as General (root-cause fix 3.5).
+    observation: NOT_RECORDED_OBSERVATION,
     highAcuity: false,
     referralId: null,
     movementId: null,

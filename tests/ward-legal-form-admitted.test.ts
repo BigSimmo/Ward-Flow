@@ -65,7 +65,8 @@ describe("the ward records the next form for a person admitted on a form (WT-03)
     const rows = admittedOnAForm(state.movements, state.admissions);
     expect(rows.map((movement) => movement.id)).toContain(movementId);
     const row = rows.find((movement) => movement.id === movementId)!;
-    expect(admittedFormLine(row)).toBe("Form 6A not recorded (Form 1A ended at arrival)");
+    // D-170 item 1 and A1: no form number for the next form, and the 1A stays as recorded.
+    expect(admittedFormLine(row)).toBe("Next form to record (On Form 1A at arrival)");
   });
 
   it("lets the ward record Form 6A with the time written on it, and computes no expiry", () => {

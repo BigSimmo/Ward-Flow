@@ -37,6 +37,11 @@ import {
 } from "@/components/ward-management/ward-clock";
 import { acceptedReferralAwaitingMovement, isOpen } from "@/components/ward-management/ward-derivations";
 import type { LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
+import {
+  currentLegalPosition,
+  FORM_RECORDED_ENDED,
+  legalFormNowWords,
+} from "@/components/ward-management/ward-legal-form-progression";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import { compareFormalNames } from "@/components/ward-management/ward-name-collation";
 import {
@@ -288,7 +293,9 @@ export function buildCensus(state: {
     const sourceAbsent = sourceLeave?.absentWithoutLeave !== undefined;
     const sourceOnLeave = sourceLeave !== undefined && !sourceAbsent;
     const waited = Math.max(0, now - movement.openedAt);
-    const form = movement.legalForm;
+    // 1.1 (K1): the one current legal position; no typed end in force once a person records the end.
+    const legalPosition = currentLegalPosition(movement);
+    const form = legalPosition.form;
     const declines = movement.declines?.length ?? 0;
     const asked = movement.referredUnitIds.length;
     // P027 (Josh, 27 Oct 2026, 11:03 PM): a decline or withdrawal takes the ward off
@@ -357,12 +364,17 @@ export function buildCensus(state: {
       nextWho: cause ? OWNER_WORDS[ownerOf(cause)] : "Bed desk",
       glyph,
       // A movement with no legal status of its own shows the person's recorded status, not "Not recorded".
-      legal: form ? `Form ${form.code}` : shortLegal(movement.legalStatus ?? resolve(movement).patient?.legalStatus),
+      legal: legalFormNowWords(movement) ?? shortLegal(movement.legalStatus ?? resolve(movement).patient?.legalStatus),
       // D5: only 4A and 4C forms carry a due time. Every other form says so rather than inventing one.
-      legalSub:
-        form?.dueAt !== undefined ? `Due ${formatInstantWithDay(form.dueAt, now)}` : form ? "No due time" : "No form",
+      legalSub: legalPosition.ended
+        ? FORM_RECORDED_ENDED
+        : legalPosition.dueAt !== undefined
+          ? `Due ${formatInstantWithDay(legalPosition.dueAt, now)}`
+          : form
+            ? "No due time"
+            : "No form",
       formCode: form?.code ?? null,
-      formDueAt: form?.dueAt ?? null,
+      formDueAt: legalPosition.dueAt ?? null,
       waitMinutes: waited,
       timeText: durMinutes(waited),
       timeSub: "waiting",

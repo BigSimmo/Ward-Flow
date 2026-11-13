@@ -192,9 +192,7 @@ describe("Legal forms Print and Export", () => {
     expect(screen.getByTestId("ward-legal-print")).not.toBeDisabled();
     // window.print() prints this view, so the admitted person must be on Checklist, not only On a form.
     expect(
-      within(screen.getByTestId("ward-legal-forms-admitted")).getByText(
-        "Form 6A not recorded (Form 1A ended at arrival)",
-      ),
+      within(screen.getByTestId("ward-legal-forms-admitted")).getByText("Next form to record (On Form 1A at arrival)"),
     ).toBeInTheDocument();
   });
 

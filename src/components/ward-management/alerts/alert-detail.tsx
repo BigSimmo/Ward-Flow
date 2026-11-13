@@ -50,6 +50,7 @@ import {
   type AlertSubject,
 } from "./alerts-model";
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import { currentLegalDueAt } from "@/components/ward-management/ward-legal-form-progression";
 import { DeclineLadder, WaitTrack, type TrackPoint } from "./alerts-visuals";
 import { AlertArrivedAtWard } from "./alert-arrived-at-ward";
 import { PullNowButton } from "./global-alert-panels";
@@ -207,8 +208,9 @@ export function AlertDetail({
       facts.push(["Accepted", formatInstantWithDay(movement.transport.acceptedAt, now)]);
     }
   }
-  if (movement?.legalForm?.dueAt !== undefined)
-    facts.push(["Form due", formatInstantWithDay(movement.legalForm.dueAt, now)]);
+  // 1.1 (K1): the typed end still in force, from the one current legal position.
+  const formDueAt = movement ? currentLegalDueAt(movement) : undefined;
+  if (formDueAt !== undefined) facts.push(["Form due", formatInstantWithDay(formDueAt, now)]);
   // An alert nobody owns (the transport officer's) has no Owner line, rather than a blank one.
   if (item.owner) facts.push(["Owner", item.owner]);
 

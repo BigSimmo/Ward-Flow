@@ -5,7 +5,8 @@ import { splitDuration } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { WardFlowContextValue } from "@/components/ward-management/ward-flow-provider";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
-import { legalFormName } from "@/components/ward-management/ward-legal-forms";
+import { examinationOutcomeLabel, legalFormName } from "@/components/ward-management/ward-legal-forms";
+import { currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
 import { isLongWait, LONG_WAIT_TEXT } from "@/components/ward-management/ward-operational-defaults";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -50,18 +51,9 @@ function formatTimelineDeclineReason(reason: string): string {
   return reason.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-const TIMELINE_EXAM_OUTCOME_LABELS: Record<string, string> = {
-  inpatient_order: "Inpatient treatment order",
-  community_order: "Community treatment order",
-  revoked: "Revoked — does not proceed",
-  further_examination_ordered: "Further examination ordered",
-};
-
+/** D-170 item 3: the shared outcome wording, so the timeline never says "revoked". */
 export function formatTimelineExamOutcome(outcome: string): string {
-  if (TIMELINE_EXAM_OUTCOME_LABELS[outcome]) {
-    return TIMELINE_EXAM_OUTCOME_LABELS[outcome];
-  }
-  return outcome.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return examinationOutcomeLabel(outcome);
 }
 
 /**
@@ -171,7 +163,7 @@ export function edDepartmentTimelineEvents({
       });
     }
     if (m.legalFormReceivedAt && now - m.legalFormReceivedAt <= 24 * 60) {
-      const formCode = m.legalForm ? `Form ${m.legalForm.code}` : "Legal Form";
+      const formCode = currentLegalPosition(m).formWords ?? "Legal Form";
       const formFull = m.legalForm ? legalFormName(m.legalForm) : "Statutory form received";
       timelineEvents.push({
         id: `form-${m.id}-${m.legalFormReceivedAt}`,

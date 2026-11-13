@@ -86,7 +86,7 @@ describe("rail account menu (DK1)", () => {
     renderRail();
     const trigger = screen.getByTestId("ward-rail-persona-trigger");
     expect(trigger).toHaveAttribute("aria-haspopup", "menu");
-    expect(trigger.getAttribute("aria-label")).toMatch(/^Dr S\. Chen, Bed coordinator\. Account menu$/u);
+    expect(trigger.getAttribute("aria-label")).toMatch(/^Dr S\. Orlenby, Bed coordinator\. Account menu$/u);
     expect(trigger.getAttribute("aria-label")).not.toMatch(/Go to a desk/u);
   });
 
@@ -94,7 +94,7 @@ describe("rail account menu (DK1)", () => {
     const openDesk = vi.fn();
     renderRail(null, openDesk);
     const menu = openAccountMenu();
-    expect(within(menu).getByText("Dr S. Chen")).toBeInTheDocument();
+    expect(within(menu).getByText("Dr S. Orlenby")).toBeInTheDocument();
     expect(within(menu).getByText(/^Bed coordinator/u)).toBeInTheDocument();
     expect(itemNames(menu)).toEqual(["Settings", expect.stringMatching(/^Help/u), "Try another desk (demo)"]);
     expect(within(menu).queryByRole("menuitem", { name: /Sign out/u })).toBeNull();
@@ -254,7 +254,7 @@ describe("phone Menu account rows (DK1)", () => {
   it("names the person and role in the who row, with no Go to a desk", async () => {
     renderPhoneMenu();
     const who = await screen.findByTestId("ward-phone-menu-who", {}, { timeout: 15_000 });
-    expect(who).toHaveTextContent("Dr S. Chen");
+    expect(who).toHaveTextContent("Dr S. Orlenby");
     expect(who).toHaveTextContent("Bed coordinator");
     expect(who).not.toHaveTextContent("Go to a desk");
     expect(who.tagName).not.toBe("BUTTON");
