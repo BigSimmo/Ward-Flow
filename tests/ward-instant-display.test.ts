@@ -107,6 +107,10 @@ const MAY_ASSERT_TODAY = new Map([
     "Patient chronology phone list (11 Oct 2026): every row sits under its day-group heading, so the row still names the day.",
   ],
   [
+    "stamped",
+    'Print attribution (F-109, A14-23, 13 Nov 2026): the clock is followed by "board time" and the day words from formatInstantWithDay, so the line still names the day.',
+  ],
+  [
     "selectedPatient.openedAtInstant",
     "Patient search Latest timeline: the clock sits in the time column and withDay adds the day from formatInstantWithDay to the event text beside it, so the row still names the day.",
   ],

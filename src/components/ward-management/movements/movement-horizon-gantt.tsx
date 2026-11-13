@@ -12,8 +12,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { Button, IconTile, buttonClass, useMediaQuery } from "@/components/wf";
-import { FullScreenFrame, FullScreenMarkSlot } from "@/components/wf/full-screen-frame";
+import { Button, FullScreenFrame, FullScreenMarkSlot, IconTile, buttonClass, useMediaQuery } from "@/components/wf";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";

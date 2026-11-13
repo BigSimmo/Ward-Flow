@@ -126,6 +126,6 @@ describe("enlarged views carry the mark", () => {
     }
   });
 
-  // The ED handover board waits for PR C (avoid list); this case returns when the mark is wired there.
+  // The ED handover board waits for PR C (#1660, avoid list); this case returns when the mark is wired there.
   it.todo("the enlarged ED handover table");
 });

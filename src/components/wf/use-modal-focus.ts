@@ -95,6 +95,11 @@ export type ModalKeyOptions = {
   capture?: boolean;
   /** Extra live subtrees whose controls stay in the Tab cycle (a guided interaction). */
   interactionRoots?: readonly HTMLElement[];
+  /**
+   * With nothing to tab to, a Sheet leaves Tab to the browser (as it always has), so a field that
+   * handles Tab itself is no keyboard trap; a dialog keeps focus on its own panel.
+   */
+  emptyTabPasses?: boolean;
 };
 
 /**
@@ -105,7 +110,15 @@ export type ModalKeyOptions = {
  * and any actionable toast.
  */
 export function handleModalKeyDown(event: KeyboardEvent, options: ModalKeyOptions): void {
-  const { modalId, panel, onClose, closeOnEscape = true, capture = false, interactionRoots = [] } = options;
+  const {
+    modalId,
+    panel,
+    onClose,
+    closeOnEscape = true,
+    capture = false,
+    interactionRoots = [],
+    emptyTabPasses = false,
+  } = options;
   // Only the top layer reacts: a dialog over a drawer closes alone, and the drawer's own Tab
   // trap stays out of the way.
   if (!isTopmostSheet(modalId)) return;
@@ -136,6 +149,7 @@ export function handleModalKeyDown(event: KeyboardEvent, options: ModalKeyOption
       ...roots.flatMap((root) => modalFocusTargets(root.parentElement).filter((element) => root.contains(element))),
     ]),
   ];
+  if (focusable.length === 0 && emptyTabPasses) return;
   // Move focus explicitly rather than trusting the platform's Tab order, which varies by
   // browser for programmatically focused buttons.
   event.preventDefault();

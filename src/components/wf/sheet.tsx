@@ -295,7 +295,12 @@ export function Sheet({
     // the top-most layer reacts, so a stacked overlay (lightbox over the Evidence sheet) does not
     // also close on one Escape or fight over the Tab trap.
     function onKeyDown(event: KeyboardEvent) {
-      handleModalKeyDown(event, { modalId: sheetId, panel: panelRef.current, onClose: () => onCloseRef.current() });
+      handleModalKeyDown(event, {
+        modalId: sheetId,
+        panel: panelRef.current,
+        onClose: () => onCloseRef.current(),
+        emptyTabPasses: true,
+      });
     }
 
     window.addEventListener("keydown", onKeyDown);
