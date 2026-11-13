@@ -40,6 +40,19 @@
   font-size: var(--wf-fs-12);
 }
 
+/* D-188: where the observation level came from ("Not recorded"), as the Home pull form says it. */
+.source {
+  margin-left: var(--wf-s-2);
+  font-weight: 400;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.interval {
+  clear: both;
+  margin-top: var(--wf-s-2);
+}
+
 .none,
 .note {
   clear: both;

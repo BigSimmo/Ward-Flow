@@ -649,8 +649,11 @@ export function WardHomeTab({
   // Accepted referrals with no movement yet stay off this page: the shared pull step needs the full
   // referral, which FD-23 keeps from ward-only modules (tests/ward-referral-screen-boundary.test.ts).
   // Review F-3: "Arrivals · today" lists only people expected today, by the hero's own rule.
+  // Review P4-4: the rest of the accepted list is due on a later day, said under the group.
+  const arrivingToday = arrivalsExpectedToday(accepted, now);
+  const laterArrivals = accepted.length - arrivingToday.length;
   const comingArrivals = arrivalRows({
-    accepted: arrivalsExpectedToday(accepted, now),
+    accepted: arrivingToday,
     beds: bedsList ?? [],
     unit,
     now,
@@ -1098,6 +1101,7 @@ export function WardHomeTab({
         phone={phoneSheets}
         updated={liveMark}
         arrivals={comingArrivals}
+        laterArrivals={laterArrivals}
         backFromLeave={comingLeave}
         referralsWaiting={incoming.length}
         answeredToday={recentAnswers.length}

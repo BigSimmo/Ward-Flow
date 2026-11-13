@@ -165,6 +165,9 @@ describe("FS-2 and FS-9: Needs a look agrees with the hero and says dates", () =
     expect(look.rows.map((row) => row.bedNumber)).toEqual([8, 2, 13]);
     expect(look.heldUp).toBe(1);
     expect(look.pastDate).toBe(beds.filter((item) => item.pastDate).length);
+    // Review FS-2: the held-up row that is past its date says both, and is counted as such.
+    expect(look.rows[0]!.lines[0]).toMatch(/Held up · Past date · Awaiting accommodation/u);
+    expect(look.heldUpPastDate).toBe(1);
   });
 
   it('says a short date ("12 Nov") in the time column, a clock time today, and "Date not recorded" when none', () => {

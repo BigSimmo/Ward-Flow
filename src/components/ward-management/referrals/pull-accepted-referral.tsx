@@ -14,7 +14,7 @@ import { legalStatusMismatchWarning } from "../ward-eligibility";
 import { legalFormStatusWarning } from "../ward-legal-form-fit";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
-import { legalFormName, SELECTABLE_LEGAL_FORMS } from "../ward-legal-forms";
+import { legalFormName, legalStatusFull, SELECTABLE_LEGAL_FORMS } from "../ward-legal-forms";
 import type { LegalStatus } from "../ward-model";
 import {
   INTERMITTENT_INTERVAL_MINUTES,
@@ -34,6 +34,7 @@ import { allEmergencyDepartments } from "../ward-sites";
 import { LEGAL_STATUSES, recordedPullDetails, type AcceptedAwaitingPull } from "./accepted-ward-referral";
 import {
   acceptedDecisionAt,
+  CHOOSE_INTERVAL_LINE,
   chooseFactsLine,
   clockText,
   isPullDesk,
@@ -51,9 +52,6 @@ import styles from "./pull-accepted-referral.module.css";
 
 /** The form's own "No form" answer, kept apart from "not answered yet" (""). */
 const NO_FORM = "none";
-
-/** The lock line under Pull the bed while "Check every" is blank (D-188 (tightened 13 Nov), D-187). */
-export const CHOOSE_INTERVAL_LINE = "Choose how often to check";
 
 /** A fact's source on its label line: the record's name, "Not recorded", or who changed it. */
 function SourceLine({ id, source }: { id: string; source: PullFactSource }) {
@@ -179,9 +177,13 @@ export function PullAcceptedReferral({
   const [journeyStarted, setJourneyStarted] = useState(false);
   const [message, setMessage] = useState<string | undefined>();
 
+  // Review P4-1: a journey whose pull was undone waits for a bed again. Pull the bed pulls on it, with
+  // the facts recorded when it started; they are changed on the movement, not here.
+  const reopened =
+    item.movementId === undefined ? undefined : movements.find((movement) => movement.id === item.movementId);
   const journeyId = journeyStarted
     ? movements.find((movement) => movement.referralId === referral.id && !movement.closure)?.id
-    : undefined;
+    : reopened?.id;
   const accepted = acceptedAddressing(referral);
   const destination = accepted?.destination.kind === "psychiatric_ward" ? accepted.destination : undefined;
   const ed =
@@ -232,7 +234,8 @@ export function PullAcceptedReferral({
       ? `Only the ${pullDeskName("coordinator").toLowerCase()} or a ward desk can pull this bed`
       : undefined) ??
     (desk === "ward" && actingUnitId !== unitId ? `Only the ${unitName} desk can pull this bed` : undefined) ??
-    gate("RAISE_REFERRAL").reason ??
+    (item.movementId !== undefined && !reopened ? "The movement has changed. Open it to pull the bed." : undefined) ??
+    (reopened ? undefined : gate("RAISE_REFERRAL").reason) ??
     gate("PULL_PATIENT").reason ??
     (!destination || (referral.source === "ed_medical" && !ed)
       ? "This referral has no accepted ward place to pull from"
@@ -241,13 +244,47 @@ export function PullAcceptedReferral({
       ? "This community referral has no referring team recorded"
       : undefined) ??
     (referral.ageBand === undefined ? "This referral has no age band recorded" : undefined) ??
-    chooseFactsLine(missing) ??
-    (level === "intermittent" && intervalMinutes === "" ? CHOOSE_INTERVAL_LINE : undefined);
+    (reopened ? undefined : chooseFactsLine(missing)) ??
+    (!reopened && level === "intermittent" && intervalMinutes === "" ? CHOOSE_INTERVAL_LINE : undefined);
 
   function pull(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (refusal) return;
-    start(true);
+    if (reopened) pullAgain(reopened.id);
+    else start(true);
+  }
+
+  /** Tells the host the bed is pulled (it keeps the row with its Undo), or says so in a toast. */
+  function pulledNow(pulledAt: number) {
+    if (!desk) return;
+    const pulled: PulledBed = {
+      entry: item,
+      name,
+      desk,
+      ...(desk === "ward" ? { actingUnitId: unitId } : {}),
+      at: pulledAt,
+    };
+    if (onPulled) onPulled(pulled);
+    // Pop-ups build (toast, round 2, 1 Nov 2026): a save confirmation names who it was for,
+    // surname first through the name display (D-83), so discreet names still apply.
+    else toast?.push({ tone: "success", title: `Bed pulled at ${unitName} for ${name}` });
+    onDone();
+  }
+
+  /** Review P4-1: pulls the bed again on the journey an Undo left open, with its recorded facts. */
+  function pullAgain(movementId: string) {
+    if (!desk) return;
+    setMessage(undefined);
+    const pulledAt = now;
+    completeCommand(
+      `pull-again:${movementId}`,
+      () => raise("PULL_PATIENT", { movementId, unitId, ...(desk === "ward" ? { actingUnitId: unitId } : {}) }),
+      (outcome) => {
+        const failure = wardCommandFailure(outcome);
+        if (failure) setMessage(`The bed is not pulled. ${failure}`);
+        else pulledNow(pulledAt);
+      },
+    );
   }
 
   /** Starts the accepted journey, with its bed pulled unless the pull was refused and declined. */
@@ -296,18 +333,7 @@ export function PullAcceptedReferral({
           setMessage(pullBed ? `The bed is not pulled and nothing has started. ${failure}` : failure);
           if (pullBed) setPullRefused(true);
         } else if (pullBed) {
-          const pulled: PulledBed = {
-            entry: item,
-            name,
-            desk,
-            ...(desk === "ward" ? { actingUnitId: unitId } : {}),
-            at: pulledAt,
-          };
-          if (onPulled) onPulled(pulled);
-          // Pop-ups build (toast, round 2, 1 Nov 2026): a save confirmation names who it was for,
-          // surname first through the name display (D-83), so discreet names still apply.
-          else toast?.push({ tone: "success", title: `Bed pulled at ${unitName} for ${name}` });
-          onDone();
+          pulledNow(pulledAt);
         } else {
           setMessage("The movement has started without the bed. Open it to pull the bed.");
           setJourneyStarted(true);
@@ -334,7 +360,11 @@ export function PullAcceptedReferral({
             Accepted, bed not pulled
           </Badge>
         </p>
-        <p className={styles.ctx}>Pulling the bed starts the movement and keeps the bed for this patient.</p>
+        <p className={styles.ctx}>
+          {reopened
+            ? "The movement is open without a bed. Pulling the bed keeps it for this patient again."
+            : "Pulling the bed starts the movement and keeps the bed for this patient."}
+        </p>
       </div>
       <section className={styles.group} aria-labelledby={`${baseId}-placement`}>
         <h3 id={`${baseId}-placement`}>Placement</h3>
@@ -357,75 +387,95 @@ export function PullAcceptedReferral({
           <dd className={styles.nr}>Not recorded</dd>
         </dl>
       </section>
-      <section className={styles.group} aria-labelledby={`${baseId}-carried`}>
-        <h3 id={`${baseId}-carried`}>Carried with the movement</h3>
-        <ChoiceRows
-          label="Legal status"
-          name={`${formId}-status`}
-          value={legalStatus}
-          options={LEGAL_STATUSES.map((status) => ({ value: status, label: status }))}
-          source={statusSource}
-          disabled={journeyStarted}
-          testId="ward-pull-accepted-legal-status"
-          onChange={setLegalStatus}
-        />
-        {mismatch ? (
-          <p role="alert" className={styles.warning} data-testid="ward-pull-accepted-legal-mismatch">
-            {mismatch} You can still pull the bed.
+      {reopened ? (
+        <section
+          className={styles.group}
+          aria-labelledby={`${baseId}-carried`}
+          data-testid="ward-pull-accepted-recorded"
+        >
+          <h3 id={`${baseId}-carried`}>Carried with the movement</h3>
+          <dl className={styles.kv}>
+            <dt>Legal</dt>
+            <dd>{legalStatusFull(reopened)}</dd>
+            <dt>Observation level</dt>
+            <dd>{observationLevelName(reopened.observation.level)}</dd>
+          </dl>
+          <p className={styles.ctx}>
+            Recorded when the movement started. <Link href={movementHref(reopened.id)}>Open the movement</Link> to
+            change them.
           </p>
-        ) : null}
-        <div className={styles.q}>
-          {/* PR E swap: the kit list picker (spec item 15) replaces this select once it is built. */}
-          <Field label="Legal form" hint={<SourceLine id={`${baseId}-form-src`} source={formSource} />}>
-            <Select
-              value={legalForm}
-              onChange={(event) => setLegalForm(event.target.value)}
-              data-testid="ward-pull-accepted-legal-form"
-              disabled={journeyStarted}
-            >
-              <option value="">Choose a form, or No form</option>
-              <option value={NO_FORM}>No form</option>
-              {SELECTABLE_LEGAL_FORMS.map((form) => (
-                <option key={form.code} value={form.code}>
-                  {legalFormName(form)}
-                </option>
-              ))}
-            </Select>
-          </Field>
-        </div>
-        {formMismatch ? (
-          <p role="alert" className={styles.warning} data-testid="ward-pull-accepted-form-mismatch">
-            {formMismatch} You can still pull the bed.
-          </p>
-        ) : null}
-        <ChoiceRows
-          label="Observation level"
-          name={`${formId}-observation`}
-          value={level}
-          options={OBSERVATION_LEVELS.map((choice) => ({ value: choice, label: observationLevelName(choice) }))}
-          source={levelSource}
-          disabled={journeyStarted}
-          testId="ward-pull-accepted-observation"
-          onChange={setLevel}
-        />
-        {level === "intermittent" ? (
-          <Field label="Check every">
-            <Select
-              value={intervalMinutes}
-              disabled={journeyStarted}
-              onChange={(event) => setIntervalMinutes(event.target.value === "" ? "" : Number(event.target.value))}
-              data-testid="ward-pull-accepted-interval"
-            >
-              <option value="">Choose how often</option>
-              {INTERMITTENT_INTERVAL_MINUTES.map((minutes) => (
-                <option key={minutes} value={minutes}>
-                  {minutes} minutes
-                </option>
-              ))}
-            </Select>
-          </Field>
-        ) : null}
-      </section>
+        </section>
+      ) : (
+        <section className={styles.group} aria-labelledby={`${baseId}-carried`}>
+          <h3 id={`${baseId}-carried`}>Carried with the movement</h3>
+          <ChoiceRows
+            label="Legal status"
+            name={`${formId}-status`}
+            value={legalStatus}
+            options={LEGAL_STATUSES.map((status) => ({ value: status, label: status }))}
+            source={statusSource}
+            disabled={journeyStarted}
+            testId="ward-pull-accepted-legal-status"
+            onChange={setLegalStatus}
+          />
+          {mismatch ? (
+            <p role="alert" className={styles.warning} data-testid="ward-pull-accepted-legal-mismatch">
+              {mismatch} You can still pull the bed.
+            </p>
+          ) : null}
+          <div className={styles.q}>
+            {/* PR E swap: the kit list picker (spec item 15) replaces this select once it is built. */}
+            <Field label="Legal form" hint={<SourceLine id={`${baseId}-form-src`} source={formSource} />}>
+              <Select
+                value={legalForm}
+                onChange={(event) => setLegalForm(event.target.value)}
+                data-testid="ward-pull-accepted-legal-form"
+                disabled={journeyStarted}
+              >
+                <option value="">Choose a form, or No form</option>
+                <option value={NO_FORM}>No form</option>
+                {SELECTABLE_LEGAL_FORMS.map((form) => (
+                  <option key={form.code} value={form.code}>
+                    {legalFormName(form)}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          </div>
+          {formMismatch ? (
+            <p role="alert" className={styles.warning} data-testid="ward-pull-accepted-form-mismatch">
+              {formMismatch} You can still pull the bed.
+            </p>
+          ) : null}
+          <ChoiceRows
+            label="Observation level"
+            name={`${formId}-observation`}
+            value={level}
+            options={OBSERVATION_LEVELS.map((choice) => ({ value: choice, label: observationLevelName(choice) }))}
+            source={levelSource}
+            disabled={journeyStarted}
+            testId="ward-pull-accepted-observation"
+            onChange={setLevel}
+          />
+          {level === "intermittent" ? (
+            <Field label="Check every">
+              <Select
+                value={intervalMinutes}
+                disabled={journeyStarted}
+                onChange={(event) => setIntervalMinutes(event.target.value === "" ? "" : Number(event.target.value))}
+                data-testid="ward-pull-accepted-interval"
+              >
+                <option value="">Choose how often</option>
+                {INTERMITTENT_INTERVAL_MINUTES.map((minutes) => (
+                  <option key={minutes} value={minutes}>
+                    {minutes} minutes
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          ) : null}
+        </section>
+      )}
       <div className={styles.actions}>
         <Button
           type="submit"

@@ -32,12 +32,14 @@ export type ComingAndGoingProps = {
   phone: boolean;
   updated: ReactNode;
   arrivals: ComingRow[];
+  /** Review P4-4: accepted people expected on a later day, left off "Arrivals · today" and counted here. */
+  laterArrivals?: number;
   backFromLeave: ComingRow[];
   referralsWaiting: number;
   answeredToday: number;
   /** The waiting referrals with their Accept and Decline, drawn by Ward home (test contracts kept). */
   referrals: ReactNode;
-  needsALook: { rows: ComingRow[]; heldUp: number; pastDate: number };
+  needsALook: { rows: ComingRow[]; heldUp: number; pastDate: number; heldUpPastDate?: number };
   dischargesToday: ComingRow[];
   /** "Bed 07 freed 07:42." for the empty Discharges line. */
   lastFreed?: string;
@@ -93,6 +95,23 @@ function GroupHead({
       ) : null}
     </h3>
   );
+}
+
+/**
+ * Review FS-2: the group's note adds up to its rows. A held-up bed that is also past its date is
+ * said once, inside the held-up figure: "2 held up, 1 of them past date · 2 past date".
+ */
+function needsALookNote({
+  heldUp,
+  pastDate,
+  heldUpPastDate = 0,
+}: {
+  heldUp: number;
+  pastDate: number;
+  heldUpPastDate?: number;
+}): string {
+  const held = heldUpPastDate > 0 ? `${heldUp} held up, ${heldUpPastDate} of them past date` : `${heldUp} held up`;
+  return `${held} · ${pastDate - heldUpPastDate} past date`;
 }
 
 export function WardComingAndGoing(props: ComingAndGoingProps) {
@@ -225,10 +244,23 @@ export function WardComingAndGoing(props: ComingAndGoingProps) {
           aside={backFromLeave.length > 0 ? `+ ${backFromLeave.length} back from leave` : undefined}
         />
         {arrivalRows.length === 0 ? (
-          <p className={styles.empty}>Nobody is accepted, pulled or on the way.</p>
+          <p className={styles.empty}>Nobody expected today.</p>
         ) : (
           renderRows("ward-coming-arrivals", arrivalRows)
         )}
+        {props.laterArrivals ? (
+          <p className={styles.empty} data-testid="ward-coming-later">
+            {props.laterArrivals} more on later days
+            {props.onOpenArrivals ? (
+              <>
+                {" · "}
+                <button type="button" className={styles.footLink} onClick={props.onOpenArrivals}>
+                  All arrivals<SrOnly>, including later days</SrOnly>
+                </button>
+              </>
+            ) : null}
+          </p>
+        ) : null}
       </section>
       <section className={styles.group} aria-labelledby="ward-coming-referrals">
         <GroupHead
@@ -246,9 +278,7 @@ export function WardComingAndGoing(props: ComingAndGoingProps) {
           n={needsALook.rows.length}
           title="Needs a look"
           window="now"
-          aside={
-            needsALook.rows.length > 0 ? `${needsALook.heldUp} held up · ${needsALook.pastDate} past date` : undefined
-          }
+          aside={needsALook.rows.length > 0 ? needsALookNote(needsALook) : undefined}
         />
         {needsALook.rows.length === 0 ? (
           <p className={styles.empty}>Nothing held up or past its date.</p>

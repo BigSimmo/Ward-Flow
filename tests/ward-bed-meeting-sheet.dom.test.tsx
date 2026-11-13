@@ -188,6 +188,8 @@ describe("the sheet on Capacity", () => {
     expect(label("short")).toMatch(/^(Short|Spare) · now$/u);
     expect(label("discharges")).toBe("Discharges · today");
     expect(label("ed")).toBe("Waiting in ED · now");
+    // Review P4-5: the gap is network-wide; only a one-service sheet says so, so the statewide one does not.
+    expect(within(dialog).getByTestId("bed-meeting-sheet-figure-short")).not.toHaveTextContent(/Network-wide/u);
     expect(within(dialog).getByTestId("bed-meeting-sheet-figure-discharges")).toHaveTextContent(
       /held up · by tomorrow/u,
     );

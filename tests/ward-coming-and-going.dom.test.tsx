@@ -72,6 +72,20 @@ function renderPart(over: Partial<Parameters<typeof WardComingAndGoing>[0]> = {}
 }
 
 describe("Coming and going (wave 4)", () => {
+  it("adds up the Needs a look note when a held-up bed is also past its date (review FS-2)", () => {
+    renderPart({
+      needsALook: {
+        rows: [row({ key: "h1", name: "Ferrowmoor, Alaric", bedNumber: 8, when: "14 Nov" })],
+        heldUp: 2,
+        pastDate: 3,
+        heldUpPastDate: 1,
+      },
+    });
+    expect(screen.getByRole("heading", { name: /Needs a look · now/ })).toHaveTextContent(
+      "2 held up, 1 of them past date · 2 past date",
+    );
+  });
+
   it("lists each group once with its count and window, names every row, and keeps one filled button", () => {
     const props = renderPart();
     const part = screen.getByTestId("ward-coming-and-going");
@@ -133,6 +147,22 @@ describe("Coming and going (wave 4)", () => {
     expect(within(list).getAllByRole("listitem")).toHaveLength(8);
     fireEvent.click(screen.getByRole("button", { name: "Show 4 more" }));
     expect(within(list).getAllByRole("listitem")).toHaveLength(12);
+  });
+
+  it("says nobody is expected today and counts the later-day arrivals with a way to All arrivals (review P4-4)", () => {
+    const props = renderPart({ arrivals: [], backFromLeave: [], laterArrivals: 2 });
+    const group = screen.getByRole("heading", { name: /0 Arrivals · today/ }).closest("section")!;
+    expect(group).toHaveTextContent("Nobody expected today.");
+    expect(group).not.toHaveTextContent("Nobody is accepted, pulled or on the way.");
+    const later = within(group).getByTestId("ward-coming-later");
+    expect(later).toHaveTextContent(/^2 more on later days · All arrivals/u);
+    fireEvent.click(within(later).getByRole("button", { name: /^All arrivals/u }));
+    expect(props.onOpenArrivals).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows no later-day line when everyone accepted is expected today", () => {
+    renderPart({ laterArrivals: 0 });
+    expect(screen.queryByTestId("ward-coming-later")).toBeNull();
   });
 
   it('words tomorrow as a free figure with no "likely" (D-191 revision, D-198)', () => {

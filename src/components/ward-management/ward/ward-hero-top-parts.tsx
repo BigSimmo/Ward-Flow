@@ -163,7 +163,7 @@ export function wardHeroTopParts({
           id: "obs-not-recorded",
           label: "Obs not recorded",
           value: obsNotRecorded,
-          ariaLabel: `Stays with no observation level recorded: ${obsNotRecorded}`,
+          ariaLabel: `Stays with no observation level recorded, including pulled beds: ${obsNotRecorded}`,
         },
       ]}
     />

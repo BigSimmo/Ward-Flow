@@ -2396,7 +2396,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           readyByShiftEnd={readyByShiftEnd}
           now={now}
           setActiveTab={setActiveTab}
-          handlePullPatient={handlePullPatient}
+          // Review P4-2 (D-188, every pull): the All arrivals pull asks for a level when none is recorded.
+          handlePullPatient={(movementId) => pullThenArrive.pullAndKeep(movementId)}
           accepted={accepted}
           heldAfterStop={heldAfterStop}
           resolvePatientIdentity={resolvePatientIdentity}

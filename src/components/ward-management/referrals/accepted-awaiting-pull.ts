@@ -26,20 +26,37 @@ export function acceptedWardOf(
   return { unitId, unitName };
 }
 
-/** An accepted ward referral the coordinator can pull a bed for, with the ward that accepted it. */
-export type AcceptedAwaitingPull = { referral: Referral; unitId: string; unitName: string };
+/**
+ * An accepted ward referral the coordinator can pull a bed for, with the ward that accepted it.
+ * `movementId` is set when its journey is already open without a bed because a pull was undone
+ * (review P4-1): Pull the bed then pulls on that journey instead of starting a new one.
+ */
+export type AcceptedAwaitingPull = { referral: Referral; unitId: string; unitName: string; movementId?: string };
+
+type PullJourney = Pick<Movement, "id" | "referralId" | "closure" | "stage" | "unwinds">;
+
+/**
+ * Review P4-1: a journey whose bed pull was undone. Undo releases the pull and leaves the journey
+ * open at "accepted, awaiting a bed", so the person still needs a bed and stays on the list.
+ */
+function releasedPullJourney(movement: PullJourney): boolean {
+  return (
+    !movement.closure && movement.stage === "accepted_awaiting_bed" && movement.unwinds.at(-1)?.kind === "pull_released"
+  );
+}
 
 /**
  * WS-02 (workflow speed audit, 26 Oct 2026): every referral a ward has accepted that still has no
  * bed pulled, oldest decision first. Only the referrals a journey can start from directly: an ED
  * referral or a community referral (D-76), accepted on a ward arm that its referrer has not
  * withdrawn, with no bed held on that arm and no live journey raised from it. A journey that closed
- * "did not proceed" does not count, as `RAISE_REFERRAL` allows a new one then.
+ * "did not proceed" does not count, as `RAISE_REFERRAL` allows a new one then. Nor does a journey
+ * whose pull was undone and that waits for a bed again (review P4-1): the item then names it.
  */
 export function acceptedReferralsAwaitingPull(
   referrals: readonly Referral[],
   units: readonly Pick<Unit, "id" | "name">[],
-  movements: readonly Pick<Movement, "referralId" | "closure">[],
+  movements: readonly PullJourney[],
 ): AcceptedAwaitingPull[] {
   return referrals
     .flatMap((referral) => {
@@ -48,15 +65,28 @@ export function acceptedReferralsAwaitingPull(
       if (!accepted || accepted.destination.kind !== "psychiatric_ward" || accepted.withdrawnAt !== undefined)
         return [];
       if (accepted.heldBedNumber !== undefined) return [];
-      if (
-        movements.some(
-          (movement) => movement.referralId === referral.id && movement.closure?.outcome !== "did_not_proceed",
-        )
-      )
-        return [];
+      const live = movements.filter(
+        (movement) => movement.referralId === referral.id && movement.closure?.outcome !== "did_not_proceed",
+      );
+      const released = live.length === 1 && releasedPullJourney(live[0]!) ? live[0] : undefined;
+      if (live.length > 0 && !released) return [];
       const ward = acceptedWardOf(referral, units);
-      return ward ? [{ referral, ...ward, decidedAt: accepted.decidedAt ?? referral.raisedAt }] : [];
+      return ward
+        ? [
+            {
+              referral,
+              ...ward,
+              ...(released ? { movementId: released.id } : {}),
+              decidedAt: accepted.decidedAt ?? referral.raisedAt,
+            },
+          ]
+        : [];
     })
     .sort((a, b) => a.decidedAt - b.decidedAt)
-    .map(({ referral, unitId, unitName }) => ({ referral, unitId, unitName }));
+    .map(({ referral, unitId, unitName, movementId }) => ({
+      referral,
+      unitId,
+      unitName,
+      ...(movementId === undefined ? {} : { movementId }),
+    }));
 }

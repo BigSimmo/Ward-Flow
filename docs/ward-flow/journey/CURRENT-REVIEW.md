@@ -175,3 +175,14 @@ Mock-up review fixes in the same PR changed two more cited files without touchin
 read once, and the unavailable reason reads "Only the bed coordinator or a ward desk can pull this bed"; the payload
 and guards are unchanged. `capacity/capacity-screen.tsx` (REQUEST_CAPACITY_REFRESH): passes the bed map its phone
 fold rule; the refresh dispatch is unchanged. `ward/ward-answer-view.tsx` (ACCEPT_IN_PRINCIPLE, DECLINE, PULL_PATIENT, CONFIRM_CAPACITY): only the occupancy ring word changes to "In use, at or over 85%" (D-191 item 4); its dispatches are unchanged. All three digests were refreshed.
+
+Review P4-1 (same PR): after Undo pull, the journey stays open at "accepted, awaiting a bed", so the accepted
+referral is listed again with that journey's id. `referrals/pull-accepted-referral.tsx` then sends PULL_PATIENT on that
+journey (`movementId`, `unitId`, and `actingUnitId` for the ward desk) instead of RAISE_REFERRAL, with the facts it
+recorded when it started shown read-only. The RAISE_REFERRAL payload and its guards are unchanged; the RAISE_REFERRAL
+digest was refreshed. Evidence: `tests/ward-pull-bed-step.dom.test.tsx` (Undo, row back, pull again), run locally.
+
+Review P4-2 (D-188 tightened, same PR): the All arrivals tab's Pull the bed in `ward/ward-screen.tsx` now goes through
+the Ward step's `pullAndKeep`, which asks for an observation level when the journey records none and then sends the
+existing RECORD_OBSERVATION_LEVEL before PULL_PATIENT. No dispatch in `ward/ward-screen.tsx` changed; its digests were
+refreshed. Evidence: `tests/ward-pull-then-arrive.dom.test.tsx`, run locally.

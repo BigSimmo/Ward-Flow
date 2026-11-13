@@ -57,6 +57,9 @@ const FACT_WORDS: Record<PullFact, string> = {
   observation: "observation level",
 };
 
+/** The lock line under Pull the bed while "Check every" is blank (D-188 (tightened 13 Nov), D-187). */
+export const CHOOSE_INTERVAL_LINE = "Choose how often to check";
+
 /** The lock line under Pull the bed: "Choose legal status, legal form and observation level". */
 export function chooseFactsLine(missing: readonly PullFact[]): string | undefined {
   if (missing.length === 0) return undefined;

@@ -261,6 +261,68 @@ describe("Undo pull from the kept row (review FA-2, FA-10, FR-1)", () => {
   });
 });
 
+describe("Undo pull keeps the person on the list (review P4-1)", () => {
+  beforeEach(() => {
+    window.sessionStorage.clear();
+    current = undefined;
+  });
+
+  it("brings the row and the count back after Undo, and Pull the bed pulls on the same movement", async () => {
+    renderWith(<ActNow />);
+    const before = acceptedReferralsAwaitingPull(current!.referrals, current!.units, current!.movements);
+    const [first] = before;
+    const referralId = first!.referral.id;
+    const rowFor = () =>
+      screen
+        .getByTestId("rows")
+        .querySelector<HTMLElement>(`li[data-referral-id="${referralId}"]:not([data-pulled-referral-id])`);
+    fireEvent.click(
+      within(rowFor()!)
+        .getAllByRole("button", { name: /^Pull the bed for / })
+        .at(-1)!,
+    );
+    await screen.findByTestId(`ward-pull-accepted-${referralId}`);
+    answerOpenFacts();
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("ward-pull-accepted-confirm"));
+    });
+    expect(acceptedReferralsAwaitingPull(current!.referrals, current!.units, current!.movements)).toHaveLength(
+      before.length - 1,
+    );
+    await act(async () => {
+      fireEvent.click(await screen.findByTestId("pulled-row-undo"));
+    });
+    await screen.findByText(/^Bed pull undone for /u);
+
+    // The count and the row are back, naming the movement the Undo left open without a bed.
+    const after = acceptedReferralsAwaitingPull(current!.referrals, current!.units, current!.movements);
+    expect(after).toHaveLength(before.length);
+    const journey = current!.movements.find((movement) => movement.referralId === referralId && !movement.closure);
+    expect(journey?.stage).toBe("accepted_awaiting_bed");
+    expect(after.find((item) => item.referral.id === referralId)?.movementId).toBe(journey!.id);
+    await waitFor(() => expect(rowFor()).not.toBeNull());
+
+    // Pull the bed again: the form shows the recorded facts and pulls on that same movement.
+    fireEvent.click(
+      within(rowFor()!)
+        .getAllByRole("button", { name: /^Pull the bed for / })
+        .at(-1)!,
+    );
+    await screen.findByTestId("ward-pull-accepted-recorded");
+    const confirm = screen.getByTestId("ward-pull-accepted-confirm");
+    expect(confirm).not.toHaveAttribute("aria-disabled", "true");
+    await act(async () => {
+      fireEvent.click(confirm);
+    });
+    const open = current!.movements.filter((movement) => movement.referralId === referralId && !movement.closure);
+    expect(open.map((movement) => movement.id)).toEqual([journey!.id]);
+    expect(open[0]!.stage).toBe("pulled");
+    expect(acceptedReferralsAwaitingPull(current!.referrals, current!.units, current!.movements)).toHaveLength(
+      before.length - 1,
+    );
+  });
+});
+
 describe("Desk act-now row for an accepted referral (FS-3, FS-6, FS-7)", () => {
   beforeEach(() => {
     window.sessionStorage.clear();

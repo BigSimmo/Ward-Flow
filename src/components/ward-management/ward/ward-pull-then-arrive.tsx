@@ -7,6 +7,10 @@
 // refused pull opens nothing. Ruling 3: a bed pulled from a row keeps "Undo pull · until HH:MM" on
 // that row for the Undo window; Undo is the existing RELEASE_PULL as "pull made in error", fenced
 // to that exact pull (`expectedPull`). No engine or event change.
+// D-188 (tightened 13 Nov), review P4-2: with no observation level on the record, both Ward pulls
+// (a row's Pull the bed and this step) ask for one first and record it with the existing
+// RECORD_OBSERVATION_LEVEL before PULL_PATIENT; a recorded level pulls exactly as before.
+// Review P4-3: a bed already held for this person is offered first, chosen, "Held for them".
 
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
@@ -16,12 +20,16 @@ import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { observationEditingToken } from "@/components/ward-management/ward-flow-observation-events";
 import type { Movement } from "@/components/ward-management/ward-model";
+import { observationIsRecorded, type Observation } from "@/components/ward-management/ward-observation";
 import { UNDO_WINDOW_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import type { BoardBed } from "./ward-bed-board-logic";
+import type { PullStepChoice } from "./ward-pull-bed-choice-sheet";
 import { useWardCommandCompletion, wardCommandFailure } from "./use-ward-command-completion";
 
-// The bed choice opens only from a row's Confirm arrival, so it loads then (phone size limit, 13 Nov 2026).
+// The step opens only from a row's Confirm arrival (or its Pull the bed with no level recorded), so it
+// loads then (phone size limit, 13 Nov 2026).
 const PullBedChoiceSheet = dynamic(
   withLoadRetry(() => import("./ward-pull-bed-choice-sheet").then((m) => m.PullBedChoiceSheet)),
   { ssr: false },
@@ -52,15 +60,19 @@ export function pullMadeHere(
   return change && index === movement.stageChanges.length - 1 ? { stageIndex: index, at: change.at } : undefined;
 }
 
+/** The open pull step: whose, and whether it asks for the bed (Confirm arrival) or only the level. */
+type PullStepAsk = { movementId: string; askBed: boolean };
+
 export type WardPullThenArrive = {
-  /** The movement whose pull step is open, if any. */
-  asking: string | undefined;
+  /** The pull step that is open, if any. */
+  asking: PullStepAsk | undefined;
   /** Confirm arrival on a row with no pulled bed: opens the pull step. */
   onPullThenArrive: (movementId: string) => void;
-  /** Pull the bed from a row, keeping its inline Undo once the pull is recorded. */
+  /** Pull the bed from a row, keeping its inline Undo once the pull is recorded. With no observation
+   *  level recorded, the pull step asks for one first (D-188). */
   pullAndKeep: (movementId: string) => void;
-  /** The pull step's answer: pull into this bed, then open the arrival. */
-  choose: (bedNumber: number) => void;
+  /** The pull step's answer: record the level when asked, pull (into this bed), then open the arrival. */
+  choose: (choice: PullStepChoice) => void;
   cancel: () => void;
   /** "Undo pull · until 10:46" for a row pulled here, while that exact pull stands and the window is open. */
   undoPullFor: (movementId: string) => { label: string; run: () => void } | null;
@@ -80,7 +92,7 @@ export function useWardPullThenArrive(unitId: string, raise: WardRaise, screen: 
     "resolvePatientIdentity",
   );
   const now = useWardFlowClock();
-  const [asking, setAsking] = useState<string | undefined>();
+  const [asking, setAsking] = useState<PullStepAsk | undefined>();
   const [sent, setSent] = useState<Readonly<Record<string, SentPull>>>({});
   const complete = useWardCommandCompletion();
   const toast = useOptionalToast();
@@ -122,6 +134,34 @@ export function useWardPullThenArrive(unitId: string, raise: WardRaise, screen: 
     screen.handlePullPatient(movementId, unitId, (recorded) => {
       if (recorded === false) forget(movementId);
     });
+  }
+
+  /** D-188: the chosen observation level is recorded on the movement first; a refusal pulls nothing. */
+  function recordLevelThenSend(movementId: string, observation: Observation, arriveBed?: number) {
+    const movement = movements.find((candidate) => candidate.id === movementId);
+    if (!movement) return;
+    complete(
+      `pull-observation:${movementId}`,
+      () =>
+        raise("RECORD_OBSERVATION_LEVEL", {
+          target: { kind: "movement", movementId, actingUnitId: unitId },
+          observation,
+          expected: observationEditingToken(
+            "movement",
+            movement.id,
+            movement.observation,
+            movement.observationChanges?.length ?? 0,
+          ),
+        }),
+      (outcome) => {
+        const failure = wardCommandFailure(outcome);
+        if (failure) {
+          toast?.push({ tone: "warning", title: "The bed is not pulled.", body: failure });
+          return;
+        }
+        send(movementId, arriveBed);
+      },
+    );
   }
 
   // Once the record shows a pull sent from the pull step: record the chosen bed, then open the arrival.
@@ -195,12 +235,18 @@ export function useWardPullThenArrive(unitId: string, raise: WardRaise, screen: 
 
   return {
     asking,
-    onPullThenArrive: setAsking,
-    pullAndKeep: (movementId) => send(movementId),
-    choose: (bedNumber) => {
-      const movementId = asking;
+    onPullThenArrive: (movementId) => setAsking({ movementId, askBed: true }),
+    pullAndKeep: (movementId) => {
+      const movement = movements.find((candidate) => candidate.id === movementId);
+      if (movement && !observationIsRecorded(movement.observation)) setAsking({ movementId, askBed: false });
+      else send(movementId);
+    },
+    choose: ({ bedNumber, observation }) => {
+      const open = asking;
       setAsking(undefined);
-      if (movementId) send(movementId, bedNumber);
+      if (!open) return;
+      if (observation) recordLevelThenSend(open.movementId, observation, bedNumber);
+      else send(open.movementId, bedNumber);
     },
     cancel: () => setAsking(undefined),
     undoPullFor,
@@ -219,17 +265,33 @@ export function WardPullBedChoice({
   beds: readonly BoardBed[];
   isMixed: boolean;
 }) {
-  const { movements, resolvePatientIdentity } = useWardFlowSelect("movements", "resolvePatientIdentity");
-  const movement = step.asking ? movements.find((candidate) => candidate.id === step.asking) : undefined;
-  if (!movement) return null;
+  const { movements, resolvePatientIdentity, wardReferralInbox } = useWardFlowSelect(
+    "movements",
+    "resolvePatientIdentity",
+    "wardReferralInbox",
+  );
+  const asking = step.asking;
+  const movement = asking ? movements.find((candidate) => candidate.id === asking.movementId) : undefined;
+  if (!asking || !movement) return null;
+  // Review P4-3: the bed this ward holds for them, read as the pull reads it (the movement's own
+  // number, else this ward's accepted referral copy), so the step never moves them out of it.
+  const heldBed =
+    movement.heldBedNumber ??
+    (movement.referralId === undefined || movement.acceptedUnitId === undefined
+      ? undefined
+      : wardReferralInbox(movement.acceptedUnitId).find(
+          (entry) => entry.id === movement.referralId && entry.state === "accepted",
+        )?.heldBedNumber);
   return (
     <PullBedChoiceSheet
-      key={movement.id}
+      key={`${movement.id}:${asking.askBed}`}
       movement={movement}
       name={resolvePatientIdentity(movement).formalName}
       unitName={unitName}
       beds={beds}
       isMixed={isMixed}
+      askBed={asking.askBed}
+      heldBed={heldBed}
       onChoose={step.choose}
       onCancel={step.cancel}
     />

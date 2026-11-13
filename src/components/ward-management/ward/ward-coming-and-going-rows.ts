@@ -206,21 +206,25 @@ export function needsALookRows(
   beds: readonly BedItem[],
   now: Instant,
   dateOf: RowDateLabel = (at) => formatInstantWithDay(at, now),
-): { rows: ComingRow[]; heldUp: number; pastDate: number } {
+): { rows: ComingRow[]; heldUp: number; pastDate: number; heldUpPastDate: number } {
   const byAdmission = (id: string | undefined) =>
     id === undefined ? undefined : beds.find((bed) => bed.admissionId === id);
   const held = [...releases]
     .filter((release) => release.blocker !== null)
     .sort((left, right) => left.expectedAt - right.expectedAt);
   const seen = new Set<string>();
+  let heldUpPastDate = 0;
   const rows: ComingRow[] = held.map((release) => {
     const bed = byAdmission(release.admissionId);
     if (bed) seen.add(String(bed.bedNumber));
+    // Review FS-2: a held-up bed past its date says both, so the rows add up to the group's note.
+    const past = bed?.pastDate === true;
+    if (past) heldUpPastDate += 1;
     return {
       key: `held-${release.id}`,
       name: bed?.patientAlias ?? bed?.bedLabel ?? "Name not recorded",
       bedNumber: bed ? Number(bed.bedNumber) : undefined,
-      lines: [[bedWord(bed), "Held up", release.blocker].filter(Boolean).join(" · ")],
+      lines: [[bedWord(bed), "Held up", past ? "Past date" : null, release.blocker].filter(Boolean).join(" · ")],
       when: dateOf(release.expectedAt),
       tone: "danger",
       action: null,
@@ -242,7 +246,7 @@ export function needsALookRows(
       action: null,
     });
   }
-  return { rows, heldUp: held.length, pastDate: allPast.length };
+  return { rows, heldUp: held.length, pastDate: allPast.length, heldUpPastDate };
 }
 
 /** Discharges · today: the page's due-today selector (`wardDischargesDueToday`), named by bed and person. */

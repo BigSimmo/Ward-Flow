@@ -85,7 +85,9 @@ export function BedMeetingSheetDialog({
       label: shortWord,
       window: "now",
       value: Math.abs(short.gap),
-      sub: [`${short.waiting} need a bed`, ...spare].join(" · "),
+      // Review P4-5: the bed gap is counted across the network (bed-meeting-derivations), so a
+      // one-service sheet says so, as Capacity's own network figures do.
+      sub: [...(sheet.service === null ? [] : ["Network-wide"]), `${short.waiting} need a bed`, ...spare].join(" · "),
     },
     {
       id: "discharges",
