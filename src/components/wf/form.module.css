@@ -34,11 +34,50 @@
 
 .help {
   display: flex;
-  align-items: center;
+  /* Spec items 13 and 17: when the words wrap, the glyph stays on the first line. */
+  align-items: flex-start;
   gap: 6px;
+  min-width: 0;
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
   color: var(--wf-ink-3);
+}
+
+.help > [data-wf-glyph] {
+  flex: none;
+  margin-block-start: calc((var(--wf-lh-12) - 9px) / 2);
+}
+
+/* Spec items 10 and 17: one line's room kept under the box, so an error appearing moves nothing. */
+.reservedLine {
+  display: block;
+  min-height: var(--wf-lh-12);
+}
+
+/* Spec item 17 (C32, 13 Nov 2026): label beside the answer; error and help under the box, in the
+   answer column, at every width. */
+.fieldRow {
+  display: grid;
+  grid-template-columns: var(--wf-field-label-w, 7.5rem) minmax(0, 1fr);
+  align-items: start;
+  column-gap: var(--wf-s-2);
+}
+
+.fieldRow > .labelRow {
+  /* Centred on the answer's first row: the box's own floor. */
+  align-items: center;
+  min-height: max(var(--wf-h-md), var(--wf-tablet-tap, 0px));
+}
+
+.fieldRow > .labelRow .label {
+  white-space: normal;
+}
+
+.answer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
 }
 
 .error {

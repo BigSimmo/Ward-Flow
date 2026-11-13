@@ -71,13 +71,35 @@ export type FieldProps = {
   id?: string;
   children: ReactNode;
   className?: string;
+  /**
+   * `stack` (the default): label above, answer below. `row`: label beside the answer, with the
+   * error and help lines under the box in the answer column (spec item 17, C32, 13 Nov 2026), so a
+   * form of short answers stops writing its own grid. The label column is `--wf-field-label-w`.
+   */
+  layout?: "stack" | "row";
+  /**
+   * Keeps one line's room under the box while there is no error or help, so words appearing there
+   * never move the controls below (spec items 10 and 17).
+   */
+  reserveLine?: boolean;
 };
 
 /**
- * Label above, help below. The control inside (TextInput, Textarea, Select) picks up its id,
- * `aria-describedby` (hint, help and error) and `aria-invalid` from the field.
+ * Label above (or beside, `layout="row"`), then the box, then its error and help lines, always under
+ * the box at the full width of the answer. The control inside (TextInput, Textarea, Select) picks up
+ * its id, `aria-describedby` (hint, help and error) and `aria-invalid` from the field.
  */
-export function Field({ label, hint, help, error, id: idProp, children, className }: FieldProps) {
+export function Field({
+  label,
+  hint,
+  help,
+  error,
+  id: idProp,
+  children,
+  className,
+  layout = "stack",
+  reserveLine = false,
+}: FieldProps) {
   const generated = useId();
   const id = idProp ?? generated;
   const [controlErrors, setControlErrors] = useState<ReadonlyMap<string, ReactNode>>(() => new Map());
@@ -96,9 +118,21 @@ export function Field({ label, hint, help, error, id: idProp, children, classNam
   const helpId = help ? `${id}-help` : undefined;
   const errorId = shownError ? `${id}-error` : undefined;
   const describedBy = cx(hintId, errorId, helpId) || undefined;
+  const answer = (
+    <>
+      {children}
+      {shownError ? <ErrorLine id={errorId}>{shownError}</ErrorLine> : null}
+      {help ? (
+        <span id={helpId} className={styles.help}>
+          {help}
+        </span>
+      ) : null}
+      {reserveLine && !shownError && !help ? <span className={styles.reservedLine} aria-hidden="true" /> : null}
+    </>
+  );
   return (
     <FieldContext.Provider value={{ id, describedBy, invalid: Boolean(error), reportError }}>
-      <div className={cx(styles.field, className)}>
+      <div className={cx(styles.field, layout === "row" && styles.fieldRow, className)} data-layout={layout}>
         <div className={styles.labelRow}>
           <label htmlFor={id} className={styles.label}>
             {label}
@@ -109,13 +143,7 @@ export function Field({ label, hint, help, error, id: idProp, children, classNam
             </span>
           ) : null}
         </div>
-        {children}
-        {shownError ? <ErrorLine id={errorId}>{shownError}</ErrorLine> : null}
-        {help ? (
-          <span id={helpId} className={styles.help}>
-            {help}
-          </span>
-        ) : null}
+        {layout === "row" ? <div className={styles.answer}>{answer}</div> : answer}
       </div>
     </FieldContext.Provider>
   );

@@ -931,6 +931,18 @@
   border: 0;
 }
 
+/* Spec item 17 (C32, 13 Nov 2026): the kit Field's row layout, on the same 5.25rem label column, so
+   the error and help sit under the box in the answer column at every width. */
+.fieldRow {
+  --wf-field-label-w: 5.25rem;
+  margin: 6px 0 0;
+}
+
+.fieldRow label {
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
 .formRow > :first-child label,
 .formLabel {
   color: var(--wf-ink-2);
@@ -1527,7 +1539,9 @@ fieldset.formRow {
 }
 
 .planSheet .formRow select,
-.planSheet .formRow input {
+.planSheet .formRow input,
+.planSheet .fieldRow select,
+.planSheet .fieldRow input {
   min-height: 44px;
 }
 

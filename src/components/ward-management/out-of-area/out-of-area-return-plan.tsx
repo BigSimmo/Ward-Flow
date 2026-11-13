@@ -408,7 +408,7 @@ export function ReturnPlan({
                     : `No shorter travel recorded for ${entry.admission.homeRegion}`}
                 </p>
               )}
-              <Field label={options.length ? "Other" : "Hospital"} className={styles.formRow}>
+              <Field label={options.length ? "Other" : "Hospital"} layout="row" className={styles.fieldRow}>
                 <Select
                   data-testid="ward-out-of-area-repat-home-hospital"
                   value={optionCodes.has(draft.homeHospital) ? "" : draft.homeHospital}
@@ -543,7 +543,7 @@ export function ReturnPlan({
                 title={PLAN_STEPS[2].title}
                 left={missing.filter((m) => PLAN_STEPS[2].answers.includes(m as never))}
               />
-              <Field label="CAD number" className={styles.formRow} error={cadError}>
+              <Field label="CAD number" layout="row" className={styles.fieldRow} error={cadError}>
                 <TextInput
                   data-testid="ward-out-of-area-repat-cad"
                   className={styles.mono}
@@ -553,7 +553,7 @@ export function ReturnPlan({
                   onChange={(event) => onDraft({ cadNumber: event.target.value })}
                 />
               </Field>
-              <Field label="Depart" className={styles.formRow} error={departError}>
+              <Field label="Depart" layout="row" className={styles.fieldRow} error={departError}>
                 <TextInput
                   icon={Clock}
                   inputMode="numeric"
