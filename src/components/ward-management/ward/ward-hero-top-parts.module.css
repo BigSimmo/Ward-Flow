@@ -1,7 +1,6 @@
 /* Wave 4 (D-191): the count label's window word, quieter than its label (shared parts spec 2). */
-.win {
-  font-weight: 400;
-  opacity: 0.85;
+.win[data-wf-window] {
+  color: var(--wf-hero-ink-3);
 }
 
 /* "Held up 1 · by tomorrow": the window after the value, in the label's face, not the figures' mono. */

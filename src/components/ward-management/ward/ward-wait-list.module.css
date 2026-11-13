@@ -115,8 +115,3 @@
   font-size: var(--wf-fs-15);
   color: var(--wf-ink-1);
 }
-
-.win {
-  color: var(--wf-ink-3);
-  font-weight: 400;
-}

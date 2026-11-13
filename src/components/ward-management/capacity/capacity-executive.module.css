@@ -30,9 +30,8 @@
 }
 
 /* "Label · window": the window word in quiet hero ink (count labels, shared spec 2). */
-.win {
+.win[data-wf-window] {
   color: var(--wf-hero-ink-3);
-  font-weight: 400;
 }
 
 .bandWord {

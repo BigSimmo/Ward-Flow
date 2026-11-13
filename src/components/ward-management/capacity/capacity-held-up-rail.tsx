@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 
-import { Card, CardHead, ShowMoreRow, foldHidden, foldLimit } from "@/components/wf";
+import { Card, CardHead, ShowMoreRow, WindowWord, foldHidden, foldLimit } from "@/components/wf";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { formatInstantWithDay, perthDateLabel, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -65,13 +65,12 @@ export function HeldUpCard({ releases, now }: { releases: readonly BedRelease[];
     }`;
   return (
     <Card aria-labelledby="capacity-held-up-title" data-testid="capacity-held-up-card">
-      {/* PR E swap: WindowWord for the "· window" count title. */}
       <CardHead
         id="capacity-held-up-title"
         title={
           <span className={styles.countTitle}>
-            <b className={styles.countN}>{rows.length}</b> Held up{" "}
-            <span className={styles.countWin}>· by tomorrow</span>
+            <b className={styles.countN}>{rows.length}</b> Held up
+            <WindowWord word="by tomorrow" />
           </span>
         }
       />

@@ -3,23 +3,12 @@
  * 12 px. The sheet's grid and lists stay in capacity-page.module.css.
  */
 
-/* The as-at line with the neutral "Synthetic data" tag at its right (PR E swap: dialog header). */
+/* The as-at line with the kit's SyntheticMark at its right. */
 .descRow {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--wf-s-2);
-}
-
-.synthetic {
-  flex: none;
-  white-space: nowrap;
-}
-
-/* The window word on a figure's label ("Ready · now"). */
-.win {
-  color: var(--wf-ink-3);
-  font-weight: 400;
 }
 
 /* Long ED names wrap rather than being cut. */

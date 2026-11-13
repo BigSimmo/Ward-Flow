@@ -177,6 +177,38 @@ describe("Capacity for a signed-in executive (WF-06)", () => {
     expect(screen.getByTestId("ward-capacity-executive-as-at")).toHaveTextContent(/report paused/u);
   });
 
+  it("names the chosen service on a service-scoped report, and the whole network otherwise (PR C's scope words)", () => {
+    const service = data.wards[0].service;
+    const scoped = projectExecutiveReportingFoundation(
+      state,
+      { role: "executive", scope: { kind: "service", service } },
+      {
+        now: NOW_ANCHOR,
+        dayZero: "2026-09-22T16:00:00.000Z",
+        startedAt: "2026-10-23T02:42:00.000Z",
+        places: wardPlaceLookup(state.units),
+      },
+    );
+    render(
+      <ExecutiveStatisticsProvider
+        binding={binding}
+        snapshot={{ binding, receivedAt: 100, expiresAt: 200, data: scoped }}
+        now={150}
+        controls={{ executive: true, paused: false, togglePause: null }}
+      >
+        <CapacityRoute />
+      </ExecutiveStatisticsProvider>,
+    );
+    expect(screen.getByRole("group", { name: `${service} beds` })).toBeInTheDocument();
+    // The hero says the service above its title, on a phone too.
+    const hero = document.querySelector('[data-phone-eyebrow="show"]');
+    expect(hero?.querySelector("[data-wf-hero-title-line]")?.previousElementSibling).toHaveTextContent(service);
+    cleanup();
+    renderReport();
+    expect(screen.getByRole("group", { name: "Network beds" })).toBeInTheDocument();
+    expect(document.querySelector("[data-phone-eyebrow]")).toBeNull();
+  });
+
   it("says the figures are unavailable when the report is absent", () => {
     render(
       <ExecutiveStatisticsProvider

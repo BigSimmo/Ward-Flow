@@ -14,6 +14,7 @@ import {
   heroChipClassName,
   Menu,
   SrOnly,
+  WindowWord,
   type HeroChipItem,
 } from "@/components/wf";
 import { formatWardOccupancy } from "@/components/ward-management/ward-occupancy";
@@ -113,7 +114,7 @@ export function CapacityHero({
   const occupancyLabel = (
     <span className={styles.figLabel}>
       In use
-      <span className={styles.heroWin}> · now</span>
+      <WindowWord word="now" className={styles.winWord} />
       {/* Occupancy counts pulled beds as in use (audit P100, D-81). */}
       {model.pulled > 0 ? <SrOnly>, including pulled beds</SrOnly> : null}
     </span>
@@ -187,9 +188,9 @@ export function CapacityHero({
   ];
 
   const jobs = chips.length > 0 ? <HeroQuickChips label="Capacity jobs" items={chips} /> : undefined;
-  // Count labels "Label · window" (shared spec 2): the window word in quiet ink, under the label on a phone.
-  // PR E swap: the kit's `window` prop on HeroStat / WindowWord replaces this span.
-  const win = (word: string) => <span className={styles.heroWin}> · {word}</span>;
+  // Count labels "Label · window" (shared spec 2): the kit's window word in the hero's quiet ink, under
+  // the label on a phone.
+  const win = (word: Parameters<typeof WindowWord>[0]["word"]) => <WindowWord word={word} className={styles.winWord} />;
   return (
     <Hero
       level={1}
@@ -218,9 +219,14 @@ export function CapacityHero({
                 // as the Ward hero says it (`networkTotals` sums each row's `pendingPreparation`).
                 label: (
                   <span className={styles.figLabel}>
-                    Ready{win("now")}
+                    Ready
+                    {/* The comma rides with the window word, so a phone's wrapped label never starts a line with it. */}
+                    <span className={styles.winJoin}>
+                      {win("now")}
+                      {totals.pendingPreparation ? "," : null}
+                    </span>
                     {totals.pendingPreparation ? (
-                      <span data-testid="capacity-hero-being-made-ready">{`, ${totals.pendingPreparation} being made ready`}</span>
+                      <span data-testid="capacity-hero-being-made-ready">{` ${totals.pendingPreparation} being made ready`}</span>
                     ) : null}
                   </span>
                 ),
@@ -315,7 +321,8 @@ export function CapacityHero({
             <HeroBand
               title={
                 <>
-                  By bed type<span className={styles.heroWin}> · now</span>
+                  By bed type
+                  <WindowWord word="now" className={styles.winWord} />
                 </>
               }
               aside={networkWide ? "Network-wide" : undefined}

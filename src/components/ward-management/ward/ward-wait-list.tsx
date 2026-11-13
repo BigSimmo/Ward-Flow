@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { Button, StatusGlyph, cx } from "@/components/wf";
+import { Button, StatusGlyph, WindowWord, cx } from "@/components/wf";
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { legalFormNowWords } from "@/components/ward-management/ward-legal-form-progression";
@@ -92,7 +92,8 @@ export function WardWaitList({
       <div className={styles.head}>
         {/* Wave 4 (D-191, notes 3): "N Wait list · now", as the mock-up heads the group. */}
         <h3 className={styles.groupHead} id="ward-wait-list-heading">
-          <b className={styles.n}>{list.length}</b> Wait list <span className={styles.win}>· now</span>
+          <b className={styles.n}>{list.length}</b> Wait list
+          <WindowWord word="now" />
         </h3>
         {list.length > 0 ? <span className={styles.note}>Oldest referral first</span> : null}
         <span className={styles.readyMark} data-testid="ward-ready-for-next">

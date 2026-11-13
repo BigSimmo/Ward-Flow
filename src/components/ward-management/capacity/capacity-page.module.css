@@ -2899,6 +2899,10 @@ button.helpLink {
   color: var(--wf-hero-ink-3);
   font-weight: 400;
 }
+/* A count label's window word (the kit's WindowWord) in the hero's quiet ink. */
+.winWord[data-wf-window] {
+  color: var(--wf-hero-ink-3);
+}
 /* One on-hero action: the sheet in one tap, the TV view and agenda under its caret. */
 .splitChip {
   display: inline-flex;
@@ -2976,10 +2980,6 @@ button.helpLink {
 .countN {
   font: 650 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-mono);
   font-variant-numeric: tabular-nums;
-}
-.countWin {
-  color: var(--wf-ink-3);
-  font-weight: 400;
 }
 .railRows,
 .railHelps {
@@ -3140,15 +3140,13 @@ a.railRow:focus-visible,
 /* Phone (743 px and below): window words under their labels, the bed-type band as a 2 × 2 grid,
    rows and links with a 48 px tap cover. */
 @media (max-width: 46.4375rem) {
-  .heroWin {
-    display: block;
+  /* The window word (or, beside Ready, the window word and its comma) on a line of its own. */
+  .figLabel > .winWord,
+  .figLabel > .winJoin {
+    display: flex;
   }
   .figLabel {
     white-space: normal;
-  }
-  .pillWrap .heroWin,
-  [data-testid="capacity-mismatch"] .heroWin {
-    display: inline;
   }
   .capHero [data-testid="capacity-mismatch"] > ul {
     display: grid;

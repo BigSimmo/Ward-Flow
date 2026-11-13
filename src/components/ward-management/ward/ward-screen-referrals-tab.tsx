@@ -5,7 +5,7 @@
 // It has its own tab, which says how referrals reach this ward before listing them.
 
 import { ArrowLeftRight, Inbox } from "lucide-react";
-import { buttonClass, EmptyState } from "@/components/wf";
+import { buttonClass, EmptyState, WindowWord } from "@/components/wf";
 import { useWardFlowSelect } from "../ward-flow-provider";
 import type { Unit } from "../ward-model";
 import styles from "./ward-screen-referrals-tab.module.css";
@@ -44,7 +44,7 @@ export function WardScreenReferralsTab({
       {active ? (
         // Wave 4 (D-191, notes 3 and 6, review FS-12): the mock-up's two parts. The referrals to answer,
         // headed "N To answer · now", and a "This ward's answers" rail that holds the wait list
-        // ("N Wait list · now"). PR E swap: the window words become the kit's WindowWord.
+        // ("N Wait list · now"), each window the kit's WindowWord.
         <div className={styles.layout}>
           <div className={styles.wrap}>
             {/* Most urgent first: a bed request from an emergency department is answered in Coming and going. */}
@@ -73,7 +73,8 @@ export function WardScreenReferralsTab({
                   Referrals to {unit.name}
                 </h2>
                 <span className={styles.quiet} data-testid="ward-referrals-to-answer">
-                  <b>{waiting}</b> To answer <span className={styles.win}>· now</span>
+                  <b>{waiting}</b> To answer
+                  <WindowWord word="now" />
                 </span>
               </div>
               {entries.length === 0 ? (

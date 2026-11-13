@@ -1145,23 +1145,10 @@
   color: var(--wf-hero-ink);
 }
 
-/* Wave 4 (D-191, notes item 11): a count label's window word ("· today") in the hero's quiet ink.
-   PR E swap: the kit count label's `window` prop. */
-.figWindow {
+/* Wave 4 (D-191, notes item 11): a count label's window word (the kit's WindowWord, "· today") in
+   the hero's quiet ink. (A5-15's wrapping confirmed pill is the kit HeroPill's own two-line wrap.) */
+.figWindow[data-wf-window] {
   color: var(--wf-hero-ink-3);
-}
-
-/* Wave 4 (A5-15): the confirmed pill wraps to a second line rather than cutting the ward's name.
-   PR E swap: a wrapping HeroPill in the kit. */
-.screen [data-testid="ward-index-confirmed"] {
-  white-space: normal;
-  padding-block: 5px;
-  border-radius: var(--wf-r-lg);
-}
-
-.screen [data-testid="ward-index-confirmed"] > span:not([aria-hidden]) {
-  overflow: visible;
-  text-overflow: clip;
 }
 
 /* Filters and the view switch at the right end of the tab row. */

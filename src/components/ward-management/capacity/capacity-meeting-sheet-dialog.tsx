@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-import { Badge, Dialog, durMinutes } from "@/components/wf";
+import { Dialog, SyntheticMark, WindowWord, durMinutes } from "@/components/wf";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { tvServiceParam } from "@/components/ward-management/bed-meeting/tv-derivations";
@@ -72,7 +72,7 @@ export function BedMeetingSheetDialog({
     {
       id: "ready",
       label: "Ready",
-      window: "now",
+      window: "now" as const,
       value: capacity.ready,
       sub: [
         `of ${capacity.beds}`,
@@ -83,7 +83,7 @@ export function BedMeetingSheetDialog({
     {
       id: "short",
       label: shortWord,
-      window: "now",
+      window: "now" as const,
       value: Math.abs(short.gap),
       // Review P4-5: the bed gap is counted across the network (bed-meeting-derivations), so a
       // one-service sheet says so, as Capacity's own network figures do.
@@ -92,7 +92,7 @@ export function BedMeetingSheetDialog({
     {
       id: "discharges",
       label: "Discharges",
-      window: "today",
+      window: "today" as const,
       value: discharges.freeingToday,
       // The held-up count is the "by tomorrow" span (overdue, today and tomorrow), said, so it never
       // reads against the any-date count on Discharges (A16-25, F-25).
@@ -101,7 +101,7 @@ export function BedMeetingSheetDialog({
     {
       id: "ed",
       label: "Waiting in ED",
-      window: "now",
+      window: "now" as const,
       value: ed.waiting,
       sub: `${ed.overLongWait} waiting past 24 hours · ${ed.detained} detained`,
     },
@@ -112,15 +112,13 @@ export function BedMeetingSheetDialog({
       onClose={onClose}
       title={`Bed meeting sheet · ${sheet.service ?? "all services"}`}
       description={
-        // PR E swap: SyntheticMark in the dialog header (shared spec 7); WindowWord for the figure windows.
+        // The kit's SyntheticMark in the dialog header (shared spec 7).
         <span className={sheetStyles.descRow}>
           <span>
             As at {formatInstant(now)}
             {asAtDay}. Same figures as Capacity and the TV view.
           </span>
-          <Badge size="sm" className={sheetStyles.synthetic} title="Synthetic data, not a medical record">
-            Synthetic data
-          </Badge>
+          <SyntheticMark />
         </span>
       }
       size="lg"
@@ -145,7 +143,7 @@ export function BedMeetingSheetDialog({
           <div key={figure.id} data-testid={`bed-meeting-sheet-figure-${figure.id}`}>
             <dt className={styles.mutedXs}>
               {figure.label}
-              <span className={sheetStyles.win}> · {figure.window}</span>
+              <WindowWord word={figure.window} />
             </dt>
             <dd>
               <b className={styles.sheetFigure}>{figure.value}</b>

@@ -109,9 +109,9 @@ describe("Track B: Integration Readiness & Non-Degradation Guardrails", () => {
     // CRITICAL: the mismatch by bed type must NEVER be removed or broken by HUD rollout. Since the
     // Capacity redesign (31 Oct 2026) it is the Mismatch band, one tile per bed type; since the page
     // tops (Josh, 9 Nov 2026) the band sits in the hero, one cell per type; wave 4 (D-191) titles it
-    // "By bed type · now" (jsdom joins the window word's span without its leading space).
+    // "By bed type · now"; the kit's WindowWord hides the dot from the spoken name ("By bed type now").
     const mismatch = within(screen.getByTestId("capacity-mismatch"));
-    const tiles = mismatch.getByRole("list", { name: /^By bed type\s*· now$/u }).querySelectorAll(":scope > li");
+    const tiles = mismatch.getByRole("list", { name: /^By bed type\s*now$/u }).querySelectorAll(":scope > li");
     const gapRows = bedKindGaps(wardMovements, allUnits(), NOW_ANCHOR, wardAdmissions);
     expect(Array.from(tiles, (tile) => tile.querySelector('[class*="cellLabel"]')?.textContent)).toEqual(
       gapRows.map((row) => shortNeed(row.need)),

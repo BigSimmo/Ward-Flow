@@ -3,7 +3,7 @@
 import { useId } from "react";
 import { ChevronRight } from "lucide-react";
 
-import { Card, CardHead } from "@/components/wf";
+import { Card, CardHead, WindowWord } from "@/components/wf";
 import { BedSquares, bedSquaresTag } from "@/components/ward-management/bed-squares";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { closedBedsPastReview } from "@/components/ward-management/ward-bed-closure-review";
@@ -60,13 +60,12 @@ export function PhoneOverview({
     <div className={styles.phoneOverview}>
       {executive ? null : <HeldUpCard releases={heldUpReleases} now={now} />}
       <Card aria-labelledby="phone-check" data-testid="capacity-wards-to-check">
-        {/* PR E swap: WindowWord for the "· window" count title. */}
         <CardHead
           id="phone-check"
           title={
             <span className={styles.countTitle}>
-              <b className={styles.countN}>{toCheck.length}</b> Wards to check{" "}
-              <span className={styles.countWin}>· now</span>
+              <b className={styles.countN}>{toCheck.length}</b> Wards to check
+              <WindowWord word="now" />
             </span>
           }
         />

@@ -193,6 +193,12 @@ describe("the Capacity screen", () => {
     expect(heroReady()).toBe(
       `${totalReady}/ ${netTotals.beds} Ready · now${netTotals.pendingPreparation ? `, ${netTotals.pendingPreparation} being made ready` : ""}`,
     );
+    if (netTotals.pendingPreparation) {
+      // A phone wraps this label: the comma rides with the window word ("· now,"), so no line starts with it.
+      const word = screen.getByTestId("capacity-hero-ready").querySelector("[data-wf-window]");
+      expect(word?.parentElement?.textContent?.trim()).toMatch(/now,$/u);
+      expect(screen.getByTestId("capacity-hero-being-made-ready").textContent).toMatch(/^ \d+ being made ready$/u);
+    }
   });
 
   it("renders exactly the four bed-type tiles the derivations return, each with its own real waiting and beds-that-fit", () => {

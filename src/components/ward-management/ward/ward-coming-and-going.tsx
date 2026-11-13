@@ -16,6 +16,7 @@ import {
   ShowMoreRow,
   SrOnly,
   StatusGlyph,
+  WindowWord,
   foldHidden,
   foldLimit,
   cx,
@@ -69,7 +70,7 @@ export function tomorrowLine(outlook: WardTomorrowOutlook): string {
   return `${rangeEnd(outlook.likely)} · range ${rangeEnd(outlook.low)} to ${rangeEnd(outlook.high)} · From ward dates`;
 }
 
-// PR E swap: the window word becomes the kit's WindowWord (`wf/window-word`) once PR E lands.
+/** A group's head: "N Title · window", the window the kit's WindowWord. */
 function GroupHead({
   id,
   n,
@@ -80,13 +81,14 @@ function GroupHead({
   id: string;
   n: number;
   title: string;
-  window: string;
+  window: Parameters<typeof WindowWord>[0]["word"];
   aside?: string;
 }) {
   return (
     // tabIndex -1: focus can land here when a row it held leaves the list (review FA-2).
     <h3 className={styles.groupHead} id={id} tabIndex={-1}>
-      <b className={styles.n}>{n}</b> {title} <span className={styles.win}>· {windowWord}</span>
+      <b className={styles.n}>{n}</b> {title}
+      <WindowWord word={windowWord} />
       {aside ? (
         <>
           {" "}
@@ -147,9 +149,9 @@ export function WardComingAndGoing(props: ComingAndGoingProps) {
             ) : (
               <span className={styles.rowName}>{row.name}</span>
             )}
-            {/* Ruling 12 (D-191): the legal tag as recorded. PR E swap: the kit's Badge `tag`. */}
+            {/* Ruling 12 (D-191): the legal tag as recorded, in the kit's neutral Badge `tag`. */}
             {row.tag ? (
-              <Badge size="sm" className={styles.rowTag}>
+              <Badge variant="tag" size="sm" className={styles.rowTag}>
                 {row.tag}
               </Badge>
             ) : null}

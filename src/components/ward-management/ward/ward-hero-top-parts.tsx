@@ -1,4 +1,4 @@
-import { HeroAct, HeroBand, HeroFigures, SrOnly, durMinutes } from "@/components/wf";
+import { HeroAct, HeroBand, HeroFigures, SrOnly, WindowWord, durMinutes } from "@/components/wf";
 import type { Unit } from "@/components/ward-management/ward-model";
 import type { BedStateCounts } from "@/components/ward-management/ward-bed-states";
 import { formatInstant } from "@/components/ward-management/ward-clock";
@@ -7,11 +7,12 @@ import type { WardBedFilter } from "./ward-telemetry-ribbon";
 import { WardPackPrintedLine } from "./ward-pack-printed-line";
 import styles from "./ward-hero-top-parts.module.css";
 
-/** Count label "Label · window" (shared parts spec 2). PR E swap: the kit's WindowWord. */
-function windowed(label: string, window: string) {
+/** Count label "Label · window" (shared parts spec 2): the kit's window word, in the hero's quiet ink. */
+function windowed(label: string, window: Parameters<typeof WindowWord>[0]["word"]) {
   return (
     <>
-      {label} <span className={styles.win}>· {window}</span>
+      {label}
+      <WindowWord word={window} className={styles.win} />
     </>
   );
 }

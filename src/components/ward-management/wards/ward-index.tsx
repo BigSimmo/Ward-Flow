@@ -32,6 +32,7 @@ import {
   TextInput,
   WardCapacityRow,
   WardCapacityRows,
+  WindowWord,
   buttonClass,
   cx,
   durMinutes,
@@ -518,10 +519,10 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                   {
                     id: "discharges",
                     value: dischargesToday,
-                    // PR E swap: the count label's `window` prop when the kit has it.
                     label: (
                       <>
-                        Discharges<span className={styles.figWindow}> · today</span>
+                        Discharges
+                        <WindowWord word="today" className={styles.figWindow} />
                       </>
                     ),
                     testId: "ward-index-figure-discharges",

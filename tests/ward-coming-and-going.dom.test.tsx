@@ -81,7 +81,7 @@ describe("Coming and going (wave 4)", () => {
         heldUpPastDate: 1,
       },
     });
-    expect(screen.getByRole("heading", { name: /Needs a look · now/ })).toHaveTextContent(
+    expect(screen.getByRole("heading", { name: /Needs a look\s*now/u })).toHaveTextContent(
       "2 held up, 1 of them past date · 2 more past date",
     );
   });
@@ -89,12 +89,12 @@ describe("Coming and going (wave 4)", () => {
   it("lists each group once with its count and window, names every row, and keeps one filled button", () => {
     const props = renderPart();
     const part = screen.getByTestId("ward-coming-and-going");
-    expect(within(part).getByRole("heading", { name: /2 Arrivals · today/ })).toHaveTextContent("+ 1 back from leave");
-    expect(within(part).getByRole("heading", { name: /1 Referrals · now/ })).toHaveTextContent("3 answered today");
-    expect(within(part).getByRole("heading", { name: /1 Needs a look · now/ })).toHaveTextContent(
+    expect(within(part).getByRole("heading", { name: /2 Arrivals\s*today/u })).toHaveTextContent("+ 1 back from leave");
+    expect(within(part).getByRole("heading", { name: /1 Referrals\s*now/u })).toHaveTextContent("3 answered today");
+    expect(within(part).getByRole("heading", { name: /1 Needs a look\s*now/u })).toHaveTextContent(
       "1 held up · 0 past date",
     );
-    expect(within(part).getByRole("heading", { name: /0 Discharges · today/ })).toBeInTheDocument();
+    expect(within(part).getByRole("heading", { name: /0 Discharges\s*today/u })).toBeInTheDocument();
     expect(part).toHaveTextContent("None still due today. Bed 07 freed 07:42.");
     expect(screen.getByTestId("ward-tomorrow-line")).toHaveTextContent(
       "Tomorrow 1 short · range 1 short to 2 free · From ward dates",
@@ -151,7 +151,7 @@ describe("Coming and going (wave 4)", () => {
 
   it("says nobody is expected today and counts the later-day arrivals with a way to All arrivals (review P4-4)", () => {
     const props = renderPart({ arrivals: [], backFromLeave: [], laterArrivals: 2 });
-    const group = screen.getByRole("heading", { name: /0 Arrivals · today/ }).closest("section")!;
+    const group = screen.getByRole("heading", { name: /0 Arrivals\s*today/u }).closest("section")!;
     expect(group).toHaveTextContent("Nobody expected today.");
     expect(group).not.toHaveTextContent("Nobody is accepted, pulled or on the way.");
     const later = within(group).getByTestId("ward-coming-later");
@@ -254,7 +254,7 @@ describe("Referrals tab headings (wave 4 mock-up, review FS-12)", () => {
     expect(screen.getByRole("heading", { name: `Referrals to ${unit.name}` })).toBeInTheDocument();
     expect(screen.getByTestId("ward-referrals-to-answer")).toHaveTextContent("1 To answer · now");
     const answers = screen.getByRole("region", { name: "This ward\u2019s answers" });
-    expect(within(answers).getByRole("heading", { name: /^\d+ Wait list · now$/u })).toBeInTheDocument();
+    expect(within(answers).getByRole("heading", { name: /^\d+ Wait list\s*now$/u })).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/\d+ waiting\b/u);
   });
 });

@@ -26,6 +26,7 @@ import {
   LiveChip,
   ShowMoreRow,
   SrOnly,
+  WindowWord,
   cx,
   foldHidden,
   foldLimit,
@@ -69,12 +70,12 @@ const PHONE_OPEN_GROUPS = 2;
 /** F-51 (C01, design critique v2, PR C): the kit's list rule, eight ward rows then Show more (DESIGN-SYSTEM.md). */
 const WARDS_FIRST = 8;
 
-/** "Label · window": the window in quiet ink (count labels, shared spec 2). PR E swap: WindowWord / the `window` prop. */
-function CountLabel({ label, window }: { label: string; window: string }) {
+/** "Label · window": the kit's window word in the hero's quiet ink (count labels, shared spec 2). */
+function CountLabel({ label, window }: { label: string; window: Parameters<typeof WindowWord>[0]["word"] }) {
   return (
     <>
       {label}
-      <span className={styles.win}> · {window}</span>
+      <WindowWord word={window} className={styles.win} />
     </>
   );
 }
@@ -143,6 +144,8 @@ export function ExecutiveCapacityScreen() {
     zone,
   });
   const beds = network.beds;
+  // PR C's scope words: a service-scoped report names its service, as the Capacity hero names a site.
+  const scopeService = network.scope.kind === "service" ? network.scope.service : null;
   const groups = serviceGroups(data);
   const wardCount = data.wards.length;
   return (
@@ -151,6 +154,8 @@ export function ExecutiveCapacityScreen() {
         <Hero
           level={1}
           className={pageTop.hero}
+          eyebrow={scopeService ?? undefined}
+          phoneEyebrow={scopeService ? "show" : undefined}
           title={
             <>
               <SrOnly>Capacity, </SrOnly>
@@ -165,7 +170,7 @@ export function ExecutiveCapacityScreen() {
               // On a phone the four figures share the row and their labels wrap (local style, `.execFigs`).
               <div className={styles.execFigs}>
                 <HeroFigures
-                  label="Network beds"
+                  label={scopeService ? `${scopeService} beds` : "Network beds"}
                   testId="ward-capacity-executive-figures"
                   items={[
                     {
@@ -212,7 +217,8 @@ export function ExecutiveCapacityScreen() {
                     variant="wrap"
                     title={
                       <>
-                        By service<span className={styles.win}> · now</span>
+                        By service
+                        <WindowWord word="now" className={styles.win} />
                       </>
                     }
                     testId="ward-capacity-executive-services"
