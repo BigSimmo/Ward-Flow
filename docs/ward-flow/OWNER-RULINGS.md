@@ -358,16 +358,16 @@ safe global key across 30 files.
 | `D-185` | `decisions.md`:2276 | D-185. Design critique v2 answers and the brand mark for the demo (13 November 2026) |
 | `D-186` | `decisions.md`:2286 | D-186. Clinical sign-off sitting, part 1: timing and the audit-backed recommendations (13 November 2026) |
 | `D-187` | `decisions.md`:2308 | D-187. Clinical sign-off sitting, part 2: the recommendations for Q17 to Q44 (13 November 2026) |
-| `D-188` | `decisions.md`:2335 | D-188. The Home pull form is filled from the record and can be changed (13 November 2026) |
-| `D-189` | `decisions.md`:2344 | D-189. Handling the open sitting questions, and how the remaining items are built (13 November 2026) |
-| `D-190` | `decisions.md`:2359 | D-190. The six-PR fix plan (13 November 2026) |
-| `D-191` | `decisions.md`:2373 | D-191. Home, Ward and Capacity mock-ups approved (13 November 2026) |
-| `D-193` | `decisions.md`:2394 | D-193. Checked travel times wait until after the demo (13 November 2026) |
-| `D-194` | `decisions.md`:2403 | D-194. Time audit answers (13 November 2026) |
-| `D-195` | `decisions.md`:2415 | D-195. Merge each pull request when its checks pass (13 November 2026) |
-| `D-196` | `decisions.md`:2426 | D-196. Threads decide on their own to keep work moving (13 November 2026) |
-| `D-197` | `decisions.md`:2432 | D-197. System-fixes calls taken under D-196 (13 November 2026) |
-| `D-199` | `decisions.md`:2457 | D-199. ED and Ward phone limits raised past the allowance (13 November 2026) |
+| `D-188` | `decisions.md`:2336 | D-188. The Home pull form is filled from the record and can be changed (13 November 2026) |
+| `D-189` | `decisions.md`:2345 | D-189. Handling the open sitting questions, and how the remaining items are built (13 November 2026) |
+| `D-190` | `decisions.md`:2361 | D-190. The six-PR fix plan (13 November 2026) |
+| `D-191` | `decisions.md`:2375 | D-191. Home, Ward and Capacity mock-ups approved (13 November 2026) |
+| `D-193` | `decisions.md`:2396 | D-193. Checked travel times wait until after the demo (13 November 2026) |
+| `D-194` | `decisions.md`:2405 | D-194. Time audit answers (13 November 2026) |
+| `D-195` | `decisions.md`:2417 | D-195. Merge each pull request when its checks pass (13 November 2026) |
+| `D-196` | `decisions.md`:2428 | D-196. Threads decide on their own to keep work moving (13 November 2026) |
+| `D-197` | `decisions.md`:2434 | D-197. System-fixes calls taken under D-196 (13 November 2026) |
+| `D-199` | `decisions.md`:2459 | D-199. ED and Ward phone limits raised past the allowance (13 November 2026) |
 | `D9-1` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | `D9-2` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
 | `D9-3` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:126 | D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION) |
@@ -865,16 +865,16 @@ safe global key across 30 files.
 - `D-185` — line 2276, heading: "D-185. Design critique v2 answers and the brand mark for the demo (13 November 2026)"
 - `D-186` — line 2286, heading: "D-186. Clinical sign-off sitting, part 1: timing and the audit-backed recommendations (13 November 2026)"
 - `D-187` — line 2308, heading: "D-187. Clinical sign-off sitting, part 2: the recommendations for Q17 to Q44 (13 November 2026)"
-- `D-188` — line 2335, heading: "D-188. The Home pull form is filled from the record and can be changed (13 November 2026)"
-- `D-189` — line 2344, heading: "D-189. Handling the open sitting questions, and how the remaining items are built (13 November 2026)"
-- `D-190` — line 2359, heading: "D-190. The six-PR fix plan (13 November 2026)"
-- `D-191` — line 2373, heading: "D-191. Home, Ward and Capacity mock-ups approved (13 November 2026)"
-- `D-193` — line 2394, heading: "D-193. Checked travel times wait until after the demo (13 November 2026)"
-- `D-194` — line 2403, heading: "D-194. Time audit answers (13 November 2026)"
-- `D-195` — line 2415, heading: "D-195. Merge each pull request when its checks pass (13 November 2026)"
-- `D-196` — line 2426, heading: "D-196. Threads decide on their own to keep work moving (13 November 2026)"
-- `D-197` — line 2432, heading: "D-197. System-fixes calls taken under D-196 (13 November 2026)"
-- `D-199` — line 2457, heading: "D-199. ED and Ward phone limits raised past the allowance (13 November 2026)"
+- `D-188` — line 2336, heading: "D-188. The Home pull form is filled from the record and can be changed (13 November 2026)"
+- `D-189` — line 2345, heading: "D-189. Handling the open sitting questions, and how the remaining items are built (13 November 2026)"
+- `D-190` — line 2361, heading: "D-190. The six-PR fix plan (13 November 2026)"
+- `D-191` — line 2375, heading: "D-191. Home, Ward and Capacity mock-ups approved (13 November 2026)"
+- `D-193` — line 2396, heading: "D-193. Checked travel times wait until after the demo (13 November 2026)"
+- `D-194` — line 2405, heading: "D-194. Time audit answers (13 November 2026)"
+- `D-195` — line 2417, heading: "D-195. Merge each pull request when its checks pass (13 November 2026)"
+- `D-196` — line 2428, heading: "D-196. Threads decide on their own to keep work moving (13 November 2026)"
+- `D-197` — line 2434, heading: "D-197. System-fixes calls taken under D-196 (13 November 2026)"
+- `D-199` — line 2459, heading: "D-199. ED and Ward phone limits raised past the allowance (13 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 
