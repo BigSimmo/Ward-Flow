@@ -508,13 +508,16 @@ function AlertsWorkspace() {
   const runningEntries = activeEntries.filter((entry) => entry.group === "running");
   const allEntries = useMemo(() => [...activeEntries, ...snoozedEntries], [activeEntries, snoozedEntries]);
   const countedActive = useMemo(() => activeEntries.filter((entry) => entry.group !== "running"), [activeEntries]);
-  // Q111 (Josh, 1 Nov 2026): a ward's acceptance with no bed pulled is act now, coordinator's desk only.
-  const toPull = useMemo(
-    () => (coordDesk ? acceptedReferralsAwaitingPull(referrals, units, movements) : []),
-    [coordDesk, referrals, units, movements],
-  );
+  // Q111 (Josh, 1 Nov 2026): a ward's acceptance with no bed pulled is act now on the coordinator's
+  // desk. D-197 item 7: the ward desk sees, and pulls, its own ward's acceptances too.
+  const ownPullUnitIds = access.role === "ward" && access.scope.kind === "ward" ? access.scope.unitIds : undefined;
+  const toPull = useMemo(() => {
+    if (!coordDesk && !ownPullUnitIds) return [];
+    const all = acceptedReferralsAwaitingPull(referrals, units, movements);
+    return coordDesk ? all : all.filter((entry) => ownPullUnitIds?.includes(entry.unitId));
+  }, [coordDesk, ownPullUnitIds, referrals, units, movements]);
   const { actNow: actCount, outstanding } = alertsNowFigures(inbox, toPull.length); // Q260: as the bell and Menu
-  const pull = useAcceptedPull();
+  const pull = useAcceptedPull({ ownUnitIds: ownPullUnitIds });
   // Wave 4 H5 (ruling item 3): a bed just pulled keeps its row with "Undo pull · until HH:MM".
   const keptPullRows =
     pull.kept.length === 0 ? null : (
@@ -573,7 +576,7 @@ function AlertsWorkspace() {
   // coordinator takes an alert).
   const namedOwners = access.role === "officer" ? [] : owners.filter(Boolean);
   // Nurse in charge: a quiet ward gets one line, not two empty groups and a sort rule over nothing.
-  const quietWard = wardName !== undefined && allEntries.length === 0;
+  const quietWard = wardName !== undefined && allEntries.length === 0 && toPull.length + pull.kept.length === 0;
   // AL2: the Open view's filters, each counted as its group's heading counts it.
   const forecastDesk = access.role === "coordinator" || access.role === "bed_manager";
   const forecastCount = useForecastAlerts(now).length;

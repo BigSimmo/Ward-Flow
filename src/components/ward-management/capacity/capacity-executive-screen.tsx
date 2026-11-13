@@ -139,37 +139,40 @@ export function ExecutiveCapacityScreen() {
           <HeroTop
             quickBar={false}
             figures={
-              <HeroFigures
-                label="Network beds"
-                testId="ward-capacity-executive-figures"
-                items={[
-                  {
-                    id: "ready",
-                    value: beds.ready,
-                    unit: `/ ${beds.total}`,
-                    label: <CountLabel label="Ready" window="now" />,
-                    testId: "ward-capacity-executive-ready",
-                  },
-                  {
-                    id: "prep",
-                    value: beds.beingMadeReady,
-                    label: <CountLabel label="Being made ready" window="now" />,
-                    testId: "ward-capacity-executive-prep",
-                  },
-                  {
-                    id: "in-use",
-                    value: inUseText(beds),
-                    label: <CountLabel label="In use" window="now" />,
-                    testId: "ward-capacity-executive-in-use",
-                  },
-                  {
-                    id: "closed",
-                    value: beds.closed,
-                    label: <CountLabel label="Closed" window="now" />,
-                    testId: "ward-capacity-executive-closed",
-                  },
-                ]}
-              />
+              // PR E swap: the kit figures keep one line on a phone, so four long labels ran off the edge.
+              <div className={styles.execFigs}>
+                <HeroFigures
+                  label="Network beds"
+                  testId="ward-capacity-executive-figures"
+                  items={[
+                    {
+                      id: "ready",
+                      value: beds.ready,
+                      unit: `/ ${beds.total}`,
+                      label: <CountLabel label="Ready" window="now" />,
+                      testId: "ward-capacity-executive-ready",
+                    },
+                    {
+                      id: "prep",
+                      value: beds.beingMadeReady,
+                      label: <CountLabel label="Being made ready" window="now" />,
+                      testId: "ward-capacity-executive-prep",
+                    },
+                    {
+                      id: "in-use",
+                      value: inUseText(beds),
+                      label: <CountLabel label="In use" window="now" />,
+                      testId: "ward-capacity-executive-in-use",
+                    },
+                    {
+                      id: "closed",
+                      value: beds.closed,
+                      label: <CountLabel label="Closed" window="now" />,
+                      testId: "ward-capacity-executive-closed",
+                    },
+                  ]}
+                />
+              </div>
             }
             pill={
               <HeroPill
@@ -179,26 +182,30 @@ export function ExecutiveCapacityScreen() {
             }
             band={
               groups.length > 0 ? (
-                // PR E swap: the kit band has no five-across or phone 2 × 2 layout yet.
-                <HeroBand
-                  title={
-                    <>
-                      By service<span className={styles.win}> · now</span>
-                    </>
-                  }
-                  testId="ward-capacity-executive-services"
-                  cells={groups.map(({ service }) => ({
-                    id: service.service,
-                    label: service.service,
-                    value: (
+                // PR E swap: the kit band has no five-across or phone 2 × 2 layout yet, so a phone
+                // lays the wrap variant out two across here.
+                <div className={styles.execBand}>
+                  <HeroBand
+                    variant="wrap"
+                    title={
                       <>
-                        {service.beds.ready} <span className={styles.bandWord}>ready</span>
+                        By service<span className={styles.win}> · now</span>
                       </>
-                    ),
-                    note: `${inUseText(service.beds)} in use · ${service.beds.closed} closed`,
-                    testId: `ward-capacity-executive-service-${service.service}`,
-                  }))}
-                />
+                    }
+                    testId="ward-capacity-executive-services"
+                    cells={groups.map(({ service }) => ({
+                      id: service.service,
+                      label: service.service,
+                      value: (
+                        <>
+                          {service.beds.ready} <span className={styles.bandWord}>ready</span>
+                        </>
+                      ),
+                      note: `${inUseText(service.beds)} in use · ${service.beds.closed} closed`,
+                      testId: `ward-capacity-executive-service-${service.service}`,
+                    }))}
+                  />
+                </div>
               ) : undefined
             }
           />

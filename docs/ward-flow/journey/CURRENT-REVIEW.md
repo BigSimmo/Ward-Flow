@@ -162,3 +162,10 @@ a just-pulled row with its Undo), and `capacity/capacity-screen.tsx` and `capaci
 Whole-file digests and lines for these five files were refreshed in `actions.json` (the other two
 catalogues do not cite them). Evidence: `tests/ward-pull-bed-step.dom.test.tsx`, `tests/ward-coordinator-path-pull.dom.test.tsx`, `tests/ward-pull-observation-not-recorded.dom.test.tsx`, the Alerts screen tests
 and the capacity screen tests, run locally with `vitest related`.
+
+The same PR then let the ward desk pull the bed for its own ward from Alerts and the referral board (D-197
+item 7). `alerts/alerts-screen.tsx` now lists the ward desk's own accepted, not-pulled referrals as well as the
+coordinator's; its five mapped dispatch sites (RECORD_ESCALATION, RELEASE_PULL, ACKNOWLEDGE_INBOX_ITEM,
+DISPATCH_BROADCAST_ALERT, STAND_DOWN_BROADCAST_ALERT) are unchanged and moved down three lines, and their digests
+were refreshed. The pull itself is the same RAISE_REFERRAL form, sending `actingUnitId` for the ward desk.
+Evidence: `tests/ward-desk-pull-own-ward.dom.test.tsx`, run locally.

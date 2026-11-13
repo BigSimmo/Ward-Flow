@@ -237,3 +237,28 @@
   font-size: var(--wf-fs-14);
   line-height: var(--wf-lh-14);
 }
+
+/* PR E swap (wave 4 mock-up, Executive desk at 390): the four figures share the row and their labels
+   wrap, and By service sits two across instead of scrolling sideways. Wider screens keep the kit's
+   own layout. */
+.execFigs,
+.execBand {
+  display: contents;
+}
+
+@media (max-width: 46.4375rem) {
+  .execFigs [role="group"] {
+    grid-auto-columns: minmax(0, 1fr);
+  }
+
+  .execFigs [role="group"] * {
+    white-space: normal;
+  }
+
+  .execBand ul[data-variant="wrap"] {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--wf-s-4);
+    row-gap: var(--wf-s-3);
+  }
+}

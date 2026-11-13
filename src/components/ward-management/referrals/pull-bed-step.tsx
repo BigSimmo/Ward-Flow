@@ -11,6 +11,7 @@ import { Sheet, useOptionalToast } from "@/components/wf";
 
 import { withLoadRetry } from "../load-retry";
 import type { Instant } from "../ward-clock";
+import { wardRaise } from "../ward-flow-raise";
 import { useOptionalWardFlowSelect, useWardFlowClock } from "../ward-flow-provider";
 import type { Movement } from "../ward-model";
 import { UNDO_TOAST_MS } from "../ward-operational-defaults";
@@ -76,10 +77,11 @@ export type PullBedStep = {
 
 /**
  * The Pull the bed step. Render `sheet` once, open it with `setPulling(entry)`, and pass `kept` and
- * `undo` to the rows (`AcceptedPullRows`). A ward desk passes its own unit as `actingUnitId`.
+ * `undo` to the rows (`AcceptedPullRows`). A ward desk passes its own units as `ownUnitIds`, and the
+ * sheet then acts for the ward pulled for when it is one of them (D-197 item 7).
  * Works outside a Ward Flow provider too (it then keeps no rows), so a page's tests can stub it.
  */
-export function usePullBedStep({ actingUnitId }: { actingUnitId?: string } = {}): PullBedStep {
+export function usePullBedStep({ ownUnitIds }: { ownUnitIds?: readonly string[] } = {}): PullBedStep {
   const [pulling, setPullingState] = useState<AcceptedAwaitingPull | undefined>();
   const [kept, setKept] = useState<readonly PulledBed[]>([]);
   const focusAfter = useRef<string | null>(null);
@@ -111,10 +113,11 @@ export function usePullBedStep({ actingUnitId }: { actingUnitId?: string } = {})
       run(
         `pull-undo:${movement.id}`,
         () =>
-          dispatch({
-            type: "RELEASE_PULL",
-            role: pulled.desk,
-            now: at,
+          wardRaise(
+            dispatch,
+            pulled.desk,
+            at,
+          )("RELEASE_PULL", {
             movementId: movement.id,
             reason: "pull_made_in_error",
             ...(pulled.actingUnitId ? { actingUnitId: pulled.actingUnitId } : {}),
@@ -176,7 +179,7 @@ export function usePullBedStep({ actingUnitId }: { actingUnitId?: string } = {})
         onDone={close}
         onPulled={flow ? onPulled : undefined}
         onCancel={close}
-        actingUnitId={actingUnitId}
+        actingUnitId={ownUnitIds?.includes(pulling.unitId) ? pulling.unitId : undefined}
       />
     </Sheet>
   ) : null;

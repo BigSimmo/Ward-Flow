@@ -3167,6 +3167,10 @@ a.railRow:focus-visible,
   .splitChip {
     width: 100%;
   }
+  /* The kit chip row sizes each item to its content; the sheet's split chip takes the row (mock-up). */
+  ul > li:has(> .splitChip) {
+    flex: 1 1 auto;
+  }
   .splitChip > .splitMain {
     flex: 1 1 auto;
     justify-content: center;

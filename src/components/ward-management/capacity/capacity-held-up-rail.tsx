@@ -31,7 +31,8 @@ const HELD_ROWS = 8;
  * `later` is the rest Discharges holds in its any-date Held up group, so the two numbers reconcile.
  */
 export function heldUpByTomorrow(releases: readonly BedRelease[], now: Instant) {
-  const byTomorrow = groupDischarges([...releases], now).blocked;
+  // Shown earliest due first (the mock-up's order), so an overdue bed leads the card.
+  const byTomorrow = [...groupDischarges([...releases], now).blocked].sort((a, b) => a.expectedAt - b.expectedAt);
   const anyDate = groupDischarges([...releases], now, { heldUpAnyDate: true }).blocked.length;
   const byUnit = new Map<string, number>();
   for (const release of byTomorrow) byUnit.set(release.unitId, (byUnit.get(release.unitId) ?? 0) + 1);

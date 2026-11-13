@@ -425,6 +425,10 @@ export function ReferralBoard({
   const edQueueEmpty = edDesk && queued.length === 0;
   const edDetailHidden = edQueueEmpty && selectedReferral === undefined;
   const selectedToPull = awaitingPull.find((entry) => entry.referral.id === selectedReferral?.id);
+  // D-197 item 7: the ward desk pulls the bed here too, for its own ward's acceptance only.
+  const ownPullUnitIds = wardDesk && access.scope.kind === "ward" ? access.scope.unitIds : undefined;
+  const canPullHere = (entry: AcceptedAwaitingPull) =>
+    routeRole === "coordinator" || (routeRole === "ward" && ownPullUnitIds?.includes(entry.unitId) === true);
   const selectedPatientInfo = resolveSubjectPatient(selectedReferral, resolverState);
   const selectedReadyUnits =
     selectedReferral && sender.referralFor(selectedReferral) === undefined
@@ -591,8 +595,8 @@ export function ReferralBoard({
           >
             Open movement
           </Link>
-        ) : readOnly ? null : selectedToPull && routeRole === "coordinator" ? (
-          // WS-03: the coordinator pulls the bed here in one step, with the recorded details.
+        ) : readOnly ? null : selectedToPull && canPullHere(selectedToPull) ? (
+          // WS-03: the coordinator (or the accepting ward's desk) pulls the bed here in one step.
           <Button
             size="md"
             variant="pri"
@@ -1488,7 +1492,11 @@ export function ReferralBoard({
             description="Check the details, then pull the bed."
             testId="ward-referral-pull-sheet"
           >
-            <PullAcceptedReferral item={pulling} onDone={() => setPulling(undefined)} />
+            <PullAcceptedReferral
+              item={pulling}
+              onDone={() => setPulling(undefined)}
+              actingUnitId={ownPullUnitIds?.includes(pulling.unitId) ? pulling.unitId : undefined}
+            />
           </Sheet>
         ) : null}
 

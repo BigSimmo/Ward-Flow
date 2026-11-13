@@ -125,6 +125,7 @@ export function WardBoardGridColumn({
             counts={{ ready: kinds.ready, prep: 0, free: 0, use: kinds.use, closed: kinds.closed }}
             tag={bedSquaresTag(unit)}
             notes={bedSquaresNotes({ pulled: kinds.pulled, closed: kinds.closed })}
+            figure="lg"
             className={redesign.phoneSquares}
             testId="ward-board-squares"
           />

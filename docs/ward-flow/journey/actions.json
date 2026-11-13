@@ -1682,8 +1682,8 @@
         },
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
-          "line": 759,
-          "sha256": "60c5b96e2c7b8a7a957fffffcac79a4580db2dcb74981b62763188fb77b5e65c"
+          "line": 762,
+          "sha256": "4feb16b40024b9d40649306480e5a41d206529be144fe8830fb3304942aa13a6"
         },
         {
           "path": "src/components/ward-management/delays/delays-screen.tsx",
@@ -1963,8 +1963,8 @@
         },
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
-          "line": 744,
-          "sha256": "60c5b96e2c7b8a7a957fffffcac79a4580db2dcb74981b62763188fb77b5e65c"
+          "line": 747,
+          "sha256": "4feb16b40024b9d40649306480e5a41d206529be144fe8830fb3304942aa13a6"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
@@ -4768,8 +4768,8 @@
         },
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
-          "line": 691,
-          "sha256": "60c5b96e2c7b8a7a957fffffcac79a4580db2dcb74981b62763188fb77b5e65c"
+          "line": 694,
+          "sha256": "4feb16b40024b9d40649306480e5a41d206529be144fe8830fb3304942aa13a6"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
@@ -7121,8 +7121,8 @@
         },
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
-          "line": 848,
-          "sha256": "60c5b96e2c7b8a7a957fffffcac79a4580db2dcb74981b62763188fb77b5e65c"
+          "line": 851,
+          "sha256": "4feb16b40024b9d40649306480e5a41d206529be144fe8830fb3304942aa13a6"
         },
         {
           "path": "src/components/ward-management/alerts/ward-broadcast-reducer.ts",
@@ -7249,8 +7249,8 @@
         },
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
-          "line": 857,
-          "sha256": "60c5b96e2c7b8a7a957fffffcac79a4580db2dcb74981b62763188fb77b5e65c"
+          "line": 860,
+          "sha256": "4feb16b40024b9d40649306480e5a41d206529be144fe8830fb3304942aa13a6"
         },
         {
           "path": "src/components/ward-management/shell/ward-broadcast-banner.tsx",

@@ -28,8 +28,8 @@ import { PulledBedRow } from "./pulled-bed-row";
  * message and Open the journey link (Alerts #1230 bug). Wave 4 (H5): it also keeps each pulled row
  * for its Undo window (`kept`, `undo`); pass both to `AcceptedPullRows`.
  */
-export function useAcceptedPull() {
-  return usePullBedStep();
+export function useAcceptedPull(options?: Parameters<typeof usePullBedStep>[0]) {
+  return usePullBedStep(options);
 }
 
 /** The "Accepted, bed not pulled" rows. The page renders the sheet from useAcceptedPull. */
