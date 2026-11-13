@@ -11,17 +11,34 @@ import {
   unitHasOpenBeds,
 } from "@/components/ward-management/ward-bed-designation";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
-import { sexDesignationAccepts } from "@/components/ward-management/ward-eligibility";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { COHORTS, type Cohort } from "@/components/ward-management/ward-model";
 import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
-import { BED_FINDER_NOTE, findBeds, type BedFinderFilters } from "@/components/ward-management/tools/ward-bed-finder";
+import {
+  BED_FINDER_GENDER_REVIEW,
+  BED_FINDER_NOTE,
+  BED_FINDER_WARD_FOR,
+  findBeds,
+  wardForAccepts,
+  wardForNeedsReview,
+  type BedFinderFilters,
+} from "@/components/ward-management/tools/ward-bed-finder";
 import {
   useExecutiveStatistics,
   useExecutiveStatisticsControl,
 } from "@/components/ward-management/statistics/executive-statistics-context";
-import { Button, EmptyState, Segmented, ShowMoreRow, SrOnly, foldHidden, foldLimit } from "@/components/wf";
+import {
+  Button,
+  ChipGroup,
+  EmptyState,
+  FilterChip,
+  Segmented,
+  ShowMoreRow,
+  SrOnly,
+  foldHidden,
+  foldLimit,
+} from "@/components/wf";
 import styles from "./ward-tool-find-bed.module.css";
 
 /**
@@ -47,11 +64,11 @@ const BED_ITEMS: { id: Bed; label: string }[] = [
   { id: "locked", label: "Locked" },
   { id: "open", label: "Open" },
 ];
-const SEX_ITEMS: { id: Sex; label: string }[] = [
-  { id: "any", label: "Any" },
-  { id: "Female", label: "Female" },
-  { id: "Male", label: "Male" },
-];
+// D-187 item 14 (Q36): Any, Female, Male and the other recorded genders (R7), from the finder's one list.
+const SEX_ITEMS: readonly { id: Sex; label: string }[] = BED_FINDER_WARD_FOR.map(({ value, label }) => ({
+  id: value,
+  label,
+}));
 const LEGAL_ITEMS: { id: Legal | ""; label: string }[] = [
   { id: "voluntary", label: "Voluntary" },
   { id: "involuntary", label: "Involuntary" },
@@ -85,7 +102,13 @@ function writeStored(filters: Filters) {
 function summaryText(filters: Filters): string {
   const bed = filters.bed === "any" ? "Any bed" : filters.bed === "locked" ? "Locked bed" : "Open bed";
   // "Any" alone read as nothing in the summary line (polish 3 Nov), so the ward filter says "ward".
-  const sex = filters.sex === "any" ? "Any ward" : `${filters.sex} ward`;
+  // D-187 item 14: another gender filters no ward, so the line names the coordinator review instead.
+  const sex =
+    filters.sex === "any"
+      ? "Any ward"
+      : wardForNeedsReview(filters.sex)
+        ? `${filters.sex}, coordinator review`
+        : `${filters.sex} ward`;
   const legal =
     filters.legalStatus === "voluntary"
       ? "Voluntary"
@@ -139,6 +162,11 @@ export function ToolFindBed({ onNavigate }: { onNavigate: () => void }) {
         </Button>
       </div>
       {editing ? <FilterPanel filters={filters} onChange={update} /> : null}
+      {wardForNeedsReview(filters.sex) ? (
+        <p className={styles.prompt} role="note" data-testid="ward-bed-finder-gender-review">
+          {BED_FINDER_GENDER_REVIEW}
+        </p>
+      ) : null}
       {filters.legalStatus ? (
         executive ? (
           <ExecutiveResults filters={filters} onNavigate={onNavigate} />
@@ -169,8 +197,21 @@ function FilterPanel({ filters, onChange }: { filters: Filters; onChange: (next:
       <FilterRow label="Bed">
         <Segmented<Bed> label="Bed" items={BED_ITEMS} value={filters.bed} onChange={(bed) => onChange({ bed })} />
       </FilterRow>
+      {/* D-187 item 14: five choices, so chips that wrap on a phone, not one segmented track. */}
       <FilterRow label="Ward for">
-        <Segmented<Sex> label="Ward for" items={SEX_ITEMS} value={filters.sex} onChange={(sex) => onChange({ sex })} />
+        <ChipGroup label="Ward for">
+          {SEX_ITEMS.map((item) => (
+            <FilterChip
+              key={item.id}
+              pressed={filters.sex === item.id}
+              onPressedChange={() => {
+                if (filters.sex !== item.id) onChange({ sex: item.id });
+              }}
+            >
+              {item.label}
+            </FilterChip>
+          ))}
+        </ChipGroup>
       </FilterRow>
       {/* Required, with no default: Involuntary keeps the list to authorised wards. */}
       <FilterRow label="Legal status">
@@ -236,7 +277,7 @@ function ExecutiveResults({ filters, onNavigate }: { filters: Filters; onNavigat
         !ward.forensic &&
         ward.cohort === filters.cohort &&
         (filters.legalStatus !== "involuntary" || ward.authorised) &&
-        (filters.sex === "any" || sexDesignationAccepts(ward.sexDesignation, filters.sex)),
+        wardForAccepts(ward.sexDesignation, filters.sex),
     )
     .map((ward) => ({
       ward,

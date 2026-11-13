@@ -15,6 +15,8 @@ import { sexDesignationAccepts } from "../ward-eligibility";
 import { unitHealthService } from "../ward-service-scope";
 import { siteByCode } from "../ward-sites";
 import { COHORTS, HEALTH_SERVICES, type BedRelease, type Cohort, type HealthService, type Unit } from "../ward-model";
+import { REFERRAL_GENDERS, type ReferralGender } from "../ward-model-vocabulary";
+import { GENDER_PLACEMENT_REFUSAL } from "../ward-change-reasons";
 import { unitHref } from "../shell/ward-facade";
 import { useCanOpenHref } from "../shell/ward-access";
 import styles from "./ward-tools-sheet.module.css";
@@ -22,10 +24,36 @@ import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statis
 
 type BedFinderLegalStatus = "voluntary" | "involuntary";
 
+/**
+ * D-187 item 14 (Q36): "Ward for" offers the recorded gender list (R7, `REFERRAL_GENDERS`), not
+ * Female and Male alone. Female and Male filter by sex designation as before; any other choice
+ * filters no ward and shows the coordinator-review message instead.
+ */
+export type BedFinderWardFor = "any" | ReferralGender;
+
+export const BED_FINDER_WARD_FOR: readonly { value: BedFinderWardFor; label: string }[] = [
+  { value: "any", label: "Any" },
+  ...REFERRAL_GENDERS.map((gender) => ({ value: gender, label: gender })),
+];
+
+/** D-187 item 14 (R7): a gender other than Female or Male needs a coordinator's review on every ward. */
+export const wardForNeedsReview = (wardFor: BedFinderWardFor): boolean =>
+  wardFor !== "any" && wardFor !== "Female" && wardFor !== "Male";
+
+/** D-187 item 14: the coordinator-review message (R7's `GENDER_PLACEMENT_REFUSAL`), and that no ward is left out. */
+export const BED_FINDER_GENDER_REVIEW = `${GENDER_PLACEMENT_REFUSAL} This list is not narrowed by sex designation.`;
+
+/** Whether a ward's sex designation is left in by the "Ward for" choice. D-187 item 14: only Female and Male narrow it. */
+export function wardForAccepts(designation: Unit["sexDesignation"], wardFor: BedFinderWardFor): boolean {
+  if (wardFor === "Female" || wardFor === "Male") return sexDesignationAccepts(designation, wardFor);
+  return true;
+}
+
 export type BedFinderFilters = {
   cohort: Cohort;
   bed: "any" | "locked" | "open";
-  sex: "any" | "Female" | "Male";
+  /** "Ward for" (D-187 item 14): Any, Female, Male, or another recorded gender, which filters no ward. */
+  sex: BedFinderWardFor;
   /** Absent until the user chooses one. There is no default (audit 24-1 decision 1). */
   legalStatus?: BedFinderLegalStatus;
   home: HealthService | "any";
@@ -80,7 +108,7 @@ export function findBeds(
       .filter((unit) => !unit.forensic)
       .filter((unit) => unit.cohort === filters.cohort)
       .filter((unit) => !involuntary || unit.authorised)
-      .filter((unit) => filters.sex === "any" || sexDesignationAccepts(unit.sexDesignation, filters.sex))
+      .filter((unit) => wardForAccepts(unit.sexDesignation, filters.sex))
       .map((unit) => {
         // Capped at the board's Ready figure, so this never shows more beds than the board or the bed
         // summary. NA3-05 (audit 26 Oct 2026): that figure is `readyBedsNow`, which leaves out a bed
@@ -168,7 +196,7 @@ function ExecutiveBedFinder({ onNavigate }: { onNavigate: () => void }) {
             !ward.forensic &&
             ward.cohort === filters.cohort &&
             (filters.legalStatus !== "involuntary" || ward.authorised) &&
-            (filters.sex === "any" || sexDesignationAccepts(ward.sexDesignation, filters.sex)),
+            wardForAccepts(ward.sexDesignation, filters.sex),
         )
         .map((ward) => ({
           ward,
@@ -194,16 +222,12 @@ function ExecutiveBedFinder({ onNavigate }: { onNavigate: () => void }) {
         ]}
         onChange={set("bed")}
       />
-      <Choice
-        label="Ward for"
-        value={filters.sex}
-        options={[
-          { value: "any", label: "Any" },
-          { value: "Female", label: "Female" },
-          { value: "Male", label: "Male" },
-        ]}
-        onChange={set("sex")}
-      />
+      <Choice label="Ward for" value={filters.sex} options={BED_FINDER_WARD_FOR} onChange={set("sex")} />
+      {wardForNeedsReview(filters.sex) ? (
+        <p className={styles.note} role="note" data-testid="ward-bed-finder-gender-review">
+          {BED_FINDER_GENDER_REVIEW}
+        </p>
+      ) : null}
       <Choice
         label="Legal status"
         value={filters.legalStatus}
@@ -325,16 +349,12 @@ function OperationalBedFinder({ onNavigate }: { onNavigate: () => void }) {
         ]}
         onChange={set("bed")}
       />
-      <Choice
-        label="Ward for"
-        value={filters.sex}
-        options={[
-          { value: "any", label: "Any" },
-          { value: "Female", label: "Female" },
-          { value: "Male", label: "Male" },
-        ]}
-        onChange={set("sex")}
-      />
+      <Choice label="Ward for" value={filters.sex} options={BED_FINDER_WARD_FOR} onChange={set("sex")} />
+      {wardForNeedsReview(filters.sex) ? (
+        <p className={styles.note} role="note" data-testid="ward-bed-finder-gender-review">
+          {BED_FINDER_GENDER_REVIEW}
+        </p>
+      ) : null}
       {/* Required, with no default: Involuntary keeps the list to authorised wards. */}
       <Choice<BedFinderLegalStatus>
         label="Legal status"

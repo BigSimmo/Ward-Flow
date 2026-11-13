@@ -42,6 +42,22 @@ function tags(model: SummaryModel, letter: string, label: string): string | null
   return block?.kind === "tags" && block.items.length ? block.items.join(", ") : null;
 }
 
+/**
+ * D-187 item 17 (Q39): the safety plan's lines under one heading ("Plan" or "Crisis", with any
+ * bracketed note kept), as written. Nothing is cut, so a crisis number keeps the "(Not checked)"
+ * mark step 5 writes beside it (D-186 item 12, `serviceText`). Null when the heading holds nothing.
+ */
+function planLines(entries: readonly [string, string][], heading: "Plan" | "Crisis"): string | null {
+  const lines = entries
+    .filter(([name]) => name === heading || name.startsWith(`${heading} (`))
+    .map(([name, body]) => {
+      const note = name.slice(heading.length).trim();
+      return `${note ? `${note} ` : ""}${body.trim()}`;
+    })
+    .filter(Boolean);
+  return lines.length ? lines.join(" ") : null;
+}
+
 const short = (text: string) => (text.length > MSE_CHARS ? `${text.slice(0, MSE_CHARS - 1).trimEnd()}…` : text);
 const or = (text: string | null | undefined) => (text && text.trim() ? text.trim() : NONE);
 
@@ -55,7 +71,8 @@ export function isbarText(state: TriageState, signed?: SignedBy): string {
   const nowFlags = present("now").filter((f) => f.key !== RECENT_DISCHARGE);
   const discharged = state.f[RECENT_DISCHARGE] === "y";
   const followUp = followUpText(state);
-  const protective = parseHeadedText(state.text.rp).find(([heading]) => heading.startsWith("Protective"))?.[1];
+  const plan = parseHeadedText(state.text.rp);
+  const protective = plan.find(([heading]) => heading.startsWith("Protective"))?.[1];
   const stream = fact(model, "1", "Stream");
   const program = fact(model, "1", "Program");
   const mental = mseLines(state)
@@ -70,6 +87,7 @@ export function isbarText(state: TriageState, signed?: SignedBy): string {
     `O Observations: ${mental.length ? mental.join("; ") : NONE}`,
     `B Background: Past risk ${pastFlags.length ? pastFlags.join(", ") : NONE}${discharged ? ` · ${FACTOR_NAME[RECENT_DISCHARGE]}` : ""}`,
     `A Assessment: Current risk ${nowFlags.length ? nowFlags.map((f) => f.name).join(", ") : NONE}${protective?.trim() ? ` · Protective: ${protective.trim()}` : ""}`,
-    `R Recommendation: Actions ${or(tags(model, "4", "Actions"))} · Review risk by ${or(fact(model, "6", "Review risk by"))}${followUp ? ` · Follow-up ${followUp}` : ""}`,
+    // D-187 item 17 (Q39): the safety plan's Plan and Crisis lines, in the plan's heading order.
+    `R Recommendation: Actions ${or(tags(model, "4", "Actions"))} · Review risk by ${or(fact(model, "6", "Review risk by"))} · Plan ${or(planLines(plan, "Plan"))} · Crisis ${or(planLines(plan, "Crisis"))}${followUp ? ` · Follow-up ${followUp}` : ""}`,
   ].join("\n");
 }

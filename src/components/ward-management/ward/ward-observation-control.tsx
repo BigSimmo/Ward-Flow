@@ -24,6 +24,8 @@ const INTERVAL_CHOICES = INTERMITTENT_INTERVAL_MINUTES.map((minutes) => ({
   id: String(minutes),
   label: `${minutes} minutes`,
 }));
+/** D-187 item 19 (Q44): the inline error when Intermittent is recorded with no interval chosen. */
+export const NO_INTERVAL_ERROR = `Choose how often to check: ${INTERMITTENT_INTERVAL_MINUTES.join(" or ")} minutes.`;
 const REVIEW_DAYS = [
   { id: "today" as const, label: "Today" },
   { id: "tomorrow" as const, label: "Tomorrow" },
@@ -78,9 +80,9 @@ export function WardObservationControl({
   // Audit CS3-01: an open observation form is checked against the board it opened on.
   useHoldOpenForm(open);
   const [level, setLevel] = useState<ObservationLevel>(observation.level);
-  const [interval, setIntervalMinutes] = useState<number>(
-    observation.intervalMinutes ?? INTERMITTENT_INTERVAL_MINUTES[0],
-  );
+  // D-187 item 19 (Q44): no interval starts chosen. A recorded interval pre-fills; otherwise it is
+  // blank until someone picks one, and Intermittent cannot be recorded without it.
+  const [interval, setIntervalMinutes] = useState<number | null>(observation.intervalMinutes);
   const [reviewTime, setReviewTime] = useState("");
   const [reviewDay, setReviewDay] = useState<"today" | "tomorrow">("today");
   const [reviewEdited, setReviewEdited] = useState(false);
@@ -100,6 +102,11 @@ export function WardObservationControl({
         return;
       }
       reviewAt = typed;
+    }
+    // D-187 item 19 (Q44): Intermittent needs an interval someone chose.
+    if (level === "intermittent" && interval === null) {
+      setError(NO_INTERVAL_ERROR);
+      return;
     }
     setError(null);
     const next = { level, intervalMinutes: level === "intermittent" ? interval : null, reviewAt };
@@ -129,7 +136,7 @@ export function WardObservationControl({
           onClick={() => {
             const review = reviewInputs(observation.reviewAt, now);
             setLevel(observation.level);
-            setIntervalMinutes(observation.intervalMinutes ?? INTERMITTENT_INTERVAL_MINUTES[0]);
+            setIntervalMinutes(observation.intervalMinutes);
             setReviewTime(review.time);
             setReviewDay(review.day);
             setReviewEdited(false);
@@ -162,14 +169,16 @@ export function WardObservationControl({
               />
             </div>
             {level === "intermittent" ? (
-              <div className={styles.field} data-testid="ward-observation-interval" data-value={String(interval)}>
+              <div className={styles.field} data-testid="ward-observation-interval" data-value={interval ?? ""}>
                 <span className={styles.fieldLabel}>Check every</span>
                 <Segmented
                   label="Check every"
                   items={INTERVAL_CHOICES}
-                  value={String(interval)}
+                  value={interval === null ? "" : String(interval)}
                   onChange={(minutes) => {
-                    if (!recording.pending) setIntervalMinutes(Number(minutes));
+                    if (recording.pending) return;
+                    setIntervalMinutes(Number(minutes));
+                    if (error === NO_INTERVAL_ERROR) setError(null);
                   }}
                 />
               </div>

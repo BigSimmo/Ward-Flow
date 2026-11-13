@@ -353,7 +353,12 @@ export function summaryModel(state: TriageState, signed?: SignedBy): SummaryMode
           {
             kind: "facts",
             rows: [
-              ["Current: present", nowPresent.length ? [names(nowPresent)] : ["None flagged"]],
+              // D-187 item 18 (TW-173): read like Past: "None recorded" (D-186 item 2), and "Not answered"
+              // until Rest of current risk is answered, so it never says none before anyone has looked.
+              [
+                "Current: present",
+                nowPresent.length ? [names(nowPresent)] : state.rest ? ["None recorded"] : [{ quiet: "Not answered" }],
+              ],
               ...[...byArea.entries()].map(([area, list]) => [`  ${areaShortName(area)}`, [list.join(", ")]] as const),
               ...(by("now", "u").length ? [["Current: not known", [names(by("now", "u"))]] as const] : []),
               [

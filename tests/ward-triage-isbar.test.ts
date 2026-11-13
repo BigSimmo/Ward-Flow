@@ -27,7 +27,8 @@ describe("isbarText", () => {
     expect(line(text, "O ")).toBe("O Observations: –");
     expect(line(text, "B ")).toBe("B Background: Past risk –");
     expect(line(text, "A ")).toBe("A Assessment: Current risk –");
-    expect(line(text, "R ")).toBe("R Recommendation: Actions – · Review risk by –");
+    // D-187 item 17 (Q39): the safety plan's Plan and Crisis lines join the Recommendation.
+    expect(line(text, "R ")).toBe("R Recommendation: Actions – · Review risk by – · Plan – · Crisis –");
   });
 
   it("reads the answers that are set, in iSoBAR order", () => {
@@ -65,7 +66,9 @@ describe("isbarText", () => {
       /^A Assessment: Current risk [^·]+ · Protective: Engaged with CMHT; mother supportive\.$/,
     );
     expect(line(text, "A ")).not.toMatch(/Agitat/i);
-    expect(line(text, "R ")).toBe("R Recommendation: Actions POLICE NOTIFIED · Review risk by 72 hours");
+    expect(line(text, "R ")).toBe(
+      "R Recommendation: Actions POLICE NOTIFIED · Review risk by 72 hours · Plan – · Crisis –",
+    );
   });
 
   it("keeps the UMRN off the clipboard", () => {

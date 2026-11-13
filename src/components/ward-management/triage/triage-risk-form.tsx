@@ -935,7 +935,8 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
         open={confirming}
         onClose={() => setConfirming(false)}
         title={`Sign triage for ${person.name}?`}
-        description="Signing creates both records, SMHMR900 and SMHMR905. Check what you chose."
+        // D-187 item 18 (TW-198): one entry, as the page foot says (TW-202), not two records.
+        description="Signing records one entry, which prints as SMHMR900 and SMHMR905. Check what you chose."
         size="sm"
         data-testid="triage-sign-dialog"
         primary={{ label: "Sign", onAction: confirmSign }}

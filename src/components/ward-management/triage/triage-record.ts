@@ -62,7 +62,8 @@ type TriageOutcome = (typeof OUTCOMES)[number];
  */
 export const LEGAL = [
   ["vol", "Voluntary"],
-  ["ref", "Referred (Form 1A)"],
+  // D-187 item 18 (TW-107): the approved status words (D-170 item 4, D-187 item 2), not tied to a form number.
+  ["ref", "Referred for psychiatric examination"],
   ["det", "Detained"],
   ["cto", "Community treatment order"],
   ["ito", "Inpatient treatment order"],

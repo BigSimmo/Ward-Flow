@@ -555,6 +555,8 @@ describe("SV-4 observation level control (ward bed drawer and ED patient record)
     render(<WardObservationControl observation={GENERAL_OBSERVATION} now={NOW_ANCHOR} onSave={onSave} />);
     fireEvent.click(screen.getByTestId("ward-observation-change"));
     pickObservationLevel("intermittent");
+    // D-187 item 19 (Q44): the interval starts blank, so one is picked before recording.
+    pickObservationInterval(15);
     await press(screen.getByTestId("ward-observation-save"));
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     fireEvent.click(screen.getByTestId("ward-observation-change"));
@@ -579,6 +581,7 @@ describe("SV-4 observation level control (ward bed drawer and ED patient record)
       <WardObservationControl observation={GENERAL_OBSERVATION} now={NOW_ANCHOR} editingToken="v2" onSave={onSave} />,
     );
     pickObservationLevel("intermittent");
+    pickObservationInterval(15);
     await press(screen.getByTestId("ward-observation-save"));
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ level: "intermittent" }), "v1");
   });
