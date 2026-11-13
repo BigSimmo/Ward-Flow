@@ -212,7 +212,7 @@ type LegalNowRecord = Pick<Movement, "legalStatus" | "legalForm"> &
  * and fit to travel not recorded (D-187 item 10). Each one asks for the one coded reason; only a
  * status that differs needs one before booking (`transportBookingReasonRequired`).
  */
-export function transportBookingGaps(
+function transportBookingGaps(
   record: LegalNowRecord | undefined,
   transportLegalStatus: TransportLegalStatus | undefined,
 ): TransportExceptionGap[] {

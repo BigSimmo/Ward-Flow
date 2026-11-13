@@ -26,7 +26,7 @@ import type { Movement, MovementUploadedForm, TransportLegalStatus } from "@/com
 export type PackRequirement = "required" | "not_required" | "unknown";
 
 /** How the two ends of a move relate. "not_known" when either site is not recorded. */
-export type TransportSites = "same_site" | "different_site" | "not_known";
+type TransportSites = "same_site" | "different_site" | "not_known";
 
 export type TransportPaperworkRow = {
   requirement: PackRequirement;
@@ -87,7 +87,7 @@ export function packRequirement(movement: Pick<Movement, "legalStatus" | "transp
   return "unknown";
 }
 
-export function transportSites(originSiteCode: string | undefined, destinationSiteCode: string | undefined) {
+function transportSites(originSiteCode: string | undefined, destinationSiteCode: string | undefined) {
   if (originSiteCode === undefined || destinationSiteCode === undefined) return "not_known" as const;
   return originSiteCode === destinationSiteCode ? ("same_site" as const) : ("different_site" as const);
 }
@@ -109,7 +109,7 @@ export function transportOrderNeeded(
 }
 
 /** The latest uploaded transport or transfer order, if any. */
-export function uploadedTransportOrder(movement: Pick<Movement, "uploadedForms">): MovementUploadedForm | undefined {
+function uploadedTransportOrder(movement: Pick<Movement, "uploadedForms">): MovementUploadedForm | undefined {
   const forms = movement.uploadedForms ?? [];
   for (let index = forms.length - 1; index >= 0; index -= 1) {
     if (TRANSPORT_ORDER_PATTERN.test(forms[index]!.formName)) return forms[index];

@@ -21,8 +21,6 @@
 import { legalFormStatusWarning } from "@/components/ward-management/ward-legal-form-fit";
 import type { Movement } from "@/components/ward-management/ward-model";
 
-export { legalFormStatusWarning };
-
 export const FOLLOW_ON_WITH_NO_EARLIER_FORM = "A follow-on form is recorded with no earlier form on file";
 
 /** A form about to be recorded through the continuation action (`RECORD_LEGAL_FORM_CONTINUATION`). */
