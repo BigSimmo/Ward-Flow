@@ -7,12 +7,12 @@
 // bed is the one filled button; the ward desk also sees Confirm arrival.
 
 import { useState, type ReactNode } from "react";
-import { Undo2 } from "lucide-react";
 import {
   Badge,
   Button,
   Card,
   CardHead,
+  RowUndo,
   ShowMoreRow,
   SrOnly,
   StatusGlyph,
@@ -27,6 +27,12 @@ import styles from "./ward-coming-and-going.module.css";
 
 /** About eight rows, then "Show N more" (design rule). */
 const COMING_ROW_LIMIT = 8;
+
+/**
+ * The kit `RowUndo` on an arrival row just pulled: when the Undo window ends and the board clock it is
+ * judged by, both as real moments (`calendarDateOf`), and the undo itself.
+ */
+export type ComingRowUndo = { until: Date; now: number; run: () => void };
 
 export type ComingAndGoingProps = {
   /** Phone: the card sits in the page between the squares and the round. */
@@ -47,7 +53,7 @@ export type ComingAndGoingProps = {
   outlook: WardTomorrowOutlook | null;
   openReleases: number;
   /** Arrivals: the inline Undo on a row just pulled ("Undo pull · until 10:46"). */
-  undoFor?: (movementId: string) => { label: string; run: () => void } | null;
+  undoFor?: (movementId: string) => ComingRowUndo | null;
   /** Under a row whose last action the engine refused. */
   refusalFor?: (movementId: string) => ReactNode;
   onPull: (row: ComingRow) => void;
@@ -163,12 +169,15 @@ export function WardComingAndGoing(props: ComingAndGoingProps) {
           ))}
           {row.quietLine ? <p className={cx(styles.rowLine, styles.ink3)}>{row.quietLine}</p> : null}
           {undo ? (
-            // PR E swap: the kit's RowUndo (`wf/row-undo`) replaces this button once PR E lands.
             <div className={styles.rowSub}>
-              <Button variant="ghost" size="sm" className={styles.undo} onClick={undo.run}>
-                <Undo2 size={14} strokeWidth={1.75} aria-hidden="true" />
-                {undo.label} <SrOnly>for {row.name}</SrOnly>
-              </Button>
+              <RowUndo
+                verb="pull"
+                until={undo.until}
+                now={undo.now}
+                who={row.name}
+                className={styles.undo}
+                onUndo={undo.run}
+              />
             </div>
           ) : null}
           {row.movementId ? props.refusalFor?.(row.movementId) : null}

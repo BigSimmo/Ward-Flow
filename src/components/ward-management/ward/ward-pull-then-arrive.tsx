@@ -17,7 +17,7 @@ import dynamic from "next/dynamic";
 
 import { useOptionalToast } from "@/components/wf";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { calendarDateOf, type Instant } from "@/components/ward-management/ward-clock";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { observationEditingToken } from "@/components/ward-management/ward-flow-observation-events";
@@ -25,6 +25,7 @@ import type { Movement } from "@/components/ward-management/ward-model";
 import { observationIsRecorded, type Observation } from "@/components/ward-management/ward-observation";
 import { UNDO_WINDOW_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import type { BoardBed } from "./ward-bed-board-logic";
+import type { ComingRowUndo } from "./ward-coming-and-going";
 import type { PullStepChoice } from "./ward-pull-bed-choice-sheet";
 import { useWardCommandCompletion, wardCommandFailure } from "./use-ward-command-completion";
 
@@ -77,7 +78,7 @@ export type WardPullThenArrive = {
   choose: (choice: PullStepChoice) => void;
   cancel: () => void;
   /** "Undo pull · until 10:46" for a row pulled here, while that exact pull stands and the window is open. */
-  undoPullFor: (movementId: string) => { label: string; run: () => void } | null;
+  undoPullFor: (movementId: string) => ComingRowUndo | null;
 };
 
 /** The ward screen's own steps the pull step runs: its Pull the bed (refusal and override form unchanged). */
@@ -88,10 +89,11 @@ type WardScreenSteps = {
 
 /** Called before the ward screen's not-found return, with that screen's own pull and arrival steps. */
 export function useWardPullThenArrive(unitId: string, raise: WardRaise, screen: WardScreenSteps): WardPullThenArrive {
-  const { movements, admissions, resolvePatientIdentity } = useWardFlowSelect(
+  const { movements, admissions, resolvePatientIdentity, dayZero } = useWardFlowSelect(
     "movements",
     "admissions",
     "resolvePatientIdentity",
+    "dayZero",
   );
   const now = useWardFlowClock();
   const [asking, setAsking] = useState<PullStepAsk | undefined>();
@@ -212,7 +214,9 @@ export function useWardPullThenArrive(unitId: string, raise: WardRaise, screen: 
     const until = pulled ? pulled.at + UNDO_WINDOW_MINUTES : undefined;
     if (!pulled || until === undefined || now > until) return null;
     return {
-      label: `Undo pull · until ${formatInstantWithDay(until, now)}`,
+      // The kit RowUndo says "Undo pull · until HH:MM" and goes when the window ends on this clock.
+      until: calendarDateOf(until, dayZero),
+      now: calendarDateOf(now, dayZero).getTime(),
       run: () =>
         complete(
           `pull-undo:${movementId}`,

@@ -131,11 +131,22 @@ describe("Coming and going (wave 4)", () => {
     expect(first.className).not.toBe(second.className);
   });
 
-  it("keeps a just-pulled row with its inline Undo", () => {
+  it("keeps a just-pulled row with its inline Undo (the kit RowUndo)", () => {
     const run = vi.fn();
-    renderPart({ undoFor: (id) => (id === "m2" ? { label: "Undo pull · until 10:46", run } : null) });
-    fireEvent.click(screen.getByRole("button", { name: "Undo pull · until 10:46 for Marrowvale, Gianna" }));
+    // 10:46 Perth (UTC+8); the board clock reads two minutes earlier.
+    const until = new Date("2026-11-13T02:46:00Z");
+    renderPart({ undoFor: (id) => (id === "m2" ? { until, now: until.getTime() - 120_000, run } : null) });
+    const undo = screen.getByRole("button", { name: "Undo pull · until 10:46 for Marrowvale, Gianna" });
+    expect(undo).toHaveAttribute("data-wf-row-undo");
+    expect(undo).toHaveTextContent(/^Undo pull · until 10:46 for Marrowvale, Gianna$/u);
+    fireEvent.click(undo);
     expect(run).toHaveBeenCalled();
+  });
+
+  it("drops the inline Undo once the board clock reaches the end of its window", () => {
+    const until = new Date("2026-11-13T02:46:00Z");
+    renderPart({ undoFor: (id) => (id === "m2" ? { until, now: until.getTime(), run: vi.fn() } : null) });
+    expect(screen.queryByRole("button", { name: /^Undo pull/u })).toBeNull();
   });
 
   it("folds a long group after eight rows behind Show N more", () => {

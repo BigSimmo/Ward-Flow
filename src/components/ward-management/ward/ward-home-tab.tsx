@@ -38,7 +38,7 @@ import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/wa
 import { LayoutGrid, List } from "lucide-react";
 import { WardPlaceOrMove } from "./ward-place-or-move";
 import { tileStateLine, WardHomeTileText } from "./ward-home-tab-today";
-import { WardComingAndGoing } from "./ward-coming-and-going";
+import { WardComingAndGoing, type ComingRowUndo } from "./ward-coming-and-going";
 import { WardDeclineReasons } from "./ward-decline-reasons";
 import {
   arrivalRows,
@@ -161,7 +161,7 @@ interface WardHomeTabProps {
   /** A quiet line under the bed squares (the coordinator's refresh request). */
   squaresAfter?: React.ReactNode;
   /** Wave 4 (W7): the inline Undo on an arrival row just pulled ("Undo pull · until 10:46"). */
-  undoPullFor?: (movementId: string) => { label: string; run: () => void } | null;
+  undoPullFor?: (movementId: string) => ComingRowUndo | null;
   /** Ruling 11 (D-191): Confirm arrival with no pulled bed opens the pull step, then the arrival. */
   onPullThenArrive?: (movementId: string) => void;
   /** The bed board's filter, owned by the screen so the hero pills can set it. */

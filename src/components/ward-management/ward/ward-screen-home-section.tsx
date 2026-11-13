@@ -32,6 +32,7 @@ import type { OverrideEntry } from "@/components/ward-management/ward-derivation
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import type { CapacityBreakdown } from "@/components/ward-management/ward-bed-availability";
 import { wardLiveFormAlerts, type WardScreenBed } from "./ward-screen-derivations";
+import type { ComingRowUndo } from "./ward-coming-and-going";
 import { ReturnEarlyAlerts } from "@/components/ward-management/out-of-area/return-early-alerts";
 
 /** The Home tab section (Worth your attention), drawn from the ward screen's own state. */
@@ -123,7 +124,7 @@ type WardScreenHomeSectionProps = {
   /** WH4: the ward's own confirm, for the phone round's Confirm discharge. */
   confirmBedRelease: (releaseId: string) => void;
   /** Wave 4 (W7, ruling 3): the inline Undo on an arrival row just pulled ("Undo pull · until HH:MM"). */
-  undoPullFor?: (movementId: string) => { label: string; run: () => void } | null;
+  undoPullFor?: (movementId: string) => ComingRowUndo | null;
   /** Ruling 11 (D-191): Confirm arrival with no pulled bed opens the pull step (which bed) first. */
   onPullThenArrive?: (movementId: string) => void;
 };
