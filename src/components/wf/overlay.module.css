@@ -336,16 +336,19 @@
     right: var(--wf-s-4);
     bottom: calc(var(--wf-toast-rest) + var(--wf-toast-note-lift, 0px) + var(--wf-phone-foot-lift, 0px));
     padding: 0;
-    align-items: center;
+    /* Item 4 (approved picture): the toast runs the full width less the 16px gutters, never only as
+       wide as its words. */
+    align-items: stretch;
   }
 
   /* A page's sticky phone action bar (Patient's "Record search done") sits on the dock: the toast
-     rests 24px above the bar (item 4, 13 Nov 2026), not over its one filled button. The bar measured
-     85px tall at 390 x 844 (its 48px button and padding); a page may set its own height. */
+     rests 24px above the bar (item 4, 13 Nov 2026), not over its one filled button. The bar's top
+     stands 65px above the dock's clear line (its hairline, 8px, the 48px button, 8px; measured at
+     390 x 844, where 85px left the toast 44px up); a page may set its own height. */
   :global(html:has([data-wf-phone-action-bar])) .toastRegion {
     bottom: calc(
       var(--wf-dock-clear, calc(72px + max(8px, env(safe-area-inset-bottom, 0px)))) +
-        var(--wf-phone-action-bar-h, 85px) + var(--wf-s-6)
+        var(--wf-phone-action-bar-h, 65px) + var(--wf-s-6)
     );
   }
 
