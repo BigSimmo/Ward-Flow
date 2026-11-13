@@ -37,7 +37,7 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { LayoutGrid, List } from "lucide-react";
 import { WardPlaceOrMove } from "./ward-place-or-move";
-import { tileStateLine, WardHomeTileText } from "./ward-home-tab-today";
+import { pulledTileNote, tileStateLine, WardHomeTileText } from "./ward-home-tab-today";
 import { WardComingAndGoing, type ComingRowUndo } from "./ward-coming-and-going";
 import { WardDeclineReasons } from "./ward-decline-reasons";
 import {
@@ -501,25 +501,29 @@ export function WardHomeTab({
     // U1 (site review, 12 Oct 2026): the tile's status word is short so it never truncates
     // ("Discharge confir…", "Held up, Awaiti…"). The full note stays in the accessible name, the
     // list view and the bed panel.
-    const tileNote = hold
-      ? hold.short
-      : delivered
-        ? "Confirm arrival"
-        : awayAtEd
-          ? `At ED ${bed.awayAtEdHours}h`
-          : bed.blockReason
-            ? "Held up"
-            : bed.pastDate
-              ? "Past date"
-              : bed.dischargeBarrier
-                ? "Held up"
-                : leaving
-                  ? bed.dischargeConfirmed
-                    ? "Confirmed out"
-                    : "Discharge due"
-                  : bed.isSpecialling && bed.observation
-                    ? `Constant ${observationRatio(bed.observation.level)}`
-                    : note;
+    // FM-11 (Ward notes item 9): a pulled tile says "Pulled" and the journey's stage, then the hold.
+    const pulledNote = bed.status === "incoming" && !delivered ? pulledTileNote(bed.pulledStage, hold?.short) : null;
+    const tileNote = pulledNote
+      ? pulledNote
+      : hold
+        ? hold.short
+        : delivered
+          ? "Confirm arrival"
+          : awayAtEd
+            ? `At ED ${bed.awayAtEdHours}h`
+            : bed.blockReason
+              ? "Held up"
+              : bed.pastDate
+                ? "Past date"
+                : bed.dischargeBarrier
+                  ? "Held up"
+                  : leaving
+                    ? bed.dischargeConfirmed
+                      ? "Confirmed out"
+                      : "Discharge due"
+                    : bed.isSpecialling && bed.observation
+                      ? `Constant ${observationRatio(bed.observation.level)}`
+                      : note;
     const glyph = bedGlyphTone(bed);
     // C3 (phone simplification, 19 Oct 2026): one word for the phone bed strip, from the same state.
     const stripWord = bedStripWord(bed, { free, preparing, awayAtEd, leaving });
@@ -540,13 +544,22 @@ export function WardHomeTab({
       .join(", ");
     // CB-3 (axe 4.14 label-content-name-mismatch): the tile's name reads its own words first, in order.
     const shownNote = free ? (stateWord === name ? "" : stateWord) : note === name ? "" : tileNote;
-    const tileName = [bed.bedLabel, criteriaTag?.label ?? "", name, tileStateLine(shownNote, days), ...spokenState]
+    // FM-11: a pulled bed names who it is for ("For Marrowvale, Gianna"), shown and spoken.
+    const pulledFor = bed.status === "incoming" && bed.patientAlias !== undefined;
+    const tileName = [
+      bed.bedLabel,
+      criteriaTag?.label ?? "",
+      pulledFor ? `For ${name}` : name,
+      tileStateLine(shownNote, days),
+      ...spokenState,
+    ]
       .filter(Boolean)
       .join(", ");
     return {
       bed,
       free,
       shownNote,
+      pulledFor,
       tileName,
       // Q7 (4 Nov 2026): the Ready chip and hero pill count as the hero and board do (`boardReadyCounts`).
       // D-179 item 8: a bed still being made ready is not Ready.
@@ -1506,6 +1519,7 @@ export function WardHomeTab({
                       note={row.shownNote}
                       days={row.days}
                       outage={outageTags}
+                      pulledFor={row.pulledFor}
                     />
                   </button>
                 </li>

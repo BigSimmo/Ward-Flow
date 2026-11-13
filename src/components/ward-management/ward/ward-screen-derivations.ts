@@ -336,6 +336,12 @@ export function wardBedRoster({
         status === "incoming" && linkedMovement && deliveredAwaitingWard(linkedMovement)
           ? linkedMovement.transport?.arrivedAt
           : undefined,
+      // FM-11 (Ward notes item 9): a pulled bed names the stage of the journey it is held for, so its
+      // tile reads "Pulled · moving". Delivered has its own words ("Arrived at ward"), so none here.
+      pulledStage:
+        status === "incoming" && linkedMovement && !deliveredAwaitingWard(linkedMovement)
+          ? linkedMovement.stage
+          : undefined,
     };
   });
 

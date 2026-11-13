@@ -242,6 +242,7 @@
   color: var(--wf-dim);
 }
 
+.bedTile[data-dim="true"] .bedTileFor,
 .bedTile[data-dim="true"] .bedTileGiven,
 .bedTile[data-dim="true"] .bedTileState,
 .bedTile[data-dim="true"] .bedTileNote {
@@ -340,6 +341,23 @@
   line-height: var(--wf-lh-14);
   font-weight: 600;
   letter-spacing: -0.005em;
+}
+
+/* FM-11 (Ward notes item 9): a pulled bed says who it is for, a quiet "For" above the name. */
+.bedTileFor {
+  margin-top: 4px;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.bedTileFor + .bedTileName {
+  margin-top: 0;
+}
+
+/* A pulled bed's state ("Pulled · handover ready · 3h 20m left") wraps, as its name does, never past the edge. */
+.bedTile[data-status="incoming"] .bedTileState {
+  white-space: normal;
 }
 
 /* A bed with no one in it names its state ("Being made ready"), which may take two lines. */

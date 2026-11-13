@@ -4,6 +4,8 @@
 // flow strip that lived here: Coming and going and the hero's "Open this shift" replace it.
 
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
+import type { MovementStage } from "@/components/ward-management/ward-model";
+import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { nameParts } from "./ward-bed-board-logic";
 import styles from "./ward-home-tab.module.css";
 import outageTag from "./ward-outage-bed-tag.module.css";
@@ -26,6 +28,16 @@ function formalParts(name: string): { last: string; given: string } | null {
   return nameParts(name);
 }
 
+/**
+ * FM-11 (Ward notes item 9): a pulled bed's state line, "Pulled · moving" or "Pulled · handover ready",
+ * then its hold time (Audit A1-3). The stage word is the journey's own short label (`stageCopy`), in
+ * lower case after "Pulled"; a journey still at the pulled stage adds nothing to "Pulled".
+ */
+export function pulledTileNote(stage: MovementStage | undefined, holdShort: string | undefined): string {
+  const stageWord = stage === undefined || stage === "pulled" ? "" : stageCopy[stage].shortLabel.toLowerCase();
+  return [BED_STATE_LABELS.pulled, stageWord, holdShort ?? ""].filter(Boolean).join(" · ");
+}
+
 /** The tile's state line as drawn ("Held up · 210d"); an occupied bed's plain state is left out. */
 export function tileStateLine(note: string, days: string): string {
   return [note === BED_STATE_LABELS.occupied ? "" : note, days].filter(Boolean).join(" · ");
@@ -37,6 +49,7 @@ export function WardHomeTileText({
   note,
   days,
   outage = false,
+  pulledFor = false,
 }: {
   name: string | null;
   label: string;
@@ -44,11 +57,18 @@ export function WardHomeTileText({
   days: string;
   /** Batch 4 item 25 (D-142): the bed is not confirmed since the recorded outage. */
   outage?: boolean;
+  /** FM-11: a pulled bed is held for the person named, so "For" sits above the name. */
+  pulledFor?: boolean;
 }) {
   const parts = name === null ? null : formalParts(name);
   const stateLine = tileStateLine(note, days);
   return (
     <>
+      {pulledFor && parts ? (
+        <span className={styles.bedTileFor} aria-hidden="true">
+          For
+        </span>
+      ) : null}{" "}
       <span className={styles.bedTileName} data-wrap={parts ? undefined : "true"} aria-hidden="true">
         {parts ? `${parts.last},` : label}
       </span>{" "}
