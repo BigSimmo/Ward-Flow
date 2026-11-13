@@ -61,7 +61,11 @@ import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { homeHrefFor, seesNetworkBedFigures, type WardAccessRole } from "@/components/ward-management/ward-role-access";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
-import { WardDemoPanel } from "@/components/ward-management/tools/ward-demo-panel";
+import {
+  WardDemoConfirmHold,
+  WardDemoPanel,
+  useDemoConfirmHold,
+} from "@/components/ward-management/tools/ward-demo-panel";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { useExecutiveStatisticsControl } from "@/components/ward-management/statistics/executive-statistics-context";
@@ -504,6 +508,12 @@ function ToolsSheetView({
   const unconfirmed = counts.unconfirmed ?? 0;
 
   const [open, setOpen] = useState<ToolsSheetToolId | null>(null);
+  // Review E-14 (F-142): the demo panel's pending confirm lives here, above the two-pane switch, so
+  // a window crossing 1280 wide (which redraws the panel elsewhere) keeps it. Closing Tools drops it.
+  const demoConfirm = useDemoConfirmHold();
+  // A pending confirm always keeps its panel on screen below two panes, so it can never sit unseen
+  // while Escape closes Tools. Adjusted during render, not in an effect.
+  if (!twoPane && open === null && demoConfirm[0] !== null) setOpen("demo");
   const [query, setQuery] = useState("");
   const [noSearch, setNoSearch] = useState(false);
   const [expanded, setExpanded] = useState<ReadonlySet<GroupId>>(new Set());
@@ -1082,235 +1092,237 @@ function ToolsSheetView({
   ) : null;
 
   return (
-    <div className={styles.sheet} data-two-pane={twoPane || undefined} data-testid="ward-tools-sheet-v3">
-      {toolPage}
-      <div className={styles.list} hidden={Boolean(toolPage)}>
-        <SearchField
-          className={styles.search}
-          label="Search tools"
-          placeholder="Search tools"
-          value={query}
-          onValueChange={(value) => {
-            setQuery(value);
-            setNoSearch(false);
-          }}
-          inputRef={searchRef}
-          shortcut={!isPhone}
-          onKeyDown={(event) => {
-            // Escape with words typed clears the box; only an empty box lets Escape close the sheet.
-            if (event.key === "Escape" && query) {
-              // The shared Sheet leaves an Escape a field has already handled (defaultPrevented).
-              event.preventDefault();
-              setQuery("");
+    <WardDemoConfirmHold value={demoConfirm}>
+      <div className={styles.sheet} data-two-pane={twoPane || undefined} data-testid="ward-tools-sheet-v3">
+        {toolPage}
+        <div className={styles.list} hidden={Boolean(toolPage)}>
+          <SearchField
+            className={styles.search}
+            label="Search tools"
+            placeholder="Search tools"
+            value={query}
+            onValueChange={(value) => {
+              setQuery(value);
               setNoSearch(false);
-            }
-          }}
-        />
+            }}
+            inputRef={searchRef}
+            shortcut={!isPhone}
+            onKeyDown={(event) => {
+              // Escape with words typed clears the box; only an empty box lets Escape close the sheet.
+              if (event.key === "Escape" && query) {
+                // The shared Sheet leaves an Escape a field has already handled (defaultPrevented).
+                event.preventDefault();
+                setQuery("");
+                setNoSearch(false);
+              }
+            }}
+          />
 
-        {/* Shared design parts item 8 (13 Nov 2026): on a phone, Help is a row here too, so a page with
+          {/* Shared design parts item 8 (13 Nov 2026): on a phone, Help is a row here too, so a page with
             Back (no header Menu) still reaches it. It opens the header Menu's Help, this screen first. */}
-        {!words && isPhone ? (
-          <section className={styles.quick} aria-label="Help">
-            <div className={styles.card}>
-              <button
-                type="button"
-                className={styles.row}
-                data-testid="ward-tools-help"
-                onClick={() => {
-                  onNavigate();
-                  openWardHelp("tasks");
-                }}
-              >
-                <span className={styles.rowIcon} data-group="look" aria-hidden="true">
-                  <CircleHelp aria-hidden="true" strokeWidth={1.75} />
-                </span>
-                <span className={styles.rowText}>
-                  <strong>How this screen works</strong> <em>Help for this page</em>
-                </span>{" "}
-                <ChevronRight className={styles.rowEnd} aria-hidden="true" strokeWidth={1.75} />
-              </button>
-            </div>
-          </section>
-        ) : null}
-
-        {/* Needs you (Josh, 8 Nov 2026; words from shared design parts item 11, 13 Nov 2026, the same
-            as Home's Needs you tab): the coordinator's few things that need them, each one tap from
-            its tool. Only what is due shows; with nothing due, the section is gone. */}
-        {!words && role === "coordinator" && suggestions.length > 0 ? (
-          <section className={styles.quick} aria-label="Needs you">
-            <h3 className={styles.groupHeading}>Needs you</h3>
-            <div className={styles.card}>
-              {suggestions.map((item) => {
-                const face = (
-                  <>
-                    <span className={styles.suggestDot} data-tone={item.tone} aria-hidden="true" />
-                    <span className={styles.suggestText}>
-                      <strong>{item.title}</strong>
-                      <em>{item.detail}</em>
-                    </span>
-                    <span className={styles.suggestValue} data-tone={item.tone}>
-                      {item.n}
-                    </span>
-                    {item.href ? <SrOnly>, opens its page</SrOnly> : null}
-                    {item.href ? (
-                      <ArrowUpRight className={styles.rowEnd} aria-hidden="true" strokeWidth={1.75} />
-                    ) : (
-                      <ChevronRight className={styles.rowEnd} aria-hidden="true" strokeWidth={1.75} />
-                    )}
-                  </>
-                );
-                return item.href ? (
-                  <Link key={item.key} href={item.href} className={styles.row} onClick={onNavigate}>
-                    {face}
-                  </Link>
-                ) : (
-                  <button
-                    key={item.key}
-                    type="button"
-                    className={styles.row}
-                    onClick={() => openTool(item.tool!)}
-                    data-testid={`ward-tools-suggest-${item.key}`}
-                  >
-                    {face}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        ) : null}
-
-        {/* Polish (3 Nov): chips show only tools this person has used; the desk order already leads with the likely ones. */}
-        {!words && recentIds.length > 0 ? (
-          <section className={styles.quick} aria-label={quickTitle}>
-            <h3 className={styles.groupHeading}>{quickTitle}</h3>
-            <div className={styles.chips}>
-              {quickIds.map((id) => {
-                const entry = usable(id);
-                if (!entry) return null;
-                const Icon = entry.icon;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    className={styles.chip}
-                    aria-pressed={shown === id}
-                    onClick={() => openTool(id)}
-                  >
-                    <Icon aria-hidden="true" strokeWidth={1.75} />
-                    {entry.name}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        ) : null}
-
-        {matches === 0 ? (
-          <div className={styles.none} role="status">
-            <p>No tool matches “{query.trim()}”.</p>
-            {noSearch ? <p>Search is not on this page. Open Patients to search.</p> : null}
-            <div className={styles.noneActions}>
-              <button
-                type="button"
-                className={buttonClass({ variant: "pri", size: "sm" })}
-                onClick={() => setNoSearch(!searchWardFlow(query.trim(), onNavigate))}
-              >
-                Search Ward Flow
-              </button>
-              <button
-                type="button"
-                className={buttonClass({ variant: "sec", size: "sm" })}
-                onClick={() => setQuery("")}
-              >
-                Clear
-              </button>
-            </div>
-          </div>
-        ) : (
-          groups.map((group) => (
-            <section key={group.id} className={styles.group} aria-label={group.title}>
-              <h3 className={styles.groupHeading}>
-                {group.title}
-                <span className={styles.groupCount}>{group.entries.length}</span>
-              </h3>
-              <div className={styles.card} data-tool-group={group.id}>
-                {(groupShowsAll(group) ? group.entries : group.entries.slice(0, GROUP_SHOWN)).map((entry) =>
-                  renderRow(entry, group.id),
-                )}
-                {!groupShowsAll(group) ? (
-                  <button
-                    type="button"
-                    className={styles.showMore}
-                    onClick={() => {
-                      setExpanded((current) => new Set(current).add(group.id));
-                      // The button leaves with the fold, so focus moves to the first row it revealed.
-                      window.requestAnimationFrame(() => {
-                        const row = document.querySelector(`[data-tool-group="${group.id}"]`)?.children[GROUP_SHOWN];
-                        const target = row?.matches("a, button") ? row : row?.querySelector("a, button");
-                        if (target instanceof HTMLElement) target.focus();
-                      });
-                    }}
-                  >
-                    Show {group.entries.length - GROUP_SHOWN} more
-                    <ChevronDown aria-hidden="true" strokeWidth={1.75} />
-                  </button>
-                ) : null}
+          {!words && isPhone ? (
+            <section className={styles.quick} aria-label="Help">
+              <div className={styles.card}>
+                <button
+                  type="button"
+                  className={styles.row}
+                  data-testid="ward-tools-help"
+                  onClick={() => {
+                    onNavigate();
+                    openWardHelp("tasks");
+                  }}
+                >
+                  <span className={styles.rowIcon} data-group="look" aria-hidden="true">
+                    <CircleHelp aria-hidden="true" strokeWidth={1.75} />
+                  </span>
+                  <span className={styles.rowText}>
+                    <strong>How this screen works</strong> <em>Help for this page</em>
+                  </span>{" "}
+                  <ChevronRight className={styles.rowEnd} aria-hidden="true" strokeWidth={1.75} />
+                </button>
               </div>
             </section>
-          ))
-        )}
+          ) : null}
 
-        {/* Q308: Viewing as joins the Demo controls at the foot. */}
-        {!words ? (
-          <section className={styles.group} aria-label="Demo">
-            <h3 className={styles.groupHeading}>Demo</h3>
-            <div className={styles.card}>
-              <div className={styles.viewingAs}>
-                <span className={styles.viewingText}>
-                  <span>Viewing as</span>
-                  <strong>{roleLabel}</strong>
-                </span>
-                <WardRoleSwitcher withWords />
+          {/* Needs you (Josh, 8 Nov 2026; words from shared design parts item 11, 13 Nov 2026, the same
+            as Home's Needs you tab): the coordinator's few things that need them, each one tap from
+            its tool. Only what is due shows; with nothing due, the section is gone. */}
+          {!words && role === "coordinator" && suggestions.length > 0 ? (
+            <section className={styles.quick} aria-label="Needs you">
+              <h3 className={styles.groupHeading}>Needs you</h3>
+              <div className={styles.card}>
+                {suggestions.map((item) => {
+                  const face = (
+                    <>
+                      <span className={styles.suggestDot} data-tone={item.tone} aria-hidden="true" />
+                      <span className={styles.suggestText}>
+                        <strong>{item.title}</strong>
+                        <em>{item.detail}</em>
+                      </span>
+                      <span className={styles.suggestValue} data-tone={item.tone}>
+                        {item.n}
+                      </span>
+                      {item.href ? <SrOnly>, opens its page</SrOnly> : null}
+                      {item.href ? (
+                        <ArrowUpRight className={styles.rowEnd} aria-hidden="true" strokeWidth={1.75} />
+                      ) : (
+                        <ChevronRight className={styles.rowEnd} aria-hidden="true" strokeWidth={1.75} />
+                      )}
+                    </>
+                  );
+                  return item.href ? (
+                    <Link key={item.key} href={item.href} className={styles.row} onClick={onNavigate}>
+                      {face}
+                    </Link>
+                  ) : (
+                    <button
+                      key={item.key}
+                      type="button"
+                      className={styles.row}
+                      onClick={() => openTool(item.tool!)}
+                      data-testid={`ward-tools-suggest-${item.key}`}
+                    >
+                      {face}
+                    </button>
+                  );
+                })}
               </div>
-              {/* The executive desktop keeps its own scenario controls, so the demo row shows there on phone only. */}
-              {isPhone || !executive ? renderRow(demoEntry, "share") : null}
+            </section>
+          ) : null}
+
+          {/* Polish (3 Nov): chips show only tools this person has used; the desk order already leads with the likely ones. */}
+          {!words && recentIds.length > 0 ? (
+            <section className={styles.quick} aria-label={quickTitle}>
+              <h3 className={styles.groupHeading}>{quickTitle}</h3>
+              <div className={styles.chips}>
+                {quickIds.map((id) => {
+                  const entry = usable(id);
+                  if (!entry) return null;
+                  const Icon = entry.icon;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      className={styles.chip}
+                      aria-pressed={shown === id}
+                      onClick={() => openTool(id)}
+                    >
+                      <Icon aria-hidden="true" strokeWidth={1.75} />
+                      {entry.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
+          {matches === 0 ? (
+            <div className={styles.none} role="status">
+              <p>No tool matches “{query.trim()}”.</p>
+              {noSearch ? <p>Search is not on this page. Open Patients to search.</p> : null}
+              <div className={styles.noneActions}>
+                <button
+                  type="button"
+                  className={buttonClass({ variant: "pri", size: "sm" })}
+                  onClick={() => setNoSearch(!searchWardFlow(query.trim(), onNavigate))}
+                >
+                  Search Ward Flow
+                </button>
+                <button
+                  type="button"
+                  className={buttonClass({ variant: "sec", size: "sm" })}
+                  onClick={() => setQuery("")}
+                >
+                  Clear
+                </button>
+              </div>
             </div>
+          ) : (
+            groups.map((group) => (
+              <section key={group.id} className={styles.group} aria-label={group.title}>
+                <h3 className={styles.groupHeading}>
+                  {group.title}
+                  <span className={styles.groupCount}>{group.entries.length}</span>
+                </h3>
+                <div className={styles.card} data-tool-group={group.id}>
+                  {(groupShowsAll(group) ? group.entries : group.entries.slice(0, GROUP_SHOWN)).map((entry) =>
+                    renderRow(entry, group.id),
+                  )}
+                  {!groupShowsAll(group) ? (
+                    <button
+                      type="button"
+                      className={styles.showMore}
+                      onClick={() => {
+                        setExpanded((current) => new Set(current).add(group.id));
+                        // The button leaves with the fold, so focus moves to the first row it revealed.
+                        window.requestAnimationFrame(() => {
+                          const row = document.querySelector(`[data-tool-group="${group.id}"]`)?.children[GROUP_SHOWN];
+                          const target = row?.matches("a, button") ? row : row?.querySelector("a, button");
+                          if (target instanceof HTMLElement) target.focus();
+                        });
+                      }}
+                    >
+                      Show {group.entries.length - GROUP_SHOWN} more
+                      <ChevronDown aria-hidden="true" strokeWidth={1.75} />
+                    </button>
+                  ) : null}
+                </div>
+              </section>
+            ))
+          )}
+
+          {/* Q308: Viewing as joins the Demo controls at the foot. */}
+          {!words ? (
+            <section className={styles.group} aria-label="Demo">
+              <h3 className={styles.groupHeading}>Demo</h3>
+              <div className={styles.card}>
+                <div className={styles.viewingAs}>
+                  <span className={styles.viewingText}>
+                    <span>Viewing as</span>
+                    <strong>{roleLabel}</strong>
+                  </span>
+                  <WardRoleSwitcher withWords />
+                </div>
+                {/* The executive desktop keeps its own scenario controls, so the demo row shows there on phone only. */}
+                {isPhone || !executive ? renderRow(demoEntry, "share") : null}
+              </div>
+            </section>
+          ) : null}
+        </div>
+
+        {twoPane ? (
+          <section
+            className={styles.pane}
+            aria-label={paneEntry?.name ?? "Tool"}
+            id={shown ? `ward-tools-${shown}` : undefined}
+          >
+            {paneEntry ? (
+              <>
+                <header className={styles.paneHead}>
+                  {(() => {
+                    const entry = paneEntry;
+                    const Icon = entry.icon;
+                    return (
+                      <>
+                        <span className={styles.rowIcon} data-group={groupOf(entry.key)} aria-hidden="true">
+                          <Icon aria-hidden="true" strokeWidth={1.75} />
+                        </span>
+                        <span className={styles.rowText}>
+                          <strong>{entry.name}</strong>
+                          <em>{entry.detail}</em>
+                        </span>
+                      </>
+                    );
+                  })()}
+                </header>
+                <div className={styles.paneBody}>{paneEntry.body}</div>
+              </>
+            ) : (
+              <p className={styles.quiet}>Choose a tool.</p>
+            )}
           </section>
         ) : null}
       </div>
-
-      {twoPane ? (
-        <section
-          className={styles.pane}
-          aria-label={paneEntry?.name ?? "Tool"}
-          id={shown ? `ward-tools-${shown}` : undefined}
-        >
-          {paneEntry ? (
-            <>
-              <header className={styles.paneHead}>
-                {(() => {
-                  const entry = paneEntry;
-                  const Icon = entry.icon;
-                  return (
-                    <>
-                      <span className={styles.rowIcon} data-group={groupOf(entry.key)} aria-hidden="true">
-                        <Icon aria-hidden="true" strokeWidth={1.75} />
-                      </span>
-                      <span className={styles.rowText}>
-                        <strong>{entry.name}</strong>
-                        <em>{entry.detail}</em>
-                      </span>
-                    </>
-                  );
-                })()}
-              </header>
-              <div className={styles.paneBody}>{paneEntry.body}</div>
-            </>
-          ) : (
-            <p className={styles.quiet}>Choose a tool.</p>
-          )}
-        </section>
-      ) : null}
-    </div>
+    </WardDemoConfirmHold>
   );
 }

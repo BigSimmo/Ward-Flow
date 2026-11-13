@@ -3,7 +3,7 @@
 import { downloadBlob } from "@/components/ward-management/ward-download";
 
 import { ChevronDown, Pause, Play } from "lucide-react";
-import { type ChangeEvent, useId, useLayoutEffect, useRef, useState } from "react";
+import { type ChangeEvent, createContext, useContext, useId, useLayoutEffect, useRef, useState } from "react";
 
 import { Dialog, useLivePause } from "@/components/wf";
 
@@ -42,6 +42,29 @@ import { useExecutiveStatistics } from "../statistics/executive-statistics-conte
  * 1366 x 768 or 1280 x 600 laptop without scrolling to Reset. Pause is the page's own pause, the one
  * a tap on its Live chip runs (`useLivePause`); it shows only on a page that can pause.
  */
+/** The world change waiting on its confirm: Reset demo, or a scenario card. */
+export type DemoConfirm = { kind: "reset" } | { kind: "load"; scenario: WardScenario };
+type DemoConfirmHold = readonly [DemoConfirm | null, (next: DemoConfirm | null) => void];
+
+/**
+ * Review E-14 (F-142): a pending confirm held above a layout switch. The Tools sheet draws the panel
+ * in its right pane from 1280 wide and as its own page below that, so crossing the line remounts the
+ * panel; holding the confirm in the sheet keeps it open through the switch. The hold ends with the
+ * sheet, so closing Tools drops it. Without a provider the panel holds its own.
+ */
+export const WardDemoConfirmHold = createContext<DemoConfirmHold | null>(null);
+
+/**
+ * A pending confirm is dropped when demo controls go off, so it can never reopen by itself when
+ * they come back (review finding on DA-10). Adjusted during render, not in an effect.
+ */
+export function useDemoConfirmHold(): DemoConfirmHold {
+  const demoOn = useDemoControlsAvailable();
+  const [pending, setPending] = useState<DemoConfirm | null>(null);
+  if (!demoOn && pending) setPending(null);
+  return [pending, setPending];
+}
+
 /**
  * `grow` lets the panel take its full height inside a scroller that already scrolls (the Tools
  * sheet), so it never becomes a second scroller and its footer flows after the content.
@@ -126,12 +149,9 @@ function OperationalDemoPanel({ oneList = false, grow = false }: { oneList?: boo
   const [message, setMessage] = useState<string | null>(null);
   // The world change waiting on its confirm: Reset demo, or a scenario card (overall review, 20 Oct
   // 2026: a card replaced all the demo data in one tap, so it now asks first, the same as Reset).
-  const [confirming, setConfirming] = useState<{ kind: "reset" } | { kind: "load"; scenario: WardScenario } | null>(
-    null,
-  );
-  // A pending confirm is dropped when demo controls go off, so it can never reopen by itself when
-  // they come back (review finding on DA-10). Adjusted during render, not in an effect.
-  if (!demoOn && confirming) setConfirming(null);
+  // Held by the Tools sheet when the panel sits in one, so a layout switch does not drop it.
+  const ownHold = useDemoConfirmHold();
+  const [confirming, setConfirming] = useContext(WardDemoConfirmHold) ?? ownHold;
   const reach = demoDataReach(shared?.enabled === true);
   // With the one tap Demo reset on, its three scenarios load from there, after a confirm, so the
   // picker above does not offer them a second time.
