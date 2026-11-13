@@ -151,30 +151,31 @@ export const CLINICAL_VALUES = {
   },
 
   // ---- Emergency department waits -----------------------------------------------------------
+  // The four ED wait steps of D-108 item 2 stand (D-187 item 5); each name says which step it is.
   edElevatedPressure: {
     ...SIGNED_BY_JOSH,
-    name: "ED pressure shown as elevated from a wait of",
+    name: "ED pressure shown as elevated, and ED wait step 1 (Ask wards), from a wait of",
     group: "Emergency department waits",
     value: 3 * MINUTES_PER_HOUR,
     unit: "minutes",
   },
   edSeverePressure: {
     ...SIGNED_BY_JOSH,
-    name: "ED pressure shown as severe, and first escalation step, from a wait of",
+    name: "ED pressure shown as severe, and ED wait step 2 (Call bed manager), from a wait of",
     group: "Emergency department waits",
     value: 8 * MINUTES_PER_HOUR,
     unit: "minutes",
   },
   longWait: {
     ...SIGNED_BY_JOSH,
-    name: "Wait in hospital shown as long, and top escalation step, from",
+    name: "Wait in hospital shown as long, and ED wait step 3 (Consider out of area), from",
     group: "Emergency department waits",
     value: 24 * MINUTES_PER_HOUR,
     unit: "minutes",
   },
   veryLongWait: {
     ...SIGNED_BY_JOSH_16_OCT,
-    name: "Wait in hospital shown in the second, danger waiting band on statistics, from",
+    name: "Wait in hospital shown in the second, danger waiting band on statistics, and ED wait step 4 (Tell executive), from",
     group: "Emergency department waits",
     value: 48 * MINUTES_PER_HOUR,
     unit: "minutes",
