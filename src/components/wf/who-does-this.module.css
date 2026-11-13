@@ -1,0 +1,9 @@
+/* Shared design parts item 6 (Josh, 13 Nov 2026): the quiet foot line on a card whose actions this
+   desk can never take. One ink-3 sentence, no icon, no tone. */
+.who {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
