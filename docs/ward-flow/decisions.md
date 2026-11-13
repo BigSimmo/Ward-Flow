@@ -136,14 +136,14 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-111](#d-111-review-and-audit-plan-first-guards-and-four-open-answers-9-november-2026)                                                                | Review and audit plan: first guards and answers                                        | Active                                           |
 | [D-112](#d-112-phone-bottom-bar-the-floating-bar-9-november-2026)                                                                                       | Phone bottom bar: the floating bar                                                     | Active                                           |
 | [D-113](#d-113-second-patient-identifier-on-accept-and-mark-done-no-initials-search-9-november-2026)                                                    | Second identifier on accept and Mark done; no initials search                          | Active                                           |
-| [D-114](#d-114-allow-pull_request_target-for-three-workflows-only-9-november-2026)                                                                      | Allow pull_request_target for three workflows only                                     | Active                                           |
+| [D-114](#d-114-allow-pull_request_target-for-three-workflows-only-9-november-2026)                                                                      | Allow pull_request_target for three workflows only                                     | Done (policy set 13 Nov 2026)                    |
 | [D-115](#d-115-one-count-on-every-screen-and-a-missing-patient-shown-everywhere-9-november-2026)                                                        | One count on every screen; missing patient shown everywhere                            | Active                                           |
 | [D-116](#d-116-page-tops-the-pr-1581-recommendations-stand-9-november-2026)                                                                             | Page tops: PR #1581 recommendations stand                                              | Active                                           |
 | [D-117](#d-117-care-plans-follow-up-frequent-presenter-count-tribunal-date-and-ward-flags-10-november-2026)                                             | Care plans follow-up: frequent presenter count, tribunal date, ward flags              | Active                                           |
 | [D-118](#d-118-page-tops-referrals-and-ward-phone-limits-up-to-8-kb-above-main-10-november-2026)                                                        | Page tops: Referrals and Ward phone limits up to 8 KB above main                       | Active                                           |
 | [D-119](#d-119-page-tops-phone-limits-raised-to-measured-sizes-trim-after-merge-10-november-2026)                                                       | Page tops: phone limits at measured sizes, trim after merge                            | Active                                           |
 | [D-120](#d-120-discharge-and-capacity-values-pull-limit-transport-delay-and-discharge-date-slip-9-november-2026)                                        | Discharge and capacity values: pull limit, transport delay, date slip                  | Active                                           |
-| [D-121](#d-121-working-rules-guards-and-your-pc-from-the-10-november-2026-audit-10-november-2026)                                                       | Working rules, guards and PC tidy from the 10 Nov audit                                | Active                                           |
+| [D-121](#d-121-working-rules-guards-and-your-pc-from-the-10-november-2026-audit-10-november-2026)                                                       | Working rules, guards and PC tidy from the 10 Nov audit                                | Active; item 1 done in part (13 Nov 2026)        |
 | [D-122](#d-122-clinical-and-privacy-answers-from-the-10-november-2026-audit-10-november-2026)                                                           | Clinical and privacy answers from the 10 Nov audit                                     | Active                                           |
 | [D-123](#d-123-master-audit-list-answers-two-clinical-fixes-and-five-working-rules-10-november-2026)                                                    | Master audit list answers: two clinical fixes and five working rules                   | Active                                           |
 | [D-124](#d-124-offline-saves-whose-record-changed-are-refused-and-shown-10-november-2026)                                                               | Offline saves whose record changed: refuse and show                                    | Active                                           |
@@ -195,6 +195,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-170](#d-170-clinical-wording-rulings-from-the-13-november-audit-13-november-2026)                                                                    | Clinical wording rulings from the 13 November audit                                    | Active                                           |
 | [D-171](#d-171-hosted-database-brought-to-schema-18-migrations-017-and-018-13-november-2026)                                                            | Hosted database brought to schema 18 (migrations 017 and 018)                          | Active                                           |
 | [D-172](#d-172-the-community-desks-ed-heads-up-stays-as-built-in-d-154-13-november-2026)                                                                | The community desk's ED heads-up stays as built in D-154                               | Active                                           |
+| [D-173](#d-173-turning-off-supabase-open-sign-up-is-deferred-13-november-2026)                                                                          | Turning off Supabase open sign-up is deferred                                          | Active                                           |
 | [D-186](#d-186-clinical-sign-off-sitting-part-1-timing-and-the-audit-backed-recommendations-13-november-2026)                                           | Clinical sign-off sitting, part 1: timing and the audit-backed recommendations         | Active                                           |
 
 ---
@@ -1485,6 +1486,7 @@ is inferred.
 - **How:** Josh adds the policy in the repository's Actions settings before the second brownout (16 November 2026, 16:00 to 18:00 UTC). The policy must also allow the other events those three files use (`merge_group`, `schedule`, `workflow_dispatch`). `ward-flow-budget-recheck.yml` is left out while its job stays switched off (`if: false`); turning it back on needs it added. No workflow file changes.
 - **Why:** the hold and bot-author checks must read their rules from `main`, so a pull request cannot edit its own check to pass. All three never check out or run pull-request code, which is the safe use GitHub describes. Switching them to `pull_request` would lose that protection.
 - **Boundary:** a repository setting Josh makes himself; agents do not change it.
+- **Status (13 November 2026):** done. The repository Actions policy now allows `pull_request_target` only for `pr-hold.yml`, `bot-author-policy.yml` and `ward-flow-ci-tidy.yml`, set on Josh's PC with his approval before the 16 November brownout.
 
 ## D-115. One count on every screen, and a missing patient shown everywhere (9 November 2026)
 
@@ -1561,6 +1563,7 @@ is inferred.
   7. **Josh's PC:** the stale `D:\Repos\Ward-Flow` checkout is saved as it stands to a local branch that is not pushed, then switched to current main. Unpushed branches and stashes are compared with main and reported, with nothing deleted or pushed. Josh's PC push hooks are documented in [git-publication.md](../agents/git-publication.md). PC-only documents worth keeping are copied into `docs/history/`, leaving the originals. Three stale allow lines are removed from the PC's Claude settings, and one dated memory note supersedes the stale "local audit still open" notes.
 - **Why:** the audit found Josh's global rules in conflict with Ward Flow's on who merges and who may direct an agent, an unguarded `live` branch, and a stale PC checkout that local agents read instead of main.
 - **Boundary:** working rules, guards and documents only. Changes no clinical value or clinical rule; approves no release.
+- **Status (13 November 2026):** item 1 is done in part. A repository ruleset, "Live protections", now blocks deleting `live` and force-pushing to it, with no bypass. "Restrict updates" (only the release workflow may move `live`) was not added, because GitHub Actions cannot be a ruleset bypass actor, so that rule would stop the daily release. A rollback needs the ruleset switched off briefly ([OPERATIONS-RUNBOOK.md](OPERATIONS-RUNBOOK.md#rolling-back-the-app), step 4).
 
 ## D-122. Clinical and privacy answers from the 10 November 2026 audit (10 November 2026)
 
@@ -2115,6 +2118,13 @@ is inferred.
 - **Decision:** the item 46 "Your patients in ED" card stays as D-154 built it. A community team desk in local mode gets the narrow scoped list (UMRN, ED name and recorded time for its open-episode patients). In shared mode the server still sends no such list, so a shared community desk's card stays empty. Sending the list from `scopeWardFlowState`, the way D-152 sends `diversionReturns`, is not built now.
 - **Why:** the shared-mode gap fails closed and exposes nothing extra. Widening what the community role receives from the server is a privacy change (D-14, D-87) that can wait for real-data planning.
 - **Boundary:** synthetic data only. No code change. Item 46 with real data still needs the D-87 privacy review. Approves no merge or release.
+
+## D-173. Turning off Supabase open sign-up is deferred (13 November 2026)
+
+- **Date:** 13 November 2026 (`2026-11-13`). **Decided by:** Josh, in the Ward Flow project chat: "defer supabase issue" (05:46 UTC), alongside his yes to the remaining live audit recommendations. Numbered D-173 because D-170 to D-172 are recorded above.
+- **Decision:** Josh's own action from D-145 item 5, turning off Supabase open sign-up, is deferred. The site stays on synthetic data, so nothing changes now. It must still be done before any real data, and it stays on the real-data gate.
+- **Why:** the shared site holds synthetic data only, so an outside Supabase account that gets past the site lock reaches no real patient information.
+- **Boundary:** synthetic data only. No code change and no provider change. Changes no clinical rule or signed value, and approves no release.
 
 ## D-186. Clinical sign-off sitting, part 1: timing and the audit-backed recommendations (13 November 2026)
 
