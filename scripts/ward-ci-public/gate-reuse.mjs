@@ -77,15 +77,17 @@ function releaseGap(jobs) {
 }
 
 /**
- * A missing legal sweep invalidates unit and its coverage, without discarding other gates.
+ * A missing legal sweep invalidates unit, without discarding other gates. `unitExceptSweep` says every
+ * shard still ran the rest of the unit suite, which, with coverage, lets main run only the sweep (D-166).
  * Build reuse always requires a separate strict-budget receipt for the built main tree.
  * Reasons contain only refused gates.
- * @returns {{unit: boolean, browser: boolean, release: boolean, build: boolean,
+ * @returns {{unit: boolean, unitExceptSweep: boolean, browser: boolean, release: boolean, build: boolean,
  *   backend: boolean, coverage: boolean, reasons: Record<string, string>}}
  */
 export function reusableGateEvidence({ jobs, counts, testedTree, builtTree, strictBudgetTree, mainTree } = {}) {
   const result = {
     unit: false,
+    unitExceptSweep: false,
     browser: false,
     release: false,
     build: false,
@@ -98,12 +100,17 @@ export function reusableGateEvidence({ jobs, counts, testedTree, builtTree, stri
     if (gap !== null) result.reasons[gate] = gap;
   };
   if (typeof mainTree !== "string" || !SHA.test(mainTree)) {
-    for (const gate of ["unit", "browser", "release", "build", "backend", "coverage"])
+    for (const gate of ["unit", "unitExceptSweep", "browser", "release", "build", "backend", "coverage"])
       decide(gate, "main tree is unavailable or invalid");
     return result;
   }
   const provedJobs = Array.isArray(jobs) && jobs.every((job) => typeof job?.name === "string") ? jobs : [];
   const testedGap = testedTree === mainTree ? null : "tested tree does not match main tree";
+  decide(
+    "unitExceptSweep",
+    testedGap ??
+      matrixGap(provedJobs, "Ward Flow unit shard ", counts?.["unit shard"], ["Run reconciled unit suite shard"]),
+  );
   decide(
     "unit",
     testedGap ??
@@ -129,7 +136,7 @@ export function reusableGateEvidence({ jobs, counts, testedTree, builtTree, stri
   decide(
     "coverage",
     testedGap ??
-      (result.unit
+      (result.unitExceptSweep
         ? singletonGap(provedJobs, "Ward Flow coverage", ["Merge shard coverage and enforce thresholds"])
         : "unit evidence is incomplete"),
   );

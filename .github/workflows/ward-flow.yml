@@ -143,6 +143,7 @@ jobs:
       browser_verified: ${{ steps.check.outputs.browser_verified }}
       release_verified: ${{ steps.check.outputs.release_verified }}
       build_verified: ${{ steps.check.outputs.build_verified }}
+      sweep_only: ${{ steps.check.outputs.sweep_only }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -489,9 +490,13 @@ jobs:
           # A pull request that changes nothing the legal-figure sweep runs leaves it out (Josh,
           # 27 October 2026); only an explicit "false" from the plan does, so main always runs it.
           WARD_GATE_SKIP_LEGAL_SWEEP: ${{ needs.plan.outputs.legal_sweep == 'false' && '1' || '0' }}
+          # D-166: on main, when the merged pull request's run proved every other unit file and the
+          # coverage floors on this exact tree but left the sweep out, the shards run only the sweep
+          # files, without coverage (main reuses that run's coverage; main-reuse.mjs sweep_only).
+          WARD_GATE_ONLY_LEGAL_SWEEP: ${{ needs.reuse.outputs.sweep_only == 'true' && '1' || '0' }}
           # Hosted runners have 4 vCPUs to themselves; the local default of 2 left half idle.
           VITEST_MAX_WORKERS: "4"
-          WARD_COVERAGE_BLOB_DIR: ${{ runner.temp }}/ward-coverage-blobs
+          WARD_COVERAGE_BLOB_DIR: ${{ needs.reuse.outputs.sweep_only != 'true' && format('{0}/ward-coverage-blobs', runner.temp) || '' }}
           WARD_FULL_GATE_STATE_DIR: ${{ runner.temp }}/ward-unit-state
           WARD_TEST_PROFILE_DIR: ${{ runner.temp }}/ward-profile
         run: npm run check:ward-expected-reds -- --print-signatures
@@ -500,14 +505,15 @@ jobs:
       - name: Confirm the legal-figure sweep ran
         if: ${{ !cancelled() && steps.shard.outcome == 'success' && needs.plan.outputs.legal_sweep != 'false' }}
         run: echo "The legal-figure sweep files were in the population these shards ran."
+      # A sweep-only run compiles only the sweep's modules, so it never saves the week's cache.
       - name: Save the Vitest module cache on main
-        if: ${{ !cancelled() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && steps.shard.outcome == 'success' && steps.vitest-cache.outputs.cache-hit != 'true' }}
+        if: ${{ !cancelled() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && steps.shard.outcome == 'success' && steps.vitest-cache.outputs.cache-hit != 'true' && needs.reuse.outputs.sweep_only != 'true' }}
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: ${{ steps.vitest-cache-path.outputs.dir }}
           key: ${{ steps.vitest-cache.outputs.cache-primary-key }}
       - name: Upload shard coverage blob
-        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && needs.reuse.outputs.sweep_only != 'true' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: ward-coverage-blob-${{ matrix.shard }}
@@ -1027,6 +1033,7 @@ jobs:
           BROWSER_REUSED: ${{ needs.reuse.outputs.browser_verified }}
           RELEASE_REUSED: ${{ needs.reuse.outputs.release_verified }}
           BUILD_REUSED: ${{ needs.reuse.outputs.build_verified }}
+          SWEEP_ONLY: ${{ needs.reuse.outputs.sweep_only }}
           STATIC_RESULT: ${{ needs.static.result }}
           UNIT_RESULT: ${{ needs.unit.result }}
           BROWSER_RESULT: ${{ needs.browser.result }}
@@ -1078,7 +1085,17 @@ jobs:
             echo "::error title=Draft fast lane::Quick checks passed. Unit, backend, browser, phone and accessibility checks run when this pull request is marked ready; only that run can pass this check."
             exit 1
           fi
-          test "$UNIT_REUSED" = "$COVERAGE_REUSED"
+          case "$SWEEP_ONLY" in
+            true)
+              test "$GITHUB_EVENT_NAME" = push
+              test "$GITHUB_REF" = refs/heads/main
+              test "$REUSE_RESULT" = success
+              test "$UNIT_REUSED" = false
+              test "$COVERAGE_REUSED" = true
+              ;;
+            false|"") test "$UNIT_REUSED" = "$COVERAGE_REUSED" ;;
+            *) exit 1 ;;
+          esac
           require_gate "$BACKEND_SCOPE" "$BACKEND_RESULT" "$BACKEND_REUSED"
           require_gate "$UNIT_SCOPE" "$UNIT_RESULT" "$UNIT_REUSED"
           require_gate "$UNIT_SCOPE" "$COVERAGE_RESULT" "$COVERAGE_REUSED"

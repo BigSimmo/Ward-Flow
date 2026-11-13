@@ -613,6 +613,21 @@ if (invokedDirectly && process.env.WARD_OWNED_FULL_GATE !== "1") {
 
   // The discovery floor above is always checked on the whole population; a shard only narrows what
   // this runner executes, and drops the manifest entries that belong to another shard's files.
+  const discoveredCount = population.length;
+  if (process.env.WARD_GATE_ONLY_LEGAL_SWEEP === "1") {
+    // D-166: main reused a pull request run on this exact tree that proved every other unit file
+    // and the coverage floors, leaving only the legal-figure sweep out (main-reuse.mjs sweep_only).
+    // These shards run just the sweep files, so main still proves the sweep itself.
+    if (process.env.WARD_GATE_SKIP_LEGAL_SWEEP === "1")
+      fail(["WARD_GATE_ONLY_LEGAL_SWEEP cannot be combined with WARD_GATE_SKIP_LEGAL_SWEEP."]);
+    const sweep = new Set(legalSweepTests(projectRoot));
+    population = population.filter((file) => sweep.has(file));
+    if (population.length === 0) fail(["WARD_GATE_ONLY_LEGAL_SWEEP found no legal-figure sweep files."]);
+    for (const file of [...expected.keys()]) if (!sweep.has(file)) expected.delete(file);
+    console.log(
+      `legal-figure sweep only: ${population.length} of ${discoveredCount} files (the rest were proved on the pull request).`,
+    );
+  }
   let shard;
   try {
     shard = parseGateShard(process.env.WARD_GATE_SHARD);
@@ -626,12 +641,16 @@ if (invokedDirectly && process.env.WARD_OWNED_FULL_GATE !== "1") {
     population = selectGateShard(population, shard, readUnitDurations());
     // Duration-balanced shards hold different numbers of files, so each shard's floors are the
     // whole-suite floors scaled by its share of the files (an equal split gives FLOOR / count).
-    const share = population.length / wholeCount;
+    const share = population.length / discoveredCount;
     runFloors = { files: Math.floor(FLOOR_FILES * share), tests: Math.floor(FLOOR_TESTS * share) };
     for (const file of [...expected.keys()]) if (!population.includes(file)) expected.delete(file);
     console.log(
       `Shard ${shard.index}/${shard.count}: ${population.length} of ${wholeCount} files, ${expected.size} manifest entr(y/ies).`,
     );
+  }
+  if (!runFloors && population.length < discoveredCount) {
+    const share = population.length / discoveredCount;
+    runFloors = { files: Math.floor(FLOOR_FILES * share), tests: Math.floor(FLOOR_TESTS * share) };
   }
 
   const reportDir = mkdtempSync(path.join(tmpdir(), "ward-reds-"));
