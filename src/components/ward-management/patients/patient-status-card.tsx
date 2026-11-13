@@ -77,7 +77,16 @@ type StatusAction =
       /** The words when pinned in the phone bar, away from its row ("Record search done"). */
       pinnedLabel?: string;
     }
-  | { kind: "unavailable"; label: string; reason: string };
+  | {
+      kind: "unavailable";
+      label: string;
+      reason: string;
+      /**
+       * This desk can never do it (a role limit), so the reason stays a tooltip with a pointer. Without
+       * it the step is "not yet" and its reason is always drawn under the button (design parts item 6).
+       */
+      never?: true;
+    };
 
 export interface PatientStatus {
   tone: WfTone;
@@ -250,7 +259,9 @@ function transportCell(
     owner: "ED nurse in charge",
     tone: "neutral",
     value: "Not booked",
-    sub: ready ? "Book by phone, then log it" : `Needs ${waitingFor}`,
+    // Design parts item 6: the lock line under Log booking says what it waits for, so the row's own
+    // line keeps its hint rather than saying it twice.
+    sub: "Book by phone, then log it",
     action: ready
       ? {
           kind: "button",
@@ -307,11 +318,11 @@ export function buildPatientStatus(
     if (summary !== undefined && action?.kind === "button" && action.onClick === ctx.onOpenPlacement) {
       if (mode !== "held" || !acceptedPlacementAllowed) return undefined;
       const reason = limit?.("PULL_PATIENT");
-      return reason ? { kind: "unavailable", label: action.label, reason } : action;
+      return reason ? { kind: "unavailable", label: action.label, reason, never: true } : action;
     }
     if (action?.kind !== "button" || action.event === undefined) return action;
     const reason = limit?.(action.event);
-    return reason ? { kind: "unavailable", label: action.label, reason } : action;
+    return reason ? { kind: "unavailable", label: action.label, reason, never: true } : action;
   };
   return {
     ...status,
@@ -835,7 +846,7 @@ function withMeter(status: PatientStatus): PatientStatus {
 function CellAction({ action, primary }: { action: StatusAction; primary: boolean }): ReactNode {
   if (action.kind === "unavailable")
     return (
-      <Button size="sm" disabledReason={action.reason} reasonDisplay="tooltip">
+      <Button size="sm" disabledReason={action.reason} reasonDisplay={action.never ? "tooltip" : undefined}>
         {action.label}
       </Button>
     );

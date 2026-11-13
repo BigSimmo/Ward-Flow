@@ -35,8 +35,22 @@ describe("tooltip reason on touch", () => {
       .join("\n");
     expect(touch).toMatch(/\.tipReason > \.touchReason \{[^}]*display: inline-flex/u);
     expect(touch).toMatch(/\.reasonTip\.reasonTip \{[^}]*display: none/u);
-    expect(css).toMatch(/\n\.touchReason \{\s*display: none;/u);
+    expect(css).toMatch(/\n\.touchReason\.touchReason \{\s*display: none;/u);
     expect(css).toMatch(/\n\.tipReason \{\s*display: contents;/u);
+  });
+});
+
+describe("tooltip reason with a mouse", () => {
+  // Design parts item 6: `.reason { display: inline-flex }` comes after the hide rule, so at equal
+  // weight it drew the touch line at the left under the value on a desktop. The hide rule must
+  // outrank it, and the touch rule (same weight as the hide rule) must come after it.
+  it("keeps the touch line hidden: the hide rule outranks .reason and the touch rule comes later", () => {
+    const hide = css.indexOf("\n.touchReason.touchReason {");
+    const touch = css.indexOf(".tipReason > .touchReason {");
+    expect(hide).toBeGreaterThan(-1);
+    expect(touch).toBeGreaterThan(hide);
+    expect(css.indexOf("\n.reason {")).toBeGreaterThan(-1);
+    expect(css).not.toMatch(/\n\.touchReason \{/u);
   });
 });
 
@@ -46,9 +60,27 @@ describe("inline reason placement", () => {
     const wrap = container.firstElementChild as HTMLElement;
     expect(wrap.firstElementChild).toHaveTextContent("Choose a bed first");
     expect(wrap.lastElementChild?.tagName).toBe("BUTTON");
+    // A row can move the drawn line to its own full-width line by this mark (the patient card's phone rows).
+    expect(wrap.firstElementChild).toHaveAttribute("data-wf-reason");
     const rule = /\n\.withReason \{([^}]*)\}/u.exec(css)?.[1] ?? "";
     expect(rule).toMatch(/flex-direction:\s*column-reverse/u);
     expect(rule).toMatch(/align-items:\s*flex-end/u);
+  });
+});
+
+describe("a drawn reason in a phone status row", () => {
+  // Design parts item 6: a long reason in the patient card's phone row widened the action column
+  // until the value and its line broke one letter a line. The reason takes its own full-width line.
+  it("goes under the row at full width and leaves the button in its column", () => {
+    const card = readFileSync(
+      path.join(process.cwd(), "src/components/ward-management/patients/patient-status-card.module.css"),
+      "utf8",
+    );
+    const reason = ":is([data-touch-reason], [data-wf-reason])";
+    expect(card).toContain(`.cell[data-ph-quiet] .action:has(${reason}) > * {\n  display: contents;`);
+    expect(card).toMatch(
+      /\.cell\[data-ph-quiet\] \.action :is\(\[data-touch-reason\], \[data-wf-reason\]\) \{\s*grid-column: 1 \/ -1;/u,
+    );
   });
 });
 

@@ -301,7 +301,9 @@
   display: contents;
 }
 
-.touchReason {
+/* Doubled so it outranks `.reason { display: inline-flex }` further down (item 6: with a mouse the
+   line drew at the left under the value); the touch rule below has the same weight and comes later. */
+.touchReason.touchReason {
   display: none;
 }
 

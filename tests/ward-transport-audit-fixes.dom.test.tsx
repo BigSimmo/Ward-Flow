@@ -186,6 +186,7 @@ describe("Mark handover ready once 3 of 3 are clear (A4-9)", () => {
       kind: "unavailable",
       label: "Mark handover ready",
       reason: "ED only",
+      never: true,
     });
   });
 
@@ -195,6 +196,24 @@ describe("Mark handover ready once 3 of 3 are clear (A4-9)", () => {
     const bar = screen.getByTestId("ward-patient-phone-action-bar");
     fireEvent.click(within(bar).getByRole("button", { name: "Mark handover ready" }));
     expect(onHandoverReady).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps a never-for-this-desk reason a tooltip and draws a not-yet reason under the button", () => {
+    // Design parts item 6: a role limit is "never" (a tooltip with a pointer, a drawn line on touch);
+    // any other unavailable step is "not yet", its lock line always drawn.
+    const never = render(<PatientStatusCard mode="held" context={{ ...context, roleLimit: () => "ED only" }} />);
+    const lines = [...never.container.querySelectorAll("[data-touch-reason]")];
+    expect(lines.length).toBeGreaterThan(0);
+    expect(never.container.querySelector("[data-wf-reason]")).toBeNull();
+    never.unmount();
+    const notYet = render(
+      <PatientStatusCard
+        mode="held"
+        context={{ ...context, movement: { ...ready, stage: "accepted_awaiting_bed", transport: undefined } }}
+      />,
+    );
+    const drawn = [...notYet.container.querySelectorAll("[data-wf-reason]")];
+    expect(drawn.map((line) => line.textContent)).toContain("Needs the bed pulled");
   });
 });
 

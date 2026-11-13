@@ -172,7 +172,7 @@ export function Button(props: ButtonProps) {
 
   return (
     <span className={styles.withReason}>
-      <span className={styles.reason} id={reasonId}>
+      <span className={styles.reason} id={reasonId} data-wf-reason="">
         <Icon icon={Lock} size={14} />
         {disabledReason}
       </span>

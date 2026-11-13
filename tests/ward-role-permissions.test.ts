@@ -275,7 +275,8 @@ describe("Patient status card actions follow the route's role", () => {
       ...ctoBase,
       roleLimit: (type) => (type === "END_COMMUNITY_TREATMENT_ORDER" ? "Community team only" : undefined),
     }).cells.find((cell) => cell.key === "cto")?.action;
-    expect(limited).toEqual({ kind: "unavailable", label: "Record ended", reason: "Community team only" });
+    // `never`: a desk that can never do it keeps the reason as a tooltip (design parts item 6).
+    expect(limited).toEqual({ kind: "unavailable", label: "Record ended", reason: "Community team only", never: true });
   });
 
   it("leaves Record CTO available on the coordinator route", () => {
