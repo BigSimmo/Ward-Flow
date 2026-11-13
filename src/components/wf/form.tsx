@@ -19,8 +19,45 @@ import { Icon } from "./icon";
 import { StatusGlyph } from "./status-glyph";
 import styles from "./form.module.css";
 
-type FieldContextValue = { id: string; describedBy?: string; invalid: boolean };
+type FieldContextValue = {
+  id: string;
+  describedBy?: string;
+  invalid: boolean;
+  /** A control inside reports its own default error (or null), shown when the caller gives none. */
+  reportError?: (key: string, text: ReactNode | null) => void;
+};
 const FieldContext = createContext<FieldContextValue | null>(null);
+
+/** The error line under a control: danger glyph and words, announced when it appears. */
+function ErrorLine({ id, children }: { id?: string; children: ReactNode }) {
+  return (
+    <span id={id} role="alert" className={cx(styles.help, styles.error, styles.errorText)}>
+      <StatusGlyph tone="danger" size={9} />
+      {children}
+    </span>
+  );
+}
+
+/**
+ * Spec item 13 (C05, 13 Nov 2026): a kit control that knows its typed value is impossible (a date
+ * that does not exist, a time past 23:59) gives default words, shown under the box. Inside a Field
+ * the words go to the Field's error line, unless the caller passed its own `error`; outside one the
+ * control draws the line itself and links it with the returned `errorId`.
+ */
+export function useControlError(text: ReactNode | null): { errorId?: string; line: ReactNode } {
+  const field = useContext(FieldContext);
+  const key = useId();
+  const report = field?.reportError;
+  const shown = text ?? null;
+  useEffect(() => {
+    if (!report) return;
+    report(key, shown);
+    return () => report(key, null);
+  }, [report, key, shown]);
+  if (report || shown === null) return { line: null };
+  const errorId = `${key}-error`;
+  return { errorId, line: <ErrorLine id={errorId}>{shown}</ErrorLine> };
+}
 
 export type FieldProps = {
   label: ReactNode;
@@ -43,12 +80,24 @@ export type FieldProps = {
 export function Field({ label, hint, help, error, id: idProp, children, className }: FieldProps) {
   const generated = useId();
   const id = idProp ?? generated;
+  const [controlErrors, setControlErrors] = useState<ReadonlyMap<string, ReactNode>>(() => new Map());
+  const reportError = useCallback((key: string, text: ReactNode | null) => {
+    setControlErrors((previous) => {
+      if (text === null ? !previous.has(key) : previous.get(key) === text) return previous;
+      const next = new Map(previous);
+      if (text === null) next.delete(key);
+      else next.set(key, text);
+      return next;
+    });
+  }, []);
+  // The caller's own words win; a control's default words show only when the caller gives none.
+  const shownError = error || controlErrors.values().next().value || null;
   const hintId = hint ? `${id}-hint` : undefined;
   const helpId = help ? `${id}-help` : undefined;
-  const errorId = error ? `${id}-error` : undefined;
+  const errorId = shownError ? `${id}-error` : undefined;
   const describedBy = cx(hintId, errorId, helpId) || undefined;
   return (
-    <FieldContext.Provider value={{ id, describedBy, invalid: Boolean(error) }}>
+    <FieldContext.Provider value={{ id, describedBy, invalid: Boolean(error), reportError }}>
       <div className={cx(styles.field, className)}>
         <div className={styles.labelRow}>
           <label htmlFor={id} className={styles.label}>
@@ -61,12 +110,7 @@ export function Field({ label, hint, help, error, id: idProp, children, classNam
           ) : null}
         </div>
         {children}
-        {error ? (
-          <span id={errorId} role="alert" className={cx(styles.help, styles.error, styles.errorText)}>
-            <StatusGlyph tone="danger" size={9} />
-            {error}
-          </span>
-        ) : null}
+        {shownError ? <ErrorLine id={errorId}>{shownError}</ErrorLine> : null}
         {help ? (
           <span id={helpId} className={styles.help}>
             {help}

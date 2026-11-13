@@ -140,6 +140,7 @@ export { TimePresets, timePresetClockText } from "./time-presets";
 export { phoneRows } from "./phone-rows";
 export { ConfirmHost, hasConfirmHost, requestConfirm, type ConfirmRequest } from "./confirm-dialog";
 export {
+  DATE_FIELD_ERROR,
   DateField,
   DateTimeField,
   isoDateAsTyped,

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
-import { TextInput, type TextInputProps } from "./form";
+import { TextInput, useControlError, type TextInputProps } from "./form";
+import { cx } from "./cx";
 import styles from "./form.module.css";
 
 /**
@@ -15,8 +16,8 @@ import styles from "./form.module.css";
  *   readers such as `instantFromDateAndTimeInputs` keep working unchanged.
  * - Nothing is filled in for the person, and nothing is worked out from the date: a legal-form
  *   date is shown as typed (D5, D-70).
- * - A finished entry that is not a real day (31/02/2026) is marked invalid; the caller's Field shows
- *   its own error words.
+ * - A finished entry that is not a real day (31/02/2026) is marked invalid and says so under the box:
+ *   `DATE_FIELD_ERROR` by default (spec item 13, 13 Nov 2026), or the caller's Field `error` words.
  *
  * Example:
  *
@@ -53,7 +54,15 @@ function looksFinished(text: string): boolean {
   return (text.match(/\d/gu)?.length ?? 0) >= 8;
 }
 
+/** The words under a date box whose typed day does not exist, or a caller's check finds unfinished. */
+export const DATE_FIELD_ERROR = "Type a real date, DD/MM/YYYY";
+
 export type DateFieldProps = Omit<TextInputProps, "value" | "defaultValue" | "onChange" | "type"> & {
+  /**
+   * Words under the box while the typed day does not exist. Defaults to `DATE_FIELD_ERROR`; `false`
+   * leaves the message to the caller (a pair that draws one line for both boxes).
+   */
+  errorText?: ReactNode | false;
   /** YYYY-MM-DD, or "" for none. */
   value: string;
   /** Called with YYYY-MM-DD when the typed text is a real day, otherwise with "". */
@@ -71,6 +80,8 @@ export function DateField({
   onRawTextChange,
   invalid,
   placeholder = "DD/MM/YYYY",
+  errorText = DATE_FIELD_ERROR,
+  "aria-describedby": describedBy,
   ...inputProps
 }: DateFieldProps) {
   const [localTyped, setTyped] = useState(() => isoDateAsTyped(value));
@@ -83,23 +94,28 @@ export function DateField({
     if (rawText === undefined && value !== (parseTypedDate(typed) ?? "")) setTyped(isoDateAsTyped(value));
   }
   const wrong = looksFinished(typed) && parseTypedDate(typed) === null;
+  const { errorId, line } = useControlError(wrong && errorText !== false ? errorText : null);
   return (
-    <TextInput
-      {...inputProps}
-      type="text"
-      inputMode="numeric"
-      autoComplete="off"
-      maxLength={10}
-      placeholder={placeholder}
-      value={typed}
-      invalid={invalid || wrong}
-      onChange={(event) => {
-        const text = event.target.value;
-        setTyped(text);
-        onRawTextChange?.(text);
-        onValueChange(parseTypedDate(text) ?? "");
-      }}
-    />
+    <>
+      <TextInput
+        {...inputProps}
+        type="text"
+        inputMode="numeric"
+        autoComplete="off"
+        maxLength={10}
+        placeholder={placeholder}
+        value={typed}
+        invalid={invalid || wrong}
+        aria-describedby={cx(describedBy, errorId) || undefined}
+        onChange={(event) => {
+          const text = event.target.value;
+          setTyped(text);
+          onRawTextChange?.(text);
+          onValueChange(parseTypedDate(text) ?? "");
+        }}
+      />
+      {line}
+    </>
   );
 }
 
@@ -137,6 +153,8 @@ export type TimeFieldProps = Omit<TextInputProps, "value" | "defaultValue" | "on
   onValueChange: (time: string) => void;
   /** Called with the text as typed, so a caller can tell an empty box from an unfinished or wrong one. */
   onTextChange?: (text: string) => void;
+  /** Words under the box while the typed time is not a real one. Defaults to `TIME_FIELD_ERROR`. */
+  errorText?: ReactNode | false;
 };
 
 /**
@@ -145,8 +163,9 @@ export type TimeFieldProps = Omit<TextInputProps, "value" | "defaultValue" | "on
  * "14:30", "1430", "14.30" or "9:05"; the caller's value stays "HH:MM" (or "" while unfinished or not
  * a real time), the shape `type="time"` gave, so reducers and checks are unchanged. Nothing is filled
  * in for the person (D5, D-70). A finished entry that is not a real time (25:00), or any letters (an
- * am/pm time), is marked invalid; on leaving the box it shows the stored HH:MM. A caller whose submit
- * finds the value "" shows `TIME_FIELD_ERROR` through its Field and does not save.
+ * am/pm time), is marked invalid and says `TIME_FIELD_ERROR` under the box (spec item 13); on leaving
+ * the box it shows the stored HH:MM. A caller whose submit finds the value "" shows `TIME_FIELD_ERROR`
+ * through its Field and does not save.
  *
  *     <Field label="Arrival time" hint="HH:MM">
  *       <TimeField value={time} onValueChange={setTime} />
@@ -159,6 +178,8 @@ export function TimeField({
   placeholder = "HH:MM",
   onBlur,
   onTextChange,
+  errorText = TIME_FIELD_ERROR,
+  "aria-describedby": describedBy,
   ...inputProps
 }: TimeFieldProps) {
   const [typed, setTyped] = useState(value);
@@ -170,30 +191,35 @@ export function TimeField({
     if (value !== (parseTypedTime(typed) ?? "")) setTyped(value);
   }
   const wrong = timeTextWrong(typed);
+  const { errorId, line } = useControlError(wrong && errorText !== false ? errorText : null);
   return (
-    <TextInput
-      {...inputProps}
-      type="text"
-      inputMode="numeric"
-      autoComplete="off"
-      placeholder={placeholder}
-      value={typed}
-      invalid={invalid || wrong}
-      onBlur={(event) => {
-        // Show the time that will be saved ("1430" and "9:05" read back as 14:30 and 09:05).
-        const stored = parseTypedTime(typed);
-        if (stored !== null && stored !== typed) setTyped(stored);
-        onBlur?.(event);
-      }}
-      onChange={(event) => {
-        const text = event.target.value;
-        setTyped(text);
-        onTextChange?.(text);
-        const next = parseTypedTime(text) ?? "";
-        setLastValue(next);
-        onValueChange(next);
-      }}
-    />
+    <>
+      <TextInput
+        {...inputProps}
+        type="text"
+        inputMode="numeric"
+        autoComplete="off"
+        placeholder={placeholder}
+        value={typed}
+        invalid={invalid || wrong}
+        aria-describedby={cx(describedBy, errorId) || undefined}
+        onBlur={(event) => {
+          // Show the time that will be saved ("1430" and "9:05" read back as 14:30 and 09:05).
+          const stored = parseTypedTime(typed);
+          if (stored !== null && stored !== typed) setTyped(stored);
+          onBlur?.(event);
+        }}
+        onChange={(event) => {
+          const text = event.target.value;
+          setTyped(text);
+          onTextChange?.(text);
+          const next = parseTypedTime(text) ?? "";
+          setLastValue(next);
+          onValueChange(next);
+        }}
+      />
+      {line}
+    </>
   );
 }
 
@@ -251,6 +277,7 @@ export function DateTimeField({
   const parts = splitDateTime(current);
   const [date, setDate] = useState(parts.date);
   const [timeText, setTimeText] = useState(parts.time);
+  const [dateText, setDateText] = useState(() => isoDateAsTyped(parts.date));
   // A new value from the caller (a reset, or a record loaded) replaces both parts. `lastValue` is
   // also what this box last sent, so the caller echoing it back leaves the typing alone.
   const [lastValue, setLastValue] = useState(current);
@@ -258,6 +285,7 @@ export function DateTimeField({
     setLastValue(current);
     setDate(parts.date);
     setTimeText(parts.time);
+    setDateText(isoDateAsTyped(parts.date));
   }
   const emit = (nextDate: string, nextTime: string) => {
     const time = parseTypedTime(nextTime);
@@ -267,10 +295,16 @@ export function DateTimeField({
     onValueChange?.(joined);
   };
   const timeWrong = timeTextWrong(timeText);
+  const dateWrong = looksFinished(dateText) && parseTypedDate(dateText) === null;
+  // One line under the pair, for whichever box is wrong first.
+  const { errorId, line } = useControlError(dateWrong ? DATE_FIELD_ERROR : timeWrong ? TIME_FIELD_ERROR : null);
   return (
     <div className={styles.dateTime} data-wf-date-time="" data-testid={testId}>
       <DateField
         id={id}
+        errorText={false}
+        aria-describedby={errorId}
+        onRawTextChange={setDateText}
         value={date}
         required={required}
         disabled={disabled}
@@ -290,6 +324,7 @@ export function DateTimeField({
         required={required}
         disabled={disabled}
         invalid={invalid || timeWrong}
+        aria-describedby={errorId}
         aria-label={`${label} time, HH:MM 24-hour`}
         data-testid={testId ? `${testId}-time` : undefined}
         onChange={(event) => {
@@ -297,6 +332,7 @@ export function DateTimeField({
           emit(date, event.target.value);
         }}
       />
+      {line ? <div className={styles.dateTimeError}>{line}</div> : null}
       {name ? <input type="hidden" name={name} value={current} /> : null}
     </div>
   );

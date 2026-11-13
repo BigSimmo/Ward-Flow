@@ -621,3 +621,8 @@
   gap: var(--wf-s-2);
   min-width: 0;
 }
+
+/* Spec item 13: the pair's one error line runs under both boxes. */
+.dateTimeError {
+  grid-column: 1 / -1;
+}
