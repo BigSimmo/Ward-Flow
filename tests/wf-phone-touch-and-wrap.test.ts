@@ -65,6 +65,16 @@ describe("one sticky bar, solid when pinned", () => {
     expect(stats.match(/\n\.segPinned \{([^}]*)\}/u)?.[1] ?? "").toMatch(/position:\s*static/u);
   });
 
+  // F-61 (PR E review, audit A5-17): the Places tab row stays pinned on a phone, so the kind switch
+  // under it no longer pins too. Wider screens never draw it.
+  it("unpins the phone Hub second bar", () => {
+    const hub = css("ward-management/hub/hub.module.css");
+    const phone = phoneBlocks(hub);
+    expect(phone.match(/\.phoneKindBar \{([^}]*)\}/u)?.[1] ?? "").toMatch(/position:\s*static/u);
+    const folder = phoneBlocks(css("wf/folder-tabs.module.css"));
+    expect(folder.match(/\.nav\.nav \{([^}]*)\}/u)?.[1] ?? "").toMatch(/position:\s*sticky/u);
+  });
+
   it("paints the pinned tab row and the scrolled header in solid slate, with no blur", () => {
     const folder = css("wf/folder-tabs.module.css");
     expect(folder).toMatch(/--wf-bar-frost:\s*var\(--wf-hero-2\);/u);
