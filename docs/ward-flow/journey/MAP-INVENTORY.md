@@ -1350,7 +1350,7 @@ Source-contract SHA256: fcffd5317eb55dd7e4ce29961e8ad901621c80297358d7f5a268b690
   effects: No departure, bed release or clinical eligibility decision is performed; typed patient-specific payloads follow the typed-text persistence boundary.
   tests: tests/ward-criteria-led-discharge.test.ts
   Reviewed source: src/components/ward-management/ward-flow-bed-events.ts:755; SHA256 09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954
-  Reviewed source: src/components/ward-management/ward-discharge-criteria.ts:271; SHA256 70e720fb09a6a8bd9ab6952b29e786e949b7c635b3eded6a97c9be8582648c5b
+  Reviewed source: src/components/ward-management/ward-discharge-criteria.ts:271; SHA256 61d0fbc46e495568898db3b80dfbedf331d5be51530f4722468d0b175765e9a5
   Reviewed source: src/components/ward-management/ward-flow-events.ts:2132; SHA256 8a2438031d11683d8648960b9d12ffd41eda8a351a21b1b50037bfd2ab59dde4
   Reviewed source: src/components/ward-management/ward-access-state.ts:709; SHA256 6749082a89387b340bc0b52cfe76a13f8375532e44cbbcdf17a85d696c94e703
 - RECORD_ED_MEDICAL_DETERIORATION — modelled; event roles: ed, coordinator

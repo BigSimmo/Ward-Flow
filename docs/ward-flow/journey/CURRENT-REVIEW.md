@@ -139,3 +139,15 @@ and END_LEAVE_BED `raise()` calls, payloads and guards are unchanged; they moved
 SET_CONFIGURATION save is unchanged and moved down one line. The six whole-file digests and lines in
 `actions.json` were refreshed. Evidence: `tests/ward-count-breakdown.dom.test.tsx` and `tests/ward-desk-qr.test.ts`,
 run locally.
+
+## 13 November 2026 — clinical sign-off sitting wording (PR #1656, D-186)
+
+Five cited review sources changed in the held clinical PR, compared line by line with main `92630b1e`.
+`movements/movement-workspace-cockpit.tsx`, `hub/hub-screen.tsx` and `capacity/capacity-ward-drawer.tsx` change
+only on-screen words ("Set up for involuntary admissions (demo)" replaces "authorised"), and
+`ward-discharge-criteria.ts` only rewords two criteria led discharge messages. `patients/patient-now-screen.tsx`
+now takes the band's movement from the one legal reading (`resolved.legalNow`, built in `patient-now-adapter.ts`
+with the same rule the screen used: the live movement in force, else the current stay's own, else the live movement)
+and passes it to the band. No handler, payload, guard, place scope or dispatch changed, so their whole-file review
+digests in `actions.json`, `event-dispositions.json` and `machines.json` were refreshed. Evidence:
+`tests/ward-clinical-d186-wording.test.ts` and `tests/ward-clinical-d186-legal-now.test.ts`, run locally.
