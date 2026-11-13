@@ -109,6 +109,13 @@ export function bedsForecast(
   now: Instant,
   plannedAdmissions: readonly PlannedAdmission[] = [],
   referrals: readonly ReservationReferral[] = [],
+  /**
+   * The range per horizon worked out per bed type (`forecastTotalsByKind`), for a network figure
+   * printed beside its types: "short" then adds each type's shortfall and never takes off a spare
+   * bed of another type (D-191 item 6). Passed in, not imported, so the Ward page, which reads one
+   * ward's plain sum, does not load the by-type forecast (phone size, PR C).
+   */
+  byKind?: (days: number) => { low: number; likely: number; high: number },
 ): BedsForecast {
   // Clinical owner ruling, 14 Oct 2026: main's capacity rule stands, and a closed unit counts as
   // zero capacity, now or projected.
@@ -159,9 +166,13 @@ export function bedsForecast(
       namedBedHolders,
     ).length;
     const bedsNeeded = waitingForBed + planned;
-    const low = readyNow + beingMadeReady + confirmed - bedsNeeded;
-    const likely = low + expected;
-    const high = likely + heldUp + overdue + plannedNotFlagged;
+    const plainLow = readyNow + beingMadeReady + confirmed - bedsNeeded;
+    const plainLikely = plainLow + expected;
+    const { low, likely, high } = byKind?.(days) ?? {
+      low: plainLow,
+      likely: plainLikely,
+      high: plainLikely + heldUp + overdue + plannedNotFlagged,
+    };
     return {
       hours,
       until,

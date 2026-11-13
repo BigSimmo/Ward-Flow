@@ -9,12 +9,8 @@ const DAY = 24 * HOUR;
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-/**
- * RC 2.5 (F-35, 13 Nov 2026): what a time since a start reads when the start is still in the
- * future, a mistyped arrival for example. It used to be clamped and read "0m", which looks like a
- * new arrival. The words are about the record, not the person. `ward-clock.ts` re-exports it.
- */
-export const FUTURE_START_TEXT = "Start time is in the future";
+/** RC 2.5 (F-35): the words for a start still in the future, kept in `src/lib/time-words.ts`. */
+export { FUTURE_START_TEXT } from "@/lib/time-words";
 
 /**
  * Duration in milliseconds as `43s`, `5m 03s`, `52m`, `7h 05m`, `5h` or `1d 2h`. A whole hour is the

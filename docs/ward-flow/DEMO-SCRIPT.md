@@ -55,9 +55,9 @@ demo code out for up to 10 minutes, and a shared venue network counts as one add
    opens at **Scenario and clock**; scroll down inside the panel if **Reset demo** is not showing (on
    a laptop screen it is at the bottom of the panel). Check the scenario is **Standard day**, and pick
    it first if it is not: Reset demo reloads whichever scenario is loaded. Check **Worked examples**
-   shows the button **Show worked examples** (they are off). If it says **Hide worked examples**,
-   press it and confirm: Reset demo keeps them on, and they add about 17 example people to Armadale
-   ED. Press **Reset demo**, then **Reset demo** again in the "Reset the demo?" box. Press **Esc**.
+   shows the button **Hide worked examples** (they are on for the demo). If it says **Show worked
+   examples**, press it, then **Show worked examples** in the box. Reset demo keeps them on. Press
+   **Reset demo**, then **Reset demo** again in the "Reset the demo?" box. Press **Esc**.
 5. Touch the app within 15 minutes of starting, and click somewhere harmless now and then while you
    wait for the room. If the screen is covered after 15 minutes untouched ("Locked after 15 minutes
    without use"), press **Carry on**; nothing is lost.
@@ -381,7 +381,8 @@ clock** with **+15 min** and **+1 hour**, and the **Scenario** list. Close with 
 Say these with confidence:
 
 - **Nobody is placed by the app.** Every refer, accept, pull and move is a person's click. Pulling a
-  bed takes two clicks and offers Undo.
+  bed takes two clicks and offers Undo. The coordinator or the accepting ward's desk may pull it, and
+  the record names which desk did.
 - **No ranking.** Wards are listed in a fixed network order, never ranked or suggested. The ED's
   list is not re-sorted.
 - **No computed legal times.** Legal expiry is shown only when it was typed from the paper form;

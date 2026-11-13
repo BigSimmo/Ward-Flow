@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { bedsForecast } from "@/components/ward-management/capacity/beds-forecast";
 import { bedKindGaps, networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
 import { plannedAdmissionsStillNeedingABed } from "@/components/ward-management/capacity/planned-admissions-reducer";
-import { forecastByKind } from "@/components/ward-management/forecast/forecast-by-kind";
+import { forecastByKind, forecastTotalsByKind } from "@/components/ward-management/forecast/forecast-by-kind";
 import { sevenDayHorizon } from "@/components/ward-management/forecast/forecast-horizon";
 import { occupiedBeds } from "@/components/ward-management/statistics/statistics-occupancy";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
@@ -14,7 +14,24 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { nextEvent, nowFor, seededRandom } from "./helpers/ward-engine-fuzz";
 
 function forecast(state: WardFlowState, now = NOW_ANCHOR) {
-  return bedsForecast(state.units, state.bedReleases, state.admissions, state.movements, now, state.plannedAdmissions);
+  // As Capacity shows it: the by-type totals go in (D-191 item 6, `capacity-model.ts`).
+  return bedsForecast(
+    state.units,
+    state.bedReleases,
+    state.admissions,
+    state.movements,
+    now,
+    state.plannedAdmissions,
+    [],
+    forecastTotalsByKind(
+      state.units,
+      state.bedReleases,
+      state.admissions,
+      state.movements,
+      now,
+      state.plannedAdmissions,
+    ),
+  );
 }
 
 function send(state: WardFlowState, event: WardFlowEvent): WardFlowState {

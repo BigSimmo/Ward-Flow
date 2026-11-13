@@ -1,5 +1,5 @@
 import { DUE_SOON_MINUTES, DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
-import { FUTURE_START_TEXT } from "@/components/wf/format";
+import { FUTURE_START_TEXT } from "@/lib/time-words";
 /**
  * Minutes elapsed since midnight on the synthetic operating day.
  *

@@ -1167,7 +1167,7 @@ export const referrals: Referral[] = completeSyntheticReferralIntakes(
       originSiteCode: "RPH",
       transportNeeded: true,
       history:
-        "Community team asked the department to see them today; they are travelling in with a family member and had not arrived when this was written. INVENTED DEMONSTRATION TEXT.",
+        "Community team asked the department to see them today. Travelling in with a family member; not yet arrived at the time of writing.",
     },
     {
       // Past the owner's 72-hour threshold, so the reconsider line on the row is reachable without
@@ -1197,7 +1197,7 @@ export const referrals: Referral[] = completeSyntheticReferralIntakes(
       originSiteCode: "RPH",
       transportNeeded: false,
       history:
-        "Accepted by the department three days ago and has not presented. Kept on the list deliberately rather than removed — the row asks somebody to reconsider it, and nothing has been decided. INVENTED DEMONSTRATION TEXT.",
+        "Referred by the crisis service three days ago and has not presented. Still waiting for the department to decide whether to keep the referral open.",
     },
     /**
      * ⚠️ **K3, ADDED 2026-09-17 AT THE OWNER'S REQUEST FOR MORE SAMPLE DATA** — six already-decided

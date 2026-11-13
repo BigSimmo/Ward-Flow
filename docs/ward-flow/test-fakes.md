@@ -93,6 +93,7 @@ The test fails when a test mocks a module not in this list. Add it here, and to 
 @/components/ward-management/ward-flow-reducer
 @/components/ward-management/ward-flow-typed-text-scrub
 @/components/ward-management/ward-global-search-help
+@/components/ward-management/ward-operational-defaults
 @/components/ward-management/ward-patient-archive
 @/components/ward-management/ward-patient-name
 @/components/ward-management/ward-patients

@@ -124,17 +124,28 @@ async function expectOutOfAreaNotRecorded(page: Page, admissionId: string): Prom
     if ((await everyone.getAttribute("aria-checked")) !== "true") await everyone.click();
     await expect(page.getByTestId("ward-out-of-area-cards").locator("li")).toHaveCount(0);
     await expect(page.getByTestId(`ward-out-of-area-card-${admissionId}`)).toHaveCount(0);
+    // The phone's plan sheet carries the subject test id, and no plan is open.
+    await expect(page.getByTestId("ward-out-of-area-subject")).toHaveCount(0);
   } else {
     await expect(page.getByTestId("ward-out-of-area-empty")).toHaveText(
       `Nobody is shown as far from home. ${notBanded} ${notBanded === 1 ? "person has" : "people have"} no travel time recorded.`,
     );
     await expect(page.getByTestId("ward-out-of-area-table")).toHaveCount(0);
     await expect(page.getByTestId(`ward-out-of-area-row-${admissionId}`)).toHaveCount(0);
+    // With nobody chosen, the desktop's subject test id sits on the Ready to go home card (the
+    // help tour points at it), and that card lists nobody either.
+    const subject = page.getByTestId("ward-out-of-area-subject");
+    await expect(subject.getByTestId("ward-out-of-area-subject-empty")).toContainText(
+      "Nobody is past their discharge date",
+    );
+    await expect(subject.getByRole("button")).toHaveCount(0);
   }
   await expect(
     page.getByRole("button", { name: /^(Plan return|Continue return plan|View recorded return)$/u }),
   ).toHaveCount(0);
-  await expect(page.getByTestId("ward-out-of-area-subject")).toHaveCount(0);
+  // No return plan is open on either layout.
+  await expect(page.locator("#ward-out-of-area-plan-title")).toHaveCount(0);
+  await expect(page.getByTestId("ward-out-of-area-subject-facts")).toHaveCount(0);
 }
 
 /**

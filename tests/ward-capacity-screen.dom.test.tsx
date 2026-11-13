@@ -17,6 +17,7 @@ import {
   networkWardRows,
 } from "@/components/ward-management/capacity/capacity-derivations";
 import { capacityConfirmer } from "@/components/ward-management/capacity/capacity-confirmer";
+import { forecastTotalsByKind } from "@/components/ward-management/forecast/forecast-by-kind";
 import { shortNeed } from "@/components/ward-management/capacity/capacity-mismatch-band";
 import { gapWords } from "@/components/ward-management/capacity/capacity-range-line";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -744,6 +745,16 @@ describe("tomorrow's beds forecast", () => {
       seed.movements,
       NOW_ANCHOR,
       seed.plannedAdmissions,
+      [],
+      // Capacity's Tomorrow adds each bed type's shortfall (D-191 item 6, `capacity-model.ts`).
+      forecastTotalsByKind(
+        seed.units,
+        seed.bedReleases,
+        seed.admissions,
+        seed.movements,
+        NOW_ANCHOR,
+        seed.plannedAdmissions,
+      ),
     );
     const [tomorrow, twoDays] = forecast.horizons;
     expect(tomorrow, "the forecast has no 24 hour estimate").toBeDefined();

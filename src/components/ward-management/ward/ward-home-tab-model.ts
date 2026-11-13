@@ -115,13 +115,19 @@ export const wardFlowFoot = {
 };
 
 /**
- * The discharges the "Discharges today" summary counts: unblocked releases past their date or due
- * today, never tomorrow. Its total and its confirmed count both come from this one list (Codex
+ * The discharges the "Discharges today" summary counts: open, unblocked releases whose expected date
+ * is today (the board's day, `dayOf(now)`), never a past date, tomorrow or later. A past date is not
+ * a discharge today: it stays under "Past date" in Ward flow and in the needs-a-look figures (F-151,
+ * Audit G FS-1: a ward with none due today read "2 discharges today"). Held up is counted apart, due
+ * by tomorrow (`isHeldUpDueByTomorrow`, D-191 item 5), and the day matches the "Beds freeing today"
+ * rule (`isFreeingToday`). Its total and its confirmed count both come from this one list (Codex
  * review on #1383), so a confirmed discharge later in the week cannot hide one still to confirm.
  */
 export function wardDischargesDueToday(releases: readonly BedRelease[], now: Instant): BedRelease[] {
-  return releases.filter((release) => {
-    const group = wardFlowReleaseGroup(release, now);
-    return group === "past" || (group === "today" && releaseBand(release, now) !== "tomorrow");
-  });
+  return releases.filter(
+    (release) =>
+      release.state !== "discharged" &&
+      dayOf(release.expectedAt) === dayOf(now) &&
+      wardFlowReleaseGroup(release, now) === "today",
+  );
 }

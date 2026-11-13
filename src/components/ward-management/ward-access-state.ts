@@ -262,10 +262,10 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
   // D-72: a ward's seclusion and restraint record goes to the desks that open the Seclusion view and
   // hold the ward, which still see an episode whose patient has left so they can record its end.
   // Other such desks get only their own stays' episodes, and no other ward's room or incidents. A
-  // role without the view, such as an access admin or an executive, gets none of it.
+  // role without the view, such as an access admin or an executive, gets none of it. F-150: scoped units.
   units: (context) => {
     const seesView = ROLE_SCREENS[context.access.role].seclusion !== undefined;
-    return context.state.units.map((unit) =>
+    return context.scoped.units.map((unit) =>
       !unit.restrictivePractice || (seesView && context.unitIn(unit.id))
         ? unit
         : {

@@ -185,13 +185,22 @@ const ROUTES = [
  * table only for people with a CHECKED travel band (`CHECKED_TRAVEL_BANDS`, A16-04), and none is
  * checked yet, so the page shows its "no travel time recorded" note and no table. Until bands are
  * checked the sweep asserts that note on the route, and the instrument cross-check runs on the
- * referral board's live queued table instead, another screen's table this file asserts nothing
- * about. Restore: nothing to edit; once `CHECKED_TRAVEL_BANDS` holds bands, the cross-check and the
- * deliberately-inert exemption below return to the out-of-area table by themselves.
+ * comparisons screen's wards table instead. Restore: nothing to edit; once `CHECKED_TRAVEL_BANDS`
+ * holds bands, the cross-check and the deliberately-inert exemption below return to the out-of-area
+ * table by themselves.
+ *
+ * ⚠️ NOT THE REFERRAL BOARD'S QUEUED TABLE, MEASURED 13 Nov 2026. Its wrapper is its own size
+ * container: `@container referral-queue (max-width: 44rem)` (REF-07, `referral-board.module.css`)
+ * hides Needs and Fit and narrows Asking for to 7rem. Starving that wrapper to 1px fires the query,
+ * so the squeeze measures a five-column table (Tier 64 + Since referral 128 + Asking for 112 =
+ * 304px) while sizing the table at 1440px, where the wrapper is 1134px, measures the seven-column
+ * one (384px). The two methods then measure different tables by design, which says nothing about
+ * the probe. The comparisons tables have no container query; both methods read 577px on the wards
+ * table in the same run.
  */
 const TRAVEL_BANDS_CHECKED = CHECKED_TRAVEL_BANDS.length > 0;
-const CROSS_CHECK_ROUTE = TRAVEL_BANDS_CHECKED ? OUT_OF_AREA_ROUTE : "/ward-flow/referrals";
-const CROSS_CHECK_TESTID = TRAVEL_BANDS_CHECKED ? OUT_OF_AREA_TESTID : "ward-referral-board-queued-table";
+const CROSS_CHECK_ROUTE = TRAVEL_BANDS_CHECKED ? OUT_OF_AREA_ROUTE : OWNED;
+const CROSS_CHECK_TESTID = TRAVEL_BANDS_CHECKED ? OUT_OF_AREA_TESTID : "ward-statistics-compare-wards";
 
 /** A width no ward table's content could coincidentally produce, so a match cannot be luck. */
 const SENTINEL_PX = 1234;

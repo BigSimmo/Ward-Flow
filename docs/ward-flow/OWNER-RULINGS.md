@@ -363,7 +363,7 @@ safe global key across 30 files.
 | `D-195` | `decisions.md`:2338 | D-195. Merge each pull request when its checks pass (13 November 2026) |
 | `D-196` | `decisions.md`:2349 | D-196. Threads decide on their own to keep work moving (13 November 2026) |
 | `D-197` | `decisions.md`:2355 | D-197. System-fixes calls taken under D-196 (13 November 2026) |
-| `D-199` | `decisions.md`:2378 | D-199. ED and Ward phone limits raised past the allowance (13 November 2026) |
+| `D-199` | `decisions.md`:2380 | D-199. ED and Ward phone limits raised past the allowance (13 November 2026) |
 | `D9-1` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | `D9-2` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
 | `D9-3` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:126 | D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION) |
@@ -866,7 +866,7 @@ safe global key across 30 files.
 - `D-195` — line 2338, heading: "D-195. Merge each pull request when its checks pass (13 November 2026)"
 - `D-196` — line 2349, heading: "D-196. Threads decide on their own to keep work moving (13 November 2026)"
 - `D-197` — line 2355, heading: "D-197. System-fixes calls taken under D-196 (13 November 2026)"
-- `D-199` — line 2378, heading: "D-199. ED and Ward phone limits raised past the allowance (13 November 2026)"
+- `D-199` — line 2380, heading: "D-199. ED and Ward phone limits raised past the allowance (13 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 

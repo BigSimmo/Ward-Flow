@@ -2373,6 +2373,8 @@ is inferred.
   15. **Code seams:** the new shared date formatter (`wf/format`) and the offline boundary for the health check are entered in their registers as recorded.
   16. **Month words:** dates keep the Australian "Sept" from the shared formatter.
   17. **Comparison tables:** a "Dates met" cell whose two counts are both withheld reads "not shown", not "an unstated number of an unstated number met"; one withheld count keeps the F-55 sentence.
+  18. **Tomorrow's short** adds each bed kind's shortfall too, the same rule as today's (D-191 item 6), so the headline equals the sum of the kinds shown beside it and never nets off a spare youth bed (Audit G FM-8). This applies on Capacity (the network forecast and its scenarios). The Ward page's own tomorrow line keeps the plain sum for now, because it shows one ward, and the by-kind code would push it past its phone size limit; it follows after the demo.
+  19. **Ward page "Discharges today"** counts only open releases dated today; a past-date release stays under "Past date" (F-151, Audit G FS-1).
 - **Boundary:** clinical values, legal calls, Josh's sign-off gates, anything irreversible or outward-facing, and project-rule exceptions still go to Josh.
 
 ## D-199. ED and Ward phone limits raised past the allowance (13 November 2026)
@@ -2380,3 +2382,4 @@ is inferred.
 - **Date:** 13 November 2026, 11:37 PM AWST (15:37 UTC). D-198 is claimed by open PR #1658. **Decided by:** Josh, choosing "Yes, raise ED and Ward by ~7 KB" on a decision card in the Fixes thread.
 - **Decision:** PR C (#1660) raises the ED page's phone script limit from 538.5 to 545.5 KB (+7.0) and the Ward page's from 618.2 to 625.4 KB (+7.2), past the 5 KB a pull request may add without asking (D-82, D-111).
 - **Why:** both pages' own code is the same size as main; the growth is the shared script every page loads (real fix and time-audit code), after a trim that took 6 to 20 KB off every page. The next lever, swapping `tailwind-merge`, is too large a change before the demo. Detail: `docs/script-budget-history/2026-11-13-pr-c-system-fixes.md`.
+- **Follow-up (14 November 2026, 12:46 AM AWST, 16:46 UTC):** Josh chose "Yes, raise Ward, ED, Referrals" on a second card in the Fixes thread, after the CI fixes added about 0.3 KB to the shared script (the Ward desk's bed seats, F-150). Final limits: ED 545.8 (+7.3), Ward 625.6 (+7.4), Referrals 595.3 (+5.4, past the 5 KB allowance).

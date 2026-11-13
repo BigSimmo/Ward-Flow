@@ -31,7 +31,11 @@ describe("withLoadRetry after the connection returns (A4-07)", () => {
     await act(async () => {
       window.dispatchEvent(new Event("online"));
     });
-    expect(await screen.findByText("Tools loaded")).toBeInTheDocument();
+    // A loaded hosted runner took over the 1 s default (PR C CI, 13 Nov 2026); the wait is longer, the claim is the same.
+    expect(await screen.findByText("Tools loaded", {}, { timeout: 5000 })).toBeInTheDocument();
+    // No Try again is left to press: the browser specs wait for the panel, not a press (PR C CI).
+    expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
+    expect(screen.queryByRole("alert")).toBeNull();
     expect(load).toHaveBeenCalledTimes(2);
   });
 

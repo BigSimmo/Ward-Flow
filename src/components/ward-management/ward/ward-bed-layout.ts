@@ -111,6 +111,16 @@ export type SeatedStay = {
   bedNumber?: number;
 };
 
+/** When a stay took its bed in the replay: its pull, else its arrival. */
+export function seatStart(stay: Pick<SeatedStay, "pulledAt" | "arrivedAt">): number {
+  return stay.pulledAt ?? stay.arrivedAt ?? Number.NEGATIVE_INFINITY;
+}
+
+/** The replay's order: by when the bed was taken, then by id, so the same records give the same beds. */
+export function seatReplayOrder(left: { start: number; id: string }, right: { start: number; id: string }): number {
+  return left.start === right.start ? (left.id < right.id ? -1 : left.id > right.id ? 1 : 0) : left.start - right.start;
+}
+
 /**
  * A FIXED bed number for every stay on one ward (audit A1-1, 13 Oct 2026). Before this, a stay
  * without a recorded bed sat at its tile's position in the state-sorted list, so recording one
@@ -137,7 +147,7 @@ export function seatStays(
   type Span = { id: string; start: number; end: number; kind?: "locked" | "open"; recorded?: number };
   const spans: Span[] = stays.flatMap((stay) => {
     if (stay.state === "waitlisted") return [];
-    const start = stay.pulledAt ?? stay.arrivedAt ?? Number.NEGATIVE_INFINITY;
+    const start = seatStart(stay);
     const end =
       stay.state === "pulled" || stay.state === "occupied" ? Number.POSITIVE_INFINITY : (stay.leftAt ?? start);
     const recorded =
@@ -158,9 +168,7 @@ export function seatStays(
     reservations.some(
       (other) => other !== span && other.recorded === bed && other.start < span.end && span.start < other.end,
     );
-  spans.sort((left, right) =>
-    left.start === right.start ? (left.id < right.id ? -1 : left.id > right.id ? 1 : 0) : left.start - right.start,
-  );
+  spans.sort(seatReplayOrder);
   const seats = new Map<string, number>();
   const taken: (Span | undefined)[] = new Array<Span | undefined>(beds + 1).fill(undefined);
   const mixed = lockedBeds > 0 && lockedBeds < beds;
@@ -201,6 +209,8 @@ export function wardStaySeats(
     lockedBeds: number;
     releasedPullSpans?: readonly (Omit<SeatedStay, "id" | "state" | "arrivedAt"> & { admissionId: string })[];
     closedBeds?: readonly { bedNumber: number; at: number; reopenedAt?: number }[];
+    /** F-150: stays this desk is not sent, as seat history on its copy (`Unit.seatHistoryStays`). */
+    seatHistoryStays?: readonly SeatedStay[];
   },
   admissions: readonly (SeatedStay & { unitId: string })[],
 ): Map<string, number> {
@@ -213,7 +223,11 @@ export function wardStaySeats(
   const mixed = unit.lockedBeds > 0 && unit.lockedBeds < unit.beds;
   return seatStays(
     unit.beds,
-    [...admissions.filter((admission) => admission.unitId === unit.id), ...releasedSpans],
+    [
+      ...admissions.filter((admission) => admission.unitId === unit.id),
+      ...(unit.seatHistoryStays ?? []),
+      ...releasedSpans,
+    ],
     mixed ? unit.lockedBeds : 0,
     (unit.closedBeds ?? []).map((mark) => ({
       bedNumber: mark.bedNumber,

@@ -104,7 +104,7 @@ export const LEGAL_STATUSES: readonly LegalStatus[] = [
 ];
 
 /** Read out when a desk other than the accepting ward or the coordinator opens Pull the bed. */
-export const PULL_DESK_REFUSAL = "Only the ward that accepted or the coordinator can pull this bed";
+export const PULL_DESK_REFUSAL = "Only the ward that accepted or the bed coordinator can pull this bed";
 
 /**
  * Who pulls an accepted referral's bed, and as which desk (D-191 build answers, settling D-188):

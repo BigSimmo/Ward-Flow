@@ -485,11 +485,11 @@ export async function wardFigure(page: Page, figure: "occupied" | "ready"): Prom
 }
 
 /**
- * Ready beds for one ward on the coordinator's capacity board. Since the Capacity redesign (31 Oct
- * 2026) every ward is a card on the bed map, on a computer and in the phone's Wards view alike; a
- * card reads "<ward> <N> ready", with zero spelt "None", and carries the ward's id.
+ * One ward's card on the coordinator's capacity board, as text. Since the Capacity redesign (31 Oct
+ * 2026) every ward is a card on the bed map, on a computer and in the phone's Wards view alike, and
+ * the card carries the ward's id.
  */
-export async function capacityReady(page: Page, unitId: string, unitName: string): Promise<number> {
+async function capacityCardText(page: Page, unitId: string, unitName: string): Promise<string> {
   if (isPhoneLayout(page)) {
     const wards = page.getByRole("radio", { name: /^Wards/u });
     if ((await wards.getAttribute("aria-checked")) !== "true") await wards.click();
@@ -512,8 +512,54 @@ export async function capacityReady(page: Page, unitId: string, unitName: string
   // (Bentley Health Service) Adult Secure"), so the text does not start with the plain ward name.
   const card = map.locator(`button[aria-haspopup="dialog"][data-unit-id="${unitId}"]`).first();
   await expect(card, `the bed map must draw ${unitName}`).toBeVisible();
-  const text = (await card.textContent()) ?? "";
+  return (await card.textContent()) ?? "";
+}
+
+/** Ready beds for one ward on the capacity board: a card reads "<ward> <N> ready", zero spelt "None". */
+export async function capacityReady(page: Page, unitId: string, unitName: string): Promise<number> {
+  const text = await capacityCardText(page, unitId, unitName);
   const match = /(\d+|None) ready/u.exec(text);
   expect(match, `the ${unitName} card must state its ready count: "${text}"`).not.toBeNull();
   return match![1] === "None" ? 0 : Number(match![1]);
+}
+
+/**
+ * Beds one ward is still making ready, from its capacity card's note ("<N> being made ready", its
+ * spaces non-breaking), shown only when there is one, so no note reads as 0. D-179 item 8: these
+ * beds are not counted in Ready.
+ */
+export async function capacityBeingMadeReady(page: Page, unitId: string, unitName: string): Promise<number> {
+  const match = /(\d+)\s+being\s+made\s+ready/u.exec(await capacityCardText(page, unitId, unitName));
+  return match ? Number(match[1]) : 0;
+}
+
+/**
+ * At a ward desk, opens the panel of the one bed still being made ready, where its Ready button
+ * offers it again (A4-24); only then does it count as ready (D-179 item 8). Desktop: the bed's tile
+ * in Ward home's Every bed board. Phone: its row in Ward home's round list opens the bed's round
+ * card, whose Update this bed opens the same panel. Returns the open panel.
+ */
+export async function openBedBeingMadeReady(page: Page, unitName: string): Promise<Locator> {
+  await openWardHome(page);
+  const wardScreen = page.getByTestId("ward-unit-screen");
+  // The bed's state word, capitalised, as only a bed's tile or row says it (the hero's figure says
+  // "being made ready" in lower case).
+  const beingMadeReady = /Being made ready/u;
+  if (isPhoneLayout(page)) {
+    const showMore = wardScreen.getByRole("button", { name: /^Show \d+ more beds?$/u });
+    if (await showMore.isVisible()) await showMore.click();
+    await wardScreen.getByTestId("ward-phone-round-list").getByRole("button", { name: beingMadeReady }).click();
+    await wardScreen
+      .getByTestId("ward-walk-round")
+      .getByRole("button", { name: "Update this bed", exact: true })
+      .click();
+  } else {
+    await wardScreen
+      .getByRole("list", { name: `Beds at ${unitName}`, exact: true })
+      .getByRole("button", { name: beingMadeReady })
+      .click();
+  }
+  const bed = page.getByTestId("bed-telemetry-drawer");
+  await expect(bed).toBeVisible();
+  return bed;
 }

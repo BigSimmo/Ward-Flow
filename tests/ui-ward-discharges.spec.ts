@@ -5,7 +5,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 
 import { bedReleases } from "@/components/ward-management/ward-movements";
 
-import { capacityReady } from "./helpers/ward-release-gate";
+import { capacityBeingMadeReady, capacityReady, openBedBeingMadeReady } from "./helpers/ward-release-gate";
 
 /**
  * Task 8 (Phase 5). One journey: a ward flags a bed coming free, confirms it, blocks it with a
@@ -245,6 +245,9 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
     await goToCapacityBoard(page);
     expect(await boardReleaseStatus(page, release.admissionId)).toBe("Expected");
     const readyBefore = await boardReady(page);
+    const makingReadyBefore = await capacityBeingMadeReady(page, UNIT_ID, UNIT_NAME);
+    // So the one bed the ward finds being made ready below is the bed this person leaves.
+    expect(makingReadyBefore, `fixture assumption: no bed at ${UNIT_ID} is being made ready yet`).toBe(0);
 
     // --- Step 1: the ward confirms the release from the Discharges list. ---
     await goBackToWard(page);
@@ -308,10 +311,26 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
     // A completed release is terminal and drops off the ward's pending list (spec D10).
     await expect(releaseRow).toHaveCount(0);
     await goToCapacityBoard(page);
-    // Ready rises by exactly one, and the completed release no longer counts as confirmed: the bed is
-    // free and already counted in Ready, so counting it twice would inflate the board.
-    await expect.poll(() => boardReady(page)).toBe(readyBefore + 1);
+    // D-179 item 8: the vacated bed is being made ready (A4-24), which is not Ready on any screen, so
+    // Ready holds and the ward's card notes one more bed being made ready. The completed release no
+    // longer counts as confirmed.
+    await expect.poll(() => capacityBeingMadeReady(page, UNIT_ID, UNIT_NAME)).toBe(makingReadyBefore + 1);
+    expect(await boardReady(page)).toBe(readyBefore);
     await expect.poll(() => boardReleaseStatus(page, release.admissionId)).toBe("Left ward");
+
+    // --- Step 3: the ward marks the bed Ready from the bed's own panel, which offers it again. ---
+    await goBackToWard(page);
+    const bedPanel = await openBedBeingMadeReady(page, UNIT_NAME);
+    const markReady = bedPanel.getByRole("button", { name: "Ready", exact: true });
+    await markReady.click();
+    await expect(page.getByText("Bed marked Ready. It is offered again.").first()).toBeVisible();
+    await expect(markReady).toHaveCount(0);
+    await bedPanel.getByRole("button", { name: "Close bed drawer" }).click();
+    await expect(bedPanel).toHaveCount(0);
+    await goToCapacityBoard(page);
+    // Only now does Ready rise, by exactly one, with no bed left being made ready.
+    await expect.poll(() => boardReady(page)).toBe(readyBefore + 1);
+    expect(await capacityBeingMadeReady(page, UNIT_ID, UNIT_NAME)).toBe(makingReadyBefore);
   });
 
   /**

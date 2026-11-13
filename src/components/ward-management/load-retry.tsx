@@ -121,4 +121,4 @@ export function withLoadRetry<C extends ComponentType<never>>(
 
 /** The stand-in's advice after the first failure, and after a second one while online (A4-07). */
 export const CONNECTION_LINE = "Check the connection, then try again.";
-export const RELOAD_LINE = "Reload the page. Ward Flow may have been updated.";
+export const RELOAD_LINE = "Ward Flow may have been updated. Reload the page.";
