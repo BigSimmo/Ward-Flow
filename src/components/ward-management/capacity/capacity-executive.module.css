@@ -116,8 +116,10 @@
   color: var(--wf-ink-1);
 }
 
+/* A figure sits under its head: `.table.table td` above sets every cell left, so the figure cell's
+   selector must out-rank it (check B3: the numbers sat about 50 px left of their heads). */
 .table.table th[class*="num"],
-.num.num {
+.table.table .num {
   text-align: right;
   font-family: var(--wf-mono);
   font-variant-numeric: tabular-nums;
