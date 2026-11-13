@@ -20,6 +20,11 @@ export { Icon } from "./icon";
 export { SrOnly, Kbd, Count, CountBubble, CountCircle, Spinner, IconTile } from "./primitives";
 export { FormalName } from "./formal-name";
 export { Button, DisabledReason, buttonClass, type ButtonSize } from "./button";
+// Shared design parts (Josh, 13 Nov 2026): items 4, 6 and 7.
+export { WhoDoesThis } from "./who-does-this";
+export { RowUndo, type RowUndoProps } from "./row-undo";
+export { SyntheticMark, SYNTHETIC_MARK_FULL } from "./synthetic-mark";
+export { FullScreenFrame, FullScreenMarkSlot, type FullScreenFrameProps } from "./full-screen-frame";
 export { Badge } from "./badge";
 export { Card, CardHead, CardBody, CardFoot } from "./card";
 export { Hero, HeroStat, type HeroNextStep } from "./hero";
