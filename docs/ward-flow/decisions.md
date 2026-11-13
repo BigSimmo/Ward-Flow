@@ -196,6 +196,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-171](#d-171-hosted-database-brought-to-schema-18-migrations-017-and-018-13-november-2026)                                                            | Hosted database brought to schema 18 (migrations 017 and 018)                          | Active                                           |
 | [D-172](#d-172-the-community-desks-ed-heads-up-stays-as-built-in-d-154-13-november-2026)                                                                | The community desk's ED heads-up stays as built in D-154                               | Active                                           |
 | [D-173](#d-173-turning-off-supabase-open-sign-up-is-deferred-13-november-2026)                                                                          | Turning off Supabase open sign-up is deferred                                          | Active                                           |
+| [D-192](#d-192-shared-design-parts-approved-for-building-wave-3-pr-e-13-november-2026)                                                                  | Shared design parts approved for building (wave 3, PR E)                               | Active                                           |
 
 ---
 
@@ -2124,3 +2125,17 @@ is inferred.
 - **Decision:** Josh's own action from D-145 item 5, turning off Supabase open sign-up, is deferred. The site stays on synthetic data, so nothing changes now. It must still be done before any real data, and it stays on the real-data gate.
 - **Why:** the shared site holds synthetic data only, so an outside Supabase account that gets past the site lock reaches no real patient information.
 - **Boundary:** synthetic data only. No code change and no provider change. Changes no clinical rule or signed value, and approves no release.
+
+## D-192. Shared design parts approved for building, wave 3, PR E (13 November 2026)
+
+- **Date:** 13 November 2026, 8:36 PM AWST (12:36 UTC). **Decided by:** Josh, choosing "Approve all, recommended words" on the decision card in the "Redesign shared design parts" thread, after the review page https://claude.ai/artifact/6ocLc57jWNs6BKRUJKSuBL (17 items, before and after on the real app). Numbered D-192 because the master plan thread reserved it for PR E; D-174 to D-191 belong to other open PRs.
+- **Decision:** build the 17 shared design parts as one PR (PR E) and record these rulings:
+  1. Health-service brand colours leave every screen. A service shows as its short name in a neutral tag, or nothing where the name is already written beside it (F-78).
+  2. A count shows its time window as a quiet word ("Discharges · any date") only when it differs from what the page title already says or when one strip mixes windows. Window words: now, today, by tomorrow, next 4h, next 24h, last 24h, this week, since 07:00, any date. Which window each count uses stays with F-105.
+  3. Undo messages carry one clock time ("Undo until 10:47"), sit bottom-right on desktop and above the pinned bar on phone, and Undo stays on the row for the whole window. The window stays at today's stated 5 minutes.
+  4. Words: Tools "Suggested now" becomes "Needs you"; ED Who to call "Suggested next step" becomes "Next escalation step"; Home and Capacity "Forecast" and "likely" become "From ward dates" (the forecast line drops "likely").
+  5. A desk never sees a button it can never use; one quiet line names who does it. A button unavailable for now keeps its reason drawn under it, on phone too.
+  6. Every enlarged or full-screen view carries a small neutral "Synthetic data" tag.
+  7. The Demo panel puts the clock, a Pause and Reset demo first; phone Tools gains a Help row; viewing as another desk shows a slim bar with "Back to coordinator".
+- **Why:** these fix approved audit findings (F-03, F-39, F-49, F-54, F-57, F-60, F-61, F-62, F-78, F-94, F-103, F-109 and design critique v2 items 19 to 23) once, in the kit, so every page inherits them.
+- **Boundary:** synthetic data only. No clinical value, clinical rule or safety wording changes. Undo logic, desk permissions, focus paths, count definitions and the header progress label are built in PR C; PR E adds the shared look and kit parts. Approves no release.
