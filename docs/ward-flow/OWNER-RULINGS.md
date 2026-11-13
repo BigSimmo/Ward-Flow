@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/his
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**730 rulings/items extracted, across 43 of 44 files.**
+**731 rulings/items extracted, across 43 of 44 files.**
 **0 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 **1 file(s) recorded as holding no ruling of their own**, each with its reason. See below.
 
@@ -32,7 +32,7 @@ line, in the order discovered — confirm which instance you mean before citing 
 
 ---
 
-## ID index — 480 distinct IDs
+## ID index — 481 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -339,6 +339,7 @@ safe global key across 30 files.
 | `D-166` | `decisions.md`:2048 | D-166. CI runs faster without dropping a check (12 November 2026) |
 | `D-167` | `decisions.md`:2057 | D-167. The Triage page has a left sign-off nav and joined section steps (13 November 2026) |
 | `D-168` | `decisions.md`:2068 | D-168. The demo script follows the 13 November pre-demo audit (13 November 2026) |
+| `D-170` | `decisions.md`:2078 | D-170. Clinical wording rulings from the 13 November audit (13 November 2026) |
 | `D9-1` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | `D9-2` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
 | `D9-3` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:126 | D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION) |
@@ -647,7 +648,7 @@ safe global key across 30 files.
 
 **Title:** Ward Flow — decision log
 
-168 item(s):
+169 item(s):
 
 - `D-1` — line 197, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 207, heading: "D-2. Railway is disconnected"
@@ -817,6 +818,7 @@ safe global key across 30 files.
 - `D-166` — line 2048, heading: "D-166. CI runs faster without dropping a check (12 November 2026)"
 - `D-167` — line 2057, heading: "D-167. The Triage page has a left sign-off nav and joined section steps (13 November 2026)"
 - `D-168` — line 2068, heading: "D-168. The demo script follows the 13 November pre-demo audit (13 November 2026)"
+- `D-170` — line 2078, heading: "D-170. Clinical wording rulings from the 13 November audit (13 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 

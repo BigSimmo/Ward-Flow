@@ -2074,3 +2074,16 @@ is inferred.
   3. **Form numbers** (Form 6A, Form 4A) stay out of the Say lines until Josh has checked them clinically.
   4. **Setup and rules:** the demo runs on the public demo; Reset demo is pressed as the audience sits down because Keira leaves "Later today" about an hour after it; the script no longer says Reset returns the clock to 10:42; and Reload page, not Try again, recovers a failed page load.
 - **Boundary:** documentation only. Changes no app behaviour, clinical rule or permission. Approves no release.
+
+## D-170. Clinical wording rulings from the 13 November audit (13 November 2026)
+
+- **Date:** 13 November 2026, 1:04 PM AWST (05:04 UTC). **Decided by:** Josh, "Yes to all recommendations. Lock them in and update coordinator" in the Ward Flow project thread "Audit clinical wording (prompt 3)", answering the seven numbered questions of the clinical wording audit (audit prompt 3). Numbered D-170 because D-169 is claimed by PR #1649 (demo script wording).
+- **Decision:**
+  1. **Next form:** a patient page no longer names Form 6A as the next form. It says "Next form to record", with no form number. A form is shown as ended at arrival only when a person records that it ended; "ended at the examination" is unchanged. This replaces Josh's 13 October 2026 default of a single "Record Form 6A" prompt.
+  2. **Demo story:** the script keeps the ambulance booking and the Form 4A check for Keira's move inside Royal Perth, and gains one presenter sentence saying the booking is shown to demonstrate the step. After the demo the story moves to a patient who crosses sites.
+  3. **Examination outcome:** "revoked" comes out of the examination outcome wording in all seven places. Josh chooses the replacement words; until he does, the wording stays.
+  4. **Sample legal status:** Josh names the status for sample people who are still in an ED on a Form 3B or Form 4A and are shown as "Involuntary inpatient". Only sample data changes.
+  5. **Transport check:** the check says "Transport or transfer order not uploaded", with no form number.
+  6. **Triage windows:** Josh checks the four triage see-by windows and the Frequent presenter number against the triage form, then signs or changes them before Triage is shown to clinicians. No value is proposed or changed here.
+  7. **Ward profile panel:** the invented "Admits" lines are removed until a service supplies its own words, the "Forms held" row is dropped, and Josh names the Act the forensic chip carries.
+- **Boundary:** records the rulings only. This PR changes no app wording, script or sample data; the fixes are built later under the audit plan. Items 3, 4, 6 and the last part of 7 wait on Josh's own words or values. Sets no clinical value. Approves no release.
