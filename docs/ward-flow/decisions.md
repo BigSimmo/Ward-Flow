@@ -211,6 +211,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-190](#d-190-the-six-pr-fix-plan-13-november-2026)                                                                                                    | The six-PR fix plan                                                                    | Active                                           |
 | [D-191](#d-191-home-ward-and-capacity-mock-ups-approved-13-november-2026)                                                                               | Home, Ward and Capacity mock-ups approved                                              | Active                                           |
 | [D-192](#d-192-shared-design-parts-approved-for-building-wave-3-pr-e-13-november-2026)                                                                  | Shared design parts approved for building (wave 3, PR E)                               | Active                                           |
+| [D-198](#d-198-one-owner-per-screen-for-forecast-words-and-reserved-bed-retired-13-november-2026)                                                       | One owner per screen for forecast words; "reserved bed" retired                        | Active                                           |
 
 ---
 
@@ -2322,3 +2323,15 @@ is inferred.
   7. The Demo panel puts the clock, a Pause and Reset demo first; phone Tools gains a Help row; viewing as another desk shows a slim bar with "Back to coordinator".
 - **Why:** these fix approved audit findings (F-03, F-39, F-49, F-54, F-57, F-60, F-61, F-62, F-78, F-94, F-103, F-109 and design critique v2 items 19 to 23) once, in the kit, so every page inherits them.
 - **Boundary:** synthetic data only. No clinical value, clinical rule or safety wording changes. Undo logic, desk permissions, focus paths, count definitions and the header progress label are built in PR C; PR E adds the shared look and kit parts. Approves no release.
+
+D-193, D-194, D-195, D-196 and D-197 are claimed by open PR #1660 (PR C), which records them.
+
+## D-198. One owner per screen for forecast words, and "reserved bed" retired (13 November 2026)
+
+- **Date:** 13 November 2026, about 10:00 PM AWST (14:00 UTC). **Decided by:** the "Plan fixes for every audit finding" thread under Josh's standing autonomy direction (D-196), not by Josh. It settles review item E-1 on PR #1658 and the overlap between PR E and PR F.
+- **Decision:**
+  1. One owner per screen for the D-192 ruling 4 words "Forecast" and "likely". PR F changes every page-level line (Home planned list, the three Capacity files, the Ward phone row). PR E changes only the shared kit words and the Home beds-gap line. The TV line goes in PR C if it fits, otherwise after the demo.
+  2. The Home ED-wait row reads "18 reach 24 hours in ED by tomorrow unless placed", and "Forecast · 10 at Armadale ED · See who" becomes "From ward dates · 10 at Armadale ED · See who". PR F builds both.
+  3. "reserved bed" joins the word list's banned words (say "Pulled", D-81). The one ED medical-deterioration safety line that uses it stays word for word, as a listed exception, and goes on the clinical sign-off sitting list.
+- **Why:** two PRs editing the same lines would clash and could leave a page half-changed; "reserved bed" means the same as Pulled and confuses the bed states.
+- **Boundary:** wording only. No clinical value, clinical rule or safety wording changes; the safety line is untouched until the clinical sitting rules on it.

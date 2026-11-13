@@ -14,20 +14,20 @@ word in the in-app Help glossary is on this list.
 
 ## Beds
 
-| Say                  | Means                                                                                                        | Do not say                                                                                 |
-| -------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| **Pulled**           | A bed kept for one named, accepted incoming patient (D-81).                                                  | bed held, held bed or hold for an incoming patient; "Inbound" as a bed status              |
-| **Pull time limit**  | How long a pulled bed is kept. When it passes, the bed shows Pull expired and a person moves or releases it. | hold time limit; reserved time                                                             |
-| Pull the bed         | The button that pulls a bed.                                                                                 | hold the bed                                                                               |
-| **Pull expired**     | A pulled bed whose pull time limit has passed. A person decides what happens next.                           | bed hold expired                                                                           |
-| Pulled bed released  | A pulled bed given back to the ward.                                                                         | bed hold released; held bed released after transport (say "Pulled bed released after ...") |
-| the pull on the bed  | The pull itself, in a sentence.                                                                              | hold on the bed                                                                            |
-| Needs the bed pulled | A step that waits for a pull.                                                                                | needs the bed held                                                                         |
-| **Held bed**         | A bed kept for its own patient on leave or away (at an ED, absent without leave).                            | pulled, for a leave bed                                                                    |
-| **Ready**            | A bed the ward has confirmed is clean and staffed for an admission.                                          | ready vacant                                                                               |
-| **Confirmed beds**   | The bed figures a ward last confirmed, with the time it did so.                                              |                                                                                            |
-| Closed               | A bed out of service that cannot be given to anyone.                                                         |                                                                                            |
-| **Held up**          | A discharge or move that is delayed. Not a bed state.                                                        |                                                                                            |
+| Say                  | Means                                                                                                        | Do not say                                                                                  |
+| -------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| **Pulled**           | A bed kept for one named, accepted incoming patient (D-81).                                                  | bed held, held bed or hold for an incoming patient; reserved bed; "Inbound" as a bed status |
+| **Pull time limit**  | How long a pulled bed is kept. When it passes, the bed shows Pull expired and a person moves or releases it. | hold time limit; reserved time                                                              |
+| Pull the bed         | The button that pulls a bed.                                                                                 | hold the bed                                                                                |
+| **Pull expired**     | A pulled bed whose pull time limit has passed. A person decides what happens next.                           | bed hold expired                                                                            |
+| Pulled bed released  | A pulled bed given back to the ward.                                                                         | bed hold released; held bed released after transport (say "Pulled bed released after ...")  |
+| the pull on the bed  | The pull itself, in a sentence.                                                                              | hold on the bed                                                                             |
+| Needs the bed pulled | A step that waits for a pull.                                                                                | needs the bed held                                                                          |
+| **Held bed**         | A bed kept for its own patient on leave or away (at an ED, absent without leave).                            | pulled, for a leave bed                                                                     |
+| **Ready**            | A bed the ward has confirmed is clean and staffed for an admission.                                          | ready vacant                                                                                |
+| **Confirmed beds**   | The bed figures a ward last confirmed, with the time it did so.                                              |                                                                                             |
+| Closed               | A bed out of service that cannot be given to anyone.                                                         |                                                                                             |
+| **Held up**          | A discharge or move that is delayed. Not a bed state.                                                        |                                                                                             |
 
 ## A patient's movement
 
