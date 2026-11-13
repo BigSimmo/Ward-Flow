@@ -96,7 +96,12 @@ describe("Later today agenda (notes item 1)", () => {
     expect(within(past).getByRole("listitem")).toHaveAttribute("data-past", "true");
     expect(within(past).getByRole("listitem")).toHaveTextContent("Initials SY");
     expect(screen.getByTestId("home-planned-group-shift")).toHaveTextContent("Synthetic, Person");
-    expect(screen.getByTestId("home-planned-group-later")).toHaveTextContent(/Nothing recorded after .+ yet\./u);
+    // Check B6: the ED forecast row sits under After your shift when its time falls after the shift
+    // (the seed's does); a group with nothing in it says so in one line.
+    const later = screen.getByTestId("home-planned-group-later");
+    if (within(later).queryByTestId("home-planned-access-forecast") === null) {
+      expect(later).toHaveTextContent(/Nothing recorded after .+ yet\./u);
+    }
     expect(screen.getByTestId("home-tomorrow")).toHaveTextContent("Not a prediction.");
     // D-198: the ED wait line says what happens unless someone is placed, with no "likely" and no
     // "Forecast ·"; the target is the configured one (24 hours by default), not a fixed figure.

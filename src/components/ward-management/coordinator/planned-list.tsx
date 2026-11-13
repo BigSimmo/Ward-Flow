@@ -51,8 +51,15 @@ export function PlannedList({
   const untilText = formatInstantWithDay(until, now);
   const forecast = useAccessForecast(now);
   const endOfDay = (dayOf(now) + 1) * MINUTES_PER_DAY;
-  // The ED target forecast row sits in the group its time belongs to: Tomorrow, or the rest of today.
+  // The ED target forecast row sits in the group its time belongs to, by the same boundaries as the
+  // rows (planned-model.ts: `later` is after the shift's end): the rest of your shift, after your
+  // shift (to midnight), or Tomorrow (check B6: a 23:46 forecast sat first under "until 15:00").
   const forecastTomorrow = forecast !== undefined && forecast.at >= endOfDay;
+  const forecastRow =
+    forecast && !forecastTomorrow
+      ? { at: forecast.at, node: <AccessForecastRow forecast={forecast} now={now} /> }
+      : undefined;
+  const forecastLater = forecast !== undefined && forecast.at > until;
   const past = rows.filter((row) => row.past);
   const shift = rows.filter((row) => !row.past && !row.later);
   const later = rows.filter((row) => !row.past && row.later);
@@ -74,7 +81,7 @@ export function PlannedList({
         aside={`until ${untilText}`}
         rows={shift}
         now={now}
-        lead={forecast && !forecastTomorrow ? <AccessForecastRow forecast={forecast} now={now} /> : null}
+        timed={forecastLater ? undefined : forecastRow}
         empty="Nothing else planned for the rest of this shift."
       />
       <AgendaGroup
@@ -84,6 +91,7 @@ export function PlannedList({
         aside={`${untilText} to midnight`}
         rows={later}
         now={now}
+        timed={forecastLater ? forecastRow : undefined}
         empty={`Nothing recorded after ${untilText} yet.`}
       />
       <TomorrowFoot now={now} forecast={forecastTomorrow ? forecast : undefined} />
@@ -98,7 +106,7 @@ function AgendaGroup({
   aside,
   rows,
   now,
-  lead,
+  timed,
   empty,
 }: {
   id: string;
@@ -107,11 +115,16 @@ function AgendaGroup({
   aside: string;
   rows: readonly PlannedRow[];
   now: Instant;
-  lead?: ReactNode;
+  /** A list item outside the group's rows (the ED forecast), drawn in time order among them. */
+  timed?: { at: Instant; node: ReactNode };
   empty?: string;
 }) {
   const [showAll, setShowAll] = useState(false);
   const shown = showAll ? rows : rows.slice(0, FIRST_ROWS);
+  // The rows are in time order (planned-model.ts), so the timed item goes before the first later row.
+  const timedAt = timed === undefined ? -1 : shown.findIndex((row) => row.at > timed.at);
+  const before = timedAt === -1 ? shown : shown.slice(0, timedAt);
+  const after = timedAt === -1 ? [] : shown.slice(timedAt);
   const headId = `home-planned-${id}`;
   return (
     <section className={styles.group} aria-labelledby={headId} data-testid={`home-planned-group-${id}`}>
@@ -121,14 +134,15 @@ function AgendaGroup({
         <Count n={rows.length} />
         <span className={styles.subAside}>{aside}</span>
       </h3>
-      {lead}
-      {rows.length === 0 ? (
-        lead ? null : (
-          <p className={styles.empty}>{empty}</p>
-        )
+      {rows.length === 0 && !timed ? (
+        <p className={styles.empty}>{empty}</p>
       ) : (
         <ol className={styles.agenda} aria-labelledby={headId}>
-          {shown.map((row) => (
+          {before.map((row) => (
+            <AgendaRow key={row.id} row={row} now={now} />
+          ))}
+          {timed?.node}
+          {after.map((row) => (
             <AgendaRow key={row.id} row={row} now={now} />
           ))}
         </ol>
@@ -205,7 +219,7 @@ function useAccessForecast(now: Instant): AccessForecast | undefined {
 /** The forecast as an agenda row, when its time falls today (otherwise it sits in Tomorrow). */
 function AccessForecastRow({ forecast, now }: { forecast: AccessForecast; now: Instant }) {
   return (
-    <div className={styles.row} data-kind="forecast" data-testid="home-planned-access-forecast">
+    <li className={styles.row} data-kind="forecast" data-testid="home-planned-access-forecast">
       <time className={styles.time}>{formatInstantWithDay(forecast.at, now)}</time>
       <div className={styles.main}>
         <p className={styles.who}>
@@ -221,7 +235,7 @@ function AccessForecastRow({ forecast, now }: { forecast: AccessForecast; now: I
           </Link>
         </p>
       </div>
-    </div>
+    </li>
   );
 }
 
