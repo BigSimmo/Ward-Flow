@@ -158,7 +158,6 @@ export { ListPicker, type ListPickerOption, type ListPickerProps } from "./list-
 // that ignores the chosen service says "Network-wide" (scope from ward-figure-scope.ts, owners from ward-page-owners.ts).
 export { FigureLink, figureLinkName, type FigureOwner } from "./figure-link";
 export { NETWORK_WIDE, ScopeNote } from "./figure-scope";
-// Shared design parts (D-192, 13 Nov 2026): the synthetic-data mark and the full-screen frame that
-// keeps it in view when a table or chart is enlarged.
-export { SyntheticMark } from "./synthetic-mark";
+// Shared design parts (D-192, 13 Nov 2026): the full-screen frame that keeps the synthetic-data mark
+// in view when a table or chart is enlarged. (The loading row imports the mark by its own file.)
 export { FullScreenFrame, FullScreenMarkSlot } from "./full-screen-frame";
