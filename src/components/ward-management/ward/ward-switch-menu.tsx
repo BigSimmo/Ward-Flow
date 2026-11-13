@@ -10,6 +10,7 @@ import { Check, ChevronDown, X } from "lucide-react";
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 
 import { hubEntries } from "@/components/ward-management/hub/hub-derivations";
+import { networkNamedHolds } from "@/components/ward-management/ward-bed-states";
 import { useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
@@ -142,22 +143,36 @@ function WardSwitchPanel({
   const titleId = useId();
   const panel = useRef<HTMLDivElement>(null);
   const network = useWardNetwork();
-  const { units, bedReleases, admissions, leaveBeds, now } = useWardFlowSelect(
+  const { units, bedReleases, admissions, leaveBeds, movements, wardReferralInbox, now } = useWardFlowSelect(
     "units",
     "bedReleases",
     "admissions",
     "leaveBeds",
+    "movements",
+    "wardReferralInbox",
     "now",
   );
   const [showAll, setShowAll] = useState(false);
   const figures = useMemo(
     () =>
       new Map(
-        hubEntries({ units, bedReleases, admissions, leaveBeds, now, sites: network.sites })
+        hubEntries({
+          units,
+          bedReleases,
+          admissions,
+          leaveBeds,
+          // FD-23: a ward desk reads referrals only through each ward's own inbox view.
+          namedHolds: networkNamedHolds(
+            movements,
+            units.flatMap((unit) => wardReferralInbox?.(unit.id) ?? []),
+          ),
+          now,
+          sites: network.sites,
+        })
           .filter((entry) => entry.kind === "ward")
           .map((entry) => [entry.id, entry]),
       ),
-    [units, bedReleases, admissions, leaveBeds, now, network],
+    [units, bedReleases, admissions, leaveBeds, movements, wardReferralInbox, now, network],
   );
 
   // Desktop: the popover opens under the chip, kept on screen.

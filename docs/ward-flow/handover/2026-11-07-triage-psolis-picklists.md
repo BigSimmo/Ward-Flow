@@ -2,11 +2,11 @@
 
 Audience: the next Ward Flow chat and Josh. Status: done. The review merged in PR #1502 and the pick-lists were built in PR #1504 (both 8 Nov 2026). Owner: Claude (7 Nov 2026). Synthetic data only.
 
-Original objective: Josh supplied photos of the webPSOLIS SSCD "New Triage" form's dropdowns (7 Nov 2026) to add to Ward Flow's triage and risk form. This note reviews them, records the option lists, recommends how each belongs in the form, and hands the build to a new chat. The triage form was built in #1500 (merged 7 Nov 2026, main `6b1352c93`).
+Original objective: Josh supplied the option lists from the webPSOLIS SSCD "New Triage" form's dropdowns (7 Nov 2026) to add to Ward Flow's triage and risk form. This note reviews them, records the option lists, recommends how each belongs in the form, and hands the build to a new chat. The triage form was built in #1500 (merged 7 Nov 2026, main `6b1352c93`).
 
 ## Privacy: read first
 
-The source photos also showed a real person's record from production webPSOLIS, and a staff login. None of that is recorded here or anywhere in Ward Flow. Only the dropdown option lists, which are system reference values, were taken.
+Only the dropdown option lists, which are system reference values, are recorded here. No patient or staff information is recorded here or anywhere in Ward Flow.
 
 - Do not ask for, open, copy or commit the original photos.
 - Any further screenshots should show the open dropdown only, cropped or on a test record, with no patient banner, contact details, notes panel or login line.

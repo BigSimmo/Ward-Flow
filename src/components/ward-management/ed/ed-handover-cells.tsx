@@ -229,6 +229,7 @@ export function ChecksCell({
   arrivedAt,
   reviewed,
   revokedNotice,
+  revokedChip,
   earlierExaminations,
   now,
   onOpenRecord,
@@ -242,6 +243,8 @@ export function ChecksCell({
   reviewed: boolean;
   /** The revoked-while-bed-held notice, word for word, when it applies. */
   revokedNotice: string | undefined;
+  /** D-170 item 3: the chip's words for that outcome, "No order made", never "revoked". */
+  revokedChip?: string;
   earlierExaminations: readonly string[];
   now: Instant;
   onOpenRecord: () => void;
@@ -279,7 +282,7 @@ export function ChecksCell({
           ? "success"
           : "neutral";
   const summary = revokedNotice
-    ? "Exam revoked"
+    ? (revokedChip ?? "No order made")
     : open === 0
       ? "Checks done"
       : `${open} ${open === 1 ? "check" : "checks"} open`;

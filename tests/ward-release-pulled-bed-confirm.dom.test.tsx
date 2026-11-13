@@ -71,7 +71,7 @@ function journeySteps(ending: "diverted" | "stopped"): { movementId: string; uni
           type: "STOP_TRANSPORT",
           role: "coordinator",
           movementId,
-          reason: "The examination was revoked",
+          reason: "The examination made no order",
           whereabouts: "At another emergency department",
         },
   ].map((step, index) => ({ ...step, now: NOW + index + 1 }) as unknown as WardFlowEvent);

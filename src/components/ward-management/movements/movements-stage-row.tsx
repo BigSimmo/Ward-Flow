@@ -4,7 +4,7 @@
 // highlight stat, the phone group heading and the tier pill. Split out of movements-screen.tsx to
 // keep that file under the line cap.
 import { PatientPeekLink } from "@/components/ward-management/patients/patient-peek-link";
-import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
+import { currentLegalPosition, FORM_RECORDED_ENDED } from "@/components/ward-management/ward-legal-form-progression";
 import Link from "next/link";
 import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import {
@@ -239,7 +239,10 @@ export function StageRow({
   // Legal line: register title plus the typed expiry only, as typed. Never a computed limit (D5)
   // and never a countdown (D-93). Its colour comes from the user's warning settings, always with
   // its words ("within 1h", "within 3h", "passed").
-  const dueAt = currentLegalDueAt(movement);
+  // 1.1 (K1) and A1: the one current legal position. "Ended" only when a person recorded the end,
+  // never guessed from a typed time that is no longer in force.
+  const legal = currentLegalPosition(movement);
+  const dueAt = legal.dueAt;
   const standing = typedTimeStanding(movement, now, thresholds);
   let legalTagTone: "danger" | "warn" | undefined = undefined;
   let legalText = "";
@@ -248,10 +251,10 @@ export function StageRow({
   // The full form name is the cell's title.
   const legalShort = legalStatusShort(movement);
   const legalFull = legalStatusFull(movement);
-  if (movement.legalForm) {
-    if (dueAt === undefined && movement.legalForm.dueAt !== undefined) {
-      // Ended at the examination or on arrival: its typed expiry is history, not a deadline (S-6).
-      legalText = "Ended";
+  if (legal.form) {
+    if (legal.ended) {
+      // A person recorded the form ended: its typed expiry is history, not a deadline.
+      legalText = FORM_RECORDED_ENDED;
     } else if (dueAt === undefined) {
       legalText = "No expiry recorded";
     } else {

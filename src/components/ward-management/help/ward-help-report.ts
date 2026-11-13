@@ -27,7 +27,7 @@ const CHECKS: readonly (readonly [PatientDetailKind, RegExp])[] = [
   ["record-number", /\b(?:UMRN|MRN|URN)\b\s*(?:no\.?|number|#)?\s*:?\s*[A-Z]{0,2}\d|\b[A-Z]{0,2}\d{6,}\b/iu],
   // Ten or eleven digits, often grouped four, five and one.
   ["medicare", /\b\d{4}[ -]?\d{5}[ -]?\d(?:[ -]?\d)?\b/iu],
-  // Australian mobiles and landlines ("0491 570 156", "+61 8 9224 1234"), and a Perth landline
+  // Australian mobiles and landlines ("0491 570 156", "+61 8 5550 0123"), and a Perth landline
   // without its area code ("9224 1234").
   ["phone", /(?:\+\s?61[ -]?|\b0)[2-478](?:[ -]?\d){8}\b|\b[69]\d{3} \d{4}\b/u],
   ["email", /[^\s@]+@[^\s@]+\.[^\s@]+/u],

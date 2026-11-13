@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { TIER_LONG } from "@/components/ward-management/triage/triage-record";
-import { seeBy } from "@/components/ward-management/triage/triage-see-by";
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import { seeBy, seeByWindowUnsigned } from "@/components/ward-management/triage/triage-see-by";
 
 const today = new Date(2026, 10, 9, 10, 50);
 
@@ -10,6 +11,7 @@ describe("seeBy", () => {
     expect(seeBy("B", "09/11/2026 10:42", today, TIER_LONG.B)).toEqual({
       when: "12:42 today",
       basis: "B, within 2 hours of review at 10:42",
+      unsigned: true,
     });
   });
 
@@ -22,6 +24,7 @@ describe("seeBy", () => {
     expect(seeBy("E", "09/11/2026 10:42", today, TIER_LONG.E)).toEqual({
       when: "Mon 23 Nov 10:42",
       basis: `E, ${TIER_LONG.E.toLowerCase()} of review at 10:42`,
+      unsigned: true,
     });
   });
 
@@ -41,5 +44,13 @@ describe("seeBy", () => {
     expect(seeBy(null, "09/11/2026 10:42", today, "")).toBeNull();
     expect(seeBy("B", "", today, TIER_LONG.B)).toBeNull();
     expect(seeBy("B", "31/02/2026 10:42", today, TIER_LONG.B)).toBeNull();
+  });
+
+  it("marks a window as not signed while its register entry is unsigned (clinical check pack C6)", () => {
+    for (const tier of ["B", "C", "D", "E"] as const) {
+      const entry: { status: string } = CLINICAL_VALUES[`triageUrgency${tier}`];
+      expect(seeByWindowUnsigned(tier)).toBe(entry.status !== "signed");
+    }
+    expect(seeByWindowUnsigned("A")).toBe(false);
   });
 });

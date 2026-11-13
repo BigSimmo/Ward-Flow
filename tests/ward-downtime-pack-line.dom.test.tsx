@@ -158,7 +158,7 @@ describe("WardDowntimePackLine (fix plan item 9)", () => {
     const pack = lastDowntimePack()!;
     for (const ward of pack.wards) {
       const unit = state.units.find((candidate) => candidate.id === ward.unitId)!;
-      expect(ward.counts).toEqual(bedStates(unit, state.admissions, state.bedReleases, state.leaveBeds));
+      expect(ward.counts).toEqual(bedStates(unit, state.admissions, state.bedReleases, state.leaveBeds, []));
     }
   });
 

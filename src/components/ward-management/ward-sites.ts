@@ -21,6 +21,10 @@ export const NOW_ANCHOR = 10 * 60 + 42;
  * `DEMONSTRATION_DAY_LABEL` is deliberately worded as the day the SCENARIO is set on rather than
  * as today's date. The prototype is a fixed synthetic day; saying so is the honest reading and it
  * stops the header making a claim the clock cannot support.
+ *
+ * Not for the page footer (root-cause fix 2.3, Josh 13 Nov 2026): the board's date is today's, so a
+ * fixed date there read as wrong. The footer names the clock from the mode instead
+ * (`footerClockWords` in `shell/ward-prototype-footer.tsx`).
  */
 export const DEMONSTRATION_DAY_LABEL = "15 Aug 2026";
 export const JURISDICTION_LABEL = "WA";

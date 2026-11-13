@@ -24,7 +24,7 @@ import {
 import { digestHref } from "@/components/ward-management/shell/ward-facade";
 import { FeatureFlagsCard } from "@/components/ward-management/settings/feature-flags-card";
 import { useCanLeaveDemo, useLeaveDemo } from "@/components/ward-management/shell/leave-demo";
-import { Button, Card, CardHead, buttonClass } from "@/components/wf";
+import { Button, Card, CardHead, StateLine, buttonClass } from "@/components/wf";
 
 import styles from "@/components/ward-management/settings/settings.module.css";
 import { SettingsFold } from "./settings-fold";
@@ -35,11 +35,14 @@ export function SettingsRulesFileCard({
   onDownload,
   onLoad,
   loadUnavailable,
+  loadError,
 }: {
   onDownload: () => void;
   /** Left out where the desk cannot change the rules (the access admin's Data). */
   onLoad?: (event: ChangeEvent<HTMLInputElement>) => void;
   loadUnavailable?: string;
+  /** C09: why the last file was not loaded. It stays beside Load until the next file is chosen. */
+  loadError?: string | null;
 }) {
   return (
     <Card aria-labelledby="rules-file-title" data-testid="ward-settings-rules-file">
@@ -56,26 +59,32 @@ export function SettingsRulesFileCard({
         </button>
       </SettingRow>
       {onLoad ? (
-        <SettingRow setting="import" title="Load a rules file" sub="Shows every change before anything is saved">
-          {loadUnavailable ? (
-            <Button variant="sec" className={styles.pill} disabledReason={loadUnavailable}>
-              <Upload size={14} aria-hidden="true" />
-              Load
-            </Button>
-          ) : (
-            <label className={buttonClass({ variant: "sec", className: styles.pill })}>
-              <Upload size={14} aria-hidden="true" />
-              Load
-              <input
-                type="file"
-                accept=".json,application/json"
-                className={styles.fileInput}
-                onChange={onLoad}
-                data-testid="input-import-config"
-              />
-            </label>
-          )}
-        </SettingRow>
+        <>
+          <SettingRow setting="import" title="Load a rules file" sub="Shows every change before anything is saved">
+            {loadUnavailable ? (
+              <Button variant="sec" className={styles.pill} disabledReason={loadUnavailable}>
+                <Upload size={14} aria-hidden="true" />
+                Load
+              </Button>
+            ) : (
+              <label className={buttonClass({ variant: "sec", className: styles.pill })}>
+                <Upload size={14} aria-hidden="true" />
+                Load
+                <input
+                  type="file"
+                  accept=".json,application/json"
+                  className={styles.fileInput}
+                  onChange={onLoad}
+                  data-testid="input-import-config"
+                />
+              </label>
+            )}
+          </SettingRow>
+          {/* C09: the reason stays under Load, in the kit's error line, until the next file is chosen. */}
+          {loadError ? (
+            <StateLine kind="error" compact title={loadError} data-testid="ward-settings-load-error" />
+          ) : null}
+        </>
       ) : null}
     </Card>
   );

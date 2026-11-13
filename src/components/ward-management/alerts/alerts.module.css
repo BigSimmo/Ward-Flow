@@ -121,6 +121,18 @@
   color: var(--wf-ink-3);
 }
 
+/* The sheet is a light surface: counts, hover and the focus ring use body ink, not the hero's white. */
+.phoneChecks .check .mono,
+.phoneChecks a.check:hover,
+.phoneChecks button.check:hover,
+.phoneChecks button.check[aria-pressed="true"] {
+  color: var(--wf-ink-1);
+}
+
+.phoneChecks .check:focus-visible {
+  outline-color: var(--wf-focus-ring);
+}
+
 .heroBroadcast {
   display: inline-flex;
   align-items: center;

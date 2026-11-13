@@ -31,7 +31,7 @@ export type DowntimePackPrintRecord = {
 export type DowntimePackPrintEvent = {
   type: "RECORD_DOWNTIME_PACK_PRINTED";
   role: WardFlowRole;
-  /** The board clock: when the print window opened. Typed `number`, as other event types beside their records. */
+  /** The board clock when the print was started; sent only after the person says it printed (fix 3.3). Typed `number`, as other event types beside their records. */
   now: number;
   /** The wards on the pack that was printed. Ids only. */
   unitIds: string[];
@@ -118,4 +118,24 @@ export function wardsWithOldPack(
   return lastPackPrintPerWard(records, unitIds)
     .filter((ward) => ward.lastPrintedAt === null || now - ward.lastPrintedAt > PACK_OLD_AFTER_MINUTES)
     .sort((a, b) => (a.lastPrintedAt ?? -Infinity) - (b.lastPrintedAt ?? -Infinity));
+}
+
+/**
+ * The two kinds of ward `wardsWithOldPack` lists, counted apart (root-cause fix 3.3, Josh 13 Nov
+ * 2026). A ward that has never printed a pack is not "over 24h old", so Home and the Downtime band
+ * word each count on its own. Whether "never printed" should alarm on a first day is Josh's call;
+ * both keep the warning tone they had.
+ */
+export function oldPackCounts(wards: readonly WardPackPrint[]): { neverPrinted: number; overAge: number } {
+  const neverPrinted = wards.filter((ward) => ward.lastPrintedAt === null).length;
+  return { neverPrinted, overAge: wards.length - neverPrinted };
+}
+
+/** "22 outage packs never printed, 1 over 24h old": each count only when it is above zero. */
+export function oldPackWords({ neverPrinted, overAge }: { neverPrinted: number; overAge: number }): string {
+  const hours = Math.round(PACK_OLD_AFTER_MINUTES / 60);
+  const packs = (count: number) => `${count} outage ${count === 1 ? "pack" : "packs"}`;
+  const never = neverPrinted > 0 ? `${packs(neverPrinted)} never printed` : "";
+  if (overAge === 0) return never;
+  return never ? `${never}, ${overAge} over ${hours}h old` : `${packs(overAge)} over ${hours}h old`;
 }

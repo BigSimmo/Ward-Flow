@@ -63,7 +63,7 @@ const close = (state: WardFlowState, unitId: string, bedNumber: number, extra: {
 
 const unitOf = (state: WardFlowState, unitId: string) => state.units.find((unit) => unit.id === unitId)!;
 const readyOf = (state: WardFlowState, unitId: string) =>
-  bedStates(unitOf(state, unitId), state.admissions, state.bedReleases, state.leaveBeds).ready;
+  bedStates(unitOf(state, unitId), state.admissions, state.bedReleases, state.leaveBeds, []).ready;
 
 describe("SET_BED_CLOSED with a review time", () => {
   it("records the review time and leaves Ready exactly as a closure without one", () => {

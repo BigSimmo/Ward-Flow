@@ -22,7 +22,7 @@ describe("isbarText", () => {
       "A Assessment",
       "R Recommendation",
     ]);
-    expect(line(text, "I ")).toBe("I Identify: Dr S. Chen · – · Harlow, Jesse, 34y");
+    expect(line(text, "I ")).toBe("I Identify: Dr S. Orlenby · – · Harlow, Jesse, 34y");
     expect(line(text, "S ")).toBe("S Situation: Urgency – · Outcome – · Legal –");
     expect(line(text, "O ")).toBe("O Observations: –");
     expect(line(text, "B ")).toBe("B Background: Past risk –");

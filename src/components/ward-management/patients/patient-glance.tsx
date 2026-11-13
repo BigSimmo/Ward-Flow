@@ -20,23 +20,31 @@ import {
   FORM_RECORDED_ENDED,
   formProgressionPhrase,
   legalFormEnd,
-} from "@/components/ward-management/legal-forms/legal-form-progression";
+  NEXT_FORM_TO_RECORD,
+} from "@/components/ward-management/ward-legal-form-progression";
 import type { PatientMode } from "./patient-mode";
 import { patientLegalNow, type PatientLegalNow } from "./patient-now-adapter";
 import { interpreterRequired } from "./patient-flight-header";
 import styles from "./patient-glance.module.css";
 
 /** The five state tags Josh asked for (PT1). The mode words still say the finer state. */
-export type PatientStateTag = "In ED" | "Inpatient" | "In placement" | "Community active" | "Not active";
+export type PatientStateTag = "In ED" | "Inpatient" | "In placement" | "Community active" | "Referred" | "Not active";
 
 export function patientStateTag({
   mode,
   movement,
   communityActive,
+  openWork,
 }: {
   mode: PatientMode;
   movement?: Movement;
   communityActive: boolean;
+  /**
+   * A16-11 (Josh, 13 Nov 2026): open records the journey and ward stay do not show. "bed" is a
+   * referral awaiting a ward's answer, an accepted ward referral with no movement yet, or a booked
+   * planned admission; "community" is a referral awaiting only a community team's answer.
+   */
+  openWork?: "bed" | "community";
 }): { tag: PatientStateTag; tone: WfTone } {
   if (mode === "find" || mode === "held") {
     // Still waiting at the emergency department until the bed is pulled and they move.
@@ -48,7 +56,12 @@ export function patientStateTag({
   if (mode === "ward" || mode === "leave" || mode === "awol" || mode === "ed") {
     return { tag: "Inpatient", tone: mode === "awol" ? "danger" : "success" };
   }
-  return communityActive ? { tag: "Community active", tone: "success" } : { tag: "Not active", tone: "neutral" };
+  // A person with an open referral or booking is never "Not active" (A16-11). A bed being sought
+  // leads; a community team caring for them comes before a community referral awaiting an answer.
+  if (openWork === "bed") return { tag: "In placement", tone: "info" };
+  if (communityActive) return { tag: "Community active", tone: "success" };
+  if (openWork === "community") return { tag: "Referred", tone: "info" };
+  return { tag: "Not active", tone: "neutral" };
 }
 
 type GlanceTile = {
@@ -137,8 +150,8 @@ function legalTile({
           : undefined,
     };
   }
-  // Audit S-6: a referral or transport form that ended at arrival or at the examination is never
-  // shown as in force; the band names it as ended and the inpatient order still to record.
+  // Audit S-6, D-170 item 1 and A1: after the examination or arrival the band keeps the form as
+  // recorded and prompts "Next form to record", with no form number and no inferred end.
   // A form recorded as ended is read before the neutral 5A/5B arrival wording (as the Legal forms page).
   const end = legalFormEnd(legal.movement);
   if (end?.kind === "progressed")
@@ -146,7 +159,7 @@ function legalTile({
       ...base,
       value: status ?? "Not recorded",
       quiet: status === undefined,
-      sub: `${formProgressionPhrase(end.progression)} · Form ${end.progression.nextCode} to record`,
+      sub: `${formProgressionPhrase(end.progression)} · ${NEXT_FORM_TO_RECORD}`,
       tone: "warning",
     };
   if (end?.kind === "recorded" && legal.form)

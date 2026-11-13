@@ -169,3 +169,9 @@ refreshed.
 Cited line numbers in the same PR's changed sources were then moved to follow its own edits (64 citations, in
 `actions.json` and `event-dispositions.json`), each mapped line by line from main `92630b1e` so it points at the same
 code text. Only `line` values changed. Two REFER citations into `ward-flow-referral-send-events.ts` (lines 1277 and 1285) were already past the file's end on main and are left for a separate fix.
+
+When PR B (#1657) merged, main was merged into this PR. Each citation keeps main's entry and is mapped line by line
+from main's source to the merged source; digests are the merged files' own. Every cited source that changed on both
+sides holds only changes already reviewed on its own side (PR B's notes and the notes above). The one hand-made
+change is the arrivals corridor tag, which keeps B's "ended" form words with the status as recorded (D-187 item 4):
+display only.

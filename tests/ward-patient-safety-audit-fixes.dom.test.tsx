@@ -39,19 +39,23 @@ describe("Record details says each fact once", () => {
     expect(pane.queryByText("Placement gender")).not.toBeInTheDocument();
   });
 
-  it("shows both legal statuses, named apart, when they differ", () => {
+  // A16-09 (Josh, 13 Nov 2026) read one current legal status; D-187 item 1 (Q19, later the same
+  // evening) keeps both when the stay and the patient record differ, each named plainly.
+  it("shows the stay's status and the patient record's, named plainly, when they differ", () => {
     const other = open.legalStatus === "Voluntary" ? "Involuntary inpatient" : "Voluntary";
     const pane = renderDetails(open, { ...patient, legalStatus: other as Patient["legalStatus"] });
     // D-187 item 1 (Q19): named plainly.
     expect(pane.getByText(/^This (ED stay|move)$/)).toBeInTheDocument();
     expect(pane.getByText("Patient record")).toBeInTheDocument();
+    expect(pane.getByText(open.legalStatus)).toBeInTheDocument();
   });
 
-  it("keeps the patient's legal status row when only the movement has one recorded", () => {
+  it("shows the stay's status and the patient record as not recorded, when only the stay has one", () => {
     const pane = renderDetails(open, { ...patient, legalStatus: undefined });
     // D-187 item 1 (Q19): named plainly.
     expect(pane.getByText(/^This (ED stay|move)$/)).toBeInTheDocument();
     expect(pane.getByText("Patient record")).toBeInTheDocument();
+    expect(pane.getByText(open.legalStatus)).toBeInTheDocument();
     expect(pane.queryByText("Legal status")).not.toBeInTheDocument();
   });
 

@@ -48,7 +48,7 @@ import {
   type Unit,
 } from "../ward-model";
 import { cohortFitsAge, patientCohort } from "../ward-patients";
-import { GENERAL_OBSERVATION } from "@/components/ward-management/ward-observation";
+import { NOT_RECORDED_OBSERVATION } from "@/components/ward-management/ward-observation";
 
 export type RejectFn = (state: WardFlowState, event: WardFlowEvent, reason: string) => WardFlowState;
 
@@ -103,7 +103,7 @@ function plannedAdmissionMovementView(planned: PlannedAdmission, unit: Unit): Mo
     security: LOCKED_FIRST.includes(planned.legalStatus) ? "Secure" : "Open",
     sex: planned.sex,
     ...(planned.gender === undefined ? {} : { gender: planned.gender }),
-    observation: GENERAL_OBSERVATION,
+    observation: NOT_RECORDED_OBSERVATION,
     highAcuity: false,
     legalStatus: planned.legalStatus,
     statusChanges: [],
@@ -588,7 +588,9 @@ export function reducePlannedAdmissionEvent(
       const admission: Admission = {
         id: `AD-ARR-${String(sequence).padStart(2, "0")}`,
         unitId: unit.id,
-        observation: GENERAL_OBSERVATION,
+        // A booking records no observation level, so the new stay holds none until the ward records
+        // one; it is never written as General (root-cause fix 3.5, Josh 13 Nov 2026).
+        observation: NOT_RECORDED_OBSERVATION,
         highAcuity: false,
         referralId: null,
         movementId: null,

@@ -57,18 +57,9 @@ const nextConfig: NextConfig = {
   // never wires up its listeners.
   allowedDevOrigins: ["127.0.0.1"],
   devIndicators: false,
-  // /ward-flow/patients was never a route: the patient finder is /ward-flow/search. People type it,
-  // so it goes there rather than to a Page not found.
-  // The old /ward-flow/transport address (MERGE 03, shell-19) goes to the officer's page here,
-  // before any render: its page.tsx redirect() ran after loading.tsx had streamed, so a phone saw
-  // the placeholder for seconds first (phone load audit, 10 Nov 2026). page.tsx stays as the
-  // backstop the redirect-stub guards read; it is temporary (307) there, so false here too.
-  async redirects() {
-    return [
-      { source: "/ward-flow/patients", destination: "/ward-flow/search", permanent: false },
-      { source: "/ward-flow/transport", destination: "/ward-flow/transport/officer", permanent: false },
-    ];
-  },
+  // A15-21 (Josh, 13 Nov 2026): no `redirects()` here. Next runs them before the proxy, so their
+  // answers skipped the front door and the security headers. The old /ward-flow/patients and
+  // /ward-flow/transport addresses forward from the proxy's list (src/proxy.ts) instead.
   // Fix list 7.3: the React Compiler memoises screens on the inputs it can see. Screens take the
   // warnings and the scenario's wards as inputs (`useDueSoonThresholds()`, `useWardNetwork()`), and
   // tests/ward-compiler-inputs.test.ts stops anything reading them from module-wide values again.
@@ -240,7 +231,20 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/manifest.webmanifest",
-        headers: [{ key: "Cache-Control", value: "no-cache" }],
+        headers: [
+          { key: "Cache-Control", value: "no-cache" },
+          // A15-03: the manifest, app images and install screenshots skip the front door on purpose
+          // (an installed phone fetches them), so they tell search engines to stay away instead.
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+        ],
+      },
+      {
+        source: "/screenshots/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/icons/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
       },
     ];
   },

@@ -29,7 +29,7 @@ export function WardAnswerPreview({ openOnLoad }: { openOnLoad?: string }) {
     if (openOnLoad !== "ward-accept") return DEFAULT_WARD;
     const answerable = world.units.find(
       (unit) =>
-        bedStates(unit, world.admissions, world.bedReleases, world.leaveBeds).ready > 0 &&
+        bedStates(unit, world.admissions, world.bedReleases, world.leaveBeds, world.movements).ready > 0 &&
         world.movements.some(
           (movement) =>
             isOpen(movement) && movement.stage === "destination_review" && movement.referredUnitIds.includes(unit.id),

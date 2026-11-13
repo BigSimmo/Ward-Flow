@@ -3,6 +3,7 @@ import type { Instant } from "./ward-clock";
 import type { Movement, Unit } from "./ward-model";
 import { boundedBedAvailability } from "./ward-ready-beds";
 import { wardStaySeats } from "./ward/ward-bed-layout";
+import { adverseExampleWard } from "./ward-demo-adverse-wards";
 
 /**
  * CLOSING THE LOOP, PACKAGE D (24 Oct 2026): synthetic demo marks, so each record is visible in the
@@ -14,16 +15,25 @@ import { wardStaySeats } from "./ward/ward-bed-layout";
  * - Graylands Adult Secure has an intake limit with a review due later today.
  * - Graylands Older Adult is closed for staffing with an overdue review, so its transition list
  *   shows what still points at it.
- * - Item 6 (10 Nov 2026): Maali (Ward 4.2) has its top empty bed closed for staffing four hours ago
- *   with a review time an hour ago, so "Closed beds past review" shows on Capacity and the bed
- *   meeting agenda. It takes one Ready bed, as any closed bed does.
+ * - Item 6 (10 Nov 2026): a ward has its top empty bed closed for staffing four hours ago with a
+ *   review time an hour ago, so "Closed beds past review" shows on Capacity and the bed meeting
+ *   agenda. It takes one Ready bed, as any closed bed does.
+ *
+ * A15-27 (Josh, 13 Nov 2026): the three ward records are adverse examples, so each lands only on a
+ * ward the shared rule allows (`adverseExampleWard`, `ward-demo-adverse-wards.ts`). The typed ids
+ * are preferences; a ward carrying a real ward's own name (Maali, which the closed bed used to name)
+ * is passed over for the first generic-label ward that suits the record.
  */
 const CANCELLED_MOVEMENT_ID = "WF-008";
 const CONDITIONS_MOVEMENT_ID = "WF-003";
 const BED_AFTER_MOVEMENT_ID = "WF-023";
 const LIMITED_UNIT_ID = "gry-adult-secure";
 const CLOSED_UNIT_ID = "gry-older-adult";
-const CLOSED_BED_UNIT_ID = "fre-adult-open";
+/**
+ * A generic-label ward (A15-27), named so the closed bed does not fall through to the first ward
+ * that fits: that is FSH Adult Secure, the bed-move fixture whose tests need a free open bed.
+ */
+const CLOSED_BED_UNIT_ID = "bty-adult-secure";
 
 const COORDINATOR = "Bed coordinator";
 const WARD = "Ward manager";
@@ -103,8 +113,22 @@ export function applyLoopChecksDemoOverlay<
     return movement;
   });
 
+  const closedUnit = adverseExampleWard(state.units, CLOSED_UNIT_ID, (unit) => !unit.isClosed);
+  const limitedUnit = adverseExampleWard(
+    state.units,
+    LIMITED_UNIT_ID,
+    (unit) => unit.id !== closedUnit?.id && (unit.intakeConstraints ?? []).length === 0,
+  );
+  const closedBedUnit = adverseExampleWard(
+    state.units,
+    CLOSED_BED_UNIT_ID,
+    (unit) =>
+      unit.id !== closedUnit?.id &&
+      unit.id !== limitedUnit?.id &&
+      demoClosedBed(unit, state.movements, state.admissions ?? []) !== undefined,
+  );
   const units = state.units.map((unit): Unit => {
-    if (unit.id === LIMITED_UNIT_ID && (unit.intakeConstraints ?? []).length === 0) {
+    if (unit.id === limitedUnit?.id && (unit.intakeConstraints ?? []).length === 0) {
       return {
         ...unit,
         intakeConstraints: ["staffing_shortage"],
@@ -119,7 +143,7 @@ export function applyLoopChecksDemoOverlay<
         ],
       };
     }
-    if (unit.id === CLOSED_UNIT_ID && !unit.isClosed) {
+    if (unit.id === closedUnit?.id && !unit.isClosed) {
       const closedAt = now - 180;
       return {
         ...unit,
@@ -137,7 +161,7 @@ export function applyLoopChecksDemoOverlay<
         ],
       };
     }
-    if (unit.id === CLOSED_BED_UNIT_ID) {
+    if (unit.id === closedBedUnit?.id) {
       const bedNumber = demoClosedBed(unit, state.movements, state.admissions ?? []);
       if (bedNumber === undefined) return unit;
       return {

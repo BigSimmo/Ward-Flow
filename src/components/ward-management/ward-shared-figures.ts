@@ -10,7 +10,8 @@
  * - occupancy (WF-16): `wardOccupiedBeds` / `wardBedsInUse` / `wardBedUseFigures` (`ward-occupancy.ts`) —
  *   Occupied / On the ward vs In use (Occupied + Pulled); percentage always uses In use;
  * - beds freeing today vs forecast discharges (WF-16): `bedsFreeingTodayTotal` (over `releasesFreeingToday`)
- *   vs forecast next-24h sources (`capacity-derivations.ts` / `beds-forecast-sources.ts`);
+ *   vs forecast next-24h sources (`capacity-derivations.ts` / `beds-forecast-sources.ts`); both
+ *   "freeing today" and "ready by <shift end>" count releases through `isExpectedToFree` below;
  * - ready vs spare that fit (WF-16): `readyBedsNow` / `totalReadyBedsNow` vs `bedKindGaps(...).gap`
  *   (`ward-bed-states.ts` / `capacity-derivations.ts`);
  * - tasks and act now: `taskItems`, `activeTaskItems`, `activeActNowItems` (`ward-act-now-items.ts`);
@@ -285,3 +286,10 @@ export function homeChipFigures(queue: readonly Movement[], now: Instant, siteSh
 
 /** P028 (Josh 27 Oct 2026): the beds figure counts beds statewide against this desk's admissions. */
 export const BEDS_READY_SCOPED_TITLE = "Beds ready statewide (your desk's admissions)";
+
+/** A16-05: the release rule lives in a leaf module (`ward-releases-expected-to-free.ts`) and is re-exported here. */
+export {
+  isExpectedToFree,
+  isFreeingToday,
+  releasesExpectedToFree,
+} from "@/components/ward-management/ward-releases-expected-to-free";

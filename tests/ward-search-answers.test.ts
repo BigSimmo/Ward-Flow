@@ -307,7 +307,13 @@ describe("screens and places", () => {
   });
 
   it("matches every typed word on the Places page, in any order", () => {
-    const entries = hubEntries({ units: state.units, bedReleases: [], now: NOW_ANCHOR, sites: wardSites });
+    const entries = hubEntries({
+      units: state.units,
+      bedReleases: [],
+      now: NOW_ANCHOR,
+      sites: wardSites,
+      namedHolds: [],
+    });
     const entry = entries.find((candidate) => candidate.kind === "ward" && candidate.site);
     if (!entry?.site) throw new Error("fixture drifted: no ward entry with a site");
     const firstWord = entry.name.split(/\s+/)[0]!.toLowerCase();

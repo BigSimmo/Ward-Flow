@@ -596,7 +596,7 @@ describe("read-only report screens", () => {
         </WardFlowProvider>,
       );
       const unit = world.units.find((candidate) => candidate.empty.value < candidate.beds)!;
-      const seedReady = bedStates(unit, world.admissions, world.bedReleases, world.leaveBeds).ready;
+      const seedReady = bedStates(unit, world.admissions, world.bedReleases, world.leaveBeds, []).ready;
       act(() =>
         world.dispatch({
           type: "CONFIRM_CAPACITY",
@@ -620,7 +620,7 @@ describe("read-only report screens", () => {
       );
       expect(screen.queryByText("Taking snapshot")).toBeNull();
       const restoredUnit = world.units.find((candidate) => candidate.id === unit.id)!;
-      const live = bedStates(restoredUnit, world.admissions, world.bedReleases, world.leaveBeds);
+      const live = bedStates(restoredUnit, world.admissions, world.bedReleases, world.leaveBeds, []);
       expect(live.ready).not.toBe(seedReady);
       expect(lastDowntimePack()?.wards.find((ward) => ward.unitId === unit.id)?.counts).toEqual(live);
     } finally {

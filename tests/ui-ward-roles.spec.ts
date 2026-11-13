@@ -954,11 +954,12 @@ test.describe("@mockup Emergency department screen", () => {
     );
     expect(rowIds).toContain("ward-ed-patient-WF-009");
     for (const id of rowIds) {
-      // ED board A2: the row's name opens the patient's sheet; its "Open patient" opens the full
-      // recorded detail, which is where police presence lives.
+      // ED board A2: the row's name opens the patient's sheet; its "Where their time went" opens the
+      // full recorded detail, which is where police presence lives (A12-04: "Open patient" now opens
+      // the patient page).
       await page.getByTestId(id).locator('button[title^="View patient details"]').click();
       const sheet = page.getByTestId(id.replace("ward-ed-patient-", "ward-ed-phone-sheet-"));
-      await sheet.getByRole("button", { name: "Open patient", exact: true }).click();
+      await sheet.getByRole("button", { name: "Where their time went", exact: true }).click();
       await expect(sheet).toBeHidden();
       const record = page.getByRole("dialog").filter({
         has: page.getByRole("button", { name: "Close patient details" }),

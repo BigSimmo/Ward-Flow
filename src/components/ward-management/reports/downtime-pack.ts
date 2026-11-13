@@ -1,15 +1,15 @@
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import { bedStates, type BedStateCounts } from "@/components/ward-management/ward-bed-states";
+import { bedStates, networkNamedHolds, type BedStateCounts } from "@/components/ward-management/ward-bed-states";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
 import { isEdOriginJourney, recordedEdDeparture } from "@/components/ward-management/ward-ed-presence";
 import { isOpen, isStoppedTransportAwaitingRelease } from "@/components/ward-management/ward-derivations";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
-import type { BedRelease, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
+import type { BedRelease, LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import { movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
-import { formRecordedEnded } from "@/components/ward-management/ward-legal-form-ended";
+import { currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
 import { legalFormOrdered } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
 import { observationSummary } from "@/components/ward-management/ward-observation";
@@ -107,6 +107,8 @@ export type DowntimePackInput = {
   bedReleases: BedRelease[];
   leaveBeds: readonly LeaveBed[];
   movements: Movement[];
+  /** Referrals that may hold a named bed, so the pack's Ready is Capacity's (A16-25, 3.4). */
+  referrals: readonly Referral[];
   now: Instant;
   /** One identity line for a journey, or for a ward stay (an absence without leave names a stay). */
   identify: (subject: Movement | Admission) => string;
@@ -130,13 +132,14 @@ function finiteOrNull(value: Instant | undefined): Instant | null {
 }
 
 export function downtimePack(input: DowntimePackInput): DowntimePack {
-  const { units, bedUnits, admissions, bedReleases, leaveBeds, movements, now, identify } = input;
+  const { units, bedUnits, admissions, bedReleases, leaveBeds, movements, referrals, now, identify } = input;
   if (!Array.isArray(bedUnits)) throw new Error("downtimePack needs an explicit bedUnits ward list");
+  const namedHolds = networkNamedHolds(movements, referrals);
   const unitName = (id: string | undefined) => (id ? (units.find((unit) => unit.id === id)?.name ?? id) : "");
 
   const wards = bedUnits
     .map((unit) => {
-      const counts = bedStates(unit, admissions, bedReleases, leaveBeds);
+      const counts = bedStates(unit, admissions, bedReleases, leaveBeds, namedHolds);
       return {
         unitId: unit.id,
         name: unit.name,
@@ -210,17 +213,21 @@ export function downtimePack(input: DowntimePackInput): DowntimePack {
     }))
     .sort((a, b) => (a.plannedAt ?? Infinity) - (b.plannedAt ?? Infinity) || a.to.localeCompare(b.to));
 
-  const legalForms = legalFormOrdered(movements, now).map((movement) => ({
-    movementId: movement.id,
-    person: identify(movement),
-    form: movement.legalForm ? legalFormName(movement.legalForm) : "",
-    legalStatus: movement.legalStatus,
-    madeAt: finiteOrNull(movement.formedAt),
-    receivedAt: finiteOrNull(movement.legalFormReceivedAt),
-    // M17 (10 Nov 2026): a form recorded as ended shows "Recorded as ended", never its old typed end.
-    typedExpiryAt: formRecordedEnded(movement) ? null : finiteOrNull(movement.legalForm?.dueAt),
-    ...(formRecordedEnded(movement) ? { formEnded: true as const } : {}),
-  }));
+  const legalForms = legalFormOrdered(movements, now).map((movement) => {
+    // 1.1 (K1) and A1: the paper fallback reads the one current legal position, as every screen does.
+    const legal = currentLegalPosition(movement);
+    return {
+      movementId: movement.id,
+      person: identify(movement),
+      form: legal.form ? legalFormName(legal.form) : "",
+      legalStatus: movement.legalStatus,
+      madeAt: finiteOrNull(movement.formedAt),
+      receivedAt: finiteOrNull(movement.legalFormReceivedAt),
+      // M17 (10 Nov 2026): a form recorded as ended shows "Recorded as ended", never its old typed end.
+      typedExpiryAt: legal.ended ? null : finiteOrNull(legal.dueAt),
+      ...(legal.ended ? { formEnded: true as const } : {}),
+    };
+  });
 
   return {
     generatedAt: now,

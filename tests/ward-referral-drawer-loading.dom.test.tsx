@@ -42,7 +42,8 @@ describe("opening a referral before its script has arrived", () => {
       </WardFlowProvider>,
     );
     expect(screen.getByTestId("ward-referral-drawer-loading").textContent).toBe("Opening the referral…");
-    expect(screen.getByRole("dialog", { name: identity.displayName })).toBeTruthy();
+    // A9-01: named surname first, as the card that opens it.
+    expect(screen.getByRole("dialog", { name: identity.formalName })).toBeTruthy();
     fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
     expect(onClose).toHaveBeenCalled();
   });

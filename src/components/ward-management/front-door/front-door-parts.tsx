@@ -22,6 +22,7 @@ import {
 
 import { BRAND_COUNTER_TRANSFORM, BRAND_VIEWBOX, brandMarkOptics } from "@/lib/brand-mark";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import { DEMO_PASS_HOURS } from "@/lib/front-door-pass";
 
 import styles from "./front-door.module.css";
 
@@ -68,7 +69,38 @@ export function BedBoardTexture({ rows = 18 }: { rows?: number }) {
 const IDLE_MINUTES = CLINICAL_VALUES.idleLock.value;
 const SESSION_HOURS = CLINICAL_VALUES.sessionLimit.value;
 
-function Brand() {
+/**
+ * A15-04 (Josh, 13 Nov 2026): the first two points differ by door. The account door limits a person
+ * to their role and asks for a fresh sign-in every SESSION_HOURS. On the demo-code door anyone can
+ * pick any desk, the idle lock is a privacy cover and the code lasts DEMO_PASS_HOURS. The values are
+ * read from their constants; only where they are shown changes.
+ */
+export function doorPoints(demo: boolean) {
+  return demo
+    ? {
+        role: { pill: "Any desk's view", title: "Pick any desk", body: "Pick any desk to see its view." },
+        lock: {
+          pill: `Covers after ${IDLE_MINUTES} minutes`,
+          title: "Covers when left",
+          body: `Covers the screen after ${IDLE_MINUTES} minutes without use. A code lasts ${DEMO_PASS_HOURS} hours.`,
+        },
+      }
+    : {
+        role: {
+          pill: "Your role, your view",
+          title: "Your role, your view",
+          body: "You see and change only what your role needs.",
+        },
+        lock: {
+          pill: `Locks after ${IDLE_MINUTES} minutes`,
+          title: "Locks when left",
+          body: `After ${IDLE_MINUTES} minutes without use, and a fresh sign-in every ${SESSION_HOURS} hours.`,
+        },
+      };
+}
+
+function Brand({ demo }: { demo: boolean }) {
+  const points = doorPoints(demo);
   return (
     <section className={styles.brand} aria-label="About Ward Flow">
       <div className={styles.brandTop}>
@@ -86,11 +118,11 @@ function Brand() {
       <ul className={styles.pills}>
         <li>
           <Shield aria-hidden="true" />
-          Your role, your view
+          {points.role.pill}
         </li>
         <li>
           <Lock aria-hidden="true" />
-          Locks after {IDLE_MINUTES} minutes
+          {points.lock.pill}
         </li>
         <li>
           <Info aria-hidden="true" />
@@ -103,7 +135,8 @@ function Brand() {
             <Shield aria-hidden="true" />
           </span>
           <span>
-            <b>Your role, your view</b>You see and change only what your role needs.
+            <b>{points.role.title}</b>
+            {points.role.body}
           </span>
         </li>
         <li>
@@ -111,8 +144,8 @@ function Brand() {
             <Lock aria-hidden="true" />
           </span>
           <span>
-            <b>Locks when left</b>After {IDLE_MINUTES} minutes without use, and a fresh sign-in every {SESSION_HOURS}{" "}
-            hours.
+            <b>{points.lock.title}</b>
+            {points.lock.body}
           </span>
         </li>
         <li>
@@ -180,13 +213,17 @@ export function DoorScreen({
   label,
   note,
   focusTarget,
+  demo = false,
   children,
 }: {
   label: string;
   note: boolean;
   focusTarget?: RefObject<HTMLElement | null>;
+  /** The demo-code door: its first two points describe the demo, not the signed-in site (A15-04). */
+  demo?: boolean;
   children: ReactNode;
 }) {
+  const points = doorPoints(demo);
   const panel = useRef<HTMLDivElement>(null);
   const screen = useRef<HTMLDivElement>(null);
   useKeyboardSettle(screen);
@@ -212,17 +249,17 @@ export function DoorScreen({
           </button>
         )}
         <BedBoardTexture />
-        <Brand />
+        <Brand demo={demo} />
         <div ref={panel} className={styles.panel}>
           {children}
           <ul className={styles.facts}>
             <li>
               <Shield aria-hidden="true" />
-              Your role, your view
+              {points.role.pill}
             </li>
             <li>
               <Lock aria-hidden="true" />
-              Locks after {IDLE_MINUTES} minutes
+              {points.lock.pill}
             </li>
             <li>
               <Info aria-hidden="true" />
@@ -332,7 +369,7 @@ export function EmailField({
           autoCapitalize="off"
           inputMode="email"
           spellCheck={false}
-          placeholder="name@health.wa.gov.au"
+          placeholder="name@example.invalid"
           value={value}
           onChange={(event) => onChange(event.target.value)}
           required

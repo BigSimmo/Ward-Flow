@@ -5,11 +5,12 @@
 // the one transport booking form every screen uses; this file keeps the popup. Redesign (Josh,
 // 31 Oct 2026, "Yes to all"): the kit's dialog with a one-line title and the person, surname
 // first, named once under it.
-import { useMemo, useState, type ReactNode, type RefObject } from "react";
+import { useState, type ReactNode } from "react";
 import { Dialog } from "@/components/wf";
 import type { TransportExceptionReason } from "@/components/ward-management/ward-model";
 import { TransportBookingForm } from "@/components/ward-management/transport/transport-booking-form";
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
+import { useModalHeadingFocus } from "@/components/ward-management/use-modal-heading-focus";
 import { useTransportBookingClose } from "@/components/ward-management/transport/use-transport-booking-close";
 import type { EdBoardRowModel } from "./ed-screen-board-row";
 import type { EdScreenContext } from "./ed-screen-context";
@@ -48,15 +49,9 @@ function EdTransportDialog({ row, ctx }: { row: EdBoardRowModel; ctx: EdScreenCo
     refused: !!save.error && !save.uncertain,
     onClose: closeTransportDialog,
   });
-  // Focus starts on the first question (who is collecting), as the popup did before the kit dialog.
-  const firstQuestion = useMemo<RefObject<HTMLElement | null>>(
-    () => ({
-      get current() {
-        return document.querySelector<HTMLElement>(`[data-testid="ward-ed-transport-provider-${movement.id}"]`);
-      },
-    }),
-    [movement.id],
-  );
+  // A12-08 (Josh, 13 Nov 2026): focus starts on the popup's heading, not the first question's
+  // select, so Escape closes the popup at once (the kit leaves Escape to a focused select).
+  const headingFocus = useModalHeadingFocus(`ward-ed-book-transport-${movement.id}`);
   return (
     <Dialog
       open
@@ -67,7 +62,7 @@ function EdTransportDialog({ row, ctx }: { row: EdBoardRowModel; ctx: EdScreenCo
       // Surname first (D-83), named once under the one-line title.
       description={`${patientInfo.formalName} · booked by phone`}
       size="md"
-      initialFocusRef={firstQuestion}
+      initialFocusRef={headingFocus}
       data-testid={`ward-ed-book-transport-${movement.id}`}
     >
       <TransportBookingForm

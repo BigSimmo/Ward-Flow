@@ -4,6 +4,7 @@ import { LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
+import { currentLegalDueAt } from "@/components/ward-management/ward-legal-form-progression";
 
 import { alertKindOf, type AlertKind } from "./alerts-model";
 
@@ -21,7 +22,8 @@ export function alertChecks({
   now: Instant;
 }) {
   const countKind = (kind: AlertKind) => allInbox.filter((item) => alertKindOf(item.id) === kind).length;
-  const withDeadline = openMovements.filter((movement: Movement) => movement.legalForm?.dueAt !== undefined);
+  // 1.1 (K1): the typed end still in force, from the one current legal position (none once recorded ended).
+  const withDeadline = openMovements.filter((movement: Movement) => currentLegalDueAt(movement) !== undefined);
   const declineCandidates = openMovements.filter((movement: Movement) => movement.declines.length > 0).length;
   const untriaged = (referrals ?? []).filter((referral) => referral.triagedAt === undefined);
   const prolongedEdCount = openMovements.filter(

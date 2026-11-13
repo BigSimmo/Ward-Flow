@@ -200,7 +200,10 @@ export function NightViewScreen() {
               <li key={step.step} className={styles.row} data-testid={`night-step-${step.step}`}>
                 <span className={styles.rowMain}>
                   <span className={styles.rowTitle}>{step.label}</span>
-                  <span className={styles.rowSub}>Suggested next step: {step.nextStep}</span>
+                  {/* 3.1: no "Ask wards" when everyone at this step already has it recorded. */}
+                  {step.count > 0 && step.actionDoneCount === step.count ? null : (
+                    <span className={styles.rowSub}>Suggested next step: {step.nextStep}</span>
+                  )}
                 </span>
                 <span className={styles.count}>
                   <b>{step.count}</b> waiting

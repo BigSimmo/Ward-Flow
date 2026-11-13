@@ -1361,7 +1361,13 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   { term: "PAS", meaning: "Patient administration system, the hospital's admissions and bed record." },
   { term: "PSOLIS", meaning: "Psychiatric Services Online Information System, WA's mental health record." },
   { term: "RN", meaning: "Registered nurse." },
-  { term: "SMHMR", meaning: "State Mental Health Medical Record, WA's standard mental health forms." },
+  // D1 (Josh, 13 Nov 2026): the prefix only; the letters are not expanded.
+  { term: "SMHMR", meaning: "The form-number prefix for WA's statewide standardised mental health documents." },
+  // E1 (Josh, 13 Nov 2026): the Act is always named in full, never as an abbreviation.
+  {
+    term: "Criminal Law (Mental Impairment) Act 2023",
+    meaning: "A WA Act, in operation from 1 September 2024. Always written in full.",
+  },
   { term: "SW", meaning: "Social worker." },
 ];
 

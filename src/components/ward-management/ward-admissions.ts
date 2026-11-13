@@ -9,7 +9,7 @@ import {
   type OverrideReason,
 } from "@/components/ward-management/ward-change-reasons";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "@/components/ward-management/ward-flow-roles";
-import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
+import { dayOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import {
   observationStaff,
@@ -1085,9 +1085,20 @@ export function daysInBed(admission: Admission, now: Instant): number | null {
  * the demonstration day: `dayOf` is a zero-based index and the printed day is one-based. It lives
  * here, named, rather than at the call site, because a bare `+ 1` beside a rendered figure is the
  * kind of thing the next reader removes as a typo.
+ *
+ * **Perth calendar days, not 24-hour blocks** (root-cause fix 2.4, approved by Josh 13 Nov 2026).
+ * It used to be `daysInBed + 1`, so a person who arrived at 23:00 stayed on "Day 1" until 23:00 the
+ * next night. Now the day of arrival is Day 1 and Day 2 starts at the next Perth midnight. An
+ * `Instant` already counts minutes from Perth midnight, so `dayOf` gives the Perth calendar day.
+ * Takes the stay itself, not a duration, so no caller can hand it the 24-hour count again.
  */
-export function stayDayNumber(daysInBedValue: number | null): number | null {
-  return daysInBedValue === null ? null : daysInBedValue + 1;
+export function stayDayNumber(admission: Pick<Admission, "arrivedAt"> | undefined, now: Instant): number | null {
+  const arrivedAt = admission?.arrivedAt;
+  if (arrivedAt === null || arrivedAt === undefined || !Number.isFinite(arrivedAt) || !Number.isFinite(now)) {
+    return null;
+  }
+  // An arrival later than `now` is incoherent data; like `daysInBed`, it reads as the first day.
+  return Math.max(1, dayOf(now) - dayOf(arrivedAt) + 1);
 }
 
 /**

@@ -10,6 +10,7 @@ import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-
 import { edById } from "@/components/ward-management/ward-sites";
 import { Button, ChipGroup, FilterChip, Segmented, ShowMoreRow, foldHidden, foldLimit } from "@/components/wf";
 import {
+  DEVICE_ONLY_LABEL,
   REMIND_REASONS,
   addReminder,
   removeReminder,
@@ -235,6 +236,9 @@ export function ToolRemindMe({ onNavigate }: { onNavigate: () => void }) {
         <h4 className={styles.label} id="remind-yours">
           Your reminders
         </h4>
+        <p className={styles.note} data-testid="remind-device-only">
+          {DEVICE_ONLY_LABEL}. Not part of the shared record.
+        </p>
         {reminders.length === 0 ? (
           <p className={styles.quiet}>None set.</p>
         ) : (
@@ -259,7 +263,7 @@ export function ToolRemindMe({ onNavigate }: { onNavigate: () => void }) {
             ))}
           </ul>
         )}
-        <p className={styles.note}>Saved in this browser. Each one shows in Alerts when it is due.</p>
+        <p className={styles.note}>Each one shows in Alerts when it is due.</p>
       </section>
     </div>
   );

@@ -4,6 +4,7 @@ import { minutesUntil } from "@/components/ward-management/ward-clock";
 import { isDetained } from "@/components/ward-management/ward-legal-meaning";
 import { wardSites } from "@/components/ward-management/ward-sites";
 import { SELECTABLE_LEGAL_FORMS, legalFormName } from "@/components/ward-management/ward-legal-forms";
+import { currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { movementSearchState } from "./search-operational-state";
 import { isCommunityReferral } from "./community-referral";
@@ -191,7 +192,7 @@ export function matchesLegal(result: PatientSearchResult, legal: string): boolea
     if (legal === "Involuntary") return isDetained(result.movement.legalStatus);
     // An exact code match against the form the record holds — never a substring, and never the
     // transport job's free-text `formRequired`, which is a known unvalidated string.
-    return legal === `Form ${result.movement.legalForm?.code}`;
+    return legal === `Form ${currentLegalPosition(result.movement).form?.code}`;
   }
 
   // A queued referral records no legal status and no form. `involuntaryBedNeeded` is, in the
@@ -237,7 +238,7 @@ export function matchesQuickChip(result: PatientSearchResult, chipQuery: string,
   }
   if (chipQuery === "Form 1A") {
     if (result.kind === "movement") {
-      return result.movement.legalForm?.code === "1A";
+      return currentLegalPosition(result.movement).form?.code === "1A";
     }
     return false;
   }

@@ -2,7 +2,7 @@
 // the counts, the Needs you items and the hero chips. Split out of `ed-screen.tsx` unchanged (fix
 // list 2.5 and 9.6, 15 Oct 2026). A plain function, not a hook: `EdScreen` calls it after its early
 // return, exactly where this code used to run.
-import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
+import { currentLegalDueAt, currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
 import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
 import { isUnderAForm } from "@/components/ward-management/ed/ed-home-derivations";
 import { isEdOriginJourney, isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
@@ -396,7 +396,7 @@ export function deriveEdScreen({
         personName: flagPatientInfo.formalName,
         meta: `${m.cohort} · ${m.sex}`,
         // Legal times only as typed (31 Oct 2026): the typed time in words, never "passed 1h 05m ago".
-        why: `Form ${m.legalForm?.code} ${typedTimePhrase(formDueAt, now)}. The movement stands at ${stageCopy[m.stage].label.toLowerCase()}.`,
+        why: `${currentLegalPosition(m).formWords} ${typedTimePhrase(formDueAt, now)}. The movement stands at ${stageCopy[m.stage].label.toLowerCase()}.`,
         when: typedTimePhrase(formDueAt, now),
         actionLabel: "Renew or discharge the form",
         onAction: () => setSelectedPatientId(m.id),
@@ -557,13 +557,14 @@ export function deriveEdScreen({
         by: null,
       });
     }
-    if (subject.legalForm?.dueAt !== undefined) {
+    // 1.1 (K1): the typed end still in force, from the one current legal position, so a form a
+    // person recorded as ended raises no deadline on the timeline.
+    const subjectLegal = currentLegalPosition(subject);
+    if (subjectLegal.dueAt !== undefined) {
       events.push({
-        min: subject.legalForm.dueAt,
-        tone: subject.legalForm.dueAt < now ? "danger" : "warn",
-        what:
-          (subject.legalForm.dueAt < now ? "Deadline passed on " : "Deadline falls due on ") +
-          `Form ${subject.legalForm.code}`,
+        min: subjectLegal.dueAt,
+        tone: subjectLegal.dueAt < now ? "danger" : "warn",
+        what: (subjectLegal.dueAt < now ? "Deadline passed on " : "Deadline falls due on ") + subjectLegal.formWords,
         by: null,
       });
     }

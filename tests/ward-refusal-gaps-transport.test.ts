@@ -138,14 +138,14 @@ describe("what a person is actually told, where the dead guards would have spoke
   it("cancelling after a stop is refused as a closed movement, never as an already-cancelled job", () => {
     const stopped = stopTransport(driveTo("collected"), NOW + 3);
     const reasons = added(stopped, cancelTransport(stopped, NOW + 4));
-    expect(reasons).toEqual(["cannot cancel transport for a closed movement (The examination was revoked)"]);
+    expect(reasons).toEqual(["cannot cancel transport for a closed movement (The examination made no order)"]);
     expect(reasons[0]).not.toContain("was already cancelled");
   });
 
   it("stopping twice is refused as a closed movement, never as an already-stopped journey", () => {
     const stopped = stopTransport(driveTo("collected"), NOW + 3);
     const reasons = added(stopped, stopTransport(stopped, NOW + 4));
-    expect(reasons).toEqual(["cannot stop transport for a closed movement (The examination was revoked)"]);
+    expect(reasons).toEqual(["cannot stop transport for a closed movement (The examination made no order)"]);
     expect(reasons[0]).not.toContain("already stopped or cancelled");
   });
 });

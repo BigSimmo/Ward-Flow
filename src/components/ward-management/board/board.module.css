@@ -5959,9 +5959,13 @@
  * The colour legend is left off, because the day count on each tile carries the meaning. A tapped
  * bed opens its record in a sheet (`.detailSheetBody`). */
 @media screen and (max-width: 46.4375rem) {
+  /* Audit A5-09 (13 Nov 2026): the board's folder sets --wf-folder-gap to 0 because the column's
+   * blocks carry their own 12px top margin. The bed list had none, so the sheet's 20px curved edge,
+   * which runs on 8px past the tabs' row, drew over the top 12px of the Show picker and sort button.
+   * The 12px top margin starts the list at the sheet's edge, as the blocks after it do. */
   .screen .phoneBeds {
     min-width: 0;
-    margin: 0 0 var(--wf-s-3);
+    margin: var(--wf-s-3) 0;
   }
 
   .screen .phoneBeds .gridColumn {

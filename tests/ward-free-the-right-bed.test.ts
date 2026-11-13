@@ -31,8 +31,10 @@ describe("dischargesThatFree", () => {
         expect(row.waitingOn).not.toBe("Nothing outstanding");
       }
     }
+    // A16-05: a time already passed today is overdue, not freeing.
     const today = bedReleases.filter(
-      (release) => release.state !== "discharged" && dayOf(release.expectedAt) === dayOf(now),
+      (release) =>
+        release.state !== "discharged" && release.expectedAt >= now && dayOf(release.expectedAt) === dayOf(now),
     );
     expect(total).toBeGreaterThan(0);
     // Every release freeing today lands under exactly one bed type.

@@ -92,7 +92,8 @@ describe("Night view figures match the day screens", () => {
   it("on call is the On-call page's key lines, in its order", () => {
     const contacts = nightContacts(wardSites, minuteOfDay(now));
     expect(contacts.map((contact) => contact.entry.id)).toEqual([...KEY_LINE_IDS]);
-    for (const contact of contacts) expect(contact.number ?? "").not.toMatch(/^(?!08 0000)\d/);
+    // A15-14/A15-19: every number shown is an invented one in the fictional (08) 5550 range.
+    for (const contact of contacts) expect(contact.number ?? "").not.toMatch(/^(?!08 5550)\d/);
   });
 });
 

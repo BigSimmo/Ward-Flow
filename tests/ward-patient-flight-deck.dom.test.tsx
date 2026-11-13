@@ -110,7 +110,7 @@ describe("unified Patient Now clinical flight deck", () => {
     // so the step warns and asks for a reason; it never blocks the coordinator.
     const check = screen.getByTestId("ward-patient-collect-check");
     expect(check).toHaveTextContent("Fit to travel not recorded");
-    expect(check).toHaveTextContent("Form 4A transport order not uploaded");
+    expect(check).toHaveTextContent("Transport or transfer order not uploaded");
     // Audit 1 (CS-09, Josh 20 Oct): the dialog names the person and UMRN, never "this patient".
     expect(check).toHaveTextContent(/Mark moving for .+ · UM\d+\?/);
     expect(screen.getByTestId("live-stage")).toHaveTextContent("handover_ready");

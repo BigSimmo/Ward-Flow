@@ -76,7 +76,7 @@ describe("a person admitted on a form stays on Legal forms (WT-03)", () => {
     expect(screen.getByTestId("form")).toHaveTextContent("arrived|1A");
 
     const admitted = screen.getByTestId("ward-legal-forms-admitted");
-    expect(within(admitted).getByText("Form 6A not recorded (Form 1A ended at arrival)")).toBeInTheDocument();
+    expect(within(admitted).getByText("Next form to record (On Form 1A at arrival)")).toBeInTheDocument();
     fireEvent.click(within(admitted).getByRole("button", { name: /^Record a form for / }));
 
     const sheet = screen.getByTestId("ward-legal-record");

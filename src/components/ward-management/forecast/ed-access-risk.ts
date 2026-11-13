@@ -9,8 +9,13 @@
 // risk when the bed their place in the line reaches is due after they pass the target, or when the
 // line runs out. New referrals, new releases and clinical priority are not modelled, so the card
 // says what this is: the earliest release on record, not a bed for this person.
-import { bedKindGaps, type BedKindId } from "@/components/ward-management/capacity/capacity-derivations";
+import {
+  bedKindBreakdown,
+  bedKindGaps,
+  type BedKindId,
+} from "@/components/ward-management/capacity/capacity-derivations";
 import { type Admission } from "@/components/ward-management/ward-admissions";
+import { readyBedsNow, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import { dayOf, MINUTES_PER_DAY, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import type { BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
@@ -35,6 +40,12 @@ export type EdAccessRiskRow = {
   minutesLeft: number;
   /** When the bed this person's place in the line reaches is due. Null when the line runs out. */
   slotAt: Instant | null;
+  /**
+   * People before this person in their line (A16-07, 3.6): the accepting ward's line for this bed
+   * kind when a ward has accepted them, else everyone waiting for this bed kind. 0 for the first in line, so the card
+   * says "ahead in the line" only when someone is.
+   */
+  ahead: number;
   /** The earliest release of the right kind on record (at the accepting ward when there is one). */
   nextRelease: EdAccessRelease | null;
   acceptedUnitName: string | null;
@@ -63,12 +74,15 @@ export function edAccessRisk(
   admissions: readonly Admission[],
   now: Instant,
   targetMinutes: number,
+  /** Referrals that may hold a named bed (3.6): the same named holds Capacity and the ward read. */
+  referrals: readonly ReservationReferral[],
   horizonMinutes = MINUTES_PER_DAY,
 ): EdAccessRisk {
   const open = new Map(units.filter((unit) => !unit.isClosed).map((unit) => [unit.id, unit]));
   const admissionById = new Map(admissions.map((admission) => [admission.id, admission]));
   const expectedAt = (release: BedRelease) => forecastReleaseAt(release, admissionById.get(release.admissionId));
-  const gaps = bedKindGaps([...movements], [...units], now, admissions);
+  const gaps = bedKindGaps([...movements], [...units], now, admissions, referrals);
+  const namedHolds: readonly ReservationReferral[] = [...movements, ...referrals];
   const pending = releases
     .filter(
       (release) =>
@@ -83,6 +97,7 @@ export function edAccessRisk(
 
   const waiting = movements.filter(isWaitingForBed).sort((a, b) => a.openedAt - b.openedAt || a.id.localeCompare(b.id));
   const slotOf = new Map<string, Instant | null>();
+  const aheadOf = new Map<string, number>();
   for (const gap of gaps) {
     const slots: Instant[] = [
       ...Array.from({ length: Math.max(0, gap.bedsThatFit) }, () => now),
@@ -90,7 +105,48 @@ export function edAccessRisk(
     ];
     waiting
       .filter((movement) => bedKindOfNeed(movement) === gap.id)
-      .forEach((movement, place) => slotOf.set(movement.id, slots[place] ?? null));
+      .forEach((movement, place) => {
+        slotOf.set(movement.id, slots[place] ?? null);
+        aheadOf.set(movement.id, place);
+      });
+  }
+  // A16-07 (Audit 16, 13 Nov 2026): a person a ward has accepted waits for THAT ward's beds of the
+  // kind they need. Its line is the people it has accepted for that kind, in the same order, served
+  // first by the ward's Ready beds of that kind (the mismatch table's own per-ward split, never more
+  // than the ward's `readyBedsNow` with the same named holds), then by its own releases of that kind.
+  // So the card never quotes a discharge in two days while the ward shows a fitting bed ready now,
+  // and never counts an open bed for someone who needs a locked one (Codex review on #1657).
+  const movementList = [...movements];
+  const unitList = [...units];
+  const kindBedsAt = new Map<BedKindId, Map<string, number>>();
+  const kindBeds = (kind: BedKindId, unitId: string) => {
+    let byUnit = kindBedsAt.get(kind);
+    if (!byUnit) {
+      byUnit = new Map(
+        bedKindBreakdown(kind, movementList, unitList, admissions, referrals).wards.map((ward) => [
+          ward.unit.id,
+          ward.beds,
+        ]),
+      );
+      kindBedsAt.set(kind, byUnit);
+    }
+    return byUnit.get(unitId) ?? 0;
+  };
+  for (const unit of open.values()) {
+    const accepted = waiting.filter((movement) => movement.acceptedUnitId === unit.id);
+    if (accepted.length === 0) continue;
+    const wardReady = readyBedsNow(unit, admissions, releases, namedHolds);
+    for (const kind of new Set(accepted.map(bedKindOfNeed))) {
+      const line = accepted.filter((movement) => bedKindOfNeed(movement) === kind);
+      const readyNow = Math.min(kindBeds(kind, unit.id), wardReady);
+      const wardReleases = pending
+        .filter((entry) => entry.release.unitId === unit.id && entry.kind === kind && entry.release.blocker === null)
+        .map((entry) => entry.at);
+      line.forEach((movement, place) => {
+        slotOf.set(movement.id, place < readyNow ? now : (wardReleases[place - readyNow] ?? null));
+        aheadOf.set(movement.id, place);
+      });
+    }
   }
 
   const inEd = waiting.filter(isWaitingInEd);
@@ -127,6 +183,7 @@ export function edAccessRisk(
       passesAt,
       minutesLeft: passesAt - now,
       slotAt,
+      ahead: aheadOf.get(movement.id) ?? 0,
       nextRelease: first
         ? {
             unitId: first.release.unitId,

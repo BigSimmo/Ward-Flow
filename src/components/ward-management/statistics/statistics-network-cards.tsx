@@ -89,7 +89,7 @@ export function networkUnitRows(
     // D-115: a bed named for an incoming patient is Pulled, not Ready, in the four boxes. The
     // in-use rate stays the beds taken by a stay, as Home's occupancy and the 85% line read it.
     const states = bedStates(unit, admissions, bedReleases, leaveBeds, holds);
-    const unheld = holds.length === 0 ? states : bedStates(unit, admissions, bedReleases, leaveBeds);
+    const unheld = holds.length === 0 ? states : bedStates(unit, admissions, bedReleases, leaveBeds, []);
     const inUse = unheld.occupied + unheld.pulled;
     const rate = unit.beds > 0 ? Math.round((inUse / unit.beds) * 100) : 0;
     return { unit, states, inUse, rate, service: siteByCode(unit.siteCode)?.service ?? "Other" };

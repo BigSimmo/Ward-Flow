@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 
 import { capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
-import { bedStates } from "@/components/ward-management/ward-bed-states";
+import { bedStates, networkNamedHolds } from "@/components/ward-management/ward-bed-states";
 import type { DueSoonThresholds } from "@/components/ward-management/ward-clock";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import type { LeaveBed, Unit } from "@/components/ward-management/ward-model";
@@ -35,10 +35,17 @@ export function useWardScreenFigures(
     () =>
       unit && {
         capacity: unitCapacity(unit, bedReleases),
-        states: bedStates(unit, admissions, bedReleases, leaveBeds),
+        // A16-25 (3.4): the ward's named holds, as its board counts them, so Ready matches Capacity.
+        states: bedStates(
+          unit,
+          admissions,
+          bedReleases,
+          leaveBeds,
+          networkNamedHolds(movements, wardReferralInbox?.(unit.id) ?? []),
+        ),
         occupancy: wardOccupancy([unit], admissions, bedReleases),
       },
-    [unit, admissions, bedReleases, leaveBeds],
+    [unit, admissions, bedReleases, leaveBeds, movements, wardReferralInbox],
   );
   const breakdown = useMemo(
     () => unit && capacityBreakdown(unit, bedReleases, leaveBeds, now),

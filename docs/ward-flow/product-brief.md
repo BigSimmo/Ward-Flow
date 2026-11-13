@@ -151,9 +151,9 @@ treat them as starting drafts.
 
 ### 3. The shape of the pilot
 
-- **Pilot site: East Metropolitan Health Service (EMHS) (Josh, 25 September).** The app keeps its
-  options for switching between health services and sites for now; EMHS is the pilot, not the only
-  site the app can show.
+- **Hoped-for first trial site (not agreed with the service): East Metropolitan Health Service (EMHS)
+  (Josh, 25 September).** The app keeps its options for switching between health services and sites
+  for now; EMHS is the hoped-for trial site, not the only site the app can show.
 - **Built for the Coordinator first (Josh, 25 September).** See "Who uses it" above.
 - One coordinator desk, weekday business hours. **(Guess — Josh to confirm.)**
 - Start with the coordinator and a small number of EMHS wards and one ED, then widen. **(Guess —

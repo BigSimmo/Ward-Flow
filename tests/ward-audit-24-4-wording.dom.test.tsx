@@ -47,7 +47,8 @@ describe("audit 24-4 wording", () => {
       thresholds: dueSoonThresholdsOf(state.configuration),
     });
     expect(RELEASES_HELD_UP_LABEL).toBe("Releases held up, today and tomorrow");
-    expect(nav.discharges?.noun).toBe("releases held up, today and tomorrow");
+    // A9-04 (Josh, 13 Nov 2026): the menu line is the TV's words, "held up due by tomorrow".
+    expect(nav.discharges?.noun).toBe("held up due by tomorrow");
   });
 
   it("NA2-04: ED 'Bed held' splits into Accepted, no bed yet and Bed pulled", () => {

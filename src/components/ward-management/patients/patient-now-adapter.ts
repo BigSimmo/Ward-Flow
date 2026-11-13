@@ -299,6 +299,8 @@ function movementNextSteps(
 /**
  * Whether a ward stay is the subject patient's own. The record tabs (Community, Details, Documents)
  * ask this of the one person in focus only, so the patient link stays read here, under archived D-14.
+ * The patient page's open work (`patient-open-work.ts`, A16-11) asks the same of that one person's
+ * own referrals and planned bookings.
  */
 export function isOwnStay(stay: { readonly patientId?: string | null }, subjectId: string): boolean {
   return stay.patientId === subjectId;

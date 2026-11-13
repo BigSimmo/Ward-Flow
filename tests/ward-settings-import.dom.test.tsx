@@ -83,7 +83,10 @@ it.each([
     "720",
   );
   expect(screen.getByTestId("import-saved-configuration").textContent).toBe(before);
-  expect(screen.getByText("Invalid configuration file format.")).toBeVisible();
+  // C09 (Josh, 13 Nov 2026): the reason stays beside Load instead of a passing toast.
+  expect(screen.getByTestId("ward-settings-load-error")).toHaveTextContent(
+    /^The rules file was not loaded: .+\. Choose another file\.$/u,
+  );
 });
 
 it("says when the rules file cannot be read and clears the picker (H-0351)", () => {
@@ -116,6 +119,8 @@ it("says when the rules file cannot be read and clears the picker (H-0351)", () 
   fireEvent.change(input, {
     target: { files: [new File(["synthetic configuration"], "rules.json", { type: "application/json" })] },
   });
+  // C09 (Josh, 13 Nov 2026): the reason stays beside Load, which sits in the Rules file fold.
+  (screen.getByTestId("ward-settings-rules-more") as HTMLDetailsElement).open = true;
   expect(screen.getByText("This rules file could not be read. Select it again.")).toBeVisible();
   expect(cleared).toHaveBeenCalled();
 });

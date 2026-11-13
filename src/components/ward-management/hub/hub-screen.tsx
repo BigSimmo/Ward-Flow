@@ -57,6 +57,7 @@ import {
   type HubEntry,
   type HubKind,
 } from "@/components/ward-management/hub/hub-derivations";
+import { networkNamedHolds } from "@/components/ward-management/ward-bed-states";
 import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import {
   edStatisticsHref,
@@ -187,8 +188,17 @@ export function HubScreen() {
 
   const wardNetwork = useWardNetwork();
   const entries = useMemo(
-    () => hubEntries({ units, bedReleases, admissions, leaveBeds, now, sites: wardNetwork.sites }),
-    [units, bedReleases, admissions, leaveBeds, now, wardNetwork.sites],
+    () =>
+      hubEntries({
+        units,
+        bedReleases,
+        admissions,
+        leaveBeds,
+        namedHolds: networkNamedHolds(movements, referrals),
+        now,
+        sites: wardNetwork.sites,
+      }),
+    [units, bedReleases, admissions, leaveBeds, movements, referrals, now, wardNetwork.sites],
   );
   const results = useMemo(() => {
     const base = searchHub(entries, "", kind);

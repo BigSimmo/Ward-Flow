@@ -17,7 +17,7 @@ Ward Flow holds synthetic data only. Nothing here authorises real patient data.
 
 | Part                 | Where                                        | Name                | Notes                                                                                                                              |
 | -------------------- | -------------------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Public demo app      | Railway, project **Ward Flow**, `production` | `ward-flow`         | Local mode only. No database, no sign-in. Health: `/api/health`                                                                    |
+| Public demo app      | Railway, project **Ward Flow**, `production` | `ward-flow`         | Local mode only. No database. Asks for a demo code (front door on, D-130). Health: `/api/health`                                   |
 | Signed-in site       | Same Railway project and environment         | `ward-flow-shared`  | Shared mode. Sleeps when idle. Health: `/api/health`                                                                               |
 | Shared backend       | Same Railway project and environment         | `ward-flow-backend` | Node server. `/healthz` reports process liveness; database diagnostics need the monitor token or signed-in `/readyz`. Never sleeps |
 | Database and sign-in | Supabase project **Ward Flow**, Sydney       | schema `ward_flow`  | Backend logs in as the restricted `wardflow_backend` role, never the administrator                                                 |
@@ -45,9 +45,10 @@ in [backend/ward-flow/migrations](../../backend/ward-flow/migrations), currently
 
 ### Front door switch
 
-Both sites can require sign-in before any page or API answers (Josh, 27 October 2026). It is
-**off** until Josh says yes to turning it on. The settings are server-only, read on each request,
-so changing them needs a restart, not a rebuild:
+Both sites can require sign-in before any page or API answers (Josh, 27 October 2026). Josh
+approved switching it on (D-129). The public demo has asked for the demo code since 10 November
+2026 (D-130); the signed-in site has not been checked from the cloud. The settings are
+server-only, read on each request, so changing them needs a restart, not a rebuild:
 
 - `WARD_FRONT_DOOR=required` turns it on and `WARD_FRONT_DOOR=off` turns it off. On Railway an
   unset or mistyped value keeps the site shut (Q372, 3 November 2026), so a lost variable never

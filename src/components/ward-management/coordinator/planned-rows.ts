@@ -20,7 +20,8 @@ export function usePlannedRows(now: Instant): readonly PlannedRow[] {
   );
   const nameOf = usePatientOf();
   const until = shiftEndInstant(now);
-  const endOfDay = (dayOf(now) + 1) * MINUTES_PER_DAY;
+  const startOfDay = dayOf(now) * MINUTES_PER_DAY;
+  const endOfDay = startOfDay + MINUTES_PER_DAY;
   return useMemo(
     () =>
       plannedRows({
@@ -32,9 +33,10 @@ export function usePlannedRows(now: Instant): readonly PlannedRow[] {
         now,
         until,
         endOfDay,
+        startOfDay,
         nameOf,
       }),
-    [movements, admissions, plannedAdmissions, units, configuration, now, until, endOfDay, nameOf],
+    [movements, admissions, plannedAdmissions, units, configuration, now, until, endOfDay, startOfDay, nameOf],
   );
 }
 

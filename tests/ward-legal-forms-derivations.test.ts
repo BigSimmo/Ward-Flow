@@ -387,7 +387,13 @@ describe("current form deadlines across operational outputs", () => {
       legalStatus: "Involuntary inpatient",
       legalForm: { code: "1A", kind: "examination", dueAt: NOW - 5 },
     });
-    const ended = { ...live, examination: { at: NOW - 10, outcome: "inpatient_order" as const } };
+    // A1 (Josh, 13 Nov 2026): only a recorded end makes the typed time history. The examination is
+    // kept on this record to show it no longer ends the form by itself.
+    const ended = {
+      ...live,
+      examination: { at: NOW - 10, outcome: "inpatient_order" as const },
+      legalForm: { code: "1A", kind: "examination" as const, dueAt: NOW - 5, endedBy: "replaced" as const },
+    };
     const activity = (movement: Movement) =>
       deriveCommandActivity({
         movements: [movement],

@@ -15,6 +15,7 @@ import type {
   TransportExceptionReason,
 } from "@/components/ward-management/ward-model";
 import { ARRIVAL_MODE_LABELS } from "@/components/ward-management/ward-model";
+import { legalFormNowWords } from "@/components/ward-management/ward-legal-form-progression";
 import {
   RELEASE_PULL_REASONS,
   changeReasonLabels,
@@ -292,12 +293,13 @@ export function WardArrivalsCorridor({
                     </span>
                   </div>
                   <div className={styles.tagCluster}>
-                    {/* D-187 item 4 (Q25): the form and the status exactly as recorded. A form on
-                        file never makes the person "involuntary"; that word shows only when the
-                        recorded status says it. */}
-                    {movement.legalForm ? (
+                    {/* 1.1 and 1.7: the one current legal position ("Form 3B", or "Form 3B ended").
+                        D-187 item 4 (Q25): the status exactly as recorded. A form on file never
+                        makes the person "involuntary"; that word shows only when the recorded
+                        status says it. */}
+                    {legalFormNowWords(movement) ? (
                       <span className={styles.statusTag} data-type="legal">
-                        Form {movement.legalForm.code}, {movement.legalStatus || "status not recorded"}
+                        {legalFormNowWords(movement)}, {movement.legalStatus || "status not recorded"}
                       </span>
                     ) : movement.legalStatus ? (
                       <span className={styles.statusTag} data-type="legal">

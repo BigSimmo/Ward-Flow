@@ -7,7 +7,13 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
 import styles from "./downtime-pack-outage.module.css";
-import { PACK_OLD_AFTER_MINUTES, wardsWithOldPack, type DowntimePackPrintRecord } from "../ward-downtime-pack-prints";
+import {
+  PACK_OLD_AFTER_MINUTES,
+  oldPackCounts,
+  oldPackWords,
+  wardsWithOldPack,
+  type DowntimePackPrintRecord,
+} from "../ward-downtime-pack-prints";
 
 /** Old packs the band shows before "Show more". */
 const OLD_PACKS_FIRST = 6;
@@ -36,6 +42,10 @@ export function lastPrintedByRole(
  * The coordinator's band on the downtime pack screen: each ward whose last printed or saved pack is
  * older than `PACK_OLD_AFTER_MINUTES`, with that time, or "Never printed". The list lives here only;
  * Home's Checking line points to it. Nothing is drawn when no pack is old.
+ *
+ * Root-cause fix 3.3 (Josh, 13 Nov 2026): the title and counts word "never printed" and "over 24h
+ * old" apart, with the same words as Home, and say the band covers every ward in the network (Home
+ * counts the chosen service's wards when one is chosen, and says so).
  */
 export function DowntimeOldPacksBand({ now }: { now: Instant }) {
   const isPhone = useIsPhone();
@@ -71,12 +81,20 @@ export function DowntimeOldPacksBand({ now }: { now: Instant }) {
       onClick: () => setOpen((was) => !was),
       testId: "ward-downtime-old-packs-more",
     });
-  const wardsWord = `${old.length} of ${units.length} ${units.length === 1 ? "ward" : "wards"}`;
+  const counts = oldPackCounts(old);
+  const hours = Math.round(PACK_OLD_AFTER_MINUTES / 60);
+  const title =
+    counts.overAge === 0
+      ? "Outage packs never printed"
+      : counts.neverPrinted === 0
+        ? `Outage packs over ${hours}h old`
+        : `Outage packs never printed or over ${hours}h old`;
+  const wardsWord = `${oldPackWords(counts)} · all ${units.length} ${units.length === 1 ? "ward" : "wards"}`;
   // Screen only: the printed pack is the board, not this list.
   return (
     <div data-print-hide>
       <HeroBand
-        title={`Outage packs older than ${Math.round(PACK_OLD_AFTER_MINUTES / 60)} hours`}
+        title={title}
         aside={isPhone ? wardsWord : `${wardsWord} · each ward's last print or save`}
         variant="wrap"
         cells={cells}

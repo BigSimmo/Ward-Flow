@@ -30,7 +30,7 @@ export const EXAMPLE_PERSON: TriagePerson = {
     received: "eReferral 06/11 08:55",
   },
   last: {
-    label: "Last triage · 12 Oct · Dr S. Chen",
+    label: "Last triage · 12 Oct · Dr S. Orlenby",
     when: "12 Oct",
     urgencyText: "D within 48 hours",
     outcome: "Accepted",

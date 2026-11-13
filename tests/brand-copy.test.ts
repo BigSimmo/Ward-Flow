@@ -7,6 +7,7 @@ import {
   BRAND_CATCHPHRASE,
   BRAND_CATCHPHRASE_BARE,
   BRAND_DESCRIPTION,
+  BRAND_OG_LABEL,
   BRAND_MENU_DESCRIPTION,
   BRAND_NAME,
   BRAND_OG_ALT,
@@ -154,8 +155,16 @@ describe("derived brand lines", () => {
 
   it("names the product in the share-card alt text", () => {
     expect(BRAND_OG_ALT.startsWith(BRAND_NAME)).toBe(true);
-    // One dash per sentence: BRAND_DESCRIPTION already carries one, so the alt
-    // text joins with a colon. Two em dashes in one line read as a stutter.
-    expect(BRAND_OG_ALT.match(/—/g) ?? []).toHaveLength(1);
+    // A15-20 (13 Nov 2026): the description now carries a colon and no dash, so the alt text joins
+    // with full stops and says the picture is a synthetic prototype.
+    expect(BRAND_OG_ALT.match(/—/g) ?? []).toHaveLength(0);
+    expect(BRAND_OG_ALT.match(/:/g) ?? []).toHaveLength(1);
+    expect(BRAND_OG_ALT).toContain(BRAND_OG_LABEL);
+  });
+
+  it("says the data is invented and names no health service as its user (A15-20)", () => {
+    expect(BRAND_DESCRIPTION).toBe("Prototype with invented data: psychiatric bed flow, from referral to bed.");
+    expect(BRAND_DESCRIPTION).not.toMatch(/WA hospitals|WA Health/u);
+    expect(readFileSync("src/app/opengraph-image.tsx", "utf8")).toContain("{BRAND_OG_LABEL}");
   });
 });

@@ -251,7 +251,7 @@ describe("RECORD_DIVERSION — build plan item 29 / R2-7", () => {
       role: "coordinator",
       now: NOW + 8,
       movementId,
-      reason: "The examination was revoked",
+      reason: "The examination made no order",
       whereabouts: TRANSPORT_WHEREABOUTS[0],
     });
     expect(stopped.rejections.at(-1)?.reason).toMatch(/diverted/i);

@@ -25,6 +25,7 @@ import { GENERAL_OBSERVATION } from "./ward-observation";
 import { createPatientResolver } from "./ward-patient-resolver";
 import type { Patient, PatientId } from "./ward-patients";
 import { completeSyntheticReferralIntake } from "./ward-referral-intake-seed";
+import { adverseExampleWard, mayCarryAdverseExample } from "./ward-demo-adverse-wards";
 import { wardReferralInboxEntries } from "./referrals/referral-inbox";
 import { currentShiftStartInstant } from "./ward-board-time-features";
 import type { StaffRequestRecord } from "./staffing/staff-requests";
@@ -231,6 +232,10 @@ function addInboxReferrals(state: Draft, people: People, anchor: Instant) {
  * Room status and incidents on every secure ward but the first, which keeps nothing recorded so the
  * demo still shows that state. No seclusion or restraint is seeded as in use: an open episode would
  * refuse that patient's discharge and transfer, which no example row should do.
+ *
+ * A15-27 (Josh, 13 Nov 2026): the room status stays on every one of those wards (script step 6B
+ * reads the Seclusion rooms list), but an invented incident is adverse, so a ward carrying a real
+ * ward's own name gets none (`mayCarryAdverseExample`, `ward-demo-adverse-wards.ts`).
  */
 function addRestrictivePractice(state: Draft, anchor: Instant) {
   let secure = -1;
@@ -238,7 +243,8 @@ function addRestrictivePractice(state: Draft, anchor: Instant) {
     if (unit.lockedBeds === 0 || unit.restrictivePractice) return unit;
     const index = secure++;
     if (index < 0) return unit;
-    const incidents: WardIncident[] = Array.from({ length: 1 + (index % 2) }, (_, n) => ({
+    const count = mayCarryAdverseExample(unit) ? 1 + (index % 2) : 0;
+    const incidents: WardIncident[] = Array.from({ length: count }, (_, n) => ({
       id: `RI-EX-${unit.id}-${n + 1}`,
       category: INCIDENTS[(index + n * 2) % INCIDENTS.length]!,
       at: anchor - 70 - ((index * 53 + n * 190) % 900),
@@ -272,12 +278,17 @@ export function applyExampleListsOverlay(state: WardFlowState, anchor: Instant):
   return { ...state, ...draft, ...seededStaffRequest(state, anchor), ...seededHandoverWork(draft, anchor) };
 }
 
-/** Staff needed (feature 10): one synthetic open request, so the tag shows in the demo. */
+/**
+ * Staff needed (feature 10): one synthetic open request, so the tag shows in the demo. A15-27: a
+ * staff request is adverse, so it goes on the first ward the shared rule allows, not on a ward
+ * carrying a real ward's own name (it used to name SCGH's Mental Health Unit).
+ */
 function seededStaffRequest(state: WardFlowState, anchor: Instant): Pick<WardFlowState, "staffRequests"> {
-  if (!state.units.some((unit) => unit.id === "scgh-adult-open")) return {};
+  const unit = adverseExampleWard(state.units);
+  if (!unit) return {};
   const request: StaffRequestRecord = {
     id: "SR-1",
-    unitId: "scgh-adult-open",
+    unitId: unit.id,
     shiftStartAt: currentShiftStartInstant(anchor),
     count: 2,
     reasons: ["constant_observation", "staff_short"],

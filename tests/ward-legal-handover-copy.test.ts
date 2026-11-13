@@ -83,13 +83,16 @@ describe("legal form handover copy: passed and upcoming recorded times", () => {
     },
   );
 
-  it.each(["arrival", "examination"] as const)("does not resurrect an ended form after %s", (endedWhen) => {
-    const entry: Movement = {
+  // A1 (Josh, 13 Nov 2026): the arrival or the examination alone ends nothing; a recorded end does.
+  it.each(["arrival", "examination"] as const)("does not resurrect a form recorded as ended, after %s", (when) => {
+    const live: Movement = {
       ...movement("WF-LEGAL-COPY-ENDED", NOW - 1),
-      ...(endedWhen === "arrival"
+      ...(when === "arrival"
         ? { closure: { at: NOW, outcome: "arrived", reason: "arrived" } }
         : { examination: { at: NOW, outcome: "inpatient_order" } }),
     };
+    expect(handoverLines([live], NOW, identify, WINDOW)).toHaveLength(1);
+    const entry: Movement = { ...live, legalForm: { ...live.legalForm!, endedBy: "form_3e" } };
 
     expect(handoverLines([entry], NOW, identify, WINDOW)).toEqual([]);
   });

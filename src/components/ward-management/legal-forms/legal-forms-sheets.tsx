@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { useDirtyStateGuard } from "../use-dirty-state-guard";
 import { draftSessionVersion, sessionDraftKey } from "../ward-session-drafts";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
+import { useModalHeadingFocus } from "../use-modal-heading-focus";
 import { ChevronLeft, Clock } from "lucide-react";
 
 import {
@@ -255,7 +256,9 @@ export function RecordFormSheet({
     priorMovement.current = draft.movement;
   }, [draft.movement, clearDraft]);
   // Redesign (Josh, 31 Oct 2026): the movement first, then the form from the paper, then its time.
-  const movementRef = useRef<HTMLSelectElement | null>(null);
+  // A12-08 (Josh, 13 Nov 2026): focus starts on the box's heading, not the Movement select, so
+  // Escape closes the box at once (the kit leaves Escape to a focused select).
+  const headingFocus = useModalHeadingFocus("ward-legal-record");
   const baseId = useId();
   const parsedWrittenAt = parseWrittenInstant(timeOnForm, now, dayZero ? dateOnForm : "", dayZero);
   const selectedMovement = openMovements.find((movement) => movement.id === draft.movement);
@@ -321,7 +324,7 @@ export function RecordFormSheet({
     <Sheet
       open={open}
       onClose={dismiss}
-      initialFocusRef={movementRef}
+      initialFocusRef={headingFocus}
       title="Record a form"
       description="Record the time written on the paper form"
       portal={false}
@@ -414,7 +417,6 @@ export function RecordFormSheet({
         {refusedSaves > 0 ? <ErrorSummary items={problems} action="before saving" focusKey={refusedSaves} /> : null}
         <Field label="Movement" id={movementId} error={problemFor(movementId)}>
           <Select
-            ref={movementRef}
             disabled={saving}
             value={draft.movement}
             onChange={(event) => {

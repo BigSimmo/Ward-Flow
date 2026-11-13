@@ -23,6 +23,7 @@ function packFor(now = NOW_ANCHOR) {
     bedReleases: state.bedReleases,
     leaveBeds: state.leaveBeds,
     movements: state.movements,
+    referrals: state.referrals,
     now,
     identify: () => "Synthetic person",
   });
@@ -44,7 +45,7 @@ describe("downtimePack", () => {
     expect(pack.wards).toHaveLength(state.units.length);
     for (const ward of pack.wards) {
       const unit = state.units.find((candidate) => candidate.id === ward.unitId)!;
-      expect(ward.counts).toEqual(bedStates(unit, state.admissions, state.bedReleases, state.leaveBeds));
+      expect(ward.counts).toEqual(bedStates(unit, state.admissions, state.bedReleases, state.leaveBeds, []));
     }
     expect(pack.totals.beds).toBe(state.units.reduce((sum, unit) => sum + unit.beds, 0));
     expect(pack.totals.ready).toBe(pack.wards.reduce((sum, ward) => sum + ward.counts.ready, 0));

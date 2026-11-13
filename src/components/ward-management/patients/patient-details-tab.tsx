@@ -17,6 +17,7 @@ import {
 import { genderReviewNeeded, SEX_DESIGNATIONS, type Movement, type RecordedSex } from "../ward-model";
 import { sexDesignationAccepts } from "../ward-eligibility";
 import { legalStatusTextIsInvoluntary } from "../ward-support-notifications";
+import { currentLegalPosition } from "../ward-legal-form-progression";
 import { calendarDateOf } from "../ward-clock";
 import { isEdOriginJourney } from "../ward-ed-presence";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
@@ -354,12 +355,16 @@ export function PatientDetailsTab({
     placement?.cohort && patient?.dateOfBirth && today && !cohortFitsAge(placement.cohort, patient.dateOfBirth, today)
       ? patientCohort(patient.dateOfBirth, today)
       : undefined;
+  // A16-09 and 1.1 (Josh, 13 Nov 2026): the first row reads the one current legal position, so the
+  // Details tab reads as every other view; the stay's (the movement's) status wins over the patient
+  // record's own. D-187 item 1 (Q19, later the same evening) keeps both statuses: when they differ,
+  // the patient record's status shows as a second, plainly named row and a warning says so.
   const legal: Fact[] = [
     // D-187 item 1 (Q19): both statuses are kept, named plainly. A movement from a ward or the
     // community is not an ED stay, so it reads "This move".
     {
       label: legalDiffers ? (movement && isEdOriginJourney(movement) ? "This ED stay" : "This move") : "Legal status",
-      value: legalValue(movement?.legalStatus ?? patient?.legalStatus),
+      value: legalValue(currentLegalPosition(movement, patient?.legalStatus).status),
       wide: !active,
     },
     ...(legalDiffers ? [{ label: "Patient record", value: legalValue(patient?.legalStatus) }] : []),

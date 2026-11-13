@@ -126,7 +126,8 @@ const UNWIND_LABELS: Record<Movement["unwinds"][number]["kind"], string> = {
 const EXAMINATION_LABELS: Record<NonNullable<Movement["examination"]>["outcome"], string> = {
   inpatient_order: "Inpatient order",
   community_order: "Community order",
-  revoked: "Revoked",
+  // D-170 item 3: an examination is never "revoked"; the stored code stays.
+  revoked: "No order made",
   further_examination_ordered: "Further examination ordered",
 };
 

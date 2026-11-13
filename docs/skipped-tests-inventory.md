@@ -11,7 +11,7 @@ own, so its row names the test it sits in; a title passed through a helper names
 Indirect registrations such as `(cond ? it.skip : it)(…)` are listed by condition. The reason column is the
 skip's own condition or message; read the comment above the call for the why.
 
-Total: 32
+Total: 31
 
 | Location                                                 | Kind                  | Title                                                                                                          | Condition or message                                                                                           |
 | -------------------------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
@@ -36,7 +36,6 @@ Total: 32
 | `tests/ward-audit-m138-ward-visual-baselines.spec.ts`    | test.skip at run time | picture: handover print preview matches its baseline                                                           | when `testInfo.project.name === "visual-phone"`: The printed handover sheet is not on a phone                  |
 | `tests/ward-audit-m138-ward-visual-baselines.spec.ts`    | test.skip at run time | picture: phone floating bar (D-112) matches its baseline                                                       | when `testInfo.project.name !== "visual-phone"`: The floating bar is the phone dock (D-112)                    |
 | `tests/ward-audit-m16-time-number-scan.test.ts`          | it.todo               | ``M16 defect: ${drift.file} types \`${drift.expr}\` (${drift.signedValue}): ${drift.why}``                     | -                                                                                                              |
-| `tests/ward-audit-m17-legal-as-recorded.test.ts`         | it.todo               | M17 gap: the ED list download (ed-export.ts) writes 'Form 3A' with no written or typed end time; D-93 covers … | -                                                                                                              |
 | `tests/ward-audit-m36-config-mid-shift.test.ts`          | it.todo               | opening a surge bed mid-shift carries through every screen (no such feature: the model records no overflow be… | -                                                                                                              |
 | `tests/ward-audit-m36-config-mid-shift.test.ts`          | it.todo               | renaming a ward mid-shift carries through every screen, waiting save and alert (no event renames a ward)       | -                                                                                                              |
 | `tests/ward-audit-m87-planted-defects.test.ts`           | it.todo               | the PR template asks which planted defect a tier 1 test fails on                                               | -                                                                                                              |

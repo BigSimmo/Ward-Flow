@@ -54,12 +54,19 @@ function namedReservationCount(
   return numberedReservationBeds(unit, admissions, movements, others).size;
 }
 
+/**
+ * `referrals` is REQUIRED (A16-25, root-cause 3.4, 13 Nov 2026): it used to default to `[]`, so All
+ * wards, Statistics, the hub, the ward page, the downtime pack and the leave tracker left it out and
+ * counted a bed named for an incoming patient as Ready while Capacity held it. Pass
+ * `networkNamedHolds(movements, referrals)`; pass `[]` only for a deliberate "before named holds"
+ * comparison, never for a figure printed as Ready.
+ */
 export function bedStates(
   unit: Unit,
   admissions: readonly Admission[],
   bedReleases: BedRelease[],
   leaveBeds: readonly LeaveBed[],
-  referrals: readonly ReservationReferral[] = [],
+  referrals: readonly ReservationReferral[],
 ): BedStateCounts {
   const capacity = unitCapacity(unit, bedReleases);
   let livePulled = 0;
@@ -130,6 +137,18 @@ export function totalReadyBedsNow(
   referrals: readonly ReservationReferral[],
 ): number {
   return readyBedsByWard(units, admissions, bedReleases, referrals).reduce((sum, ward) => sum + ward.ready, 0);
+}
+
+/**
+ * THE NAMED-HOLD LIST every network figure reads (WF-FIG-017, D-115): every journey and every
+ * referral, unfiltered. Capacity, Home, the meeting sheet and the TV already pass this list; every
+ * other screen takes it from here so a bed named for an incoming patient is held on all of them.
+ */
+export function networkNamedHolds(
+  movements: readonly Movement[],
+  referrals: readonly BaseReservationReferral[],
+): ReservationReferral[] {
+  return [...movements, ...referrals];
 }
 
 /** The ruled words, spelled once. */

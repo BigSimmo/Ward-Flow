@@ -41,7 +41,8 @@ import styles from "./ward-tool-on-call.module.css";
  *
  * Calling does not dial. The On-call directory's rule ("nothing dials or sends; Call copies the
  * number and says the dialler is not wired", `on-call-directory.ts`) holds here too: every number is
- * an invented demo number on the unassigned (08) 0000 exchange, labelled Demo.
+ * an invented demo number in the (08) 5550 fiction range. A15-29 (13 Nov 2026): one Sample mark per
+ * row covers its number, hours and duty together, not the number alone.
  */
 
 type ContactsView = "key" | "mine" | "now" | "recent" | "all";
@@ -211,16 +212,15 @@ function OnCallBody({
             return (
               <li key={entry.id} className={styles.row}>
                 <span className={styles.who}>
-                  <strong className={styles.name}>{name}</strong>
+                  <strong className={styles.name}>
+                    {name} <span className={styles.demo}>Sample</span>
+                  </strong>
                   <span className={styles.place}>{entry.place}</span>
                   <span className={styles.status}>
                     <StatusGlyph tone={status.tone} size={8} />
                     {status.text}
                   </span>
-                  <span className={styles.number}>
-                    {detail ?? "No number"}
-                    {detail ? <span className={styles.demo}>Demo</span> : null}
-                  </span>
+                  <span className={styles.number}>{detail ?? "No number"}</span>
                 </span>
                 <span className={styles.actions}>
                   {number ? (

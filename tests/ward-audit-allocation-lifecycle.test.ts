@@ -233,7 +233,7 @@ describe("new bed allocations after capacity reconfirmation", () => {
         commitments,
       );
       const unit = state.units.find((u) => u.id === UNIT)!;
-      const boxes = bedStates(unit, state.admissions, state.bedReleases, state.leaveBeds);
+      const boxes = bedStates(unit, state.admissions, state.bedReleases, state.leaveBeds, []);
       expect(boxes.ready).toBe(0);
       if (closed) expect(boxes.closed).toBe(1);
       expect(boxes.ready + boxes.pulled + boxes.closed + boxes.occupied).toBe(unit.beds);
@@ -341,6 +341,7 @@ describe("unreserved beds still being made ready", () => {
         state.admissions,
         state.bedReleases,
         state.leaveBeds,
+        [],
       );
     expect(boxes(before)).toMatchObject({ ready: 2, beingMadeReady: 2 });
     const allocate: WardFlowEvent =

@@ -138,7 +138,7 @@ describe("a new triage", () => {
   it("names the chosen person in the summary and says there is no referral", () => {
     const model = summaryModel(state);
     expect(model.name).toBe("Ridgewell, Ada");
-    expect(model.keyLine).toContain("Dr S. Chen");
+    expect(model.keyLine).toContain("Dr S. Orlenby");
     expect(summaryText(model)).toMatch(/\nReferral: None\n/);
   });
 
@@ -179,7 +179,7 @@ describe("a previous triage, read from a signed record", () => {
     expect(last.urgencyText).toBe("C within 12 hours");
     expect(last.legal).toBe("Community treatment order");
     expect(last.review).toBe("72 hours");
-    expect(last.label).toMatch(/^Last triage · \d{2} [A-Z][a-z]{2} · Dr S\. Chen$/);
+    expect(last.label).toMatch(/^Last triage · \d{2} [A-Z][a-z]{2} · Dr S\. Orlenby$/);
   });
 
   it("puts that triage on the person, so the next one compares with it", () => {
@@ -191,9 +191,9 @@ describe("a previous triage, read from a signed record", () => {
 
 describe("the document", () => {
   it("starts with the key line, keeps PSOLIS order and ends with the signature", () => {
-    const model = summaryModel(exampleTriage(), { at: "07/11/2026 10:42", by: "Dr S. Chen" });
+    const model = summaryModel(exampleTriage(), { at: "07/11/2026 10:42", by: "Dr S. Orlenby" });
     expect(model.keyLine).toBe(
-      "Urgency not chosen · Outcome not set · Community treatment order (as chosen), Form 5A 28/01/2027 23:59 (as typed) · Reviewed 06/11/2026 09:42 Phone · Dr S. Chen",
+      "Urgency not chosen · Outcome not set · Community treatment order (as chosen), Form 5A 28/01/2027 23:59 (as typed) · Reviewed 06/11/2026 09:42 Phone · Dr S. Orlenby",
     );
     expect(model.parts.map((p) => p.title)).toEqual([
       "Review details",
@@ -207,7 +207,7 @@ describe("the document", () => {
     expect(text).toMatch(/\n\n5\. RISK ASSESSMENT\nCurrent: present: /);
     expect(text).toMatch(/\nArrived by: Ambulance\n/);
     expect(text).toMatch(/\nReferrer: Dr P\. Singh, ED registrar · \(08\) 5550 0190\n/);
-    expect(text).toMatch(/\n\nSIGNATURE\nSigned 07\/11\/2026 10:42 by Dr S\. Chen\n/);
+    expect(text).toMatch(/\n\nSIGNATURE\nSigned 07\/11\/2026 10:42 by Dr S\. Orlenby\n/);
     expect(text).not.toContain("SYN 40-2271");
   });
 
@@ -220,7 +220,7 @@ describe("the document", () => {
     const text = summaryText(summaryModel(state));
     expect(text).toMatch(/\nCurrent: not known: /);
     expect(text).toMatch(/\(carried from 12 Oct, not re-checked\)/);
-    expect(text).toMatch(/\nNot signed\. Reviewer: Dr S\. Chen/);
+    expect(text).toMatch(/\nNot signed\. Reviewer: Dr S\. Orlenby/);
   });
 });
 

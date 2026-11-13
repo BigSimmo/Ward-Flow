@@ -322,7 +322,7 @@
       ],
       "scope": "EVENT_ROLE applies. Ward movement updates require its accepted ward; admission target requires its ward claim and refuses ED callers. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.",
       "guards": [
-        "Valid observation; target exists; movement open or admission bed occupied",
+        "Valid observation; target exists; movement open or admission bed occupied. Since root-cause fix 3.5 (13 Nov 2026) isObservation also admits the Not recorded level, so this guard does not refuse a payload naming it; no screen offers it, as the pickers list OBSERVATION_LEVELS only",
         "New value must differ; token must match and linked records must agree; missing token refused after first recorded change",
         "Seeded links without matching observations stay unlinked rather than silently overwriting the other record",
         "Accepted edits require a safe retained sequence allocator below Number.MAX_SAFE_INTEGER; exhaustion refuses before writing.",
@@ -357,15 +357,16 @@
         },
         {
           "path": "src/components/ward-management/ward-observation.ts",
-          "line": 48,
-          "sha256": "b714525f0d4c6d18d050f9a3600f38c8de4e9a013595a77844c5c492fbdc2e3c"
+          "line": 60,
+          "sha256": "2a0c9ce8ac922f87a56ad939978724ae8e91d71ac39a0615e93c8a09a14a5358"
         }
       ],
       "tests": [
         "tests/ward-observation-levels.test.ts",
         "tests/ward-observation-expected-token.test.ts",
         "tests/ward-audit-s2-observation-join.test.ts",
-        "tests/ward-consolidated-domain-20261104.test.ts"
+        "tests/ward-consolidated-domain-20261104.test.ts",
+        "tests/ward-fix-C2-home-day-obs.test.ts"
       ]
     }
   },
@@ -1872,8 +1873,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
-          "line": 1170,
-          "sha256": "cba036c7a855d0877b0e066893d9f3ac46105f9cc632efe968b5d6559e39dbdc"
+          "line": 1171,
+          "sha256": "be9d7980f7876cdf82cf93120443db9b983deaff447a9eccd352383b925e7285"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
@@ -2315,12 +2316,12 @@
         {
           "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
           "line": 334,
-          "sha256": "d91a5be952e2110e25d304edcac7c17bede49897d9115701033cc8be1e0c61df"
+          "sha256": "c79c60eedc020add541d0f04ca0aa6546a6d788131a8850f4045d0245da05b55"
         },
         {
           "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
           "line": 298,
-          "sha256": "d91a5be952e2110e25d304edcac7c17bede49897d9115701033cc8be1e0c61df"
+          "sha256": "c79c60eedc020add541d0f04ca0aa6546a6d788131a8850f4045d0245da05b55"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
@@ -2366,12 +2367,12 @@
         {
           "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
           "line": 418,
-          "sha256": "d91a5be952e2110e25d304edcac7c17bede49897d9115701033cc8be1e0c61df"
+          "sha256": "c79c60eedc020add541d0f04ca0aa6546a6d788131a8850f4045d0245da05b55"
         },
         {
           "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
           "line": 298,
-          "sha256": "d91a5be952e2110e25d304edcac7c17bede49897d9115701033cc8be1e0c61df"
+          "sha256": "c79c60eedc020add541d0f04ca0aa6546a6d788131a8850f4045d0245da05b55"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
@@ -2413,7 +2414,7 @@
         {
           "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
           "line": 494,
-          "sha256": "d91a5be952e2110e25d304edcac7c17bede49897d9115701033cc8be1e0c61df"
+          "sha256": "c79c60eedc020add541d0f04ca0aa6546a6d788131a8850f4045d0245da05b55"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
@@ -2447,7 +2448,7 @@
         "A gender-placement review requirement refuses this shortcut; use referral journey instead."
       ],
       "effects": [
-        "Creates an occupied AD-ARR-* admission with recorded patient/sex/gender/planned legal status, without a movement/referral; increments admissionSequence.",
+        "Creates an occupied AD-ARR-* admission with recorded patient/sex/gender/planned legal status, without a movement/referral; increments admissionSequence. The new stay's observation level is Not recorded (never written as General; root-cause fix 3.5, 13 Nov 2026) until a person records one.",
         "Decrements ward empty and allocatable counts by one, locked count when used, and increments sex mix.",
         "Marks plan arrived with convertedAt/admissionId; does not create a numbered bed assignment or admit merely because its date passed."
       ],
@@ -2455,7 +2456,7 @@
         {
           "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
           "line": 518,
-          "sha256": "d91a5be952e2110e25d304edcac7c17bede49897d9115701033cc8be1e0c61df"
+          "sha256": "c79c60eedc020add541d0f04ca0aa6546a6d788131a8850f4045d0245da05b55"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
@@ -2468,7 +2469,11 @@
           "sha256": "6749082a89387b340bc0b52cfe76a13f8375532e44cbbcdf17a85d696c94e703"
         }
       ],
-      "tests": ["tests/ward-planned-admissions.test.ts", "tests/ward-planned-arrival-closed-bed.test.ts"]
+      "tests": [
+        "tests/ward-planned-admissions.test.ts",
+        "tests/ward-planned-arrival-closed-bed.test.ts",
+        "tests/ward-fix-C2-home-day-obs.test.ts"
+      ]
     }
   },
   {
@@ -3561,7 +3566,7 @@
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
           "line": 101,
-          "sha256": "cba036c7a855d0877b0e066893d9f3ac46105f9cc632efe968b5d6559e39dbdc"
+          "sha256": "be9d7980f7876cdf82cf93120443db9b983deaff447a9eccd352383b925e7285"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-legal-events.ts",
@@ -4060,8 +4065,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
-          "line": 1374,
-          "sha256": "cba036c7a855d0877b0e066893d9f3ac46105f9cc632efe968b5d6559e39dbdc"
+          "line": 1375,
+          "sha256": "be9d7980f7876cdf82cf93120443db9b983deaff447a9eccd352383b925e7285"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
@@ -4109,8 +4114,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
-          "line": 1377,
-          "sha256": "cba036c7a855d0877b0e066893d9f3ac46105f9cc632efe968b5d6559e39dbdc"
+          "line": 1378,
+          "sha256": "be9d7980f7876cdf82cf93120443db9b983deaff447a9eccd352383b925e7285"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
@@ -4182,13 +4187,13 @@
       "payload": [
         "unitId; shift this or next; count 1, 2, 3 or 4 or more",
         "reasons: one or more distinct items from STAFF_REQUEST_REASONS; actingUnitId for ward callers; role and now",
-        "optional shiftStartAt: the start of the shift the person chose; kept only when it is that shift's start at now or 5 minutes earlier, otherwise the shift at now is used"
+        "optional shiftStartAt: the start of the shift the person chose; kept only when it is that shift's start at now or 5 minutes earlier, otherwise the shift at now is used, except that a This-shift choice naming a shift that has already ended is refused (below)"
       ],
       "scope": "Ward, coordinator or site bed manager in EVENT_ROLE; a ward acts only for its own ward (actingUnitId must equal unitId). Executive changes nothing (D-80). Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.",
       "guards": [
         "Known unit; shift and count from their lists",
         "Reject empty, duplicate or unlisted reasons, and a ward naming another ward",
-        "Reject a This-shift request whose chosen shift has already ended (D-158); a Next-shift request that lands just after the shift changes is still kept"
+        "Reject a This-shift request whose chosen shift has already ended (D-158), however long after the shift change the save arrives (#1633, #1636): an ended chosen shift is refused before the shift at now could replace it; a Next-shift request that lands just after the shift changes, or a This-shift request with no chosen start, is still kept"
       ],
       "effects": [
         "Appends a record, or updates count, reasons and updatedAt on the open one; never names a patient",
@@ -4203,7 +4208,7 @@
         {
           "path": "src/components/ward-management/staffing/staff-requests.ts",
           "line": 156,
-          "sha256": "61771664a49e5dd78341e5a6f34b9ad61b99896c789768c878c93b3bb5ff21ad"
+          "sha256": "d644b16a8185a8c5bb39a5ad1ee5547d02d472713aac799ce9cd8625862e1209"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -4244,8 +4249,8 @@
         },
         {
           "path": "src/components/ward-management/staffing/staff-requests.ts",
-          "line": 200,
-          "sha256": "61771664a49e5dd78341e5a6f34b9ad61b99896c789768c878c93b3bb5ff21ad"
+          "line": 210,
+          "sha256": "d644b16a8185a8c5bb39a5ad1ee5547d02d472713aac799ce9cd8625862e1209"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -4732,7 +4737,7 @@
         {
           "path": "src/components/ward-management/ward-downtime-pack-prints.ts",
           "line": 49,
-          "sha256": "e767d9065a60c199968fdc71210406000a397a8dd769b58fb836e8b1a7d7b033"
+          "sha256": "3a0f73eb25ce1f420e91f222ea533b603b5253abf4938d4f977c36d9dbcaa679"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",

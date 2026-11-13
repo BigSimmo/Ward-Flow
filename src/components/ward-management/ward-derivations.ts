@@ -337,7 +337,18 @@ export function isStoppedTransportAwaitingRelease(movement?: Movement | null): b
  * derivation's own doc comment explains it exists to survive.
  */
 export const EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE =
-  "The examination was revoked and this movement still has a bed pulled.";
+  "The examination made no order and this movement still has a bed pulled.";
+
+/**
+ * D-170 item 3 (Josh, 13 Nov 2026): the same notice, naming the outcome as recorded and never
+ * "revoked". `examinationRevokedWhileBedHeld` is also true for a community treatment order, which is
+ * an order, so that outcome keeps its own list name rather than "made no order".
+ */
+export function examinationBedHeldNotice(movement: Pick<Movement, "examination">): string {
+  return movement.examination?.outcome === "community_order"
+    ? "The examination made a community treatment order and this movement still has a bed pulled."
+    : EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE;
+}
 
 /**
  * A movement whose CURRENT legal status requires an authorised destination, but whose already

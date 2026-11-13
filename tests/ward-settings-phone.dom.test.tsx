@@ -99,7 +99,7 @@ describe("Settings on a phone", () => {
     const page = screen.getByTestId("ward-settings-screen");
     expect(page).toHaveAttribute("data-ward-design", "v10-phone");
     // Q226 (design review, 2 Nov 2026): one spelling of the signed-in name, as written.
-    expect(within(page).getByRole("heading", { level: 1 })).toHaveTextContent("Dr S. Chen");
+    expect(within(page).getByRole("heading", { level: 1 })).toHaveTextContent("Dr S. Orlenby");
     // D-91 (Josh, 31 Oct 2026): the Menu's who-you-are row opens Go to a desk, so the hero has none.
     expect(within(page).queryByRole("button", { name: /Go to a desk/ })).toBeNull();
     expect(within(page).getByRole("combobox", { name: "Find a setting" })).toBeInTheDocument();

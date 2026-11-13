@@ -256,7 +256,7 @@ describe("consolidated reservation accuracy", () => {
       units: [unit],
       admissions: [admission],
     });
-    expect(result.wards[0].readyBeds).toBe(bedStates(unit, [admission], [], []).ready);
+    expect(result.wards[0].readyBeds).toBe(bedStates(unit, [admission], [], [], []).ready);
     expect(result.wards[0].readyBeds).toBe(1);
   });
 });
