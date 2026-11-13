@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Badge, Button, DisabledReason, Field, Radio, Select, useOptionalToast } from "@/components/wf";
 
 import { minutesText } from "../alerts/alerts-model";
+import { originPlace } from "../coordinator/origin-place";
 import { movementHref } from "../shell/ward-facade";
 import { usePatientNameDisplay } from "../settings/discreet-names";
 import { useWardCommandCompletion, wardCommandFailure } from "../ward/use-ward-command-completion";
@@ -14,7 +15,7 @@ import { legalFormStatusWarning } from "../ward-legal-form-fit";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "../ward-legal-forms";
-import { ORIGIN_NOT_RECORDED, type LegalStatus } from "../ward-model";
+import type { LegalStatus } from "../ward-model";
 import {
   INTERMITTENT_INTERVAL_MINUTES,
   OBSERVATION_LEVELS,
@@ -84,8 +85,10 @@ function ChoiceRows<T extends string>({
   onChange: (value: T) => void;
 }) {
   const srcId = useId();
+  // Review FA-7: the source is said once, as part of the legend; a description repeating it read
+  // the group as "Legal status Not recorded, Not recorded".
   return (
-    <fieldset className={styles.q} aria-describedby={srcId} data-testid={testId}>
+    <fieldset className={styles.q} data-testid={testId}>
       <legend className={styles.qHead}>
         <span className={styles.qLabel}>{label}</span>
         <SourceLine id={srcId} source={source} />
@@ -225,7 +228,9 @@ export function PullAcceptedReferral({
   // D-188 point a: the ward-desk clinician (for its own ward) and the bed coordinator may pull.
   const refusal =
     (journeyStarted ? "The movement has started. Open it to pull the bed." : undefined) ??
-    (desk === undefined ? `${pullDeskName("coordinator")} or ward desk only` : undefined) ??
+    (desk === undefined
+      ? `Only the ${pullDeskName("coordinator").toLowerCase()} or a ward desk can pull this bed`
+      : undefined) ??
     (desk === "ward" && actingUnitId !== unitId ? `Only the ${unitName} desk can pull this bed` : undefined) ??
     gate("RAISE_REFERRAL").reason ??
     gate("PULL_PATIENT").reason ??
@@ -312,7 +317,6 @@ export function PullAcceptedReferral({
   }
 
   const decidedAt = acceptedDecisionAt(item);
-  const fromPlace = ed ? `${referral.originSiteCode} ED` : (referral.originSiteCode ?? ORIGIN_NOT_RECORDED);
   const formId = `${baseId}-form`;
   return (
     <form
@@ -347,7 +351,8 @@ export function PullAcceptedReferral({
             </dd>
           )}
           <dt>From</dt>
-          <dd>{withSendingTeam(fromPlace, referral)}</dd>
+          {/* FS-7: the place in words ("Royal Perth ED"), as the Home row that opened this says it. */}
+          <dd>{withSendingTeam(originPlace(referral), referral)}</dd>
           <dt>Bed</dt>
           <dd className={styles.nr}>Not recorded</dd>
         </dl>

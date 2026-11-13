@@ -47,6 +47,7 @@ import { occupancyText } from "@/components/ward-management/statistics/statistic
 import { ExecutiveStatisticsUnavailable } from "@/components/ward-management/statistics/statistics-small-numbers";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { formatInstant } from "@/components/ward-management/ward-clock";
+import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import pageTop from "@/components/ward-management/page-top-title.module.css";
 
 import styles from "./capacity-executive.module.css";
@@ -94,8 +95,15 @@ function wardSquares(ward: ExecutiveWard) {
 
 type ServiceGroup = { service: ExecutiveService; wards: ExecutiveWard[] };
 
+/** The coordinator's bed map order (`wardServiceOrder`: North, East, South, WACHS, CAHS, Private). */
+const serviceRank = (service: ExecutiveService) => {
+  const rank = wardServiceOrder.indexOf(service.service);
+  return rank === -1 ? wardServiceOrder.length : rank;
+};
+
 function serviceGroups(data: ExecutiveReportingFoundation): ServiceGroup[] {
-  return data.services
+  return [...data.services]
+    .sort((a, b) => serviceRank(a) - serviceRank(b))
     .map((service) => ({ service, wards: data.wards.filter((ward) => ward.service === service.service) }))
     .filter((group) => group.wards.length > 0);
 }
@@ -139,7 +147,7 @@ export function ExecutiveCapacityScreen() {
           <HeroTop
             quickBar={false}
             figures={
-              // PR E swap: the kit figures keep one line on a phone, so four long labels ran off the edge.
+              // On a phone the four figures share the row and their labels wrap (local style, `.execFigs`).
               <div className={styles.execFigs}>
                 <HeroFigures
                   label="Network beds"
@@ -182,8 +190,8 @@ export function ExecutiveCapacityScreen() {
             }
             band={
               groups.length > 0 ? (
-                // PR E swap: the kit band has no five-across or phone 2 × 2 layout yet, so a phone
-                // lays the wrap variant out two across here.
+                // On a phone By service sits two across rather than scrolling sideways (local style,
+                // `.execBand`).
                 <div className={styles.execBand}>
                   <HeroBand
                     variant="wrap"

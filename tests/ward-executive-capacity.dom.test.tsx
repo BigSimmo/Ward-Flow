@@ -34,6 +34,7 @@ import { projectExecutiveReportingFoundation } from "../src/components/ward-mana
 import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
 import { wardPlaceLookup } from "../src/components/ward-management/ward-access-places";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
+import { wardServiceOrder } from "../src/components/ward-management/ward-derivations";
 
 const state = seedWardFlowState();
 const data = projectExecutiveReportingFoundation(
@@ -121,6 +122,18 @@ describe("Capacity for a signed-in executive (WF-06)", () => {
       .queryAllByRole("button")
       .map((button) => button.getAttribute("aria-label") ?? button.textContent);
     expect(buttons.filter((name) => !/pause|resume|live/iu.test(name ?? ""))).toEqual([]);
+  });
+
+  it("orders the services as the coordinator's bed map does: North, East, South, WACHS, Private", () => {
+    renderReport();
+    const populated = new Set(data.wards.map((ward) => ward.service));
+    const expected = wardServiceOrder.filter((service) => populated.has(service));
+    const table = screen.getByRole("table", { name: /Beds by ward/u });
+    const drawn = [...table.querySelectorAll<HTMLElement>("tbody[data-testid]")].map((group) =>
+      (group.dataset.testid ?? "").replace("ward-capacity-executive-group-", ""),
+    );
+    expect(drawn).toEqual(expected);
+    expect(expected.slice(0, 3)).toEqual(["North Metro", "East Metro", "South Metro"]);
   });
 
   it("on a phone lists wards in the bed-squares form, later service groups folded", () => {

@@ -27,6 +27,8 @@ import styles from "./bed-squares.module.css";
  * - `figure`  `"md"` 15 px head figure (default) or `"lg"` 20 px where the card is the page's focal strip.
  * - `head`    false draws the strip (and notes) without the head line, e.g. in a table row whose
  *             cells already say the figures.
+ * - `tagAfter` true sets the tag straight after "ready of N beds" (the Ward page's mock-up) instead of
+ *             at the line's right end (Capacity and All wards cards, the default).
  * - `className`, `testId` for the caller's layout and tests.
  *
  * The strip is decorative (`aria-hidden`); the head and note line say it in words, so a screen
@@ -55,6 +57,8 @@ export type BedSquaresProps = {
    */
   readyFigure?: number;
   head?: boolean;
+  /** The tag straight after the words, not at the line's end (Ward "Every bed"). */
+  tagAfter?: boolean;
   className?: string;
   testId?: string;
 };
@@ -194,6 +198,7 @@ export function BedSquares({
   figure = "md",
   readyFigure,
   head = true,
+  tagAfter = false,
   className,
   testId,
 }: BedSquaresProps) {
@@ -220,7 +225,7 @@ export function BedSquares({
           {tag ? (
             <>
               <SrOnly>, </SrOnly>
-              <Badge size="sm" className={styles.tag}>
+              <Badge size="sm" className={cx(styles.tag, tagAfter && styles.tagAfter)}>
                 {tag}
               </Badge>
             </>

@@ -7,6 +7,13 @@ import { WardDeclineReasons, DECLINE_LOCK_LINE } from "@/components/ward-managem
 import { bedSquareFor, squareCounts } from "@/components/ward-management/ward/ward-every-bed-squares";
 import type { BedItem } from "@/components/ward-management/ward/ward-bed-tone";
 import type { WardTomorrowOutlook } from "@/components/ward-management/ward/ward-home-outlook";
+import { wardHeroTopParts } from "@/components/ward-management/ward/ward-hero-top-parts";
+import type { BedStateCounts } from "@/components/ward-management/ward-bed-states";
+import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { WardScreenReferralsTab } from "@/components/ward-management/ward/ward-screen-referrals-tab";
+import { ToastProvider, buttonClass } from "@/components/wf";
+import { WardPhoneFind } from "@/components/ward-management/ward/ward-phone-find";
 
 /**
  * Wave 4 (D-191): Ward home's "Coming and going" part, the decline reasons as kit choice rows and the
@@ -82,14 +89,32 @@ describe("Coming and going (wave 4)", () => {
 
     const pull = within(part).getByRole("button", { name: "Pull the bed Pellingworth, Keira" });
     const confirm = within(part).getByRole("button", { name: "Confirm arrival Marrowvale, Gianna" });
-    // One filled button per panel: Pull the bed.
+    // One filled button per panel, desk-aware (main-ward-*): the ward desk's rows carry Confirm
+    // arrival, so it is the filled one there; Pull the bed is outlined beside it.
     expect(pull.className).not.toBe(confirm.className);
+    expect(
+      within(part)
+        .getAllByRole("button")
+        .filter((button) => button.className === confirm.className),
+    ).toHaveLength(1);
     fireEvent.click(pull);
     expect(props.onPull).toHaveBeenCalledWith(expect.objectContaining({ key: "m1" }));
     fireEvent.click(confirm);
     expect(props.onConfirmArrival).toHaveBeenCalledWith(expect.objectContaining({ key: "m2" }));
     fireEvent.click(within(part).getByRole("button", { name: "Ferrowmoor, Alaric" }));
     expect(props.onOpenBed).toHaveBeenCalledWith(8);
+  });
+
+  it("fills Pull the bed on the coordinator's panel, where no row offers Confirm arrival", () => {
+    renderPart({
+      arrivals: [
+        row({ key: "m1", name: "Pellingworth, Keira", movementId: "m1", action: "pull", tone: "info" }),
+        row({ key: "m3", name: "Quenfold, Junia", movementId: "m3", action: "pull", tone: "info" }),
+      ],
+    });
+    const first = screen.getByRole("button", { name: "Pull the bed Pellingworth, Keira" });
+    const second = screen.getByRole("button", { name: "Pull the bed Quenfold, Junia" });
+    expect(first.className).not.toBe(second.className);
   });
 
   it("keeps a just-pulled row with its inline Undo", () => {
@@ -157,5 +182,58 @@ describe("bed squares on Every bed (wave 4, notes 2)", () => {
     ];
     expect(squares).toEqual(["ready", "prep", "use", "free", "use", "use", "closed"]);
     expect(squareCounts(squares)).toEqual({ ready: 1, prep: 1, free: 1, use: 3, closed: 1 });
+  });
+});
+
+describe("Checking strip words (wave 4 mock-up)", () => {
+  it('puts the held-up number straight after its label, then the window: "Held up 1 · by tomorrow"', () => {
+    const { wardBand } = wardHeroTopParts({
+      unit: allUnits()[0]!,
+      states: { ready: 0, occupied: 0 } as BedStateCounts,
+      now: NOW_ANCHOR,
+      isPhone: false,
+      pendingPreparation: 0,
+      arrivalsToday: 0,
+      openArrivals: () => undefined,
+      actNowCount: 0,
+      heldUpCount: 1,
+      pastDateCount: 2,
+      bedCountsStale: false,
+      staffedSpecialling: 0,
+      obsNotRecorded: 0,
+      bedFilter: "all",
+      pickBedFilter: () => undefined,
+      openShiftTodo: () => undefined,
+    });
+    render(<>{wardBand}</>);
+    const text = (screen.getByTestId("ward-hero-checking").textContent ?? "").replace(/\s+/gu, " ");
+    expect(text).toContain("Held up 1 · by tomorrow");
+    expect(text).toContain("Past date 2");
+  });
+});
+
+describe("Referrals tab headings (wave 4 mock-up, review FS-12)", () => {
+  it('heads the list "N To answer · now" and the wait list "N Wait list · now" under This ward\'s answers', () => {
+    const unit = allUnits()[0]!;
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ToastProvider>
+          <WardScreenReferralsTab active unit={unit} waiting={1} bedRequests={0} onOpenBedRequests={() => undefined} />
+        </ToastProvider>
+      </WardFlowProvider>,
+    );
+    expect(screen.getByRole("heading", { name: `Referrals to ${unit.name}` })).toBeInTheDocument();
+    expect(screen.getByTestId("ward-referrals-to-answer")).toHaveTextContent("1 To answer · now");
+    const answers = screen.getByRole("region", { name: "This ward\u2019s answers" });
+    expect(within(answers).getByRole("heading", { name: /^\d+ Wait list · now$/u })).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/\d+ waiting\b/u);
+  });
+});
+
+describe("phone find button (review EH-4)", () => {
+  it("is the kit's icon-only button, so its phone tap cover is 48 x 48 px", () => {
+    render(<WardPhoneFind value="" onChange={vi.fn()} />);
+    const open = screen.getByRole("button", { name: "Find a bed or person on this ward" });
+    expect(open.className).toBe(buttonClass({ variant: "ghost", size: "sm", iconOnly: true }));
   });
 });

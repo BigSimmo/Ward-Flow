@@ -115,14 +115,6 @@
 .cardFoot > :first-child {
   flex: 1 1 260px;
 }
-.footLink {
-  color: var(--wf-accent-ink);
-  font-weight: 600;
-  text-decoration: none;
-}
-.footLink:hover {
-  text-decoration: underline;
-}
 
 .headActions {
   display: flex;
@@ -587,6 +579,10 @@
   transition:
     background-color var(--wf-m-fast) var(--wf-ease),
     opacity var(--wf-m-fast) var(--wf-ease);
+}
+/* FA-4: the card's figures and note line, named as its description; no box of its own. */
+.cardDetail {
+  display: contents;
 }
 .wardCard:hover {
   background: var(--wf-hover);
@@ -2927,7 +2923,9 @@ button.helpLink {
   white-space: normal;
 }
 
-/* Overview: the bed map, with Held up and Forecast in a sticky rail a third wide. */
+/* Overview: the bed map, with Held up and Forecast in a sticky rail a third wide. The rail stays
+   beside the map down to a 900 px column (1280 px with the shell's rail, wave 4 mock-up); a tablet's
+   column (820 px) puts the two rail cards side by side above the map. */
 .overview {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
@@ -2950,7 +2948,7 @@ button.helpLink {
   flex-direction: column;
   gap: var(--wf-s-3);
 }
-@container page (max-width: 1099px) {
+@container page (max-width: 899px) {
   .overview {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -3072,6 +3070,10 @@ a.railRow:focus-visible,
   font-variant-numeric: tabular-nums;
   color: var(--wf-ink-1);
   text-align: end;
+}
+/* Tomorrow "N short" in warning ink (wave 4 mock-up); `.warnInk` alone loses to `.railValue` above. */
+.railValue.warnInk {
+  color: var(--wf-warning-ink);
 }
 .railHatch {
   display: inline-block;

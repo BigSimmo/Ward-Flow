@@ -93,8 +93,7 @@
 }
 
 .name:focus-visible,
-.link:focus-visible,
-.toggle:focus-visible {
+.link:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
 }
@@ -166,22 +165,6 @@
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   color: var(--wf-ink-1);
-}
-
-.toggle {
-  position: relative;
-  min-height: 40px;
-  margin: 0 var(--wf-s-4);
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--wf-accent-ink);
-  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-  cursor: pointer;
-}
-
-.toggle:hover {
-  text-decoration: underline;
 }
 
 .fine {

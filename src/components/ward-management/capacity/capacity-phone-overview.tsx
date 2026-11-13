@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { ChevronRight } from "lucide-react";
 
 import { Card, CardHead } from "@/components/wf";
@@ -54,6 +55,7 @@ export function PhoneOverview({
   const checkIds = new Set([...wardsToCheck.map((row) => row.unit.id), ...pastReview]);
   const toCheck = networkRows.filter((row) => checkIds.has(row.unit.id));
   const extras = wardExtras(units, model.bedReleases ?? [], now);
+  const detailIdBase = useId();
   return (
     <div className={styles.phoneOverview}>
       {executive ? null : <HeldUpCard releases={heldUpReleases} now={now} />}
@@ -81,6 +83,9 @@ export function PhoneOverview({
                     type="button"
                     className={`${styles.wardCard} ${styles.wardTile}`}
                     aria-haspopup="dialog"
+                    // FA-4: a short spoken name; the figures and note line are its description.
+                    aria-label={`Open ${row.unit.name}`}
+                    aria-describedby={ward ? `${detailIdBase}-${row.unit.id}` : undefined}
                     data-testid={`capacity-check-ward-${row.unit.id}`}
                     data-stale={stale ? "" : undefined}
                     onClick={() => onWard(row.unit.id)}
@@ -89,12 +94,14 @@ export function PhoneOverview({
                       <SpelledCodes text={row.unit.name} />
                     </span>
                     {ward ? (
-                      <BedSquares
-                        counts={wardSquareCounts(ward, extras.get(ward.unit.id)?.dischargesToday ?? 0)}
-                        readyFigure={ward.ready}
-                        tag={bedSquaresTag(ward.unit)}
-                        notes={wardNotes(ward, rowOf.get(ward.unit.id), now, extras.get(ward.unit.id), false)}
-                      />
+                      <span id={`${detailIdBase}-${row.unit.id}`} className={styles.cardDetail}>
+                        <BedSquares
+                          counts={wardSquareCounts(ward, extras.get(ward.unit.id)?.dischargesToday ?? 0)}
+                          readyFigure={ward.ready}
+                          tag={bedSquaresTag(ward.unit)}
+                          notes={wardNotes(ward, rowOf.get(ward.unit.id), now, extras.get(ward.unit.id), false)}
+                        />
+                      </span>
                     ) : null}
                   </button>
                 </li>

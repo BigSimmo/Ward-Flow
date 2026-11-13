@@ -238,7 +238,7 @@
   line-height: var(--wf-lh-14);
 }
 
-/* PR E swap (wave 4 mock-up, Executive desk at 390): the four figures share the row and their labels
+/* Phone layout (wave 4 mock-up, Executive desk at 390): the four figures share the row and their labels
    wrap, and By service sits two across instead of scrolling sideways. Wider screens keep the kit's
    own layout. */
 .execFigs,

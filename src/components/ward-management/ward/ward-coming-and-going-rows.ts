@@ -1,7 +1,13 @@
 import type { WfTone } from "@/components/wf";
 import type { BedRelease, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
-import { dayOf, formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { legalFormNowWords } from "@/components/ward-management/ward-legal-form-progression";
+import {
+  dayOf,
+  formatInstant,
+  formatInstantWithDay,
+  perthDateLabel,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
+import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import { transportNeedState } from "@/components/ward-management/ward-derivations-transport";
 import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import { heldUntilExtendedLabel } from "@/components/ward-management/ward-bed-hold-extension";
@@ -77,7 +83,9 @@ export function arrivalsExpectedToday<T extends Movement>(accepted: readonly T[]
 
 /** Ruling 12 (D-191): the legal tag as recorded, in the Fixes wording ("Form 3B", else "Voluntary"). */
 export function arrivalLegalTag(movement: Movement): string {
-  return legalFormNowWords(movement) ?? movement.legalStatus;
+  // The chip every other legal tag uses, so a ruling on what it says (D-187 item 4: status and form
+  // together) reaches the Arrivals rows too.
+  return legalStatusShort(movement);
 }
 
 /**
@@ -171,14 +179,33 @@ export function leaveRows(leave: readonly LeaveBed[], beds: readonly BedItem[], 
   });
 }
 
+/** A row's time column: "14 Nov" (review FS-9), as Capacity's held-up rail says a date. */
+type RowDateLabel = (at: Instant) => string;
+
+/**
+ * The time column of Needs a look and Discharges rows: the Perth date ("14 Nov") so the row does not
+ * wrap on a phone; a time today keeps its clock face ("15:30"), as the leave rows do. With no day 0
+ * (a store without one), the board's own words, as Capacity's held-up rail falls back.
+ */
+export function shortDateLabel(dayZero: Date | undefined, now: Instant): RowDateLabel {
+  return (at) =>
+    dayOf(at) === dayOf(now)
+      ? formatInstant(at)
+      : dayZero
+        ? perthDateLabel(at, dayZero, { day: "numeric", month: "short" })
+        : formatInstantWithDay(at, now);
+}
+
 /**
  * Needs a look · now: held up first (the page's held-up selector, today any date), then beds past
- * their date. A bed is listed once.
+ * their date. A bed is listed once, but `pastDate` counts every bed past its date, held up or not, so
+ * the figure says the same as the hero's "Past date" (notes 3, review FS-2). Dates read "14 Nov" (FS-9).
  */
 export function needsALookRows(
   releases: readonly BedRelease[],
   beds: readonly BedItem[],
   now: Instant,
+  dateOf: RowDateLabel = (at) => formatInstantWithDay(at, now),
 ): { rows: ComingRow[]; heldUp: number; pastDate: number } {
   const byAdmission = (id: string | undefined) =>
     id === undefined ? undefined : beds.find((bed) => bed.admissionId === id);
@@ -194,25 +221,28 @@ export function needsALookRows(
       name: bed?.patientAlias ?? bed?.bedLabel ?? "Name not recorded",
       bedNumber: bed ? Number(bed.bedNumber) : undefined,
       lines: [[bedWord(bed), "Held up", release.blocker].filter(Boolean).join(" · ")],
-      when: formatInstantWithDay(release.expectedAt, now),
+      when: dateOf(release.expectedAt),
       tone: "danger",
       action: null,
     };
   });
-  const past = beds.filter((bed) => bed.pastDate === true && !seen.has(String(bed.bedNumber)));
+  const allPast = beds.filter((bed) => bed.pastDate === true);
+  const past = allPast.filter((bed) => !seen.has(String(bed.bedNumber)));
   for (const bed of past) {
+    const expectedAt = typeof bed.expectedDischargeAt === "number" ? bed.expectedDischargeAt : undefined;
+    const when = expectedAt !== undefined ? dateOf(expectedAt) : (bed.expectedDischargeLabel ?? undefined);
     rows.push({
       key: `past-${String(bed.bedNumber)}`,
       name: bed.patientAlias ?? bed.bedLabel,
       bedNumber: Number(bed.bedNumber),
       lines: [[bedWord(bed), "Past date", bed.criteriaLedChip?.label].filter(Boolean).join(" · ")],
-      when: bed.expectedDischargeLabel ?? undefined,
-      quietLine: bed.expectedDischargeLabel ? undefined : "Date not recorded",
+      when,
+      quietLine: when ? undefined : "Date not recorded",
       tone: "warning",
       action: null,
     });
   }
-  return { rows, heldUp: held.length, pastDate: past.length };
+  return { rows, heldUp: held.length, pastDate: allPast.length };
 }
 
 /** Discharges · today: the page's due-today selector (`wardDischargesDueToday`), named by bed and person. */
@@ -220,6 +250,7 @@ export function dischargeTodayRows(
   releases: readonly BedRelease[],
   beds: readonly BedItem[],
   now: Instant,
+  dateOf: RowDateLabel = (at) => formatInstantWithDay(at, now),
 ): ComingRow[] {
   return wardDischargesDueToday(releases, now)
     .sort((left, right) => left.expectedAt - right.expectedAt)
@@ -244,7 +275,7 @@ export function dischargeTodayRows(
             .filter(Boolean)
             .join(" · "),
         ],
-        when: formatInstantWithDay(release.expectedAt, now),
+        when: dateOf(release.expectedAt),
         tone: release.blocker ? "danger" : release.state === "confirmed" ? "success" : "neutral",
         action: null,
       };

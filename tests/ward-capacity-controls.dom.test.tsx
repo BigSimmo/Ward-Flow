@@ -118,6 +118,19 @@ describe("the Capacity screen's bed map controls", () => {
    * "Sort wards" box, which the redesign removed; the bed map keeps each service's own ward order.
    */
 
+  it("names each ward card shortly, with its figures and note line as the description (FA-4)", () => {
+    renderScreen();
+    const cards = within(bedMap()).getAllByRole("button", { name: /^Open /u });
+    expect(cards.length, "no ward card on the bed map").toBe(networkRows.length);
+    for (const card of cards) {
+      const id = card.getAttribute("data-unit-id");
+      const row = networkRows.find((candidate) => candidate.unit.id === id);
+      expect(row, `card for unknown ward ${id}`).toBeDefined();
+      expect(card).toHaveAccessibleName(`Open ${row!.unit.name}`);
+      expect(card).toHaveAccessibleDescription(/ready of \d+ beds?/u);
+    }
+  });
+
   it("keeps the highlight's lit set and the full card set consistent across a folded service and a ward selection", () => {
     renderScreen();
     fireEvent.click(highlightChip("Any ready"));
@@ -130,7 +143,7 @@ describe("the Capacity screen's bed map controls", () => {
     fireEvent.click(toggles[0]!);
     expect(toggles[0]).toHaveAttribute("aria-expanded", "false");
 
-    const visibleCard = within(bedMap()).getAllByRole("button", { name: /ready of/u })[0]!;
+    const visibleCard = within(bedMap()).getAllByRole("button", { name: /^Open /u })[0]!;
     const selected = unitIdOfCard(visibleCard);
     fireEvent.click(visibleCard);
     expect(screen.getByTestId("ward-capacity-ward-drawer")).toHaveAccessibleName(
@@ -182,7 +195,7 @@ describe("the Capacity screen's bed map controls", () => {
   it("a demo reset after opening a ward clears the selection, and focus lands back on the opener", async () => {
     renderScreen();
     const user = userEvent.setup();
-    const opener = within(bedMap()).getAllByRole("button", { name: /ready of/u })[0]!;
+    const opener = within(bedMap()).getAllByRole("button", { name: /^Open /u })[0]!;
     await user.click(opener);
     expect(screen.getByTestId("ward-capacity-ward-drawer")).toBeInTheDocument();
 

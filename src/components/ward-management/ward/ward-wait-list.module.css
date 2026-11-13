@@ -16,17 +16,6 @@
   align-items: center;
   gap: var(--wf-s-2) var(--wf-s-3);
 }
-.caps {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  margin: 0;
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  font-weight: 650;
-  letter-spacing: var(--wf-tr-caps);
-  text-transform: uppercase;
-}
 .note {
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-13);
@@ -96,4 +85,38 @@
   .readyMark {
     margin-inline-start: 0;
   }
+}
+
+/* Wave 4 (D-191): inside "This ward's answers" the wait list is a group, not a card of its own. */
+.embedded {
+  padding: var(--wf-s-3) 0 0;
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.groupHead {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  font-weight: 600;
+}
+
+.n {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  font-size: var(--wf-fs-15);
+  color: var(--wf-ink-1);
+}
+
+.win {
+  color: var(--wf-ink-3);
+  font-weight: 400;
 }

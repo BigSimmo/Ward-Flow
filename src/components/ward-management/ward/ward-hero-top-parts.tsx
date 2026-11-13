@@ -136,8 +136,10 @@ export function wardHeroTopParts({
         {
           id: "held",
           // Ruling 5: held up counts "by tomorrow"; the count is the page's selector (PR C moves it).
-          label: windowed("Held up", "by tomorrow"),
+          // Mock-up: the number straight after the label, the window after it ("Held up 1 · by tomorrow").
+          label: "Held up",
           value: heldUpCount,
+          sub: <span className={styles.winAfter}>· by tomorrow</span>,
           tone: heldUpCount > 0 ? "danger" : undefined,
           ariaLabel: `${BED_RELEASES_HELD_UP_ANY_DATE_LABEL}: ${heldUpCount}`,
         },

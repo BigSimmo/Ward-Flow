@@ -3,3 +3,9 @@
   font-weight: 400;
   opacity: 0.85;
 }
+
+/* "Held up 1 · by tomorrow": the window after the value, in the label's face, not the figures' mono. */
+.winAfter {
+  font-family: var(--wf-font);
+  font-weight: 400;
+}

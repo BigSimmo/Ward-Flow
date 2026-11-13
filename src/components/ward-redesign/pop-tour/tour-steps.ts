@@ -101,7 +101,7 @@ const ED_ROW: TourTarget = { sel: '[data-testid^="ward-ed-patient-"]' };
 const ED_RAISE: TourTarget = { sel: '[data-testid="ward-ed-raise-referral-toggle"]' };
 const STATS_NAV: TourTarget = { sel: '[data-testid="ward-statistics-nav"]' };
 const TRENDS: TourTarget = { sel: '[data-testid="ward-statistics-session-trends"]' };
-const MISMATCH: TourTarget = { sel: 'section[aria-label="Where the mismatch is"]' };
+const MISMATCH: TourTarget = { sel: '[data-testid="capacity-mismatch"]' };
 
 function count(value: number, one: string, many: string): string {
   return `${value} ${value === 1 ? one : many}`;
@@ -569,16 +569,16 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your daily work",
           "meeting",
-          { sel: '[data-testid="bed-meeting-sheet-open"]' },
+          { sel: '[data-testid="capacity-bed-meeting"]' },
           "The bed meeting",
-          "Bed meeting sheet and Meeting agenda prepare the meeting. Open on TV puts it on the meeting room screen.",
+          "Bed meeting sheet opens the sheet in one tap. The arrow beside it holds Open on TV for the meeting room screen, and Open the meeting agenda.",
         ),
         step(
           "Finding your way",
           "map",
-          { sel: 'section[aria-label="Bed map"]' },
+          { sel: "#capacity-bed-map" },
           "Bed map",
-          "Every ward with ready, occupied and closed beds. Switch between Grid, Rows and Table.",
+          "Every ward as a line of squares: ready, being made ready, discharge today, in use and closed. Held up shows in words under the squares.",
         ),
         step(
           "Finding your way",

@@ -42,44 +42,56 @@ export function WardScreenReferralsTab({
       data-testid="ward-referrals-tab"
     >
       {active ? (
-        <div className={styles.wrap}>
-          {/* Most urgent first: a bed request from an emergency department is answered in Coming and going. */}
-          {bedRequests > 0 ? (
-            <div className={styles.requestRow} data-testid="ward-referrals-bed-requests">
-              <span className={styles.requestText}>
-                <span className={styles.caps}>Bed request from ED</span>
-                <span className={styles.requestLine}>
-                  <b>{bedRequests}</b> waiting for this ward&rsquo;s answer
+        // Wave 4 (D-191, notes 3 and 6, review FS-12): the mock-up's two parts. The referrals to answer,
+        // headed "N To answer · now", and a "This ward's answers" rail that holds the wait list
+        // ("N Wait list · now"). PR E swap: the window words become the kit's WindowWord.
+        <div className={styles.layout}>
+          <div className={styles.wrap}>
+            {/* Most urgent first: a bed request from an emergency department is answered in Coming and going. */}
+            {bedRequests > 0 ? (
+              <div className={styles.requestRow} data-testid="ward-referrals-bed-requests">
+                <span className={styles.requestText}>
+                  <span className={styles.caps}>Bed request from ED</span>
+                  <span className={styles.requestLine}>
+                    <b>{bedRequests}</b> waiting for this ward&rsquo;s answer
+                  </span>
                 </span>
-              </span>
-              <button
-                type="button"
-                className={buttonClass({ variant: "sec", size: "sm" })}
-                onClick={onOpenBedRequests}
-                data-testid="ward-referrals-open-bed-requests"
-              >
-                <ArrowLeftRight strokeWidth={1.75} size={14} aria-hidden="true" />
-                Answer on Ward home
-              </button>
+                <button
+                  type="button"
+                  className={buttonClass({ variant: "sec", size: "sm" })}
+                  onClick={onOpenBedRequests}
+                  data-testid="ward-referrals-open-bed-requests"
+                >
+                  <ArrowLeftRight strokeWidth={1.75} size={14} aria-hidden="true" />
+                  Answer on Ward home
+                </button>
+              </div>
+            ) : null}
+            <div className={styles.listCard}>
+              <div className={styles.listHead}>
+                <h2 className={styles.title} id="ward-referrals-heading">
+                  Referrals to {unit.name}
+                </h2>
+                <span className={styles.quiet} data-testid="ward-referrals-to-answer">
+                  <b>{waiting}</b> To answer <span className={styles.win}>· now</span>
+                </span>
+              </div>
+              {entries.length === 0 ? (
+                <EmptyState icon={Inbox} title="No referrals yet." meta="Referrals sent to this ward show here." />
+              ) : (
+                <WardReferralInbox unitId={unit.id} embedded />
+              )}
             </div>
-          ) : null}
-          <div className={styles.listCard}>
-            <div className={styles.listHead}>
-              <h2 className={styles.caps} id="ward-referrals-heading">
-                Referrals to {unit.name}
-              </h2>
-              <span className={styles.quiet}>
-                <b>{waiting}</b> waiting
-              </span>
-            </div>
-            {entries.length === 0 ? (
-              <EmptyState icon={Inbox} title="No referrals yet." meta="Referrals sent to this ward show here." />
-            ) : (
-              <WardReferralInbox unitId={unit.id} embedded />
-            )}
           </div>
-          {/* Ward wait list (Josh, 9 Nov 2026): who this ward waitlisted, and its ready mark. */}
-          <WardWaitList unit={unit} />
+          <section className={styles.rail} aria-labelledby="ward-answers-heading" data-testid="ward-referrals-answers">
+            <div className={styles.listHead}>
+              <h2 className={styles.title} id="ward-answers-heading">
+                This ward&rsquo;s answers
+              </h2>
+            </div>
+            {/* Ward wait list (Josh, 9 Nov 2026): who this ward waitlisted, and its ready mark. */}
+            <WardWaitList unit={unit} embedded />
+          </section>
         </div>
       ) : null}
     </section>

@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useId, useState } from "react";
 import { ChevronDown, ChevronRight, Search } from "lucide-react";
 
 import { Button, Card, CardHead, FilterChip, SrOnly, durMinutes } from "@/components/wf";
@@ -22,7 +21,6 @@ import { isConfirmationFresh } from "./capacity-gap-words";
 import type { NetworkWardRow } from "./capacity-derivations";
 import type { BedMapWard } from "./bed-map";
 
-import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { openStaffRequests } from "@/components/ward-management/staffing/staff-requests";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
@@ -43,18 +41,12 @@ const HIGHLIGHTS: readonly { id: Highlight; label: string; test: (row: NetworkWa
   ];
 
 /**
- * Services open on first view: the two with the most wards a metro coordinator moves between.
- * C11: counted among groups that hold wards, so a site bed manager's own service (the only group
- * with wards on that desk) opens rather than two empty ones ahead of it in network order.
+ * Phone only: services open on first view, the two with the most wards a metro coordinator moves
+ * between. C11: counted among groups that hold wards, so a site bed manager's own service (the only
+ * group with wards on that desk) opens rather than two empty ones ahead of it in network order.
+ * On a tablet or desktop every service starts open (wave 4 mock-ups at 820, 1280 and 1440).
  */
 const OPEN_FIRST = 2;
-
-/**
- * The bed map: every ward with its bed squares (shared pattern v1, wave 4), grouped by health
- * service. The ward table that used to repeat it lives on All wards, so the page holds each ward
- * once (design review finding 2).
- */
-const WARDS_HREF = "/ward-flow/wards";
 
 /**
  * The bed map's highlight chips: each lights the wards it matches and dims the rest; none hides a
@@ -104,6 +96,7 @@ export function BedMapCards({
   onHighlight,
   highlightsInCard = true,
   findBed = true,
+  foldLater = false,
 }: {
   model: CapacityModel;
   onSelectWard: (unitId: string) => void;
@@ -115,9 +108,10 @@ export function BedMapCards({
   onHighlight: (highlight: Highlight | null) => void;
   /** Find a bed in the card head (wave 4: it left the hero). False for a desk that opens no finder. */
   findBed?: boolean;
+  /** Phone: only the first two services start open. A tablet or desktop opens every service. */
+  foldLater?: boolean;
 }) {
   const { mapGroups, networkRows, now } = model;
-  const canOpen = useCanOpenHref();
   // A model built without releases (a test's slice of it) draws no discharge squares.
   const bedReleases: readonly BedRelease[] = model.bedReleases ?? [];
   const rowOf = new Map(networkRows.map((row) => [row.unit.id, row]));
@@ -138,29 +132,29 @@ export function BedMapCards({
     id === null
       ? []
       : mapGroups.filter((group) => group.wards.some((ward) => lit(ward.unit.id, id))).map((group) => group.service);
-  const [open, setOpen] = useState(
-    () =>
-      new Set([
-        ...mapGroups
-          .filter((group) => group.wards.length > 0)
-          .slice(0, OPEN_FIRST)
-          .map((group) => group.service),
-        ...groupsLitBy(highlight),
-      ]),
+  type Service = (typeof mapGroups)[number]["service"];
+  // Only the coordinator's own folds and unfolds are kept; the starting state follows the layout,
+  // so a phone layout learnt after the first draw still folds the later services.
+  const firstOpen = new Set(
+    mapGroups
+      .filter((group) => group.wards.length > 0)
+      .slice(0, OPEN_FIRST)
+      .map((group) => group.service),
   );
+  const [chosen, setChosen] = useState<ReadonlyMap<Service, boolean>>(
+    () => new Map(groupsLitBy(highlight).map((service) => [service, true])),
+  );
+  const startsOpen = (service: Service) => !foldLater || firstOpen.has(service);
+  const isGroupOpen = (service: Service) => chosen.get(service) ?? startsOpen(service);
   const [openedFor, setOpenedFor] = useState(highlight);
   if (openedFor !== highlight) {
     setOpenedFor(highlight);
     const toOpen = groupsLitBy(highlight);
-    if (toOpen.length > 0) setOpen((current) => new Set([...current, ...toOpen]));
+    if (toOpen.length > 0)
+      setChosen((current) => new Map([...current, ...toOpen.map((service) => [service, true] as const)]));
   }
-  const toggleGroup = (service: (typeof mapGroups)[number]["service"]) =>
-    setOpen((current) => {
-      const next = new Set(current);
-      if (next.has(service)) next.delete(service);
-      else next.add(service);
-      return next;
-    });
+  const toggleGroup = (service: Service) =>
+    setChosen((current) => new Map([...current, [service, !(current.get(service) ?? startsOpen(service))]]));
   const wardCount = mapGroups.reduce((sum, group) => sum + group.wards.length, 0);
 
   return (
@@ -192,23 +186,14 @@ export function BedMapCards({
       <BedSquaresKey label="Bed map key" className={styles.mapKey} />
       <div className={styles.mapBody}>
         {mapGroups.map((group) => {
-          // An empty service is said in words, never dropped: a missing service reads as no such
-          // beds exist (census §8 and the old network table's sentence).
-          if (group.wards.length === 0) {
-            // A site bed manager's map holds its own site only; the other services are in Other sites.
-            if (model.site) return null;
-            return (
-              <p key={group.service} className={styles.mapEmpty}>
-                <SpelledCodes text={`${group.service} has no inpatient unit reporting to this board.`} />
-              </p>
-            );
-          }
+          // A service with no ward is said in words at the map's foot (below).
+          if (group.wards.length === 0) return null;
           const groupRows = group.wards.map((ward) => rowOf.get(ward.unit.id)).filter((row) => row !== undefined);
           const ready = groupRows.reduce((sum, row) => sum + row.ready, 0);
           const closed = group.wards.reduce((sum, ward) => sum + ward.closed, 0);
           const beds = group.wards.reduce((sum, ward) => sum + ward.unit.beds, 0);
           const inUse = group.wards.reduce((sum, ward) => sum + ward.occupied + ward.pulled, 0);
-          const isOpen = open.has(group.service);
+          const isOpen = isGroupOpen(group.service);
           const panelId = `capacity-map-${group.service.replace(/\W+/g, "-").toLowerCase()}`;
           return (
             <section key={group.service} className={styles.mapGroup} aria-label={`${group.service} bed map`}>
@@ -254,15 +239,21 @@ export function BedMapCards({
             </section>
           );
         })}
+        {/* An empty service is said in words, never dropped: a missing service reads as no such
+            beds exist (census §8 and the old network table's sentence). It sits at the map's foot,
+            after every service with wards (wave 4 mock-ups). A site bed manager's map holds its own
+            site only; the other services are in Other sites. */}
+        {model.site
+          ? null
+          : mapGroups
+              .filter((group) => group.wards.length === 0)
+              .map((group) => (
+                <p key={group.service} className={styles.mapEmpty}>
+                  <SpelledCodes text={`${group.service} has no inpatient unit reporting to this board.`} />
+                </p>
+              ))}
       </div>
-      {/* Only for a desk that may open the wards list (the executive may not). */}
-      {canOpen(WARDS_HREF) ? (
-        <div className={styles.cardFoot}>
-          <Link href={WARDS_HREF} className={styles.footLink}>
-            Every ward as a table
-          </Link>
-        </div>
-      ) : null}
+      {/* "Every ward as a table" left the foot (wave 4 mock-ups): All wards is in the menu. */}
     </Card>
   );
 }
@@ -377,6 +368,7 @@ function WardCard({
   selected: boolean;
   onSelect: () => void;
 }) {
+  const detailId = useId();
   // Wave 4 (D-191, ruling 7): the shared bed squares. The ready figure leads the head (zero is 0,
   // Josh 3 Nov 2026), the neutral cohort and lock tag sits right, the squares take one line, and
   // the note line shows only what needs a look; held up is said there, never as a colour.
@@ -385,6 +377,9 @@ function WardCard({
       type="button"
       className={`${styles.wardCard}${dimmed ? ` ${styles.dimmed}` : ""}`}
       aria-haspopup="dialog"
+      // FA-4: a short spoken name; the figures and note line are its description, not its name.
+      aria-label={`Open ${ward.unit.name}`}
+      aria-describedby={detailId}
       data-unit-id={ward.unit.id}
       data-testid={`capacity-map-ward-${ward.unit.id}`}
       data-selected={selected ? "" : undefined}
@@ -393,16 +388,18 @@ function WardCard({
       <span className={styles.wardName}>
         <SpelledCodes text={ward.unit.name} />
       </span>{" "}
-      <BedSquares
-        figure="lg"
-        counts={wardSquareCounts(ward, extra?.dischargesToday ?? 0)}
-        // Owner ruling 5 Sep 2026: a bed being made ready is never subtracted from Ready (the hero's
-        // figure); it is drawn hollow inside it and named on the note line, until PR C's F-26.
-        readyFigure={ward.ready}
-        tag={bedSquaresTag(ward.unit)}
-        notes={wardNotes(ward, row, now, extra, staffRequested)}
-        testId={`capacity-map-squares-${ward.unit.id}`}
-      />
+      <span id={detailId} className={styles.cardDetail}>
+        <BedSquares
+          figure="lg"
+          counts={wardSquareCounts(ward, extra?.dischargesToday ?? 0)}
+          // Owner ruling 5 Sep 2026: a bed being made ready is never subtracted from Ready (the hero's
+          // figure); it is drawn hollow inside it and named on the note line, until PR C's F-26.
+          readyFigure={ward.ready}
+          tag={bedSquaresTag(ward.unit)}
+          notes={wardNotes(ward, row, now, extra, staffRequested)}
+          testId={`capacity-map-squares-${ward.unit.id}`}
+        />
+      </span>
     </button>
   );
 }

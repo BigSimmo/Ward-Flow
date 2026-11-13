@@ -229,12 +229,12 @@ const plural = (count: number, one: string, many: string) => `${count} ${count =
 
 /**
  * Tomorrow (six features build, Josh 9 Nov 2026; wave 4 facts list): what wards have recorded for
- * tomorrow, one fact a line, with the people one tap away. Counts only recorded expected dates.
+ * tomorrow, one fact a line. Counts only recorded expected dates. Home mock-up (wave 4): the one
+ * "See who" is the ED line's; the "Show who (N people)" list beside it is gone, so the block has
+ * one way to the people, as drawn.
  */
 function TomorrowFoot({ now, forecast }: { now: Instant; forecast: AccessForecast | undefined }) {
   const { dayStart, discharges, confirmed, admissions } = useTomorrowOutlook(now);
-  const [open, setOpen] = useState(false);
-  const rows = [...discharges, ...admissions].sort((a, b) => a.at - b.at || a.id.localeCompare(b.id));
   const { dayZero } = useWardFlowSelect("dayZero");
   const day = dayZero ? ` · ${perthDayLabel(dayStart, dayZero)}` : "";
   const wards = [...new Set(admissions.map((row) => row.where))];
@@ -274,29 +274,6 @@ function TomorrowFoot({ now, forecast }: { now: Instant; forecast: AccessForecas
           </div>
         ) : null}
       </dl>
-      {rows.length > 0 ? (
-        <button
-          type="button"
-          className={styles.toggle}
-          aria-expanded={open}
-          aria-controls={open ? "home-tomorrow-list" : undefined}
-          onClick={() => setOpen((value) => !value)}
-          data-testid="home-tomorrow-summary"
-        >
-          {open ? "Hide who" : `Show who (${plural(rows.length, "person", "people")})`}
-        </button>
-      ) : null}
-      {open && rows.length > 0 ? (
-        <ol
-          id="home-tomorrow-list"
-          className={styles.agenda}
-          aria-label={`Recorded for tomorrow: ${plural(rows.length, "person", "people")}`}
-        >
-          {rows.map((row) => (
-            <AgendaRow key={row.id} row={row} now={now} />
-          ))}
-        </ol>
-      ) : null}
       <p className={styles.fine}>From expected dates wards have recorded. Not a prediction.</p>
     </section>
   );

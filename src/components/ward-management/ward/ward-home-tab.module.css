@@ -83,6 +83,19 @@
   white-space: nowrap;
 }
 
+/* Mock-up (main-coord-1440): "Updated 10:42" sits under the title, so the title, Place or move, the
+   filters and the board/list switch share one row at 1440. Narrower, the tools still drop below. */
+.bedsHead > div:first-child {
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.bedsHead > div:first-child > span {
+  flex: none;
+}
+
 /* The waiting count on Place or move, as the tab badges draw a count. */
 .placeCount {
   min-width: 18px;
@@ -275,11 +288,30 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--wf-s-2);
+  min-width: 0;
 }
 
-/* D-64: the criteria led discharge tag sits with the glyph on the right, the number keeps the left. */
+/* The number and the glyph never shrink; the tag between them gives way. */
+.bedTileTop > svg {
+  flex: none;
+}
+
+/* D-64: the criteria led discharge tag sits with the glyph on the right, the number keeps the left.
+   Mock-up check (820, bed 13): on a narrow tile the tag gives way and its words wrap inside it, so the
+   at-risk dot after it stays inside the tile's edge (wrap, never "…"). */
 .bedTileTag {
   margin-left: auto;
+  flex: 0 1 auto;
+  white-space: normal;
+}
+
+.bedTileTag span:last-child {
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.bedTileTop:has(.bedTileTag) {
+  gap: 4px;
 }
 
 /* The bed number is the tile's label, a step quieter than the person it holds. */
@@ -2063,6 +2095,7 @@ label.todoMain:has(.todoTick:focus-visible) {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  flex: none;
 }
 
 .bedTileSquare {

@@ -7,11 +7,11 @@
 import alertStyles from "@/components/ward-management/alerts/alerts.module.css";
 import { clockText, pullUndoUntil, type PulledBed } from "@/components/ward-management/referrals/pull-bed-facts";
 import { PULLED_ROW_ATTRIBUTE } from "@/components/ward-management/referrals/pull-bed-step";
-import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
-import { Button, StatusGlyph } from "@/components/wf";
+import { Badge, Button, StatusGlyph } from "@/components/wf";
 
 import styles from "./home-list.module.css";
+import { originPlace } from "./origin-place";
 
 export function PulledBedRow({
   pulled,
@@ -27,12 +27,14 @@ export function PulledBedRow({
   const umrn = patientOf(referral).umrn;
   const until = clockText(pullUndoUntil(pulled));
   const tag = `Bed pulled at ${unitName}`;
-  const line = `Movement started · ${referral.originSiteCode ?? ORIGIN_NOT_RECORDED} to ${unitName}`;
+  // FS-7: the place in words ("Bunbury to Bunbury Acute Psychiatric Unit"), not a site code.
+  const line = `Movement started · ${originPlace(referral)} to ${unitName}`;
   const undo = (
     <Button
       size="sm"
       variant="ghost"
-      aria-label={`Undo pull for ${pulled.name}, until ${until}`}
+      // Review FA-10: the name starts with the words on the button, then says whose pull it is.
+      aria-label={`Undo pull · until ${until}, ${pulled.name}`}
       onClick={() => onUndo(pulled)}
       data-testid="pulled-row-undo"
     >
@@ -57,11 +59,16 @@ export function PulledBedRow({
             <strong className={alertStyles.umrn}>{umrn}</strong>
           </span>
         </span>
-        <span className={`${alertStyles.phoneRowLine} ${styles.compactWhere}`}>{tag}</span>
-        <span className={`${alertStyles.phoneRowLine} ${styles.compactLine}`}>{line}</span>
+        <Badge size="sm" className={`${styles.hrowTag} ${styles.phoneTag}`}>
+          {tag}
+        </Badge>
+        <span className={`${alertStyles.phoneRowLine} ${styles.compactWhere}`}>{line}</span>
       </span>
       <span className={`${alertStyles.phoneRowEnd} ${styles.compactEnd}`}>
-        <span className={alertStyles.phoneRowAge}>{`${clockText(pulled.at)} pulled`}</span>
+        <span className={alertStyles.phoneRowAge}>
+          {clockText(pulled.at)}
+          <span className={styles.phoneAgeNote}>pulled</span>
+        </span>
         <span className={styles.phoneRowAction}>{undo}</span>
       </span>
     </li>
@@ -73,8 +80,10 @@ export function PulledBedRow({
       <span className={styles.hrowMain}>
         <span className={styles.hrowWho}>
           <strong className={styles.hrowName}>{pulled.name}</strong> <span className={styles.hrowUmrn}>{umrn}</span>
+          <Badge size="sm" className={styles.hrowTag}>
+            {tag}
+          </Badge>
         </span>
-        <span className={styles.hrowTitle}>{tag}</span>
         <span className={styles.hrowLine}>{line}</span>
       </span>
       <span className={styles.hrowEnd}>

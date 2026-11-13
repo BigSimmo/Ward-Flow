@@ -4,8 +4,6 @@
 // Referrals, History and the row. It sits in Act now with its own Pull the bed, on Home and, since
 // the Alerts redesign (Q111, Josh 1 Nov 2026), on Alerts too, so the two pages agree.
 
-import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
-
 import { minutesText } from "@/components/ward-management/alerts/alerts-model";
 import alertStyles from "@/components/ward-management/alerts/alerts.module.css";
 import type { AcceptedAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
@@ -20,6 +18,7 @@ import { Button } from "@/components/wf";
 import { AcceptedPullPhoneRow } from "./accepted-pull-phone-row";
 import { HomeRow } from "./home-rows";
 import styles from "./home-list.module.css";
+import { originPlace } from "./origin-place";
 import { PulledBedRow } from "./pulled-bed-row";
 
 /**
@@ -79,7 +78,8 @@ export function AcceptedPullRows({
           name,
           umrn: who.umrn,
         };
-        const from = withSendingTeam(`from ${referral.originSiteCode ?? ORIGIN_NOT_RECORDED}`, referral);
+        // FS-7: the place in words ("from Royal Perth ED"), as the referral rows say it.
+        const from = withSendingTeam(`from ${originPlace(referral)}`, referral);
         return phone ? (
           <AcceptedPullPhoneRow
             key={referral.id}
@@ -99,11 +99,18 @@ export function AcceptedPullRows({
           <HomeRow
             key={referral.id}
             {...shared}
-            where={`${entry.unitName} accepted, ${from}`}
+            where={`${entry.unitName} accepted · ${from}`}
             age={age}
             ageNote={decidedAt === undefined ? "Time not recorded" : "since accepted"}
             action={
-              <Button size="sm" data-placement-action aria-label={shared.openLabel} onClick={() => setPulling(entry)}>
+              // FS-3: the panel's one filled button, as on the phone row and the Ward page.
+              <Button
+                size="sm"
+                variant="pri"
+                data-placement-action
+                aria-label={shared.openLabel}
+                onClick={() => setPulling(entry)}
+              >
                 Pull the bed
               </Button>
             }

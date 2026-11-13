@@ -82,7 +82,8 @@ function GroupHead({
   aside?: string;
 }) {
   return (
-    <h3 className={styles.groupHead} id={id}>
+    // tabIndex -1: focus can land here when a row it held leaves the list (review FA-2).
+    <h3 className={styles.groupHead} id={id} tabIndex={-1}>
       <b className={styles.n}>{n}</b> {title} <span className={styles.win}>· {windowWord}</span>
       {aside ? (
         <>
@@ -97,10 +98,12 @@ function GroupHead({
 export function WardComingAndGoing(props: ComingAndGoingProps) {
   const { phone, arrivals, backFromLeave, needsALook, dischargesToday } = props;
   const [open, setOpen] = useState<Record<string, boolean>>({});
-  // One filled button per panel (design rule): the first Pull the bed, else the first Confirm arrival.
+  // One filled button per panel (design rule), desk-aware as the mock-ups draw it: the ward desk's is
+  // its first Confirm arrival (main-ward-*: Marrowvale's row), the coordinator's its first Pull the bed.
+  // Only the ward desk's rows carry Confirm arrival, so the coordinator's panel is unchanged.
   const filledKey = (
-    arrivals.find((row) => row.action === "pull" && !row.blocked) ??
-    arrivals.find((row) => row.action !== null && !row.blocked)
+    arrivals.find((row) => row.action === "confirm-arrival" && !row.blocked) ??
+    arrivals.find((row) => row.action === "pull" && !row.blocked)
   )?.key;
 
   function renderRow(row: ComingRow) {

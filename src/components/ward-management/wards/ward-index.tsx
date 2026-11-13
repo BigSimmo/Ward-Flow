@@ -1106,16 +1106,17 @@ function WardCard({
  */
 function WardBedSquares({ row, className, notes = true }: { row: WardRow; className?: string; notes?: boolean }) {
   const { unit, states } = row;
-  return (
+  const counts = bedSquareCounts({
+    beds: unit.beds,
+    ready: row.ready,
+    dischargesToday: row.dischargesToday,
+    closed: states.closed,
+  });
+  const squares = (
     <BedSquares
       className={className}
       head={false}
-      counts={bedSquareCounts({
-        beds: unit.beds,
-        ready: row.ready,
-        dischargesToday: row.dischargesToday,
-        closed: states.closed,
-      })}
+      counts={counts}
       notes={
         notes
           ? bedSquaresNotes({
@@ -1130,6 +1131,24 @@ function WardBedSquares({ row, className, notes = true }: { row: WardRow; classN
       }
       testId={`ward-index-squares-${unit.id}`}
     />
+  );
+  if (notes) return squares;
+  // Review FA-3: the table's squares have no note line and the strip is hidden from screen readers,
+  // so the cell says the squares in words, from the same counts the strip draws (no new counting).
+  const spoken = [
+    `${counts.ready} ready`,
+    counts.prep > 0 ? `${counts.prep} being made ready` : null,
+    counts.free > 0 ? `${counts.free} ${counts.free === 1 ? "discharge" : "discharges"} today` : null,
+    counts.closed > 0 ? `${counts.closed} closed` : null,
+    `${counts.use} in use${states.pulled > 0 ? `, ${states.pulled} of them pulled` : ""}`,
+  ]
+    .filter(Boolean)
+    .join(", ");
+  return (
+    <>
+      {squares}
+      <SrOnly>{`${unit.beds} beds: ${spoken}.`}</SrOnly>
+    </>
   );
 }
 

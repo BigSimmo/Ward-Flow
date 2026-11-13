@@ -3,13 +3,18 @@ import { describe, expect, it } from "vitest";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
-import type { Movement } from "@/components/ward-management/ward-model";
+import type { BedRelease, Movement } from "@/components/ward-management/ward-model";
+import type { BedItem } from "@/components/ward-management/ward/ward-bed-tone";
 import {
   arrivalLegalTag,
   arrivalRows,
   arrivalsExpectedToday,
   arrivalTransportLine,
+  dischargeTodayRows,
+  needsALookRows,
+  shortDateLabel,
 } from "@/components/ward-management/ward/ward-coming-and-going-rows";
+import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import { obsNotRecordedCount } from "@/components/ward-management/ward/ward-screen-derivations";
 
 /**
@@ -60,6 +65,10 @@ describe("F-12: arrival rows keep the legal tag as recorded and say the transpor
     expect(arrivalLegalTag(bare())).not.toMatch(/involuntary/i);
     const noForm = bare({ legalForm: undefined, legalStatus: "Voluntary" });
     expect(arrivalLegalTag(noForm)).toBe("Voluntary");
+    // D-187 item 4: Arrivals use the shared chip, so whatever it says for a Voluntary person with a
+    // form on file (status and form together, once that ruling lands) shows here too.
+    const voluntaryWithForm = bare({ legalStatus: "Voluntary" });
+    expect(arrivalLegalTag(voluntaryWithForm)).toBe(legalStatusShort(voluntaryWithForm));
   });
 
   it("reads the transport line from the transport record, quiet when none is booked", () => {
@@ -106,5 +115,69 @@ describe("F-4: Obs not recorded is a model rule, not a page's", () => {
       stay({ id: "e", unitId: "u1", state: "occupied" }),
     ];
     expect(obsNotRecordedCount("u1", admissions)).toBe(2);
+  });
+});
+
+describe("FS-2 and FS-9: Needs a look agrees with the hero and says dates", () => {
+  // Day 0 is Perth midnight on Wed 11 Nov 2026, so `now` (day 3, 10:00) is Sat 14 Nov.
+  const dayZero = new Date("2026-11-10T16:00:00Z");
+  const rowDate = shortDateLabel(dayZero, now);
+  const bed = (over: Partial<BedItem>): BedItem => ({
+    bedNumber: 1,
+    bedLabel: "Bed 01",
+    status: "occupied",
+    statusText: "",
+    ...over,
+  });
+  const release = (over: Partial<BedRelease>): BedRelease =>
+    ({
+      id: "r",
+      unitId: "u1",
+      admissionId: "a",
+      state: "expected",
+      expectedAt: now,
+      blocker: null,
+      ...over,
+    }) as BedRelease;
+  const beds = [
+    bed({
+      bedNumber: 8,
+      admissionId: "a8",
+      patientAlias: "Surname, Held",
+      pastDate: true,
+      expectedDischargeAt: now - 2 * day,
+    }),
+    bed({
+      bedNumber: 2,
+      admissionId: "a2",
+      patientAlias: "Surname, Past",
+      pastDate: true,
+      expectedDischargeAt: now - day,
+    }),
+    bed({ bedNumber: 13, admissionId: "a13", patientAlias: "Surname, Also", pastDate: true }),
+  ];
+  const releases = [
+    release({ id: "r8", admissionId: "a8", expectedAt: now - 2 * day, blocker: "Awaiting accommodation" }),
+  ];
+
+  it("lists a held-up bed once but counts every past-date bed, as the hero's Past date does", () => {
+    const look = needsALookRows(releases, beds, now, rowDate);
+    expect(look.rows.map((row) => row.bedNumber)).toEqual([8, 2, 13]);
+    expect(look.heldUp).toBe(1);
+    expect(look.pastDate).toBe(beds.filter((item) => item.pastDate).length);
+  });
+
+  it('says a short date ("12 Nov") in the time column, a clock time today, and "Date not recorded" when none', () => {
+    const look = needsALookRows(releases, beds, now, rowDate);
+    expect(look.rows.map((row) => row.when)).toEqual(["12 Nov", "13 Nov", undefined]);
+    expect(look.rows[2]!.quietLine).toBe("Date not recorded");
+    expect(rowDate(now + 330)).toBe("15:30");
+    const out = dischargeTodayRows(
+      [release({ id: "r2", admissionId: "a2", expectedAt: now - day })],
+      beds,
+      now,
+      rowDate,
+    );
+    expect(out[0]!.when).toBe("13 Nov");
   });
 });

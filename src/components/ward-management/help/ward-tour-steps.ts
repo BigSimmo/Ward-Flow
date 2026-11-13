@@ -210,7 +210,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "pressure",
           HERO,
           "Your network now",
-          "The title counts open ED movements and beds ready. The share of beds in use says At risk once it passes the line, and opens Capacity. The line under it says what needs you first, and its button shows just those. The chips count the rest, such as referrals to decide, waits past target, Tier 1 patients and bed counts to check.",
+          "The title counts open movements and beds ready. In use, the share of beds in use, carries an amber dot once it passes the line, and opens Capacity. The line under it says what needs you first, and its button shows just those. The chips count the rest, such as referrals to decide, waits past target, Tier 1 patients and bed counts to check.",
         ),
         step(
           "Your daily work",
@@ -316,7 +316,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "beds",
           { sel: "#bed-capacity" },
           "Every bed",
-          "One tile per bed with who is in it, the length of stay and any flag. Filter to Needs a look, Discharges today or Ready.",
+          "One tile per bed with who is in it, the length of stay and any flag. Filter to Needs a look, Ready or No discharge due.",
           "Select a bed to record a discharge, move the date or Record hold-up.",
         ),
         step(
@@ -624,7 +624,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "map",
           { sel: "#capacity-bed-map" },
           "Bed map",
-          "Every ward as a line of squares: ready, being made ready, discharge today, in use and closed. Held up is said under the squares.",
+          "Every ward as a line of squares: ready, being made ready, discharge today, in use and closed. Held up shows in words under the squares.",
           "Choose a ward to open its panel.",
         ),
         step(

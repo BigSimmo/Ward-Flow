@@ -373,8 +373,9 @@ export function WardScreenHomeSection({
                 Asked to refresh at {formatInstant(latestRefreshRequest.at)} by {latestRefreshRequest.byRole}
               </p>
             ) : null}
-            {/* Wave 4 (D-191): the mock's "What the squares mean", keeping the old figures' explanation. */}
-            <details className={styles.clinicalDisclosure}>
+            {/* Wave 4 (D-191): the mock's "What the squares mean", keeping the old figures' explanation.
+                Drawn as the mock-up's right-aligned link, not a "▸" row; it still opens in place. */}
+            <details className={styles.squaresMeaning}>
               <summary>What the squares mean</summary>
               <p className={styles.bedNote}>
                 Each square is one bed, {unit.beds} in all. A ready square is free now and named for no one; a bed being

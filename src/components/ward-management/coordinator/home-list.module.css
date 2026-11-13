@@ -659,25 +659,6 @@
   overflow-wrap: anywhere;
 }
 
-.compactTag.compactTag {
-  order: 2;
-  flex: 0 1 auto;
-  max-width: 100%;
-  margin: 0;
-  padding: 0 6px;
-  border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-tag);
-  background: var(--wf-surface);
-  /* Live audit, 8 Nov 2026: 18px lines made this phone link 20 px tall; 22px makes 24 (WCAG 2.5.8). */
-  font: 600 var(--wf-fs-12) / 22px var(--wf-font);
-}
-
-.compactTag.compactTag > span {
-  display: block;
-  white-space: normal;
-  overflow-wrap: anywhere;
-}
-
 .compactLine.compactLine {
   order: 3;
   flex: 1 0 100%;
@@ -759,16 +740,6 @@
   font: 400 var(--wf-fs-13) / 18px var(--wf-font);
 }
 
-.compactTag.compactTag {
-  order: 1;
-  margin-top: var(--wf-s-1);
-  padding: 0 var(--wf-s-2);
-  border: 0;
-  box-shadow: inset 0 0 0 1px var(--wf-line-2);
-  color: var(--wf-ink-1);
-  font: 500 var(--wf-fs-12) / 24px var(--wf-font);
-}
-
 .compactEnd.compactEnd {
   align-self: start;
   min-height: 20px;
@@ -794,7 +765,8 @@
   align-items: start;
   column-gap: var(--wf-s-3);
   min-height: 0;
-  padding: var(--wf-s-3) var(--wf-s-4);
+  /* FS-6: about 80 px a row at 1440, as the mock-up. */
+  padding: 10px var(--wf-s-4);
 }
 
 .hrowStacked .hrowGlyph {
@@ -805,10 +777,54 @@
   gap: var(--wf-s-1);
 }
 
+/* FS-6 (home mock-up): name, UMRN and the status tag share one line and wrap when it is tight. */
 .hrowWho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--wf-s-2);
+  row-gap: 2px;
   color: var(--wf-ink-1);
   font: 600 var(--wf-fs-14) / 20px var(--wf-font);
   overflow-wrap: break-word;
+}
+
+/* The name is the row's open control, drawn as the name. */
+.hrowNameOpen {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.hrowNameOpen:hover {
+  text-decoration: underline;
+}
+
+.hrowNameOpen:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-xs);
+}
+
+/* The kit's filled tag, wrapping rather than ending in "…". */
+.hrowTag.hrowTag {
+  align-self: center;
+  white-space: normal;
+  line-height: 16px;
+}
+
+.hrowTag.hrowTag > span {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
 }
 
 .hrowWho .hrowName {
@@ -816,21 +832,8 @@
 }
 
 .hrowUmrn {
-  margin-left: 2px;
   color: var(--wf-ink-3);
   font: 500 var(--wf-fs-12) / 20px var(--wf-mono);
-}
-
-.hrowStacked .hrowTitle {
-  padding: 0 var(--wf-s-2);
-  border-radius: var(--wf-r-tag);
-  box-shadow: inset 0 0 0 1px var(--wf-line-2);
-  background: var(--wf-surface);
-  font: 500 var(--wf-fs-12) / 22px var(--wf-font);
-}
-
-.hrowStacked .hrowTitle:hover {
-  background: var(--wf-hover);
 }
 
 .hrowStacked .hrowLine {
@@ -841,7 +844,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: var(--wf-s-2);
+  gap: 6px;
 }
 
 .hrowStacked .hrowAge {
@@ -897,37 +900,64 @@
 }
 
 /* Wave 4 (notes item 6, A16-23): a referral row's tier and ward lead its one place line, in strong
-   ink, and open the referral like the tag did. */
+   ink; the name opens the referral. */
 .hrowTitleInline {
-  display: inline;
-  padding: 0;
-  border: 0;
-  background: none;
   color: var(--wf-ink-1);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  text-align: left;
-  cursor: pointer;
+  font-weight: 600;
 }
 
-.hrowTitleInline:hover {
+/* Wave 4 (notes item 5, A5-15; FS-6, FS-8): on a phone the person's name opens the row (the
+   Alerts open button, drawn as the name), the status is the kit's filled tag on its own line, and
+   the age keeps its words. Doubled classes outrank the Alerts phone-row rules. */
+.compactWho .phoneName.phoneName {
+  display: inline;
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / 20px var(--wf-font);
+}
+
+.compactWho .phoneName.phoneName:hover {
   text-decoration: underline;
 }
 
-.hrowTitleInline:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
-  border-radius: var(--wf-r-xs);
+.compactWho .phoneUmrn.phoneUmrn {
+  margin-left: 2px;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / 20px var(--wf-mono);
 }
 
-/* Wave 4 (notes item 5, A5-15): a phone row's tag wraps instead of ending in "…" (three classes,
-   so it wins over the Alerts phone row's two-line clamp). */
-.compactText .compactTag .wrapTag {
-  display: inline;
-  -webkit-line-clamp: unset;
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-  overflow-wrap: anywhere;
+.phoneTag.phoneTag {
+  order: 1;
+  flex: 0 1 auto;
+  margin-top: var(--wf-s-1);
+}
+
+.phoneAgeNote {
+  margin-left: 4px;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / 20px var(--wf-font);
+}
+
+.phoneTitleInline {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+/* Notes item 5: a referral's quiet "Decide ›" sits at the row's end, under the age, so the one plain
+   line keeps the text column's width. */
+.compactRow.compactRow[data-end-action] > .compactText {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+.compactRow.compactRow[data-end-action] .phoneRowAction {
+  grid-column: 3;
+  grid-row: 2;
+  align-self: end;
+  justify-self: end;
+  margin-top: 0;
 }
 
 /* Wave 4 (notes item 5): on a phone, Decide is a quiet end link drawn small with a 40 px cover. */

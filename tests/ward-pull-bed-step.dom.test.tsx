@@ -13,6 +13,7 @@ vi.mock("next/link", () => ({
 
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import { AcceptedPullRows, useAcceptedPull } from "@/components/ward-management/coordinator/accepted-pull-rows";
+import { originPlace } from "@/components/ward-management/coordinator/origin-place";
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { PullAcceptedReferral } from "@/components/ward-management/referrals/pull-accepted-referral";
 import {
@@ -23,7 +24,7 @@ import {
 } from "@/components/ward-management/referrals/pull-bed-facts";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { ToastProvider } from "@/components/wf";
+import { buttonClass, ToastProvider } from "@/components/wf";
 
 /**
  * Wave 4 Pull the bed (D-188 as settled 13 Nov 2026, ruling items 1 and 3). Synthetic seed data only.
@@ -197,6 +198,15 @@ describe("After a pull (ruling item 3)", () => {
       expect(active.closest("li")).not.toBe(keptRow);
       expect(active.tagName).toBe("BUTTON");
     });
+    // After-pull mock-up (F-57): when another accepted row follows, focus is on its name, the row's
+    // open control, whose name says the visible text (CB-3).
+    const next = keptRow.nextElementSibling as HTMLElement | null;
+    if (next?.hasAttribute("data-referral-id")) {
+      const active = document.activeElement as HTMLElement;
+      expect(active.closest("li")).toBe(next);
+      expect(active).not.toHaveTextContent("Pull the bed");
+      expect(active.getAttribute("aria-label")).toContain(active.textContent!);
+    }
     // The toast says one clock time and offers the same Undo (shared parts spec item 4).
     expect(screen.getByText(`Undo until ${kept.textContent!.slice(-5)}`)).toBeInTheDocument();
 
@@ -208,6 +218,70 @@ describe("After a pull (ruling item 3)", () => {
     expect(journey.stageChanges.at(-1)).toMatchObject({ from: "pulled" });
     expect(screen.queryByTestId("pulled-row-undo")).toBeNull();
     expect(await screen.findByText(/^Bed pull undone for /u)).toBeInTheDocument();
+  });
+});
+
+describe("Undo pull from the kept row (review FA-2, FA-10, FR-1)", () => {
+  beforeEach(() => {
+    window.sessionStorage.clear();
+    current = undefined;
+  });
+
+  it("names the button by its words, closes the pull's toast and keeps focus in the list", async () => {
+    renderWith(<ActNow />);
+    const [first] = acceptedReferralsAwaitingPull(current!.referrals, current!.units, current!.movements);
+    const row = screen.getByTestId("rows").querySelector(`[data-referral-id="${first!.referral.id}"]`) as HTMLElement;
+    fireEvent.click(
+      within(row)
+        .getAllByRole("button", { name: /^Pull the bed for / })
+        .at(-1)!,
+    );
+    await screen.findByTestId(`ward-pull-accepted-${first!.referral.id}`);
+    answerOpenFacts();
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("ward-pull-accepted-confirm"));
+    });
+    const kept = await screen.findByTestId("pulled-row-undo");
+    // FA-10: the spoken name starts with the words on the button.
+    expect(kept.getAttribute("aria-label")!.startsWith(kept.textContent!)).toBe(true);
+    const pulledToast = screen.getByText(`Bed pulled at ${first!.unitName} for`, { exact: false });
+    kept.focus();
+    await act(async () => {
+      fireEvent.click(kept);
+    });
+    expect(await screen.findByText(/^Bed pull undone for /u)).toBeInTheDocument();
+    // FR-1: the pull's own toast, with its Undo, is gone once the row's Undo has run.
+    await waitFor(() => expect(pulledToast).not.toBeInTheDocument());
+    // FA-2: focus stays in Act now (the row's Pull the bed again, or the list), never the page body.
+    await waitFor(() => {
+      const active = document.activeElement as HTMLElement;
+      expect(active).not.toBe(document.body);
+      expect(active.closest("section")).toHaveAccessibleName("Act now");
+    });
+  });
+});
+
+describe("Desk act-now row for an accepted referral (FS-3, FS-6, FS-7)", () => {
+  beforeEach(() => {
+    window.sessionStorage.clear();
+    current = undefined;
+  });
+
+  it("puts the tag on the name line, names the place in words and fills Pull the bed", () => {
+    renderWith(<ActNow />);
+    const toPull = acceptedReferralsAwaitingPull(current!.referrals, current!.units, current!.movements);
+    const first = toPull[0]!;
+    const row = screen.getByTestId("rows").querySelector(`[data-referral-id="${first.referral.id}"]`) as HTMLElement;
+    const who = row.querySelector("button")!.parentElement!;
+    expect(who).toHaveTextContent("Accepted, bed not pulled");
+    const pull = within(row)
+      .getAllByRole("button", { name: /^Pull the bed for / })
+      .at(-1)!;
+    for (const name of buttonClass({ variant: "pri", size: "sm" }).split(" ")) expect(pull).toHaveClass(name);
+    // Site names in full, never a code to decode (Home notes item 6).
+    const code = first.referral.originSiteCode;
+    if (code) expect(row).toHaveTextContent(`from ${originPlace(first.referral)}`);
+    expect(row.textContent).not.toMatch(/from [A-Z]{2,6}\b/u);
   });
 });
 

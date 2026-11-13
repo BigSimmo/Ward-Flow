@@ -65,6 +65,8 @@ export function WardEverySquares({
         figure="lg"
         counts={counts}
         tag={bedSquaresTag(unit)}
+        // Mock-up (main-*): "1 ready of 20 beds  Adult · Locked", the tag after the words.
+        tagAfter
         notes={bedSquaresNotes({
           dischargesToday: counts.free,
           heldUp,

@@ -45,6 +45,7 @@ import {
   lastFreedToday,
   leaveRows as comingLeaveRows,
   needsALookRows,
+  shortDateLabel,
   type ComingRow,
 } from "./ward-coming-and-going-rows";
 import { WardEverySquares, bedSquareFor } from "./ward-every-bed-squares";
@@ -281,7 +282,8 @@ export function WardHomeTab({
     leaveBeds = [],
     admissions = [],
     configuration,
-  } = useWardFlowSelect("bedReleases", "leaveBeds", "admissions", "configuration");
+    dayZero,
+  } = useWardFlowSelect("bedReleases", "leaveBeds", "admissions", "configuration", "dayZero");
   const outlook = useWardTomorrowOutlook(unit, accepted, now); // WH3: tomorrow for this ward alone
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
   const [localChecks, setLocalChecks] = useState<Record<string, Instant | null>>({
@@ -480,7 +482,7 @@ export function WardHomeTab({
               : bed.blockReason
                 ? `Held up, ${String(bed.blockReason)}`
                 : bed.pastDate
-                  ? "Past expected date"
+                  ? "Past date"
                   : bed.dischargeBarrier
                     ? String(bed.dischargeBarrier)
                     : leaving
@@ -656,8 +658,10 @@ export function WardHomeTab({
     desk: deskRole,
   });
   const comingLeave = comingLeaveRows(unitLeaveBeds, bedsList ?? [], now);
-  const needsALook = needsALookRows(pendingBedReleases, bedsList ?? [], now);
-  const dischargesToday = dischargeTodayRows(pendingBedReleases, bedsList ?? [], now);
+  // Review FS-9: the time column says the date ("14 Nov"), as Capacity's held-up rail does.
+  const rowDate = shortDateLabel(dayZero, now);
+  const needsALook = needsALookRows(pendingBedReleases, bedsList ?? [], now, rowDate);
+  const dischargesToday = dischargeTodayRows(pendingBedReleases, bedsList ?? [], now, rowDate);
 
   // This shift: one to do list, sorted into act now, later today and done. Every row is a recorded
   // fact or one of the ward's own reminder ticks, which are listed but never counted as to do.

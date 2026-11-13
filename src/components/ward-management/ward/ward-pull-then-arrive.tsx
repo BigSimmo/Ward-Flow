@@ -90,6 +90,19 @@ export function useWardPullThenArrive(unitId: string, raise: WardRaise, screen: 
   });
   // Arrivals already opened for a pull made here, so each opens once.
   const arrived = useRef(new Set<string>());
+  // Review FA-2: after Undo pull the row's Undo button is gone, so focus would drop to the page. Once
+  // the row shows Pull the bed again, focus moves there; if the row has left the list, to the
+  // Arrivals heading.
+  const focusAfterUndo = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    const movementId = focusAfterUndo.current;
+    if (movementId === undefined || typeof document === "undefined") return;
+    const row = document.querySelector(`[data-testid="ward-coming-row-${CSS.escape(movementId)}"]`);
+    const pull = row?.querySelector<HTMLElement>("[data-placement-action]");
+    if (row && !pull) return; // The row has not redrawn yet; try after the next render.
+    focusAfterUndo.current = undefined;
+    (pull ?? document.getElementById("ward-coming-arrivals"))?.focus();
+  });
 
   const forget = (movementId: string) =>
     setSent((current) => {
@@ -171,6 +184,7 @@ export function useWardPullThenArrive(unitId: string, raise: WardRaise, screen: 
               toast?.push({ tone: "warning", title: failure });
               return;
             }
+            focusAfterUndo.current = movementId;
             forget(movementId);
             const who = resolvePatientIdentity(movement).formalName;
             toast?.push({ tone: "success", title: `Bed pull undone for ${who}. The movement stays open.` });

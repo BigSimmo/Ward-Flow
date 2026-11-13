@@ -274,6 +274,8 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
         // Desktop: the highlights sit at the right of the page tabs (page tops, 9 Nov 2026).
         highlightsInCard={isPhone}
         findBed={!executive}
+        // Every service starts open on a tablet or desktop; a phone folds all but the first two.
+        foldLater={isPhone}
       />
       {siteDesk ? <OtherSitesCounts model={model} focusUnitId={focusUnitId} /> : null}
     </>

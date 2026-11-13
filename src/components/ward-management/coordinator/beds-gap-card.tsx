@@ -32,7 +32,11 @@ function waysToFree(kind: KindForecast): { count: number; text: string }[] {
 
 /** "A locked adult bed" reads "Locked adult" in a row heading. */
 function shortNeed(need: string): string {
-  const words = need.replace(/^(a|an)\s+/i, "").replace(/\s+bed$/i, "");
+  // Home mock-up: the bed type reads "Older adult", as Capacity names it, not the hyphenated need.
+  const words = need
+    .replace(/^(a|an)\s+/i, "")
+    .replace(/\s+bed$/i, "")
+    .replace(/\bolder-adult\b/iu, "older adult");
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 

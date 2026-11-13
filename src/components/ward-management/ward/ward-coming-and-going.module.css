@@ -203,8 +203,18 @@ button.rowName:focus-visible {
     margin-top: 6px;
   }
 
+  /* Review FS-10: Pull the bed and Confirm arrival share the row in equal widths and never wrap
+     their words; on a panel too narrow for both, the second drops onto its own line. */
   .rowAct:has(.pull) {
     justify-self: stretch;
+    flex-wrap: wrap;
+  }
+
+  .rowAct:has(.pull) button {
+    flex: 1 1 0;
+    min-width: max-content;
+    white-space: nowrap;
+    justify-content: center;
   }
 }
 
@@ -224,8 +234,11 @@ button.rowName:focus-visible {
 
 .phone .pull {
   min-height: 48px;
-  width: 100%;
   justify-content: center;
+}
+
+.phone .rowAct:not(:has(button + button)) .pull {
+  width: 100%;
 }
 
 .phone .footLink {

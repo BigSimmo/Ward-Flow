@@ -1,4 +1,21 @@
 /* The ward page's Referrals tab (WH7, WH9): soft raised cards on a tinted strip, as on Capacity. */
+
+/* Wave 4 (D-191, mock-up referrals-1440): the referrals beside "This ward's answers"; one column on
+   a narrower screen. */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--wf-s-3);
+  align-items: start;
+  min-width: 0;
+}
+
+@media (min-width: 75rem) {
+  .layout {
+    grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr);
+  }
+}
+
 .wrap {
   display: flex;
   flex-direction: column;
@@ -6,7 +23,8 @@
 }
 
 .requestRow,
-.listCard {
+.listCard,
+.rail {
   display: flex;
   min-width: 0;
   padding: var(--wf-s-4);
@@ -47,9 +65,11 @@
 
 .listHead {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--wf-s-2);
+  min-width: 0;
 }
 
 .listHead .caps {
@@ -78,4 +98,29 @@
 .quiet b {
   color: var(--wf-ink-1);
   font-variant-numeric: tabular-nums;
+}
+
+.listCard,
+.rail {
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+
+.title {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.listHead .quiet {
+  flex: none;
+}
+
+.win {
+  color: var(--wf-ink-3);
+  font-weight: 400;
 }

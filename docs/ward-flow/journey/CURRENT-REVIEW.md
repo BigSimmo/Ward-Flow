@@ -169,3 +169,9 @@ coordinator's; its five mapped dispatch sites (RECORD_ESCALATION, RELEASE_PULL, 
 DISPATCH_BROADCAST_ALERT, STAND_DOWN_BROADCAST_ALERT) are unchanged and moved down three lines, and their digests
 were refreshed. The pull itself is the same RAISE_REFERRAL form, sending `actingUnitId` for the ward desk.
 Evidence: `tests/ward-desk-pull-own-ward.dom.test.tsx`, run locally.
+
+Mock-up review fixes in the same PR changed two more cited files without touching a dispatch.
+`referrals/pull-accepted-referral.tsx` (RAISE_REFERRAL): the From line names the place in words, each fact group is
+read once, and the unavailable reason reads "Only the bed coordinator or a ward desk can pull this bed"; the payload
+and guards are unchanged. `capacity/capacity-screen.tsx` (REQUEST_CAPACITY_REFRESH): passes the bed map its phone
+fold rule; the refresh dispatch is unchanged. `ward/ward-answer-view.tsx` (ACCEPT_IN_PRINCIPLE, DECLINE, PULL_PATIENT, CONFIRM_CAPACITY): only the occupancy ring word changes to "In use, at or over 85%" (D-191 item 4); its dispatches are unchanged. All three digests were refreshed.

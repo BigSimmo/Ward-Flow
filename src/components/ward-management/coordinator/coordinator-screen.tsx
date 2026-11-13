@@ -214,7 +214,7 @@ function HomeListMoreMenu() {
         <button
           type="button"
           {...props}
-          className={`${buttonClass({ variant: "ghost", size: "sm" })} ${folderTabClasses.more}`}
+          className={`${buttonClass({ variant: "ghost", size: "sm" })} ${folderTabClasses.more} ${flowStyles.moreCover}`}
           data-testid="ward-home-more"
         >
           <Ellipsis size={16} strokeWidth={1.75} aria-hidden="true" />
@@ -826,6 +826,7 @@ export function CoordinatorScreen() {
             }
           >
             <HeroTop
+              className={heroStyles.heroTop}
               figures={
                 <HeroFigures
                   items={[

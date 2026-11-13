@@ -102,6 +102,9 @@ describe("Ward: Confirm arrival with no pulled bed (F-2)", () => {
     const released = current!.movements.find((candidate) => candidate.id === movement.id)!;
     expect(released.stage).toBe("accepted_awaiting_bed");
     expect(released.closure).toBeUndefined();
+    // Review FA-2: focus moves to the restored row's Pull the bed, not to the page.
+    const restored = screen.getByTestId(`ward-coming-row-${movement.id}`);
+    expect(document.activeElement).toBe(within(restored).getByRole("button", { name: /^Pull the bed/u }));
   });
 
   it("never lists a closed bed and sends nothing on Cancel", () => {

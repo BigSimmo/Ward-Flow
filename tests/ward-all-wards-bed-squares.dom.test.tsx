@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -48,6 +48,28 @@ describe("All wards cards: shared bed squares", () => {
     }
     // The standard day holds pulled beds, so the note line is exercised, not skipped.
     expect(pulledWards).toBeGreaterThan(0);
+  });
+
+  it("says each ward's squares in words in Table view, where the strip has no note line (review FA-3)", () => {
+    const seed = seedWardFlowState();
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardIndex />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByTestId("ward-index-view-toggle"));
+    let checked = 0;
+    for (const unit of seed.units) {
+      const block = screen.queryByTestId(`ward-index-squares-${unit.id}`);
+      if (!block) continue;
+      const strip = within(block).getByTestId("bed-squares-strip");
+      expect(strip).toHaveAttribute("aria-hidden", "true");
+      const ready = strip.querySelectorAll('i[data-s="ready"]').length;
+      const words = block.parentElement!.textContent ?? "";
+      expect(words, unit.id).toMatch(new RegExp(`^${unit.beds} beds: ${ready} ready, .*\\d+ in use`, "u"));
+      checked += 1;
+    }
+    expect(checked).toBeGreaterThan(0);
   });
 
   it("keys the squares in words under the filters", () => {

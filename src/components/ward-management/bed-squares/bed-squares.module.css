@@ -48,6 +48,9 @@
   align-self: center;
   flex: none;
 }
+.tagAfter {
+  margin-inline-start: var(--wf-s-1);
+}
 
 .strip {
   display: grid;
