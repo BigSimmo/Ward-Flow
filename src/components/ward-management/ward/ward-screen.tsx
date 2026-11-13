@@ -144,11 +144,9 @@ import { WardAcceptDialog, WardScreenDecisionJobs } from "./ward-on-demand";
 import type { DecisionReport } from "./ward-decisions-cockpit";
 import { signOffUndo } from "./ward-sign-off-undo";
 import { formatDateOfBirth } from "@/components/ward-management/ward-patients";
-import { namedNotRecordedMessage, notRecordedMessage } from "./ward-screen-messages";
+import { namedNotRecordedMessage, notRecordedMessage, wardLabels } from "./ward-screen-messages";
 import { WardScreenTabSections } from "./ward-screen-tab-sections";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
-import { authorisationLabel } from "@/components/ward-management/ward-authorisation";
-import { SAMPLE_OBSERVATION_MIX_LABEL } from "@/components/ward-management/ward-sample-choices";
 
 type WardScreenProps = {
   departurePlanning?: boolean;
@@ -1984,9 +1982,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       </Link>
       {" · "}
       {/* The staffed figure is the bed count; no roster is held, and the screen says so. */}
-      <span>Roster not recorded</span> ·{" "}
-      {/* D-189 items 6 and 8(a): no ward is shown as authorised or not until Q42 is signed. */}
-      {authorisationLabel(unit)}
+      <span>Roster not recorded</span> · {wardLabels(unit).authorisation}
       {(unit.intakeConstraints ?? []).length > 0
         ? ` · ${(unit.intakeConstraints ?? [])
             .map((constraint) => wardIntakeConstraintLabels[constraint] ?? constraint)
@@ -2578,10 +2574,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           />
         ) : null}
 
-        <WardPrototypeFooter
-          testId="ward-unit-governance"
-          note={`Scoped to ${unit.name} · Bed decisions remain human-confirmed · Not approved for clinical use · Observation levels: ${SAMPLE_OBSERVATION_MIX_LABEL.toLowerCase()}`}
-        />
+        <WardPrototypeFooter testId="ward-unit-governance" note={wardLabels(unit).governanceNote} />
       </main>
     </div>
   );
