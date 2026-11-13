@@ -698,7 +698,13 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
                     testId="triage-signed-tag"
                   />
                 ) : null}
-                {due ? <HeroChip value={`See by ${due.when}`} label={due.basis} testId="triage-see-by" /> : null}
+                {due ? (
+                  <HeroChip
+                    value={`See by ${due.when}`}
+                    label={due.unsigned ? `${due.basis} · window not signed` : due.basis}
+                    testId="triage-see-by"
+                  />
+                ) : null}
                 {person.alert ? <HeroChip value="Alert" tone="warning" label={person.alert} /> : null}
                 <HeroChip
                   value="Allergies"

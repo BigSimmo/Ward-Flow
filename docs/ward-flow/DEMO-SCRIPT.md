@@ -356,8 +356,8 @@ Say these with confidence:
   record asks for a recorded reason.
 - **One decline list.** Wards and coordinators decline from the same list of reasons, with a few
   kept for wards only.
-- **Asking wards.** For an open community referral, the coordinator can ask more wards, up to three
-  waiting at once. Wards that declined don't count. An accepted community referral moves through
+- **Asking wards.** For an open community referral, the coordinator can ask more wards, usually up
+  to three waiting at once. Wards that declined don't count. An accepted community referral moves through
   the same journey, transport and arrival as an ED one.
 - **Role access by desk.** Each desk (coordinator, ward, ED, community team, transport officer, bed
   manager) sees and does only what its role needs. A ward never sees which other wards were asked.
@@ -416,9 +416,9 @@ Do not claim:
 
 **"What about community teams?"**
 
-> "A community team can send a short referral and see whether a ward accepted. The coordinator can
-> ask up to three wards at once. Once accepted, the journey, transport and arrival work the same as
-> from an ED. The journey names the team, never a home address."
+> "A community team can send a short referral and see whether a ward accepted. The coordinator
+> usually asks up to three wards at once. Once accepted, the journey, transport and arrival work the
+> same as from an ED. The journey names the team, never a home address."
 
 **"What about country sites?"**
 
