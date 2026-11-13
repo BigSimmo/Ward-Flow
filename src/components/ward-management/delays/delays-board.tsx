@@ -87,7 +87,6 @@ import { notWaitingParts, waitingSplit } from "@/components/ward-management/ward
 import { WAITING_VIEWS } from "./waiting-href";
 import { inWaitingView, queuedReferralCount } from "./waiting-views";
 import styles from "./delays-board.module.css";
-import wardPin from "@/components/ward-management/ward-pinned-switch.module.css";
 import { PersonPanel, Registers } from "./delays-board-panels";
 import {
   rememberReturnRow,
@@ -1270,7 +1269,9 @@ export function DelaysBoard({
               data-ward-primitive="panel"
               tabIndex={-1}
             >
-              <div className={`${styles.chead} ${wardPin.pinnedSwitch} ${polish.tableHead}`}>
+              {/* Not pinned (spec item 9): the order switch moved up into the tabs, so on a phone this
+                  head is an empty band, and pinned it painted over the pinned tab row. */}
+              <div className={`${styles.chead} ${polish.tableHead}`} data-testid="delays-table-head">
                 <h2>{flat ? "Waiting" : "Waiting by reason"}</h2>
                 <span
                   className={styles.meta}
