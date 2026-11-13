@@ -39,17 +39,25 @@
   flex-wrap: wrap;
 }
 
+/* Item 12 (approved picture): until it shows, the line takes no space either (0 by 0, clipped), so
+   "Loading page" and the synthetic-data mark share one row and no gap opens above the rows. */
 .slow {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-2);
+  max-width: 0;
+  max-height: 0;
+  overflow: hidden;
   visibility: hidden;
   animation: wardLoadingSlowShow 0s 15s forwards;
 }
 
 @keyframes wardLoadingSlowShow {
   to {
+    max-width: none;
+    max-height: none;
+    overflow: visible;
     visibility: visible;
   }
 }

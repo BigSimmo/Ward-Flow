@@ -62,4 +62,14 @@ describe("loading placeholder", () => {
     const loading = readFileSync(path.join(process.cwd(), "src/app/ward-flow/loading.module.css"), "utf8");
     expect(loading).not.toMatch(/\.spin\b/u);
   });
+
+  it("keeps the hidden 15 s line out of the layout until it shows, so the mark shares the status row", () => {
+    // Item 12 (approved picture): hidden only by visibility, the line still took its space, wrapped
+    // the status to two lines and pushed the mark and the rows down.
+    const loading = readFileSync(path.join(process.cwd(), "src/app/ward-flow/loading.module.css"), "utf8");
+    const slow = /\n\.slow \{([^}]*)\}/u.exec(loading)?.[1] ?? "";
+    expect(slow).toMatch(/max-width: 0;\s*max-height: 0;\s*overflow: hidden;\s*visibility: hidden;/u);
+    const shown = /@keyframes wardLoadingSlowShow \{\s*to \{([^}]*)\}/u.exec(loading)?.[1] ?? "";
+    expect(shown).toMatch(/max-width: none;[\s\S]*max-height: none;[\s\S]*visibility: visible;/u);
+  });
 });
