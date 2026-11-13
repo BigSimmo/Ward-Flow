@@ -64,7 +64,7 @@ function renderScreen() {
 function expectWholeNetworkHero() {
   const figures = screen.getByRole("group", { name: "Network beds" });
   expect(within(figures).getByTestId("capacity-hero-ready")).toHaveTextContent(
-    new RegExp(`^${netTotals.ready}\\s*/ ${netTotals.beds}\\s*beds? ready$`, "u"),
+    new RegExp(`^${netTotals.ready}\\s*/ ${netTotals.beds}\\s*Ready · now$`, "u"),
   );
   expect(netTotals.ready, "the network and South Metro could not be told apart").not.toBe(scopedReady);
 }
@@ -184,9 +184,9 @@ describe("with South Metro chosen, only the bed map is scoped", () => {
  * Only React's generated ids are normalised, because they differ between any two mounts.
  */
 /** React's `useId` values count up across mounts, so two renders differ there and nowhere else. */
-/** The Mismatch band (in the hero since the page tops) or the Bed forecast card. */
-function card(view: ReturnType<typeof renderScreen>, name: "Mismatch" | "Bed forecast"): HTMLElement {
-  return name === "Mismatch" ? view.getByTestId("capacity-mismatch") : view.getByRole("region", { name });
+/** The Mismatch band (in the hero since the page tops) or the Forecast rail card (wave 4, D-191). */
+function card(view: ReturnType<typeof renderScreen>, name: "Mismatch" | "Forecast"): HTMLElement {
+  return name === "Mismatch" ? view.getByTestId("capacity-mismatch") : view.getByTestId("capacity-forecast-card");
 }
 
 function withoutIds(html: string): string {
@@ -194,7 +194,7 @@ function withoutIds(html: string): string {
 }
 
 describe("safety property: the mismatch band and the forecast are identical with and without a service", () => {
-  for (const name of ["Mismatch", "Bed forecast"] as const) {
+  for (const name of ["Mismatch", "Forecast"] as const) {
     it(`produces byte-identical markup for the ${name} card under All services and under South Metro`, () => {
       const withoutService = renderScreen();
       const unscopedHtml = withoutIds(card(withoutService, name).outerHTML);
@@ -210,8 +210,8 @@ describe("safety property: the mismatch band and the forecast are identical with
       // Scope audit (Josh, 3 Nov 2026): the scoped card adds one quiet "Network-wide" label and
       // nothing else; every figure is the same.
       // The Mismatch card is now the hero's band (page tops, Josh 9 Nov 2026), whose aside is a <p>.
-      const label =
-        name === "Mismatch" ? /<p class="[^"]*">Network-wide<\/p>/u : /<span class="[^"]*">Network-wide<\/span>/u;
+      // The Forecast card says it in its meta line, "From ward dates · Network-wide" (wave 4).
+      const label = name === "Mismatch" ? /<p class="[^"]*">Network-wide<\/p>/u : / · Network-wide/u;
       expect(unscopedHtml).not.toMatch(label);
       expect(scopedHtml).toMatch(label);
       expect(scopedHtml.replace(label, "")).toBe(unscopedHtml);

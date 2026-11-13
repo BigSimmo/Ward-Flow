@@ -4,58 +4,32 @@
 // Referrals, History and the row. It sits in Act now with its own Pull the bed, on Home and, since
 // the Alerts redesign (Q111, Josh 1 Nov 2026), on Alerts too, so the two pages agree.
 
-import { useState } from "react";
 import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
-import dynamic from "next/dynamic";
-import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 import { minutesText } from "@/components/ward-management/alerts/alerts-model";
 import alertStyles from "@/components/ward-management/alerts/alerts.module.css";
 import type { AcceptedAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
+import { acceptedDecisionAt, type PulledBed } from "@/components/ward-management/referrals/pull-bed-facts";
+import { usePullBedStep } from "@/components/ward-management/referrals/pull-bed-step";
 import { withSendingTeam } from "@/components/ward-management/referrals/referral-sending-team";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
-import { Button, Sheet } from "@/components/wf";
+import { Button } from "@/components/wf";
 
-import { HomeRow, PhoneRow } from "./home-rows";
+import { AcceptedPullPhoneRow } from "./accepted-pull-phone-row";
+import { HomeRow } from "./home-rows";
 import styles from "./home-list.module.css";
-
-// WS-03: the one-step pull loads only when a coordinator opens it.
-const PullAcceptedReferral = dynamic(
-  withLoadRetry(() => import("../referrals/pull-accepted-referral").then((m) => m.PullAcceptedReferral)),
-  { loading: () => null },
-);
-
-/** When the ward accepted: the accepted arm's recorded decision time, when there is one. */
-function acceptedDecisionAt({ referral, unitId }: AcceptedAwaitingPull): Instant | undefined {
-  return referral.destinations.find(
-    (arm) =>
-      arm.state === "accepted" &&
-      arm.destination.kind === "psychiatric_ward" &&
-      (arm.acceptedUnitId ?? arm.destination.unitId) === unitId,
-  )?.decidedAt;
-}
+import { PulledBedRow } from "./pulled-bed-row";
 
 /**
  * The Pull the bed sheet's state. The page holds it, not the rows, so the sheet stays open after
  * "Start the journey without the bed": that removes the last row, and the sheet must still show its
- * message and Open the journey link (Alerts #1230 bug).
+ * message and Open the journey link (Alerts #1230 bug). Wave 4 (H5): it also keeps each pulled row
+ * for its Undo window (`kept`, `undo`); pass both to `AcceptedPullRows`.
  */
 export function useAcceptedPull() {
-  const [pulling, setPulling] = useState<AcceptedAwaitingPull | undefined>();
-  const sheet = pulling ? (
-    <Sheet
-      open
-      onClose={() => setPulling(undefined)}
-      title="Pull the bed"
-      description="Anything already recorded is filled in. Check the details, then pull the bed."
-      testId="home-pull-accepted-sheet"
-    >
-      <PullAcceptedReferral item={pulling} onDone={() => setPulling(undefined)} />
-    </Sheet>
-  ) : null;
-  return { pulling, setPulling, sheet };
+  return usePullBedStep();
 }
 
 /** The "Accepted, bed not pulled" rows. The page renders the sheet from useAcceptedPull. */
@@ -66,6 +40,8 @@ export function AcceptedPullRows({
   testId,
   pulling,
   setPulling,
+  kept = [],
+  onUndo,
 }: {
   toPull: readonly AcceptedAwaitingPull[];
   now: Instant;
@@ -73,11 +49,19 @@ export function AcceptedPullRows({
   testId: string;
   pulling: AcceptedAwaitingPull | undefined;
   setPulling: (entry: AcceptedAwaitingPull) => void;
+  /** Wave 4 H5: beds just pulled, kept at the top with their Undo (`useAcceptedPull().kept`). */
+  kept?: readonly PulledBed[];
+  onUndo?: (pulled: PulledBed) => void;
 }) {
   const patientOf = usePatientOf();
   const nameFor = usePatientNameDisplay();
   return (
     <ul className={phone ? alertStyles.phoneRows : styles.hrows} data-testid={testId}>
+      {onUndo
+        ? kept.map((pulled) => (
+            <PulledBedRow key={`pulled-${pulled.entry.referral.id}`} pulled={pulled} phone={phone} onUndo={onUndo} />
+          ))
+        : null}
       {toPull.map((entry) => {
         const { referral } = entry;
         const who = patientOf(referral);
@@ -97,22 +81,19 @@ export function AcceptedPullRows({
         };
         const from = withSendingTeam(`from ${referral.originSiteCode ?? ORIGIN_NOT_RECORDED}`, referral);
         return phone ? (
-          <PhoneRow
+          <AcceptedPullPhoneRow
             key={referral.id}
-            {...shared}
+            data={shared.data}
+            selected={shared.selected}
+            name={name}
+            umrn={who.umrn}
+            // D-14 guard: this file may not read the patient link; the name stays plain text.
+            patientId={undefined}
             line={`${entry.unitName} accepted · ${from}`}
             age={age}
-            owner={undefined}
-            action={
-              <Button
-                size="sm"
-                data-placement-action
-                aria-label={`Pull bed for ${name} at ${entry.unitName}`}
-                onClick={() => setPulling(entry)}
-              >
-                Pull bed
-              </Button>
-            }
+            ageNote={decidedAt === undefined ? "Time not recorded" : "since accepted"}
+            openLabel={shared.openLabel}
+            onPull={() => setPulling(entry)}
           />
         ) : (
           <HomeRow

@@ -177,7 +177,8 @@ describe("Case 2 — the hero headline states availableNow alone", () => {
     expect(
       headline.textContent?.replace(/\s+/gu, " ").trim(),
       `the hero must state exactly ${netTotals.ready} beds ready of ${netTotals.beds}`,
-    ).toBe(`${netTotals.ready}/ ${netTotals.beds} ${netTotals.ready === 1 ? "bed ready" : "beds ready"}`);
+      // Wave 4 (D-191): the count label carries its window, "Ready · now".
+    ).toBe(`${netTotals.ready}/ ${netTotals.beds} Ready · now`);
   });
 });
 

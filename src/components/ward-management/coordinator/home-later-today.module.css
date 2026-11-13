@@ -1,0 +1,192 @@
+/* Home's Later today as an agenda (wave 4, D-191, notes item 1). Tokens only. */
+.card {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* The phone's Later today tab already names the card: the head stays for screen readers only. */
+.tabbed > [data-wf-card-head] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.group + .group,
+.group + .tomorrow {
+  border-top: 1px solid var(--wf-line);
+}
+
+.sub {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.subAside {
+  margin-left: auto;
+  font-weight: 400;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  text-align: right;
+}
+
+.agenda {
+  margin: 0;
+  padding: 0 0 var(--wf-s-1);
+  list-style: none;
+}
+
+.row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  column-gap: var(--wf-s-3);
+  align-items: start;
+  padding: 6px var(--wf-s-4);
+}
+
+.row + .row,
+.row + .agenda > .row:first-child {
+  border-top: 1px solid var(--wf-line);
+}
+
+.time {
+  font: 600 var(--wf-fs-13) / 20px var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-1);
+  white-space: nowrap;
+}
+
+/* A passed time is in warning ink, never "late by" or a countdown. */
+.row[data-past] .time {
+  color: var(--wf-warning-ink);
+}
+
+.main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.who {
+  margin: 0;
+  font: 600 var(--wf-fs-13) / 20px var(--wf-font);
+}
+
+.name {
+  color: var(--wf-ink-1);
+  text-decoration: none;
+  border-radius: var(--wf-r-xs);
+}
+
+.name:hover {
+  text-decoration: underline;
+}
+
+.name:focus-visible,
+.link:focus-visible,
+.toggle:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.nameText {
+  color: var(--wf-ink-1);
+}
+
+.line {
+  margin: 0;
+  min-width: 0;
+  font: 400 var(--wf-fs-12) / 20px var(--wf-font);
+  color: var(--wf-ink-2);
+  overflow-wrap: break-word;
+}
+
+.where {
+  color: var(--wf-ink-3);
+}
+
+.link {
+  color: var(--wf-accent-ink);
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: var(--wf-r-xs);
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.empty {
+  margin: 0;
+  padding: var(--wf-s-1) var(--wf-s-4) var(--wf-s-3) calc(var(--wf-s-4) + 44px + var(--wf-s-3));
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
+.tomorrow {
+  background: var(--wf-surface-2);
+}
+
+.facts {
+  margin: 0;
+  padding: var(--wf-s-1) var(--wf-s-4) 0;
+}
+
+.facts > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px var(--wf-s-3);
+  padding: 4px 0;
+}
+
+.facts dt {
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.facts dd {
+  margin: 0;
+  font: 400 var(--wf-fs-12) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
+.figure {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.toggle {
+  position: relative;
+  min-height: 40px;
+  margin: 0 var(--wf-s-4);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wf-accent-ink);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  cursor: pointer;
+}
+
+.toggle:hover {
+  text-decoration: underline;
+}
+
+.fine {
+  margin: 0;
+  padding: var(--wf-s-1) var(--wf-s-4) var(--wf-s-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-3);
+}

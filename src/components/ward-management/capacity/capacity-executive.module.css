@@ -1,0 +1,239 @@
+/*
+ * Capacity for the Executive desk (wave 4, C7, notes item 7, D-191): the slate hero, then the kit
+ * table "Beds by ward" grouped by service, or a read-only bed-squares list on a phone. Tokens only;
+ * nothing under 12 px; no coloured side edges and no health-service colours.
+ */
+
+.screen {
+  composes: wardTokens from "../ward-tokens.module.css";
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  display: block;
+  min-width: 0;
+  --wf-page-canvas: var(--wf-canvas);
+  background: var(--wf-canvas);
+  color: var(--wf-ink-1);
+  font-family: var(--wf-font);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+  min-width: 0;
+  padding: var(--wf-s-4);
+}
+
+/* The title's quiet second words, as Capacity's hero. */
+.titleSoft {
+  color: var(--wf-hero-ink-3);
+  font-weight: 500;
+}
+
+/* "Label · window": the window word in quiet hero ink (count labels, shared spec 2). */
+.win {
+  color: var(--wf-hero-ink-3);
+  font-weight: 400;
+}
+
+.bandWord {
+  font-family: var(--wf-font);
+  font-weight: 500;
+}
+
+.card {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.ink3 {
+  color: var(--wf-ink-3);
+  font-weight: 400;
+}
+
+/* Key: one swatch and word per state, under the card head. */
+.key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-4);
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-2);
+}
+
+.keyItem {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  white-space: nowrap;
+}
+
+.keyItem > i {
+  width: 10px;
+  height: 8px;
+}
+
+/* Table (tablet and desktop). */
+.tableWrap {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.tableWrap:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.table.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--wf-fs-13);
+}
+
+.table.table th,
+.table.table td {
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  text-align: left;
+  vertical-align: middle;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* Sentence-case heads, not uppercase mono (notes self-critique round 1). */
+.table.table thead th {
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.table.table tbody th,
+.table.table tfoot th {
+  font-family: var(--wf-font);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.table.table th[class*="num"],
+.num.num {
+  text-align: right;
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.table.table thead th[class*="num"] {
+  font-family: var(--wf-font);
+}
+
+.wardName {
+  display: block;
+  font-weight: 600;
+  overflow-wrap: break-word;
+}
+
+.wardTag {
+  display: block;
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+
+.squaresCell {
+  width: 34%;
+  min-width: 160px;
+}
+
+.groupRow th {
+  background: var(--wf-surface-2);
+  font: 650 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.totalRow th,
+.totalRow td {
+  font-weight: 700;
+  border-bottom: 0;
+  border-top: 1px solid var(--wf-line-3);
+}
+
+.table.table .totalRow th,
+.table.table .totalRow td {
+  border-bottom: 0;
+}
+
+/* Phone list: service groups with the bed-squares phone form. */
+.group + .group {
+  border-top: 1px solid var(--wf-line);
+}
+
+.groupHead {
+  margin: 0;
+}
+
+.groupHead > button {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: var(--wf-row-touch, 52px);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.groupHead > button:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.groupHead svg {
+  flex: none;
+  color: var(--wf-ink-3);
+}
+
+.groupName {
+  font-weight: 650;
+}
+
+.groupHead .ink3 {
+  font-size: var(--wf-fs-12);
+}
+
+.groupFigs {
+  margin-left: auto;
+  font-weight: 400;
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.groupFigs b {
+  color: var(--wf-ink-1);
+}
+
+.wards {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ward {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  min-width: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.ward .wardName {
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
+}

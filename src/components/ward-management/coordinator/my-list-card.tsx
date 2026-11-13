@@ -7,6 +7,7 @@ import { useState, type MouseEvent, type ReactNode } from "react";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import dynamic from "next/dynamic";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
 
@@ -30,6 +31,7 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import type { Referral, Unit } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { isAwaitingAnswer } from "@/components/ward-management/ward-referrals";
+import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import type { AcceptedAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { ACT_NOW_TARGET_ID } from "@/components/ward-management/shell/ward-skip-to-act-now";
 import { Button, buttonClass, Card, Sheet, StatusGlyph } from "@/components/wf";
@@ -44,8 +46,6 @@ import {
 import { AcceptedPullRows, useAcceptedPull } from "./accepted-pull-rows";
 import { HomeRow, PhoneRow } from "./home-rows";
 import styles from "./home-list.module.css";
-
-const WAIT_ROWS_SHOWN = 3;
 
 const CallSheet = dynamic(
   withLoadRetry(() => import("./call-sheet").then((m) => m.CallSheet)),
@@ -66,6 +66,18 @@ function followUpMarker(referral: Referral, now: Instant): string | undefined {
 /** Row text only: "Emergency Department" reads as "ED", as Placement's own header already does. */
 function shortPlace(place: string): string {
   return place.replace(/\bEmergency Department\b/g, "ED");
+}
+
+/**
+ * Wave 4 (notes item 6, A16-23): a referral row names where it came from in full words ("from Royal
+ * Perth ED"), not a site code to decode. Falls back to the recorded code, then to "not recorded".
+ */
+function referralFromPlace(referral: Referral): string {
+  const code = referral.originSiteCode;
+  if (code === undefined) return ORIGIN_NOT_RECORDED;
+  const ed = allEmergencyDepartments().find((place) => place.siteCode === code);
+  const name = ed?.name ?? siteByCode(code)?.name;
+  return name ? shortPlace(name).replace(/\s*\b(Public )?Hospital\b/gu, "") : code;
 }
 
 /**
@@ -192,7 +204,7 @@ function PhoneAlertRow({ entry, now, handlers }: { entry: QueueEntry; now: Insta
 export function MyListCard({
   act,
   toPull = [],
-  wait,
+  since,
   referrals,
   units,
   now,
@@ -203,13 +215,16 @@ export function MyListCard({
   decideHref,
   focus = "all",
   onShowAll,
-  hideWait = false,
   referralCap,
 }: {
   act: QueueEntry[];
   /** WS-02: referrals a ward has accepted with no bed pulled yet. They sit in Act now. */
   toPull?: readonly AcceptedAwaitingPull[];
-  wait: QueueEntry[];
+  /**
+   * Wave 4 (D-191, notes item 7): the "Since 07:00 · … Review" line, folded into the top of this
+   * card so Needs you is one card, not two.
+   */
+  since?: ReactNode;
   referrals: Referral[];
   units: readonly Unit[];
   now: Instant;
@@ -229,8 +244,6 @@ export function MyListCard({
   /** Hero counts narrow the list to one group; "all" shows every group. */
   focus?: "all" | "act" | "decide";
   onShowAll?: () => void;
-  /** Home flow mock-up (Q340): waiting alerts are marks on Flow rows, so the group is left out. */
-  hideWait?: boolean;
   /** Home flow mock-up: show this many referral rows, then Show all (8 rows then Show more). */
   referralCap?: number;
 }) {
@@ -251,14 +264,15 @@ export function MyListCard({
         }
       : {};
   const shownReferrals = referralCap === undefined || allReferrals ? referrals : referrals.slice(0, referralCap);
-  const [allWaiting, setAllWaiting] = useState(false);
   const [callSheetOpen, setCallSheetOpen] = useState(false);
   const pull = useAcceptedPull();
   const patientOf = usePatientOf();
   const nameFor = usePatientNameDisplay();
-  const shownWait = allWaiting ? wait : wait.slice(0, WAIT_ROWS_SHOWN);
   const actCount = act.length + toPull.length;
-  const total = actCount + referrals.length + wait.length;
+  // Ruling 2 (D-191): Needs you is Act now and Referrals to decide only. "Waiting on others" is gone:
+  // a late planned arrival is in Later today's Past planned time, discharge notices stay in Alerts,
+  // and a waiting alert on a person is a mark on their Flow row (Q340).
+  const total = actCount + referrals.length;
 
   const alertRows = (list: QueueEntry[]) =>
     phone ? (
@@ -282,7 +296,7 @@ export function MyListCard({
         const who = patientOf(referral);
         const name = nameFor(who.formalName, who.umrn);
         const title = `Tier ${referral.urgency} · ${referralTo(referral, units)}`;
-        const from = withSendingTeam(`from ${referral.originSiteCode ?? ORIGIN_NOT_RECORDED}`, referral);
+        const from = withSendingTeam(`from ${referralFromPlace(referral)}`, referral);
         const profile = referral.homeRegion ? `${referral.ageBand}, ${referral.homeRegion}` : referral.ageBand;
         const age = minutesText(Math.max(0, now - referral.raisedAt));
         const marker = followUpMarker(referral, now);
@@ -305,13 +319,16 @@ export function MyListCard({
             age={age}
             owner={undefined}
             action={
+              // Wave 4 (notes item 5): on a phone Decide is a quiet end link with a 40 px cover, so the
+              // row's text keeps the width.
               <Link
                 href={decideHref(referral.id)}
-                className={buttonClass({ size: "sm" })}
+                className={styles.decideQuiet}
                 aria-label={`Decide referral for ${name}`}
                 {...decideHere(referral.id)}
               >
                 Decide
+                <ChevronRight aria-hidden="true" size={14} />
               </Link>
             }
           />
@@ -319,8 +336,10 @@ export function MyListCard({
           <HomeRow
             key={referral.id}
             {...shared}
-            where={from}
-            extra={marker ? `${profile} · ${marker}` : profile}
+            // Wave 4 (notes item 6, A16-23): one plain line, "Tier 3 · Any suitable ward · from Royal
+            // Perth ED · Adult, Perth Metropolitan", in place of three stacked lines.
+            inlineTitle
+            where={[from, profile, marker].filter(Boolean).join(" · ")}
             age={age}
             ageNote="waiting"
             action={
@@ -343,7 +362,8 @@ export function MyListCard({
     // WS-18: the target of the shell's "Skip to Act now" link (shell/ward-skip-to-act-now.tsx).
     <section className={alertStyles.group} aria-label="Act now" id={ACT_NOW_TARGET_ID} tabIndex={-1}>
       <GroupHead tone="danger" label="Act now" count={actCount} aside="needs a person now" />
-      {toPull.length > 0 ? (
+      {/* Wave 4 H5 (ruling item 3): a bed just pulled keeps its row, with Undo, until its window ends. */}
+      {toPull.length > 0 || pull.kept.length > 0 ? (
         <AcceptedPullRows
           toPull={toPull}
           now={now}
@@ -351,11 +371,13 @@ export function MyListCard({
           testId="home-accepted-to-pull"
           pulling={pull.pulling}
           setPulling={pull.setPulling}
+          kept={pull.kept}
+          onUndo={pull.undo}
         />
       ) : null}
       {act.length > 0 ? (
         alertRows(act)
-      ) : toPull.length > 0 ? null : (
+      ) : toPull.length > 0 || pull.kept.length > 0 ? null : (
         <CalmEmpty>None firing now. The checks run are named in the header.</CalmEmpty>
       )}
     </section>
@@ -376,28 +398,6 @@ export function MyListCard({
       ) : null}
     </section>
   );
-  const waitGroup = (
-    <section className={alertStyles.group} aria-label="Waiting on others">
-      <GroupHead tone="warning" label="Waiting on others" count={wait.length} aside="you may need to chase" />
-      {wait.length > 0 ? (
-        alertRows(shownWait)
-      ) : (
-        <CalmEmpty>Nothing is waiting on a transport leg or an arrival.</CalmEmpty>
-      )}
-      {wait.length > WAIT_ROWS_SHOWN ? (
-        <button
-          type="button"
-          className={styles.showMore}
-          aria-expanded={allWaiting}
-          data-testid="home-list-show-more"
-          onClick={() => setAllWaiting((open) => !open)}
-        >
-          {allWaiting ? "Show fewer" : `Show ${wait.length - WAIT_ROWS_SHOWN} more`}
-        </button>
-      ) : null}
-    </section>
-  );
-
   const body = (
     <div className={styles.needsBody}>
       {focus === "all" ? null : (
@@ -413,16 +413,12 @@ export function MyListCard({
       )}
       {focus === "decide" ? null : actGroup}
       {focus === "act" ? null : decideGroup}
-      {focus === "all" && !hideWait ? waitGroup : null}
     </div>
   );
 
   return (
-    <Card
-      className={styles.needsCard}
-      data-testid="home-my-list"
-      aria-label={hideWait ? `Needs you, ${total - wait.length} items` : `My list, ${total} items`}
-    >
+    <Card className={styles.needsCard} data-testid="home-my-list" aria-label={`Needs you, ${total} items`}>
+      {since}
       {body}
       {pull.sheet}
       <div className={styles.needsFoot}>

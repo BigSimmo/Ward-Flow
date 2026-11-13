@@ -100,7 +100,7 @@ function litIds(): Set<string> {
 
 function highlightChip(label: string): HTMLElement {
   const group = within(screen.getByRole("group", { name: "Highlight wards" }));
-  return group.getByRole("button", { name: new RegExp(`^${label} · \\d+ wards?$`, "u") });
+  return group.getByRole("button", { name: new RegExp(`^${label} \\d+ wards?$`, "u") });
 }
 
 describe("the Capacity screen's bed map controls", () => {
@@ -130,7 +130,7 @@ describe("the Capacity screen's bed map controls", () => {
     fireEvent.click(toggles[0]!);
     expect(toggles[0]).toHaveAttribute("aria-expanded", "false");
 
-    const visibleCard = within(bedMap()).getAllByRole("button", { name: /occupied/u })[0]!;
+    const visibleCard = within(bedMap()).getAllByRole("button", { name: /ready of/u })[0]!;
     const selected = unitIdOfCard(visibleCard);
     fireEvent.click(visibleCard);
     expect(screen.getByTestId("ward-capacity-ward-drawer")).toHaveAccessibleName(
@@ -182,7 +182,7 @@ describe("the Capacity screen's bed map controls", () => {
   it("a demo reset after opening a ward clears the selection, and focus lands back on the opener", async () => {
     renderScreen();
     const user = userEvent.setup();
-    const opener = within(bedMap()).getAllByRole("button", { name: /occupied/u })[0]!;
+    const opener = within(bedMap()).getAllByRole("button", { name: /ready of/u })[0]!;
     await user.click(opener);
     expect(screen.getByTestId("ward-capacity-ward-drawer")).toBeInTheDocument();
 

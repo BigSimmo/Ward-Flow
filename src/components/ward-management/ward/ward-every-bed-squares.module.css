@@ -1,0 +1,7 @@
+/* Wave 4 (D-191): the squares head on Every bed. Tokens only. */
+
+.wrap {
+  display: grid;
+  gap: var(--wf-s-1);
+  min-width: 0;
+}

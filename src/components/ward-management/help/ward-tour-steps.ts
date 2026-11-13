@@ -316,15 +316,14 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "beds",
           { sel: "#bed-capacity" },
           "Every bed",
-          "One tile per bed with who is in it, the length of stay and any flag. Filter to Needs a look, Discharge due or Ready.",
+          "One tile per bed with who is in it, the length of stay and any flag. Filter to Needs a look, Discharges today or Ready.",
           "Select a bed to record a discharge, move the date or Record hold-up.",
         ),
         step(
           "Your daily work",
           "answer",
-          // Ward flow opens on its busiest list, so the referrals list may be the hidden pane; the
-          // Referrals choice above it is always on screen (document order puts it first).
-          { sel: '[aria-label="Ward flow list"] [role="radio"], #ward-awaiting-answer' },
+          // Wave 4 (D-191): the referrals wait in Coming and going, always on screen.
+          { sel: "#ward-awaiting-answer" },
           "Referrals to answer",
           `Referrals sent to ${place ?? "your ward"} wait here for your answer. Accept, or decline with a reason, and the sender sees your answer straight away.`,
         ),
@@ -610,7 +609,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "meeting",
           { sel: '[data-testid="capacity-bed-meeting"]' },
           "The bed meeting",
-          "Bed meeting opens a short menu: Print the meeting sheet, Open on TV for the meeting room screen, and Open the meeting agenda.",
+          "Bed meeting sheet opens the sheet in one tap. The arrow beside it holds Open on TV for the meeting room screen, and Open the meeting agenda.",
         ),
         step(
           "Your daily work",
@@ -625,8 +624,8 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "map",
           { sel: "#capacity-bed-map" },
           "Bed map",
-          "Every ward with ready, occupied and closed beds. Switch between Grid and Rows.",
-          "Switch the bed map to Rows.",
+          "Every ward as a line of squares: ready, being made ready, discharge today, in use and closed. Held up is said under the squares.",
+          "Choose a ward to open its panel.",
         ),
         step(
           "Finding your way",

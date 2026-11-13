@@ -1,5 +1,5 @@
 // Readers for Capacity's bed map (the October 2026 redesign, `capacity-bed-map-cards.tsx`): one
-// card per ward, grouped by health service, with Grid and Rows layouts.
+// card per ward, grouped by health service (wave 4: the shared bed squares; Grid and Rows are gone).
 //
 // ⚠️ `showWardTable` and `ensureWardTable` are kept only because other suites still import them.
 // They open the bed map's old Table layout (device audit option A, 11 Oct 2026), which the
@@ -60,8 +60,13 @@ export function bedSquares(card: HTMLElement): HTMLElement[] {
   return Array.from(card.querySelectorAll<HTMLElement>('span[aria-hidden="true"] > i'));
 }
 
-/** The squares of one kind, read from the class the card draws them with. */
+/**
+ * The squares of one kind, read from the state each square carries (`data-s`, shared bed squares
+ * v1, wave 4). "ready" counts the beds the ready figure counts, so a bed being made ready (drawn
+ * hollow, still inside `bedStates().ready` until F-26) is one; "used" is every in-use square, the
+ * hatched "discharge today" ones included.
+ */
 export function bedSquaresOf(card: HTMLElement, kind: "ready" | "used" | "closed"): HTMLElement[] {
-  const pattern = { ready: /cellReady/u, used: /cellUsed/u, closed: /cellClosed/u }[kind];
-  return bedSquares(card).filter((square) => pattern.test(square.className));
+  const states = { ready: ["ready", "prep"], used: ["free", "use"], closed: ["closed"] }[kind];
+  return bedSquares(card).filter((square) => states.includes(square.dataset.s ?? ""));
 }

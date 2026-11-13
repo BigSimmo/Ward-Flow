@@ -79,7 +79,9 @@ export function BedsGapCard({ now, bedsReady, condensed }: { now: Instant; bedsR
         meta={
           folded
             ? `${gapRangeWord(totals.gap)} now · ${gapRangeWord(tomorrow.total.likely)} tomorrow`
-            : `${bedsReady} ready · whole network`
+            : // PR E swap: the kit's WindowWord / `window` prop. Wave 4 (D-191, notes item 4): the count label "Ready", as the hero and Capacity say it; no
+              // window word, since the page title already says "right now".
+              `${bedsReady} Ready · whole network`
         }
         icon={BedSingle}
         iconPlain
@@ -174,10 +176,12 @@ export function BedsGapCard({ now, bedsReady, condensed }: { now: Instant; bedsR
               })}
             </tbody>
           </table>
-          <p className={styles.fitFoot}>
-            <b>{gapRangeWord(totals.gap)}</b> across all four. Tomorrow likely{" "}
-            <b>{gapRangeWord(tomorrow.total.likely)}</b>, range {gapRangeWord(tomorrow.total.low)} to{" "}
-            {gapRangeWord(tomorrow.total.high)}.{" "}
+          {/* PR E swap: PR E (#1658) rewrites this line the same way ("From ward dates", no "likely"); take E's.
+              Wave 4 (D-191, shared-parts revision): "Tomorrow N short · range … · From ward dates". The
+              totals come from PR C's selectors (ruling 6: short never nets a spare youth bed). */}
+          <p className={styles.fitFoot} data-testid="home-beds-gap-foot">
+            <b>{gapRangeWord(totals.gap)}</b> across all four. Tomorrow <b>{gapRangeWord(tomorrow.total.likely)}</b> ·
+            range {gapRangeWord(tomorrow.total.low)} to {gapRangeWord(tomorrow.total.high)} · From ward dates.{" "}
             <Link href={HOME_FORECAST_HREF} className={styles.headLink} data-testid="home-beds-gap-forecast-link">
               Forecast
               <ChevronRight size={14} aria-hidden="true" />

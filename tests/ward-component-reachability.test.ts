@@ -144,6 +144,18 @@ const rel = (path: string) => relative(ROOT, path).replaceAll("\\", "/");
  */
 const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
   {
+    module: "src/components/ward-management/capacity/capacity-shift-checks.tsx",
+    why: "wave 4 redesign (D-191 item 8, Josh 13 Nov 2026): the shorter Capacity Overview keeps one rail (Held up · by tomorrow, then Forecast), so the shift checks card is no longer on the page. Kept with its tests until Josh decides whether to delete it",
+  },
+  {
+    module: "src/components/ward-management/capacity/capacity-closed-beds-review.tsx",
+    why: "wave 4 redesign (D-191 items 7 and 8, Josh 13 Nov 2026): closed beds are shown in the bed squares and the shorter Overview drops the separate review card. Kept with its tests until Josh decides whether to delete it",
+  },
+  {
+    module: "src/components/ward-management/capacity/capacity-intake-windows-card.tsx",
+    why: "wave 4 redesign (D-191 item 8, Josh 13 Nov 2026): the shorter Capacity Overview drops the intake windows card. Kept with its tests until Josh decides whether to delete it",
+  },
+  {
     module: "src/components/ward-management/ward-management-console.tsx",
     why: "the movement page renders PatientNowScreen and only imported this module for its WardMovementNotFound re-export, which pulled the movement cockpit into every movement page's first load. #1467 (5 Nov 2026) imports the not-found view directly, so WardPatientWorkspace is reached by no route, as it already was in practice. Kept with its tests until Josh decides whether to delete it",
   },

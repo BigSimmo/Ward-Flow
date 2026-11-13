@@ -484,9 +484,7 @@
 .mapBody {
   display: flex;
   flex-direction: column;
-  gap: var(--wf-s-2);
-  padding: var(--wf-s-3) var(--wf-s-4);
-  border-top: 1px solid var(--wf-line);
+  padding: 0 var(--wf-s-2);
 }
 .highlights {
   display: flex;
@@ -494,15 +492,26 @@
   align-items: center;
   gap: var(--wf-s-2);
 }
-/* Polish (31 Oct 2026): highlight chips and the Grid/Rows switch share the title row. */
-.mapControls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--wf-s-2) var(--wf-s-3);
+/* Wave 4 (D-191): the highlight chips' mono ward counts ("Any ready 19"). */
+.chipWords {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--wf-s-1);
 }
-.mapGroup {
+.chipN {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+.mapCard .highlights {
+  padding: 0 var(--wf-s-4) var(--wf-s-2);
+}
+/* The bed squares key sits at the top of the map (wave 4, notes item 5). */
+.mapKey {
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+}
+.mapGroup + .mapGroup {
   border-top: 1px solid var(--wf-line);
 }
 .mapGroupHead {
@@ -515,252 +524,101 @@
   gap: var(--wf-s-1) var(--wf-s-2);
   width: 100%;
   min-height: var(--wf-h-lg);
-  padding: var(--wf-s-2) 0;
+  padding: var(--wf-s-2);
   border: 0;
   background: none;
   font: inherit;
   font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
   color: var(--wf-ink-2);
   text-align: start;
   cursor: pointer;
+}
+.mapGroupToggle svg {
+  flex: none;
+  color: var(--wf-ink-3);
 }
 .mapGroupToggle:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
   border-radius: var(--wf-r-xs);
 }
+/* F-78: the service is a plain heading in words. */
 .mapGroupName {
-  font-size: var(--wf-fs-12);
   font-weight: 650;
-  letter-spacing: var(--wf-tr-caps);
-  text-transform: uppercase;
   color: var(--wf-ink-1);
+}
+.mapGroupToggle .muted {
+  font-size: var(--wf-fs-12);
 }
 .mapGroupFigures {
   margin-inline-start: auto;
+  white-space: nowrap;
 }
 .mapGroupFigures b {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
   color: var(--wf-ink-1);
 }
+/* Two wards across inside the one card, no card borders (boxes inside a box). */
 .mapGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-  gap: var(--wf-s-2);
-  padding-bottom: var(--wf-s-3);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding-bottom: var(--wf-s-2);
 }
-.mapRows {
-  display: flex;
-  flex-direction: column;
-  padding-bottom: var(--wf-s-3);
-}
-.mapGrid[hidden],
-.mapRows[hidden] {
+.mapGrid[hidden] {
   display: none;
 }
 
-.wardCard,
-.wardRow {
-  display: grid;
+.wardCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
   min-width: 0;
-  border: 1px solid var(--wf-line);
-  background: var(--wf-surface);
+  padding: var(--wf-s-2) var(--wf-s-2) var(--wf-s-3);
+  border: 0;
+  border-radius: var(--wf-r-sm);
+  background: transparent;
   font: inherit;
   color: var(--wf-ink-1);
   text-align: start;
   cursor: pointer;
   transition:
-    border-color var(--wf-m-fast) var(--wf-ease),
-    box-shadow var(--wf-m-fast) var(--wf-ease),
+    background-color var(--wf-m-fast) var(--wf-ease),
     opacity var(--wf-m-fast) var(--wf-ease);
 }
-.wardCard {
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas:
-    "name ready"
-    "occupied ready"
-    "cells cells"
-    "note note";
-  align-content: start;
-  gap: 2px var(--wf-s-3);
-  padding: var(--wf-s-3);
-  border-radius: var(--wf-r-md);
+.wardCard:hover {
+  background: var(--wf-hover);
 }
-/* Capacity issue 5 (Josh, 3 Nov 2026): a row is the name with its notes under it, then the ready
-   figure, occupied of beds and the bed squares, in fixed columns so nothing runs together. */
-.wardRow {
-  grid-template-columns: minmax(180px, 1.6fr) 84px 124px minmax(140px, 2fr);
-  grid-template-areas:
-    "name ready occupied cells"
-    "note ready occupied cells";
-  align-items: center;
-  gap: 2px var(--wf-s-4);
-  min-height: 52px;
-  padding: var(--wf-s-2) var(--wf-s-2);
-  border-width: 0 0 1px;
-  border-radius: 0;
-}
-.wardCard:hover,
-.wardRow:hover {
-  border-color: var(--wf-line-3);
-  box-shadow: var(--wf-e1-hover);
-}
-.wardCard:focus-visible,
-.wardRow:focus-visible {
+.wardCard:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
+  outline-offset: 0;
 }
-.wardCard[data-selected],
-.wardRow[data-selected] {
-  border-color: var(--wf-accent);
-  box-shadow: 0 0 0 1px var(--wf-accent);
+.wardCard[data-selected] {
+  box-shadow: inset 0 0 0 1px var(--wf-accent);
 }
 .dimmed {
   opacity: 0.38;
 }
 .wardName {
-  grid-area: name;
-  font-size: var(--wf-fs-13);
-  line-height: var(--wf-lh-13);
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
   font-weight: 600;
-  overflow-wrap: anywhere;
-}
-.wardReady {
-  grid-area: ready;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-  color: var(--wf-ink-3);
+  overflow-wrap: break-word;
 }
 .mapEmpty {
   margin: 0;
-  padding: var(--wf-s-2) 0;
-  font-size: var(--wf-fs-13);
-  color: var(--wf-ink-2);
-}
-.wardRow .wardReady {
-  flex-direction: row;
-  align-items: baseline;
-  justify-content: flex-end;
-  gap: 4px;
-}
-.wardReadyN {
-  font-size: var(--wf-fs-20);
-  line-height: 1;
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-  color: var(--wf-success-ink);
-}
-.wardReadyNone .wardReadyN {
-  color: var(--wf-ink-3);
-  font-weight: 500;
-}
-.wardOccupied {
-  grid-area: occupied;
+  padding: var(--wf-s-3) var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
   font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-  color: var(--wf-ink-3);
-  font-variant-numeric: tabular-nums;
-}
-.wardNote {
-  grid-area: note;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 2px var(--wf-s-2);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
   color: var(--wf-ink-3);
 }
-.wardCard .wardNote {
-  margin-top: 4px;
-}
-.wardNoteItem {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-}
-.cells {
-  grid-area: cells;
-  display: grid;
-  gap: 2px;
-  max-width: 100%;
-}
-.wardCard .cells {
-  margin-top: var(--wf-s-2);
-}
-.cells i {
-  display: block;
-  height: 8px;
-  border-radius: 2px;
-}
-/* Doubled with the card so the bed map key's swatches match the squares (the shared legend swatch
-   has the same weight and could otherwise win). */
-.cellReady,
-.mapCard .cellReady {
-  background: var(--wf-data-ready);
-}
-.cellUsed,
-.mapCard .cellUsed {
-  background: var(--wf-data-1);
-}
-.cellClosed,
-.mapCard .cellClosed {
-  background: var(--wf-data-closed);
-}
-@media (forced-colors: active) {
-  .cellReady,
-  .mapCard .cellReady {
-    background: Highlight;
-  }
-  .cellUsed,
-  .mapCard .cellUsed {
-    background: CanvasText;
-  }
-  .cellClosed,
-  .mapCard .cellClosed {
-    background: GrayText;
-  }
-}
-
-/* C4 (Josh, 4 Nov 2026): in-use beds by discharge state. Each sits after the plain in-use square
-   at the same weight, so it wins; the bed map key and the ward panel's words name each one. Confirmed
-   is a lighter green than ready, so the two never read as one. */
-.cellConfirmed,
-.mapCard .cellConfirmed {
-  background: color-mix(in srgb, var(--wf-success) 45%, var(--wf-surface));
-  box-shadow: inset 0 0 0 1px var(--wf-success);
-}
-.cellExpected,
-.mapCard .cellExpected {
-  background: var(--wf-info);
-}
-.cellHeldUp,
-.mapCard .cellHeldUp {
-  background: var(--wf-warning);
-}
-/* Forced colours: shape, not colour. Confirmed is hollow, expected is a link-coloured fill, held up
-   is a hollow square with a heavy edge. */
-@media (forced-colors: active) {
-  .cellConfirmed,
-  .mapCard .cellConfirmed {
-    background: Canvas;
-    box-shadow: none;
-    border: 1px solid CanvasText;
-    box-sizing: border-box;
-  }
-  .cellExpected,
-  .mapCard .cellExpected {
-    background: LinkText;
-  }
-  .cellHeldUp,
-  .mapCard .cellHeldUp {
-    background: Canvas;
-    border: 3px double CanvasText;
-    box-sizing: border-box;
-  }
+.wardCard.wardTile {
+  width: 100%;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-radius: 0;
+  border-top: 0;
 }
 
 /* ── Side column ── */
@@ -993,9 +851,6 @@
   .sideColumn > :first-child {
     grid-row: span 2;
   }
-  .wardRow {
-    grid-template-columns: minmax(150px, 1.4fr) 76px 112px minmax(100px, 2fr);
-  }
 }
 
 @container page (max-width: 699px) {
@@ -1024,15 +879,29 @@
   .mapGroupFigures {
     flex-basis: 100%;
     margin-inline-start: calc(14px + var(--wf-s-2));
+    white-space: normal;
   }
 }
 
 @media (max-width: 46.4375rem) {
+  .mapBody {
+    padding: 0;
+  }
+  .mapGroupToggle {
+    padding-inline: var(--wf-s-4);
+  }
+  .mapEmpty {
+    padding-inline: var(--wf-s-4);
+  }
   .mapGrid {
     grid-template-columns: minmax(0, 1fr);
+    padding-bottom: 0;
   }
   .wardCard {
     min-height: var(--wf-row-touch);
+    padding: var(--wf-s-3) var(--wf-s-4);
+    border-radius: 0;
+    border-top: 1px solid var(--wf-line);
   }
   .mapGroupToggle {
     min-height: var(--wf-row-touch);
@@ -1040,8 +909,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .wardCard,
-  .wardRow {
+  .wardCard {
     transition: none;
   }
 }
@@ -1356,12 +1224,9 @@
   color: var(--wf-ink-1);
   font-variant-numeric: tabular-nums;
 }
-.wdBeds .cells {
-  --cell-max: 14px;
-}
-.wdBeds .cells i {
-  height: 10px;
-  border-radius: 3px;
+.wdSquares {
+  --sq-max: 14px;
+  --sq-h: 10px;
 }
 .wdConfirm {
   display: flex;
@@ -1531,23 +1396,6 @@
 .wdListLink.wdListLink {
   flex: none;
   white-space: nowrap;
-}
-/* C4: the ward panel's coloured bed parts, in words with their swatch. */
-.wdPartsKey {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--wf-s-1) var(--wf-s-3);
-}
-.wdPartsItem {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.wdPartsSwatch.wdPartsSwatch {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
 }
 /* C3: the ward's own days as small bars, under its beds. */
 .wdWeek {
@@ -3045,4 +2893,302 @@ button.helpLink {
     top: var(--wf-header-height, 3.5rem);
     z-index: 6;
   }
+}
+
+/* ── Wave 4 (D-191): hero count labels, the split chip, the Overview with its rail ── */
+.figLabel {
+  white-space: nowrap;
+}
+.heroWin {
+  color: var(--wf-hero-ink-3);
+  font-weight: 400;
+}
+/* One on-hero action: the sheet in one tap, the TV view and agenda under its caret. */
+.splitChip {
+  display: inline-flex;
+  gap: 1px;
+}
+.splitChip > .splitMain {
+  border-start-end-radius: var(--wf-r-xs);
+  border-end-end-radius: var(--wf-r-xs);
+}
+.splitChip .splitCaret {
+  padding-inline: var(--wf-s-2);
+  border-start-start-radius: var(--wf-r-xs);
+  border-end-start-radius: var(--wf-r-xs);
+}
+/* A5-15: the counts pill wraps rather than cut "last at 05:42". */
+.pillWrap [data-testid="capacity-hero-confirmed"] {
+  height: auto;
+}
+.pillWrap [data-testid="capacity-hero-confirmed"] > span:not([aria-hidden]) {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+/* Overview: the bed map, with Held up and Forecast in a sticky rail a third wide. */
+.overview {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--wf-s-4);
+}
+.overviewMain,
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+  min-width: 0;
+}
+.rail {
+  position: sticky;
+  top: var(--wf-s-4);
+}
+.phoneOverview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+@container page (max-width: 1099px) {
+  .overview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .rail {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    order: -1;
+  }
+}
+@container page (max-width: 699px) {
+  .rail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Rail cards: count titles, rows, foot link. */
+.countTitle {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wf-s-1);
+}
+.countN {
+  font: 650 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+.countWin {
+  color: var(--wf-ink-3);
+  font-weight: 400;
+}
+.railRows,
+.railHelps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--wf-line);
+}
+.railRows > li + li {
+  border-top: 1px solid var(--wf-line);
+}
+.railRow,
+.railHelp {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--wf-row-default);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border: 0;
+  background: none;
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: start;
+  text-decoration: none;
+}
+a.railRow,
+.railHelp {
+  cursor: pointer;
+}
+a.railRow:hover,
+.railHelp:hover {
+  background: var(--wf-hover);
+}
+a.railRow:focus-visible,
+.railHelp:focus-visible,
+.railFoot:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+.railRow svg,
+.railHelp svg {
+  flex: none;
+  color: var(--wf-ink-3);
+}
+.railRowMain {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.railName {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  font-weight: 600;
+  overflow-wrap: break-word;
+}
+.railSub {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-2);
+}
+.railRowEnd {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+.railDue {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+.railDue[data-late] {
+  color: var(--wf-warning-ink);
+}
+.railValue {
+  flex: none;
+  font: 650 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-1);
+  text-align: end;
+}
+.railHatch {
+  display: inline-block;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--wf-hatch), var(--wf-data-rest);
+}
+.railSubHead {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-1);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+}
+.railHelps {
+  border-top: 0;
+}
+.railHelp {
+  min-height: 40px;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+.railHelpTitle {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.railHelpTag {
+  flex: none;
+  max-width: none;
+}
+.railEmpty {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+.railFoot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--wf-s-1);
+  min-height: 40px;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-accent-ink);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+}
+@media (forced-colors: active) {
+  .railHatch {
+    background: repeating-linear-gradient(135deg, CanvasText 0 2px, Canvas 2px 4px);
+  }
+}
+
+/* Phone (743 px and below): window words under their labels, the bed-type band as a 2 × 2 grid,
+   rows and links with a 48 px tap cover. */
+@media (max-width: 46.4375rem) {
+  .heroWin {
+    display: block;
+  }
+  .figLabel {
+    white-space: normal;
+  }
+  .pillWrap .heroWin,
+  [data-testid="capacity-mismatch"] .heroWin {
+    display: inline;
+  }
+  .capHero [data-testid="capacity-mismatch"] > ul {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: var(--wf-s-1);
+    overflow: visible;
+    margin: 0;
+    padding: 0;
+    mask-image: none;
+  }
+  .capHero [data-testid="capacity-mismatch"] > ul > li {
+    min-width: 0;
+  }
+  .capHero [data-testid="capacity-mismatch"] > ul > li:nth-child(odd) > * {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .splitChip {
+    width: 100%;
+  }
+  .splitChip > .splitMain {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+  .railRow,
+  .railHelp,
+  .railFoot {
+    min-height: var(--wf-row-touch);
+  }
+}
+.capHero {
+  min-width: 0;
+}
+.pillWrap {
+  min-width: 0;
+  max-width: 100%;
+}
+button.railFoot {
+  width: 100%;
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
 }

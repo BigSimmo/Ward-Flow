@@ -12,21 +12,21 @@ vi.mock("next/link", () => ({
 }));
 
 import { bedMeetingSheet } from "@/components/ward-management/capacity/bed-meeting-derivations";
+import { bedKindGaps, bedKindTotals } from "@/components/ward-management/capacity/capacity-derivations";
 import { ClosedBedsPastReview } from "@/components/ward-management/capacity/capacity-closed-beds-review";
 import { networkNamedHolds, totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";
-import { shiftEndInstant } from "@/components/ward-management/ward-board-time-features";
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { releasesExpectedToFree } from "@/components/ward-management/ward-shared-figures";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardIndex } from "@/components/ward-management/wards/ward-index";
 
-/** Fix package B (A16-05): All wards' header reads the shared figures, so it agrees with the meeting sheet. */
+/** Fix package B (A16-05): All wards' header reads the shared figures, so it agrees with the meeting sheet.
+ *  Wave 4 (D-191, notes item 11): "ready by" went; Discharges · today and Short are the sheet's and Capacity's. */
 const figure = (testId: string) => Number.parseInt(screen.getByTestId(testId).textContent ?? "", 10);
 
 describe("All wards header (A16-05)", () => {
-  it("adds only beds still to free by the shift's end to Ready, and its Ready is the meeting sheet's", () => {
+  it("shows the meeting sheet's Ready and Discharges · today, and Capacity's Short", () => {
     const seed = seedWardFlowState();
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -39,7 +39,6 @@ describe("All wards header (A16-05)", () => {
       seed.bedReleases,
       networkNamedHolds(seed.movements, seed.referrals),
     );
-    const freeing = releasesExpectedToFree(seed.bedReleases, NOW_ANCHOR, shiftEndInstant(NOW_ANCHOR)).length;
     const sheet = bedMeetingSheet({
       ...seed,
       now: NOW_ANCHOR,
@@ -50,11 +49,12 @@ describe("All wards header (A16-05)", () => {
     });
     expect(figure("ward-index-figure-ready")).toBe(ready);
     expect(figure("ward-index-figure-ready")).toBe(sheet.capacity.ready);
-    expect(figure("ward-index-figure-ready-by")).toBe(ready + freeing);
-    // The shift ends today, so "ready by" is never more than ready now plus the sheet's freeing today.
-    expect(figure("ward-index-figure-ready-by")).toBeLessThanOrEqual(
-      sheet.capacity.ready + sheet.discharges.freeingToday,
-    );
+    // Still due later today and not held up: the sheet's own freeing-today count.
+    expect(figure("ward-index-figure-discharges")).toBe(sheet.discharges.freeingToday);
+    // The same selector as Capacity's hero, so the two pages never disagree.
+    const gap = bedKindTotals(bedKindGaps(seed.movements, seed.units, NOW_ANCHOR, seed.admissions, seed.referrals)).gap;
+    expect(figure("ward-index-figure-short")).toBe(Math.abs(gap));
+    expect(screen.queryByText(/ready by/iu)).toBeNull();
   });
 });
 

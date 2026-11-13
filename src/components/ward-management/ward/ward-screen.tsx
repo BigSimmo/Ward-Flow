@@ -132,6 +132,7 @@ import { WardScreenTopBar } from "./ward-screen-top-bar";
 import { useWardScreenFigures } from "./use-ward-screen-figures";
 import { WardAcceptedReferralPlacement } from "./ward-accepted-referral-placement";
 import { WardScreenHomeSection } from "./ward-screen-home-section";
+import { obsNotRecordedCount } from "./ward-hero-top-parts";
 import { WardAcceptDialog, WardScreenDecisionJobs } from "./ward-on-demand";
 import type { DecisionReport } from "./ward-decisions-cockpit";
 import { signOffUndo } from "./ward-sign-off-undo";
@@ -1909,7 +1910,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const pickBedFilter = (next: WardBedFilter) => {
     const chosen = bedFilter === next && next !== "all" ? "all" : next;
     setBedFilter(chosen);
-    if (chosen === "shift-end") setFlowTab("discharges");
     showHome("bed-capacity");
   };
   const openShiftTodo = () => {
@@ -1924,12 +1924,14 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     now,
     isPhone,
     pendingPreparation,
-    readyByShiftEnd,
+    arrivalsToday: accepted.length,
+    openArrivals: () => showHome("ward-flow"),
     actNowCount,
     heldUpCount: blockedReleases.length,
     pastDateCount: bedsList.filter((bed) => bed.pastDate).length,
     bedCountsStale,
     staffedSpecialling,
+    obsNotRecorded: obsNotRecordedCount(unit.id, admissions ?? []),
     bedFilter,
     pickBedFilter,
     openShiftTodo,

@@ -81,9 +81,10 @@ function panelOf(service: string): HTMLElement {
 /** "3 ready · 1 closed · 85% in use", read back as numbers from the group's fold button. */
 function readHeading(service: string): { ready: number; closed: number; inUse: number } {
   const text = (bedMapGroupToggle(groupOf(service)).textContent ?? "").replace(/\s+/gu, " ");
-  const match = /(\d+) ready · (\d+) closed · (\d+)% in use/u.exec(text);
-  expect(match, `${service}'s heading rendered "${text}" — not "N ready · N closed · N% in use"`).not.toBeNull();
-  return { ready: Number(match![1]), closed: Number(match![2]), inUse: Number(match![3]) };
+  // Wave 4 (D-191): "4 ready · 86% in use · 5 closed", as the mock-up orders it.
+  const match = /(\d+) ready · (\d+)% in use · (\d+) closed/u.exec(text);
+  expect(match, `${service}'s heading rendered "${text}" — not "N ready · N% in use · N closed"`).not.toBeNull();
+  return { ready: Number(match![1]), inUse: Number(match![2]), closed: Number(match![3]) };
 }
 
 afterEach(() => {

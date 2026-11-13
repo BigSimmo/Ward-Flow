@@ -40,6 +40,7 @@ export function HomeRow({
   age,
   ageNote,
   action,
+  inlineTitle = false,
 }: {
   data: Record<string, string | undefined>;
   tone: "danger" | "warning" | "info" | "neutral";
@@ -57,6 +58,11 @@ export function HomeRow({
   age: string | undefined;
   ageNote: string;
   action: ReactNode;
+  /**
+   * Wave 4 (notes item 6, A16-23): the title leads the place line in strong ink ("Tier 3 · Any
+   * suitable ward · from Royal Perth ED · …"), one line instead of a tag over two more lines.
+   */
+  inlineTitle?: boolean;
 }) {
   const linkRef = useRef<HTMLAnchorElement>(null);
   return (
@@ -85,7 +91,7 @@ export function HomeRow({
           <Link ref={linkRef} href={href} className={styles.hrowTitle} aria-label={rowOpenName(openLabel, title)}>
             {title}
           </Link>
-        ) : (
+        ) : inlineTitle ? null : (
           <button
             type="button"
             className={styles.hrowTitle}
@@ -97,6 +103,20 @@ export function HomeRow({
           </button>
         )}
         <span className={styles.hrowLine}>
+          {inlineTitle && !href ? (
+            <>
+              <button
+                type="button"
+                className={styles.hrowTitleInline}
+                aria-current={selected ? "true" : undefined}
+                aria-label={rowOpenName(openLabel, title)}
+                onClick={onOpen}
+              >
+                {title}
+              </button>
+              {" · "}
+            </>
+          ) : null}
           <SpelledCodes text={where} />
         </span>
         {extra ? <span className={styles.hrowExtra}>{extra}</span> : null}
@@ -184,7 +204,8 @@ function PhoneRow({
             aria-label={rowOpenName(openLabel, title)}
             onClick={onOpen}
           >
-            <span className={alertStyles.rowOpenText}>{title}</span>
+            {/* Wave 4 (notes item 5, A5-15): the tag wraps on a phone, never "…". */}
+            <span className={`${alertStyles.rowOpenText} ${styles.wrapTag}`}>{title}</span>
           </button>
         )}
         <span className={`${alertStyles.phoneRowLine} ${styles.compactWho}`}>

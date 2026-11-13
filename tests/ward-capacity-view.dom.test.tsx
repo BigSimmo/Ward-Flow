@@ -164,10 +164,9 @@ function drawerFact(drawer: HTMLElement, label: string): string {
   return within(drawer).getByText(label, { selector: "dt" }).nextElementSibling?.textContent ?? "";
 }
 
-/** Opens Capacity's bed meeting sheet from the hero's Bed meeting menu. */
+/** Opens Capacity's bed meeting sheet from the hero's one action (wave 4, D-191: one tap). */
 function openMeetingSheet(): HTMLElement {
-  fireEvent.click(screen.getByRole("button", { name: "Bed meeting" }));
-  fireEvent.click(screen.getByRole("menuitem", { name: "Print the meeting sheet" }));
+  fireEvent.click(screen.getByRole("button", { name: "Bed meeting sheet" }));
   return screen.getByTestId("bed-meeting-sheet-print-copy");
 }
 
@@ -183,8 +182,10 @@ function excludedBeyondTodayCount(): number {
 /** The hero's held-up discharge count (it replaced the "This shift" card, 8 Nov 2026; a chip's
  *  count since the page tops, 9 Nov 2026). */
 function heldUpCount(): number {
-  const chip = screen.getByTestId("capacity-hero-held-up");
-  return Number(/(\d+)\s*$/u.exec(chip.querySelector("b > [aria-hidden]")?.textContent ?? "")?.[1]);
+  // Wave 4 (D-191): the hero chip went; the rail's "N Held up · by tomorrow" card holds the count.
+  // An overdue release is due by tomorrow, so it still counts here.
+  const card = screen.getByTestId("capacity-held-up-card");
+  return Number(card.querySelector("h2 b")?.textContent ?? "");
 }
 
 function ConfirmCapacityProbe({ unitId, now }: { unitId: string; now: number }) {

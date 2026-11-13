@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { ChartColumn, ChevronDown, Clock, Presentation, Printer, Search } from "lucide-react";
+import { ChevronDown, Presentation, Printer } from "lucide-react";
 
 import {
-  durMinutes,
   folderTabClasses,
   Hero,
   HeroBand,
@@ -23,7 +22,6 @@ import { CountBreakdown } from "@/components/ward-management/count-breakdown";
 import { wardReadyBreakdownRows } from "@/components/ward-management/count-breakdown-rows";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { PAGE_OWNERS } from "@/components/ward-management/ward-page-owners";
-import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import { BED_MEETING_AGENDA_HREF } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
 
@@ -33,8 +31,8 @@ import { shortNeed } from "./capacity-mismatch-band";
 import { MismatchPopup } from "./capacity-mismatch-popup";
 import type { CapacityModel } from "./capacity-model";
 import { waitingHref } from "../delays/waiting-href";
-import { HELD_UP_HREF } from "./capacity-held-up";
 import type { SiteEdWaiting } from "./capacity-site-ed";
+import { formatInstant } from "@/components/ward-management/ward-clock";
 import styles from "./capacity-page.module.css";
 import pageTop from "@/components/ward-management/page-top-title.module.css";
 
@@ -48,6 +46,11 @@ function gapShort(gap: number): string {
 }
 
 /**
+ * Wave 4 (D-191, ruling 8): four figures with their windows (Ready, Need a bed, Short, In use, each
+ * "· now"), the counts pill that says since when, one on-hero action (Bed meeting sheet, a split
+ * chip with the TV view and agenda under its caret) and the gap by bed type. Find a bed moved to the
+ * bed map's head; the forecast and held-up chips went (both are rail cards now).
+ *
  * Capacity's top (page tops, Josh 9 Nov 2026): three figures, the counts-confirmed pill with the
  * coordinator's Ask, the page's jobs as chips, and one slim band of the gap by bed type now (each
  * cell opens who is waiting and where, the pop-up the Mismatch card used to open). The figures are
@@ -64,7 +67,6 @@ export function CapacityHero({
   hideEmptyTypes,
   tvHref,
   onSheet,
-  onForecast,
   onWard,
   onAskWard,
 }: {
@@ -82,7 +84,6 @@ export function CapacityHero({
   /** The bed meeting TV link, or undefined when the TV view is off. */
   tvHref: string | undefined;
   onSheet: () => void;
-  onForecast: () => void;
   onWard: (unitId: string) => void;
   /** The coordinator's Ask on the counts pill; absent for a desk that may not ask a ward. */
   onAskWard?: (unitId: string) => void;
@@ -94,7 +95,7 @@ export function CapacityHero({
   const { totals, gapTotals, gapRows, tomorrowByKind, occupancy, live, now, oldestCount, site } = model;
   const place = site ? site.name : "Modelled network";
   const oldestStale = oldestCount ? !isConfirmationFresh(oldestCount.unit, now) : false;
-  const { confirmations, heldUp } = model;
+  const { confirmations } = model;
   const firstToConfirm = confirmations.waiting[0];
   const countTarget = firstToConfirm?.id ?? oldestCount?.unit.id;
   const byId = new Map(tomorrowByKind.kinds.map((kind) => [kind.id, kind]));
@@ -110,75 +111,66 @@ export function CapacityHero({
   const openRow = gapRows.find((row) => row.id === openKind) ?? null;
   const gap = gapTotals.gap;
   const occupancyLabel = (
-    <>
-      in use
+    <span className={styles.figLabel}>
+      In use
+      <span className={styles.heroWin}> · now</span>
       {/* Occupancy counts pulled beds as in use (audit P100, D-81). */}
       {model.pulled > 0 ? <SrOnly>, including pulled beds</SrOnly> : null}
-    </>
+    </span>
   );
 
+  // Wave 4 (D-191, ruling 8): one on-hero action. The sheet opens in one tap; the TV view and the
+  // agenda sit under its caret (MU3, Josh 5 Nov 2026, kept).
+  const meetingMore = [
+    ...(tvHref && canOpen(tvHref)
+      ? [{ id: "tv", label: "Open on TV", icon: Presentation, onSelect: () => go(tvHref) }]
+      : []),
+    // Only when this desk may open the agenda (access audit, 31 Oct 2026).
+    ...(canOpen(BED_MEETING_AGENDA_HREF)
+      ? [{ id: "agenda", label: "Open the meeting agenda", onSelect: () => go(BED_MEETING_AGENDA_HREF) }]
+      : []),
+  ];
   const chips: HeroChipItem[] = [
     ...(executive
       ? []
       : [
           {
-            id: "find",
-            label: "Find a bed",
-            icon: <Search {...ICON} />,
-            onClick: () => requestToolsTool("bed-finder", activeElement()),
-            testId: "capacity-hero-find-bed",
-          },
-          {
             id: "meeting",
-            label: "Bed meeting",
-            // The sheet, the TV view and the agenda stay in one menu (MU3, Josh 5 Nov 2026).
+            label: "Bed meeting sheet",
             node: (
-              <Menu
-                label="Bed meeting"
-                items={[
-                  { id: "sheet", label: "Print the meeting sheet", icon: Printer, onSelect: onSheet },
-                  ...(tvHref && canOpen(tvHref)
-                    ? [{ id: "tv", label: "Open on TV", icon: Presentation, onSelect: () => go(tvHref) }]
-                    : []),
-                  // Only when this desk may open the agenda (access audit, 31 Oct 2026).
-                  ...(canOpen(BED_MEETING_AGENDA_HREF)
-                    ? [{ id: "agenda", label: "Open the meeting agenda", onSelect: () => go(BED_MEETING_AGENDA_HREF) }]
-                    : []),
-                ]}
-                trigger={(props) => (
-                  <button type="button" {...props} className={heroChipClassName} data-testid="capacity-bed-meeting">
-                    <Printer {...ICON} />
-                    <span>Bed meeting</span>
-                    <ChevronDown size={14} strokeWidth={1.75} aria-hidden="true" />
-                  </button>
-                )}
-              />
+              <span className={styles.splitChip}>
+                <button
+                  type="button"
+                  className={`${heroChipClassName} ${styles.splitMain}`}
+                  onClick={onSheet}
+                  aria-haspopup="dialog"
+                  data-testid="capacity-bed-meeting"
+                >
+                  <Printer {...ICON} />
+                  <span>Bed meeting sheet</span>
+                </button>
+                {meetingMore.length > 0 ? (
+                  <Menu
+                    label="More bed meeting views"
+                    items={meetingMore}
+                    align="end"
+                    trigger={(props) => (
+                      <button
+                        type="button"
+                        {...props}
+                        className={`${heroChipClassName} ${styles.splitCaret}`}
+                        aria-label={`More bed meeting views: ${meetingMore.map((item) => item.label).join(", ")}`}
+                        data-testid="capacity-bed-meeting-more"
+                      >
+                        <ChevronDown size={14} strokeWidth={1.75} aria-hidden="true" />
+                      </button>
+                    )}
+                  />
+                ) : null}
+              </span>
             ),
           },
         ]),
-    // The phone's Overview opens with the forecast card, so the chip would repeat it there.
-    ...(isPhone
-      ? []
-      : [
-          {
-            id: "forecast",
-            label: "Bed forecast",
-            icon: <ChartColumn {...ICON} />,
-            onClick: onForecast,
-            testId: "capacity-hero-forecast",
-          },
-        ]),
-    {
-      id: "held-up",
-      // A16-25: this is every held-up discharge on any date, as Discharges' Held up group; the meeting
-      // sheet and TV count only those due by tomorrow, so each figure names its span.
-      label: heldUp.total === 1 ? "Held-up discharge, any date" : "Held-up discharges, any date",
-      icon: <Clock {...ICON} />,
-      count: heldUp.total,
-      countTone: "quiet",
-      href: canOpen(HELD_UP_HREF) ? HELD_UP_HREF : undefined,
-      testId: "capacity-hero-held-up",
-    },
     // Site bed manager: the site's ED, counts only, with the All EDs page's words (WF-FIG-016).
     ...(edWaiting && canOpen(PAGE_OWNERS.waiting.route)
       ? [
@@ -194,11 +186,14 @@ export function CapacityHero({
       : []),
   ];
 
-  const jobs = <HeroQuickChips label="Capacity jobs" items={chips} />;
+  const jobs = chips.length > 0 ? <HeroQuickChips label="Capacity jobs" items={chips} /> : undefined;
+  // Count labels "Label · window" (shared spec 2): the window word in quiet ink, under the label on a phone.
+  // PR E swap: the kit's `window` prop on HeroStat / WindowWord replaces this span.
+  const win = (word: string) => <span className={styles.heroWin}> · {word}</span>;
   return (
     <Hero
       level={1}
-      className={`${pageTop.hero} ${folderTabClasses.hero}`}
+      className={`${pageTop.hero} ${folderTabClasses.hero} ${styles.capHero}`}
       // A chosen service or a site: say whose figures these are; otherwise the header says it.
       eyebrow={site || service !== null ? (site ? place : `${place}, not only ${service}`) : undefined}
       phoneEyebrow={site || service !== null ? "show" : undefined}
@@ -219,7 +214,7 @@ export function CapacityHero({
                 id: "ready",
                 value: totals.ready,
                 unit: `/ ${totals.beds}`,
-                label: totals.ready === 1 ? "bed ready" : "beds ready",
+                label: <span className={styles.figLabel}>Ready{win("now")}</span>,
                 testId: "capacity-hero-ready",
                 // Item 5: the wards the figure sums (`networkTotals` over these rows), each with its ready beds.
                 renderPress: (press) => (
@@ -240,9 +235,21 @@ export function CapacityHero({
                 ),
               },
               {
+                id: "need",
+                value: gapTotals.waiting,
+                label: <span className={styles.figLabel}>Need a bed{win("now")}</span>,
+                testId: "capacity-hero-need",
+              },
+              {
+                // PR C owns the rule (ruling 6: add each type's shortfall); this reads `gapTotals`.
                 id: "gap",
                 value: Math.abs(gap),
-                label: `${gap < 0 ? "short" : gap > 0 ? "spare" : "short"} for ${gapTotals.waiting}`,
+                label: (
+                  <span className={styles.figLabel}>
+                    {gap > 0 ? "Spare" : "Short"}
+                    {win("now")}
+                  </span>
+                ),
                 testId: "capacity-hero-gap",
               },
               {
@@ -266,9 +273,11 @@ export function CapacityHero({
                   <b className={styles.pillCount}>
                     {confirmations.confirmed} of {confirmations.total}
                   </b>{" "}
+                  counts confirmed
+                  <span className={styles.heroWin}> · since {formatInstant(confirmations.since)}</span>
                   {firstToConfirm
-                    ? `confirmed · ${firstToConfirm.name} ${durMinutes(Math.max(0, now - firstToConfirm.allocatable.confirmedAt))} old`
-                    : "counts confirmed this shift"}
+                    ? ` · ${firstToConfirm.name} last at ${formatInstant(firstToConfirm.allocatable.confirmedAt)}`
+                    : null}
                 </>
               }
               action={
@@ -295,14 +304,20 @@ export function CapacityHero({
         band={
           typeRows.length > 0 ? (
             <HeroBand
-              title="Short now, by bed type"
+              title={
+                <>
+                  By bed type<span className={styles.heroWin}> · now</span>
+                </>
+              }
               aside={networkWide ? "Network-wide" : undefined}
               testId="capacity-mismatch"
               cells={typeRows.map((row) => {
                 const title = shortNeed(row.need);
                 const likely = byId.get(row.id)?.likely;
                 const short = row.gap < 0;
-                const tomorrow = likely === undefined ? "" : ` · tomorrow ${gapShort(likely)}`;
+                // Wave 4: "13 waiting · 7 fit"; tomorrow is the Forecast card's, not repeated here.
+                const fit = `${row.bedsThatFit} fit`;
+                const tomorrow = likely === undefined ? "" : `, tomorrow ${gapShort(likely)}`;
                 return {
                   id: row.id,
                   label: title,
@@ -313,10 +328,10 @@ export function CapacityHero({
                     </>
                   ),
                   tone: short ? "warning" : "ok",
-                  note: `${row.waiting} waiting${tomorrow}`,
+                  note: `${row.waiting} waiting · ${fit}`,
                   // The spoken name starts with the cell's visible words in order (WCAG 2.5.3, label in
                   // name), then adds the beds that fit and what pressing it opens.
-                  ariaLabel: `${title}: ${gapShort(row.gap)}, ${row.waiting} waiting${tomorrow}. ${row.bedsThatFit} ready that fit. Who is waiting and where`,
+                  ariaLabel: `${title}: ${gapShort(row.gap)}, ${row.waiting} waiting, ${fit}${tomorrow}. Who is waiting and where`,
                   onClick: () => setOpenKind(row.id),
                   testId: `capacity-mismatch-${row.id}`,
                 };
@@ -347,10 +362,11 @@ export function CapacityHero({
  * unique on each screen size.
  */
 function CountsRegion({ phone, children }: { phone: boolean; children: ReactNode }) {
-  return phone ? children : <section aria-label="Bed counts confirmed">{children}</section>;
-}
-
-/** The chip that opened the bed finder gets focus back when it closes. */
-function activeElement(): HTMLElement | undefined {
-  return document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
+  return phone ? (
+    <div className={styles.pillWrap}>{children}</div>
+  ) : (
+    <section aria-label="Bed counts confirmed" className={styles.pillWrap}>
+      {children}
+    </section>
+  );
 }

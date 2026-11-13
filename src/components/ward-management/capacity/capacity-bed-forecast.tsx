@@ -336,7 +336,7 @@ function plural(count: number, one: string, many: string): string {
  * (Capacity issue 3, Josh, 3 Nov 2026): ward counts past their threshold, and beds being made
  * ready. Each opens its pop-up.
  */
-function helpItems(levers: readonly ForecastLever[], rows: readonly NetworkWardRow[], now: number): HelpItem[] {
+export function helpItems(levers: readonly ForecastLever[], rows: readonly NetworkWardRow[], now: number): HelpItem[] {
   const items: HelpItem[] = levers.map((lever) =>
     lever.kind === "clear_held_up"
       ? {
@@ -384,7 +384,7 @@ function helpItems(levers: readonly ForecastLever[], rows: readonly NetworkWardR
   return items;
 }
 
-function tagText(item: HelpItem): string {
+export function tagText(item: HelpItem): string {
   if (item.kind === "stale_counts") return "check";
   // A bed being made ready already counts as ready (owner, 1 Sep 2026), so finishing it is a task,
   // not an uplift to tomorrow's figure.
@@ -392,7 +392,7 @@ function tagText(item: HelpItem): string {
   return item.uplift > 0 ? `up to +${item.uplift}` : "range only";
 }
 
-function tagTone(item: HelpItem): boolean {
+export function tagTone(item: HelpItem): boolean {
   if (item.kind === "stale_counts") return false;
   if (item.kind === "being_made_ready") return false;
   return item.uplift > 0;

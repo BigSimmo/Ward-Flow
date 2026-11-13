@@ -18,7 +18,7 @@ type WardScreenReferralsTabProps = {
   unit: Unit;
   /** Referrals still waiting for this ward's answer. */
   waiting: number;
-  /** Bed requests from an emergency department, answered in Ward flow on Ward home. */
+  /** Bed requests from an emergency department, answered in Coming and going on Ward home. */
   bedRequests: number;
   onOpenBedRequests: () => void;
 };
@@ -43,7 +43,7 @@ export function WardScreenReferralsTab({
     >
       {active ? (
         <div className={styles.wrap}>
-          {/* Most urgent first: a bed request from an emergency department is answered in Ward flow. */}
+          {/* Most urgent first: a bed request from an emergency department is answered in Coming and going. */}
           {bedRequests > 0 ? (
             <div className={styles.requestRow} data-testid="ward-referrals-bed-requests">
               <span className={styles.requestText}>
@@ -59,7 +59,7 @@ export function WardScreenReferralsTab({
                 data-testid="ward-referrals-open-bed-requests"
               >
                 <ArrowLeftRight strokeWidth={1.75} size={14} aria-hidden="true" />
-                Answer in Ward flow
+                Answer on Ward home
               </button>
             </div>
           ) : null}

@@ -141,6 +141,9 @@ function mismatchCells(): HTMLElement[] {
 
 /** One of the bed forecast's three figures ("Now", "Tomorrow", "In 2 days"): value and sub-line. */
 function forecastFigure(label: string): { value: string; sub: string } {
+  // Wave 4 (D-191, ruling 8): the full forecast sits behind the Forecast card's Open.
+  if (!screen.queryByRole("region", { name: "Bed forecast" }))
+    fireEvent.click(screen.getByTestId("capacity-forecast-open"));
   const forecast = screen.getByRole("region", { name: "Bed forecast" });
   const term = within(forecast)
     .getAllByRole("term")
@@ -184,7 +187,8 @@ describe("the Capacity screen", () => {
     const totalReady = netTotals.ready;
     expect(totalReady, "no ready bed in the fixture — this guard proved nothing").toBeGreaterThan(0);
     renderScreen();
-    expect(heroReady()).toBe(`${totalReady}/ ${netTotals.beds} ${totalReady === 1 ? "bed ready" : "beds ready"}`);
+    // Wave 4 (D-191): the count label carries its window, "Ready · now".
+    expect(heroReady()).toBe(`${totalReady}/ ${netTotals.beds} Ready · now`);
   });
 
   it("renders exactly the four bed-type tiles the derivations return, each with its own real waiting and beds-that-fit", () => {
@@ -196,7 +200,8 @@ describe("the Capacity screen", () => {
       expect(tile, `tile ${row.id}`).toHaveTextContent(`${row.waiting} waiting`);
       const name = tile.getAttribute("aria-label") ?? "";
       expect(name, `tile ${row.id}`).toContain(`${row.waiting} waiting`);
-      expect(name, `tile ${row.id}`).toContain(`${row.bedsThatFit} ready that fit`);
+      expect(tile, `tile ${row.id}`).toHaveTextContent(`${row.waiting} waiting · ${row.bedsThatFit} fit`);
+      expect(name, `tile ${row.id}`).toContain(`${row.bedsThatFit} fit`);
       // Label in name (WCAG 2.5.3): the spoken name starts with the cell's visible bed type.
       expect(name.startsWith(`${shortNeed(row.need)}: `), `tile ${row.id}`).toBe(true);
     }
@@ -282,8 +287,10 @@ describe("the Capacity screen", () => {
       const [card] = cardsOf(row.unit);
       // Capacity issue 5 (Josh, 3 Nov 2026): the bed map card shows a known zero as the digit 0,
       // replacing the 6 Sep ruling that spelt it "None". The drawer below keeps its word.
+      // Wave 4 (notes item 1): the card's head leaves out a bed being made ready (drawn hollow).
       const cardFigure = card?.querySelector("b")?.textContent?.trim() ?? "";
-      expect(cardFigure, `${row.unit.id}'s card does not show its ready count`).toBe(String(row.ready));
+      const offered = row.ready - Math.min(row.pendingPreparation ?? 0, row.ready);
+      expect(cardFigure, `${row.unit.id}'s card does not show its ready count`).toBe(String(offered));
 
       const { figure } = bedsNow(openWardDrawer(row.unit));
       expect(figure, `${row.unit.id} has ${row.ready} ready bed(s) and its drawer does not say so`).toBe(
@@ -415,7 +422,8 @@ describe("the Capacity screen", () => {
     expect(networkRows.length, "no ward can be selected, so this comparison would be vacuous").toBeGreaterThan(0);
     renderScreen();
     const mismatch = () => screen.getByTestId("capacity-mismatch").textContent;
-    const forecast = () => screen.getByRole("region", { name: "Bed forecast" }).textContent;
+    // Wave 4: the Forecast rail card stands for the forecast on the page.
+    const forecast = () => screen.getByTestId("capacity-forecast-card").textContent;
     const beforeSelection = [mismatch(), forecast()];
     expect(beforeSelection[0], "the mismatch card is empty, so selection cannot be compared").toBeTruthy();
 
@@ -532,7 +540,7 @@ describe("the Capacity screen never labels a bed count and a ward count with the
     const beds = heroLabels();
     const chips = highlightChips().map((chip) => (chip.textContent ?? "").replace(/\s+/gu, " ").trim());
     for (const chip of chips) {
-      expect(chip, "a ward-counting chip does not say it counts wards").toMatch(/ · \d+ wards?$/u);
+      expect(chip, "a ward-counting chip does not say it counts wards").toMatch(/ \d+ wards?$/u);
       expect(beds, "a ward-counting chip reads exactly like a bed-counting hero figure").not.toContain(chip);
     }
     for (const label of beds) {
@@ -655,9 +663,9 @@ describe("the Capacity bed map's highlight chips mark the matching wards and nev
     ).toBeLessThan(networkRows.length);
 
     renderScreen();
-    const chip = highlightChips().find((candidate) => /^Any ready · /u.test(candidate.textContent ?? ""))!;
+    const chip = highlightChips().find((candidate) => /^Any ready \d/u.test(candidate.textContent ?? ""))!;
     // The chip states how many wards it matches, never a bed count standing in for it.
-    expect(chip).toHaveTextContent(`Any ready · ${readyRows.length} ${readyRows.length === 1 ? "ward" : "wards"}`);
+    expect(chip).toHaveTextContent(`Any ready ${readyRows.length} ${readyRows.length === 1 ? "ward" : "wards"}`);
     fireEvent.click(chip);
     expect(chip).toHaveAttribute("aria-pressed", "true");
 

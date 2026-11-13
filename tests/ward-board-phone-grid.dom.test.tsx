@@ -49,23 +49,24 @@ describe("phone bed grid", () => {
     const notice = screen.queryByTestId("ward-board-stranded");
     if (notice) expect(beds.compareDocumentPosition(notice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(beds).getAllByRole("button").length).toBeGreaterThan(0);
-    // One row: a Show drop-down and the order select as a sort button, not the chip group.
-    expect(screen.queryByRole("group", { name: "Narrow Bed board" })).toBeNull();
-    expect(screen.getByRole("combobox", { name: "Show" })).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Order the beds" })).toBeInTheDocument();
+    // Wave 4 (D-191): one row, the kit Show choices and a sort button whose menu orders the beds.
+    expect(screen.queryByRole("radiogroup", { name: "Narrow Bed board" })).toBeNull();
+    expect(screen.getByRole("radiogroup", { name: "Show" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Order the beds" })).toBeInTheDocument();
+    expect(screen.queryByRole("combobox")).toBeNull();
     // No side panel on a phone until a bed is chosen.
     expect(screen.queryByTestId("ward-board-detail")).toBeNull();
   });
 
-  it("narrows the beds from the Show drop-down, with each option carrying its count", () => {
+  it("narrows the beds from the Show choices, with each option carrying its count", () => {
     stubPhone(true);
     renderBoard();
-    const show = screen.getByRole<HTMLSelectElement>("combobox", { name: "Show" });
+    const show = screen.getByRole("radiogroup", { name: "Show" });
     const before = within(screen.getByTestId("ward-board-beds")).getAllByRole("button").length;
-    const ready = [...show.options].find((option) => option.value === "ready")!;
-    expect(ready.textContent).toMatch(/^Ready · (\d+|none)$/);
-    fireEvent.change(show, { target: { value: "ready" } });
-    expect(show.value).toBe("ready");
+    const ready = within(show).getByRole("radio", { name: /^Ready/u });
+    expect(ready.textContent).toMatch(/^Ready\D*(\d+|none)$/u);
+    fireEvent.click(ready);
+    expect(ready).toHaveAttribute("aria-checked", "true");
     const after = within(screen.getByTestId("ward-board-beds")).getAllByRole("button").length;
     expect(after).toBeLessThan(before);
   });

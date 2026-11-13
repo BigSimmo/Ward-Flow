@@ -895,3 +895,66 @@
   justify-self: start;
   margin-top: var(--wf-s-2);
 }
+
+/* Wave 4 (notes item 6, A16-23): a referral row's tier and ward lead its one place line, in strong
+   ink, and open the referral like the tag did. */
+.hrowTitleInline {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.hrowTitleInline:hover {
+  text-decoration: underline;
+}
+
+.hrowTitleInline:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-xs);
+}
+
+/* Wave 4 (notes item 5, A5-15): a phone row's tag wraps instead of ending in "…" (three classes,
+   so it wins over the Alerts phone row's two-line clamp). */
+.compactText .compactTag .wrapTag {
+  display: inline;
+  -webkit-line-clamp: unset;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+}
+
+/* Wave 4 (notes item 5): on a phone, Decide is a quiet end link drawn small with a 40 px cover. */
+.decideQuiet {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 40px;
+  color: var(--wf-accent-ink);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.decideQuiet::after {
+  content: "";
+  position: absolute;
+  inset: -4px -8px;
+}
+
+.decideQuiet:hover {
+  text-decoration: underline;
+}
+
+.decideQuiet:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-xs);
+}

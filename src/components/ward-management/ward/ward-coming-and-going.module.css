@@ -1,0 +1,230 @@
+/* Wave 4 (D-191): Ward home's "Coming and going" part. Tokens only; mock classes w4Group/w4Row. */
+
+.card {
+  padding: 0;
+  overflow: hidden;
+  container-type: inline-size;
+}
+
+.group {
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-2);
+}
+
+.group + .group {
+  border-top: 1px solid var(--wf-line);
+}
+
+.groupHead {
+  margin: 0 0 var(--wf-s-1);
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+}
+
+.n {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  font-size: var(--wf-fs-15);
+  color: var(--wf-ink-1);
+}
+
+.win {
+  color: var(--wf-ink-3);
+  font-weight: 400;
+}
+
+.groupAside {
+  margin-left: auto;
+  font-weight: 400;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  text-align: right;
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  gap: var(--wf-s-2);
+  align-items: start;
+  padding: var(--wf-s-2) 0;
+  min-height: var(--wf-row-default);
+  box-sizing: border-box;
+}
+
+.row + .row {
+  border-top: 1px solid var(--wf-line);
+}
+
+.rowGlyph {
+  padding-top: 4px;
+  display: inline-flex;
+}
+
+.rowMain {
+  min-width: 0;
+}
+
+.rowTop {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.rowName {
+  all: unset;
+  position: relative;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
+}
+
+button.rowName {
+  cursor: pointer;
+}
+
+button.rowName:hover {
+  text-decoration: underline;
+}
+
+button.rowName:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.rowLine {
+  margin: 2px 0 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-2);
+}
+
+.ink3 {
+  color: var(--wf-ink-3);
+}
+
+.rowAct {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  align-self: center;
+}
+
+.rowAct:empty {
+  display: none;
+}
+
+.rowTime {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rowSub {
+  margin-top: 6px;
+}
+
+.undo {
+  color: var(--wf-ink-2);
+}
+
+.empty {
+  margin: 2px 0 var(--wf-s-1) 20px;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+
+.foot {
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  display: grid;
+  gap: var(--wf-s-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-2);
+}
+
+.foot p {
+  margin: 0;
+}
+
+.footLabel {
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  margin-right: 4px;
+}
+
+.footLinks {
+  display: flex;
+  gap: var(--wf-s-4);
+  flex-wrap: wrap;
+}
+
+.footLink {
+  all: unset;
+  cursor: pointer;
+  color: var(--wf-accent-ink, var(--wf-accent));
+  font-weight: 600;
+  font-size: var(--wf-fs-12);
+}
+
+.footLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* A narrow panel: the action drops under the text. */
+@container (max-width: 520px) {
+  .rowAct:has(button) {
+    grid-column: 2 / -1;
+    justify-self: start;
+    margin-top: 6px;
+  }
+
+  .rowAct:has(.pull) {
+    justify-self: stretch;
+  }
+}
+
+/* Phone: 40 px buttons with a 48 px cover; Pull the bed is 48 px (the placement exception). */
+.phone .rowAct button,
+.phone .footLink {
+  min-height: 40px;
+  position: relative;
+}
+
+.phone .rowAct button::after,
+.phone .rowName::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+}
+
+.phone .pull {
+  min-height: 48px;
+  width: 100%;
+  justify-content: center;
+}
+
+.phone .footLink {
+  display: inline-flex;
+  align-items: center;
+}

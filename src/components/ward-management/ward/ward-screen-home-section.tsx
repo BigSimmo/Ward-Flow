@@ -4,14 +4,10 @@
 // file under the line cap.
 
 import { WardIntakeWindowControl } from "./ward-intake-window-control";
-import { Clock, LayoutPanelLeft } from "lucide-react";
-import { capacityConfirmer } from "@/components/ward-management/capacity/capacity-confirmer";
 import type { FormEvent } from "react";
 import { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
-import { BED_STATE_DETAILS, BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { formatInstant } from "@/components/ward-management/ward-clock";
-import { BED_RELEASES_HELD_UP_ANY_DATE_LABEL, unitCapacity } from "@/components/ward-management/ward-derivations";
-import { WardFreshness } from "@/components/ward-management/ward-freshness";
+import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import type { DeclineReason, Rejection } from "@/components/ward-management/ward-model";
 import { WardPhoneFind } from "./ward-phone-find";
 import styles from "./ward.module.css";
@@ -126,6 +122,10 @@ type WardScreenHomeSectionProps = {
   pendingPreparation: number;
   /** WH4: the ward's own confirm, for the phone round's Confirm discharge. */
   confirmBedRelease: (releaseId: string) => void;
+  /** Wave 4 (W7): the inline Undo on an arrival row just pulled. */
+  undoPullFor?: (movementId: string) => { label: string; run: () => void } | null;
+  /** Ruling 11 (D-191): Confirm arrival with no pulled bed opens the pull step first. */
+  onPullThenArrive?: (movementId: string) => void;
 };
 
 /** The control that opened or closed placing hides with it, so focus follows to its partner. */
@@ -212,10 +212,9 @@ export function WardScreenHomeSection({
   pressBoardBed,
   placedBed,
   latestRefreshRequest,
-  states,
-  blockedReleases,
-  pendingPreparation,
   confirmBedRelease,
+  undoPullFor,
+  onPullThenArrive,
 }: WardScreenHomeSectionProps) {
   // Opted out of the React Compiler: before the 18 Oct 2026 file split this code ran unmemoised
   // inside WardScreen, which the compiler skips. Memoising it changed nothing visible but added
@@ -367,117 +366,32 @@ export function WardScreenHomeSection({
             </>
           ) : undefined
         }
-        figures={
-          <section aria-label="Ward figures, right now" className={styles.figuresFoot} data-ward-primitive="panel">
-            <div className={styles.commandHeader} data-ward-primitive="panel-header">
-              <div className={styles.commandTitleGroup}>
-                <h2 className={styles.commandMainTitle}>
-                  <LayoutPanelLeft size={16} strokeWidth={1.75} aria-hidden="true" />
-                  <span>Ward figures, right now</span>
-                </h2>
-                <span className={styles.commandSubTitle}>Bed distribution · {unit.beds} Staffed Beds</span>
-              </div>
-              <div
-                className={`${styles.capacityFreshnessRow} ${styles.flushMargin}`}
-                data-testid="ward-unit-capacity-freshness"
-              >
-                <WardFreshness
-                  confirmedAt={unit.allocatable.confirmedAt}
-                  confirmedByRole={capacityConfirmer(unit)}
-                  now={now}
-                  derived={unit.allocatable.source !== "ward"}
-                />
-                {latestRefreshRequest ? (
-                  <span className={styles.refreshRequestMark} data-testid="ward-refresh-request-mark">
-                    Asked to refresh at {formatInstant(latestRefreshRequest.at)} by {latestRefreshRequest.byRole}
-                  </span>
-                ) : null}
-              </div>
-            </div>
-
-            <div className={styles.capacitySection}>
-              <div className={styles.capacityTrackTitleRow}>
-                <span className={styles.capacityTrackLabel}>Capacity distribution</span>
-              </div>
-
-              <div className={`${styles.bedGrid} ${styles.breakdownStatsGrid}`} data-testid="ward-unit-beds">
-                {/* The ruled four (`ward-bed-states.ts`). No Blocked box: out-of-service beds are
-                        not recorded (owner ruling 2026-09-25) and are folded into Closed. Integration
-                        QA (3 Nov 2026): Ready and Occupied sit once, in the hero, so only the other
-                        two of the four are here. */}
-                <span
-                  className={`${styles.bedChip} ${styles.statBox}`}
-                  data-ward-primitive="chip"
-                  data-state="pulled"
-                  title={BED_STATE_DETAILS.pulled}
-                >
-                  <span className={styles.statBoxLabel}>{BED_STATE_LABELS.pulled}</span>{" "}
-                  <strong className={styles.statBoxVal}>{states.pulled}</strong>
-                </span>
-                <span
-                  className={`${styles.bedChip} ${styles.statBox}`}
-                  data-ward-primitive="chip"
-                  data-state="closed"
-                  title={BED_STATE_DETAILS.closed}
-                >
-                  <span className={styles.statBoxLabel}>{BED_STATE_LABELS.closed}</span>{" "}
-                  <strong className={styles.statBoxVal}>{states.closed}</strong>
-                </span>
-                <span
-                  className={`${styles.bedChip} ${styles.statBox}`}
-                  data-ward-primitive="chip"
-                  data-state="confirmed"
-                >
-                  <span className={styles.statBoxLabel}>Confirmed</span>{" "}
-                  <strong className={styles.statBoxVal}>{breakdown.confirmedToday}</strong>
-                </span>
-                <span
-                  className={`${styles.bedChip} ${styles.statBox}`}
-                  data-ward-primitive="chip"
-                  data-state="expected"
-                >
-                  <span className={styles.statBoxLabel}>Expected</span>{" "}
-                  <strong className={styles.statBoxVal}>{breakdown.expectedToday}</strong>
-                </span>
-                <span
-                  className={`${styles.bedChip} ${styles.statBox}`}
-                  data-ward-primitive="chip"
-                  data-state="blocked-release"
-                  data-testid="ward-unit-blocked-releases"
-                >
-                  <span className={styles.statBoxLabel}>{BED_RELEASES_HELD_UP_ANY_DATE_LABEL}</span>{" "}
-                  <strong className={styles.statBoxVal}>{blockedReleases.length}</strong>
-                </span>
-                <span className={`${styles.bedChip} ${styles.statBox}`} data-ward-primitive="chip" data-state="leave">
-                  <span className={styles.statBoxLabel}>On leave</span>{" "}
-                  <strong className={styles.statBoxVal}>{breakdown.onLeave}</strong>
-                </span>
-              </div>
-
-              {pendingPreparation > 0 ? (
-                <div className={styles.pendingCleanBanner} data-testid="ward-unit-beds-pending">
-                  <Clock size={16} strokeWidth={1.75} aria-hidden="true" />
-                  <span>
-                    <strong>
-                      {pendingPreparation} ready {pendingPreparation === 1 ? "bed" : "beds"} at {unit.name}{" "}
-                      {pendingPreparation === 1 ? "is" : "are"} still being made ready.
-                    </strong>{" "}
-                    Not offered until marked Ready.
-                  </span>
-                </div>
-              ) : null}
-
-              <details className={styles.clinicalDisclosure}>
-                <summary>What these bed figures mean</summary>
-                <p className={styles.bedNote}>
-                  Ready and Occupied, at the top of the page, with pulled and closed here total {unit.beds}. Closed
-                  means empty but not offered; pulled means allocated to a patient who has not arrived yet. Ready
-                  includes beds being made ready; Occupied includes beds held for leave. Discharge and leave counts are
-                  not added to the total.
-                </p>
-              </details>
-            </div>
-          </section>
+        squaresAfter={
+          <>
+            {latestRefreshRequest ? (
+              <p className={styles.refreshRequestMark} data-testid="ward-refresh-request-mark">
+                Asked to refresh at {formatInstant(latestRefreshRequest.at)} by {latestRefreshRequest.byRole}
+              </p>
+            ) : null}
+            {/* Wave 4 (D-191): the mock's "What the squares mean", keeping the old figures' explanation. */}
+            <details className={styles.clinicalDisclosure}>
+              <summary>What the squares mean</summary>
+              <p className={styles.bedNote}>
+                Each square is one bed, {unit.beds} in all. A ready square is free now and named for no one; a bed being
+                made ready has its own square. Closed means empty but not offered; pulled means allocated to a patient
+                who has not arrived yet. Discharge and leave counts are not added to the total.
+              </p>
+            </details>
+          </>
+        }
+        undoPullFor={undoPullFor}
+        onPullThenArrive={
+          onPullThenArrive ??
+          ((movementId) => {
+            // Ruling 11 (D-191): a started movement pulls with PULL_PATIENT, then its arrival opens.
+            handlePullPatient(movementId, unit.id);
+            openArrival(movementId);
+          })
         }
       />
     </section>

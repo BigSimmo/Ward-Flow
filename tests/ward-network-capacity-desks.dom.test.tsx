@@ -63,10 +63,11 @@ describe("Capacity for the bed coordinator", () => {
     // Page tops (Josh, 9 Nov 2026): the ready beds are the hero's first figure, and the mismatch by
     // bed type is the hero's band.
     expect(screen.getByTestId("capacity-hero-ready")).toHaveTextContent(
-      new RegExp(`^${totals.ready}\\s*/ ${totals.beds}\\s*beds? ready$`, "u"),
+      new RegExp(`^${totals.ready}\\s*/ ${totals.beds}\\s*Ready · now$`, "u"),
     );
-    expect(screen.getByTestId("capacity-mismatch")).toHaveTextContent("Short now, by bed type");
-    expect(screen.getByRole("heading", { name: "Bed forecast" })).toBeInTheDocument();
+    expect(screen.getByTestId("capacity-mismatch")).toHaveTextContent("By bed type · now");
+    // Wave 4 (D-191, ruling 8): the forecast is a rail card; the chart opens in its drawer.
+    expect(screen.getByRole("heading", { name: "Forecast" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Bed map" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Bed meeting/ })).toBeInTheDocument();
     expect(screen.getByTestId("ward-capacity-governance")).toBeInTheDocument();
@@ -75,9 +76,12 @@ describe("Capacity for the bed coordinator", () => {
   it("keeps Open on TV in the Bed meeting menu, not on the hero (MU3, Josh 5 Nov 2026)", () => {
     renderCapacity();
     expect(screen.queryByRole("link", { name: /Open on TV/ })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /Bed meeting/ }));
+    // Wave 4 (D-191, ruling 8): the sheet is the hero's one action, one tap; the TV view and the
+    // agenda sit under its caret.
+    expect(screen.getByRole("button", { name: "Bed meeting sheet" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /^More bed meeting views/ }));
     expect(screen.getByRole("menuitem", { name: "Open on TV" })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: "Print the meeting sheet" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Open the meeting agenda" })).toBeInTheDocument();
   });
 
   it("opens a ward's drawer from the bed map", () => {
@@ -85,7 +89,7 @@ describe("Capacity for the bed coordinator", () => {
     const map = screen.getByRole("region", { name: "Bed map" });
     const first = within(map)
       .getAllByRole("button")
-      .find((button) => button.getAttribute("aria-haspopup") === "dialog" && /occupied/.test(button.textContent ?? ""));
+      .find((button) => button.getAttribute("aria-haspopup") === "dialog" && /ready of/.test(button.textContent ?? ""));
     expect(first).toBeDefined();
     fireEvent.click(first!);
     expect(screen.getByTestId("ward-capacity-ward-drawer")).toBeInTheDocument();
@@ -98,6 +102,8 @@ describe("Capacity for the executive", () => {
     renderCapacity();
     expect(screen.queryByRole("button", { name: /Bed meeting/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Open on TV/ })).not.toBeInTheDocument();
+    // Wave 4 (D-191): planned moves live on the Planned tab.
+    fireEvent.click(screen.getByRole("radio", { name: /^Planned/ }));
     expect(screen.getByTestId("as-executive-planned-counts")).toBeInTheDocument();
     expect(screen.queryByTestId("ward-planned-book")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Ask / })).not.toBeInTheDocument();
@@ -119,7 +125,7 @@ describe("Capacity for a site bed manager", () => {
     expect(screen.getByRole("group", { name: `${siteName} beds` })).toBeInTheDocument();
     expect(screen.getAllByText(siteName).length).toBeGreaterThan(0);
     expect(screen.getByTestId("capacity-hero-ready")).toHaveTextContent(
-      new RegExp(`^${totals.ready}\\s*/ ${totals.beds}\\s*beds? ready$`, "u"),
+      new RegExp(`^${totals.ready}\\s*/ ${totals.beds}\\s*Ready · now$`, "u"),
     );
     expect(screen.getByRole("heading", { name: "Other sites" })).toBeInTheDocument();
     expect(screen.getByText(/Other sites show beds, never the people in them\./)).toBeInTheDocument();
@@ -131,6 +137,8 @@ describe("Capacity for a site bed manager", () => {
     const siteCode = seed.units[0].siteCode;
     asDesk({ role: "bed_manager", scope: { kind: "site", siteCode } });
     renderCapacity();
+    // Wave 4 (D-191, ruling 8): Try a scenario sits in the forecast drawer the rail card opens.
+    fireEvent.click(screen.getByTestId("capacity-forecast-open"));
     fireEvent.click(screen.getByRole("button", { name: "Try a scenario" }));
     const dialog = within(screen.getByRole("dialog"));
     // The ward list is the kit's searchable picker (ListPicker): open it, then read its options.
@@ -149,8 +157,10 @@ describe("Capacity offers only pages the desk may open", () => {
   it("leaves out the meeting agenda and the TV view when the desk may not open them", () => {
     access.canOpen = (href) => !href.startsWith("/ward-flow/bed-meeting");
     renderCapacity();
-    fireEvent.click(screen.getByRole("button", { name: /Bed meeting/ }));
-    expect(screen.getByRole("menuitem", { name: "Print the meeting sheet" })).toBeInTheDocument();
+    // Wave 4: the sheet stays one tap; with neither the TV view nor the agenda open to this desk,
+    // the caret that holds them is not drawn.
+    expect(screen.getByRole("button", { name: "Bed meeting sheet" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^More bed meeting views/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("menuitem", { name: "Open the meeting agenda" })).not.toBeInTheDocument();
     expect(screen.queryByRole("menuitem", { name: "Open on TV" })).not.toBeInTheDocument();
   });

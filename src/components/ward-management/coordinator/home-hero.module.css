@@ -52,6 +52,19 @@
   white-space: nowrap;
 }
 
+/* Wave 4 (notes item 5, A5-16): a 40 px tap cover on a phone, drawn no bigger. */
+@media (max-width: 46.4375rem) {
+  .edPopulation {
+    position: relative;
+  }
+
+  .edPopulation::after {
+    content: "";
+    position: absolute;
+    inset: -12px -8px;
+  }
+}
+
 .edPopulation svg {
   color: var(--wf-hero-ink-3);
 }
@@ -293,4 +306,19 @@
   .edClearCell {
     padding-left: 20px;
   }
+}
+
+/* Wave 4 (D-191, notes items 4 and 5): each part of the act box's second line takes a line of its
+   own and wraps, so "Checking: …" and the outage-pack link are never cut to "…" on a phone. */
+.actLine {
+  display: block;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* Ruling 4 (D-191): "In use" with the amber dot that replaced the words "at risk". */
+.figGlyphLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
 }

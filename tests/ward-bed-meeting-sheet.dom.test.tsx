@@ -5,7 +5,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { BED_MEETING_ROW_LIMIT, bedMeetingSheet } from "@/components/ward-management/capacity/bed-meeting-derivations";
 import { BED_MEETING_PRINTING_CLASS } from "@/components/ward-management/capacity/bed-meeting-sheet";
-import { networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
+import {
+  bedKindGaps,
+  bedKindTotals,
+  networkWardRows,
+} from "@/components/ward-management/capacity/capacity-derivations";
+import { BED_MEETING_SHEET_BODY_LABEL } from "@/components/ward-management/capacity/capacity-meeting-sheet-dialog";
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { delayGroups } from "@/components/ward-management/delays/delays-derivations";
 import { groupDischarges } from "@/components/ward-management/discharges/discharge-board";
@@ -19,7 +24,7 @@ import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 /**
- * The morning bed-meeting sheet (Capacity → "Bed meeting" → "Print the meeting sheet"). Two
+ * The morning bed-meeting sheet (Capacity → "Bed meeting sheet", one tap since wave 4). Two
  * properties matter:
  *   1. Every figure on the paper is the figure its own screen shows — the sheet re-derives nothing.
  *   2. Printing while the sheet is open sends the sheet alone on A4.
@@ -78,6 +83,27 @@ describe("bedMeetingSheet agrees with the screens it summarises", () => {
     if (groups.blocked.length > 0) expect(sheet.discharges.rows[0].status).toBe("Held up");
   });
 
+  it("held up · by tomorrow lists the held-up group by ward, with no names, oldest due first", () => {
+    const blocked = groupDischarges(bedReleases, NOW_ANCHOR).blocked;
+    const { heldUpRows, moreHeldUpRows } = sheet.discharges;
+    expect(heldUpRows.length + moreHeldUpRows).toBe(blocked.length);
+    expect(heldUpRows.length).toBeLessThanOrEqual(BED_MEETING_ROW_LIMIT);
+    const due = heldUpRows.map((row) => row.dueAt);
+    expect(due).toEqual([...due].sort((a, b) => a - b));
+    for (const row of heldUpRows) {
+      expect(Object.keys(row).sort()).toEqual(["dueAt", "id", "reason", "ward"]);
+      expect(row.reason.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("short reads Capacity's own bed-type selector", () => {
+    const kinds = bedKindGaps(wardMovements, units, NOW_ANCHOR, wardAdmissions, []);
+    const totals = bedKindTotals(kinds);
+    expect(sheet.short.gap).toBe(totals.gap);
+    expect(sheet.short.waiting).toBe(totals.waiting);
+    expect(sheet.short.spare.map((kind) => kind.id)).toEqual(kinds.filter((k) => k.gap > 0).map((k) => k.id));
+  });
+
   it("ED waiting matches the ED home's summaries and lists the longest wait first", () => {
     const waiting = edOpenSummaries(wardMovements, NOW_ANCHOR).reduce((sum, summary) => sum + summary.waiting, 0);
     expect(sheet.ed.waiting).toBe(waiting);
@@ -126,17 +152,18 @@ describe("the sheet on Capacity", () => {
       </WardFlowProvider>,
     );
   }
-  /** The hero's Bed meeting menu, then "Print the meeting sheet". */
+  /** Wave 4 (C6, D-191): the hero's one action, "Bed meeting sheet", opens the sheet in one tap. */
   function chooseSheet() {
-    fireEvent.click(screen.getByRole("button", { name: "Bed meeting" }));
-    fireEvent.click(screen.getByRole("menuitem", { name: "Print the meeting sheet" }));
+    fireEvent.click(screen.getByRole("button", { name: "Bed meeting sheet" }));
     return screen.getByTestId("bed-meeting-sheet-dialog");
   }
 
   it("opens a dialog with all four sections, the as-at stamp and the synthetic disclosure", () => {
     renderCapacity();
     const dialog = chooseSheet();
-    expect(dialog.textContent).toMatch(/Synthetic, not a record of any real day/u);
+    // Wave 4 (C8): a neutral "Synthetic data" tag, and the as-at line says the figures agree.
+    expect(within(dialog).getByText("Synthetic data")).toBeInTheDocument();
+    expect(dialog.textContent).toMatch(/Same figures as Capacity and the TV view/u);
     // The printed copy is the full sheet; the dialog is its on-screen summary.
     const copy = screen.getByTestId("bed-meeting-sheet-print-copy");
     for (const id of ["bed-meeting-capacity", "bed-meeting-discharges", "bed-meeting-ed", "bed-meeting-delays"]) {
@@ -150,6 +177,27 @@ describe("the sheet on Capacity", () => {
     expect(within(copy).getByTestId("ward-print-attribution").textContent).toBe(
       "Printed by Bed coordinator, Statewide, at 10:42. Synthetic data.",
     );
+  });
+
+  it("carries windows on its figures, lists held up by tomorrow by ward, and has a named, focusable body", () => {
+    renderCapacity();
+    const dialog = chooseSheet();
+    const label = (id: string) =>
+      within(dialog).getByTestId(`bed-meeting-sheet-figure-${id}`).querySelector("dt")?.textContent ?? "";
+    expect(label("ready")).toBe("Ready · now");
+    expect(label("short")).toMatch(/^(Short|Spare) · now$/u);
+    expect(label("discharges")).toBe("Discharges · today");
+    expect(label("ed")).toBe("Waiting in ED · now");
+    expect(within(dialog).getByTestId("bed-meeting-sheet-figure-discharges")).toHaveTextContent(
+      /held up · by tomorrow/u,
+    );
+    const held = within(dialog).getByTestId("bed-meeting-sheet-held-up");
+    expect(held.querySelectorAll("li").length).toBeGreaterThan(0);
+    const body = within(dialog).getByRole("region", { name: BED_MEETING_SHEET_BODY_LABEL });
+    expect(body).toHaveAttribute("tabindex", "0");
+    // The footer: Close (beside the header's close cross), then Print sheet, the one filled button.
+    expect(within(dialog).getAllByRole("button", { name: "Close" }).length).toBeGreaterThan(0);
+    expect(within(dialog).getByRole("button", { name: "Print sheet" })).toBeInTheDocument();
   });
 
   it("marks the page for sheet-only printing while open, prints on request, and unmarks on close", () => {

@@ -223,16 +223,18 @@ export function WardBoardHero(props: {
                   {
                     id: "ready",
                     value: available,
-                    label: "ready now",
+                    // Wave 4 (D-191, notes 10): count labels "Label · window". PR E swap: kit WindowWord.
+                    label: "Ready · now",
                     testId: "ward-board-headline",
                   },
-                  { id: "occupied", value: states.occupied, label: "occupied" },
+                  { id: "occupied", value: states.occupied, label: "Occupied · now" },
                   {
                     id: "pulled",
                     value: pulledIn,
                     label: (
+                      // "not arrived" was the pulled count itself (notes 10).
                       <>
-                        <SrOnly>Pulled, </SrOnly>not arrived
+                        Pulled · now<SrOnly>, not arrived</SrOnly>
                       </>
                     ),
                     testId: "ward-board-figure-pulled",

@@ -21,7 +21,6 @@ describe("Home empty state", () => {
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <MyListCard
           act={[]}
-          wait={[]}
           referrals={[]}
           units={[]}
           now={NOW_ANCHOR}
@@ -36,7 +35,6 @@ describe("Home empty state", () => {
     for (const [group, line] of [
       ["Act now", "None firing now. The checks run are named in the header."],
       ["Referrals to decide", "No referral is waiting on a decision."],
-      ["Waiting on others", "Nothing is waiting on a transport leg or an arrival."],
     ] as const) {
       const region = screen.getByRole("region", { name: group });
       const empty = within(region).getByText(line).closest("p")!;

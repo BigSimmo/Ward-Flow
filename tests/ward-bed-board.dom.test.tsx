@@ -340,10 +340,11 @@ describe("Ward page on a phone — the round (Option B, 20 Oct 2026)", () => {
       expect(numbers.every(Number.isFinite), "every round row starts with its bed number").toBe(true);
       expect(numbers).toEqual([...numbers].sort((left, right) => left - right));
       expect(screen.queryByTestId("ward-phone-bed-groups")).toBeNull();
-      // This shift and Ward flow are rows under My list, not chips above the tabs.
-      expect(screen.getByRole("heading", { name: "My list" })).toBeInTheDocument();
-      expect(screen.getByTestId("ward-phone-row-shift")).toBeInTheDocument();
-      expect(screen.getByTestId("ward-phone-row-flow")).toBeInTheDocument();
+      // Wave 4 (D-191): the phone draws the bed squares, then Coming and going, then the round; This
+      // shift opens from the hero's action. None of them is a chip above the tabs.
+      expect(screen.getByTestId("ward-unit-beds")).toBeInTheDocument();
+      expect(screen.getByRole("region", { name: "Coming and going" })).toBeInTheDocument();
+      expect(screen.getByTestId("ward-hero-act-now")).toBeInTheDocument();
       expect(screen.queryByTestId("ward-phone-chip-shift")).toBeNull();
       // A row opens that bed's card in the round; Close returns to the list.
       fireEvent.click(rows[0]);

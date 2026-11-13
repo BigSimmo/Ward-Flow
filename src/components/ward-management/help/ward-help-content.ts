@@ -108,7 +108,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
         // Explain this number (Help overhaul, 9 Nov 2026): the three figures at the top of Home, in the
         // glossary's own words, with the bed alert line from its one source (clinical-values.md).
         question: "What do the figures at the top of Home mean?",
-        answer: `Open ED movements counts movements that started at an ED and have not closed, including people in transit. It is not how many people are in an ED right now. Beds ready counts beds the wards have confirmed as Ready, across the whole network. The last figure is the share of beds in use statewide: it reads at risk at ${CLINICAL_VALUES.bedAlertLine.value}% or more (the bed alert line) and beds in use below that.`,
+        answer: `Open movements counts movements that started at an ED and have not closed, including people in transit. It is not how many people are in an ED right now. Ready counts beds the wards have confirmed as Ready, across the whole network. The last figure, In use, is the share of beds in use statewide: it carries an amber dot at ${CLINICAL_VALUES.bedAlertLine.value}% or more (the bed alert line).`,
       },
       {
         question: "What is Later today?",

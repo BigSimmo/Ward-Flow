@@ -157,9 +157,11 @@ describe("the ward screen's heading contract", () => {
  * nobody drew** — see `ward-pull-vocabulary.dom.test.tsx` for the reasoning, which lives there
  * because that is the file a future reader will open when they want to change it back.
  */
+// Wave 4 (D-191): "Ward figures, right now" became the bed squares, and Ward flow became "Coming and
+// going". Its waiting referrals sit under the group head "Referrals · now", so "Awaiting your answer"
+// stays as the landmark label only (asserted on its own below).
 const RENAMED_PANELS: readonly (readonly [string, string])[] = [
-  ["Ward figures, right now", "Ward figures, right now"],
-  ["Awaiting your answer", "Awaiting your answer"],
+  ["Coming and going", "Coming and going"],
   // Archived D-20-REVISED. Both layers identical on purpose: before the rename the label read "Accepted,
   // pulled or en route" and the heading "Accepted, pulled or en route here" — the same words minus
   // one, the third such pair found on this screen.
@@ -203,6 +205,9 @@ describe("the ward screen's third-edition panel names", () => {
         `"${label}" is the visible heading but not the landmark label — the two layers disagree`,
       ).toBeInTheDocument();
     }
+    const referrals = screen.getByRole("heading", { name: /Referrals · now/u });
+    expect(referrals).toBeVisible();
+    expect(screen.getByRole("region", { name: "Awaiting your answer" })).toBeInTheDocument();
   });
 
   it("carries no retired panel wording, in either layer", () => {
