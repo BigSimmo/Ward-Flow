@@ -142,7 +142,7 @@ export function PatientLegalNowCard({
   onAllForms: () => void;
   /** The demo clock, for the typed expiry's words ("Ends 15:42 as typed"). */
   now?: Instant;
-  /** Absent without leave: an order stays in force while the person is missing (audit A3-2). */
+  /** Absent without leave (audit A3-2): the recorded status stays on the card, as recorded (D-187 item 8). */
   absent?: boolean;
 }) {
   const legalId = useId();
@@ -217,12 +217,11 @@ export function PatientLegalNowCard({
     });
   const status = legal.status;
   const onOrder = status !== undefined && status !== "Voluntary";
-  const statusNote =
-    absent && onOrder
-      ? "Order stays in force while absent"
-      : rows.some((row) => row.left)
-        ? "As recorded · expiry typed from the form"
-        : "As recorded · no lapse time shown";
+  // D-187 item 8 (Q29): a missing person shows only the recorded status and form. The card no
+  // longer says the order stays in force while absent; which status shows is unchanged.
+  const statusNote = rows.some((row) => row.left)
+    ? "As recorded · expiry typed from the form"
+    : "As recorded · no lapse time shown";
   // With a stay or placement current, the band names the status, so the card says only that no form
   // is on record. With nothing current, the band reads "No order in force" and the card agrees.
   const showNoForm = rows.length === 0 && !movement && !(absent && onOrder);

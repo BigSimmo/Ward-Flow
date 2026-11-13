@@ -292,9 +292,12 @@ export function WardArrivalsCorridor({
                     </span>
                   </div>
                   <div className={styles.tagCluster}>
+                    {/* D-187 item 4 (Q25): the form and the status exactly as recorded. A form on
+                        file never makes the person "involuntary"; that word shows only when the
+                        recorded status says it. */}
                     {movement.legalForm ? (
                       <span className={styles.statusTag} data-type="legal">
-                        Form {movement.legalForm.code}, involuntary
+                        Form {movement.legalForm.code}, {movement.legalStatus || "status not recorded"}
                       </span>
                     ) : movement.legalStatus ? (
                       <span className={styles.statusTag} data-type="legal">

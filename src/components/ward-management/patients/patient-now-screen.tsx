@@ -656,6 +656,9 @@ export function PatientNowScreen({
   }
   function markAbsent() {
     const stay = resolved?.liveAdmission;
+    // D-187 item 16 (Q38): the Undo message names what it restores. Marked absent from leave, the
+    // person goes back on leave; marked absent from the ward, they go back on the ward.
+    const fromLeave = stayLeaveBed !== undefined && stayLeaveBed.absentWithoutLeave === undefined;
     if (stay && gate("RECORD_ABSENT_WITHOUT_LEAVE").allowed)
       runStep(
         {
@@ -674,7 +677,7 @@ export function PatientNowScreen({
             admissionId: stay.id,
             ...(routeRole === "ward" ? { actingUnitId: stay.unitId } : {}),
           }),
-          undone: "Undone. Back on leave.",
+          undone: fromLeave ? "Undone. Back on leave." : "Undone. Back on the ward.",
         },
       );
   }

@@ -18,6 +18,7 @@ import { genderReviewNeeded, SEX_DESIGNATIONS, type Movement, type RecordedSex }
 import { sexDesignationAccepts } from "../ward-eligibility";
 import { legalStatusTextIsInvoluntary } from "../ward-support-notifications";
 import { calendarDateOf } from "../ward-clock";
+import { isEdOriginJourney } from "../ward-ed-presence";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { communityTeamById, communityTeamSlug } from "../community/community-derivations";
 import { isOwnStay } from "./patient-now-adapter";
@@ -354,12 +355,14 @@ export function PatientDetailsTab({
       ? patientCohort(patient.dateOfBirth, today)
       : undefined;
   const legal: Fact[] = [
+    // D-187 item 1 (Q19): both statuses are kept, named plainly. A movement from a ward or the
+    // community is not an ED stay, so it reads "This move".
     {
-      label: legalDiffers ? "Movement legal status" : "Legal status",
+      label: legalDiffers ? (movement && isEdOriginJourney(movement) ? "This ED stay" : "This move") : "Legal status",
       value: legalValue(movement?.legalStatus ?? patient?.legalStatus),
       wide: !active,
     },
-    ...(legalDiffers ? [{ label: "Patient legal status", value: legalValue(patient?.legalStatus) }] : []),
+    ...(legalDiffers ? [{ label: "Patient record", value: legalValue(patient?.legalStatus) }] : []),
     ...(cto ? [{ label: "Community treatment order", value: `Form ${cto.form} in force` }] : []),
     // Placement facts exist only with an active movement; otherwise they are left out.
     ...(placement
@@ -480,6 +483,14 @@ export function PatientDetailsTab({
           </Section>
 
           <Section title={placement ? "Legal and placement" : "Legal"}>
+            {/* D-187 item 1 (Q19): a warning, never a block (D-186 item 5). Only while the stay is
+                current: once it has ended, the record is expected to move on from it. */}
+            {legalDiffers && active ? (
+              <p className={styles.attention} role="status" data-testid="ward-person-legal-differs">
+                <StatusGlyph tone="warning" size={12} />
+                <span>These two legal statuses differ. Check which is current.</span>
+              </p>
+            ) : null}
             <FactGrid facts={legal} />
           </Section>
 

@@ -141,14 +141,14 @@ describe("D-186 Q7: the band and Legal now read one legal reading", () => {
     expect(card).not.toContain("No form in force");
   });
 
-  it("a missing person on an order: both name the status, and the card keeps its absence sentence", () => {
+  it("a missing person on an order: both name the status, and the card shows only what is recorded (D-187 item 8)", () => {
     // PT-095 is absent without leave in the seed; only the recorded status is set here.
     const state = withStatus("PT-095", "Involuntary inpatient");
     const { band, card, legalNow, mode } = render(state, "PT-095");
     expect(mode).toBe("awol");
     expect(band).toContain("Involuntary inpatient");
     expect(card).toContain("Involuntary inpatient");
-    expect(card).toContain("Order stays in force while absent");
+    expect(card).not.toContain("Order stays in force");
     expect(card).not.toContain("No form in force");
     expect(legalNow.statusSource).toBe("patient");
   });

@@ -33,8 +33,8 @@ describe("Record details says each fact once", () => {
   it("shows one legal status and no placement sex or gender when the record and the movement agree", () => {
     const pane = renderDetails(open, patient);
     expect(pane.getByText("Legal status")).toBeInTheDocument();
-    expect(pane.queryByText("Patient legal status")).not.toBeInTheDocument();
-    expect(pane.queryByText("Movement legal status")).not.toBeInTheDocument();
+    expect(pane.queryByText("Patient record")).not.toBeInTheDocument();
+    expect(pane.queryByText(/^This (ED stay|move)$/)).not.toBeInTheDocument();
     expect(pane.queryByText("Placement sex")).not.toBeInTheDocument();
     expect(pane.queryByText("Placement gender")).not.toBeInTheDocument();
   });
@@ -42,14 +42,16 @@ describe("Record details says each fact once", () => {
   it("shows both legal statuses, named apart, when they differ", () => {
     const other = open.legalStatus === "Voluntary" ? "Involuntary inpatient" : "Voluntary";
     const pane = renderDetails(open, { ...patient, legalStatus: other as Patient["legalStatus"] });
-    expect(pane.getByText("Movement legal status")).toBeInTheDocument();
-    expect(pane.getByText("Patient legal status")).toBeInTheDocument();
+    // D-187 item 1 (Q19): named plainly.
+    expect(pane.getByText(/^This (ED stay|move)$/)).toBeInTheDocument();
+    expect(pane.getByText("Patient record")).toBeInTheDocument();
   });
 
   it("keeps the patient's legal status row when only the movement has one recorded", () => {
     const pane = renderDetails(open, { ...patient, legalStatus: undefined });
-    expect(pane.getByText("Movement legal status")).toBeInTheDocument();
-    expect(pane.getByText("Patient legal status")).toBeInTheDocument();
+    // D-187 item 1 (Q19): named plainly.
+    expect(pane.getByText(/^This (ED stay|move)$/)).toBeInTheDocument();
+    expect(pane.getByText("Patient record")).toBeInTheDocument();
     expect(pane.queryByText("Legal status")).not.toBeInTheDocument();
   });
 
