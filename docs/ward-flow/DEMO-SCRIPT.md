@@ -77,8 +77,8 @@ button in the card above the menu. On a short laptop screen the menu scrolls ins
 - **Wait a second after each page opens** before clicking. Clicks in the first moment after a page
   loads can be ignored.
 
-If something goes wrong: press **Undo** on the message that appears (the bed pull offers it for five
-minutes), or press the **Board time** clock, then **Reset demo**, and start again from Act 2. Acts 1
+If something goes wrong: press **Undo** on the "Bed pulled" message while it is still on screen, or
+press the **Board time** clock, then **Reset demo**, and start again from Act 2. Acts 1
 and 2 change nothing.
 
 If the code screen says "Too many tries", someone on the same network has typed wrong codes. A
