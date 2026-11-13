@@ -171,7 +171,7 @@ Railway deployment, and it never touches the database.
    `gh api -X PATCH repos/BigSimmo/Ward-Flow/git/refs/heads/live -f sha=<that commit> -F force=true`.
    The "Live protections" ruleset blocks this force move (D-121 status, 13 November 2026), so Josh
    first switches that ruleset off in the repository's Rules settings, the move is made, and Josh
-   switches it back on straight away. Check it shows as active again before step 5. Railway then
+   switches it back on straight away, even if the move fails or is cancelled. Check it shows as active again before step 5. Railway then
    deploys the moved commit.
 5. Confirm Railway has deployed it: each service's newest deployment has succeeded and its source
    commit is the one `live` now points at. Moving `live` is not a rollback until this is true. Then
