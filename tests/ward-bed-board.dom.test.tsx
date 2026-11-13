@@ -344,6 +344,13 @@ describe("Ward page on a phone — the round (Option B, 20 Oct 2026)", () => {
       expect(screen.getByRole("heading", { name: "My list" })).toBeInTheDocument();
       expect(screen.getByTestId("ward-phone-row-shift")).toBeInTheDocument();
       expect(screen.getByTestId("ward-phone-row-flow")).toBeInTheDocument();
+      // Each count is kept on one line with its window word (design parts item 2).
+      const windows = [...screen.getByTestId("ward-phone-row-flow").querySelectorAll("[data-wf-window]")];
+      expect(windows.map((word) => word.parentElement?.textContent?.replace(/\s+/gu, " "))).toEqual([
+        expect.stringMatching(/^\d+ referrals? now$/u),
+        expect.stringMatching(/^\d+ admissions? any date$/u),
+        expect.stringMatching(/^\d+ discharges? any date$/u),
+      ]);
       expect(screen.queryByTestId("ward-phone-chip-shift")).toBeNull();
       // A row opens that bed's card in the round; Close returns to the list.
       fireEvent.click(rows[0]);

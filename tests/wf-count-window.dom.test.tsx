@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { HeroStat, PillTabs, Segmented } from "@/components/wf";
+import { HeroStat, PillTabs, Segmented, WindowWord } from "@/components/wf";
 
 /**
  * Shared design parts item 2 (13 Nov 2026): a count can carry its time window, from one fixed list.
@@ -36,6 +36,21 @@ describe("count window words", () => {
     );
     expect(screen.getByRole("radio", { name: /^Referrals/u })).toHaveAccessibleName(/^Referrals\s*0\s*now$/u);
     expect(screen.getByRole("radio", { name: /^Discharges/u })).toHaveAccessibleName(/^Discharges\s*14\s*any date$/u);
+  });
+
+  it("in running text, a count phrase and its window stay together with no dot of their own", () => {
+    const { container } = render(
+      <p>
+        <WindowWord word="now" of="0 referrals" />
+        {"\u00a0· "}
+        <WindowWord word="any date" of="14 discharges" />
+      </p>,
+    );
+    const words = [...container.querySelectorAll("[data-wf-window]")];
+    expect(words.map((word) => word.parentElement?.textContent)).toEqual(["0 referrals now", "14 discharges any date"]);
+    // The group is one unbreakable unit, so a wrap falls only between counts.
+    expect(words.every((word) => word.parentElement !== container.firstElementChild)).toBe(true);
+    expect(container.querySelectorAll('[aria-hidden="true"]')).toHaveLength(0);
   });
 
   it("pill tabs draw the window after a middle dot that screen readers skip", () => {

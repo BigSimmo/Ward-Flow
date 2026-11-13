@@ -17,11 +17,11 @@ export {
 } from "./use-is-phone";
 export { StatusGlyph, Dot, type WfTone } from "./status-glyph";
 export { Icon } from "./icon";
-export { SrOnly, Kbd, Count, CountBubble, CountCircle, Spinner, IconTile } from "./primitives";
+export { SrOnly, Kbd, Count, CountBubble, CountCircle, Spinner, IconTile, WindowWord } from "./primitives";
 export { FormalName } from "./formal-name";
 export { Button, DisabledReason, buttonClass, type ButtonSize } from "./button";
-// Shared design parts (D-192): WindowWord, WhoDoesThis, RowUndo, SyntheticMark and
-// FullScreenFrame are imported from their own files until screens use them here.
+// Shared design parts (D-192): WhoDoesThis, RowUndo, SyntheticMark and FullScreenFrame are
+// imported from their own files until screens use them here (WindowWord is used by Ward home).
 export { Badge } from "./badge";
 export { Card, CardHead, CardBody, CardFoot } from "./card";
 export { Hero, HeroStat, type HeroNextStep } from "./hero";

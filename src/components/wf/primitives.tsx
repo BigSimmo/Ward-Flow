@@ -30,8 +30,22 @@ export type CountWindow =
  * A count's time window, drawn quiet (ink-3) after a middle dot: "Discharges 14 · any date". The
  * dot is hidden from screen readers, so the name reads "Discharges 14 any date". A part that stacks
  * the word under its label (phone, equal-width segments) hides the dot through its `className`.
+ *
+ * In running text ("0 referrals now · 14 discharges any date") pass the count phrase as `of`: the
+ * phrase and its window are kept on one line, with no dot of their own, so a wrapping summary
+ * breaks only between counts, never between a number and its words (design parts item 2).
  */
-export function WindowWord({ word, className }: { word: CountWindow; className?: string }) {
+export function WindowWord({ word, of, className }: { word: CountWindow; of?: ReactNode; className?: string }) {
+  if (of !== undefined) {
+    return (
+      <span className={cx(styles.winGroup, className)}>
+        {of}{" "}
+        <span className={styles.win} data-wf-window={word}>
+          {word}
+        </span>
+      </span>
+    );
+  }
   return (
     <span className={cx(styles.win, className)} data-wf-window={word}>
       {" "}
