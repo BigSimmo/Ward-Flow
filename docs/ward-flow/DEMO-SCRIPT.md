@@ -1,6 +1,6 @@
 # Ward Flow demonstration script
 
-<!-- last-checked: 2026-11-10 -->
+<!-- last-checked: 2026-11-13 -->
 
 **What this is:** an 11-minute walk-through of one synthetic patient journey, from the morning bed
 meeting to arrival on the ward, then a short look at what is new.  
@@ -11,9 +11,9 @@ connection to any hospital system.
 
 ---
 
-_Updated 10 November 2026. Every button, tab, screen and patient below was checked against the
-source and walked through once in a local production build (Chromium, 1440 px wide). Rehearse once
-before any audience. Previous rewrites: 24 October 2026 and 20 October 2026 (PR #510). Documentation
+_Updated 13 November 2026 from the pre-demo audit, which ran the script three times on a local
+production build and once on the public demo (Chromium, 1440 px wide). Rehearse once before any
+audience. Previous rewrites: 10 November, 24 October and 20 October 2026 (PR #510). Documentation
 owns._
 
 ## Read this first
@@ -31,34 +31,34 @@ owns._
 
 ## Setup (before the audience arrives)
 
-1. Build and start the demo build. Do not use `npm run ensure`: that starts a development server,
-   which has role access off.
+1. Open the public demo in Chrome or Edge, 1440 px or wider, 100% zoom, in a new tab. Type the demo
+   code and press **Open the demo**. If the **Welcome to Ward Flow** cards appear, press **Not now**.
+   Open it well before the audience arrives: a first open on a slow connection can take over ten
+   seconds behind a "Loading page" notice.
+2. Check the footer starts "Synthetic prototype" and says "Not approved for clinical use".
+3. Rehearse once from start to finish **in this same tab**, so every page's code is already loaded
+   for the real run. Do not press **Lock** on the TV view: the lock survives Reset demo.
+4. As the audience sits down (not earlier), press the **Board time** clock in the header. **Tools**
+   opens at **Scenario and clock**. Check the scenario is **Standard day**, and pick it first if it
+   is not: Reset demo reloads whichever scenario is loaded. Press **Reset demo**, then **Reset demo**
+   again in the "Reset the demo?" box. Press **Esc**.
 
-   ```
-   npm run build
-   npm run start
-   ```
-
-2. Open the address it prints in Chrome or Edge, 1440 px wide or wider, 100% zoom. Use one tab for
-   the whole demo. If the **Welcome to Ward Flow** cards appear, press **Not now**.
-3. In the header, press the **Board time** clock. **Tools** opens at **Scenario and clock**. Check the
-   scenario is **Standard day**, and pick it first if it is not: Reset demo reloads whichever
-   scenario is loaded. Press **Reset demo**, then **Reset demo** again in the "Reset the demo?" box.
-   The demo board opens at 10:42 on today's date, whatever the real time, then runs on in real
-   time. Say it is a demonstration clock, not the time now. Press **Esc**.
-4. Check the page footer reads "Synthetic prototype" and ends "… synthetic demonstration figures ·
-   Not approved for clinical use".
-5. Rehearse once from start to finish, then **Reset demo** again.
+**About the clock.** A new tab opens at 10:42 on today's date and keeps running in real time. Reset
+demo does not rewind the clock: after a 40-minute rehearsal the board reads about 11:20. That is
+fine; say it is a demonstration clock, not the time now. If you want a 10:42 start, close the
+rehearsal tab and open the demo in one new tab just before the audience arrives, then Reset demo.
+Do not press **+1 hour** before Act 2: Keira leaves Home's **Later today** list about an hour after
+the last Reset demo.
 
 The left-hand menu is the coordinator's own short menu: **Home**, **Capacity**, **Movements**,
 **Waiting**, **All EDs**, **Referrals** and **Handover**. Every other page is under **More**.
 
 ### Three rules for the run
 
-- **Avoid reloads, F5 and typed addresses once you start pulling the bed in Act 3.** A reload can
-  lose the demo's recent clicks, and the page warns "Demonstration state is saved on this device,
-  except typed text." Move around only with on-screen links, the left-hand menu and the browser's
-  Back button.
+- **Avoid reloads, F5 and typed addresses.** A reload keeps your clicks but not typed text. Avoid one
+  unless the "Part of this page did not load" card appears; then press **Reload page** (not **Try
+  again**, which does not bring the page back). Move around only with on-screen links, the left-hand
+  menu and the browser's Back button.
 - **Do not open the TV view in a new tab or a second tab mid-demo.** If you want to show the TV, show
   it in Act 1 and come back.
 - **Wait a second after each page opens** before clicking. Clicks in the first moment after a page
@@ -138,22 +138,29 @@ filters **Under a form** and **No bed yet**.
 
 **Do:** click **Pellingworth, Keira**. A panel opens. Point to **Where the referral is** (Referral
 sent, Dabakarn accepted, Bed pulled for this patient: No bed yet, Transport: Not booked yet), then
-to the board's form column: "Form 3B · Time not entered · No expiry recorded from the form."
+to the panel's **Legal form** card ("Ended", "Form 3B ended at the examination"). Press **Esc** to
+close the panel. Then point to **Calder Ridgeholt**'s form column on the same board: "Form 1A",
+"Time not entered".
 
 **Say:**
 
 > "The ED can now see where its referral stands without ringing anyone: sent, accepted
 > by Dabakarn, no bed yet, no transport yet.
 >
-> Look at the form: 'No expiry recorded from the form'. Ward Flow never works out when a form
+> Her form ended at the examination, and the app is prompting for the next form to be recorded. A
+> person records it; the app does not.
+>
+> Now look at this patient's form: 'Time not entered'. Ward Flow never works out when a form
 > expires. If a time is shown, it is the one typed from the paper form. If it wasn't written, the
 > app says so rather than guessing."
 
-**Do:** press **Esc** to close the panel. In the left-hand menu press **Home**. Under **Later
-today**, click **Pellingworth, Keira** ("Planned move, bed not pulled yet"). Her page opens. Point to
+**Do:** in the left-hand menu press **Home**. Under **Later today**, click **Pellingworth, Keira**
+("Planned move, bed not pulled yet"). Her page opens. If she is not under Later today (her planned
+move is an hour after the last Reset demo), press **All EDs**, **Enter** on the RPH ED card, click
+her row, then **Open patient** at the foot of her panel. Point to
 "Stage 3 / 7 · Accepted, awaiting bed" and the strip beneath it (In ED, Bed agreed, Moving, On ward,
 Discharge, Community). Press **Placement steps** to show the seven placement steps, then **Hide
-placement steps**. Then point to the status card, **Getting ready to move**, and its three cells:
+placement steps**. Then point to the status card, **Getting ready to move**, and its three rows:
 **Bed** ("Accepted, no bed pulled yet"), **Fit to travel** and **Transport** ("Needs the bed
 pulled").
 
@@ -163,7 +170,7 @@ pulled").
 > pulled for her yet. The page shows the steps of her journey and what still has to happen before
 > she can move: a bed pulled, the treating team's clearance, and transport.
 >
-> Each cell names who does it. The app will not let a step happen out of order: transport waits for
+> Each row names who does it. The app will not let a step happen out of order: transport waits for
 > the pulled bed."
 
 ---
@@ -172,18 +179,18 @@ pulled").
 
 **Screen:** **Referrals** in the left-hand menu.
 
-**Do:** under **Awaiting decision**, open **Vallowen, Orla** (from Armadale). Her referral opens on
-the **Place** tab. Point to the three groups: **Fits, bed ready**, **Fits, no bed now** and **Needs
-review**. Choose one ward to show that **Accept at …** only appears after a person chooses (until
+**Do:** under **Awaiting decision**, open **Coldharbour, Cyril**. His referral opens on the
+**Place** tab. Press **Show 1 more with a bed ready**, then point to the three groups: **Fits, bed
+ready**, **Fits, no bed now** and **Needs review**. Choose one ward to show that **Accept at …** only appears after a person chooses (until
 then the button reads "Choose a ward first"). Do not press Accept. Press **Esc** to close.
 
 **Say:**
 
-> "When a referral comes in, the coordinator sees every ward in one list, in the network's fixed
-> order, grouped by whether it fits and has a bed. Nothing is ranked and nothing is picked for you.
+> "When a referral comes in, the coordinator sees every ward in one list, grouped by whether it
+> fits and has a bed. Nothing is ranked and nothing is picked for you.
 > A ward that does not fit says why. A person decides, and presses Accept."
 
-**Do:** go back to Keira's page with the browser's **Back** button. On the **Bed** cell press **Pull
+**Do:** go back to Keira's page with the browser's **Back** button. On the **Bed** row press **Pull
 the bed**. The **Destination and placement** panel opens. Press **Pull the bed** in the panel. A
 "Bed pulled" message appears with **Undo**. Press **Esc**.
 
@@ -192,7 +199,7 @@ the bed**. The **Destination and placement** panel opens. Press **Pull the bed**
 > "Dabakarn has a bed, so the coordinator pulls it for Keira. Two clicks, so it can't happen by
 > accident, and there's an Undo."
 
-**Do:** point to the **Bed** cell ("Bed pulled, 4h 00m left"), the stage now "Stage 4 / 7 · Bed
+**Do:** point to the **Bed** row ("Bed pulled, 4h 00m left"), the stage now "Stage 4 / 7 · Bed
 pulled", and the number beside **Capacity** in the left-hand menu, which has dropped by one.
 
 **Say:**
@@ -211,7 +218,7 @@ control only, to show time passing. The clock in a real deployment would be the 
 
 **Screen:** still Keira's page.
 
-**Do:** on the **Fit to travel** cell press **Record clearance**. Choose **Medical clearance
+**Do:** on the **Fit to travel** row press **Record clearance**. Choose **Medical clearance
 provided**, tick "This is the treating team's stated outcome.", and press **Save clearance
 outcome**.
 
@@ -220,10 +227,10 @@ outcome**.
 > "The treating team records that she is medically cleared. The app records what they said. It does
 > not judge fitness to travel itself."
 
-**Do:** on the **Transport** cell press **Log booking**. The **Transport** panel opens. Under **Who
+**Do:** on the **Transport** row press **Log booking**. The **Transport** panel opens. Under **Who
 is collecting** choose **Ambulance (St John)**. Type a synthetic number such as `CAD-DEMO-0001` in
-**CAD transport number**, press **+30m** for the estimated time, answer **Escort needed?**, and
-answer **Is the transport voluntary or involuntary?** (the line under it shows Legal now). Press
+**CAD transport number**, press **+30m** for the estimated time, press **No escort required**, then
+**Involuntary** for the transport question. Press
 **Save transport booking**, then **Esc**.
 
 **Say:**
@@ -269,7 +276,7 @@ Press **Esc**, and point to "Arrived · transfer complete" on her page.
 
 **Do:** in the left-hand menu press **More**, then **All wards**, then **Open ward** on the
 **Dabakarn** card. Point to Keira in the bed grid, and to **Constant obs** in the ward's checks
-strip, which counts patients on constant observation.
+strip, which counts patients on constant observation (none on this ward just now).
 
 **Say:**
 
@@ -421,11 +428,11 @@ Do not claim:
 | --- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1   | Capacity                                  | Bed meeting, Print the meeting sheet, Close                                                                                                   |
 | 2   | All EDs, Enter (RPH ED)                   | Pellingworth, Keira; Esc; Home, Later today, Pellingworth, Keira; Placement steps                                                             |
-| 3   | Referrals, Vallowen, Orla (Place tab)     | Choose a ward (do not accept); Esc; browser Back; Pull the bed, Pull the bed; Esc                                                             |
+| 3   | Referrals, Coldharbour, Cyril (Place tab) | Show 1 more with a bed ready; choose a ward (do not accept); Esc; browser Back; Pull the bed, Pull the bed; Esc                               |
 | 4   | Keira's page                              | Record clearance; Log booking; Mark handover ready; Destination row; Provider accepted job, Vehicle en route, Mark moving · patient collected |
 | 5   | Destination and placement                 | Confirm arrival · receiving ward, Confirm arrival; Esc; More, All wards, Open ward (Dabakarn)                                                 |
 | 6   | SJGM Adult Open; More, Legal forms; clock | Saoirse Loxbury, Esc; Seclusion tab; Board time, Demo clock                                                                                   |
 | -   | Home                                      | -                                                                                                                                             |
 
-Before every run: **Board time** clock, **Reset demo**, confirm. Once you pull the bed in Act 3:
-avoid reloads and typed addresses.
+Before every run, as the audience sits down: **Board time** clock, **Reset demo**, confirm. Avoid
+reloads and typed addresses; if "Part of this page did not load" appears, press **Reload page**.

@@ -190,6 +190,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-165](#d-165-the-patient-screen-is-a-dashboard-grid-on-every-tab-13-november-2026)                                                                    | The patient screen is a dashboard grid on every tab                                    | Active                                           |
 | [D-166](#d-166-ci-runs-faster-without-dropping-a-check-12-november-2026)                                                                                | CI runs faster without dropping a check                                                | Active                                           |
 | [D-167](#d-167-the-triage-page-has-a-left-sign-off-nav-and-joined-section-steps-13-november-2026)                                                       | The Triage page has a left sign-off nav and joined section steps                       | Active                                           |
+| [D-168](#d-168-the-demo-script-follows-the-13-november-pre-demo-audit-13-november-2026)                                                                 | The demo script follows the 13 November pre-demo audit                                 | Active                                           |
 
 ---
 
@@ -2063,3 +2064,13 @@ is inferred.
   4. **Start a triage:** "Waiting by source" and "Signed triages" keep a right-hand column beside the numbered queue.
   5. **Top band:** unchanged in this PR. Josh set its button row on 9 November 2026.
 - **Boundary:** synthetic data only. Changes no clinical rule, signed value, time limit or permission. Does not touch the patient screen's Triage card (PR #1644). Approves no release.
+
+## D-168. The demo script follows the 13 November pre-demo audit (13 November 2026)
+
+- **Date:** 13 November 2026, 12:17 PM AWST (04:17 UTC). **Decided by:** Josh, "Go ahead and do this as recommended" in the Ward Flow project thread "Update demo script from audit", accepting the recommendations of the pre-demo master audit (audit prompt 0).
+- **Decision:** `DEMO-SCRIPT.md` is changed to match the screen, with no app change in this PR.
+  1. **Act 3** shows Cyril Coldharbour's referral, whose Place tab shows all three groups, instead of Orla Vallowen's, which since D-141 shows one ward.
+  2. **Keira's Form 3B:** the script alone changes for now. It says her form ended at the examination and the app prompts for the next form, and makes the "no expiry is worked out" point on another patient's row. Making the ED board, panel and transport "Legal now" line read the ended state is a later app fix that needs Josh's clinical check.
+  3. **Form numbers** (Form 6A, Form 4A) stay out of the Say lines until Josh has checked them clinically.
+  4. **Setup and rules:** the demo runs on the public demo; Reset demo is pressed as the audience sits down because Keira leaves "Later today" about an hour after it; the script no longer says Reset returns the clock to 10:42; and Reload page, not Try again, recovers a failed page load.
+- **Boundary:** documentation only. Changes no app behaviour, clinical rule or permission. Approves no release.
