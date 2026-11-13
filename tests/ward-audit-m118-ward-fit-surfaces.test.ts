@@ -41,6 +41,10 @@ import { allUnits, NOW_ANCHOR } from "../src/components/ward-management/ward-sit
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 
+// A16-04: the app shows only travel bands someone has checked (none yet). This file tests a
+// mechanism that needs bands, so importing this swaps in the tests' own invented table.
+import "./helpers/ward-test-travel-bands";
+
 /**
  * M118 (master audit list, 10 Nov 2026): ward-fit rules agree on every surface.
  *

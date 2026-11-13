@@ -147,7 +147,10 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
         <p className={styles.transportEmptyText}>
           {liveMovement.transport?.collectedAt !== undefined
             ? "Booking details cannot be edited after collection. Ask the bed coordinator."
-            : "Booking details cannot be edited here. Ask the bed coordinator or booking team to cancel the active job first."}
+            : // A9-12 (Audit 9, 13 Nov 2026): name the control that is really there.
+              routeRole === "coordinator" || routeRole === "ed"
+              ? "Booking details cannot be edited here. To change them, cancel transport under Destination, then book again."
+              : "Booking details cannot be edited here. Ask the bed coordinator or the team that booked it to cancel it first."}
         </p>
       )}
       {/* A34: the one transport booking form every screen uses. */}

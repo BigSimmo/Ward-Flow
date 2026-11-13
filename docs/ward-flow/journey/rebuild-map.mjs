@@ -834,7 +834,7 @@ const REC_ITEMS = [
     "rkPrep",
     "bedReleased",
     "The bed is being prepared",
-    "Cleaning/repair is a separate preparation flag. It does not directly rewrite the ward count; the pull handler separately refuses when every free bed is still being made ready.",
+    "Cleaning/repair is a separate preparation flag. It does not directly rewrite the ward count, and a bed still being made ready may still be pulled (D-181 item 5).",
   ],
   [
     "rkExpiryShut",

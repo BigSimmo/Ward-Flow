@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "re
 
 import { splitDuration } from "@/components/ward-management/ward-clock";
 
+import { HELD_UP_BY_TOMORROW_LABEL } from "@/components/ward-management/ward-held-up";
 import type { ClinicalFact, EdClinicalRow, WardClinicalRow } from "./tv-clinical-derivations";
 import { Fact, Summary } from "./tv-clinical-views";
 import styles from "./tv-function.module.css";
@@ -219,10 +220,11 @@ export function WardTodayTvView({ rows, footer }: { rows: WardClinicalRow[]; foo
     },
     {
       id: "stuck",
-      title: "Held up or overdue",
+      // D-197 item 6: the same by-tomorrow held-up window as the ward TV and the Ward page (D-191 item 5).
+      title: `${HELD_UP_BY_TOMORROW_LABEL}, or overdue`,
       hint: "What is holding up the discharge",
       tone: "warning",
-      cards: rows.filter((row) => row.plan?.tone && !row.goingToday).map((row) => wardCard(row, row.plan)),
+      cards: rows.filter((row) => row.stuck).map((row) => wardCard(row, row.plan)),
     },
     {
       id: "nodate",

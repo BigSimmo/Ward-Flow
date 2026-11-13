@@ -180,11 +180,15 @@ const FREQUENT_PRESENTER_WINDOW_MONTHS = 12;
 
 const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 
-/** "14 Jun 2026" as "2026-06-14"; undefined for anything less precise ("Mar 2025"). */
+/**
+ * "14 Jun 2026" as "2026-06-14"; undefined for anything less precise ("Mar 2025"). A typed "Sept"
+ * reads as September, as "Sep" does (time audit D14, 13 Nov 2026).
+ */
 export function isoDayOfDisplayDate(text: string): string | undefined {
-  const match = /^(\d{1,2}) ([A-Za-z]{3}) (\d{4})$/u.exec(text.trim());
+  const match = /^(\d{1,2}) ([A-Za-z]{3,4}) (\d{4})$/u.exec(text.trim());
   if (!match) return undefined;
-  const month = MONTHS.indexOf(match[2].toLowerCase());
+  const typed = match[2].toLowerCase();
+  const month = MONTHS.indexOf(typed === "sept" ? "sep" : typed);
   if (month < 0) return undefined;
   const iso = `${match[3]}-${String(month + 1).padStart(2, "0")}-${match[1].padStart(2, "0")}`;
   return isIsoDay(iso) ? iso : undefined;

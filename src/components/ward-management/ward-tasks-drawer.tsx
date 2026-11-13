@@ -40,6 +40,7 @@ import { usePatientNameDisplay } from "@/components/ward-management/settings/dis
 import { edById } from "./ward-sites";
 import { stageCopy } from "./ward-derivations";
 import type { Admission } from "./ward-admissions";
+import { useOptionalWardFlowSelect } from "./ward-flow-provider";
 import type { Movement, Referral, Unit } from "./ward-model";
 import type { Patient } from "./ward-patients";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
@@ -211,6 +212,7 @@ function rowTiming(
   movement: Movement | undefined,
   now: Instant,
   waitWord: string,
+  dayZero: Date | undefined,
 ): { value?: string; word?: string; state: string; tone: WfTone; stateTone?: WfTone } {
   if (movement && /bed pull|pulls? expired/i.test(item.title) && movement.pullExpiresAt !== undefined) {
     // pop-alerts (Josh, 31 Oct 2026): "Past pull limit", because "overdue" means form times.
@@ -226,7 +228,7 @@ function rowTiming(
   if (movement && /legal/i.test(item.title) && legalDueAt !== undefined) {
     // Legal times only as typed (31 Oct 2026): the typed clock time, never a count past it.
     return {
-      value: typedClock(legalDueAt, now),
+      value: typedClock(legalDueAt, now, dayZero),
       state: "Ended, as typed",
       tone: "danger",
       stateTone: "danger",
@@ -266,6 +268,7 @@ function rowDetail(
   movement: Movement | undefined,
   units: readonly Unit[] | undefined,
   now: Instant,
+  dayZero: Date | undefined,
 ): string {
   if (movement && /bed pull|pulls? expired/i.test(item.title) && movement.pullExpiresAt !== undefined) {
     const unit = units?.find((candidate) => candidate.id === movement.acceptedUnitId);
@@ -273,7 +276,7 @@ function rowDetail(
   }
   const legal = movement ? currentLegalPosition(movement) : undefined;
   if (movement && legal && /legal/i.test(item.title) && legal.dueAt !== undefined) {
-    return `${legal.formWords} recorded due time ${formatInstantWithDay(legal.dueAt, now)} has passed`;
+    return `${legal.formWords} recorded due time ${typedClock(legal.dueAt, now, dayZero)} has passed`;
   }
   return item.detail.replace(`${item.movementId} · `, "");
 }
@@ -298,6 +301,7 @@ export function WardTasksDrawer({
   alertsQueueForDesk = true,
 }: WardTasksDrawerProps) {
   const drawerRef = useRef<HTMLElement>(null);
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   const words = alertsScreenOpen && alertsQueueForDesk ? ALERTS_WORDS : TASKS_WORDS;
   // A2-20: a row's name follows Discreet names (initials plus UMRN).
   const nameFor = usePatientNameDisplay();
@@ -537,7 +541,7 @@ export function WardTasksDrawer({
       : undefined;
     const timing = isComplete(item)
       ? { value: undefined, word: undefined, state: "Done", tone: "success" as WfTone, stateTone: undefined }
-      : rowTiming(item, movement, now, words.wait);
+      : rowTiming(item, movement, now, words.wait, dayZero);
     const name = patient?.formalName ?? "Patient not linked";
     // A grouped alert keeps its own acknowledgement line, worded as a single row's, so staff can
     // still tell seen from unseen after "Acknowledge visible".
@@ -832,13 +836,13 @@ export function WardTasksDrawer({
           tone: "success" as WfTone,
           stateTone: undefined,
         }
-      : rowTiming(item, movement, now, words.wait);
+      : rowTiming(item, movement, now, words.wait, dayZero);
     const isExpanded = expanded === item.id;
     const shownName = patient
       ? nameFor(patient.formalName, patient.patient ? patient.umrn : null)
       : "Patient not linked";
     const severity: WfTone = item.tone === "danger" ? "danger" : "warning";
-    const detail = rowDetail(item, movement, records?.units, now);
+    const detail = rowDetail(item, movement, records?.units, now, dayZero);
 
     return (
       // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- the row click is a pointer shortcut, and focus does the same for the keyboard

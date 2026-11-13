@@ -27,6 +27,12 @@ export function movementBedReservation(movement: Movement, referrals: readonly R
  * a movement backpointer; runtime AD-ARR records may not. Acceptance alone is never a hold. */
 export function movementHasBedHold(movement: Movement, admissions: readonly Admission[]): boolean {
   if (movement.closure !== undefined || movement.acceptedUnitId === undefined) return false;
+  // F-41 (A9-25): a desk scoped away from the ward (the ED desk) is never sent the ward's admission.
+  // When the linked stay is not in this view at all, the movement's own stage says whether the bed
+  // is pulled, as for an older record with no link; a stay this view holds is still checked in full.
+  if (movement.admissionId !== undefined && !admissions.some((admission) => admission.id === movement.admissionId)) {
+    return ["pulled", "handover_ready", "moving"].includes(movement.stage);
+  }
   if (movement.admissionId !== undefined) {
     return admissions.some(
       (admission) =>

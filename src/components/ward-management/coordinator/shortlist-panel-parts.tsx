@@ -90,21 +90,10 @@ export function capacityLine(
   const states = bedStates(unit, admissions, bedReleases, [], reservations);
   const pendingPreparation = states.beingMadeReady;
   /*
-   * 🔴 THE READY FIGURE IS CORRECT AND MUST NOT CHANGE. Nothing is subtracted from it for a
-   * preparation note — asked whether a bed being cleaned should drop the ward's number or merely
-   * refuse the pull, the owner chose the refusal, because the ward has not changed what it can
-   * staff and its figures must not lurch as cleaning starts and stops. This line was missing the
-   * qualifier, not the arithmetic: the reducer refuses PULL_PATIENT with "every free bed at X is
-   * still being made ready", and this panel is where a coordinator picks a destination.
-   *
-   * ⚠️ SAID IN THIS LINE'S OWN RHYTHM RATHER THAN AS A SENTENCE, and that is deliberate. Every
-   * other screen states it as prose beneath the figure, because a bare count beside "Ready 2" reads
-   * as 21. Here the established shape is already `Label N · Label N`, so the count is separated from
-   * the Ready figure by three other labelled figures and a delimiter — the misparse the sentence
-   * form exists to prevent cannot occur. A shortlist is scanned, not read, and a paragraph here
-   * would be skipped; this stays one scannable line.
-   *
-   * Appended only when there is one. An absence is silence, never "Being made ready 0".
+   * D-179 item 8 (Josh, 13 Nov 2026): Ready leaves out a bed still being made ready, and that bed is
+   * counted on its own, in this line's own `Label N` rhythm. A bare count beside "Ready 2" would
+   * read as 21; here three labelled figures and a delimiter sit between them. Appended only when
+   * there is one: an absence is silence, never "Being made ready 0".
    */
   const line = `Ready ${states.ready} · Pulled ${states.pulled} · Closed ${states.closed} · Occupied ${states.occupied}`;
   return pendingPreparation > 0 ? `${line} · Being made ready ${pendingPreparation}` : line;

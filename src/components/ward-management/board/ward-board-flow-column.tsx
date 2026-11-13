@@ -8,6 +8,7 @@ import { releaseBand } from "@/components/ward-management/ward-bed-availability"
 import { ARROW_HORIZON_DAYS } from "@/components/ward-management/ward-board-derivations";
 import { type Instant } from "@/components/ward-management/ward-clock";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
+import { PULL_NO_LIMIT_RECORDED } from "@/components/ward-management/ward-bed-hold";
 import type { BedRelease } from "@/components/ward-management/ward-model";
 import styles from "./board.module.css";
 import {
@@ -138,9 +139,12 @@ export function WardBoardFlowColumn({
                 {person.state === "pulled" && (
                   <p className={styles.flowRowLine}>{bedGonePhrase(person.bedGoneHours)}</p>
                 )}
-                {person.state === "pulled" && person.pullExpiresAt !== null ? (
+                {person.state === "pulled" ? (
                   <p className={styles.flowRowLine} data-testid={`ward-board-incoming-pull-hold-${person.key}`}>
-                    Bed pull {pullHoldRemainingLabel(person.pullExpiresAt, now)}
+                    {/* D-187 (F-46): a pull with no limit recorded says so. */}
+                    {person.pullExpiresAt !== null
+                      ? `Bed pull ${pullHoldRemainingLabel(person.pullExpiresAt, now)}`
+                      : `Bed pull · ${PULL_NO_LIMIT_RECORDED}`}
                   </p>
                 ) : null}
               </li>

@@ -10,13 +10,20 @@ import type {
 } from "@/components/ward-management/ward-model";
 import type { Patient, PatientId } from "@/components/ward-management/ward-patients";
 import { generateSeedPatient } from "@/components/ward-management/ward-patients-seed";
-import { NOW_ANCHOR, allEmergencyDepartments, allUnits } from "@/components/ward-management/ward-sites";
+import { NOW_ANCHOR, allEmergencyDepartments, allUnits, siteByCode } from "@/components/ward-management/ward-sites";
 import { unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import { requiresAuthorisedDestination } from "@/components/ward-management/ward-eligibility";
 import { generatedOccupantPatients, wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { derivedBedReleases } from "@/components/ward-management/ward-discharge-dates";
 import { withSeededDischargeLogistics } from "@/components/ward-management/discharges/discharge-dependency-seed";
 import { GENERAL_OBSERVATION, observationAt } from "@/components/ward-management/ward-observation";
+import { withSampleLegalStatusFromForm } from "@/components/ward-management/ward-sample-legal-status";
+import {
+  SEEDED_PULL_HOLDS,
+  seededPullExpiresAt,
+  seededPullHoldForMovement,
+  seededPulledAt,
+} from "@/components/ward-management/ward-seeded-pull-holds";
 
 /**
  * The transport-form name seeded onto `TransportJob.formRequired` below. This is a single fact
@@ -24,6 +31,16 @@ import { GENERAL_OBSERVATION, observationAt } from "@/components/ward-management
  * place and both seed writes reference it, rather than each carrying its own copy of the string.
  */
 const SEEDED_TRANSPORT_FORM_REQUIRED = "Form 1A";
+
+/**
+ * A16-13: a hand-authored pulled stay's `pullExpiresAt`, taken from the shared seeded hold for it
+ * (the pull plus the signed hold, plus any minutes its own record extended it by).
+ */
+function seededPullExpiry(movementId: string, extendedMinutes = 0): number {
+  const hold = seededPullHoldForMovement(movementId);
+  if (hold === undefined) throw new Error(`${movementId} is pulled but no seeded pulled bed is held for it`);
+  return seededPullExpiresAt(hold, NOW_ANCHOR, extendedMinutes);
+}
 
 /**
  * Hand-authored movements covering the states volume alone cannot guarantee: three declines
@@ -206,7 +223,7 @@ const seededMovements: Movement[] = [
     withdrawnReferrals: [],
     unwinds: [],
     stageChanges: [],
-    pullExpiresAt: NOW_ANCHOR - 10,
+    pullExpiresAt: seededPullExpiry("WF-004"),
   },
   {
     id: "WF-005",
@@ -584,7 +601,7 @@ const seededMovements: Movement[] = [
     withdrawnReferrals: [],
     unwinds: [],
     stageChanges: [],
-    pullExpiresAt: NOW_ANCHOR + 20,
+    pullExpiresAt: seededPullExpiry("WF-011"),
   },
   {
     id: "WF-012",
@@ -807,7 +824,8 @@ const seededMovements: Movement[] = [
     withdrawnReferrals: [],
     unwinds: [],
     stageChanges: [],
-    pullExpiresAt: NOW_ANCHOR + 45,
+    // A16-13: the pull is the shared seeded hold's, plus the hour the ward extended it by below.
+    pullExpiresAt: seededPullExpiry("WF-016", 60),
     // Feature 11 demo: the ward extended this hold by an hour while the bed was cleaned.
     pullExtensions: [{ at: NOW_ANCHOR - 30, by: "ward", minutes: 60 }],
   },
@@ -1076,6 +1094,44 @@ function fallbackUnitId(
 }
 
 /**
+ * How long a generated trip took, from collection to arrival, in minutes (A16-18, 13 Nov 2026).
+ *
+ * SYNTHETIC, AND NOT A DISTANCE CLAIM. These are sample-day durations chosen only so a trip is not
+ * implausibly short for where it goes. A move within one hospital site is a short trip (5 to 14
+ * minutes, the old figure for every trip). A move between two metropolitan or private sites is 25 to
+ * 54 minutes. A move to or from a country (WACHS) site is 3 to 5 hours. None is measured.
+ *
+ * Travel bands (`ward-travel-bands.ts`) are not used here: a band is a fact about a person's HOME
+ * region and a hospital site, not about the trip between two hospitals, and as of 13 Nov 2026 none
+ * has been checked, so no band could apply to an ED-to-ward trip.
+ */
+function generatedTripMinutes(originSiteCode: string, destinationSiteCode: string | undefined, index: number): number {
+  if (destinationSiteCode === undefined || destinationSiteCode === originSiteCode) return 5 + (index % 10);
+  const country = [originSiteCode, destinationSiteCode].some((code) => siteByCode(code)?.service === "WACHS");
+  return country ? 180 + ((index * 37) % 120) : 25 + ((index * 7) % 30);
+}
+
+/**
+ * What is holding a generated movement up, set from its stage (A16-18, 13 Nov 2026). It used to be
+ * "every fifth person is awaiting a destination response" whatever the stage, so people who had
+ * arrived, or were on the road, still read as waiting on a ward's answer. The two "None — …"
+ * sentences are the seed's own wording that the reducer also writes at those stages.
+ */
+function generatedBlocker(stage: MovementStage, index: number): string {
+  switch (stage) {
+    case "placement_requested":
+    case "destination_review":
+      return index % 5 === 0 ? "Awaiting destination response" : "No blocker";
+    case "moving":
+      return "None — in transit";
+    case "arrived":
+      return "None — handover complete";
+    default:
+      return "No blocker";
+  }
+}
+
+/**
  * Stage-dependent fields a generated movement needs to not contradict its own `stage` — the
  * same fields the hand-authored `seededMovements` above always carry together. Kept as a
  * switch, rather than folded into the field literals below, so each stage's requirement
@@ -1088,39 +1144,30 @@ function stageFields(
   index: number,
   legalStatus: LegalStatus,
   sex: Movement["sex"],
+  originSiteCode: string,
 ): Pick<Movement, "acceptedUnitId" | "transport" | "closure" | "pullExpiresAt" | "admissionId"> {
   switch (stage) {
     case "accepted_awaiting_bed":
       return { acceptedUnitId: fallbackUnitId(cohort, security, index, legalStatus, sex) };
-    case "pulled":
-      // Bounds match the hand-authored records: NOW_ANCHOR - 20 to NOW_ANCHOR + 45, so a
-      // pull cannot be recorded without a time for it to expire at.
-      // admissionId points at an in-unit pulled Admission (stayDays null) — never an extra row.
+    case "pulled": {
+      // A16-13 (13 Nov 2026): a generated pull names the bed held for it, and both records take the
+      // pull from one shared row (`ward-seeded-pull-holds.ts`): the bed's `pulledAt` and this
+      // stay's `pullExpiresAt` (the pull plus the signed hold). A pulled stage with no row is a
+      // bed held for nobody, so the seed refuses to build rather than inventing one.
+      const id = `WF-${String(index).padStart(3, "0")}`;
+      const hold = seededPullHoldForMovement(id);
+      if (hold === undefined) {
+        throw new Error(`${id} is generated at the pulled stage but no seeded pulled bed is held for it`);
+      }
+      // The ward is the bed's ward, so it is fixed, unlike fallback picks which shift when the
+      // network roster changes (WF-318). `checkSeededPullHolds` below checks the bed is there.
+      const heldBed = wardAdmissions.find((admission) => admission.id === hold.admissionId);
       return {
-        // These generated holds name existing authored admissions. Their ward is fixed,
-        // unlike fallback picks which shift when the network roster changes (WF-318).
-        acceptedUnitId:
-          index === 304
-            ? "bty-older-adult"
-            : index === 311
-              ? "sjgm-adult-open"
-              : index === 318
-                ? "ger-adult-open"
-                : index === 325
-                  ? "alb-adult-open"
-                  : fallbackUnitId(cohort, security, index, legalStatus, sex),
-        pullExpiresAt: NOW_ANCHOR - 20 + (index % 66),
-        admissionId:
-          index === 304
-            ? "AD-BTYO-01"
-            : index === 311
-              ? "AD-SJGA-02"
-              : index === 318
-                ? "AD-GERA-03"
-                : index === 325
-                  ? "AD-ALBA-03"
-                  : `AD-GEN-PULL-${index}`,
+        acceptedUnitId: heldBed?.unitId ?? fallbackUnitId(cohort, security, index, legalStatus, sex),
+        pullExpiresAt: seededPullExpiresAt(hold, NOW_ANCHOR),
+        admissionId: hold.admissionId,
       };
+    }
     case "moving": {
       const acceptedAt = NOW_ANCHOR - (40 + (index % 15));
       const enRouteAt = acceptedAt + (10 + (index % 10));
@@ -1160,7 +1207,11 @@ function stageFields(
       const unitName = allUnits().find((unit) => unit.id === acceptedUnitId)?.name ?? acceptedUnitId;
       const closureAt = NOW_ANCHOR - (index % 10);
       const arrivedAt = closureAt;
-      const collectedAt = arrivedAt - (5 + (index % 10));
+      // A16-18 (13 Nov 2026): the trip length follows where the trip goes (`generatedTripMinutes`),
+      // not "5 to 14 minutes" for every pair, which put Fiona Stanley to Albany at nine minutes.
+      const collectedAt =
+        arrivedAt -
+        generatedTripMinutes(originSiteCode, allUnits().find((unit) => unit.id === acceptedUnitId)?.siteCode, index);
       const enRouteAt = collectedAt - (8 + (index % 10));
       const acceptedAt = enRouteAt - (10 + (index % 10));
       return {
@@ -1355,11 +1406,11 @@ function routineMovements(count: number, startIndex: number): Movement[] {
       owner: index % 2 === 0 ? "Bed coordinator" : "ED mental health team",
       referredUnitIds: [],
       declines: [],
-      blocker: index % 5 === 0 ? "Awaiting destination response" : "No blocker",
+      blocker: generatedBlocker(stage, index),
       withdrawnReferrals: [],
       unwinds: [],
       stageChanges: [],
-      ...stageFields(stage, cohort, security, index, legalStatus, sex),
+      ...stageFields(stage, cohort, security, index, legalStatus, sex, ed.siteCode),
     } satisfies Movement;
   });
 }
@@ -1754,7 +1805,7 @@ const journeyCoverageMovements: Movement[] = [
     withdrawnReferrals: [],
     unwinds: [],
     stageChanges: [],
-    pullExpiresAt: NOW_ANCHOR + 30,
+    pullExpiresAt: seededPullExpiry("WF-029"),
   },
   {
     id: "WF-030",
@@ -1838,7 +1889,49 @@ export const wardMovements: Movement[] = [
   ...seededMovements,
   ...journeyCoverageMovements,
   ...routineMovements(30, 300),
-];
+  // D-170 item 4: a sample person on a Form 4A with no examination is referred for examination.
+].map(withSampleLegalStatusFromForm);
+
+/**
+ * A16-13 (13 Nov 2026): the check that holds every seeded pull to one story, run as the seed loads.
+ * Each shared hold row names a stay at the pulled stage that names the row's bed, on that bed's
+ * ward, for the same person, pulled at the row's time, which is after the person reached the
+ * emergency department. Every pulled bed and every pulled stay has a row. Anything else is a bed
+ * held for nobody, or a pull nobody could have made, so the seed refuses to build.
+ */
+function checkSeededPullHolds(): void {
+  const problems: string[] = [];
+  for (const hold of SEEDED_PULL_HOLDS) {
+    const movement = wardMovements.find((candidate) => candidate.id === hold.movementId);
+    const bed = wardAdmissions.find((admission) => admission.id === hold.admissionId);
+    const pulledAt = seededPulledAt(hold, NOW_ANCHOR);
+    if (!movement || movement.stage !== "pulled" || movement.admissionId !== hold.admissionId) {
+      problems.push(`${hold.movementId} is not a pulled stay naming ${hold.admissionId}`);
+    } else if (!bed || bed.state !== "pulled" || bed.pulledAt !== pulledAt) {
+      problems.push(`${hold.admissionId} is not the pulled bed for ${movement.id} at the shared pull time`);
+    } else if (
+      bed.unitId !== movement.acceptedUnitId ||
+      bed.sex !== movement.sex ||
+      bed.patientId !== movement.patientId
+    ) {
+      problems.push(`${hold.admissionId} is not on ${movement.id}'s ward, or not the same person`);
+    } else if (pulledAt <= movement.openedAt) {
+      problems.push(`${movement.id}'s bed was pulled before the person reached the emergency department`);
+    }
+  }
+  for (const bed of wardAdmissions) {
+    if (bed.state === "pulled" && !SEEDED_PULL_HOLDS.some((hold) => hold.admissionId === bed.id)) {
+      problems.push(`${bed.id} is a pulled bed held for no ED stay`);
+    }
+  }
+  for (const movement of wardMovements) {
+    if (movement.stage === "pulled" && !movement.closure && seededPullHoldForMovement(movement.id) === undefined) {
+      problems.push(`${movement.id} is pulled but no seeded bed is held for it`);
+    }
+  }
+  if (problems.length > 0) throw new Error(`Seeded pulled beds do not line up: ${problems.join("; ")}`);
+}
+checkSeededPullHolds();
 
 /**
  * The generated people on routine movements (seed-link plan task T2 names them `PT-G-<movement

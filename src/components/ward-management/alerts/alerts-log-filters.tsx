@@ -219,9 +219,10 @@ export function handoverText(
   sections: readonly [string, readonly QueueEntry[]][],
   activeBroadcast: BroadcastAlert | undefined,
   now: Instant,
+  dayZero: Date | undefined,
 ): string {
   const line = (entry: QueueEntry) =>
-    `- ${entry.item.title}. ${entry.subject.displayName}. ${entry.subject.to ? `${entry.subject.from} to ${entry.subject.to}` : entry.subject.from}. Owner ${entry.owner}.${copiedAge(entry.item, entry.raised, now)}`;
+    `- ${entry.item.title}. ${entry.subject.displayName}. ${entry.subject.to ? `${entry.subject.from} to ${entry.subject.to}` : entry.subject.from}. Owner ${entry.owner}.${copiedAge(entry.item, entry.raised, now, dayZero)}`;
   return [
     `Alerts at ${formatInstantWithDay(now, now)} (synthetic data)`,
     ...sections.flatMap(([label, list]) => (list.length > 0 ? [`${label} ${list.length}`, ...list.map(line)] : [])),

@@ -4,12 +4,14 @@ import { unitById } from "@/components/ward-management/ward-sites";
 import { bedReleases, wardMovements } from "@/components/ward-management/ward-movements";
 
 import {
+  capacityBeingMadeReady,
   capacityReady,
   expectAccessible,
   expectNoReloadSince,
   goToDesk,
   goViaNav,
   isPhoneLayout,
+  openBedBeingMadeReady,
   openWardFlow,
   openWardHome,
   openWardList,
@@ -370,6 +372,9 @@ test("Discharge with bed release: a ward confirms a release, the person leaves, 
   await waitForScreen(page, "ward-capacity-screen");
   await plantSentinel(page);
   const readyBefore = await capacityReady(page, unitId, unitName);
+  const makingReadyBefore = await capacityBeingMadeReady(page, unitId, unitName);
+  // So the one bed the ward finds being made ready below is the bed this person leaves.
+  expect(makingReadyBefore, `fixture assumption: no bed at ${unitId} is being made ready yet`).toBe(0);
 
   // The ward confirms the release from its Discharges list.
   await goToDesk(page, wardDesk(unitId, unitName), "ward-unit-screen");
@@ -407,10 +412,32 @@ test("Discharge with bed release: a ward confirms a release, the person leaves, 
   await expectAccessible(page, testInfo, "ward bed board after the departure");
   await expectNoReloadSince(page, "recording the departure");
 
-  // The coordinator's board shows one more ready bed.
+  // D-179 item 8: the vacated bed is being made ready (A4-24), which is not Ready on any screen, so
+  // the coordinator's board keeps the same Ready figure and notes one more bed being made ready.
+  await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
+  await goViaNav(page, "/ward-flow/capacity", "ward-capacity-screen");
+  await expect.poll(() => capacityBeingMadeReady(page, unitId, unitName)).toBe(makingReadyBefore + 1);
+  expect(await capacityReady(page, unitId, unitName)).toBe(readyBefore);
+  await expectAccessible(page, testInfo, "capacity board after the departure");
+  await expectNoReloadSince(page, "returning to the capacity board");
+
+  // The ward marks the bed Ready from the bed's own panel, which offers it again.
+  await goToDesk(page, wardDesk(unitId, unitName), "ward-unit-screen");
+  const bedPanel = await openBedBeingMadeReady(page, unitName);
+  const markReady = bedPanel.getByRole("button", { name: "Ready", exact: true });
+  await expectAccessible(page, testInfo, "bed being made ready");
+  await markReady.click();
+  await expect(page.getByText("Bed marked Ready. It is offered again.").first()).toBeVisible();
+  await expect(markReady).toHaveCount(0);
+  await bedPanel.getByRole("button", { name: "Close bed drawer" }).click();
+  await expect(bedPanel).toHaveCount(0);
+  await expectNoReloadSince(page, "marking the bed ready");
+
+  // Now the coordinator's board shows one more ready bed, and none left being made ready.
   await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
   await goViaNav(page, "/ward-flow/capacity", "ward-capacity-screen");
   await expect.poll(() => capacityReady(page, unitId, unitName)).toBe(readyBefore + 1);
-  await expectAccessible(page, testInfo, "capacity board after the departure");
+  expect(await capacityBeingMadeReady(page, unitId, unitName)).toBe(makingReadyBefore);
+  await expectAccessible(page, testInfo, "capacity board after the bed is ready");
   await expectNoReloadSince(page, "returning to the capacity board");
 });

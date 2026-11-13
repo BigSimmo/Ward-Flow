@@ -25,6 +25,7 @@ import {
 import type { DischargeRecord, WardRecordActor } from "../ward-discharge-records";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { formatInstantWithDay, perthDateTimeLocal } from "../ward-clock";
+import { typedClock } from "../ward-legal-time-as-typed";
 import { useWardFormSave } from "../use-ward-form-save";
 import { isPhoneWidth } from "@/components/ward-management/ward-phone-width";
 import styles from "./discharges-third-edition.module.css";
@@ -271,7 +272,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
         <dt>Paper authority for community transition</dt>
         <dd>
           {care?.legal
-            ? `${choiceLabel(care.legal.authority)} · written ${formatInstantWithDay(care.legal.writtenAt, now)} · checked ${fact(care.legal.recordedAt, care.legal.recordedBy)}`
+            ? `${choiceLabel(care.legal.authority)} · written ${typedClock(care.legal.writtenAt, now, dayZero)} · checked ${fact(care.legal.recordedAt, care.legal.recordedBy)}`
             : "Not recorded"}
         </dd>
       </dl>

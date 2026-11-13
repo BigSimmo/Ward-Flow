@@ -37,6 +37,7 @@ import searchStyles from "./search.module.css";
 import { isCommunityReferral } from "./community-referral";
 import { movementHref, patientHref, raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 const NOT_RECORDED = "Not recorded";
 
@@ -262,6 +263,7 @@ export function RecordPreview({
   const flow = useOptionalWardFlow();
   // Access audit (31 Oct 2026): New referral shows only where this desk can open the referral form.
   const canOpenHref = useCanOpenHref();
+  const zone = useClockZoneLabel();
   const activeDate = useMemo(() => {
     const activeDayZero = dayZero ?? flow?.dayZero ?? demoDayZero(new Date());
     // `patientAgeYears` reads this instant on the Perth calendar day itself (no browser-local midnight).
@@ -613,7 +615,9 @@ export function RecordPreview({
                 <span className={styles.timelineNodeBullet} aria-hidden="true" />
                 <div className={styles.timelineTimeRow}>
                   <span className={styles.timelineMonoTime}>
-                    {recordOpenedAt === undefined ? NOT_RECORDED : `${formatInstantWithDay(recordOpenedAt, now)} AWST`}
+                    {recordOpenedAt === undefined
+                      ? NOT_RECORDED
+                      : `${formatInstantWithDay(recordOpenedAt, now)} ${zone}`}
                   </span>
                 </div>
                 <span className={styles.timelineEventText}>Record active from origin site ({originSite})</span>
@@ -860,7 +864,9 @@ export function RecordPreview({
               <div className={styles.timelineNode}>
                 <span className={styles.timelineNodeBullet} aria-hidden="true" />
                 <div className={styles.timelineTimeRow}>
-                  <span className={styles.timelineMonoTime}>{formatInstantWithDay(referral.raisedAt, now)} AWST</span>
+                  <span className={styles.timelineMonoTime}>
+                    {formatInstantWithDay(referral.raisedAt, now)} {zone}
+                  </span>
                 </div>
                 <span className={styles.timelineEventText}>
                   Record active from origin site ({referral.originSiteCode ?? ORIGIN_NOT_RECORDED})
@@ -1077,7 +1083,9 @@ export function RecordPreview({
             <div className={styles.timelineNode}>
               <span className={styles.timelineNodeBullet} aria-hidden="true" />
               <div className={styles.timelineTimeRow}>
-                <span className={styles.timelineMonoTime}>{formatInstantWithDay(movement.openedAt, now)} AWST</span>
+                <span className={styles.timelineMonoTime}>
+                  {formatInstantWithDay(movement.openedAt, now)} {zone}
+                </span>
               </div>
               <span className={styles.timelineEventText}>Record active from origin site ({originSite})</span>
             </div>

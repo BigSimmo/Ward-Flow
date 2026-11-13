@@ -27,7 +27,8 @@ describe("isUnderAForm: one rule for Home, the ED desk and the TV", () => {
   });
 
   test.each(WARD_SCENARIOS)("the standard Armadale case reads the same on every count (%s)", (scenario) => {
-    const { movements } = seedWardFlowState(scenario);
+    // A16-14 (D-175 item 1): the Armadale case is the worked examples, now opt-in; 3 people without them.
+    const { movements } = seedWardFlowState(scenario, { workedExamples: true });
     for (const summary of edOpenSummaries(movements, Date.now() as never)) {
       const count = summary.open.filter(isUnderAForm).length;
       expect(count).toBeGreaterThanOrEqual(summary.open.filter((m) => m.legalForm !== undefined).length);

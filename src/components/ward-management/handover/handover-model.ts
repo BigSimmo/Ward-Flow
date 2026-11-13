@@ -10,14 +10,16 @@ import type { WardChromeRole } from "../ward-chrome-role";
  */
 import { durMinutes } from "@/components/wf";
 import { deliveredAwaitingWard, movementStatusLabel, stageCopy } from "@/components/ward-management/ward-stage-copy";
-import { bedHold, bedHoldLapsed } from "@/components/ward-management/ward-bed-hold";
+import { bedHold, bedHoldLapsed, PULL_NO_LIMIT_RECORDED } from "@/components/ward-management/ward-bed-hold";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import {
   formatInstantWithDay,
+  type ClockZoneLabel,
   MINUTES_PER_DAY,
   minuteOfDay,
   type Instant,
 } from "@/components/ward-management/ward-clock";
+import { typedClock } from "@/components/ward-management/ward-legal-time-as-typed";
 import { isStoppedTransportAwaitingRelease, transportLeg } from "@/components/ward-management/ward-derivations";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
@@ -472,13 +474,13 @@ export function destinationText(row: HandoverRow): string {
 }
 
 /** Short due text for the table: whichever comes first of a bed hold and a typed form time. */
-export function dueShort(row: HandoverRow, now: Instant): string | null {
+export function dueShort(row: HandoverRow, now: Instant, dayZero?: Date): string | null {
   const collected = isCollected(row);
   const hold = collected ? null : bedHold(row.pullExpiresAt, now);
   if (hold !== null && (row.formDueAt === undefined || hold.expiresAt <= row.formDueAt)) {
     return hold.state === "lapsed" ? hold.label : `Pull ends ${formatInstantWithDay(hold.expiresAt, now)}`;
   }
-  if (row.formDueAt !== undefined) return `${row.formCode ?? "Form"} due ${formatInstantWithDay(row.formDueAt, now)}`;
+  if (row.formDueAt !== undefined) return `${row.formCode ?? "Form"} due ${typedClock(row.formDueAt, now, dayZero)}`;
   // AR-1: a delivered journey is still `moving` until the ward confirms, but is no longer in transit.
   if (collected && deliveredAwaitingWard(row.movement)) return movementStatusLabel(row.movement);
   return collected ? "In transit" : null;
@@ -488,7 +490,11 @@ export function dueShort(row: HandoverRow, now: Instant): string | null {
  * The Due cell in two parts: the time or length on its own line, which is never cut, and what it is
  * ("Pull over by", "Pull ends", "1A due"), which may truncate (device audit 11 Oct 2026).
  */
-export function dueParts(row: HandoverRow, now: Instant): { when: string; what: string; atRisk?: boolean } | null {
+export function dueParts(
+  row: HandoverRow,
+  now: Instant,
+  dayZero?: Date,
+): { when: string; what: string; atRisk?: boolean } | null {
   const collected = isCollected(row);
   if (
     !collected &&
@@ -510,7 +516,7 @@ export function dueParts(row: HandoverRow, now: Instant): { when: string; what: 
     }
   }
   if (row.formDueAt !== undefined)
-    return { when: formatInstantWithDay(row.formDueAt, now), what: `${row.formCode ?? "Form"} due` };
+    return { when: typedClock(row.formDueAt, now, dayZero), what: `${row.formCode ?? "Form"} due` };
   // AR-1: the delivered wording, split as movementStatusLabel reads it.
   if (collected && deliveredAwaitingWard(row.movement))
     return { when: "Arrived at ward", what: "Awaiting ward confirmation" };
@@ -518,7 +524,7 @@ export function dueParts(row: HandoverRow, now: Instant): { when: string; what: 
 }
 
 /** Long due text for the panel: the bed hold and the typed form time, both when both are held. */
-export function dueLong(row: HandoverRow, now: Instant): string | null {
+export function dueLong(row: HandoverRow, now: Instant, dayZero?: Date): string | null {
   const parts: string[] = [];
   const hold = shownBedHold(row, now);
   if (hold) {
@@ -530,7 +536,7 @@ export function dueLong(row: HandoverRow, now: Instant): string | null {
     parts.push(
       row.formDueAt <= now
         ? `Form ${row.formCode} time passed`
-        : `Form ${row.formCode} due ${formatInstantWithDay(row.formDueAt, now)} as typed`,
+        : `Form ${row.formCode} due ${typedClock(row.formDueAt, now, dayZero)} as typed`,
     );
   }
   return parts.length ? parts.join(". ") : null;
@@ -615,7 +621,8 @@ export function situationState(row: HandoverRow, now: Instant): string {
   if (isStoppedAwaitingRelease(row)) return `Transport stopped, bed pulled at ${to} awaiting release`;
   if (deliveredAwaitingWard(row.movement)) return movementStatusLabel(row.movement);
   if (row.stage === "pulled") {
-    if (row.pullExpiresAt === undefined) return `Bed pulled at ${to}`;
+    // D-187 (F-46): a pull with no limit recorded says so.
+    if (row.pullExpiresAt === undefined) return `Bed pulled at ${to} · ${PULL_NO_LIMIT_RECORDED}`;
     return row.pullExpiresAt <= now
       ? `Bed pull at ${to} expired ${durMinutes(now - row.pullExpiresAt)} ago`
       : `Bed pulled at ${to} until ${formatInstantWithDay(row.pullExpiresAt, now)}`;
@@ -650,12 +657,13 @@ export function isbarLines(
   row: HandoverRow,
   now: Instant,
   readyBeds: (unitId: string) => number = () => 0,
+  dayZero?: Date,
 ): IsbarLine[] {
   const form =
     row.formCode && row.formEnded
       ? `, Form ${row.formCode} ended`
       : row.formCode && row.formDueAt !== undefined
-        ? `, Form ${row.formCode} due ${formatInstantWithDay(row.formDueAt, now)} as typed`
+        ? `, Form ${row.formCode} due ${typedClock(row.formDueAt, now, dayZero)} as typed`
         : row.formCode
           ? `, Form ${row.formCode}, no due time typed`
           : "";
@@ -672,11 +680,16 @@ export function isbarLines(
   ];
 }
 
-export function isbarText(row: HandoverRow, now: Instant, readyBeds: (unitId: string) => number = () => 0): string {
+export function isbarText(
+  row: HandoverRow,
+  now: Instant,
+  readyBeds: (unitId: string) => number = () => 0,
+  dayZero?: Date,
+): string {
   return [
     "Synthetic demonstration · Not approved for clinical use",
     `${row.name} ${row.umrn}`,
-    ...isbarLines(row, now, readyBeds).map((line) => `${line.label}: ${line.text}`),
+    ...isbarLines(row, now, readyBeds, dayZero).map((line) => `${line.label}: ${line.text}`),
   ].join("\n");
 }
 
@@ -778,7 +791,7 @@ export type HandoverWard = {
   occupied: number;
   empty: number;
   ready: number;
-  /** Free beds still being made ready: counted in ready, but a pull is refused until they are done. */
+  /** Free beds still being made ready: not counted in ready (D-179 item 8), but may still be pulled. */
   pendingPreparation: number;
   confirmedAt: Instant;
   staleAfter: number;
@@ -884,16 +897,18 @@ export function summaryText(
   shiftLabel: string,
   takenAt: Instant,
   now: Instant,
+  zone: ClockZoneLabel,
+  dayZero?: Date,
 ): string {
   const lines = [
     `Handover sheet, ${scopeLabel}, ${shiftLabel}`,
-    `Taken ${formatInstantWithDay(takenAt, now)} AWST. Synthetic data.`,
+    `Taken ${formatInstantWithDay(takenAt, now)} ${zone}. Synthetic data.`,
   ];
   for (const group of groups) {
     if (group.rows.length === 0) continue;
     lines.push("", `${group.title} (${group.rows.length})`);
     for (const row of group.rows) {
-      const due = dueLong(row, now);
+      const due = dueLong(row, now, dayZero);
       lines.push(
         `- ${row.name} ${row.umrn}, T${row.tier}, ${row.edShort}, waiting ${durMinutes(now - row.openedAt)}, ${handoverStatusLabel(
           row,

@@ -1,5 +1,6 @@
 "use client";
 
+import { MONTH_SHORT } from "@/components/ward-management/ward-month-names";
 import { ArrowLeft, ArrowRight, ExternalLink, Printer, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -16,7 +17,7 @@ import s from "./ward-help-panel.module.css";
 
 /* ── What's new ─────────────────────────────────────────────────────────────────────────────── */
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTHS = MONTH_SHORT;
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 /** "Sat 31 Oct" from "2026-10-31", read as a calendar day with no time zone shift. */

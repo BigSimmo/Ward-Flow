@@ -1,4 +1,4 @@
-import type { MouseEvent, ReactNode } from "react";
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
 import Link from "next/link";
@@ -15,19 +15,23 @@ import {
   type Movement,
 } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
-import { bedHold } from "@/components/ward-management/ward-bed-hold";
+import { bedHold, PULL_NO_LIMIT_RECORDED } from "@/components/ward-management/ward-bed-hold";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { legalStatusTextIsInvoluntary } from "@/components/ward-management/ward-support-notifications";
 import {
   calendarDateOf,
   formatInstantWithDay,
+  formatSince,
   perthDayLabel,
   perthIsoDay,
 } from "@/components/ward-management/ward-clock";
 import { clock, dur } from "./patient-now-records";
+import { cadNumberLine } from "@/components/ward-management/ward-cad-number";
+import { focusAfterAction } from "../focus-after-action";
 import type { PatientMode } from "./patient-mode";
 import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
+import type { RoleLimit } from "@/components/ward-management/ward-role-gate";
 import { recordExtrasFor } from "./patient-record-extras";
 import { recordedDayPassed } from "./patient-date-passed";
 import { stayProgress } from "./patient-now-ward";
@@ -50,6 +54,7 @@ import { canDispatch } from "../ward-role-permissions";
 import { unitInScope } from "../ward-role-access";
 import { wardPlaceLookup } from "../ward-access-places";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
+import { awaitingWardAnswer, isWaitlistReason, waitlistStands } from "../ward-waitlist";
 
 /** One gate or fact on the status card: value, who owns it, when it last changed, at most one action. */
 interface StatusCell {
@@ -126,6 +131,8 @@ export interface PatientStatusContext {
   onOpenPlacement: () => void;
   onClearance: (event: MouseEvent<HTMLButtonElement>) => void;
   onBookTransport: () => void;
+  /** K37 / F-101: takes back a recorded "no transport needed" (records needed), so booking returns. */
+  onTransportNeeded?: () => void;
   onArrivalTime: () => void;
   /** Phone: the booking is updated from the Moving to card, as no separate transport block shows. */
   bookingInCard?: boolean;
@@ -152,7 +159,7 @@ export interface PatientStatusContext {
   /** Audit A4-9: records handover ready once every gate is clear. */
   onHandoverReady?: () => void;
   /** Feature 11: why the route's role may not dispatch this event ("Ward only"), or undefined. */
-  roleLimit?: (eventType: WardFlowEventType) => string | undefined;
+  roleLimit?: RoleLimit;
   /** Decision 2: the accepted ward's page, linked from the Bed cell's value. */
   bedHref?: string;
   /** Decision 2: the movement's own page (its transport job), linked from the Transport cell's value. */
@@ -185,7 +192,7 @@ export interface PatientStatusContext {
 function awolTrackerMeta(since: number, now: number, stayUnitName?: string, holdReview = false): string {
   const away = Math.max(0, now - since);
   const holdWarning = CLINICAL_VALUES.awolBedHoldWarning.value;
-  const base = `Since ${clock(since)}, away ${dur(away)}, owner nurse in charge`;
+  const base = `Since ${clock(since)}, away ${formatSince(since, now)}, owner nurse in charge`;
   if (!holdReview || away < holdWarning) return base;
   const bed = stayUnitName ? `Bed on ${stayUnitName}` : "Bed";
   return `${base}. ${bed} held over ${holdWarning % 60 === 0 ? `${holdWarning / 60}h` : dur(holdWarning)}, review the hold`;
@@ -200,7 +207,9 @@ function clearanceCell(movement: Movement, onClearance: PatientStatusContext["on
     owner: "ED doctor",
     tone: clearance ? (clearance.cleared ? "success" : "danger") : "warning",
     value: clearance ? (clearance.cleared ? `Cleared ${clock(clearance.at)}` : "Not cleared") : "Not recorded",
-    sub: clearance ? "Treating team's stated outcome" : "Needed before transport",
+    // A9-09 (Audit 9, 13 Nov 2026): the app records clearance and holds nothing back, so the card says
+    // only that, until Josh rules whether transport or handover should wait for it.
+    sub: clearance ? "Treating team's stated outcome" : "Not yet stated by the treating team",
     clear: clearance?.cleared === true,
     // Kept once cleared, so focus can return to it when the clearance dialog closes.
     action: {
@@ -218,6 +227,7 @@ function transportCell(
   onBook: () => void,
   waitingFor = "an accepted bed",
   bookingInCard = false,
+  onChangeNeed?: () => void,
 ): StatusCell {
   const job = movement.transport && movement.transport.cancelledAt === undefined ? movement.transport : undefined;
   if (job)
@@ -229,7 +239,7 @@ function transportCell(
       tone: "success",
       value: job.provider,
       // Audit round 2, A4-19: a number recorded as "CAD-11111" is not prefixed again.
-      sub: job.cadNumber ? (/^CAD/i.test(job.cadNumber) ? job.cadNumber : `CAD ${job.cadNumber}`) : "CAD to follow",
+      sub: job.cadNumber ? cadNumberLine(job.cadNumber) : "CAD to follow",
       time: job.estimatedAt !== undefined ? `ETA ${clock(job.estimatedAt)}, typed by the booker` : undefined,
       clear: true,
       action: bookingInCard
@@ -255,6 +265,20 @@ function transportCell(
       value: "Not needed",
       sub: "Recorded on the movement",
       clear: true,
+      // K37 / F-101 (Josh, 13 Nov 2026): Change sits beside the recorded answer, as on the ED row. It
+      // records that transport is needed, which brings back Log booking; the toast offers Undo.
+      action: onChangeNeed
+        ? {
+            kind: "button",
+            label: "Change",
+            ariaLabel: "Change no transport needed",
+            secondary: true,
+            onClick: () => {
+              onChangeNeed();
+            },
+            event: "RECORD_TRANSPORT_NEED",
+          }
+        : undefined,
     };
   return {
     key: "transport",
@@ -305,8 +329,9 @@ export function absenceVoluntary(movement: Movement | undefined, patient: Patien
 
 /** Builds the status card for a mode from the live record. Every value comes from shared state. */
 /**
- * The status for this mode, with every action the route's role may not take shown as unavailable
- * with its reason ("Ward only"), never hidden. The role rule is `ward-role-permissions.ts`.
+ * The status for this mode, with every action the route's role may not take for now shown as
+ * unavailable with its reason ("Ward only"). An action this desk can never take is left out (F-54,
+ * A9-35; `RoleLimit` gives `null`). The role rule is `ward-role-permissions.ts`.
  */
 export function buildPatientStatus(
   mode: PatientMode,
@@ -320,10 +345,13 @@ export function buildPatientStatus(
     if (summary !== undefined && action?.kind === "button" && action.onClick === ctx.onOpenPlacement) {
       if (mode !== "held" || !acceptedPlacementAllowed) return undefined;
       const reason = limit?.("PULL_PATIENT");
+      if (reason === null) return undefined;
       return reason ? { kind: "unavailable", label: action.label, reason } : action;
     }
     if (action?.kind !== "button" || action.event === undefined) return action;
     const reason = limit?.(action.event);
+    // F-54 (A9-35): an action this desk can never take is left out (DESIGN-SYSTEM.md, Actions).
+    if (reason === null) return undefined;
     return reason ? { kind: "unavailable", label: action.label, reason } : action;
   };
   return {
@@ -359,7 +387,10 @@ function statusFor(
           sub: "Destination details are restricted",
         },
         clearanceCell(movement, ctx.onClearance),
-        withHref(transportCell(movement, false, ctx.onBookTransport), ctx.transportHref),
+        withHref(
+          transportCell(movement, false, ctx.onBookTransport, undefined, false, ctx.onTransportNeeded),
+          ctx.transportHref,
+        ),
       ],
     };
   }
@@ -391,25 +422,50 @@ function statusFor(
             sub: "Destination details are restricted",
           },
           clearanceCell(movement, ctx.onClearance),
-          withHref(transportCell(movement, false, ctx.onBookTransport), ctx.transportHref),
+          withHref(
+            transportCell(movement, false, ctx.onBookTransport, undefined, false, ctx.onTransportNeeded),
+            ctx.transportHref,
+          ),
         ],
       });
     }
     // `referredUnitIds` holds only live requests: a decline or withdrawal removes its ward.
-    const pending = movement.referredUnitIds.length;
-    const declined = movement.declines.length;
-    const lastDecline = movement.declines.at(-1);
-    const noneAsked = pending === 0 && declined === 0;
+    // A9-05: a ward that waitlisted ("No suitable bed") keeps its live request but has answered, so it
+    // counts as waitlisted, neither awaiting an answer nor declined.
+    const pending = movement.referredUnitIds.filter((unitId) => awaitingWardAnswer(movement, unitId)).length;
+    const waitlisted = movement.referredUnitIds.length - pending;
+    const refusals = movement.declines.filter(
+      (decline) => !isWaitlistReason(decline.reason) || !waitlistStands(movement, decline.unitId),
+    );
+    const declined = refusals.length;
+    const lastDecline = refusals.at(-1);
+    const noneAsked = movement.referredUnitIds.length === 0 && declined === 0;
     const bed: StatusCell = {
       key: "bed",
       icon: BedSingle,
       label: `${movement.security} ${movement.cohort.toLowerCase()} bed`,
       owner: "Bed coordinator",
-      tone: pending === 0 ? "danger" : "warning",
-      value: noneAsked ? "No ward asked" : pending === 0 ? "None found" : `${pending} awaiting answer`,
-      sub: noneAsked ? "Ask wards that fit" : `${declined} declined`,
+      tone: pending === 0 && waitlisted === 0 ? "danger" : "warning",
+      value: noneAsked
+        ? "No ward asked"
+        : pending > 0
+          ? `${pending} awaiting answer`
+          : waitlisted > 0
+            ? `${waitlisted} waitlisted`
+            : "None found",
+      sub: noneAsked
+        ? "Ask wards that fit"
+        : [`${declined} declined`, pending > 0 && waitlisted > 0 ? `${waitlisted} waitlisted` : undefined]
+            .filter(Boolean)
+            .join(" · "),
       time: lastDecline ? `Last decline ${clock(lastDecline.at)}` : undefined,
-      action: { kind: "button", label: noneAsked ? "Ask wards" : "Ask more wards", onClick: ctx.onOpenPlacement },
+      // F-108 (A14-14): asking wards is the coordinator's (REFER_TO_UNITS), so the desk's role limits it.
+      action: {
+        kind: "button",
+        label: noneAsked ? "Ask wards" : "Ask more wards",
+        onClick: ctx.onOpenPlacement,
+        event: "REFER_TO_UNITS",
+      },
     };
     return withMeter({
       tone: "danger",
@@ -418,7 +474,10 @@ function statusFor(
       cells: [
         bed,
         clearanceCell(movement, ctx.onClearance),
-        withHref(transportCell(movement, false, ctx.onBookTransport), ctx.transportHref),
+        withHref(
+          transportCell(movement, false, ctx.onBookTransport, undefined, false, ctx.onTransportNeeded),
+          ctx.transportHref,
+        ),
       ],
     });
   }
@@ -440,7 +499,7 @@ function statusFor(
           ? lapsed
             ? hold.label
             : `Bed pulled, ${hold.short}`
-          : "Bed pulled"
+          : `Bed pulled · ${PULL_NO_LIMIT_RECORDED}`
         : "Accepted, no bed pulled yet",
       time: movement.acceptedAt !== undefined ? `Accepted ${clock(movement.acceptedAt)}` : undefined,
       clear: ctx.hasBedHold && !lapsed,
@@ -465,6 +524,7 @@ function statusFor(
             ctx.onBookTransport,
             "the bed pulled",
             ctx.bookingInCard,
+            ctx.onTransportNeeded,
           ),
           ctx.transportHref,
         ),
@@ -653,7 +713,7 @@ function statusFor(
           owner: "Ward",
           tone: "warning",
           value: `Since ${formatInstantWithDay(since, now)}`,
-          sub: `Away ${dur(Math.max(0, now - since))}, recorded by the ward`,
+          sub: `Away ${formatSince(since, now)}, recorded by the ward`,
         },
         {
           key: "bed",
@@ -914,6 +974,26 @@ function withMeter(status: PatientStatus): PatientStatus {
   return { ...status, meter: { clear, of: status.cells.length } };
 }
 
+/**
+ * F-57 (A5-18): where focus goes on the status card once the control pressed has gone: the card's
+ * Transport (or Collected) action, then any action the card still offers (on a phone, the pinned
+ * bar's), then the card's verdict line.
+ */
+export function statusCardFocusTargets(card: HTMLElement | null): HTMLElement[] {
+  if (typeof document === "undefined") return [];
+  const root = card ?? document.querySelector<HTMLElement>('[data-testid="ward-patient-status-card"]');
+  if (!root) return [];
+  const usable = 'button:not([disabled]):not([aria-disabled="true"])';
+  const within = (selector: string) => Array.from(root.querySelectorAll<HTMLElement>(selector));
+  return [
+    ...within(`[data-testid="ward-patient-gate-transport"] ${usable}`),
+    ...within(`[data-testid="ward-patient-gate-collected"] ${usable}`),
+    ...Array.from(document.querySelectorAll<HTMLElement>(`[data-testid="ward-patient-phone-action-bar"] ${usable}`)),
+    ...within(usable),
+    ...within('[data-testid="ward-patient-status-verdict"]'),
+  ];
+}
+
 function CellAction({ action, primary }: { action: StatusAction; primary: boolean }): ReactNode {
   if (action.kind === "unavailable")
     return (
@@ -983,6 +1063,29 @@ export function PatientStatusCard({
     context.movement ? sender.movementFor(context.movement) : undefined,
     acceptedPlacementAllowed,
   );
+  // F-57 (A5-18): Mark handover ready takes its own button away (the card moves on to the journey),
+  // which dropped focus to the start of the page. Once the card has changed, focus goes to the control
+  // that took its place, else the card's verdict.
+  const cardRef = useRef<HTMLElement>(null);
+  const cardStep = `${mode}:${status.verdict}`;
+  // The card's step when Mark handover ready was pressed; a refused step keeps the card, and focus.
+  const [handoverFrom, setHandoverFrom] = useState<string | null>(null);
+  if (status.next?.kind === "button" && status.next.event === "HANDOVER_READY") {
+    const markReady = status.next.onClick;
+    status.next = {
+      ...status.next,
+      onClick: (event) => {
+        setHandoverFrom(cardStep);
+        markReady(event);
+      },
+    };
+  }
+  useEffect(() => {
+    if (handoverFrom === null || handoverFrom === cardStep) return;
+    focusAfterAction(() => statusCardFocusTargets(cardRef.current));
+    const frame = window.requestAnimationFrame(() => setHandoverFrom(null));
+    return () => window.cancelAnimationFrame(frame);
+  }, [handoverFrom, cardStep]);
   const primaryKey =
     status.rows?.find((r) => !r.done && r.action?.kind === "button")?.key ??
     status.cells.find((c) => !c.clear && c.action?.kind === "button" && !c.action.secondary)?.key;
@@ -1009,6 +1112,7 @@ export function PatientStatusCard({
   return (
     <>
       <section
+        ref={cardRef}
         className={styles.card}
         aria-label="Status"
         data-tone={status.tone}

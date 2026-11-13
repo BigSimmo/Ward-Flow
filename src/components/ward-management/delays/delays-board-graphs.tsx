@@ -47,7 +47,7 @@ import styles from "./delays-board.module.css";
 import polish from "./waiting-polish.module.css";
 import { NextCrossings } from "./waiting-next-crossings";
 
-import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
+import { useDueSoonThresholds, useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { standingSuffix, typedTimeStanding } from "@/components/ward-management/legal-forms/legal-forms-view";
 import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 type Graph = "spread" | "runway" | "matrix";
@@ -123,6 +123,7 @@ function Spread({
   onTip: (event: React.MouseEvent | null, body?: ReactNode) => void;
 }) {
   const thresholds = useDueSoonThresholds();
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   const patientOf = usePatientOf();
   // Role views (`waiting-desk-words.ts`): "on you" is said from the desk's side.
   const desk = useWaitingDeskWords();
@@ -254,7 +255,7 @@ function Spread({
                           {row.dueIn !== undefined && row.movement.legalForm ? (
                             <>
                               <br />
-                              {`Form ${row.movement.legalForm.code} ${typedTimePhrase(now + row.dueIn, now)}${standingSuffix(typedTimeStanding(row.movement, now, thresholds))}`}
+                              {`Form ${row.movement.legalForm.code} ${typedTimePhrase(now + row.dueIn, now, dayZero)}${standingSuffix(typedTimeStanding(row.movement, now, thresholds))}`}
                             </>
                           ) : null}
                         </>,

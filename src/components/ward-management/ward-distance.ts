@@ -1,5 +1,5 @@
 import type { HomeRegion, Referral, Unit } from "@/components/ward-management/ward-model";
-import { SYNTHETIC_TRAVEL_BANDS, TRAVEL_BANDS, type TravelBand } from "@/components/ward-management/ward-travel-bands";
+import { SHOWN_TRAVEL_BANDS, TRAVEL_BANDS, type TravelBand } from "@/components/ward-management/ward-travel-bands";
 
 export { TRAVEL_BANDS };
 export type { TravelBand };
@@ -13,20 +13,20 @@ export type { TravelBand };
  * shipped and caught by screenshot.
  *
  * Nothing here writes a band onto a record. Not a `Referral`, not a `Movement`, not an event, not
- * a snapshot, not a cache: a stored band would outlive the day the placeholders in
- * `ward-travel-bands.ts` are replaced with checked values, which is precisely what must not
- * happen. The band is only ever looked up.
+ * a snapshot, not a cache: a stored band would outlive the day a checked band in
+ * `ward-travel-bands.ts` is added or corrected, which is precisely what must not happen. The band
+ * is only ever looked up.
  */
 
 /**
- * The band from a person's home region to a hospital site, or `undefined` when the synthetic
- * fixture records none for that pair. NEVER falls back to a band — not to the first band, not to
- * the nearest one, not to "unknown means far". An unrecorded pair is a gap, and a gap is shown as
- * a gap.
+ * The band from a person's home region to a hospital site, or `undefined` when nobody has checked
+ * one for that pair (only checked bands are shown, A16-04). NEVER falls back to a band — not to
+ * the first band, not to the nearest one, not to "unknown means far". An unrecorded pair is a gap,
+ * and a gap is shown as a gap.
  */
 export function travelBand(homeRegion: HomeRegion | undefined, siteCode: string): TravelBand | undefined {
   if (homeRegion === undefined) return undefined;
-  return SYNTHETIC_TRAVEL_BANDS[homeRegion]?.[siteCode];
+  return SHOWN_TRAVEL_BANDS[homeRegion]?.[siteCode];
 }
 
 /**
@@ -73,7 +73,13 @@ export const NOT_RECORDED_LABEL = "Travel time not recorded";
  */
 export const OUT_OF_AREA_BANDS: readonly TravelBand[] = ["three_hours_or_more", "air_transport_only"];
 
-export const SYNTHETIC_TRAVEL_TIMES_NOTICE = "Travel times are invented and unchecked. Do not rely on them.";
+/**
+ * Shown beside every travel time. A16-04 (Josh, 13 Nov 2026): only bands someone has checked are
+ * shown, so the old "invented and unchecked" sentence would now be untrue. The name is kept so the
+ * screens that show it need no change.
+ */
+export const SYNTHETIC_TRAVEL_TIMES_NOTICE =
+  "Only travel times someone has checked are shown. The rest read as not recorded.";
 
 export const INVENTED_OUT_OF_AREA_THRESHOLD_NOTICE =
   "Out of area here means three hours or more from home, or reachable only by air. This prototype " +

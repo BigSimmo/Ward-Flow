@@ -1,10 +1,10 @@
 import type { WfTone } from "@/components/wf";
-import { type DueSoonThresholds, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
 
 import { currentLegalDueAt } from "./legal-forms-derivations";
 import { STANDING_TONE, clockStanding, isActNow, type ClockStanding } from "./legal-forms-view";
-import { typedTimeLine } from "./legal-time-as-typed";
+import { typedClock, typedTimeLine } from "./legal-time-as-typed";
 
 /**
  * ONE RULE FOR A FORM'S TIME LEFT (audit A3-3/A3-4/S-28, 13 Oct 2026). The Patient page, the Forms
@@ -32,6 +32,7 @@ export function formTimeLeft(
   movement: Movement | undefined,
   now: Instant,
   thresholds: DueSoonThresholds,
+  dayZero?: Date,
 ): FormTimeLeft | undefined {
   const form = movement?.legalForm;
   const dueAt = movement ? currentLegalDueAt(movement) : undefined;
@@ -39,8 +40,8 @@ export function formTimeLeft(
   const standing = clockStanding(movement, now, thresholds);
   return {
     code: `Form ${form.code}`,
-    text: typedTimeLine(dueAt, now),
-    at: formatInstantWithDay(dueAt, now),
+    text: typedTimeLine(dueAt, now, dayZero),
+    at: typedClock(dueAt, now, dayZero),
     standing,
     tone: STANDING_TONE[standing],
     actNow: isActNow(standing),

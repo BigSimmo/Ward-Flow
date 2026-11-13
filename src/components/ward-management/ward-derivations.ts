@@ -197,16 +197,20 @@ export const BED_RELEASE_BLOCKED_LABEL = "Held up";
  * with a recorded hold (13, Handover and Statistics). The release count is now "Releases held up,
  * today and tomorrow", because `blockedToday` covers the same today-and-tomorrow window as its
  * Confirmed and Expected neighbours. "Discharges held up" belongs only to the patient count.
+ *
+ * 🔴 **AND 13 NOV 2026 (Josh, D-191 item 5): "due by tomorrow".** The window takes in overdue dates
+ * as well, and held up now means due by tomorrow on Capacity, Ward, TV, the sheet and Home
+ * (`isHeldUpDueByTomorrow`, `ward-held-up.ts`), so the label says that span in the window words.
  */
-export const BED_RELEASE_BLOCKED_FIGURE_LABEL = "Releases held up, today and tomorrow";
+export const BED_RELEASE_BLOCKED_FIGURE_LABEL = "Releases held up, due by tomorrow";
 
 /**
- * Releases with a blocker whatever their date (the ward's own list and the Discharges board, WT-17).
- * Not "today and tomorrow", because it is not that window; not "Discharges held up", which is the
- * patient count (decision 15, 26 Oct 2026): patients in a bed with a recorded hold
+ * Releases with a blocker whatever their date: the Discharges board's own group only (D-191 item 5,
+ * Josh 13 Nov 2026; the Ward page counts due by tomorrow since). Not "Discharges held up", which
+ * is the patient count (decision 15, 26 Oct 2026): patients in a bed with a recorded hold
  * (`admission.blockReason`) on Handover, Statistics and the ward's shift brief.
  */
-export const BED_RELEASES_HELD_UP_ANY_DATE_LABEL = "Releases held up";
+export const BED_RELEASES_HELD_UP_ANY_DATE_LABEL = "Releases held up, any date";
 
 /**
  * The one canonical order of the health services, and the list every screen that groups by service
@@ -590,6 +594,8 @@ export type ActionInboxRecords = Partial<Omit<Parameters<typeof supportNotificat
    * exactly as before.
    */
   stuckHandoverMinutes?: number;
+  /** The board's day 0, so a typed legal time on another day prints its date (D1, D-93). */
+  dayZero?: Date;
 };
 
 /** P068: minutes past the booking estimate before Alerts raise it (Josh, 27 Oct 2026, 10:02 PM AWST). */
@@ -644,7 +650,7 @@ export function buildActionInbox(
       title: "Legal due time passed",
       // Legal times only as typed (31 Oct 2026): "WF-001 · Form 4C (Transfer order) · ended 10:02 as
       // typed", never "1h 15m overdue".
-      detail: `${movement.id} · ${movement.legalForm ? formTimeAsTyped(movement.legalForm, now) : `Legal form · ${typedTimePhrase(dueAt, now)}`}`,
+      detail: `${movement.id} · ${movement.legalForm ? formTimeAsTyped(movement.legalForm, now, records?.dayZero) : `Legal form · ${typedTimePhrase(dueAt, now, records?.dayZero)}`}`,
       owner: movement.owner,
       movementId: movement.id,
       dueAt,

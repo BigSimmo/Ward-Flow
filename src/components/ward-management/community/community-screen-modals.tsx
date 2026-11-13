@@ -18,6 +18,7 @@ import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import styles from "./community-screen-modals.module.css";
 import { clinicalContactCanSave, referralOriginLabel } from "./community-screen-helpers";
 import type { CommunityScreenView } from "./community-screen";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 /** Sets a ref the page hands in, whether a callback ref or an object ref. */
 function assignRef<T>(ref: ((value: T) => void) | { current: T } | null | undefined, value: T) {
@@ -136,6 +137,7 @@ const NOTE_IDS = { contact: "contactModal", handover: "handoverModal", crisis: "
 
 /** Record contact, catchment counts and crisis dialogs. */
 export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }) {
+  const zone = useClockZoneLabel();
   const {
     now,
     team,
@@ -167,7 +169,7 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
   );
   const stamp = Number.isFinite(now)
     ? flow?.dayZero !== undefined && Number.isFinite(flow.dayZero.getTime())
-      ? formatSheetMoment(now, flow.dayZero, { includeYearAndZone: true })
+      ? formatSheetMoment(now, flow.dayZero, { includeYearAndZone: true, zone })
       : formatInstant(now)
     : null;
   if (activeModalType === null) return null;

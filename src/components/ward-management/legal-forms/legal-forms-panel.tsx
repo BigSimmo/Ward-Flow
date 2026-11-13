@@ -20,6 +20,7 @@ import {
   type TimelineItem,
 } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { typedClock } from "./legal-time-as-typed";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { edHref, movementHref } from "@/components/ward-management/shell/ward-facade";
 
@@ -154,7 +155,7 @@ export function FocusPanel({
     writtenCommand.submit(() => onSaveWritten(written, accepted), accepted);
   };
 
-  const step = nextStep(movement, now);
+  const step = nextStep(movement, now, dayZero);
   // Gap list item 1: an optional typed receipt time. Blank means now; a time later than now is refused.
   // The draft lives on the screen, so the phone's pinned Mark received sends the same typed time.
   const { at: receivedAt, problem: receivedProblem } = typedReceipt(receivedText, now);
@@ -303,9 +304,9 @@ export function FocusPanel({
                       <span className={p.checkSub}>
                         {fact.at !== undefined
                           ? fact.gap === "written"
-                            ? `Written ${formatInstantWithDay(fact.at, now)} on the form`
+                            ? `Written ${typedClock(fact.at, now, dayZero)} on the form`
                             : fact.gap === "received" && movement.legalFormReceivedTyped
-                              ? `${formatInstantWithDay(fact.at, now)}, as typed`
+                              ? `${typedClock(fact.at, now, dayZero)}, as typed`
                               : formatInstantWithDay(fact.at, now)
                           : fact.gap === "examination"
                             ? "Not recorded. Recorded on the ED screen"

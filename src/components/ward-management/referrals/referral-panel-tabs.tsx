@@ -20,7 +20,6 @@ import { referralClocks } from "@/components/ward-management/ward-referrals";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { DemoPhoneNumber } from "@/components/ward-management/demo-phone-number";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { formatReferralIntakeTime } from "@/components/ward-management/ward-referral-seed-time";
 import {
   OVERDUE_AFTER_ANY_TIER_MINUTES,
   OVERDUE_AFTER_MINUTES_BY_TIER,
@@ -35,9 +34,11 @@ import { referralPresentation } from "@/components/ward-management/ward-partial-
 import { StatusGlyph, cx, durMinutes } from "@/components/wf";
 
 import { ReferralDocuments } from "./referral-documents";
+import { referralExpectedTime } from "./referral-expected-time";
 import { LiveDot } from "./referral-panel-parts";
 import redesign from "./referral-page.module.css";
 import s from "./referral-tabs.module.css";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 function Block({ title, aside, children }: { title: string; aside?: ReactNode; children: ReactNode }) {
   return (
@@ -92,6 +93,7 @@ export function PatientTab({
 }) {
   const { dayZero } = useWardFlowSelect("dayZero");
   const intake = referral.intake;
+  const zone = useClockZoneLabel();
   const [readMore, setReadMore] = useState(false);
   const [historyMore, setHistoryMore] = useState(false);
   const reason = intake?.reasonForReferral?.trim() ?? "";
@@ -161,7 +163,7 @@ export function PatientTab({
             ) : (
               <>
                 Clearance expected{" "}
-                {formatReferralIntakeTime(intake.medicalClearance.expectedAt, intake.medicalClearance, dayZero, now)}
+                {referralExpectedTime(intake.medicalClearance.expectedAt, intake.medicalClearance, dayZero, now, zone)}
               </>
             )
           }

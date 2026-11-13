@@ -12,6 +12,7 @@ import {
   useContext,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -33,7 +34,7 @@ import { absenceStepsFor, ABSENCE_STEP_LABELS } from "@/components/ward-manageme
 import { heldUnitGenderRefusal } from "@/components/ward-management/ward-flow-reducer";
 import type { UploadFormsModalProps } from "@/components/ward-management/referrals/upload-forms-modal";
 import { acceptedWardReferralFor } from "@/components/ward-management/referrals/accepted-ward-referral";
-import { SYNTHETIC_COPY_LINE } from "@/components/ward-management/referrals/referral-letter";
+import { SYNTHETIC_COPY_LINE } from "@/components/ward-management/ward-clipboard";
 import { activeCommunityTreatmentOrder, type Patient } from "@/components/ward-management/ward-patients";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { WardMovementNotFound } from "@/components/ward-management/ward-movement-not-found";
@@ -109,11 +110,14 @@ preloadWhenIdle(
 import { useUndoableStep } from "../use-undoable-step";
 import { resolvePatientNowRecord } from "./patient-now-adapter";
 import { PATIENT_MODES, patientMode } from "./patient-mode";
-import { dayLabel, type PatientStatusContext } from "./patient-status-card";
+import { dayLabel, statusCardFocusTargets, type PatientStatusContext } from "./patient-status-card";
+import { focusAfterAction, handFocusTo } from "../focus-after-action";
+import { cadNumberLine } from "@/components/ward-management/ward-cad-number";
 import type { LeaveKind, WardChangeForm } from "./patient-ward-change-card";
 import {
   calendarDateOf,
   formatInstantWithDay,
+  formatSince,
   perthClockTime,
   perthIsoDay,
 } from "@/components/ward-management/ward-clock";
@@ -126,6 +130,7 @@ import { formProgression } from "@/components/ward-management/ward-legal-form-pr
 import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
 import {
   requiredRoleForPermission,
+  roleLimitFrom,
   useDeskRoleSwitch,
   useRoleGate,
   ReadOnlyRecordActions,
@@ -134,7 +139,7 @@ import {
 import { usePathname } from "next/navigation";
 import { type ContactRow } from "./patient-now-cards";
 import { movementHasBedHold } from "@/components/ward-management/ward-movement-bed-hold";
-import { type PatientNowRecord, STAGES, clock, dur, fillTemplate } from "./patient-now-records";
+import { type PatientNowRecord, STAGES, clock, fillTemplate } from "./patient-now-records";
 import styles from "./patient-now.module.css";
 import { PatientArchivePanel } from "./patient-archive-panel";
 import { PatientGlance, patientStateTag } from "./patient-glance";
@@ -148,6 +153,7 @@ import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feat
 import { Dialog, PhoneSheet, cx, folderTabClasses, useIsPhone } from "@/components/wf";
 import { PatientClearanceDialog, type ClearanceDraft } from "./patient-clearance-dialog";
 import { isOnOrder } from "../ward-stay-legal";
+import { TIER_NOT_RECORDED } from "../ward-priority";
 import { legalStatusTextIsInvoluntary } from "../ward-support-notifications";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { type TabKey, formatTransportLegalStatus, getStageBedflowDetail } from "./patient-now-screen-helpers";
@@ -158,6 +164,7 @@ import { renderTransportSection } from "./patient-now-transport-section";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { movementTransferNotesText } from "@/components/ward-management/referral-notes-text";
 import { originName as movementOriginName } from "@/components/ward-management/ward-movement-origin";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 interface PatientNowScreenProps {
   patientId?: string;
@@ -273,20 +280,31 @@ export function PatientNowScreen({
 
   // Transport booking state & overrides
   const [showTransportForm, setShowTransportForm] = useState(false);
+  // F-57 (A5-18): counts saved bookings, so the heading takes focus in the commit that closes the form,
+  // before the panel's own fallback puts it on Close.
+  const [transportSaved, setTransportSaved] = useState(0);
+  useLayoutEffect(() => {
+    if (transportSaved === 0) return;
+    const heading = document.getElementById("pnTransportHeading");
+    const active = document.activeElement;
+    const lost = active === null || active === document.body || !active.isConnected;
+    if (heading && lost) handFocusTo(heading);
+  }, [transportSaved]);
   const [showArrivalTimeModal, setShowArrivalTimeModal] = useState(false);
   const [showUploadFormsModal, setShowUploadFormsModal] = useState(false);
   const [showClearanceModal, setShowClearanceModal] = useState(false);
   const clearanceTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [clearanceDraft, setClearanceDraft] = useState<ClearanceDraft>("");
   const [clearanceAttested, setClearanceAttested] = useState(false);
+  const zone = useClockZoneLabel();
   // A34: the one transport booking form's answers. Legal status starts from Legal now (audit A4-7),
   // and a status that differs from Legal now asks for a recorded reason.
   const [transportAnswers, setTransportAnswers] = useState<TransportBookingAnswers>(BLANK_TRANSPORT_BOOKING);
   const [transportLegalReason, setTransportLegalReason] = useState<TransportExceptionReason | "">("");
   // Draft ownership follows the edited movement, not just its patient route.
   const resolved = useMemo(() => {
-    return resolvePatientNowRecord(selectedId, patients, movements, referrals, admissions, units, now);
-  }, [selectedId, patients, movements, referrals, admissions, units, now]);
+    return resolvePatientNowRecord(selectedId, patients, movements, referrals, admissions, units, now, zone);
+  }, [selectedId, patients, movements, referrals, admissions, units, now, zone]);
   const gate = useRoleGate({ patientId: resolved?.livePatient?.id });
   const clearanceGate = gate("RECORD_MOVEMENT_MEDICAL_CLEARANCE");
   const readOnlyRecord = clearanceGate.reason === "Exceptional access is read only.";
@@ -347,7 +365,7 @@ export function PatientNowScreen({
   const livePatient = resolved.livePatient as (Patient & { confidential?: boolean }) | undefined;
 
   // Helper values
-  const waitedStr = liveMovement ? dur(Math.max(0, now - liveMovement.openedAt)) : "Not recorded";
+  const waitedStr = liveMovement ? formatSince(liveMovement.openedAt, now) : "Not recorded";
   const urgencyTier = liveMovement?.urgency;
 
   // The gate board mode: an open movement, then an occupied bed, otherwise not active.
@@ -380,7 +398,8 @@ export function PatientNowScreen({
     mode !== "cto" &&
     (!liveMovement.closure || (liveMovement.closure.outcome === "arrived" && stayCurrent)),
   );
-  const isPulled = isLiveBedflow && liveMovement?.pullExpiresAt !== undefined;
+  // D-187 (F-46): a pulled bed with no limit recorded is still pulled, and its banner says so.
+  const isPulled = isLiveBedflow && (liveMovement?.pullExpiresAt !== undefined || liveMovement?.stage === "pulled");
 
   const acceptingUnit = liveMovement?.acceptedUnitId
     ? units.find((u) => u.id === liveMovement.acceptedUnitId)
@@ -432,7 +451,7 @@ export function PatientNowScreen({
       );
       return;
     }
-    const urgencyLabel = urgencyTier ? `Tier ${urgencyTier}` : "urgency not recorded";
+    const urgencyLabel = urgencyTier ? `Tier ${urgencyTier}` : TIER_NOT_RECORDED;
     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
     // Audit 1 (CS-12, Josh 20 Oct): the synthetic line first in every copy.
     const text = `${SYNTHETIC_COPY_LINE}\nWard Flow handover summary — ${displayName} (${urgencyLabel})\nStatus: ${record.verdict.title}\nSince movement opened: ${waitedStr}\nNext action: ${record.next[0]?.w ?? "Review"}`;
@@ -491,7 +510,7 @@ export function PatientNowScreen({
   const displayCadNumber = liveMovement?.transport?.cadNumber;
   const displayEta =
     liveMovement?.transport?.estimatedAt !== undefined
-      ? `${formatInstantWithDay(liveMovement.transport.estimatedAt, now)} AWST`
+      ? `${formatInstantWithDay(liveMovement.transport.estimatedAt, now)} ${zone}`
       : undefined;
   const displayProvider = liveMovement?.transport?.provider ?? "Not recorded";
   const displayLegalStatus = liveMovement?.transport?.transportLegalStatus
@@ -536,7 +555,12 @@ export function PatientNowScreen({
           ...(transportActingUnitId ? { actingUnitId: transportActingUnitId } : {}),
           ...booking,
         }),
-      () => setShowTransportForm(false),
+      () => {
+        // F-57 (A5-18): the form, and the Save pressed, go away while the Transport panel stays open.
+        // Focus goes to the panel's heading, above the booking just saved (`transportHeadingRef`).
+        setTransportSaved((count) => count + 1);
+        setShowTransportForm(false);
+      },
     );
   }
 
@@ -612,7 +636,7 @@ export function PatientNowScreen({
   const formMovement = movementInForce ? liveMovement : stayCurrent ? heroStayMovement : undefined;
   const ctoInForce = activeCommunityTreatmentOrder(livePatient);
   const movementTimeLeft =
-    isLiveBedflow && !formProgression(liveMovement) ? formTimeLeft(liveMovement, now, thresholds) : undefined;
+    isLiveBedflow && !formProgression(liveMovement) ? formTimeLeft(liveMovement, now, thresholds, dayZero) : undefined;
   // Redesign (Josh, 30 Oct 2026): one place per fact. The phone hero no longer repeats the legal
   // figure; Legal now carries the form, its typed end and Form 6A still to record.
   // Audit S-32: the leave sheet names the form in force and says when the person is on an order.
@@ -845,6 +869,36 @@ export function PatientNowScreen({
       openTransportForm();
       setNowSheet("transport");
     },
+    // K37 / F-101 (Josh, 13 Nov 2026): Change beside "Not needed" records that transport is needed,
+    // the same event the ED row's Change sends, so Log booking comes back. Undo on its toast.
+    onTransportNeeded: () => {
+      if (!liveMovement || !gate("RECORD_TRANSPORT_NEED").allowed) return;
+      const movementId = liveMovement.id;
+      runStep(
+        {
+          type: "RECORD_TRANSPORT_NEED",
+          role: routeRole,
+          now,
+          movementId,
+          needed: true,
+          ...(transportActingUnitId ? { actingUnitId: transportActingUnitId } : {}),
+          ...(routeRole === "ed" ? { actingPlaceId: edActingPlaceId(access, liveMovement.originEdId) } : {}),
+        },
+        {
+          success: "Recorded: transport needed",
+          // A ward recorded it as the sending ward, so its Undo names that ward too, or the
+          // engine's "only the ward that made this decision" check refuses it.
+          undo: (at) => ({
+            type: "UNDO_ED_STEP",
+            role: routeRole,
+            now: at,
+            movementId,
+            ...(transportActingUnitId ? { actingUnitId: transportActingUnitId } : {}),
+          }),
+          undone: "Undone. Back as it was.",
+        },
+      );
+    },
     onArrivalTime: () => {
       setShowArrivalTimeModal(true);
     },
@@ -897,7 +951,8 @@ export function PatientNowScreen({
         },
       );
     },
-    roleLimit: (eventType) => gate(eventType).reason,
+    // F-54 (A9-35): `null` for an action this desk can never take, so the status card leaves it out.
+    roleLimit: roleLimitFrom(gate),
     handoverRefusal:
       mode === "held" && liveMovement ? (heldUnitGenderRefusal({ units }, liveMovement, now) ?? undefined) : undefined,
     // Audit A4-9: once every gate is clear the next step is pinned (phone), with Undo on its toast.
@@ -927,7 +982,7 @@ export function PatientNowScreen({
     if (isTransportBooked && liveMovement?.transport)
       contacts.push({
         name: liveMovement.transport.provider,
-        role: displayCadNumber ? `Transport, CAD ${displayCadNumber}` : "Transport",
+        role: displayCadNumber ? `Transport, ${cadNumberLine(displayCadNumber)}` : "Transport",
       });
     if (originName) contacts.push({ name: originName, role: sender });
   } else if ((mode === "ward" || mode === "leave" || mode === "awol" || mode === "ed") && (stayUnit ?? acceptingUnit)) {
@@ -1031,6 +1086,7 @@ export function PatientNowScreen({
     setShowArrivalTimeModal,
     setShowUploadFormsModal,
     uploadedForms,
+    zone,
   });
 
   /* Now tab: one next step; destination and transport open as sheets. */
@@ -1082,7 +1138,9 @@ export function PatientNowScreen({
   // a person recorded as ended has no expiry in force (currentLegalDueAt, A1); a form with a next form
   // to record shows that prompt on the band instead.
   const bandTimeLeft =
-    glanceMovement && !formProgression(glanceMovement) ? formTimeLeft(glanceMovement, now, thresholds) : undefined;
+    glanceMovement && !formProgression(glanceMovement)
+      ? formTimeLeft(glanceMovement, now, thresholds, dayZero)
+      : undefined;
   const glance = (
     <PatientGlance
       mode={mode}
@@ -1533,7 +1591,12 @@ export function PatientNowScreen({
           </PhoneSheet>
           <PhoneSheet
             open={nowSheet === "transport"}
-            onClose={() => setNowSheet(null)}
+            onClose={() => {
+              setNowSheet(null);
+              // F-57 (A5-18): Esc gives focus back to what opened the panel. When a booking has
+              // replaced that control, focus goes to the status card's transport step instead.
+              focusAfterAction(() => statusCardFocusTargets(null));
+            }}
             title="Transport"
             description={isTransportBooked ? `${displayProvider} booked` : "Not booked yet"}
             height="content"

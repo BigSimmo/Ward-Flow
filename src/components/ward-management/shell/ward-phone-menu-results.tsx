@@ -79,6 +79,7 @@ function useMenuSearch(query: string, entries: RailEntry[], findHelp: ReturnType
       limitPerGroup: MENU_RESULTS_FULL,
       plannedAdmissions,
       admissions,
+      dayZero,
     });
     // Preserve engine keyword matches, then use the same destinations as the role menu.
     const views = accessNav(

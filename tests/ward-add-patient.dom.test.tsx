@@ -414,7 +414,7 @@ describe("AddPatientForm — the creation-time duplicate check", () => {
     ).toContain("Hallowin, Marcus");
     // The identifier, because by construction the NAME cannot distinguish these two people.
     expect(notice.textContent).toContain("UM100002");
-    expect(notice.textContent).toContain("1961-11-02");
+    expect(notice.textContent).toContain("02/11/1961");
   });
 
   it("⚠️ keeps warning after the obvious tidy-up — the case that broke in nearPatients", () => {

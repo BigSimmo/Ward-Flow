@@ -66,8 +66,11 @@ function write(next: Record<string, MidlandDecision>): boolean {
   return persisted;
 }
 
-/** Records one decision; false means it is kept for this visit only (storage refused it). */
-export function recordMidlandDecision(id: string, line: string, at = Date.now()): boolean {
+/**
+ * Records one decision; false means it is kept for this visit only (storage refused it). `at` is the
+ * board's moment (`useMidlandBoardMoment`); the device clock stands in only outside a provider.
+ */
+export function recordMidlandDecision(id: string, line: string, at: number | undefined = Date.now()): boolean {
   return write({ ...read(), [id]: { id, line, at } });
 }
 
@@ -116,7 +119,7 @@ export function openReferrals<T extends { id: string }>(all: readonly T[], decid
 const CONTACT_PREFIX = "contact:";
 export type MidlandContact = { about: string; at: number };
 
-export function recordMidlandContact(about: string, at = Date.now()) {
+export function recordMidlandContact(about: string, at: number | undefined = Date.now()) {
   recordMidlandDecision(`${CONTACT_PREFIX}${about}:${at}`, about, at);
 }
 
@@ -135,8 +138,8 @@ function midlandContacts(all: Record<string, MidlandDecision>): MidlandContact[]
  */
 export function todaysMidlandContacts(
   all: Record<string, MidlandDecision>,
-  today: Date = new Date(),
+  today: Date | number = new Date(),
 ): MidlandContact[] {
-  const day = perthIsoDay(today);
+  const day = perthIsoDay(new Date(today));
   return midlandContacts(all).filter((c) => perthIsoDay(new Date(c.at)) === day);
 }

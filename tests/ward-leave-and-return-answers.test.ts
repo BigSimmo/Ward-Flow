@@ -13,6 +13,10 @@ import { outOfAreaLedger } from "@/components/ward-management/ward-referrals";
 import { isValidSharedWardFlowState } from "@/components/ward-management/ward-shared-state-validation";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 
+// A16-04: the app shows only travel bands someone has checked (none yet). This file tests a
+// mechanism that needs bands, so importing this swaps in the tests' own invented table.
+import "./helpers/ward-test-travel-bands";
+
 /**
  * Josh, 27 Oct 2026. #101: the Patient page's "Leave authorised by the treating psychiatrist" tick is
  * saved on the leave. #177: an involuntary return's Form 4C and escort answers are saved on the

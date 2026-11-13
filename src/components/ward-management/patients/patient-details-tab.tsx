@@ -20,6 +20,7 @@ import { legalStatusTextIsInvoluntary } from "../ward-support-notifications";
 import { currentLegalPosition } from "../ward-legal-form-progression";
 import { calendarDateOf } from "../ward-clock";
 import { isEdOriginJourney } from "../ward-ed-presence";
+import { monthIndexOfShort } from "@/components/ward-management/ward-month-names";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { communityTeamById, communityTeamSlug } from "../community/community-derivations";
 import { isOwnStay } from "./patient-now-adapter";
@@ -127,13 +128,11 @@ function addressLine(patient?: Patient): string | undefined {
   return `${address}, ${suburb}`;
 }
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
 /** "6 Aug 2026" as typed in the extras, written DD/MM/YYYY like every other date here. Anything
  *  else (such as "Jan 2026") stays exactly as typed. */
 function typedDate(value: string): string {
-  const match = /^(\d{1,2}) ([A-Z][a-z]{2}) (\d{4})$/u.exec(value.trim());
-  const month = match ? MONTHS.indexOf(match[2]!) : -1;
+  const match = /^(\d{1,2}) ([A-Z][a-z]{2,3}) (\d{4})$/u.exec(value.trim());
+  const month = match ? monthIndexOfShort(match[2]!) : -1;
   if (!match || month < 0) return value;
   return `${match[1]!.padStart(2, "0")}/${String(month + 1).padStart(2, "0")}/${match[3]}`;
 }

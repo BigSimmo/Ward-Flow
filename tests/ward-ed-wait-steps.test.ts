@@ -33,8 +33,9 @@ describe("ED long wait steps (Top 25 item 13)", () => {
   });
 
   it("labels each step in plain words", () => {
-    expect(edWaitStep(long)?.label).toBe("Step 3, over 24 hours");
-    expect(edWaitStep(severe)?.label).toBe("Step 2, over 8 hours");
+    // K27 (F-32): "from", because each step starts at its threshold minute.
+    expect(edWaitStep(long)?.label).toBe("Step 3, from 24 hours");
+    expect(edWaitStep(severe)?.label).toBe("Step 2, from 8 hours");
   });
 
   it("gives each step its signed-off next step (Josh, 9 Nov 2026)", () => {

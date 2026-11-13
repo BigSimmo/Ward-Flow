@@ -27,6 +27,10 @@ import { isOnOrder } from "@/components/ward-management/ward-stay-legal";
 import { outOfAreaLedger } from "@/components/ward-management/ward-referrals";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 
+// A16-04: the app shows only travel bands someone has checked (none yet). This file tests a
+// mechanism that needs bands, so importing this swaps in the tests' own invented table.
+import "./helpers/ward-test-travel-bands";
+
 /**
  * Josh, 27 Oct 2026. #101: the leave sheet's authority tick reaches the leave event. #177: an
  * involuntary return's Form 4C and escort answers reach the saved return, and leaving them blank is
@@ -51,6 +55,8 @@ describe("#101 Start leave carries the authority tick", () => {
     const card = screen.getByTestId("ward-patient-change-card");
     fireEvent.change(within(card).getByLabelText("Day"), { target: { value: "1" } });
     fireEvent.change(within(card).getByLabelText("Expected back time"), { target: { value: "09:30" } });
+    // A9-15 (Josh, 13 Nov 2026): no kind of leave starts chosen; the nurse chooses it.
+    fireEvent.click(within(card).getByRole("button", { name: "Off-ward leave" }));
     return { card, onRecordLeave };
   }
   const tomorrowAt930 = Math.floor(NOW_ANCHOR / MINUTES_PER_DAY) * MINUTES_PER_DAY + MINUTES_PER_DAY + 9 * 60 + 30;
@@ -108,6 +114,7 @@ describe("#101 the Patient page saves the tick on the leave", () => {
     fireEvent.click(within(card).getByTestId("ward-patient-leave-authorised"));
     fireEvent.change(within(card).getByLabelText("Day"), { target: { value: "1" } });
     fireEvent.change(within(card).getByLabelText("Expected back time"), { target: { value: "09:30" } });
+    fireEvent.click(within(card).getByRole("button", { name: "Off-ward leave" }));
     fireEvent.click(within(card).getByRole("button", { name: "Record leave" }));
     expect(screen.getByTestId("probe-authorised")).toHaveTextContent("true");
   });

@@ -30,7 +30,7 @@ export type DowntimeWard = {
   service: string;
   beds: number;
   counts: BedStateCounts;
-  /** Of `counts.ready`: released beds still being made ready (frozen with the pack). */
+  /** Beside `counts.ready`, never inside it: released beds still being made ready (D-179 item 8). */
   pendingPreparation: number;
   /**
    * D-115 (audit 6): each person this ward holds a bed for who is absent without leave, named by the

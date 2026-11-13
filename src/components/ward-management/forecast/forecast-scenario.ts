@@ -3,7 +3,7 @@
 // "Try a scenario" (forecasting build, Josh, 23 Oct 2026, screen 2). The coordinator ticks what
 // might happen and sees tomorrow's likely figure recalculated. A scenario is never saved, never
 // sent and never changes a record: it is arithmetic on the forecast already on screen.
-import type { BedKindId } from "@/components/ward-management/capacity/capacity-derivations";
+import { combinedKindGap, type BedKindId } from "@/components/ward-management/capacity/capacity-derivations";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { bedKindOfBed, type ForecastByKind } from "./forecast-by-kind";
 
@@ -69,9 +69,11 @@ export function applyScenario(
       change;
     return { id: kind.id, before: kind.likely, after };
   });
+  // D-191 item 6: the headline adds each type's shortfall and never nets off a spare type, so
+  // `before` is the forecast's own `total.likely`.
   return {
     kinds,
-    before: kinds.reduce((total, kind) => total + kind.before, 0),
-    after: kinds.reduce((total, kind) => total + kind.after, 0),
+    before: combinedKindGap(kinds.map((kind) => kind.before)),
+    after: combinedKindGap(kinds.map((kind) => kind.after)),
   };
 }

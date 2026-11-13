@@ -48,7 +48,7 @@ describe("Log a delay as a short form in Tools (item 6c)", () => {
     );
     fireEvent.click(screen.getByTestId("ward-tools-toggle-log-delay"));
     const form = await screen.findByTestId("tools-log-delay");
-    const search = within(form).getByRole("searchbox", { name: "Find a person by name or UR number" });
+    const search = within(form).getByRole("searchbox", { name: "Find a person by name or UMRN" });
     // The first person's UR number, as the list shows it.
     const ur = form.querySelector("strong span")!.textContent!;
     fireEvent.change(search, { target: { value: ur } });

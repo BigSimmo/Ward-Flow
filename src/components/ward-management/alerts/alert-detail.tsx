@@ -49,8 +49,9 @@ import {
   shownAgeFrom,
   type AlertSubject,
 } from "./alerts-model";
-import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import { typedClock, typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { currentLegalDueAt } from "@/components/ward-management/ward-legal-form-progression";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { DeclineLadder, WaitTrack, type TrackPoint } from "./alerts-visuals";
 import { AlertArrivedAtWard } from "./alert-arrived-at-ward";
 import { PullNowButton } from "./global-alert-panels";
@@ -121,6 +122,7 @@ export function AlertDetail({
 }) {
   const [releaseReason, setReleaseReason] = useState<ReleasePullReason | "">("");
   const [panelTab, setPanelTab] = useState<PanelTab>("act");
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   // Whether Escalate means anything for THIS alert comes first: a movement's escalation record belongs
   // to its bed search, so an unrelated alert on the same movement must not claim it was escalated.
   const escalationApplies = escalationAppliesTo(item, movement, units, now);
@@ -210,7 +212,7 @@ export function AlertDetail({
   }
   // 1.1 (K1): the typed end still in force, from the one current legal position.
   const formDueAt = movement ? currentLegalDueAt(movement) : undefined;
-  if (formDueAt !== undefined) facts.push(["Form due", formatInstantWithDay(formDueAt, now)]);
+  if (formDueAt !== undefined) facts.push(["Form due", typedClock(formDueAt, now, dayZero)]);
   // An alert nobody owns (the transport officer's) has no Owner line, rather than a blank one.
   if (item.owner) facts.push(["Owner", item.owner]);
 
@@ -287,7 +289,7 @@ export function AlertDetail({
           <span className={styles.eyebrow}>{kind === "hold" ? "Time in ED" : "Recorded times"}</span>
           <span className={`${styles.quiet} ${styles.mono}`}>
             {legalEnded !== undefined
-              ? typedTimeLine(legalEnded, now)
+              ? typedTimeLine(legalEnded, now, dayZero)
               : minutesText(Math.max(0, now - Math.min(...track.map((point) => point.at))))}
           </span>
         </div>
@@ -399,7 +401,7 @@ export function AlertDetail({
         open <span className={styles.mono}>{minutesText(Math.max(0, now - openedShown))}</span>
       </span>
     ) : legalEnded !== undefined ? (
-      <span className={styles.quiet}>{typedTimeLine(legalEnded, now)}</span>
+      <span className={styles.quiet}>{typedTimeLine(legalEnded, now, dayZero)}</span>
     ) : null;
 
   const actPanel = (

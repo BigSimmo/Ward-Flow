@@ -23,6 +23,7 @@ import { renderEdBoardRow } from "./ed-screen-board-row";
 import { TierBarsKey } from "./ed-handover-cells";
 import handover from "./ed-handover.module.css";
 import { EdCrewsWaitingLine } from "@/components/ward-management/ed-crews-waiting-line";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 const COLUMNS = ["Patient", "In ED", "Bay", "Presentation", "Form", "Checks", "Referral", "Next"] as const;
 
@@ -35,6 +36,7 @@ type Band = {
 };
 
 export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
+  const zone = useClockZoneLabel();
   const {
     needsRailSlides,
     needsYouItems,
@@ -110,7 +112,7 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
         at: (instant) => formatSheetMoment(instant, ctx.dayZero),
       },
       {
-        asAt: formatSheetMoment(now, ctx.dayZero, { includeYearAndZone: true }),
+        asAt: formatSheetMoment(now, ctx.dayZero, { includeYearAndZone: true, zone }),
         scope: `${ctx.department.name} psychiatry list; everyone on the table, regardless of search or highlights`,
       },
     );

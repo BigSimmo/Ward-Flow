@@ -11,6 +11,7 @@ import {
   isClockBreached,
   splitDuration,
 } from "@/components/ward-management/ward-clock";
+import { targetHoursText } from "@/components/ward-management/ward-target-hours";
 import { typedClock, typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import {
   currentLegalPosition,
@@ -113,7 +114,7 @@ export function renderEdBoardTableRow(
   const formExpiryFullWords = legal.ended
     ? FORM_RECORDED_ENDED
     : legal.dueAt !== undefined
-      ? `${typedTimePhrase(legal.dueAt, now)} (limits not legally checked)`
+      ? `${typedTimePhrase(legal.dueAt, now, dayZero)} (limits not legally checked)`
       : undefined;
   const clearedWords =
     medicalClearance === undefined ? "Pending" : medicalClearance.cleared ? "Cleared" : "Not cleared";
@@ -331,16 +332,16 @@ export function renderEdBoardTableRow(
           className={overTarget ? handover.overTarget : "sr-only"}
           data-testid={`ward-ed-access-target-${movement.id}`}
           data-state={overTarget ? "over" : "under"}
-          title={`Access target ${splitDuration(accessTarget)}`}
+          title={`Access target ${targetHoursText(accessTarget)}`}
         >
           {overTarget ? (
             <span aria-hidden="true">{minutesInDepartment > accessTarget ? "Over target" : "At target"}</span>
           ) : null}
           <span className="sr-only">
-            Access target {splitDuration(accessTarget)}.
+            Access target {targetHoursText(accessTarget)}.
             {overTarget
               ? minutesInDepartment > accessTarget
-                ? ` ${splitDuration(minutesInDepartment - accessTarget)} over target (${splitDuration(accessTarget)})`
+                ? ` ${splitDuration(minutesInDepartment - accessTarget)} over target (${targetHoursText(accessTarget)})`
                 : " At the access target."
               : ""}
           </span>
@@ -386,7 +387,8 @@ export function renderEdBoardTableRow(
                   {formExpiryWarningText !== undefined ? (
                     <StatusGlyph tone={formExpiryPassed ? "danger" : "warning"} size={8} />
                   ) : null}{" "}
-                  {isClockBreached(legal.dueAt, now) ? "ended" : "ends"} {typedClock(legal.dueAt, now)}, not checked
+                  {isClockBreached(legal.dueAt, now) ? "ended" : "ends"} {typedClock(legal.dueAt, now, dayZero)}, not
+                  checked
                 </span>
               ) : null}
             </FormCell>

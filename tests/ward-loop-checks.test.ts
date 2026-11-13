@@ -24,6 +24,14 @@ const send = (state: WardFlowState, event: EventInput) =>
   wardFlowReducer(state, { now: NOW, ...event } as WardFlowEvent);
 const movementOf = (state: WardFlowState, id: string) => state.movements.find((movement) => movement.id === id)!;
 const unitOf = (state: WardFlowState, id: string) => state.units.find((unit) => unit.id === id)!;
+/**
+ * The demo's closed ward. A16-17 (D-175 item 1, "no open referral to a closed ward"): the overlay now
+ * closes no ward an open request still asks, so Graylands Older Adult (asked by WF-013) is passed over.
+ * It was "gry-older-adult" before 13 Nov 2026, then "rph-older-adult", which also carries the seeded
+ * staff request; no ward carries two adverse examples, so it is now SCGH Older Adult, where an
+ * accepted move still points.
+ */
+const CLOSED_WARD = "scgh-older-adult";
 /** What a save holds: a JSON copy, as the restore check reads it. */
 const stored = (state: WardFlowState) => JSON.parse(JSON.stringify(state)) as WardFlowState;
 
@@ -33,12 +41,23 @@ describe("demo seed", () => {
     expect(movementOf(state, "WF-008").cancellationChecks).toHaveLength(2);
     expect(outstandingAcceptanceConditions(movementOf(state, "WF-003"))).toHaveLength(1);
     expect(currentAcceptanceConditions(movementOf(state, "WF-023"))[0]?.kind).toBe("bed_after_time");
-    const closed = unitOf(state, "gry-older-adult");
+    const closed = unitOf(state, CLOSED_WARD);
     expect(closed.isClosed).toBe(true);
     const review = currentRestrictionReview(closed, "admissions_closure")!;
     expect(restrictionReviewOverdue(review, NOW)).toBe(true);
     expect(currentRestrictionReview(unitOf(state, "gry-adult-secure"), "intake_constraints")).toBeDefined();
-    expect(closureTransitionItems(closed, state.movements, state.referrals, state.plannedAdmissions).length).toBe(1);
+    expect(closureTransitionItems(closed, state.movements, state.referrals, state.plannedAdmissions).length).toBe(2);
+    // A16-17: the preferred ward stays open while WF-013 still asks it.
+    expect(unitOf(state, "gry-older-adult").isClosed ?? false).toBe(false);
+    expect(movementOf(state, "WF-013").referredUnitIds).toContain("gry-older-adult");
+    // No double adverse example: the staff request's ward stays open, and only one ward is closed.
+    const staffWard = state.staffRequests?.[0]?.unitId;
+    expect(staffWard).toBe("rph-older-adult");
+    expect(unitOf(state, staffWard!).isClosed ?? false).toBe(false);
+    expect(state.units.filter((unit) => unit.isClosed).map((unit) => unit.id)).toEqual([CLOSED_WARD]);
+    expect(closed.intakeConstraints ?? []).toEqual([]);
+    expect(closed.closedBeds ?? []).toEqual([]);
+    expect(closed.restrictivePractice?.incidents ?? []).toEqual([]);
     expect(isValidStoredWardFlowState(stored(state))).toBe(true);
     // A mark outside the fixed lists is refused at restore.
     const bad = stored(state);
@@ -194,13 +213,13 @@ describe("RECORD_RESTRICTION_REVIEW", () => {
     const next = send(state, {
       type: "RECORD_RESTRICTION_REVIEW",
       role: "coordinator",
-      unitId: "gry-older-adult",
+      unitId: CLOSED_WARD,
       restriction: "admissions_closure",
       reviewer: "nurse_unit_manager",
       expectedAt: NOW + 8 * 60,
     });
     expect(next.rejections).toEqual([]);
-    const unit = unitOf(next, "gry-older-adult");
+    const unit = unitOf(next, CLOSED_WARD);
     expect(unit.isClosed).toBe(true);
     const review = currentRestrictionReview(unit, "admissions_closure")!;
     expect(review.reviewer).toBe("nurse_unit_manager");
@@ -235,22 +254,22 @@ describe("RECORD_RESTRICTION_REVIEW", () => {
 
   it("drops a closure's review when the ward is reopened and closed again", () => {
     const state = seedWardFlowState();
-    const reopened = send(state, { type: "REOPEN_WARD_TO_ADMISSIONS", role: "coordinator", unitId: "gry-older-adult" });
+    const reopened = send(state, { type: "REOPEN_WARD_TO_ADMISSIONS", role: "coordinator", unitId: CLOSED_WARD });
     const closedAgain = send(reopened, {
       type: "CLOSE_WARD_TO_ADMISSIONS",
       role: "coordinator",
-      unitId: "gry-older-adult",
+      unitId: CLOSED_WARD,
       reason: "staffing",
       now: NOW + 5,
     });
-    expect(currentRestrictionReview(unitOf(closedAgain, "gry-older-adult"), "admissions_closure")).toBeUndefined();
+    expect(currentRestrictionReview(unitOf(closedAgain, CLOSED_WARD), "admissions_closure")).toBeUndefined();
   });
 });
 
 describe("MARK_CLOSURE_TRANSITION_ITEM", () => {
   it("marks an item dealt with and moves, reassigns or releases nothing", () => {
     const state = seedWardFlowState();
-    const unit = unitOf(state, "gry-older-adult");
+    const unit = unitOf(state, CLOSED_WARD);
     const [item] = closureTransitionItems(unit, state.movements, state.referrals, state.plannedAdmissions);
     expect(item).toBeDefined();
     const next = send(state, {
@@ -293,7 +312,7 @@ describe("MARK_CLOSURE_TRANSITION_ITEM", () => {
       send(state, {
         type: "MARK_CLOSURE_TRANSITION_ITEM",
         role: "coordinator",
-        unitId: "gry-older-adult",
+        unitId: CLOSED_WARD,
         item: "accepted",
         movementId: "WF-003",
       }).rejections,
@@ -303,7 +322,7 @@ describe("MARK_CLOSURE_TRANSITION_ITEM", () => {
         type: "MARK_CLOSURE_TRANSITION_ITEM",
         role: "ward",
         actingUnitId: "rph-adult-secure",
-        unitId: "gry-older-adult",
+        unitId: CLOSED_WARD,
         item: "bed_request",
         movementId: "WF-003",
       }).rejections,

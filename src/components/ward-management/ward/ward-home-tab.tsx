@@ -21,12 +21,13 @@ import type { WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import { withdrawalReasonLabels } from "@/components/ward-management/ward-change-reasons";
 import { formatInstantWithDay, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import { currentShiftStartInstant, releasesDueByShiftEnd } from "@/components/ward-management/ward-board-time-features";
-import { bedHold } from "@/components/ward-management/ward-bed-hold";
+import { bedHold, pullHoldText, pulledWithoutLimitLabel } from "@/components/ward-management/ward-bed-hold";
 import { heldUntilExtendedLabel } from "@/components/ward-management/ward-bed-hold-extension";
 import { deliveredAwaitingWard, movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
 import type { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
+import { HELD_UP_BY_TOMORROW_LABEL, heldUpDueByTomorrow } from "@/components/ward-management/ward-held-up";
 import {
-  BED_RELEASES_HELD_UP_ANY_DATE_LABEL,
+  BED_RELEASE_BLOCKED_FIGURE_LABEL,
   deriveAfternoonDischarges,
   restrictionNotice,
   type OverrideEntry,
@@ -75,6 +76,7 @@ import {
   referralAnswerBlocked,
   WARD_ACTION_REJECTION_LABELS,
   wardDischargesDueToday,
+  wardFlowFoot,
   wardFlowReleaseGroup,
   type WardFlowTab,
   type WardShiftView,
@@ -536,7 +538,8 @@ export function WardHomeTab({
       shownNote,
       tileName,
       // Q7 (4 Nov 2026): the Ready chip and hero pill count as the hero and board do (`boardReadyCounts`).
-      readyNow: bed.status === "ready" && bed.heldFor === undefined,
+      // D-179 item 8: a bed still being made ready is not Ready.
+      readyNow: bed.status === "ready" && bed.heldFor === undefined && bed.preparing !== true,
       leaving,
       look,
       readyByShiftEnd,
@@ -587,7 +590,9 @@ export function WardHomeTab({
   const highlighting = bedFilter !== "all" || query !== "";
   const isLit = (row: (typeof bedRows)[number]) => matchesFilter(row) && matchesQuery(row);
   const litCount = bedRows.filter(isLit).length;
-  const makingReady = bedRows.filter((row) => row.readyNow && row.bed.preparing === true).length;
+  const makingReady = bedRows.filter(
+    (row) => row.bed.status === "ready" && row.bed.heldFor === undefined && row.bed.preparing === true,
+  ).length;
   const shownBeds = bedRows;
   // One partition, the ruled four bed states, so this key, the hero and the bed figures agree.
   const bedTally = {
@@ -673,7 +678,7 @@ export function WardHomeTab({
             ? "Late"
             : hold
               ? (heldUntilExtendedLabel(movement, now) ?? hold.label)
-              : movementStatusLabel(movement)),
+              : (pulledWithoutLimitLabel(movement) ?? movementStatusLabel(movement))),
       tone: hold?.state === "lapsed" ? "danger" : late ? "warning" : hold?.state === "at-risk" ? "warning" : "info",
       action: canPull ? "Pull the bed" : "Open",
       placement: canPull,
@@ -734,7 +739,8 @@ export function WardHomeTab({
   // This shift: one to do list, sorted into act now, later today and done. Every row is a recorded
   // fact or one of the ward's own reminder ticks, which are listed but never counted as to do.
   const confirmedOut = pendingBedReleases.filter((release) => release.state === "confirmed").length;
-  const heldUp = pendingBedReleases.filter((release) => release.blocker !== null);
+  // D-191 item 5 (Josh, 13 Nov 2026): held up is due by tomorrow, as everywhere but Discharges.
+  const heldUp = heldUpDueByTomorrow(pendingBedReleases, now);
   type TodoRow = {
     key: string;
     title: string;
@@ -786,7 +792,7 @@ export function WardHomeTab({
   if (heldUp.length > 0) {
     actNow.push({
       key: "held",
-      title: BED_RELEASES_HELD_UP_ANY_DATE_LABEL,
+      title: BED_RELEASE_BLOCKED_FIGURE_LABEL,
       detail: heldUp
         .map((release) => `${bedByAdmission(release.admissionId)?.bedLabel ?? "A bed"} ${release.blocker}`)
         .join(", "),
@@ -1455,7 +1461,7 @@ export function WardHomeTab({
             ) : (
               (
                 [
-                  ["held", "Held up", "danger", heldRows],
+                  ["held", HELD_UP_BY_TOMORROW_LABEL, "danger", heldRows],
                   ["past", "Past date", "warning", pastRows],
                   ["today", "Today and tomorrow", "info", todayRows],
                   ["later", "Later", "neutral", laterRows],
@@ -1501,7 +1507,8 @@ export function WardHomeTab({
             </>
           ) : flowTab === "admissions" ? (
             <>
-              <span>{expectedRows.length} expected</span>
+              {/* F-105 (D-191 item 5): the tab's count is every open admission at any date, said here. */}
+              <span>{wardFlowFoot.admissions(expectedRows.length, leaveRows.length)}</span>
               {onOpenArrivals ? (
                 <button type="button" className={styles.keyLink} onClick={onOpenArrivals}>
                   All arrivals
@@ -1510,9 +1517,7 @@ export function WardHomeTab({
             </>
           ) : (
             <>
-              <span>
-                {confirmedOut} confirmed · {heldRows.length} held up
-              </span>
+              <span>{wardFlowFoot.discharges(outRows.length, confirmedOut, heldRows.length)}</span>
               <button
                 type="button"
                 className={styles.keyLink}
@@ -1817,7 +1822,9 @@ export function WardHomeTab({
                 <b>{litCount}</b> of <b>{bedRows.length}</b> beds highlighted.
               </span>
               {litCount === 0 ? <span>No bed matches this choice.</span> : null}
-              {bedFilter === "free" && makingReady > 0 ? <span>{makingReady} still being made ready.</span> : null}
+              {bedFilter === "free" && makingReady > 0 ? (
+                <span>{makingReady} more being made ready, not counted as ready.</span>
+              ) : null}
               {bedFilter === "all" ? null : (
                 <button
                   type="button"
@@ -2073,10 +2080,10 @@ export function WardHomeTab({
             now={now}
             extended={acceptExtended}
             holdChoices={[
-              { extended: false, label: `${durMinutes(configuration.pullHoldMinutes)} standard` },
+              { extended: false, label: `${pullHoldText(configuration.pullHoldMinutes)} standard` },
               {
                 extended: true,
-                label: `${durMinutes(configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES)} with extra travel`,
+                label: `${pullHoldText(configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES)} with extra travel`,
               },
             ]}
             dialogRef={acceptDialogRef}

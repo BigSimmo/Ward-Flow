@@ -18,6 +18,7 @@ import {
   suburbUnknownLabels,
 } from "@/components/ward-management/ward-model";
 import { EXPECT_RECONSIDER_AFTER_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { PLACE_NOT_RECORDED, placeDisplayName } from "@/components/ward-management/ward-place-names";
 import type { CommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
 import type {
   CommunityDeclineReason,
@@ -267,7 +268,11 @@ export function referralDestinationLabels(referral: Referral): string[] {
  *  destination cannot be added without this failing to compile. */
 export function referralDestinationLabel(destination: ReferralDestination): string {
   if (destination.kind === "psychiatric_ward" && destination.unitId) {
-    return `Ward · ${destination.unitId}`;
+    // F-41 (A9-32): the ward's name, never its internal id ("Ward · rph-older-adult"). The id shows
+    // only for a ward the network does not list. Name only, through the one place-name reader
+    // (single-source guard).
+    const name = placeDisplayName(destination.unitId);
+    return name === PLACE_NOT_RECORDED ? `Ward · ${destination.unitId}` : name;
   }
   // ⚠️ AN ED DESTINATION CARRIES ITS PURPOSE INTO EVERY LABEL, ON THE OWNER'S RULING OF
   // 2026-09-03: "it is not a bed request when a patient is referred to the ED from community or

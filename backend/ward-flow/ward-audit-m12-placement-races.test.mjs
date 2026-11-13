@@ -80,7 +80,10 @@ const SCENARIOS = [
     bed: "scgh-adult-open bed 1",
   },
   {
-    screen: "front door referral accepted into a named bed: two referrals, one bed",
+    // The second contender was the worked example RF-RD06. Worked examples are opt-in since PR C
+    // (A16-14, D-197 item 14), so the shared seed has no second referral for this bed; the ward
+    // moving one of its own stays into the same bed contests it instead.
+    screen: "front door referral accepted into a named bed while the ward moves a stay into it",
     first: {
       type: "ACCEPT_REFERRAL",
       role: C,
@@ -89,14 +92,7 @@ const SCENARIOS = [
       unitId: "scgh-adult-open",
       bedNumber: 1,
     },
-    second: {
-      type: "ACCEPT_REFERRAL",
-      role: C,
-      referralId: "RF-RD06",
-      destinationKind: "psychiatric_ward",
-      unitId: "scgh-adult-open",
-      bedNumber: 1,
-    },
+    second: { type: "PLACE_IN_BED", role: C, admissionId: "AD-SCGA-01", bedNumber: 1 },
     bed: "scgh-adult-open bed 1",
   },
   {

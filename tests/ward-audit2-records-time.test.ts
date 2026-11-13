@@ -23,7 +23,7 @@ function send(state: WardFlowState, now: number, event: Record<string, unknown>)
 
 describe("E-11: making a vacated bed ready keeps the departure time", () => {
   it("leaves a discharged release's confirmedAt alone", () => {
-    let state = seedWardFlowState();
+    let state = seedWardFlowState("standard", { workedExamples: true });
     const stay = state.admissions.find(
       (admission) =>
         admission.state === "occupied" && !state.bedReleases.some((release) => release.admissionId === admission.id),
@@ -58,7 +58,7 @@ describe("E-11: making a vacated bed ready keeps the departure time", () => {
 
 describe("E-12: a withdrawn referral reads as withdrawn", () => {
   it("is withdrawn once the referrer withdraws it, and not before", () => {
-    const seeded = seedWardFlowState();
+    const seeded = seedWardFlowState("standard", { workedExamples: true });
     const referral = seeded.referrals.find((candidate) => candidate.id === "RF-RD06")!;
     expect(referralWithdrawn(referral)).toBe(false);
     const step = send(seeded, NOW_ANCHOR, {
@@ -74,7 +74,7 @@ describe("E-12: a withdrawn referral reads as withdrawn", () => {
 
 describe("E-13: arrival details need an accepting ward and keep the hold timer", () => {
   it("refuses arrival details before any ward accepts", () => {
-    const seeded = seedWardFlowState();
+    const seeded = seedWardFlowState("standard", { workedExamples: true });
     const unaccepted = seeded.movements.find((movement) => !movement.closure && movement.acceptedUnitId === undefined)!;
     const step = send(seeded, NOW_ANCHOR, {
       type: "SET_ARRIVAL_DETAILS",
@@ -88,7 +88,7 @@ describe("E-13: arrival details need an accepting ward and keep the hold timer",
   });
 
   it("keeps pullExpiresAt when arrival details are recorded for a held bed", () => {
-    const seeded = seedWardFlowState();
+    const seeded = seedWardFlowState("standard", { workedExamples: true });
     const held = seeded.movements.find(
       (movement) => !movement.closure && movement.stage === "pulled" && movement.pullExpiresAt !== undefined,
     )!;
@@ -106,7 +106,7 @@ describe("E-13: arrival details need an accepting ward and keep the hold timer",
 
 describe("E-15 and E-16: legal form records keep their history", () => {
   const start = () => {
-    const seeded = seedWardFlowState();
+    const seeded = seedWardFlowState("standard", { workedExamples: true });
     const movement = seeded.movements.find((candidate) => !candidate.closure)!;
     const fiveA = send(seeded, NOW_ANCHOR, {
       type: "RECORD_LEGAL_FORM_WRITTEN",

@@ -19,6 +19,7 @@ import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-
 import { Button, Checkbox, Dialog, Radio } from "@/components/wf";
 
 import styles from "./pop-clearance.module.css";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 /** The sample record the patient mock-up shows (`patient/patient-page.tsx`). */
 const SAMPLE_ADDRESS = "196zcp24w5t0";
@@ -98,10 +99,11 @@ export function PopClearance({ page }: { page: ReactNode }) {
   const [showClearanceModal, setShowClearanceModal] = useState(true);
   const [clearanceDraft, setClearanceDraft] = useState<"" | "cleared" | "not-cleared">("");
   const [clearanceAttested, setClearanceAttested] = useState(false);
+  const zone = useClockZoneLabel();
 
   const resolved = useMemo(
-    () => resolvePatientNowRecord(selectedId, patients, movements, referrals, admissions, units, now),
-    [selectedId, patients, movements, referrals, admissions, units, now],
+    () => resolvePatientNowRecord(selectedId, patients, movements, referrals, admissions, units, now, zone),
+    [selectedId, patients, movements, referrals, admissions, units, now, zone],
   );
   if (!resolved) return <>{page}</>;
   const liveMovement = resolved.liveMovement ?? movements.find((m) => m.id === selectedId);

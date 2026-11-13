@@ -96,7 +96,8 @@ describe("home team heads-up (D-133)", () => {
   });
 
   it("shows the seeded synthetic example on the Midland team's page", () => {
-    const state = seedWardFlowState();
+    // A16-14: WF-RD03 is a legal-form worked example, opt-in since 13 Nov 2026.
+    const state = seedWardFlowState("standard", { workedExamples: true });
     const items = homeTeamHeadsUps(
       state.movements,
       MIDLAND,

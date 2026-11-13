@@ -21,6 +21,7 @@ import {
 } from "@/components/ward-management/ward-scenarios";
 
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
+import { resetWardDemoBrowserState } from "@/components/ward-management/ward-browser-data";
 
 import styles from "./ward-demo-reset.module.css";
 
@@ -32,6 +33,14 @@ import styles from "./ward-demo-reset.module.css";
 export function demoDataReach(shared: boolean): string {
   return shared ? "for everyone in this workspace" : "in this browser only. Other devices are not changed";
 }
+
+/**
+ * F-34: what Reset demo and a scenario load do to the demo clock today. They take off any hours
+ * added in Tools but never set the clock back to its start time: it keeps running in real time.
+ * Whether Reset should go back to the start time instead is Josh's to rule (Q3); this only says what
+ * happens now, as DEMO-SCRIPT.md's "About the clock" does.
+ */
+export const RESET_KEEPS_CLOCK = "The demo clock keeps running: this does not set it back to its start time.";
 
 /**
  * THE ONE TAP DEMO RESET (Josh, 15 Oct 2026, item 10): quiet day, winter surge, ED crisis.
@@ -123,6 +132,8 @@ export function WardDemoReset({
       if (outcome?.isCurrent?.() === false) return;
       const loaded =
         outcome?.status === "accepted" && (outcome.generation === undefined || outcome.generation !== fromGeneration);
+      // F-65: a demo reset also clears this browser's demo-day leftovers and the demo desk.
+      if (loaded) resetWardDemoBrowserState({ desk: shared?.enabled !== true });
       const text = loaded ? `${scenarioLabels[next]} loaded. Synthetic demo data only.` : notConfirmed;
       setMessage(text);
       announceToWardShell(text);
@@ -189,7 +200,7 @@ export function WardDemoReset({
         >
           <p>
             Load {scenarioLabels[pending]}? This replaces the demo data {demoDataReach(shared?.enabled === true)}. There
-            is no undo.
+            is no undo. {RESET_KEEPS_CLOCK}
           </p>
           <Button variant="pri" onClick={() => load(pending)} data-testid="ward-demo-reset-confirm-load">
             Load {scenarioLabels[pending]}

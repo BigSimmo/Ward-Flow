@@ -19,6 +19,8 @@ import { describe, expect, it } from "vitest";
 
 import { transportNeedState } from "../src/components/ward-management/ward-derivations";
 import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
+// A16-14 (13 Nov 2026): the legal-form worked examples are opt-in; this file pins the seed with
+// them on, as it was written against.
 import type { Movement } from "../src/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
@@ -26,7 +28,9 @@ const NOW = NOW_ANCHOR;
 
 /** An open movement from the seed — the reducer refuses a closed one. */
 function openMovement(): Movement {
-  const movement = seedWardFlowState().movements.find((candidate) => candidate.closure === undefined);
+  const movement = seedWardFlowState("standard", { workedExamples: true }).movements.find(
+    (candidate) => candidate.closure === undefined,
+  );
   if (movement === undefined) throw new Error("the seed holds no open movement");
   return movement;
 }
@@ -50,7 +54,9 @@ describe("transportNeedState names three states and never collapses two of them"
     // A booked job proves need; its absence proves nothing, which is the whole gap this field
     // closes. A movement carrying a job and no recorded answer must still read `not_recorded` —
     // honest, and visibly so — rather than being upgraded by an inference nobody made.
-    const withJob = seedWardFlowState().movements.find((movement) => movement.transport !== undefined);
+    const withJob = seedWardFlowState("standard", { workedExamples: true }).movements.find(
+      (movement) => movement.transport !== undefined,
+    );
     expect(withJob, "the seed holds no movement with a transport job, so this test proves nothing").toBeDefined();
     expect(withJob!.transportNeed).toBeUndefined();
     expect(transportNeedState(withJob!)).toBe("not_recorded");
@@ -59,7 +65,7 @@ describe("transportNeedState names three states and never collapses two of them"
 
 describe("the seed records no transport need at all, which the ruling requires", () => {
   it("leaves every one of the fifty movements not_recorded", () => {
-    const seeded = seedWardFlowState();
+    const seeded = seedWardFlowState("standard", { workedExamples: true });
     // 50 → 61: the 17 Sept sample-data addition, WF-021..WF-031. None of the eleven set
     // transportNeed (a different field from the transport job several of them do carry), so all
     // still read not_recorded below.
@@ -80,7 +86,7 @@ describe("the seed records no transport need at all, which the ruling requires",
 
 describe("RECORD_TRANSPORT_NEED is the producer, so the field is not one only a fixture can write", () => {
   it("records a yes and a no, each with the instant it was answered", () => {
-    const seeded = seedWardFlowState();
+    const seeded = seedWardFlowState("standard", { workedExamples: true });
     const movement = openMovement();
 
     const needed = wardFlowReducer(seeded, {
@@ -114,7 +120,7 @@ describe("RECORD_TRANSPORT_NEED is the producer, so the field is not one only a 
     // A patient who could walk at 09:00 may need an escort by 11:00. Refusing the correction would
     // leave the board asserting something the sending team no longer believes — the same reasoning
     // `RECORD_MEDICAL_CLEARANCE` is written with, and deliberately unlike `RECORD_EXAMINATION`.
-    const first = wardFlowReducer(seedWardFlowState(), {
+    const first = wardFlowReducer(seedWardFlowState("standard", { workedExamples: true }), {
       type: "RECORD_TRANSPORT_NEED",
       role: "ed",
       now: NOW,
@@ -136,7 +142,7 @@ describe("RECORD_TRANSPORT_NEED is the producer, so the field is not one only a 
   });
 
   it("refuses an unknown movement id rather than defaulting to one", () => {
-    const seeded = seedWardFlowState();
+    const seeded = seedWardFlowState("standard", { workedExamples: true });
     const after = wardFlowReducer(seeded, {
       type: "RECORD_TRANSPORT_NEED",
       role: "ed",
@@ -152,7 +158,7 @@ describe("RECORD_TRANSPORT_NEED is the producer, so the field is not one only a 
   });
 
   it("refuses a closed movement", () => {
-    const seeded = seedWardFlowState();
+    const seeded = seedWardFlowState("standard", { workedExamples: true });
     const closed = seeded.movements.find((movement) => movement.closure !== undefined);
     expect(closed, "the seed holds no closed movement, so this test proves nothing").toBeDefined();
     const after = wardFlowReducer(seeded, {
@@ -173,7 +179,7 @@ describe("RECORD_TRANSPORT_NEED is the producer, so the field is not one only a 
     // know whether this patient can travel. Whether transport is needed at all is that same
     // knowledge one step earlier. The three accepted roles are the control — a role gate that
     // refused everybody would pass the refusal half of this test on its own.
-    const seeded = seedWardFlowState();
+    const seeded = seedWardFlowState("standard", { workedExamples: true });
     const refused = wardFlowReducer(seeded, {
       type: "RECORD_TRANSPORT_NEED",
       role: "officer",
@@ -201,7 +207,7 @@ describe("RECORD_TRANSPORT_NEED is the producer, so the field is not one only a 
   it("refuses an unnamed ward's transport need when the patient did not start on a ward", () => {
     // PR #508 review: an unnamed ward desk must not skip the E-20 rule. With a sending ward the
     // signed-in scope binds it instead (tests/ward-audit-command-permissions.test.ts).
-    const seeded = seedWardFlowState();
+    const seeded = seedWardFlowState("standard", { workedExamples: true });
     const after = wardFlowReducer(seeded, {
       type: "RECORD_TRANSPORT_NEED",
       role: "ward",

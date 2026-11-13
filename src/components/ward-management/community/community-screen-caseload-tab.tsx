@@ -15,10 +15,12 @@ import styles from "./community.module.css";
 import { DEMO_COMMUNITY_CASELOAD } from "./community-demo-cohort";
 import { caseloadStatutoryFormCode, caseloadRecordedExpiryLabel } from "./community-screen-helpers";
 import type { CommunityScreenView } from "./community-screen";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
 /** Tab 4: the caseload and recorded community treatment orders. */
 export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView }) {
   const baseId = useId();
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   const {
     now,
     team,
@@ -258,7 +260,7 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                   visibleCaseload.map((row) => {
                     const formCode = caseloadStatutoryFormCode(row);
                     const formLabel = formCode ? legalFormName({ code: formCode }) : "No form recorded";
-                    const expiryLabel = caseloadRecordedExpiryLabel(row, now);
+                    const expiryLabel = caseloadRecordedExpiryLabel(row, now, dayZero);
                     const formTone = formCode === "5A" || formCode === "5B" ? "danger" : formCode ? "warn" : "neutral";
                     return (
                       <tr key={row.key} data-testid={`ward-community-caseload-${row.referralId}`}>

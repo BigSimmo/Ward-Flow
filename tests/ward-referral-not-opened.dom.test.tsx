@@ -118,8 +118,10 @@ describe("Not opened yet", () => {
 });
 
 describe("Not opened yet in the demo seed (D-141, Josh 11 Nov 2026)", () => {
-  it("tags RF-RD06, sent to the SCGH Mental Health Unit and not opened, without any set-up", () => {
-    const tagged = seedWardFlowState().referrals.flatMap((referral) => {
+  it("tags RF-RD06, sent to the SCGH Mental Health Unit and not opened, once the worked examples are on", () => {
+    // A16-14 (Josh, 13 Nov 2026): RF-RD06 is a legal-form worked example, off by default and
+    // switched on by the presenter, so the tag shows once they are on.
+    const tagged = seedWardFlowState("standard", { workedExamples: true }).referrals.flatMap((referral) => {
       const unitIds = referralNotOpenedUnitIds(referral, NOW_ANCHOR);
       return unitIds.length > 0 ? [[referral.id, unitIds]] : [];
     });

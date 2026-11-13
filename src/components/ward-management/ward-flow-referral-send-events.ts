@@ -4,6 +4,7 @@ import { type AuditDecision } from "./ward-audit";
 import { uniqueRecord } from "./ward-discharge-records";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import { communityTeamOptions } from "@/components/ward-management/referrals/referral-destination-options";
+import { startsAcceptedJourneyAtEd } from "@/components/ward-management/referrals/accepted-awaiting-pull";
 import {
   GENDER_PLACEMENT_REASONS,
   GENDER_PLACEMENT_REFUSAL,
@@ -91,6 +92,10 @@ export function reduceReferralSendEvent(
   } = helpers;
   switch (event.type) {
     case "RAISE_REFERRAL": {
+      // D-191: a pull form change is kept on the pull itself, so it comes only with the pull
+      // (`raiseAndPullBed` takes it off the journey half before this case runs).
+      if (event.changedOnPull !== undefined)
+        return reject(state, event, "A change on the pull form is recorded only when the bed is pulled");
       if (!isObservation(event.draft.observation))
         return reject(state, event, "RAISE_REFERRAL observation must be a recorded level with a valid interval.");
       if (event.draft.atsCategory !== undefined && ![1, 2, 3, 4, 5].includes(event.draft.atsCategory))
@@ -167,8 +172,9 @@ export function reduceReferralSendEvent(
           if (
             (event.role !== "ward" && event.role !== "coordinator") ||
             (event.role === "ward" && event.actingUnitId !== event.acceptedUnitId) ||
+            // A9-13: any referral recorded at this department, not only an ED referral, starts here.
             (department
-              ? referral.source !== "ed_medical" || department.siteCode !== referral.originSiteCode
+              ? !startsAcceptedJourneyAtEd(referral.source) || department.siteCode !== referral.originSiteCode
               : referral.source !== "community") ||
             !findUnit(state, event.acceptedUnitId!)
           )
@@ -314,7 +320,10 @@ export function reduceReferralSendEvent(
             // without a booking. A needed vehicle is booked on the journey as for any other.
             {
               originCommunity: recordedOrigin!,
-              ...(raisedFrom!.transportNeeded ? {} : { transportNeed: { needed: false, at: event.now } }),
+              // A9-11: transport left "Not chosen" is no answer, so nothing is recorded either way.
+              ...(raisedFrom!.transportNeeded || raisedFrom!.intake?.arrival?.transport === ""
+                ? {}
+                : { transportNeed: { needed: false, at: event.now } }),
             }),
         openedAt,
         patientId,

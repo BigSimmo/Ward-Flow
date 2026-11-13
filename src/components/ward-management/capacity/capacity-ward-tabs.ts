@@ -12,8 +12,8 @@ export type CapacityWardTab = "ward" | "discharges";
 
 /**
  * The ward panel's two tabs, shown by the kit drawer (`PanelDrawer`) that holds the panel, and the
- * selected one. Discharges counts the ward page's own window: releases not yet discharged
- * (`openBedReleases`). Each ward opens on Ward, as when the tabs lived inside the panel.
+ * selected one. Discharges counts the ward page's own window: releases not yet discharged, at any
+ * date (`openBedReleases`). Each ward opens on Ward, as when the tabs lived inside the panel.
  */
 export function useCapacityWardTabs(unitId: string | undefined): {
   tabs: DrawerTab<CapacityWardTab>[];
@@ -29,7 +29,12 @@ export function useCapacityWardTabs(unitId: string | undefined): {
   return {
     tabs: [
       { id: "ward", label: "Ward" },
-      { id: "discharges", label: "Discharges", count: unitId ? openBedReleases(bedReleases, unitId).length : 0 },
+      // D-191 item 5: Discharges keeps "any date", so the tab names that window (F-105).
+      {
+        id: "discharges",
+        label: "Discharges · any date",
+        count: unitId ? openBedReleases(bedReleases, unitId).length : 0,
+      },
     ],
     tab: chosen.unitId === unitId ? chosen.tab : "ward",
     onTabChange: (next) => setChosen({ unitId, tab: next }),

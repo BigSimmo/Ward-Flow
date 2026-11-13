@@ -245,6 +245,7 @@ export function BedMapCards({
           label="Bed map key"
           items={[
             { label: "Ready", swatchClassName: styles.cellReady },
+            { label: "Being made ready", swatchClassName: styles.cellPreparing },
             // C4 (Josh, 4 Nov 2026): in-use beds by discharge state, each named here.
             { label: "Confirmed out", swatchClassName: styles.cellConfirmed },
             { label: "Expected out", swatchClassName: styles.cellExpected },
@@ -326,7 +327,7 @@ function WardCard({
       <span className={styles.wardOccupied}>
         {ward.occupied} of {ward.unit.beds} occupied
       </span>
-      <BedCells beds={ward.unit.beds} ready={ward.ready} used={inUse} parts={parts} />
+      <BedCells beds={ward.unit.beds} ready={ward.ready} preparing={ward.beingMadeReady} used={inUse} parts={parts} />
       {stale || sameCount || notes.length || freeing > 0 || staffRequested ? (
         <span className={styles.wardNote}>
           {staffRequested ? (
@@ -375,19 +376,23 @@ export function releaseParts(releases: readonly BedRelease[], unitId: string): R
 }
 
 /**
- * One square per bed: ready, then the in-use beds by how sure their discharge is (confirmed,
- * expected, held up), then the rest in use, then closed. The squares share one line at any bed
+ * One square per bed: ready, then being made ready (D-179 item 8: not Ready, drawn on its own),
+ * then the in-use beds by how sure their discharge is (confirmed, expected, held up), then the rest
+ * in use, then closed. The squares share one line at any bed
  * count (a grid of equal columns), so a large ward never wraps. Decorative; the card says it in
  * words and the bed map key names each colour.
  */
 export function BedCells({
   beds,
   ready,
+  preparing = 0,
   used,
   parts,
 }: {
   beds: number;
   ready: number;
+  /** `bedStates().beingMadeReady`: empty beds still being made ready, never counted as Ready. */
+  preparing?: number;
   used: number;
   parts?: ReleaseParts;
 }) {
@@ -397,7 +402,8 @@ export function BedCells({
   const heldUp = Math.min(parts?.heldUp ?? 0, used - confirmed - expected);
   const cellClass = (index: number): string | undefined => {
     if (index < ready) return styles.cellReady;
-    const inUse = index - ready;
+    if (index < ready + preparing) return styles.cellPreparing;
+    const inUse = index - ready - preparing;
     if (inUse >= used) return styles.cellClosed;
     // Each coloured square stays an in-use square too, so it counts as one.
     if (inUse < confirmed) return `${styles.cellUsed} ${styles.cellConfirmed}`;

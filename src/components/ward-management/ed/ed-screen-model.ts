@@ -591,14 +591,14 @@ export function outstandingItem(movement: Movement): OutstandingItem {
  * — this prototype works out no legal time limits of its own; it shows back only what a clinician
  * typed.
  */
-export function formExpiryLine(legalForm: LegalForm, now: Instant): string {
+export function formExpiryLine(legalForm: LegalForm, now: Instant, dayZero?: Date): string {
   // 1.1 (K1) and A1: a form a person recorded as ended says so on every ED surface, as the Forms
   // page, downtime pack and handover do; its old typed end is history, never shown as live.
   if (legalForm.endedBy !== undefined) return `${FORM_RECORDED_ENDED}.`;
   if (legalForm.dueAt === undefined) return "No expiry recorded from the form.";
   // Legal times only as typed (Josh, 31 Oct 2026): "Ends Mon 09:00 as typed" or "Ended … as typed",
   // never "(3h 20m left)" or "(passed 1h 05m ago)".
-  return typedTimeLine(legalForm.dueAt, now);
+  return typedTimeLine(legalForm.dueAt, now, dayZero);
 }
 
 /**

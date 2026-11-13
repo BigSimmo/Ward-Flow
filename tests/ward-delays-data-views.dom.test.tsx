@@ -222,7 +222,7 @@ describe("the Delays board's data views", () => {
         movement.acceptedUnitId === undefined,
     );
     expect(fresh, "everyone in the fixture has been referred somewhere").toBeDefined();
-    const expected = candidateWards(fresh!, allUnits(), NOW_ANCHOR);
+    const expected = candidateWards(fresh!, state.units, NOW_ANCHOR);
     expect(expected.offerable.length, "nobody could take this person, so this proves nothing").toBeGreaterThan(0);
     expect(expected.unavailable.length, "no unavailable ward, so the disclosure is untested").toBeGreaterThan(0);
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { MONTH_SHORT } from "@/components/ward-management/ward-month-names";
 import { ArrowRight, ChevronDown, CircleHelp, Compass, Keyboard } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -74,8 +75,7 @@ function goLink(
 /** "25 Oct" from "2026-10-25", without the time zone shifts a Date would bring. */
 function formatNewDate(date: string): string {
   const [, month, day] = date.split("-").map(Number);
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  return `${day} ${months[(month ?? 1) - 1] ?? ""}`.trim();
+  return `${day} ${MONTH_SHORT[(month ?? 1) - 1] ?? ""}`.trim();
 }
 
 function deskLabel(role: WardTourRole): string {

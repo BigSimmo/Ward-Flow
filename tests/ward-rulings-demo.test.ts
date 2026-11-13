@@ -67,8 +67,10 @@ describe("rulingsDemoOverlay", () => {
     expect(overlay.skipped.map((row) => row.field)).toEqual(["writtenAt", "Movement.originUnitId"]);
   });
 
-  it("seedWardFlowState includes RD-01 without dropping the existing night", () => {
-    const seeded = seedWardFlowState();
+  it("seedWardFlowState includes RD-01, when switched on, without dropping the existing night", () => {
+    // A16-14 (Josh, 13 Nov 2026): the examples are opt-in. The guard that they are off by default
+    // is in `tests/ward-fix-E-worked-examples.test.ts`.
+    const seeded = seedWardFlowState("standard", { workedExamples: true });
     expect(seeded.movements.some((row) => row.id === "WF-RD01")).toBe(true);
     expect(seeded.movements.some((row) => row.id === "WF-001")).toBe(true);
     const rd01 = overlay.movements.find((row) => row.id === "WF-RD01");

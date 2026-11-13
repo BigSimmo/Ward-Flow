@@ -25,6 +25,7 @@ import { SMALL_NUMBER_NOT_SHOWN } from "@/components/ward-management/ward-access
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { MINUTES_PER_DAY, formatSheetMoment } from "@/components/ward-management/ward-clock";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 import {
   statisticsSectionById,
   STATISTICS_SERVICE_CHOOSER_HREF,
@@ -119,6 +120,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
 function ExecutiveServiceScreen({ serviceId }: { serviceId: string }) {
   const data = useExecutiveStatistics(),
     control = useExecutiveStatisticsControl();
+  const zone = useClockZoneLabel();
   const selected = data?.services.find((service) => service.service === serviceId);
   if (!data || !selected || !data.openableServiceIds.includes(selected.service))
     return <ExecutiveStatisticsUnavailable />;
@@ -196,6 +198,7 @@ function ExecutiveServiceScreen({ serviceId }: { serviceId: string }) {
             serviceId={service}
             asAt={formatSheetMoment(data.network.asAt.now, new Date(data.network.asAt.dayZero), {
               includeYearAndZone: true,
+              zone,
             })}
             initialGroup="ward"
             scopeLabel={"in " + service}
@@ -265,6 +268,7 @@ function OperationalServiceScreen({ serviceId }: { serviceId: string }) {
   const { countsOnly, small } = useStatisticsCounts();
   const { units: liveUnits, admissions, referrals, bedReleases, leaveBeds, movements, dayZero } = live.state;
   const now = live.now;
+  const zone = useClockZoneLabel();
 
   const section = statisticsSectionById("service");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'service' section");
@@ -487,7 +491,7 @@ function OperationalServiceScreen({ serviceId }: { serviceId: string }) {
         ),
         capacity: (
           <StatisticsCapacityChart
-            asAt={formatSheetMoment(now, dayZero, { includeYearAndZone: true })}
+            asAt={formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone })}
             units={serviceUnits}
             bedReleases={bedReleases}
             admissions={admissions}

@@ -783,6 +783,8 @@ export type SmartSearchInput = {
   /** Ward admissions, so an accepted referral already admitted is not offered as still waiting. */
   admissions?: readonly Admission[];
   precomputedTasks?: readonly InboxItem[];
+  /** The board's day 0, so a task's typed legal time on another day prints its date (D1, D-93). */
+  dayZero?: Date;
 };
 
 export type SmartSearchResults = {
@@ -1002,12 +1004,10 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
 
   const tasksInbox = shouldDeriveTasks
     ? (input.precomputedTasks ??
-      buildActionInbox(
-        input.movements.filter(isOpen),
-        input.now ?? 0,
-        input.units,
-        input.plannedAdmissions ? { plannedAdmissions: input.plannedAdmissions } : undefined,
-      ))
+      buildActionInbox(input.movements.filter(isOpen), input.now ?? 0, input.units, {
+        plannedAdmissions: input.plannedAdmissions,
+        dayZero: input.dayZero,
+      }))
     : [];
   const tasks = shouldDeriveTasks
     ? rankGroup("tasks", searchTasks(typed, tasksInbox), typed, (task) => [

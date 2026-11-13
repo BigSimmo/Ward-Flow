@@ -138,12 +138,13 @@ export function MovementWorkspaceCockpit({
   role?: "ward" | "coordinator";
 }) {
   const thresholds = useDueSoonThresholds();
-  const { movements, units, patients, referrals, admissions } = useWardFlowSelect(
+  const { movements, units, patients, referrals, admissions, dayZero } = useWardFlowSelect(
     "movements",
     "units",
     "patients",
     "referrals",
     "admissions",
+    "dayZero",
   );
   const now = useWardFlowClock();
   // A ward embed raises in its own name (CodeAnt on #342), so actions only a coordinator may take
@@ -220,6 +221,7 @@ export function MovementWorkspaceCockpit({
     open,
     blockerIsActive,
     presentation,
+    dayZero,
   });
   const reachedIndex = MOVEMENT_STAGES.indexOf(patient.stage);
 
@@ -712,7 +714,7 @@ export function MovementWorkspaceCockpit({
             {deadline !== undefined && patient.legalForm ? (
               <WardFigure
                 label={`Deadline on the ${legalFormNameLabelFirst(patient.legalForm)}`}
-                value={typedClock(deadline, now)}
+                value={typedClock(deadline, now, dayZero)}
                 flagged={flagged.has("deadline")}
                 sub={`${isClockBreached(deadline, now) ? "Ended" : "Ends"} as typed · not legally checked`}
               />
@@ -853,7 +855,9 @@ export function MovementWorkspaceCockpit({
                   <div className={styles.factRow}>
                     <dt className={styles.factLabel}>Form</dt>
                     <dd className={styles.factValue}>
-                      {patient.legalForm ? legalFormReadinessLine(patient.legalForm, now) : "No legal form recorded"}
+                      {patient.legalForm
+                        ? legalFormReadinessLine(patient.legalForm, now, dayZero)
+                        : "No legal form recorded"}
                     </dd>
                   </div>
                   <div className={styles.factRow}>

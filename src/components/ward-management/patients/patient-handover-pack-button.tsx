@@ -14,16 +14,18 @@ import { formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { handoverPackModel, handoverPackText, type HandoverPackInput } from "./patient-handover-pack";
 import styles from "./patient-handover-pack.module.css";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 /** Sections whose single row label repeats the heading; others keep it (what is outstanding, whose contact). */
 const HEADING_LABELLED_SECTIONS: ReadonlySet<string> = new Set(["risks", "clearance", "medication"]);
 
 export function PatientHandoverPackButton({ input, dayZero }: { input: HandoverPackInput; dayZero: Date }) {
+  const zone = useClockZoneLabel();
   const [open, setOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const pack = handoverPackModel(input);
+  const pack = handoverPackModel(input, dayZero);
   // A printed pack outlives its day, so it carries the full date, never a bare clock face.
-  const stamp = formatSheetMoment(input.now, dayZero, { includeYearAndZone: true });
+  const stamp = formatSheetMoment(input.now, dayZero, { includeYearAndZone: true, zone });
   async function copy() {
     try {
       await copyTextToClipboard(handoverPackText(pack, stamp));

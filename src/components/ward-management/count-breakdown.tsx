@@ -87,7 +87,7 @@ export function CountBreakdown({
           data-testid={testId}
           data-count-breakdown=""
           onClick={() => setSheetOpen(true)}
-          onPointerEnter={() => void loadPanel()}
+          onPointerEnter={() => void loadPanel().catch(() => undefined)}
         >
           {children}
         </button>
@@ -119,8 +119,8 @@ export function CountBreakdown({
           aria-labelledby={labelledBy}
           data-testid={testId}
           data-count-breakdown=""
-          onPointerEnter={() => void loadPanel()}
-          onFocus={() => void loadPanel()}
+          onPointerEnter={() => void loadPanel().catch(() => undefined)}
+          onFocus={() => void loadPanel().catch(() => undefined)}
         >
           {children}
         </button>

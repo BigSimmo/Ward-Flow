@@ -522,7 +522,7 @@
     {
       "id": "admission",
       "name": "An admission",
-      "subject": "The held or occupied stay. A new pull creates a held admission; supported direct placement/planned-arrival and ward-transfer paths can create an occupied admission without passing through Held.",
+      "subject": "The held or occupied stay. A new pull creates a held admission; supported direct placement/planned-arrival and ward-transfer paths, and an arrival for a journey with no pulled stay, can create an occupied admission without passing through Held.",
       "width": 1684,
       "height": 426,
       "states": [
@@ -902,7 +902,7 @@
           "w": 300,
           "h": 86,
           "label": "Being made ready — a flag",
-          "sub": "Cleaning or repair is a separate flag. It can be set on an expected, confirmed or discharged release, and recording the departure (or a ward transfer arriving) sets it too, except item 18's \"Left the ward, waiting for transport\", where the bed is Ready at once. It does not rewrite the ward count, but a new pull refuses when every free bed is still being prepared."
+          "sub": "Cleaning or repair is a separate flag. It can be set on an expected, confirmed or discharged release, and recording the departure (or a ward transfer arriving) sets it too, except item 18's \"Left the ward, waiting for transport\", where the bed is Ready at once. It does not rewrite the ward count, and a bed still being made ready may still be pulled (D-181 item 5)."
         }
       ],
       "transitions": [
@@ -1573,7 +1573,7 @@
         "moves": [
           {
             "action": "PATIENT_ARRIVED",
-            "effect": "Usually −1, floored at zero; a pre-counted seeded pull is not decremented twice. Arrival into no empty bed is recorded as a capacity conflict."
+            "effect": "Usually −1, floored at zero; a pre-counted seeded pull is not decremented twice. An arrival with no pulled stay takes a ready bed (empty and allocatable −1) where a pull could reserve one now, or, with none ready (no empty or allocatable bed, a closed ward or closed beds, or beds held for other journeys), changes neither and is counted once, as the conflict, which names the new stay. Arrival into no empty or ready bed is recorded as a capacity conflict."
           },
           {
             "action": "RECORD_LEAVING",
@@ -1705,8 +1705,8 @@
       "title": "Placement and held-destination checks outside the label table",
       "blurb": "These checks answer physical reservations, staffing and record consistency at their actual handlers. They are not all evaluated on every path; an already-held restoration has its own checks and physical arrival has a separate record-first path.",
       "items": [
-        "A new pull needs a Ready bed, including closed-ward and closed-bed adjustments and live pulled admissions; when beds are being made ready it needs more Ready beds than pending ones (planned arrivals likewise). An arrival into zero empty capacity is recorded as a capacity conflict.",
-        "Every free bed still being prepared prevents a new pull.",
+        "A new pull needs a Ready bed, including closed-ward and closed-bed adjustments and live pulled admissions; a bed still being made ready may still be pulled (D-181 item 5). Converting a planned arrival still needs more Ready beds than pending ones. An arrival into zero empty capacity is recorded as a capacity conflict.",
+        "Every free bed still being prepared prevents converting a planned arrival, but no longer a new pull.",
         "Current observation staff and high-acuity capacity are checked at placement; supported exceptions need their recorded facts and acuity also needs nurse unit manager consultation.",
         "A Secure request using an open bed requires the supported recorded reason; naming an unavailable numbered reservation still refuses.",
         "Coordinator gender-placement records are required for the cases defined by genderReviewNeeded, and a binary designation conflict has no suitability override.",
@@ -1734,7 +1734,7 @@
   ],
   "review": {
     "reviewedOn": "2026-11-05",
-    "basis": "Source comparison of eleven machines, route nodes, gates, resources and current gap notes; not runtime or clinical acceptance. 5 November follow-up: explicit handler, payload, authority and caller review reconciled the consolidated audit repairs. Accepted observation sequence and legacy-tie fallback, current place/Undo provenance, safe world reset/import identity, return retry, meeting occurrence metadata and UI draft/completion ownership qualify existing transitions; they add no clinical decision or new physical transport stage. See CURRENT-REVIEW.md for the source-by-source review scope and reused versus fresh evidence. Main29f61/domain1430 reconciliation: accepted observation order is max(retained history,0)+1 with positive-safe restore metadata and sequence preserved through arrival; legacy ties retain compatibility fallback. Import and archive Undo share normalized retained identity, excluding explicit missing/privacy sentinels. Complete inverses preserve occupied-stay/leave consistency. No transition geometry or clinical rule changed; see CURRENT-REVIEW.md. #1447 consolidation, 5 November: other journeys' pending numbered bed reservations come off Ready and the free locked/open counts in the pull and planned-arrival gates; a pull release clears its held bed number and refuses a release matching no reservation; a coordinator transfer recorded as arrived needs a Ready bed; restore refuses a save whose live absences, active stays or numbered beds have more than one owner and names the broken rule. No transition geometry or clinical rule changed. 10 November (items 3, 9, 10/16/27, 26/46): escalation calls and police or ambulance crew times add record-only movement fields and events; the ward card fit lines, home team heads-up and transfer notes copy are screen reads. Cited sources compared line by line; no transition geometry or clinical rule changed. 11 November (D-141): RECORD_ARRIVAL_MODE marks an ED arrival brought by police or ambulance, a record-only movement field; the home team heads-up adds the patient's UMRN as a screen read. Cited sources compared line by line (additions only); no transition geometry or clinical rule changed.",
+    "basis": "Source comparison of eleven machines, route nodes, gates, resources and current gap notes; not runtime or clinical acceptance. 5 November follow-up: explicit handler, payload, authority and caller review reconciled the consolidated audit repairs. Accepted observation sequence and legacy-tie fallback, current place/Undo provenance, safe world reset/import identity, return retry, meeting occurrence metadata and UI draft/completion ownership qualify existing transitions; they add no clinical decision or new physical transport stage. See CURRENT-REVIEW.md for the source-by-source review scope and reused versus fresh evidence. Main29f61/domain1430 reconciliation: accepted observation order is max(retained history,0)+1 with positive-safe restore metadata and sequence preserved through arrival; legacy ties retain compatibility fallback. Import and archive Undo share normalized retained identity, excluding explicit missing/privacy sentinels. Complete inverses preserve occupied-stay/leave consistency. No transition geometry or clinical rule changed; see CURRENT-REVIEW.md. #1447 consolidation, 5 November: other journeys' pending numbered bed reservations come off Ready and the free locked/open counts in the pull and planned-arrival gates; a pull release clears its held bed number and refuses a release matching no reservation; a coordinator transfer recorded as arrived needs a Ready bed; restore refuses a save whose live absences, active stays or numbered beds have more than one owner and names the broken rule. No transition geometry or clinical rule changed. 10 November (items 3, 9, 10/16/27, 26/46): escalation calls and police or ambulance crew times add record-only movement fields and events; the ward card fit lines, home team heads-up and transfer notes copy are screen reads. Cited sources compared line by line; no transition geometry or clinical rule changed. 11 November (D-141): RECORD_ARRIVAL_MODE marks an ED arrival brought by police or ambulance, a record-only movement field; the home team heads-up adds the patient's UMRN as a screen read. Cited sources compared line by line (additions only); no transition geometry or clinical rule changed. 13 November (PR C): RAISE_REFERRAL with pullBed may carry changedOnPull, kept on the pulled stage change only (restore accepts it from the fixed list); examination closures and notices name the plain outcome words; reseeds take worked examples as opt-in and place calendar-day and clock-face seed records on the board's own time. A pull no longer refuses beds still being made ready (D-181 item 5); an arrival with no pulled stay records a named occupied stay in a ready bed, or with no empty and allocatable bed is one capacity conflict (A9-08); a standing wait list answer is not a prior decline (A9-05); hold-up reasons are listed by bed state (A16-06); a ward's Undo of its own named transport-need step names that ward. Cited sources compared line by line; no transition geometry or clinical rule changed.",
     "sources": [
       {
         "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
@@ -1744,22 +1744,22 @@
       {
         "path": "src/components/ward-management/legal-forms/legal-forms-screen.tsx",
         "line": 1,
-        "sha256": "381f09f6b932ae6752767f1e74e0978629c3ff442e1b0132c9d79275ef100762"
+        "sha256": "9e2c56b73071a92e2a18d0ab4e08a8311f7f2a2af443e63a8df6f2541bcc8bb0"
       },
       {
         "path": "src/components/ward-management/legal-forms/legal-forms-sheets.tsx",
         "line": 328,
-        "sha256": "a8d31c168d09c35f7d7626f722b8618ad736ef595ddd2e335228059160afe1a9"
+        "sha256": "fa608025a20d0c7af33099b5506211fd25eba89771dcff0c24ee9f49fd23a6e3"
       },
       {
         "path": "src/components/ward-management/patients/add-patient.tsx",
         "line": 87,
-        "sha256": "e4d277572fc48f16fc5a3746118fc7ab1758d274ed28ae459d9cd1821a2de4f0"
+        "sha256": "2493857b8ea5832e4e49afc2b8d32ae3630ffded73adc8076ac839524e5a4918"
       },
       {
         "path": "src/components/ward-management/patients/patient-now-screen.tsx",
         "line": 1,
-        "sha256": "f946ddaf708561df6cbec4214f53576c5ed0ddc153a62d0668fe7fbd698245f1"
+        "sha256": "79249b6deef483b0a6e1d8ac7d43f9950cfe32ca31c828316772f343e561e686"
       },
       {
         "path": "src/components/ward-management/shell/ward-broadcast-banner-body.tsx",
@@ -1779,7 +1779,7 @@
       {
         "path": "src/components/ward-management/ward-change-reasons.ts",
         "line": 1,
-        "sha256": "884ffa05f8abcc23f73542ba96420061fc6edf7812619effcf7b7afed69c2a3f"
+        "sha256": "1ce389c8740f3d29bdcd9b08f859e9b57955837d90376e19c8385b55a8d53fda"
       },
       {
         "path": "src/components/ward-management/ward-configuration.ts",
@@ -1794,7 +1794,7 @@
       {
         "path": "src/components/ward-management/ward-derivations.ts",
         "line": 1,
-        "sha256": "11a3b28e445bd695a854eb7ff87b3b1943afdf84de531baa701488a30a7575b1"
+        "sha256": "5f554e5dbc213a7ea531b86965536c91b6655b56613fa0062bfa23516a6e3fd2"
       },
       {
         "path": "src/components/ward-management/ward-duplicate-bed-requests.ts",
@@ -1804,7 +1804,7 @@
       {
         "path": "src/components/ward-management/ward-eligibility.ts",
         "line": 49,
-        "sha256": "5a876b1943bbfa47b1db277fb4a5b36b37d80de4c4ff9bb6b620366d7217800d"
+        "sha256": "02d2df72a5e2ba06e07ca95b167fa0b4867148470069a926a980cac2f410d30d"
       },
       {
         "path": "src/components/ward-management/ward-flow-bed-events.ts",
@@ -1824,12 +1824,12 @@
       {
         "path": "src/components/ward-management/ward-flow-events.ts",
         "line": 1,
-        "sha256": "8a2438031d11683d8648960b9d12ffd41eda8a351a21b1b50037bfd2ab59dde4"
+        "sha256": "d42b2be4478288dfe65c71b09b0c0b346c641e65e53b8e306d0e66239d55c269"
       },
       {
         "path": "src/components/ward-management/ward-flow-placement-events.ts",
         "line": 430,
-        "sha256": "d03d664cb1f66c71f417fab7848bfbb308127dcb374dea22ffdeb14223d5e948"
+        "sha256": "a6b14057a373dde70fc68852bc5f1de870e8be23bdce1941b1196323b0bcf3ec"
       },
       {
         "path": "src/components/ward-management/ward-flow-protected-record-events.ts",
@@ -1839,7 +1839,7 @@
       {
         "path": "src/components/ward-management/ward-flow-record-events.ts",
         "line": 606,
-        "sha256": "be9d7980f7876cdf82cf93120443db9b983deaff447a9eccd352383b925e7285"
+        "sha256": "5e60055bf865da4804a2034ea9838e832a2264b948a60db9d8c5c52b56d89236"
       },
       {
         "path": "src/components/ward-management/ward-flow-record-legal-events.ts",
@@ -1854,27 +1854,27 @@
       {
         "path": "src/components/ward-management/ward-flow-reducer.ts",
         "line": 1178,
-        "sha256": "79b19a0fd06f5688ff75e384be708208c5bbe7cb497f48ee24b8433ceb9b4304"
+        "sha256": "d6f8743339a68ba83410150d1084fcc83dc9a3d7f7cdf42f8d13d5c03261c6d0"
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
         "line": 392,
-        "sha256": "aa1c1e1bdf49c3e38ce3ca99d5e92e542e0d2956c43b9befa32e6915def5d7dc"
+        "sha256": "781f7567bd848cabcb79824dfadcbfac9ffd2225ba6f4be214842fabd26563f4"
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
         "line": 1219,
-        "sha256": "5145d6761048c808021aabfe2796c42734baca8805f85584b2e0da6bbbb8089a"
+        "sha256": "d5c51a9c2f31674b58553161869e25c36bf58a9d74e2f252cfcd04ae992036aa"
       },
       {
         "path": "src/components/ward-management/ward-flow-storage-validation.ts",
         "line": 452,
-        "sha256": "235c28653c50815296ac813352251daa8bfdc0d045f34784be71ad4387965ac5"
+        "sha256": "12263178ae945293e298e11657e6db54e68c3c42a52aa88919e4a14974c4302c"
       },
       {
         "path": "src/components/ward-management/ward-flow-transport-events.ts",
         "line": 85,
-        "sha256": "573cd3b2155de245658d45a432a45fd526cd829402d6b9c6b77ad8dc63f904cc"
+        "sha256": "c678f3bd04a6823df46daf7ff4c1e20e9066371921458cbeb58fb4424a8707e5"
       },
       {
         "path": "src/components/ward-management/ward-flow-undo-events.ts",
@@ -1904,12 +1904,12 @@
       {
         "path": "src/components/ward-management/ward-model.ts",
         "line": 1,
-        "sha256": "6cc372267168e04e8bb4a3365d5db08888f67c6cbd08a372e5f57d40b6614e46"
+        "sha256": "492b60a8e948c80df4698567225ad8d5e91612ee6f5ade7631c871db620352af"
       },
       {
         "path": "src/components/ward-management/ward-patient-registration-reducer.ts",
         "line": 77,
-        "sha256": "9e0f9c39d6d4a7f8f406fd438e09cd9ea7b7c6631a7bdd5e059d1f38de3caac4"
+        "sha256": "0be05bfeca4d601535c542765393c4cfb1874f0ad2b22aeafd8122945b421fca"
       },
       {
         "path": "src/components/ward-management/ward-ready-beds.ts",
@@ -1924,7 +1924,7 @@
       {
         "path": "src/components/ward-management/ward-observation.ts",
         "line": 60,
-        "sha256": "2a0c9ce8ac922f87a56ad939978724ae8e91d71ac39a0615e93c8a09a14a5358"
+        "sha256": "c9b2c0b4dcfdf10028f825490912a6e60e59ccb3d00aeb79aee5fed92e70dadb"
       },
       {
         "path": "src/components/ward-management/ward-retained-umrn.ts",

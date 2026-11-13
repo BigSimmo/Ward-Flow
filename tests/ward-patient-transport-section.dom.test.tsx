@@ -174,7 +174,7 @@ describe("Patient Transport & Transfer Coordination section", () => {
     expect(cadNumber).toHaveTextContent("CAD-84920");
 
     const eta = within(section).getByTestId("ward-patient-transport-eta");
-    expect(eta).toHaveTextContent(`${clock(NOW_ANCHOR + 30)} AWST`);
+    expect(eta).toHaveTextContent(`${clock(NOW_ANCHOR + 30)} demo time`);
 
     const provider = within(section).getByTestId("ward-patient-transport-provider");
     expect(provider).toHaveTextContent("Ambulance service");
@@ -218,7 +218,9 @@ describe("Patient Transport & Transfer Coordination section", () => {
 
     const eta = within(section).getByTestId("ward-patient-transport-eta");
     expect(eta).toHaveTextContent(
-      movement.transport!.estimatedAt !== undefined ? `${clock(movement.transport!.estimatedAt)} AWST` : "Not recorded",
+      movement.transport!.estimatedAt !== undefined
+        ? `${clock(movement.transport!.estimatedAt)} demo time`
+        : "Not recorded",
     );
 
     const provider = within(section).getByTestId("ward-patient-transport-provider");
@@ -238,8 +240,8 @@ describe("Patient Transport & Transfer Coordination section", () => {
     expect(within(section).queryByRole("button", { name: "Update Booking Details" })).not.toBeInTheDocument();
     expect(within(section).queryByTestId("ward-patient-book-transport-btn")).not.toBeInTheDocument();
     expect(section).toHaveTextContent("Booking details cannot be edited");
-    expect(section).toHaveTextContent("cancel the active job");
-    expect(section).toHaveTextContent("Ask the bed coordinator or booking team");
+    // A9-12 (Audit 9, 13 Nov 2026): the coordinator's page names its own Cancel transport control.
+    expect(section).toHaveTextContent("To change them, cancel transport under Destination, then book again.");
     expect(within(section).getByTestId("ward-patient-cad-number")).toHaveTextContent("CAD-84920");
   });
 
@@ -397,8 +399,8 @@ describe("Patient Transport & Transfer Coordination section", () => {
     fireEvent.click(screen.getByRole("button", { name: "Record synthetic transport booking" }));
     openTransportSheet();
     const eta = within(screen.getByTestId("ward-patient-transport-section")).getByTestId("ward-patient-transport-eta");
-    expect(eta).toHaveTextContent(`${formatInstantWithDay(tomorrow, NOW_ANCHOR)} AWST`);
-    expect(eta).toHaveTextContent(/ tomorrow AWST/);
+    expect(eta).toHaveTextContent(`${formatInstantWithDay(tomorrow, NOW_ANCHOR)} demo time`);
+    expect(eta).toHaveTextContent(/ tomorrow demo time/);
   });
 
   it("does not offer a booking before a bed is accepted, so no booking can appear to succeed", () => {

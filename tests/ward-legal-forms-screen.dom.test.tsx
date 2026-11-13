@@ -22,9 +22,12 @@ import { resolveSubjectPatient } from "@/components/ward-management/ward-patient
 import { setDeskRole } from "@/components/ward-management/ward-role-gate";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { typedDateFor } from "./helpers/ward-date-input";
+import { WorkedExamplesOn } from "./helpers/ward-worked-examples-on";
 
 const NOW = NOW_ANCHOR;
-const seed = seedWardFlowState();
+// A16-14 (D-175 item 1): the Armadale legal-form worked examples are off by default. This file's
+// subjects are among them (the Form 3D arrival, the non-voluntary people with no form), so it opts in.
+const seed = seedWardFlowState("standard", { workedExamples: true });
 const seededMovements = seed.movements;
 const withDeadline = legalFormGroupRows(seededMovements, NOW, "with-deadline");
 const noDeadline = legalFormGroupRows(seededMovements, NOW, "no-deadline");
@@ -46,6 +49,7 @@ const COMPUTED_ACT_PERIOD = /would end|Synthetic demo|Act period|under-18 period
 function renderScreen() {
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <WorkedExamplesOn />
       <LegalFormsScreen />
     </WardFlowProvider>,
   );
@@ -322,6 +326,7 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
     render(
       <ToastProvider>
         <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <WorkedExamplesOn />
           <AdvanceClock minutes={240} />
           <LegalFormsScreen />
         </WardFlowProvider>
@@ -404,6 +409,7 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
     const target = withDeadline[0]!;
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WorkedExamplesOn />
         <AdvanceClock minutes={240} />
         <LegalFormsScreen />
       </WardFlowProvider>,

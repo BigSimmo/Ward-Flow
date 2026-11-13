@@ -41,6 +41,7 @@ import {
 import { mixSexOf, referralEligibility } from "@/components/ward-management/ward-eligibility";
 import { isConfirmationFresh } from "@/components/ward-management/capacity/capacity-gap-words";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 import { wardReferralDestinations } from "./ward-referral-drawer-model";
 
 /**
@@ -170,6 +171,7 @@ const COMMUNITY_TEAMS_SHOWN = 6;
 
 /** Step 4, Wards, Teams or EDs: the places to refer to, the summary and the arrival plan. */
 export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
+  const zone = useClockZoneLabel();
   const {
     movements,
     referrals,
@@ -277,7 +279,8 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
               {/* Audit round 2 (A2-8): no closed total. No listed ward shows a closed bed,
                               so the figure matched nothing on the step. */}
               <span className={styles.legendAside}>
-                {effectiveCohort || currentPatient.cohort} · {securityWord(security).toLowerCase()} ·{" "}
+                {effectiveCohort || currentPatient.cohort} ·{" "}
+                {security ? `${securityWord(security).toLowerCase()} · ` : "bed security not chosen · "}
                 {realTimeMatch.sortedUnits.length} {realTimeMatch.sortedUnits.length === 1 ? "ward" : "wards"}
               </span>
             </div>
@@ -288,8 +291,8 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
             {realTimeMatch.pendingPreparationCount > 0 ? (
               <p className={styles.beingMadeReady} data-testid="referral-drawer-pending-preparation">
                 <StatusGlyph tone="neutral" size={9} />
-                <strong className={styles.mono}>{realTimeMatch.pendingPreparationCount}</strong> of them still being
-                made ready, offered and counted
+                <strong className={styles.mono}>{realTimeMatch.pendingPreparationCount}</strong> more being made ready,
+                not counted as ready
               </p>
             ) : null}
           </div>
@@ -398,7 +401,12 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
               })}
             </div>
             {!realTimeMatch.sortedUnits.length && (
-              <p className={styles.bodyMeta}>No wards match this cohort and bed security.</p>
+              <p className={styles.bodyMeta}>
+                {/* A9-10: bed security starts unanswered, so the list waits for it. */}
+                {security
+                  ? "No wards match this cohort and bed security."
+                  : "Choose the bed security on the Referral step to see wards that fit."}
+              </p>
             )}
           </div>
         </section>
@@ -579,7 +587,7 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
                   </select>
                 </SelectBox>
               </Field>
-              <Field label="Arrival, AWST" htmlFor={`${sectionId}-eta`}>
+              <Field label={`Arrival, ${zone}`} htmlFor={`${sectionId}-eta`}>
                 <DateTimeField
                   id={`${sectionId}-eta`}
                   label="Arrival"

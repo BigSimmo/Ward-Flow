@@ -80,6 +80,7 @@ import {
   tryWriteDemoState,
   useDeferredDeviceSave,
   useDemoStateRead,
+  useTypedTextScrubRetry,
   WARD_FLOW_DEMO_STORAGE_KEY,
 } from "./ward-flow-demo-storage";
 import { BROUGHT_UP_TO_DATE_NOTICE, OPEN_ITEMS_CLOSED_NOTICE } from "./ward-flow-demo-storage-constants";
@@ -442,9 +443,9 @@ type WardFlowProviderProps = {
   children: ReactNode;
   /**
    * Pins the clock at this instant and stops it from ticking. Tests and any deterministic
-   * render (screenshots, contract walks) pass this; the live app omits it so the clock reads
-   * the wall clock once at mount and then advances only via the 30s tick interval, never by
-   * re-reading the wall clock on every render.
+   * render (screenshots, contract walks) pass this; the live app omits it so the clock takes its
+   * baseline from the wall clock once at mount, re-renders at the top of each minute
+   * (`useWardMinuteTick`), and each render measures the minutes since that baseline.
    */
   initialNow?: Instant;
   /** Perth midnight captured by the server layout, reused by the client's first render. Epoch ms
@@ -483,7 +484,7 @@ export type { AssertNever, UnreviewedStringOrUnknownKeys };
  * the provider either — that is the point."* Pinning either would delete the property it exists to
  * test. **The remaining 18 sites, across 12 files, are unpinned by omission with no clock control of
  * any kind** — for those the effect below does NOT return, the world re-seeds at the real wall-clock
- * offset, and the 30s interval is installed.
+ * offset, and the minute tick is installed.
  *
  * ⚠️ **Whether any of the 18 actually varies run to run is UNMEASURED.** A timezone probe was
  * attempted and its own control showed `TZ` is ignored by Node on this machine, so it proved
@@ -833,27 +834,41 @@ function WardFlowWorld({
    * An absolute count makes elapsed time a plain subtraction that is correct over any span, and the
    * whole class of bug disappears rather than being handled.
    */
-  // Board and event callers share one 30s tick. A separate board-only clock left
+  // Board and event callers share one minute tick (`useWardMinuteTick`). A separate board-only clock left
   // event callers recording the time of the last unrelated state change.
   // A pinned `initialNow` (tests, deterministic renders) never touches the wall clock, and neither
   // does the render before the mount effect has adopted it — `mountedAtAbsolute` is null until then,
   // and reading the clock against a null baseline is exactly the non-determinism this split removes.
-  const elapsed =
+  const deviceElapsed =
     initialNow !== undefined || mountedAtAbsolute === null ? 0 : absoluteWallClockMinutes() - mountedAtAbsolute;
+  // Time audit C1 (13 Nov 2026): a device clock set back while the page is open holds the board at
+  // the furthest minute it has shown until the device catches up, as the shared clock reads a set-back
+  // clock as no time passed. Before, the board ran backwards, a later action was stamped before an
+  // earlier one, and the restore guard (`ward-flow-demo-restore.ts`) then refused the whole saved day.
+  const [elapsedHighWater, setElapsedHighWater] = useState(0);
+  const elapsed = Math.max(elapsedHighWater, deviceElapsed);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- records the furthest minute shown, read from the device clock in render
+    if (elapsed > elapsedHighWater) setElapsedHighWater(elapsed);
+  }, [elapsed, elapsedHighWater]);
 
   const now =
     shared.enabled && shared.snapshot
       ? sharedBoardNow(shared.snapshot.now, shared.receivedAt)
-      : NOW_ANCHOR + anchorOffsetMinutes + container.restoredElapsed + Math.max(0, elapsed) + state.clockOffsetMinutes;
+      : NOW_ANCHOR + anchorOffsetMinutes + container.restoredElapsed + elapsed + state.clockOffsetMinutes;
 
   const nowRef = useRef(now);
   useEffect(() => {
     nowRef.current = now;
   }, [now]);
   const elapsedRef = useRef(elapsed);
+  // The device's own reading goes into a save beside the board minute, so a reload measures time
+  // away on the device clock (C1): the board may be ahead of it after a set-back, never behind.
+  const deviceElapsedRef = useRef(deviceElapsed);
   useEffect(() => {
     elapsedRef.current = elapsed;
-  }, [elapsed]);
+    deviceElapsedRef.current = deviceElapsed;
+  }, [elapsed, deviceElapsed]);
 
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -969,9 +984,23 @@ function WardFlowWorld({
   // save once the copy's code arrives.
   const [deviceCopyCheck, setDeviceCopyCheck] = useState<number | "loaded" | null>(null);
   const typedTextLocked = container.typedTextSeen && deviceCopyCheck === state.worldGeneration;
+  // A4-02 (13 Nov 2026): the copy's code failed to load (offline, server away). Saving pauses and the
+  // "not saved" note shows, but it is not stopped for the day: the next save attempt and the
+  // connection's return load it again (`useTypedTextScrubRetry`).
+  const [typedTextCopyLoadFailed, setTypedTextCopyLoadFailed] = useState(false);
+  const typedTextCopyLoaded = useCallback(() => {
+    setTypedTextCopyLoadFailed(false);
+    setDeviceCopyCheck("loaded");
+  }, []);
+  useTypedTextScrubRetry(typedTextCopyLoadFailed && !!container.typedTextSeen, typedTextCopyLoaded);
   // Local saving runs only in the unpinned local demonstration, until storage fails or a typed-text
   // copy cannot be made safely. Shared mode does not save actions on this device.
-  const savingOnDevice = ownDevice && initialNow === undefined && !typedTextLocked && !storageUnavailable;
+  const savingOnDevice =
+    ownDevice &&
+    initialNow === undefined &&
+    !typedTextLocked &&
+    !storageUnavailable &&
+    !(typedTextCopyLoadFailed && container.typedTextSeen);
   const demoControlsAvailable = !shared.enabled || shared.snapshot?.demoControls !== false;
   useEffect(() => {
     if (!savingOnDevice) savesOnDeviceRef.current = false;
@@ -1109,10 +1138,8 @@ function WardFlowWorld({
     if (deviceCopy === undefined) {
       deviceSave.flush();
       keepLastSafeDemoSave();
-      void loadTypedTextScrub().then(
-        () => setDeviceCopyCheck("loaded"),
-        () => setDeviceCopyCheck(state.worldGeneration),
-      );
+      // A failed load pauses saving only until a retry loads it (A4-02); D-18 still holds meanwhile.
+      void loadTypedTextScrub().then(typedTextCopyLoaded, () => setTypedTextCopyLoadFailed(true));
       return;
     }
     if (!deviceCopy) {
@@ -1127,13 +1154,7 @@ function WardFlowWorld({
     // Replaces any save still waiting: this one holds the newer day.
     deviceSave.schedule(() => {
       if (
-        !tryWriteDemoState(
-          deviceCopy,
-          dayZero,
-          nowRef.current,
-          mountedAtAbsolute + Math.max(0, elapsedRef.current),
-          senderId,
-        )
+        !tryWriteDemoState(deviceCopy, dayZero, nowRef.current, mountedAtAbsolute + deviceElapsedRef.current, senderId)
       )
         setStorageUnavailable(true);
       else {
@@ -1152,6 +1173,7 @@ function WardFlowWorld({
     storageUnavailable,
     ownDevice,
     deviceSave,
+    typedTextCopyLoaded,
   ]);
 
   // ISSUE-P1-83 3e: stable, as the `value` useMemo below depends on it. Reset also clears Midland decisions (SD-06).
@@ -1191,10 +1213,10 @@ function WardFlowWorld({
       if (!safeCounter(generation) || generation >= Number.MAX_SAFE_INTEGER)
         return { ok: false, reason: "This scenario file is damaged or incomplete, so nothing was loaded." };
       // The clock resumes at the file's own scenario time: `now` is rebuilt from the same parts the
-      // render uses, so the elapsed term is read fresh rather than from the last 30s tick.
+      // render uses, so the elapsed term is read fresh rather than from the last minute tick.
       const elapsedNow =
         initialNow !== undefined || mountedAtAbsolute === null ? 0 : absoluteWallClockMinutes() - mountedAtAbsolute;
-      const base = NOW_ANCHOR + anchorOffsetMinutes + Math.max(0, elapsedNow);
+      const base = NOW_ANCHOR + anchorOffsetMinutes + Math.max(elapsedRef.current, elapsedNow);
       // A new generation, as a reseed does, so every screen keyed on it drops drafts and
       // selections that belonged to the world being replaced.
       const world: WardFlowState = {

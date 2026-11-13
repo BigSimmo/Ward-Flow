@@ -91,8 +91,11 @@ export type PilotMeasuresInput = {
   now: Instant;
   /** The configured hold length (`WardConfiguration.pullHoldMinutes`), minutes. */
   pullHoldMinutes: number;
-  /** The wards in view, for measure 3. */
-  units: readonly Pick<Unit, "id">[];
+  /**
+   * The wards in view, for measure 3, with each ward's own count confirmation where known: the time
+   * Capacity's "confirmed" chip and the TV read (A9-26).
+   */
+  units: readonly (Pick<Unit, "id"> & { allocatable?: Pick<Unit["allocatable"], "confirmedAt"> })[];
   /**
    * Each ward's morning roll-up confirmation, for measure 3. A later capacity refresh moves
    * `allocatable.confirmedAt` but never this, so a routine update cannot make a ward late.
@@ -226,10 +229,20 @@ export function pilotMeasures(input: PilotMeasuresInput, week: ReportWeek): Pilo
     arrivedInWeek.length,
   );
 
-  // Measure 3: today's bed figures against the roll-up time.
+  // Measure 3: today's bed figures against the roll-up time. A9-26 (F-27, 13 Nov 2026): the morning
+  // roll-up list starts empty every demo day and fills only when a ward presses its roll-up confirm,
+  // so Weekly read "0 of 22 wards" while Capacity read "21 of 22 confirmed" from the wards' count
+  // confirmations. A ward with no roll-up today now counts its own count confirmation, the time
+  // every other screen reads. A roll-up, when recorded, still wins, so a later refresh never makes
+  // a ward that rolled up on time late. The 09:30 time is unchanged.
+  const today = (at: Instant | undefined): at is Instant =>
+    typeof at === "number" && Number.isFinite(at) && dayOf(at) === dayOf(now);
   const confirmedTimes = units
-    .map((unit) => morningRollupConfirmations[unit.id]?.confirmedAt)
-    .filter((at): at is Instant => typeof at === "number" && Number.isFinite(at) && dayOf(at) === dayOf(now));
+    .map((unit) => {
+      const rollup = morningRollupConfirmations[unit.id]?.confirmedAt;
+      return today(rollup) ? rollup : unit.allocatable?.confirmedAt;
+    })
+    .filter(today);
   const bedFigures = {
     wards: units.length,
     confirmedToday: confirmedTimes.length,

@@ -1,6 +1,7 @@
 // The Alerts screen's Checking strip: every condition the screen looks at, by name, with its count.
 // Moved out of `alerts-screen.tsx` to keep it under the line cap.
-import { LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { isLongWait } from "@/components/ward-management/ward-operational-defaults";
+import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
@@ -26,8 +27,11 @@ export function alertChecks({
   const withDeadline = openMovements.filter((movement: Movement) => currentLegalDueAt(movement) !== undefined);
   const declineCandidates = openMovements.filter((movement: Movement) => movement.declines.length > 0).length;
   const untriaged = (referrals ?? []).filter((referral) => referral.triagedAt === undefined);
+  // RC 3.7 (F-27, 13 Nov 2026): the people Waiting lists, still in an ED (`isWaitingInEd`), at the
+  // shared long-wait boundary (`isLongWait`). It used to count every open ED journey, people in
+  // transit included, so the number could differ from the Waiting list it opens.
   const prolongedEdCount = openMovements.filter(
-    (movement: Movement) => movement.originEdId !== undefined && now - movement.openedAt >= LONG_WAIT_MINUTES,
+    (movement: Movement) => isWaitingInEd(movement) && isLongWait(now - movement.openedAt),
   ).length;
   const overrideCount = movements.reduce((total, movement: Movement) => total + movement.overrides.length, 0);
   const checks: { key: string; kind?: AlertKind; label: string; n: number; href?: string; scope: string }[] = [

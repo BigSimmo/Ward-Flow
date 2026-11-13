@@ -5,12 +5,14 @@ import { Button, cx, useOptionalToast } from "@/components/wf";
 import { savedAtToast } from "@/components/ward-management/ward-saved-at-toast";
 import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
-import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
+import { holdUpReasonsFor, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import styles from "./ward-bed-dossier-drawer.module.css";
 import { ChoiceChips } from "./ward-bed-dossier-bits";
 
-const BLOCKER_CHOICES = BED_RELEASE_BLOCKERS.map((blocker) => ({ id: blocker, label: blocker }));
+// A16-06: this saves onto a stay that is in the bed (the reducer refuses any other), so only the
+// reasons for an occupied bed are offered (the lists Josh signed, D-181 item 6).
+const BLOCKER_CHOICES = holdUpReasonsFor("occupied").map((blocker) => ({ id: blocker, label: blocker }));
 
 /**
  * The bed drawer's discharge blocker save (live test, 26 Oct 2026: a bed manager's Save closed the

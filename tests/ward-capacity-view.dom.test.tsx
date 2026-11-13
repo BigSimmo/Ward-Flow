@@ -653,3 +653,17 @@ describe("a discharge held up for days keeps counting, and shows since when (WLQ
     expect(blocked(entriesAfter), "a release never held up is named as held up").toBe(blocked(entriesBefore));
   });
 });
+
+describe("the ward drawer's Discharges tab names its window (D-191 item 5)", () => {
+  it('reads "Discharges · any date", since it lists every open release whatever its date', () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <CapacityScreen />
+      </WardFlowProvider>,
+    );
+    const drawer = openWardDrawer("fre-adult-open");
+    const tab = within(drawer).getByRole("tab", { name: /^Discharges/u });
+    expect(tab).toHaveTextContent(/Discharges · any date/u);
+    expect(tab).not.toHaveTextContent(/Discharges · open/u);
+  });
+});

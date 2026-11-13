@@ -10,11 +10,7 @@ import { durMinutes } from "@/components/wf";
 import { clockState, type DueSoonThresholds, type Instant } from "@/components/ward-management/ward-clock";
 import { elapsedLabel, isOpen } from "@/components/ward-management/ward-derivations";
 import { remainingSpeciallingCapacity } from "@/components/ward-management/ward-admissions";
-import {
-  bedsPendingPreparation,
-  capacityBreakdown,
-  openBedsNow,
-} from "@/components/ward-management/ward-bed-availability";
+import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
 import { serviceRollup } from "@/components/ward-management/ward-morning-rollup";
 import { edPressure } from "@/components/ward-management/ward-pressure";
 import {
@@ -149,12 +145,12 @@ export function standingFigures(
    */
   const pendingAt = (unitId: string) => bedsPendingPreparation(unitId, [...bedReleases]);
   const pendingEverywhere = units.reduce((total, unit) => total + pendingAt(unit.id), 0);
-  const openEverywhere = units.reduce((total, unit) => total + openBedsNow(unit, [...bedReleases]), 0);
-  /** `actionable` omitted where the reader cannot pull — see the ED note above. */
-  const preparationNote = (pending: number, actionable?: number): string | undefined => {
-    if (pending === 0) return undefined;
-    return actionable === undefined ? `${pending} pending` : `${actionable} can be pulled into · ${pending} pending`;
-  };
+  /*
+   * D-179 item 8 and D-181 item 5 (Josh, 13 Nov 2026): Ready now leaves out a pending bed, and a
+   * pending bed may still be pulled, so the old "N can be pulled into" clause no longer holds. The
+   * pending count stands beside Ready on its own.
+   */
+  const preparationNote = (pending: number): string | undefined => (pending === 0 ? undefined : `${pending} pending`);
   const withSub = (base: string | undefined, note: string | undefined): string | undefined => {
     if (note === undefined) return base;
     return base === undefined ? note : `${base} · ${note}`;
@@ -229,7 +225,7 @@ export function standingFigures(
           key: "ready-here",
           label: "Ready here",
           value: String(breakdown.availableNow),
-          sub: withSub(unit.name, preparationNote(pendingAt(unit.id), openBedsNow(unit, [...bedReleases]))),
+          sub: withSub(unit.name, preparationNote(pendingAt(unit.id))),
         },
         { key: "out-today", label: "Out today", value: String(breakdown.expectedToday) },
         /*
@@ -280,7 +276,7 @@ export function standingFigures(
       key: "ready",
       label: "Ready now",
       value: String(rollup.service.availableNow),
-      sub: withSub(undefined, preparationNote(pendingEverywhere, openEverywhere)),
+      sub: withSub(undefined, preparationNote(pendingEverywhere)),
     },
     { key: "out-today", label: "Out today", value: String(rollup.service.expectedToday) },
     { key: "waiting", label: "Waiting", value: String(open.length) },

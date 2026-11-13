@@ -104,7 +104,7 @@ describe("Q61: the site bed manager's own tasks", () => {
     expect(tasks.map((task) => task.kind)).toEqual([
       "confirm_bed_numbers",
       "reply_bed_call",
-      "review_discharge_blocker",
+      // One RPH blocker since A16-06 took AD-RPHS-15's "Awaiting clean" off an occupied bed (D-181 item 6).
       "review_discharge_blocker",
       "bed_release_ready",
       "seclusion_room_status",

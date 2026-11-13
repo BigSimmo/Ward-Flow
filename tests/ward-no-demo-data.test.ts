@@ -76,6 +76,7 @@ describe("a live shared build carries no demo records", () => {
     expectTypeOf(standIn.rulingsDemoOverlay).toEqualTypeOf(RulingsDemo.rulingsDemoOverlay);
     expectTypeOf(standIn.withDemoPlannedMoveTimes).toEqualTypeOf(DemoPlannedMoves.withDemoPlannedMoveTimes);
     expectTypeOf(standIn.applyExampleListsOverlay).toEqualTypeOf(DemoExampleLists.applyExampleListsOverlay);
+    expectTypeOf(standIn.withSeededStaffRequest).toEqualTypeOf(DemoExampleLists.withSeededStaffRequest);
   });
 
   it("swaps the modules in only when the build is a live shared one", async () => {

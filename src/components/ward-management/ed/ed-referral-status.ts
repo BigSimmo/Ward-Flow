@@ -1,4 +1,4 @@
-import { bedHold, type BedHold } from "@/components/ward-management/ward-bed-hold";
+import { bedHold, PULL_NO_LIMIT_RECORDED, type BedHold } from "@/components/ward-management/ward-bed-hold";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import type { Movement, MovementStage } from "@/components/ward-management/ward-model";
@@ -57,7 +57,6 @@ export function edReferralStatus(
     acceptedUnitName,
     fallback,
     referredTo,
-    holdLabel,
     now,
   }: {
     /** The accepting ward's name, when one has accepted. */
@@ -66,8 +65,6 @@ export function edReferralStatus(
     fallback: string;
     /** "Referred to …", when the ED sent the referral to named wards itself. */
     referredTo: string | undefined;
-    /** The configured hold length, said when no hold end is recorded. */
-    holdLabel: string;
     now: Instant;
   },
 ): EdReferralStatus {
@@ -95,7 +92,8 @@ export function edReferralStatus(
       ? `Declined by ${declinedBy} ${declinedBy === 1 ? "ward" : "wards"}, coordinator reviewing`
       : "Coordinator asked wards";
   const heldDetail =
-    stage === "pulled" ? (hold ? hold.short : `${holdLabel} pull time limit`) : done > 3 ? "Bed pulled" : "No bed yet";
+    // D-187 (F-46): a pull with no limit recorded says so, not the configured default.
+    stage === "pulled" ? (hold ? hold.short : PULL_NO_LIMIT_RECORDED) : done > 3 ? "Bed pulled" : "No bed yet";
   const transportDetail =
     stage === "moving"
       ? "On the way"
@@ -145,7 +143,7 @@ export function edReferralStatus(
     stage !== "pulled"
       ? ""
       : !hold
-        ? `, ${holdLabel} pull time limit`
+        ? `, ${PULL_NO_LIMIT_RECORDED.toLowerCase()}`
         : hold.state === "lapsed"
           ? `, ${hold.short.toLowerCase()}`
           : ` ${hold.short}`;
@@ -163,13 +161,12 @@ export function edReferralStatus(
 /** One board row's status, from what the row model already resolved. */
 export function edRowReferralStatus(
   row: Pick<EdBoardRowModel, "movement" | "acceptedUnit" | "destinationLabel" | "referredTo">,
-  ctx: Pick<EdScreenContext, "holdLabel" | "now">,
+  ctx: Pick<EdScreenContext, "now">,
 ): EdReferralStatus {
   return edReferralStatus(row.movement, {
     acceptedUnitName: row.acceptedUnit?.name,
     fallback: row.destinationLabel,
     referredTo: row.referredTo,
-    holdLabel: ctx.holdLabel,
     now: ctx.now,
   });
 }

@@ -1,8 +1,8 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { createContext, useContext } from "react";
+
+import { WardDemoSavingNote } from "./ward-demo-saving-note";
 
 /**
  * Once this session holds typed text, whether its submitted demonstration state still saves on this
@@ -13,14 +13,9 @@ import { createContext, useContext } from "react";
  */
 export const WardDemoNotSavedContext = createContext<boolean | undefined>(undefined);
 
-// The note's code (`ward-demo-saving-note.tsx`) loads only once there is something to say, which
-// keeps it off every page's first load (Josh, 21 Oct 2026: no phone script budget raises). `loading`
-// gives it its own Suspense boundary: without one, the first typed entry suspended the whole page
-// while the note's code arrived, and the control just pressed could briefly show twice.
-const WardDemoSavingNote = dynamic(
-  withLoadRetry(() => import("./ward-demo-saving-note").then((module) => module.WardDemoSavingNote)),
-  { loading: () => null },
-);
+// The note is part of the first load (Audit 4 A4-02, 13 Nov 2026). It used to load only once there
+// was something to say, so with the connection down, which is when saving fails, the "not saved"
+// note could not arrive. It is two short lines of text, so it costs the first load next to nothing.
 
 /**
  * The note once saving has stopped. It outranks every other pinned note, broadcasts included (Josh,

@@ -48,13 +48,17 @@ describe("bedMapWards — the bed map's per-ward figures", () => {
     expect(wards.length).toBe(units.length);
     for (const ward of wards) {
       const states = bedStates(ward.unit, wardAdmissions, bedReleases, leaveBeds, []);
-      expect(ward.ready, ward.unit.id).toBe(unitCapacity(ward.unit, bedReleases).available);
+      // D-179 item 8: a bed being made ready comes off Ready and is drawn as its own square.
+      expect(ward.ready + ward.beingMadeReady, ward.unit.id).toBe(unitCapacity(ward.unit, bedReleases).available);
       expect(ward.ready, ward.unit.id).toBe(states.ready);
+      expect(ward.beingMadeReady, ward.unit.id).toBe(states.beingMadeReady);
       expect(ward.pulled, ward.unit.id).toBe(states.pulled);
       expect(ward.closed, ward.unit.id).toBe(states.closed);
       expect(ward.occupied, ward.unit.id).toBe(states.occupied);
       expect(ward.onLeave, ward.unit.id).toBe(states.onLeave);
-      expect(ward.ready + ward.pulled + ward.closed + ward.occupied, ward.unit.id).toBe(ward.unit.beds);
+      expect(ward.ready + ward.beingMadeReady + ward.pulled + ward.closed + ward.occupied, ward.unit.id).toBe(
+        ward.unit.beds,
+      );
       expect(ward.pendingPreparation, ward.unit.id).toBe(bedsPendingPreparation(ward.unit.id, bedReleases));
     }
   });
@@ -73,7 +77,7 @@ describe("bedMapWards — the bed map's per-ward figures", () => {
    * population actually containing a preparing ward, or this would pass by never being exercised —
    * `capacity-derivations.ts`'s own doc comment names `arm-adult-open` as the seeded case.
    */
-  it("never has more beds pending preparation than are ready, for every real ward", () => {
+  it("never has more beds pending preparation than the ward was offering, for every real ward", () => {
     // The seed marks no bed as being made ready (a preparation note is never guessed; coordinator
     // decision 25 Sept 2026), so a ward records one here, on a real stay that has already left.
     const seeded = seedWardFlowState();
@@ -94,7 +98,7 @@ describe("bedMapWards — the bed map's per-ward figures", () => {
       "no ward has a bed pending preparation — this guard would be vacuous",
     ).toBeGreaterThan(0);
     for (const ward of wards) {
-      expect(ward.pendingPreparation, ward.unit.id).toBeLessThanOrEqual(ward.ready);
+      expect(ward.pendingPreparation, ward.unit.id).toBe(ward.beingMadeReady);
     }
   });
 
@@ -139,9 +143,12 @@ describe("bedMapWards — the bed map's per-ward figures", () => {
     ];
     // `available` for this unit is 1 (min(1, 1)); two preparing releases exceed it.
     const ward = bedMapWards([brokenUnit], brokenReleases)[0];
+    // D-179 item 8: the one offered bed is being made ready, so none is Ready; the second record
+    // is said in words but never drawn as a second bed.
     expect(ward.pendingPreparation).toBe(2);
-    expect(ward.ready).toBe(1);
-    expect(ward.ready + ward.pulled + ward.closed + ward.occupied).toBe(brokenUnit.beds);
+    expect(ward.ready).toBe(0);
+    expect(ward.beingMadeReady).toBe(1);
+    expect(ward.ready + ward.beingMadeReady + ward.pulled + ward.closed + ward.occupied).toBe(brokenUnit.beds);
   });
 
   /** The map and table must retain the same Ready population for identical inputs. */
@@ -311,6 +318,7 @@ describe("groupBedMapWardsByService — grouping ward blocks by health service",
     const orphanWard: BedMapWard = {
       unit: { ...wards[0].unit, id: "test-orphan-unit", siteCode: "NOT-A-REAL-SITE" },
       ready: 0,
+      beingMadeReady: 0,
       pulled: 0,
       closed: 0,
       occupied: 0,

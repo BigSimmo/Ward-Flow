@@ -119,7 +119,8 @@ describe("referral letter and ISBAR copies", () => {
 
   it("copies the letter with one synthetic line and no UMRN line", () => {
     const text = copiedText(referralLetterText(input, "10:46"));
-    expect(lines(text)[0]).toBe("Synthetic prototype. Draft 10:46 AWST.");
+    // RC 2.6 (F-113, D-190): the local demo's scripted clock reads "demo time", never AWST.
+    expect(lines(text)[0]).toBe("Synthetic prototype. Draft 10:46 demo time.");
     expect(text).not.toMatch(UMRN);
     expect(text).not.toMatch(/^UMRN/m);
     expect(text).toContain("PATIENT\nAlex Testperson · 41, female · Midland");

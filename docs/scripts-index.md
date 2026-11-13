@@ -62,7 +62,7 @@ before the production build measures the phone script budget),
 `identifier-scan.mjs` (runs the pre-commit secret and patient-identifier scan on a pull request's added lines, D-122) and
 `budget-raise-cap.mjs` (fails a phone limit raised more than 5 KB unless the PR's budget history records Josh's approval, D-121).
 The other workflows need no script here: `release-tag.yml` tags each CI-passed main commit
-`release-YYYY-MM-DD-<short sha>` (the full commit id if a different same-day commit already holds the short one), and `backend-uptime.yml` checks the hosted backend's `/healthz` every
+`release-YYYY-MM-DD-<short sha>`, dated in UTC by the CI run's start, not Perth (the full commit id if a different same-day commit already holds the short one), and `backend-uptime.yml` checks the hosted backend's `/healthz` every
 10 minutes, signs in as the synthetic monitor account to load `/v1/workspace`, and opens an issue
 for the owner when either stays down. If the monitor secret is unset or the database check is hidden for
 about a day (144 runs), it also opens one "Uptime monitor not set up" issue, which closes itself when

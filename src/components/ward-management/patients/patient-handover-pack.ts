@@ -131,7 +131,8 @@ function letterRow(rows: readonly ReferralLetterRow[], label: string): ReferralL
   return rows.find((row) => row.label === label) ?? { label, value: NOT_RECORDED, missing: true };
 }
 
-export function handoverPackModel(input: HandoverPackInput): HandoverPack {
+/** `dayZero` dates a typed paper expiry on another day (D1, D-93); left out, it never shows an age. */
+export function handoverPackModel(input: HandoverPackInput, dayZero?: Date): HandoverPack {
   const letter = referralLetterModel(letterInput(input));
   const { movement, now } = input;
   const bed = movement.allocatedBed ?? movement.heldBedNumber;
@@ -190,7 +191,7 @@ export function handoverPackModel(input: HandoverPackInput): HandoverPack {
             ? FORM_RECORDED_ENDED
             : input.paperExpiryAt === undefined
               ? NOT_RECORDED
-              : typedTimeLine(input.paperExpiryAt, now),
+              : typedTimeLine(input.paperExpiryAt, now, dayZero),
           missing: !formRecordedEnded(input.movement) && input.paperExpiryAt === undefined,
         },
       ],

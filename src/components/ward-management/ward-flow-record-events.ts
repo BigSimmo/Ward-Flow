@@ -44,6 +44,7 @@ import {
 } from "@/components/ward-management/ward-change-reasons";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { isLegalClockFormCode } from "@/components/ward-management/ward-legal-clock";
+import { examinationOutcomeInSentence } from "@/components/ward-management/ward-legal-forms";
 import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning";
 import {
   BLOCKERS_MEANING_NOTHING_IS_BLOCKING,
@@ -663,7 +664,8 @@ export function reduceRecordedFactEvent(
         // S1-5 and TASK-L3-06: the shared close step, so the closed movement does not linger as
         // live at any ward, a booked job is cancelled and nothing is left blocking.
         ...endedBedSearch(movement, event.now, "ed_outcome_recorded", {
-          reason: `examination outcome ${event.outcome}`,
+          // F-15 (A3-4): the plain outcome words, never the stored code.
+          reason: `Examination recorded (${examinationOutcomeInSentence(event.outcome)})`,
         }),
       };
       const next = replaceMovement(withoutPulledBed, movement.id, updated);
@@ -692,7 +694,7 @@ export function reduceRecordedFactEvent(
             "transport_cancelled_officer",
             { role: "officer" },
             { movementId: movement.id },
-            `Transport for ${movement.id} was cancelled (examination outcome ${event.outcome}); no bed is pulled and nothing has been rebooked.`,
+            `Transport for ${movement.id} was cancelled (examination recorded: ${examinationOutcomeInSentence(event.outcome)}); no bed is pulled and nothing has been rebooked.`,
           ),
         );
       }
@@ -705,7 +707,7 @@ export function reduceRecordedFactEvent(
             "ward_request_withdrawn",
             { role: "ward", placeId: unitId },
             { movementId: movement.id, unitId },
-            `The request for ${movement.id} was withdrawn: examination outcome ${event.outcome}.`,
+            `The request for ${movement.id} was withdrawn: examination recorded (${examinationOutcomeInSentence(event.outcome)}).`,
           ),
         );
       }

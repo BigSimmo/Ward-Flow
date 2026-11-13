@@ -61,7 +61,7 @@ export function bedSquares(card: HTMLElement): HTMLElement[] {
 }
 
 /** The squares of one kind, read from the class the card draws them with. */
-export function bedSquaresOf(card: HTMLElement, kind: "ready" | "used" | "closed"): HTMLElement[] {
-  const pattern = { ready: /cellReady/u, used: /cellUsed/u, closed: /cellClosed/u }[kind];
+export function bedSquaresOf(card: HTMLElement, kind: "ready" | "preparing" | "used" | "closed"): HTMLElement[] {
+  const pattern = { ready: /cellReady/u, preparing: /cellPreparing/u, used: /cellUsed/u, closed: /cellClosed/u }[kind];
   return bedSquares(card).filter((square) => pattern.test(square.className));
 }

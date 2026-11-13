@@ -18,7 +18,7 @@ import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-
 import { standingSuffix, typedTimeStanding } from "@/components/ward-management/legal-forms/legal-forms-view";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { LEGAL_LIMITS_NOT_CHECKED_NOTICE } from "@/components/ward-management/ward-legal-clock";
-import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
+import { useDueSoonThresholds, useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { WardChipLevel } from "@/components/ward-management/ward-chip";
 import { useEffect, useId, useRef } from "react";
 import { edById } from "@/components/ward-management/ward-sites";
@@ -204,6 +204,7 @@ export function StageRow({
   selected: boolean;
 }) {
   const thresholds = useDueSoonThresholds();
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   const sender = useSenderPresentation();
   const presentation = movementPresentation(movement, sender.movementFor(movement));
   const progressText = movementProgressText(presentation);
@@ -259,7 +260,7 @@ export function StageRow({
       legalText = "No expiry recorded";
     } else {
       if (standing.word) legalTagTone = standing.urgent ? "danger" : "warn";
-      legalText = `${typedTimePhrase(dueAt, now)}${standingSuffix(standing)}`;
+      legalText = `${typedTimePhrase(dueAt, now, dayZero)}${standingSuffix(standing)}`;
     }
   } else if (isNotVoluntary(movement.legalStatus)) {
     legalTagTone = "warn";
@@ -474,6 +475,7 @@ export function StageRow({
         <Timer
           at={movement.openedAt * MS_PER_MINUTE}
           now={clockEnd * MS_PER_MINUTE}
+          wholeMinutes
           direction="waiting"
           thresholds={
             closure

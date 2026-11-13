@@ -152,7 +152,8 @@ describe("ward board page", () => {
     // And the pulled bed is drawn as taken, never as a free bed.
     const pulled = occupants.filter((admission) => daysInBed(admission, WARD_ADMISSIONS_ANCHOR) === null);
     expect(container.querySelectorAll('[data-bed-kind="waiting"]')).toHaveLength(pulled.length);
-    expect(within(screen.getByTestId("ward-board-beds")).getAllByText("Pulled")).toHaveLength(pulled.length);
+    // queryAll: A16-13 (13 Nov 2026) left Dabakarn with no pulled bed (its two were held for nobody).
+    expect(within(screen.getByTestId("ward-board-beds")).queryAllByText("Pulled")).toHaveLength(pulled.length);
   });
 });
 

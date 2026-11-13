@@ -17,6 +17,18 @@ export function releasedCountText(count: ReleasedCount): number | string {
   return count.kind === "exact" ? count.value : count.kind === "small" ? smallNumberText(1) : SMALL_NUMBER_NOT_SHOWN;
 }
 
+/**
+ * F-55 (A9-36): a count in a sentence, worded as the ward statistics page words it. A withheld count
+ * (`SMALL_NUMBER_NOT_SHOWN`) reads "an unstated number", never the bare words "not shown" dropped
+ * where a figure goes ("0 of not shown refused so far"). With `one` and `many` the noun follows; a
+ * worded count takes the plural, so the grammar never gives a 1 away. The small number rule itself
+ * is unchanged (D-179 item 9).
+ */
+export function countInSentence(shown: number | string, one?: string, many?: string): string {
+  if (shown === SMALL_NUMBER_NOT_SHOWN) return many ? `an unstated number of ${many}` : "an unstated number";
+  return many ? `${shown} ${shown === 1 ? one : many}` : String(shown);
+}
+
 export function statisticsCountText(
   count: StatisticsCount,
   small: (value: number) => number | string = (value) => value,

@@ -41,7 +41,8 @@ import {
 } from "../src/components/ward-management/ward-model";
 import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
-const { movements, units, referrals } = seedWardFlowState();
+// A16-14: the legal-form worked examples are opt-in since 13 Nov 2026; this file pins them.
+const { movements, units, referrals } = seedWardFlowState("standard", { workedExamples: true });
 const openMovements = movements.filter(isOpen);
 // R2: `movementIsUrgentForServiceSafety`/`urgentMovementsOutsideService` now take the
 // coordinator-configured ED access target as their last argument — the real seed's own

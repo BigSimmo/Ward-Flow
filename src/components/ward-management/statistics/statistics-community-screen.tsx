@@ -25,6 +25,7 @@ import {
 } from "@/components/wf";
 import { useCanOpenHref, useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { MINUTES_PER_DAY, formatSheetMoment } from "@/components/ward-management/ward-clock";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
   admissionsWithNoCommunityTeam,
@@ -53,7 +54,7 @@ import {
 import { countAxisMax } from "./statistics-axis";
 import { communityFigures, type CommunityFigures } from "./statistics-community-figures";
 import { downloadCsv } from "./statistics-csv";
-import { dateOf, fromToday, isPastDate } from "./statistics-dates";
+import { dateOf, fromToday, isDueWithinDays, isPastDate } from "./statistics-dates";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { HeroTool, UnitStepper } from "./statistics-hero-tools";
 import { FlushRow, FlushStack, Follow } from "./statistics-layout";
@@ -283,10 +284,7 @@ function OperationalCommunityScreen({ teamId }: { teamId: string }) {
     (admission) => admission.expectedDischargeAt !== null && isPastDate(admission.expectedDischargeAt, now),
   ).length;
   const dueOutWeek = lists.expectedBack.filter(
-    (admission) =>
-      admission.expectedDischargeAt !== null &&
-      admission.expectedDischargeAt >= now &&
-      admission.expectedDischargeAt < now + 7 * MINUTES_PER_DAY,
+    (admission) => admission.expectedDischargeAt !== null && isDueWithinDays(admission.expectedDischargeAt, now, 7),
   ).length;
   const dueOutText = figures.expected.kind === "measured" ? small(dueOutWeek) : figureText(figures.expected);
   const pastDateText = figures.expected.kind === "measured" ? small(pastDate) : figureText(figures.expected);
@@ -504,6 +502,7 @@ function OperationalCommunityScreen({ teamId }: { teamId: string }) {
   );
 }
 function CommunityView({ model, slots }: { model: CommunityModel; slots: CommunitySlots }) {
+  const zone = useClockZoneLabel();
   const {
     team,
     openTeams,
@@ -698,7 +697,7 @@ function CommunityView({ model, slots }: { model: CommunityModel; slots: Communi
                 current={team}
                 rows={allTeams}
                 countsOnly={countsOnly}
-                asAt={formatSheetMoment(now, dayZero, { includeYearAndZone: true })}
+                asAt={formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone })}
               />
             </Follow>
             <FlushStack>

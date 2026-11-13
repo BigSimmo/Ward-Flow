@@ -62,6 +62,8 @@ function openPatientForm(kind: "leave" | "date") {
     kind === "leave" ? "Expected back time" : "Expected discharge time",
   ) as HTMLInputElement;
   fireEvent.change(input, { target: { value: "09:30" } });
+  // A9-15 (Josh, 13 Nov 2026): no kind of leave starts chosen.
+  if (kind === "leave") fireEvent.click(within(card).getByRole("button", { name: "Off-ward leave" }));
   fireEvent.click(within(card).getByRole("button", { name: kind === "leave" ? "Record leave" : "Save date" }));
   return { card, input };
 }

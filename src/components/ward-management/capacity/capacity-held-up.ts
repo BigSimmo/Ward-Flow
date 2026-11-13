@@ -1,16 +1,13 @@
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { BedRelease } from "@/components/ward-management/ward-model";
-import {
-  barrierCategory,
-  barrierLabel,
-  groupDischarges,
-} from "@/components/ward-management/discharges/discharge-board-model";
+import { barrierCategory, barrierLabel } from "@/components/ward-management/discharges/discharge-board-model";
+import { heldUpDueByTomorrow } from "@/components/ward-management/ward-held-up";
 
 /**
- * Held-up releases, counted the way Discharges counts them (redesign, Josh, 30 Oct 2026): every
- * open bed release with a recorded blocker, any date (`groupDischarges` with `heldUpAnyDate`, as
- * the Discharges board's Held up group), named with Discharges' short barrier labels
- * ("Clean / prep", "Family / carer"). One count and one set of names on both pages.
+ * Held-up releases on Capacity: every open bed release with a recorded blocker, due by tomorrow
+ * (`heldUpDueByTomorrow`, D-191 item 5, Josh 13 Nov 2026), the same count as the TV, the bed
+ * meeting sheet and the menu. It was every date, as Discharges' own group, until that ruling.
+ * Named with Discharges' short barrier labels ("Clean / prep", "Family / carer").
  */
 export type BarrierTally = { id: string; label: string; count: number };
 
@@ -30,7 +27,7 @@ export function tallyBarriers(entries: readonly { reason: string; count: number 
 }
 
 export function heldUpReleases(releases: readonly BedRelease[], now: Instant) {
-  const held = groupDischarges([...releases], now, { heldUpAnyDate: true }).blocked;
+  const held = heldUpDueByTomorrow(releases, now);
   const tally = tallyBarriers(held.map((release) => ({ reason: release.blocker ?? "", count: 1 })));
   return {
     total: held.length,

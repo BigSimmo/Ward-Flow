@@ -26,6 +26,10 @@ const WARD_DIR = "src/components/ward-management";
  */
 const MAY_ASSERT_TODAY = new Map([
   [
+    "row.followUpDueAt",
+    'Community follow-up due (F-33, RC 2.3, 13 Nov 2026): demoEgressAt prints it only when relativeDay says the due time is today, after the words "Due today".',
+  ],
+  [
     "intake.from",
     "Tonight's intake window (item 13, 10 Nov 2026): the line or card heading says Tonight, and the event keeps the window inside one intake day.",
   ],
@@ -82,6 +86,10 @@ const MAY_ASSERT_TODAY = new Map([
   ["latestRefreshRequest.at", "STILL TO SWEEP - a refresh asked for yesterday reads as this morning"],
   ["legalForm.dueAt", "STILL TO SWEEP - needs `now` threaded into legalFormReadinessLine"],
   ["referral.localBedSought.at", "referral surface, owned by another session"],
+  [
+    "typedAt",
+    "Legal times as typed (time audit D1, 13 Nov 2026): typedClockParts returns this clock face with its day (yesterday, tomorrow or the Perth date) whenever it is not today, and every caller shows both.",
+  ],
   [
     "record.estimatedAt",
     "Out of area This shift: the clock sits above departureDayLabel, which names the departure's day (Yesterday, Today, Tomorrow or a day count), so the row still names the day.",

@@ -79,6 +79,8 @@ const OFFLINE_EXCEPTIONS: Readonly<Record<string, string>> = {
   "No connection. Unlock when it is back.": "TV lock: says what to do, on a locked shared screen.",
   "Offline. Snapshot when the connection returns.": "Downtime pack button state.",
   "No connection.": "Front door title, before any desk is chosen; its body says what to do.",
+  "Optional. In your browser settings, to remove display settings and offline files too.":
+    "About this demo: what clearing browser data also removes, not an offline state.",
 };
 
 /**

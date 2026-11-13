@@ -259,7 +259,7 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
                     </td>
                     <td>{referralPurposeLabel(destination.purpose)}</td>
                     <td>{eta === undefined ? "Not recorded" : formatInstantWithDay(eta, now)}</td>
-                    <td className={redesign.listMono}>{formatElapsed(Math.max(0, now - referral.raisedAt))}</td>
+                    <td className={redesign.listMono}>{formatElapsed(now - referral.raisedAt)}</td>
                     <td className={redesign.alignEnd}>
                       <button
                         type="button"

@@ -10,7 +10,7 @@ import type { FormEvent } from "react";
 import { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
 import { BED_STATE_DETAILS, BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { formatInstant } from "@/components/ward-management/ward-clock";
-import { BED_RELEASES_HELD_UP_ANY_DATE_LABEL, unitCapacity } from "@/components/ward-management/ward-derivations";
+import { BED_RELEASE_BLOCKED_FIGURE_LABEL, unitCapacity } from "@/components/ward-management/ward-derivations";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import type { DeclineReason, Rejection } from "@/components/ward-management/ward-model";
 import { WardPhoneFind } from "./ward-phone-find";
@@ -78,7 +78,7 @@ type WardScreenHomeSectionProps = {
   recentAnswers: {
     key: string;
     movementId: string;
-    outcome: "Accepted" | "Declined";
+    outcome: "Accepted" | "Declined" | "Waitlisted";
     at?: number | undefined;
     reason?: DeclineReason | undefined;
   }[];
@@ -445,7 +445,7 @@ export function WardScreenHomeSection({
                   data-state="blocked-release"
                   data-testid="ward-unit-blocked-releases"
                 >
-                  <span className={styles.statBoxLabel}>{BED_RELEASES_HELD_UP_ANY_DATE_LABEL}</span>{" "}
+                  <span className={styles.statBoxLabel}>{BED_RELEASE_BLOCKED_FIGURE_LABEL}</span>{" "}
                   <strong className={styles.statBoxVal}>{blockedReleases.length}</strong>
                 </span>
                 <span className={`${styles.bedChip} ${styles.statBox}`} data-ward-primitive="chip" data-state="leave">
@@ -459,10 +459,10 @@ export function WardScreenHomeSection({
                   <Clock size={16} strokeWidth={1.75} aria-hidden="true" />
                   <span>
                     <strong>
-                      {pendingPreparation} ready {pendingPreparation === 1 ? "bed" : "beds"} at {unit.name}{" "}
-                      {pendingPreparation === 1 ? "is" : "are"} still being made ready.
+                      {pendingPreparation} {pendingPreparation === 1 ? "bed" : "beds"} at {unit.name}{" "}
+                      {pendingPreparation === 1 ? "is" : "are"} being made ready.
                     </strong>{" "}
-                    Not offered until marked Ready.
+                    Not counted as ready until marked Ready.
                   </span>
                 </div>
               ) : null}
@@ -470,10 +470,10 @@ export function WardScreenHomeSection({
               <details className={styles.clinicalDisclosure}>
                 <summary>What these bed figures mean</summary>
                 <p className={styles.bedNote}>
-                  Ready and Occupied, at the top of the page, with pulled and closed here total {unit.beds}. Closed
-                  means empty but not offered; pulled means allocated to a patient who has not arrived yet. Ready
-                  includes beds being made ready; Occupied includes beds held for leave. Discharge and leave counts are
-                  not added to the total.
+                  Ready and Occupied, at the top of the page, with being made ready, pulled and closed here total{" "}
+                  {unit.beds}. Closed means empty but not offered; pulled means allocated to a patient who has not
+                  arrived yet. Ready leaves out beds being made ready, which are counted on their own; Occupied includes
+                  beds held for leave. Discharge and leave counts are not added to the total.
                 </p>
               </details>
             </div>

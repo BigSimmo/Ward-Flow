@@ -18,6 +18,7 @@ import { Badge, Button, PhoneSheet, Radio, SrOnly } from "@/components/wf";
 import { referralWaitLine } from "@/components/ward-management/referrals/referral-wait";
 import { daysInBed } from "@/components/ward-management/ward-admissions";
 import { daysBetween } from "@/components/ward-management/ward-clock";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { communityDeclineBlockedReason } from "@/components/ward-management/community/community-blocked-reasons";
 import { UMRN_NOT_RECORDED } from "@/components/ward-management/ward-patient-resolver";
@@ -65,6 +66,7 @@ import {
 
 /** The phone tree, rendered only under 48rem. Built from the same view as desktop. */
 export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   const {
     teamId,
     units,
@@ -389,7 +391,7 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
                   testId: `ward-community-phone-cto-${row.referralId}`,
                   name: phoneName(person, "No person on file"),
                   meta: `${formCode ? `Form ${formCode}` : "No form recorded"} · ${row.umrn ?? UMRN_NOT_RECORDED}`,
-                  time: caseloadRecordedExpiryLabel(row, now),
+                  time: caseloadRecordedExpiryLabel(row, now, dayZero),
                   onSelect: patientId !== undefined ? () => openDossier(patientId) : undefined,
                 };
               }),

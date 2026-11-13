@@ -17,6 +17,7 @@ import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/w
 import { officerHref } from "@/components/ward-management/shell/ward-facade";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 import { addReminder } from "@/components/ward-management/tools/ward-tool-remind-store";
+import { demoDayZero } from "@/components/ward-management/ward-clock";
 
 /**
  * Alerts redesign (Josh, 31 Oct 2026 09:04 UTC, "Yes to all"), built from the mock-up's page and its
@@ -169,6 +170,7 @@ describe("Alerts redesign: nurse in charge (ROLE BRANCH ward)", () => {
         targetLabel: "Ward 3B",
         reason: "Call back",
         dueAt: NOW_ANCHOR - 60,
+        dayZero: demoDayZero(new Date()).getTime(),
       });
     });
     renderAs({ role: "coordinator", scope: { kind: "statewide" } }, { quiet: true });
@@ -186,6 +188,7 @@ describe("Alerts redesign: nurse in charge (ROLE BRANCH ward)", () => {
         targetLabel: "Ward 3B",
         reason: "Call back",
         dueAt: NOW_ANCHOR - 60,
+        dayZero: demoDayZero(new Date()).getTime(),
       });
     });
     renderAs({ role: "ward", scope: { kind: "ward", unitIds: [ward.id] } }, { quiet: true });

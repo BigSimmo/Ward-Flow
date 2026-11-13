@@ -103,7 +103,9 @@ export function ShiftChecks({
         <div className={styles.shiftTop}>
           <span className={styles.shiftFigure}>
             {heldUp.total}
-            <span className={styles.shiftNoun}>held-up {heldUp.total === 1 ? "discharge" : "discharges"}</span>
+            <span className={styles.shiftNoun}>
+              held-up {heldUp.total === 1 ? "discharge" : "discharges"} due by tomorrow
+            </span>
           </span>
           {canOpen(HELD_UP_HREF) ? (
             <Link
@@ -116,7 +118,7 @@ export function ShiftChecks({
           ) : null}
         </div>
         {heldUp.total === 0 ? (
-          <p className={styles.mutedXs}>No discharge is recorded as held up.</p>
+          <p className={styles.mutedXs}>No discharge due by tomorrow is recorded as held up.</p>
         ) : (
           groups.map((group) =>
             group.rows.length === 0 ? null : (

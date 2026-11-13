@@ -50,7 +50,7 @@ it("capacity CSV retains the held snapshot time across the new year and preserve
   vi.spyOn(Date, "now").mockReturnValue(Date.UTC(2027, 0, 2));
   const csv = await captureCsv(() => fireEvent.click(screen.getByRole("button", { name: "Chart CSV" })));
   const lines = csv.split("\r\n");
-  expect(lines[1]).toBe(`"As at","Thu 31 Dec 2026, 23:59 AWST"`);
+  expect(lines[1]).toBe(`"As at","Thu 31 Dec 2026, 23:59 demo time"`);
   expect(lines[2]).toContain('"Scope","Capacity across the network');
   expect(lines[5]).toBe(
     '"Synthetic current-state data","Scope","Total beds","Ready","Pulled","Closed","Occupied","On leave"',

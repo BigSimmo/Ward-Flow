@@ -1300,7 +1300,8 @@ function GovernanceSession({
             },
             {
               title: "Tribunal and advocacy",
-              text: "Reviews and advocate contact on time.",
+              // F-91 (K22): says what is recorded, never that a legal time was met.
+              text: "Review dates and advocate contact, as recorded.",
             },
           ].map((report) => (
             <Card key={report.title} className={thirdEdition.previewCard} aria-label={report.title}>

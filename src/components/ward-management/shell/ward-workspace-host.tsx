@@ -149,6 +149,8 @@ function ExecutiveWorkspace({
   const selectedReceivedAt = held?.receivedAt ?? connection.receivedAt;
   const currentDeadline = connection.accessUntil;
   const sessionDeadline = connection.sessionEndsAt;
+  // All three deadlines are on this device's clock: the access deadlines through `onDeviceClock`, the
+  // session limit through `toDeviceClock` (time audit C2), so the earliest is a like-for-like minimum.
   const finiteSession = sessionDeadline === null || sessionDeadline === undefined || Number.isFinite(sessionDeadline);
   const expiresAt =
     selected && typeof currentDeadline === "number" && Number.isFinite(currentDeadline) && finiteSession

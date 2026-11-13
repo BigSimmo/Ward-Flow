@@ -41,8 +41,9 @@ export function BedMeetingSheetDialog({
     {
       label: "Beds freeing today",
       value: discharges.freeingToday,
-      // A16-25: the same day as the figure above it, said, so it never reads against "held up" elsewhere.
-      sub: `${discharges.heldUpToday} held up today`,
+      // D-191 item 5 (Josh, 13 Nov 2026): held up is due by tomorrow on every screen, the sheet's
+      // own "held up" count below and the TV's; the sub names that span, not the figure's day.
+      sub: `${discharges.heldUp} held up, due by tomorrow`,
     },
     { label: "Pulled", value: capacity.pulled, sub: `${capacity.closed} closed` },
   ];

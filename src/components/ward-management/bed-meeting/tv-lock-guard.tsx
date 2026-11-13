@@ -62,6 +62,45 @@ export function lockTv(href: string): boolean {
   return writeLock(href);
 }
 
+/*
+ * F-65 (K8, RC 5.3, A14-24): the lock could trap a browser. The guard sends every page back to the TV
+ * view, and the only Unlock is on the TV view, so a TV view that drew no Unlock (closed to the desk,
+ * failed to load, or the TV views switched off) left no way out. Each TV control notes itself here, so
+ * the layout's stand-in Unlock (`tv-lock-fallback-host.tsx`) shows only when none is on the page.
+ */
+let controlsShown = 0;
+const controlListeners = new Set<() => void>();
+
+function notifyControls() {
+  for (const listener of controlListeners) listener();
+}
+
+/** A TV view's Lock or Unlock control is on the page; call the returned function when it leaves. */
+export function noteTvLockControl(): () => void {
+  controlsShown += 1;
+  notifyControls();
+  return () => {
+    controlsShown -= 1;
+    notifyControls();
+  };
+}
+
+function subscribeControls(onChange: () => void): () => void {
+  controlListeners.add(onChange);
+  return () => {
+    controlListeners.delete(onChange);
+  };
+}
+
+/** Whether a TV view's own Lock or Unlock control is on the page now. */
+export function useTvLockControlShown(): boolean {
+  return useSyncExternalStore(
+    subscribeControls,
+    () => controlsShown > 0,
+    () => true,
+  );
+}
+
 /** Mounted once in the layout: a locked browser goes back to its TV view from any other page. */
 export function TvLockGuard() {
   const locked = useTvLock();

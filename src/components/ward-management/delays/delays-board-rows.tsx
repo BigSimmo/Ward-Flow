@@ -16,7 +16,7 @@ import {
   isClockBreached,
   splitDuration,
 } from "@/components/ward-management/ward-clock";
-import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
+import { useDueSoonThresholds, useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { type Movement, type Unit } from "@/components/ward-management/ward-model";
 import { legalStatusFull, legalStatusShort } from "@/components/ward-management/ward-legal-forms";
@@ -26,7 +26,11 @@ import { Tooltip } from "@/components/wf/tooltip";
 import { Glyph } from "./delays-board-parts";
 import { OVER_24H, OVER_8H, rowEvents, type BoardRow } from "./delays-board-model";
 import { standingSuffix, typedTimeStanding } from "@/components/ward-management/legal-forms/legal-forms-view";
-import { typedTimeLine, typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import {
+  typedClock,
+  typedTimeLine,
+  typedTimePhrase,
+} from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning";
 import styles from "./delays-board.module.css";
 import redesign from "./waiting.module.css";
@@ -48,17 +52,22 @@ export function ago(minutes: number): string {
  * on the chip shows the tip and does not open the row.
  */
 /** The export's legal time: the form's time exactly as typed, or none recorded. Never a countdown (D-93). */
-export function legalTimeAsTypedWords(movement: Movement, now: Instant): string {
+export function legalTimeAsTypedWords(movement: Movement, now: Instant, dayZero: Date | undefined): string {
   const typed = movement.legalForm === undefined ? undefined : currentLegalDueAt(movement);
-  return typed === undefined ? "None recorded" : typedTimeLine(typed, now);
+  return typed === undefined ? "None recorded" : typedTimeLine(typed, now, dayZero);
 }
 
-export function legalCell(row: BoardRow, now: Instant, thresholds: DueSoonThresholds): ReactNode {
+export function legalCell(
+  row: BoardRow,
+  now: Instant,
+  thresholds: DueSoonThresholds,
+  dayZero: Date | undefined,
+): ReactNode {
   const short = legalStatusShort(row.movement);
   const full = legalStatusFull(row.movement);
   const typed = row.movement.legalForm === undefined ? undefined : currentLegalDueAt(row.movement);
   if (typed === undefined) return legalTip(full, <>{short}</>);
-  const ends = `${isClockBreached(typed, now) ? "Ended" : "Ends"} ${formatInstantWithDay(typed, now)}`;
+  const ends = `${isClockBreached(typed, now) ? "Ended" : "Ends"} ${typedClock(typed, now, dayZero)}`;
   const standing = typedTimeStanding(row.movement, now, thresholds);
   return (
     <span className={redesign.legalTyped}>
@@ -116,7 +125,12 @@ export function updateCell(row: BoardRow, now: Instant): ReactNode {
 }
 
 /** Phone: the second line leads with the form and its typed end time, or that it was escalated. */
-export function phonePrefix(row: BoardRow, now: Instant, thresholds: DueSoonThresholds): ReactNode {
+export function phonePrefix(
+  row: BoardRow,
+  now: Instant,
+  thresholds: DueSoonThresholds,
+  dayZero: Date | undefined,
+): ReactNode {
   const form = row.movement.legalForm;
   const typed = form === undefined ? undefined : currentLegalDueAt(row.movement);
   if (form !== undefined && typed !== undefined) {
@@ -126,7 +140,9 @@ export function phonePrefix(row: BoardRow, now: Instant, thresholds: DueSoonThre
     return (
       <span className={redesign.phLegalLine}>
         {standing.word ? <Glyph tone={standing.tone} /> : null}
-        <b className={styles.phPre}>{`Form ${form.code} ${typedTimePhrase(typed, now)}${standingSuffix(standing)}`}</b>
+        <b
+          className={styles.phPre}
+        >{`Form ${form.code} ${typedTimePhrase(typed, now, dayZero)}${standingSuffix(standing)}`}</b>
       </span>
     );
   }
@@ -187,6 +203,7 @@ export function WaitBar({ row }: { row: BoardRow }) {
 /** The open row's own journey: arrival to now, then the recorded legal time if there is one. */
 export function RowTimeline({ row, units, now }: { row: BoardRow; units: Unit[]; now: Instant }) {
   const thresholds = useDueSoonThresholds();
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   const standing = typedTimeStanding(row.movement, now, thresholds);
   const all = rowEvents(row, units, now);
   const keep = all.length <= 3 ? all : [all[0], ...all.slice(-2)];
@@ -213,7 +230,7 @@ export function RowTimeline({ row, units, now }: { row: BoardRow; units: Unit[];
   if (due !== undefined && dueP !== null && row.movement.legalForm)
     labels.push({
       p: dueP,
-      time: formatInstantWithDay(now + due, now),
+      time: typedClock(now + due, now, dayZero),
       text: `Form ${row.movement.legalForm.code} ends as typed${standingSuffix(standing)}`,
       tone: standing.word ? standing.tone : undefined,
     });
@@ -223,7 +240,7 @@ export function RowTimeline({ row, units, now }: { row: BoardRow; units: Unit[];
   if (passed !== undefined && passedP !== null && row.movement.legalForm)
     labels.push({
       p: passedP,
-      time: formatInstantWithDay(now - passed, now),
+      time: typedClock(now - passed, now, dayZero),
       text: `Form ${row.movement.legalForm.code} ended as typed`,
       tone: "danger",
     });

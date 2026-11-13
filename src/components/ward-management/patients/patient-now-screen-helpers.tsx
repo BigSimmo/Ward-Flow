@@ -4,6 +4,7 @@
 // record tab keys. Split out of `patient-now-screen.tsx` so
 // the screen and its section files share them without importing one another.
 import type { Movement } from "@/components/ward-management/ward-model";
+import { recordedByWords } from "@/components/ward-management/ward-flow-roles";
 import type { PatientMode } from "./patient-mode";
 import { type PatientStatusContext, buildPatientStatus } from "./patient-status-card";
 import { STAGES, clock } from "./patient-now-records";
@@ -54,7 +55,7 @@ export function getStageBedflowDetail(stageId: string, liveMovement?: Movement):
     milestones: changes.map((change) => ({
       time: clock(change.at),
       label: "Stage recorded",
-      detail: `Recorded by ${change.by}${change.reason ? `: ${change.reason}` : ""}.`,
+      detail: `Recorded by ${recordedByWords(change.by)}${change.reason ? `: ${change.reason}` : ""}.`,
     })),
   };
 }
@@ -73,8 +74,19 @@ export type TabKey = "now" | "history" | "community" | "details" | "documents";
  * status context (whose clearance handler remembers its trigger in a ref) is read as a prop rather
  * than during the screen's render.
  */
-/** How many of the status card's move conditions are clear ("0 of 3"), as the card counts them. */
-export function clearToMove(mode: PatientMode, context: PatientStatusContext): { clear: number; of: number } {
+/**
+ * How many of the status card's move conditions are clear ("0 of 3"), as the card counts them.
+ * F-41 (A9-25): once the person is handover ready or moving ("transit"), the card's cells are the
+ * journey's progress steps, not conditions to move, so the count is named "steps done".
+ */
+export function clearToMove(
+  mode: PatientMode,
+  context: PatientStatusContext,
+): { clear: number; of: number; label: string } {
   const status = buildPatientStatus(mode, context);
-  return { clear: status.cells.filter((cell) => cell.clear).length, of: status.cells.length };
+  return {
+    clear: status.cells.filter((cell) => cell.clear).length,
+    of: status.cells.length,
+    label: mode === "transit" ? "steps done" : "clear to move",
+  };
 }

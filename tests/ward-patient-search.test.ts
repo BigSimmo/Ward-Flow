@@ -9,7 +9,8 @@ import type { Movement } from "../src/components/ward-management/ward-model";
 import { getPatientPresence } from "../src/components/ward-management/search/patient-search-model";
 import { isCommunityReferral } from "../src/components/ward-management/search/community-referral";
 
-const { movements, units, referrals, patients } = seedWardFlowState();
+// A16-14: the Armadale worked examples are opt-in since 13 Nov 2026; this file pins them.
+const { movements, units, referrals, patients } = seedWardFlowState("standard", { workedExamples: true });
 const openIds = movements
   .filter(isOpen)
   .map((movement) => movement.id)

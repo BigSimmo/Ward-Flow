@@ -125,7 +125,8 @@ export type WardScreenId =
   | "on-call"
   | "seclusion"
   | "leave"
-  | "settings";
+  | "settings"
+  | "about";
 
 export const WARD_SCREEN_IDS: readonly WardScreenId[] = [
   "home",
@@ -165,6 +166,8 @@ export const WARD_SCREEN_IDS: readonly WardScreenId[] = [
   "seclusion",
   "leave",
   "settings",
+  // F-77 (Audit 15, A15-25): About this demo, a plain facts page every desk can open.
+  "about",
 ];
 
 /**
@@ -209,6 +212,7 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
     // Feature 23: everyone on leave on the site's own wards.
     leave: "own",
     settings: "own",
+    about: "own",
   },
   // Josh, 5 Nov 2026 (WF-10, replaces Q154): the ward, ED and community desks no longer open the
   // Transport desk. They request and follow transport from their own patient's movement record.
@@ -241,6 +245,7 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
     // D-80: its own ward's statistics only, as counts (`OWN_STATISTICS_SECTION`).
     statistics: "counts",
     settings: "own",
+    about: "own",
   },
   ed: {
     ed: "own",
@@ -263,6 +268,7 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
     alerts: "own",
     "on-call": "all",
     settings: "own",
+    about: "own",
   },
   community: {
     community: "own",
@@ -286,12 +292,14 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
     alerts: "own",
     "on-call": "all",
     settings: "own",
+    about: "own",
   },
   officer: {
     officer: "own",
     alerts: "own",
     "on-call": "all",
     settings: "own",
+    about: "own",
   },
   executive: {
     statistics: "counts",
@@ -299,10 +307,12 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
     // only (`ward-access-scope.ts`), so Capacity shows beds and no patient names.
     capacity: "counts",
     settings: "own",
+    about: "own",
   },
   admin: {
     governance: "own",
     settings: "own",
+    about: "own",
   },
 };
 
@@ -428,6 +438,7 @@ export function screenForPath(pathname: string): ScreenAddress | undefined {
     case "seclusion":
     case "leave":
     case "settings":
+    case "about":
       return second === undefined ? { screen: first } : undefined;
     case "ward":
       return second === undefined ? undefined : { screen: "ward", unitId: second };

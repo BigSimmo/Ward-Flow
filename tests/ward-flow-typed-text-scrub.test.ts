@@ -41,9 +41,8 @@ function after(fixture: (typeof TYPED_TEXT_FIXTURES)[number]): WardFlowState {
 }
 
 /** Restore cannot hold these with a placeholder in place: its fence checks their shape. */
-const STOPS_SAVING = new Set([
-  "ADD_PATIENT", // a typed date of birth must be a date (Josh, 21 Oct 2026: keep stopping)
-]);
+// A9-07 (Josh, 13 Nov 2026): a typed date of birth is now held as the placeholder, so none stops.
+const STOPS_SAVING = new Set<string>([]);
 
 /** Records whose typed fields the restore fence accepts only as the placeholder (D-72). */
 const PLACEHOLDER_ONLY = new Set(["RECORD_REPATRIATION", "RECORD_SUPPORT_NOTIFICATION"]);

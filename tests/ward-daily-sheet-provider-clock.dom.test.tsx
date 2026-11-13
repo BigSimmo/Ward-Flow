@@ -16,8 +16,9 @@ const unit = allUnits()[0];
 afterEach(cleanup);
 // Root-cause fix 2.4 (Josh, 13 Nov 2026): the stay day is a Perth calendar day, so Instant 0 and the
 // seed anchor (10:42 the same day) give the same Day. The expected date sits between them, so the
-// "past the ward's expected date" line shows only when the sheet reads the anchor.
-const PAST_EXPECTED = /past the ward.s expected date/;
+// "past the ward's expected date" line shows only when the sheet reads the anchor. Time audit T1
+// counts Perth calendar days, so a date passed earlier the same day reads "Expected out earlier today".
+const PAST_EXPECTED = /past the ward.s expected date|Expected out earlier today/;
 function Fixture({ now }: { now?: number }) {
   const flow = useContext(WardFlowContext)!;
   const admission = {

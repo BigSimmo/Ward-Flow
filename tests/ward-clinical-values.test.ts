@@ -374,6 +374,27 @@ const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> =
   { file: "ward-bed-availability.ts", name: "LATE_AFTERNOON_MINUTES", why: "a day-part bin" },
   { file: "ward-board-derivations.ts", name: "ARROW_HORIZON_DAYS", why: "how far ahead the board draws" },
   { file: "forecast/ed-access-risk.ts", name: "RELEASE_LOOKAHEAD_DAYS", why: "how far ahead the ED risk card looks" },
+  {
+    file: "ward-demo-planned-moves.ts",
+    name: "HORIZON_MINUTES",
+    why: "synthetic demo data: the 48-hour window the seed's sample planned move times stay inside (A16-20)",
+  },
+  // A16-13 (worker AL, 13 Nov 2026): the demo network's pull is timed from its own journey.
+  {
+    file: "ward-demo-network.ts",
+    name: "ACCEPTED_AFTER_ARRIVAL_MINUTES",
+    why: "synthetic demo data: how soon after reaching the ED a sample acceptance is timed (A16-13)",
+  },
+  {
+    file: "ward-demo-network.ts",
+    name: "PULLED_AFTER_ACCEPTANCE_MINUTES",
+    why: "synthetic demo data: the step a sample pull is timed after its acceptance (A16-13)",
+  },
+  {
+    file: "ward-demo-network.ts",
+    name: "LAPSING_HOLD_LEFT_MINUTES",
+    why: "synthetic demo data: how far ahead the sample lapsing hold's limit falls; the hold itself is read from the configuration (A16-13)",
+  },
 ];
 
 /** Synthetic fixtures build made-up records; their times are data, not thresholds.

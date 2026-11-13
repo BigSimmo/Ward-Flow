@@ -10,7 +10,7 @@ What is addressed to this desk right now, across every movement and referral.
 2. Show open alerts. Act now, Waiting, Forecast, Reminders, Notices, Snoozed or Yours. All shows every one again.
 3. Open an alert. Each alert opens the record it is about.
 4. The order. How the list is ordered: act now first, then waiting, oldest first in each.
-5. Forecast. Forecast lines set in Settings: beds likely to be short tomorrow, the ED access target and a worse forecast.
+5. Forecast. Forecast lines set in Settings: beds likely to be short tomorrow, the ED access target and a worse forecast. With none today, the Forecast filter shows 0.
 
 ## Jobs done here
 

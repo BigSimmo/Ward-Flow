@@ -15,7 +15,7 @@ import {
 } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { handoverPackModel } from "@/components/ward-management/patients/patient-handover-pack";
 import { downtimePack } from "@/components/ward-management/reports/downtime-pack";
-import type { Instant } from "@/components/ward-management/ward-clock";
+import { perthMidnight, type Instant } from "@/components/ward-management/ward-clock";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
@@ -45,6 +45,8 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const MOVEMENT_ID = "WF-001";
 const NOW = NOW_ANCHOR;
+/** The board's day 0, passed in as every screen does, so a typed time on another day prints its date. */
+const DAY_ZERO = perthMidnight(2026, 10, 9);
 
 function apply(state: WardFlowState, event: WardFlowEvent): WardFlowState {
   const before = state.rejections.length;
@@ -79,6 +81,7 @@ function outputsAt(state: WardFlowState, now: Instant): Outputs {
     edId: movement.originEdId!,
     units: state.units,
     now,
+    dayZero: DAY_ZERO,
     accessTargetMinutes: 12 * 60,
     nameOf: () => "Synthetic person",
   })?.find((row) => row.id === MOVEMENT_ID);
@@ -94,23 +97,26 @@ function outputsAt(state: WardFlowState, now: Instant): Outputs {
     identify: () => "Synthetic person",
   });
   const downtimeRow = pack.legalForms.find((row) => row.movementId === MOVEMENT_ID);
-  const print = handoverPackModel({
-    movement,
-    patient: { name: "Testperson, Alex", umrn: "UM100001", ageSex: "41, female" },
-    fromName: "Synthetic ED",
-    wardName: undefined,
-    riskFlags: undefined,
-    clearance: undefined,
-    paperExpiryAt: currentLegalDueAt(movement),
-    edContacts: [],
-    careContacts: [],
-    checklist: [],
-    now,
-  });
+  const print = handoverPackModel(
+    {
+      movement,
+      patient: { name: "Testperson, Alex", umrn: "UM100001", ageSex: "41, female" },
+      fromName: "Synthetic ED",
+      wardName: undefined,
+      riskFlags: undefined,
+      clearance: undefined,
+      paperExpiryAt: currentLegalDueAt(movement),
+      edContacts: [],
+      careContacts: [],
+      checklist: [],
+      now,
+    },
+    DAY_ZERO,
+  );
   const legal = print.sections.find((section) => section.id === "legal")!;
   return {
-    page: legalDeadlineText(movement, now),
-    shared: formTimeAsTyped(movement.legalForm!, now),
+    page: legalDeadlineText(movement, now, DAY_ZERO),
+    shared: formTimeAsTyped(movement.legalForm!, now, DAY_ZERO),
     tv: tvRow?.legal?.text ?? "(no TV row)",
     downtime: {
       form: downtimeRow?.form ?? "(no downtime row)",
@@ -130,17 +136,17 @@ function expectAsRecorded(outputs: Outputs, movement: Movement, now: Instant, la
   const form = movement.legalForm!;
   const dueAt = form.dueAt!;
   const name = legalFormName(form);
-  expect(outputs.page, `${label}: Legal forms page`).toBe(`Form expiry ${typedTimePhrase(dueAt, now)}`);
-  expect(outputs.shared, `${label}: shared screen wording`).toBe(`${name} · ${typedTimePhrase(dueAt, now)}`);
+  expect(outputs.page, `${label}: Legal forms page`).toBe(`Form expiry ${typedTimePhrase(dueAt, now, DAY_ZERO)}`);
+  expect(outputs.shared, `${label}: shared screen wording`).toBe(`${name} · ${typedTimePhrase(dueAt, now, DAY_ZERO)}`);
   expect(outputs.tv, `${label}: TV`).toContain(name);
-  expect(outputs.tv, `${label}: TV`).toContain(typedTimeLine(dueAt, now));
+  expect(outputs.tv, `${label}: TV`).toContain(typedTimeLine(dueAt, now, DAY_ZERO));
   expect(outputs.downtime, `${label}: downtime pack`).toEqual({
     form: name,
     madeAt: movement.formedAt ?? null,
     typedExpiryAt: dueAt,
   });
   expect(outputs.printStatus, `${label}: printed handover`).toBe(name);
-  expect(outputs.printExpiry, `${label}: printed handover`).toBe(typedTimeLine(dueAt, now));
+  expect(outputs.printExpiry, `${label}: printed handover`).toBe(typedTimeLine(dueAt, now, DAY_ZERO));
   for (const [where, text] of Object.entries({
     page: outputs.page,
     shared: outputs.shared,
@@ -197,7 +203,7 @@ describe("M17: one form, edited, replaced and lapsed, reads the same on every ou
     expect(movement.formedAt).toBe(NOW - 25);
     const outputs = outputsAt(edited, NOW + 1);
     expectAsRecorded(outputs, movement, NOW + 1, "edited");
-    const oldClock = typedClock(movementOf(recorded).legalForm!.dueAt!, NOW + 1);
+    const oldClock = typedClock(movementOf(recorded).legalForm!.dueAt!, NOW + 1, DAY_ZERO);
     for (const text of [outputs.page, outputs.shared, outputs.tv, outputs.printExpiry])
       expect(text).not.toContain(oldClock);
   });
@@ -243,7 +249,7 @@ describe("M17: one form, edited, replaced and lapsed, reads the same on every ou
     expect(outputs.printExpiry).toBe(FORM_RECORDED_ENDED);
     expect(outputs.tv.startsWith(`${name}, `)).toBe(true);
     expect(outputs.tv.endsWith(`. ${FORM_RECORDED_ENDED}`)).toBe(true);
-    expect(outputs.tv).not.toContain(typedTimeLine(movement.legalForm!.dueAt!, NOW + 3));
+    expect(outputs.tv).not.toContain(typedTimeLine(movement.legalForm!.dueAt!, NOW + 3, DAY_ZERO));
     expect(outputs.downtime.form).toBe(name);
     expect(outputs.downtime.typedExpiryAt).toBeNull();
     expect(outputs.downtimeEnded).toBe(true);
@@ -264,9 +270,9 @@ describe("M17: one form, edited, replaced and lapsed, reads the same on every ou
     const movement = movementOf(ended);
     const dueAt = movement.legalForm!.dueAt!;
     for (const now of [NOW + 3, dueAt + 61]) {
-      const page = legalDeadlineText(movement, now);
-      expect(page).toBe(`Form ended; expiry as typed was ${typedClock(dueAt, now)}`);
-      expect(page).not.toContain(typedTimePhrase(dueAt, now));
+      const page = legalDeadlineText(movement, now, DAY_ZERO);
+      expect(page).toBe(`Form ended; expiry as typed was ${typedClock(dueAt, now, DAY_ZERO)}`);
+      expect(page).not.toContain(typedTimePhrase(dueAt, now, DAY_ZERO));
       expect(page).not.toMatch(COUNT);
     }
     const noTime = { ...movement, legalForm: { ...movement.legalForm!, dueAt: undefined } } as Movement;

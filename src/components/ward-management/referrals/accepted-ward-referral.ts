@@ -6,7 +6,9 @@ import type { Observation } from "../ward-observation";
 import { acceptedAddressing } from "../ward-referrals";
 import { SELECTABLE_LEGAL_FORMS } from "../ward-legal-forms";
 import { allEmergencyDepartments } from "../ward-sites";
-import { acceptedWardOf } from "./accepted-awaiting-pull";
+import type { WardChromeRole } from "../ward-chrome-role";
+import type { WardAccess } from "../ward-role-access";
+import { acceptedWardOf, startsAcceptedJourneyAtEd } from "./accepted-awaiting-pull";
 
 export { acceptedWardOf, acceptedReferralsAwaitingPull, type AcceptedAwaitingPull } from "./accepted-awaiting-pull";
 
@@ -62,7 +64,7 @@ export type RecordedPullDetails = {
 export function recordedPullDetails(referral: Referral, movements: readonly Movement[]): RecordedPullDetails {
   const ed = allEmergencyDepartments().find((place) => place.siteCode === referral.originSiteCode);
   const edWait =
-    referral.patientId === undefined || referral.source !== "ed_medical" || !ed
+    referral.patientId === undefined || !startsAcceptedJourneyAtEd(referral.source) || !ed
       ? undefined
       : movements
           .filter(
@@ -100,3 +102,25 @@ export const LEGAL_STATUSES: readonly LegalStatus[] = [
   "Detained awaiting examination",
   "Involuntary inpatient",
 ];
+
+/** Read out when a desk other than the accepting ward or the coordinator opens Pull the bed. */
+export const PULL_DESK_REFUSAL = "Only the ward that accepted or the bed coordinator can pull this bed";
+
+/**
+ * Who pulls an accepted referral's bed, and as which desk (D-191 build answers, settling D-188):
+ * the ward-desk clinician of the ward that accepted, or the ward coordinator. There are no personal
+ * sign-ins, so the pull is recorded under the desk's role (`Movement.stageChanges[].by`). A ward
+ * desk always names its own ward, as `referral-match.tsx` does; the engine refuses any other
+ * (`RAISE_REFERRAL` and `PULL_PATIENT` with `actingUnitId`).
+ */
+export function acceptedPullDesk(
+  deskRole: WardChromeRole,
+  access: WardAccess,
+  unitId: string,
+): { role: "coordinator" } | { role: "ward"; actingUnitId: string } | { refusal: string } {
+  if (deskRole === "coordinator") return { role: "coordinator" };
+  if (deskRole !== "ward") return { refusal: PULL_DESK_REFUSAL };
+  // A demonstration ward desk with no ward scope acts as the ward that accepted.
+  if (access.scope.kind === "ward" && !access.scope.unitIds.includes(unitId)) return { refusal: PULL_DESK_REFUSAL };
+  return { role: "ward", actingUnitId: unitId };
+}

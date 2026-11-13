@@ -23,6 +23,7 @@ import {
   shownAgeFrom,
 } from "@/components/ward-management/alerts/alerts-model";
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import alertStyles from "@/components/ward-management/alerts/alerts.module.css";
 import { withSendingTeam } from "@/components/ward-management/referrals/referral-sending-team";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
@@ -111,6 +112,7 @@ function AlertAction({ entry, handlers }: { entry: QueueEntry; handlers: QueueHa
 }
 
 function DeskAlertRow({ entry, now, handlers }: { entry: QueueEntry; now: Instant; handlers: QueueHandlers }) {
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   const { subject } = entry;
   const where = subject.to ? `${subject.to}, from ${shortPlace(subject.from)}` : shortPlace(subject.from);
   const owner = isYours(entry) ? undefined : `With ${ownerShort(entry.owner)}`;
@@ -124,7 +126,7 @@ function DeskAlertRow({ entry, now, handlers }: { entry: QueueEntry; now: Instan
   const overdue = entry.raised === undefined ? null : extractOverdue(entry.item.detail);
   const ageNote =
     legalEnded !== undefined
-      ? typedTimeLine(legalEnded, now)
+      ? typedTimeLine(legalEnded, now, dayZero)
       : entry.raised === undefined
         ? "Time not recorded"
         : overdue
@@ -164,6 +166,7 @@ function referralTo(referral: Referral, units: readonly Unit[]): string {
 }
 
 function PhoneAlertRow({ entry, now, handlers }: { entry: QueueEntry; now: Instant; handlers: QueueHandlers }) {
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   const { subject } = entry;
   return (
     <PhoneRow
@@ -183,7 +186,9 @@ function PhoneAlertRow({ entry, now, handlers }: { entry: QueueEntry; now: Insta
           ? undefined
           : minutesText(Math.max(0, now - entry.raised))
       }
-      note={legalTypedEnd(entry.item) !== undefined ? typedTimeLine(legalTypedEnd(entry.item)!, now) : undefined}
+      note={
+        legalTypedEnd(entry.item) !== undefined ? typedTimeLine(legalTypedEnd(entry.item)!, now, dayZero) : undefined
+      }
       owner={isYours(entry) ? undefined : ownerShort(entry.owner)}
     />
   );

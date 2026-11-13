@@ -3,10 +3,14 @@ import type { ReferralIntakeDetails, ReferralContact } from "./referrals/referra
 import type { Movement, Referral } from "./ward-model";
 import type { ReferralDossier } from "./ward-referral-dossier-seed";
 import { seededReferralTimelineBase } from "./ward-referral-seed-time";
+import { REFERRING_CLINICIANS, staffFullName } from "./ward-staff-names-seed";
 import { demoLandline } from "./demo-phone-numbers";
+import { referralState } from "./ward-referrals";
 
-type IntakeContext = { movement?: Movement; dossier?: ReferralDossier };
+/** `anchor`: the seed's own "now", so an open referral's target is still ahead of it (time audit G6). */
+type IntakeContext = { movement?: Movement; dossier?: ReferralDossier; anchor?: number };
 type SeedContext = {
+  anchor?: number;
   movements?: readonly Movement[];
   dossiers?: Readonly<Record<string, ReferralDossier | undefined>>;
 };
@@ -147,7 +151,7 @@ const REFERRAL_PRESENTATIONS: Readonly<Record<string, Presentation>> = {
     "Assessment and psychiatric admission requested following ambulance attendance and agreement to admission.",
   ),
   "RF-DN-005": authored("Transfer for continuing psychiatric treatment and continuity of care."),
-  "RF-DN-006": authored("Older-adult psychiatric care requested after recorded medical clearance."),
+  "RF-DN-006": authored("Older adult psychiatric care requested after recorded medical clearance."),
   "RF-DN-007": authored("Planned psychiatric admission requested by the referring general practitioner."),
   "RF-DN-008": authored("Step down from high-dependency care to an open psychiatric setting for continuing treatment."),
   "RF-DN-009": authored("Community referral for psychiatric assessment and a suitable inpatient treatment setting."),
@@ -161,16 +165,31 @@ function ordinal(key: string): number {
   return [...key].reduce((value, character) => (value * 31 + character.charCodeAt(0)) >>> 0, 0);
 }
 
-/** An invented proposed review target, never a completed-clearance time or a legal duration. */
-export function seededReferralMedicalTarget(raisedAt: number): string {
+/**
+ * An invented proposed review target, never a completed-clearance time or a legal duration.
+ *
+ * Time audit G6 (13 Nov 2026): two hours after the referral, which put 25 of 36 open referrals'
+ * targets already past when the demo opened. A referral nobody has decided yet now gets a target
+ * still ahead at seed time: half an hour to two hours after the anchor, spread by the referral's id.
+ * A decided referral keeps the two hours after it was raised.
+ */
+export function seededReferralMedicalTarget(raisedAt: number, notBefore = Number.NEGATIVE_INFINITY): string {
   const midnight = Date.parse(seededReferralTimelineBase());
-  return new Date(midnight + (raisedAt + 120) * 60_000).toISOString();
+  return new Date(midnight + Math.max(raisedAt + 120, notBefore) * 60_000).toISOString();
+}
+
+/** The earliest seeded medical target for a referral still awaiting a decision (time audit G6). */
+function openReferralTargetFloor(referral: Referral, anchor: number | undefined): number {
+  if (anchor === undefined || referralState(referral) !== "queued") return Number.NEGATIVE_INFINITY;
+  return anchor + 30 + (ordinal(referral.id) % 4) * 30;
 }
 
 function syntheticContact(key: string): ReferralContact {
-  const index = ordinal(key) % 100;
+  // A16-11 (Audit 16, 13 Nov 2026): a named synthetic clinician from the one staff list, never a
+  // numbered placeholder such as "Synthetic clinician 17". One clinician, one number and one email.
+  const index = ordinal(key) % REFERRING_CLINICIANS.length;
   return {
-    name: `Synthetic clinician ${index + 1}`,
+    name: staffFullName(REFERRING_CLINICIANS[index]!),
     role: "Demo referring clinician",
     location: "Synthetic assessment service",
     // A15-18 and A15-19 (13 Nov 2026): the reserved example.invalid domain, and each invented
@@ -201,7 +220,7 @@ export function completeSyntheticReferralIntake(referral: Referral, context: Int
       ? { cleared: true }
       : {
           cleared: false,
-          expectedAt: seededReferralMedicalTarget(referral.raisedAt),
+          expectedAt: seededReferralMedicalTarget(referral.raisedAt, openReferralTargetFloor(referral, context.anchor)),
           syntheticTimelineBase: seededReferralTimelineBase(),
           contactName: referrer.name,
           contactPhone: referrer.phone,
@@ -236,6 +255,7 @@ export function completeSyntheticReferralIntakes(
   return referrals.map((referral) => {
     const movement = context.movements?.find((candidate) => candidate.referralId === referral.id);
     return completeSyntheticReferralIntake(referral, {
+      anchor: context.anchor,
       movement,
       dossier: movement ? context.dossiers?.[movement.id] : undefined,
     });

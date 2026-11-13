@@ -8,12 +8,13 @@ import type {
 } from "@/components/ward-management/ward-admissions";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import type { DischargeCriterion } from "@/components/ward-management/ward-discharge-criteria";
-import type { BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
+import { holdUpReasonFits, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import type { HomeRegion, MovementId, ReferralGender, Sex } from "@/components/ward-management/ward-model";
 import type { Patient, PatientId } from "@/components/ward-management/ward-patients";
 import { generateSeedPatient, type GeneratedSeedPatientCohort } from "@/components/ward-management/ward-patients-seed";
 import { GENERAL_OBSERVATION } from "@/components/ward-management/ward-observation";
+import { seededPullHoldForMovement, seededPulledAt } from "@/components/ward-management/ward-seeded-pull-holds";
 
 /**
  * The synthetic people occupying beds across the network.
@@ -78,22 +79,20 @@ export const WARD_ADMISSIONS_ANCHOR: Instant = 10 * 60 + 42;
  */
 const MORNING_OFFSETS = [-162, -132, -102, -72, -42, -12, 0] as const;
 const DAY_OFFSETS = [-162, -102, -42, 0, 78, 198, 288] as const;
-function dischargeTimeOffset(dischargeInDays: number, tag: string, index: number): number {
-  if (!Number.isInteger(dischargeInDays) || dischargeInDays < 1) return 0;
+/**
+ * A16-19 (Audit 16, 13 Nov 2026): a date due today or already past used to sit exactly on the board
+ * time, so all forty overdue dates read 10:42. Each now takes a working-hours time from its own
+ * record id: a past date 08:00 to 15:30 on its own day, and a date due today 10:42 to 13:00, never
+ * before now, so it is not counted overdue (Discharges counts `expected < now`). Synthetic times.
+ */
+const TODAY_OFFSETS = [0, 18, 48, 78, 108, 138] as const;
+function dischargeTimeOffset(dischargeInDays: number, tag: string, index: number, recordId: string): number {
+  if (!Number.isInteger(dischargeInDays)) return 0;
+  if (dischargeInDays === 0) return TODAY_OFFSETS[seedHash(recordId) % TODAY_OFFSETS.length]!;
+  if (dischargeInDays < 0) return DAY_OFFSETS[seedHash(recordId) % DAY_OFFSETS.length]!;
   const offsets = dischargeInDays > 3 ? DAY_OFFSETS : MORNING_OFFSETS;
   return offsets[(index + tag.charCodeAt(tag.length - 1)) % offsets.length]!;
 }
-
-/**
- * How long before somebody arrives the bed was given away, in minutes.
- *
- * An INVENTED operational figure, like every bed number in this prototype. It exists so that a
- * seeded occupant's `pulledAt` and `arrivedAt` are two genuinely different instants — the bed is
- * gone from the pull, the stay runs from the arrival — rather than the same number twice, which is
- * how a reader (or a later refactor) comes to believe the two clocks are interchangeable. Nothing
- * legal, nothing clinical, nothing measured.
- */
-const PULL_TO_ARRIVAL_MINUTES = 5 * 60;
 
 /**
  * Review 5 Nov 2026: one fixed gap made Statistics read "average, shortest and longest 5h 00m" across
@@ -112,6 +111,8 @@ function seededPullToArrivalMinutes(key: string): number {
  * falls into depend on rounding, and `STAY_BANDS`'s ceilings are exclusive.
  */
 const ARRIVAL_PART_DAY_MINUTES = 90;
+/** Time audit G4: the earliest a seeded expected date is set, after the person arrived. Synthetic. */
+const DATE_SET_AFTER_ARRIVAL_MINUTES = 30;
 
 /**
  * Who set the expected discharge date, as a ROLE and never a personal name.
@@ -248,6 +249,12 @@ type OccupantExtras = {
   readonly referralId?: string;
   readonly movementId?: MovementId | null;
   /**
+   * A16-13 (13 Nov 2026): the ED stay a PULLED bed is held for. Required on every pulled line (one
+   * with no stay): the builder takes the pull time from that stay's shared hold row
+   * (`ward-seeded-pull-holds.ts`) and refuses a pulled line that names none.
+   */
+  readonly heldFor?: MovementId;
+  /**
    * Archived D-14. The real patient this occupant is — a pointer, never invented, and never set without
    * `referralId` beside it: `Admission.patientId`'s own doc comment says the only honest way to
    * populate this seed is to reuse a pair `referralId` already authors, never a hand-picked patient
@@ -270,6 +277,87 @@ type OccupantExtras = {
   /** Item 5: clinically ready this many whole days before the anchor's day, and why not gone. Synthetic. */
   readonly ready?: { readonly daysAgo: number; readonly reason: DelayedDischargeReason };
 };
+
+/** A stable number from a text, so a ward's or record's sample values never shift between loads. */
+function seedHash(text: string): number {
+  let hash = 2166136261;
+  for (const char of text) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619) >>> 0;
+  return hash;
+}
+
+/**
+ * Whether a typed line is a plain stay the per-ward rearrangement below may move: an occupied bed of
+ * a day or more that carries nothing beyond who the person is. A line with a discharge decision, a
+ * hold-up, a ready date, criteria, an ED visit or a real referral keeps exactly what was typed,
+ * because those facts are written against its own stay and date.
+ */
+function isPlainStay(occupant: Occupant): boolean {
+  const [, , stayDays, , extras] = occupant;
+  if (stayDays === null || stayDays < 1) return false;
+  return Object.keys(extras ?? {}).every((key) => key === "patientId" || key === "gender");
+}
+
+/**
+ * A16-12 and A16-19 (Audit 16, 13 Nov 2026): every ward's lines were typed from one template, so
+ * every ward ran down the same length-of-stay ladder (210, 130, 115, 95 ...) and the same discharge
+ * days, which bunched the network's discharges onto the same few days ahead.
+ *
+ * This breaks the repeat WITHOUT choosing a spread. It only rearranges the values already typed:
+ *   - the stays of the ward's plain lines are shuffled among those lines, in an order fixed by the
+ *     ward's id, so no two wards share a run and every picture stays the same on every load;
+ *   - each plain line's discharge day, when it falls 1 to 7 days ahead, is turned round within those
+ *     seven days by an amount fixed by the ward's id. Overdue dates, today's dates and dates more
+ *     than a week out are untouched, so "overdue" and "within 7 days" keep their counts; the days
+ *     ahead are spread across the week instead of every ward landing on the same ones, so no
+ *     weekday carries the bulk whichever day the demonstration is run on.
+ * Sex, home region, every extra and the number of people on the ward do not move.
+ *
+ * ⚠️ The spread itself (how long stays on each kind of ward should run) is Josh's to give; he has
+ * not given it yet. When he does, it replaces the typed values, and this only stops wards repeating.
+ */
+function pastDateBeforeArrival(stayDays: number | null, dischargeInDays: number | null): boolean {
+  return stayDays !== null && dischargeInDays !== null && dischargeInDays < 0 && stayDays + dischargeInDays < 1;
+}
+
+function rearrangedForWard(unitId: string, occupants: readonly Occupant[]): readonly Occupant[] {
+  const plain = occupants.flatMap((occupant, index) => (isPlainStay(occupant) ? [index] : []));
+  const turn = seedHash(`${unitId}:discharge`) % 7;
+  // Each attempt is a different fixed order. The first whose runs of three stays no earlier ward
+  // already has is kept, so the check "no two wards share a run" holds by construction.
+  for (let attempt = 0; attempt < 64; attempt += 1) {
+    const stays = plain.map((index) => occupants[index]![2] as number);
+    let state = seedHash(`${unitId}:${attempt}`) || 1;
+    for (let position = stays.length - 1; position > 0; position -= 1) {
+      state = Math.imul(state ^ (state >>> 15), 2246822507) >>> 0;
+      state = (state ^ (state >>> 13)) >>> 0;
+      const pick = state % (position + 1);
+      [stays[position], stays[pick]] = [stays[pick]!, stays[position]!];
+    }
+    const arranged = occupants.map((occupant, index) => {
+      const at = plain.indexOf(index);
+      if (at < 0) return occupant;
+      const [sex, homeRegion, , dischargeInDays, extras] = occupant;
+      const turned =
+        dischargeInDays !== null && dischargeInDays >= 1 && dischargeInDays <= 7
+          ? ((dischargeInDays - 1 + turn) % 7) + 1
+          : dischargeInDays;
+      return [sex, homeRegion, stays[at]!, turned, ...(extras ? [extras] : [])] as unknown as Occupant;
+    });
+    // Time audit G4: a stay's overdue date never falls before its own arrival, so an order that hands a
+    // short stay a line whose date is further back than the stay is long is passed over. A whole day
+    // more than the date is far back keeps the date after arrival whatever its working-hours time.
+    if (arranged.some(([, , stayDays, dischargeInDays]) => pastDateBeforeArrival(stayDays, dischargeInDays))) continue;
+    const sequence = arranged.flatMap(([, , stayDays]) => (stayDays !== null && stayDays >= 1 ? [stayDays] : []));
+    const runs = sequence.slice(0, -2).map((_, start) => sequence.slice(start, start + 3).join(","));
+    if (runs.some((run) => STAY_RUNS_TAKEN.has(run))) continue;
+    for (const run of runs) STAY_RUNS_TAKEN.add(run);
+    return arranged;
+  }
+  throw new Error(`${unitId}: no order of its typed stays avoids a run another ward already has`);
+}
+
+/** Every run of three stays a ward already built has, so the next ward can avoid them. */
+const STAY_RUNS_TAKEN = new Set<string>();
 
 /**
  * Builds one ward's occupants from the list above.
@@ -304,19 +392,38 @@ function unitOccupants(
   diagnoses: DiagnosisPool,
   occupants: readonly Occupant[],
 ): Admission[] {
-  return occupants.map(([sex, homeRegion, stayDays, dischargeInDays, extras], index) => {
+  return rearrangedForWard(unitId, occupants).map(([sex, homeRegion, stayDays, dischargeInDays, extras], index) => {
     const suffix = `${tag}-${String(index + 1).padStart(2, "0")}`;
     const blockReason = extras?.blockReason ?? null;
+    // A16-06: a hold-up reason must fit the bed (`BED_RELEASE_BLOCKER_BED_STATE`, signed by Josh,
+    // D-181 item 6). A pulled bed records no hold-up at all, and an occupied one only a reason
+    // for an occupied bed, so a typed line cannot put "Awaiting clean" on somebody's stay.
+    if (blockReason !== null && (stayDays === null || !holdUpReasonFits(blockReason, "occupied"))) {
+      throw new Error(
+        `AD-${suffix} carries the hold-up "${blockReason}", which does not fit ${stayDays === null ? "a pulled bed" : "an occupied bed"}`,
+      );
+    }
     const tentativeDiagnosis = diagnoses[index % diagnoses.length];
 
     if (stayDays === null) {
       // The bed is gone; the person is not here. No stay, no plan, no blocker.
+      //
+      // A16-13 (13 Nov 2026): a pulled bed is held for a named ED stay, and its pull time comes
+      // from the shared hold row for that stay (`ward-seeded-pull-holds.ts`), which is also where
+      // the stay's own `pullExpiresAt` comes from. A pulled line that names no stay with a hold is a
+      // bed held for nobody, so the builder refuses it rather than inventing a time for it.
+      const hold = extras?.heldFor ? seededPullHoldForMovement(extras.heldFor) : undefined;
+      if (hold === undefined || hold.admissionId !== `AD-${suffix}`) {
+        throw new Error(`AD-${suffix} is a pulled bed that names no ED stay with a seeded pull held for it`);
+      }
       return {
         id: `AD-${suffix}`,
         unitId,
         observation: GENERAL_OBSERVATION,
         highAcuity: false,
         referralId: extras?.referralId ?? null,
+        // The stay names this bed (`Movement.admissionId`); the bed's own backpointer stays as typed
+        // (`null` on every seeded pull), the documented forward-only seed shape the engine tests use.
         movementId: extras?.movementId ?? null,
         patientId: extras?.patientId ?? null,
         sex,
@@ -324,7 +431,7 @@ function unitOccupants(
         homeRegion,
         tentativeDiagnosis,
         state: "pulled",
-        pulledAt: WARD_ADMISSIONS_ANCHOR - PULL_TO_ARRIVAL_MINUTES - index * 30,
+        pulledAt: seededPulledAt(hold, WARD_ADMISSIONS_ANCHOR),
         arrivedAt: null,
         awayAtEmergencyDepartmentSince: null,
         expectedDischargeAt: null,
@@ -366,19 +473,26 @@ function unitOccupants(
       awayAtEmergencyDepartmentSince:
         extras?.awayAtEdHoursAgo === undefined ? null : WARD_ADMISSIONS_ANCHOR - extras.awayAtEdHoursAgo * 60,
       expectedDischargeAt: hasDate
-        ? WARD_ADMISSIONS_ANCHOR + dischargeInDays * MINUTES_PER_DAY + dischargeTimeOffset(dischargeInDays, tag, index)
+        ? WARD_ADMISSIONS_ANCHOR +
+          dischargeInDays * MINUTES_PER_DAY +
+          dischargeTimeOffset(dischargeInDays, tag, index, `AD-${suffix}`)
         : null,
       dischargeDateMoves: hasDate ? index % 3 : 0,
       // A date that has moved was set in the last day. One that never moved was set a week before it
       // falls (or the morning after arrival, if later), so a stay past its date counts as delayed for
       // the whole time since, not only since yesterday (polish pass, 9 Nov 2026, Weekly heatmap).
+      // Time audit G4: never before the person arrived, so a short stay's date is set at least half
+      // an hour after arrival (AD-SCGA-15 had its date set half an hour before it arrived).
       dischargeDateSetAt: hasDate
-        ? index % 3 === 0
-          ? Math.min(
-              WARD_ADMISSIONS_ANCHOR - (6 + (index % 5) * 5) * 60,
-              Math.max(arrivedAt + 18 * 60, WARD_ADMISSIONS_ANCHOR + (dischargeInDays - 7) * MINUTES_PER_DAY),
-            )
-          : WARD_ADMISSIONS_ANCHOR - (6 + (index % 5) * 5) * 60
+        ? Math.max(
+            arrivedAt + DATE_SET_AFTER_ARRIVAL_MINUTES,
+            index % 3 === 0
+              ? Math.min(
+                  WARD_ADMISSIONS_ANCHOR - (6 + (index % 5) * 5) * 60,
+                  Math.max(arrivedAt + 18 * 60, WARD_ADMISSIONS_ANCHOR + (dischargeInDays - 7) * MINUTES_PER_DAY),
+                )
+              : WARD_ADMISSIONS_ANCHOR - (6 + (index % 5) * 5) * 60,
+          )
         : null,
       dischargeDateSetBy: hasDate ? DISCHARGE_DATE_SETTERS[index % DISCHARGE_DATE_SETTERS.length] : null,
       dischargeConfirmedAt: isConfirmed ? WARD_ADMISSIONS_ANCHOR - confirmedHoursAgo * 60 : null,
@@ -571,7 +685,8 @@ const occupiedBeds: Admission[] = [
     ],
     // Confirmed and NOT blocked, so the blocked cross-cut above is compared against something.
     ["Male", "Mid West", 5, 3, { confirmedHoursAgo: 4, patientId: "PT-028" }],
-    ["Male", "Peel", null, null, { patientId: "PT-G-AD-RPHS-03" }],
+    // A16-13: arrived this morning; the bed was typed as pulled for nobody before 13 Nov 2026.
+    ["Male", "Peel", 0, null, { patientId: "PT-G-AD-RPHS-03" }],
     // AWAY AT AN EMERGENCY DEPARTMENT, and the bed is still theirs. Two people in the whole
     // network carry this — one long enough to be a conversation, one recent — because the board
     // marker is a claim about a person's whereabouts, and a marker no seeded person triggers has
@@ -625,8 +740,9 @@ const occupiedBeds: Admission[] = [
         },
       },
     ],
-    ["Male", "Great Southern", 210, 10, { blockReason: "Awaiting clean", patientId: "PT-G-AD-RPHS-15" }],
-    ["Female", "Mid West", null, 4, { patientId: "PT-G-AD-RPHS-16" }],
+    ["Male", "Great Southern", 210, 10, { patientId: "PT-G-AD-RPHS-15" }],
+    // A16-13: arrived this morning; the bed was typed as pulled for nobody before 13 Nov 2026.
+    ["Female", "Mid West", 0, null, { patientId: "PT-G-AD-RPHS-16" }],
     ["Male", "Kimberley", 75, 2, { patientId: "PT-G-AD-RPHS-17" }],
     ["Female", "South West", 4, 5, { patientId: "PT-G-AD-RPHS-18" }],
   ]),
@@ -638,14 +754,16 @@ const occupiedBeds: Admission[] = [
     ["Female", "Gascoyne", 26, 3, { patientId: "PT-G-AD-RPHO-05" }],
     ["Male", "Perth Metropolitan", 3, null, { patientId: "PT-G-AD-RPHO-06" }],
     ["Female", "Great Southern", 12, 4, { patientId: "PT-G-AD-RPHO-07" }],
-    ["Male", "Mid West", null, 6, { patientId: "PT-G-AD-RPHO-08" }],
+    // A16-13: arrived this morning; the bed was typed as pulled for nobody before 13 Nov 2026.
+    ["Male", "Mid West", 0, null, { patientId: "PT-G-AD-RPHO-08" }],
     ["Female", "Kimberley", 130, -2, { patientId: "PT-G-AD-RPHO-09" }],
     ["Male", "South West", 5, 9, { patientId: "PT-G-AD-RPHO-10" }],
     ["Female", "Goldfields-Esperance", 20, 2, { patientId: "PT-G-AD-RPHO-11" }],
     ["Male", "Pilbara", 60, 8, { patientId: "PT-G-AD-RPHO-12" }],
   ]),
   ...unitOccupants("scgh-adult-open", "SCGA", ADULT_OPEN_DIAGNOSES, [
-    ["Female", "Pilbara", null, null, { patientId: "PT-G-AD-SCGA-01" }],
+    // A16-13: arrived this morning; the bed was typed as pulled for nobody before 13 Nov 2026.
+    ["Female", "Pilbara", 0, null, { patientId: "PT-G-AD-SCGA-01" }],
     ["Male", "Peel", 210, null, { patientId: "PT-G-AD-SCGA-02" }],
     ["Female", "South West", 61, -1, { blockReason: "Awaiting transport", patientId: "PT-G-AD-SCGA-03" }],
     ["Female", "Perth Metropolitan", 2, null, { patientId: "PT-038" }],
@@ -665,7 +783,8 @@ const occupiedBeds: Admission[] = [
     ["Female", "Gascoyne", 26, 3, { patientId: "PT-G-AD-SCGA-16" }],
     ["Male", "Perth Metropolitan", 3, null, { blockReason: "Awaiting pharmacy", patientId: "PT-G-AD-SCGA-17" }],
     ["Female", "Great Southern", 12, 4, { patientId: "PT-G-AD-SCGA-18" }],
-    ["Male", "Mid West", null, 6, { patientId: "PT-G-AD-SCGA-19" }],
+    // A16-13: arrived this morning; the bed was typed as pulled for nobody before 13 Nov 2026.
+    ["Male", "Mid West", 0, null, { patientId: "PT-G-AD-SCGA-19" }],
   ]),
   ...unitOccupants("scgh-older-adult", "SCGO", OLDER_ADULT_DIAGNOSES, [
     [
@@ -696,7 +815,8 @@ const occupiedBeds: Admission[] = [
     ["Male", "Gascoyne", 26, 3, { patientId: "PT-G-AD-FSHS-03" }],
     ["Male", "Perth Metropolitan", 3, null, { patientId: "PT-G-AD-FSHS-04" }],
     ["Male", "Great Southern", 12, 4, { patientId: "PT-G-AD-FSHS-05" }],
-    ["Male", "Mid West", null, 6, { patientId: "PT-G-AD-FSHS-06" }],
+    // A16-13: arrived this morning; the bed was typed as pulled for nobody before 13 Nov 2026.
+    ["Male", "Mid West", 0, null, { patientId: "PT-G-AD-FSHS-06" }],
     // Polish pass (9 Nov 2026): 4 days past the date, so the Weekly heatmap spreads across the week.
     ["Male", "Kimberley", 130, -4, { patientId: "PT-G-AD-FSHS-07" }],
     ["Male", "South West", 5, 9, { patientId: "PT-G-AD-FSHS-08" }],
@@ -743,18 +863,19 @@ const occupiedBeds: Admission[] = [
     ["Female", "Mid West", 17, 4, { patientId: "PT-G-AD-ARMA-13" }],
     ["Male", "Kimberley", 75, 2, { patientId: "PT-G-AD-ARMA-14" }],
     ["Female", "South West", 4, 5, { patientId: "PT-G-AD-ARMA-15" }],
-    ["Male", "Goldfields-Esperance", null, null, { patientId: "PT-G-AD-ARMA-16" }],
+    // A16-13: arrived this morning; the bed was typed as pulled for nobody before 13 Nov 2026.
+    ["Male", "Goldfields-Esperance", 0, null, { patientId: "PT-G-AD-ARMA-16" }],
   ]),
   ...unitOccupants("sjgm-adult-open", "SJGA", ADULT_OPEN_DIAGNOSES, [
     // Due home this afternoon (dischargeInDays 0.25 = 16:42 today), so the demo has a bed freeing
     // later today (DEFERRED from Test bed-matching, 26 Sept 2026). Was 1 (tomorrow).
     ["Female", "Pilbara", 115, 0.25, { patientId: "PT-G-AD-SJGA-01" }],
-    ["Male", "Peel", null, 6, { patientId: "PT-G-WF-311" }],
+    ["Male", "Peel", null, null, { patientId: "PT-G-WF-311", heldFor: "WF-311" }],
     ["Female", "Wheatbelt", 1, 7, { blockReason: "Awaiting service coordination", patientId: "PT-G-AD-SJGA-03" }],
     ["Male", "Gascoyne", 26, 3, { patientId: "PT-G-AD-SJGA-04" }],
     ["Female", "Perth Metropolitan", 20, 2, { referralId: "RF-SJGA-05", patientId: "PT-093" }],
     ["Male", "Great Southern", 12, 4, { patientId: "PT-G-AD-SJGA-06" }],
-    ["Female", "Perth Metropolitan", null, 6, { patientId: "PT-014" }],
+    ["Female", "Perth Metropolitan", null, null, { patientId: "PT-014", heldFor: "WF-016" }],
     ["Male", "Kimberley", 130, -2, { patientId: "PT-G-AD-SJGA-08" }],
     ["Female", "South West", 5, 9, { patientId: "PT-G-AD-SJGA-09" }],
     ["Male", "Goldfields-Esperance", 20, 2, { patientId: "PT-G-AD-SJGA-10" }],
@@ -769,7 +890,8 @@ const occupiedBeds: Admission[] = [
     ["Female", "Mid West", 17, 4, { patientId: "PT-G-AD-RGHS-03" }],
     ["Male", "Kimberley", 75, 2, { patientId: "PT-G-AD-RGHS-04" }],
     ["Female", "South West", 4, 5, { patientId: "PT-G-AD-RGHS-05" }],
-    ["Male", "Goldfields-Esperance", null, null, { patientId: "PT-G-AD-RGHS-06" }],
+    // A16-13: arrived this morning; the bed was typed as pulled for nobody before 13 Nov 2026.
+    ["Male", "Goldfields-Esperance", 0, null, { patientId: "PT-G-AD-RGHS-06" }],
     // Due home this afternoon (dischargeInDays 0.2 = 15:30 today), so the demo has a bed freeing
     // later today (DEFERRED from Test bed-matching, 26 Sept 2026). Was 1 (tomorrow).
     ["Female", "Pilbara", 115, 0.2, { patientId: "PT-G-AD-RGHS-07" }],
@@ -803,7 +925,7 @@ const occupiedBeds: Admission[] = [
   ]),
   ...unitOccupants("fre-older-adult", "FREO", OLDER_ADULT_DIAGNOSES, [
     ["Female", "Great Southern", 12, 4, { patientId: "PT-G-AD-FREO-01" }],
-    ["Male", "Mid West", null, 6, { patientId: "PT-052" }],
+    ["Male", "Mid West", null, null, { patientId: "PT-052", heldFor: "WF-011" }],
     ["Female", "Kimberley", 130, -2, { patientId: "PT-G-AD-FREO-03" }],
     ["Male", "South West", 5, 9, { patientId: "PT-G-AD-FREO-04" }],
     ["Female", "Goldfields-Esperance", 20, 2, { patientId: "PT-G-AD-FREO-05" }],
@@ -818,7 +940,7 @@ const occupiedBeds: Admission[] = [
     ["Female", "Mid West", 17, 4, { patientId: "PT-G-AD-BTYS-01" }],
     ["Male", "Kimberley", 75, 2, { patientId: "PT-G-AD-BTYS-02" }],
     ["Female", "South West", 4, 5, { patientId: "PT-G-AD-BTYS-03" }],
-    ["Male", "Goldfields-Esperance", null, 6, { patientId: "PT-046" }],
+    ["Male", "Goldfields-Esperance", null, null, { patientId: "PT-046", heldFor: "WF-004" }],
     ["Female", "Pilbara", 115, 1, { blockReason: "Awaiting transport", patientId: "PT-G-AD-BTYS-05" }],
     ["Male", "Peel", 40, -1, { patientId: "PT-G-AD-BTYS-06" }],
     ["Female", "Wheatbelt", 1, 7, { patientId: "PT-G-AD-BTYS-07" }],
@@ -831,7 +953,7 @@ const occupiedBeds: Admission[] = [
     ["Male", "Goldfields-Esperance", 20, 2, { patientId: "PT-G-AD-BTYS-14" }],
   ]),
   ...unitOccupants("bty-older-adult", "BTYO", OLDER_ADULT_DIAGNOSES, [
-    ["Female", "Pilbara", null, 6, { patientId: "PT-G-WF-304" }],
+    ["Female", "Pilbara", null, null, { patientId: "PT-G-WF-304", heldFor: "WF-304" }],
     ["Male", "Peel", 2, null, { patientId: "PT-G-AD-BTYO-02" }],
     ["Female", "Wheatbelt", 95, 3, { patientId: "PT-G-AD-BTYO-03" }],
     ["Male", "Gascoyne", 33, 5, { patientId: "PT-G-AD-BTYO-04" }],
@@ -843,7 +965,8 @@ const occupiedBeds: Admission[] = [
     ["Male", "Goldfields-Esperance", 9, null, { patientId: "PT-G-AD-BTYO-10" }],
   ]),
   ...unitOccupants("bty-youth", "BTYY", YOUTH_DIAGNOSES, [
-    ["Male", "Wheatbelt", null, null, { patientId: "PT-G-AD-BTYY-01" }],
+    // A16-13: arrived this morning; the bed was typed as pulled for nobody before 13 Nov 2026.
+    ["Male", "Wheatbelt", 0, null, { patientId: "PT-G-AD-BTYY-01" }],
     ["Female", "Perth Metropolitan", 115, 1, { patientId: "PT-031" }],
     ["Male", "Perth Metropolitan", 40, -1, { patientId: "PT-037" }],
     ["Female", "Wheatbelt", 1, 7, { patientId: "PT-G-AD-BTYY-04" }],
@@ -886,7 +1009,7 @@ const occupiedBeds: Admission[] = [
   ...unitOccupants("alb-adult-open", "ALBA", ADULT_OPEN_DIAGNOSES, [
     ["Female", "Great Southern", 150, 2, { patientId: "PT-G-AD-ALBA-01" }],
     ["Female", "South West", 5, 9, { patientId: "PT-G-AD-ALBA-02" }],
-    ["Male", "Goldfields-Esperance", null, 6, { patientId: "PT-G-WF-325" }],
+    ["Male", "Goldfields-Esperance", null, null, { patientId: "PT-G-WF-325", heldFor: "WF-325" }],
     ["Female", "Pilbara", 60, 8, { patientId: "PT-G-AD-ALBA-04" }],
     ["Male", "Peel", 2, null, { patientId: "PT-G-AD-ALBA-05" }],
     ["Female", "Wheatbelt", 95, 3, { patientId: "PT-G-AD-ALBA-06" }],
@@ -923,7 +1046,7 @@ const occupiedBeds: Admission[] = [
       { blockReason: "Awaiting family or carer arrangement", patientId: "PT-G-AD-GERA-01" },
     ],
     ["Female", "Great Southern", 12, 4, { patientId: "PT-G-AD-GERA-02" }],
-    ["Female", "Mid West", null, 6, { patientId: "PT-G-WF-318" }],
+    ["Female", "Mid West", null, null, { patientId: "PT-G-WF-318", heldFor: "WF-318" }],
     ["Female", "Kimberley", 130, -2, { patientId: "PT-G-AD-GERA-04" }],
     ["Female", "South West", 5, 9, { patientId: "PT-G-AD-GERA-05" }],
     ["Female", "Goldfields-Esperance", 20, 2, { patientId: "PT-G-AD-GERA-06" }],
@@ -942,7 +1065,7 @@ const occupiedBeds: Admission[] = [
     // A confirmed discharge on a second site, so no board test can pass by looking at one ward.
     ["Female", "Perth Metropolitan", 6, -3, { confirmedHoursAgo: 8, patientId: "PT-G-AD-SJSA-01" }],
     ["Male", "Great Southern", 210, 10, { patientId: "PT-G-AD-SJSA-02" }],
-    ["Female", "Mid West", null, 4, { patientId: "PT-055" }],
+    ["Female", "Mid West", null, null, { patientId: "PT-055", heldFor: "WF-029" }],
     ["Male", "Kimberley", 75, 2, { patientId: "PT-G-AD-SJSA-04" }],
     ["Female", "South West", 4, 5, { patientId: "PT-G-AD-SJSA-05" }],
     ["Male", "Goldfields-Esperance", 9, null, { patientId: "PT-G-AD-SJSA-06" }],
@@ -955,7 +1078,7 @@ const occupiedBeds: Admission[] = [
     ["Female", "Perth Metropolitan", 3, null, { patientId: "PT-G-AD-SJSS-03" }],
     ["Male", "Great Southern", 12, 4, { patientId: "PT-G-AD-SJSS-04" }],
     ["Female", "Mid West", 45, 6, { patientId: "PT-G-AD-SJSS-05" }],
-    ["Male", "Kimberley", 130, -2, { blockReason: "Awaiting clean", patientId: "PT-G-AD-SJSS-06" }],
+    ["Male", "Kimberley", 130, -2, { patientId: "PT-G-AD-SJSS-06" }],
     ["Female", "South West", 5, 9, { patientId: "PT-G-AD-SJSS-07" }],
   ]),
 ];
@@ -1166,8 +1289,9 @@ export const wardAdmissions: Admission[] = [...occupiedBeds, ...departures, ...w
 
 /**
  * Three synthetic planned admissions for the calendar (stream D, 9 October 2026), authored against
- * `WARD_ADMISSIONS_ANCHOR` like every instant above. One links an existing synthetic patient with
- * no live stay; two carry initials only. The respite booking's expected arrival is earlier today,
+ * `WARD_ADMISSIONS_ANCHOR` like every instant above. Each links a synthetic patient with no live
+ * stay (F-148: the sample never shows a booking by initials; initials stay for a real booking made
+ * before a person is on file). The respite booking's expected arrival is earlier today,
  * so the seeded day already shows one planned arrival overdue in the action inbox.
  *
  * Every figure is invented: the stay lengths are a ward's own plan, not a legal period.
@@ -1175,8 +1299,8 @@ export const wardAdmissions: Admission[] = [...occupiedBeds, ...departures, ...w
 export const wardPlannedAdmissions: PlannedAdmission[] = [
   {
     id: "PA-SEED-01",
-    patientId: null,
-    initials: "JM",
+    patientId: "PT-105",
+    initials: null,
     sex: "Male",
     gender: "Male",
     reason: "court_ordered",
@@ -1218,8 +1342,8 @@ export const wardPlannedAdmissions: PlannedAdmission[] = [
   },
   {
     id: "PA-SEED-03",
-    patientId: null,
-    initials: "RK",
+    patientId: "PT-106",
+    initials: null,
     sex: "Female",
     gender: "Female",
     reason: "respite",

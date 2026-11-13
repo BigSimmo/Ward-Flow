@@ -46,7 +46,12 @@ import {
 } from "@/components/wf";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
-import { formatInstant, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  formatInstant,
+  formatSheetMoment,
+  type ClockZoneLabel,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Patient } from "@/components/ward-management/ward-patients";
 
@@ -58,7 +63,7 @@ import {
   type ChronologyRow,
   type ChronologySource,
 } from "./patient-chronology";
-import { calendarDateOf, perthDateLabel } from "@/components/ward-management/ward-clock";
+import { calendarDateOf, perthDateLabel, perthIsoDay } from "@/components/ward-management/ward-clock";
 import phone from "./patient-chronology-phone.module.css";
 import styles from "./reports.module.css";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
@@ -67,6 +72,7 @@ import { csvCell } from "@/components/ward-management/statistics/statistics-csv"
 import start from "./patient-chronology-start.module.css";
 import topTitle from "../shell/page-top-title.module.css";
 import { PatientChronologySearch } from "./patient-chronology-search";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 const NOT_RECORDED = "Not recorded";
 /** How many people the start list shows before "Show more", and how many each press adds. */
@@ -88,10 +94,10 @@ function rowDetail(row: ChronologyRow): string {
   return row.after || row.before || row.record;
 }
 
-function rowText(row: ChronologyRow, dayZero: Date): string {
+function rowText(row: ChronologyRow, dayZero: Date, zone: ClockZoneLabel): string {
   return [
-    `Occurred ${chronologyTime(row.occurredAt, dayZero)}`,
-    `Recorded ${chronologyTime(row.recordedAt, dayZero)}`,
+    `Occurred ${chronologyTime(row.occurredAt, dayZero, zone)}`,
+    `Recorded ${chronologyTime(row.recordedAt, dayZero, zone)}`,
     row.who || "Who not recorded",
     row.action,
     row.record,
@@ -113,7 +119,7 @@ function SourceMark({ source }: { source: ChronologySource }) {
 }
 
 /** Rows grouped by the day each happened (occurred, else recorded), in table order. */
-function dayGroups(rows: readonly ChronologyRow[], dayZero: Date) {
+function dayGroups(rows: readonly ChronologyRow[], dayZero: Date, zone: ClockZoneLabel) {
   const groups: Array<{ key: string; label: string; rows: ChronologyRow[] }> = [];
   for (const row of rows) {
     const at = row.occurredAt ?? row.recordedAt;
@@ -122,10 +128,9 @@ function dayGroups(rows: readonly ChronologyRow[], dayZero: Date) {
     const label =
       at === null
         ? "No time recorded"
-        : `${perthDateLabel(at, dayZero, { weekday: "short", day: "numeric", month: "short", year: "numeric" })} AWST`;
+        : `${perthDateLabel(at, dayZero, { weekday: "short", day: "numeric", month: "short", year: "numeric" })} ${zone}`;
     // Keep the grouping key in the same full Perth calendar date as its heading.
-    const key =
-      at === null ? "none" : calendarDateOf(at, dayZero).toLocaleDateString("en-CA", { timeZone: "Australia/Perth" });
+    const key = at === null ? "none" : perthIsoDay(calendarDateOf(at, dayZero));
     const last = groups[groups.length - 1];
     if (last && last.key === key) last.rows.push(row);
     else groups.push({ key, label, rows: [row] });
@@ -155,6 +160,7 @@ const pickerName = (patient: Patient) => `${patient.familyName}, ${patient.given
  * Flow keeps no record of who was opened) and says what a chronology holds.
  */
 export function PatientChronologyScreen({ initialPatientId }: { initialPatientId?: string }) {
+  const zone = useClockZoneLabel();
   const { patients, movements, referrals, admissions, units, eventLog, readAuditEvents, dayZero } = useWardFlowSelect(
     "patients",
     "movements",
@@ -222,9 +228,10 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
             auditEvents,
             eventLog: eventLog ?? [],
             dayZero,
+            zone,
           })
         : null,
-    [patientId, patients, movements, referrals, admissions, units, auditEvents, eventLog, dayZero],
+    [patientId, patients, movements, referrals, admissions, units, auditEvents, eventLog, dayZero, zone],
   );
 
   // The ward nurse view is a narrower set of sources: the coordinator audit is left out.
@@ -291,6 +298,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
       now,
       // D-122 (extends D-102): the file carries the UMRN, never the name the screen shows.
       chronology.patient?.umrn,
+      zone,
     ).split("\r\n");
     // Audit 24-7 (CT-12): a filter row sits under Scope so the file says which rows it holds.
     const scopeAt = lines.findIndex((line) => line.startsWith(`${csvCell("Scope")},`));
@@ -302,11 +310,21 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
   }
 
   function copyRow(row: ChronologyRow) {
-    const text = rowText(row, dayZero);
+    const text = rowText(row, dayZero, zone);
     // The shared wf toast (polite live region) confirms the copy; words stay neutral.
     const copied = () => toast?.push({ tone: "success", title: "Row copied", duration: 2600 });
     const failed = () => toast?.push({ tone: "warning", title: "Could not copy the row", duration: 4000 });
     copyTextToClipboard(text).then(copied, failed);
+  }
+
+  // F-57 (C17): closing the side panel's event gives focus back to that event's row in the table.
+  function closeSideEvent() {
+    const key = openKey;
+    setOpenKey(null);
+    const rowButton = [...document.querySelectorAll<HTMLButtonElement>("[data-chronology-event-key]")].find(
+      (button) => button.getAttribute("data-chronology-event-key") === key,
+    );
+    rowButton?.focus({ preventScroll: true });
   }
 
   // Opening an event never moves the table: remember and restore its scroll position.
@@ -320,8 +338,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
 
   const generated = (
     <span data-testid="ward-chronology-generated">
-      Generated {formatSheetMoment(now, dayZero, { includeYearAndZone: true })} · Synthetic demo data, not a clinical
-      record
+      Generated {formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone })} · Synthetic demo data, not a
+      clinical record
       <span className={styles.printOnlyInline} data-testid="ward-chronology-print-filter">
         {" "}
         · Filter: {filterScope}
@@ -366,7 +384,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                 Generated {formatInstant(now)}
                 <SrOnly>
                   {" "}
-                  · {formatSheetMoment(now, dayZero, { includeYearAndZone: true })} · Synthetic demo data, not a
+                  · {formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone })} · Synthetic demo data, not a
                   clinical record
                 </SrOnly>
                 <span className={styles.printOnlyInline} data-testid="ward-chronology-print-filter">
@@ -497,8 +515,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
   ) : null;
 
   const detailFacts = (row: ChronologyRow) => [
-    { id: "occurred", label: "Occurred", value: chronologyTime(row.occurredAt, dayZero) },
-    { id: "recorded", label: "Recorded", value: chronologyTime(row.recordedAt, dayZero) },
+    { id: "occurred", label: "Occurred", value: chronologyTime(row.occurredAt, dayZero, zone) },
+    { id: "recorded", label: "Recorded", value: chronologyTime(row.recordedAt, dayZero, zone) },
     { id: "who", label: "Who", value: row.who || NOT_RECORDED },
     { id: "source", label: "Source", value: row.source },
   ];
@@ -525,8 +543,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                   Generated {formatInstant(now)}
                   <span className={phone.srOnly}>
                     {" "}
-                    · PIR chronology, {formatSheetMoment(now, dayZero, { includeYearAndZone: true })} · Synthetic demo
-                    data
+                    · PIR chronology, {formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone })} · Synthetic
+                    demo data
                   </span>
                   <span className={styles.printOnlyInline} data-testid="ward-chronology-print-filter">
                     {" "}
@@ -589,7 +607,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
               {emptyState}
               {rows.length ? (
                 <div className={phone.list}>
-                  {dayGroups(rows, dayZero).map((group) => (
+                  {dayGroups(rows, dayZero, zone).map((group) => (
                     <section key={group.key} aria-label={group.label}>
                       <h2 className={phone.dayHead}>
                         <span>{group.label}</span>
@@ -950,7 +968,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                         <th scope="col">Source</th>
                       </tr>
                     </thead>
-                    {dayGroups(rows, dayZero).map((group) => (
+                    {dayGroups(rows, dayZero, zone).map((group) => (
                       <tbody key={group.key}>
                         <tr className={styles.dayRow}>
                           <th scope="rowgroup" colSpan={5}>
@@ -970,15 +988,16 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                               className={cx(styles.eventRow, selected && start.eventSelected)}
                               aria-selected={selected}
                             >
-                              <td className={styles.time}>{chronologyTime(row.occurredAt, dayZero)}</td>
+                              <td className={styles.time}>{chronologyTime(row.occurredAt, dayZero, zone)}</td>
                               <td className={styles.time} data-chronology-recorded="">
-                                {chronologyTime(row.recordedAt, dayZero)}
+                                {chronologyTime(row.recordedAt, dayZero, zone)}
                               </td>
                               <th scope="row">
                                 <button
                                   type="button"
                                   className={styles.eventButton}
                                   data-chronology-event-action=""
+                                  data-chronology-event-key={row.key}
                                   aria-expanded={selected}
                                   aria-controls={`${baseId}-panel`}
                                   onClick={() => openRow(row.key)}
@@ -1027,7 +1046,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                         iconOnly
                         icon={X}
                         aria-label="Close event"
-                        onClick={() => setOpenKey(null)}
+                        onClick={closeSideEvent}
                       />
                     }
                   />
@@ -1050,11 +1069,11 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                     <dl className={styles.sideList}>
                       <div>
                         <dt>First</dt>
-                        <dd className={styles.time}>{firstLast(rows, dayZero, "first")}</dd>
+                        <dd className={styles.time}>{firstLast(rows, dayZero, zone, "first")}</dd>
                       </div>
                       <div>
                         <dt>Latest</dt>
-                        <dd className={styles.time}>{firstLast(rows, dayZero, "last")}</dd>
+                        <dd className={styles.time}>{firstLast(rows, dayZero, zone, "last")}</dd>
                       </div>
                       <div>
                         <dt>No occurred time</dt>
@@ -1123,11 +1142,16 @@ function EventChange({ row }: { row: ChronologyRow }) {
   );
 }
 
-function firstLast(rows: readonly ChronologyRow[], dayZero: Date, which: "first" | "last"): string {
+function firstLast(
+  rows: readonly ChronologyRow[],
+  dayZero: Date,
+  zone: ClockZoneLabel,
+  which: "first" | "last",
+): string {
   const times = rows
     .map((row) => row.occurredAt ?? row.recordedAt)
     .filter((at): at is Instant => at !== null)
     .sort((a, b) => a - b);
   const at = which === "first" ? times[0] : times[times.length - 1];
-  return at === undefined ? NOT_RECORDED : chronologyTime(at, dayZero);
+  return at === undefined ? NOT_RECORDED : chronologyTime(at, dayZero, zone);
 }

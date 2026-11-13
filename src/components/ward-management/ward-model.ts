@@ -424,6 +424,20 @@ export type Unit = {
     bedKind?: "locked" | "open";
     bedNumber?: number;
   }[];
+  /** F-150 (audit G FS-4): on a desk's copy only, never in the saved state. This ward's stays the
+   * desk is not sent (a ward desk keeps a departed stay only for its hand-off window): bed times
+   * under a stand-in id that sorts where the stay's own id would (`withSeatHistory` in
+   * ward-access-scope), nothing about the person. The bed replay (`wardStaySeats`) then seats every
+   * stay in the same bed on every desk; without them a ward desk renumbered its beds. */
+  seatHistoryStays?: {
+    id: string;
+    state: string;
+    pulledAt: Instant | null;
+    arrivedAt: Instant | null;
+    leftAt: Instant | null;
+    bedKind?: "locked" | "open";
+    bedNumber?: number;
+  }[];
   /** Who this bed may hold, as a CONSTRAINT — see `SexDesignation`'s own doc comment. Never
    *  compared to a referral's `sex` by equality; `"Undesignated"` accepts either sex. */
   sexDesignation: SexDesignation;

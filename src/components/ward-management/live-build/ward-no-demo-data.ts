@@ -47,6 +47,14 @@ export function applyRulingsDemoOverlay<
   return state;
 }
 
+export function workedExamplesShown(state: {
+  movements: readonly Movement[];
+  referrals: readonly Referral[];
+}): boolean {
+  void state;
+  return false;
+}
+
 export function rulingsDemoOverlay(now: Instant): {
   exampleIds: readonly string[];
   movements: Movement[];
@@ -68,5 +76,11 @@ export function withDemoPlannedMoveTimes(movements: readonly Movement[], anchor:
 /** S6 example data: a live shared build adds no invented example rows. */
 export function applyExampleListsOverlay(state: WardFlowState, anchor: Instant): WardFlowState {
   void anchor;
+  return state;
+}
+
+/** Time audit G1: a live shared build adds no invented staff request. */
+export function withSeededStaffRequest(state: WardFlowState, now: Instant): WardFlowState {
+  void now;
   return state;
 }

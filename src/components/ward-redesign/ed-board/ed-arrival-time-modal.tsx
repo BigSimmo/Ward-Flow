@@ -30,6 +30,7 @@ import styles from "@/components/ward-management/referrals/arrival-time-modal.mo
 import { TimePresets } from "@/components/ward-redesign/parts/time-presets";
 import redesign from "./ed-board-redesign.module.css";
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 /**
  * Late when an arrival plan exists, now is more than the late-arrival grace period past that
@@ -64,6 +65,7 @@ export function ArrivalTimeModal(props: ArrivalTimeModalProps) {
 function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinator" }: ArrivalTimeModalProps) {
   const { dispatch, configuration } = useWardFlowSelect("dispatch", "configuration");
   const now = useWardFlowClock();
+  const zone = useClockZoneLabel();
   const baseId = useId();
   // Feature 11: the route's role must be one that may set arrival details (`ward-role-permissions.ts`).
   const saveGate = useRoleGate()("SET_ARRIVAL_DETAILS");
@@ -210,8 +212,8 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
               <CircleAlert size={18} className={styles.lateIcon} aria-hidden="true" />
               <span>
                 Arrival is more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past the estimated ward time (
-                {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} AWST). They have not been marked
-                arrived.
+                {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} {zone}). They have not been
+                marked arrived.
               </span>
             </div>
           ) : null}
@@ -262,7 +264,9 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
           <div className={styles.etaField}>
             <div className={styles.label}>
               Estimated time of arrival (ETA):{" "}
-              <strong>{etaMinutes === undefined ? "Not set" : `${formatInstantWithDay(etaMinutes, now)} AWST`}</strong>
+              <strong>
+                {etaMinutes === undefined ? "Not set" : `${formatInstantWithDay(etaMinutes, now)} ${zone}`}
+              </strong>
               {etaFromBooking && !etaText.trim() ? " (from the transport booking)" : null}
             </div>
           </div>

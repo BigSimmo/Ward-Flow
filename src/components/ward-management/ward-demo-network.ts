@@ -23,6 +23,9 @@ import { mixSexOf } from "@/components/ward-management/ward-eligibility";
 import { NOW_ANCHOR, STANDARD_WARD_SITES } from "@/components/ward-management/ward-sites";
 import { GENERAL_OBSERVATION, observationAt } from "@/components/ward-management/ward-observation";
 import { completeSyntheticReferralIntake } from "./ward-referral-intake-seed";
+import { withSampleLegalStatusFromForm } from "./ward-sample-legal-status";
+import { sampleReferralRaisedAt } from "./ward-sample-working-hours";
+import { sampleDayPullHoldMinutes, sampleDayPullLimit } from "./ward-seeded-pull-holds";
 
 /*
  * THE DEMONSTRATION NETWORKS: "EMHS demo" and "EMHS surge". Owner rulings 2026-09-25 10:08.
@@ -674,7 +677,9 @@ class NetworkBuilder {
         ? this.between(1938, 1960)
         : person.cohort === "Youth"
           ? this.between(2003, 2009)
-          : this.between(1962, 2000);
+          : // Time audit G5: one year of headroom under the older-adult boundary (65), so no adult
+            // turns 65 before the end of the year after the demonstration's own year.
+            this.between(1963, 2001);
     const givenName = givenNames[index % givenNames.length];
     // P005: a clash takes the next family name along, so only the later namesake changes.
     let familyIndex = (index * 7) % MINERALS.length;
@@ -799,6 +804,34 @@ function lawfulWards(
 
 const EMHS_SITES = ["RPH", "BTY", "ARM", "SJGM"];
 
+/** A ward accepts a person ten minutes after they reach the ED at the earliest (synthetic). */
+const ACCEPTED_AFTER_ARRIVAL_MINUTES = 10;
+/** A held bed is pulled in steps of a quarter of an hour after the acceptance (synthetic). */
+const PULLED_AFTER_ACCEPTANCE_MINUTES = 15;
+/** The bed hold about to lapse runs out this many minutes after the anchor (synthetic). */
+const LAPSING_HOLD_LEFT_MINUTES = 6;
+
+/** When the lapsing bed was pulled: the signed hold before its limit, which falls just after now. */
+function lapsingPullAt(): number {
+  return NOW_ANCHOR + LAPSING_HOLD_LEFT_MINUTES - sampleDayPullHoldMinutes();
+}
+
+/**
+ * Which ED wait carries the bed hold about to lapse. A16-13: its bed was pulled a whole signed hold
+ * ago, so only a person who reached the ED and was accepted before that can hold it. The longest
+ * such wait among the people the cycle already pulls a bed for is chosen; failing that, among those
+ * it accepts; failing that, any. Returns `undefined` when nobody has waited that long.
+ */
+function lapsingHoldWait(variant: DemoNetworkVariant): { edId: string; index: number } | undefined {
+  const earliestArrival = lapsingPullAt() - PULLED_AFTER_ACCEPTANCE_MINUTES - ACCEPTED_AFTER_ARRIVAL_MINUTES;
+  const rank = (index: number) => (index % 5 === 3 ? 0 : index % 5 === 1 ? 1 : 2);
+  const eligible = Object.entries(ED_WAITS[variant]).flatMap(([edId, waits]) =>
+    waits.flatMap((waited, index) => (NOW_ANCHOR - waited <= earliestArrival ? [{ edId, index, waited }] : [])),
+  );
+  eligible.sort((a, b) => rank(a.index) - rank(b.index) || b.waited - a.waited);
+  return eligible[0];
+}
+
 /**
  * One person waiting in an emergency department. Stages cycle so every ED shows a mix: most are
  * waiting for a bed; some are accepted and waiting for it to be ready; some have a bed held.
@@ -809,6 +842,7 @@ function edMovement(
   waitedMinutes: number,
   index: number,
   heldBeds: Map<string, number>,
+  lapse = false,
 ): Movement {
   const siteCode = ED_SITE[edId];
   const service = serviceOf(siteCode);
@@ -831,7 +865,7 @@ function edMovement(
   const candidates = bucket === undefined ? [] : lawfulWards(cohort, bucket, security, legalStatus, sameService);
   const cycle = index % 5;
   let stage: MovementStage = cycle === 1 && candidates.length > 0 ? "accepted_awaiting_bed" : "placement_requested";
-  if (cycle === 3 && candidates.length > 0) stage = "pulled";
+  if ((cycle === 3 || lapse) && candidates.length > 0) stage = "pulled";
   if (stage === "pulled") {
     // A bed can only be held on a ward with an empty bed not already held for someone else.
     const roomy = candidates.filter(
@@ -873,16 +907,42 @@ function edMovement(
   if (stage !== "placement_requested") {
     const ward = candidates[index % candidates.length];
     movement.acceptedUnitId = ward.id;
-    movement.acceptedAt = NOW_ANCHOR - Math.min(waitedMinutes - 10, 120);
+    movement.acceptedAt = NOW_ANCHOR - Math.min(waitedMinutes - ACCEPTED_AFTER_ARRIVAL_MINUTES, 120);
     if (stage === "pulled") {
       // A bed held for this person: an admission in state "pulled" on the ward, same patient.
       const heldIndex = heldBeds.get(ward.id) ?? 0;
       heldBeds.set(ward.id, heldIndex + 1);
       const admissionId = `AD-DN-${ward.id.slice(3)}-H${heldIndex + 1}`;
+      // A16-13 (D-175 item 1): the pull comes from the journey's own times, after it reached the ED
+      // and after the ward accepted, and the limit runs from the pull by the signed hold, as
+      // PULL_PATIENT writes it. The pull was typed as 25 minutes ago with a limit of its own, so
+      // WF-DN-010 on the surge day was pulled before it was accepted.
+      let pulledAt: number;
+      if (lapse) {
+        pulledAt = lapsingPullAt();
+        movement.acceptedAt = Math.max(
+          movement.openedAt + ACCEPTED_AFTER_ARRIVAL_MINUTES,
+          pulledAt - PULLED_AFTER_ACCEPTANCE_MINUTES,
+        );
+      } else {
+        const sinceAccepted = NOW_ANCHOR - movement.acceptedAt;
+        pulledAt =
+          movement.acceptedAt +
+          Math.min(PULLED_AFTER_ACCEPTANCE_MINUTES * (1 + (index % 4)), Math.floor(sinceAccepted / 2));
+      }
       movement.admissionId = admissionId;
-      movement.pullExpiresAt = NOW_ANCHOR + 40 + (index % 4) * 15;
+      movement.pullExpiresAt = sampleDayPullLimit(pulledAt);
       build.admissions.push(
-        pulledAdmission(admissionId, ward.id, id, patientId, person, security === "Secure", NOW_ANCHOR - 25),
+        // The held bed is a locked one when the person needs it or the ward has no open beds.
+        pulledAdmission(
+          admissionId,
+          ward.id,
+          id,
+          patientId,
+          person,
+          security === "Secure" || ward.lockedBeds >= ward.beds,
+          pulledAt,
+        ),
       );
     }
   }
@@ -1032,6 +1092,9 @@ function buildReferral(
 ): Referral {
   const person: PersonSpec = { cohort: spec.cohort, sex: spec.sex, gender: spec.sex, suburb: spec.suburb };
   const patientId = stepDownPatient ?? build.patient(person);
+  // A16-20 (D-175 item 1): a GP or community team refers inside the sample working day, by the
+  // same shared rule as the Standard day (RF-DN-007's GP referral was raised at 05:42).
+  const raisedAt = sampleReferralRaisedAt(spec.source, NOW_ANCHOR - spec.raisedMinutesAgo);
   const decidedAt = NOW_ANCHOR - Math.floor(spec.raisedMinutesAgo / 2);
   const destination = {
     kind: "psychiatric_ward" as const,
@@ -1065,21 +1128,24 @@ function buildReferral(
       decidedBy: `Nurse unit manager, ${ward?.name ?? "ward"}`,
     };
   }
-  return completeSyntheticReferralIntake({
-    id: `RF-DN-${String(index + 1).padStart(3, "0")}`,
-    patientId,
-    destinations: [addressing],
-    ageBand: spec.cohort,
-    homeRegion: "Perth Metropolitan",
-    suburb: { kind: "named", name: spec.suburb },
-    source: spec.source,
-    ...(spec.source === "psychiatric_ward" ? { originUnitId: "dn-rph-hdu" } : {}),
-    raisedAt: NOW_ANCHOR - spec.raisedMinutesAgo,
-    urgency: spec.urgency,
-    originSiteCode: spec.originSiteCode,
-    transportNeeded: spec.source !== "gp",
-    history: spec.history,
-  });
+  return completeSyntheticReferralIntake(
+    {
+      id: `RF-DN-${String(index + 1).padStart(3, "0")}`,
+      patientId,
+      destinations: [addressing],
+      ageBand: spec.cohort,
+      homeRegion: "Perth Metropolitan",
+      suburb: { kind: "named", name: spec.suburb },
+      source: spec.source,
+      ...(spec.source === "psychiatric_ward" ? { originUnitId: "dn-rph-hdu" } : {}),
+      raisedAt,
+      urgency: spec.urgency,
+      originSiteCode: spec.originSiteCode,
+      transportNeeded: spec.source !== "gp",
+      history: spec.history,
+    },
+    { anchor: NOW_ANCHOR },
+  );
 }
 
 function pulledAdmission(
@@ -1369,13 +1435,14 @@ function buildNetwork(variant: DemoNetworkVariant): DemoNetwork {
   // The transfer first, so its held bed is counted before any ED patient is offered one.
   inTransitTransfer(build);
   heldBeds.set("dn-mid-secure", 1);
+  // The bed hold about to lapse: one held bed's limit falls six minutes from now. It was a limit typed
+  // onto the first held bed, whose pull was 25 minutes ago, so its limit did not run from its pull.
+  const lapsing = lapsingHoldWait(variant);
   for (const [edId, waits] of Object.entries(ED_WAITS[variant])) {
-    waits.forEach((waited, index) => edMovement(build, edId, waited, index, heldBeds));
+    waits.forEach((waited, index) =>
+      edMovement(build, edId, waited, index, heldBeds, lapsing?.edId === edId && lapsing.index === index),
+    );
   }
-
-  // The bed hold about to lapse: the first held bed's pull expires in six minutes.
-  const firstPulled = build.movements.find((movement) => movement.stage === "pulled");
-  if (firstPulled) firstPulled.pullExpiresAt = NOW_ANCHOR + 6;
 
   for (const spec of DEMO_WARD_SPECS) fillWard(build, spec);
 
@@ -1396,7 +1463,8 @@ function buildNetwork(variant: DemoNetworkVariant): DemoNetwork {
     sites,
     patients: build.patients,
     admissions: build.admissions,
-    movements: build.movements,
+    // D-170 item 4: a sample person on a Form 4A with no examination is referred for examination.
+    movements: build.movements.map(withSampleLegalStatusFromForm),
     referrals: build.referrals,
     bedReleases: build.bedReleases,
     leaveBeds: build.leaveBeds,

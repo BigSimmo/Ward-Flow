@@ -174,7 +174,8 @@ describe("Weekly executive aggregate adoption", () => {
     expect(screen.getByText(/Weekly report · synthetic demo data · North Metro/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Paused, pause demo updates/ }));
     expect(togglePause).toHaveBeenCalledOnce();
-    expect(screen.getByTestId("ward-weekly-range")).toHaveTextContent("Wed 23 Sept 2026, 10:42 AWST");
+    // RC 2.6 (F-113, D-190): not signed in here, so the stamp's zone reads "demo time", not AWST.
+    expect(screen.getByTestId("ward-weekly-range")).toHaveTextContent("Wed 23 Sept 2026, 10:42 demo time");
     expect(guard.operational).not.toHaveBeenCalled();
   });
 

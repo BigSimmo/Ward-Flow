@@ -15,12 +15,13 @@ import { ChevronDown, Maximize2, Minimize2, Tv } from "lucide-react";
 
 import { bedMeetingSheet, type BedMeetingSheet } from "@/components/ward-management/capacity/bed-meeting-derivations";
 import type { BedKindGap, BedKindId } from "@/components/ward-management/capacity/capacity-derivations";
-import { asAtStamp, type DailySheetPerson } from "@/components/ward-management/board/ward-daily-sheet";
+import { asAtStamp, type DailySheetPerson } from "@/components/ward-management/board/ward-daily-sheet-model";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { useWardFeatureFlag, useWardFeatureFlags } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { splitDuration } from "@/components/ward-management/ward-clock";
+import { HELD_UP_BY_TOMORROW_LABEL } from "@/components/ward-management/ward-held-up";
 import {
   useDueSoonThresholds,
   useWardFlowClock,
@@ -31,7 +32,6 @@ import {
   ED_TREND_STEP_MINUTES,
   LONG_WAIT_MINUTES,
 } from "@/components/ward-management/ward-operational-defaults";
-import type { HealthService } from "@/components/ward-management/ward-model";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import { WARD_BED_MEETING_TV_HREF, WARD_CAPACITY_HREF, bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import { currentShift } from "@/components/ward-management/ward-board-time-features";
@@ -48,9 +48,11 @@ import {
   tvHealthServices,
   tvServiceFromParam,
   tvServiceParam,
+  tvSiteScope,
   wardTvSheet,
   type EdTvSheet,
   type MeetingTvExtras,
+  type TvSiteScope,
   type TvJourneyRow,
   type WardTvSheet,
 } from "./tv-derivations";
@@ -297,18 +299,21 @@ function JourneyList({
         {rows.map((row, index) => (
           <li
             key={row.id}
-            data-long={row.waitMinutes >= LONG_WAIT_MINUTES || undefined}
+            data-long={(row.waitMinutes !== null && row.waitMinutes >= LONG_WAIT_MINUTES) || undefined}
             data-fit={shortRows !== undefined && index >= shortRows ? "full" : undefined}
           >
             <span className={styles.who}>{row.name}</span>
             <span className={styles.where}>{[row.stage, row.where].filter(Boolean).join(" · ")}</span>
             {/* Overall review (20 Oct 2026): the time says what it measures, the whole wait since
                 the journey opened, so "In transit · 8h 00m" is not read as 8 hours on the road. */}
-            <span className={styles.wait}>
-              {/* Core pages redesign (31 Oct 2026): a long wait carries a glyph as well as red, not an underline that reads as a link. */}
-              {row.waitMinutes >= LONG_WAIT_MINUTES ? <StatusGlyph tone="danger" size={10} /> : null}
-              {splitDuration(row.waitMinutes)} <span className={styles.waitWord}>waiting</span>
-            </span>
+            {/* C16: a waitlisted stay with no journey has no start time, so no wait is shown for it. */}
+            {row.waitMinutes === null ? null : (
+              <span className={styles.wait}>
+                {/* Core pages redesign (31 Oct 2026): a long wait carries a glyph as well as red, not an underline that reads as a link. */}
+                {row.waitMinutes >= LONG_WAIT_MINUTES ? <StatusGlyph tone="danger" size={10} /> : null}
+                {splitDuration(row.waitMinutes)} <span className={styles.waitWord}>waiting</span>
+              </span>
+            )}
           </li>
         ))}
       </ol>
@@ -337,7 +342,10 @@ function lockedReadyText(lockedReady: number): string {
   return lockedReady === 1 ? "1 of the ready beds is locked" : `${lockedReady} of the ready beds are locked`;
 }
 
-/** NA3-02 (Josh, 26 Oct 2026, Part A 15): the bed meeting's held up count is discharges, today and tomorrow. */
+/**
+ * NA3-02 (Josh, 26 Oct 2026, Part A 15): the bed meeting's held up count is discharges due by
+ * tomorrow, overdue included (`groupDischarges`), not Capacity's count on any date (A16-25).
+ */
 function releasesHeldUpText(heldUp: number): string {
   return `${heldUp} ${heldUp === 1 ? "discharge" : "discharges"} held up`;
 }
@@ -439,9 +447,10 @@ function ServiceTable({ rows }: { rows: MeetingTvExtras["services"] }) {
           <th scope="col" className={cx(styles.num, styles.headWrap)}>
             Locked ready
           </th>
-          {/* Review 5 Nov 2026: "Discharges due" ran past the panel edge in the 4em column. */}
+          {/* Review 5 Nov 2026: the head ran past the panel edge in the 4em column. F-105: it names its
+              window, which is not the headline's "today". */}
           <th scope="col" className={cx(styles.numWide, styles.headWrap)}>
-            Discharges due
+            Due by tomorrow
           </th>
         </tr>
       </thead>
@@ -514,7 +523,7 @@ function meetingCheckingText(sheet: BedMeetingSheet, extras: MeetingTvExtras, no
       ? upperFirst(preparingSentence(extras.pendingPreparation).replace(/^[.,]\s*/, ""))
       : null,
     // NA3-02: the discharges figure counts those held up, so the line says how many (page tops, 9 Nov 2026).
-    sheet.discharges.heldUp > 0 ? releasesHeldUpText(sheet.discharges.heldUp) : null,
+    sheet.discharges.heldUp > 0 ? `${releasesHeldUpText(sheet.discharges.heldUp)} due by tomorrow` : null,
     sheet.stuckReferrals && stuck > 0
       ? `${stuck} ${stuck === 1 ? "place" : "places"} with no referral reply after ${splitDuration(sheet.stuckReferrals.limitMinutes)}`
       : null,
@@ -528,14 +537,19 @@ function BedMeetingTvView({
   extras,
   now,
   scenario,
+  site,
 }: {
   sheet: BedMeetingSheet;
   extras: MeetingTvExtras;
   now: number;
   scenario: string;
+  /** A9-16: a site bed manager's meeting, which names its site rather than the service. */
+  site?: TvSiteScope;
 }) {
   const { ed, delays } = sheet;
-  const scope = sheet.service === null ? "All services" : sheet.service;
+  const scope = site ? site.name : sheet.service === null ? "All services" : sheet.service;
+  // A9-16: the panels name the site's code ("Wards in RPH") on a site bed manager's screen.
+  const placeShort = site ? site.siteCode : sheet.service === null ? "" : healthServiceAcronym(sheet.service);
   const forecast = useForecastModel(now);
 
   return (
@@ -546,13 +560,17 @@ function BedMeetingTvView({
             <ServiceTable rows={extras.services} />
           </Panel>
         ) : (
-          <Panel title={`Wards in ${healthServiceAcronym(sheet.service)}`} testId="bed-meeting-tv-wards-panel" wide>
-            {extras.wards.length === 0 ? <Empty>No wards in this service</Empty> : <WardTable rows={extras.wards} />}
+          <Panel title={`Wards in ${placeShort}`} testId="bed-meeting-tv-wards-panel" wide>
+            {extras.wards.length === 0 ? (
+              <Empty>{site ? "No wards at this site" : "No wards in this service"}</Empty>
+            ) : (
+              <WardTable rows={extras.wards} />
+            )}
           </Panel>
         )}
 
         <Panel
-          title={sheet.service === null ? "Beds that fit" : `Beds that fit in ${healthServiceAcronym(sheet.service)}`}
+          title={sheet.service === null ? "Beds that fit" : `Beds that fit in ${placeShort}`}
           testId="bed-meeting-tv-fit-panel"
           area="fit"
         >
@@ -584,7 +602,9 @@ function BedMeetingTvView({
           )}
         </Panel>
 
-        <Panel title="Waiting by cause" testId="bed-meeting-tv-delays-panel" area="delays">
+        {/* A16-25: the causes cover every open movement, the hero's "open movements" figure, so they
+            add up to it rather than to "waiting in ED". */}
+        <Panel title="Open movements by cause" testId="bed-meeting-tv-delays-panel" area="delays">
           {delays.groups.length === 0 ? (
             <Empty>No delays</Empty>
           ) : (
@@ -646,10 +666,12 @@ export function WardTvView({
   const { capacity, incoming, discharges } = sheet;
   const going = discharges.heldUp + discharges.confirmed + discharges.expected;
   const changed = useWardTvChangeMarks(sheet, scenario, now, frozen);
+  // D-191 item 5: everyone held up by tomorrow, then anyone else past their date, each once.
+  const heldUpKeys = new Set(sheet.heldUp.map((person) => person.key));
   const stuck = [
     ...sheet.heldUp.map((person) => ({ person, note: `Held up: ${person.blockReason ?? ""}`.trim() })),
     ...sheet.overdue
-      .filter((person) => person.blockReason === null)
+      .filter((person) => !heldUpKeys.has(person.key))
       .map((person) => ({ person, note: "Past expected date" })),
   ];
 
@@ -689,7 +711,9 @@ export function WardTvView({
           {
             label: "Going out",
             value: going,
-            detail: `Today and tomorrow. ${discharges.confirmed} confirmed, ${releasesHeldUpText(discharges.heldUp)}`,
+            // A16-25: overdue dates are in the figure too, so the span is "due by tomorrow". D-197 item 5:
+            // the held-up count is confirmed discharges held up by tomorrow (D-115, D-191 item 5), so it says so.
+            detail: `Due by tomorrow. ${discharges.confirmed} confirmed, ${discharges.heldUp} confirmed held up`,
             tone: discharges.heldUp > 0 ? "warning" : undefined,
             meter: { value: discharges.confirmed, max: going },
             changed: changed("going"),
@@ -737,7 +761,7 @@ export function WardTvView({
           )}
         </Panel>
 
-        <Panel title="Held up or overdue" testId="ward-tv-stuck-panel">
+        <Panel title={`${HELD_UP_BY_TOMORROW_LABEL}, or overdue`} testId="ward-tv-stuck-panel">
           {stuck.length === 0 ? (
             <Empty>Nobody held up or past their date</Empty>
           ) : (
@@ -994,14 +1018,34 @@ function useScreenWakeLock(active: boolean) {
 
 /** Which screen to show: plain links, so a TV can be pointed at one service, ward or ED for good. */
 /** `chip`: drawn as a slate quick chip naming the screen in short ("All services"), as the meeting's top. */
-function ScreenPicker({ current, label, chip }: { current: string; label: string; chip?: string }) {
-  const { units } = useWardFlowSelect("units");
+/** `site`: a site bed manager's TV offers only that site's meeting, ED and wards (A9-16). */
+function ScreenPicker({
+  current,
+  label,
+  chip,
+  site,
+}: {
+  current: string;
+  label: string;
+  chip?: string;
+  site?: TvSiteScope;
+}) {
+  const { units: everyUnit } = useWardFlowSelect("units");
+  const units = site ? site.units : everyUnit;
   const wards = [...units].sort((a, b) => a.name.localeCompare(b.name));
-  const eds = [...allEmergencyDepartments()].sort((a, b) => a.name.localeCompare(b.name));
-  const meetings: { key: string; label: string; service: HealthService | null }[] = [
-    { key: "all", label: "All services", service: null },
-    ...tvHealthServices(units).map((service) => ({ key: tvServiceParam(service), label: service, service })),
-  ];
+  const eds = [...allEmergencyDepartments()]
+    .filter((ed) => !site || ed.siteCode === site.siteCode)
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const meetings: { key: string; label: string; current: string }[] = site
+    ? [{ key: tvServiceParam(site.service), label: site.name, current: `site:${site.siteCode}` }]
+    : [
+        { key: "all", label: "All services", current: "service:all" },
+        ...tvHealthServices(units).map((service) => ({
+          key: tvServiceParam(service),
+          label: service,
+          current: `service:${tvServiceParam(service)}`,
+        })),
+      ];
   // WT-21: a choice only changes the query, so the page stays mounted. Close the menu on a choice.
   const pickerRef = useRef<HTMLDetailsElement>(null);
   const close = () => pickerRef.current?.removeAttribute("open");
@@ -1029,7 +1073,7 @@ function ScreenPicker({ current, label, chip }: { current: string; label: string
               replace
               href={bedMeetingTvHref({ service: meeting.key })}
               onClick={close}
-              aria-current={current === `service:${meeting.key}` ? "page" : undefined}
+              aria-current={current === meeting.current ? "page" : undefined}
             >
               {meeting.label}
             </Link>
@@ -1100,7 +1144,12 @@ export function BedMeetingTvScreen({
     "plannedAdmissions",
   );
   const board: TvBoard = tvBoardOf(boardParam, ward !== undefined ? "ward" : ed !== undefined ? "ed" : "meeting");
-  const { scenario, configuration, shared } = useWardFlowSelect("scenario", "configuration", "shared");
+  const { scenario, configuration, shared, dayZero } = useWardFlowSelect(
+    "scenario",
+    "configuration",
+    "shared",
+    "dayZero",
+  );
   const now = useWardFlowClock();
   const deviceService = useServiceScope();
   const access = useEffectiveWardAccess();
@@ -1147,6 +1196,9 @@ export function BedMeetingTvScreen({
   const { units, movements, bedReleases, admissions, leaveBeds, referrals, patients, plannedAdmissions } = live
     ? liveRecords
     : lastLiveRecords;
+  // A9-16 (Q12, Josh 13 Nov 2026): a site bed manager's bed meeting is its own site, whatever the link
+  // asks for: its people are that site's, so its beds and title are too.
+  const siteScope = useMemo(() => tvSiteScope(access, units), [access, units]);
   // Resolve names against the same selected records as the rows and counts. A supported scenario
   // change while offline must not pair the previous world's movements with the new world's people.
   const patientOf = useMemo(
@@ -1179,7 +1231,7 @@ export function BedMeetingTvScreen({
       nameOf,
       namedHolds: [...movements, ...referrals],
     };
-    const records = { movements, referrals, patients, plannedAdmissions };
+    const records = { movements, referrals, patients, plannedAdmissions, dayZero };
     if (ward !== undefined) {
       if (!unit) return { kind: "missing" as const, what: "ward" };
       if (board !== "flow") {
@@ -1194,7 +1246,12 @@ export function BedMeetingTvScreen({
         });
         return { kind: "ward-clinical" as const, unit, rows };
       }
-      return { kind: "ward" as const, sheet: wardTvSheet({ ...inputs, unit, thresholds }) };
+      // C16: a stay coming in with no open journey is named from its own record.
+      const nameOfStay = (admissionId: string) => {
+        const stay = admissions.find((admission) => admission.id === admissionId);
+        return stay ? patientOf(stay).formalName : "";
+      };
+      return { kind: "ward" as const, sheet: wardTvSheet({ ...inputs, unit, thresholds, nameOfStay }) };
     }
     if (ed !== undefined && board !== "flow") {
       const rows = department
@@ -1217,6 +1274,21 @@ export function BedMeetingTvScreen({
       if (!sheet) return { kind: "missing" as const, what: "emergency department" };
       return { kind: "ed" as const, sheet };
     }
+    if (siteScope) {
+      const siteInputs = { ...inputs, units: siteScope.units };
+      return {
+        kind: "network" as const,
+        sheet: bedMeetingSheet({
+          ...siteInputs,
+          service: siteScope.service,
+          thresholds,
+          referrals,
+          referralLimitMinutes: configuration.referralDecisionTargetMinutes,
+        }),
+        extras: meetingTvExtras({ ...siteInputs, service: siteScope.service, thresholds }),
+        site: siteScope,
+      };
+    }
     if (service === undefined) return { kind: "missing" as const, what: "health service" };
     return {
       kind: "network" as const,
@@ -1228,6 +1300,7 @@ export function BedMeetingTvScreen({
         referralLimitMinutes: configuration.referralDecisionTargetMinutes,
       }),
       extras: meetingTvExtras({ ...inputs, service, thresholds }),
+      site: undefined,
     };
   }, [
     units,
@@ -1238,6 +1311,7 @@ export function BedMeetingTvScreen({
     referrals,
     patients,
     plannedAdmissions,
+    dayZero,
     board,
     configuration.referralDecisionTargetMinutes,
     shownNow,
@@ -1249,6 +1323,7 @@ export function BedMeetingTvScreen({
     department,
     accessTarget,
     thresholds,
+    siteScope,
   ]);
 
   const stamp = asAtStamp(shownNow);
@@ -1277,6 +1352,15 @@ export function BedMeetingTvScreen({
     );
   }
 
+  // A9-16: the place a bed meeting covers: the site for a site bed manager, else the service or all.
+  const meetingScope =
+    view.kind !== "network"
+      ? ""
+      : view.site
+        ? view.site.name
+        : view.sheet.service === null
+          ? "All services"
+          : view.sheet.service;
   const title =
     view.kind === "ward"
       ? view.sheet.unit.name
@@ -1287,7 +1371,7 @@ export function BedMeetingTvScreen({
           : view.kind === "ed"
             ? edName(view.sheet.summary.ed.name)
             : view.kind === "network"
-              ? `Bed meeting · ${view.sheet.service === null ? "All services" : view.sheet.service}`
+              ? `Bed meeting · ${meetingScope}`
               : "Screen not found";
   const eyebrow =
     view.kind === "ward" || view.kind === "ward-clinical"
@@ -1295,9 +1379,11 @@ export function BedMeetingTvScreen({
       : view.kind === "ed" || view.kind === "ed-clinical"
         ? (tvBoardTitle(board, "ed") ?? "Emergency department")
         : view.kind === "network"
-          ? view.sheet.service === null
-            ? "State"
-            : "Health service"
+          ? view.site
+            ? "Site"
+            : view.sheet.service === null
+              ? "State"
+              : "Health service"
           : "Bed meeting";
   // TV-06: a frozen screen warns in red at once, with no invented wait; from the first minute it
   // also says how old the figures are, and the time now.
@@ -1311,9 +1397,11 @@ export function BedMeetingTvScreen({
     ? `ward:${unit.id}`
     : department
       ? `ed:${department.id}`
-      : service === undefined
-        ? "missing"
-        : `service:${tvServiceParam(service)}`;
+      : siteScope
+        ? `site:${siteScope.siteCode}`
+        : service === undefined
+          ? "missing"
+          : `service:${tvServiceParam(service)}`;
 
   return (
     <main
@@ -1332,7 +1420,7 @@ export function BedMeetingTvScreen({
       {view.kind === "network" ? (
         <MeetingTvTop
           sheet={view.sheet}
-          scope={view.sheet.service === null ? "All services" : view.sheet.service}
+          scope={meetingScope}
           longestPlace={view.sheet.ed.longestWaits[0] ? edName(view.sheet.ed.longestWaits[0].department) : undefined}
           checking={meetingCheckingText(view.sheet, view.extras, shownNow)}
           live={live}
@@ -1345,13 +1433,7 @@ export function BedMeetingTvScreen({
             {
               id: "screen",
               label: "Change screen",
-              node: (
-                <ScreenPicker
-                  current={current}
-                  label={title}
-                  chip={view.sheet.service === null ? "All services" : view.sheet.service}
-                />
-              ),
+              node: <ScreenPicker current={current} label={title} chip={meetingScope} site={siteScope} />,
             },
             ...(fullscreen.supported
               ? [
@@ -1460,7 +1542,13 @@ export function BedMeetingTvScreen({
         </header>
       )}
       {view.kind === "network" ? (
-        <BedMeetingTvView sheet={view.sheet} extras={view.extras} now={shownNow} scenario={scenarioLabel} />
+        <BedMeetingTvView
+          sheet={view.sheet}
+          extras={view.extras}
+          now={shownNow}
+          scenario={scenarioLabel}
+          site={view.site}
+        />
       ) : view.kind === "ward" ? (
         <WardTvView sheet={view.sheet} now={shownNow} scenario={scenarioLabel} nameOfStay={nameOfStay} frozen={!live} />
       ) : view.kind === "ward-clinical" ? (

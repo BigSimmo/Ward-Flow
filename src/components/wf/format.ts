@@ -9,12 +9,21 @@ const DAY = 24 * HOUR;
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
+/** RC 2.5 (F-35): the words for a start still in the future. The engine's clock keeps the same words
+ * (`ward-clock.ts`); the kit may not import ward code, and a test holds the two copies equal. */
+export const FUTURE_START_TEXT = "Start time is in the future";
+
 /**
  * Duration in milliseconds as `43s`, `5m 03s`, `52m`, `7h 05m`, `5h` or `1d 2h`. A whole hour is the
- * plain age, `5h`, never `5h 00m` (v10 content rule, wardanswer chapter). Negative values use their size.
+ * plain age, `5h`, never `5h 00m` (v10 content rule, wardanswer chapter).
+ *
+ * RC 2.5 (F-35, 13 Nov 2026): a negative length keeps its sign, `-18m`, as `splitDuration` does. It
+ * used to print its size, so a start still in the future read as a time already waited. A caller
+ * that means "how far past" passes the size itself, as `Timer` does for "overdue".
  */
 export function dur(ms: number): string {
-  const v = Math.abs(ms);
+  if (ms < 0) return `-${dur(-ms)}`;
+  const v = ms;
   if (v < MINUTE) return `${Math.floor(v / 1000)}s`;
   if (v < 10 * MINUTE) return `${Math.floor(v / MINUTE)}m ${pad(Math.floor((v % MINUTE) / 1000))}s`;
   if (v < HOUR) return `${Math.floor(v / MINUTE)}m`;

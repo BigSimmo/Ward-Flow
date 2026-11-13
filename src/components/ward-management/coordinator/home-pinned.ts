@@ -135,7 +135,8 @@ export function pinnedRows(
         href,
         where: unitsById.get(stay.unitId)?.name ?? "Ward not recorded",
         // A waitlisted or pulled stay holds a bed before arrival, so only an occupied one is on the ward.
-        step: stay.state === "occupied" ? "On ward" : "Bed held",
+        // F-91 (K23): "held" is a leave bed's word; a stay before arrival is pulled or waitlisted.
+        step: stay.state === "occupied" ? "On ward" : stay.state === "pulled" ? "Bed pulled" : "On the waiting list",
       });
       continue;
     }

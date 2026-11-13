@@ -97,7 +97,7 @@ import { OfficerFormCheckDialog } from "./officer-form-check-dialog";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
 import type { TransportExceptionInput } from "@/components/ward-management/ward-flow-events";
 import { collectionGaps } from "@/components/ward-management/ward-transport-checks";
-import { SYNTHETIC_COPY_LINE } from "@/components/ward-management/referrals/referral-letter";
+import { SYNTHETIC_COPY_LINE } from "@/components/ward-management/ward-clipboard";
 import {
   type HighlightPill,
   type HistoryTab,
@@ -139,6 +139,7 @@ import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { useWardShellPublic } from "@/components/ward-management/shell/ward-shell-public-context";
 import { replaceSearchParams, useLocationSearch } from "@/components/ward-management/ward-url-state";
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
+import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 export {
   acceptedBlockedReason,
   enRouteBlockedReason,
@@ -208,6 +209,7 @@ export function OfficerScreen() {
   // Page tops (9 Nov 2026): the Demo pill pauses the desk, as on Alerts and Places.
   const live = usePageLive();
   const now = live.now;
+  const zone = useClockZoneLabel();
 
   const [collectCheckId, setCollectCheckId] = useState<string | null>(null);
   // #236 (Josh, 27 Oct): jobs whose crew tapped "Identity checked with the sending team". Sent with Collected; no gate.
@@ -754,6 +756,7 @@ export function OfficerScreen() {
     showToast,
     toggleIdentityChecked,
     unitFor,
+    zone,
   };
 
   const needCard = (
