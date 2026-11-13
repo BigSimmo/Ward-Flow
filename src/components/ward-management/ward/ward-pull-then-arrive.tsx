@@ -66,6 +66,8 @@ type PullStepAsk = { movementId: string; askBed: boolean };
 export type WardPullThenArrive = {
   /** The pull step that is open, if any. */
   asking: PullStepAsk | undefined;
+  /** The screen's "Bed pulled for …" toast for this movement, so the row's Undo can close it. */
+  rememberPullToast: (movementId: string, toastId: string) => void;
   /** Confirm arrival on a row with no pulled bed: opens the pull step. */
   onPullThenArrive: (movementId: string) => void;
   /** Pull the bed from a row, keeping its inline Undo once the pull is recorded. With no observation
@@ -96,6 +98,9 @@ export function useWardPullThenArrive(unitId: string, raise: WardRaise, screen: 
   const [sent, setSent] = useState<Readonly<Record<string, SentPull>>>({});
   const complete = useWardCommandCompletion();
   const toast = useOptionalToast();
+  // The pull's own toast, by movement: once the row's Undo has released the pull, that toast's Undo
+  // has nothing left to undo, so it goes rather than still saying the bed is pulled.
+  const pullToasts = useRef(new Map<string, string>());
   const latest = useRef({ admissions, screen, raise });
   useEffect(() => {
     latest.current = { admissions, screen, raise };
@@ -226,6 +231,11 @@ export function useWardPullThenArrive(unitId: string, raise: WardRaise, screen: 
             }
             focusAfterUndo.current = movementId;
             forget(movementId);
+            const toastId = pullToasts.current.get(movementId);
+            if (toastId !== undefined) {
+              pullToasts.current.delete(movementId);
+              toast?.dismiss(toastId);
+            }
             const who = resolvePatientIdentity(movement).formalName;
             toast?.push({ tone: "success", title: `Bed pull undone for ${who}. The movement stays open.` });
           },
@@ -250,6 +260,9 @@ export function useWardPullThenArrive(unitId: string, raise: WardRaise, screen: 
     },
     cancel: () => setAsking(undefined),
     undoPullFor,
+    rememberPullToast: (movementId, toastId) => {
+      pullToasts.current.set(movementId, toastId);
+    },
   };
 }
 

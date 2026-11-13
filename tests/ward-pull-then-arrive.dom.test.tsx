@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { useEffect, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -125,12 +125,25 @@ describe("Ward: Confirm arrival with no pulled bed (F-2)", () => {
     const undo = within(screen.getByTestId(`ward-coming-row-${movement.id}`)).getByRole("button", {
       name: /^Undo pull · until \d\d:\d\d for /u,
     });
+    // The pull's own toast is up, with its Undo. The live region says the words too; the toast is
+    // the one carrying the Undo window.
+    const pullToasts = () =>
+      screen
+        .queryAllByText(/^Bed pulled for /u)
+        .map((text) => text.closest("[data-undo]"))
+        .filter((toast) => toast !== null);
+    expect(pullToasts()).toHaveLength(1);
+    const pullToast = pullToasts()[0]!;
     await act(async () => {
       fireEvent.click(undo);
     });
     const released = current!.movements.find((candidate) => candidate.id === movement.id)!;
     expect(released.stage).toBe("accepted_awaiting_bed");
     expect(released.closure).toBeUndefined();
+    // Review (PR F): the row's Undo closes the pull's toast, so nothing still says the bed is pulled
+    // or offers a second Undo that would only be refused.
+    await waitFor(() => expect(pullToast).not.toBeInTheDocument());
+    expect(pullToasts()).toHaveLength(0);
     // Review FA-2: focus moves to the restored row's Pull the bed, not to the page.
     const restored = screen.getByTestId(`ward-coming-row-${movement.id}`);
     expect(document.activeElement).toBe(within(restored).getByRole("button", { name: /^Pull the bed/u }));
