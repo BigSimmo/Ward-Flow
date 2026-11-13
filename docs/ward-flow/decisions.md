@@ -192,6 +192,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-167](#d-167-the-triage-page-has-a-left-sign-off-nav-and-joined-section-steps-13-november-2026)                                                       | The Triage page has a left sign-off nav and joined section steps                       | Active                                           |
 | [D-168](#d-168-the-demo-script-follows-the-13-november-pre-demo-audit-13-november-2026)                                                                 | The demo script follows the 13 November pre-demo audit                                 | Active                                           |
 | [D-169](#d-169-demo-script-wording-follows-the-hard-questions-audit-13-november-2026)                                                                   | Demo script wording follows the hard questions audit                                   | Active                                           |
+| [D-171](#d-171-hosted-database-brought-to-schema-18-migrations-017-and-018-13-november-2026)                                                            | Hosted database brought to schema 18 (migrations 017 and 018)                          | Active                                           |
 
 ---
 
@@ -2084,3 +2085,10 @@ is inferred.
   2. **Invented ward descriptions:** the next on-screen audit checks where the "what each ward admits" lines show under real ward names.
   3. **Cost:** the answer in the room is that there is no price today.
 - **Boundary:** documentation only. Changes no app behaviour, clinical rule or permission. Gives no regulatory, legal or clinical view. Approves no release.
+
+## D-171. Hosted database brought to schema 18 (migrations 017 and 018) (13 November 2026)
+
+- **Date:** 13 November 2026, 1:34 PM AWST (05:34 UTC). **Decided by:** Josh, choosing "Apply 017 then 018" on a decision card in the Ward Flow project thread "Audit Ward Flow performance". He had said "Go ahead" to applying migration 018 after PR #1624 merged (11 November). D-170 is claimed by open PR #1650.
+- **Finding:** the hosted Ward Flow Supabase database (project `zakzoemeedfepxcstsou`) was still at schema 16. Migration 017 (Help remembered by account, 4 November) had never been applied, so 018 could not go on alone.
+- **Decision:** apply 017 and then 018 together, after the release carrying PR #1624 was live (the backend refuses a schema newer than it knows). This was done at 05:37 UTC in one transaction under advisory lock `782322`, with a starting-version check, the checksum-verified migration files and the runtime grants, as `migrate-supabase.mjs` does. Afterwards: schema 18, the four new indexes present, the runtime role can read, add and update `account_preferences` but not delete, browser roles have no access, and row security is on.
+- **Boundary:** synthetic data only. Schema and grants only, with rollback files 018 then 017. No release, Railway or clinical change.
