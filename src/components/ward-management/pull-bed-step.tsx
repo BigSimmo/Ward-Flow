@@ -191,9 +191,9 @@ export function usePullBedStep(): PullBedStep {
       const toastId = toast?.push({
         tone: "success",
         title: `Bed pulled at ${pulled.entry.unitName} for ${pulled.name}`,
-        body: `Undo until ${until}`,
-        // Review P4-10: PR C's window, so the toast's Undo is offered as long as its words say.
-        undo: { durationMs: BED_PULL_UNDO_TOAST_MS, onUndo: () => undo(pulled) },
+        // Review P4-10: PR C's window, so the toast's Undo is offered as long as its words say. FM-13
+        // (D-192): the kit adds " · Undo until HH:MM" from `until`, the same time the kept row says.
+        undo: { durationMs: BED_PULL_UNDO_TOAST_MS, until, onUndo: () => undo(pulled) },
       });
       if (toastId !== undefined) pullToasts.current.set(pulled.entry.referral.id, toastId);
     },

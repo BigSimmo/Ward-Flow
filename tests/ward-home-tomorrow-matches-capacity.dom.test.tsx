@@ -51,6 +51,7 @@ describe("FM-8: Home's Tomorrow matches Capacity's", () => {
     );
     const [low, likely, high] = screen.getByTestId("capacity-tomorrow").textContent!.split("|");
     const card = screen.getByTestId("home-beds-fit").textContent!.replace(/\s+/gu, " ");
-    expect(card).toContain(`Tomorrow ${likely} · range ${low} to ${high}`);
+    // The separator is the design's punctuation ("·" before PR E, "," after); the figures are the point.
+    expect(card).toMatch(new RegExp(`Tomorrow ${likely}\\s*[·,]\\s*range ${low} to ${high}`, "u"));
   });
 });

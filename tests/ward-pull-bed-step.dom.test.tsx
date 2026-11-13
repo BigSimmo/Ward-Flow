@@ -207,8 +207,9 @@ describe("After a pull (ruling item 3)", () => {
       expect(active).not.toHaveTextContent("Pull the bed");
       expect(active.getAttribute("aria-label")).toContain(active.textContent!);
     }
-    // The toast says one clock time and offers the same Undo (shared parts spec item 4).
-    expect(screen.getByText(`Undo until ${kept.textContent!.slice(-5)}`)).toBeInTheDocument();
+    // The toast says one clock time and offers the same Undo (shared parts spec item 4; FM-13, the kit's
+    // " · Undo until HH:MM" from `undo.until`).
+    expect(screen.getByText(`· Undo until ${kept.textContent!.slice(-5)}`)).toBeInTheDocument();
 
     await act(async () => {
       fireEvent.click(kept);
