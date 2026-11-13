@@ -28,7 +28,9 @@
    "file": "ward-model-bed-release.ts",
    "members": [
     "contraband_search",
-    "medication_chart"
+    "medication_chart",
+    "interpreter_booked",
+    "aboriginal_liaison_offered"
    ]
   },
   "BED_RELEASE_STATES": {

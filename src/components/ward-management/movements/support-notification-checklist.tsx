@@ -89,7 +89,8 @@ export function SupportNotificationChecklist({
 }) {
   const routeRole = wardChromeRole(usePathname() ?? "");
   const role = roleOverride ?? routeRole;
-  const canRecord = canDispatch(role, "RECORD_SUPPORT_NOTIFICATION");
+  // ED may raise the event only for the arrival checklist's advocacy line before arrival (item 15).
+  const canRecord = role !== "ed" && canDispatch(role, "RECORD_SUPPORT_NOTIFICATION");
   const { movements, admissions, patients, referrals, supportNotifications, dispatch, rejections } = useWardFlowSelect(
     "movements",
     "admissions",
@@ -111,8 +112,14 @@ export function SupportNotificationChecklist({
   const [time, setTime] = useState("");
   const [day, setDay] = useState<ToldDay>("0");
   const [reason, setReason] = useState("");
-  const [outcomeMessage, setOutcomeMessage] = useState<string | null>(null);
-  const { runRecorded } = useUndoableStep({ dispatch, rejections, now, routeRole: role, onMessage: setOutcomeMessage });
+  const [saveNote, setSaveNote] = useState<{ message: string; tone: "success" | "warning" } | null>(null);
+  const { runRecorded } = useUndoableStep({
+    dispatch,
+    rejections,
+    now,
+    routeRole: role,
+    onMessage: (message, tone) => setSaveNote({ message, tone }),
+  });
   const [timeError, setTimeError] = useState<string | null>(null);
   const openParty = editing;
 
@@ -142,7 +149,7 @@ export function SupportNotificationChecklist({
     setTime(formatInstant(now));
     setDay("0");
     setReason("");
-    setOutcomeMessage(null);
+    setSaveNote(null);
     setTimeError(null);
   }
 
@@ -216,7 +223,10 @@ export function SupportNotificationChecklist({
           {SUPPORT_NOTIFICATION_OCCASION_LABELS[subject.occasion]} · Advisory · {done} of 3
         </span>
       </div>
-      {outcomeMessage ? <p role="status">{outcomeMessage}</p> : null}
+      {saveNote ? (
+        // A refused save is an error and is announced at once; a recorded one stays polite.
+        <p role={saveNote.tone === "warning" ? "alert" : "status"}>{saveNote.message}</p>
+      ) : null}
       <ul className={styles.rows}>
         {SUPPORT_NOTIFICATION_PARTIES.map((party) => {
           const record = checklist[party];

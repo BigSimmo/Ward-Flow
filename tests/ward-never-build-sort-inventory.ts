@@ -40,6 +40,16 @@ export type SortInventoryEntry = {
 };
 
 export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
+  // ---------------------------------------------------------------- batch 3 item 23 (10 Nov 2026)
+  {
+    file: "handover-work-model.ts",
+    match: "(left, right) => left.bestAfter - right.bestAfter",
+    list: "patients",
+    key: "the carer's typed best-after time, earliest first",
+    order: "wait order",
+    reason:
+      "Carer call backs due at handover list by the time the carer asked to be rung after, a recorded clock order like the ward replies beside them. 'best' is part of the field name bestAfter, not a quality; nothing ranks a person, ward or bed.",
+  },
   // ---------------------------------------------------------------- ruled by Josh (D-126)
   {
     file: "wards/ward-index.tsx",
@@ -59,6 +69,15 @@ export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
     order: "fixed order",
     reason:
       "D-126 (10 Nov 2026): the Statistics finder's Wards tab, where a person picks a ward to open, lists wards A to Z by name, not most ready beds first.",
+  },
+  {
+    file: "night-view-figures.ts",
+    match: "serviceRank(a.unit) - serviceRank(b.unit) || a.unit.name.localeCompare(b.unit.name)",
+    list: "wards",
+    key: "health service, then ward name",
+    order: "fixed order",
+    reason:
+      "Feature plan item 29 (10 Nov 2026): Night view lists wards with ready beds in the fixed order (health service, then ward name, D-126), never most ready beds first (D-71).",
   },
   {
     file: "capacity/capacity-derivations.ts",

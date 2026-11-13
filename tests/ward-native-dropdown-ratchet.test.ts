@@ -36,9 +36,10 @@ const KNOWN_DROPDOWNS: Readonly<Record<string, number>> = {
   "src/components/ward-management/coordinator/call-sheet.tsx": 1,
   "src/components/ward-management/coordinator/home-release-sheet.tsx": 1,
   "src/components/ward-management/coordinator/shortlist-panel.tsx": 13,
-  "src/components/ward-management/discharges/discharge-board.tsx": 1,
   "src/components/ward-management/discharges/discharge-care-journey.tsx": 5,
   "src/components/ward-management/discharges/discharge-dependencies-panel.tsx": 4,
+  // Moved, not added: the Going to drop-down left discharge-board.tsx for this file (item 7, 11 Nov 2026).
+  "src/components/ward-management/discharges/discharge-departure-field.tsx": 1,
   "src/components/ward-management/discharges/discharge-follow-up.tsx": 1,
   "src/components/ward-management/ed/ed-screen-referred.tsx": 1,
   "src/components/ward-management/ed/ed-screen-row-forms.tsx": 6,

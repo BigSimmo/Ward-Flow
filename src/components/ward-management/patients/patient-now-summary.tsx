@@ -43,6 +43,8 @@ import { clearToMove, getStageBedflowDetail } from "./patient-now-screen-helpers
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { CommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
 import { useState, type Dispatch, type JSX, type RefObject, type SetStateAction } from "react";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import type { CareStep } from "./patient-care-journey";
 import { PatientCareJourneyStrip, journeyToggleClass } from "./patient-care-journey-strip";
 import type { FormTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
@@ -50,7 +52,7 @@ import type { LeaveBed, Movement } from "@/components/ward-management/ward-model
 import type { PatientMode } from "./patient-mode";
 import type { ResolvedPatientNow } from "./patient-now-adapter";
 import type { StagePresentationDetail } from "./patient-now-screen-helpers";
-import { PatientPinButton, usePatientPinChip } from "./patient-pin-button";
+import { usePatientPinChip } from "./patient-pin-button";
 import type { WfTone } from "@/components/wf";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 
@@ -76,6 +78,8 @@ export type PatientNowSummaryProps = {
   expandedStageIndex: number | null;
   focusedStageIndex: number;
   handleCopySummary: () => void;
+  /** Item 27: the transfer as text for the notes; absent until a ward has accepted. */
+  transferNotes?: () => string | undefined;
   isLiveBedflow: boolean;
   isPhone: boolean;
   lastStay: Admission | undefined;
@@ -136,6 +140,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
     expandedStageIndex,
     focusedStageIndex,
     handleCopySummary,
+    transferNotes,
     isLiveBedflow,
     isPhone,
     lastStay,
@@ -275,7 +280,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
               tone: overTarget ? "warning" : undefined,
             },
             { id: "clear", value: clear.clear, unit: ` of ${clear.of}`, label: "clear to move" },
-            ...(movementTimeLeft && (isPhone || !glance)
+            ...(movementTimeLeft && !glance
               ? [
                   {
                     id: "form",
@@ -293,6 +298,20 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
   // Feature 31: Pin (to Home) is a quick chip in the top; a record with no live movement shows it
   // alone on a phone, and beside Copy summary on a desktop.
   const pinChip = usePatientPinChip(livePatient?.id, displayName);
+  const [notesCopied, setNotesCopied] = useState(false);
+  const copyTransferNotes = () => {
+    const text = transferNotes?.();
+    if (!text) return;
+    void copyTextToClipboard(text).then(
+      () => {
+        setNotesCopied(true);
+        announceToWardShell("Copied for the notes");
+        setTimeout(() => setNotesCopied(false), 2000);
+      },
+      // The same words as CopyNotesButton, so a refused copy never reads as done.
+      () => announceToWardShell("Copy unavailable in this browser"),
+    );
+  };
   const movementChips = movementTop ? (
     <HeroQuickChips
       label="Patient actions"
@@ -304,6 +323,17 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
           onClick: handleCopySummary,
           testId: "ward-patient-copy-handover",
         },
+        ...(transferNotes
+          ? [
+              {
+                id: "copy-notes",
+                label: notesCopied ? "Copied" : "Copy to notes",
+                icon: <Copy size={16} strokeWidth={1.75} aria-hidden="true" />,
+                onClick: copyTransferNotes,
+                testId: "ward-patient-copy-transfer-notes",
+              },
+            ]
+          : []),
         ...(pinChip ? [pinChip] : []),
         ...(onOpenForms
           ? [
@@ -319,6 +349,79 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
       ]}
     />
   ) : undefined;
+  // Redesign (12 Nov 2026): a stay's top matches a movement's. Copy summary, Pin and Forms are the
+  // same chip row (D-159: one chip row, at most one on-hero button), not two buttons by the name.
+  const stayChips =
+    !movementTop && !isPhone ? (
+      <HeroQuickChips
+        label="Patient actions"
+        items={[
+          {
+            id: "copy",
+            label: copied ? "Copied" : mode === "awol" ? "Copy missing person summary" : "Copy summary",
+            icon: <Copy size={16} strokeWidth={1.75} aria-hidden="true" />,
+            onClick: handleCopySummary,
+            testId: "ward-patient-copy-summary",
+          },
+          ...(pinChip ? [pinChip] : []),
+          ...(onOpenForms
+            ? [
+                {
+                  id: "forms",
+                  label: "Forms",
+                  icon: <FileText size={16} strokeWidth={1.75} aria-hidden="true" />,
+                  onClick: onOpenForms,
+                  testId: "ward-patient-forms-chip",
+                },
+              ]
+            : []),
+        ]}
+      />
+    ) : undefined;
+  // The stay's figures sit beside the safety facts, as a movement's wait and clear count do.
+  const stayAdmission = stayCurrent ? resolved.liveAdmission : undefined;
+  const absence = mode === "awol" ? stayLeaveBed?.absentWithoutLeave : undefined;
+  const stayFigureItems =
+    movementTop || isPhone || mode === "ward" || mode === "idle" || mode === "cto"
+      ? []
+      : [
+          ...(absence
+            ? [
+                {
+                  id: "absent",
+                  value: dur(Math.max(0, now - absence.since)),
+                  label: `absent since ${clock(absence.since)}`,
+                  tone: "warning" as const,
+                },
+              ]
+            : []),
+          ...((mode === "leave" || mode === "ed") && stayDay !== undefined
+            ? [{ id: "day", value: `Day ${stayDay}`, label: "on the ward" }]
+            : []),
+          ...(stayAdmission
+            ? [
+                {
+                  id: "out",
+                  value:
+                    typeof stayAdmission.expectedDischargeAt === "number"
+                      ? dayLabel(stayAdmission.expectedDischargeAt, dayZero).replace(",", "")
+                      : "Not set",
+                  label: "discharge date",
+                  testId: "ward-patient-hero-discharge",
+                },
+              ]
+            : []),
+        ];
+  const stayFigures =
+    stayFigureItems.length > 0 ? (
+      <span className={styles.ptFigures}>
+        <HeroFigures label="This stay" items={stayFigureItems} />
+      </span>
+    ) : undefined;
+  const stayTags =
+    !movementTop && !isPhone && (mode === "leave" || mode === "awol" || mode === "ed") ? (
+      <span className={styles.ptTag}>Bed held</span>
+    ) : undefined;
   const movementTags = movementTop ? (
     <>
       <span className={styles.ptTag}>{tierChipText(urgencyTier)}</span>
@@ -344,10 +447,11 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
             {tagText}
           </span>
         }
-        tags={movementTags}
-        figures={movementFigures}
+        tags={movementTags ?? stayTags}
+        figures={movementFigures ?? stayFigures}
         chips={
           movementChips ??
+          stayChips ??
           (isPhone && pinChip ? <HeroQuickChips label="Patient actions" items={[pinChip]} /> : undefined)
         }
         phoneEyebrow={
@@ -482,7 +586,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                 ),
               )}
             </span>
-          ) : mode === "ward" || mode === "idle" || mode === "cto" ? undefined : (
+          ) : !isPhone || mode === "ward" || mode === "idle" || mode === "cto" ? undefined : (
             <span className={styles.v6HeroFacts}>
               {(mode === "leave" || mode === "awol" || mode === "ed") && (
                 <span className={styles.v6HeroFact}>
@@ -557,18 +661,6 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
             {modeMeta.quiet ? null : (
               // v10 phone: the movement page reads "Live HH:MM", the patient page a plain "Live".
               <LiveChip state="live" age={phoneMovement ? undefined : null} onHero />
-            )}
-            {isPhone || movementTop ? null : <PatientPinButton patientId={livePatient?.id} name={displayName} />}
-            {isPhone || movementTop ? null : (
-              <Button variant="onHero" size="sm" icon={Copy} onClick={handleCopySummary}>
-                {copied
-                  ? "Copied"
-                  : isLiveBedflow
-                    ? "Copy handover"
-                    : mode === "awol"
-                      ? "Copy missing person summary"
-                      : "Copy summary"}
-              </Button>
             )}
             {(mode === "idle" || mode === "cto") && !isPhone && canOpenHref(newReferralHref) ? (
               <Link

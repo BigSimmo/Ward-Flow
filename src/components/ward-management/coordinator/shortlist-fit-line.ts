@@ -42,3 +42,35 @@ function listWords(words: readonly string[]): string {
   if (lower.length === 1) return lower[0]!;
   return `${lower.slice(0, -1).join(", ")} and ${lower.at(-1)}`;
 }
+
+/**
+ * MORE FIT DETAILS (item 26). The "More" list under the fit line names the other gates the ward
+ * card already computed, one plain status each, in this fixed order. Explain only (D-71): it never
+ * sorts, tints, scores or suggests a ward, and it reads the same verdict the fit line reads.
+ */
+const MORE_GATES: readonly { gate: EligibilityGate; label: string }[] = [
+  { gate: "prior_decline", label: "Not declined by this ward before" },
+  { gate: "allocatable_bed", label: "Allocatable bed" },
+  { gate: "capacity_freshness", label: "Beds confirmed recently" },
+  { gate: "acuity", label: "High-acuity places" },
+  { gate: "specialling", label: "Observation staffing" },
+];
+
+type FitDetailStatus = "Met" | "Not met" | "To check";
+export type FitDetail = { gate: EligibilityGate; label: string; status: FitDetailStatus };
+
+/** Information-only gates appear only as "To check", and only when the patient has that need. */
+export function fitDetails(gates: readonly GateResult[]): FitDetail[] {
+  const details: FitDetail[] = [];
+  for (const { gate: name, label } of MORE_GATES) {
+    const gate = gates.find((candidate) => candidate.gate === name);
+    if (!gate) continue;
+    const mark = gateMark(gate);
+    if (mark === "info") {
+      if (gate.need) details.push({ gate: name, label, status: "To check" });
+      continue;
+    }
+    details.push({ gate: name, label, status: mark === "met" ? "Met" : "Not met" });
+  }
+  return details;
+}

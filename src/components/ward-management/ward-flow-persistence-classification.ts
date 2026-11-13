@@ -179,7 +179,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "CLEAR_MOVEMENT_URGENT_FLAG",
   "CLOSE_WARD_TO_ADMISSIONS",
   "REOPEN_WARD_TO_ADMISSIONS",
-  // H-0978: ids, a whole bed number, a boolean and a choice from WARD_CLOSURE_REASONS. No typed text.
+  // H-0978: ids, a whole bed number, a boolean, a choice from WARD_CLOSURE_REASONS and (item 6) a
+  // review time chosen from WARD_REOPEN_AFTER_HOURS, read to an `Instant`. No typed text.
   "SET_BED_CLOSED",
   "RECORD_BED_MEETING_ACTION",
   "COMPLETE_BED_MEETING_ACTION",
@@ -265,7 +266,13 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // #816: a patient id and a closed `PatientArchiveReason`, offered by radio buttons. No typed text.
   "ARCHIVE_PATIENT",
   "RECORD_LEAVING",
+  // Item 18: an admission id, the acting unit id, a time and the caller's role. No typed text.
+  "MARK_TRANSPORT_COLLECTED",
   "RECORD_LEFT_DEPARTMENT",
+  // Item 9 (10 Nov 2026): a movement id and up to three typed clock times. No typed text.
+  "RECORD_CREW_TIMES",
+  // D-141 (11 Nov 2026): a movement id and a fixed Police or Ambulance choice. No typed text.
+  "RECORD_ARRIVAL_MODE",
   "RECORD_LEGAL_FORM_EXPIRY",
   "RECORD_LEGAL_FORM_RECEIVED",
   "RECORD_LOCAL_BED_SOUGHT",
@@ -288,6 +295,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // the reducer, never a bare `string[]` — the same "array element types reviewed by hand" shape
   // `REFER_TO_UNITS.unitIds` already has on this list.
   "RECORD_WARD_INTAKE_CONSTRAINTS",
+  // Feature item 13 (D-72 pattern): ids and two typed clock times already read to instants. No typed text.
+  "SET_INTAKE_WINDOW",
   "REFER_TO_UNITS",
   // Owner answer 8 (second round, 2026-09-17): `movementId`/`actingUnitId` are ids (reviewed
   // above) and the caller's own `role` — no human-typed field, the same shape `RELEASE_PULL`
@@ -330,6 +339,9 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "RECORD_WARD_DIAGNOSIS",
   // Feature 14: an admission id, a unit id and instants. No typed text.
   "MARK_WEEKEND_DISCHARGE_REVIEWED",
+  // Item 4 (11 Nov 2026): an admission id, a unit id and instants (the notified time is a typed clock
+  // time read to an instant, never free text). No typed text.
+  "RECORD_CHIEF_PSYCHIATRIST_NOTIFIED",
   // Closing-the-loop (package E): an admission id, a site code, closed lists and instants. No typed text.
   "RECORD_HOME_SERVICE_RETURN",
   // Closing-the-loop (package E): a directory entry id only. No typed text.
@@ -337,6 +349,19 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // Staff needed (feature 10): ward and request ids, closed lists and a whole count. No typed text.
   "REQUEST_WARD_STAFF",
   "CLOSE_WARD_STAFF_REQUEST",
+  // Batch 4 (10 Nov 2026): a site code the reducer checks, a feature from a fixed list and a flag;
+  // ward ids the reducer checks; two typed times already read to instants. No typed text.
+  "SET_SITE_FEATURE_SWITCH",
+  "RECORD_DOWNTIME_PACK_PRINTED",
+  "RECORD_OUTAGE_WINDOW",
+  // Batch 3 item 21: an item reference (ids and a closed bed meeting action kind, rebuilt by the
+  // reducer from its checked fields), a closed role, a reducer-minted "HI-N" id and a ward id.
+  "HAND_OVER_ITEM",
+  "ACCEPT_HANDED_ITEM",
+  // Batch 3 item 23: a stay or bed request id, an instant, a reducer-minted "CB-N" id and a ward id.
+  // No carer name or phone number: the event has no typed text field at all.
+  "RECORD_CARER_CALLBACK",
+  "MARK_CARER_CALLBACK_MADE",
   // Out of area "Flag early" (3 Nov 2026): an admission id and a site code the reducer checks. No typed text.
   "FLAG_RETURN_EARLY",
   "SET_DISCHARGE_BARRIER",
@@ -365,6 +390,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // Psychiatry review tracker and ward wait list (9 Nov 2026): ids, a fixed grade, a flag and instants only.
   "REQUEST_PSYCH_REVIEW",
   "RECORD_PSYCH_REVIEW_SEEN",
+  // Escalation calls (item 3, D-133): a movement id, a step, a fixed role and a fixed outcome. No typed text.
+  "RECORD_ESCALATION_CALL",
   "MARK_WARD_READY_FOR_NEXT",
   "RAISE_EXPECT_FLAG",
   "FLAG_LEGAL_MISMATCH",
@@ -547,6 +574,10 @@ type WardFlowReviewedStringOrUnknownKey =
   // Staff needed (feature 10): `CLOSE_WARD_STAFF_REQUEST.requestId` names a reducer-minted "SR-N" id;
   // the reducer finds the request or refuses. Not about a person; never typed.
   | "requestId"
+  // Batch 3 items 21 and 23: `ACCEPT_HANDED_ITEM.handedItemId` and `MARK_CARER_CALLBACK_MADE.callbackId`
+  // name reducer-minted "HI-N" and "CB-N" ids; the reducer finds the record or refuses. Never typed.
+  | "handedItemId"
+  | "callbackId"
   // Optional reassessmentNote on `ACCEPT_REFERRAL`; checked at runtime in `eventCarriesTypedTextPayload`
   // so any dispatch carrying `reassessmentNote` locks persistence just like `overrideSignOff`.
   | "reassessmentNote";

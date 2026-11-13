@@ -1,4 +1,4 @@
-import { downloadBlob } from "@/components/ward-management/ward-download";
+import { type CsvProvenance, csvTextCell, downloadCsv as downloadWardCsv } from "@/components/ward-management/ward-csv";
 import type { ReleasedCount } from "./executive-statistics-contract";
 import { releasedCountText } from "./statistics-small-numbers";
 
@@ -9,28 +9,7 @@ type CsvValue = string | number | ReleasedCount;
  * spreadsheet reads it as text, not a formula; numbers are written as they are.
  */
 export function csvCell(value: CsvValue): string {
-  if (typeof value === "object") value = releasedCountText(value);
-  const text = String(value);
-  const safe = typeof value === "string" && /^[=+\-@\t\r]/u.test(text) ? `'${text}` : text;
-  return `"${safe.replaceAll('"', '""')}"`;
-}
-
-type CsvProvenance = {
-  /** The snapshot time, already formatted with its calendar year and time zone. */
-  readonly asAt: string;
-  readonly scope: string;
-  readonly period?: string;
-};
-
-/** Metadata is separate from the unchanged data-column header and rows. */
-function csvProvenanceLines(provenance: CsvProvenance): (string | number)[][] {
-  return [
-    ["Data", "Synthetic, not clinical records"],
-    ["As at", provenance.asAt],
-    ["Scope", provenance.scope],
-    ["Period", provenance.period ?? "Recorded state as at snapshot"],
-    [],
-  ];
+  return csvTextCell(typeof value === "object" ? releasedCountText(value) : value);
 }
 
 /** Writes rows as a CSV file and hands it to the browser as a download. */
@@ -39,10 +18,10 @@ export function downloadCsv(
   lines: readonly (readonly CsvValue[])[],
   provenance?: CsvProvenance,
 ): void {
-  const output = provenance ? [...csvProvenanceLines(provenance), ...lines] : lines;
-  downloadBlob(
-    new Blob([output.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
+  downloadWardCsv(
     filename,
+    lines.map((line) => line.map((value) => (typeof value === "object" ? releasedCountText(value) : value))),
+    provenance,
   );
 }
 

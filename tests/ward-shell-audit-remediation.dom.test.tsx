@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { Dialog } from "@/components/wf/dialog";
+import { ListPicker } from "@/components/wf/list-picker";
 import { Menu } from "@/components/wf/menu";
 import { Sheet } from "@/components/wf/sheet";
 import { bedMeetingAgenda } from "@/components/ward-management/bed-meeting/bed-meeting-agenda";
@@ -99,6 +100,29 @@ it("cancels an interrupted Sheet drag without dismissing, then permits a normal 
   pointer("pointerdown", 100);
   pointer("pointerup", 300);
   expect(close).toHaveBeenCalledTimes(1);
+});
+
+it("closes a list picker on Tab from its search box inside a modal without losing focus", () => {
+  vi.spyOn(HTMLElement.prototype, "getClientRects").mockImplementation(function () {
+    return Object.assign([new DOMRect(0, 0, 100, 20)], { item: () => new DOMRect(0, 0, 100, 20) });
+  });
+  // Synthetic sites; enough rows for the search box.
+  const options = ["Alpha", "Birch", "Cedar", "Delta", "Elm", "Fern", "Grove", "Harbour", "Iris"].map((name) => ({
+    value: name.toLowerCase(),
+    label: `${name} Hospital`,
+  }));
+  render(
+    <Dialog open title="Audit dialog" onClose={() => {}}>
+      <ListPicker label="Site" value={null} onChange={() => {}} options={options} />
+      <button type="button">After</button>
+    </Dialog>,
+  );
+  fireEvent.click(screen.getByRole("combobox", { name: "Site" }));
+  const search = screen.getByRole("combobox", { name: "Search Site" });
+  search.focus();
+  fireEvent.keyDown(search, { key: "Tab" });
+  expect(screen.queryByRole("listbox")).toBeNull();
+  expect(document.activeElement).toBe(screen.getByRole("button", { name: "After" }));
 });
 
 it.each([false, true])("closes a menu on Tab inside a modal without losing focus, reverse=%s", (reverse) => {

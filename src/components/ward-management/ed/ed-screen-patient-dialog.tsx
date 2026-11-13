@@ -18,6 +18,7 @@ import {
 import { JourneyStrip, StatusGlyph } from "@/components/wf";
 import { edJourneyStages } from "./ed-journey";
 import { EdObservationControl } from "./ed-observation-control";
+import { EdCrewTimesSlot } from "./ed-crew-times-slot";
 import type { EdScreenContext } from "./ed-screen-context";
 import { formExpiryLine, movementMedicalClearance, outstandingItem } from "./ed-screen-model";
 import { edStageLabel } from "./ed-referral-status";
@@ -127,12 +128,6 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
                 </div>
               )}
 
-              {selectedPatient.arrivalMode === "police" && (
-                <div className={styles.pair}>
-                  <dt>Police presence</dt>
-                  <dd>Police in attendance</dd>
-                </div>
-              )}
               <div className={styles.pair}>
                 <dt>Gender</dt>
                 <dd>{selectedPatient.gender ?? "Not yet recorded"}</dd>
@@ -213,6 +208,8 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
               </div>
             ) : null}
           </section>
+          {/* Item 9 (10 Nov 2026): a police or ambulance crew's typed times, in place of "Police in attendance". */}
+          <EdCrewTimesSlot key={`crew-${selectedPatient.id}`} movement={selectedPatient} now={now} raise={raise} />
           {selectedPatient.closure ? null : (
             <section className={styles.pxBlock} data-testid="ward-ed-observation">
               <h3>Observation level</h3>

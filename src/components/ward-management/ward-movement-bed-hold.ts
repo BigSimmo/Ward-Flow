@@ -141,3 +141,20 @@ export function pendingNumberedReservations(
   const locked = [...held.values()].filter((kind) => kind === "locked").length;
   return { total: held.size, locked, open: held.size - locked };
 }
+
+/**
+ * The named holds at `unit` split by bed kind (WF-FIG-017, D-115 item 3). Takes the mixed hold list
+ * that the bed counts read (open journeys and referrals), so a kind filter can take a held bed off
+ * its own kind before capping at Ready, as `capacity-derivations.ts` does.
+ */
+export function heldBedsByKind(
+  unit: Unit,
+  admissions: readonly Admission[],
+  holds: readonly (Movement | ReservationReferral)[],
+): { locked: number; open: number } {
+  const movements = holds.filter((row): row is Movement => "stage" in row);
+  const others = holds.filter((row): row is ReservationReferral => !("stage" in row));
+  const kinds = [...numberedReservationBeds(unit, admissions, movements, others).values()];
+  const locked = kinds.filter((kind) => kind === "locked").length;
+  return { locked, open: kinds.length - locked };
+}

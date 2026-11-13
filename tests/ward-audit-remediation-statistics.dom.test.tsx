@@ -202,7 +202,8 @@ describe("audit remediation: TV lock outcomes", () => {
     });
     render(<TvLockControl href="/ward-flow/bed-meeting" className="" shared={false} />);
     fireEvent.click(screen.getByTestId("tv-lock"));
-    expect(screen.getByRole("status")).toHaveTextContent(/could not.*lock|lock.*could not/i);
+    // D-162: a refused lock is an error, announced as an alert (kit StateLine).
+    expect(screen.getByRole("alert")).toHaveTextContent(/could not.*lock|lock.*could not/i);
     expect(screen.getByTestId("tv-lock")).toBeInTheDocument();
   });
 });

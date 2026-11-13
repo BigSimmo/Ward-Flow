@@ -2,7 +2,12 @@
 
 import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
 import { HOME_REGION_NOT_RECORDED } from "@/components/ward-management/ward-model";
-import { currentLegalDueAt, formProgression, formProgressionPhrase } from "../legal-forms/legal-form-progression";
+import {
+  currentLegalDueAt,
+  FORM_RECORDED_ENDED,
+  formProgressionPhrase,
+  legalFormEnd,
+} from "../legal-forms/legal-form-progression";
 
 import { Check, CircleCheck, CircleAlert, ChevronDown, ChevronUp, Info } from "lucide-react";
 import Link from "next/link";
@@ -36,7 +41,6 @@ import {
   WARD_REQUEST_WITHDRAWAL_REASONS,
   wardRequestWithdrawalReasonLabels,
   type WardRequestWithdrawalReason,
-  wardIntakeConstraintLabels,
 } from "@/components/ward-management/ward-change-reasons";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
@@ -101,7 +105,7 @@ import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { urgencyTierLabel, waitFactors } from "@/components/ward-management/ward-priority";
 import { referenceDistance } from "@/components/ward-management/reference/ward-reference-distances";
-import { CandidateFit } from "@/components/ward-management/coordinator/shortlist-candidate-fit";
+import { CandidateFit, CandidateItem } from "@/components/ward-management/coordinator/shortlist-candidate-fit";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { openWardHelp } from "@/components/ward-management/help/ward-help-events";
@@ -109,6 +113,7 @@ import { openWardHelp } from "@/components/ward-management/help/ward-help-events
 import styles from "./coordinator.module.css";
 import drawer from "@/components/ward-management/movements/movement-drawer.module.css";
 import shortlistStyles from "./shortlist-panel.module.css";
+import { WardDetailIntakeNotes } from "./shortlist-ward-intake-notes";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { FIT_LABEL, fitGroups, type FitKind } from "./home-fit";
 import { NextWardAfterRefusal } from "./next-ward-after-refusal";
@@ -241,8 +246,12 @@ type OverrideRecord = { unitIds: string[]; at: Instant; reason: string };
 function legalFormLine(movement: Movement, now: Instant) {
   if (!movement.legalForm) return "No legal form recorded";
   const formCode = `Form ${movement.legalForm.code}`;
-  const progression = formProgression(movement);
-  if (progression) return `${formProgressionPhrase(progression)}; Form ${progression.nextCode} to record`;
+  // The recorded end is read before the neutral 5A/5B arrival wording, as the Legal forms page reads it.
+  const end = legalFormEnd(movement);
+  if (end?.kind === "progressed") {
+    return `${formProgressionPhrase(end.progression)}; Form ${end.progression.nextCode} to record`;
+  }
+  if (end?.kind === "recorded") return `${formCode} · ${FORM_RECORDED_ENDED.toLowerCase()}`;
   const dueAt = currentLegalDueAt(movement);
   if (dueAt === undefined) {
     // States what the record holds, never what the Act requires (tests/ward-legal-figure-guard.test.ts).
@@ -1151,7 +1160,7 @@ export function ShortlistPanel({
     // technology); only a live referral needs its word.
     const label = isLive ? "Referred" : undefined;
     return (
-      <li key={candidate.unit.id}>
+      <CandidateItem key={candidate.unit.id} unit={candidate.unit} gates={candidate.verdict.gates}>
         <button
           type="button"
           data-testid={`ward-shortlist-candidate-${candidate.unit.id}`}
@@ -1223,7 +1232,7 @@ export function ShortlistPanel({
             </span>
           ) : null}
         </button>
-      </li>
+      </CandidateItem>
     );
   }
 
@@ -1237,7 +1246,7 @@ export function ShortlistPanel({
     const reason = blocking?.detail ?? candidateReason(candidate.verdict);
     const describedBy = `ward-shortlist-unavailable-why-${candidate.unit.id}`;
     return (
-      <li key={candidate.unit.id}>
+      <CandidateItem key={candidate.unit.id} unit={candidate.unit} gates={candidate.verdict.gates}>
         <button
           type="button"
           data-testid={`ward-shortlist-unavailable-${candidate.unit.id}`}
@@ -1270,7 +1279,7 @@ export function ShortlistPanel({
             Unavailable: {reason}. No recorded reason can place this person here.
           </span>
         </button>
-      </li>
+      </CandidateItem>
     );
   }
 
@@ -2171,18 +2180,7 @@ export function ShortlistPanel({
                     still being made ready
                   </span>
                 ) : null}
-                {/* Owner Answer 18 (second round, 2026-09-17): the ward's own fixed-list answer to
-                what is currently limiting who it can accept — the coordinator's ward-detail view
-                this ruling names. Chosen labels only, never a code. */}
-                {activeUnit.intakeConstraints !== undefined && activeUnit.intakeConstraints.length > 0 ? (
-                  <span
-                    className={styles.diagramBeingMadeReady}
-                    data-testid={`ward-shortlist-ward-detail-constraints-${activeUnit.id}`}
-                  >
-                    Limiting intake:{" "}
-                    {activeUnit.intakeConstraints.map((code) => wardIntakeConstraintLabels[code]).join(", ")}
-                  </span>
-                ) : null}
+                <WardDetailIntakeNotes unit={activeUnit} now={now} className={styles.diagramBeingMadeReady} />
               </div>
             ) : null}
             {/* The security gate below will read "Met — Secure ward meets an open requirement" for this

@@ -4,6 +4,7 @@ import { useWardFormSave } from "../use-ward-form-save";
 import { wardScrollBehavior } from "../ward-scroll";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { startTransition, useEffect, useMemo, useState } from "react";
 
 import {
@@ -35,10 +36,12 @@ import { bedMeetingSheet } from "./bed-meeting-derivations";
 import { BedForecast } from "./capacity-bed-forecast";
 import { BedMapCards, BedMapHighlights, type Highlight } from "./capacity-bed-map-cards";
 import { ComingIn } from "./capacity-coming-in";
+import { ClosedBedsPastReview } from "./capacity-closed-beds-review";
 import { CapacityHero } from "./capacity-hero";
 import { useCapacityModel, type CapacityModel } from "./capacity-model";
 import { OtherSitesCounts } from "./capacity-other-sites";
 import { PhoneOverview } from "./capacity-phone-overview";
+import { CapacityIntakeWindowsCard } from "./capacity-intake-windows-card";
 import { PlannedCounts } from "./capacity-planned-counts";
 import { useSiteEdWaiting } from "./capacity-site-ed";
 import { heldUpReleases } from "./capacity-held-up";
@@ -48,18 +51,30 @@ import styles from "./capacity-page.module.css";
 
 // Phone size limit (9 Nov 2026): the ward drawer's body and the two pop-ups load when first opened,
 // not with the page. Each is drawn only while open, as the bed meeting sheet already was.
-const ScenarioDialog = dynamic(() => import("./capacity-open-parts").then((m) => m.ScenarioDialog), {
-  ssr: false,
-});
-const BedMeetingSheetDialog = dynamic(() => import("./capacity-open-parts").then((m) => m.BedMeetingSheetDialog), {
-  ssr: false,
-});
-const CapacityWardFoot = dynamic(() => import("./capacity-open-parts").then((m) => m.CapacityWardFoot), {
-  ssr: false,
-});
-const CapacityWardSidebar = dynamic(() => import("./capacity-open-parts").then((m) => m.CapacityWardSidebar), {
-  ssr: false,
-});
+const ScenarioDialog = dynamic(
+  withLoadRetry(() => import("./capacity-open-parts").then((m) => m.ScenarioDialog)),
+  {
+    ssr: false,
+  },
+);
+const BedMeetingSheetDialog = dynamic(
+  withLoadRetry(() => import("./capacity-open-parts").then((m) => m.BedMeetingSheetDialog)),
+  {
+    ssr: false,
+  },
+);
+const CapacityWardFoot = dynamic(
+  withLoadRetry(() => import("./capacity-open-parts").then((m) => m.CapacityWardFoot)),
+  {
+    ssr: false,
+  },
+);
+const CapacityWardSidebar = dynamic(
+  withLoadRetry(() => import("./capacity-open-parts").then((m) => m.CapacityWardSidebar)),
+  {
+    ssr: false,
+  },
+);
 
 type Popup = { kind: "scenario" } | { kind: "sheet" } | { kind: "ward"; unitId: string } | { kind: "forecast" } | null;
 type PageTab = "overview" | "wards" | "planned";
@@ -330,6 +345,17 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
                 one card, full width. Josh's fifth notes (8 Nov 2026): the row under it is gone; the
                 shift figures are in the hero and an unchanged count on its ward card. */}
             {planned}
+            {/* Item 6 (10 Nov 2026): beds closed past their review time; hidden when there are none. */}
+            <ClosedBedsPastReview
+              units={mapModel.networkRows.map((row) => row.unit)}
+              now={mapModel.now}
+              executive={executive}
+            />
+            <CapacityIntakeWindowsCard
+              units={mapModel.networkRows.map((row) => row.unit)}
+              now={now}
+              onWard={openWard}
+            />
           </>
         )}
         <WardPrototypeFooter

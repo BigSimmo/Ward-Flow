@@ -62,7 +62,7 @@
    inner scroll box (Handover snapshot, Movements, Transport, Referrals tables) escaped that box and
    let the window scroll far past the footer onto bare canvas. `clip` cuts that overflow without
    making `.shell` a scroll container, so sticky headers still stick. Desktop only, matching #132. */
-@media (min-width: 1001px) {
+@media (min-width: 62.5625rem) {
   .shell {
     position: relative;
     overflow-y: clip;
@@ -131,7 +131,7 @@
   }
 }
 
-@media (min-width: 1201px) {
+@media (min-width: 75.0625rem) {
   .shell [data-wf-rail="1201"]:not([hidden]) {
     position: sticky;
     top: var(--ward-sticky-top);

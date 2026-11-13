@@ -454,6 +454,8 @@ type Departure = {
    *  alongside a real `referralId`, and only on `AD-LEFT-01` (`RF-010` → `PT-001`, `wardPatients[0]`,
    *  sex Female, matching this departure's own recorded sex). */
   readonly patientId?: PatientId;
+  /** Item 18: left the ward and still on site waiting for transport, since they left. */
+  readonly waitingForTransport?: true;
 };
 
 function departed(departure: Departure): Admission {
@@ -487,6 +489,7 @@ function departed(departure: Departure): Admission {
     blockReason: null,
     leavingDestination: departure.destination,
     leftAt,
+    ...(departure.waitingForTransport ? { waitingForTransport: { since: leftAt, by: "ward" as const } } : {}),
     followUp: departure.followUp,
   };
 }
@@ -1013,6 +1016,8 @@ const departures: Admission[] = [
     referralId: "RF-010",
     movementId: null,
     patientId: "PT-010",
+    // Item 18: the seeded "Waiting for transport" case, so the ward board's list has someone on it.
+    waitingForTransport: true,
   }),
   departed({
     id: "AD-LEFT-02",
@@ -1247,6 +1252,13 @@ function occupantCohort(unitId: string): GeneratedSeedPatientCohort {
 }
 
 /**
+ * Feature item 4 (11 Nov 2026): one synthetic seventeen year old on an adult ward (SCGH adult open,
+ * AD-SCGA-09), so the under 18 on an adult ward notice can be seen. Born September 2009, so the
+ * person stays under 18 through the demonstration year.
+ */
+const UNDER_18_ON_ADULT_WARD = "PT-G-AD-SCGA-09";
+
+/**
  * The generated people in these beds (seed-link plan task T1 names them `PT-G-<admission id>`),
  * built here, next to the records they describe, as `ward-patients-seed.ts` asks. Owner rule,
  * 25 Sept 2026: every seeded record belongs to a patient who exists.
@@ -1261,4 +1273,5 @@ export const generatedOccupantPatients: Patient[] = wardAdmissions
       cohort: occupantCohort(admission.unitId),
       index,
     }),
-  );
+  )
+  .map((patient) => (patient.id === UNDER_18_ON_ADULT_WARD ? { ...patient, dateOfBirth: "2009-09-20" } : patient));

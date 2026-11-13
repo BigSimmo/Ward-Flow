@@ -48,7 +48,8 @@ const LIT: Record<"desk" | "phone", Record<string, readonly string[]>> = {
       ...["more-capacity", "more-waiting", "more-activity", "more-learn"],
     ],
     ward: [
-      ...["you", "hero", "checking", "confirm", "beds", "answer", "decisions", "raise", "brief", "pin"],
+      // No "raise": off the phone the ward raises a referral from a bed's More menu (D-159), so that step is centred.
+      ...["you", "hero", "checking", "confirm", "beds", "answer", "decisions", "brief", "pin"],
       ...["more-coming", "more-search", "more-alerts", "more-learn"],
     ],
     ed: [

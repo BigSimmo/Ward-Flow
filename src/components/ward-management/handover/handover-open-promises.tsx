@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 import Link from "next/link";
 
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
@@ -13,10 +13,35 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import type { Referral, Unit } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
+import { useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { useWardAccessSnapshot } from "@/components/ward-management/shell/ward-access-store";
 import { ChevronRight, PhoneCall } from "lucide-react";
-import { FormalName, Icon, StatusGlyph, type HeroActProps } from "@/components/wf";
+import {
+  Button,
+  FormalName,
+  Icon,
+  ShowMoreRow,
+  StatusGlyph,
+  foldHidden,
+  foldLimit,
+  type HeroActProps,
+} from "@/components/wf";
 
+import { useCarerCallbacksDue } from "@/components/ward-management/carer-callbacks";
+import { HandoverOwnWork } from "@/components/ward-management/handover-own-work";
+
+export { useCarerCallbacksDue as useCarerDue } from "@/components/ward-management/carer-callbacks";
 import styles from "./handover-open-promises.module.css";
+
+/** About eight rows, then the kit's Show more (DESIGN-SYSTEM.md section 4). */
+const PROMISE_ROWS = 8;
+
+/** "1 carer call back", "2 carer call backs". */
+function carerCallbacksWords(count: number): string {
+  return `${count} carer call ${count === 1 ? "back" : "backs"}`;
+}
 
 /**
  * When to chase one open promise. `sortAt` is the earlier of the next callback and the promised
@@ -70,25 +95,35 @@ export function openPromiseCounts(referrals: readonly Referral[], now: Instant):
 /**
  * Page tops (Josh, 9 Nov 2026): the ward replies as the top's one act row. Overdue replies are the
  * act-now line ("1 ward reply overdue"); replies still to come are a quieter amber line. The button
- * shows or hides the replies card (`onOpenChange`), or with `onShow` takes the reader to it.
+ * ("Show list") shows or hides the card (`onOpenChange`), or with `onShow` takes the reader to it.
  */
 export function promisesHeroAct(
   referrals: readonly Referral[],
   now: Instant,
   open: boolean,
   onOpenChange: (open: boolean) => void,
+  /** Batch 3 item 23: carer call backs past their best-after time (`useCarerCallbacksDue`). */
+  carerDue = 0,
 ): HeroActProps | undefined {
   const { total, overdue } = openPromiseCounts(referrals, now);
-  if (total === 0) return undefined;
+  if (total === 0 && carerDue === 0) return undefined;
+  const ward =
+    total === 0
+      ? undefined
+      : overdue > 0
+        ? `${overdue} ward ${overdue === 1 ? "reply" : "replies"} overdue`
+        : `${total} ward ${total === 1 ? "reply" : "replies"} due`;
   return {
     tone: overdue > 0 ? "danger" : "warning",
-    title:
-      overdue > 0
-        ? `${overdue} ward ${overdue === 1 ? "reply" : "replies"} overdue`
-        : `${total} ward ${total === 1 ? "reply" : "replies"} due`,
+    title: ward
+      ? carerDue > 0
+        ? `${ward} · ${carerCallbacksWords(carerDue)}`
+        : ward
+      : `${carerCallbacksWords(carerDue)} due`,
     testId: "ward-handover-promises-act",
     action: {
-      label: open ? "Hide replies" : "Show replies",
+      // Neutral words: the card may hold carer call backs only, so "replies" would misname it.
+      label: open ? "Hide list" : "Show list",
       phoneLabel: open ? "Hide" : "Show",
       pressed: open,
       testId: "ward-handover-promises-toggle",
@@ -98,13 +133,13 @@ export function promisesHeroAct(
 }
 
 /** Phone: the replies card always shows under the top, so the act row's button takes the reader to it. */
-export function promisesPhoneAct(referrals: readonly Referral[], now: Instant): HeroActProps | undefined {
-  const act = promisesHeroAct(referrals, now, false, () => undefined);
+export function promisesPhoneAct(referrals: readonly Referral[], now: Instant, carerDue = 0): HeroActProps | undefined {
+  const act = promisesHeroAct(referrals, now, false, () => undefined, carerDue);
   if (!act) return undefined;
   return {
     ...act,
     action: {
-      label: "Show replies",
+      label: "Show list",
       phoneLabel: "Show",
       testId: "ward-handover-promises-toggle",
       onClick: () =>
@@ -122,6 +157,27 @@ export function promisesPhoneAct(referrals: readonly Referral[], now: Instant): 
  * On a phone it sits below the Since previous handover card as a rounded card like it.
  */
 export function HandoverOpenPromises({
+  open = true,
+  ...props
+}: {
+  referrals: readonly Referral[];
+  units: readonly Unit[];
+  now: Instant;
+  layout?: "page" | "rail" | "phone";
+  /** The page's hero shows or hides the promises card; your open work below it shows either way. */
+  open?: boolean;
+}) {
+  const layout = props.layout ?? "page";
+  return (
+    <>
+      {open ? <PromisesCard {...props} /> : null}
+      {/* Batch 3 item 21: your own open work to hand on sits with the promises carried over. */}
+      {layout === "rail" ? null : <HandoverOwnWork now={props.now} layout={layout} />}
+    </>
+  );
+}
+
+function PromisesCard({
   referrals,
   units,
   now,
@@ -133,10 +189,17 @@ export function HandoverOpenPromises({
   layout?: "page" | "rail" | "phone";
 }) {
   const baseId = useId();
+  const [showAll, setShowAll] = useState(false);
   const patientOf = usePatientOf();
   const nameFor = usePatientNameDisplay();
+  // Batch 3 item 23: carer call backs past their best-after time join the same list, as one kind.
+  const carerDue = useCarerCallbacksDue(now);
+  const stays = useOptionalWardFlowSelect("admissions")?.admissions;
+  const routeRole = useRouteRole();
+  const previewing = useWardAccessSnapshot().previewOf !== null;
+  const raise = useWardRaise(routeRole);
   const items = commitmentsDueBy(referrals, Number.POSITIVE_INFINITY);
-  if (items.length === 0) return null;
+  if (items.length === 0 && carerDue.length === 0) return null;
   const wardName = (unitId: string) => units.find((unit) => unit.id === unitId)?.name ?? "Ward not recorded";
   const at = (instant: Instant) => formatInstantWithDay(instant, now);
   /*
@@ -157,9 +220,15 @@ export function HandoverOpenPromises({
             ? `${ward} acknowledged, no time promised`
             : `Waiting for ${ward} to respond`;
       const then = callback !== undefined && (overdue || promised !== undefined) ? `ring again ${at(callback)}` : null;
-      return { item, overdue, when, sortAt, ward, what, then, isCallback };
+      return { kind: "ward" as const, item, overdue, when, sortAt, ward, what, then, isCallback };
     })
     .sort((left, right) => left.sortAt - right.sortAt);
+  const carerRows = carerDue.map((record) => ({ kind: "carer" as const, record, sortAt: record.bestAfter }));
+  const merged = [...rows, ...carerRows].sort((left, right) => left.sortAt - right.sortAt);
+  const hidden = foldHidden(merged.length, PROMISE_ROWS);
+  const shown = showAll || hidden === 0 ? merged : merged.slice(0, foldLimit(merged.length, PROMISE_ROWS));
+  const heading =
+    carerRows.length === 0 ? "Ward replies due" : rows.length === 0 ? "Carer call backs due" : "Promises due";
   return (
     <section
       className={styles.panel}
@@ -169,13 +238,56 @@ export function HandoverOpenPromises({
     >
       <h2 id={`${baseId}-heading`} className={styles.heading}>
         <Icon icon={PhoneCall} size={16} className={styles.headIcon} />
-        Ward replies due
-        <span className={styles.count}>{rows.length}</span>
+        {heading}
+        <span className={styles.count}>{merged.length}</span>
         {/* The overdue count is the page top's act row; each row still says Overdue. */}
         <span className={styles.note}>Earliest first</span>
       </h2>
-      <ul className={styles.list}>
-        {rows.map(({ item, overdue, when, what, then, isCallback }) => {
+      <ul className={styles.list} id={`${baseId}-list`}>
+        {shown.map((row) => {
+          if (row.kind === "carer") {
+            const { record } = row;
+            const stay = stays?.find((admission) => admission.id === record.admissionId);
+            const who = stay
+              ? patientOf(stay)
+              : patientOf(record.movementId ? { movementId: record.movementId } : null);
+            return (
+              <li key={record.id} data-testid={`ward-handover-carer-callback-${record.id}`}>
+                <div className={styles.row} data-kind="carer">
+                  <span className={styles.time}>
+                    <span className={styles.clock}>{at(record.bestAfter)}</span>
+                    <span className={styles.timeNote}>call back</span>
+                  </span>
+                  <span className={styles.who}>
+                    <span className={styles.name}>
+                      <FormalName name={nameFor(who.formalName, who.umrn)} />
+                    </span>
+                    {who.umrn ? <span className={styles.umrn}>{who.umrn}</span> : null}
+                  </span>
+                  <span className={styles.what}>Carer wants a call back</span>
+                  {previewing ? (
+                    <span />
+                  ) : (
+                    <Button
+                      variant="sec"
+                      size="sm"
+                      className={styles.made}
+                      data-testid="ward-handover-carer-callback-made"
+                      onClick={() =>
+                        void raise("MARK_CARER_CALLBACK_MADE", {
+                          callbackId: record.id,
+                          ...(routeRole === "ward" && record.unitId ? { actingUnitId: record.unitId } : {}),
+                        })
+                      }
+                    >
+                      Call made
+                    </Button>
+                  )}
+                </div>
+              </li>
+            );
+          }
+          const { item, overdue, when, what, then, isCallback } = row;
           const who = patientOf(item.referral);
           return (
             <li key={`${item.referral.id}-${item.unitId}`} data-testid={`ward-handover-promise-${item.referral.id}`}>
@@ -216,6 +328,11 @@ export function HandoverOpenPromises({
           );
         })}
       </ul>
+      {hidden > 0 ? (
+        <ShowMoreRow onClick={() => setShowAll((all) => !all)} expanded={showAll} controls={`${baseId}-list`}>
+          {showAll ? "Show fewer" : `Show ${hidden} more`}
+        </ShowMoreRow>
+      ) : null}
     </section>
   );
 }

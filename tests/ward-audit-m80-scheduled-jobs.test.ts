@@ -218,6 +218,25 @@ describe("M72: the 10-minute uptime check, each failure injected offline", () =>
     expect(workspaceOnly.gh).not.toMatch(/issue (?:create|close|comment)/u);
   });
 
+  // #1613, 12 Nov 2026: a hidden database check must not swallow a sign-in or workspace outage.
+  it("still raises the sign-in or workspace issue, then fails, when the database check is hidden", async () => {
+    for (const [workspace, title] of [
+      ["signin", "Ward Flow sign-in is not answering"],
+      ["workspace", "Signed-in staff cannot load the shared workspace"],
+    ] as const) {
+      const result = await runStep(RAISE_STEP, {
+        HEALTH: "unknown",
+        WORKSPACE: workspace,
+        WORKSPACE_DETAIL: "HTTP 503",
+        OPEN_ISSUE: "",
+      });
+      expect(result.code).toBe(1);
+      expect(result.gh.match(/issue create/gu)).toHaveLength(1);
+      expect(result.gh).toContain(`--title ${title}`);
+      expect(result.log).toMatch(/::error::Uptime check did not see the database: WARD_FLOW_UPTIME_TOKEN/u);
+    }
+  });
+
   const gapRun = (env: Record<string, string>) =>
     runStep(GAP_STEP, {
       OPEN_ISSUE: "",

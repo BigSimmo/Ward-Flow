@@ -330,8 +330,19 @@ export type Unit = {
    * because of it. Cleared by a pull into this ward or by the ward cancelling it.
    */
   readyForNextAt?: Instant;
-  /** H-0978: beds closed one by one (`SET_BED_CLOSED`); a reopened one keeps `reopenedAt` as seat history. */
-  closedBeds?: { bedNumber: number; at: Instant; by: string; reason?: WardClosureReason; reopenedAt?: Instant }[];
+  /**
+   * H-0978: beds closed one by one (`SET_BED_CLOSED`); a reopened one keeps `reopenedAt` as seat history.
+   * Item 6 (10 Nov 2026): `reviewAt`, "look at this again", only prompts (`bedReviewDue`); reopening
+   * always needs a person, and it changes no bed figure.
+   */
+  closedBeds?: {
+    bedNumber: number;
+    at: Instant;
+    by: string;
+    reason?: WardClosureReason;
+    reviewAt?: Instant;
+    reopenedAt?: Instant;
+  }[];
   /**
    * D-72 (21 Oct 2026), operational only: seclusion and restraint in use now, the seclusion room's
    * recorded status, and incidents the ward recorded. Typed times and fixed lists, no legal limit.
@@ -460,9 +471,18 @@ export type Unit = {
    * limiting intake is recorded".
    */
   intakeConstraints?: readonly WardIntakeConstraint[];
+  /**
+   * Feature item 13 (10 Nov 2026): the hours tonight the ward says it can take an admission, set by
+   * `SET_INTAKE_WINDOW`. Information only: never blocks a referral or orders wards. Read through
+   * `tonightIntakeWindow`, which ignores a window set before the latest 07:00 day start.
+   */
+  intakeWindow?: WardIntakeWindow;
   restrictionReviews?: LoopChecks.WardRestrictionReview[]; // Closing the loop D3: reviewer and review time.
   homeRegion?: HomeRegion;
 };
+
+/** Feature item 13: typed clock times read to instants (D-72), when set and by which desk. */
+export type WardIntakeWindow = { from: Instant; to: Instant; at: Instant; by: string };
 
 export type Site = {
   code: string;
@@ -879,6 +899,14 @@ export type Movement = MovementBase & {
   }[];
   /** How the patient reached the department. Police attendance is a real and invisible pressure. */
   arrivalMode?: "self" | "ambulance" | "police";
+  /**
+   * Item 9 (police and ambulance handover times, D-93): the crew's times as typed from the paper by
+   * `RECORD_CREW_TIMES`, only for a police or ambulance arrival. Each is absent until typed and is
+   * never filled in or worked out. A record saved before item 9 has none of them.
+   */
+  crewArrivedAt?: Instant;
+  crewHandedOverAt?: Instant;
+  crewReleasedAt?: Instant;
   /** When a pulled bed lapses. A pull cannot expire without a time to expire at. */
   pullExpiresAt?: Instant;
   /**
@@ -949,6 +977,12 @@ export type Movement = MovementBase & {
    * out from them and the ED list keeps its own order.
    */
   psychReview?: PsychReview;
+  /**
+   * Escalation calls (item 3, D-133): the latest recorded call per ED wait step, with its fixed
+   * outcome, time and desk (`RECORD_ESCALATION_CALL`). Never a person, never typed text. The queue
+   * order, the steps and their hours do not read it.
+   */
+  escalationCalls?: import("@/components/ward-management/escalation/escalation-call-record").EscalationCallRecord[];
   /**
    * Earlier examination records this movement has outgrown, oldest first. Owner item 7
    * (2026-09-17): a repeat examination is a NEW record, not an edit to the old one, so the
@@ -1075,6 +1109,10 @@ export type Movement = MovementBase & {
   contrabandSearchDone?: boolean;
   /** Top 25 item 14: whether the pre-transfer medication chart is ready for the receiving ward. */
   medicationChartDone?: boolean;
+  /** Feature item 15: an interpreter booked for arrival. Offered only when the record needs one. */
+  interpreterBooked?: boolean;
+  /** Feature item 15: Aboriginal liaison offered at arrival. Offered, never assumed. */
+  aboriginalLiaisonOffered?: boolean;
 };
 
 /**

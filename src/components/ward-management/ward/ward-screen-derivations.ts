@@ -4,8 +4,9 @@
 import type { PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import {
   currentLegalDueAt,
-  formProgression,
+  FORM_RECORDED_ENDED,
   formProgressionPhrase,
+  legalFormEnd,
 } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { criteriaLedTileChip, dischargeCriteriaStatus } from "@/components/ward-management/ward-discharge-criteria";
@@ -35,6 +36,7 @@ import { patientAgeYears } from "@/components/ward-management/ward-patients";
 import { WARD_LOCKED_BED_SPLITS } from "@/components/ward-management/ward-sites";
 import { layoutBedNumbers, wardStaySeats } from "./ward-bed-layout";
 import { activeClosedBeds } from "@/components/ward-management/ward-ready-beds";
+import { bedReviewLine } from "../ward-bed-closure-review";
 import { arrivalIsLate } from "./ward-screen-helpers";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { BedRelease, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
@@ -223,12 +225,16 @@ export function wardBedRoster({
         : undefined;
     // WT-03 (walk-through, 26 Oct 2026): a form the examination or arrival moved on from is not the
     // stay's authority, so the card names the form still to record, as the person page does.
-    const progression = patientLegalForm ? formProgression(linkedMovement) : undefined;
-    const legalStatusLabel = progression
-      ? `Form ${progression.nextCode} not recorded (${formProgressionPhrase(progression)})`
-      : patientLegalForm
-        ? `Form ${patientLegalForm.code}${patientLegalStatus ? ` ${patientLegalStatus}` : ""}`
-        : patientLegalStatus;
+    // A form recorded as ended is read before the neutral 5A/5B arrival wording (legalFormEnd).
+    const legalEnd = patientLegalForm ? legalFormEnd(linkedMovement) : undefined;
+    const legalStatusLabel =
+      legalEnd?.kind === "progressed"
+        ? `Form ${legalEnd.progression.nextCode} not recorded (${formProgressionPhrase(legalEnd.progression)})`
+        : legalEnd?.kind === "recorded" && patientLegalForm
+          ? `Form ${patientLegalForm.code} ${FORM_RECORDED_ENDED.toLowerCase()}`
+          : patientLegalForm
+            ? `Form ${patientLegalForm.code}${patientLegalStatus ? ` ${patientLegalStatus}` : ""}`
+            : patientLegalStatus;
 
     const stayBandObj = admission && stayDays !== null ? stayBand(admission, now) : null;
     const isPastDate = admission ? isPastExpectedDischarge(admission, now) : false;
@@ -394,9 +400,12 @@ export function wardBedRoster({
     const releaseId = preparingByBed.has(bedNumber) ? undefined : unplacedReleases.shift();
     if (releaseId !== undefined) preparingByBed.set(bedNumber, releaseId);
   }
+  // Item 6: a bed closed by number carries its review line ("Review 14:00", "Review overdue").
+  const closedMarks = new Map(activeClosedBeds(unit).map((mark) => [mark.bedNumber, mark]));
   const bedsList = rawBeds
     .map((bed, index) => {
       const bedNumber = bedNumbers[index];
+      const closedMark = bed.status === "closed" ? closedMarks.get(bedNumber) : undefined;
       const preparingReleaseId = bed.status === "ready" ? preparingByBed.get(bedNumber) : undefined;
       const designation: "Locked" | "Open" | undefined = isMixed
         ? bedNumber <= lockedBeds
@@ -414,6 +423,7 @@ export function wardBedRoster({
         preparing: preparingReleaseId !== undefined,
         preparingReleaseId,
         statusText: preparingReleaseId !== undefined ? BED_STATE_LABELS.beingMadeReady : bed.statusText,
+        closedReview: closedMark ? (bedReviewLine(closedMark, now) ?? undefined) : undefined,
       };
     })
     .sort((left, right) => left.bedNumber - right.bedNumber);

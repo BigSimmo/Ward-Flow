@@ -244,13 +244,17 @@ jobs:
             exit 0
           fi
           # Hidden database or a monitor account that is not set up: neither raise nor close a
-          # backend-down issue. A hidden database check must not look green (A7-01). A rate-limited
-          # or unset workspace check stays a warning only; the monitor-not-set-up issue covers it.
+          # backend-down issue. A hidden database check must not look green (A7-01), but it is
+          # reported after any sign-in or workspace failure has raised its issue. A rate-limited or
+          # unset workspace check stays a warning only; the monitor-not-set-up issue covers it.
+          hidden=""
           if [ "$HEALTH" = "unknown" ]; then
-            echo "::error::Uptime check did not see the database: WARD_FLOW_UPTIME_TOKEN is missing or does not match the backend's value."
-            exit 1
+            hidden="::error::Uptime check did not see the database: WARD_FLOW_UPTIME_TOKEN is missing or does not match the backend's value."
           fi
-          if [ "$state" = "unknown" ]; then exit 0; fi
+          if [ "$state" = "unknown" ]; then
+            if [ -n "$hidden" ]; then echo "$hidden"; exit 1; fi
+            exit 0
+          fi
           if [ -z "$open" ]; then
             gh label create "$LABEL" --color B60205 --description "Hosted backend not answering" --force
             case "$state" in
@@ -264,4 +268,5 @@ jobs:
                 gh issue create --label "$LABEL" --title "Shared backend is not answering" --body "@$OWNER The hosted Ward Flow backend ($BACKEND_URL/healthz) did not answer three times in a row ($run). Shared mode will not load or save until it is back. Check the ward-flow-backend service in Railway. This issue closes itself when the backend answers again." ;;
             esac
           fi
+          if [ -n "$hidden" ]; then echo "$hidden"; fi
           exit 1

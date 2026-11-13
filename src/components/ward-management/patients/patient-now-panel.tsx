@@ -5,6 +5,7 @@
 import { scrollWardPageToTop } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { Ambulance, BedSingle, Copy, FileText, RotateCcw } from "lucide-react";
 import { PatientRecordOverview } from "./patient-record-overview";
 import { callRows, type CallTarget } from "./patient-call-list";
@@ -22,7 +23,7 @@ import { Button, buttonClass } from "@/components/wf";
 import { raiseReferralHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { type TabKey } from "./patient-now-screen-helpers";
-import type { Dispatch, SetStateAction } from "react";
+import type { Dispatch, ReactNode, SetStateAction } from "react";
 import type { LeaveBed, Movement, TransportProvider, Unit } from "@/components/ward-management/ward-model";
 import type { PatientMode } from "./patient-mode";
 import type { ResolvedPatientNow } from "./patient-now-adapter";
@@ -36,12 +37,18 @@ import { PatientNextStepButton } from "./patient-now-ward-button";
 // The ward cards load on their own: only a stay needs them (phone script budget).
 const loadWardCards = () => import("./patient-now-ward-cards");
 // The ward change row shows only for a patient on the ward, so it loads with that state.
-const PatientWardChangeCard = dynamic(() => import("./patient-ward-change-card").then((m) => m.PatientWardChangeCard));
-const PatientDischargeReadiness = dynamic(() => loadWardCards().then((m) => m.PatientDischargeReadiness));
-const PatientLastDay = dynamic(() => loadWardCards().then((m) => m.PatientLastDay));
-const PatientNextStepCard = dynamic(() => loadWardCards().then((m) => m.PatientNextStepCard));
-// Where the hours went and the handover pack (items 8 and 17) load on their own (phone script budget).
-const PatientJourneyExtras = dynamic(() => import("./patient-journey-extras").then((m) => m.PatientJourneyExtras));
+const PatientWardChangeCard = dynamic(
+  withLoadRetry(() => import("./patient-ward-change-card").then((m) => m.PatientWardChangeCard)),
+);
+const PatientDischargeReadiness = dynamic(
+  withLoadRetry(() => loadWardCards().then((m) => m.PatientDischargeReadiness)),
+);
+const PatientLastDay = dynamic(withLoadRetry(() => loadWardCards().then((m) => m.PatientLastDay)));
+const PatientNextStepCard = dynamic(withLoadRetry(() => loadWardCards().then((m) => m.PatientNextStepCard)));
+// The handover pack and the patient or carer page (item 17) load on their own (phone script budget).
+const PatientJourneyExtras = dynamic(
+  withLoadRetry(() => import("./patient-journey-extras").then((m) => m.PatientJourneyExtras)),
+);
 
 /** The values and handlers `PatientNowScreen` passes to its Now tab. */
 export type PatientNowPanelProps = {
@@ -91,6 +98,11 @@ export type PatientNowPanelProps = {
   wardPending: boolean;
   wardRefusal: string | undefined;
   wardSaveError: string | undefined;
+  /** Redesign (12 Nov 2026): the small cards (meeting actions, triage, carer call back) sit two across under the status card. */
+  notices?: ReactNode;
+  tiles?: ReactNode;
+  /** Care and safety, in the main column under the work. */
+  care?: ReactNode;
 };
 
 export function PatientNowPanel(props: PatientNowPanelProps) {
@@ -146,6 +158,9 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
     wardPending,
     wardRefusal,
     wardSaveError,
+    notices,
+    tiles,
+    care,
   } = props;
   const readOnlyRecord = clearanceGate.reason === "Exceptional access is read only.";
   const newReferralHref = livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/ward-flow/referrals/new";
@@ -178,11 +193,6 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
         patient={livePatient}
       />
     ) : null;
-  // Community clinician: Why admitted moves into the left column, where Record a change would be, so
-  // the page has no empty column beside the rail.
-  // Redesign (1 Nov 2026): on the ward or at ED, Why admitted sits under Record a change on desktop,
-  // so the two columns balance and the rail keeps the safety cards (Legal now, Who to call).
-  const whyMovesLeft = !isPhone && (mode === "ward" || mode === "ed");
   const copyLabel = copied ? "Copied" : isLiveBedflow ? "Copy handover" : "Copy summary";
   const referralMain =
     !readOnlyRecord && isPhone && (mode === "idle" || mode === "cto") && canOpenHref(newReferralHref);
@@ -300,7 +310,26 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
           />
         ) : null
       }
-      why={whyMovesLeft ? null : whyCard}
+      why={whyCard}
+      absence={
+        <>
+          {mode === "leave" && stayLeaveBed ? (
+            <PatientLeaveCard
+              dueBack={formatInstantWithDay(stayLeaveBed.expectedReturn, now)}
+              voluntary={voluntaryNow}
+              onMarkAbsent={markAbsent}
+            />
+          ) : null}
+          {mode === "awol" && stayLeaveBed?.absentWithoutLeave ? (
+            <PatientLastSeenCard
+              wardName={stayUnit?.name}
+              voluntary={voluntaryNow}
+              since={clock(stayLeaveBed.absentWithoutLeave.since)}
+              onRecordReturn={recordReturn}
+            />
+          ) : null}
+        </>
+      }
       change={
         <>
           {!readOnlyRecord &&
@@ -328,7 +357,6 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
               })()}
             </div>
           ) : null}
-          {whyMovesLeft ? whyCard : null}
           {mode === "ward" && wardChangeOpen ? (
             <>
               {canSwitchDesk && !gate("RECORD_LEAVE_BED").allowed ? (
@@ -353,21 +381,6 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
               ) : null}
             </>
           ) : null}
-          {mode === "leave" && stayLeaveBed ? (
-            <PatientLeaveCard
-              dueBack={formatInstantWithDay(stayLeaveBed.expectedReturn, now)}
-              voluntary={voluntaryNow}
-              onMarkAbsent={markAbsent}
-            />
-          ) : null}
-          {mode === "awol" && stayLeaveBed?.absentWithoutLeave ? (
-            <PatientLastSeenCard
-              wardName={stayUnit?.name}
-              voluntary={voluntaryNow}
-              since={clock(stayLeaveBed.absentWithoutLeave.since)}
-              onRecordReturn={recordReturn}
-            />
-          ) : null}
           {(mode === "idle" || mode === "cto") && !isPhone ? (
             <PatientRecordOverview patient={livePatient} record={record} onOpen={openTab} />
           ) : null}
@@ -378,18 +391,23 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
             // near-empty bar.
             <PatientJourneyTimeline movement={liveMovement} now={now} onOpenHistory={() => openTab("history")} />
           ) : null}
-          {isLiveBedflow && liveMovement ? (
-            <PatientJourneyExtras
-              movement={liveMovement}
-              patient={livePatient}
-              patientName={patientName}
-              acceptingUnit={acceptingUnit}
-              callTargets={callTargets}
-              riskFlags={handoverRiskFlags}
-              now={now}
-            />
-          ) : null}
         </>
+      }
+      notices={notices}
+      tiles={tiles}
+      care={care}
+      handover={
+        isLiveBedflow && liveMovement ? (
+          <PatientJourneyExtras
+            movement={liveMovement}
+            patient={livePatient}
+            patientName={patientName}
+            acceptingUnit={acceptingUnit}
+            callTargets={callTargets}
+            riskFlags={handoverRiskFlags}
+            now={now}
+          />
+        ) : null
       }
       calls={callRows(callTargets, now)}
       sheetRows={

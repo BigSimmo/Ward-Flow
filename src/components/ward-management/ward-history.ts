@@ -48,6 +48,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   OPEN_DISCHARGE_RECORD: { category: "neither", plainWording: "Discharge record viewed" },
   REVIEW_AUDIT_EVENT: { category: "neither", plainWording: "Governance audit review completed" },
   RECORD_LEAVING: { category: "both", plainWording: "Patient departed ward" },
+  MARK_TRANSPORT_COLLECTED: { category: "patient", plainWording: "Collected by transport" },
   RECORD_AWAY_AT_EMERGENCY_DEPARTMENT: {
     category: "patient",
     plainWording: "Patient temporarily away at Emergency Department",
@@ -62,6 +63,10 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   SET_STEP_DOWN_CANDIDATE: { category: "patient", plainWording: "Step-down pathway candidate status updated" },
   RECORD_WARD_DIAGNOSIS: { category: "patient", plainWording: "Ward's tentative diagnosis recorded" },
   MARK_WEEKEND_DISCHARGE_REVIEWED: { category: "patient", plainWording: "Weekend discharge reviewed" },
+  RECORD_CHIEF_PSYCHIATRIST_NOTIFIED: {
+    category: "patient",
+    plainWording: "Chief Psychiatrist notified time recorded",
+  },
   SET_DISCHARGE_BARRIER: { category: "patient", plainWording: "Discharge hold-up recorded" },
   SET_CLINICALLY_READY: { category: "patient", plainWording: "Clinically ready date recorded" },
   SET_DISCHARGE_CRITERIA: { category: "patient", plainWording: "Discharge criteria updated" },
@@ -71,6 +76,15 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   RECORD_DIRECTORY_CHECK: { category: "neither", plainWording: "On-call directory entry checked" },
   REQUEST_WARD_STAFF: { category: "neither", plainWording: "Extra ward staff requested" },
   CLOSE_WARD_STAFF_REQUEST: { category: "neither", plainWording: "Ward staff request closed" },
+  // Batch 4 (10 Nov 2026): settings and records with no bed or patient change.
+  SET_SITE_FEATURE_SWITCH: { category: "neither", plainWording: "Feature switched off or on at a site" },
+  RECORD_DOWNTIME_PACK_PRINTED: { category: "neither", plainWording: "Downtime pack printed or saved" },
+  RECORD_OUTAGE_WINDOW: { category: "neither", plainWording: "Outage window recorded" },
+  // Batch 3 items 21 and 23 (10 Nov 2026).
+  HAND_OVER_ITEM: { category: "neither", plainWording: "Open work handed to another desk" },
+  ACCEPT_HANDED_ITEM: { category: "neither", plainWording: "Handed work accepted" },
+  RECORD_CARER_CALLBACK: { category: "patient", plainWording: "Carer asked for a call back" },
+  MARK_CARER_CALLBACK_MADE: { category: "patient", plainWording: "Carer called back" },
   // Out of area "Flag early" (Josh, 3 Nov 2026).
   FLAG_RETURN_EARLY: { category: "patient", plainWording: "Out of area return flagged early" },
 
@@ -104,6 +118,8 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   EXTEND_PULL: { category: "both", plainWording: "Pull time limit extended" },
   REFER_TO_COMMUNITY_TEAM: { category: "patient", plainWording: "Patient diverted to Community Mental Health" },
   RECORD_LEFT_DEPARTMENT: { category: "patient", plainWording: "Patient departed Emergency Department" },
+  RECORD_CREW_TIMES: { category: "patient", plainWording: "Police or ambulance crew times recorded" },
+  RECORD_ARRIVAL_MODE: { category: "patient", plainWording: "Brought by police or ambulance recorded" },
   STEP_BACK_STAGE: { category: "patient", plainWording: "Movement stepped back to earlier stage" },
   WITHDRAW_ACCEPTANCE: { category: "patient", plainWording: "Ward acceptance withdrawn" },
   WITHDRAW_WARD_REQUEST: { category: "patient", plainWording: "Ward shortlist request withdrawn" },
@@ -134,11 +150,13 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   RAISE_EXPECT_FLAG: { category: "patient", plainWording: "Expected patient flag raised" },
   REQUEST_PSYCH_REVIEW: { category: "patient", plainWording: "Psychiatric review asked for" },
   RECORD_PSYCH_REVIEW_SEEN: { category: "patient", plainWording: "Psychiatric review seen" },
+  RECORD_ESCALATION_CALL: { category: "patient", plainWording: "Escalation call recorded" },
   FLAG_LEGAL_MISMATCH: { category: "patient", plainWording: "Statutory placement mismatch flagged" },
 
   // 2.5 Capacity and bed release
   CONFIRM_CAPACITY: { category: "bed", plainWording: "Ward bed capacity confirmed" },
   RECORD_WARD_INTAKE_CONSTRAINTS: { category: "bed", plainWording: "Ward intake constraints updated" },
+  SET_INTAKE_WINDOW: { category: "bed", plainWording: "Tonight's intake hours updated" },
   FLAG_BED_RELEASE: { category: "bed", plainWording: "Upcoming bed release flagged" },
   CONFIRM_BED_RELEASE: { category: "bed", plainWording: "Bed release confirmed" },
   REVERT_BED_RELEASE: { category: "bed", plainWording: "Bed release reverted to expected" },

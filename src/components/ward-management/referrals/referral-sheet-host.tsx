@@ -4,11 +4,15 @@
 // `openReferralRecord` asked for. The sheet's code loads on the first open, not with the page.
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { useEffect, useState } from "react";
 
 import { subscribeReferralRecord, type ReferralRecordRequest } from "./referral-sheet-bus";
 
-const ReferralSheetRecord = dynamic(() => import("./referral-sheet-record"), { ssr: false });
+const ReferralSheetRecord = dynamic(
+  withLoadRetry(() => import("./referral-sheet-record").then((m) => m.default)),
+  { ssr: false },
+);
 
 export function ReferralSheetHost() {
   const [request, setRequest] = useState<ReferralRecordRequest | null>(null);

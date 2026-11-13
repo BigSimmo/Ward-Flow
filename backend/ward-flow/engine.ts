@@ -51,6 +51,10 @@ import {
 } from "../../src/components/ward-management/ward-flow-reducer";
 import { isValidSharedWardFlowState } from "../../src/components/ward-management/ward-shared-state-validation";
 import { checkSyntheticPayload } from "../../src/lib/synthetic-data-guard";
+import {
+  SITE_FEATURE_SWITCH_ROLE,
+  siteFeatureSwitchRefusal,
+} from "../../src/components/ward-management/ward-site-feature-switches";
 import { cleanReferralFields } from "../../src/components/ward-management/referrals/referral-text-clean";
 
 export { checkSyntheticPayload };
@@ -397,21 +401,38 @@ function changedFacts(before: WardFlowState, after: WardFlowState, rawAfter?: Wa
 }
 
 export function seedWorld(at: Date): SharedWorld {
+  const dayZero = demoDayZero(at);
   return {
     version: 1,
-    state: serialise(seedWardFlowStateAt(0)),
+    // D-150: the seed is re-anchored onto the real Perth time, as the public demo's provider does
+    // (`ward-reanchor.ts`), so a new world's clock and its seeded times agree from the start.
+    state: serialise(seedWardFlowStateAt(minutesSince(dayZero, at) - NOW_ANCHOR)),
     // New worlds share the local demo's Perth calendar. Existing stored origins remain authoritative.
-    dayZero: demoDayZero(at).toISOString(),
+    dayZero: dayZero.toISOString(),
     startedAt: at.toISOString(),
   };
 }
 
-export function worldNow(world: SharedWorld, at: Date): number {
-  return (
-    NOW_ANCHOR +
-    Math.max(0, Math.floor((at.getTime() - Date.parse(world.startedAt)) / 60_000)) +
-    world.state.clockOffsetMinutes
+/** Whole minutes from `from` to `at`, never negative. */
+function minutesSince(from: Date | string, at: Date): number {
+  return Math.max(
+    0,
+    Math.floor((at.getTime() - (typeof from === "string" ? Date.parse(from) : from.getTime())) / 60_000),
   );
+}
+
+/**
+ * The shared world's clock. D-150 (Josh, 11 Nov 2026): the signed-in site shows real Perth time, so
+ * an instant is the real minutes since the world's day zero (a Perth midnight). Before this the clock
+ * started at the scripted 10:42 (`NOW_ANCHOR`) whenever the world was made and ran fast or slow by
+ * that gap all day. The scripted clock stays on the public demo only. `clockOffsetMinutes` is still
+ * added, though the advance-clock control is hidden in shared mode.
+ */
+export function worldNow(
+  world: Pick<SharedWorld, "dayZero"> & { state: Pick<WardFlowState, "clockOffsetMinutes"> },
+  at: Date,
+): number {
+  return minutesSince(world.dayZero, at) + world.state.clockOffsetMinutes;
 }
 
 export function validWorld(value: unknown): value is SharedWorld {
@@ -611,7 +632,15 @@ export function deskCommand(access: WardAccess, supplied: unknown): unknown {
   const sent = supplied as Record<string, unknown> | null;
   const networkSignOff =
     sent?.type === "RECORD_HANDOVER_SIGN_OFF" && accessIsWholeNetwork(access) && sent.unitId === undefined;
-  const fields = networkSignOff ? { ...sent, network: true } : sent;
+  let fields = networkSignOff ? { ...sent, network: true } : sent;
+  // D-142 (Josh, 11 Nov 2026): a site switch names the access admin from the membership, never from
+  // the browser, so the record says who switched it. The access admin's switch goes under the
+  // engine's coordinator role, the one role the action takes; `commandRefusal` still decides.
+  if (fields?.type === "SET_SITE_FEATURE_SWITCH") {
+    fields = { ...fields };
+    delete fields.byAccessAdmin;
+    if (access.role === "admin") return { ...fields, role: SITE_FEATURE_SWITCH_ROLE, byAccessAdmin: true };
+  }
   if (access.role !== "coordinator" || typeof fields?.role !== "string") return fields;
   if (fields.role === "demo" || fields.role === access.role || fields.type === "MARK_NOTICE_READ") return fields;
   return { ...fields, role: access.role };
@@ -637,7 +666,15 @@ export function commandRefusal(
   if (!Object.hasOwn(EVENT_ROLE, type)) return "This change is not one the workflow knows.";
   if (accessIsWholeNetwork(access)) return null;
   const notYours = "This change is not part of your role.";
+  // Batch 4 item 20 (10 Nov 2026): only an admin switches a feature off at a site. The statewide
+  // coordinator was returned above; the statewide access admin is let through here (D-142, Josh's
+  // amendment to D-80 for this one action); every other desk, a service coordinator too, is refused.
+  if (type === "SET_SITE_FEATURE_SWITCH") return siteFeatureSwitchRefusal(access, supplied);
   if (access.role === "admin" || access.role === "executive" || role === "demo") return notYours;
+  // Batch 4 item 25 (D-142): an outage record is network-wide, so only the statewide coordinator
+  // (returned above) records one; a service coordinator is refused. The role itself is allowed, so
+  // the permission matrix reads this as a place limit, like the site switch above.
+  if (type === "RECORD_OUTAGE_WINDOW") return "Only the statewide coordinator records an outage.";
   // A service coordinator is the coordinator inside its service (Josh, 10 Oct 2026: the
   // coordinator takes every action), so only its place limits it, below.
   if (access.role !== "coordinator") {

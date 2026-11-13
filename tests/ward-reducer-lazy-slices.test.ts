@@ -50,7 +50,9 @@ describe("lazily loaded reducer slices", () => {
       const text = readFileSync(file, "utf8");
       for (const name of [...slices, "ward-flow-reducer-slices"]) {
         const base = name.split("/").at(-1);
-        const pattern = new RegExp(`^import (?!type )[^;]*?from "[^"]*/${base}";`, "ms");
+        // A value re-export (`export { X } from`) loads the module too: the reducer's re-export of one
+        // refusal sentence once put the protected-record slice on every first load (D-162 finding 1).
+        const pattern = new RegExp(`^(?:import|export) (?!type )[^;]*?from "[^"]*/${base}";`, "ms");
         if (pattern.test(text)) offenders.push(`${path.relative(process.cwd(), file)} -> ${base}`);
       }
     }

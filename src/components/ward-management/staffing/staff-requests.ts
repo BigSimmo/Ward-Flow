@@ -72,6 +72,13 @@ export type StaffRequestEvent =
       /** Claim, not proof, as `SET_BED_CLOSED`: required of a ward desk, which asks for itself only. */
       actingUnitId?: string;
       shift: StaffRequestShift;
+      /**
+       * The start of the shift the desk chose, read on its own clock when it pressed save. The
+       * shared server stamps its own `now`, so without this a "This shift" pressed at 14:59 and
+       * saved at 15:00 would land on the 15:00 shift. The reducer keeps it only when it is the
+       * chosen shift's start within `STAFF_REQUEST_SHIFT_TOLERANCE_MINUTES` of `now`.
+       */
+      shiftStartAt?: number;
       count: StaffRequestCount;
       reasons: StaffRequestReason[];
     }
@@ -125,8 +132,25 @@ export function staffRequestTagText(record: StaffRequestRecord, now: Instant): s
   return `Staff requested ${formatInstantWithDay(record.updatedAt ?? record.requestedAt, now)} · ${record.count >= 4 ? "4+" : record.count} · ${staffRequestShiftWord(record, now)}`;
 }
 
-function shiftStartFor(shift: StaffRequestShift, now: Instant): Instant {
+/** The start of the shift a "This shift" or "Next shift" choice names at `now`. */
+export function staffRequestShiftStart(shift: StaffRequestShift, now: Instant): Instant {
   return shift === "this_shift" ? currentShiftStartInstant(now) : shiftEndInstant(now);
+}
+
+/** How long a save may take to reach the shared board and still keep the shift the desk chose. */
+export const STAFF_REQUEST_SHIFT_TOLERANCE_MINUTES = 5;
+
+/**
+ * The shift the request is for: the desk's own `shiftStartAt` when it is what the chosen word
+ * meant at some moment within the tolerance before `now`, otherwise the shift read at `now`.
+ * Shifts are hours long, so checking both ends of the window covers every moment in it.
+ */
+function chosenShiftStart(event: Extract<StaffRequestEvent, { type: "REQUEST_WARD_STAFF" }>): Instant {
+  const atNow = staffRequestShiftStart(event.shift, event.now);
+  const chosen = event.shiftStartAt;
+  if (typeof chosen !== "number" || !Number.isFinite(chosen)) return atNow;
+  const pressedAt = event.now - STAFF_REQUEST_SHIFT_TOLERANCE_MINUTES;
+  return chosen === atNow || chosen === staffRequestShiftStart(event.shift, pressedAt) ? chosen : atNow;
 }
 
 export function reduceStaffRequest(state: WardFlowState, event: StaffRequestEvent, reject: Reject): WardFlowState {
@@ -147,7 +171,12 @@ export function reduceStaffRequest(state: WardFlowState, event: StaffRequestEven
       !reasons.every((reason) => STAFF_REQUEST_REASONS.includes(reason))
     )
       return reject(state, event, "REQUEST_WARD_STAFF needs one or more reasons chosen from the list");
-    const shiftStartAt = shiftStartFor(event.shift, event.now);
+    const shiftStartAt = chosenShiftStart(event);
+    // D-158: a "This shift" pressed just before the shift ends, and saved just after, would
+    // otherwise keep the ended shift — accepted, immediately not open, and unable to be closed.
+    // "Next shift" across the same boundary stays valid and is kept.
+    if (event.shift === "this_shift" && event.now >= staffRequestEndsAt({ shiftStartAt }))
+      return reject(state, event, "This shift has already ended. Choose this shift or next shift again");
     const ordered = STAFF_REQUEST_REASONS.filter((reason) => reasons.includes(reason));
     // One open request per ward per shift: asking again updates it rather than adding a second.
     const existing = records.find(

@@ -553,3 +553,105 @@
     background: transparent;
   }
 }
+
+/* Redesign (12 Nov 2026): gates as rows. Label and owner, then the value with its reason beside it;
+   the one action per row sits on the right edge, so the actions form a column. */
+.card[data-rows] .cells,
+.card[data-rows] .cells[data-count="2"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.card[data-rows] .cell + .cell {
+  border-left: 0;
+  border-top: 1px solid var(--wf-line);
+}
+
+.card[data-rows] .cell:not([data-ph-quiet]) {
+  align-items: center;
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.card[data-rows] .cell:not([data-ph-quiet]) .iconChip {
+  margin-top: 0;
+}
+
+.card[data-rows] .cellBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--wf-s-4);
+  row-gap: 0;
+  align-items: center;
+}
+
+.card[data-rows] .cellBody > .label,
+.card[data-rows] .cellBody > .sub {
+  grid-column: 1;
+}
+
+.card[data-rows] .cellLine {
+  display: contents;
+}
+
+.card[data-rows] .cellLine > .value {
+  grid-column: 1;
+}
+
+.card[data-rows] .cellLine > :not(.value) {
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  align-self: center;
+}
+
+.card[data-rows] .cells > .cell:first-child[data-hot],
+.card[data-rows] .cells > .cell:last-child[data-hot] {
+  border-radius: 0;
+}
+
+.card[data-rows] .cells > .cell:last-child[data-hot] {
+  border-bottom-left-radius: calc(var(--wf-r-lg) - 1px);
+  border-bottom-right-radius: calc(var(--wf-r-lg) - 1px);
+}
+
+.card[data-rows] .head {
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  padding-block: var(--wf-s-3);
+}
+
+.card[data-rows] .headText {
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.card[data-rows] .meterGroup,
+.card[data-rows] .headAction {
+  flex: none;
+  min-height: 24px;
+}
+
+.card[data-rows] .ownerFoot {
+  margin-left: 0;
+}
+
+.card[data-rows] .verdict {
+  align-self: flex-start;
+}
+
+/* Version 2 (12 Nov 2026): the row's icon is the tinted chip the History figures use, so a gate, a
+   figure and a small-card row all read as the same kind of thing. The one urgent row keeps a plain
+   chip, so its soft red ground stays the only colour on it. */
+.card[data-rows] .iconChip {
+  width: 32px;
+  height: 32px;
+  margin-top: 0;
+  border: 0;
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+
+.card[data-rows] .cell[data-hot] .iconChip {
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+}

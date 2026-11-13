@@ -8,6 +8,7 @@ import {
   frontDoorRequired,
   frontDoorSecret,
   isFrontDoorOpenPath,
+  passMatchesDemoCode,
   passOpensSite,
   safeNextPath,
   verifyPass,
@@ -208,13 +209,16 @@ export async function frontDoorVerdict(
 ): Promise<NextResponse | null> {
   const { pathname, search } = request.nextUrl;
   if (!frontDoorRequired(environment) || isFrontDoorOpenPath(pathname)) return null;
-  const pass = await verifyPass(frontDoorSecret(environment), request.cookies.get(FRONT_DOOR_PASS_COOKIE)?.value);
+  const secret = frontDoorSecret(environment);
+  const pass = await verifyPass(secret, request.cookies.get(FRONT_DOOR_PASS_COOKIE)?.value);
   // The literal read is inlined at build time, as in POST /api/session; the environment read covers
   // a runtime value and tests.
   const shared =
     (environment.NEXT_PUBLIC_WARD_SHARED_ENABLED ??
       (environment === process.env ? process.env.NEXT_PUBLIC_WARD_SHARED_ENABLED : undefined)) === "true";
-  if (pass && passOpensSite(pass, shared)) return null;
+  // A demo pass also ends as soon as WARD_DEMO_CODE changes (it carries the code's fingerprint).
+  if (secret && pass && passOpensSite(pass, shared) && (await passMatchesDemoCode(secret, pass, environment)))
+    return null;
   if (pathname === "/api" || pathname.startsWith("/api/"))
     return NextResponse.json({ error: "Sign in first.", code: "front_door" }, { status: 401 });
   const url = request.nextUrl.clone();

@@ -141,6 +141,14 @@ export const CORE_SEARCH_VIEWS: readonly CoreSearchView[] = [
     description: "Recorded forms (demo)",
   },
   {
+    // Feature 23: the Leave page, also reached from the Tools sheet's Leave due ("See all leave").
+    key: "leave",
+    title: "Leave",
+    href: "/ward-flow/leave",
+    keywords: ["leave", "on leave", "due back", "overdue", "absent", "absent without leave", "awol"],
+    description: "Everyone on leave and due back",
+  },
+  {
     key: "referrals",
     title: "Referrals",
     href: "/ward-flow/referrals",
@@ -201,8 +209,9 @@ type TaskSearchResult = {
  */
 export function unitReadyBedCount(
   unit: Unit,
-  admissions: readonly Admission[] = [],
-  referrals: readonly ReservationReferral[] = [],
+  admissions: readonly Admission[],
+  /** The named holds: open journeys and accepted referrals (D-115 item 3). */
+  referrals: readonly ReservationReferral[],
 ): number | null {
   if (unit.allocatable && unit.empty) {
     return readyBedsNow(unit, admissions, [], referrals);

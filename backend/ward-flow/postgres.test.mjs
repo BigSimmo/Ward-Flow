@@ -264,8 +264,10 @@ test("real PostgreSQL: shared commands, last-bed contention, retry, audit and re
       unit.id === unitId
         ? {
             ...unit,
-            empty: { ...unit.empty, value: 6, confirmedAt: 642 },
-            allocatable: { ...unit.allocatable, value: 6, confirmedAt: 642 },
+            // Confirmed at the world's own now: under D-150 the shared clock is real Perth time,
+            // so a fixed 10:42 is hours stale at this test's 18:00 Perth.
+            empty: { ...unit.empty, value: 6, confirmedAt: seed.now },
+            allocatable: { ...unit.allocatable, value: 6, confirmedAt: seed.now },
             allocatableLocked: 6,
           }
         : unit,
@@ -338,7 +340,7 @@ test("real PostgreSQL: shared commands, last-bed contention, retry, audit and re
       const restored = await createWorkspaceStore(pool, { workspaceId, engine, clock: () => at }).read(actorB);
       assert.equal(restored.revision, 2);
       assert.equal(restored.payload.state.movements.find((row) => row.id === winner.movement).stage, "pulled");
-      assert.equal(restored.payload.state.units.find((row) => row.id === unitId).allocatable.confirmedAt, 642);
+      assert.equal(restored.payload.state.units.find((row) => row.id === unitId).allocatable.confirmedAt, seed.now);
     });
     await t.test("audit entries cannot be changed or removed", async () => {
       await assert.rejects(
@@ -1104,10 +1106,12 @@ test(
       await assert.rejects(rollBack("./infra/rollback-014-archived-records.sql"), /not at migration 14/);
       await assert.rejects(rollBack("./infra/rollback-015-list-and-tv-views.sql"), /not at migration 15/);
       await assert.rejects(rollBack("./infra/rollback-016-forecast-history.sql"), /not at migration 16/);
-      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 17);
+      await assert.rejects(rollBack("./infra/rollback-017-account-preferences.sql"), /not at migration 17/);
+      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 18);
       let beforeRecordsRollback;
       let revision = 2;
       for (const [file, version] of [
+        ["./infra/rollback-018-read-path-indexes.sql", 17],
         ["./infra/rollback-017-account-preferences.sql", 16],
         ["./infra/rollback-016-forecast-history.sql", 15],
         ["./infra/rollback-015-list-and-tv-views.sql", 14],
@@ -1616,6 +1620,9 @@ test(
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
+        await client.query(
+          await readFile(new URL("./infra/rollback-018-read-path-indexes.sql", import.meta.url), "utf8"),
+        );
         await client.query(
           await readFile(new URL("./infra/rollback-017-account-preferences.sql", import.meta.url), "utf8"),
         );

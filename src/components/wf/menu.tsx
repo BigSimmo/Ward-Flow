@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Fragment,
   useCallback,
   useEffect,
   useId,
@@ -47,6 +48,8 @@ export type MenuItem =
     }
   | { kind: "separator"; id: string }
   | { kind: "heading"; id: string; label: ReactNode };
+
+type ActionableMenuItem = Exclude<MenuItem, { kind: "separator" | "heading" }>;
 
 type MenuTriggerProps = {
   ref: RefObject<HTMLButtonElement | null>;
@@ -308,7 +311,19 @@ export function Menu({ label, items, trigger, align = "start", className, onOpen
       event.stopPropagation();
       close(true);
     } else if (event.key === "Tab") {
-      close(false);
+      if (event.shiftKey) {
+        // Shift+Tab goes back to the trigger the menu opened from, here or inside a modal.
+        event.preventDefault();
+        event.stopPropagation();
+        close(true);
+      } else {
+        // Park focus on the trigger before the menu unmounts, so the browser's (or a modal's) Tab
+        // step carries on from there rather than dropping to the page. The closing panel goes
+        // inert so a modal's Tab cycle does not step back into it.
+        menuPanelRef.current?.setAttribute("inert", "");
+        triggerRef.current?.focus({ preventScroll: true });
+        close(false);
+      }
     } else if (event.key.length === 1 && /\S/.test(event.key)) {
       // Typeahead keys stay in the menu so page shortcuts (Shift+T, /, [) do not fire too.
       event.stopPropagation();
@@ -328,6 +343,57 @@ export function Menu({ label, items, trigger, align = "start", className, onOpen
   for (const item of items) {
     if (item.kind === undefined || item.kind === "item") positionOf.set(item.id, positionOf.size);
   }
+
+  /** Items between headings or separators; a heading's items render inside its group. */
+  const menuSections: Array<
+    | { kind: "separator"; id: string }
+    | { kind: "items"; heading?: Extract<MenuItem, { kind: "heading" }>; items: ActionableMenuItem[] }
+  > = [];
+  for (const item of items) {
+    if (item.kind === "separator") menuSections.push({ kind: "separator", id: item.id });
+    else if (item.kind === "heading") menuSections.push({ kind: "items", heading: item, items: [] });
+    else {
+      const last = menuSections.at(-1);
+      if (last?.kind === "items") last.items.push(item);
+      else menuSections.push({ kind: "items", items: [item] });
+    }
+  }
+
+  const renderItem = (item: ActionableMenuItem) => {
+    const position = positionOf.get(item.id) ?? 0;
+    const checkable = item.checkable ?? (item.checked !== undefined ? ("checkbox" as const) : undefined);
+    const closeOnSelect = item.closeOnSelect ?? checkable !== "checkbox";
+    return (
+      <button
+        key={item.id}
+        ref={(node) => {
+          itemRefs.current[position] = node;
+        }}
+        type="button"
+        role={checkable === "radio" ? "menuitemradio" : checkable ? "menuitemcheckbox" : "menuitem"}
+        aria-checked={checkable ? Boolean(item.checked) : undefined}
+        tabIndex={position === active ? 0 : -1}
+        aria-disabled={item.disabled || undefined}
+        className={cx(styles.item, item.tone === "danger" && styles.danger)}
+        onMouseEnter={() => setActive(position)}
+        onClick={() => {
+          if (item.disabled) return;
+          if (closeOnSelect) close(true);
+          item.onSelect();
+        }}
+      >
+        {hasCheckable ? (
+          <span className={styles.itemCheck} aria-hidden="true">
+            {checkable && item.checked ? <Icon icon={Check} size={14} /> : null}
+          </span>
+        ) : null}
+        {item.icon ? <Icon icon={item.icon} size={16} className={styles.itemIcon} /> : null}
+        <span className={styles.itemLabel}>{item.label}</span>
+        {present(item.meta) ? <span className={styles.itemMeta}>{item.meta}</span> : null}
+        {item.kbd ? <Kbd>{item.kbd}</Kbd> : null}
+      </button>
+    );
+  };
 
   return (
     <span ref={anchorRef} className={cx(styles.anchor, className)}>
@@ -349,48 +415,21 @@ export function Menu({ label, items, trigger, align = "start", className, onOpen
           className={cx(styles.glass, styles.panel, align === "end" ? styles.end : styles.start)}
           onKeyDown={onMenuKeyDown}
         >
-          {items.map((item) => {
-            if (item.kind === "separator") return <div key={item.id} role="separator" className={styles.separator} />;
-            if (item.kind === "heading")
-              return (
-                <div key={item.id} role="presentation" className={styles.heading}>
-                  {item.label}
+          {menuSections.map((section) =>
+            section.kind === "separator" ? (
+              <div key={section.id} role="separator" className={styles.separator} />
+            ) : section.heading ? (
+              // A heading names its items as a group, so screen readers announce it inside the menu.
+              <div key={section.heading.id} role="group" aria-labelledby={`${menuId}-${section.heading.id}`}>
+                <div id={`${menuId}-${section.heading.id}`} role="presentation" className={styles.heading}>
+                  {section.heading.label}
                 </div>
-              );
-            const position = positionOf.get(item.id) ?? 0;
-            const checkable = item.checkable ?? (item.checked !== undefined ? ("checkbox" as const) : undefined);
-            const closeOnSelect = item.closeOnSelect ?? checkable !== "checkbox";
-            return (
-              <button
-                key={item.id}
-                ref={(node) => {
-                  itemRefs.current[position] = node;
-                }}
-                type="button"
-                role={checkable === "radio" ? "menuitemradio" : checkable ? "menuitemcheckbox" : "menuitem"}
-                aria-checked={checkable ? Boolean(item.checked) : undefined}
-                tabIndex={position === active ? 0 : -1}
-                aria-disabled={item.disabled || undefined}
-                className={cx(styles.item, item.tone === "danger" && styles.danger)}
-                onMouseEnter={() => setActive(position)}
-                onClick={() => {
-                  if (item.disabled) return;
-                  if (closeOnSelect) close(true);
-                  item.onSelect();
-                }}
-              >
-                {hasCheckable ? (
-                  <span className={styles.itemCheck} aria-hidden="true">
-                    {checkable && item.checked ? <Icon icon={Check} size={14} /> : null}
-                  </span>
-                ) : null}
-                {item.icon ? <Icon icon={item.icon} size={16} className={styles.itemIcon} /> : null}
-                <span className={styles.itemLabel}>{item.label}</span>
-                {present(item.meta) ? <span className={styles.itemMeta}>{item.meta}</span> : null}
-                {item.kbd ? <Kbd>{item.kbd}</Kbd> : null}
-              </button>
-            );
-          })}
+                {section.items.map(renderItem)}
+              </div>
+            ) : (
+              <Fragment key={section.items[0]?.id}>{section.items.map(renderItem)}</Fragment>
+            ),
+          )}
         </div>
       ) : null}
     </span>

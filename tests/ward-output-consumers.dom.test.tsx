@@ -10,6 +10,7 @@ vi.mock("@/components/wf", async (original) => ({
 vi.mock("@/components/ward-management/ward-flow-provider", () => ({
   useWardFlowClock: () => 600,
   useWardFlowSelect: () => ({ dayZero: new Date("2026-11-04T00:00:00+08:00"), worldGeneration: 1 }),
+  useOptionalWardFlowSelect: () => null,
 }));
 vi.mock("@/components/ward-management/ward-role-gate", () => ({ useRouteRole: () => "coordinator" }));
 vi.mock("@/components/ward-management/use-online-status", () => ({ useOnlineStatus: () => true }));

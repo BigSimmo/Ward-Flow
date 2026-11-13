@@ -143,6 +143,10 @@ import {
   RETURN_PREREQUISITES,
 } from "@/components/ward-management/out-of-area/home-service-return";
 import { buildOnCallDirectory } from "@/components/ward-management/on-call/on-call-directory";
+import {
+  ESCALATION_CALL_OUTCOMES,
+  ESCALATION_STEP_ROLE,
+} from "@/components/ward-management/escalation/escalation-calls";
 
 /** mulberry32: a tiny, well-mixed 32-bit generator. Same seed, same sequence, on every machine. */
 export function seededRandom(seed: number) {
@@ -842,6 +846,13 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
     1,
     (state, random) => {
       const stay = stayFor(state, random, (candidate) => candidate.awayAtEmergencyDepartmentSince !== null);
+      // Item 18: on alternate calls (by the refusal count, never a fresh draw, so the seeded runs keep
+      // their random stream), or with nobody away at an ED, Collected for the first stay waiting for transport.
+      const waiting =
+        stay && state.rejections.length % 2 === 1
+          ? undefined
+          : state.admissions.find((candidate) => candidate.waitingForTransport);
+      if (waiting) return { type: "MARK_TRANSPORT_COLLECTED", admissionId: waiting.id, actingUnitId: waiting.unitId };
       return {
         type: "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
         admissionId: id(stay),
@@ -1140,7 +1151,11 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
         actingUnitId: id(unit),
         bedNumber: beds - int(random, 0, Math.min(2, beds - 1)),
         closed: true,
-        ...(chance(random, 0.5) ? { reason: pick(random, WARD_CLOSURE_REASON_IDS) } : {}),
+        // Item 6: a review time rides with a chosen reason, with no extra draw, so the runs aimed
+        // before it was added stay where they were.
+        ...(chance(random, 0.5)
+          ? { reason: pick(random, WARD_CLOSURE_REASON_IDS), reviewAt: currentNow + WARD_REOPEN_AFTER_HOURS[0] * 60 }
+          : {}),
       };
     },
   ],
@@ -1273,6 +1288,19 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
         weekendStart: chance(random, 0.85)
           ? upcomingWeekendWindow(currentNow, perthMidnight(2026, 10, 12)).start
           : currentNow + 8 * 1440,
+      };
+    },
+  ],
+  [
+    1,
+    (state, random) => {
+      const stay = stayFor(state, random, occupied);
+      return {
+        type: "RECORD_CHIEF_PSYCHIATRIST_NOTIFIED",
+        admissionId: id(stay),
+        actingUnitId: stay?.unitId ?? MISSING_ID,
+        // Item 4: a typed time at or before now; now and then one later than now, refused.
+        notifiedAt: chance(random, 0.85) ? currentNow - 30 : currentNow + 60,
       };
     },
   ],
@@ -2107,6 +2135,21 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       };
     },
   ],
+  // Feature item 13: tonight's intake hours, set (from the next whole hour, two to six hours long)
+  // or cleared. Information only, so it must leave every count and placement where it was.
+  [
+    0.5,
+    (state, random) => {
+      const unit = pick(random, state.units);
+      const from = Math.ceil((currentNow + 1) / 60) * 60;
+      return {
+        type: "SET_INTAKE_WINDOW",
+        unitId: id(unit),
+        actingUnitId: id(unit),
+        intake: chance(random, 0.3) ? null : { from, to: from + int(random, 2, 6) * 60 },
+      };
+    },
+  ],
   // Ward-level confirmations and requests.
   [
     1,
@@ -2459,6 +2502,22 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       };
     },
   ],
+  // Batch 4 (10 Nov 2026): a site feature switch, a pack print time and an outage window. Weight 0,
+  // so only the coverage sweep sends them and every other builder's weighted draws stay as they were.
+  [
+    0,
+    (state, random) => {
+      const unit = pick(random, state.units);
+      return {
+        type: "SET_SITE_FEATURE_SWITCH",
+        siteCode: unit?.siteCode ?? MISSING_ID,
+        feature: "help-ask",
+        off: true,
+      };
+    },
+  ],
+  [0, (state, random) => ({ type: "RECORD_DOWNTIME_PACK_PRINTED", unitIds: [id(pick(random, state.units))] })],
+  [0, () => ({ type: "RECORD_OUTAGE_WINDOW", from: currentNow - 120, to: currentNow - 10 })],
   // Care plans and safety flags (Josh, 9 Nov 2026): facts on the person, synthetic values only.
   // Weight 0 and last in the list: only the coverage sweep sends them, so the weighted draws of
   // every other builder stay as they were.
@@ -2521,7 +2580,101 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       };
     },
   ],
+  // Escalation calls (item 3, D-133): weight 0 and last, the same convention, so the weighted
+  // draws of every other builder stay as they were.
+  [
+    0,
+    movementEvent("RECORD_ESCALATION_CALL", undefined, (_state, random) => {
+      const step = pick(random, [1, 2, 3, 4] as const)!;
+      return {
+        step,
+        roleCalled: ESCALATION_STEP_ROLE[step],
+        outcome: pick(random, ESCALATION_CALL_OUTCOMES),
+      };
+    }),
+  ],
+  // Item 9 (10 Nov 2026): weight 0 and last, so only the coverage sweep sends it and the weighted
+  // draws of every other builder stay as they were.
+  [
+    0,
+    (state, random) => {
+      // Item 9: a police or ambulance crew's typed times, sometimes out of order or in the future.
+      const movement = prefer(
+        random,
+        state.movements,
+        (m) => m.arrivalMode === "police" || m.arrivalMode === "ambulance",
+      );
+      const arrived = currentNow - int(random, 0, 240);
+      return {
+        type: "RECORD_CREW_TIMES",
+        movementId: id(movement),
+        ...(chance(random, 0.8) ? { crewArrivedAt: arrived } : {}),
+        ...(chance(random, 0.5) ? { crewHandedOverAt: arrived + int(random, -10, 60) } : {}),
+        ...(chance(random, 0.4) ? { crewReleasedAt: arrived + int(random, 0, 90) } : {}),
+      };
+    },
+  ],
+  // D-141 (11 Nov 2026): weight 0 and last, the same convention, so the weighted draws stay as they were.
+  [
+    0,
+    (state, random) => {
+      // D-141: "Brought by" on an ED arrival, sometimes on a journey that never was one.
+      const movement = prefer(random, state.movements, (m) => m.originEdId !== undefined);
+      return {
+        type: "RECORD_ARRIVAL_MODE",
+        movementId: id(movement),
+        arrivalMode: chance(random, 0.5) ? "police" : "ambulance",
+      };
+    },
+  ],
+  // Item 18: Collected for the first stay waiting for transport. The ED return builder above sends it
+  // only when someone is waiting, so merging main (11 Nov 2026) could leave it unsent. With nobody
+  // waiting it still sends, naming a missing stay (refused), so the sweep always covers it.
+  [
+    0,
+    (state) => {
+      const waiting = state.admissions.find((candidate) => candidate.waitingForTransport);
+      return {
+        type: "MARK_TRANSPORT_COLLECTED",
+        admissionId: waiting?.id ?? MISSING_ID,
+        actingUnitId: waiting?.unitId ?? MISSING_ID,
+      };
+    },
+  ],
 ];
+
+/**
+ * Batch 3 items 21 and 23: accept a waiting hand-over as its receiving desk (the demo seeds one),
+ * hand an open carer callback on as its owner, tick one off, or record one on a current stay. The
+ * kind is chosen by `pickKind`, falling through to recording when its subject is missing.
+ */
+function handoverWorkDraft(state: WardFlowState, pickKind: number): Draft {
+  const waiting = (state.handedItems ?? []).find((record) => record.acceptedAt === undefined);
+  const owned = (state.carerCallbacks ?? []).find((record) => record.madeAt === undefined);
+  if (waiting && pickKind === 0)
+    return {
+      type: "ACCEPT_HANDED_ITEM",
+      role: waiting.to.role,
+      handedItemId: waiting.id,
+      ...(waiting.to.unitId ? { actingUnitId: waiting.to.unitId } : {}),
+    };
+  if (owned && pickKind === 1)
+    return {
+      type: "HAND_OVER_ITEM",
+      role: owned.owner.role,
+      item: { kind: "callback", callbackId: owned.id },
+      toRole: owned.owner.role === "coordinator" ? "ward" : "coordinator",
+      ...(owned.owner.unitId ? { actingUnitId: owned.owner.unitId } : {}),
+    };
+  if (owned && pickKind === 2) return { type: "MARK_CARER_CALLBACK_MADE", role: "coordinator", callbackId: owned.id };
+  const stay = state.admissions.find((admission) => admission.state === "occupied");
+  return {
+    type: "RECORD_CARER_CALLBACK",
+    role: "coordinator",
+    admissionId: stay?.id ?? MISSING_ID,
+    bestAfter: Math.floor(currentNow) + 60,
+  };
+}
 
 const ALL_BUILDERS = [...BUILDERS, ...MORE_BUILDERS];
 
@@ -2608,8 +2761,35 @@ export function nextEvent(
       siteCode: justTold.subjectId.replace(/^site-handover:/, ""),
     } as unknown as WardFlowEvent;
   }
+  // The same for a governance review (11 Nov 2026): merging the ward arrival batch with Batch 1 moved
+  // the random runs so no seed drew the undo in time. Sometimes take the newest review back at once,
+  // as the coordinator. The draw is made only while one can be undone, so other runs do not move.
+  const lastReview = state.auditReviews.at(-1);
+  if (
+    !sweep &&
+    lastReview !== undefined &&
+    lastReview.generation === state.worldGeneration &&
+    currentNow - lastReview.at <= UNDO_WINDOW_MINUTES &&
+    chance(random, 0.5)
+  ) {
+    FUZZED_EVENT_TYPES.add("UNDO_AUDIT_REVIEW");
+    return {
+      type: "UNDO_AUDIT_REVIEW",
+      role: "coordinator",
+      now: currentNow,
+      reviewId: lastReview.id,
+      expectedGeneration: state.worldGeneration,
+    } as unknown as WardFlowEvent;
+  }
   // Aimed on 9 Nov 2026, when adding the staff request builders shifted the random runs: a reset is
   // counted as accepted only from a state with no refusal yet, so now and then reset at the first step.
+  // Batch 3 items 21 and 23 (10 Nov 2026): each seeded run's last step sends one of the four, by
+  // seed, so no earlier step's draw moves and a short run still sends every one.
+  if (seed !== undefined && step === steps - 1) {
+    const draft = handoverWorkDraft(state, seed % 4);
+    FUZZED_EVENT_TYPES.add(draft.type);
+    return { now: currentNow, ...draft } as unknown as WardFlowEvent;
+  }
   if (seed !== undefined && step === 0 && seed % 25 === 0) {
     FUZZED_EVENT_TYPES.add("RESET_SCENARIO");
     return { type: "RESET_SCENARIO", role: "demo", now: currentNow } as WardFlowEvent;

@@ -115,7 +115,7 @@ function QuickChipRow({
           return (
             <li key={controlKey(control)}>
               {control.kind === "link" ? (
-                <Link href={control.href} className={styles.control} title={control.detail}>
+                <Link href={control.href} className={styles.control}>
                   {body}
                 </Link>
               ) : (
@@ -124,7 +124,6 @@ function QuickChipRow({
                   className={styles.control}
                   onClick={(event) => press(control, event.currentTarget)}
                   aria-haspopup="dialog"
-                  title={control.detail}
                 >
                   {body}
                 </button>

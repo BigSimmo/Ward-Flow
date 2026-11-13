@@ -1,12 +1,55 @@
 /* Triage and risk on the patient record (built 7 Nov 2026). Tokens only, neutral borders, 12px floor. */
 
-.card {
-  margin-block-end: var(--wf-s-3);
+/* Version 2 (12 Nov 2026): one row of the Now page's small card. A tinted icon, the title over what
+   is on record, and the one action on the right edge, level with the status rows above it. */
+.row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: var(--wf-s-3);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
-.body {
+.chip {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+
+.text {
   display: grid;
-  gap: var(--wf-s-2);
+  gap: 2px;
+  min-width: 0;
+}
+
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--wf-s-2);
+}
+
+.title {
+  margin: 0;
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.meta {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.action {
+  align-self: center;
 }
 
 .signed {

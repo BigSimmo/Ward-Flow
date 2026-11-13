@@ -5,10 +5,13 @@ import { describe, expect, it } from "vitest";
 import {
   openStaffRequestFor,
   openStaffRequests,
+  STAFF_REQUEST_SHIFT_TOLERANCE_MINUTES,
+  staffRequestShiftStart,
   staffRequestTagText,
   type StaffRequestEvent,
 } from "@/components/ward-management/staffing/staff-requests";
-import { shiftEndInstant } from "@/components/ward-management/ward-board-time-features";
+import { currentShiftStartInstant, shiftEndInstant } from "@/components/ward-management/ward-board-time-features";
+import { validSharedCommand } from "../backend/ward-flow/command-schemas";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -128,5 +131,61 @@ describe("staff needed requests", () => {
     const end = shiftEndInstant(record.shiftStartAt);
     expect(openStaffRequestFor(asked.staffRequests, UNIT, end - 1)).toBeDefined();
     expect(openStaffRequestFor(asked.staffRequests, UNIT, end)).toBeUndefined();
+  });
+
+  it("keeps Next shift when the shared save lands just after the shift changes", () => {
+    const boundary = shiftEndInstant(NOW_ANCHOR);
+    const pressedAt = boundary - 1;
+    const savedAt = boundary + 1;
+    const startOf = (state: WardFlowState) =>
+      state.staffRequests!.filter((record) => record.unitId === UNIT).at(-1)!.shiftStartAt;
+    const chosen = staffRequestShiftStart("next_shift", pressedAt);
+    const kept = wardFlowReducer(seed, ask({ shift: "next_shift", now: savedAt, shiftStartAt: chosen }));
+    expect(refused(seed, kept)).toBe(false);
+    expect(startOf(kept)).toBe(chosen);
+    // Without the desk's choice, the server's later clock reads the following shift (the old bug).
+    expect(startOf(wardFlowReducer(seed, ask({ shift: "next_shift", now: savedAt })))).toBe(
+      staffRequestShiftStart("next_shift", savedAt),
+    );
+  });
+
+  it("refuses This shift when the shared save lands after that shift has ended (D-158)", () => {
+    const boundary = shiftEndInstant(NOW_ANCHOR);
+    const pressedAt = boundary - 1;
+    const savedAt = boundary + 1;
+    const chosen = staffRequestShiftStart("this_shift", pressedAt);
+    const after = wardFlowReducer(seed, ask({ shift: "this_shift", now: savedAt, shiftStartAt: chosen }));
+    expect(refused(seed, after)).toBe(true);
+    expect(after.staffRequests?.filter((record) => record.unitId === UNIT) ?? []).toHaveLength(0);
+    expect(after.rejections.at(-1)?.reason).toBe("This shift has already ended. Choose this shift or next shift again");
+    // A This shift that is still open at save is accepted, including a press just before the end.
+    const before = wardFlowReducer(seed, ask({ shift: "this_shift", now: pressedAt, shiftStartAt: chosen }));
+    expect(refused(seed, before)).toBe(false);
+    expect(before.staffRequests!.filter((record) => record.unitId === UNIT).at(-1)!.shiftStartAt).toBe(chosen);
+    expect(staffRequestShiftStart("this_shift", pressedAt)).toBe(currentShiftStartInstant(NOW_ANCHOR));
+  });
+
+  it("falls back to the shift at now when the sent shift start is not the chosen shift's", () => {
+    const boundary = shiftEndInstant(NOW_ANCHOR);
+    const savedAt = boundary + STAFF_REQUEST_SHIFT_TOLERANCE_MINUTES + 1;
+    const startOf = (state: WardFlowState) =>
+      state.staffRequests!.filter((record) => record.unitId === UNIT).at(-1)!.shiftStartAt;
+    const atNow = staffRequestShiftStart("this_shift", savedAt);
+    // Pressed too long before the save, a far-off time, the other shift's start and a bad number.
+    for (const shiftStartAt of [
+      staffRequestShiftStart("this_shift", boundary - 1),
+      NOW_ANCHOR + 10_000,
+      staffRequestShiftStart("next_shift", savedAt),
+      Number.NaN,
+    ]) {
+      expect(startOf(wardFlowReducer(seed, ask({ now: savedAt, shiftStartAt })))).toBe(atNow);
+    }
+  });
+
+  it("lets the shared command carry the chosen shift start as a number only", () => {
+    const command = { ...ask(), shiftStartAt: currentShiftStartInstant(NOW_ANCHOR) };
+    expect(validSharedCommand(command)).toBe(true);
+    expect(validSharedCommand(ask())).toBe(true);
+    expect(validSharedCommand({ ...command, shiftStartAt: "07:00" })).toBe(false);
   });
 });

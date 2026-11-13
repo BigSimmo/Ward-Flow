@@ -96,6 +96,8 @@ interface PhoneBedSheetProps {
   leavingCriteriaNote?: string | null;
   /** Top 25: a short note on a bed being made ready (flagged). */
   readyNote?: ReactNode;
+  /** Feature item 4: the under 18 on an adult ward notice, under the four facts. */
+  safetyNote?: ReactNode;
   /** WT-02: the paper an involuntary stay needs first; while shown, "Record that they have left" waits. */
   leavePaper?: ReactNode;
   /** The expected leaving line as plain words, for the not-left notice. */
@@ -147,6 +149,7 @@ export function PhoneBedSheet({
   sentJourney,
   leavingCriteriaNote,
   readyNote,
+  safetyNote,
   leavePaper,
   actions,
   mainId,
@@ -160,6 +163,17 @@ export function PhoneBedSheet({
     .filter(Boolean)
     .join(" · ");
   const admissionId = bedItem?.admissionId;
+  const timelineList = (
+    <ul className={styles.timeline}>
+      {timeline.map((event) => (
+        <li key={`${event.label}-${event.at}`}>
+          <StatusGlyph tone={event.tone} />
+          <span className={styles.timelineAt}>{formatInstantWithDay(event.at, now)}</span>
+          <span className={styles.ell}>{event.label}</span>
+        </li>
+      ))}
+    </ul>
+  );
   return (
     <>
       <div
@@ -230,6 +244,13 @@ export function PhoneBedSheet({
                 {bedItem?.designation ? <Row label="Bed">{bedItem.designation}</Row> : null}
               </dl>
               {readyNote}
+              {/* Live audit item 13: an empty bed's closures and reopenings, when it has any. */}
+              {timeline.length > 0 ? (
+                <>
+                  <h3 className={styles.phoneSec}>History</h3>
+                  {timelineList}
+                </>
+              ) : null}
             </>
           ) : (
             <>
@@ -241,6 +262,7 @@ export function PhoneBedSheet({
                 <FactTile label="Observation" value={observationShort} />
               </div>
               <NotLeftNotice bedItem={bedItem} expectedPlan={notLeftPlan} isOccupied={isOccupied} />
+              {safetyNote}
               <h3 className={styles.phoneSec}>This person</h3>
               <dl className={styles.phoneKv}>
                 {bedItem?.preferredName ? <Row label="Known as">{bedItem.preferredName}</Row> : null}
@@ -294,15 +316,7 @@ export function PhoneBedSheet({
               ) : null}
               <h3 className={styles.phoneSec}>History</h3>
               {timeline.length > 0 ? (
-                <ul className={styles.timeline}>
-                  {timeline.map((event) => (
-                    <li key={`${event.label}-${event.at}`}>
-                      <StatusGlyph tone={event.tone} />
-                      <span className={styles.timelineAt}>{formatInstantWithDay(event.at, now)}</span>
-                      <span className={styles.ell}>{event.label}</span>
-                    </li>
-                  ))}
-                </ul>
+                timelineList
               ) : (
                 <p className={styles.phoneEmpty}>Nothing recorded for this stay yet.</p>
               )}

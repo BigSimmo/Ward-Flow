@@ -54,7 +54,10 @@ describe("audit 24-4: Handover held and header bed alerts read the shared bed st
         if (oldHeld !== pulled) oldHeldSplit += 1;
 
         const siteUnits = state.units.filter((unit) => siteCodes.has(unit.siteCode));
-        const ready = totalReadyBedsNow(siteUnits, state.admissions, state.bedReleases);
+        const ready = totalReadyBedsNow(siteUnits, state.admissions, state.bedReleases, [
+          ...state.movements,
+          ...state.referrals,
+        ]);
         const alerts = deriveServiceBedAlerts(
           state.units,
           state.bedReleases,
@@ -63,6 +66,7 @@ describe("audit 24-4: Handover held and header bed alerts read the shared bed st
           now,
           undefined,
           state.admissions,
+          state.referrals,
         );
         expect(alerts.totalFreeBeds, label).toBe(ready);
         const preparing = siteUnits.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, state.bedReleases), 0);

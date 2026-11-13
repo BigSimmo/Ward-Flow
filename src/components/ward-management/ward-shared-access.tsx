@@ -15,6 +15,7 @@ import {
 import { createPortal } from "react-dom";
 import { Clock } from "lucide-react";
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { usePathname } from "next/navigation";
 import type { SharedChangeResult, SharedView, SharedWorkspaceClient, WardCommandDispatch } from "./ward-shared-client";
 import { PhonePushAccessContext, type PhonePushAccess, type PhonePushApi } from "./shell/ward-phone-push";
@@ -25,6 +26,7 @@ import {
   FrontDoorStatusButton,
 } from "@/components/ward-management/front-door/front-door-lazy";
 import { PUSH_ROLES } from "./ward-access-shell-rules";
+import { WardSharedReceivedAtContext } from "./ward-shared-freshness";
 import { accessIsWholeNetwork, type WardAccess } from "./ward-role-access";
 import {
   markSignInLanding,
@@ -76,14 +78,20 @@ const unavailableAccessApi: SharedAccessApi = {
 // The role picker and Ask for access show only in the shared workspace, before the board opens,
 // so a first load skips their code.
 // The Demo menu (change 8) loads only when the Synthetic pill opens it.
-const WardRolePicker = dynamic(() => import("./ward-shared-role-gate").then((m) => m.WardRolePicker), {
-  ssr: false,
-  loading: () => null,
-});
-const WardAskForAccess = dynamic(() => import("./ward-shared-role-gate").then((m) => m.WardAskForAccess), {
-  ssr: false,
-  loading: () => null,
-});
+const WardRolePicker = dynamic(
+  withLoadRetry(() => import("./ward-shared-role-gate").then((m) => m.WardRolePicker)),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
+const WardAskForAccess = dynamic(
+  withLoadRetry(() => import("./ward-shared-role-gate").then((m) => m.WardAskForAccess)),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
 
 /** The shared workspace's access calls, through the signed-in connection. Reject when not connected. */
 /**
@@ -442,12 +450,28 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
     connection.status === "saving" || ("unconfirmedSave" in connection && connection.unconfirmedSave === true);
   // Stable, so recovery consumers do not re-render on every poll; it still calls the latest retry.
   const retryLatest = useCallback(() => latest.current.retry(), []);
+  // D-151: one string, so the context changes only when the beds waiting to save do.
+  const waitingBeds = (connection.waitingBeds ?? []).join(" ");
   const saveRecovery = useMemo<WardSharedSave | null>(
     () =>
       connection.enabled && connection.signedIn
-        ? { unconfirmedSave, status: connection.status, error: connection.error, retry: retryLatest }
+        ? {
+            unconfirmedSave,
+            status: connection.status,
+            error: connection.error,
+            retry: retryLatest,
+            waitingBeds: waitingBeds ? waitingBeds.split(" ") : [],
+          }
         : null,
-    [connection.enabled, connection.signedIn, connection.status, connection.error, retryLatest, unconfirmedSave],
+    [
+      connection.enabled,
+      connection.signedIn,
+      connection.status,
+      connection.error,
+      retryLatest,
+      unconfirmedSave,
+      waitingBeds,
+    ],
   );
   return (
     <DowntimePackBoundary
@@ -492,7 +516,11 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
                         readSource={displayReadSource}
                       >
                         <WardSharedWorkspaceContent connection={connection} access={serverAccess}>
-                          {children}
+                          <WardSharedReceivedAtContext.Provider
+                            value={connection.enabled ? connection.receivedAt : null}
+                          >
+                            {children}
+                          </WardSharedReceivedAtContext.Provider>
                         </WardSharedWorkspaceContent>
                       </WardPartialViewProvider>
                     </WardSharedSaveContext.Provider>

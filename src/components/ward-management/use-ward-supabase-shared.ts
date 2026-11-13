@@ -30,15 +30,8 @@ const IDLE_ACTIVITY = ["pointerdown", "keydown", "wheel", "touchstart"] as const
  * as the server counts it (ISM-0428). `null` when the token carries no start time.
  */
 function sessionEndsAt(token: string): number | null {
-  try {
-    const claims = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-    const times = (Array.isArray(claims?.amr) ? claims.amr : [])
-      .map((entry: { timestamp?: unknown }) => entry?.timestamp)
-      .filter((value: unknown): value is number => Number.isFinite(value));
-    return times.length ? Math.min(...times) * 1000 + CLINICAL_VALUES.sessionLimit.value * 3_600_000 : null;
-  } catch {
-    return null;
-  }
+  const startedAt = signInStartedAt(token);
+  return startedAt === null ? null : startedAt + CLINICAL_VALUES.sessionLimit.value * 3_600_000;
 }
 
 /** Set once the shared client has loaded on the first sign-in. */
@@ -59,6 +52,7 @@ import {
   UNSENT_CHANGES_DROPPED_NOTICE,
 } from "@/components/ward-management/front-door/front-door-notice";
 import { heldActionsWaiting, sendHeldActions } from "./ward-held-actions";
+import { signInStartedAt } from "@/components/ward-management/ward-sign-in-started-at";
 
 /** #805, #839: fetch the shared client and every chunk its first read awaits (state checks and the
  * scenario wards) while the sign-in is checked, not one after another once it is. */

@@ -21,17 +21,18 @@ import { broadcastKind, type BroadcastAlert, type BroadcastTargetScope } from ".
 import type { LiveBedCall } from "./broadcast-composer";
 
 export function useBroadcastAudience(
-  state: Pick<WardFlowState, "units" | "admissions" | "bedReleases">,
+  state: Pick<WardFlowState, "units" | "admissions" | "bedReleases" | "movements" | "referrals">,
   initial: { templateId: string; scope: BroadcastTargetScope },
   wardsOnly = false,
 ) {
-  const { units, admissions, bedReleases } = state;
+  const { units, admissions, bedReleases, movements, referrals } = state;
   const groups = useMemo(() => audienceGroups(units), [units]);
-  // The wards Capacity shows with a bed ready now.
-  const wardsWithBedNow = useMemo(
-    () => units.filter((unit) => readyBedsNow(unit, admissions, bedReleases ?? []) > 0).map((unit) => unit.id),
-    [units, admissions, bedReleases],
-  );
+  // The wards Capacity shows with a bed ready now: a bed named for an open journey or accepted
+  // referral is not ready (D-115 item 3).
+  const wardsWithBedNow = useMemo(() => {
+    const holds = [...movements, ...referrals];
+    return units.filter((unit) => readyBedsNow(unit, admissions, bedReleases ?? [], holds) > 0).map((unit) => unit.id);
+  }, [units, admissions, bedReleases, movements, referrals]);
   const [audience, setAudience] = useState<BroadcastAudience>(() =>
     templateAudience(initial.templateId, initial.scope, audienceGroups(units)),
   );

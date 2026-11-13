@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { SeclusionFormsView } from "@/components/ward-management/restrictive-practice/seclusion-forms-view";
@@ -36,5 +36,21 @@ describe("seclusion forms view asks from the page top", () => {
       </WardFlowProvider>,
     );
     expect(seen).toHaveBeenCalledTimes(1);
+  });
+
+  it("says when the patient search shows only the first six matches", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <SeclusionFormsView ask={{ kind: "start", n: 1 }} />
+      </WardFlowProvider>,
+    );
+    const dialog = screen.getByRole("dialog", { name: "Start seclusion or restraint" });
+    // A single vowel matches most synthetic names on the secure wards.
+    fireEvent.change(within(dialog).getByRole("searchbox"), { target: { value: "a" } });
+    const shown = within(screen.getByTestId("seclusion-start-matches")).getAllByRole("button");
+    expect(shown).toHaveLength(6);
+    expect(screen.getByTestId("seclusion-start-more")).toHaveTextContent(
+      /^Showing 6 of \d+, sample data, type more of the name\.$/u,
+    );
   });
 });

@@ -42,7 +42,7 @@ vi.mock("next/navigation", () => ({
 import { applyAppearance } from "@/components/ward-management/shell/ward-bar";
 import { NextBar as WardBar } from "@/components/ward-management/shell-next/next-bar";
 import { WardLiveRegion, resetWardLiveRegionForTests } from "@/components/ward-management/shell/ward-live-region";
-import { computeShiftProgress } from "@/components/ward-management/shell-next/next-rail-body";
+import { computeShiftProgress } from "@/components/ward-management/shell/ward-rail-helpers";
 import { NextRailBody as WardRail } from "@/components/ward-management/shell-next/next-rail-body";
 // CB-1 (Josh, 6 Nov 2026): two cases stay on the retired shell until Josh decides, because the live
 // shell has no equivalent. Its Activity trigger reads "Activity" alone, with no "synthetic activity"
@@ -235,7 +235,7 @@ describe("closed desktop rail cards", () => {
     const matchMedia = vi.spyOn(window, "matchMedia").mockImplementation(
       (query) =>
         ({
-          matches: query === "(min-width: 1001px)",
+          matches: query === "(min-width: 62.5625rem)",
           media: query,
           onchange: null,
           addListener: vi.fn(),
@@ -426,9 +426,12 @@ describe("assertion 3 — drawer focus trap and Escape order", () => {
         getClientRectsSpy.mockRestore();
       }
       // Each drawer walks every control twice in both directions; the Tasks and Tools drawers take
-      // about 11 s on an idle machine, so a loaded CI shard can pass the 30 s default.
+      // about 11 s on an idle machine, so a loaded CI shard can pass the 30 s default. The trap scans
+      // every candidate on each press, so the cost grows with the square of the control count: since
+      // the first look of a shift covers the whole night (feature plan item 11), Activity holds about
+      // 145 controls in the demo world instead of about 50, and takes about 35 s idle.
     },
-    60_000,
+    180_000,
   );
 
   it("Escape closes the open drawer first (the documented order's first step) and returns focus to its trigger", async () => {

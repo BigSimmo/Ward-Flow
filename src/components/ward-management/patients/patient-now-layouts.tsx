@@ -1,7 +1,7 @@
 "use client";
 
-import { Check, ChevronRight, Copy, Phone } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { Check, ChevronRight, Copy, Phone, Printer } from "lucide-react";
+import { Fragment, useState, type ReactNode } from "react";
 
 import { Button, Card, CardHead, useIsPhone, useIsTabletPortrait } from "@/components/wf";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
@@ -36,13 +36,23 @@ export type PatientNowLayoutParts = {
   recent?: ReactNode;
   legal: ReactNode;
   why: ReactNode;
-  /** Record a change, leave and absence cards, and the record overview, in that order. */
+  /** Version 2 (12 Nov 2026): the leave steps or the absence record, in the side column on desktop. */
+  absence?: ReactNode;
+  /** Record a change and the record overview, in that order. */
   change: ReactNode;
   calls: CallRow[];
   /** Rows under the work: destination and transport sheets, Review and corrections. */
   sheetRows: ReactNode;
   /** Phone only: Community and Details one tap away. */
   phoneMore?: ReactNode;
+  /** Bed meeting actions due for this patient: each its own card above the small rows. */
+  notices?: ReactNode;
+  /** Redesign (12 Nov 2026): triage and carer call back, joined as rows of one card. */
+  tiles?: ReactNode;
+  /** Care and safety. */
+  care?: ReactNode;
+  /** Handover pack and the patient or carer page, as one card in the side column. */
+  handover?: ReactNode;
 };
 
 export function PatientNowLayout({
@@ -54,67 +64,113 @@ export function PatientNowLayout({
   recent,
   legal,
   why,
+  absence,
   change,
   calls,
   sheetRows,
   phoneMore,
+  notices,
+  tiles,
+  care,
+  handover,
 }: PatientNowLayoutParts) {
   const isPhone = useIsPhone();
   const isPortrait = useIsTabletPortrait();
   const card = <PatientStatusCard mode={mode} context={context} {...statusCardProps} />;
   const callCard = <PatientCallCard rows={calls} />;
+  // Redesign (12 Nov 2026): Now is a dashboard grid. The work leads in the main column, triage and
+  // carer call back follow as rows of one card, and the side column holds what people look up
+  // (legal, who to call, hand over). Nothing stretches the full width of the page.
+  // The rows and Care and safety hold open editors. Each keeps one key under the one keyed parent in
+  // all three forms, so turning a tablet (which swaps the form) does not throw away a draft.
+  const tileRow = tiles ? (
+    <div key="tiles" className={styles.tiles}>
+      {tiles}
+    </div>
+  ) : null;
+  const careSlot = <Fragment key="care">{care}</Fragment>;
+  // Version 2: the status card and the rows that open its sheets are one card, the links its foot.
+  const work = (
+    <div className={styles.work}>
+      {card}
+      {sheetRows ? <div className={styles.across}>{sheetRows}</div> : null}
+    </div>
+  );
+  const handoverCard = handover ? (
+    <Card className={styles.handover} data-testid="ward-patient-hand-over">
+      <CardHead level={2} icon={Printer} title="Hand over and print" />
+      <div className={styles.handoverRows}>{handover}</div>
+    </Card>
+  ) : null;
   if (isPhone)
     return (
       <div className={styles.stack}>
-        {nextStep}
-        {card}
-        {sheetRows}
-        {legal}
-        {readiness}
-        {recent}
-        {callCard}
-        {change}
-        {phoneMore}
+        <div key="main" className={styles.flat}>
+          {nextStep}
+          {card}
+          {sheetRows}
+          {notices}
+          {tileRow}
+          {legal}
+          {readiness}
+          {recent}
+          {callCard}
+          {absence}
+          {change}
+          {careSlot}
+          {handoverCard}
+          {phoneMore}
+        </div>
       </div>
     );
   if (isPortrait)
     return (
       <div className={styles.stack}>
-        {nextStep}
-        {card}
-        <div className={styles.twoUp}>
-          {legal || readiness ? (
-            <div className={styles.col}>
-              {legal}
-              {readiness}
-            </div>
-          ) : null}
-          {callCard}
+        <div key="main" className={styles.flat}>
+          {nextStep}
+          {work}
+          {notices}
+          {tileRow}
+          <div className={styles.twoUp}>
+            {legal || readiness ? (
+              <div className={styles.col}>
+                {legal}
+                {readiness}
+                {why}
+              </div>
+            ) : (
+              why
+            )}
+            {callCard}
+          </div>
+          {recent}
+          {absence}
+          {change}
+          {careSlot}
+          {handoverCard}
         </div>
-        {recent}
-        {sheetRows}
-        {change}
-        {why}
       </div>
     );
   return (
-    <div className={styles.stack}>
-      {nextStep}
-      {card}
-      <div className={styles.cols}>
-        <div className={styles.col}>
-          {sheetRows}
-          {recent}
-          {change}
-        </div>
-        {/* Not the shared `data-wf-rail`: that caps the column at the window and scrolls it inside
-            itself, which cut Who to call off when this column was the longer one (Josh, 19 Oct 2026). */}
-        <div className={`${styles.col} ${styles.rail}`}>
-          {legal}
-          {readiness}
-          {why}
-          {callCard}
-        </div>
+    <div className={styles.cols} data-now-dash="">
+      <div key="main" className={styles.col}>
+        {nextStep}
+        {work}
+        {notices}
+        {tileRow}
+        {change}
+        {careSlot}
+      </div>
+      {/* Not the shared `data-wf-rail`: that caps the column at the window and scrolls it inside
+          itself, which cut Who to call off when this column was the longer one (Josh, 19 Oct 2026). */}
+      <div className={`${styles.col} ${styles.rail}`}>
+        {legal}
+        {readiness}
+        {absence}
+        {callCard}
+        {recent}
+        {why}
+        {handoverCard}
       </div>
     </div>
   );

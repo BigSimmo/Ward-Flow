@@ -24,6 +24,8 @@ import { communityDischargeCriteria } from "./ward-discharge-criteria";
  */
 import { communityTeamOptions } from "@/components/ward-management/referrals/referral-destination-options";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
+import { homeTeamHeadsUps, type HomeTeamHeadsUp } from "@/components/ward-management/community/home-team-heads-up";
+import { communityEpisodeTeamsOf } from "@/components/ward-management/patients/community-episode-teams";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { withWardReadmission } from "@/components/ward-management/ward-readmission-copy";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -90,6 +92,12 @@ export type ScopedWorkspace<T extends ScopableWorkspace> = T & {
   readonly breakGlassPatientIds: ReadonlySet<string>;
   /** Stays sent as ward and dates only, so nothing hung off them (leave, a release) goes too. */
   readonly datesOnlyAdmissionIds: ReadonlySet<string>;
+  /**
+   * D-154: a community team desk's own patients in an emergency department now, for the Home
+   * team heads-up. Present only on a community desk. Each item is the UMRN, the ED's name and the
+   * time, and nothing else; the ED stay itself stays out of `movements`.
+   */
+  readonly communityEdArrivals?: readonly HomeTeamHeadsUp[];
 };
 
 function activeGrantIds(grants: readonly BreakGlassGrant[] | undefined, now: Instant): Set<string> {
@@ -924,6 +932,7 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
   let referrals: Referral[] = [];
   let admissions: Admission[] = [];
   const datesOnlyAdmissionIds = new Set<string>();
+  let communityEdArrivals: HomeTeamHeadsUp[] | undefined;
   let anonymise = false;
   let officer = false;
 
@@ -1164,6 +1173,19 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
           .map((movement) => movement.id),
       );
       const movementIds = new Set(movements.map((movement) => movement.id));
+      // D-154 (Josh, 11 Nov 2026): the team's patients with an open episode who are in an ED now,
+      // as UMRN, ED name and time only. Read from the whole workspace, so the ED stay itself is
+      // never sent.
+      if (teamKey !== "" && scope.kind === "team") {
+        const umrns = new Map(workspace.patients.map((patient) => [patient.id as string, patient.umrn]));
+        communityEdArrivals = homeTeamHeadsUps(
+          workspace.movements,
+          { id: communityTeamSlug(scope.teamName), name: scope.teamName },
+          communityEpisodeTeamsOf,
+          now,
+          (patientId) => umrns.get(patientId),
+        );
+      }
       admissions = workspace.admissions.flatMap((admission) => {
         if (
           (admission.referralId !== null && askedOfTeam.has(admission.referralId)) ||
@@ -1328,6 +1350,7 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
     notices,
     breakGlassPatientIds: visibleOnlyByGrant,
     datesOnlyAdmissionIds,
+    ...(communityEdArrivals ? { communityEdArrivals } : {}),
   };
 }
 

@@ -53,6 +53,7 @@ function synthetic(overrides: Partial<DirectoryEntry> & Pick<DirectoryEntry, "id
     checkedDaysAgo: 1,
     checkedBy: "coordinator",
     rostered: false,
+    ownerRole: "coordinator",
     ...overrides,
   };
 }

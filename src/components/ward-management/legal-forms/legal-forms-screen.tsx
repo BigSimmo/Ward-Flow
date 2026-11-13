@@ -36,7 +36,14 @@ import {
   useIsPhone,
 } from "@/components/wf";
 import { movementOriginLabel } from "@/components/ward-management/ward-movement-origin";
-import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  formatInstant,
+  formatInstantWithDay,
+  formatSheetMoment,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
+import { ListExportButton } from "@/components/ward-management/ward-list-export-button";
+import { ListPrintButton } from "@/components/ward-management/ward-list-print-button";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import {
   useDueSoonThresholds,
@@ -77,7 +84,12 @@ import {
   legalFormGroupRows,
   isLegalDeadlineBreached,
 } from "./legal-forms-derivations";
-import { admittedOnAForm, LegalFormsAdmitted, WARD_RECORDS_ADMITTED } from "./legal-forms-admitted";
+import {
+  admittedOnAForm,
+  legalFormsListPopulation,
+  LegalFormsAdmitted,
+  WARD_RECORDS_ADMITTED,
+} from "./legal-forms-admitted";
 import { FocusPanel, typedReceipt } from "./legal-forms-panel";
 import { AddTimeDialog } from "./legal-forms-add-time";
 import { ChecklistView, FormRow, GAP_LABEL, PhoneFormRow, ROW_COLUMNS } from "./legal-form-rows";
@@ -247,6 +259,9 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   const patientOf = (movement: Movement) => resolveSubjectPatient(movement, { patients, referrals });
   const noDeadline = legalFormGroupRows(movements, now, "no-deadline");
   const rows = [...withDeadline, ...noDeadline];
+  // D-157: Print, Export and their disabled state use the same people as the on-screen list,
+  // including "Admitted on a form" (same `admitted` set the admitted group shows).
+  const listPopulation = legalFormsListPopulation(rows, admitted);
   const withoutForm = openMovements.length - rows.length;
   const breakdown = legalFormBreakdown(rows, now);
   const reminders = legalExpiryReminderSummary(movements, now, thresholds);
@@ -330,6 +345,9 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   // FS3: only the desks that may open seclusion (D-72: ward, site bed manager, coordinator) see the view.
   const seesSeclusion = ROLE_SCREENS[access.role].seclusion !== undefined;
   const shownView: View = view === "seclusion" && !seesSeclusion ? "clocks" : view;
+  // D-157: Checklist Print is window.print() of this view, so Admitted on a form stays on
+  // Checklist as well as On a form (clocks), and the printed page includes those people.
+  const showAdmittedOnAForm = shownView === "clocks" || shownView === "checklist";
   // Page tops (10 Nov 2026): the bar names the Seclusion tab, as the old Seclusion page did.
   const pathname = usePathname() ?? "";
   useWardBarPageTitle(pathname, shownView === "seclusion" ? "Seclusion" : undefined);
@@ -538,6 +556,18 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
     if (!formCode) return;
     return raise("RECORD_LEGAL_FORM_DETAILS", { movementId: target.id, formCode, ...details });
   };
+  // Export (feature 44, D-157): everyone on a form on the list, including admitted on a form;
+  // never names; legal times exactly as typed (D-93, D-102).
+  const exportList = async () =>
+    (await import("./legal-forms-export")).downloadLegalFormsList(
+      listPopulation,
+      { umrnOf, edName: edNameOf, wardName: wardNameOf, now, dayZero },
+      {
+        asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
+        scope:
+          "Legal forms; everyone on a form on the list, including admitted on a form, expiry typed first (highlights do not narrow it)",
+      },
+    );
   const addTimeTarget = rows.find((movement) => movement.id === addTimeId) ?? null;
   const addTimeRefusal = addTimeTarget
     ? rejections
@@ -983,6 +1013,24 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
             {viewTabs}
             {shownView === "seclusion" ? seclusionView : null}
             <Card className={styles.listCard} aria-label="Everyone on a form" hidden={shownView === "seclusion"}>
+              {/* One phone rule with Movements and Leave: Print and Export stay, icon-only, named. */}
+              {shownView === "history" ? null : (
+                <CardHead
+                  title="Everyone on a form"
+                  level={2}
+                  action={
+                    <>
+                      <ListPrintButton iconOnly disabled={listPopulation.length === 0} testId="ward-legal-print" />
+                      <ListExportButton
+                        iconOnly
+                        load={exportList}
+                        disabled={listPopulation.length === 0}
+                        testId="ward-legal-export"
+                      />
+                    </>
+                  }
+                />
+              )}
               {highlight ? (
                 <p className={styles.phoneNote}>
                   {highlightCount} of {rows.length} highlighted, all rows stay
@@ -1030,7 +1078,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   onSelect={select}
                 />
               ) : null}
-              {shownView === "clocks" ? admittedList : null}
+              {showAdmittedOnAForm ? admittedList : null}
               {shownView === "history" ? historyList : null}
               {/* FS1: as on desktop, the full notice closes the list it qualifies, so the phone reaches
                   the people on a form first. */}
@@ -1073,24 +1121,37 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                 <CardHead
                   title={shownView === "history" ? "Closed moves with a form" : "Everyone on a form"}
                   level={2}
-                  aside={
-                    <span className={styles.meta}>
-                      {highlight
-                        ? `${highlightCount} of ${rows.length} highlighted, all rows stay`
-                        : shownView === "clocks"
-                          ? // The one colour key, near the list (Josh, 30 Oct 2026). The group heads say the order.
-                            TYPED_TIME_KEY
-                          : null}
-                    </span>
+                  // The note sits under the title and wraps, so the list's tools keep the right edge.
+                  meta={
+                    highlight || shownView === "clocks" ? (
+                      <span className={styles.meta}>
+                        {highlight
+                          ? `${highlightCount} of ${rows.length} highlighted, all rows stay`
+                          : // The one colour key, near the list (Josh, 30 Oct 2026). The group heads say the order.
+                            TYPED_TIME_KEY}
+                      </span>
+                    ) : undefined
                   }
                   action={
                     // Page tops (Josh, 9 Nov 2026): Record a form, Record and tell and Copy for handover are
-                    // the top's chips; the list keeps its own Clear highlight.
-                    highlight ? (
-                      <Button variant="ghost" size="sm" onClick={() => setHighlight(null)}>
-                        Clear highlight
-                      </Button>
-                    ) : undefined
+                    // the top's chips; the list keeps its own Clear highlight, Print and Export.
+                    <>
+                      {highlight ? (
+                        <Button variant="ghost" size="sm" onClick={() => setHighlight(null)}>
+                          Clear highlight
+                        </Button>
+                      ) : null}
+                      {shownView === "history" ? null : (
+                        <>
+                          <ListPrintButton disabled={listPopulation.length === 0} testId="ward-legal-print" />
+                          <ListExportButton
+                            load={exportList}
+                            disabled={listPopulation.length === 0}
+                            testId="ward-legal-export"
+                          />
+                        </>
+                      )}
+                    </>
                   }
                 />
 
@@ -1171,7 +1232,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   />
                 ) : null}
 
-                {shownView === "clocks" ? admittedList : null}
+                {showAdmittedOnAForm ? admittedList : null}
                 {shownView === "history" ? historyList : null}
                 {/* The full notice closes the list it qualifies, not a loose line under the hero. */}
                 <div className={styles.listFoot}>

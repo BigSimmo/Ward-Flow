@@ -25,8 +25,24 @@ const sha = "a".repeat(40);
 const before = "b".repeat(40);
 const head = "c".repeat(40);
 const tree = "d".repeat(40);
-const allGates = { unit: true, coverage: true, browser: true, release: true, build: true, backend: true };
-const noGates = { unit: false, coverage: false, browser: false, release: false, build: false, backend: false };
+const allGates = {
+  unit: true,
+  unitExceptSweep: true,
+  coverage: true,
+  browser: true,
+  release: true,
+  build: true,
+  backend: true,
+};
+const noGates = {
+  unit: false,
+  unitExceptSweep: false,
+  coverage: false,
+  browser: false,
+  release: false,
+  build: false,
+  backend: false,
+};
 
 const passedJob = (name: string, ...steps: string[]) => ({
   name,
@@ -121,9 +137,23 @@ describe("main-push reuse decision", () => {
           }
         : job,
     );
-    expect(decideMainReuse(evidence({ runs: [{ ...evidence().runs[0], jobs: withoutSweep }] }))).toMatchObject({
-      verified: false,
-      gates: { ...allGates, unit: false, coverage: false },
+    const decision = decideMainReuse(evidence({ runs: [{ ...evidence().runs[0], jobs: withoutSweep }] }));
+    expect(decision).toMatchObject({ verified: false, gates: { ...allGates, unit: false } });
+    // D-166: main runs only the sweep in fresh shards and reuses the rest of the unit proof and coverage.
+    expect(mainReuseOutputs(decision)).toMatchObject({
+      unit_verified: false,
+      coverage_verified: true,
+      sweep_only: true,
+    });
+    const noCoverage = decideMainReuse(
+      evidence({
+        runs: [{ ...evidence().runs[0], jobs: withoutSweep.filter((job) => job.name !== "Ward Flow coverage") }],
+      }),
+    );
+    expect(mainReuseOutputs(noCoverage)).toMatchObject({
+      unit_verified: false,
+      coverage_verified: false,
+      sweep_only: false,
     });
     expect(runEvidenceGap(withoutSweep, counts)).toBe("Ward Flow unit shard 3 did not run its checks (scope-skipped)");
   });
@@ -345,7 +375,15 @@ describe("main-push reuse decision", () => {
     const result = decideMainReuse(evidence({ runs: [{ ...evidence().runs[0], jobs }] }));
     expect(result).toMatchObject({
       verified: false,
-      gates: { unit: true, coverage: false, browser: false, release: false, backend: false, build: true },
+      gates: {
+        unit: true,
+        unitExceptSweep: true,
+        coverage: false,
+        browser: false,
+        release: false,
+        backend: false,
+        build: true,
+      },
     });
     expect(mainReuseOutputs(result)).toEqual({
       verified: false,
@@ -355,6 +393,7 @@ describe("main-push reuse decision", () => {
       release_verified: false,
       backend_verified: false,
       build_verified: true,
+      sweep_only: false,
     });
   });
 
@@ -391,7 +430,7 @@ describe("main-push reuse decision", () => {
     ]) {
       expect(decideMainReuse(evidence({ runs }))).toMatchObject({
         verified: false,
-        gates: { ...allGates, unit: false, coverage: false, build: false },
+        gates: { ...allGates, unit: false, build: false },
       });
     }
   });
@@ -414,6 +453,7 @@ describe("main-push reuse decision", () => {
       release_verified: false,
       backend_verified: false,
       build_verified: false,
+      sweep_only: false,
     });
   });
 

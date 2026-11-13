@@ -2,6 +2,7 @@
 
 // Each page and popup loads on its own, so a frame compiles and downloads only what it draws.
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { useSearchParams } from "next/navigation";
 
 import { useEffect, type ComponentType, type ReactNode } from "react";
@@ -10,73 +11,103 @@ import { openWardMenu } from "@/components/ward-management/shell/ward-drawer-bus
 
 import { useOpenOnLoad } from "./open-on-load";
 
-const PopAlerts = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-alerts/pop-alerts").then((module) => module.PopAlerts),
+const PopAlerts = dynamic<{ page: ReactNode }>(
+  withLoadRetry(() => import("@/components/ward-redesign/pop-alerts/pop-alerts").then((module) => module.PopAlerts)),
 );
-const PopTools = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-tools/pop-tools").then((module) => module.PopTools),
+const PopTools = dynamic<{ page: ReactNode }>(
+  withLoadRetry(() => import("@/components/ward-redesign/pop-tools/pop-tools").then((module) => module.PopTools)),
 );
-const PopSearch = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-search/pop-search").then((module) => module.PopSearch),
+const PopSearch = dynamic<{ page: ReactNode }>(
+  withLoadRetry(() => import("@/components/ward-redesign/pop-search/pop-search").then((module) => module.PopSearch)),
 );
-const PopHelp = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-help/pop-help").then((module) => module.PopHelp),
+const PopHelp = dynamic<{ page: ReactNode }>(
+  withLoadRetry(() => import("@/components/ward-redesign/pop-help/pop-help").then((module) => module.PopHelp)),
 );
-const PopShortcuts = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-shortcuts/pop-shortcuts").then((module) => module.PopShortcuts),
-);
-const PopDemo = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-demo/pop-demo").then((module) => module.PopDemo),
-);
-const PopMenu = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-menu/pop-menu").then((module) => module.PopMenu),
-);
-const PopCreate = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-create/pop-create").then((module) => module.PopCreate),
-);
-const PopServicePicker = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-service-picker/pop-service-picker").then((module) => module.PopServicePicker),
-);
-const PopMorePages = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-more-pages/pop-more-pages").then((module) => module.PopMorePages),
-);
-const PopTour = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-tour/pop-tour").then((module) => module.PopTour),
-);
-const PopReferWard = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-refer-ward/pop-refer-ward").then((module) => module.PopReferWard),
-);
-const PopClearance = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-clearance/pop-clearance").then((module) => module.PopClearance),
-);
-const PopIdleWarning = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-idle-warning/pop-idle-warning").then((module) => module.PopIdleWarning),
-);
-const PopIdleLock = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-idle-lock/pop-idle-lock").then((module) => module.PopIdleLock),
-);
-const PopConfirmLeave = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-confirm-leave/pop-confirm-leave").then((module) => module.PopConfirmLeave),
-);
-const PopConfirmDiscard = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-confirm-discard/pop-confirm-discard").then(
-    (module) => module.PopConfirmDiscard,
+const PopShortcuts = dynamic<{ page: ReactNode }>(
+  withLoadRetry(() =>
+    import("@/components/ward-redesign/pop-shortcuts/pop-shortcuts").then((module) => module.PopShortcuts),
   ),
 );
-const PopStateLoading = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-state-loading/pop-state-loading").then((module) => module.PopStateLoading),
+const PopDemo = dynamic<{ page: ReactNode }>(
+  withLoadRetry(() => import("@/components/ward-redesign/pop-demo/pop-demo").then((module) => module.PopDemo)),
 );
-const PopStateEmpty = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-state-empty/pop-state-empty").then((module) => module.PopStateEmpty),
+const PopMenu = dynamic<{ page: ReactNode }>(
+  withLoadRetry(() => import("@/components/ward-redesign/pop-menu/pop-menu").then((module) => module.PopMenu)),
 );
-const PopStateError = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-state-error/pop-state-error").then((module) => module.PopStateError),
+const PopCreate = dynamic<{ page: ReactNode }>(
+  withLoadRetry(() => import("@/components/ward-redesign/pop-create/pop-create").then((module) => module.PopCreate)),
 );
-const PopStateOffline = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-state-offline/pop-state-offline").then((module) => module.PopStateOffline),
+const PopServicePicker = dynamic<{ page: ReactNode }>(
+  withLoadRetry(() =>
+    import("@/components/ward-redesign/pop-service-picker/pop-service-picker").then(
+      (module) => module.PopServicePicker,
+    ),
+  ),
 );
-const PopStateToast = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-state-toast/pop-state-toast").then((module) => module.PopStateToast),
+const PopMorePages = dynamic<{ page: ReactNode }>(
+  withLoadRetry(() =>
+    import("@/components/ward-redesign/pop-more-pages/pop-more-pages").then((module) => module.PopMorePages),
+  ),
+);
+const PopTour = dynamic<{ page: ReactNode }>(
+  withLoadRetry(() => import("@/components/ward-redesign/pop-tour/pop-tour").then((module) => module.PopTour)),
+);
+const PopReferWard = dynamic<{ page: ReactNode }>(
+  withLoadRetry(() =>
+    import("@/components/ward-redesign/pop-refer-ward/pop-refer-ward").then((module) => module.PopReferWard),
+  ),
+);
+const PopClearance = dynamic<{ page: ReactNode }>(
+  withLoadRetry(() =>
+    import("@/components/ward-redesign/pop-clearance/pop-clearance").then((module) => module.PopClearance),
+  ),
+);
+const PopIdleWarning = dynamic<{ page: ReactNode }>(
+  withLoadRetry(() =>
+    import("@/components/ward-redesign/pop-idle-warning/pop-idle-warning").then((module) => module.PopIdleWarning),
+  ),
+);
+const PopIdleLock = dynamic<{ page: ReactNode }>(
+  withLoadRetry(() =>
+    import("@/components/ward-redesign/pop-idle-lock/pop-idle-lock").then((module) => module.PopIdleLock),
+  ),
+);
+const PopConfirmLeave = dynamic<{ page: ReactNode }>(
+  withLoadRetry(() =>
+    import("@/components/ward-redesign/pop-confirm-leave/pop-confirm-leave").then((module) => module.PopConfirmLeave),
+  ),
+);
+const PopConfirmDiscard = dynamic<{ page: ReactNode }>(
+  withLoadRetry(() =>
+    import("@/components/ward-redesign/pop-confirm-discard/pop-confirm-discard").then(
+      (module) => module.PopConfirmDiscard,
+    ),
+  ),
+);
+const PopStateLoading = dynamic<{ page: ReactNode }>(
+  withLoadRetry(() =>
+    import("@/components/ward-redesign/pop-state-loading/pop-state-loading").then((module) => module.PopStateLoading),
+  ),
+);
+const PopStateEmpty = dynamic<{ page: ReactNode }>(
+  withLoadRetry(() =>
+    import("@/components/ward-redesign/pop-state-empty/pop-state-empty").then((module) => module.PopStateEmpty),
+  ),
+);
+const PopStateError = dynamic<{ page: ReactNode }>(
+  withLoadRetry(() =>
+    import("@/components/ward-redesign/pop-state-error/pop-state-error").then((module) => module.PopStateError),
+  ),
+);
+const PopStateOffline = dynamic<{ page: ReactNode }>(
+  withLoadRetry(() =>
+    import("@/components/ward-redesign/pop-state-offline/pop-state-offline").then((module) => module.PopStateOffline),
+  ),
+);
+const PopStateToast = dynamic<{ page: ReactNode }>(
+  withLoadRetry(() =>
+    import("@/components/ward-redesign/pop-state-toast/pop-state-toast").then((module) => module.PopStateToast),
+  ),
 );
 
 /**

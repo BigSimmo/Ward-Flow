@@ -2,7 +2,7 @@ import type { WardFlowEvent } from "./ward-flow-events";
 import type { SharedSnapshot } from "./ward-shared-client-types";
 import { payloadUnchanged } from "./ward-shared-client-reuse";
 
-export { onDeviceClock } from "./ward-shared-clock";
+export { notModifiedUpdate, onDeviceClock } from "./ward-shared-clock";
 
 /**
  * H-0304: `AbortSignal.any` is missing from older Safari (before 17.4), where it threw and every
@@ -28,27 +28,29 @@ export function anySignal(signals: readonly AbortSignal[]): AbortSignal {
   return controller.signal;
 }
 
-/** Settles with `promise`, or rejects with an AbortError as soon as `signal` aborts. */
-export function untilAborted<T>(promise: Promise<T>, signal: AbortSignal | undefined): Promise<T> {
-  if (!signal) return promise;
-  if (signal.aborted) {
+/**
+ * Settles with `promise`, or rejects with an AbortError as soon as `signal` aborts. Only the shared
+ * client's sign-in token wait uses it, so it also gives that wait its own deadline (15 s, as long as
+ * a request may take): a token step that never answers ends in the normal "not refreshed" retry
+ * instead of an endless spinner (live audit item 14).
+ */
+export function untilAborted<T>(promise: Promise<T>, signal: AbortSignal | undefined, ms = 15_000): Promise<T> {
+  if (signal?.aborted) {
     // Cancellation settles the caller, but the token request can still reject later.
     void promise.catch(() => {});
     return Promise.reject(new DOMException("The poll was stopped", "AbortError"));
   }
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let onAbort: (() => void) | undefined;
   return new Promise<T>((resolve, reject) => {
-    const stop = () => reject(new DOMException("The poll was stopped", "AbortError"));
-    signal.addEventListener("abort", stop, { once: true });
-    promise.then(
-      (value) => {
-        signal.removeEventListener("abort", stop);
-        resolve(value);
-      },
-      (error: unknown) => {
-        signal.removeEventListener("abort", stop);
-        reject(error);
-      },
-    );
+    onAbort = () => reject(new DOMException("The poll was stopped", "AbortError"));
+    signal?.addEventListener("abort", onAbort, { once: true });
+    timer = setTimeout(() => reject(new Error("Sign-in check timed out")), ms);
+    // A late answer or failure after either stop is observed here and dropped.
+    promise.then(resolve, reject);
+  }).finally(() => {
+    clearTimeout(timer);
+    if (onAbort) signal?.removeEventListener("abort", onAbort);
   });
 }
 

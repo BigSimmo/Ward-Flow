@@ -1,7 +1,8 @@
 import { pulledBedAvailability } from "./ward-ready-beds";
+import { leftWardRefusal } from "./ward-left-ward";
 import { withoutRecordNumbers } from "./ward-patient-resolver";
 import { validCareChange, careChangeRefusal, applyCareChange, emptyCareJourney } from "./ward-care-journey";
-import { PROTECTED_REFUSAL_REASONS } from "./ward-protected-refusal-reasons";
+import { PROTECTED_REFUSAL_REASONS, UNLINKED_CARE_REFUSAL } from "./ward-protected-refusal-reasons";
 import { ON_BEHALF_REASON_REFUSAL, isOnBehalfReason } from "./ward-on-behalf-reason";
 import { appendAudit, finiteInstant, governanceAuditEntry, reviewDecision, type AuditDecision } from "./ward-audit";
 import { undoWindowRefusal } from "./ward-undo";
@@ -48,10 +49,6 @@ export type ProtectedRecordEvent = Extract<
       | "RECORD_ADMISSION_CARE";
   }
 >;
-
-/** Shown when a care step, such as a revocation, is attempted on a stay with no linked patient. */
-export const UNLINKED_CARE_REFUSAL =
-  "Link the patient to their record first. A revocation or any other care step can only be recorded for a linked patient.";
 
 export { PROTECTED_REFUSAL_REASONS };
 
@@ -376,16 +373,19 @@ export function reduceProtectedRecordEvent(
         sexMix: adjustSexMix(receiving.sexMix, mixSexOf(admission.gender, admission.sex), 1),
       });
       // The receiving stay starts its own discharge date plan: the date, its trail and the weekend
-      // review ticks all belong to the sending ward's plan.
+      // review ticks all belong to the sending ward's plan. Item 4: the Chief Psychiatrist notified
+      // time belongs to the sending ward's stay too, so a new adult ward starts with the full notice.
       const {
         bedNumber: _sendingBedNumber,
         dischargeDateTrail: _sendingDateTrail,
         weekendDischargeReviews: _sendingWeekendReviews,
+        chiefPsychiatristNotice: _sendingChiefPsychiatristNotice,
         ...admissionWithoutBedNumber
       } = admission;
       void _sendingBedNumber;
       void _sendingDateTrail;
       void _sendingWeekendReviews;
+      void _sendingChiefPsychiatristNotice;
       next = {
         ...next,
         admissions: [
@@ -486,9 +486,15 @@ export function reduceProtectedRecordEvent(
     movementSourceAdmission(state, movement),
   );
   if (returnRefusal) return deny("transition", "denied", returnRefusal);
+  // Item 18: "Left the ward" only for a discharge still waiting on transport.
+  const awaitingTransport = event.awaitingTransport === true;
+  const leftWardProblem = awaitingTransport
+    ? leftWardRefusal(admission, state.bedReleases, event.leavingDestination)
+    : null;
+  if (leftWardProblem) return deny("transition", "denied", leftWardProblem);
   return appendAudit(
     state,
-    departAdmission(state, admission, unit, event.now, event.leavingDestination, event.role),
+    departAdmission(state, admission, unit, event.now, event.leavingDestination, event.role, awaitingTransport),
     event,
     {
       outcome: "accepted",

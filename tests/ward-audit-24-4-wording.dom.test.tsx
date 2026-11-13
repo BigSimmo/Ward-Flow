@@ -87,7 +87,7 @@ describe("audit 24-4 wording", () => {
     );
     act(() => fireEvent.click(screen.getByTestId("ward-open-bed-board")));
     const unit = seen!.units.find((candidate) => candidate.id === "scgh-adult-open")!;
-    const ready = readyBedsNow(unit, seen!.admissions, seen!.bedReleases);
+    const ready = readyBedsNow(unit, seen!.admissions, seen!.bedReleases, []);
     const preparing = bedsPendingPreparation(unit.id, seen!.bedReleases);
     const head = screen.getAllByText(
       (_, element) => element?.tagName === "SPAN" && /^\d+ ready of \d+/u.test(element.textContent ?? ""),

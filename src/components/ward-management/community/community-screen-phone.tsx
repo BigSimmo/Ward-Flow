@@ -12,6 +12,7 @@ import { HOME_REGION_NOT_RECORDED } from "@/components/ward-management/ward-mode
 import { currentCareContact } from "../ward-care-journey";
 import { CommunityFollowUp } from "./community-follow-up";
 import { CommunityFollowUpReply } from "./community-follow-up-reply";
+import { CommunityFollowUpReplies } from "./community-follow-up-replies";
 import { FileText, Phone, Users } from "lucide-react";
 import { Badge, Button, PhoneSheet, Radio, SrOnly } from "@/components/wf";
 import { referralWaitLine } from "@/components/ward-management/referrals/referral-wait";
@@ -127,6 +128,7 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
     phoneDeparturePerson,
     closePhoneReferral,
     setToastMessage,
+    umrnLookup,
   } = view;
   const sinceElement = communitySinceElement(view);
   const noticesSection = communityNoticesSection(view);
@@ -323,7 +325,20 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
                 };
               }),
               empty: "Nobody in a bed has a discharge date the ward has written down.",
-              after: <p className={phoneCss.quiet}>Ward-reported plan; elapsed time only. No target is applied.</p>,
+              after: (
+                <>
+                  <p className={phoneCss.quiet}>Ward-reported plan; elapsed time only. No target is applied.</p>
+                  {/* Feature 13: the team's follow-up reply for each, as the desktop Back home list has. */}
+                  <CommunityFollowUpReplies
+                    admissions={lists.expectedBack}
+                    teamId={team.id}
+                    units={units}
+                    now={now}
+                    umrnLookup={umrnLookup}
+                    onMessage={setToastMessage}
+                  />
+                </>
+              ),
             },
             {
               id: "discharged",

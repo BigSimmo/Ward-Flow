@@ -21,6 +21,7 @@ vi.mock("next/navigation", () => ({
 
 import { NextRail as WardRail } from "@/components/ward-management/shell-next/next-rail";
 import { RAIL_OPEN_STORAGE_KEY, WARD_RAIL_EARLY_SCRIPT } from "@/components/ward-management/shell/ward-rail-early";
+import { WardRailPlaceholder } from "@/components/ward-management/shell/ward-rail-placeholder";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { Hero } from "@/components/wf";
@@ -180,7 +181,7 @@ describe("desktop rail: the server render is the settled render", () => {
     const host = document.createElement("div");
     host.innerHTML = renderToString(tree);
     const server = railItemClasses(host);
-    mockViewport((query) => query === "(min-width: 1001px)");
+    mockViewport((query) => query === "(min-width: 62.5625rem)");
     const { container } = render(tree);
     expect(server.length).toBeGreaterThan(0);
     expect(railItemClasses(container)).toEqual(server);
@@ -188,8 +189,20 @@ describe("desktop rail: the server render is the settled render", () => {
 
   it("hides narrow-only entries at 1000px and below only", () => {
     const css = strip(readFileSync("src/components/ward-management/shell/ward-rail.module.css", "utf8"));
-    const desktop = [...css.matchAll(/@media \(min-width: 1001px\) \{([\s\S]*?)\n\}/gu)].map((m) => m[1]).join("");
+    const desktop = [...css.matchAll(/@media \(min-width: 62.5625rem\) \{([\s\S]*?)\n\}/gu)].map((m) => m[1]).join("");
     expect(desktop).not.toMatch(/compactExtra/u);
+  });
+
+  // D-137 follow-up: the held cookie is shared across tabs, so a ward tab can get the coordinator's
+  // server rail and bar; while this tab's desk is pending they stay hidden, with the same give-up.
+  it("hides the server's rail and top bar while a stored desk is pending", () => {
+    const css = strip(readFileSync("src/app/ward-flow/ward-flow-layout.module.css", "utf8"));
+    const rule =
+      /:global\(html\[data-wf-desk-pending\]\) \.shellRow :global\(\[data-testid="ward-rail"\]\),\s*:global\(html\[data-wf-desk-pending\]\) \.shellContent :global\(\[data-testid="ward-bar"\]\) \{([^}]*)\}/u.exec(
+        css,
+      );
+    expect(rule?.[1]).toMatch(/visibility: hidden;/u);
+    expect(rule?.[1]).toMatch(/animation: deskPendingGiveUp 0s 8s forwards;/u);
   });
 });
 
@@ -219,9 +232,9 @@ describe("rail early script", () => {
       root: document.documentElement.getAttribute("data-rail"),
     };
   }
-  const desktop = (q: string) => q === "(min-width: 1001px)";
-  const tablet = (q: string) => q === "(min-width: 1001px)" || q === "(max-width: 1200px)";
-  const narrow = (q: string) => q === "(max-width: 1200px)";
+  const desktop = (q: string) => q === "(min-width: 62.5625rem)";
+  const tablet = (q: string) => q === "(min-width: 62.5625rem)" || q === "(max-width: 75rem)";
+  const narrow = (q: string) => q === "(max-width: 75rem)";
 
   it("draws a stored closed rail closed on desktop before the app loads", () => {
     expect(runWith({ query: desktop, stored: "closed" })).toEqual({ rail: "closed", tablet: null, root: "closed" });
@@ -258,7 +271,7 @@ describe("rail early script and hydration", () => {
     document.body.append(host);
     expect(host.querySelector('[data-testid="ward-rail"]')).toHaveAttribute("data-rail", "open");
 
-    mockViewport((query) => query === "(min-width: 1001px)" || query === "(min-width: 1201px)");
+    mockViewport((query) => query === "(min-width: 62.5625rem)" || query === "(min-width: 75.0625rem)");
     window.localStorage.setItem(RAIL_OPEN_STORAGE_KEY, "closed");
     new Function(WARD_RAIL_EARLY_SCRIPT)();
     expect(host.querySelector('[data-testid="ward-rail"]')).toHaveAttribute("data-rail", "closed");
@@ -272,5 +285,39 @@ describe("rail early script and hydration", () => {
     expect(mismatch).toEqual([]);
     expect(recoverable).toEqual([]);
     expect(host.querySelector('[data-testid="ward-rail"]')).toHaveAttribute("data-rail", "closed");
+  });
+
+  // Count leak (D-137): the held first load's empty rail gets the same early shape, and hydrates over it.
+  it.each([
+    { name: "a closed rail preference", wide: true, stored: "closed", tablet: null },
+    { name: "tablet landscape", wide: false, stored: null, tablet: "landscape" },
+  ])("hydrates the rail placeholder over $name without a mismatch", async ({ wide, stored, tablet }) => {
+    const host = document.createElement("div");
+    host.innerHTML = renderToString(<WardRailPlaceholder />);
+    document.body.append(host);
+    const placeholder = () => host.querySelector("[data-wf-rail-placeholder]");
+    expect(placeholder()).toHaveAttribute("data-rail", "open");
+
+    mockViewport(
+      (query) =>
+        query === "(min-width: 62.5625rem)" ||
+        (wide && query === "(min-width: 75.0625rem)") ||
+        (!wide && query === "(max-width: 75rem)"),
+    );
+    if (stored) window.localStorage.setItem(RAIL_OPEN_STORAGE_KEY, stored);
+    new Function(WARD_RAIL_EARLY_SCRIPT)();
+    expect(placeholder()).toHaveAttribute("data-rail", "closed");
+
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    const recoverable: unknown[] = [];
+    await act(async () => {
+      hydrateRoot(host, <WardRailPlaceholder />, { onRecoverableError: (error) => recoverable.push(error) });
+    });
+    const mismatch = errors.mock.calls.filter((call) => /hydrat|did(n't| not) match/iu.test(String(call[0])));
+    expect(mismatch).toEqual([]);
+    expect(recoverable).toEqual([]);
+    expect(placeholder()).toHaveAttribute("data-rail", "closed");
+    if (tablet) expect(placeholder()).toHaveAttribute("data-tablet", tablet);
+    else expect(placeholder()).not.toHaveAttribute("data-tablet");
   });
 });

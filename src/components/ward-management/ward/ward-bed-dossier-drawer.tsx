@@ -24,6 +24,7 @@ import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { BlockerEditor, useBlockerSave } from "./ward-bed-blocker-editor";
 import { BedClosureControls, type BedClosureActions } from "./ward-bed-closure-controls";
+import { wardClosureReasonLabel } from "../ward-bed-closure-reason";
 import {
   openJourneyFromStay,
   SentJourneyChanges,
@@ -83,6 +84,7 @@ import { PhoneBedSheet } from "./ward-bed-dossier-phone";
 import { WardDrawerDischargeDate } from "./ward-drawer-discharge-date";
 import { observationEditingToken } from "@/components/ward-management/ward-flow-observation-events";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
+import { WardUnder18Notice } from "./ward-under-18-notice";
 
 const roleLabel = (role: keyof typeof WARD_FLOW_ROLE_LABELS) => WARD_FLOW_ROLE_LABELS[role];
 
@@ -539,8 +541,19 @@ export function WardBedDossierDrawer({
         tone: "success",
         label: `Hold-up cleared: ${cleared.blocker}, by ${roleLabel(cleared.by)}`,
       });
-    timeline.sort((left, right) => right.at - left.at);
   }
+  // Live audit item 13 (11 Nov 2026): this bed's own closures (`Unit.closedBeds`), closed and reopened,
+  // with who and why. They belong to the bed, so they show with or without anyone in it.
+  for (const mark of unit.closedBeds ?? []) {
+    if (mark.bedNumber !== selectedBed) continue;
+    timeline.push({
+      at: mark.at,
+      tone: "warning",
+      label: `Bed closed${mark.reason ? `: ${wardClosureReasonLabel(mark.reason)}` : ""}, by ${mark.by}`,
+    });
+    if (mark.reopenedAt !== undefined) timeline.push({ at: mark.reopenedAt, tone: "success", label: "Bed reopened" });
+  }
+  timeline.sort((left, right) => right.at - left.at);
 
   const openBlockerEditor = () => {
     const opening = !quickBlockerOpen;
@@ -598,6 +611,12 @@ export function WardBedDossierDrawer({
   const resolved = admission ? resolvePatientIdentity(admission) : undefined;
   const person = resolved?.patient;
   const personHref = person ? patientHref(person.id) : null;
+  // Feature item 4: under 18 on an adult ward, read from the date of birth and this ward's cohort.
+  // Keyed by the stay, so a typed time never carries over to the next bed (Codex, #1609).
+  const under18Notice =
+    !isReady && admission ? (
+      <WardUnder18Notice key={admission.id} patient={person} unit={unit} admission={admission} />
+    ) : null;
 
   // The ward board's departure check (`board/ward-board.tsx`): name · UMRN · bed, and here the destination.
   const leavingLabel = LEAVING_DESTINATIONS.find((destination) => destination.id === drawerLeavingDestination)?.label;
@@ -802,6 +821,7 @@ export function WardBedDossierDrawer({
           sentJourney={sentJourneyControls}
           leavingCriteriaNote={criteriaDepartureNote}
           readyNote={readyNote}
+          safetyNote={under18Notice}
           actions={bedActions}
           mainId={mainId}
           notLeftPlan={expectedPlan}
@@ -868,6 +888,20 @@ export function WardBedDossierDrawer({
         </div>
       </dl>
     </section>
+  );
+  const historyToggle = (
+    <button
+      type="button"
+      className={styles.historyButton}
+      aria-expanded={historyOpen}
+      aria-controls={`${TAB_PREFIX}-history`}
+      data-testid="bed-drawer-history-toggle"
+      onClick={toggleHistory}
+    >
+      <Icon icon={HistoryIcon} size={14} />
+      History
+      <span className={styles.historyCount}>{timeline.length}</span>
+    </button>
   );
   const history = (
     <section
@@ -1036,10 +1070,18 @@ export function WardBedDossierDrawer({
               </dl>
               {readyNote}
             </section>
+            {/* Live audit item 13: an empty bed's History holds its closures, so it shows when there are any. */}
+            {timeline.length > 0 ? (
+              <>
+                {historyToggle}
+                {history}
+              </>
+            ) : null}
           </>
         ) : (
           <>
             {hero}
+            {under18Notice}
             <div className={styles.tabsWrap}>
               {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
               <div role="tablist" aria-label="Bed details" className={styles.tabs} onKeyDown={onTabKeyDown}>
@@ -1067,18 +1109,7 @@ export function WardBedDossierDrawer({
                   );
                 })}
               </div>
-              <button
-                type="button"
-                className={styles.historyButton}
-                aria-expanded={historyOpen}
-                aria-controls={`${TAB_PREFIX}-history`}
-                data-testid="bed-drawer-history-toggle"
-                onClick={toggleHistory}
-              >
-                <Icon icon={HistoryIcon} size={14} />
-                History
-                <span className={styles.historyCount}>{timeline.length}</span>
-              </button>
+              {historyToggle}
             </div>
             {panel(
               "now",

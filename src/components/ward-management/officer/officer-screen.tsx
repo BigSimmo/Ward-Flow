@@ -1,5 +1,6 @@
 "use client";
 
+import { plural } from "../ward-plural";
 import { confirmLeavingShell } from "../shell/ward-leave-guard";
 
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
@@ -658,7 +659,7 @@ export function OfficerScreen() {
       ...lines,
     ].join("\n");
     copyTextToClipboard(text).then(
-      () => showToast(`Handover copied, ${jobs.length} open jobs.`),
+      () => showToast(`Handover copied, ${plural(jobs.length, "open job", "open jobs")}.`),
       () => showToast("Copying is not available in this browser."),
     );
   };
@@ -1163,7 +1164,6 @@ export function OfficerScreen() {
                               data-testid={`ward-officer-job-${movement.id}`}
                               data-highlight={lit ? "true" : undefined}
                               className={active ? `${tableClasses.selected} ${styles.jobRow}` : styles.jobRow}
-                              aria-selected={active}
                             >
                               <td>
                                 <button

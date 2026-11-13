@@ -55,6 +55,9 @@ import {
 import { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
 import { siteByCode } from "./ward-sites";
 import { returnEarlyNoticesFor } from "./out-of-area/return-early";
+import { diversionReturnsForTeam } from "./community/diversion-return-review";
+import { CLINICAL_VALUES } from "./ward-clinical-values";
+import { MINUTES_PER_DAY } from "./ward-clock";
 import { journeySentByDesk, referralSentByDesk } from "./ward-referral-sender";
 import { isBreakGlassReviewId } from "./ward-break-glass-review-id";
 
@@ -70,12 +73,32 @@ type Context = {
   readonly inboxSubjectIds: ReadonlySet<string>;
   readonly auditEvents: readonly AuditEvent[];
   readonly reviewableBreakGlassEventIds: ReadonlySet<string>;
+  /** The time the copy is cut at, for the windowed derivations below. */
+  readonly now: number;
 };
 
 const keep =
   <K extends keyof WardFlowState>(key: K) =>
   (context: Context): WardFlowState[K] =>
     context.state[key];
+
+/**
+ * D-152: the community desk's own returns to ED after a diversion, from the whole workspace. Any
+ * other desk gets none: a ward, ED, officer or coordinator copy never carries them.
+ */
+function diversionReturnsForDesk(context: Context): NonNullable<WardFlowState["diversionReturns"]> {
+  const { access } = context;
+  if (access.role !== "community" || access.scope.kind !== "team") return [];
+  const ownTeam = communityTeamKey(access.scope.teamName);
+  if (ownTeam === "") return [];
+  const sent = new Set(context.scoped.referrals.map((referral) => referral.id));
+  return diversionReturnsForTeam(
+    context.state,
+    (teamName) => communityTeamKey(teamName) === ownTeam,
+    CLINICAL_VALUES.diversionReturnReview.value * MINUTES_PER_DAY,
+    context.now,
+  ).filter((record) => sent.has(record.referralId));
+}
 
 /** Every ward of the site is inside the desk's scope (and the site has a ward). */
 function siteWithinScope(context: Pick<Context, "state" | "unitIn">, siteCode: string): boolean {
@@ -176,16 +199,25 @@ function notifiesOnArrival(
 /**
  * The support notifications one desk sees: a discharge note only for a stay it is sent in full, an
  * arrival note only from a ward it covers. The scoped state and the browser shell share this rule.
+ * An emergency department sees only the advocacy notice on a move it can see that has not yet
+ * arrived, the one record it may make (item 15, D-134), so its checklist shows it as done.
  */
-export function supportNotificationsForDesk<R extends { occasion: string; subjectId: string }>(
+export function supportNotificationsForDesk<R extends { occasion: string; subjectId: string; party: string }>(
   records: readonly R[] | undefined,
   desk: Pick<Context, "coordinator" | "unitIn"> & {
     readonly wholeNetwork: boolean;
     readonly role: WardAccess["role"];
-    readonly movements: readonly { id: string; acceptedUnitId?: string | null }[];
+    readonly movements: readonly { id: string; acceptedUnitId?: string | null; closure?: unknown }[];
     readonly wholeStay: (admissionId: string) => boolean;
   },
 ): R[] {
+  if (desk.role === "ed")
+    return (records ?? []).filter(
+      (record) =>
+        record.occasion === "admission" &&
+        record.party === "mhas" &&
+        desk.movements.some((movement) => movement.id === record.subjectId && movement.closure === undefined),
+    );
   if (!desk.coordinator && desk.role !== "ward") return [];
   return (records ?? []).filter((record) =>
     record.occasion === "discharge"
@@ -197,6 +229,14 @@ export function supportNotificationsForDesk<R extends { occasion: string; subjec
 /** A stay this desk is sent in full: in its scope, and not cut to ward and dates only. */
 function wholeStay(context: Context, admissionId: string): boolean {
   return context.admissionIds.has(admissionId) && !context.scoped.datesOnlyAdmissionIds.has(admissionId);
+}
+
+/** Batch 3 items 21 and 23: a record about one stay or bed request goes only with that stay or request. */
+function stayOrRequestVisible(context: Context, record: { admissionId?: string; movementId?: string }): boolean {
+  if (record.admissionId !== undefined) return wholeStay(context, record.admissionId);
+  return (
+    record.movementId !== undefined && context.scoped.movements.some((movement) => movement.id === record.movementId)
+  );
 }
 
 /**
@@ -316,6 +356,31 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
   directoryChecks: (context) => context.state.directoryChecks ?? [],
   // Staff needed (feature 10): a ward, a shift, a count and chosen reasons. Each desk keeps its wards'.
   staffRequests: (context) => (context.state.staffRequests ?? []).filter((record) => context.unitIn(record.unitId)),
+  // Batch 4 (10 Nov 2026): a site switch names a site and a listed feature, never a person, so every
+  // desk keeps them all (a switched-off feature is off for everyone at that site). Pack print times
+  // go to the desks of the wards they were printed for; an outage window is the whole workspace's.
+  siteFeatureSwitches: (context) => context.state.siteFeatureSwitches ?? [],
+  downtimePackPrints: (context) =>
+    (context.state.downtimePackPrints ?? []).filter((record) => context.unitIn(record.unitId)),
+  outageWindows: (context) => context.state.outageWindows ?? [],
+  // Batch 3 item 23: a carer callback goes where its stay or bed request goes. No name, no number.
+  carerCallbacks: (context) =>
+    (context.state.carerCallbacks ?? []).filter((record) => stayOrRequestVisible(context, record)),
+  // Batch 3 item 21: a hand-over goes with the record its item is on, so it names nobody a desk cannot see.
+  handedItems: (context) =>
+    (context.state.handedItems ?? []).filter((record) =>
+      record.item.kind === "referral"
+        ? context.scoped.referrals.some(
+            (referral) => referral.id === (record.item as { referralId: string }).referralId,
+          )
+        : record.item.kind === "callback"
+          ? (context.state.carerCallbacks ?? []).some(
+              (callback) =>
+                callback.id === (record.item as { callbackId: string }).callbackId &&
+                stayOrRequestVisible(context, callback),
+            )
+          : stayOrRequestVisible(context, record.item),
+    ),
   // Closing-the-loop (package E): the coordinator's return plan, as repatriations below.
   homeServiceReturns: (context) =>
     context.coordinator
@@ -338,6 +403,10 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
       seesSite: (siteCode) => context.state.units.some((unit) => unit.siteCode === siteCode && context.unitIn(unit.id)),
       seesStay: (admissionId) => wholeStay(context, admissionId),
     }),
+  // Shared mode (D-152, item 28): a community desk is not sent the later ED request, so the return
+  // is found in the whole workspace. Only the taking team hears it, as a referral id it is already
+  // sent and the time back: never the ED, the movement or anything typed.
+  diversionReturns: (context) => diversionReturnsForDesk(context),
   repatriations: (context) =>
     context.coordinator
       ? context.state.repatriations.filter((record) => context.admissionIds.has(record.admissionId))
@@ -408,6 +477,7 @@ export function scopeWardFlowState(
     admissionIds,
     inboxSubjectIds,
     reviewableBreakGlassEventIds: options.reviewableBreakGlassEventIds ?? new Set<string>(),
+    now: options.now,
   };
   const auditEvents = state.auditEvents.filter(
     (event) =>
@@ -430,7 +500,13 @@ export function scopeWardFlowState(
   if (state.returnEarlyFlags === undefined) delete next.returnEarlyFlags;
   if (state.triages === undefined) delete next.triages;
   if (state.staffRequests === undefined) delete next.staffRequests;
+  if (state.siteFeatureSwitches === undefined) delete next.siteFeatureSwitches;
+  if (state.downtimePackPrints === undefined) delete next.downtimePackPrints;
+  if (state.outageWindows === undefined) delete next.outageWindows;
+  if (state.handedItems === undefined) delete next.handedItems;
+  if (state.carerCallbacks === undefined) delete next.carerCallbacks;
   if ((next.returnEarlyNotices as unknown[]).length === 0) delete next.returnEarlyNotices;
+  if ((next.diversionReturns as unknown[]).length === 0) delete next.diversionReturns;
   return {
     state: closeReferences(next as WardFlowState, scoped.datesOnlyAdmissionIds, state, access.role !== "executive"),
     breakGlassPatientIds: scoped.breakGlassPatientIds,
@@ -599,6 +675,9 @@ const COMMAND_RECORD_FIELDS = {
   alertId: "broadcastAlerts",
   eventId: "auditEvents",
   reviewId: "auditReviews",
+  // Batch 3 items 21 and 23: a hand-over or call back is checked like the stay or request it is on.
+  handedItemId: "handedItems",
+  callbackId: "carerCallbacks",
 } as const;
 type CommandRecordCollection = (typeof COMMAND_RECORD_FIELDS)[keyof typeof COMMAND_RECORD_FIELDS] | "invalid";
 type CommandRecordReference = { collection: CommandRecordCollection; id: string };
@@ -924,7 +1003,7 @@ export function commandScopeRefusal(
   for (const { collection, id } of references) {
     // Hidden and absent references fail identically. Never consult the whole world's id set:
     // doing so made a scoped refusal distinguish an existing hidden record from a missing one.
-    if (collection === "invalid" || !writableState[collection].some((record) => record.id === id)) {
+    if (collection === "invalid" || !(writableState[collection] ?? []).some((record) => record.id === id)) {
       // D-80 item 14: a coordinator also reviews break glass openings, which the workspace does not
       // hold. The shared server also checks the opening exists and is of a record in the
       // coordinator's own service (`breakGlassReviewRefusal` in backend/ward-flow/postgres.mjs).

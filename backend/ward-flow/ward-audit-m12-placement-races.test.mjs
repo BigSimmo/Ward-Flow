@@ -86,7 +86,7 @@ const SCENARIOS = [
       role: C,
       referralId: "RF-011",
       destinationKind: "psychiatric_ward",
-      unitId: "rph-adult-secure",
+      unitId: "scgh-adult-open",
       bedNumber: 1,
     },
     second: {
@@ -94,10 +94,10 @@ const SCENARIOS = [
       role: C,
       referralId: "RF-RD06",
       destinationKind: "psychiatric_ward",
-      unitId: "rph-adult-secure",
+      unitId: "scgh-adult-open",
       bedNumber: 1,
     },
-    bed: "rph-adult-secure bed 1",
+    bed: "scgh-adult-open bed 1",
   },
   {
     screen: "ED movement placed in a named bed while the ward moves a stay into it",

@@ -4,6 +4,7 @@ import type { WardFlowRole } from "./ward-flow-roles";
 import type { findMovement, findUnit, reject, replaceMovement, replaceUnit, WardFlowState } from "./ward-flow-reducer";
 import { PSYCH_REVIEW_GRADES, type PsychReviewGrade } from "./ward-model-movement-parts";
 import type { Unit } from "./ward-model";
+import { reduceEscalationCall, type EscalationCallEvent } from "./escalation/escalation-calls";
 
 /**
  * PSYCHIATRY REVIEW TRACKER AND WARD READY FOR NEXT PATIENT (Josh, 9 Nov 2026). Records times as a
@@ -11,6 +12,9 @@ import type { Unit } from "./ward-model";
  * by itself: the coordinator still chooses and pulls by hand.
  */
 export type ReviewReadyWardFlowEvent =
+  // Escalation calls (item 3, D-133): an ED wait step's call and outcome, declared in its own file and
+  // joined here so `ward-flow-events.ts` and the reducer stay under their line caps.
+  | EscalationCallEvent
   | {
       /** The emergency department has asked for a psychiatric review. A time only. */
       type: "REQUEST_PSYCH_REVIEW";
@@ -51,6 +55,8 @@ export function reduceReviewReadyEvent(
   decision: AuditDecision,
   { findMovement, findUnit, reject, replaceMovement, replaceUnit }: ReviewReadyHelpers,
 ): WardFlowState {
+  if (event.type === "RECORD_ESCALATION_CALL")
+    return reduceEscalationCall(state, event, reject, { findMovement, replaceMovement });
   const accept = () => {
     decision.outcome = "accepted";
     decision.reasonCode = "none";

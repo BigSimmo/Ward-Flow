@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { useEffect, useRef, type ComponentProps } from "react";
 
 import type { Instant } from "../ward-clock";
@@ -20,13 +21,13 @@ import { useSenderPresentation } from "../ward-sender-presentation";
 const panelPending = () => null;
 
 const LazyPicker = dynamic(
-  () => import("./referral-information-needs-panel").then((m) => m.WardInformationNeedsPicker),
+  withLoadRetry(() => import("./referral-information-needs-panel").then((m) => m.WardInformationNeedsPicker)),
   {
     loading: panelPending,
   },
 );
 const LazyTickOff = dynamic(
-  () => import("./referral-information-needs-panel").then((m) => m.ReferralInformationNeedsPanel),
+  withLoadRetry(() => import("./referral-information-needs-panel").then((m) => m.ReferralInformationNeedsPanel)),
   { loading: panelPending },
 );
 
@@ -84,7 +85,6 @@ export function useMarkReferralsOpened(
         if (outcome && outcome.status !== "accepted") forget();
       }, forget);
     }
-    // `raise` carries the time a referral first appears; a clock tick alone does not re-run this.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `raise` carries the time a referral first appears; a clock tick alone does not re-run this.
   }, [enabled, routeRole, actingUnitId, unitId, unopened]);
 }

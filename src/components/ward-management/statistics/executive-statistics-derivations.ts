@@ -1,6 +1,6 @@
 import type { WardFlowState } from "../ward-flow-reducer";
 import { wardStatistics } from "../ward-statistics";
-import { bedIsOccupied, endedInWardTransfer, STAY_BANDS, stayBand } from "../ward-admissions";
+import { bedIsOccupied, daysInBed, endedInWardTransfer, STAY_BANDS, stayBand } from "../ward-admissions";
 import { dayOf, MINUTES_PER_DAY, isClockBreached } from "../ward-clock";
 import { openBedsNow, bedsPendingPreparation } from "../ward-bed-availability";
 import { dischargeDateCoverage } from "./statistics-ward-discharge-dates";
@@ -41,10 +41,6 @@ import { MINIMUM_EFFECTIVENESS_SAMPLE } from "../ward-derivations-records";
 import { isEdOriginJourney } from "../ward-ed-presence";
 import { readyBedsNow } from "../ward-bed-states";
 import { lockedBedsFree, openBedsFree } from "../ward-bed-designation";
-
-function stayDays(arrivedAt: number | null, now: number): number | null {
-  return arrivedAt === null || arrivedAt > now ? null : Math.floor((now - arrivedAt) / MINUTES_PER_DAY);
-}
 
 export type ExecutivePrivateInput = WeeklyReportInput &
   Pick<WardFlowState, "morningRollupConfirmations"> & {
@@ -148,7 +144,7 @@ export function executiveWardSummary(ward: PublicWard, input: ExecutivePrivateIn
   release.partition(dischargeDateOutcomes.consideredCount, [dischargeDateOutcomes.met, dischargeDateOutcomes.missed]);
   const stays = currentRows
     .filter(bedIsOccupied)
-    .map((row) => stayDays(row.arrivedAt, now))
+    .map((row) => daysInBed(row, now))
     .filter((value): value is number => value !== null);
   const longStays = c("longStays", statistics.longStays);
   const longStayBand = stayBands.find((band) => band.id === "over-3-months");

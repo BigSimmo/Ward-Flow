@@ -29,7 +29,8 @@ Access is managed in **Settings**. On a phone, the bar at the bottom has **Gover
 ## Saved, or not
 
 - After a change, a short message says it was recorded.
-- On a shared board the status line reads "Saving shared changes…", then your desk name again.
+- On a shared board a small "Saving…" note shows while a save goes through. If it takes longer
+  than 8 seconds, or you are offline, the status line warns you not to reload.
 - If it reads "Connection unavailable — changes are disabled." and shows **Retry**: stay on the
   page and press **Retry**. Do not reload. Reloading loses the unconfirmed change.
 - A message saying a change was not recorded means nothing changed. Read the reason and try again.

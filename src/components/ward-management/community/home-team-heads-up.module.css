@@ -1,0 +1,5 @@
+/* Home team heads-up (D-141): the patient's UMRN in Geist Mono, as every other UMRN in the app. */
+.umrn {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}

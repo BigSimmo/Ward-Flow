@@ -29,6 +29,7 @@ import { alternativesConsideredError } from "./referrals/referral-alternatives";
 import { REFERRAL_INFORMATION_NEED_IDS } from "./referrals/referral-information-needs";
 import { REFERRAL_CONTACT_OUTCOME_IDS, REFERRAL_OWNER_DESKS } from "./referrals/referral-owner-and-calls";
 import { REFERRAL_COMMITMENT_STEP_IDS } from "./referrals/referral-commitments";
+import { storedEscalationCalls } from "./escalation/escalation-calls-schema";
 import {
   MOVEMENT_STAGES,
   COHORTS,
@@ -45,6 +46,7 @@ import {
 import { BROADCAST_ANSWER_LABELS } from "./alerts/ward-broadcast-model";
 import { validateConfiguration } from "./ward-configuration";
 import { WARD_CLOSURE_REASONS, type WardClosureReason } from "./capacity/ward-closure";
+import { unitBedFields } from "./ward-flow-storage-bed-fields";
 import { storedTriageRecords } from "./triage/triage-record-schema";
 import {
   ACCEPTANCE_CONDITION_AGREED_WITH,
@@ -92,12 +94,13 @@ import { isObservation, type Observation } from "./ward-observation";
 import { isTentativeDiagnosisBlock } from "./ward-diagnosis";
 import { isCommunityReferralPurpose } from "./ward-model-referral-parts";
 import { storedStaffRequests } from "./staffing/staff-requests-schema";
+import { pilotControlRowsBelong, pilotControlStoredFields } from "./ward-flow-pilot-control-schema";
+import { storedCarerCallbacks, storedHandedItems } from "@/components/ward-management/handover-work-schema";
 
 // D-72: numbered device-copy stand-ins keep typed criteria distinct.
 export function typedCriterionNotKept(n: number): string {
   return n === 1 ? TYPED_TEXT_NOT_KEPT : `${TYPED_TEXT_NOT_KEPT} (${n})`;
 }
-
 const CRITERION_STAND_INS: ReadonlySet<string> = new Set(
   Array.from({ length: PATIENT_SPECIFIC_CRITERIA_MAX }, (_, index) => typedCriterionNotKept(index + 1)),
 );
@@ -113,11 +116,9 @@ function isDeviceCopyDischargeCriteriaRecord(value: unknown): value is Discharge
 // Restore validates nested values, collection shapes, then cross-row consistency in order.
 // `nested` refuses undefined, so optional fields must be absent. Strict identity/care records
 // refuse unknown keys to prevent restoring free text.
-
 type RecordValue = Record<string, unknown>;
 const object = (v: unknown): v is RecordValue => typeof v === "object" && v !== null && !Array.isArray(v);
 const fits = (schema: z.ZodMiniType, value: unknown) => schema.safeParse(value).success;
-
 // zod 4 numbers refuse NaN and both infinities, and `z.int()` is a safe integer.
 const finite = z.number();
 const maybeAt = z.optional(finite); // Psychiatry review and ward wait list instants (9 Nov 2026).
@@ -182,6 +183,8 @@ const NESTED_KEY_RULES = new Map<string, z.ZodMiniType>([
   ["medicalClearance", medicalClearanceRule],
   ["transportNeed", z.looseObject({ needed: bool, at: finite })],
   ["psychReview", z.strictObject({ requestedAt: finite, registrarSeenAt: maybeAt, consultantSeenAt: maybeAt })],
+  ...["crewArrivedAt", "crewHandedOverAt", "crewReleasedAt"].map((key) => [key, maybeAt] as const), // Never null.
+  ["escalationCalls", storedEscalationCalls], // Escalation calls (D-133): fixed lists, a time and a desk.
   ["closure", closureRule],
   ...[
     "legalClock",
@@ -288,6 +291,7 @@ const capacityFigure = z.looseObject({
   revision: z.optional(counter),
   confirmations: z.optional(counter),
   confirmedBy: z.optional(z.enum(["ward", "bed_manager", "coordinator"])),
+  wardConfirmedAt: z.optional(finite),
 });
 // Closing the loop, package D (24 Oct 2026): fixed-list choices, ids, instants and role labels only.
 const closureTransitionMarkRule = z.strictObject({
@@ -373,21 +377,7 @@ const unit = z
     ),
     isClosed: z.optional(bool),
     readyForNextAt: maybeAt, // Ward wait list (9 Nov 2026): when the ward said it is ready for its next patient.
-    // H-0978: one bed closed (`SET_BED_CLOSED`), a chosen reason, never typed text; optional for older saves.
-    closedBeds: z.optional(
-      z.array(
-        z.looseObject({
-          bedNumber: counter.check(z.gte(1)),
-          at: finite,
-          by: text,
-          reason: z.optional(
-            z.enum(WARD_CLOSURE_REASONS.map((entry) => entry.id) as [WardClosureReason, ...WardClosureReason[]]),
-          ),
-          // A reopened mark stays as seat history; it reopened no earlier than it closed.
-          reopenedAt: z.optional(finite),
-        }),
-      ),
-    ),
+    ...unitBedFields, // closedBeds (H-0978, item 6) and intakeWindow (item 13)
     // Smart features idea 7: a chosen reason, never typed text.
     admissionsClosure: z.optional(
       z.looseObject({
@@ -605,7 +595,7 @@ const admission = z
     dischargeConfirmedBy: nullableText,
     blockReason: z.nullable(z.enum(BED_RELEASE_BLOCKERS)),
     stayBlockRecords: z.optional(z.custom(isStayBlockRecords)), // absent in older saves.
-    ...dischargeFollowThroughFields, // Features 6, 37, 13 and 14 (9 Nov 2026); absent in older saves.
+    ...dischargeFollowThroughFields, // Features 6, 37, 13 and 14 (9 Nov 2026), item 18; absent in older saves.
     leavingDestination: z.nullable(z.custom(isLeavingDestination)),
     // A stored barrier is a list value or absent; free text would be typed text restored (finding A2-2).
     dischargeBarrier: z.optional(z.nullable(z.custom(isDischargeBarrier))),
@@ -633,6 +623,8 @@ const admission = z
     z.refine(
       (stay) => ((stay.clinicallyReadySince ?? null) === null) === ((stay.delayedDischargeReason ?? null) === null),
     ),
+    // Item 18: only somebody who has left can be waiting for transport, so the list never shows a bed holder.
+    z.refine((stay) => stay.waitingForTransport === undefined || stay.state === "departed"),
   );
 
 // A destination is one of three kinds, each holding its own facts; any other kind is refused.
@@ -1084,11 +1076,17 @@ const storedState = z.looseObject({
   returnEarlyFlags: z.optional(z.array(z.strictObject({ admissionId: id, homeHospital: id, at: finite, by: role }))),
   // Shared mode nameless notices (4 Nov 2026): a key, a site and a time. No stay id, no name.
   returnEarlyNotices: z.optional(z.array(z.strictObject({ key: id, homeHospital: id, at: finite }))),
+  diversionReturns: z.optional(z.array(z.strictObject({ referralId: id, returnedAt: finite }))), // D-152, no person
   handoverSignOffs: z.array(stamped),
   // Triage and risk (7 Nov 2026): signed triages, absent in older saves. Codes only, no typed text.
   triages: z.optional(storedTriageRecords),
   // Staff needed (feature 10, 9 Nov 2026): absent in older saves. Ids, closed lists, times and roles only.
   staffRequests: z.optional(storedStaffRequests),
+  // Batch 4 (10 Nov 2026): site feature switches, pack print times and outage windows, each optional.
+  ...pilotControlStoredFields,
+  // Batch 3 items 21 and 23 (10 Nov 2026): absent in older saves. Ids, desks and times only.
+  handedItems: z.optional(storedHandedItems),
+  carerCallbacks: z.optional(storedCarerCallbacks),
   // Q61 (31 Oct 2026): site handover sign-offs, absent in older saves. Ids, times and a role only.
   siteHandoverSignOffs: z.optional(
     z.array(
@@ -1455,6 +1453,7 @@ function consistent(state: StoredState, value: RecordValue): boolean {
   for (const key of Object.keys(state.morningRollupConfirmations)) if (!unitIds.has(key)) return false;
   // Staff needed (feature 10): every request names a ward in this world.
   for (const row of state.staffRequests ?? []) if (!unitIds.has(row.unitId)) return false;
+  if (!pilotControlRowsBelong(value as unknown as WardFlowState, state.units)) return false;
   // H-IMPORT (#1455): live absence, active stays and numbered beds must each have one owner.
   return storedPlacementInvariants(value as unknown as WardFlowState, activePatientStays(state.admissions));
 }

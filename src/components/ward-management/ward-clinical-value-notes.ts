@@ -125,6 +125,10 @@ const CLINICAL_VALUE_NOTES = {
     source:
       "D-63 (16 Oct 2026), local workflow choice; each health service's business continuity plan sets downtime report refresh",
   },
+  downtimePackOld: {
+    source:
+      "Josh, 10 Nov 2026, decision card (Batch 4 item 24, D-135); each health service's business continuity plan sets how often paper is refreshed",
+  },
   preparingBedStale: {
     source: "D-63 (16 Oct 2026), more than an hour, local workflow choice",
   },
@@ -148,6 +152,15 @@ const CLINICAL_VALUE_NOTES = {
     source:
       "Shift ring on the rail, in the 27 Sep 2026 source snapshot with no decision recorded; added to the register 10 Nov 2026 (D-122)",
   },
+  tvChangeMark: {
+    source: 'D-137 (Josh, 10 Nov 2026), plan item 43: TV "Changed HH:MM" mark on the ward and bed meeting TVs',
+  },
+  handoverOwnWorkLead: {
+    source: "Feature build plan batch 3, item 21: Josh signed 30 minutes on a decision card, 10 Nov 2026 (D-136)",
+  },
+  diversionReturnReview: {
+    source: "Feature build plan batch 3, item 28: Josh signed 7 days on a decision card, 10 Nov 2026 (D-136)",
+  },
   lateArrivalGrace: {
     source: "D-22 (26 Sep 2026), labelled default",
   },
@@ -160,6 +173,9 @@ const CLINICAL_VALUE_NOTES = {
   missedRequestWindow: {
     source:
       "Product brief success measure 2 (25 Sep 2026); signed off by owner Josh, 07:02 AWST 20 Oct 2026, prototype",
+  },
+  referralNotOpened: {
+    source: "D-133 (Josh, 10 Nov 2026): signed 30 minutes for the referral list's Not opened yet tag (item 16)",
   },
   wardAnswerTarget: {
     source: "Stream A, 9 Oct 2026, labelled default",

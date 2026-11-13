@@ -26,6 +26,7 @@ import type {
 import type { UndoBedMeetingActionEvent } from "./ward-bed-meeting-undo-event-type";
 import type { Tier1UndoEvent } from "./ward-tier1-undo-event-types";
 import type { PatientCollectedEvent, RecordTransportCadEvent } from "./ward-transport-collection-events";
+import type { MarkTransportCollectedEvent } from "./ward-left-ward";
 import type { ReferralInformationNeed } from "@/components/ward-management/referrals/referral-information-needs";
 import type {
   ReferralContactOutcome,
@@ -121,7 +122,6 @@ import type { RecordWardDiagnosisEvent } from "@/components/ward-management/ward
 import type { MarkWeekendDischargeReviewedEvent } from "@/components/ward-management/ward-flow-weekend-review-events";
 // The role table lives in its own file (line cap, 18 Oct 2026), re-exported here.
 export { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
-
 // The ED's intake form type lives in its own file (line cap, 22 Oct 2026), re-exported here.
 import type { ReferralDraft } from "@/components/ward-management/ward-referral-draft";
 export type { ReferralDraft };
@@ -170,6 +170,7 @@ export type WardFlowEvent =
       expectedGeneration: number;
       expectedRevision: number;
       leavingDestination: LeavingDestination;
+      awaitingTransport?: true; // Item 18, "Left the ward": see `ward-left-ward.ts`.
     }
   | {
       type: "UPDATE_EXPECTED_DISCHARGE";
@@ -598,6 +599,21 @@ export type WardFlowEvent =
       codes: readonly WardIntakeConstraint[];
     }
   | {
+      /**
+       * Feature item 13 (10 Nov 2026): the hours tonight a ward can take an admission, or `null` to
+       * clear it. Two typed clock times already read to instants (D-72), no typed text. Information
+       * only: it never blocks a referral or orders wards. The ward for itself, or the coordinator.
+       * See ward-flow-intake-window-events.ts.
+       */
+      type: "SET_INTAKE_WINDOW";
+      role: WardFlowRole;
+      now: Instant;
+      unitId: string;
+      /** The ward's own claim, refused when it is not `unitId`. Absent for the coordinator. */
+      actingUnitId?: string;
+      intake: { from: Instant; to: Instant } | null;
+    }
+  | {
       type: "CONFIRM_CAPACITY";
       role: WardFlowRole;
       now: Instant;
@@ -816,8 +832,7 @@ export type WardFlowEvent =
       role: WardFlowRole;
       now: Instant;
       unitId: string;
-      /** The ward's own claim, refused when it is not `unitId`. Absent for the coordinator. */
-      actingUnitId?: string;
+      actingUnitId?: string; // The ward's own claim, refused when it is not `unitId`. Absent for the coordinator.
       reason: WardClosureReason;
       until?: Instant;
     }
@@ -839,6 +854,7 @@ export type WardFlowEvent =
       bedNumber: number;
       closed: boolean;
       reason?: WardClosureReason;
+      reviewAt?: Instant; // Item 6: look again then, a prompt only. Closing only; capped as a ward's `until`.
     }
   | {
       /**
@@ -1774,7 +1790,9 @@ export type WardFlowEvent =
        * what makes the difference between a bed freed and a bed moved.
        */
       leavingDestination: LeavingDestination;
+      awaitingTransport?: true; // Item 18, "Left the ward": see `ward-left-ward.ts`.
     }
+  | MarkTransportCollectedEvent
   | {
       /**
        * A WARD SENDS ONE OF ITS OWN OCCUPANTS OUT TO AN EMERGENCY DEPARTMENT, AND KEEPS THE BED.
@@ -2543,13 +2561,14 @@ export type WardFlowEvent =
   // Package B (24 Oct 2026) dependencies and plan changes; features 37 and 13 (9 Nov 2026) checklist and reply.
   | import("./discharges/discharge-check-events").DischargeDeskEvent
   | ObservationLevelEvent
+  | import("./ward-crew-handover").CrewHandoverEvent
   | RecordWardDiagnosisEvent
-  // Feature 14 (Josh, 9 Nov 2026): the weekend discharge review tick.
+  // Feature 14 (9 Nov 2026): the weekend discharge review tick; item 4 (11 Nov 2026): Chief Psychiatrist notified.
   | MarkWeekendDischargeReviewedEvent
+  | import("./ward-flow-under-18-events").ChiefPsychiatristNotifiedEvent
   | import("./ward-flow-referral-ask-events").ReferralAskEvent
-  // Closing-the-loop (package E): return requested vs home service agreed.
+  // Closing-the-loop (package E): return requested vs home service agreed; an on-call directory entry checked now.
   | import("./out-of-area/home-service-return").HomeServiceReturnEvent
-  // Closing-the-loop (package E): an on-call directory entry checked now.
   | import("./on-call/on-call-checks").DirectoryCheckEvent
   // Q61 (Josh, 31 Oct 2026): the site bed manager's site handover sign-off, and its Undo.
   | import("./site-sign-off/site-handover-sign-off").SiteHandoverSignOffEvent
@@ -2557,8 +2576,11 @@ export type WardFlowEvent =
   | import("./out-of-area/return-early").ReturnEarlyEvent
   // Triage and risk (Josh's approved mock-up, built 7 Nov 2026): a signed triage on one person.
   | import("./triage/triage-record").TriageSignedEvent
-  // Staff needed (feature 10, 9 Nov 2026): a ward needs more staff, and the request closed.
+  // Staff needed (feature 10, 9 Nov 2026); batch 3 items 21 and 23 (handing on own work, carer callbacks).
   | import("./staffing/staff-requests").StaffRequestEvent
+  // Batch 4 (10 Nov 2026): a site feature switch, a downtime pack print time and an outage window.
+  | import("./ward-flow-pilot-control-events").PilotControlEvent
+  | import("@/components/ward-management/handover-work-events").HandoverWorkEvent
   /*
    * v10 pass 2 (Josh, 10 Oct 2026): the build guide's "Toast with Undo". Each undo is a proper,
    * role-gated, audited event that restores the state its decision changed EXACTLY, and only within
@@ -2725,26 +2747,3 @@ export type WardFlowEvent =
 /** Road or flight — the two repatriation modes this prototype records. Never free text. */
 export const REPATRIATION_MODES = ["road", "flight"] as const;
 export type RepatriationMode = (typeof REPATRIATION_MODES)[number];
-
-/**
- * ⚠️ THE EVENTS A RECORDED REASON CAN GET PAST — AND THE POINT IS THAT IT IS DERIVED, NOT LISTED.
- *
- * `Extract` reads the union itself, so this cannot drift from `WardFlowEvent`. The reducer's two
- * refusal helpers take THIS rather than `WardFlowEvent & { overrideReason?: OverrideReason }`.
- *
- * That intersection was the defect: it RE-ADDED the field regardless of what the union member
- * declared, so deleting `overrideReason?: OverrideReason` from an event produced no type error
- * anywhere. The declaration was load-bearing for CALLERS constructing the event and NOT for the
- * reducer reading it — a deletion would have left screens unable to pass a reason while the
- * reducer went on reading one that could never arrive. A field with no producer, arriving by
- * deletion, invisible to tsc.
- *
- * ⚠️ AND A STRUCTURAL CHECK WOULD NOT HAVE CAUGHT IT EITHER. `Member extends { overrideReason?:
- * OverrideReason }` stays TRUE when the field is deleted, because a type missing an OPTIONAL
- * property is still structurally assignable to one that declares it optional. That check would
- * compile for ever and report nothing — a check that cannot fail, in the type system.
- */
-export type OverridableWardFlowEvent = Extract<
-  WardFlowEvent,
-  { type: "REFER_TO_UNITS" | "ACCEPT_IN_PRINCIPLE" | "PULL_PATIENT" | "ACCEPT_REFERRAL" }
->;

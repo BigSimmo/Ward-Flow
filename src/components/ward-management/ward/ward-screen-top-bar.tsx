@@ -3,6 +3,7 @@
 // The ward screen's ward card and top action bar. Split out of `ward-screen.tsx` (18 October 2026)
 // to keep that file under the line cap.
 
+import { WardIntakeWindowControl } from "./ward-intake-window-control";
 import { useEffect, useState } from "react";
 import { type WardHeroTopInput, wardHeroTopParts } from "./ward-hero-top-parts";
 import { Bed, Check, Presentation, Send, Zap } from "lucide-react";
@@ -312,7 +313,9 @@ export function WardScreenTopBar({
                     testId: "ward-updates",
                   },
                   ...staffContact.chips,
-                  ...(raiseReferralGate.allowed
+                  // D-116 and D-159: the New referral chip is phone-only. Off the phone the bar's New
+                  // menu is the one way in, so the ward top does not repeat it.
+                  ...(isPhone && raiseReferralGate.allowed
                     ? [
                         {
                           id: "referral",
@@ -341,6 +344,8 @@ export function WardScreenTopBar({
             band={wardBand}
           >
             {wardHeroMeta}
+            {/* Feature item 13: tonight's intake hours, information only. */}
+            {wardHeroMeta ? <WardIntakeWindowControl unit={unit} now={now} /> : null}
             {staffContact.tag}
           </HeroTop>
         </Hero>

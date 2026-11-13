@@ -32,6 +32,7 @@ import { reduceDirectoryCheck, type DirectoryCheckRecord } from "./on-call/on-ca
 import type { SiteHandoverSignOffRecord } from "./site-sign-off/site-handover-sign-off";
 import type { TriageSignedRecord } from "./triage/triage-record";
 import { reduceStaffRequest, type StaffRequestRecord } from "./staffing/staff-requests";
+import type { PilotControlState } from "./ward-flow-pilot-control-events";
 import { classifyLegalStatus, legalStatusIsDetained } from "@/components/ward-management/ward-legal-status";
 import { appendRefreshRequest } from "./ward/ward-buzz-keys";
 import { referralState } from "./ward-referrals";
@@ -63,11 +64,7 @@ import {
 } from "./ward-discharge-records";
 // D-64: these two live beside the discharge records so the Discharges list can use them too.
 export { admissionCriteriaEligibility, dischargeMovement };
-import {
-  PLANNED_ADMISSION_CANCEL_REASONS,
-  PLANNED_ADMISSION_REASONS,
-  type LeavingDestination,
-} from "./ward-admissions";
+import { PLANNED_ADMISSION_CANCEL_REASONS, PLANNED_ADMISSION_REASONS } from "./ward-admissions";
 import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
 import { activeClosedBeds } from "@/components/ward-management/ward-ready-beds";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -87,8 +84,6 @@ import {
 import {
   candidateReason,
   eligibility,
-  adjustSexMix,
-  mixSexOf,
   referralEligibility,
   type EligibilityGate,
 } from "@/components/ward-management/ward-eligibility";
@@ -103,7 +98,6 @@ import {
   WARD_FLOW_ROLE_LABELS,
   type RepatriationMode,
   type WardFlowEvent,
-  type OverridableWardFlowEvent,
   type WardFlowRole,
 } from "@/components/ward-management/ward-flow-events";
 
@@ -163,8 +157,7 @@ import {
   type Admission,
   type PlannedAdmission,
 } from "@/components/ward-management/ward-admissions";
-import { activeCommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
-import type { Patient } from "@/components/ward-management/ward-patients";
+import { activeCommunityTreatmentOrder, type Patient } from "@/components/ward-management/ward-patients";
 import { combineWardPatients } from "@/components/ward-management/ward-patients-seed";
 import {
   generatedOccupantPatients,
@@ -191,12 +184,20 @@ import { type SupportNotificationRecord } from "@/components/ward-management/war
 import { applyLoopChecksDemoOverlay } from "./ward-loop-checks-demo";
 import { applyWaitlistDemoOverlay } from "./ward-demo-waitlist";
 import { reduceReviewReadyEvent } from "./ward-flow-review-ready-events";
+import { applyIntakeWindowDemoOverlay } from "./capacity/ward-intake-window-demo";
 // S6 example data (3 Nov 2026): no demo list opens empty. A live shared build swaps in a no-op.
 import { applyExampleListsOverlay } from "@/components/ward-management/ward-demo-example-lists";
 import { stepUndoSubjectId, subjectId } from "./ward-flow-subject-id";
-import { nextBedReleaseId, withFreshIds } from "./ward-runtime-ids";
+import { withFreshIds } from "./ward-runtime-ids";
+// The departure arithmetic lives in its own file (line cap, 10 Nov 2026), re-exported here.
+import { departAdmission, recordedByLabel } from "./ward-flow-departure";
+import type { OverridableWardFlowEvent } from "./ward-flow-overridable-events";
+export { departAdmission, recordedByLabel };
 import { isPatientCarePlanEvent } from "./ward-patient-care-plan-events";
-export { UNLINKED_CARE_REFUSAL } from "./ward-flow-protected-record-events";
+import { isHandoverWorkEvent } from "@/components/ward-management/handover-work-events";
+// From the reasons file, never the protected-record slice: a re-export loads its module, which put the
+// slice and the stay events in the first-load script every page downloads (D-162 finding 1).
+export { UNLINKED_CARE_REFUSAL } from "./ward-protected-refusal-reasons";
 
 /**
  * Stages `REFER_TO_UNITS` accepts, exported so a UI can pre-check referability before dispatching
@@ -283,7 +284,8 @@ export const STAGE_TRANSITION_BLOCKERS = {
  * Units live in state, not just movements: a ward whose capacity never moves as it accepts, holds
  * and receives patients makes the primary screen less true the more it is used.
  */
-export type WardFlowState = WardAuditState & {
+type WardAuditAndPilotState = WardAuditState & PilotControlState; // Batch 4 records (10 Nov 2026).
+export type WardFlowState = WardAuditAndPilotState & {
   dischargeRevisions: Record<string, number>;
   movements: Movement[];
   units: Unit[];
@@ -419,11 +421,13 @@ export type WardFlowState = WardAuditState & {
   triages?: TriageSignedRecord[];
   /** Staff needed (feature 10, 9 Nov 2026): ward, shift, count, chosen reasons, times and roles only. */
   staffRequests?: StaffRequestRecord[];
-  /**
-   * Shared mode only (Josh, 4 Nov 2026): nameless early-return notices for a desk that should hear a
-   * flag but cannot see the stay. Worked out when the desk's copy is scoped; never written by the reducer.
-   */
+  /** Batch 3 items 21 and 23 (`handover/handover-work-events.ts`): hand-overs of own work, and carer callbacks. */
+  handedItems?: import("@/components/ward-management/handover-work-events").HandedItemRecord[];
+  carerCallbacks?: import("@/components/ward-management/handover-work-events").CarerCallbackRecord[];
+  /** Shared mode only, set when a desk's copy is scoped and never by the reducer: nameless early-return notices
+   *  (Josh, 4 Nov 2026), and a community desk's returns to ED after a diversion (D-152). */
   returnEarlyNotices?: ReturnEarlyNotice[];
+  diversionReturns?: import("@/components/ward-management/community/diversion-return-review").DiversionReturnRecord[];
   /** Handover sign-offs — role and time only. `RECORD_HANDOVER_SIGN_OFF` appends here. */
   handoverSignOffs: HandoverSignOffRecord[];
   /**
@@ -593,7 +597,12 @@ export function seedWardFlowState(scenario: WardScenario = "standard"): WardFlow
   };
   // Closing the loop, package D (24 Oct 2026): a few synthetic marks so each record shows in the demo.
   const demo = network ? seed : applyLoopChecksDemoOverlay(applyRulingsDemoOverlay(seed, NOW_ANCHOR), NOW_ANCHOR);
-  return applyExampleListsOverlay(network ? demo : applyWaitlistDemoOverlay(demo, NOW_ANCHOR), NOW_ANCHOR);
+  // Feature item 13: a few synthetic intake windows set this morning.
+  const withWindows = network ? demo : applyIntakeWindowDemoOverlay(demo, NOW_ANCHOR);
+  return applyExampleListsOverlay(
+    network ? withWindows : applyWaitlistDemoOverlay(withWindows, NOW_ANCHOR),
+    NOW_ANCHOR,
+  );
 }
 
 /**
@@ -1181,122 +1190,6 @@ export function referralReferrer(referral: Referral): Addressee | undefined {
   return edId === undefined ? undefined : { role: "ed", placeId: edId };
 }
 
-/** The established departure arithmetic, shared by the legacy and patient-linked commands. */
-export function departAdmission(
-  state: WardFlowState,
-  admission: Admission,
-  unit: Unit,
-  now: Instant,
-  leavingDestination: LeavingDestination,
-  role: WardFlowRole,
-): WardFlowState {
-  // Owner decision: a bed release is a named patient's discharge, so pairing is by admission, never
-  // by ward-wide counts. `releaseAlreadyIncremented` should be unreachable (RELEASE_BED refuses
-  // while the person is in the bed, and storage validation refuses it); if met, not raising the
-  // figures again can only under-state free beds.
-  const liveRelease = state.bedReleases.find((r) => r.admissionId === admission.id && r.state !== "discharged");
-  const releaseAlreadyIncremented = state.bedReleases.some(
-    (r) => r.admissionId === admission.id && r.state === "discharged",
-  );
-
-  // Item 11 / WFA-003: `PULL_PATIENT` decrements `allocatableLocked` when the bed taken was locked;
-  // departure restores it on both branches, since `RELEASE_BED` never touches that field.
-  //
-  // S2-3: a departure resolves one over-capacity arrival (this admission's, or the unit's earliest
-  // pending conflict), so bed figures do not rise above true capacity.
-  const admittingMovement = state.movements.find((m) => m.admissionId === admission.id);
-  const matchingConflictIndex =
-    unit.arrivalCapacityConflicts?.findIndex(
-      (entry) =>
-        entry.admissionId === admission.id ||
-        (admittingMovement?.id !== undefined && entry.movementId === admittingMovement.id),
-    ) ?? -1;
-  const conflictToResolveIndex =
-    matchingConflictIndex >= 0 ? matchingConflictIndex : (unit.arrivalCapacityConflicts?.length ?? 0) > 0 ? 0 : -1;
-  const arrivalAwaitingCapacity = conflictToResolveIndex >= 0;
-  const remainingArrivalConflicts =
-    conflictToResolveIndex >= 0 && unit.arrivalCapacityConflicts
-      ? unit.arrivalCapacityConflicts.filter((_, idx) => idx !== conflictToResolveIndex)
-      : unit.arrivalCapacityConflicts;
-  const restoreLocked = !arrivalAwaitingCapacity && admission.bedKind === "locked" ? 1 : 0;
-  // Owner ruling 2026-09-25: occupant counts follow gender (recorded sex for a non-binary person).
-  // An admission carries only `sex`, so the gender comes from the movement that admitted it.
-  const leaverSex = mixSexOf(admission.gender ?? admittingMovement?.gender, admission.sex);
-  // Audit A1-11 (13 Oct 2026): a departure moves the figures but never stamps them as confirmed;
-  // only the ward's own Confirm numbers (`CONFIRM_CAPACITY`) sets `confirmedAt`.
-  const updatedUnit: Unit =
-    releaseAlreadyIncremented || arrivalAwaitingCapacity
-      ? {
-          ...unit,
-          allocatableLocked: Math.min(unit.lockedBeds, unit.allocatableLocked + restoreLocked),
-          sexMix: adjustSexMix(unit.sexMix, leaverSex, -1),
-          ...(remainingArrivalConflicts === undefined ? {} : { arrivalCapacityConflicts: remainingArrivalConflicts }),
-        }
-      : {
-          ...unit,
-          empty: { ...unit.empty, value: Math.min(unit.beds, unit.empty.value + 1) },
-          allocatable: {
-            ...unit.allocatable,
-            value: Math.min(unit.beds, unit.allocatable.value + 1),
-          },
-          allocatableLocked: Math.min(unit.lockedBeds, unit.allocatableLocked + restoreLocked),
-          sexMix: adjustSexMix(unit.sexMix, leaverSex, -1),
-          ...(remainingArrivalConflicts === undefined ? {} : { arrivalCapacityConflicts: remainingArrivalConflicts }),
-        };
-  // Leaving ends any discharge blocker too: the stay is over, so it must not carry a "held up" reason
-  // into history, the same way its bed release loses its blocker below.
-  const departed: Admission = {
-    ...admission,
-    state: "departed",
-    leftAt: now,
-    leavingDestination,
-    blockReason: null,
-    dischargeCriteria: null,
-  };
-  const departedState = replaceAdmission(replaceUnit(state, unit.id, updatedUnit), admission.id, departed);
-  // Owner ruling: a leave bed belongs to one stay, so leaving ends it in the same write. No bed
-  // figure moves here.
-  const withPerson: WardFlowState = departedState.leaveBeds.some((bed) => bed.admissionId === admission.id)
-    ? { ...departedState, leaveBeds: departedState.leaveBeds.filter((bed) => bed.admissionId !== admission.id) }
-    : departedState;
-  // A4-24 (owner decision): a vacated bed goes to "Being made ready" (`preparing: true` on the
-  // discharged release) until one tap of Ready (`SET_BED_PREPARATION`, `preparing: false`). When no
-  // bed came free here, nothing is marked.
-  const bedCameFree = !releaseAlreadyIncremented && !arrivalAwaitingCapacity;
-  if (!liveRelease) {
-    if (!bedCameFree) return withPerson;
-    // A departure nobody flagged still vacates a bed: record its release, already discharged, to
-    // carry "Being made ready". Same id scheme as FLAG_BED_RELEASE.
-    const vacated: BedRelease = {
-      id: nextBedReleaseId(withPerson.bedReleases),
-      unitId: unit.id,
-      admissionId: admission.id,
-      state: "discharged",
-      expectedAt: now,
-      waitingOn: null,
-      blocker: null,
-      blockedBy: null,
-      preparing: true,
-      preparationNote: null,
-      confirmedAt: now,
-      confirmedBy: recordedByLabel(role, unit.name),
-    };
-    return { ...withPerson, bedReleases: [...withPerson.bedReleases, vacated] };
-  }
-  // Leaving completes this person's release — the same fields RELEASE_BED used to write. A stuck flag
-  // comes off, because the bed is no longer held up.
-  return replaceBedRelease(withPerson, liveRelease.id, {
-    ...liveRelease,
-    state: "discharged",
-    waitingOn: null,
-    blocker: null,
-    blockedBy: null,
-    preparing: bedCameFree,
-    preparationNote: null,
-    confirmedAt: now,
-  });
-}
-
 /**
  * Whether a patient record's free-text legal status is involuntary, for the two discharge guards
  * below. Deliberately wide: anything starting "Involuntary", plus "Detained awaiting examination".
@@ -1351,11 +1244,6 @@ export function dischargeBlockingTransit(state: WardFlowState, admission: Admiss
       movementInTransit(movement) &&
       movementSourceAdmission(state, movement)?.id === admission.id,
   );
-}
-
-/** "NUM <ward>" when the ward recorded it, otherwise the role's own label (the coordinator acts too). */
-export function recordedByLabel(role: WardFlowRole, unitName: string): string {
-  return role === "ward" ? `NUM ${unitName}` : WARD_FLOW_ROLE_LABELS[role];
 }
 
 /** Any ward-resource update invalidates a capacity draft, including protected departures. */
@@ -1871,6 +1759,7 @@ export function reduceClinicalEvent(
     case "RECORD_LEFT_DEPARTMENT":
     case "RECORD_EXAMINATION":
     case "RECORD_LEAVING":
+    case "MARK_TRANSPORT_COLLECTED":
     case "RECORD_MOVEMENT_BLOCKER":
     case "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT":
     case "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT":
@@ -1896,6 +1785,8 @@ export function reduceClinicalEvent(
     case "RECORD_REPATRIATION":
     case "RECORD_CLINICAL_CONTACT":
     case "RECORD_SUPPORT_NOTIFICATION":
+    case "RECORD_CREW_TIMES":
+    case "RECORD_ARRIVAL_MODE":
       return reducerSlices().reduceRecordedFactEvent(state, event, decision, RECORDED_FACT_EVENT_HELPERS);
     case "RECORD_OBSERVATION_LEVEL":
       return reduceObservationLevelEvent(state, event, RECORDED_FACT_EVENT_HELPERS, decision);
@@ -1939,6 +1830,9 @@ export function reduceClinicalEvent(
     case "CLOSE_WARD_TO_ADMISSIONS":
     case "REOPEN_WARD_TO_ADMISSIONS":
       return reducerSlices().reduceWardClosureEvent(state, event, decision, { findUnit, reject, replaceUnit });
+    // Feature item 13: tonight's intake hours, information only.
+    case "SET_INTAKE_WINDOW":
+      return reducerSlices().reduceIntakeWindowEvent(state, event, decision, { findUnit, reject, replaceUnit });
     // H-0978 / WS-15: one exact bed closed or reopened (`Unit.closedBeds`).
     case "SET_BED_CLOSED":
       return reducerSlices().reduceBedClosureEvent(state, event, decision, {
@@ -1984,7 +1878,6 @@ export function reduceClinicalEvent(
         replaceAdmission,
         replaceMovement,
       });
-
     case "PULL_PATIENT":
     case "EXTEND_PULL":
     case "RELEASE_PULL":
@@ -1993,7 +1886,6 @@ export function reduceClinicalEvent(
     case "STEP_BACK_STAGE":
     case "RELEASE_AND_REOPEN_SEARCH":
       return reducerSlices().reducePlacementEvent(state, event, decision, PLACEMENT_EVENT_HELPERS);
-
     case "HANDOVER_READY":
     case "TRANSPORT_ACCEPTED":
     case "TRANSPORT_EN_ROUTE":
@@ -2213,6 +2105,7 @@ export function reduceClinicalEvent(
       return replaceMovement(state, movement.id, updated);
     }
 
+    case "RECORD_ESCALATION_CALL": // Escalation calls (item 3, D-133), forwarded on to escalation-calls.ts.
     case "REQUEST_PSYCH_REVIEW":
     case "RECORD_PSYCH_REVIEW_SEEN":
     case "MARK_WARD_READY_FOR_NEXT":
@@ -2352,12 +2245,12 @@ export function reduceClinicalEvent(
         return reject(state, event, `${event.type} reason must be chosen from the listed reasons`);
       return reducePlannedAdmission(state, event, decision);
     }
-    case "CONVERT_PLANNED_ADMISSION": {
+    case "CONVERT_PLANNED_ADMISSION":
       return reducePlannedAdmission(state, event, decision);
-    }
     case "RECORD_WARD_DIAGNOSIS":
       return reducerSlices().reduceWardDiagnosis(state, event, reject);
     case "MARK_WEEKEND_DISCHARGE_REVIEWED":
+    case "RECORD_CHIEF_PSYCHIATRIST_NOTIFIED":
     case "RECORD_DISCHARGE_CHECK":
     case "RECORD_FOLLOW_UP_REPLY":
       return reducerSlices().reduceDischargeFollowThroughEvent(state, event, reject);
@@ -2375,12 +2268,17 @@ export function reduceClinicalEvent(
     case "REQUEST_WARD_STAFF":
     case "CLOSE_WARD_STAFF_REQUEST":
       return reduceStaffRequest(state, event, reject);
+    case "SET_SITE_FEATURE_SWITCH": // Batch 4 (10 Nov 2026): one small record each.
+    case "RECORD_DOWNTIME_PACK_PRINTED":
+    case "RECORD_OUTAGE_WINDOW":
+      return reducerSlices().reducePilotControlEvent(state, event, decision, reject);
     // Triage and risk (7 Nov 2026): a signed triage on one person. No Undo: it is a signed record.
     case "RECORD_TRIAGE_SIGNED":
       return reducerSlices().reduceTriageSigned(state, event, reject);
     default: {
       if (isPatientCarePlanEvent(event))
         return reducerSlices().reducePatientCarePlanEvent(state, event, reject, decision);
+      if (isHandoverWorkEvent(event)) return reducerSlices().reduceHandoverWork(state, event, reject);
       const _exhaustive: never = event;
       void _exhaustive;
       return state;

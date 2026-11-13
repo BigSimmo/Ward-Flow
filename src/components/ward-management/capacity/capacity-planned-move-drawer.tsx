@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import Link from "next/link";
 import { CalendarCheck, FileText, Pencil, X } from "lucide-react";
 
@@ -37,7 +38,7 @@ import styles from "./capacity-page.module.css";
 
 // Ward peek (D-98): loaded when a drawer opens, so the Capacity page's first download stays the same.
 const WardPeekButton = dynamic(
-  () => import("@/components/ward-management/board/ward-peek").then((m) => m.WardPeekButton),
+  withLoadRetry(() => import("@/components/ward-management/board/ward-peek").then((m) => m.WardPeekButton)),
   { ssr: false },
 );
 

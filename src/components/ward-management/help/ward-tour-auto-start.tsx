@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { usePathname } from "next/navigation";
 import { useContext, useEffect, useRef, useState } from "react";
 
@@ -11,7 +12,10 @@ import { useTourFacts } from "./ward-tour-facts";
 
 // The welcome cards, their words and the tour length they quote load only when the offer shows,
 // so this file (on every signed-in page) stays small.
-const WardTourWelcome = dynamic(() => import("./ward-tour-welcome").then((m) => m.WardTourWelcome), { ssr: false });
+const WardTourWelcome = dynamic(
+  withLoadRetry(() => import("./ward-tour-welcome").then((m) => m.WardTourWelcome)),
+  { ssr: false },
+);
 
 export const TOUR_AUTO_DONE_STORAGE_KEY = "ward_flow_choice_tour_auto_done";
 // Heard by the what's new note (`ward-whats-new.tsx`), written out so neither loads the other: the

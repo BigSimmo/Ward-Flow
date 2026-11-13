@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import * as engine from "./dist/engine.mjs";
 import { createWorkspaceStore } from "./postgres.mjs";
+import { answerMembershipRead, isMembershipRead } from "./viewer.test-support.mjs";
 
 const at = new Date("2026-11-04T12:00:00Z");
 const actorId = "11111111-1111-4111-8111-111111111111";
@@ -39,6 +40,7 @@ function fixture({
   let locked = false;
   const queries = [];
   const query = async (sql, values = []) => {
+    if (isMembershipRead(sql)) return answerMembershipRead(query, sql, values);
     queries.push(sql);
     if (sql === "BEGIN" || sql === "COMMIT" || sql === "ROLLBACK") return { rows: [] };
     if (sql.startsWith("SELECT max(version)")) return { rows: [{ version: 16 }] };

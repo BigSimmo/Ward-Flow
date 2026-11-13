@@ -12,7 +12,7 @@
  * outcome, legal status, review and the risk flags marked present); the typed text is never in it,
  * so it never reaches the workspace or browser storage (HOW-WE-WORK §6). Every person is synthetic.
  */
-import { BellRing, BookUser, CircleHelp, FileText } from "lucide-react";
+import { BellRing, BookUser, Check, CircleHelp, FileText } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -20,14 +20,14 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import {
   Button,
   Card,
-  CardBody,
+  CardHead,
   Dialog,
   FormalName,
   Hero,
   HeroChip,
   HeroChips,
   HeroStat,
-  Meter,
+  Icon,
   buttonClass,
   useIsPhone,
   useOptionalToast,
@@ -40,6 +40,8 @@ import { confirmedWardCommand } from "@/components/ward-management/ward-command-
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
+import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 
 import { DecisionBody } from "./triage-risk-decision";
 import { FOLDABLE, foldedSections, foldLine } from "./triage-risk-fold";
@@ -63,7 +65,7 @@ import { HowToDrawer } from "./triage-risk-how";
 import { ContactsPop, TeamPop } from "./triage-risk-pops";
 import { seeBy } from "./triage-see-by";
 import { navigateWithDirtyGuard, useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
-import { SideSummary } from "./triage-risk-side";
+import { SignRail } from "./triage-risk-side";
 import { TriageStart } from "./triage-risk-start";
 import { TRIAGE_NEW_HREF, triageHrefFor, useTriagePeople } from "./use-triage-people";
 import { summaryModel, summaryText } from "./triage-risk-summary";
@@ -101,6 +103,10 @@ function LegalName({ name }: { name: string }) {
 const REVIEW_SHORT: Readonly<Record<string, string>> = Object.fromEntries(
   REVIEW.map(([v, label]) => [v, label.replace("At ", "")]),
 );
+const PARTS = [
+  { part: "triage", title: "Triage", code: "SMHMR900" },
+  { part: "risk", title: "Risk assessment and management plan", code: "SMHMR905" },
+] as const;
 const SUB: Readonly<Record<SectionId, string>> = {
   rev: "When, where and how you reviewed",
   note: "Reason and story",
@@ -111,8 +117,6 @@ const SUB: Readonly<Record<SectionId, string>> = {
 };
 
 type Sheet = "sum" | "how" | "all" | null;
-
-const NOT_WIRED = "Not wired in this prototype.";
 
 const NOT_SIGNED = "Not signed. Try again.";
 
@@ -390,6 +394,8 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
   // Raised by name as this desk at the board clock, as every screen does (tests/ward-flow-raise.test.ts).
   const raise = useWardRaise(routeRole);
   const signGate = useRoleGate({ patientId: person.id })("RECORD_TRIAGE_SIGNED");
+  const bedRequestHref = raiseReferralHref({ patientId: person.id });
+  const canRequestBed = useCanOpenHref()(bedRequestHref);
   const [signing, setSigning] = useState(false);
   const [editingReview, setEditingReview] = useState(false);
   const [sheet, setSheet] = useState<Sheet>(null);
@@ -450,7 +456,6 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
     SectionId,
     ReturnType<typeof sectionStatus>
   >;
-  const sectionsDone = SECTIONS.filter((s) => status[s.id].done).length;
   // Folds only when nothing is needed or left to check, so a fold never hides a check.
   const folded = foldedSections({
     done: Object.fromEntries(FOLDABLE.map((id) => [id, status[id].done && status[id].toCheck === 0])),
@@ -621,32 +626,26 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
     plan: <PlanBody form={formApi} />,
   };
 
-  const indexGroup = (part: "triage" | "risk", title: string, code: string) => (
-    <>
-      <div className={styles.indexGroup}>
-        <span>{title}</span>
-        <span className={styles.mono}>{code}</span>
-      </div>
-      {SECTIONS.filter((s) => s.part === part).map((s) => (
-        <a
-          key={s.id}
-          href={`#triage-${s.id}`}
-          className={styles.indexLink}
-          aria-current={active === s.id ? "location" : undefined}
-          onClick={(event) => {
-            event.preventDefault();
-            navLock.current = Date.now() + 1200;
-            setActive(s.id);
-            jump(s.id);
-          }}
-        >
-          <span className={styles.indexNum}>{s.n}</span>
-          <span className={styles.grow}>{s.label}</span>
-          <StatusMark status={status[s.id]} withText={false} />
-        </a>
-      ))}
-    </>
-  );
+  // Tablet and phone: one row of step chips above the form. On a desktop the sign-off rail lists
+  // the sections instead, so this row is hidden there (redesign, 13 Nov 2026).
+  const indexLinks = SECTIONS.map((s) => (
+    <a
+      key={s.id}
+      href={`#triage-${s.id}`}
+      className={styles.indexLink}
+      aria-current={active === s.id ? "location" : undefined}
+      onClick={(event) => {
+        event.preventDefault();
+        navLock.current = Date.now() + 1200;
+        setActive(s.id);
+        jump(s.id);
+      }}
+    >
+      <span className={styles.indexNum}>{s.n}</span>
+      <span className={styles.grow}>{s.label}</span>
+      <StatusMark status={status[s.id]} withText={false} />
+    </a>
+  ));
 
   return (
     <div className={styles.screen} data-testid="triage-risk-page">
@@ -745,134 +744,141 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
           condensed={`${person.name} · ${person.umrn} · ${signed ? "Signed" : left ? `${left} left before signing` : "Ready to sign"}`}
         />
 
-        {signed ? (
-          <Card className={startStyles.card} aria-labelledby="triage-signed-title" data-testid="triage-signed">
-            <CardBody className={startStyles.signed}>
-              <div className={startStyles.signedHead}>
-                <h2 className={startStyles.signedTitle} id="triage-signed-title">
-                  Triage signed
-                </h2>
-              </div>
-              <p className={startStyles.quiet}>
-                One entry, printed as SMHMR900 and SMHMR905. The form below is read-only.
-              </p>
-              <SummaryDocument form={formApi} signed={{ at: signedAt, by: SIGNED_IN }} />
-              <div className={startStyles.actions} role="group" aria-label="Next">
-                <Button variant="pri" onClick={copySummary} data-testid="triage-signed-copy">
-                  Copy summary
-                </Button>
-                <Button onClick={() => say(NOT_WIRED)}>Make a bed request</Button>
-                <Link href={person.recordHref} className={buttonClass()}>
-                  Open patient record
-                </Link>
-                <Button onClick={onStartNew}>Start another triage</Button>
-              </div>
-              <p className={startStyles.quiet} data-testid="triage-signed-record-line">
-                Signed to the patient record: urgency, outcome, legal status, review and risk flags only. The typed
-                assessment, mental state, formulation and plan are not part of that record.
-              </p>
-            </CardBody>
-          </Card>
-        ) : null}
-
         <div className={styles.layout}>
           <nav ref={indexRef} className={styles.index} aria-label="Sections">
-            {indexGroup("triage", "Triage", "SMHMR900")}
-            {indexGroup("risk", "Risk", "SMHMR905")}
-            {/* 7 Nov 2026: the live checklist, the Now box and the Summary button replace Go to next
-                needed, Open summary and the floating Summary button, which covered the form. */}
-            <div className={styles.indexFoot}>
-              <span className={styles.mono}>
-                {sectionsDone} of {SECTIONS.length} sections
-              </span>
-              <Meter value={percent} max={100} fill="data-1" label="Needed answers in" />
-              {isPhone ? null : (
-                <>
-                  <SideSummary left={left} signed={signed} onOpen={() => openSummary("sum")} />
-                </>
-              )}
-            </div>
+            {indexLinks}
           </nav>
 
-          {/* Once signed the form is read-only: every control in the fieldset is disabled, the text stays readable. */}
-          <fieldset
-            className={`${styles.form} ${startStyles.readOnly}`}
-            disabled={signed || signing}
-            aria-label={signed ? "Signed triage, read-only" : undefined}
-            data-testid="triage-form"
-          >
-            {SECTIONS.map((s, index) => (
-              <div key={s.id} className={styles.formPart}>
-                {index === 0 ? (
-                  <h2 className={styles.part}>
-                    Triage <span className={styles.mono}>SMHMR900</span>
-                  </h2>
-                ) : null}
-                {s.id === "risk" ? (
-                  <h2 className={styles.part}>
-                    Risk assessment and management plan <span className={styles.mono}>SMHMR905</span>
-                  </h2>
-                ) : null}
-                <SectionCard
-                  id={s.id}
-                  n={s.n}
-                  title={s.label}
-                  sub={SUB[s.id]}
-                  status={status[s.id]}
-                  fold={
-                    FOLDABLE.includes(s.id)
-                      ? {
-                          folded: folded.has(s.id),
-                          line: foldLine(state, s.id),
-                          onOpen: () => {
-                            openSection(s.id);
-                            focusSectionStart(s.id);
-                          },
+          {/* The left rail (Josh, 13 Nov 2026: the nav reads more naturally on the left): sections, progress and
+              Sign and send in one card. A tablet shows it after the form; the phone has its bar. */}
+          {isPhone ? null : (
+            <SignRail
+              reqs={reqs}
+              status={status}
+              active={active}
+              left={left}
+              percent={percent}
+              signed={signed}
+              signedLine={signedAt ? `${signedAt} by ${SIGNED_IN}` : undefined}
+              doneLine={(section) => foldLine(state, section)[0] ?? ""}
+              onJump={(section, target) => {
+                navLock.current = Date.now() + 1200;
+                setActive(section);
+                jump(section, target);
+              }}
+              onSummary={() => openSummary("sum")}
+              signButton={signed ? null : signButton("foot")}
+            />
+          )}
+
+          <div className={styles.mainCol}>
+            {signed ? (
+              <Card className={startStyles.card} aria-labelledby="triage-signed-title" data-testid="triage-signed">
+                {/* Redesign (13 Nov 2026): what to do next sits under the title, above the signed entry. */}
+                <div className={startStyles.signedHead}>
+                  <span className={startStyles.chip} data-done="" aria-hidden="true">
+                    <Icon icon={Check} size={16} />
+                  </span>
+                  <div className={startStyles.signedText}>
+                    <h2 className={startStyles.signedTitle} id="triage-signed-title">
+                      Triage signed
+                    </h2>
+                    <p className={startStyles.quiet}>
+                      One entry, printed as SMHMR900 and SMHMR905. The form below is read-only.
+                    </p>
+                  </div>
+                  <div className={startStyles.actions} role="group" aria-label="Next">
+                    <Button variant="pri" onClick={copySummary} data-testid="triage-signed-copy">
+                      Copy summary
+                    </Button>
+                    {/* Review finding 4 (12 Nov 2026): opens the new referral for this person, where the desk may. */}
+                    {canRequestBed ? (
+                      <Link href={bedRequestHref} className={buttonClass()} data-testid="triage-signed-bed-request">
+                        Make a bed request
+                      </Link>
+                    ) : null}
+                    <Link href={person.recordHref} className={buttonClass()}>
+                      Open patient record
+                    </Link>
+                    <Button onClick={onStartNew}>Start another triage</Button>
+                  </div>
+                </div>
+                <div className={startStyles.signedDoc}>
+                  <SummaryDocument form={formApi} signed={{ at: signedAt, by: SIGNED_IN }} />
+                </div>
+                <p className={`${startStyles.quiet} ${startStyles.signedFoot}`} data-testid="triage-signed-record-line">
+                  Signed to the patient record: urgency, outcome, legal status, review and risk flags only. The typed
+                  assessment, mental state, formulation and plan are not part of that record.
+                </p>
+              </Card>
+            ) : null}
+
+            {/* Once signed the form is read-only: every control in the fieldset is disabled, the text stays readable. */}
+            <fieldset
+              className={`${styles.form} ${startStyles.readOnly}`}
+              disabled={signed || signing}
+              aria-label={signed ? "Signed triage, read-only" : undefined}
+              data-testid="triage-form"
+            >
+              {/* Redesign (13 Nov 2026): one card per printed form, its sections as rows with a hairline
+                  between them, in place of six cards and two divider headings. */}
+              {PARTS.map(({ part, title, code }) => {
+                const sections = SECTIONS.filter((s) => s.part === part);
+                const doneHere = sections.filter((s) => status[s.id].done).length;
+                return (
+                  <Card
+                    key={part}
+                    as="div"
+                    role="group"
+                    aria-labelledby={`triage-part-${part}`}
+                    className={styles.partCard}
+                  >
+                    <CardHead
+                      eyebrow
+                      id={`triage-part-${part}`}
+                      title={title}
+                      meta={<span className={styles.mono}>{code}</span>}
+                      aside={
+                        <span className={styles.partCount}>
+                          <b className={styles.mono}>{doneHere}</b> of {sections.length} done
+                        </span>
+                      }
+                    />
+                    {sections.map((s) => (
+                      <SectionCard
+                        key={s.id}
+                        id={s.id}
+                        n={s.n}
+                        title={s.label}
+                        sub={SUB[s.id]}
+                        status={status[s.id]}
+                        active={active === s.id}
+                        fold={
+                          FOLDABLE.includes(s.id)
+                            ? {
+                                folded: folded.has(s.id),
+                                line: foldLine(state, s.id),
+                                onOpen: () => {
+                                  openSection(s.id);
+                                  focusSectionStart(s.id);
+                                },
+                              }
+                            : undefined
                         }
-                      : undefined
-                  }
-                >
-                  {sectionBody[s.id]}
-                  {s.id === "plan" && !isPhone && !signed ? (
-                    <div className={styles.signFoot} data-testid="triage-sign-foot">
-                      {/* 7 Nov 2026: one short line; the full list is the summary's Before you sign. */}
-                      <span className={`${styles.grow} ${styles.inline}`}>
-                        {left ? (
-                          <>
-                            <span>
-                              <b className={styles.mono}>{left}</b> left before signing
-                            </span>
-                            <span aria-hidden="true">·</span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className={styles.showLeft}
-                              onClick={() => openSummary("sum")}
-                              aria-haspopup="dialog"
-                            >
-                              Show what&apos;s left
-                            </Button>
-                          </>
-                        ) : (
-                          "Everything needed is in. Signing creates both records."
-                        )}
-                      </span>
-                      <Button variant="ghost" onClick={() => say(NOT_WIRED)}>
-                        Awaiting information
-                      </Button>
-                      <Button onClick={() => say(NOT_WIRED)}>Save draft</Button>
-                      {signButton("foot")}
-                    </div>
-                  ) : null}
-                </SectionCard>
-              </div>
-            ))}
-            <p className={styles.footNote}>
-              Ward Flow prototype. Synthetic patient and figures only. Not validated clinical decision support. One
-              entry prints as SMHMR900 and SMHMR905.
-            </p>
-          </fieldset>
+                      >
+                        {sectionBody[s.id]}
+                      </SectionCard>
+                    ))}
+                  </Card>
+                );
+              })}
+            </fieldset>
+          </div>
         </div>
+        <p className={styles.footNote}>
+          Ward Flow prototype. Synthetic patient and figures only. Not validated clinical decision support. One entry
+          prints as SMHMR900 and SMHMR905.
+        </p>
       </main>
 
       {signed ? null : isPhone ? (
@@ -892,7 +898,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
           {signButton("bar")}
         </div>
       ) : (
-        // Tablet only: from 62.5rem up the Summary button sits at the foot of the left column.
+        // Tablet only: from 62.5rem up the Summary button sits in the sign-off rail.
         <Button className={styles.edgeTab} icon={FileText} onClick={() => openSummary("sum")} aria-haspopup="dialog">
           Summary <span className={styles.edgeCount}>{left ? `${left} needed` : "Ready"}</span>
         </Button>

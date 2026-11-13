@@ -1,0 +1,115 @@
+/* Night view (feature plan item 29). The page frame matches Today's review; cards and rows use the kit. */
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+  width: 100%;
+  min-width: 0;
+  padding: var(--wf-s-4) var(--wf-s-6) var(--wf-s-6);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: var(--wf-s-4);
+  align-items: start;
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.row:first-child {
+  border-top: 0;
+}
+
+.rowMain {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rowTitle {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / 20px var(--wf-font);
+}
+
+a.rowTitle {
+  color: var(--wf-accent-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.rowSub {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-13) / 18px var(--wf-font);
+}
+
+.count {
+  flex: none;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / 18px var(--wf-font);
+  white-space: nowrap;
+}
+
+.count b {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-16) / 20px var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.number {
+  flex: none;
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-13) / 18px var(--wf-mono);
+  white-space: nowrap;
+}
+
+.headLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--wf-h-md);
+  color: var(--wf-accent-ink);
+  font: 500 var(--wf-fs-13) / 18px var(--wf-font);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.cardFoot,
+.notRecorded {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-13) / 18px var(--wf-font);
+}
+
+.notRecorded {
+  border-top: 0;
+  color: var(--wf-ink-2);
+}
+
+@media (max-width: 46.4375rem) {
+  .main {
+    padding-inline: var(--wf-s-3);
+  }
+
+  .headLink,
+  a.rowTitle {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+  }
+}

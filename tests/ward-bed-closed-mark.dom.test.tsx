@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { useEffect, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -72,5 +72,88 @@ describe("closing the exact bed from the bed drawer", () => {
     expect(activeClosedBeds(flow!.units.find((unit) => unit.id === UNIT)!)).toEqual([]);
     expect(card(bed)).toHaveAttribute("data-state", "ready");
     expect(bedsIn("ready")).toHaveLength(ready.length);
+  });
+
+  // Live audit item 13 (11 Nov 2026): the bed's History lists its closure and its reopening.
+  it("lists the closure and the reopening in the bed's History", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ToastProvider>
+          <Grab />
+          <WardScreen unitId={UNIT} />
+        </ToastProvider>
+      </WardFlowProvider>,
+    );
+    const bed = Math.min(...bedsIn("ready"));
+    fireEvent.click(card(bed));
+    fireEvent.click(screen.getByTestId("ward-drawer-close-bed"));
+    fireEvent.click(screen.getByTestId("ward-drawer-reopen-bed"));
+    const toggle = screen.getByTestId("bed-drawer-history-toggle");
+    fireEvent.click(toggle);
+    const history = document.getElementById(toggle.getAttribute("aria-controls")!)!;
+    expect(history).toBeVisible();
+    expect(history).toHaveTextContent(/Bed closed, by /u);
+    expect(history).toHaveTextContent("Bed reopened");
+    expect(toggle).toHaveTextContent("History2");
+  });
+});
+
+describe("closing a bed with a review time (item 6)", () => {
+  it("records Review in, shows the review on the closed bed, and leaves Ready as a plain closure", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ToastProvider>
+          <Grab />
+          <WardScreen unitId={UNIT} />
+        </ToastProvider>
+      </WardFlowProvider>,
+    );
+    const ready = bedsIn("ready");
+    const bed = Math.min(...ready);
+    fireEvent.click(card(bed));
+    // Nothing is chosen for the person beyond "Not known", which leaves the time out.
+    const choice = screen.getByTestId("ward-drawer-close-bed-review");
+    expect(choice).toHaveAttribute("data-value", "");
+    fireEvent.click(screen.getByRole("button", { name: "In 4 hours" }));
+    expect(choice).toHaveAttribute("data-value", "4");
+    fireEvent.click(screen.getByTestId("ward-drawer-close-bed"));
+
+    const now = flow!.now;
+    const mark = flow!.units.find((unit) => unit.id === UNIT)!.closedBeds!.at(-1)!;
+    expect(mark).toMatchObject({ bedNumber: bed, reviewAt: now + 240 });
+    expect(bedsIn("ready")).toHaveLength(ready.length - 1);
+    expect(screen.getByTestId("ward-drawer-reopen-bed-note")).toHaveTextContent(/^Review \d\d:\d\d\. Reopening/);
+  });
+
+  // PR #1626 review: a reason chosen on the toast (D-148) closes the bed again, and keeps the time.
+  it("keeps the review time when a reason is added from the toast", async () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ToastProvider>
+          <Grab />
+          <WardScreen unitId={UNIT} />
+        </ToastProvider>
+      </WardFlowProvider>,
+    );
+    const bed = Math.min(...bedsIn("ready"));
+    fireEvent.click(card(bed));
+    fireEvent.click(screen.getByRole("button", { name: "In 4 hours" }));
+    fireEvent.click(screen.getByTestId("ward-drawer-close-bed"));
+    const reviewAt = flow!.now + 240;
+    // The menu loads on use (off the first load); until then the same choices are plain buttons.
+    const toast = await screen.findByTestId("toast");
+    const staffing = await within(toast)
+      .findByRole("button", { name: "Staffing" })
+      .catch(() => null);
+    await act(async () => {
+      if (staffing) fireEvent.click(staffing);
+      else fireEvent.click(await within(toast).findByTestId("toast-choices"));
+    });
+    if (!staffing)
+      await act(async () => {
+        fireEvent.click(await screen.findByRole("menuitem", { name: "Staffing" }));
+      });
+    const mark = flow!.units.find((unit) => unit.id === UNIT)!.closedBeds!.at(-1)!;
+    expect(mark).toMatchObject({ bedNumber: bed, reason: "staffing", reviewAt });
   });
 });

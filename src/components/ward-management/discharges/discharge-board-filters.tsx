@@ -21,6 +21,13 @@ import type { DischargeWorkspaceState } from "./use-discharge-workspace-state";
  * folder tabs under the hero (`className` carries `folderTabClasses.switch`), so they are tabs
  * (`aria-selected`) with Now's count beside its word.
  */
+/** Now and Recorded share one panel, the workspace below, labelled by whichever tab is selected. */
+export const DISCHARGE_TABPANEL_ID = "ward-discharge-population-panel";
+export const DISCHARGE_TAB_IDS = {
+  releases: "ward-discharge-tab-now",
+  records: "ward-discharge-tab-recorded",
+} as const;
+
 export function DischargePopulationSwitch({ s, className }: { s: DischargeWorkspaceState; className?: string }) {
   const {
     releaseGroups,
@@ -76,6 +83,8 @@ export function DischargePopulationSwitch({ s, className }: { s: DischargeWorksp
         <button
           type="button"
           role="tab"
+          id={DISCHARGE_TAB_IDS.releases}
+          aria-controls={DISCHARGE_TABPANEL_ID}
           disabled={!sessionAdopted}
           aria-selected={population === "releases"}
           data-testid="ward-discharge-now"
@@ -93,6 +102,8 @@ export function DischargePopulationSwitch({ s, className }: { s: DischargeWorksp
         <button
           type="button"
           role="tab"
+          id={DISCHARGE_TAB_IDS.records}
+          aria-controls={DISCHARGE_TABPANEL_ID}
           aria-selected={population === "records"}
           data-testid="ward-discharge-history"
           disabled={!sessionAdopted}

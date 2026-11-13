@@ -93,8 +93,10 @@ export const sensitivePathPatterns = [
   /^data\/mha-[^/]*$/iu,
   /^docs\/ward-flow\/governance\//u,
   /^(?:src|data|docs|backend)\/(?:.*\/)?[^/]*clinic[^/]*(?:\/|$)/iu,
-  // CI itself: the workflows, the public CI scripts (this file included) and the protected-test list.
+  // CI itself: the workflows and their local actions, the public CI scripts (this file included) and
+  // the protected-test list.
   /^\.github\/workflows\//u,
+  /^\.github\/actions\//u,
   /^scripts\/ward-ci-public\//u,
   /^scripts\/ward-flow\/protected-safety-tests\.json$/u,
 ];
@@ -191,7 +193,9 @@ export function botSensitiveCommitViolations(commits) {
     }
     const pinOnly = isDependabotAuthor(commit.author) ? new Set(commit.actionPinOnlyFiles ?? []) : new Set();
     const sensitive = commit.files.filter(
-      (file) => isSensitivePath(file) && !(pinOnly.has(file) && /^\.github\/workflows\/[^/]+\.ya?ml$/u.test(file)),
+      (file) =>
+        isSensitivePath(file) &&
+        !(pinOnly.has(file) && /^\.github\/(?:workflows\/[^/]+|actions\/[^/]+\/action)\.ya?ml$/u.test(file)),
     );
     if (sensitive.length > 0) {
       violations.push(

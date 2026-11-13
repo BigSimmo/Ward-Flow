@@ -12,7 +12,12 @@ import {
   safeNextPath,
   verifyPass,
 } from "@/lib/front-door-pass";
-import { edgeAddress, reserveDemoTry, resetWrongTriesForTests } from "@/lib/demo-code-tries";
+import {
+  edgeAddress,
+  reserveDemoTry,
+  resetWrongTriesForTests,
+  trustedProxyAddressesFromEnv,
+} from "@/lib/demo-code-tries";
 import { frontDoorVerdict } from "../src/proxy";
 
 // Synthetic secrets only: these values exist for this test file.
@@ -79,9 +84,18 @@ describe("front door switch and secret", () => {
       "/api/health",
       "/ward-flow-offline.html",
       "/ward-flow-push-sw.js",
+      "/.well-known/security.txt",
     ])
       expect(isFrontDoorOpenPath(path)).toBe(true);
-    for (const path of ["/", "/ward-flow", "/api/workspace", "/sign-in/extra", "/ward-flow-sign-in/extra", "/mockups"])
+    for (const path of [
+      "/",
+      "/ward-flow",
+      "/api/workspace",
+      "/sign-in/extra",
+      "/ward-flow-sign-in/extra",
+      "/mockups",
+      "/.well-known/other.txt",
+    ])
       expect(isFrontDoorOpenPath(path)).toBe(false);
   });
 });
@@ -116,6 +130,22 @@ describe("the pass", () => {
     expect(await verifyPass(SECRET, value, NOW + 12 * 3_600_000)).toBeNull();
   });
 
+  it("imports each signing secret once, and still tells secrets apart", async () => {
+    const importKey = vi.spyOn(crypto.subtle, "importKey");
+    try {
+      const secret = `${SECRET}-memo`;
+      const other = `${SECRET}-memo-other`;
+      const { value } = await issuePass(secret, { kind: "demo", hours: 8 }, NOW);
+      expect(await verifyPass(secret, value, NOW)).toMatchObject({ kind: "demo" });
+      expect(await verifyPass(secret, value, NOW + 1000)).toMatchObject({ kind: "demo" });
+      expect(importKey).toHaveBeenCalledTimes(1);
+      expect(await verifyPass(other, value, NOW)).toBeNull();
+      expect(importKey).toHaveBeenCalledTimes(2);
+    } finally {
+      importKey.mockRestore();
+    }
+  });
+
   it("ends with the sign-in's own limit when that comes first", async () => {
     const endsBy = NOW + 3_600_000;
     const { value, maxAge } = await issuePass(SECRET, { kind: "account", hours: 12, endsBy }, NOW);
@@ -139,9 +169,16 @@ describe("the pass", () => {
 
 describe("demo code", () => {
   it("matches ignoring case, spaces and dashes, and never when no code is set", async () => {
-    expect(await demoCodeMatches("ward 7q4k", { WARD_DEMO_CODE: "WARD-7Q4K" })).toBe(true);
-    expect(await demoCodeMatches("WARD-7Q4J", { WARD_DEMO_CODE: "WARD-7Q4K" })).toBe(false);
+    expect(await demoCodeMatches("ward 7q4k synth", { WARD_DEMO_CODE: "WARD-7Q4K-SYNTH" })).toBe(true);
+    expect(await demoCodeMatches("WARD-7Q4J-SYNTH", { WARD_DEMO_CODE: "WARD-7Q4K-SYNTH" })).toBe(false);
     expect(await demoCodeMatches("", {})).toBe(false);
+  });
+
+  it("treats a set code shorter than 12 characters as no code at all", async () => {
+    // Eleven characters once spaces and dashes are removed: too guessable to open the site.
+    expect(await demoCodeMatches("WARD-7Q4K-SYN", { WARD_DEMO_CODE: "WARD-7Q4K-SYN" })).toBe(false);
+    // Exactly twelve opens it.
+    expect(await demoCodeMatches("WARD-7Q4K-SYNT", { WARD_DEMO_CODE: "WARD-7Q4K-SYNT" })).toBe(true);
   });
 });
 
@@ -427,53 +464,104 @@ describe("POST /api/session", () => {
   it("opens the public demo with the right code and pauses after too many wrong ones", async () => {
     vi.stubEnv("WARD_FRONT_DOOR", "required");
     vi.stubEnv("WARD_PASS_SECRET", SECRET);
-    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K");
+    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K-SYNTH");
     vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
-    const right = await POST(post({ demoCode: "ward 7q4k" }, "192.0.2.20"));
+    vi.stubEnv("WARD_TRUSTED_PROXY_ADDRESSES", "*");
+    const right = await POST(post({ demoCode: "ward 7q4k synth" }, "192.0.2.20"));
     expect(right.status).toBe(204);
     expect(right.headers.getSetCookie().find((line) => line.startsWith(FRONT_DOOR_PASS_COOKIE))).toContain(
       `Max-Age=${8 * 3600}`,
     );
     for (let attempt = 0; attempt < 10; attempt += 1)
       expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.30"))).status).toBe(401);
-    expect((await POST(post({ demoCode: "ward 7q4k" }, "192.0.2.30"))).status).toBe(429);
+    expect((await POST(post({ demoCode: "ward 7q4k synth" }, "192.0.2.30"))).status).toBe(429);
   });
 
-  it("counts wrong tries by the edge's address, not a caller-written forwarded-for", async () => {
-    expect(edgeAddress(new Headers({ "x-real-ip": "192.0.2.40", "x-forwarded-for": "198.51.100.1" }))).toBe(
-      "192.0.2.40",
-    );
-    expect(edgeAddress(new Headers({ "x-forwarded-for": "198.51.100.1, 192.0.2.41" }))).toBe("192.0.2.41");
-    expect(edgeAddress(new Headers())).toBe("unknown");
+  it("counts wrong tries by a trusted hop's address, not a caller-written forwarded-for (A4-02)", async () => {
+    const dual = new Headers({ "x-real-ip": "192.0.2.40", "x-forwarded-for": "198.51.100.1" });
+    const forwardedOnly = new Headers({ "x-forwarded-for": "198.51.100.1, 192.0.2.41" });
+    expect(edgeAddress(dual, ["*"])).toBe("192.0.2.40");
+    expect(edgeAddress(forwardedOnly, ["*"])).toBe("192.0.2.41");
+    expect(edgeAddress(dual, ["10.0.0.2"], "10.0.0.2")).toBe("192.0.2.40");
+    expect(edgeAddress(dual, ["10.0.0.2"], "::ffff:10.0.0.2")).toBe("192.0.2.40");
+    expect(edgeAddress(dual, ["10.0.0.2"], "198.51.100.8")).toBe("198.51.100.8");
+    expect(edgeAddress(dual, ["10.0.0.2"])).toBe("unknown");
+    expect(edgeAddress(new Headers(), ["*"])).toBe("unknown");
+    // D-147 fallback: with no trusted proxy configured, keying stays as before A4-02.
+    expect(edgeAddress(dual, [])).toBe("192.0.2.40");
+    expect(edgeAddress(forwardedOnly, [])).toBe("192.0.2.41");
+    expect(edgeAddress(new Headers(), [])).toBe("unknown");
+    // #1615: on the Next service only `*` applies; an IP-only list is dropped with one warning.
+    const warn = vi.fn();
+    expect(trustedProxyAddressesFromEnv({ WARD_TRUSTED_PROXY_ADDRESSES: "10.0.0.2, *, not-an-ip" }, warn)).toEqual([
+      "*",
+    ]);
+    expect(trustedProxyAddressesFromEnv({}, warn)).toEqual([]);
+    expect(warn).not.toHaveBeenCalled();
+    expect(trustedProxyAddressesFromEnv({ WARD_TRUSTED_PROXY_ADDRESSES: "10.0.0.2, not-an-ip" }, warn)).toEqual([]);
+    expect(trustedProxyAddressesFromEnv({ WARD_TRUSTED_PROXY_ADDRESSES: "10.0.0.3" }, warn)).toEqual([]);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]?.[0]).toBe("ward_front_door_config_warning");
     vi.stubEnv("WARD_FRONT_DOOR", "required");
     vi.stubEnv("WARD_PASS_SECRET", SECRET);
-    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K");
+    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K-SYNTH");
     vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
+    vi.stubEnv("WARD_TRUSTED_PROXY_ADDRESSES", "*");
     for (let attempt = 0; attempt < 10; attempt += 1)
       expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.50", `198.51.100.${attempt}`))).status).toBe(401);
     expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.50", "198.51.100.99"))).status).toBe(429);
   });
 
+  it("keeps per-address keying while no trusted proxy is configured (D-147)", async () => {
+    vi.stubEnv("WARD_FRONT_DOOR", "required");
+    vi.stubEnv("WARD_PASS_SECRET", SECRET);
+    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K-SYNTH");
+    vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
+    vi.stubEnv("WARD_TRUSTED_PROXY_ADDRESSES", "");
+    for (let attempt = 0; attempt < 10; attempt += 1)
+      expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.70"))).status).toBe(401);
+    expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.70"))).status).toBe(429);
+    // Another address keeps its own budget, so one guesser cannot refuse every presenter.
+    expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.71"))).status).toBe(401);
+    expect((await POST(post({ demoCode: "ward 7q4k synth" }, "192.0.2.72"))).status).toBe(204);
+  });
+
+  it("ignores an IP-only trusted proxy list on the Next route, so one guesser cannot lock everyone out (#1615)", async () => {
+    vi.stubEnv("WARD_FRONT_DOOR", "required");
+    vi.stubEnv("WARD_PASS_SECRET", SECRET);
+    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K-SYNTH");
+    vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
+    vi.stubEnv("WARD_TRUSTED_PROXY_ADDRESSES", "10.0.0.2");
+    for (let attempt = 0; attempt < 10; attempt += 1)
+      expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.80"))).status).toBe(401);
+    expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.80"))).status).toBe(429);
+    // The route has no socket, so the list falls back to D-147 keying: other callers keep their budget.
+    expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.81"))).status).toBe(401);
+    expect((await POST(post({ demoCode: "ward 7q4k synth" }, "192.0.2.82"))).status).toBe(204);
+  });
+
   it("refuses wrong codes once tries across all addresses reach the cap, but still opens with the right code", async () => {
     vi.stubEnv("WARD_FRONT_DOOR", "required");
     vi.stubEnv("WARD_PASS_SECRET", SECRET);
-    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K");
+    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K-SYNTH");
     vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
+    vi.stubEnv("WARD_TRUSTED_PROXY_ADDRESSES", "*");
     for (let attempt = 0; attempt < 200; attempt += 1)
       expect((await POST(post({ demoCode: "WRONG" }, `10.0.${attempt >> 8}.${attempt & 255}`))).status).toBe(401);
     expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.61"))).status).toBe(429);
-    expect((await POST(post({ demoCode: "ward 7q4k" }, "192.0.2.60"))).status).toBe(204);
+    expect((await POST(post({ demoCode: "ward 7q4k synth" }, "192.0.2.60"))).status).toBe(204);
     // The per-address limit still applies at the cap.
     for (let attempt = 0; attempt < 9; attempt += 1)
       expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.61"))).status).toBe(429);
-    expect((await POST(post({ demoCode: "ward 7q4k" }, "192.0.2.61"))).status).toBe(429);
+    expect((await POST(post({ demoCode: "ward 7q4k synth" }, "192.0.2.61"))).status).toBe(429);
   });
 
   it("checks the code before a full address table refuses, so the right code from a new address opens (M53)", async () => {
     vi.stubEnv("WARD_FRONT_DOOR", "required");
     vi.stubEnv("WARD_PASS_SECRET", SECRET);
-    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K");
+    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K-SYNTH");
     vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
+    vi.stubEnv("WARD_TRUSTED_PROXY_ADDRESSES", "*");
     // Fill the 5,000-address table with wrong tries 9.5 minutes ago, so each is still counted while
     // the 200-try window across all addresses (opened by an earlier try) has already passed.
     const opened = Date.now() - 10.5 * 60_000;
@@ -483,7 +571,7 @@ describe("POST /api/session", () => {
       expect(reserveDemoTry(address(index), opened + 60_000)).not.toBeNull();
     first?.release();
     expect(reserveDemoTry(address(4_999), opened + 60_000)).not.toBeNull();
-    expect((await POST(post({ demoCode: "ward 7q4k" }, "192.0.2.70"))).status).toBe(204);
+    expect((await POST(post({ demoCode: "ward 7q4k synth" }, "192.0.2.70"))).status).toBe(204);
     // The table being full still pauses a wrong code from a new address, without forgetting anyone.
     expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.71"))).status).toBe(429);
     expect(reserveDemoTry(address(0), Date.now())).toMatchObject({ overCap: false });
@@ -492,7 +580,7 @@ describe("POST /api/session", () => {
   it("never opens the signed-in site with a demo code", async () => {
     vi.stubEnv("WARD_FRONT_DOOR", "required");
     vi.stubEnv("WARD_PASS_SECRET", SECRET);
-    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K");
+    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K-SYNTH");
     vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "true");
     expect((await POST(post({ demoCode: "WARD-7Q4K" }))).status).toBe(400);
   });
@@ -502,12 +590,17 @@ describe("DELETE /api/session", () => {
   it("clears the pass", () => {
     const response = DELETE(new NextRequest(new URL("https://ward.example.test/api/session"), { method: "DELETE" }));
     expect(response.status).toBe(204);
-    expect(response.headers.get("set-cookie")).toMatch(/^wf_pass=; Path=\/; Max-Age=0;.*HttpOnly; Secure$/);
+    const [pass, marker] = response.headers.getSetCookie();
+    expect(pass).toMatch(/^wf_pass=; Path=\/; Max-Age=0;.*HttpOnly; Secure$/);
+    // Live audit item 19: the readable marker goes too, so nothing stays after sign-out.
+    expect(marker).toBe("wf_door=; Path=/; Max-Age=0; SameSite=Lax; Secure");
   });
 
   it("marks the cookie Secure in production even when the app sees plain http behind the edge", () => {
     vi.stubEnv("NODE_ENV", "production");
     const response = DELETE(new NextRequest(new URL("http://ward.example.test/api/session"), { method: "DELETE" }));
-    expect(response.headers.get("set-cookie")).toMatch(/HttpOnly; Secure$/);
+    const [pass, marker] = response.headers.getSetCookie();
+    expect(pass).toMatch(/HttpOnly; Secure$/);
+    expect(marker).toMatch(/; Secure$/);
   });
 });

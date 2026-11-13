@@ -4,6 +4,7 @@ import { REPATRIATION_MODES, WARD_FLOW_ROLE_LABELS } from "./ward-flow-events";
 import { TRANSPORT_LEGAL_STATUSES, TRANSPORT_PROVIDERS } from "./ward-model";
 import type { WardFlowState } from "./ward-flow-reducer";
 import { upgradeLegacyDeclineReasons } from "./ward-decline-legacy";
+import { diversionReturnsResolve } from "./community/diversion-return-review";
 import { upgradeLegacyObservationRows } from "./ward-observation-legacy";
 import {
   SUPPORT_NOTIFICATION_OCCASIONS,
@@ -29,6 +30,8 @@ export function isValidSharedWardFlowState(value: unknown): value is WardFlowSta
   // Live audit, 8 Nov 2026: a stored bed release saved without `blocker` or `blockedBy` read as held
   // up with no reason and crashed Discharges. A missing one means none recorded, read in place.
   readMissingReleaseBlockersAsNone(state);
+  // D-152: a shared copy's returns to ED each name a referral that copy holds.
+  if (!diversionReturnsResolve(state)) return false;
   const admissionIds = new Set<string>();
   for (const admission of state.admissions) {
     if (!admission || typeof admission !== "object" || typeof admission.id !== "string") return false;

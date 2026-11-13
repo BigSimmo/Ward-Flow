@@ -3,6 +3,7 @@
 // Fork of src/components/ward-management/shell/ward-rail-lazy.tsx: mounts the mock-ups' rail copy.
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { useEffect } from "react";
 
 import { useIsPhone } from "@/components/wf";
@@ -24,8 +25,8 @@ import "@/components/ward-management/shell/ward-rail.module.css";
  * and the server waits for it). On a phone only the page-wide preferences and drawer shortcuts
  * the rail used to keep run, so its code is never fetched.
  */
-const RailLoaded = dynamic(() =>
-  import("@/components/ward-redesign/shell/preview-rail-body").then((m) => m.PreviewRailBody),
+const RailLoaded = dynamic(
+  withLoadRetry(() => import("@/components/ward-redesign/shell/preview-rail-body").then((m) => m.PreviewRailBody)),
 );
 
 function PhonePreferences() {

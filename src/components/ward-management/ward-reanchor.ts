@@ -82,6 +82,10 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "plannedMoveAt",
   "cancelledAt",
   "collectedAt",
+  // Item 9 (10 Nov 2026): a police or ambulance crew's typed times (`Movement.crew*At`).
+  "crewArrivedAt",
+  "crewHandedOverAt",
+  "crewReleasedAt",
   /**
    * A notice's read-time. ⚠️ **NOTHING WRITES IT TODAY** — `Notice.readAt` is `undefined` until an
    * addressed viewer reads the notice, and the phase that raised notices deliberately built no read
@@ -98,6 +102,8 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   // Item 5 (9 Nov 2026): the day a stay was recorded clinically ready for discharge.
   "clinicallyReadySince",
   "confirmedAt",
+  // Batch 4 item 25 (D-142): the ward's own last bed confirm, kept for its outage catch-up.
+  "wardConfirmedAt",
   "decidedAt",
   "dueAt",
   "previousDueAt",
@@ -138,6 +144,8 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "leftAt",
   // Feature 14 (9 Nov 2026): the weekend a discharge review tick belongs to moves with the clock.
   "weekendStart",
+  // Item 4 (11 Nov 2026): the typed time the Chief Psychiatrist was notified (`Admission.chiefPsychiatristNotice`).
+  "notifiedAt",
   // Nested one level down, inside `Admission.followUp`. `shift` recurses, so a name is still all
   // it takes — but a nested instant is exactly the kind this set loses track of, which is why it is
   // named here rather than left for the reader to notice.
@@ -210,6 +218,11 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "lapsesAt",
   // Closing-the-loop (package E): a home service return's request, answer and review day.
   "requestedAt",
+  // Batch 3 items 21 and 23 (10 Nov 2026): when work was handed on, and a carer callback's
+  // best-after time and when it was made (`handover/handover-work-events.ts`).
+  "handedAt",
+  "bestAfter",
+  "madeAt",
   // Staff needed (feature 10): a request's shift start and when it was closed.
   "shiftStartAt",
   "closedAt",
@@ -218,6 +231,12 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   // WS-15: when a closed bed was reopened. The mark keeps it so a stay seated during the closure
   // stays put.
   "reopenedAt",
+  // Item 6: when to look at a closed bed again, a prompt only.
+  "reviewAt",
+  // Item 13, tonight's intake window (`Unit.intakeWindow`), 10 Nov 2026. No other model field is a
+  // numeric `from` or `to`, so naming them here moves only the window's two ends.
+  "from",
+  "to",
 ]);
 
 /**

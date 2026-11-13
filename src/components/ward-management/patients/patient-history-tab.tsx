@@ -358,7 +358,10 @@ export function PatientHistoryTab({
   absence,
   absenceVoluntary = false,
   chronologyHref,
+  hours,
 }: {
+  /** Redesign (12 Nov 2026): Where the hours went, given while a movement is open, so it sits here. */
+  hours?: ReactNode;
   record: PatientNowRecord;
   /** Ops-17 (13 Oct 2026): this person's full chronology, one tap from their history. */
   chronologyHref?: string;
@@ -462,11 +465,14 @@ export function PatientHistoryTab({
 
   return (
     <section className={s.pane} aria-label="Presentation history" data-layout="history">
+      {/* Redesign (12 Nov 2026): the figure strip leads. While a movement is open, where its hours went
+          sits beside the episodes on a wide screen. */}
       {knownHistory ? (
         <StatRow rows={rows} dayZero={dayZero} current={current !== undefined} admittedNow={occupiedNow} />
       ) : null}
+      {movement && hours ? <div className={s.hoursSlot}>{hours}</div> : null}
 
-      <Card aria-label="Movement event log">
+      <Card aria-label="Movement event log" className={s.mainCard}>
         <CardHead
           level={2}
           icon={History}

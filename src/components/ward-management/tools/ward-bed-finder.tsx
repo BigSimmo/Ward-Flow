@@ -6,8 +6,9 @@ import { ArrowUpRight } from "lucide-react";
 
 import { useWardFlowSelect } from "../ward-flow-provider";
 import { bedsPendingPreparation } from "../ward-bed-availability";
-import { readyBedsNow } from "../ward-bed-states";
+import { readyBedsNow, type ReservationReferral } from "../ward-bed-states";
 import type { Admission } from "../ward-admissions";
+import { heldBedsByKind } from "../ward-movement-bed-hold";
 import { designationSummary, lockedBedsFree, openBedsFree } from "../ward-bed-designation";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import { sexDesignationAccepts } from "../ward-eligibility";
@@ -67,6 +68,8 @@ export function findBeds(
   admissions: readonly Admission[],
   releases: BedRelease[],
   filters: BedFinderFilters,
+  /** D-115 item 3: the named holds (open journeys and accepted referrals), so a named bed is not offered. */
+  holds: readonly ReservationReferral[],
 ): BedFinderRow[] {
   if (!filters.legalStatus) return [];
   const involuntary = filters.legalStatus === "involuntary";
@@ -84,12 +87,15 @@ export function findBeds(
         // pulled for an incoming patient; the older min(allocatable, empty) still offered it. The
         // data does not say which beds are empty, so each kind is capped on its own rather than
         // giving the cap to locked beds first.
-        const ready = readyBedsNow(unit, admissions, releases);
+        const ready = readyBedsNow(unit, admissions, releases, holds);
+        // A bed held by name comes off its own kind before the cap (D-115 item 3, CodeRabbit on
+        // #1637), so neither kind filter offers a named bed.
+        const held = filters.bed === "any" ? undefined : heldBedsByKind(unit, admissions, holds);
         const free =
           filters.bed === "locked"
-            ? Math.min(lockedBedsFree(unit), ready)
+            ? Math.min(Math.max(0, lockedBedsFree(unit) - (held?.locked ?? 0)), ready)
             : filters.bed === "open"
-              ? Math.min(openBedsFree(unit), ready)
+              ? Math.min(Math.max(0, openBedsFree(unit) - (held?.open ?? 0)), ready)
               : ready;
         const service = unitHealthService(unit);
         return {
@@ -283,12 +289,19 @@ function BedFinderRowText({ row, now }: { row: BedFinderRow; now: Instant }) {
   );
 }
 function OperationalBedFinder({ onNavigate }: { onNavigate: () => void }) {
-  const { units, admissions, bedReleases, now } = useWardFlowSelect("units", "admissions", "bedReleases", "now");
+  const { units, admissions, bedReleases, movements, referrals, now } = useWardFlowSelect(
+    "units",
+    "admissions",
+    "bedReleases",
+    "movements",
+    "referrals",
+    "now",
+  );
   // Access audit (31 Oct 2026): a ward links to its page only for a desk that may open that page,
   // by the same role table the menu reads. Another desk still reads the row, as plain text.
   const canOpen = useCanOpenHref();
   const [filters, setFilters] = useState<BedFinderFilters>(DEFAULT_BED_FINDER_FILTERS);
-  const rows = findBeds(units, admissions, bedReleases, filters);
+  const rows = findBeds(units, admissions, bedReleases, filters, [...movements, ...referrals]);
   const set =
     <K extends keyof BedFinderFilters>(key: K) =>
     (value: BedFinderFilters[K]) =>

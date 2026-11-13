@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 import { preloadWhenIdle } from "../preload-when-idle";
 
@@ -11,8 +12,11 @@ import { preloadWhenIdle } from "../preload-when-idle";
  */
 const loadTable = () => import("./capacity-expected-occupancy");
 
-export const ExpectedOccupancyTable = dynamic(() => loadTable().then((m) => m.ExpectedOccupancyTable), {
-  loading: () => null,
-});
+export const ExpectedOccupancyTable = dynamic(
+  withLoadRetry(() => loadTable().then((m) => m.ExpectedOccupancyTable)),
+  {
+    loading: () => null,
+  },
+);
 
 preloadWhenIdle(loadTable);

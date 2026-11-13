@@ -441,26 +441,8 @@ export function firstSentence(reason: string): string {
   return end === -1 ? reason : reason.slice(0, end + 1);
 }
 
-/**
- * Ward Lead audit (2026-09-17): the two exact `closure.reason` strings `WITHDRAW_REFERRAL`
- * (`ward-flow-reducer.ts`) writes when the REFERRER (this department, dispatching as `"ed"`)
- * withdraws or revokes — never when the coordinator does (`"The coordinator revoked the accepted
- * referral"`), and never any other closure (`RECORD_ED_OUTCOME`, `REFER_TO_COMMUNITY_TEAM`,
- * arrival). This department raised the withdrawal, so it stays accountable for knowing it
- * happened — a coordinator-driven revocation or any other closure is somebody else's decision and
- * stays off this board, exactly like every other closed movement.
- */
-const ED_INITIATED_WITHDRAWAL_REASONS = [
-  "The referrer withdrew the referral",
-  "The referrer revoked the accepted referral",
-] as const;
-
-export function isEdInitiatedWithdrawal(movement: Movement): boolean {
-  return (
-    movement.closure !== undefined &&
-    (ED_INITIATED_WITHDRAWAL_REASONS as readonly string[]).includes(movement.closure.reason)
-  );
-}
+// Moved to `ward-ed-presence.ts` so the crew wait count can read it without this file's weight.
+export { isEdInitiatedWithdrawal } from "@/components/ward-management/ward-ed-presence";
 
 /**
  * L4 (site review 12 Oct 2026): the wait marker beside "In ED" reads the one tier-due rule Home

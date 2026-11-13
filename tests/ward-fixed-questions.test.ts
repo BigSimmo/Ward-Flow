@@ -54,6 +54,18 @@ describe("fixedQuestionAnswers", () => {
     expect(row?.detail).toContain("until a person releases it");
   });
 
+  it("counts a pull as past its limit at the limit itself, the same boundary as the bed-hold rule", () => {
+    const state = seedWardFlowState();
+    const pulled = state.movements.find((movement) => movement.stage === "pulled")!;
+    const at = (pullExpiresAt: number) =>
+      rowsOf(
+        "pulls_past_limit",
+        state.movements.map((movement) => (movement.id === pulled.id ? { ...movement, pullExpiresAt } : movement)),
+      ).map((row) => row.key);
+    expect(at(NOW_ANCHOR)).toContain(pulled.id);
+    expect(at(NOW_ANCHOR + 1)).not.toContain(pulled.id);
+  });
+
   it("lists open requests with no ward asked, in recorded order", () => {
     const state = seedWardFlowState();
     const keys = rowsOf("requests_no_ward_asked").map((row) => row.key);

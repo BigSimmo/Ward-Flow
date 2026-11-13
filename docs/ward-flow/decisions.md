@@ -102,7 +102,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-77](#d-77-the-ten-bigger-ux-changes-approved-for-build-22-october-2026)                                                                              | The ten bigger UX changes approved for build                                           | Partly replaced by D-98                          |
 | [D-78](#d-78-one-decline-list-for-wards-and-coordinators-22-october-2026)                                                                               | One decline list for wards and coordinators                                            | Active                                           |
 | [D-79](#d-79-wards-see-the-full-referral-with-name-and-umrn-before-they-answer-23-october-2026)                                                         | Wards see the full referral before answering                                           | Active                                           |
-| [D-80](#d-80-role-access-plan-version-2-all-17-recommendations-23-october-2026)                                                                         | Role access plan version 2: all 17 recommendations                                     | Partly replaced by D-86                          |
+| [D-80](#d-80-role-access-plan-version-2-all-17-recommendations-23-october-2026)                                                                         | Role access plan version 2: all 17 recommendations                                     | Partly replaced by D-86 and D-142                |
 | [D-81](#d-81-pulled-with-a-pull-time-limit-for-a-bed-kept-for-an-incoming-patient-24-october-2026)                                                      | Pulled, with a pull time limit, for a bed kept for an incoming patient                 | Active                                           |
 | [D-82](#d-82-a-pr-may-raise-a-phone-size-limit-by-up-to-5-kb-per-screen-without-asking-26-october-2026)                                                 | A PR may raise a phone size limit by up to 5 KB per screen without asking              | Active                                           |
 | [D-83](#d-83-patient-names-stay-in-full-on-every-screen-copy-and-tv-privacy-work-must-not-make-the-app-less-useful-26-october-2026)                     | Patient names in full                                                                  | Partly replaced by D-102                         |
@@ -155,14 +155,43 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-130](#d-130-audit-follow-ups-every-remaining-recommendation-approved-10-november-2026)                                                               | Audit follow-ups: every remaining recommendation approved                              | Active                                           |
 | [D-131](#d-131-hard-case-demo-data-allowed-and-the-movement-diagram-follows-the-engine-10-november-2026)                                                | Hard-case demo data allowed, and the movement diagram follows the engine               | Active                                           |
 | [D-132](#d-132-audit-fixes-group-1-docs-and-ci-guards-10-november-2026)                                                                                 | Audit fixes group 1: docs and CI guards; Claude-authored sensitive changes warn        | Active                                           |
+| [D-133](#d-133-batch-1-ed-and-referral-flow-three-answers-10-november-2026)                                                                             | Batch 1: escalation record, 30 min not opened, home team heads-up                      | Active                                           |
+| [D-134](#d-134-ward-arrival-and-beds-batch-how-to-hold-advocate-line-night-list-and-the-feature-freeze-10-november-2026)                                | Ward arrival and beds batch: held split, advocate line, night list, feature freeze     | Active                                           |
+| [D-135](#d-135-batch-4-outages-and-pilot-control-pack-age-and-plan-answers-10-november-2026)                                                            | Batch 4, outages and pilot control: pack age and plan answers                          | Active                                           |
+| [D-136](#d-136-feature-batch-3-shift-change-and-follow-up-two-signed-values-10-november-2026)                                                           | Feature batch 3: two signed values (7-day diversion return, 30-minute handover list)   | Active                                           |
+| [D-137](#d-137-feature-build-batch-5-count-leak-first-tv-change-mark-and-qr-library-10-november-2026)                                                   | Feature build batch 5: count leak first, TV change mark 15 minutes, QR library         | Active                                           |
 | [D-138](#d-138-phone-alert-urgency-by-kind-10-november-2026)                                                                                            | Phone alert urgency by kind                                                            | Active                                           |
 | [D-139](#d-139-phone-statistics-ward-list-a-to-z-and-leave-return-times-as-typed-10-november-2026)                                                      | Phone Statistics ward list A to Z, and leave return times as typed                     | Active                                           |
+| [D-140](#d-140-feature-list-adopted-and-wave-1-begins-10-november-2026)                                                                                 | Feature list adopted, and Wave 1 begins                                                | Active                                           |
+| [D-141](#d-141-batch-1-ed-and-referral-flow-design-approved-with-eleven-answers-11-november-2026)                                                       | Batch 1 design approved, with eleven answers                                           | Active                                           |
+| [D-142](#d-142-batch-4-design-review-and-all-twelve-answers-approved-d-80-amended-for-site-features-11-november-2026)                                   | Batch 4: design review and all twelve answers approved, D-80 amended for site features | Active                                           |
 | [D-143](#d-143-mhert-is-mherl-in-the-glossary-smhmr-deferred-11-november-2026)                                                                          | MHERT is MHERL in the glossary; SMHMR deferred                                         | Active                                           |
 | [D-144](#d-144-chip-rows-move-only-sideways-on-a-phone-11-november-2026)                                                                                | Chip rows move only sideways on a phone                                                | Active                                           |
-| [D-150](#d-150-close-this-bed-stays-one-tap-with-undo-and-an-optional-reason-11-november-2026)                                                          | Close this bed stays one tap, with Undo and an optional reason                         | Active                                           |
-| [D-151](#d-151-archive-allowed-when-only-ended-referrals-and-audit-rows-name-the-record-11-november-2026)                                               | Archive allowed when only ended referrals and audit rows name the record               | Active                                           |
-| [D-152](#d-152-the-signed-in-shared-board-shows-real-perth-time-11-november-2026)                                                                       | The signed-in shared board shows real Perth time                                       | Active                                           |
-| [D-153](#d-153-waiting-saves-stay-in-memory-with-a-tile-marker-and-a-leave-warning-11-november-2026)                                                    | Waiting saves stay in memory, with a tile marker and a leave warning                   | Active                                           |
+| [D-145](#d-145-repository-review-fixes-features-and-code-health-approved-11-november-2026)                                                              | Repository review: fixes, features and code health approved                            | Active                                           |
+| [D-146](#d-146-performance-audit-fixes-and-the-phone-speed-target-11-november-2026)                                                                     | Performance audit fixes and the phone speed target                                     | Active                                           |
+| [D-147](#d-147-demo-code-tries-keep-per-address-keying-until-a-trusted-proxy-is-set-11-november-2026)                                                   | Demo-code tries keep per-address keying until a trusted proxy is set                   | Active                                           |
+| [D-148](#d-148-closing-a-bed-stays-one-tap-and-its-toast-offers-a-reason-11-november-2026)                                                              | Closing a bed stays one tap, and its toast offers a reason                             | Active                                           |
+| [D-149](#d-149-a-record-whose-only-links-are-withdrawn-referrals-can-be-archived-11-november-2026)                                                      | A record whose only links are withdrawn referrals can be archived                      | Active                                           |
+| [D-150](#d-150-the-signed-in-site-runs-on-real-perth-time-11-november-2026)                                                                             | The signed-in site runs on real Perth time                                             | Active                                           |
+| [D-151](#d-151-a-bed-tile-says-when-a-change-is-waiting-to-save-11-november-2026)                                                                       | A bed tile says when a change is waiting to save                                       | Active                                           |
+| [D-152](#d-152-returned-to-ed-prompt-sees-every-return-in-shared-mode-11-november-2026)                                                                 | Returned to ED prompt sees every return in shared mode                                 | Active                                           |
+| [D-153](#d-153-keep-the-drawn-time-settle-check-and-defer-a-separate-agent-github-identity-11-november-2026)                                            | Keep the drawn-time settle check, and defer a separate agent GitHub identity           | Active                                           |
+| [D-154](#d-154-the-community-desks-ed-heads-up-reads-a-narrow-scoped-list-11-november-2026)                                                             | The community desk's ED heads-up reads a narrow scoped list                            | Active                                           |
+| [D-155](#d-155-check-the-live-clock-offset-before-clearing-it-11-november-2026)                                                                         | Check the live clock offset before clearing it                                         | Active                                           |
+| [D-156](#d-156-reset-the-synthetic-live-world-after-the-clock-fix-11-november-2026)                                                                     | Post-release reset of the live synthetic world withdrawn                               | Withdrawn 12 November 2026                       |
+| [D-157](#d-157-legal-forms-print-and-export-include-people-admitted-on-a-form-12-november-2026)                                                         | Legal forms Print and Export include people admitted on a form                         | Active                                           |
+| [D-158](#d-158-a-this-shift-staff-request-is-refused-once-that-shift-has-ended-12-november-2026)                                                        | A This-shift staff request is refused once that shift has ended                        | Active                                           |
+| [D-159](#d-159-fixes-from-the-10-to-12-november-pr-review-12-november-2026)                                                                             | Fixes from the 10 to 12 November PR review                                             | Active                                           |
+| [D-160](#d-160-a-trusted-proxy-list-of-plain-addresses-falls-back-to-per-address-keying-12-november-2026)                                               | A trusted proxy list of plain addresses falls back to per-address keying               | Active                                           |
+| [D-161](#d-161-homes-changes-since-strip-is-one-line-12-november-2026)                                                                                  | Home's changes-since strip is one line                                                 | Active                                           |
+| [D-162](#d-162-fixes-from-the-12-november-whole-site-component-review-12-november-2026)                                                                 | Fixes from the 12 November whole-site component review                                 | Active                                           |
+| [D-163](#d-163-pre-demo-audits-use-the-public-demo-after-d-162-is-live-12-november-2026)                                                                | Pre-demo audits use the public demo after D-162 is live                                | Active                                           |
+| [D-164](#d-164-homes-changes-since-strip-names-escalations-first-and-leaves-movements-off-12-november-2026)                                             | Home's changes-since strip names escalations first and leaves movements off            | Active                                           |
+| [D-165](#d-165-the-patient-screen-is-a-dashboard-grid-on-every-tab-13-november-2026)                                                                    | The patient screen is a dashboard grid on every tab                                    | Active                                           |
+| [D-166](#d-166-ci-runs-faster-without-dropping-a-check-12-november-2026)                                                                                | CI runs faster without dropping a check                                                | Active                                           |
+| [D-167](#d-167-the-triage-page-has-a-left-sign-off-nav-and-joined-section-steps-13-november-2026)                                                       | The Triage page has a left sign-off nav and joined section steps                       | Active                                           |
+| [D-168](#d-168-the-demo-script-follows-the-13-november-pre-demo-audit-13-november-2026)                                                                 | The demo script follows the 13 November pre-demo audit                                 | Active                                           |
+| [D-169](#d-169-demo-script-wording-follows-the-hard-questions-audit-13-november-2026)                                                                   | Demo script wording follows the hard questions audit                                   | Active                                           |
 
 ---
 
@@ -989,7 +1018,7 @@ is inferred.
   5. **Observation levels.** General (hourly), Intermittent (interval typed, 15 or 30 minutes), Constant within sight (1:1), Constant within arm's length (1:1) and Two staff constant (2:1). Each 1:1 counts as one staff member against a ward's observation capacity and 2:1 as two; General and Intermittent count as none. The labels stay editable in the clinical values, because names vary by health service. Nothing is scored or suggested from a level (D-71).
   6. **Seclusion and restraint.** An operational view only: what is in use now and seclusion room availability, typed times, no computed limits (D-70). The legal register stays in the health service's own system.
   7. **Unfinished controls hidden by Audit 7.** Build the answer view's bed hold field (wired to the existing hold event) and its nurse unit manager field (wired to the existing high-acuity override tick). Delete the referral Call button and replace it with "Log a call" from the new call log. Delete the Add patient "After adding" card and go straight to the patient's page. Delete the cockpit's "Confirm a destination" section, which leans toward suggesting a ward (D-71). Build Assign referral with the call log.
-- **Boundary:** Synthetic data only. This decides product direction, not clinical governance sign-off (D-54), and authorises no provider, deployment or spending step.
+- **Boundary:** synthetic data only. This decides product direction, not clinical governance sign-off (D-54), and authorises no provider, deployment or spending step.
 - **Why:** A source review of 21 October 2026 found 14 product issues; these were the decisions the fix plan needed from the owner before building. Plan: `/mnt/project-files/plan/ward-flow-fix-plan-2026-10-21.md` (project files, outside the repository).
 - **Subsequent note (25 October 2026):** The fix plan named above is no longer kept in the project files, so that path no longer opens.
 
@@ -1005,7 +1034,7 @@ is inferred.
   5. The merge queue is used for this batch. Josh switches it on himself.
   6. A read-only check of the Supabase plan and Realtime quota is allowed before fix plan items 1 (shared boards) or 6 (history) start.
   7. Issues #430 (CAD number validation) and #431 (seeded surname check) join Phase 2 of the fix plan. Issues #314, #315 and #374 to #376 are closed once each is verified as fixed in the source.
-- **Boundary:** Synthetic data only. A push or PR is not a merge, deployment or provider change; each still needs its own authority (AGENTS.md hard rule 10).
+- **Boundary:** synthetic data only. A push or PR is not a merge, deployment or provider change; each still needs its own authority (AGENTS.md hard rule 10).
 - **Why:** Several threads were building fix plan items in parallel, and the batch needed agreed rules for publishing, shared files and merge order.
 - **Subsequent note (21 October 2026):** Item 5 cannot be applied as approved: GitHub's merge queue is unavailable for a personally owned repository. Josh accepted a lighter substitute in the health check thread at 7:51 PM AWST, in his words "yes but this slows things down", then "yes ok", to that session's proposal as relayed by the coordinating session: "Require branches to be up to date before merging" stays off; only the three riskier PRs (Work loss, Referral owner and Observation levels) merge `main` in and re-run CI just before they are marked ready; the smaller PRs merge as they are.
 
@@ -1027,7 +1056,7 @@ is inferred.
   11. **R19** (costed ward questions) stays parked until a pilot ward is chosen.
   12. **Hosted checks.** The hosted save and conflict test and the hosted fresh browser check are approved, with synthetic data only.
 - **Standing rule:** Josh, in the project chat at 8:02 PM AWST: "DO NOT EVER GO AHEAD UNTIL I APPROVE THE MOCKUP". Nothing is built from any mockup until Josh explicitly approves that mockup.
-- **Boundary:** Synthetic data only. This authorises no deployment, provider configuration change or spending. The Supabase connector, open sign-up, restore drill, iPhone walkthrough and pilot roles are for Josh to do himself.
+- **Boundary:** synthetic data only. This authorises no deployment, provider configuration change or spending. The Supabase connector, open sign-up, restore drill, iPhone walkthrough and pilot roles are for Josh to do himself.
 - **Why:** The parallel threads had raised open questions that needed owner answers before Phase 2 and the hosted checks could go ahead.
 
 ## D-75. UX audit follow-up, page caching, community gaps and the extra-travel bed hold (21 October 2026)
@@ -1040,7 +1069,7 @@ is inferred.
   4. **Seclusion view** may claim the two screen-map files their previous owner released.
   5. **Extra-travel bed hold.** A bed hold for a person with extra travel adds 60 minutes to the hold set in Settings.
 - **Mock-up evidence rule:** Josh, in the project chat at 8:40 PM AWST: "Disregard any mockups that did not utilise up to date live or local site and visual assessment". A mock-up counts only when it was made from screenshots of the running app at current `main` or the hosted site, and it says which commit.
-- **Boundary:** Synthetic data only. This authorises no deployment, provider configuration change or spending, and no build from a mock-up before Josh approves it.
+- **Boundary:** synthetic data only. This authorises no deployment, provider configuration change or spending, and no build from a mock-up before Josh approves it.
 - **Why:** The audit and the fix threads needed owner answers before the quick wins, caching work, community gaps and bed hold timing could go ahead.
 
 ## D-76. Community referral gaps: the full move journey and asking more wards (21 October 2026)
@@ -1049,7 +1078,7 @@ is inferred.
 - **Decision:**
   1. **Fix plan item 15.** An accepted community referral is built as the full journey: it can be moved, transported and arrived, and it shows on the Movements and Transport boards. The journey records a community origin by team name, with no address. This updates owner ruling 8 of 1 September 2026, which said a journey never starts at a community team, for an accepted community referral. The smaller option, where the ward records "arrived from community" against the held bed with no movement, is not taken.
   2. **Fix plan item 16.** The coordinator can ask more wards about an open community referral. Each ward added is recorded with who added it and when. No more than 3 wards may be waiting at once (`PARALLEL_REFERRAL_CAP`), and wards that declined do not count. Wards are listed alphabetically and are never ranked or suggested (D-71).
-- **Boundary:** Synthetic data only. The engine work waits until the trends work has merged, because both touch the same event, model and drawer files. This authorises no deployment, provider configuration change or spending.
+- **Boundary:** synthetic data only. The engine work waits until the trends work has merged, because both touch the same event, model and drawer files. This authorises no deployment, provider configuration change or spending.
 - **Why:** D-74 item 2 put the community gaps into Phase 2, and the scope showed that only the full journey puts community transport on the boards that coordinators and transport officers already use.
 
 ## D-77. The ten bigger UX changes approved for build (22 October 2026)
@@ -1069,7 +1098,7 @@ is inferred.
   11. **Top bar** at 1280 px is fixed.
 - **Not decided:** the "Not legally checked" notice stays on the live Legal forms screen, and D-70 is unchanged, until Josh answers that question. The card's recommendation to remove it is not acted on.
 - **Process:** one pull request per group, each from current `main`, with a visual check. Nothing merges without Josh.
-- **Boundary:** Synthetic data only. This authorises no deployment, provider configuration change or spending.
+- **Boundary:** synthetic data only. This authorises no deployment, provider configuration change or spending.
 - **Why:** Josh reviewed the ten mock-ups, made from the current app, and approved them with the recommended answers to their open questions.
 
 ## D-78. One decline list for wards and coordinators (22 October 2026)
@@ -1080,7 +1109,7 @@ is inferred.
   2. **Ward-only reasons stay.** Four clinically distinct reasons are kept for ward declines only: Specialling unavailable, Acuity mix, Bed pulled for earlier referral and Capability mismatch. Capability mismatch is kept because neither Age band not provided here nor Secure bed unavailable fully covers it, for example a ward with no ECT or eating disorder capability.
   3. **Retired ward values map across.** No bed becomes No suitable bed, Sex mix becomes Sex designation unavailable and Out of catchment becomes Belongs to another service. Old saves are converted when they load, so no recorded decline is lost.
   4. **Limits kept.** A ward refusing a movement is still not offered Sex designation unavailable (T10), and an ED decline gets none of the ward-only reasons.
-- **Boundary:** Synthetic data only. Built in PR #579, which cites D-78 in its code comments. This authorises no deployment, provider configuration change or spending.
+- **Boundary:** synthetic data only. Built in PR #579, which cites D-78 in its code comments. This authorises no deployment, provider configuration change or spending.
 - **Why:** two lists with different words for the same reason made decline records hard to compare across the network. Keeping the ward-only reasons and converting old values keeps what earlier records meant.
 
 ## D-79. Wards see the full referral, with name and UMRN, before they answer (23 October 2026)
@@ -1105,7 +1134,7 @@ is inferred.
   5. **PR 5, items 7, 9 to 13 and 15.** Transport officers see their own service's jobs only, with the referral's risk categories as flags. Wards, EDs and community teams get own-place Statistics as counts. Community teams get a Movements screen for their own journeys. Phone alerts go to officers for new or changed jobs, and to community teams when a referral is answered or a catchment client is admitted or discharged. The ward sees the readmission flag once it has accepted, which changes Josh's 9 October 2026 ruling. The ED sees the wards asked, their state and the accepting ward, but not other wards' decline reasons. Opening the full referral detail is logged as a record view.
 - **Mock-ups first (item 14):** a review screen for break glass openings and record views, read from the server, for statewide and service coordinators, and an Access log in Settings for the access admin. Both are made from the running app at current `main` and built only after Josh approves them (D-74).
 - **Pre-pilot only (item 17):** before any real data, a second approver comes back for role grants, and a coordinator opening a clinical ward record gives an "on behalf of the ward" reason. This is recorded now and built at pilot. Until then D-66 stands. _Subsequent note (27 October 2026): D-86 drops the second approver part of this item; the "on behalf of the ward" reason is unchanged._
-- **Boundary:** Synthetic data only. No Supabase change beyond reading tables that already exist. No new roles, and nothing a coordinator, ward or ED needs is taken away. This authorises no deployment, provider configuration change or spending.
+- **Boundary:** synthetic data only. No Supabase change beyond reading tables that already exist. No new roles, and nothing a coordinator, ward or ED needs is taken away. This authorises no deployment, provider configuration change or spending.
 - **Why:** the review found the FD-23 leak, a broken bed manager Discharges screen, cover that could go to any account, break glass review with no screen, and gaps in daily work for sending wards, community teams and transport officers.
 - **Later change (2 November 2026):** the site bed manager no longer marks a bed meeting action done, which narrows item 3 above and the 31 October Q61 ruling. The bed meeting agenda is read only for that desk (Decision 46). Ward, ED and community desks still mark their own agreed actions done. Built in PR #1214 (Q97, 1 November 2026); Josh approved recording it here on 2 November 2026 ("Yes to all recommendations").
 
@@ -1701,9 +1730,79 @@ is inferred.
 - **Why:** these were the confirmed, low-risk audit findings; failing agent commits now would block almost every engine or legal PR, because no approval route exists yet.
 - **Boundary:** synthetic data only. No clinical rule, signed value or release changes. D-82 (5 KB phone limit raises) and D-107 (no merge queue) stand.
 
+## D-133. Batch 1 (ED and referral flow): three answers (10 November 2026)
+
+- **Date:** 10 November 2026, 17:02 UTC (1:02 AM AWST on 11 November). **Decided by:** Josh, on three decision cards in the Ward Flow project thread "Build ED and referral flow features", after asking at 17:00 UTC for Batches 1 and 2 of the feature build plan (Claude Doc "Ward Flow feature build plan: 27 chosen items") to begin. That request is his go-ahead for these items despite D-128 item 9. D-140 is in this PR.
+- **Decision:**
+  1. **Escalation call outcomes (item 3):** a shared record everyone can see (Agreed a plan, No bed, No answer, Left a message), not a browser-only log like the Tools call log.
+  2. **Referral not opened yet (item 16):** a sent referral that no ward has opened shows "Not opened yet" after 30 minutes. Signed into clinical-values.md.
+  3. **Home team heads-up (item 46):** an open community team episode's team is told the ED name and arrival time only, and nothing for closed episodes. No reason, diagnosis, risk or free text.
+- **Why:** item 3 exists to show that escalation was done, which a browser-only log can't; 30 minutes lets a busy ward look before chasing; the home team already holds the open episode.
+- **Boundary:** synthetic data only. Item 46 with real data still needs the D-87 privacy review. Approves no merge or release. D-74 still applies to anything drawn.
+
+## D-134. Ward arrival and beds batch: how to hold, advocate line, night list and the feature freeze (10 November 2026)
+
+- **Date:** 10 November 2026, about 1:02 AM to 1:08 AM AWST on 11 November (17:02 to 17:08 UTC on 10 November). **Decided by:** Josh, on two decision cards in the Ward Flow project thread "Build ward arrival and bed features", then "Yes to all recommendations please" to the thread's numbered questions. Numbered D-134 because the numbers before it were taken first. D-133 is claimed by open PR #1606.
+- **Decision:**
+  1. **Held split:** items 6 (bed closure review time), 7 (plan staffing for an arrival), 13 (overnight intake window) and 18 (left the ward, waiting for transport) go in one PR that may merge once green. Items 4 (young person on an adult ward) and 15 (interpreter, Aboriginal liaison and advocate lines at arrival) go in a second PR with the `hold` label until Josh signs them off.
+  2. **Advocate line (item 15):** "Mental Health Advocacy Service told" shows on the arrival checklist for every patient the app already treats as detained, the same group the existing support and advocacy notification checklist covers, and reuses that record.
+  3. **Item 4:** nothing is built until Josh gives the legal duty and the exact notice wording.
+  4. **Night list (item 13):** a "Tonight's intake windows" card on the Capacity page, beside "Closed beds past review", in the neutral service-then-name order (D-126).
+  5. **Feature freeze:** Josh's instruction to begin the feature batches replaces D-128 item 9 for the 27 items he chose on 10 November. Other features stay frozen until #1564 to #1577 close.
+  6. **Design review first:** Josh approves the batch's design review page before its PR is opened (D-74, D-107).
+- **Addendum, 11 November 2026, about 10:19 AM AWST (02:19 UTC):** Josh wrote "Go ahead with all recommendations now for me" in the project thread "Perfect the ranked feature list", and the same words two minutes later in this batch's thread "Build ward arrival and bed features". They answer this batch's two open cards with their recommended options, and the item 4 design that thread drew:
+
+  7. **Design approval:** the review page for items 6, 7, 13 and 18 is approved as drawn (version 3: "Has their transport come?" is two buttons, not a drop-down).
+  8. **ED may record the advocate line (item 15):** ED can record "Mental Health Advocacy Service told" on an accepted move of a detained patient before arrival. The ward sees it and can change it after arrival. It uses the one existing advocacy record.
+  9. **Item 4 wording and behaviour (replaces item 3):** the patient card of a patient under 18 on a ward that is not a youth ward shows "Under 18 on an adult ward. Check the Mental Health Act 2014 requirements for a child on an adult ward, including notifying the Chief Psychiatrist." It shows automatically from the date of birth and the ward type. It has one optional typed field, "Chief Psychiatrist notified at", never pre-filled (D-93). Once a time is entered it stays visible but goes quiet. It goes away at 18 or on a move to a youth ward. It never blocks a bed offer and never pre-selects anything. It quotes no section number or time limit, because neither has been verified. It stays in the held PR.
+
+- **Addendum, 11 November 2026, about 11:05 to 11:24 AM AWST (03:05 to 03:24 UTC):** Josh wrote "I approve all your recommendations" in this batch's thread, then "I sign off on everything here" to the project's PR summary, which listed the held PR #1609 as waiting on his sign-off.
+
+  10. **Held items signed off:** items 4 and 15 (#1609) are signed off, so its `hold` label comes off and it may merge once green.
+  11. **Legal wording check:** the legal language check lets through only his exact item 4 sentence ("check the Mental Health Act 2014 requirements for a child on an adult ward"). It tells staff to check the Act rather than claiming authority. "2014" stays in the notice.
+
+- **Boundary:** synthetic data only. Information and prompts only: nothing ranks or recommends a ward or bed (D-71), and no clinical value changes. Approves no merge or release.
+
+## D-135. Batch 4, outages and pilot control: pack age and plan answers (10 November 2026)
+
+- **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, choosing "Older than 24 hours" on a decision card in the Batch 4 thread (17:04 UTC), and saying "Go ahead with all your recommendations" for the feature build plan in the project chat (17:04 UTC). D-132 is claimed by open PR #1601. D-133 is claimed by open PR #1606 (Batch 1). D-134 is claimed by open PR #1608 (Batch 2).
+- **Decision:**
+  1. **Outage pack age (item 24):** a ward's downtime pack counts as old once its last print or PDF save is more than 24 hours ago (`PACK_OLD_AFTER_MINUTES`, clinical-values.md). The server keeps only the time and ward of each print, never the pack.
+  2. **Site switch-off (item 20):** a fixed allow-list says which features can be switched off at one site. Safety notices, legal times, ruling guards, role access, the AWOL bed hold review, ward closure and the demo reset can never be switched off.
+  3. **Catch-up after an outage (item 25):** a prompt only. It starts when the coordinator types "We were down from __ to __", nothing is filled in or guessed from the device, and a ward is caught up only when it confirms "Beds still correct" after the outage ended.
+- **Boundary:** the screens for items 20, 24 and 25 wait for Josh's approval of the Batch 4 design review (D-74). Until he rules on D-80, only the statewide coordinator can switch a site feature. Synthetic data only. Approves no merge or release.
+
+## D-136. Feature batch 3 (shift change and follow-up): two signed values (10 November 2026)
+
+- **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, on two decision cards in the batch 3 build thread, and "Go ahead with all your recommendations" on the feature build plan the same day. Numbered D-136 by the coordinator's allocation. D-133 is claimed by PR #1606. D-134 is claimed by PR #1608. D-135 is claimed by PR #1603.
+- **Decision:**
+  1. **Diversion return (item 28):** a person offered an alternative to admission (D-110) who returns to ED within 7 days prompts the team that took them to review. Signed as `diversionReturnReview`.
+  2. **End-of-shift handover (item 21):** the handover page lists your own open work, with "Hand to", once the shift has 30 minutes or less to run. Signed as `handoverOwnWorkLead`.
+  3. **Batch scope:** batch 3 builds items 11, 12, 21, 22, 23 and 28 of the feature build plan. Josh's go-ahead on the plan, given after D-128 item 9, starts these features while #1564 to #1577 are still open.
+  4. **Design approved (11 November 2026):** the batch 3 design review page (six screens, D-74) is approved as built, by Josh's "go ahead with all your recommendations" relayed to this thread.
+  5. **D-14 allowlist (11 November 2026):** `community/diversion-return-review.ts` joins the patient-link allowlist. It compares ids only, for one referral this team took and a later ED request, and shows the team that person's link and two times.
+  6. **Item 21 placement (11 November 2026):** the "Your open work" list sits at the top of the Handover page.
+- **Boundary:** synthetic data only. Both values are prompts: neither blocks sign-out, ranks a person or judges the alternative. Approves no merge or release.
+
+## D-137. Feature build batch 5: count leak first, TV change mark and QR library (10 November 2026)
+
+- **Date:** 10 November 2026, 1:05 AM AWST on 11 November (17:05 UTC on 10 November). **Decided by:** Josh, choosing the recommended option on three decision cards in the "Build counts, screens and print" project thread, and writing "Go ahead with all your recommendations and disregard anything you cannot do" in the feature list thread (17:04 UTC) for the build plan's twelve questions. Numbered D-137 because the numbers before it were taken first. D-132 is claimed by PR #1601. D-133 is claimed by PR #1606. D-134 is claimed by PR #1608. D-135 is claimed by PR #1603. D-136 is claimed by PR #1605.
+- **Decision:**
+  1. **Count leak (plan question 1, item 1):** fixed first, before item 5. The server holds the page whenever it cannot be sure of the desk: only a browser that has said its desk is the whole-network coordinator's (cookie value `0`) gets the server's page. This changes H-0111 for a fresh device, which now sees a short loading page before its first page.
+  2. **TV change mark (plan question 9, item 43):** "Changed 14:32" shows on a ward or bed meeting TV tile for 15 minutes after its figure changes. Signed for the prototype by Josh as `tvChangeMark` in clinical-values.md.
+  3. **QR code library (plan question 11, item 42):** one small, well-known QR code library may be added as a dependency, loaded only where the desk QR code is drawn.
+  4. **Design approval and review answers (11 November 2026, 10:20 AM AWST, 02:20 UTC):** Josh chose "Approve all, with your answers" on the batch 5 approval card and wrote "Go ahead with all recommendations now for me." That approves the drawn parts on the batch's design review page (D-74) and these answers:
+     - No names in executive or statistics (aggregate) views at any count: a tapped count of people there lists nobody and says "Names are not listed in this view."
+     - The patient or carer page shows the receiving ward's mock nurses' station number from the on-call directory as "Ward phone".
+     - The patient or carer page wording stays marked as draft until consumer, carer and cultural review.
+     - The Night view's ready-bed heading reads "Beds ready now".
+     - This batch may change three files that held PR #1599 also changes (`bed-meeting-tv.tsx`, `ward-clinical-values.ts`, `ward-clinical-value-notes.ts`); this batch fixes any conflict.
+- **Note:** D-128 item 9 said no new features until #1564 to #1577 close. This batch builds because Josh chose the 27 items and asked for the batches to start on 10 November 2026; Josh may say otherwise on the PR.
+- **Boundary:** synthetic data only. Design approval for the drawn parts stays with the batch's design review page (D-74). Approves no merge or release.
+
 ## D-138. Phone alert urgency by kind (10 November 2026)
 
-- **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, picking item 23 of the audit fix build plan (Ward Flow project thread "Fix audit app and backend issues", audit fix group 2), which counts as his yes to audit decision 20. Numbered D-138 because D-132 to D-137 belong to other threads. D-133 is claimed by open PR #1606. D-134 is claimed by open PR #1608, and D-135 is claimed by open PR #1603, and D-136 is claimed by open PR #1605, and D-137 is claimed by open PR #1607. On 11 November 2026 Josh told every thread to go ahead with its recommendations, which approved the Settings line as drawn in the design review.
+- **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, picking item 23 of the audit fix build plan (Ward Flow project thread "Fix audit app and backend issues", audit fix group 2), which counts as his yes to audit decision 20. Numbered D-138 because D-132 to D-137 belong to other threads. D-133 is claimed by open PR #1606. D-135 is claimed by open PR #1603, and D-136 is claimed by open PR #1605, and D-137 is claimed by open PR #1607. On 11 November 2026 Josh told every thread to go ahead with its recommendations, which approved the Settings line as drawn in the design review.
 - **Decision:** act-now phone alerts stay high urgency and buzz again when replaced. Jobs and team alerts go out at normal urgency and replace their earlier alert quietly. Settings shows when this device last received an alert, from the time only (never the alert's words).
 - **Boundary:** synthetic data only. Changes no signed clinical value or clinical rule, and approves no merge or release.
 
@@ -1716,6 +1815,49 @@ is inferred.
 - **Unchanged:** the time absent without leave still shows as a running figure, because it counts from when the absence was recorded, not from a typed return time. Leave lists still order by return time.
 - **Why:** a list that puts the most ready beds first reads as "send them here" (D-126). A return time comes from the leave form, which staff read against paper; a running figure beside it is a second, unchecked number, the reason D-93 exists.
 - **Boundary:** D-71 and D-93 stand. Order and wording only; no figure, clinical value or rule changes. Synthetic data only. Approves no merge or release.
+
+## D-140. Feature list adopted, and Wave 1 begins (10 November 2026)
+
+- **Date:** 10 November 2026, 10:09 PM AWST (14:09 UTC). **Decided by:** Josh, in the Ward Flow project thread "Perfect the ranked feature list": "Go ahead with all your recommendations", answering the six questions in the reviewed feature list (Claude Doc "Ward Flow feature list: reviewed and re-ranked", 10 November 2026). Numbered D-140 because D-132 to D-139 were taken first; D-133 is in the same PR. D-134 is claimed by open PR #1608. D-135 is claimed by open PR #1603. D-136 is claimed by open PR #1605. D-137 is claimed by open PR #1607. D-139 is claimed by open PR #1600.
+- **Decision:**
+  1. **Working list:** the reviewed list (39 build items in four waves, pilot items P1 to P3, ruling items R1 to R6) replaces the order in the 10 November feature handover. Each item is re-checked against `main` before it is built.
+  2. **Two-point ID:** rows, cards and toasts on signed-in screens show age and sex as recorded and the full UMRN beside the full name, the same UMRN format as D-113, and mark same-name clashes on a list. Never on the wall TV. Built in a held PR, after PR #1599.
+  3. **A person under 18 placed on an adult ward:** treated as clinical. Nothing is built until Josh gives the legal duty and wording.
+  4. **Left the ward, waiting for transport:** the bed counts as Ready as soon as the ward marks the person gone. There is no cleaning step; "Bed cleaned tap" stays on the do-not-build list.
+  5. **Wave 1:** items 1 to 7 are built in one thread, starting with the role-scope count leak (item 1); items 2 and 4 go in that thread's one held PR.
+  6. **Bed round:** wards stay in the fixed order (D-126); wards that have not answered "Please confirm your beds" get a tag and a filter, and are not moved to the top.
+- **Why:** the code check found several listed items already built, and six needed changes to stay within D-71, D-113, D-126 and the do-not-build list.
+- **Boundary:** synthetic data only. Changes no signed clinical value; approves no release. D-74 still applies to anything drawn.
+
+## D-141. Batch 1 (ED and referral flow) design approved, with eleven answers (11 November 2026)
+
+- **Date:** 11 November 2026, 02:19 UTC (10:19 AM AWST). **Decided by:** Josh, in the Ward Flow project thread "Build ED and referral flow features": "Approve all your recommendations", answering the eleven questions on the Batch 1 design review page (artifact "Batch 1 design review", v1). D-133 and D-140 are in the same PR.
+- **Decision:**
+  1. **Design:** Batch 1 (items 3, 9, 10, 16, 26, 27 and 46) is approved as built (D-74).
+  2. **New features:** Josh's request to begin Batches 1 and 2 (10 November, 17:00 UTC) overrides D-128 item 9 for Batch 1.
+  3. **Who to call:** desktop and tablet only; phone shows no wait step, so it has no link.
+  4. **Step 1 contact:** the service bed coordinator, as one contact, rather than each ward's nurse in charge.
+  5. **Escalation record:** keeps only the latest call outcome for each step.
+  6. **Privacy guard:** D-133 covers the home team heads-up's one extra reader of the patient link in the D-14 guard.
+  7. **Open episode:** the patient record's community list stands in for a stored community episode until one exists.
+  8. **Demo seed:** one unopened referral to a named ward and one with a ward's ask are added, so items 10 and 16 show without set-up.
+  9. **Brought by:** a new ED arrival can be marked "Brought by: Police" or "Ambulance", nothing pre-selected, so crew times can be recorded for it.
+  10. **Crews line on Home:** one total line across departments, not one per department tile.
+  11. **Heads-up identity:** the home team heads-up shows the UMRN, and still no name, reason, diagnosis, risk or free text.
+- **Also fixed:** the white strip between the ED board's hero and its Board tabs (Josh's screenshot, 11 November 2026).
+- **Boundary:** synthetic data only. Changes no signed clinical value. Item 46 with real data still needs the D-87 privacy review. Approves no release.
+
+## D-142. Batch 4: design review and all twelve answers approved, D-80 amended for site features (11 November 2026)
+
+- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, writing "Go ahead with all recommendations now for me." in the Batch 4 thread (02:21 UTC), and confirming in the project chat that every thread should go ahead with all its recommendations (02:22 UTC). D-136 is claimed by open PR #1605, D-138 is claimed by open PR #1604 and D-139 is claimed by open PR #1600. D-140 and D-141 are claimed by open PR #1606 (Batch 1). D-137 is claimed by open PR #1607 (Batch 5).
+- **Decision:**
+  1. **Design review (D-74):** the Batch 4 screens are built as drawn in the review page.
+  2. **Site switch-off (item 20):** the allow-list holds five features (bed meeting TV, Top 25 criteria-led discharge, referral opened receipts, referral information needs and Help ask). The card "Features at this site" sits in the access admin's Access tab. One tap switches a feature, with Undo.
+  3. **D-80 amended:** the access admin may switch site features as well as the statewide coordinator. Protected features still cannot be switched off by anyone.
+  4. **Pack age (item 24):** the old-pack list lives on the Downtime screen, with a pointer on Home. A ward that has never printed is listed as old. Print times may sit in the device's cleaned copy of the state.
+  5. **Catch-up (item 25):** the outage start is a blank Today or Yesterday choice. Each bed not confirmed since the outage shows "Not confirmed since the outage" in full. Catch-up starts only after the coordinator records the outage, and only the ward's own confirm counts.
+- **Later the same day (04:13 UTC):** Josh chose "Mark ready now" on a decision card, so this PR was marked ready past the five-PR cap.
+- **Boundary:** synthetic data only. Approves the screens and the D-80 amendment only; no release.
 
 ## D-143. MHERT is MHERL in the glossary; SMHMR deferred (11 November 2026)
 
@@ -1731,31 +1873,214 @@ is inferred.
 - **Decision:** on a phone, the page-top quick-link chip rows, the Home quick bar, the shared phone chip row and Home's "Waiting in ED" strip take `touch-action: pan-x`. A finger on one of these rows can only move it sideways. The accepted trade-off is that a vertical swipe starting on one of these rows does not scroll the page. Reason: iPhone still slid the rows up and down after three layout fixes (#1596, #1602, #1610), and the cause could not be reproduced off the device.
 - **Boundary:** presentation only, synthetic data. Changes no clinical value or rule, and approves no merge or release.
 
-## D-150. Close this bed stays one tap, with Undo and an optional reason (11 November 2026)
+## D-145. Repository review: fixes, features and code health approved (11 November 2026)
 
-- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, in the Ward Flow project thread "Verify the live audit findings": "Go ahead with all recommendations" (06:47 UTC), approving the four recommendations in the verified live audit report (Claude Doc "Ward Flow live audit: verified findings and fix plan"). D-145 to D-149 are claimed by other threads.
-- **Decision:** "Close this bed" in the bed drawer still saves on one tap, with no confirm step, and keeps its Undo toast. After closing, staff may pick a reason from the existing fixed closure reason list. A reason is optional.
-- **Why:** the live audit (item 4) found no confirm and no reason. A confirm step would slow the nurse in charge; Undo already covers a mistaken tap, and an optional reason keeps the record useful.
-- **Boundary:** workflow only, synthetic data. Changes no clinical value or rule, and approves no merge or release.
+- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, in the Ward Flow project thread "Review repository for issues and new features": "Go ahead with all these recommendations please" (03:55 UTC), answering the review doc "Ward Flow repository review, 11 November 2026". Numbered D-145 because D-133 to D-144 belong to other threads. D-139 is claimed by open PR #1600, D-140 is claimed by open PR #1606, D-141 is claimed by open PR #1606, D-142 is claimed by open PR #1603, D-143 is claimed by open PR #1612, and D-144 is claimed by open PR #1617.
+- **Decision:**
+  1. **Clinical display fixes, one held PR:** a ward's expected occupancy no longer counts a patient twice when they hold a named bed and also have a booked planned admission to that ward; an ended legal form says it ended and gives the expiry only as it was typed; the ED screen flags a long wait at 24 hours or more, like every other screen.
+  2. **Non-clinical fixes:** one lapse check for pull holds, staff requests keep the shift the person chose, one reader for typed times, one length-of-stay calculation, a demo code shorter than 12 characters counts as no code (added after PR #1615 merged; spaces and dashes not counted), and a demo pass stops working when the code changes. Two lines added to the real-data go/no-go list (record ids never built from UMRNs; a check of the push library).
+  3. **Features that finish existing screens** (not covered by the D-128 item 9 pause): Leave page links, print and entry point; Help for pages that had none; print and spreadsheet export on Legal forms and Movements. Triage risk reviews due waits until #1564 to #1577 close and needs its own clinical sign-off.
+  4. **Code health:** the file line cap counts code lines, not comments or blank lines; one shared CI setup step; shared helpers for the forked side rail; reasons or fixes for unexplained React hook rule switch-offs; patch-level dependency updates.
+  5. **Josh's own action:** turn off Supabase open sign-up before real data.
+- **Screens approved (11 November 2026, 05:46 UTC):** after the design review page "Leave and export review", Josh chose "Yes, add them" on the decision card. This approves the item 3 screens and two new patterns: an icon-only Print button on phones, and the Export status line hidden until it has something to say (this affects every list with Export).
+- **Clinical sign-off (11 November 2026, 05:51 UTC):** Josh wrote "I approve all of them to remove labels" in the thread "Get all open PRs merged", approving the item 1 fixes in PR #1621 as built, including the Legal forms wording "Form ended; expiry as typed was HH:MM".
+- **Why:** findings from the 11 November review, each checked against source; the clinical items were display bugs, not changes to signed values.
+- **Boundary:** synthetic data only. Changes no signed clinical value; clinical items merge only after Josh checks the held PR. Approves no release.
 
-## D-151. Archive allowed when only ended referrals and audit rows name the record (11 November 2026)
+## D-146. Performance audit fixes and the phone speed target (11 November 2026)
 
-- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, in the Ward Flow project thread "Verify the live audit findings": "Go ahead with all recommendations" (06:47 UTC), approving the four recommendations in the verified live audit report (Claude Doc "Ward Flow live audit: verified findings and fix plan"). D-145 to D-149 are claimed by other threads.
-- **Decision:** the coordinator may archive a patient record added in error when the only other references to it are withdrawn or cancelled referrals and audit rows. Any live referral, stay, bed, legal form or movement still blocks it. When archive is not available, the record says why instead of hiding the panel. Archive stays coordinator only, with a reason, a confirm step and the 5-minute Undo. This extends Josh's 26 October 2026 archive rule (#816: archive only, coordinator only, for records added in error), which had no D-number.
-- **Why:** the live audit (item 9) found that test patient PT-A06 could never be archived because a withdrawn referral named it, so test and mistaken records stayed on the shared site for good.
-- **Follow-up:** archiving PT-A06 and the old TEST-Helper4 records on the live site is a live write, done in the app after release.
-- **Boundary:** synthetic data. Changes no clinical value, and approves no merge or release.
+- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, in the Ward Flow project thread "Audit Ward Flow performance" ("Go ahead with all the issues and fixes for all the findings please", 03:55 UTC), approving every recommendation in the performance audit report. Numbered D-146 because D-139 to D-144 are claimed by open PRs #1600, #1606, #1603, #1612 and #1617, and D-145 is claimed by open PR #1623 (the repository review thread).
+- **Decision:** build the audit's fixes for screen redraws, phone first-load size, database round trips, indexes and CI time in one PR. The phone speed target (M84) is: a screen usable within 3 seconds, with under 0.3 seconds of main-thread blocking after first paint, on a mid-range phone over 4G (measured as Chromium at 4 times CPU slowdown). CI unit shards may start after the static checks instead of after the production build, replacing the 4 November "cheap first" ordering for that one job. Read-only GitHub reads of CI run times, and the D-111 shift-change load test against a hosted synthetic database, are approved. The triage "days since discharge" Perth-date finding needs no change: PR #1599 (D-129) already counts it on the Perth clock. Data retention stays with the existing BE-008 register item; this ruling sets no retention period.
+- **Boundary:** synthetic data only. Changes no signed clinical value or clinical rule, and approves no merge into `main`, release or migration on a hosted database beyond the normal PR flow.
 
-## D-152. The signed-in shared board shows real Perth time (11 November 2026)
+## D-147. Demo-code tries keep per-address keying until a trusted proxy is set (11 November 2026)
 
-- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, in the Ward Flow project thread "Verify the live audit findings": "Go ahead with all recommendations" (06:47 UTC), approving the four recommendations in the verified live audit report (Claude Doc "Ward Flow live audit: verified findings and fix plan"). D-145 to D-149 are claimed by other threads.
-- **Decision:** on the signed-in shared site, board time is the real current Perth time. The scripted demonstration clock stays on the public demo and local demo only, and the advance-clock control cannot move the shared board.
-- **Why:** the live audit (item 5) found the shared board labelled AWST while running about 48 minutes fast, because a shared world always started its clock at 10:42. Recorded times, handover and downtime prints would disagree with paper records.
-- **Boundary:** synthetic data. Changes no clinical value or rule, and approves no merge or release.
+- **Date:** 11 November 2026, 2:37 PM AWST (06:37 UTC). **Decided by:** Josh, on a decision card in the Ward Flow project thread "Get all open PRs merged", choosing "Add a safe fallback, then merge" for PR #1615 (A4-02). Numbered D-147 because D-145 and D-146 belong to other threads. D-145 is claimed by open PR #1623. D-146 is claimed by open PR #1624.
+- **Decision:** while `WARD_TRUSTED_PROXY_ADDRESSES` names no proxy on the Next service, the front door's demo-code try limit keeps keying on the edge's `X-Real-IP`, else the last `X-Forwarded-For` hop, as it did before A4-02. Once it names a proxy (or `*`), A4-02's trusted-proxy rule applies. Reason: the Next session route has no socket address, so the strict rule alone would put every caller in one shared bucket, and ten wrong tries from anyone in ten minutes would refuse every presenter.
+- **Boundary:** no Railway or environment change; setting `WARD_TRUSTED_PROXY_ADDRESSES` stays a separate, approved provider action. The fallback logs nothing. Synthetic data only; changes no clinical value or rule, and approves no release.
 
-## D-153. Waiting saves stay in memory, with a tile marker and a leave warning (11 November 2026)
+## D-148. Closing a bed stays one tap, and its toast offers a reason (11 November 2026)
 
-- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, in the Ward Flow project thread "Verify the live audit findings": "Go ahead with all recommendations" (06:47 UTC), approving the four recommendations in the verified live audit report (Claude Doc "Ward Flow live audit: verified findings and fix plan"). D-145 to D-149 are claimed by other threads.
-- **Decision:** waiting saves stay in page memory only (D-18, D-72 and D-124 stand). A bed tile with a change still waiting to save shows a "waiting to save" marker, and the browser warns before the page is closed or reloaded while saves are waiting. Nothing is stored on the device.
-- **Why:** the live audit (item 3) found a closed bed still showing "Ready" while its change waited offline, and a reload lost the change with no warning.
-- **Boundary:** privacy rulings unchanged; synthetic data. Changes no clinical value or rule, and approves no merge or release.
+- **Date:** 11 November 2026. **Decided by:** Josh, approving every recommendation in the "Ward Flow live audit: verified findings and fix plan" (decision item 4) after fact-checking: "Go ahead with all recommendations after fact checking please". Numbered D-148 because D-145 is claimed by open PR #1623. D-146 is claimed by open PR #1624. D-147 is claimed by open PR #1615.
+- **Decision:** "Close this bed" in the bed drawer still saves on one tap with Undo (the 26 October fast-workflow choice). No confirm step is added. Its toast now offers "Add a reason", a kit menu of the existing ward closure reasons (`WARD_CLOSURE_REASONS`). Choosing one undoes the close and closes the bed again with that reason, so the reason is chosen, never typed, and the audit trail keeps both steps (the bed's History shows the closure with its reason).
+- **Why:** the live audit found closures with no reason; a reason helps the bed meeting without slowing the close.
+- **Boundary:** synthetic data only. No engine rule changes: `SET_BED_CLOSED` already took an optional reason.
+
+## D-149. A record whose only links are withdrawn referrals can be archived (11 November 2026)
+
+- **Date:** 11 November 2026. **Decided by:** Josh, approving decision item 9 of the live audit fix plan, as for D-148. This gives the 26 October rule (#816: "archive only, coordinator only, for records added in error") its D-number.
+- **Decision:**
+  1. Archiving stays coordinator only, for a record added in error, and still never destroys anything.
+  2. A record can now be archived when the only things naming it are front-door referrals that nobody answered (every destination withdrawn by the referrer or cancelled), audit rows, and Undo records older than the Undo window. Any journey, stay, form, bed record, answered or open referral, or fact recorded on the person still keeps the record. The withdrawn referral stays in the history but no longer links to the archived record.
+  3. The coordinator's "Record added in error" card no longer hides when archive is not available. It says why in one line.
+- **Why:** the live audit's test patient could never be archived because a withdrawn referral and record-view audit rows named it, so test and mistaken records stayed on the board for good.
+- **Boundary:** synthetic data only. Archiving the live audit's test patient and the old TEST-Helper4 records is a live write that waits for Josh's yes after release.
+- **Note (11 November 2026, 15:34 UTC):** Josh approved, on a decision card in the Ward Flow project thread for PR #1626, adding `ward-patient-archive-reducer.ts` to the D-14 patient-link allowlist (60 to 61 files). The archive step reads `referral.patientId` only to unlink that one record's withdrawn front-door referrals; it reads no other referral and shows nothing.
+
+## D-150. The signed-in site runs on real Perth time (11 November 2026)
+
+- **Date:** 11 November 2026. **Decided by:** Josh, approving decision item 5 of the live audit fix plan, as for D-148.
+- **Decision:** the shared world's clock is the real minutes since its day zero (a Perth midnight). A new world's seed is re-anchored onto that time, as the public demo already does (`ward-reanchor.ts`). The scripted clock that starts at 10:42 stays on the public demo only, and the advance-clock controls are hidden on the signed-in site.
+- **Why:** the shared clock started at 10:42 whenever the world was made, so the board, labelled AWST, ran about 48 minutes fast all day.
+- **Note:** an existing shared world's clock steps back once by that gap when this is released, so steps recorded in the last 48 minutes before the release briefly read as a little in the future.
+- **Boundary:** synthetic data only. No clinical rule or signed value changes.
+
+## D-151. A bed tile says when a change is waiting to save (11 November 2026)
+
+- **Date:** 11 November 2026. **Decided by:** Josh, approving decision item 3 of the live audit fix plan, as for D-148.
+- **Decision:** the privacy rule stands (D-18, D-72, D-124): a save waiting on the signed-in site is held in this page's memory only, never on the device. The ward bed tile now says "Waiting to save" while a save for that bed is waiting. The browser's warning before the page closes or reloads with a save waiting was already in place (since 23 October), so it is unchanged.
+- **Why:** the live audit closed a bed offline and the tile still read "Ready", with nothing on it to say the change had not gone.
+- **Boundary:** presentation only, synthetic data. Nothing new is stored on the device.
+
+## D-152. Returned to ED prompt sees every return in shared mode (11 November 2026)
+
+- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, "Yes go ahead with all recommendations" in the Ward Flow project thread "Show every ED return in shared mode", approving the follow-up the batch 3 thread recorded on PR #1605. Numbered D-152 because D-145 to D-151 belong to other threads. D-145 is claimed by open PR #1623. D-146 is claimed by open PR #1624. D-148 is claimed by open PR #1626. D-149 is claimed by open PR #1626. D-150 is claimed by open PR #1626. D-151 is claimed by open PR #1626.
+- **Decision:** the item 28 "Please review: returned to ED" prompt (D-136 item 1) now sees a return in shared mode even when the later ED request is not in the community desk's copy. When the server cuts a community team desk's copy (`scopeWardFlowState`), it finds that team's returns in the whole workspace and sends `diversionReturns`: for each one, the id of a referral the desk is already sent and the time back in ED. The browser rebuilds the prompt from its own copy of that referral, so the desk learns one time and nothing else.
+- **Role access, kept narrow:** only a community desk scoped to one team receives `diversionReturns`, and only for referrals it took and is already sent. Ward, ED, officer, admin, executive and service coordinator copies never carry them. A statewide coordinator already holds the whole workspace. The record names no ED, movement or person, carries no typed text, and the reducer never writes it. A shared copy whose return names a referral the desk was not sent fails the shared-state check.
+- **D-14:** no new patient-link reader. The match still runs in `community/diversion-return-review.ts`, which D-136 item 5 allows.
+- **Boundary:** synthetic data only. A review prompt only, as D-136. Changes no signed clinical value or rule, and approves no merge or release.
+
+## D-153. Keep the drawn-time settle check, and defer a separate agent GitHub identity (11 November 2026)
+
+- **Date:** 11 November 2026, 11:41 PM AWST (15:41 UTC). **Decided by:** Josh, "Yes to all recommendations" in the Ward Flow project chat, answering the coordinator's list of five open questions. Two of those answers are rulings and are recorded here. The community desk ED heads-up answer is still unclear and will be recorded separately. The uptime monitor secrets and the GitHub and Railway settings are tasks for Josh, not rulings.
+- **Decision:**
+  1. **Phone release gate settle check:** the shared helper `waitForAccessibleReadiness` (`tests/helpers/ward-release-gate.ts`, changed in PR #1607) stays as it is. It counts a 100 ms tick against its 5-second settle budget only when the browser drew a frame in that tick, or while fonts load. A cold WebKit page held by D-137 can pause drawing after its first frame. Finite motion, or geometry that keeps changing while the browser draws, still fails after 5 seconds, and the test timeout still bounds a renderer that never recovers. The helper ignores infinite animations and the running Undo availability bar, so those can carry on while the page settles.
+  2. **A9-01, a separate GitHub identity for the agents:** deferred until after the pilot. Agents keep publishing as they do now.
+- **Boundary:** synthetic data only. Changes no clinical value or rule, weakens no release gate check, and approves no merge, release or settings change.
+
+## D-154. The community desk's ED heads-up reads a narrow scoped list (11 November 2026)
+
+- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, choosing "Yes, in a follow-up PR" on a decision card in the Ward Flow project thread "Batch 1: ED and referral flow", then "Yes I approve" in the project chat (15:43 UTC) when asked again whether to build it. Numbered D-154 because D-153 belongs to the counts thread's docs PR and D-145 to D-152 belong to other threads.
+- **Decision:** the item 46 "Your patients in ED" card (D-133, D-141) now works on a community team desk. That desk's movements hold only the journeys its own referrals touch, so the card was empty there. When `scopeWorkspace` cuts a community team desk's view, it now finds that team's open-episode patients who are in an ED in the whole workspace, and adds `communityEdArrivals` beside the scoped records. The card reads that list on a community desk and its own movements anywhere else.
+- **Role access, kept narrow:** each item is the UMRN, the ED's name and the time the stay was recorded, keyed by the journey id, and nothing else. The ED journey and the person's record stay out of the desk's movements and patients. Only a community desk scoped to one team gets the list; every other desk's view has none.
+- **Episode list:** the mock-up community episodes' team and status moved to `patients/community-episode-teams.ts`, the one place they are typed. The patient record mock-ups spread them in. That keeps the record mock-ups out of the shared access code.
+- **Not covered:** shared mode. A shared community desk's copy comes from the server's `scopeWardFlowState`, which does not send this list yet, so the card stays empty there, as before. Sending it the way D-152 sends `diversionReturns` is a separate change.
+- **Boundary:** synthetic data only. Display only. No event, stored field or signed clinical value changes, and this approves no merge or release.
+
+## D-155. Check the live clock offset before clearing it (11 November 2026)
+
+- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, "Go ahead with all recommendations" in the Ward Flow project thread for PRs #1622, #1623 and #1626, choosing the recommended option on the decision card about the live world's clock offset. Numbered D-155 because D-153 and D-154 belong to other threads, and both are recorded above (PR #1630 and PR #1632).
+- **Decision:** D-150 keeps `clockOffsetMinutes` on purpose, because test servers use it to move the clock. After this PR is released, the live shared world's stored offset is read once, read-only, and reported to Josh. If it is not 0, nothing is written: clearing it is a live write that waits for Josh's own yes.
+- **Why:** under D-150 a leftover offset would keep the signed-in site's clock ahead of real Perth time by that amount. Reading the value is harmless, and Josh decides on the live write once the number is known.
+- **Boundary:** synthetic data only. No code change, and no live write is approved. Changes no clinical rule or signed value, and approves no merge or release.
+
+## D-156. Reset the synthetic live world after the clock fix (11 November 2026)
+
+- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, choosing "Reset the synthetic live world" on the decision card in the Ward Flow project thread for PR #1626 (18:07 UTC), about the times stored before D-150's clock change.
+- **Decision:** after PR #1626 is released, the live shared world is reset to a fresh synthetic seed, so every stored time is on the new clock. Its current demo history goes, PT-A06 and TEST-Helper4 included, which also covers the D-149 archive of those records. This supersedes D-155's "clearing it waits for Josh's own yes": the reset clears any stored clock offset as well, so no separate offset write is needed. D-155's text stands as recorded.
+- **Why:** the live world holds synthetic data only, so a reset is the simplest fix. It leaves no lasting skew from D-150's clock change: without it, times stored before release stay about 48 minutes ahead of the new clock, so waits recorded before release read short and an expired Undo could briefly come back.
+- **Boundary:** synthetic data only. No code change in this PR. The reset is one live write, made by this thread after release, not by CI. Changes no clinical rule or signed value, and approves no merge or release.
+- **Withdrawn (12 November 2026):** Josh withdrew the post-release reset of the live synthetic shared world on 12 November 2026 (`2026-11-12`). No reset happens without a verified pre-reset backup and a tested restore, plus a fresh yes from Josh. D-149's after-release archive of PT-A06 and TEST-Helper4 is restored: that live write still waits for Josh's yes. D-155 stands as recorded: after release, the live world's stored clock offset is read once, read-only, and reported; any clear of that offset is a live write that waits for Josh's yes. This entry's 11 November decision to reset after release is withdrawn and does not supersede D-149 or D-155.
+
+## D-157. Legal forms Print and Export include people admitted on a form (12 November 2026)
+
+- **Date:** 12 November 2026, 8:44 AM to 8:45 AM AWST (00:44 to 00:45 UTC). **Decided by:** Josh, ruling on the two open review threads on PR #1623. Numbered D-157 because D-145 through D-156 are already on main (D-148 to D-156 arrived with PR #1626; D-156 is withdrawn but the number stays taken).
+- **Decision:** Legal forms Print, Export and the disabled condition for those buttons include the "Admitted on a form" people together with the open-movement rows, using the same `admitted` set as the on-screen admitted list (the same role filter). Highlights do not narrow the export. Print is `window.print()` of the current page, so that admitted group also shows on the Checklist view, not only On a form (clocks), and a Checklist print includes those people.
+- **Boundary:** synthetic data only. No signed clinical value or clinical rule. Approves no merge or release.
+
+## D-158. A This-shift staff request is refused once that shift has ended (12 November 2026)
+
+- **Date:** 12 November 2026, 8:44 AM to 8:45 AM AWST (00:44 to 00:45 UTC). **Decided by:** Josh, ruling on the two open review threads on PR #1623. Numbered D-158 because D-157 records the Legal forms ruling from the same answers, and D-155 and D-156 are already on main via PR #1626.
+- **Decision:** A `this_shift` staff request whose chosen shift has already ended is refused, using the Staff needed sheet's existing save error, with the reason "This shift has already ended. Choose this shift or next shift again". "Next shift" late-save behaviour is unchanged: a Next-shift request that lands just after the shift changes is still kept.
+- **Boundary:** synthetic data only. No signed clinical value or clinical rule. Approves no merge or release.
+
+## D-159. Fixes from the 10 to 12 November PR review (12 November 2026)
+
+- **Date:** 12 November 2026, 12:04 PM AWST (04:04 UTC). **Decided by:** Josh, "Yes to all" in the Ward Flow project thread "Review recent PRs for design regressions", answering its three numbered questions: fix the review's findings in one PR, keep v6's quick-link chip rows as the rule, and refresh the master design's Home and Ward tabs from main.
+- **Decision:**
+  1. **Page header rule:** a page top has at most one on-hero button, the next step's light button, plus one row of quick-link chips under it that scrolls sideways on a phone (page tops v6, D-116). DESIGN-SYSTEM.md says so in place of "one on-hero action".
+  2. **New referral chip:** phone-only on the ward top, as D-116 says; off the phone the bar's New menu is the way in.
+  3. **Chip rows (D-144 follow-up):** a sideways chip row still never slides up and down, but a finger that starts on it scrolls the page (`touch-action: pan-x pan-y`, `overflow-y: hidden`).
+  4. **Home's Waiting in ED strip on a tablet:** cells keep their whole words and the strip scrolls sideways when the departments do not fit.
+  5. **The other review findings** are fixed as recommended: eight rows then Show more on the new lists, Leave on the band hero, one phone rule for Print and Export, kit control sizes, shorter transport choices, honest outage catch-up labels, one ready count (D-115), one ended-form wording, the uptime issue raised before the run fails, a trusted proxy list other than `*` ignored, and Home's loading cards no longer hiding the page.
+  6. **MHERL wording:** the synthetic community example reads "joint assessment with the WA Police co-response team, referred through MHERL", so the phone line refers rather than attends. Josh may reword it.
+- **Boundary:** synthetic data only. No signed clinical value, time limit or clinical rule changes. Approves no release.
+
+## D-160. A trusted proxy list of plain addresses falls back to per-address keying (12 November 2026)
+
+- **Date:** 12 November 2026, 7:56 PM AWST (11:56 UTC). **Decided by:** Josh, "Keep it as is" on the decision card in the Ward Flow project thread "Review recent PRs for design regressions", answering CodeRabbit's security note on PR #1637.
+- **Decision:** when `WARD_TRUSTED_PROXY_ADDRESSES` lists plain addresses rather than `*`, the demo-code limit ignores the list with one warning and keys wrong tries per address as D-147 does. It does not fall back to one shared bucket, because ten wrong tries from anyone would then lock out every presenter.
+- **Accepted risk:** someone who can forge a forwarding header could avoid the 10-wrong-tries limit for one address. The network-wide cap of 200 wrong tries per 10 minutes still applies. The live sites use `*`, so the setting is not used there.
+- **Boundary:** synthetic data only. Changes no setting on Railway and approves no release.
+
+## D-161. Home's changes-since strip is one line (12 November 2026)
+
+- **Date:** 12 November 2026, 9:39 PM AWST (13:39 UTC). **Decided by:** Josh, "Build option A" in the Ward Flow project thread "Tidy the Since the shift started strip", after the mock-up showed options A and B at 390, 820, 1280 and 1440 in light and dark. Numbered D-161 because D-159 and D-160 arrived with PR #1637.
+- **Decision:** Home's "since" strip (feature 40) stays on one line at every width. It leads with "This shift" before any review and "Since 15:02 yesterday" after one, drops "new" from each count, sets each figure in mono, names three counts where the line is wide and fewer where it is narrow (one on a phone), and ends with "+N more" matching what is hidden. Screen readers hear the whole sentence with every count. The card, the Review button and the sheet it opens are unchanged.
+- **Not decided:** Josh did not answer the two follow-up questions (put escalations first; leave movements off the line), so the count order and the counts shown are unchanged.
+- **Boundary:** synthetic data only. No clinical rule changes. Approves no release.
+
+## D-162. Fixes from the 12 November whole-site component review (12 November 2026)
+
+- **Date:** 12 November 2026, 11:25 PM AWST (15:25 UTC). **Decided by:** Josh, "Yes go ahead with all recommendations" in the Ward Flow project thread "Review every site component for issues", answering its two numbered questions.
+- **Decision:**
+  1. **One fix PR:** the review's findings 2 to 26 are fixed as recommended in one PR. These include a retry on every lazily loaded part so Try again recovers, demo Accept and Decline on the community waiting list that act (with Undo), no unwired triage buttons, visible error lines for failed saves, a kit focus ring in the seclusion dialog, "Showing N of M" lines where a list is cut short, named bed board tiles, a pausable bed meeting TV view, keyboard and screen-reader fixes across the kit and screens, rem breakpoints, lighter cross-tab sync and saving, a capped saved audit trail, timers that pause in hidden tabs, hover shading only on devices that hover, and 24px phone tap areas.
+  2. **Phone bundle (finding 1):** the build is measured first, then the demo data and less-used logic load after first paint where that is safe. This is in the same PR (Josh, "go ahead with all recommendations").
+  3. **Saved audit trail (finding 22):** not capped. Trimming the saved copy would break restore, Today's review counts and the audit trail itself, and the existing "storage unavailable" notice already tells staff when saving stops. Josh agreed at 12:58 AM AWST on 13 November (16:58 UTC on 12 November), "I agree with your recommendations".
+  4. **Open-tab sync (finding 13):** narrowed. Each tab keeps its own saved day, so the whole day still travels between tabs. The receiving tab now skips the double comparison when the worlds clearly differ, and it no longer redraws every clock view on each message.
+- **Boundary:** synthetic data only. No signed clinical value, time limit or clinical rule changes. Approves no release.
+
+## D-163. Pre-demo audits use the public demo after D-162 is live (12 November 2026)
+
+- **Date:** 12 November 2026, 11:39 PM AWST (15:39 UTC). **Decided by:** Josh, "Yes to all recommendations" in the Ward Flow project thread "Write pre-demo audit prompts", answering its three numbered questions. Numbered D-163 because D-162 is claimed by open PR #1639.
+- **Decision:**
+  1. **Site to show:** the health service demonstration uses the public demo (state kept on the device, with Reset demo), not the signed-in shared site. The shared world still holds the PT-A06 and TEST-Helper4 test records, and clearing them stays a live write that waits for Josh's yes (D-149, D-156).
+  2. **Timing:** the pre-demo audit prompts run after PR #1639 (D-162) has merged and reached `live`, so they do not re-find its fixes.
+  3. **Public demo walk:** the demo rehearsal prompt may do one read-only walk of the public demo address, using on-screen controls only. It never signs in to the shared site, writes to the live world or calls another provider.
+- **Boundary:** synthetic data only. No code, clinical rule or signed value changes. Approves no live write, release, hosted CI run or other provider action.
+
+## D-164. Home's changes-since strip names escalations first and leaves movements off (12 November 2026)
+
+- **Date:** 12 November 2026, 11:27 PM AWST (15:27 UTC). **Decided by:** Josh, "Go ahead and fix all recommendations" in the Ward Flow project thread "Tidy the Since the shift started strip", answering the two follow-up questions left open by D-161. Numbered D-164 because D-162 is claimed by open PR #1639.
+- **Decision:** the strip's counts run escalations, delays, referrals, beds freed, then acceptances withdrawn, discharge dates moved and records updated, so a phone line, which names one count, shows an escalation when there is one. New movements are left off the line and stay in the Review sheet; when movements are the only change, the line names them so Review stays reachable from Home.
+- **Boundary:** synthetic data only. Changes no clinical rule, only the order and choice of counts on one line. Approves no release.
+
+## D-165. The patient screen is a dashboard grid on every tab (13 November 2026)
+
+- **Date:** 13 November 2026, 5:21 AM AWST (12 November, 21:21 UTC). **Decided by:** Josh, "Yes, open the PR" on the card "Approve version 2 of the patient screen so I can open the PR?" in the Ward Flow project thread "Redesign the patient screen". He had asked for the screen to be overhauled so the Now cards stop stretching across the page, saw version 1, said the History figure strip looked better as it was and gave free rein for a visual upgrade, then approved version 2 as shown at 390, 820, 1280 and 1440 in light and dark, with its five recommended answers.
+- **Decision:** the screen opened by clicking a patient is a dashboard grid on every tab from tablet landscape up: a 2:1 main and side column on Now, History and Community, and two level columns on Details and Documents.
+  1. **Now, main column:** the next step; the status gates as rows, each with a tinted icon and its action on the right edge, joined to a one-line Destination, Transport and Review foot that shows titles only; Triage and risk and Carer call back as two rows of one card under that work; then Care and safety.
+  2. **Now, side column:** Legal now, Discharge readiness, the leave or absence card, Who to call (stacked when narrow, so a name is never cut short), Recent changes, Why, and one "Hand over and print" card in place of the separate print cards.
+  3. **Moved:** "Where the hours went" sits on History beside the record, for a moving patient only; "Record added in error" sits at the foot of Details.
+  4. **History** keeps its joined figure strip across the top, as it was.
+  5. **Top band:** every patient gets the same band (chips, figures, tags), whether moving or staying; on a phone it drops the duplicate "Ends ... as typed" line.
+- **Boundary:** synthetic data only. Layout and appearance only: no action, wording of a clinical rule, permission or saved record changes. Approves no release.
+
+## D-166. CI runs faster without dropping a check (12 November 2026)
+
+- **Date:** 13 November 2026, 5:26 AM AWST (12 November, 21:26 UTC). **Decided by:** Josh, "Yes to all recommendations" in the Ward Flow project thread "Speed up CI without losing quality", answering its three numbered questions on the CI review. Numbered D-166 because D-165 is claimed by PR #1644 (patient screen redesign).
+- **Decision:**
+  1. **Draft lane:** a draft PR runs only the scope plan, static checks and production build. The unit shards, coverage, backend proof, browser journeys and release gate run when it is marked ready, and only that run can pass Ward Flow required.
+  2. **Phone release gate:** runs as two jobs (journeys then referrals, and checks alone). This reverses the phone half of the 4 November "fewer jobs" ruling; desktop keeps its three suites in one job.
+  3. **The rest of the review:** the unit shards are dealt from main's newest measured timings (falling back to `scripts/ward-flow/unit-durations.json`); the push guard warns when it cannot see a PR; threads keep PRs in draft while iterating; `npm run check:phone-budget` checks phone limits before a push; and main reuses a PR's unit evidence apart from the legal-figure sweep.
+- **Boundary:** no check is removed, skipped on a ready PR or loosened. Phone limits, coverage floors and test populations are unchanged. Approves no release, provider action or settings change.
+
+## D-167. The Triage page has a left sign-off nav and joined section steps (13 November 2026)
+
+- **Date:** 13 November 2026, 7:26 AM AWST (12 November, 23:26 UTC). **Decided by:** Josh, "Yes, open the PR" on the approval card and then "Yes to all recommendations" in the Ward Flow project thread "Redesign the Triage page", answering its five numbered questions on version 2 of the mock-up. Forty minutes earlier, on version 1, he wrote "isn't it better to have the nav on the left please as that is more natural". Numbered D-167 because D-165 is claimed by PR #1644 (patient screen redesign).
+- **Decision:** Start a triage and the Triage and risk form are redrawn in the patient screen's row pattern (D-165), with no change to what any action does, to clinical wording, to permissions or to saved records.
+  1. **Sign-off card on the left:** from 1001 px one sticky "Before you sign" card on the left lists the six sections, shows what is left and carries the Sign button. It replaces the old left list, the progress bar and the Sign button at the form's foot. On a tablet the card sits after the form; a phone keeps its bottom bar. On 7 November 2026 Josh kept the left column to the sections only and moved the "Before you sign" list out of it; this entry replaces that for the left column, because the one card is now both the section list and the sign-off list.
+  2. **Signature part:** the sections are drawn as steps joined by a line, with a filled chip for the section in view, in the card and in the form. This is the page's one signature part.
+  3. **Pills everywhere:** pick-one answers are round pills at every width. Pick-any answers stay square with a tick.
+  4. **Start a triage:** "Waiting by source" and "Signed triages" keep a right-hand column beside the numbered queue.
+  5. **Top band:** unchanged in this PR. Josh set its button row on 9 November 2026.
+- **Boundary:** synthetic data only. Changes no clinical rule, signed value, time limit or permission. Does not touch the patient screen's Triage card (PR #1644). Approves no release.
+
+## D-168. The demo script follows the 13 November pre-demo audit (13 November 2026)
+
+- **Date:** 13 November 2026, 12:17 PM AWST (04:17 UTC). **Decided by:** Josh, "Go ahead and do this as recommended" in the Ward Flow project thread "Update demo script from audit", accepting the recommendations of the pre-demo master audit (audit prompt 0).
+- **Decision:** `DEMO-SCRIPT.md` is changed to match the screen, with no app change in this PR.
+  1. **Act 3** shows Cyril Coldharbour's referral, whose Place tab shows all three groups, instead of Orla Vallowen's, which since D-141 shows one ward.
+  2. **Keira's Form 3B:** the script alone changes for now. It says her form ended at the examination and the app prompts for the next form, and makes the "no expiry is worked out" point on another patient's row. Making the ED board, panel and transport "Legal now" line read the ended state is a later app fix that needs Josh's clinical check.
+  3. **Form numbers** (Form 6A, Form 4A) stay out of the Say lines until Josh has checked them clinically.
+  4. **Setup and rules:** the demo runs on the public demo; Reset demo is pressed as the audience sits down because Keira leaves "Later today" about an hour after it; the script no longer says Reset returns the clock to 10:42; and Reload page, not Try again, recovers a failed page load.
+- **Boundary:** documentation only. Changes no app behaviour, clinical rule or permission. Approves no release.
+
+## D-169. Demo script wording follows the hard questions audit (13 November 2026)
+
+- **Date:** 13 November 2026, 12:52 PM AWST (04:52 UTC). **Decided by:** Josh, "Yes to all recommendations" in the Ward Flow project thread "Prepare for hard demo questions (prompt 7)", accepting the three recommendations of the hard questions audit (audit prompt 7).
+- **Decision:**
+  1. **Five script wording fixes** go into `DEMO-SCRIPT.md` as one script-only change: the script no longer states "not a medical device" as settled; Keira's form is "shown as ended" by a rule that still needs legal review; a patient whose gender is not recorded as female or male takes the same recorded, ward-checked route as a non-binary patient; RFDS can be recorded as the carrier, with nothing specific to air transport built; and role access is described as built in the shared version, with its checks not finished.
+  2. **Invented ward descriptions:** the next on-screen audit checks where the "what each ward admits" lines show under real ward names.
+  3. **Cost:** the answer in the room is that there is no price today.
+- **Boundary:** documentation only. Changes no app behaviour, clinical rule or permission. Gives no regulatory, legal or clinical view. Approves no release.

@@ -24,7 +24,12 @@ vi.mock("next/navigation", () => ({
 
 import { HomePinnedCard } from "@/components/ward-management/coordinator/home-pinned-card";
 import { pinnedRows } from "@/components/ward-management/coordinator/home-pinned";
-import { sinceBannerParts, sinceBannerText } from "@/components/ward-management/coordinator/home-since-text";
+import {
+  sinceBannerCounts,
+  sinceBannerLead,
+  sinceBannerLeadParts,
+  sinceBannerText,
+} from "@/components/ward-management/coordinator/home-since-text";
 import type { ChangesSinceLastLook } from "@/components/ward-management/coordinator/since-last-look";
 import {
   MY_PATIENTS_LIMIT,
@@ -167,19 +172,35 @@ describe("since banner text", () => {
     newEscalationIds: [],
   };
 
-  it("names counts in order with the review time", () => {
+  it("names counts escalations first, then delays, referrals and beds, with the review time", () => {
     expect(sinceBannerText(base, "15:02 yesterday")).toBe(
-      "Since you were last here, 15:02 yesterday: 4 new referrals · 3 beds freed · 2 new delays",
+      "Since 15:02 yesterday: 2 new delays, 4 new referrals, 3 beds freed",
     );
+    expect(sinceBannerLead(base, "15:02 yesterday")).toBe("Since 15:02 yesterday");
+    expect(sinceBannerLeadParts(base, "15:02 yesterday")).toEqual({ lead: "Since 15:02", day: " yesterday" });
+    expect(sinceBannerLeadParts(base, "15:02")).toEqual({ lead: "Since 15:02", day: "" });
+    expect(sinceBannerCounts(base).map(({ count, label }) => `${count} ${label}`)).toEqual([
+      "2 delays",
+      "4 referrals",
+      "3 beds freed",
+    ]);
   });
 
-  it("says the shift start before any review, folds extra kinds into 'more', and is empty with nothing new", () => {
+  it("leads with This shift before any review, keeps every count for screen readers, and is empty with nothing new", () => {
     const shift = { ...base, basis: "shift" as const, newEscalationIds: ["WF-9"] };
+    expect(sinceBannerLead(shift, "07:00")).toBe("This shift");
     expect(sinceBannerText(shift, "07:00")).toBe(
-      "Since the shift started, 07:00: 4 new referrals · 3 beds freed · 2 new delays · 1 more",
+      "Since the shift started at 07:00: 1 new escalation, 2 new delays, 4 new referrals, 3 beds freed",
     );
     const nothing = { ...base, newReferralIds: [], bedsFreed: [], newDelays: [] };
-    expect(sinceBannerParts(nothing)).toEqual([]);
+    expect(sinceBannerCounts(nothing)).toEqual([]);
     expect(sinceBannerText(nothing, "07:00")).toBeUndefined();
+  });
+
+  it("leaves movements off the line unless they are the only change (D-164)", () => {
+    const withMovements = { ...base, newMovementIds: ["WF-3", "WF-4"] };
+    expect(sinceBannerCounts(withMovements).map(({ label }) => label)).not.toContain("movements");
+    const onlyMovements = { ...withMovements, newReferralIds: [], bedsFreed: [], newDelays: [] };
+    expect(sinceBannerText(onlyMovements, "15:02")).toBe("Since 15:02: 2 new movements");
   });
 });

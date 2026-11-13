@@ -1,6 +1,7 @@
 import { RELEASE_BANDS, releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
 import { dayOf, formatSheetMoment, perthDateLabel, type Instant } from "@/components/ward-management/ward-clock";
 import type { DischargeRecord } from "@/components/ward-management/ward-discharge-records";
+import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
 import { BED_RELEASES_HELD_UP_ANY_DATE_LABEL } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
 import { wardLabel } from "@/components/ward-management/ward-absence-labels";
@@ -284,6 +285,16 @@ export function recordName(record: DischargeRecord): string {
 }
 export function recordedMoment(value: Instant | null, dayZero: Date): string {
   return value !== null && Number.isFinite(value) ? formatSheetMoment(value, dayZero) : "Not recorded";
+}
+
+/**
+ * Recorded's "Going to" cell: where they went, and, while they wait on site for transport after
+ * leaving the ward (item 18), since when. The ward board's Collected clears the wait.
+ */
+export function recordGoingTo(record: DischargeRecord, dayZero: Date): string {
+  const going = LEAVING_DESTINATIONS.find((item) => item.id === record.leavingDestination)?.label ?? "Not recorded";
+  const wait = record.waitingForTransport;
+  return wait ? `${going}. Waiting for transport since ${recordedMoment(wait.since, dayZero)}.` : going;
 }
 
 /** The calendar day alone ("Fri 9 Oct"), for a release already past its date. */

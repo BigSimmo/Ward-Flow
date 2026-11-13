@@ -47,6 +47,7 @@ import {
   smallNumberParts,
   smallNumberText,
 } from "@/components/ward-management/ward-access-scope";
+import type { HomeTeamHeadsUp } from "@/components/ward-management/community/home-team-heads-up";
 import type { AuditReview } from "@/components/ward-management/ward-audit";
 import { isBreakGlassReviewId } from "@/components/ward-management/ward-break-glass-review-id";
 import type { RecordRead, WardRecordActor } from "@/components/ward-management/ward-discharge-records";
@@ -131,15 +132,18 @@ export function useWardRecordActors(): readonly WardRecordActor[] {
   }, [access]);
 }
 
+/** Shared empty set, so an unscoped desk's value keeps its identity from render to render. */
+const NO_IDS: ReadonlySet<string> = new Set();
+
 /** Break glass ids visible only through a grant, so a screen can say the record is read only. */
-const BreakGlassContext = createContext<ReadonlySet<string>>(new Set());
+const BreakGlassContext = createContext<ReadonlySet<string>>(NO_IDS);
 
 function useBreakGlassPatientIds(): ReadonlySet<string> {
   return useContext(BreakGlassContext);
 }
 
 /** Stays this desk sees with ward and dates only (a community team's catchment client). */
-const DatesOnlyStayContext = createContext<ReadonlySet<string>>(new Set());
+const DatesOnlyStayContext = createContext<ReadonlySet<string>>(NO_IDS);
 
 /**
  * Whether this desk sees a stay with ward and dates only, so its observation level and other
@@ -148,6 +152,17 @@ const DatesOnlyStayContext = createContext<ReadonlySet<string>>(new Set());
 export function useIsDatesOnlyStay(): (admissionId: string | undefined) => boolean {
   const ids = useContext(DatesOnlyStayContext);
   return useCallback((admissionId) => admissionId !== undefined && ids.has(admissionId), [ids]);
+}
+
+/** D-154: a community desk's own patients in ED now, or `undefined` on any other desk. */
+const CommunityEdArrivalsContext = createContext<readonly HomeTeamHeadsUp[] | undefined>(undefined);
+
+/**
+ * The community team desk's patients with an open episode who are in an ED now (UMRN, ED name and
+ * time only, D-154), or `undefined` when this desk is not a community team's.
+ */
+export function useCommunityEdArrivals(): readonly HomeTeamHeadsUp[] | undefined {
+  return useContext(CommunityEdArrivalsContext);
 }
 
 /**
@@ -166,13 +181,13 @@ export function useIsBreakGlassRecord(): (record: { patientId?: string | null } 
 export function useDeskInScope(): ((deskId: string) => boolean) | undefined {
   const on = useWardAccessEnabled();
   const access = useEffectiveWardAccess();
-  const shell = useWardShellPublic();
+  // Only the place lookup: the shell value also carries the clock, which this answer does not need.
+  const places = useWardShellPublic()?.places;
   return useMemo(() => {
     if (!on || accessIsWholeNetwork(access)) return undefined;
-    const places = shell?.places;
     return (deskId: string) =>
       places !== undefined && (unitInScope(access.scope, deskId, places) || edInScope(access.scope, deskId, places));
-  }, [on, access, shell]);
+  }, [on, access, places]);
 }
 
 function sameItems(a: readonly unknown[], b: readonly unknown[]): boolean {
@@ -325,9 +340,10 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
     scoped: WardFlowContextValue;
     glass: ReadonlySet<string>;
     datesOnly: ReadonlySet<string>;
+    edArrivals?: readonly HomeTeamHeadsUp[];
   }>(() => {
     if (accessIsWholeNetwork(access) && activeGrants.length === 0)
-      return { scoped: context, glass: new Set(), datesOnly: new Set() };
+      return { scoped: context, glass: NO_IDS, datesOnly: NO_IDS };
     const places = wardPlaceLookup(context.units);
     const baseScoped = scopeWorkspace(context, access, { now, places, grants: activeGrants });
     const collection = retainSharedSenderReadCollection({
@@ -470,6 +486,7 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
     return {
       glass: breakGlassPatientIds,
       datesOnly: scoped.datesOnlyAdmissionIds,
+      edArrivals: baseScoped.communityEdArrivals,
       scoped: {
         ...rest,
         dispatch,
@@ -562,7 +579,9 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
         <WardFlowOverride value={steadyScoped}>
           <BreakGlassContext.Provider value={value.glass}>
             <DatesOnlyStayContext.Provider value={value.datesOnly}>
-              <DowntimePackBoundary identity={packIdentity}>{children}</DowntimePackBoundary>
+              <CommunityEdArrivalsContext.Provider value={value.edArrivals}>
+                <DowntimePackBoundary identity={packIdentity}>{children}</DowntimePackBoundary>
+              </CommunityEdArrivalsContext.Provider>
             </DatesOnlyStayContext.Provider>
           </BreakGlassContext.Provider>
         </WardFlowOverride>

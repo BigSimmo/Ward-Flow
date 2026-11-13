@@ -46,6 +46,20 @@ describe("departure readiness lives in the release panel", () => {
     expect(item.getAttribute("aria-pressed")).toBe(before);
   });
 
+  // Live audit item 7 (11 Nov 2026): the checklist's ticks are invented for the demo, so the
+  // signed-in shared workspace leaves it out until a real shared checklist exists.
+  it("leaves the demo Ready to leave checklist out on the shared workspace", () => {
+    vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "true");
+    try {
+      renderBoard();
+      fireEvent.click(document.querySelector<HTMLElement>('tr[data-act="true"]')!);
+      expect(screen.queryByTestId("ward-discharge-ready-to-leave")).toBeNull();
+      expect(document.body.textContent).not.toContain("invented for the demo");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("never renders the excluded barrier option or the false census/invariant claim", () => {
     renderBoard();
 

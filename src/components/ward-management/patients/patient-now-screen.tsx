@@ -38,43 +38,40 @@ import { activeCommunityTreatmentOrder, type Patient } from "@/components/ward-m
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { WardMovementNotFound } from "@/components/ward-management/ward-movement-not-found";
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { preloadWhenIdle } from "../preload-when-idle";
 // The arrival-time dialog has no initial-page content. Load it only after its action is opened.
 // (Document details load through the cancellable UploadFormsModal below.)
 // Care and safety (Josh, 9 Nov 2026) sits below the first screen of the Now tab, so its code loads
 // on its own rather than with the patient page's first load.
-const PatientCarePlansCard = dynamic(() => import("./patient-care-plans-card").then((m) => m.PatientCarePlansCard));
-const ArrivalTimeModal = dynamic(() => import("../referrals/arrival-time-modal").then((m) => m.ArrivalTimeModal));
+const PatientCarePlansCard = dynamic(
+  withLoadRetry(() => import("./patient-care-plans-card").then((m) => m.PatientCarePlansCard)),
+);
+const ArrivalTimeModal = dynamic(
+  withLoadRetry(() => import("../referrals/arrival-time-modal").then((m) => m.ArrivalTimeModal)),
+);
 // F-10: transit operations only draw inside the Destination sheet, so their code loads on its own,
 // fetched once the page is idle, rather than with the patient page.
 const loadTransitOperations = () => import("./patient-transit-operations");
-const PatientTransitOperations = dynamic(() => loadTransitOperations().then((m) => m.PatientTransitOperations));
+const PatientTransitOperations = dynamic(
+  withLoadRetry(() => loadTransitOperations().then((m) => m.PatientTransitOperations)),
+);
 // Document details have no closed-state work. Keep their code off the first load, with the same
 // idle preload as Transit operations and a cancellable, focus-managed dialog while loading.
 const loadUploadForms = () => import("../referrals/upload-forms-modal");
 const UploadFormsCloseContext = createContext<(() => void) | null>(null);
-function UploadFormsPending({ failed = false }: { failed?: boolean }) {
+function UploadFormsPending() {
   const onClose = useContext(UploadFormsCloseContext);
   if (!onClose) return null;
   return (
     <Dialog open onClose={onClose} title="Record document details">
-      <p role={failed ? "alert" : "status"}>
-        {failed
-          ? "Document details could not load. Close this dialog and reload the page before trying again."
-          : "Loading document details…"}
-      </p>
+      <p role="status">Loading document details…</p>
     </Dialog>
   );
 }
-function UploadFormsUnavailable() {
-  return <UploadFormsPending failed />;
-}
+// A failed fetch reaches withLoadRetry, which shows Try again and Close (the render site passes onClose).
 const UploadFormsModal = dynamic<UploadFormsModalProps>(
-  () =>
-    loadUploadForms().then(
-      (module) => module.UploadFormsModal,
-      () => UploadFormsUnavailable,
-    ),
+  withLoadRetry(() => loadUploadForms().then((module) => module.UploadFormsModal)),
   { loading: () => <UploadFormsPending /> },
 );
 // The History, Community, Details and Documents tabs draw nothing until opened, so their code
@@ -85,13 +82,22 @@ const loadDetailsTab = () => import("./patient-details-tab");
 const loadDocumentsTab = () => import("./patient-documents-tab");
 // Each pane wraps its tab in its own Suspense: without one, a tab whose code has not arrived yet
 // hid the whole page (React's fallback), and the arrow-key focus on the record tabs fell to the body.
-const PatientHistoryTab = dynamic(() => loadHistoryTab().then((m) => m.PatientHistoryTab));
-const PatientCommunityTab = dynamic(() => loadCommunityTab().then((m) => m.PatientCommunityTab));
-const PatientDetailsTab = dynamic(() => loadDetailsTab().then((m) => m.PatientDetailsTab));
-const PatientDocumentsTab = dynamic(() => loadDocumentsTab().then((m) => m.PatientDocumentsTab));
+const PatientHistoryTab = dynamic(withLoadRetry(() => loadHistoryTab().then((m) => m.PatientHistoryTab)));
+const PatientCommunityTab = dynamic(withLoadRetry(() => loadCommunityTab().then((m) => m.PatientCommunityTab)));
+const PatientDetailsTab = dynamic(withLoadRetry(() => loadDetailsTab().then((m) => m.PatientDetailsTab)));
+const PatientDocumentsTab = dynamic(withLoadRetry(() => loadDocumentsTab().then((m) => m.PatientDocumentsTab)));
 // Triage and risk (built 7 Nov 2026): the signed triages and the Triage action, on Now. Loaded with
 // the page's other lazy parts so the movement page's phone first load does not grow.
-const PatientTriageCard = dynamic(() => import("../triage/patient-triage-card").then((m) => m.PatientTriageCard));
+const PatientTriageCard = dynamic(
+  withLoadRetry(() => import("../triage/patient-triage-card").then((m) => m.PatientTriageCard)),
+);
+const CarerCallbackCard = dynamic(
+  withLoadRetry(() => import("@/components/ward-management/carer-callback-card").then((m) => m.CarerCallbackCard)),
+);
+// Where the hours went, on History. It comes from the same download as the Now tab's handover pack.
+const PatientJourneyHours = dynamic(
+  withLoadRetry(() => import("./patient-journey-extras").then((m) => m.PatientJourneyHours)),
+);
 preloadWhenIdle(
   loadTransitOperations,
   loadUploadForms,
@@ -149,6 +155,7 @@ import { PatientNowPanel } from "./patient-now-panel";
 import { PatientNowSummary } from "./patient-now-summary";
 import { renderTransportSection } from "./patient-now-transport-section";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { movementTransferNotesText } from "@/components/ward-management/referral-notes-text";
 import { originName as movementOriginName } from "@/components/ward-management/ward-movement-origin";
 
 interface PatientNowScreenProps {
@@ -299,7 +306,7 @@ export function PatientNowScreen({
 
   const closeClearanceModal = useCallback(() => {
     if (!clearanceSave.pending) setShowClearanceModal(false);
-  }, [clearanceSave.pending]);
+  }, [clearanceSave.pending, setShowClearanceModal]);
 
   // Synchronize document title
   useEffect(() => {
@@ -435,6 +442,12 @@ export function PatientNowScreen({
       () => undefined,
     );
   }
+
+  // Item 27 (10 Nov 2026): the transfer as plain recorded facts, for the notes, once a ward accepted.
+  const transferNotes = () =>
+    liveMovement
+      ? movementTransferNotesText(liveMovement, { patientName: displayName, units, admissions, now })
+      : undefined;
 
   // Keyboard navigation for tablist
   // Round 2 (Josh, 1 Nov 2026): Community shows only when community engagement is noted (a team
@@ -1113,6 +1126,36 @@ export function PatientNowScreen({
       wardPending={wardSave.pending}
       wardRefusal={wardRefusal}
       wardSaveError={wardSave.error}
+      notices={
+        <>
+          {/* Overall review, 20 Oct 2026: the owner of a bed meeting action marks it done here. */}
+          <MeetingActionsDue subject={liveMovement && { kind: "movement", id: liveMovement.id }} />
+          <MeetingActionsDue subject={resolved.liveAdmission && { kind: "admission", id: resolved.liveAdmission.id }} />
+        </>
+      }
+      tiles={
+        <>
+          <PatientTriageCard patientId={livePatient?.id} />
+          <CarerCallbackCard tile admissionId={resolved.liveAdmission?.id} movementId={liveMovement?.id} />
+        </>
+      }
+      care={
+        // Care plans and safety flags (Josh, 9 Nov 2026): the plan, hearing date, carer told and
+        // cultural support, on the record's own facts.
+        livePatient ? (
+          <PatientCarePlansCard
+            patient={livePatient}
+            role={routeRole}
+            now={now}
+            todayIso={perthIsoDay(displayToday)}
+            nowClock={perthClockTime(displayToday)}
+            hasCarer={(extras?.supports.length ?? 0) > 0}
+            episodes={extras?.episodes}
+            gate={gate}
+            run={(event, success, onRefused) => runStep(event, { success, onRefused })}
+          />
+        ) : null
+      }
     />
   );
 
@@ -1177,6 +1220,7 @@ export function PatientNowScreen({
           expandedStageIndex={expandedStageIndex}
           focusedStageIndex={focusedStageIndex}
           handleCopySummary={handleCopySummary}
+          transferNotes={liveMovement?.acceptedUnitId ? transferNotes : undefined}
           isLiveBedflow={isLiveBedflow}
           isPhone={isPhone}
           lastStay={lastStay}
@@ -1235,28 +1279,7 @@ export function PatientNowScreen({
               aria-labelledby="pntab-now"
               hidden={activeTab !== "now"}
             >
-              {/* Overall review, 20 Oct 2026: the owner of a bed meeting action marks it done here. */}
-              <MeetingActionsDue subject={liveMovement && { kind: "movement", id: liveMovement.id }} />
-              <MeetingActionsDue
-                subject={resolved.liveAdmission && { kind: "admission", id: resolved.liveAdmission.id }}
-              />
-              <PatientTriageCard patientId={livePatient?.id} />
               {nowPanel}
-              {/* Care plans and safety flags (Josh, 9 Nov 2026): the plan, hearing date, carer told
-                  and cultural support, on the record's own facts. */}
-              {livePatient ? (
-                <PatientCarePlansCard
-                  patient={livePatient}
-                  role={routeRole}
-                  now={now}
-                  todayIso={perthIsoDay(displayToday)}
-                  nowClock={perthClockTime(displayToday)}
-                  hasCarer={(extras?.supports.length ?? 0) > 0}
-                  episodes={extras?.episodes}
-                  gate={gate}
-                  run={(event, success, onRefused) => runStep(event, { success, onRefused })}
-                />
-              ) : null}
             </div>
 
             {/* Tab 2: HISTORY */}
@@ -1279,6 +1302,11 @@ export function PatientNowScreen({
                     absence={stayLeaveBed?.absentWithoutLeave}
                     absenceVoluntary={voluntaryNow}
                     chronologyHref={openable(livePatient ? patientChronologyHref(livePatient.id) : undefined)}
+                    hours={
+                      isLiveBedflow && liveMovement ? (
+                        <PatientJourneyHours movement={liveMovement} now={now} />
+                      ) : undefined
+                    }
                     open={!modeMeta.quiet}
                     onBackToNow={() => {
                       setActiveTab("now");
@@ -1359,6 +1387,9 @@ export function PatientNowScreen({
                     referralWhen={referralWhen}
                     displayName={displayName}
                     preferredName={preferredName}
+                    foot={
+                      livePatient ? <PatientArchivePanel patientId={livePatient.id} displayName={displayName} /> : null
+                    }
                   />
                 </Suspense>
               ) : null}
@@ -1479,7 +1510,6 @@ export function PatientNowScreen({
           </PhoneSheet>
         </>
       ) : null}
-      {livePatient ? <PatientArchivePanel patientId={livePatient.id} displayName={displayName} /> : null}
       <WardPrototypeFooter testId="ward-patient-now-governance" />
     </main>
   );

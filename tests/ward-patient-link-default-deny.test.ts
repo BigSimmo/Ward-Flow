@@ -418,6 +418,13 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
       "It reads the sender projection only and is rendered only by the community team screen.",
   },
   {
+    file: "community/home-team-heads-up.ts",
+    reason:
+      "D-133 (Josh, 10 Nov 2026): the home team heads-up links a person's open ED stay to their own open " +
+      "community team episode, for that one team's page only, and shows the ED name and time, nothing else. " +
+      "D-141 (Josh, 11 Nov 2026) adds the patient's UMRN so a team can tell items apart; still no name.",
+  },
+  {
     file: "patients/patient-now-adapter.ts",
     reason:
       "Patient-Now adapter: resolves live episode trajectory, active bed/admission, legal documents, " +
@@ -432,7 +439,8 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
       "the Admission it creates. BOOK checks that patientId exists in state.patients and refuses a " +
       "second waiting booking or a person who holds a pulled or occupied stay; CONVERT refuses when " +
       "that person holds such a stay or is on an open movement; the forecast helper drops a linked " +
-      "booking already counted through a waiting movement. Each is a yes/no on ids: reads compare ids " +
+      "booking already counted through a waiting movement or through a bed that person already holds by number " +
+      "(Josh, 11 Nov 2026, D-145). Each is a yes/no on ids: reads compare ids " +
       "only, write state, render nothing and disclose no other stay, movement or referral.",
   },
   {
@@ -478,6 +486,21 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
       "that person once and offer their triage, the same bounded read as search/patient-typeahead.tsx: " +
       "one person's own single linked referral, never a history across several.",
   },
+  {
+    file: "community/diversion-return-review.ts",
+    reason:
+      "Diversion return review (feature plan item 28, Josh, 11 Nov 2026, D-136): matches one referral " +
+      "this team took with a later ED request for the same person by comparing patientId only, within " +
+      "the signed 7-day window. It shows the taking team that person's link and two times, nothing else.",
+  },
+  {
+    file: "ward-patient-archive-reducer.ts",
+    reason:
+      "Archive reducer (D-149, Approved by Josh as Ward Lead, 11 Nov 2026, PR #1626): when a record is " +
+      "archived, the only referrals still naming it are withdrawn ones nobody answered. It compares each " +
+      "referral's patientId with the archived id and drops that link so no referral points at a record " +
+      "that has left the lists. Ids only; it writes state, renders nothing and discloses no other stay.",
+  },
 ].map((entry) => ({ ...entry, file: resolve(WARD_DIR, entry.file) }));
 
 const shortPath = (file: string) => relative(process.cwd(), file).replace(/\\/g, "/");
@@ -519,7 +542,11 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     // 51 → 52 on 2026-10-26: F-17 moved the seeded referrals out of ward-movements.ts unchanged. No new reader.
     // 53 → 58 on 2026-11-07: Josh as Ward Lead allowed the five triage and risk files (PR #1500).
     // 58 → 59 on 2026-11-10: Josh as Ward Lead allowed the M134 hard-case seed overlay (PR #1598, D-131).
-    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(59);
+    // 59 → 60 on 2026-11-11: Josh allowed the item 28 diversion return review (PR #1605, D-136).
+    // 60 → 61 on 2026-11-11: Approved by Josh as Ward Lead — the D-149 archive reducer unlinks
+    // withdrawn referrals from an archived record (PR #1626).
+    // 61 → 62 on 2026-11-11: D-133, the home team heads-up (open episodes only, ED name and time only).
+    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(62);
     for (const { file, reason } of ALLOWLIST) {
       expect(existsSync(file), `${shortPath(file)} is allow-listed but does not exist`).toBe(true);
       expect(reason.length, `${shortPath(file)} is allow-listed with no real reason beside it`).toBeGreaterThan(30);

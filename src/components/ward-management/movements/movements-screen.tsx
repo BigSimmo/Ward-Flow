@@ -17,6 +17,7 @@ import {
   useCallback,
   useDeferredValue,
   useEffect,
+  useEffectEvent,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -82,6 +83,7 @@ import flow from "./movement-flow.module.css";
 import styles from "./movements.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { MovementsPhoneNav } from "./movements-phone-nav";
+import { MovementsListTools } from "./movements-list-tools";
 import { rememberReturnRow, rowWithAttribute, useReturnedView, useReturnToPlace } from "../use-return-to-place";
 import { ShapeOfTheDay } from "./movements-shape-of-day";
 import { MovementPeopleSheet, corridorPeople, type MovementPeopleList } from "./movement-people-sheet";
@@ -144,15 +146,17 @@ const worklistRow = (id: string) => rowWithAttribute("data-record-key", id, "li"
 export function MovementsScreen() {
   const returned = useReturnedView<MovementsPlace>(MOVEMENTS_ROUTE);
   const thresholds = useDueSoonThresholds();
-  const { movements, units, referrals, patients, dispatch, configuration, setFocusMovementId } = useWardFlowSelect(
-    "movements",
-    "units",
-    "referrals",
-    "patients",
-    "dispatch",
-    "configuration",
-    "setFocusMovementId",
-  );
+  const { movements, units, referrals, patients, dispatch, configuration, setFocusMovementId, dayZero } =
+    useWardFlowSelect(
+      "movements",
+      "units",
+      "referrals",
+      "patients",
+      "dispatch",
+      "configuration",
+      "setFocusMovementId",
+      "dayZero",
+    );
   const now = useWardFlowClock();
   // Task 6 of the audit-wiring plan, 2026-09-16: StageRow's wait-meter bar and its "of N hours"
   // caption are read against the coordinator-configured ED access target, not a bare 24h literal.
@@ -200,15 +204,18 @@ export function MovementsScreen() {
     setDetailId(null);
   }, []);
 
+  // Reads the latest movements when Back fires, so the listener is added once rather than again on
+  // every movements change (performance audit WF-27, 11 November 2026).
+  const movementExists = useEffectEvent((id: string) => movements.some((movement) => movement.id === id));
   useEffect(() => {
     function handlePopState(event: PopStateEvent) {
       const state = event.state;
       const id = state && Object.hasOwn(state, "wardMovementDetail") ? state.wardMovementDetail : null;
-      setDetailId(typeof id === "string" && movements.some((movement) => movement.id === id) ? id : null);
+      setDetailId(typeof id === "string" && movementExists(id) ? id : null);
     }
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [movements]);
+  }, []);
 
   // Usability review, 24 Oct 2026: the tab lives in the address, so Back from a record returns to it.
   const [boardTab, setBoardTab] = useAddressTab("tab", MOVEMENT_BOARD_TABS, "every");
@@ -1224,6 +1231,19 @@ export function MovementsScreen() {
                   placeholder="Name, UMRN or ED"
                   aria-label="Find movements by name, UMRN or ED"
                   boxClassName={flow.search}
+                />
+                <MovementsListTools
+                  {...{
+                    patients,
+                    referrals,
+                    units,
+                    now,
+                    dayZero,
+                    resolved: boardTab === "resolved",
+                    iconOnly: isPhone,
+                  }}
+                  movements={boardTab === "resolved" ? worklistClosedToday : worklistMovements}
+                  disabled={(boardTab === "resolved" ? worklistClosedToday : worklistMovements).length === 0}
                 />
               </div>
 

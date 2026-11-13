@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { useWardFormSave } from "../use-ward-form-save";
 import {
   areCharacterShortcutsEnabled,
@@ -83,11 +84,13 @@ import {
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 
 // Help usage counts carry the how-to list, so they load only when the Ask help preview is on.
-const WardHelpUsageCard = dynamic(() =>
-  import("@/components/ward-management/help/ward-help-usage-card").then((m) => m.WardHelpUsageCard),
+const WardHelpUsageCard = dynamic(
+  withLoadRetry(() =>
+    import("@/components/ward-management/help/ward-help-usage-card").then((m) => m.WardHelpUsageCard),
+  ),
 );
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
+import { usePersonaDeskId, useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
 import { ROLE_SCREENS, type WardAccessRole } from "@/components/ward-management/ward-role-access";
 import { useConfigurationGate } from "@/components/ward-management/settings/settings-configuration-gate";
 import { AccessSettings, showsAccessTab } from "./access-settings";
@@ -106,6 +109,7 @@ import { publishedThresholds } from "@/components/ward-management/settings/setti
 import styles from "@/components/ward-management/settings/settings.module.css";
 import rx from "./settings-layout.module.css";
 import { SettingsDraftsCard } from "./settings-drafts-card";
+import { WardDeskQrCard } from "./ward-desk-qr-card";
 import { SettingsFold } from "./settings-fold";
 import { SettingsProfileCard } from "./settings-profile-card";
 import { SettingsSaveBar } from "./settings-save-bar";
@@ -213,6 +217,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   // Josh, 3 Nov 2026 (stress test, "yes to all"): with Role access off the access in force is the
   // whole view, so Settings follows the desk being tried in the demo, as the rail's person does.
   const personaRole = useShellPersonaRole();
+  const personaDeskId = usePersonaDeskId();
   const deskRole: WardAccessRole = !roleAccessOn && access.role === "coordinator" ? personaRole : access.role;
   const role: WardAccessRole = source.kind === "executive" ? "executive" : deskRole;
   const accessOn = roleAccessOn && showsAccessTab(access);
@@ -993,6 +998,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
     <div className={rx.accessStack}>
       <SettingsProfileCard now={now} />
       {role === "executive" ? null : <SettingsDraftsCard />}
+      {role === "ward" ? <WardDeskQrCard demoUnitId={roleAccessOn ? undefined : personaDeskId} /> : null}
       {role === "admin" ? null : accessPanels}
     </div>
   );

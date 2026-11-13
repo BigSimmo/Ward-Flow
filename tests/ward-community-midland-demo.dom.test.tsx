@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { CommunityScreen } from "@/components/ward-management/community/community-screen";
 import {
   recordMidlandDecision,
@@ -27,8 +27,12 @@ describe("Midland community team demo (locked design)", () => {
     // Page-top redesign (Josh, 9 Nov 2026): figures, the act row, chips and the week-ahead band.
     expect(screen.getByTestId("ward-community-hero-answer")).toHaveTextContent(/^142\s*on the caseload$/u);
     const figures = screen.getByRole("group", { name: "Team figures" });
-    expect(within(figures).getByText("in hospital").closest("p")).toHaveTextContent(/^9 in hospital$/u);
-    expect(within(figures).getByText("no case manager").closest("p")).toHaveTextContent(/^5 no case manager$/u);
+    expect(within(figures).getByText("in hospital").closest<HTMLElement>("[data-wf-hero-figure]")).toHaveTextContent(
+      /^9 in hospital$/u,
+    );
+    expect(
+      within(figures).getByText("no case manager").closest<HTMLElement>("[data-wf-hero-figure]"),
+    ).toHaveTextContent(/^5 no case manager$/u);
     expect(screen.getByText("3 need someone today")).toBeInTheDocument();
     expect(
       within(screen.getByTestId("ward-community-glance")).getByRole("button", { name: /CTO reviews/u }),
@@ -97,6 +101,26 @@ describe("Midland community team demo (locked design)", () => {
       expect(after.tab).toBe(`Referrals${REFERRALS.length - 1}`);
     } finally {
       undoMidlandDecision(REFERRALS[0]!.id);
+    }
+  });
+});
+
+// Live audit item 6 (11 Nov 2026): the signed-in shared workspace never shows the Midland demo team,
+// so its home lists the shared referrals and nothing is kept in this browser.
+describe("Midland on the signed-in shared workspace", () => {
+  it("shows the team's own page, not the demo team", () => {
+    vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "true");
+    try {
+      renderTeam("midland");
+      expect(screen.queryByTestId("community-top-duty")).toBeNull();
+      expect(screen.queryByText("3 need someone today")).toBeNull();
+      expect(screen.getByTestId("ward-community-screen")).toBeInTheDocument();
+      // PR #1626 review: the team's own page, drawn from the board's referrals, not the unresolved page
+      // (which shares the screen's test id).
+      expect(screen.queryByText("Community team not found")).toBeNull();
+      expect(screen.getByText("No referral naming this team is currently waiting for an answer.")).toBeInTheDocument();
+    } finally {
+      vi.unstubAllEnvs();
     }
   });
 });

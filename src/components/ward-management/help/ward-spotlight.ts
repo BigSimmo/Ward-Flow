@@ -17,6 +17,16 @@ export const SPOT_NOT_HERE = "This is not on the screen right now, for example w
 /** The lit window, with `radius` following the control's own corners so the ring sits evenly round it. */
 export type SpotBox = { top: number; left: number; width: number; height: number; radius: number };
 
+const sameBox = (a: SpotBox | null, b: SpotBox | null) =>
+  a === b ||
+  (a !== null &&
+    b !== null &&
+    a.top === b.top &&
+    a.left === b.left &&
+    a.width === b.width &&
+    a.height === b.height &&
+    a.radius === b.radius);
+
 /** How long a step waits for its control to appear (a page still loading) before it says so. */
 const FIND_TIMEOUT_MS = 2500;
 /** How often the spotlight re-measures, so a notice that shifts the page cannot leave it behind. */
@@ -235,7 +245,14 @@ export function useSpotlight(
           if (found && found !== element) bringIntoView(found, device);
           element = found;
         }
-        setSpot({ key, box: element ? spotBox(element) : null, missing: !element && gaveUp, element });
+        const box = element ? spotBox(element) : null;
+        const missing = !element && gaveUp;
+        // The 400 ms re-measure mostly finds nothing moved: keep the same state so nothing re-renders.
+        setSpot((last) =>
+          last && last.key === key && last.element === element && last.missing === missing && sameBox(last.box, box)
+            ? last
+            : { key, box, missing, element },
+        );
       });
     };
     const started = Date.now();

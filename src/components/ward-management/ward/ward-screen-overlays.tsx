@@ -6,12 +6,15 @@
 import type { LeavingDestination } from "@/components/ward-management/ward-admissions";
 import type { BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { activeClosedBeds } from "@/components/ward-management/ward-ready-beds";
+import { bedReviewLine } from "../ward-bed-closure-review";
+import { reviewAtFrom } from "../ward-closure-choice";
 import { admissionCriteriaEligibility } from "@/components/ward-management/ward-flow-reducer";
 import { useWardCommandCompletion, wardCommandFailure } from "./use-ward-command-completion";
 import { useUndoableStep } from "../use-undoable-step";
+import { bedClosureReasonChoices } from "../ward-bed-closure-reason";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { WardBedDossierDrawer } from "./ward-screen-lazy";
-import { wardSafeRejectionReason } from "./ward-rejection-text";
+import { notRecordedMessage } from "./ward-screen-messages";
 import type { Dispatch, KeyboardEvent, ReactElement, RefObject, SetStateAction } from "react";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
@@ -58,23 +61,7 @@ type WardScreenBedDrawerProps = {
   raiseAsRouteRole: WardRaise;
 };
 
-/**
- * The drawer's refusal line: what was refused, then that nothing changed, said once. A shared-board
- * refusal already ends "Nothing was changed." (audit E-25).
- */
-export function notRecordedMessage(message?: string): string {
-  const reason = (message ?? "The change was refused").replace(/\s*Nothing was changed\.$/u, "").replace(/\.$/u, "");
-  return `Not recorded: ${reason}. Nothing was changed.`;
-}
-
-/**
- * D-125 (audit M2): a refused referral answer said on this ward's own toast. It names the person,
- * as the success message does; the engine's reason is put in ward words first.
- */
-export function namedNotRecordedMessage(reason: string, who: string): string {
-  const said = wardSafeRejectionReason(reason);
-  return notRecordedMessage(said.includes(who) ? said : `${who}: ${said}`);
-}
+export { namedNotRecordedMessage, notRecordedMessage } from "./ward-screen-messages";
 
 export function WardScreenBedDrawer({
   selectedBed,
@@ -145,9 +132,20 @@ export function WardScreenBedDrawer({
     !pathname || routeRole === "ward" || routeRole === "bed_manager" || routeRole === "coordinator";
   // Tier 1 item 6 (Josh, 4 Nov 2026): closing or reopening a bed offers Undo on its toast.
   const bedClosureRole: WardFlowRole = !pathname || routeRole === "ward" ? "ward" : routeRole;
-  const setBedClosed = (bedNumber: number, closed: boolean) =>
-    runBedStep(
-      { type: "SET_BED_CLOSED", role: bedClosureRole, now, unitId: unit.id, actingUnitId: unitId, bedNumber, closed },
+  const setBedClosed = (bedNumber: number, closed: boolean, reviewAfter = "") => {
+    // Item 6: "Review in" read to a time at the tap; "Not known" leaves it out.
+    const reviewAt = closed ? reviewAtFrom(reviewAfter, now) : undefined;
+    return runBedStep(
+      {
+        type: "SET_BED_CLOSED",
+        role: bedClosureRole,
+        now,
+        unitId: unit.id,
+        actingUnitId: unitId,
+        bedNumber,
+        closed,
+        ...(reviewAt !== undefined ? { reviewAt } : {}),
+      },
       {
         success: closed
           ? `Bed ${bedNumber} closed. It is not offered until it is reopened.`
@@ -161,13 +159,28 @@ export function WardScreenBedDrawer({
           ...(bedClosureRole === "ward" ? { actingUnitId: unitId } : {}),
         }),
         undone: closed ? `Undone. Bed ${bedNumber} is open again.` : `Undone. Bed ${bedNumber} is closed again.`,
+        // D-148 (Josh, 11 Nov 2026): closing stays one tap; its toast offers an optional reason.
+        ...(closed
+          ? {
+              choices: bedClosureReasonChoices({
+                role: bedClosureRole,
+                unitId: unit.id,
+                actingUnitId: unitId,
+                bedNumber,
+                // The reasoned close keeps the first close's review time (item 6).
+                ...(reviewAt !== undefined ? { reviewAt } : {}),
+              }),
+            }
+          : {}),
       },
     );
+  };
   return selectedBed !== null
     ? (() => {
         const selectedBedItem = bedsList.find((b) => b.bedNumber === selectedBed);
         const selectedAdmission = admissions.find((admission) => admission.id === selectedBedItem?.admissionId);
-        const closedByNumber = activeClosedBeds(unit).some((mark) => mark.bedNumber === selectedBed);
+        const closedMark = activeClosedBeds(unit).find((mark) => mark.bedNumber === selectedBed);
+        const closedByNumber = closedMark !== undefined;
         return (
           <WardBedDossierDrawer
             selectedBed={selectedBed}
@@ -304,12 +317,13 @@ export function WardScreenBedDrawer({
             bedClosure={{
               onCloseBed:
                 bedClosureAllowed && selectedBedItem?.status === "ready" && !selectedBedItem.heldFor
-                  ? () => setBedClosed(selectedBed, true)
+                  ? (reviewAfter: string) => setBedClosed(selectedBed, true, reviewAfter)
                   : undefined,
               onReopenBed:
                 bedClosureAllowed && selectedBedItem?.status === "closed" && closedByNumber
                   ? () => setBedClosed(selectedBed, false)
                   : undefined,
+              reviewLine: closedMark ? bedReviewLine(closedMark, now) : null,
             }}
             bedDrawerRef={bedDrawerRef}
             onKeyDown={handleBedDrawerKeyDown}

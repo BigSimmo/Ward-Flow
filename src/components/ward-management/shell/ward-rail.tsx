@@ -24,25 +24,22 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { Sheet } from "@/components/wf/sheet";
 import { Tooltip } from "@/components/wf/tooltip";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
-import { communityTeamById } from "@/components/ward-management/community/community-derivations";
 import { useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
-import { currentDeskId } from "@/components/ward-management/settings/workstation-desks";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
-import { CHROME_ROLE_LABELS, wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { ACCESS_ADMIN_PERSONA, DESK_PERSONAS } from "@/components/ward-management/shell/ward-desk-personas";
 import { useDeskRoleLabel, useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService } from "@/components/ward-management/ward-model";
-import { edById } from "@/components/ward-management/ward-sites";
 import { WARD_CAPACITY_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
+import { OPERATIONAL_DEFAULT_LABEL } from "@/components/ward-management/ward-operational-defaults";
 import {
-  HANDOVER_DUE_PROMPT_MINUTES,
-  OPERATIONAL_DEFAULT_LABEL,
-} from "@/components/ward-management/ward-operational-defaults";
-import { shiftAtMinute } from "@/components/ward-management/ward-board-time-features";
+  computeShiftProgress,
+  sentenceStart,
+  viewingDeskLine,
+} from "@/components/ward-management/shell/ward-rail-helpers";
 import { Dot, SrOnly, durMinutes, useIsPhone } from "@/components/wf";
 import { applyAppearance, applyGlare } from "./ward-bar";
 import { closeWardDrawer, isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
@@ -139,14 +136,14 @@ const NARROW_CORE_ENTRY_COUNT = 3;
 /** The role menu id of the handover board, which the countdown card also opens (A5). */
 const HANDOVER_MENU_ID = "handover";
 
-const CLOSED_RAIL_CARD_MEDIA_QUERY = "(min-width: 1001px)";
+const CLOSED_RAIL_CARD_MEDIA_QUERY = "(min-width: 62.5625rem)";
 /**
  * Tablet landscape (v10 shell, "Landscape 1180"): the 64px icon rail whatever is stored, with the
  * role's own menu, then More, which opens the rest over the page (B1, 19 Oct 2026: every shape
  * shows the same short menu). Above 1200px the stored open or closed preference applies as before;
  * at 1000px and below the tablet portrait and phone shapes take over.
  */
-const TABLET_LANDSCAPE_RAIL_QUERY = "(min-width: 1001px) and (max-width: 1200px)";
+const TABLET_LANDSCAPE_RAIL_QUERY = "(min-width: 62.5625rem) and (max-width: 75rem)";
 
 // Visual abbreviations for the tablet row. Full registry names and live counts remain on the
 // accessible link and its hover card; these never define destinations.
@@ -195,11 +192,6 @@ function getTabletLandscapeSnapshot() {
   );
 }
 
-/** "at a time limit…" → "At a time limit…", for the closed rail's hover card. */
-function sentenceStart(text: string): string {
-  return text.length === 0 ? text : text.charAt(0).toUpperCase() + text.slice(1);
-}
-
 // UX audit (21 Oct 2026): the same four themes as Settings, Display (settings-15 made Glare a fourth).
 const APPEARANCE_CHOICES = [
   { id: "auto", label: "Auto" },
@@ -219,34 +211,6 @@ function chooseAppearance(next: AppearanceChoice) {
     applyAppearance(next);
   }
   announceToWardShell(`Appearance set to ${next}.`);
-}
-
-/**
- * The desk a page belongs to, when it is not the person's own kind of desk: "Viewing RPH ED as Bed
- * coordinator". Null on the person's own kind of desk and on every network page. Place names only,
- * never a patient.
- */
-function viewingDeskLine(
-  pathname: string,
-  personaRole: WardChromeRole,
-  units: readonly { id: string; name: string }[],
-  personaLabel: string,
-): string | null {
-  const pageRole = wardChromeRole(pathname);
-  if (pageRole === "coordinator" || pageRole === personaRole) return null;
-  const deskId = currentDeskId(pathname);
-  const place =
-    pageRole === "ed"
-      ? `${(deskId ? edById(deskId)?.siteCode : undefined) ?? "this"} ED`
-      : pageRole === "ward"
-        ? (units.find((unit) => unit.id === deskId)?.name ?? "this ward")
-        : pageRole === "officer"
-          ? "the transport desk"
-          : pageRole === "community"
-            ? // PR #489 review: the team by name when its page names one; the index has none.
-              ((deskId ? communityTeamById(deskId)?.name : undefined) ?? "a community team")
-            : CHROME_ROLE_LABELS[pageRole];
-  return `Viewing ${place} as ${personaLabel}`;
 }
 
 /**
@@ -288,12 +252,13 @@ const NO_BED_ALERTS: ServiceBedAlertsSummary = {
 export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const network = useWardNetwork();
   const pathname = usePathname() ?? "";
-  const { units, bedReleases, movements, configuration, admissions } = useWardFlowSelect(
+  const { units, bedReleases, movements, configuration, admissions, referrals } = useWardFlowSelect(
     "units",
     "bedReleases",
     "movements",
     "configuration",
     "admissions",
+    "referrals",
   );
   const now = useWardFlowClock();
   const accessTargetMinutes = configuration.edAccessTargetMinutes;
@@ -301,7 +266,16 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   // A phone never draws the rail (below), so it skips the bed alert figures too.
   const bedAlerts = phone
     ? NO_BED_ALERTS
-    : deriveServiceBedAlerts(units, bedReleases, network.sites, movements, now, accessTargetMinutes, admissions);
+    : deriveServiceBedAlerts(
+        units,
+        bedReleases,
+        network.sites,
+        movements,
+        now,
+        accessTargetMinutes,
+        admissions,
+        referrals,
+      );
   // Nav order follows the signed-in person, not the route (device audit item 6).
   const { counts, shellRole: role } = useWardNavCounts();
   const { open, appearance: storedAppearance, glare } = useWardDocumentPreferences();
@@ -1393,89 +1367,4 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
       </Sheet>
     </WardRailFrame>
   );
-}
-
-export interface ShiftProgress {
-  shiftTitle: string;
-  /** "Day shift": the pattern's name in sentence case. */
-  shiftName: string;
-  /** "07:00–15:00": clock times, so colons are right here. */
-  shiftHours: string;
-  elapsedHours: number;
-  elapsedMins: number;
-  percent: number;
-  /** Minutes until the shift ends. */
-  remainingMinutes: number;
-  /** True inside the handover prompt window (`HANDOVER_DUE_PROMPT_MINUTES`). */
-  handoverDue: boolean;
-  countdownStr: string;
-  dashOffset: number;
-}
-
-/** "07:00" from a minute-of-day figure — used only to word `SHIFT_PATTERN`'s own entries. */
-function formatMinuteOfDay(minute: number): string {
-  const hours = Math.floor(minute / 60);
-  const mins = minute % 60;
-  return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
-}
-
-/** Minutes from `from` to `to`, wrapping through midnight when `to` is earlier in the day. */
-function minutesFrom(from: number, to: number): number {
-  return (((to - from) % 1440) + 1440) % 1440;
-}
-
-function computeShiftProgress(nowInput?: number | Date): ShiftProgress {
-  const CIRCUMFERENCE = 81.68;
-
-  let currentMinute: number;
-  if (typeof nowInput === "number") {
-    // Normalise minute of day 0..1439
-    currentMinute = ((nowInput % 1440) + 1440) % 1440;
-  } else {
-    const d = nowInput instanceof Date ? nowInput : new Date();
-    // AWST is UTC+8
-    const awstHours = (d.getUTCHours() + 8) % 24;
-    const awstMins = d.getUTCMinutes();
-    currentMinute = awstHours * 60 + awstMins;
-  }
-
-  // The shift pattern itself (07:00/15:00/23:00) is a labelled default, not a legal roster rule —
-  // owner ruling 26 September 2026 (decisions.md D-22) — read from `SHIFT_PATTERN` through `shiftAtMinute` (the rule `currentShift` uses too), never
-  // hand-typed here, so the one figure and its three titles cannot drift apart.
-  const shift = shiftAtMinute(currentMinute);
-
-  const shiftHours = `${formatMinuteOfDay(shift.startMinute)}–${formatMinuteOfDay(shift.endMinute)}`;
-  const shiftTitle = `${shift.name} (${shiftHours})`;
-  const shiftName = shift.name.charAt(0) + shift.name.slice(1).toLowerCase();
-  const shiftDuration = minutesFrom(shift.startMinute, shift.endMinute);
-  const elapsedTotal = minutesFrom(shift.startMinute, currentMinute);
-  const remainingTotal = shiftDuration - elapsedTotal;
-
-  const elapsedHours = Math.floor(elapsedTotal / 60);
-  const elapsedMins = elapsedTotal % 60;
-  const percent = Math.min(100, Math.max(0, Math.round((elapsedTotal / shiftDuration) * 100)));
-  const dashOffset = Number((CIRCUMFERENCE * (1 - percent / 100)).toFixed(2));
-  const handoverDue = remainingTotal <= HANDOVER_DUE_PROMPT_MINUTES;
-
-  let countdownStr: string;
-  if (handoverDue) {
-    countdownStr = "Handover Due";
-  } else {
-    const remainingHours = Math.floor(remainingTotal / 60);
-    const remainingRemMins = remainingTotal % 60;
-    countdownStr = remainingHours > 0 ? `${remainingHours}h ${remainingRemMins}m` : `${remainingRemMins}m`;
-  }
-
-  return {
-    shiftTitle,
-    shiftName,
-    shiftHours,
-    elapsedHours,
-    elapsedMins,
-    percent,
-    remainingMinutes: remainingTotal,
-    handoverDue,
-    countdownStr,
-    dashOffset,
-  };
 }

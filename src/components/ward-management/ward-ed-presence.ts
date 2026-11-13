@@ -9,6 +9,27 @@ export function isEdOriginJourney(movement: Pick<Movement, "sourceAdmissionId" |
   return movement.sourceAdmissionId === undefined && movement.originEdId !== undefined;
 }
 
+/**
+ * Ward Lead audit (2026-09-17): the two exact `closure.reason` strings `WITHDRAW_REFERRAL`
+ * (`ward-flow-reducer.ts`) writes when the REFERRER (this department, dispatching as `"ed"`)
+ * withdraws or revokes — never when the coordinator does (`"The coordinator revoked the accepted
+ * referral"`), and never any other closure (`RECORD_ED_OUTCOME`, `REFER_TO_COMMUNITY_TEAM`,
+ * arrival). This department raised the withdrawal, so it stays accountable for knowing it
+ * happened — a coordinator-driven revocation or any other closure is somebody else's decision and
+ * stays off this board, exactly like every other closed movement.
+ */
+const ED_INITIATED_WITHDRAWAL_REASONS = [
+  "The referrer withdrew the referral",
+  "The referrer revoked the accepted referral",
+] as const;
+
+export function isEdInitiatedWithdrawal(movement: Movement): boolean {
+  return (
+    movement.closure !== undefined &&
+    (ED_INITIATED_WITHDRAWAL_REASONS as readonly string[]).includes(movement.closure.reason)
+  );
+}
+
 type DepartureRecord = Pick<Movement, "leftDepartmentAt" | "transport"> & Partial<Pick<Movement, "stageChanges">>;
 
 /** Recorded physical departure only. Acceptance and closure alone do not establish departure. */

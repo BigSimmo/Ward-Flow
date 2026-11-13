@@ -1,10 +1,11 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 
-import doorStyles from "./front-door.module.css";
+import doorStyles from "./front-door-hold.module.css";
 
 /**
  * The idle prompts, out of the phone's first load like the front door. They are fetched once the
@@ -13,14 +14,20 @@ import doorStyles from "./front-door.module.css";
  */
 const loadLockCards = () => import("./lock-cards");
 
-export const IdleWarningSheet = dynamic(() => loadLockCards().then((module) => module.IdleWarningSheet), {
-  ssr: false,
-  loading: () => null,
-});
+export const IdleWarningSheet = dynamic(
+  withLoadRetry(() => loadLockCards().then((module) => module.IdleWarningSheet)),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
 
-export const IdleLockScreen = dynamic(() => loadLockCards().then((module) => module.IdleLockScreen), {
-  ssr: false,
-  loading: () => <div className={doorStyles.screen} aria-busy="true" />,
-});
+export const IdleLockScreen = dynamic(
+  withLoadRetry(() => loadLockCards().then((module) => module.IdleLockScreen)),
+  {
+    ssr: false,
+    loading: () => <div className={doorStyles.screen} aria-busy="true" />,
+  },
+);
 
 preloadWhenIdle(loadLockCards);

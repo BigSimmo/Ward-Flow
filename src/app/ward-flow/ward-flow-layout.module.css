@@ -157,15 +157,15 @@
 }
 
 /*
- * ⚠️ **MUST MATCH `ward-rail.module.css`'S OWN `max-width: 1000px` BREAKPOINT EXACTLY.** Below
+ * ⚠️ **MUST MATCH `ward-rail.module.css`'S OWN `max-width: 62.5rem` (1000px) BREAKPOINT EXACTLY.** Below
  * it, `WardRail`'s `.rail` sets its own `width: 100%; height: auto` and reflows to a wrapping row
  * (see that file's own header) — a shape that only makes sense as the FIRST block in a COLUMN,
  * never as a row sibling still trying to share a line with `.shellContent`. The approved drawing
  * makes the same switch at the same width, on its own outermost `.app` (`command-third-
- * edition.html`'s `@media (max-width: 1000px) { .app { grid-template-columns: 1fr } }`) — this is
+ * edition.html`'s `@media (max-width: 62.5rem) { .app { grid-template-columns: 1fr } }`) — this is
  * that rule, ported to flexbox the same way the base rule above is.
  */
-@media (max-width: 1000px) {
+@media (max-width: 62.5rem) {
   .shellRow {
     flex-direction: column;
   }
@@ -175,14 +175,14 @@
    ancestor it escaped the inner scroller and stretched the document, so scrolling past the end of
    a page showed blank space below it. Making the row and the scroller containing blocks keeps that
    text inside the scroller. Phone is unchanged. */
-@media (min-width: 1001px) {
+@media (min-width: 62.5625rem) {
   .shellRow,
   .shellContent {
     position: relative;
   }
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 62.5rem) {
   .shellRow {
     height: auto;
     max-height: none;
@@ -396,6 +396,17 @@
   animation: deskPendingGiveUp 0s 8s forwards;
 }
 
+/* D-137 follow-up: the held cookie is shared by the browser's tabs, while the desk is kept per tab. A
+   ward tab reloaded after another tab chose the coordinator's desk sends "0", so the server draws the
+   coordinator's rail and top bar. While this tab's stored desk is still pending, they stay hidden
+   too (their shape kept, so nothing moves). On a held load they are the empty placeholder and
+   nothing, so this changes nothing there. */
+:global(html[data-wf-desk-pending]) .shellRow :global([data-testid="ward-rail"]),
+:global(html[data-wf-desk-pending]) .shellContent :global([data-testid="ward-bar"]) {
+  visibility: hidden;
+  animation: deskPendingGiveUp 0s 8s forwards;
+}
+
 @keyframes deskPendingGiveUp {
   to {
     visibility: visible;
@@ -567,7 +578,7 @@
 
 /* At 1000px and under the rail is never drawn beside the page (the bar's Menu holds the
    navigation), so its line would only squeeze the page. */
-@media (max-width: 1000px) {
+@media (max-width: 62.5rem) {
   .shellRow > [data-wf-shell-error] {
     display: none;
   }

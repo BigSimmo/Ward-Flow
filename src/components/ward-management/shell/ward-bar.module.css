@@ -120,8 +120,10 @@
   height: 18px;
 }
 
-.deskBack:hover {
-  background: color-mix(in srgb, currentColor 8%, transparent);
+@media (hover: hover) and (pointer: fine) {
+  .deskBack:hover {
+    background: color-mix(in srgb, currentColor 8%, transparent);
+  }
 }
 
 .deskBack:focus-visible {
@@ -219,8 +221,10 @@
   transform: translateY(-50%);
 }
 
-.demoClock:hover {
-  background: color-mix(in srgb, currentColor 14%, transparent);
+@media (hover: hover) and (pointer: fine) {
+  .demoClock:hover {
+    background: color-mix(in srgb, currentColor 14%, transparent);
+  }
 }
 
 .demoClock:focus-visible {
@@ -295,7 +299,7 @@
  * notice must stay legible) and New referral keeps its label. The room comes from the search field,
  * which folds to its magnifier here and still opens the full smart search; Activity and Tools stay,
  * because the portrait Menu sheet does not hold them. */
-@media (min-width: 46.5rem) and (max-width: 1000px) {
+@media (min-width: 46.5rem) and (max-width: 62.5rem) {
   /* F-14: a phone on its side lands in this band, so the bar's sides clear the notch. */
   .bar {
     padding-right: max(16px, env(safe-area-inset-right, 0px));
@@ -428,9 +432,11 @@
   }
 }
 
-.screenHelp:hover {
-  color: var(--wf-ink-1);
-  background: var(--wf-accent-tint);
+@media (hover: hover) and (pointer: fine) {
+  .screenHelp:hover {
+    color: var(--wf-ink-1);
+    background: var(--wf-accent-tint);
+  }
 }
 
 .screenHelp:focus-visible {
@@ -488,8 +494,10 @@
   transition: background-color var(--wf-m-fast) var(--wf-ease);
 }
 
-.scopeBadgeBtn:hover::before {
-  background: var(--wf-hover);
+@media (hover: hover) and (pointer: fine) {
+  .scopeBadgeBtn:hover::before {
+    background: var(--wf-hover);
+  }
 }
 
 .scopeBadgeBtn[aria-expanded="true"]::before {
@@ -747,10 +755,12 @@
   cursor: pointer;
 }
 
-.serviceOption:hover,
-.primaryMenuItem:hover {
-  background: var(--wf-hover);
-  color: var(--wf-ink-1);
+@media (hover: hover) and (pointer: fine) {
+  .serviceOption:hover,
+  .primaryMenuItem:hover {
+    background: var(--wf-hover);
+    color: var(--wf-ink-1);
+  }
 }
 
 .serviceOption[aria-pressed="true"] {
@@ -851,7 +861,7 @@
  * width and grows into what is left, so the search gives way first (as it already does with Back,
  * `.deskBack + .title`), and a long page name ends in an ellipsis only once the search is at its
  * 4rem floor. Tablet portrait folds the search to its magnifier instead, and leaves the clock out. */
-@media (min-width: 1001px) {
+@media (min-width: 62.5625rem) {
   .centerGroup {
     flex-basis: 0;
   }
@@ -1095,8 +1105,10 @@
     border-color var(--wf-m-fast) var(--wf-ease);
 }
 
-.drawerTrigger:hover::before {
-  background: var(--wf-hover);
+@media (hover: hover) and (pointer: fine) {
+  .drawerTrigger:hover::before {
+    background: var(--wf-hover);
+  }
 }
 
 .drawerTrigger[aria-expanded="true"]::before {
@@ -1208,10 +1220,12 @@
   pointer-events: none;
 }
 
-.primary:hover::before {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--wf-on-accent) 20%, transparent), transparent 50%),
-    linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
+@media (hover: hover) and (pointer: fine) {
+  .primary:hover::before {
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--wf-on-accent) 20%, transparent), transparent 50%),
+      linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
+  }
 }
 
 .primary:active::before {
@@ -1286,7 +1300,7 @@
 
 /* ── width: the bar collapses by its own width, labels first ────────────────────────────────── */
 
-@media (max-width: 1300px) {
+@media (max-width: 81.25rem) {
   .bar {
     gap: 8px;
     padding: 0 12px 0 14px;
@@ -1299,7 +1313,7 @@
 
 /* From 1001px to 1300px both sides match (Josh, 30 Oct 2026): 12px on the right crowded New
    referral against the edge. Tablet widths keep their own padding. */
-@media (min-width: 1001px) and (max-width: 1300px) {
+@media (min-width: 62.5625rem) and (max-width: 81.25rem) {
   .bar {
     padding-inline-end: 14px;
   }
@@ -1632,12 +1646,16 @@
     border-radius: var(--wf-r-sm);
   }
 
-  .phoneOnly:hover {
-    background: transparent;
+  @media (hover: hover) and (pointer: fine) {
+    .phoneOnly:hover {
+      background: transparent;
+    }
   }
 
-  .phoneOnly:hover::before {
-    background: var(--wf-hover);
+  @media (hover: hover) and (pointer: fine) {
+    .phoneOnly:hover::before {
+      background: var(--wf-hover);
+    }
   }
 
   /* Search and Tasks: plain icons on a ghost face. */
@@ -1799,11 +1817,18 @@
     box-shadow: none;
   }
 
-  .scopeBadgeBtn:hover::before,
   .scopeBadgeBtn[aria-expanded="true"]::before {
     border-color: transparent;
     background: transparent;
     box-shadow: none;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .scopeBadgeBtn:hover::before {
+      border-color: transparent;
+      background: transparent;
+      box-shadow: none;
+    }
   }
 
   .scopeBadgeBtn[aria-expanded="true"] .scopeCaret {
@@ -2022,9 +2047,14 @@
   transition: background-color var(--wf-m-fast) var(--wf-ease);
 }
 
-.drawerClose:hover::before,
 .drawerClose:active::before {
   background: var(--wf-hover);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .drawerClose:hover::before {
+    background: var(--wf-hover);
+  }
 }
 
 .drawerClose:focus-visible {
@@ -2199,9 +2229,11 @@
   cursor: pointer;
 }
 
-.segBtn:hover,
-.filterChip:hover {
-  color: var(--wf-ink-1);
+@media (hover: hover) and (pointer: fine) {
+  .segBtn:hover,
+  .filterChip:hover {
+    color: var(--wf-ink-1);
+  }
 }
 
 .segBtn[aria-pressed="true"],
@@ -2509,8 +2541,10 @@
   cursor: pointer;
 }
 
-.noticeMarkRead:hover {
-  text-decoration: underline;
+@media (hover: hover) and (pointer: fine) {
+  .noticeMarkRead:hover {
+    text-decoration: underline;
+  }
 }
 
 .noticeReadLabel {
@@ -2757,9 +2791,11 @@
   text-decoration: none;
 }
 
-.tallyDepartments a:hover {
-  color: var(--wf-accent-ink);
-  text-decoration: underline;
+@media (hover: hover) and (pointer: fine) {
+  .tallyDepartments a:hover {
+    color: var(--wf-accent-ink);
+    text-decoration: underline;
+  }
 }
 
 @media (max-width: 640px) {
@@ -2914,7 +2950,7 @@
  * that rule). Touch sizes here: Cancel keeps the 48px target. The band rules below still apply over
  * a Hero, so the open field restores the light face explicitly (doubled `.bar` outranks the band's
  * later focus-within rule), as the phone block does. */
-@media (min-width: 46.5rem) and (max-width: 1000px) {
+@media (min-width: 46.5rem) and (max-width: 62.5rem) {
   .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type,
   .bar.bar[data-band="ink"] .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type {
     --wf-focus-ring: var(--wf-accent);
@@ -3076,13 +3112,15 @@
     color: var(--wf-hero-ink-2);
   }
 
-  .bar:is(
-      [data-band="ink"],
-      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
-    )
-    .screenHelp:hover {
-    color: var(--wf-hero-ink);
-    background: var(--wf-on-hero-fill);
+  @media (hover: hover) and (pointer: fine) {
+    .bar:is(
+        [data-band="ink"],
+        :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+      )
+      .screenHelp:hover {
+      color: var(--wf-hero-ink);
+      background: var(--wf-on-hero-fill);
+    }
   }
 
   .bar:is(
@@ -3144,17 +3182,19 @@
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--wf-hero-ink) 22%, transparent);
   }
 
-  .bar:is(
-      [data-band="ink"],
-      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
-    )
-    .scopeBadgeBtn:hover::before,
-  .bar:is(
-      [data-band="ink"],
-      :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
-    )
-    .drawerTrigger:hover::before {
-    background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+  @media (hover: hover) and (pointer: fine) {
+    .bar:is(
+        [data-band="ink"],
+        :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+      )
+      .scopeBadgeBtn:hover::before,
+    .bar:is(
+        [data-band="ink"],
+        :where(:global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band]))
+      )
+      .drawerTrigger:hover::before {
+      background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+    }
   }
 
   .bar:is(
@@ -3359,23 +3399,25 @@
     color: var(--wf-hero-ink-2);
   }
 
-  .bar:is(
-      [data-band="ink"],
-      :where(
-        :global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"])))
-          :not([data-band]):not([data-scrolled])
+  @media (hover: hover) and (pointer: fine) {
+    .bar:is(
+        [data-band="ink"],
+        :where(
+          :global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"])))
+            :not([data-band]):not([data-scrolled])
+        )
       )
-    )
-    .phoneOnly:hover::before,
-  .bar:is(
-      [data-band="ink"],
-      :where(
-        :global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"])))
-          :not([data-band]):not([data-scrolled])
+      .phoneOnly:hover::before,
+    .bar:is(
+        [data-band="ink"],
+        :where(
+          :global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"])))
+            :not([data-band]):not([data-scrolled])
+        )
       )
-    )
-    .drawerTrigger:hover::before {
-    background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+      .drawerTrigger:hover::before {
+      background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+    }
   }
 
   .bar:is(
@@ -3453,7 +3495,7 @@
 /* Tablet portrait (v10 shell, 10 Oct 2026, 769px to 1000px): no sidebar, so the Menu button shows
  * at the left of the header and opens the full sidebar as a 280px sheet over a scrim (the rail's
  * own sheet answers above 48rem). 48px target. Desktop above 1000px and the phone are unchanged. */
-@media (min-width: 46.5rem) and (max-width: 1000px) {
+@media (min-width: 46.5rem) and (max-width: 62.5rem) {
   .phoneOnly {
     display: inline-flex;
     flex: none;
@@ -3469,8 +3511,10 @@
     cursor: pointer;
   }
 
-  .phoneOnly:hover {
-    background: var(--wf-hover);
+  @media (hover: hover) and (pointer: fine) {
+    .phoneOnly:hover {
+      background: var(--wf-hover);
+    }
   }
 
   .phoneOnly svg {
@@ -3812,13 +3856,20 @@
     content: "";
   }
 
-  .servicePanel .serviceOption:hover,
   .servicePanel .serviceOption[aria-pressed="true"] {
     background: transparent;
   }
 
-  .servicePanel .serviceOption:hover::before {
-    background: var(--wf-hover);
+  @media (hover: hover) and (pointer: fine) {
+    .servicePanel .serviceOption:hover {
+      background: transparent;
+    }
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .servicePanel .serviceOption:hover::before {
+      background: var(--wf-hover);
+    }
   }
 
   .servicePanel .serviceOption[aria-pressed="true"]::before {

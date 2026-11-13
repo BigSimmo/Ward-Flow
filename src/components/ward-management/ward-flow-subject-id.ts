@@ -1,5 +1,18 @@
 import type { WardFlowEvent } from "./ward-flow-events";
 import { PATIENT_RECORD_UNDO_TYPES, undoStepSubjectId } from "./ward-undo";
+import type { HandedItemRef } from "@/components/ward-management/handover-work-events";
+
+/** A hand-over's item id; a malformed item (from the wire) files against nothing rather than throwing. */
+function handedItemSubjectId(item: HandedItemRef | undefined): string {
+  if (typeof item !== "object" || item === null) return "none";
+  const id =
+    item.kind === "referral"
+      ? item.referralId
+      : item.kind === "callback"
+        ? item.callbackId
+        : (item.movementId ?? item.admissionId);
+  return typeof id === "string" ? id : "none";
+}
 
 /*
  * Moved out of ward-flow-reducer.ts unchanged (19 Oct 2026) to keep the reducer under its line cap
@@ -63,6 +76,7 @@ export function subjectId(event: WardFlowEvent): string {
       return event.edId ?? event.acceptedUnitId ?? "none";
     case "CONFIRM_CAPACITY":
     case "RECORD_WARD_INTAKE_CONSTRAINTS":
+    case "SET_INTAKE_WINDOW":
     case "CLOSE_WARD_TO_ADMISSIONS":
     case "REOPEN_WARD_TO_ADMISSIONS":
     case "MARK_WARD_READY_FOR_NEXT":
@@ -84,6 +98,7 @@ export function subjectId(event: WardFlowEvent): string {
       return event.releaseId;
     // Admission-scoped: an admission id is not a unit or release id, so these keep their own group.
     case "RECORD_LEAVING":
+    case "MARK_TRANSPORT_COLLECTED":
     case "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT":
     case "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT":
     case "RECORD_STAY_DISCHARGE_BLOCKER":
@@ -175,6 +190,7 @@ export function subjectId(event: WardFlowEvent): string {
     case "SET_STEP_DOWN_CANDIDATE":
     case "RECORD_WARD_DIAGNOSIS":
     case "MARK_WEEKEND_DISCHARGE_REVIEWED":
+    case "RECORD_CHIEF_PSYCHIATRIST_NOTIFIED":
     case "RECORD_DISCHARGE_CHECK":
     case "RECORD_FOLLOW_UP_REPLY":
     // Closing-the-loop (package E).
@@ -200,6 +216,22 @@ export function subjectId(event: WardFlowEvent): string {
     case "REQUEST_WARD_STAFF":
     case "CLOSE_WARD_STAFF_REQUEST":
       return event.unitId;
+    // Batch 4 (10 Nov 2026): a site switch against its site; a pack print and an outage name no one record.
+    case "SET_SITE_FEATURE_SWITCH":
+      return event.siteCode;
+    case "RECORD_DOWNTIME_PACK_PRINTED":
+    case "RECORD_OUTAGE_WINDOW":
+      return "none";
+    // Batch 3 items 21 and 23: a hand-over is filed against its item, an accept against itself, a
+    // carer callback against its stay or bed request, and its tick against itself.
+    case "HAND_OVER_ITEM":
+      return handedItemSubjectId(event.item);
+    case "ACCEPT_HANDED_ITEM":
+      return typeof event.handedItemId === "string" ? event.handedItemId : "none";
+    case "RECORD_CARER_CALLBACK":
+      return event.admissionId ?? event.movementId ?? "none";
+    case "MARK_CARER_CALLBACK_MADE":
+      return typeof event.callbackId === "string" ? event.callbackId : "none";
     case "DISPATCH_BROADCAST_ALERT":
       return "broadcast";
     case "ACKNOWLEDGE_BROADCAST_ALERT":

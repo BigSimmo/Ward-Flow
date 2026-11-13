@@ -68,8 +68,14 @@ describe("Ward Flow Read-Only Plain History", () => {
       // RECORD_TRIBUNAL_OUTCOME and SET_CULTURAL_SUPPORT_REQUEST.
       // Review tracker and wait list (9 Nov 2026) add REQUEST_PSYCH_REVIEW, RECORD_PSYCH_REVIEW_SEEN
       // and MARK_WARD_READY_FOR_NEXT. Staff needed (9 Nov 2026) adds REQUEST_WARD_STAFF and
-      // CLOSE_WARD_STAFF_REQUEST.
-      expect(allEventTypes.length).toBe(193);
+      // CLOSE_WARD_STAFF_REQUEST. Batch 4 (10 Nov 2026) adds SET_SITE_FEATURE_SWITCH,
+      // RECORD_DOWNTIME_PACK_PRINTED and RECORD_OUTAGE_WINDOW. Batch 3 items 21 and 23 (10 Nov 2026)
+      // add HAND_OVER_ITEM, ACCEPT_HANDED_ITEM, RECORD_CARER_CALLBACK and MARK_CARER_CALLBACK_MADE.
+      // Escalation calls (item 3, D-133) add RECORD_ESCALATION_CALL, and item 9 (10 Nov 2026) adds
+      // RECORD_CREW_TIMES. D-141 (11 Nov 2026) adds RECORD_ARRIVAL_MODE. Item 4 (11 Nov 2026) adds
+      // RECORD_CHIEF_PSYCHIATRIST_NOTIFIED. Item 18 (10 Nov 2026) adds MARK_TRANSPORT_COLLECTED.
+      // Feature item 13 (10 Nov 2026) adds SET_INTAKE_WINDOW.
+      expect(allEventTypes.length).toBe(206);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];

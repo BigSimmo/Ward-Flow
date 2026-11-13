@@ -460,7 +460,13 @@ describe("front-door contract — an ED may close to all admissions, never refus
     RECORD_ADMISSION_FOLLOW_UP: false,
     RECORD_PATIENT_DISCHARGE: false,
     RECORD_LEAVING: false,
+    // Item 18: the end of a wait for transport home. Not a refusal of anyone.
+    MARK_TRANSPORT_COLLECTED: false,
     RECORD_LEFT_DEPARTMENT: false,
+    // Item 9: a police or ambulance crew's typed times. Records when a crew waited; refuses nobody.
+    RECORD_CREW_TIMES: false,
+    // D-141: marking who brought the person in. Refuses nobody.
+    RECORD_ARRIVAL_MODE: false,
     // RB3, item 19: the department recording that a patient no longer needs a bed search (going
     // home, or needing community follow-up instead). Not a refusal by a RECEIVING unit — no unit
     // is declining a placement, the department is stating its own disposition of the patient, the
@@ -559,6 +565,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     // A ward restating what is currently limiting its own intake, from a fixed list. Not a
     // refusal of any named referral or placement — it carries no subject at all.
     RECORD_WARD_INTAKE_CONSTRAINTS: false,
+    // Feature item 13: tonight's intake hours, information only, never a refusal of anyone.
+    SET_INTAKE_WINDOW: false,
     // Smart features idea 7: closes a whole ward to everyone, never one named patient.
     CLOSE_WARD_TO_ADMISSIONS: false,
     REOPEN_WARD_TO_ADMISSIONS: false,
@@ -677,6 +685,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     RECORD_WARD_DIAGNOSIS: false,
     // Feature 14: records that a desk reviewed a weekend discharge. Not a refusal.
     MARK_WEEKEND_DISCHARGE_REVIEWED: false,
+    // Item 4: records when the Chief Psychiatrist was notified. Not a refusal.
+    RECORD_CHIEF_PSYCHIATRIST_NOTIFIED: false,
     // Closing-the-loop (package E): records a return request and the home service's answer. Not a refusal.
     RECORD_HOME_SERVICE_RETURN: false,
     // Closing-the-loop (package E): records that a directory entry was checked. Not a refusal.
@@ -684,6 +694,14 @@ describe("front-door contract — an ED may close to all admissions, never refus
     // Staff needed (feature 10): a ward asks for staff, and the request is closed. Nobody is refused.
     REQUEST_WARD_STAFF: false,
     CLOSE_WARD_STAFF_REQUEST: false,
+    // Escalation calls (item 3, D-133): records who was called and what happened. Not a refusal.
+    RECORD_ESCALATION_CALL: false,
+    // Batch 3 items 21 and 23: handing on own work and accepting it, and a carer callback asked for
+    // and made. Each moves or ticks off a task; none refuses anybody.
+    HAND_OVER_ITEM: false,
+    ACCEPT_HANDED_ITEM: false,
+    RECORD_CARER_CALLBACK: false,
+    MARK_CARER_CALLBACK_MADE: false,
     // Out of area "Flag early" (3 Nov 2026): records that a return may come sooner. Not a refusal.
     FLAG_RETURN_EARLY: false,
     SET_DISCHARGE_BARRIER: false,
@@ -710,6 +728,10 @@ describe("front-door contract — an ED may close to all admissions, never refus
     REQUEST_PSYCH_REVIEW: false,
     RECORD_PSYCH_REVIEW_SEEN: false,
     MARK_WARD_READY_FOR_NEXT: false,
+    // Batch 4 (10 Nov 2026): a site switch, a pack print time and an outage window; refuses no one.
+    SET_SITE_FEATURE_SWITCH: false,
+    RECORD_DOWNTIME_PACK_PRINTED: false,
+    RECORD_OUTAGE_WINDOW: false,
     RAISE_EXPECT_FLAG: false,
     FLAG_LEGAL_MISMATCH: false,
     EVALUATE_LEAVE_BED_WARNINGS: false,
@@ -1326,8 +1348,13 @@ describe("Referral privacy — structural", () => {
     // commitments, each a ward id, a listed step or a time, an instant and a role label. Nothing
     // typed and no person; entry fields are pinned by ALLOWED_COMMITMENT_ENTRY_FIELDS below.
     "commitments",
+    // WIDENED 11 Nov 2026 (D-141): a seeded ward copy carries what the ward asked for ("What we
+    // still need"), each a listed need, an instant and a role label, and when ticked off the same
+    // again. Nothing typed and no person; entry fields are pinned by ALLOWED_INFORMATION_NEED_FIELDS.
+    "informationNeeds",
   ].sort();
   const ALLOWED_COMMITMENT_ENTRY_FIELDS = ["at", "by", "nextCallbackAt", "promisedFor", "step", "unitId"];
+  const ALLOWED_INFORMATION_NEED_FIELDS = ["at", "by", "metAt", "metBy", "need"];
 
   const ALLOWED_DESTINATION_FIELDS: Record<ReferralDestinationKind, string[]> = {
     // WIDENED ON PURPOSE, 2026-09-10 — owner ruling: high-acuity nursing is marked by the
@@ -1487,6 +1514,16 @@ describe("Referral privacy — structural", () => {
               by: "Bed coordinator",
             },
           ],
+          // D-141: a fully populated information need, so its keys are pinned too.
+          informationNeeds: [
+            {
+              need: "legal_form_copy",
+              at: NOW_ANCHOR + 1,
+              by: "Ward manager",
+              metAt: NOW_ANCHOR + 3,
+              metBy: "Bed coordinator",
+            },
+          ],
         },
       ],
       homeRegion: "Perth Metropolitan",
@@ -1567,6 +1604,9 @@ describe("Referral privacy — structural", () => {
     expect(Object.keys(canonical.ownerHistory[0]!).sort()).toEqual(ALLOWED_OWNER_ENTRY_FIELDS);
     expect(Object.keys(canonical.contactLog[0]!).sort()).toEqual(ALLOWED_CONTACT_ENTRY_FIELDS);
     expect(Object.keys(canonical.destinations[0].commitments![0]!).sort()).toEqual(ALLOWED_COMMITMENT_ENTRY_FIELDS);
+    expect(Object.keys(canonical.destinations[0].informationNeeds![0]!).sort()).toEqual(
+      ALLOWED_INFORMATION_NEED_FIELDS,
+    );
   });
 
   it("gives every real referral in the fixture only keys drawn from that same allowed set", () => {
@@ -1586,6 +1626,9 @@ describe("Referral privacy — structural", () => {
         // Closing-the-loop package A: one level further down, each commitment entry's own keys.
         for (const entry of addressing.commitments ?? []) {
           for (const key of Object.keys(entry)) expect(ALLOWED_COMMITMENT_ENTRY_FIELDS).toContain(key);
+        }
+        for (const entry of addressing.informationNeeds ?? []) {
+          for (const key of Object.keys(entry)) expect(ALLOWED_INFORMATION_NEED_FIELDS).toContain(key);
         }
         for (const key of Object.keys(addressing.destination)) {
           expect(

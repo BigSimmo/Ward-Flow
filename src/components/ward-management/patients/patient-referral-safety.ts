@@ -16,6 +16,9 @@ import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diag
 import { seededReferralDossier } from "@/components/ward-management/ward-referral-dossier-seed";
 import { riskFlagLabel } from "@/components/ward-management/referrals/referral-risk-flags";
 
+/** The referral fields this file reads: a full referral or a ward's scoped inbox entry (FD-23). */
+export type CardReferral = Pick<Referral, "id" | "raisedAt" | "intake">;
+
 export type ReferralSafetyFacts =
   /** The movement names a referral this desk cannot see. Show nothing from it. */
   | { kind: "not_shared" }
@@ -37,7 +40,7 @@ export type ReferralSafetyFacts =
  */
 export function referralSafetyFacts(
   movement: Movement | undefined,
-  visibleReferral: Referral | undefined,
+  visibleReferral: CardReferral | undefined,
 ): ReferralSafetyFacts {
   if (!movement) return { kind: "none" };
   const diagnosisOnMovement = tentativeDiagnosisPhrase(movement.tentativeDiagnosis ?? null) ?? undefined;
@@ -77,10 +80,44 @@ export type ReferralCardFlags = { labels: readonly string[]; raisedAt: number };
  * referral the movement names is looked up, so a desk that cannot see it gets nothing. Nothing
  * also when the referral flagged none.
  */
-export function referralCardFlags(movement: Movement, referrals: readonly Referral[]): ReferralCardFlags | undefined {
-  const visible =
-    movement.referralId === undefined ? undefined : referrals.find((referral) => referral.id === movement.referralId);
-  const facts = referralSafetyFacts(movement, visible);
+export function referralCardFlags(
+  movement: Movement,
+  referrals: readonly CardReferral[],
+): ReferralCardFlags | undefined {
+  const facts = referralSafetyFacts(movement, namedReferral(movement, referrals));
   if (facts.kind !== "shown" || !facts.riskFlags || facts.riskFlags.length === 0) return undefined;
   return { labels: facts.riskFlags.map(riskFlagLabel), raisedAt: facts.raisedAt };
+}
+
+function namedReferral(movement: Movement, referrals: readonly CardReferral[]): CardReferral | undefined {
+  return movement.referralId === undefined
+    ? undefined
+    : referrals.find((referral) => referral.id === movement.referralId);
+}
+
+/** The recorded flags that ask the receiving ward to plan staff before the person arrives, in words. */
+const ARRIVAL_STAFFING_FLAGS: Readonly<Record<string, string>> = {
+  aggression: "aggression",
+  absconding: "absent without leave",
+};
+
+/** "Plan staffing for this arrival", with the recorded flags behind it in words. */
+export type ArrivalStaffingPrompt = { reasons: readonly string[] };
+
+/**
+ * Feature 7 (D-117 item 3): the receiving ward's incoming card asks the nurse in charge to plan
+ * staff when the referral records aggression or absconding. Read under the same H10 conditions as
+ * `referralCardFlags`, so a referral this desk cannot see gives nothing. It rides on the movement
+ * and its referral only, never on the patient record (R-2026-09-04-A).
+ */
+export function arrivalStaffingPrompt(
+  movement: Movement,
+  referrals: readonly CardReferral[],
+): ArrivalStaffingPrompt | undefined {
+  const facts = referralSafetyFacts(movement, namedReferral(movement, referrals));
+  if (facts.kind !== "shown" || !facts.riskFlags) return undefined;
+  const reasons = facts.riskFlags.flatMap((flag) =>
+    Object.hasOwn(ARRIVAL_STAFFING_FLAGS, flag) ? [ARRIVAL_STAFFING_FLAGS[flag]!] : [],
+  );
+  return reasons.length > 0 ? { reasons } : undefined;
 }

@@ -82,8 +82,12 @@ function anAdmission(overrides: Partial<Admission> = {}): Admission {
     stayBlockClearances: [],
     stayBlockRecords: [],
     weekendDischargeReviews: [],
+    // Item 4: a recorded Chief Psychiatrist notified time, carried so the field count stays honest.
+    chiefPsychiatristNotice: { notifiedAt: 0, at: 0, by: "ward" },
     leavingDestination: null,
     leftAt: null,
+    // Item 18 (10 Nov 2026), so the built fixture carries every field.
+    waitingForTransport: { since: DAY_ZERO, by: "ward" },
     followUp: null,
     careJourney: { contacts: [], plan: {}, documents: {}, episodes: [] },
     dischargeBarrier: null,
@@ -630,8 +634,12 @@ describe("Admission privacy — structural", () => {
     "stayBlockRecords",
     // Feature 14 (9 Nov 2026): weekend discharge review ticks. Two times and a role, no free text.
     "weekendDischargeReviews",
+    // Item 4 (11 Nov 2026): when the Chief Psychiatrist was notified. Two times and a role, no free text.
+    "chiefPsychiatristNotice",
     "leavingDestination",
     "leftAt",
+    // Item 18: left the ward, waiting for transport. A time and a role, no free text.
+    "waitingForTransport",
     "followUp",
     "careJourney",
     // Features 37 and 13 (9 Nov 2026): listed checklist states and a listed reply, each with a time and role.
@@ -689,8 +697,14 @@ describe("Admission privacy — structural", () => {
       stayBlockClearances: [],
       stayBlockRecords: [],
       weekendDischargeReviews: [],
+      chiefPsychiatristNotice: {
+        notifiedAt: DAY_ZERO + 2 * MINUTES_PER_DAY,
+        at: DAY_ZERO + 2 * MINUTES_PER_DAY,
+        by: "ward",
+      },
       leavingDestination: "discharged-to-the-community",
       leftAt: DAY_ZERO + 30 * MINUTES_PER_DAY,
+      waitingForTransport: { since: DAY_ZERO + 30 * MINUTES_PER_DAY, by: "ward" },
       // Populated for the same reason the ED timestamp above is: a null here would make the new
       // field indistinguishable from an absent one, which is exactly what this fixture exists to tell
       // apart.

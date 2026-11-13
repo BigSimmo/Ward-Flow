@@ -10,6 +10,7 @@ import {
   DrawerFootRow,
   Field,
   PanelDrawer,
+  Segmented,
   Select,
   StatusGlyph,
   StatusPill,
@@ -43,6 +44,12 @@ import { WardDiagnosisControl } from "./ward-board-ward-diagnosis";
 import { ClinicallyReadyControl } from "./ward-board-clinically-ready";
 import { plural } from "@/components/ward-management/ward-plural";
 import { WardStepDownRequest } from "@/components/ward-management/referrals/step-down-request";
+import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
+// Batch 3 item 23: a carer call back, from the ward's bed record. Loaded with the open drawer.
+const CarerCallbackCard = dynamic(
+  withLoadRetry(() => import("@/components/ward-management/carer-callback-card").then((m) => m.CarerCallbackCard)),
+);
 
 /** Redesign: the record's buttons are the kit's, so the panel matches the rest of the page. */
 // Long labels ("Gone to an ED" and others) wrap inside the panel
@@ -119,6 +126,7 @@ export function WardBoardDetailPanel({
   setLeavingDestination,
   setPendingConfirm,
   setSelectedBlocker,
+  transportPending = false,
   unit,
 }: {
   admissions: Admission[];
@@ -160,9 +168,17 @@ export function WardBoardDetailPanel({
   >;
   setLeavingDestination: (destination: LeavingDestination) => void;
   setPendingConfirm: Dispatch<
-    SetStateAction<{ kind: "leaving" | "away_at_ed"; who: string; item?: ShiftTileItem; admissionId?: string } | null>
+    SetStateAction<{
+      kind: "leaving" | "away_at_ed";
+      who: string;
+      item?: ShiftTileItem;
+      admissionId?: string;
+      offerTransport?: boolean;
+    } | null>
   >;
   setSelectedBlocker: Dispatch<SetStateAction<BedReleaseBlocker>>;
+  /** Item 18: the selected stay's transport is still pending, so leaving asks about it (Codex, #1608). */
+  transportPending?: boolean;
   unit: Unit;
 }) {
   const [dateTimeWrong, setDateTimeWrong] = useState(false);
@@ -265,7 +281,8 @@ export function WardBoardDetailPanel({
             };
 
             // Audit CS3-07: with no destination chosen yet, the confirmation asks for one.
-            if (!requireConfirmation && leavingDestination !== "") {
+            // Item 18: with transport still pending, it always asks whether they are waiting for it.
+            if (!requireConfirmation && leavingDestination !== "" && !transportPending) {
               executeLeaving(leavingDestination);
               return;
             }
@@ -275,6 +292,7 @@ export function WardBoardDetailPanel({
               kind: "leaving",
               who: tileWho || nameFor(selectedTile.key),
               admissionId: selectedTile.key,
+              ...(transportPending ? { offerTransport: true } : {}),
             });
           }}
         >
@@ -532,6 +550,7 @@ export function WardBoardDetailPanel({
                       fullWidthClassName={styles.fullWidthBtn}
                     />
                   </div>
+                  <CarerCallbackCard admissionId={occupied.key} />
                   {occupied.days !== null && occupied.days >= CLINICAL_VALUES.longStayPrompt.value && (
                     <div
                       className={`${styles.barrierSelectGroup} ${styles.fullRowSpaced}`}
@@ -669,3 +688,34 @@ export function LeavingDestinationField({
     </>
   );
 }
+
+/** Item 18: asked only while transport is pending; never defaulted, so the ward chooses each time. */
+export function TransportWaitField({
+  id,
+  value,
+  onChange,
+}: {
+  id: string;
+  value: boolean | undefined;
+  onChange: (awaitingTransport: boolean) => void;
+}) {
+  // Kit radio choices, not a drop-down (Q36). Nothing is chosen until the person answers.
+  return (
+    <div data-testid={id}>
+      <p className={cx(styles.leavingLabel, redesign.fieldLabel)} aria-hidden="true">
+        Has their transport come?
+      </p>
+      <Segmented
+        label="Has their transport come?"
+        items={TRANSPORT_WAIT_ITEMS}
+        value={value === undefined ? "" : value ? "waiting" : "collected"}
+        onChange={(choice) => onChange(choice === "waiting")}
+      />
+    </div>
+  );
+}
+
+const TRANSPORT_WAIT_ITEMS: { id: "" | "waiting" | "collected"; label: string }[] = [
+  { id: "waiting", label: "Still waiting" },
+  { id: "collected", label: "Gone with transport" },
+];

@@ -4,6 +4,7 @@ import { placeDisplayName } from "@/components/ward-management/ward-place-names"
 import { readDeclinesByReason } from "./statistics-decline-reporting";
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import Link from "next/link";
 import { Clock, Download, Search } from "lucide-react";
 
@@ -87,15 +88,21 @@ function StatisticsViewLoading({ view }: { view: "journey" | "map" }) {
   );
 }
 
-const StatisticsJourneyView = dynamic(() => import("./statistics-journey-view").then((m) => m.StatisticsJourneyView), {
-  ssr: false,
-  loading: () => <StatisticsViewLoading view="journey" />,
-});
+const StatisticsJourneyView = dynamic(
+  withLoadRetry(() => import("./statistics-journey-view").then((m) => m.StatisticsJourneyView)),
+  {
+    ssr: false,
+    loading: () => <StatisticsViewLoading view="journey" />,
+  },
+);
 
-const StatisticsMapView = dynamic(() => import("./statistics-map-view").then((m) => m.StatisticsMapView), {
-  ssr: false,
-  loading: () => <StatisticsViewLoading view="map" />,
-});
+const StatisticsMapView = dynamic(
+  withLoadRetry(() => import("./statistics-map-view").then((m) => m.StatisticsMapView)),
+  {
+    ssr: false,
+    loading: () => <StatisticsViewLoading view="map" />,
+  },
+);
 import styles from "./statistics-v6.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { StatisticsCapacityChart } from "./statistics-capacity-chart";
@@ -496,6 +503,7 @@ function OperationalStatisticsScreen({
             bedReleases={sourceBedReleases}
             admissions={sourceAdmissions}
             leaveBeds={leaveBeds}
+            holds={namedHolds}
           />
         ),
         occupancy: (

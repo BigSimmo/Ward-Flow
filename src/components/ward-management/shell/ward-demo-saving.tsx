@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { createContext, useContext } from "react";
 
 /**
@@ -17,7 +18,7 @@ export const WardDemoNotSavedContext = createContext<boolean | undefined>(undefi
 // gives it its own Suspense boundary: without one, the first typed entry suspended the whole page
 // while the note's code arrived, and the control just pressed could briefly show twice.
 const WardDemoSavingNote = dynamic(
-  () => import("./ward-demo-saving-note").then((module) => module.WardDemoSavingNote),
+  withLoadRetry(() => import("./ward-demo-saving-note").then((module) => module.WardDemoSavingNote)),
   { loading: () => null },
 );
 

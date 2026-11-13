@@ -902,7 +902,7 @@
           "w": 300,
           "h": 86,
           "label": "Being made ready — a flag",
-          "sub": "Cleaning or repair is a separate flag. It can be set on an expected, confirmed or discharged release, and recording the departure (or a ward transfer arriving) sets it too. It does not rewrite the ward count, but a new pull refuses when every free bed is still being prepared."
+          "sub": "Cleaning or repair is a separate flag. It can be set on an expected, confirmed or discharged release, and recording the departure (or a ward transfer arriving) sets it too, except item 18's \"Left the ward, waiting for transport\", where the bed is Ready at once. It does not rewrite the ward count, but a new pull refuses when every free bed is still being prepared."
         }
       ],
       "transitions": [
@@ -1015,7 +1015,7 @@
           "route": "exit",
           "offset": 170,
           "kind": "side",
-          "label": "the departure also marks the bed"
+          "label": "the departure also marks the bed, unless left waiting for transport"
         },
         {
           "from": "confirmed",
@@ -1024,7 +1024,7 @@
           "route": "exit",
           "offset": 190,
           "kind": "side",
-          "label": "the departure also marks the bed"
+          "label": "the departure also marks the bed, unless left waiting for transport"
         },
         {
           "from": "expected",
@@ -1734,17 +1734,17 @@
   ],
   "review": {
     "reviewedOn": "2026-11-05",
-    "basis": "Source comparison of eleven machines, route nodes, gates, resources and current gap notes; not runtime or clinical acceptance. 5 November follow-up: explicit handler, payload, authority and caller review reconciled the consolidated audit repairs. Accepted observation sequence and legacy-tie fallback, current place/Undo provenance, safe world reset/import identity, return retry, meeting occurrence metadata and UI draft/completion ownership qualify existing transitions; they add no clinical decision or new physical transport stage. See CURRENT-REVIEW.md for the source-by-source review scope and reused versus fresh evidence. Main29f61/domain1430 reconciliation: accepted observation order is max(retained history,0)+1 with positive-safe restore metadata and sequence preserved through arrival; legacy ties retain compatibility fallback. Import and archive Undo share normalized retained identity, excluding explicit missing/privacy sentinels. Complete inverses preserve occupied-stay/leave consistency. No transition geometry or clinical rule changed; see CURRENT-REVIEW.md. #1447 consolidation, 5 November: other journeys' pending numbered bed reservations come off Ready and the free locked/open counts in the pull and planned-arrival gates; a pull release clears its held bed number and refuses a release matching no reservation; a coordinator transfer recorded as arrived needs a Ready bed; restore refuses a save whose live absences, active stays or numbered beds have more than one owner and names the broken rule. No transition geometry or clinical rule changed.",
+    "basis": "Source comparison of eleven machines, route nodes, gates, resources and current gap notes; not runtime or clinical acceptance. 5 November follow-up: explicit handler, payload, authority and caller review reconciled the consolidated audit repairs. Accepted observation sequence and legacy-tie fallback, current place/Undo provenance, safe world reset/import identity, return retry, meeting occurrence metadata and UI draft/completion ownership qualify existing transitions; they add no clinical decision or new physical transport stage. See CURRENT-REVIEW.md for the source-by-source review scope and reused versus fresh evidence. Main29f61/domain1430 reconciliation: accepted observation order is max(retained history,0)+1 with positive-safe restore metadata and sequence preserved through arrival; legacy ties retain compatibility fallback. Import and archive Undo share normalized retained identity, excluding explicit missing/privacy sentinels. Complete inverses preserve occupied-stay/leave consistency. No transition geometry or clinical rule changed; see CURRENT-REVIEW.md. #1447 consolidation, 5 November: other journeys' pending numbered bed reservations come off Ready and the free locked/open counts in the pull and planned-arrival gates; a pull release clears its held bed number and refuses a release matching no reservation; a coordinator transfer recorded as arrived needs a Ready bed; restore refuses a save whose live absences, active stays or numbered beds have more than one owner and names the broken rule. No transition geometry or clinical rule changed. 10 November (items 3, 9, 10/16/27, 26/46): escalation calls and police or ambulance crew times add record-only movement fields and events; the ward card fit lines, home team heads-up and transfer notes copy are screen reads. Cited sources compared line by line; no transition geometry or clinical rule changed. 11 November (D-141): RECORD_ARRIVAL_MODE marks an ED arrival brought by police or ambulance, a record-only movement field; the home team heads-up adds the patient's UMRN as a screen read. Cited sources compared line by line (additions only); no transition geometry or clinical rule changed.",
     "sources": [
       {
         "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
-        "line": 584,
-        "sha256": "fcd8e3b7667a295dc58225efa80ca7dc36863ad203ca4b6873c535c7ae5a0eb3"
+        "line": 619,
+        "sha256": "d91a5be952e2110e25d304edcac7c17bede49897d9115701033cc8be1e0c61df"
       },
       {
         "path": "src/components/ward-management/legal-forms/legal-forms-screen.tsx",
         "line": 1,
-        "sha256": "6b9c32af15d569ddb7bcffdd4202bc0def13f74465b211163a1bd706293a4721"
+        "sha256": "381f09f6b932ae6752767f1e74e0978629c3ff442e1b0132c9d79275ef100762"
       },
       {
         "path": "src/components/ward-management/legal-forms/legal-forms-sheets.tsx",
@@ -1754,12 +1754,12 @@
       {
         "path": "src/components/ward-management/patients/add-patient.tsx",
         "line": 87,
-        "sha256": "fc5752f90ad948491ad836c940e4eb1571aba082c71cee36e4e6083afdf78002"
+        "sha256": "e4d277572fc48f16fc5a3746118fc7ab1758d274ed28ae459d9cd1821a2de4f0"
       },
       {
         "path": "src/components/ward-management/patients/patient-now-screen.tsx",
         "line": 1,
-        "sha256": "dfb17d155ac70a24ed4bb602838067ce4b93753a8cdba1d9a89b24092aba2e44"
+        "sha256": "26363123efd33bdd7362b576d3e5250c70803f8575a31700d00eaae19a80654e"
       },
       {
         "path": "src/components/ward-management/shell/ward-broadcast-banner-body.tsx",
@@ -1769,7 +1769,7 @@
       {
         "path": "src/components/ward-management/shell/ward-broadcast-banner.tsx",
         "line": 1,
-        "sha256": "d34087fc1cfb2356065997d7942882cd1bc9791e3041e71ec0fb0d279fe429be"
+        "sha256": "6d155c1c79a2cbe910ea77e83a46047d4f22cdae22a8241072e2c068d705012f"
       },
       {
         "path": "src/components/ward-management/shell/ward-facade.ts",
@@ -1808,18 +1808,23 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-bed-events.ts",
-        "line": 619,
-        "sha256": "be57f071ee46dc50dc5c0ac2dd9474b8a75f474f65aa943661a8bd08d2ed8113"
+        "line": 621,
+        "sha256": "09c601d833dcb66d3e94cb5acb54aaad7c4d3e05569b53d6447aa415d1402954"
+      },
+      {
+        "path": "src/components/ward-management/ward-flow-departure.ts",
+        "line": 18,
+        "sha256": "624ccc1fda2f7732e2704270f7281dcea991daac85485619881b0d1790aacb62"
       },
       {
         "path": "src/components/ward-management/ward-flow-event-roles.ts",
         "line": 1,
-        "sha256": "01913e33459ff2e0c7dfce7de7e0e731cc155400a42b2537e1e6ad7a6c3c83eb"
+        "sha256": "808d614bd517bb11c0ef517ce5632dd3caba8a71758476401f35da82fe26afda"
       },
       {
         "path": "src/components/ward-management/ward-flow-events.ts",
         "line": 1,
-        "sha256": "378044cce3b2c98c2c24f4e5bb6ab27f7c361f02a7fa8ab59fa36a77388c84bf"
+        "sha256": "8a2438031d11683d8648960b9d12ffd41eda8a351a21b1b50037bfd2ab59dde4"
       },
       {
         "path": "src/components/ward-management/ward-flow-placement-events.ts",
@@ -1829,12 +1834,12 @@
       {
         "path": "src/components/ward-management/ward-flow-protected-record-events.ts",
         "line": 1,
-        "sha256": "54c8451a1eab7a74e88ff65a617a8cd2440a3de08b73e42b7e5e93720531fc96"
+        "sha256": "c53559bdd18a5ce354526bdb68e9ba4b099fbac2c11c20a3ea7abcb094e3aba0"
       },
       {
         "path": "src/components/ward-management/ward-flow-record-events.ts",
-        "line": 601,
-        "sha256": "901a830650fc830bfa41e4351b15fcea7e71bf475cc389ac2ece99fe698c4e06"
+        "line": 606,
+        "sha256": "5cc4fde885cc7c9b44aabd7b260b5f94371b7d4f06e26736e406c40972fb8d21"
       },
       {
         "path": "src/components/ward-management/ward-flow-record-legal-events.ts",
@@ -1843,13 +1848,13 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-        "line": 376,
-        "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
+        "line": 428,
+        "sha256": "6d2e541a95fe4655e181df60917102587753069caaf78534536b93a4a5b4d4fe"
       },
       {
         "path": "src/components/ward-management/ward-flow-reducer.ts",
-        "line": 1169,
-        "sha256": "edd08d18e7d96cad77b0a026b29f7acc6b9918b4818010e53b14e08d9c00eb2a"
+        "line": 1178,
+        "sha256": "79b19a0fd06f5688ff75e384be708208c5bbe7cb497f48ee24b8433ceb9b4304"
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
@@ -1863,8 +1868,8 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-storage-validation.ts",
-        "line": 460,
-        "sha256": "cd370f6848c32198af9d13d0f8d43a4b1c5af4f1b9c1e2e5f1a8c15aefc81769"
+        "line": 452,
+        "sha256": "235c28653c50815296ac813352251daa8bfdc0d045f34784be71ad4387965ac5"
       },
       {
         "path": "src/components/ward-management/ward-flow-transport-events.ts",
@@ -1879,7 +1884,7 @@
       {
         "path": "src/components/ward-management/ward-inbox-reducer.ts",
         "line": 58,
-        "sha256": "4a7dde821d15d7032a38cb18333ed34872d78fb28e4be6efb382ad5e9095c81d"
+        "sha256": "08c484bdd2238608d2f341a4d4026e57d200d349d16dacafcf1ba57ec0d0c21e"
       },
       {
         "path": "src/components/ward-management/ward-model-leave.ts",
@@ -1899,7 +1904,7 @@
       {
         "path": "src/components/ward-management/ward-model.ts",
         "line": 1,
-        "sha256": "246b885c01dade4f48f7a46d323569f34ac206a306597ae60a761a2b5d6b2f2d"
+        "sha256": "6cc372267168e04e8bb4a3365d5db08888f67c6cbd08a372e5f57d40b6614e46"
       },
       {
         "path": "src/components/ward-management/ward-patient-registration-reducer.ts",
@@ -1914,7 +1919,7 @@
       {
         "path": "src/components/ward-management/ward-undo.ts",
         "line": 1,
-        "sha256": "22a192fa0c973fff7b2b9b13038f17020b3990a33a0588af76ab2a4f79d035db"
+        "sha256": "3c53075006e38d5b6dac4bfff7b374662ec8511a331c3129f22d9febaefc8186"
       },
       {
         "path": "src/components/ward-management/ward-observation.ts",

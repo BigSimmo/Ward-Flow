@@ -5,8 +5,9 @@ import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
 
 /**
  * Features 6, 37, 13 and 14 (9 Nov 2026): the stored admission fields for the discharge date trail,
- * the discharge checklist, the community follow-up reply and the weekend discharge review ticks. Finite times and listed values only;
- * absent in older saves. Spread into the admission schema in `ward-flow-storage-validation.ts`,
+ * the discharge checklist, the community follow-up reply and the weekend discharge review ticks;
+ * item 4 (11 Nov 2026) adds the Chief Psychiatrist notified time and item 18 (10 Nov 2026) the
+ * transport wait. Finite times and listed values only; absent in older saves. Spread into the admission schema in `ward-flow-storage-validation.ts`,
  * which is at its line cap.
  */
 export const dischargeFollowThroughFields = {
@@ -23,5 +24,19 @@ export const dischargeFollowThroughFields = {
         }),
       ),
     ),
+  ),
+  // Item 4 (11 Nov 2026): when the Chief Psychiatrist was notified, as typed. Two times and a role.
+  chiefPsychiatristNotice: z.optional(
+    z.readonly(
+      z.strictObject({
+        notifiedAt: z.number(),
+        at: z.number(),
+        by: z.enum(Object.keys(WARD_FLOW_ROLE_LABELS) as [string, ...string[]]),
+      }),
+    ),
+  ),
+  // Item 18: left the ward, waiting for transport. Absent in older saves; a time and a known role only.
+  waitingForTransport: z.optional(
+    z.strictObject({ since: z.number(), by: z.enum(Object.keys(WARD_FLOW_ROLE_LABELS) as [string, ...string[]]) }),
   ),
 };

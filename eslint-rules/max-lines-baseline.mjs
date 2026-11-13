@@ -23,24 +23,30 @@
 // 9 Nov 2026 (PR #1583): main reached 2547 of the reducer's 2550 with PR #1563; the discharge and
 // capacity features add six dispatch lines (their logic already lives in slices), so the cap is 2555.
 // 10 Nov 2026 (PR #1583): PR #1578 took main to 2550, so with the same six lines the cap is 2560.
+// 10 Nov 2026 (batch 3 items 21 and 23): two state fields, a guard import and one dispatch line take
+// the reducer to 2565, and one union line takes ward-flow-events to 2751; the logic is a lazy slice.
 // 10 Nov 2026 (PR #1598): main reached 2574 of ward-screen's 2575; the D-129 sign-off Undo adds three
 // lines (its logic lives in ward-sign-off-undo.ts), so the cap is 2580.
 // 10 Nov 2026 (Tier 7 audit A5-05): the cap now covers the backend's source files too. postgres.mjs
 // was split by area into workspace-*.mjs; its remaining core (the record cache, reads, saves,
 // archive and the command path) gets a cap of its size plus about 150 lines.
+// 11 Nov 2026 (D-145, Josh approved): the cap counts code lines only. Blank lines and comment-only
+// lines no longer count (MAX_LINES_COUNTING), so nobody deletes spacing or safety comments to fit.
+// The caps were in raw lines; each is now re-set to the file's code lines plus the same
+// headroom it had under raw counting, so no file gains room to grow. ward-model, ward-movements,
+// ward-flow-events, ward-patients-seed and postgres.mjs are under the default in code lines and
+// came off the list. Main's later +5 for the reducer (batch 3 items 21 and 23) carries over: 1854 + 5 = 1859.
+// Main's Batch 4 +6 for the reducer (three outage and pilot events) carries over too: 1859 + 6 = 1865.
 export const MAX_LINES_DEFAULT = 1500;
 export const MAX_LINES_HEADROOM = 300;
+// ESLint max-lines options shared by eslint.config.mjs and tests/max-lines-baseline.test.ts.
+export const MAX_LINES_COUNTING = { skipBlankLines: true, skipComments: true };
 
 export const MAX_LINES_BASELINE = {
-  "src/components/ward-management/ward-flow-reducer.ts": 2560,
-  "src/components/ward-management/ward/ward-screen.tsx": 2580,
-  "src/components/ward-management/ward-model.ts": 1900,
-  "src/components/ward-management/ward-movements.ts": 2070,
-  "src/components/ward-management/ward-flow-events.ts": 2750,
-  "src/components/ward-management/coordinator/shortlist-panel.tsx": 2850,
-  "src/components/ward-management/movements/movement-workspace-cockpit.tsx": 2150,
-  "src/components/ward-management/ward/ward-home-tab.tsx": 2150,
-  "src/components/ward-management/ward-patients-seed.ts": 1800,
-  "src/components/ward-management/ward/ward-answer-view.tsx": 1750,
-  "backend/ward-flow/postgres.mjs": 1860,
+  "src/components/ward-management/ward-flow-reducer.ts": 1865,
+  "src/components/ward-management/ward/ward-screen.tsx": 2174,
+  "src/components/ward-management/coordinator/shortlist-panel.tsx": 2256,
+  "src/components/ward-management/movements/movement-workspace-cockpit.tsx": 2059,
+  "src/components/ward-management/ward/ward-home-tab.tsx": 1991,
+  "src/components/ward-management/ward/ward-answer-view.tsx": 1630,
 };

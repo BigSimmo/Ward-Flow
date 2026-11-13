@@ -3,7 +3,8 @@
  * switch `WARD_FRONT_DOOR=required` is set, no Ward Flow page or API answers until this browser
  * holds a signed pass. The pass is an HttpOnly cookie that `POST /api/session` sets after it has
  * checked a Supabase sign-in with Supabase itself, or a demo code on the public demo. It ends with
- * the 12-hour sign-in limit (8 hours for a demo code) and on sign-out.
+ * the 12-hour sign-in limit (8 hours for a demo code) and on sign-out. A demo pass also ends as
+ * soon as `WARD_DEMO_CODE` changes.
  *
  * The pass only opens the door. It never stands in for the sign-in: the shared workspace still
  * checks the account's own token on every request, so a pass without a sign-in shows the sign-in
@@ -59,6 +60,8 @@ const OPEN_PATHS = new Set([
   "/api/health",
   "/api/local-project-id",
   "/robots.txt",
+  // Live audit item 15: the security contact (RFC 9116) is readable before sign-in.
+  "/.well-known/security.txt",
   "/opengraph-image",
   "/ward-flow-offline.html",
   "/ward-flow-push-sw.js",
@@ -91,6 +94,11 @@ export type FrontDoorPass = {
   kind: "account" | "demo";
   /** The Supabase account id for an account pass. */
   subject?: string;
+  /**
+   * A demo pass's fingerprint of the demo code it was opened with (`demoCodeFingerprint`), so
+   * changing `WARD_DEMO_CODE` closes every demo pass at once rather than up to 8 hours later.
+   */
+  code?: string;
   issuedAt: number;
   expiresAt: number;
 };
@@ -113,10 +121,30 @@ function fromBase64Url(value: string): Uint8Array | null {
   }
 }
 
+/**
+ * Imported signing keys, one per secret, so a request does not import the same key again. Only a
+ * few secrets are ever live at once (the current one, and the old one during a change), so the
+ * oldest is dropped past that. A failed import is not kept.
+ */
+const signingKeys = new Map<string, Promise<CryptoKey>>();
+const SIGNING_KEYS_KEPT = 4;
+
+function signingKey(secret: string): Promise<CryptoKey> {
+  let key = signingKeys.get(secret);
+  if (!key) {
+    key = crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+    const imported = key;
+    imported.catch(() => {
+      if (signingKeys.get(secret) === imported) signingKeys.delete(secret);
+    });
+    signingKeys.set(secret, imported);
+    while (signingKeys.size > SIGNING_KEYS_KEPT) signingKeys.delete(signingKeys.keys().next().value as string);
+  }
+  return key;
+}
+
 async function sign(secret: string, data: string): Promise<string> {
-  const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, [
-    "sign",
-  ]);
+  const key = await signingKey(secret);
   return toBase64Url(new Uint8Array(await crypto.subtle.sign("HMAC", key, encoder.encode(data))));
 }
 
@@ -128,16 +156,39 @@ function sameText(a: string, b: string): boolean {
   return difference === 0;
 }
 
-/** A signed pass value and its cookie lifetime in seconds. */
+/**
+ * A demo pass's tie to the demo code now set: a keyed hash of the normalised code, so the cookie
+ * never shows the code itself. Any change to `WARD_DEMO_CODE` changes it.
+ */
+export async function demoCodeFingerprint(secret: string, env: Env = process.env): Promise<string> {
+  return (await sign(secret, `demo-code:${normaliseDemoCode(env.WARD_DEMO_CODE ?? "")}`)).slice(0, 22);
+}
+
+/**
+ * Whether a verified pass still stands against the settings now: an account pass always, a demo
+ * pass only while `WARD_DEMO_CODE` is the code it was opened with.
+ */
+export async function passMatchesDemoCode(
+  secret: string,
+  pass: FrontDoorPass,
+  env: Env = process.env,
+): Promise<boolean> {
+  if (pass.kind !== "demo") return true;
+  return typeof pass.code === "string" && sameText(pass.code, await demoCodeFingerprint(secret, env));
+}
+
+/** A signed pass value and its cookie lifetime in seconds. A demo pass carries the code's fingerprint. */
 export async function issuePass(
   secret: string,
-  pass: Omit<FrontDoorPass, "issuedAt" | "expiresAt"> & { hours: number; endsBy?: number | null },
+  pass: Omit<FrontDoorPass, "issuedAt" | "expiresAt" | "code"> & { hours: number; endsBy?: number | null },
   now = Date.now(),
+  env: Env = process.env,
 ): Promise<{ value: string; maxAge: number }> {
   const limit = now + pass.hours * 3_600_000;
   const expiresAt = pass.endsBy && pass.endsBy < limit ? pass.endsBy : limit;
   const body: FrontDoorPass = { kind: pass.kind, issuedAt: now, expiresAt };
   if (pass.subject) body.subject = pass.subject;
+  if (pass.kind === "demo") body.code = await demoCodeFingerprint(secret, env);
   const payload = toBase64Url(encoder.encode(JSON.stringify(body)));
   return {
     value: `${payload}.${await sign(secret, payload)}`,
@@ -177,17 +228,45 @@ export function passOpensSite(pass: FrontDoorPass, sharedEnabled: boolean): bool
   return pass.kind === "account" || !sharedEnabled;
 }
 
+/** The shortest demo code that opens the site, counted after spaces and dashes are removed. */
+const DEMO_CODE_MIN_LENGTH = 12;
+
 /** The demo code's own form: capitals, with spaces and dashes ignored, so "ward 7q4k" still opens. */
 function normaliseDemoCode(code: string): string {
   return code.toUpperCase().replace(/[\s-]+/g, "");
 }
 
-/** Whether an entered demo code matches `WARD_DEMO_CODE`. False when no code is set. */
+/**
+ * Whether an entered demo code matches `WARD_DEMO_CODE`. False when no code is set, or when the set
+ * code is shorter than 12 characters (spaces and dashes not counted), so a guessable code never
+ * opens the site (D-145).
+ */
 export async function demoCodeMatches(entered: string, env: Env = process.env): Promise<boolean> {
   const expected = normaliseDemoCode(env.WARD_DEMO_CODE ?? "");
-  if (expected.length < 4) return false;
+  if (expected.length < DEMO_CODE_MIN_LENGTH) return false;
   // Hash both sides, so the comparison takes the same time whatever was typed.
   const digest = async (text: string) =>
     toBase64Url(new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(text))));
   return sameText(await digest(normaliseDemoCode(entered.slice(0, 64))), await digest(expected));
+}
+
+/**
+ * When a sign-in began, in milliseconds: the oldest `amr` factor time in a Supabase access token,
+ * as the backend counts it (`startedAt` in backend/ward-flow/supabase-auth.mjs). A refresh or a later
+ * factor never moves it, so the 12-hour session limit (ISM-0428) counts from here. `null` when the
+ * token cannot be read or carries no factor time. The signature is not checked: callers use this only
+ * to show or shorten a limit the server enforces itself.
+ */
+export function signInStartedAt(token: string): number | null {
+  try {
+    const part = (token.split(".")[1] ?? "").replace(/-/g, "+").replace(/_/g, "/");
+    const bytes = Uint8Array.from(atob(part), (char) => char.charCodeAt(0));
+    const claims = JSON.parse(new TextDecoder().decode(bytes));
+    const times = (Array.isArray(claims?.amr) ? claims.amr : [])
+      .map((entry: { timestamp?: unknown }) => entry?.timestamp)
+      .filter((value: unknown): value is number => Number.isFinite(value));
+    return times.length ? Math.min(...times) * 1000 : null;
+  } catch {
+    return null;
+  }
 }

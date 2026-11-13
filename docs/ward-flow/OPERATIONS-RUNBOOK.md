@@ -41,7 +41,7 @@ There is no `supabase/` folder and no Railway config file in the repo. Build com
 commands, watch paths and the health-check path are Railway dashboard settings. The repo copy of
 the backend watch list is [watch-paths.mjs](../../backend/ward-flow/watch-paths.mjs). The schema is
 in [backend/ward-flow/migrations](../../backend/ward-flow/migrations), currently up to
-<!-- fact:latest-migration -->017-account-preferences<!-- /fact -->.
+<!-- fact:latest-migration -->018-read-path-indexes<!-- /fact -->.
 
 ### Front door switch
 
@@ -56,11 +56,12 @@ so changing them needs a restart, not a rebuild:
   stays shut and `/sign-in` says sign-in is not set up. Changing it signs everyone out.
 - `WARD_DEMO_CODE` (public demo only) is the code `/sign-in` asks for. Josh chose a demo code over
   the open demo of 28 September 2026 ([D-88](decisions.md)). Share it only with people meant to
-  see the demo.
+  see the demo. It must be at least 12 characters, not counting spaces and dashes; a shorter code
+  counts as no code and the demo stays shut (D-145).
 
 With it on, a page without a pass goes to `/sign-in` and an API call gets 401. On the signed-in
 site the pass lasts until the 12-hour sign-in limit and ends at sign-out. A demo code pass lasts 8
-hours. `/api/health`, the offline page and the alert worker stay open. To switch it off, set
+hours, and ends at once when `WARD_DEMO_CODE` changes. `/api/health`, the offline page and the alert worker stay open. To switch it off, set
 `WARD_FRONT_DOOR=off` and restart. Code: `src/lib/front-door-pass.ts`, `src/proxy.ts`,
 `src/app/api/session/route.ts`.
 
@@ -106,7 +107,7 @@ Weekly, or before a demonstration. All read-only.
 5. **Receipts.** Command receipts older than 7 days are pruned every Monday at 03:00 Perth by
    `.github/workflows/prune-receipts.yml`. Until the owner adds the repository secret
    `WARD_SUPABASE_PRUNE_DATABASE_URL`, the weekly run fails on purpose; check it succeeded. To prune by hand, run
-   `npm --prefix backend/ward-flow run prune:supabase`. It needs the private administrator
+   `npm --prefix backend/ward-flow run prune:receipts:supabase`. It needs the private administrator
    environment, so it is a live change. The audit history is never pruned.
 6. **Quiet periods.** Two things stop by themselves when nobody is working on Ward Flow:
    - GitHub turns off every scheduled workflow after 60 days without repository activity:

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { EVENT_ROLE, WARD_FLOW_ROLE_LABELS } from "../src/components/ward-management/ward-flow-events";
 import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
+import { commandRefusal, deskCommand, seedWorld } from "../backend/ward-flow/engine";
 
 /**
  * WHO MAY DO WHAT, written out by hand and compared for exact equality.
@@ -211,6 +212,8 @@ describe("who may raise which event", () => {
     // Owner Answer 18 (second round, 2026-09-17): the ward's own answer to what is currently
     // limiting its intake, same role as CONFIRM_CAPACITY above.
     RECORD_WARD_INTAKE_CONSTRAINTS: ["ward", "coordinator"],
+    // Feature item 13: tonight's intake hours, the ward for itself or the coordinator.
+    SET_INTAKE_WINDOW: ["ward", "coordinator"],
     RECORD_NO_REFERRAL: ["ed", "coordinator"],
     RECORD_LEAVE_BED: ["ward", "coordinator"],
     // D-38 (9 Oct 2026): the ward records an absence and its steps; the community team a CTO.
@@ -226,6 +229,8 @@ describe("who may raise which event", () => {
      * about that ward's own beds - see `RECORD_LEAVING` in the reducer, which refuses any acting
      * unit other than the one holding the admission. */
     RECORD_LEAVING: ["ward", "coordinator"],
+    // Item 18: Collected ends a wait for transport; whoever may record the departure may record it.
+    MARK_TRANSPORT_COLLECTED: ["ward", "coordinator"],
     /* ADDED 2026-09-01. Two new events, one fact: a ward records that one of its own occupants has
      * gone out to an emergency department, and that they are back. Ward-only for the reason
      * `RECORD_LEAVING` directly above is — it is a statement about that ward's own bed, and the
@@ -465,10 +470,15 @@ describe("who may raise which event", () => {
     // RB3, item 19: the department holding the patient records the outcome — same reasoning as
     // RECORD_LEFT_DEPARTMENT above.
     RECORD_ED_OUTCOME: ["ed", "coordinator"],
+    // Item 9 (10 Nov 2026): the department holding the patient types its police or ambulance crew times.
+    RECORD_CREW_TIMES: ["ed", "coordinator"],
+    // D-141 (11 Nov 2026): the same department marks an arrival brought by police or ambulance.
+    RECORD_ARRIVAL_MODE: ["ed", "coordinator"],
     SET_ARRIVAL_DETAILS: ["coordinator", "ed", "ward", "community"],
     SET_STEP_DOWN_CANDIDATE: ["ward", "coordinator"],
     RECORD_WARD_DIAGNOSIS: ["ward", "coordinator"],
     MARK_WEEKEND_DISCHARGE_REVIEWED: ["ward", "coordinator"],
+    RECORD_CHIEF_PSYCHIATRIST_NOTIFIED: ["ward", "coordinator"],
     SET_DISCHARGE_BARRIER: ["ward", "coordinator"],
     SET_CLINICALLY_READY: ["ward", "coordinator"],
     SET_DISCHARGE_CRITERIA: ["ward", "coordinator"],
@@ -489,7 +499,15 @@ describe("who may raise which event", () => {
     CLEAR_EXPECT_FLAG: ["ward", "coordinator", "ed", "community"],
     REQUEST_PSYCH_REVIEW: ["ed", "coordinator"],
     RECORD_PSYCH_REVIEW_SEEN: ["ed", "coordinator"],
+    RECORD_ESCALATION_CALL: ["ed", "coordinator"],
     MARK_WARD_READY_FOR_NEXT: ["ward", "coordinator"],
+    // Batch 4 (Josh's plan, 10 Nov 2026): only admins switch a site feature: the statewide coordinator
+    // and the statewide access admin (D-142), which sends it under the coordinator role; the server
+    // narrows the coordinator role to those two. The downtime pack desks record a print; a coordinator
+    // records an outage window.
+    SET_SITE_FEATURE_SWITCH: ["coordinator"],
+    RECORD_DOWNTIME_PACK_PRINTED: ["coordinator", "bed_manager", "ward", "ed"],
+    RECORD_OUTAGE_WINDOW: ["coordinator"],
     RAISE_EXPECT_FLAG: ["ward", "coordinator", "ed", "community"],
     FLAG_LEGAL_MISMATCH: ["ward", "coordinator"],
     EVALUATE_LEAVE_BED_WARNINGS: ["ward", "coordinator"],
@@ -507,6 +525,11 @@ describe("who may raise which event", () => {
     // Staff needed (feature 10, 9 Nov 2026).
     REQUEST_WARD_STAFF: ["ward", "coordinator", "bed_manager"],
     CLOSE_WARD_STAFF_REQUEST: ["ward", "coordinator", "bed_manager"],
+    // Batch 3 items 21 and 23 (10 Nov 2026): handing on own work, and carer callbacks.
+    HAND_OVER_ITEM: ["coordinator", "ward", "ed", "community"],
+    ACCEPT_HANDED_ITEM: ["coordinator", "ward", "ed", "community"],
+    RECORD_CARER_CALLBACK: ["ward", "coordinator"],
+    MARK_CARER_CALLBACK_MADE: ["ward", "coordinator"],
     RECORD_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
     RECORD_SITE_HANDOVER_SIGN_OFF: ["bed_manager", "coordinator"],
     // Triage and risk (7 Nov 2026): the desks that raise a referral, never the bed manager, officer,
@@ -529,7 +552,7 @@ describe("who may raise which event", () => {
     CANCEL_PLANNED_ADMISSION: ["coordinator", "bed_manager", "ward"],
     CONVERT_PLANNED_ADMISSION: ["ward", "coordinator"],
     // Advisory carer/PSP/MHAS checklist, 9 Oct 2026 (stream B): recorded where the move completes.
-    RECORD_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
+    RECORD_SUPPORT_NOTIFICATION: ["ward", "coordinator", "ed"],
     SEND_RELEASE_SUPPORT_NOTICE: ["ward", "coordinator"],
     RECORD_DISCHARGE_DEPENDENCY: ["ward", "coordinator"],
     RECORD_DISCHARGE_PLAN_CHANGE: ["ward", "coordinator"],
@@ -606,6 +629,53 @@ describe("who may raise which event", () => {
       expect(roles as readonly string[], type).not.toContain("executive");
       expect(roles as readonly string[], type).not.toContain("admin");
     }
+  });
+
+  it("refuses the access admin every action on the server but the one D-142 names", () => {
+    // D-142 (Josh, 11 Nov 2026) amends D-80 for one action only: the statewide access admin switches a
+    // listed feature off at a site (`SET_SITE_FEATURE_SWITCH`). Every other action stays refused, and
+    // the executive's stay refused with no exception.
+    const D142_ACCESS_ADMIN_ACTIONS: readonly string[] = ["SET_SITE_FEATURE_SWITCH"];
+    const world = seedWorld(new Date("2026-11-11T02:00:00Z"));
+    const at = new Date("2026-11-11T02:00:00Z");
+    const admin = { role: "admin", scope: { kind: "statewide" } } as const;
+    const executive = { role: "executive", scope: { kind: "statewide" } } as const;
+    for (const type of Object.keys(EVENT_ROLE)) {
+      const sent = (access: typeof admin | typeof executive) =>
+        deskCommand(access, { type, role: "executive", now: NOW_ANCHOR, siteCode: "RPH" }) as Record<string, unknown>;
+      expect(commandRefusal(world, executive, sent(executive), at), type).not.toBeNull();
+      const refusal = commandRefusal(world, admin, sent(admin), at);
+      if (D142_ACCESS_ADMIN_ACTIONS.includes(type)) expect(refusal, type).toBeNull();
+      else expect(refusal, type).toBe("This change is not part of your role.");
+    }
+    // The exception is the access admin's statewide desk only, and its record names the access admin.
+    const switched = deskCommand(admin, { type: "SET_SITE_FEATURE_SWITCH", role: "executive", siteCode: "RPH" });
+    expect(switched).toMatchObject({ role: "coordinator", byAccessAdmin: true });
+    const serviceAdmin = { role: "admin", scope: { kind: "service", service: "East Metro" } } as const;
+    expect(
+      commandRefusal(world, serviceAdmin, deskCommand(serviceAdmin, switched) as Record<string, unknown>, at),
+    ).not.toBeNull();
+    // A browser cannot claim the access admin's name for another desk's switch.
+    const coordinator = { role: "coordinator", scope: { kind: "statewide" } } as const;
+    expect(deskCommand(coordinator, switched)).not.toHaveProperty("byAccessAdmin");
+  });
+
+  it("lets only the statewide coordinator record an outage, which every ward's catch-up reads", () => {
+    const world = seedWorld(new Date("2026-11-11T02:00:00Z"));
+    const at = new Date("2026-11-11T02:00:00Z");
+    const outage = {
+      type: "RECORD_OUTAGE_WINDOW",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      from: NOW_ANCHOR - 60,
+      to: NOW_ANCHOR - 5,
+    };
+    const statewide = { role: "coordinator", scope: { kind: "statewide" } } as const;
+    const service = { role: "coordinator", scope: { kind: "service", service: "East Metro" } } as const;
+    expect(commandRefusal(world, statewide, deskCommand(statewide, outage) as Record<string, unknown>, at)).toBeNull();
+    expect(commandRefusal(world, service, deskCommand(service, outage) as Record<string, unknown>, at)).toBe(
+      "Only the statewide coordinator records an outage.",
+    );
   });
 });
 

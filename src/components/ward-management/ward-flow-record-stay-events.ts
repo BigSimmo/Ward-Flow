@@ -4,6 +4,7 @@
 import { stayLegalStatusIsInvoluntary } from "./ward-discharge-records";
 import { openRestrictivePracticeRefusal } from "./restrictive-practice/ward-restrictive-practice";
 import { isLeavingDestination } from "./ward-admissions";
+import { leftWardRefusal } from "./ward-left-ward";
 import { type AuditDecision, finiteInstant } from "./ward-audit";
 import { recordedCommunityTransition } from "./ward-care-journey";
 import type {
@@ -38,6 +39,7 @@ import {
   SUPPORT_NOTIFICATION_WHO_MAX_CHARACTERS,
   type SupportNotificationRecord,
   admissionSupportNotificationSubject,
+  movementSupportNotificationBeforeArrival,
   movementSupportNotificationSubject,
 } from "@/components/ward-management/ward-support-notifications";
 
@@ -46,6 +48,7 @@ type RecordedStayEvent = Extract<
   {
     type:
       | "RECORD_LEAVING"
+      | "MARK_TRANSPORT_COLLECTED"
       | "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT"
       | "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT"
       | "RECORD_STAY_DISCHARGE_BLOCKER"
@@ -152,6 +155,11 @@ export function reduceRecordedStayEvent(
         decision.reasonCode = "invalid-payload";
         return reject(state, event, "Departure cannot precede this admission's arrival");
       }
+      // Item 18: "Left the ward" only for a discharge still waiting on transport.
+      if (event.awaitingTransport === true) {
+        const refusal = leftWardRefusal(admission, state.bedReleases, event.leavingDestination);
+        if (refusal) return reject(state, event, refusal);
+      }
 
       // Discharge blocked while in transit: a patient cannot be discharged while their transfer
       // ambulance is actively on the road.
@@ -202,7 +210,51 @@ export function reduceRecordedStayEvent(
 
       decision.outcome = "accepted";
       decision.reasonCode = "none";
-      return departAdmission(state, admission, unit, event.now, event.leavingDestination, event.role);
+      return departAdmission(
+        state,
+        admission,
+        unit,
+        event.now,
+        event.leavingDestination,
+        event.role,
+        event.awaitingTransport === true,
+      );
+    }
+
+    case "MARK_TRANSPORT_COLLECTED": {
+      // Item 18: the person who left the ward waiting for transport has gone. No bed figure moves:
+      // the bed freed when they left the ward.
+      if (finiteInstant(event.now) === null) {
+        decision.reasonCode = "invalid-payload";
+        return reject(state, event, "Collected needs a finite time");
+      }
+      const admission = findAdmission(state, event.admissionId);
+      if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
+      if (event.actingUnitId !== admission.unitId) {
+        decision.reasonCode = "scope";
+        return reject(
+          state,
+          event,
+          `MARK_TRANSPORT_COLLECTED was raised acting as unit ${event.actingUnitId} but admission ${admission.id} belongs to unit ${admission.unitId}`,
+        );
+      }
+      if (admission.state !== "departed" || admission.waitingForTransport === undefined) {
+        return reject(state, event, `admission ${admission.id} is not waiting for transport`);
+      }
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
+      const collected: typeof admission = { ...admission };
+      delete collected.waitingForTransport;
+      // The projected discharge record changes too, so its revision moves: a protected-record
+      // command carrying the revision from before collection is then refused as stale.
+      const next = replaceAdmission(state, admission.id, collected);
+      return {
+        ...next,
+        dischargeRevisions: {
+          ...next.dischargeRevisions,
+          [admission.id]: (state.dischargeRevisions[admission.id] ?? 0) + 1,
+        },
+      };
     }
 
     case "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT": {
@@ -689,6 +741,15 @@ export function reduceRecordedStayEvent(
       if (!SUPPORT_NOTIFICATION_OUTCOMES.includes(event.outcome))
         return reject(state, event, "RECORD_SUPPORT_NOTIFICATION outcome must be told or not applicable");
 
+      // Item 15 (D-134 item 2): the emergency department records only the advocacy notice on an
+      // arrival, never a discharge notice (Codex, #1609).
+      if (event.role === "ed" && (event.party !== "mhas" || event.occasion === "discharge"))
+        return reject(
+          state,
+          event,
+          "the emergency department records only the advocacy service notice, before the patient arrives",
+        );
+
       let subjectId: string;
       if (event.occasion === "discharge") {
         if (event.admissionId === undefined || event.movementId !== undefined)
@@ -707,7 +768,17 @@ export function reduceRecordedStayEvent(
           return reject(state, event, "an admission or transfer notification names the movement, not an admission");
         const movement = findMovement(state, event.movementId);
         if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-        const subject = movementSupportNotificationSubject(movement, state.referrals);
+        // Item 15 (D-134 item 2): the emergency department records only the advocacy notice, and
+        // only before arrival, from the arrival checklist. Everything else stays with the ward.
+        const beforeArrival =
+          event.role === "ed" ? movementSupportNotificationBeforeArrival(movement, state.referrals) : undefined;
+        if (event.role === "ed" && (event.party !== "mhas" || !beforeArrival))
+          return reject(
+            state,
+            event,
+            "the emergency department records only the advocacy service notice, before the patient arrives",
+          );
+        const subject = beforeArrival ?? movementSupportNotificationSubject(movement, state.referrals);
         if (!subject)
           return reject(state, event, `movement ${movement.id} is not a completed arrival of an involuntary patient`);
         if (subject.occasion !== event.occasion)

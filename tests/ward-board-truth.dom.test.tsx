@@ -48,7 +48,7 @@ function renderBoard(unitId: string) {
 describe("the bed board says what the reducer actually did", () => {
   it("D12: after They have left, the message matches the reducer's outcome, refusal or success", () => {
     renderBoard(unitWithDueDischarge());
-    const button = screen.getAllByRole("button", { name: "They have left" })[0];
+    const button = screen.getAllByRole("button", { name: /^They have left(, |$)/ })[0];
     expect(button).toBeDefined();
     const before = probeRef.current!.rejections.length;
 

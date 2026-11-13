@@ -4,7 +4,7 @@
 import { describe, expect, it } from "vitest";
 
 import { defaultHandoverShift, handoverAt } from "@/components/ward-management/handover/handover-model";
-import { computeShiftProgress } from "@/components/ward-management/shell-next/next-rail-body";
+import { computeShiftProgress } from "@/components/ward-management/shell/ward-rail-helpers";
 import { currentShift, shiftAtMinute } from "@/components/ward-management/ward-board-time-features";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 

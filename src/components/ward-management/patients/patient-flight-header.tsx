@@ -175,7 +175,9 @@ export function PatientFlightHeader({
         bar={
           <div className={styles.v6HeroBar}>
             {isPhone ? null : idLine}
-            {figures ? (
+            {/* Redesign (12 Nov 2026): on tablet and desktop the safety facts are always the compact
+                strip at the left of the band, never a box stretched across it. */}
+            {figures || (glance && !isPhone) ? (
               <div className={styles.ptGrid}>
                 {glance}
                 {figures}

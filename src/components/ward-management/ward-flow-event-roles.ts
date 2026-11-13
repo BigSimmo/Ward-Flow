@@ -101,6 +101,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // Owner Answer 18, second round, 2026-09-17: the ward's own answer to what is currently
   // limiting its intake, same role as CONFIRM_CAPACITY above.
   RECORD_WARD_INTAKE_CONSTRAINTS: ["ward", "coordinator"],
+  // Feature item 13: tonight's intake hours, the ward for itself (reducer checks) or the coordinator.
+  SET_INTAKE_WINDOW: ["ward", "coordinator"],
   RECORD_ESCALATION: ["coordinator"],
   ADVANCE_CLOCK: ["demo"],
   RESET_SCENARIO: ["demo"],
@@ -194,6 +196,10 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   RELEASE_DIVERTED_BED: ["coordinator", "ward", "ed"],
   REFER_TO_COMMUNITY_TEAM: ["ed", "coordinator"],
   RECORD_LEFT_DEPARTMENT: ["ed", "coordinator"],
+  // Item 9 (10 Nov 2026): the department holding the patient types its crew times; the coordinator too.
+  RECORD_CREW_TIMES: ["ed", "coordinator"],
+  // D-141 (11 Nov 2026): the same department marks who brought the person, Police or Ambulance.
+  RECORD_ARRIVAL_MODE: ["ed", "coordinator"],
   // D-80: the site's bed manager may move, block and prepare a release for its own wards too.
   // Chasing releases is its main job.
   FLAG_BED_RELEASE: ["ward", "bed_manager", "coordinator"],
@@ -218,6 +224,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // know that somebody walked out of a building, and a coordinator recording a discharge it
   // cannot observe is the shape this project refuses everywhere else.
   RECORD_LEAVING: ["ward", "coordinator"],
+  // Item 18: whoever may record the departure may record the collection that ends the wait.
+  MARK_TRANSPORT_COLLECTED: ["ward", "coordinator"],
   // The ward that holds the bed, and nobody else. A ward is the only party that observes one of
   // its own occupants leaving the building for an emergency department and coming back, and it is
   // the party still holding the bed while they are gone. The coordinator is excluded on exactly
@@ -537,6 +545,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   RECORD_WARD_DIAGNOSIS: ["ward", "coordinator"],
   // Feature 14 (Josh, 9 Nov 2026): the ward or coordinator ticks a weekend discharge as reviewed.
   MARK_WEEKEND_DISCHARGE_REVIEWED: ["ward", "coordinator"],
+  // Item 4 (11 Nov 2026): the ward or the coordinator records when the Chief Psychiatrist was notified.
+  RECORD_CHIEF_PSYCHIATRIST_NOTIFIED: ["ward", "coordinator"],
   SET_DISCHARGE_BARRIER: ["ward", "coordinator"],
   // Item 5 (Josh, 9 Nov 2026): the same roles that record a discharge hold-up.
   SET_CLINICALLY_READY: ["ward", "coordinator"],
@@ -560,6 +570,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // Psychiatry review tracker and ward wait list (Josh, 9 Nov 2026).
   REQUEST_PSYCH_REVIEW: ["ed", "coordinator"],
   RECORD_PSYCH_REVIEW_SEEN: ["ed", "coordinator"],
+  // Escalation calls (item 3, D-133): the ED and the coordinator record who they called and what happened.
+  RECORD_ESCALATION_CALL: ["ed", "coordinator"],
   MARK_WARD_READY_FOR_NEXT: ["ward", "coordinator"],
   RAISE_EXPECT_FLAG: ["ward", "coordinator", "ed", "community"],
   FLAG_LEGAL_MISMATCH: ["ward", "coordinator"],
@@ -590,6 +602,24 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // Not the executive, which changes nothing (D-80).
   REQUEST_WARD_STAFF: ["ward", "coordinator", "bed_manager"],
   CLOSE_WARD_STAFF_REQUEST: ["ward", "coordinator", "bed_manager"],
+  // Batch 4 item 20 (Josh's plan, 10 Nov 2026): a feature switched off at one site, admins only: the
+  // statewide coordinator and, by D-142 (Josh, 11 Nov 2026, amending D-80 for this one action), the
+  // statewide access admin, which sends it under this coordinator role (`mayChangeSiteFeatures`). The
+  // shared server refuses every other desk, a service coordinator too (`siteFeatureSwitchRefusal`).
+  SET_SITE_FEATURE_SWITCH: ["coordinator"],
+  // Batch 4 item 24: the desks that open the downtime pack record when they print it or save a PDF.
+  RECORD_DOWNTIME_PACK_PRINTED: ["coordinator", "bed_manager", "ward", "ed"],
+  // Batch 4 item 25: a coordinator records the outage window, typed. Not the ward, which confirms.
+  RECORD_OUTAGE_WINDOW: ["coordinator"],
+  // Batch 3 item 21 (D-136): a desk that can own an open item (a referral, a bed meeting chase or a
+  // carer callback) hands it on, and the receiving desk accepts it. The reducer lets only the owner
+  // hand an item over and only the named desk accept it; a ward names its own ward.
+  HAND_OVER_ITEM: ["coordinator", "ward", "ed", "community"],
+  ACCEPT_HANDED_ITEM: ["coordinator", "ward", "ed", "community"],
+  // Batch 3 item 23: the ward or the coordinator records that a carer wants a call back, and ticks it
+  // off once made. A ward only for its own patients (reducer). No carer name or number is held.
+  RECORD_CARER_CALLBACK: ["ward", "coordinator"],
+  MARK_CARER_CALLBACK_MADE: ["ward", "coordinator"],
   // Contacting a team is this record. The team that made the call, or the coordinator logging it.
   // Decision 43 (Josh, 31 Oct 2026): the ED no longer holds it. It was unused: the only place to
   // record a contact is the community team page, which an ED desk cannot open.
@@ -616,7 +646,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   CONVERT_PLANNED_ADMISSION: ["ward", "coordinator"],
   // Advisory carer/PSP/MHAS checklist (9 Oct 2026): recorded where the move is completed — the
   // ward (arrivals, discharges board) or the coordinator (movements).
-  RECORD_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
+  // Item 15 (D-134 item 2): ED records only the advocacy notice before arrival (reducer-checked).
+  RECORD_SUPPORT_NOTIFICATION: ["ward", "coordinator", "ed"],
   SEND_RELEASE_SUPPORT_NOTICE: ["ward", "coordinator"],
   // Closing-the-loop package B (24 Oct 2026): discharge logistics, recorded by the ward or the coordinator.
   RECORD_DISCHARGE_DEPENDENCY: ["ward", "coordinator"],

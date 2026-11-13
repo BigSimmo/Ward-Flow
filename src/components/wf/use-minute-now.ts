@@ -11,15 +11,23 @@ export function useMinuteNow({ fast = false, paused = false }: { fast?: boolean;
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (paused) return;
-    let timer: ReturnType<typeof setTimeout>;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     const tick = () => {
+      clearTimeout(timer);
+      timer = undefined;
+      // No ticks (and no re-renders) while the tab is hidden; showing it again refreshes at once.
+      if (document.visibilityState !== "visible") return;
       const t = Date.now();
       setNow(t);
       timer = setTimeout(tick, fast ? 1000 - (t % 1000) : 60_000 - (t % 60_000));
     };
     // Refresh straight away so Resume never shows the frozen time until the next boundary.
     tick();
-    return () => clearTimeout(timer);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", tick);
+    };
   }, [fast, paused]);
   return now;
 }

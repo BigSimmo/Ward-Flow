@@ -755,10 +755,29 @@ export type Admission = {
     readonly at: Instant;
     readonly by: WardFlowRole;
   }>;
+  /**
+   * Item 4 (Josh, 11 Nov 2026): when the Chief Psychiatrist was notified that this person, under 18,
+   * is on an adult ward (`RECORD_CHIEF_PSYCHIATRIST_NOTIFIED`). `notifiedAt` is the time a person
+   * typed, never pre-filled (D-93). Records what a person says happened; nothing here decides
+   * whether a notice is required, computes a deadline or blocks anything. Absent until recorded.
+   */
+  chiefPsychiatristNotice?: {
+    readonly notifiedAt: Instant;
+    readonly at: Instant;
+    readonly by: WardFlowRole;
+  };
   /** Where this person went, once they have gone. `null` until then. */
   leavingDestination: LeavingDestination | null;
   /** When they went. `null` until then. */
   leftAt: Instant | null;
+  /**
+   * Item 18, "Left the ward, waiting for transport": set when the ward records that a discharged
+   * person has left the ward but is still on site waiting for transport home. The departure itself
+   * already freed the bed (`departAdmission`), so Ready counts it at once; this only keeps the person
+   * on the ward's "Waiting for transport" list until "Collected" clears it. A time and a role, never
+   * a name or typed text. Absent on every other stay and on older saves.
+   */
+  waitingForTransport?: { readonly since: Instant; readonly by: WardFlowRole };
   /**
    * WHETHER ANYBODY ARRANGED FOLLOW-UP, AND WHETHER ANYBODY SAID.
    *
@@ -852,8 +871,10 @@ const ADMISSION_FIELD_PRESENCE: Record<keyof Admission, true> = {
   stayBlockClearances: true,
   stayBlockRecords: true,
   weekendDischargeReviews: true,
+  chiefPsychiatristNotice: true,
   leavingDestination: true,
   leftAt: true,
+  waitingForTransport: true,
   followUp: true,
   careJourney: true,
   dischargeChecks: true,

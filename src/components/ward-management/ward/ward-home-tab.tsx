@@ -67,6 +67,7 @@ import { originName } from "@/components/ward-management/ward-movement-origin";
 import { declineTargetLeftNote } from "./decline-target-left";
 import { useBusiestFlowTabDefault } from "./ward-flow-busiest";
 import { WardPhoneRoundList } from "./ward-phone-round-list";
+import { NOT_CONFIRMED_SINCE_OUTAGE, OutageMeta, useWardOutageCatchUp } from "./ward-outage-tags";
 import {
   canSubmitDecline,
   DECLINE_SUBMIT_UNAVAILABLE_REASON,
@@ -457,29 +458,33 @@ export function WardHomeTab({
     const days = typeof bed.stayDays === "number" ? `${bed.stayDays}d` : "";
     // Audit A1-3: every pulled bed shows its hold time, from the one bed-hold rule.
     const hold = bed.status === "incoming" ? (bed.bedHold ?? null) : null;
-    const note = hold
-      ? hold.label
-      : delivered
-        ? `Arrived at ward ${formatInstantWithDay(bed.deliveredAt as Instant, now)}, confirm arrival`
-        : awayAtEd
-          ? `Away at an ED ${bed.awayAtEdHours}h`
-          : bed.blockReason
-            ? `Held up, ${String(bed.blockReason)}`
-            : bed.pastDate
-              ? "Past expected date"
-              : bed.dischargeBarrier
-                ? String(bed.dischargeBarrier)
-                : leaving
-                  ? bed.dischargeConfirmed
-                    ? "Discharge confirmed"
-                    : "Expected out today"
-                  : bed.isSpecialling && bed.observation
-                    ? observationSummary(bed.observation)
-                    : bed.criteriaLedChip && bed.status === "occupied"
-                      ? bed.criteriaLedChip.label
-                      : free
-                        ? "Ready"
-                        : stateWord;
+    // Item 6: a closed bed with a review time says it on the tile ("Review 14:00", "Review overdue").
+    const note =
+      bed.status === "closed" && bed.closedReview
+        ? bed.closedReview
+        : hold
+          ? hold.label
+          : delivered
+            ? `Arrived at ward ${formatInstantWithDay(bed.deliveredAt as Instant, now)}, confirm arrival`
+            : awayAtEd
+              ? `Away at an ED ${bed.awayAtEdHours}h`
+              : bed.blockReason
+                ? `Held up, ${String(bed.blockReason)}`
+                : bed.pastDate
+                  ? "Past expected date"
+                  : bed.dischargeBarrier
+                    ? String(bed.dischargeBarrier)
+                    : leaving
+                      ? bed.dischargeConfirmed
+                        ? "Discharge confirmed"
+                        : "Expected out today"
+                      : bed.isSpecialling && bed.observation
+                        ? observationSummary(bed.observation)
+                        : bed.criteriaLedChip && bed.status === "occupied"
+                          ? bed.criteriaLedChip.label
+                          : free
+                            ? "Ready"
+                            : stateWord;
     // U1 (site review, 12 Oct 2026): the tile's status word is short so it never truncates
     // ("Discharge confir…", "Held up, Awaiti…"). The full note stays in the accessible name, the
     // list view and the bed panel.
@@ -547,6 +552,8 @@ export function WardHomeTab({
       accessibleName,
     };
   });
+  // Batch 4 item 25 (D-142): each bed says so in full until the ward confirms after a recorded outage.
+  const outageTags = useWardOutageCatchUp(unit, now)?.caughtUp === false;
   const [innerBedFilter, setInnerBedFilter] = useState<WardBedFilter>("all");
   const bedFilter = bedFilterProp ?? innerBedFilter;
   const setBedFilter = onBedFilterChange ?? setInnerBedFilter;
@@ -617,6 +624,7 @@ export function WardHomeTab({
       walkFrom={walkFrom}
       isLit={isLit}
       rowLabel={walkRowLabel}
+      outage={outageTags}
     />
   );
 
@@ -1747,7 +1755,7 @@ export function WardHomeTab({
               className={styles.bedsHead}
               icon={BedSingle}
               title="Every bed"
-              meta={liveMark}
+              meta={<OutageMeta on={outageTags}>{liveMark}</OutageMeta>}
               action={
                 <span className={styles.headTools}>
                   <WardPlaceOrMove variant="head" waiting={boardWaitingCount} onOpen={onOpenBoard} />
@@ -1855,7 +1863,7 @@ export function WardHomeTab({
                     data-lit={highlighting && isLit(row) ? "true" : undefined}
                     data-dim={isLit(row) ? undefined : "true"}
                     aria-haspopup="dialog"
-                    aria-label={row.tileName}
+                    aria-label={outageTags ? `${row.tileName}, ${NOT_CONFIRMED_SINCE_OUTAGE}` : row.tileName}
                     title={row.accessibleName}
                     onClick={() => {
                       onSelectBed?.(Number(row.bed.bedNumber));
@@ -1872,6 +1880,7 @@ export function WardHomeTab({
                       label={row.name}
                       note={row.shownNote}
                       days={row.days}
+                      outage={outageTags}
                     />
                   </button>
                 </li>

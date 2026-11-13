@@ -5,9 +5,9 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardAccessSnapshot } from "@/components/ward-management/shell/ward-access-store";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { Button, Card, Sheet, StatusGlyph } from "@/components/wf";
+import { Button, Card, Sheet, SrOnly, StatusGlyph } from "@/components/wf";
 
-import { sinceBannerText } from "./home-since-text";
+import { SINCE_BANNER_MAX_PARTS, sinceBannerCounts, sinceBannerLeadParts, sinceBannerText } from "./home-since-text";
 import styles from "./home-pinned.module.css";
 import type { ChangesSinceLastLook } from "./since-last-look";
 import { SinceLastLookSheetBody, sinceLastLookCount, useSinceLastLook } from "./since-last-look-panel";
@@ -44,8 +44,11 @@ export function HomeSinceBanner({ now }: { now: Instant }) {
   const open = review !== null;
   // While the sheet is open the line keeps the captured words, so the button the sheet returns to stays put.
   const shown = open ? review : changes;
-  const text =
-    sinceLastLookCount(shown) > 0 ? sinceBannerText(shown, formatInstantWithDay(shown.since, now)) : undefined;
+  const sinceLabel = formatInstantWithDay(shown.since, now);
+  const text = sinceLastLookCount(shown) > 0 ? sinceBannerText(shown, sinceLabel) : undefined;
+  const counts = text ? sinceBannerCounts(shown) : [];
+  const named = counts.slice(0, SINCE_BANNER_MAX_PARTS);
+  const lead = sinceBannerLeadParts(shown, sinceLabel);
 
   return (
     // With nothing new the slot leaves the column's flow but stays focusable, so focus has a place
@@ -60,7 +63,38 @@ export function HomeSinceBanner({ now }: { now: Instant }) {
       {text ? (
         <Card as="div" className={styles.banner} data-testid="home-since-banner">
           <StatusGlyph tone="info" size={10} className={styles.bannerGlyph} />
-          <p className={styles.bannerText}>{text}</p>
+          {/* One line: the lead, then as many counts as the line's width holds (a container query
+              hides the 2nd and 3rd on narrow lines) and "+N" for the rest. Screen readers get the
+              whole sentence instead. */}
+          <p className={styles.bannerText}>
+            <SrOnly>{text}</SrOnly>
+            <span className={styles.bannerLine} aria-hidden="true" data-testid="home-since-line">
+              <span className={styles.bannerLead}>
+                {lead.lead.startsWith("Since ") ? (
+                  <>
+                    Since <span className={styles.bannerFigure}>{lead.lead.slice("Since ".length)}</span>
+                  </>
+                ) : (
+                  lead.lead
+                )}
+                {lead.day ? <span className={styles.bannerLeadDay}>{lead.day}</span> : null}
+              </span>
+              {named.map((entry, index) => (
+                <span key={entry.label} className={styles.bannerPart} data-rank={index + 1}>
+                  <span className={styles.bannerCount}>{entry.count}</span>
+                  <span className={styles.bannerLabel}>{entry.label}</span>
+                </span>
+              ))}
+              {named.map((entry, index) => {
+                const rest = counts.length - (index + 1);
+                return rest > 0 ? (
+                  <span key={`more-${entry.label}`} className={styles.bannerMore} data-shown={index + 1}>
+                    <span className={styles.bannerFigure}>+{rest}</span> more
+                  </span>
+                ) : null;
+              })}
+            </span>
+          </p>
           <Button
             ref={trigger}
             className={styles.bannerAction}

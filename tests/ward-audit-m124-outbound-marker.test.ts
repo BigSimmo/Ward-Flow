@@ -50,7 +50,7 @@ const SOURCES = sourceFiles(path.join(ROOT, "src"));
 
 describe("M124 downloads carry the marker", () => {
   it("every CSV download passes its provenance block, which opens with the synthetic line", () => {
-    const csv = readFileSync(path.join(ROOT, "src/components/ward-management/statistics/statistics-csv.ts"), "utf8");
+    const csv = readFileSync(path.join(ROOT, "src/components/ward-management/ward-csv.ts"), "utf8");
     expect(csv).toContain('["Data", "Synthetic, not clinical records"]');
     const missing: string[] = [];
     let seen = 0;
@@ -81,7 +81,7 @@ describe("M124 downloads carry the marker", () => {
       ["src/components/ward-management/tools/ward-demo-panel.tsx", "scenario file: its JSON carries the notice"],
       ["src/components/ward-redesign/pop-demo/demo-panel.tsx", "scenario file: its JSON carries the notice"],
       // The CSV helper itself: its callers name every file (checked above).
-      ["src/components/ward-management/statistics/statistics-csv.ts", "the CSV helper"],
+      ["src/components/ward-management/ward-csv.ts", "the CSV helper"],
     ]);
     const unmarked: string[] = [];
     for (const file of SOURCES) {
@@ -176,12 +176,15 @@ describe("M124 word read-through on outbound builders (Manual, reviewed hits onl
   // A new "cleared", "safe to", "should", "approved", "endorsed" or "recommended" in a quoted
   // string in these files fails until a person reads it and adds it here with a reason.
   const files = [
+    "src/components/ward-management/ward-csv.ts",
     "src/components/ward-management/statistics/statistics-csv.ts",
     "src/components/ward-management/ed/ed-export.ts",
     "src/components/ward-management/discharges/discharge-export.ts",
     "src/components/ward-management/referrals/referral-export.ts",
     "src/components/ward-management/search/census-export.ts",
     "src/components/ward-management/delays/delays-export.ts",
+    "src/components/ward-management/legal-forms/legal-forms-export.ts",
+    "src/components/ward-management/ward-movements-export.ts",
     "src/components/ward-management/reports/patient-chronology.ts",
     "src/components/ward-management/reports/weekly-report.ts",
     "src/components/ward-management/ward-clipboard.ts",

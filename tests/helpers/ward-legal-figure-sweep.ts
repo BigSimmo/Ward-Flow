@@ -26,6 +26,7 @@ import { OBSERVATION_LEVELS, observationAt } from "@/components/ward-management/
 import { activeSnooze, SNOOZE_REASON_IDS } from "@/components/ward-management/ward-inbox-snooze";
 import { referralState } from "../../src/components/ward-management/ward-referrals";
 import { afterAll, expect } from "vitest";
+import type { AuditDecision } from "../../src/components/ward-management/ward-audit";
 import { createPreparationProfile } from "../../scripts/ward-flow/test-preparation-profile.mjs";
 
 import {
@@ -53,6 +54,7 @@ import {
   wardFlowReducer,
   bedNumberRefusal,
   heldBedRefusal,
+  reduceClinicalEvent,
   type WardFlowState,
 } from "../../src/components/ward-management/ward-flow-reducer";
 import { SELECTABLE_LEGAL_FORMS } from "../../src/components/ward-management/ward-legal-forms";
@@ -616,6 +618,15 @@ function candidatesForMovements(
         actingUnitId: admission.unitId,
         weekendStart: now,
       }));
+    case "RECORD_CHIEF_PSYCHIATRIST_NOTIFIED":
+      return state.admissions.map((admission) => ({
+        type,
+        role,
+        now,
+        admissionId: admission.id,
+        actingUnitId: admission.unitId,
+        notifiedAt: now,
+      }));
     case "SET_DISCHARGE_BARRIER":
       return state.admissions.map((admission) => ({
         type,
@@ -784,6 +795,16 @@ function candidatesForMovements(
       return movementIds.flatMap((movementId) =>
         (["registrar", "consultant"] as const).map((grade) => ({ type, role, now, movementId, grade })),
       );
+    case "RECORD_ESCALATION_CALL":
+      return movementIds.map((movementId) => ({
+        type,
+        role,
+        now,
+        movementId,
+        step: 2,
+        roleCalled: "site_bed_manager",
+        outcome: "no_answer",
+      }));
     case "RAISE_EXPECT_FLAG":
       return movementIds.map((movementId) => ({ type, role, now, movementId, kind: "voluntary_48h" }));
     case "FLAG_LEGAL_MISMATCH":
@@ -928,6 +949,18 @@ function candidatesForMovements(
           actingUnitId: unitId,
           value,
           expectedRevision: state.units.find((unit) => unit.id === unitId)!.allocatable.revision ?? 0,
+        })),
+      );
+    // Feature item 13: tonight's intake hours, set from the next hour then cleared. Information only.
+    case "SET_INTAKE_WINDOW":
+      return unitIds.flatMap((unitId) =>
+        [{ from: now + 60, to: now + 180 }, null].map((intake) => ({
+          type,
+          role,
+          now,
+          unitId,
+          actingUnitId: unitId,
+          intake,
         })),
       );
     case "RECORD_WARD_INTAKE_CONSTRAINTS":
@@ -1373,6 +1406,17 @@ function candidatesForMovements(
       }));
     case "RECORD_LEFT_DEPARTMENT":
       return movementIds.map((movementId) => ({ type, role, now, movementId }));
+    // Item 9 (10 Nov 2026): a police or ambulance crew's typed arrival time. It writes no legal
+    // figure; unscoped, so any police or ambulance arrival in the swept state may take it.
+    case "RECORD_CREW_TIMES":
+      return state.movements
+        .filter((m) => m.arrivalMode === "police" || m.arrivalMode === "ambulance")
+        .map((m) => ({ type, role, now, movementId: m.id, crewArrivedAt: now - 30 }));
+    // D-141 (11 Nov 2026): marks an ED arrival brought by police. It writes no legal figure.
+    case "RECORD_ARRIVAL_MODE":
+      return state.movements
+        .filter((m) => m.originEdId !== undefined)
+        .map((m) => ({ type, role, now, movementId: m.id, arrivalMode: "police" as const }));
     case "WITHDRAW_WARD_REQUEST":
       return state.movements.flatMap((m) =>
         (m.referredUnitIds ?? []).map((unitId) => ({
@@ -1425,6 +1469,8 @@ function candidatesForMovements(
       return movementIds.map((movementId) => ({ type, role, now, movementId, blocker: "Awaiting a bed" }));
     case "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT":
     case "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT":
+    // Item 18: Collected names the stay and its ward, nothing else.
+    case "MARK_TRANSPORT_COLLECTED":
       // One candidate per admission already in `state.admissions`, `actingUnitId` mirroring the
       // admission's own unit — the same discipline `RECORD_LEAVING` above uses, and for the same
       // reason: a mismatched acting unit is refused before the reducer body runs, and a refused
@@ -1815,6 +1861,44 @@ function candidatesForMovements(
         actingUnitId: record.unitId,
         outcome: "withdrawn",
       }));
+    // Batch 4 (10 Nov 2026): settings and records with no legal figure.
+    case "SET_SITE_FEATURE_SWITCH":
+      return [{ type, role, now, siteCode: state.units[0]!.siteCode, feature: "help-ask", off: true }];
+    case "RECORD_DOWNTIME_PACK_PRINTED":
+      return [{ type, role, now, unitIds: state.units.slice(0, 2).map((unit) => unit.id) }];
+    case "RECORD_OUTAGE_WINDOW":
+      return [{ type, role, now, from: now - 120, to: now - 10 }];
+    // Batch 3 items 21 and 23: hand-overs and carer call backs carry ids, times and desks only.
+    case "HAND_OVER_ITEM":
+      return (state.carerCallbacks ?? [])
+        .filter((record) => record.madeAt === undefined && record.owner.role === "coordinator")
+        .map((record) => ({ type, role, now, item: { kind: "callback", callbackId: record.id }, toRole: "ward" }));
+    case "ACCEPT_HANDED_ITEM":
+      return (state.handedItems ?? [])
+        .filter((record) => record.acceptedAt === undefined)
+        .map((record) => ({
+          type,
+          role: record.to.role,
+          now,
+          ...(record.to.role === "ward" ? { actingUnitId: record.to.unitId } : {}),
+          handedItemId: record.id,
+        }));
+    case "RECORD_CARER_CALLBACK":
+      return state.admissions
+        .filter((admission) => admission.state !== "departed")
+        .slice(0, 2)
+        .map((admission) => ({
+          type,
+          role,
+          now,
+          admissionId: admission.id,
+          actingUnitId: admission.unitId,
+          bestAfter: Math.floor(now) + 60,
+        }));
+    case "MARK_CARER_CALLBACK_MADE":
+      return (state.carerCallbacks ?? [])
+        .filter((record) => record.madeAt === undefined)
+        .map((record) => ({ type, role, now, callbackId: record.id, actingUnitId: record.unitId }));
     case "RECORD_DIRECTORY_CHECK":
       return buildOnCallDirectory()
         .slice(0, 3)
@@ -2245,6 +2329,62 @@ export function* iterateCandidateEvents(
 }
 
 /**
+ * Events `wardFlowReducer` does not send straight through `reduceClinicalEvent`: protected record
+ * events, the two world reseeds and the one-tap raise-and-pull. They always take the full reducer.
+ */
+const FULL_REDUCER_ONLY = new Set<WardFlowEvent["type"]>([
+  "OPEN_DISCHARGE_RECORD",
+  "REVIEW_AUDIT_EVENT",
+  "UNDO_AUDIT_REVIEW",
+  "RECORD_PATIENT_DISCHARGE",
+  "RECORD_ADMISSION_FOLLOW_UP",
+  "RECORD_ADMISSION_CARE",
+  "RESET_SCENARIO",
+  "SET_SCENARIO",
+]);
+
+/** How often a quick refusal is checked again against the whole reducer. */
+const CLINICAL_REFUSAL_CHECK_EVERY = 64;
+let clinicalRefusalsSinceCheck = 0;
+/** Event types whose first quick refusal has been checked against the whole reducer. */
+const clinicalRefusalTypesChecked = new Set<WardFlowEvent["type"]>();
+
+/**
+ * Sweep cost, 12 Nov 2026: about 99.8% of the sweep's ten million reducer calls per pass are
+ * refused, and most of each refused call went on work around the verdict (the denied audit entry,
+ * the step-undo diff) that the sweep throws away with the refused state.
+ *
+ * `wardFlowReducer` takes its verdict from `reduceClinicalEvent` for every event outside
+ * `FULL_REDUCER_ONLY`; the wrappers after it only add undo records, unit revisions and the audit
+ * entry, and never drop a rejection. So when `reduceClinicalEvent` alone records a rejection, the
+ * full reducer refuses the same event, and the sweep can skip it without changing which candidate
+ * is accepted first. An accepted verdict is never trusted from here: the full reducer still runs
+ * and decides, and every accepted state is still checked exactly as before.
+ *
+ * Tripwire: the first quick refusal of each event type, and every CLINICAL_REFUSAL_CHECK_EVERY-th
+ * after that, is run through the whole reducer too, and the sweep fails if the two ever disagree.
+ * A reducer change that broke this equivalence (a new event routed around `reduceClinicalEvent`,
+ * say) therefore fails the sweep instead of hiding.
+ */
+function clinicalStepRefuses(state: WardFlowState, event: WardFlowEvent): boolean {
+  if (FULL_REDUCER_ONLY.has(event.type)) return false;
+  if (event.type === "RAISE_REFERRAL" && event.pullBed === true) return false;
+  const decision: AuditDecision = { outcome: "denied", reasonCode: "transition" };
+  const clinical = preparationProfile.measure("clinicalStep", () => reduceClinicalEvent(state, event, decision));
+  if (clinical.rejections.length === state.rejections.length) return false;
+  clinicalRefusalsSinceCheck += 1;
+  if (clinicalRefusalsSinceCheck >= CLINICAL_REFUSAL_CHECK_EVERY || !clinicalRefusalTypesChecked.has(event.type)) {
+    clinicalRefusalsSinceCheck = 0;
+    clinicalRefusalTypesChecked.add(event.type);
+    preparationProfile.count("clinicalRefusalsRechecked");
+    const full = wardFlowReducer(state, event);
+    if (full.rejections.length === state.rejections.length)
+      throw new Error(`reduceClinicalEvent refused ${event.type} but wardFlowReducer accepted it`);
+  }
+  return true;
+}
+
+/**
  * Applies the first candidate of this type that the reducer ACCEPTS, optionally restricted to
  * candidates acting on a movement whose legal form carries `code`.
  *
@@ -2265,6 +2405,11 @@ export function applyFirstAccepted(
 ): { applied: WardFlowState; event: WardFlowEvent } | undefined {
   for (const event of iterateCandidateEvents(type, state, now, code, supplyDueAt)) {
     preparationProfile.count("reducerAttempts");
+    if (clinicalStepRefuses(state, event)) {
+      preparationProfile.count("refusedTransitions");
+      preparationProfile.count("refusedByClinicalStep");
+      continue;
+    }
     const next = preparationProfile.measure("reducer", () => wardFlowReducer(state, event));
     if (next.rejections.length === state.rejections.length) {
       preparationProfile.count("acceptedTransitions");

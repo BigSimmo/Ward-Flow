@@ -9,7 +9,9 @@
  */
 
 import { useState } from "react";
-import { Button, ShowMoreRow, StatusGlyph, type WfTone } from "@/components/wf";
+import { Route } from "lucide-react";
+
+import { Button, Card, CardHead, ShowMoreRow, StatusGlyph, type WfTone } from "@/components/wf";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { calendarDateOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -105,18 +107,21 @@ export function PatientJourneyTimeline({
   const long = events.length > LONG_LIST;
   const shown = expanded || !long ? events : events.slice(0, FIRST_ROWS);
   return (
-    <section className={styles.journey} aria-labelledby="pn-journey-head">
-      <div className={styles.journeyHead}>
-        <h2 id="pn-journey-head" className={styles.journeyTitle}>
-          Movement so far
-        </h2>
-        <span className={styles.journeyMeta}>
-          {events.length} recorded {events.length === 1 ? "event" : "events"}, newest first
-        </span>
-        <Button size="sm" variant="ghost" onClick={onOpenHistory} className={styles.journeyLink}>
-          Full history
-        </Button>
-      </div>
+    <Card className={styles.journey} aria-labelledby="pn-journey-head">
+      {/* Version 2 (12 Nov 2026): the kit card head, so this card's title, icon and rule line up with
+          every other card on Now. */}
+      <CardHead
+        level={2}
+        id="pn-journey-head"
+        icon={Route}
+        title="Movement so far"
+        meta={`${events.length} recorded ${events.length === 1 ? "event" : "events"}, newest first`}
+        action={
+          <Button size="sm" variant="ghost" onClick={onOpenHistory}>
+            Full history
+          </Button>
+        }
+      />
       <ol className={styles.timeline} data-testid="pn-journey-timeline">
         {shown.map((event, index) => (
           <li key={`${event.at}-${index}`} className={styles.timelineItem}>
@@ -135,6 +140,6 @@ export function PatientJourneyTimeline({
           {expanded ? "Show fewer" : `Show ${events.length - FIRST_ROWS} more`}
         </ShowMoreRow>
       ) : null}
-    </section>
+    </Card>
   );
 }

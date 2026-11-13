@@ -48,6 +48,8 @@ const DEFINITION_FILES = new Set([
   `${WARD_ROOT}/ward-flow-bed-events.ts`,
   `${WARD_ROOT}/ward-flow-referral-followup-events.ts`,
   `${WARD_ROOT}/ward-flow-ward-closure-events.ts`,
+  // Feature item 13 (10 Nov 2026): SET_INTAKE_WINDOW's case, beside its helpers.
+  `${WARD_ROOT}/ward-flow-intake-window-events.ts`,
   `${WARD_ROOT}/ward-flow-bed-meeting-events.ts`,
   // 21 Oct 2026: declares SEND_RELEASE_SUPPORT_NOTICE and RECORD_ARRIVAL_CHECK beside their cases.
   `${WARD_ROOT}/ward-flow-release-notice-events.ts`,

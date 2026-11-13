@@ -165,7 +165,7 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
   it.each([6, 7])("lists all %i wards in scope, with no shortlist", (count) => {
     function MatchingWards() {
       const flow = useWardFlow();
-      const template = findBeds(flow.units, [], [], { ...DEFAULT_BED_FINDER_FILTERS, legalStatus: "voluntary" })[0]
+      const template = findBeds(flow.units, [], [], { ...DEFAULT_BED_FINDER_FILTERS, legalStatus: "voluntary" }, [])[0]
         ?.unit;
       if (!template) throw new Error("the fixture needs one matching adult ward");
       const units = Array.from({ length: count }, (_, index) => ({

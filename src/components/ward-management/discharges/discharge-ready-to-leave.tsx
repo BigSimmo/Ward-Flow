@@ -1,11 +1,12 @@
 "use client";
 
 import { Check } from "lucide-react";
-import { useId } from "react";
+import { useContext, useId } from "react";
 
 import { Frac, StatusGlyph, ToastView, cx, useIsPhone } from "@/components/wf";
 
-import { useOptionalWardFlowSelect } from "../ward-flow-provider";
+import { SharedSessionContext } from "../shell/ward-shared-session-context";
+
 import styles from "./discharge-ready-to-leave.module.css";
 
 /**
@@ -57,6 +58,7 @@ export function ReadyToLeave({
   onDismiss: () => void;
 }) {
   const headingId = useId();
+  const signedIn = useContext(SharedSessionContext) !== null;
   // v10 phone: a glyph list (green tick or open circle), not checkbox squares.
   const isPhone = useIsPhone();
   const sharedMode = useOptionalWardFlowSelect("shared")?.shared?.enabled === true;
@@ -65,7 +67,9 @@ export function ReadyToLeave({
     : READY_TO_LEAVE_ITEMS;
   const done = items.filter((item) => ticked.includes(item.id)).length;
   const changedLabel = lastChange ? items.find((item) => item.id === lastChange.itemId)?.label : undefined;
-  if (sharedMode) return null;
+  // Live audit item 7 (11 Nov 2026): the checklist and its ticks are invented for the demo, so the
+  // signed-in shared workspace does not show it until a real shared checklist exists.
+  if (signedIn || process.env.NEXT_PUBLIC_WARD_SHARED_ENABLED === "true") return null;
   return (
     <section className={styles.readyPanel} aria-labelledby={headingId} data-testid="ward-discharge-ready-to-leave">
       <header className={styles.head}>

@@ -138,6 +138,12 @@ const EXCLUSIONS: readonly Exclusion[] = [
 
 /** Rule 4 only: constants that are not limits. */
 const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegExp; name?: RegExp }> = [
+  {
+    id: "staff-request-clock-slack",
+    why: "How many minutes a staff request may lag the shift start it names before the save falls back to the current shift (D-145); clock slack for a form, never shown, not a limit.",
+    file: /^staffing\/staff-requests\.ts$/,
+    name: /^STAFF_REQUEST_SHIFT_TOLERANCE_MINUTES$/,
+  },
   { id: "seed-data", why: "Seed files build made-up records; their times are data, not limits.", file: /-seed\.ts$/ },
   {
     id: "chart-and-day-part",
@@ -157,6 +163,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     name: /^ROLE_ALERT_WINDOW_MINUTES$/,
   },
   {
+    id: "save-warning-pause",
+    why: "Live audit item 8 (11 Nov 2026): how long a save in flight shows the calm Saving… pill before the reload warning; screen timing, never shown, not a clinical limit.",
+    file: /^ward-shared-save-status\.tsx$/,
+    name: /^SAVE_WARNING_AFTER_MS$/,
+  },
+  {
     id: "typing-pause",
     why: "The referral draft's autosave pause (9 Oct 2026): how long typing rests before tab memory is updated; never shown, not a limit.",
     file: /^referrals\/referral-draft-cache\.ts$/,
@@ -173,6 +185,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     why: "How long a second tap after Accept presentation is ignored, so a double tap cannot confirm it (audit CS3-08); a UI pause, not a limit.",
     file: /^referrals\/use-referral-match-state\.tsx$/,
     name: /^ACCEPT_SECOND_TAP_GUARD_MS$/,
+  },
+  {
+    id: "home-cards-wait",
+    why: "How long Home holds its columns for its two early cards before showing anyway (item 13, 11 Nov 2026), so the page does not shift; a loading pause, never shown, not a limit.",
+    file: /^coordinator\/home-cards-settled\.ts$/,
+    name: /^HOME_CARDS_WAIT_MS$/,
   },
   {
     id: "recovery-verifier-lifetime",
@@ -281,6 +299,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     why: "Help account memory (#1410, 4 Nov 2026): the 1 second pause before a change is saved; save delay, not a clinical time limit.",
     file: /^help\/ward-help-account-memory\.tsx$/,
     name: /^SEND_AFTER_MS$/,
+  },
+  {
+    id: "leave-demo-pass-deadline",
+    why: "Live audit item 22 (11 Nov 2026): how long Leave the demo waits for the server to end the front door's pass before saying it could not end; network deadline, never shown, not a clinical limit.",
+    file: /^front-door\/front-door-pass-client\.ts$/,
+    name: /^END_PASS_DEADLINE_MS$/,
   },
 ];
 

@@ -1,12 +1,15 @@
 "use client";
 
 import { ReturnEarlyAlerts } from "@/components/ward-management/out-of-area/return-early-alerts";
+import { DiversionReturnReview } from "./diversion-return-review-lazy";
+import { HomeTeamHeadsUp } from "./home-team-heads-up-lazy";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { currentCareContactCompleted } from "../ward-care-journey";
 import type { DischargeOpenHandle } from "../ward-discharge-records";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";
 import { Segmented, useIsPhone, useOptionalToast } from "@/components/wf";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { useActionToast } from "@/components/ward-management/use-action-toast";
@@ -310,6 +313,10 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     "worldGeneration",
   );
   const liveReferrals = useCommunityScopedReferrals();
+  // Live audit item 6 (11 Nov 2026): the signed-in shared workspace (a shared build, or a signed-in
+  // session) never shows the Midland demo team.
+  const sharedWorkspace =
+    useContext(SharedSessionContext) !== null || process.env.NEXT_PUBLIC_WARD_SHARED_ENABLED === "true";
   const sentByAnyTeam = useCommunitySentReferrals();
   const now = useWardFlowClock();
   const raise = useWardRaise("community");
@@ -432,7 +439,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     generation: worldGeneration,
     shared,
     onAccepted: (source) => {
-      if (!shared?.enabled && MIDLAND_DEMO_TEAM.test(teamId)) recordMidlandContact("team");
+      if (!sharedWorkspace && MIDLAND_DEMO_TEAM.test(teamId)) recordMidlandContact("team");
       if (source === "modal") setActiveModalType((current) => (current === "contact" ? null : current));
       else setToastMessage("Team contact logged. This does not record patient or referral contact.");
     },
@@ -448,13 +455,36 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   const hasExplicitProps = Boolean(admissions || referrals);
   const isDemoMode = demonstration && !hasExplicitProps;
   // The live Midland page carries the locked mock-up's demo team (Q126, Q132: Midland only). Supplied
-  // records, and the older demonstration cohort, keep their own lists. The signed-in shared site
-  // shows the shared records instead: the Midland demo lives only in this browser (audit 6).
-  const midlandDemo = !hasExplicitProps && !demonstration && !shared?.enabled && MIDLAND_DEMO_TEAM.test(teamId);
+  // records, and the older demonstration cohort, keep their own lists. Live audit item 6 (11 Nov
+  // 2026): the signed-in shared workspace never shows the demo team, so its home lists the shared
+  // referrals and a contact is saved to the workspace, not kept in this browser.
+  const midlandDemo = !hasExplicitProps && !demonstration && !sharedWorkspace && MIDLAND_DEMO_TEAM.test(teamId);
   const midlandDecisions = useMidlandDecisions();
 
-  const { demoTeamReferrals, demoVisibleReferrals, demoVisibleInpatients, demoVisibleEgress, demoVisibleCaseload } =
-    useCommunityScreenDemoLists({ teamId, triageFilter, inpatientFilter, egressFilter, caseloadFilter });
+  const {
+    demoTeamReferrals,
+    demoVisibleReferrals,
+    demoVisibleInpatients,
+    demoVisibleEgress,
+    demoVisibleCaseload,
+    answerDemoReferral,
+    restoreDemoReferral,
+  } = useCommunityScreenDemoLists({ teamId, triageFilter, inpatientFilter, egressFilter, caseloadFilter });
+  // Review finding 3 (12 Nov 2026): a sample row's Accept or Decline takes it off the sample list,
+  // with Undo on the toast, as the real list's decision does. The sample list keeps nothing.
+  const answerSampleReferral = useCallback(
+    (referralId: string, title: string) => {
+      answerDemoReferral(referralId);
+      toast?.push({
+        tone: "success",
+        title,
+        body: "Sample referral only: taken off this list, nothing is saved.",
+        testId: "community-action-toast",
+        action: { label: "Undo", onAction: () => restoreDemoReferral(referralId) },
+      });
+    },
+    [answerDemoReferral, restoreDemoReferral, toast],
+  );
 
   const handleCompleteContact = useCallback((ptId: string) => {
     setSelectedPatientId(ptId);
@@ -1037,6 +1067,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     isDemoMode,
     demoTeamReferrals,
     demoVisibleReferrals,
+    answerSampleReferral,
     demoVisibleInpatients,
     demoVisibleEgress,
     demoVisibleCaseload,
@@ -1225,6 +1256,10 @@ export function CommunityScreen(props: CommunityScreenProps) {
         <CommunityScreenSwitchDrawer view={view} />
         {/* Out of area "Flag early" (3 Nov 2026): the home team hears it in the app. */}
         <ReturnEarlyAlerts desk={{ role: "community" }} now={view.now} />
+        {/* Home team heads-up (item 46, D-133): open-episode patients now in an ED. */}
+        <HomeTeamHeadsUp team={view.team} now={view.now} />
+        {/* Batch 3 item 28 (D-136): only the team that took the person sees this review prompt. */}
+        <DiversionReturnReview team={view.team} now={view.now} />
 
         {isPhone ? null : (
           <div className={`${styles.contentWorkspace} ${v6.sections}`} data-community-section={teamSection}>

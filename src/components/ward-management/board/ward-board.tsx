@@ -13,7 +13,14 @@ import {
   LEAVING_DESTINATIONS,
   type LeavingDestination,
 } from "@/components/ward-management/ward-admissions";
-import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
+import {
+  bedsPendingPreparation,
+  capacityBreakdown,
+  capacityBreakdownLists,
+} from "@/components/ward-management/ward-bed-availability";
+import type { BreakdownRow } from "@/components/ward-management/count-breakdown-model";
+import { leaveStays, releaseStays, stayBreakdownRows } from "@/components/ward-management/count-breakdown-rows";
+import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
 import {
   arrowTargets,
   constraintSentence,
@@ -31,6 +38,7 @@ import { derivedBedReleases } from "@/components/ward-management/ward-discharge-
 import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-morning-rollup";
 import { confirmedHeldUpNote } from "@/components/ward-management/capacity/capacity-derivations";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 
 import { asAtStamp } from "./ward-daily-sheet";
@@ -66,8 +74,15 @@ import hero from "./ward-board-hero.module.css";
 import panels from "./ward-board-panels.module.css";
 import { WardBoardFlowColumn } from "./ward-board-flow-column";
 import { WardBoardGridColumn } from "./ward-board-grid-column";
-import { LeavingDestinationField, WardBoardDetailPanel } from "./ward-board-detail-panel";
+import { LeavingDestinationField, TransportWaitField, WardBoardDetailPanel } from "./ward-board-detail-panel";
 import { WardBoardWorkBand } from "./ward-board-work-band";
+import {
+  collectedStep,
+  transportConfirm,
+  TransportWaitConfirmText,
+  WardBoardTransportWait,
+} from "./ward-board-transport-wait";
+import { transportPendingFor, waitingForTransport } from "@/components/ward-management/ward-left-ward";
 import { WardBoardPrintSections } from "./ward-board-print-sections";
 import { createReadmissionIndex } from "@/components/ward-management/ward-readmission";
 import { stayReadmissionCopy } from "@/components/ward-management/ward-readmission-copy";
@@ -136,6 +151,7 @@ export function WardBoard({
   // below is the one this board is about; `now` and `admissions` keep their names so every
   // derivation beneath reads unchanged.
   const network = useWardNetwork();
+  const canOpenHref = useCanOpenHref();
   const {
     units: liveUnits,
     admissions,
@@ -180,6 +196,8 @@ export function WardBoard({
     identity?: string;
     item?: ShiftTileItem;
     admissionId?: string;
+    offerTransport?: boolean; // Item 18: transport still pending, so the dialog asks about it.
+    awaitingTransport?: boolean; // Item 18: left the ward, waiting for transport. Unset until chosen.
   } | null>(null);
   const dialogTriggerRef = useRef<HTMLElement | null>(null);
   const blockerDialogRef = useRef<HTMLDivElement | null>(null);
@@ -572,6 +590,10 @@ export function WardBoard({
   const states = bedStates(unit, admissions, [...bedReleases], [...leaveBeds], namedHolds);
   const incoming = buildIncoming(unit, admissions, movements, now);
   const outgoing = outgoingToday(unit, bedReleases, outgoingBasis, now);
+  // Item 18: with transport still pending, "They have left" also asks whether they are waiting for it.
+  const transportPendingForStay = (key?: string | null) =>
+    admissions.some((admission) => admission.id === key && transportPendingFor(admission, liveBedReleases));
+  const transportWait = waitingForTransport(admissions, unit.id); // Item 18: left, still to be collected.
   /*
    * `sinceYesterday` counts whatever it is given and deliberately cannot use `admissionsForUnit`,
    * which drops departed admissions and would make `discharged` permanently zero — see its own doc
@@ -721,7 +743,30 @@ export function WardBoard({
    * when there is nothing to say cannot tell a reader that there is nothing to say.
    */
   const pulledIn = incoming.filter((person) => person.state === "pulled");
-  const figures: { key: string; label: string; value: number; led?: boolean; note?: string }[] = [
+  // Item 5 (count breakdown): each figure below that names people is the length of one list, and
+  // tapping it lists exactly that list, so the list and the number can never disagree.
+  const dayLists = capacityBreakdownLists(unit, bedReleases, leaveBeds, now);
+  const awayAtEdOccupants = occupants.filter((occupant) => occupant.awayAtEdHours !== null);
+  const overThreeMonthsTiles = tiles.filter((tile) => tile.kind === "occupied" && tile.bandId === "over-3-months");
+  const breakdownPersonOf = (admissionId: string) => {
+    const subject = admissions.find((a) => a.id === admissionId) ?? { id: admissionId };
+    const resolved = resolvePatientIdentity
+      ? resolvePatientIdentity(subject)
+      : resolveSubjectPatient(subject, { patients, movements });
+    return resolved.patient
+      ? { name: resolved.formalName, href: patientHref(resolved.patient.id) }
+      : { name: "Name not recorded" };
+  };
+  const stayRows = (stays: readonly { key: string; admissionId: string }[]) => () =>
+    stayBreakdownRows(stays, breakdownPersonOf, canOpenHref);
+  const figures: {
+    key: string;
+    label: string;
+    value: number;
+    led?: boolean;
+    note?: string;
+    rows?: () => readonly BreakdownRow[];
+  }[] = [
     {
       key: "availableNow",
       label: CAPACITY_FIGURE_LABELS.availableNow,
@@ -734,7 +779,8 @@ export function WardBoard({
     {
       key: "confirmedToday",
       label: CAPACITY_FIGURE_LABELS.confirmedToday,
-      value: breakdown.confirmedToday,
+      value: dayLists.confirmedToday.length,
+      rows: stayRows(releaseStays(dayLists.confirmedToday)),
       led: outgoingBasis === "confirmed",
       // NA3-06 (decision 16): Capacity's note, explaining the bed meeting's lower confirmed figure.
       note: confirmedHeldUpNote(breakdown.confirmedToday, breakdown.confirmedHeldUpToday),
@@ -742,23 +788,41 @@ export function WardBoard({
     {
       key: "expectedToday",
       label: CAPACITY_FIGURE_LABELS.expectedToday,
-      value: breakdown.expectedToday,
+      value: dayLists.expectedToday.length,
+      rows: stayRows(releaseStays(dayLists.expectedToday)),
       led: outgoingBasis === "expected",
     },
-    { key: "blockedToday", label: CAPACITY_FIGURE_LABELS.blockedToday, value: breakdown.blockedToday },
+    {
+      key: "blockedToday",
+      label: CAPACITY_FIGURE_LABELS.blockedToday,
+      value: dayLists.blockedToday.length,
+      rows: stayRows(releaseStays(dayLists.blockedToday)),
+    },
     {
       key: "awayAtEd",
       label: "Away at an ED",
-      value: occupants.filter((occupant) => occupant.awayAtEdHours !== null).length,
+      value: awayAtEdOccupants.length,
+      rows: stayRows(awayAtEdOccupants.map((occupant) => ({ key: occupant.key, admissionId: occupant.admissionId }))),
     },
-    { key: "pulled", label: "Pulled, not arrived", value: pulledIn.length },
+    {
+      key: "pulled",
+      label: "Pulled, not arrived",
+      value: pulledIn.length,
+      rows: stayRows(pulledIn.map((person) => ({ key: person.key, admissionId: person.key }))),
+    },
     { key: "blockedBeds", label: "Out of service", value: blockedTileCount },
     {
       key: "overThreeMonths",
       label: "Here over 3 months",
-      value: tiles.filter((tile) => tile.kind === "occupied" && tile.bandId === "over-3-months").length,
+      value: overThreeMonthsTiles.length,
+      rows: stayRows(overThreeMonthsTiles.map((tile) => ({ key: tile.key, admissionId: tile.key }))),
     },
-    { key: "onLeave", label: CAPACITY_FIGURE_LABELS.onLeave, value: breakdown.onLeave },
+    {
+      key: "onLeave",
+      label: CAPACITY_FIGURE_LABELS.onLeave,
+      value: dayLists.onLeave.length,
+      rows: stayRows(leaveStays(dayLists.onLeave)),
+    },
   ];
 
   // Page tops (9 Nov 2026): the hero's next step is the "Worth a look" list, the same flags it shows.
@@ -787,6 +851,7 @@ export function WardBoard({
       shiftTiles.push({
         key: `discharge-${occupant.key}`,
         selectableKey: occupant.key,
+        subject: cardNameByKey.get(occupant.key),
         label: isConfirmed ? "Confirmed discharge" : "Expected discharge",
         tone: "warn",
         // No "when" word: the label already says discharge (device audit, 11 Oct 2026: a lone
@@ -826,6 +891,7 @@ export function WardBoard({
       shiftTiles.push({
         key: `away-${occupant.key}`,
         selectableKey: occupant.key,
+        subject: cardNameByKey.get(occupant.key),
         label: "Away at an ED",
         tone: "warn",
         when: `${occupant.awayAtEdHours}h ago`,
@@ -871,6 +937,7 @@ export function WardBoard({
   const confirmDestination = LEAVING_DESTINATIONS.find(
     (destination) => destination.id === destinationFor(confirmAdmissionId),
   )?.label;
+  const ask = transportConfirm(pendingConfirm, destinationFor(confirmAdmissionId), transportPendingForStay);
 
   const handleConfirmAction = () => {
     if (!pendingConfirm) return;
@@ -878,16 +945,21 @@ export function WardBoard({
       const admissionId = pendingConfirm.admissionId || pendingConfirm.item?.selectableKey;
       const leavingDestination = destinationFor(admissionId);
       if (!admissionId || leavingDestination === "") return;
+      if (ask.unanswered) return;
+      const awaitingTransport = ask.awaiting === true;
       recordDepartureAndReport(
         () =>
           recordWardDeparture
-            ? recordWardDeparture(admissionId, unit.id, leavingDestination)
+            ? recordWardDeparture(admissionId, unit.id, leavingDestination, "ward", { awaitingTransport })
             : raise("RECORD_LEAVING", {
                 admissionId: admissionId,
                 actingUnitId: unit.id,
                 leavingDestination,
+                ...(awaitingTransport ? { awaitingTransport: true as const } : {}),
               }),
-        `Recorded discharge: ${pendingConfirm.who} has left the ward.`,
+        awaitingTransport
+          ? `Recorded: ${pendingConfirm.who} has left the ward and is waiting for transport. The bed is ready.`
+          : `Recorded discharge: ${pendingConfirm.who} has left the ward.`,
         admissionId,
         pendingConfirm.who,
       );
@@ -897,7 +969,8 @@ export function WardBoard({
       // DR-08 (25 Oct 2026): the button that opened this dialog and the patient's tile both leave
       // with the patient, so focus would fall to the page. It goes to the "Before handover" band.
       focusBackTo.current = null;
-      dialogTriggerRef.current = document.getElementById("ward-board-work-band-heading")?.closest("summary") ?? null;
+      dialogTriggerRef.current =
+        document.querySelector<HTMLElement>('[data-testid="ward-board-work-band"] > summary') ?? null;
     } else if (pendingConfirm.kind === "away_at_ed" && pendingConfirm.admissionId) {
       dispatchAndReport(
         () =>
@@ -914,6 +987,17 @@ export function WardBoard({
 
   const handleShiftAction = (item: ShiftTileItem, word: string) => {
     if (word === "They have left") {
+      if (transportPendingForStay(item.selectableKey)) {
+        setPendingConfirm({
+          kind: "leaving",
+          who: item.who || nameFor(item.selectableKey),
+          identity: identityFor(item.selectableKey),
+          item,
+          admissionId: item.selectableKey,
+          offerTransport: true,
+        });
+        return;
+      }
       const leavingDestination = destinationFor(item.selectableKey);
       const executeLeaving = (leavingDestination: LeavingDestination) => {
         recordDepartureAndReport(
@@ -1101,6 +1185,7 @@ export function WardBoard({
       }
       setPendingConfirm={setPendingConfirm}
       setSelectedBlocker={setSelectedBlocker}
+      transportPending={transportPendingForStay(selectedTile?.key)}
       unit={unit}
     />
   );
@@ -1260,6 +1345,17 @@ export function WardBoard({
             shiftTiles={shiftTiles}
             unit={unit}
           />
+          <WardBoardTransportWait
+            entries={transportWait}
+            nameFor={listNameFor}
+            now={now}
+            onCollected={(entry, who) =>
+              runDeparture(
+                () => raise("MARK_TRANSPORT_COLLECTED", { admissionId: entry.admissionId, actingUnitId: unit.id }),
+                collectedStep(entry.admissionId, unit.id, who),
+              )
+            }
+          />
         </div>
 
         <WardBoardPrintSections
@@ -1295,7 +1391,7 @@ export function WardBoard({
             <div className={styles.confirmDialogPanel}>
               <div className={styles.modalHeader}>
                 <h3 id="confirm-dialog-title" className={styles.confirmDialogTitle}>
-                  {pendingConfirm.kind === "leaving" ? "Confirm discharge" : "Confirm emergency department transfer"}
+                  {ask.words.title}
                 </h3>
                 <button
                   ref={confirmCloseBtnRef}
@@ -1313,7 +1409,9 @@ export function WardBoard({
               </div>
 
               <p id="confirm-dialog-description" className={styles.confirmDialogText}>
-                {pendingConfirm.kind === "leaving" ? (
+                {ask.awaiting ? (
+                  <TransportWaitConfirmText who={pendingConfirm.who} destination={confirmDestination} />
+                ) : pendingConfirm.kind === "leaving" ? (
                   <>
                     Are you sure you want to record that <strong>{pendingConfirm.who}</strong> has left the ward? This
                     will record their discharge and make this bed available for new admissions.
@@ -1348,6 +1446,14 @@ export function WardBoard({
                 />
               ) : null}
 
+              {ask.offers ? (
+                <TransportWaitField
+                  id="ward-board-confirm-transport"
+                  value={ask.awaiting}
+                  onChange={(awaitingTransport) => setPendingConfirm({ ...pendingConfirm, awaitingTransport })}
+                />
+              ) : null}
+
               <div className={styles.modalActions}>
                 <button
                   type="button"
@@ -1363,10 +1469,12 @@ export function WardBoard({
                   data-testid="ward-board-confirm-proceed"
                   className={styles.detailPrimaryBtn}
                   // Native `disabled`: transient inertness until where they went is chosen (CS3-07).
-                  disabled={pendingConfirm.kind === "leaving" && destinationFor(confirmAdmissionId) === ""}
+                  disabled={
+                    (pendingConfirm.kind === "leaving" && destinationFor(confirmAdmissionId) === "") || ask.unanswered
+                  }
                   data-tone={pendingConfirm.kind === "leaving" ? "warn" : undefined}
                 >
-                  {pendingConfirm.kind === "leaving" ? "Record discharge" : "Record ED transfer"}
+                  {ask.words.action}
                 </button>
               </div>
             </div>

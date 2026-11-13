@@ -8,7 +8,90 @@ const workflow = readFileSync(new URL("../../.github/workflows/ward-flow.yml", i
   /\r\n/gu,
   "\n",
 );
-function requireWorkflow(source) {
+// The shared setup action the install jobs use (.github/actions/ward-setup).
+const setupAction = readFileSync(
+  new URL("../../.github/actions/ward-setup/action.yml", import.meta.url),
+  "utf8",
+).replace(/\r\n/gu, "\n");
+function requireWorkflow(source, action) {
+  // The shared setup the install jobs use: Node, the pinned npm, the exact installed-packages restore and
+  // the attested install. Its steps are held to the same contracts the inline copies were.
+  const SETUP_ACTION = "./.github/actions/ward-setup";
+  const SETUP_STEP = "Set up Node and install locked dependencies";
+  const SETUP_JOBS = ["backend", "unit", "browser-build", "browser", "release-gate", "build", "coverage"];
+  const NPM_PROVISION =
+    'npm install --global --ignore-scripts --no-audit --no-fund "$(node -p "require(\'./package.json\').packageManager")" && node --version && npm --version';
+  const CACHE_RESTORE = "actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9";
+  const NODE_MODULES_KEY =
+    "ward-node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package.json', 'package-lock.json') }}";
+  function requireSetupAction(source, setupNode) {
+    source = source
+      .split("\n")
+      .filter((line) => !/^\s*#/u.test(line))
+      .join("\n");
+    assert.match(source, /^runs:\n {2}using: composite\n {2}steps:\n/mu);
+    // The build job's main-only save reads these outputs; anything else would save an unattested key.
+    assert.match(
+      source,
+      /^outputs:\n {2}cache-hit:\n {4}description: [^\n]+\n {4}value: \$\{\{ steps\.node-modules\.outputs\.cache-hit \}\}\n {2}cache-primary-key:\n {4}description: [^\n]+\n {4}value: \$\{\{ steps\.node-modules\.outputs\.cache-primary-key \}\}\n(?=\S)/mu,
+    );
+    for (const pattern of [
+      /continue-on-error:/u,
+      /secrets\./u,
+      /actions\/cache@/u,
+      /node-version: /u,
+      /restore-keys/u,
+      /^\s*if:/mu,
+      /working-directory:/u,
+      /^\s*(?:-\s+)?uses: \.\//mu,
+    ])
+      assert.doesNotMatch(source, pattern, `setup action: ${pattern}`);
+    for (const match of source.matchAll(/^\s*(?:- )?uses: ([^\n]+)/gmu))
+      assert.match(match[1], /^[\w./-]+@[0-9a-f]{40}$/u);
+    // A composite run step must name its shell; plain bash keeps -e and pipefail.
+    for (const match of source.matchAll(/^\s*shell: ([^\n]*)$/gmu)) assert.equal(match[1], "bash");
+    const entries = source
+      .split(/^ {4}- /mu)
+      .slice(1)
+      .map((text) => {
+        const fields = new Map();
+        for (const match of `      ${text}`.matchAll(/^ {6}([a-z][a-z0-9_-]*): ([^\n]*)(?:\n|$)/gmu)) {
+          assert.ok(!fields.has(match[1]), `setup action: duplicate step field ${match[1]}`);
+          fields.set(match[1], match[2]);
+        }
+        return { fields, text };
+      });
+    assert.deepEqual(
+      entries.map(({ fields }) => fields.get("name") ?? fields.get("uses")),
+      [
+        setupNode,
+        "Install and record the pinned npm toolchain",
+        "Restore installed packages",
+        "Install locked dependencies",
+      ],
+      "setup action: select Node, provision npm, restore, then install",
+    );
+    const [runtime, provision, restore, install] = entries;
+    assert.match(runtime.fields.get("uses"), /^actions\/setup-node@[0-9a-f]{40}$/u);
+    assert.match(runtime.text, /^ {8}node-version-file: \.nvmrc$/mu);
+    assert.match(runtime.text, /^ {8}cache: npm$/mu);
+    assert.equal(provision.fields.get("run"), NPM_PROVISION);
+    assert.equal(provision.fields.get("shell"), "bash");
+    assert.equal(restore.fields.get("uses"), CACHE_RESTORE);
+    assert.equal(restore.fields.get("id"), "node-modules");
+    assert.match(restore.text, /^ {8}path: node_modules$/mu);
+    assert.ok(
+      restore.text.includes(`        key: ${NODE_MODULES_KEY}\n`),
+      "setup action: exact installed-packages key",
+    );
+    assert.equal(install.fields.get("id"), "install");
+    assert.equal(install.fields.get("run"), "node scripts/install-locked-dependencies.mjs");
+    assert.equal(install.fields.get("shell"), "bash");
+    assert.deepEqual(
+      install.text.split("\n").filter((line) => line.startsWith("        WARD_")),
+      ["        WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}"],
+    );
+  }
   // Dependency-free, bounded YAML subset: duplicate fields and comments cannot
   // supply executable evidence. Exact commands prevent shell failure suppression.
   source = source
@@ -81,7 +164,7 @@ function requireWorkflow(source) {
   ])
     assert.doesNotMatch(source, pattern);
   for (const match of source.matchAll(/^\s*(?:- )?uses: ([^\n]+)/gmu))
-    assert.match(match[1], /^[\w./-]+@[0-9a-f]{40}$/u);
+    if (match[1] !== SETUP_ACTION) assert.match(match[1], /^[\w./-]+@[0-9a-f]{40}$/u);
   for (const match of source.matchAll(/persist-credentials: ([^\n]+)/gu)) assert.equal(match[1], "false");
   assert.equal([...source.matchAll(/run: node scripts\/ward-ci-public\/plan\.mjs/g)].length, 1);
   exact("plan", "Plan Ward scope", "node scripts/ward-ci-public/plan.mjs");
@@ -110,13 +193,19 @@ function requireWorkflow(source) {
   }
   assert.match(jobs.get("static"), /^ {4}needs: plan$/mu);
   assert.match(jobs.get("static"), /^ {4}if: \$\{\{ !cancelled\(\) && needs.plan.result == 'success' \}\}$/mu);
-  // Cheap first (Josh, 4 Nov 2026): the expensive jobs wait for static checks and the production
-  // build; a build skipped by scope (not by failure) still lets them run.
+  // Cheap first (Josh, 4 Nov 2026): the expensive jobs wait for static checks, and the browser
+  // jobs also for the production build; a build skipped by scope (not by failure) still lets them
+  // run. The unit shards do not use the build and wait for static checks only (11 Nov 2026).
   const cheapFirst = new Set(["unit", "browser", "release-gate"]);
-  const cheapGate =
-    " && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && (needs.plan.outputs.build != 'true' || needs.reuse.outputs.build_verified == 'true')))";
-  for (const job of cheapFirst)
+  const staticGate = " && needs.static.result == 'success'";
+  const buildGate =
+    " && (needs.build.result == 'success' || (needs.build.result == 'skipped' && (needs.plan.outputs.build != 'true' || needs.reuse.outputs.build_verified == 'true')))";
+  const cheapGateFor = (job) => (job === "unit" ? staticGate : staticGate + buildGate);
+  assert.match(jobs.get("unit"), /^ {4}needs: \[plan, reuse, static\]$/mu, "unit: waits for static checks");
+  for (const job of ["browser", "release-gate"])
     assert.match(jobs.get(job), /^ {4}needs: \[[^\n]*\bstatic, build\]$/mu, `${job}: waits for cheap checks`);
+  // Draft fast lane (D-166, 12 Nov 2026): drafts also skip the unit shards (so coverage) and the backend proof.
+  const draftSkipped = new Set(["unit", "backend"]);
   for (const [job, scope, reuseGate] of [
     ["unit", "unit", "unit"],
     ["browser-build", "browser", null],
@@ -131,13 +220,51 @@ function requireWorkflow(source) {
         ? " && (needs.reuse.outputs.browser_verified != 'true' || needs.reuse.outputs.release_verified != 'true')"
         : ` && needs.reuse.outputs.${reuseGate}_verified != 'true'`;
     const route = expression(
-      `!cancelled() && needs.plan.result == 'success' && needs.plan.outputs.${scope} == 'true'${reuseGuard}${scope === "browser" ? " && github.event.pull_request.draft != true" : ""}${job === "browser" || job === "release-gate" ? " && needs.browser-build.result == 'success'" : ""}${job === "coverage" ? " && needs.unit.result == 'success'" : ""}${cheapFirst.has(job) ? cheapGate : ""}`,
+      `!cancelled() && needs.plan.result == 'success' && needs.plan.outputs.${scope} == 'true'${reuseGuard}${scope === "browser" || draftSkipped.has(job) ? " && github.event.pull_request.draft != true" : ""}${job === "browser" || job === "release-gate" ? " && needs.browser-build.result == 'success'" : ""}${job === "coverage" ? " && needs.unit.result == 'success'" : ""}${cheapFirst.has(job) ? cheapGateFor(job) : ""}`,
     );
     assert.ok(jobs.get(job)?.includes(`    if: ${route}\n`), `${job} job scope`);
     assert.match(jobs.get(job), /^ {4}needs: (?:plan|\[[^\n]*\bplan\b[^\n]*\])$/mu);
-    exact(job, "Install locked dependencies", "node scripts/install-locked-dependencies.mjs");
-    assert.equal(step(job, "Install locked dependencies").fields.get("id"), "install");
   }
+  // These jobs install through the shared setup action, unconditionally, after their checkout.
+  assert.deepEqual(
+    [...jobs.keys()].filter((job) => jobs.get(job).includes(SETUP_ACTION)),
+    SETUP_JOBS,
+    "jobs using the shared setup action",
+  );
+  for (const job of SETUP_JOBS) {
+    const entries = steps(job);
+    const setup = step(job, SETUP_STEP);
+    assert.equal(setup.fields.get("uses"), SETUP_ACTION, `${job}: shared setup action`);
+    assert.equal(setup.fields.get("id"), "install", `${job}: setup outcome is steps.install`);
+    assert.deepEqual(
+      [...setup.fields.keys()].sort(),
+      ["id", "name", "uses"],
+      `${job}: setup takes no inputs or condition`,
+    );
+    assert.equal(
+      entries.filter(({ fields }) => fields.get("uses")?.startsWith("actions/checkout@")).length,
+      1,
+      `${job}: one checkout`,
+    );
+    assert.ok(
+      entries.findIndex(({ fields }) => fields.get("uses")?.startsWith("actions/checkout@")) <
+        entries.findIndex(({ fields }) => fields.get("name") === SETUP_STEP),
+      `${job}: checkout before the local setup action`,
+    );
+    assert.doesNotMatch(jobs.get(job), /actions\/setup-node@|Install locked dependencies|steps\.node-modules\./u);
+  }
+  // A job reading steps.install has exactly one installer: the shared action or the inline steps.
+  for (const [job, body] of jobs) {
+    if (!body.includes("steps.install.")) continue;
+    const inline = steps(job).filter(({ fields }) => fields.get("name") === "Install locked dependencies").length;
+    const shared = steps(job).filter(({ fields }) => fields.get("name") === SETUP_STEP).length;
+    assert.equal(inline + shared, 1, `${job}: one dependency install`);
+    if (!inline) assert.doesNotMatch(body, /steps\.node-modules\./u, `${job}: restore outputs come from the action`);
+  }
+  // The action selects Node with the same pinned setup-node the plan job uses.
+  const planSetupNode = steps("plan").find(({ fields }) => fields.get("uses")?.startsWith("actions/setup-node@"));
+  assert.ok(planSetupNode, "plan: selects Node");
+  requireSetupAction(action, planSetupNode.fields.get("uses"));
   assert.equal(step("static", "Install locked dependencies").fields.get("id"), "install");
   // Installed packages come from a cache saved on main only, straight after an attested install; the
   // installer reuses an exact hit only when its own post-install stamp still matches (see
@@ -173,9 +300,19 @@ function requireWorkflow(source) {
     const names = steps("build").map(({ fields }) => fields.get("name"));
     assert.equal(
       names.indexOf("Save installed packages on main"),
-      names.indexOf("Install locked dependencies") + 1,
+      names.indexOf(SETUP_STEP) + 1,
       "build: installed packages are saved straight after the attested install",
     );
+    const save = step("build", "Save installed packages on main");
+    assert.equal(save.fields.get("uses"), "actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9");
+    assert.equal(
+      save.fields.get("if"),
+      expression(
+        "!cancelled() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && steps.install.outcome == 'success' && steps.install.outputs.cache-hit != 'true'",
+      ),
+    );
+    assert.match(save.text, /^ {10}path: node_modules$/mu);
+    assert.ok(save.text.includes(`          key: ${expression("steps.install.outputs.cache-primary-key")}\n`));
   }
   exact(
     "static",
@@ -250,8 +387,22 @@ function requireWorkflow(source) {
   assert.equal(typecheck.fields.get("if"), frontend);
   assert.equal(
     typecheck.text.split("        run: |\n")[1]?.trim(),
-    "node node_modules/next/dist/bin/next typegen\n          node --max-old-space-size=8192 node_modules/typescript/bin/tsc -p tsconfig.json --noEmit --incremental false",
+    "node node_modules/next/dist/bin/next typegen\n          node --max-old-space-size=8192 node_modules/typescript/bin/tsc -p tsconfig.json --noEmit --incremental",
   );
+  // The incremental record is restored before the typecheck and saved only from main.
+  {
+    const names = steps("static").map(({ fields }) => fields.get("name"));
+    assert.ok(
+      names.indexOf("Restore the TypeScript build info") === names.indexOf("Typecheck source and route types") - 1,
+      "static: the TypeScript build info is restored straight before the typecheck",
+    );
+    const save = step("static", "Save the TypeScript build info on main");
+    assert.match(
+      save.fields.get("if") ?? "",
+      /github\.ref == 'refs\/heads\/main' && github\.event_name != 'pull_request'/u,
+    );
+    assert.match(save.fields.get("if") ?? "", /steps\.typecheck\.outcome == 'success'/u);
+  }
   exact(
     "backend",
     "Install locked Ward backend dependencies",
@@ -276,7 +427,40 @@ function requireWorkflow(source) {
     "node tests/support/ward-shared-mode-run.mjs",
     expression("!cancelled() && steps.shared-chromium.outcome == 'success'"),
   );
-  exact("unit", "Run reconciled unit suite shard", "npm run check:ward-expected-reds -- --print-signatures", installed);
+  exact(
+    "unit",
+    "Run reconciled unit suite shard",
+    "npm run check:ward-expected-reds -- --print-signatures",
+    expression("!cancelled() && steps.install.outcome == 'success' && steps.timings.outcome == 'success'"),
+  );
+  // D-166: one timing record per run, chosen and uploaded by the plan, so every shard deals the same split.
+  assert.equal(
+    step("plan", "Choose the unit shard timings").fields.get("run"),
+    'node scripts/ward-ci-public/unit-durations-latest.mjs --output "$RUNNER_TEMP/ward-unit-durations/unit-durations.json"',
+  );
+  assert.match(
+    step("plan", "Upload the unit shard timings").text,
+    /name: ward-unit-durations-\$\{\{ github\.run_id \}\}\n/u,
+  );
+  assert.match(step("plan", "Upload the unit shard timings").text, /if-no-files-found: error\n/u);
+  // A rerun keeps the run id; both records must replace their own earlier copy, not fail on the name.
+  for (const [job, name] of [
+    ["plan", "Upload the unit shard timings"],
+    ["coverage", "Keep main's unit timings for the shard split"],
+  ])
+    assert.match(step(job, name).text, /\n\s+overwrite: true\n/u, `${name} must be rerun-safe`);
+  assert.match(
+    step("unit", "Download the unit shard timings").text,
+    /name: ward-unit-durations-\$\{\{ github\.run_id \}\}\n/u,
+  );
+  assert.match(
+    step("unit", "Run reconciled unit suite shard").text,
+    /WARD_UNIT_DURATIONS_FILE: \$\{\{ runner\.temp \}\}\/ward-unit-durations\/unit-durations\.json\n/u,
+  );
+  assert.match(
+    step("coverage", "Keep main's unit timings for the shard split").fields.get("if") ?? "",
+    /github\.event_name == 'push' && github\.ref == 'refs\/heads\/main'/u,
+  );
   // The unit suite runs every file on every PR in the shards; a second, related-only run is not repeated.
   assert.doesNotMatch(jobs.get("static"), /related-tests\.mjs/u);
   // Lint and Vitest module caches only ever save from main, and lint keys include its config and rules.
@@ -347,18 +531,19 @@ function requireWorkflow(source) {
     "release-gate",
     "Run the second release-gate suite",
     "npm run test:e2e:release-gate",
-    expression("!cancelled() && steps.browsers.outcome == 'success'"),
+    expression("!cancelled() && steps.browsers.outcome == 'success' && matrix.second_part != ''"),
   );
   exact(
     "release-gate",
     "Run the third release-gate suite",
     "npm run test:e2e:release-gate",
-    expression("!cancelled() && steps.browsers.outcome == 'success'"),
+    expression("!cancelled() && steps.browsers.outcome == 'success' && matrix.third_part != ''"),
   );
   // Desktop and phone each split the gate into three parts (which partition the release-gate files),
-  // run as two jobs of three suites: together exactly both device projects times all three parts,
-  // each suite once, none dropped by fail-fast, and each suite's runner narrowed only through
-  // WARD_RELEASE_GATE_PROJECT and WARD_RELEASE_GATE_PART.
+  // run as jobs of one to three suites (desktop one job, phone two since D-166): together exactly
+  // both device projects times all three parts, each suite once, none dropped by fail-fast, and each
+  // suite's runner narrowed only through WARD_RELEASE_GATE_PROJECT and WARD_RELEASE_GATE_PART. Each
+  // job's name is its device then its parts in order, which gate-reuse.mjs reads for main reuse.
   const gateMatrix = jobs
     .get("release-gate")
     .match(
@@ -383,17 +568,33 @@ function requireWorkflow(source) {
         "third_project",
       ]);
       assert.equal(fields.browser, fields.project === "release-gate-phone" ? "webkit" : "chromium");
-      return fields;
+      for (const key of Object.keys(fields)) if (fields[key] === '""') fields[key] = "";
+      const suites = [
+        [fields.project, fields.part],
+        [fields.second_project, fields.second_part],
+        [fields.third_project, fields.third_part],
+      ];
+      const present = suites.filter(([project, part]) => project || part);
+      assert.ok(
+        present.every(([project, part]) => project === fields.project && part) &&
+          suites.findIndex(([project, part]) => !project && !part) in { [-1]: 1, [present.length]: 1 },
+        `release-gate ${fields.pair}: one device, suites filled from the first with no gap`,
+      );
+      const parts = present.map(([, part]) => part);
+      const listed = parts.length === 1 ? parts[0] : `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}`;
+      assert.equal(
+        fields.pair,
+        `${fields.project === "release-gate-phone" ? "phone" : "desktop"} ${listed}`,
+        `release-gate ${fields.pair}: the job name lists its device and parts in order`,
+      );
+      return { ...fields, suites: present.map(([project, part]) => `${project}/${part}`) };
     });
-  assert.equal(gateEntries.length, 2, "release-gate: two jobs of three suites");
-  assert.equal(new Set(gateEntries.map(({ pair }) => pair)).size, 2, "release-gate: distinct job names");
-  const gateSuites = gateEntries
-    .flatMap(({ project, part, second_project, second_part, third_project, third_part }) => [
-      `${project}/${part}`,
-      `${second_project}/${second_part}`,
-      `${third_project}/${third_part}`,
-    ])
-    .sort();
+  assert.equal(
+    new Set(gateEntries.map(({ pair }) => pair)).size,
+    gateEntries.length,
+    "release-gate: distinct job names",
+  );
+  const gateSuites = gateEntries.flatMap(({ suites }) => suites).sort();
   assert.deepEqual(
     gateSuites,
     ["release-gate-desktop", "release-gate-phone"]
@@ -532,7 +733,29 @@ function requireWorkflow(source) {
     /node node_modules\/vitest\/vitest.mjs run --merge-reports="\$WARD_SHARD_BLOBS" --coverage\n/u,
   );
   assert.match(jobs.get("coverage"), /WARD_SHARD_COUNT: "4"/u);
-  assert.match(jobs.get("unit"), /WARD_COVERAGE_BLOB_DIR: \$\{\{ runner.temp \}\}\/ward-coverage-blobs/u);
+  // D-166: only a sweep-only main run (main reused the merged pull request's coverage) drops the blobs.
+  assert.match(
+    step("unit", "Run reconciled unit suite shard").text,
+    /WARD_COVERAGE_BLOB_DIR: \$\{\{ needs\.reuse\.outputs\.sweep_only != 'true' && format\('\{0\}\/ward-coverage-blobs', runner\.temp\) \|\| '' \}\}\n/u,
+  );
+  assert.match(
+    step("unit", "Run reconciled unit suite shard").text,
+    /WARD_GATE_ONLY_LEGAL_SWEEP: \$\{\{ needs\.reuse\.outputs\.sweep_only == 'true' && '1' \|\| '0' \}\}\n/u,
+  );
+  for (const name of ["Upload shard coverage blob", "Save the Vitest module cache on main"])
+    assert.match(
+      step("unit", name).fields.get("if") ?? "",
+      / && needs\.reuse\.outputs\.sweep_only != 'true' \}\}$/u,
+      name,
+    );
+  assert.equal(
+    jobs
+      .get("reuse")
+      .split("\n")
+      .filter((line) => line.includes("sweep_only"))
+      .join("\n"),
+    "      sweep_only: ${{ steps.check.outputs.sweep_only }}",
+  );
   assert.match(jobs.get("unit"), /if-no-files-found: error/u);
   for (const [job, key, variable, count] of [
     ["unit", "shard", "WARD_GATE_SHARD", 4],
@@ -546,6 +769,16 @@ function requireWorkflow(source) {
     );
     assert.ok(jobs.get(job).includes(`${variable}: ${expression(`matrix.${key}`)}/${count}`));
   }
+  // Each browser group and release-gate suite runs on two servers at once, never more: three
+  // sharing one 4-vCPU runner made timing-sensitive journeys fail (28 September 2026).
+  for (const [job, name] of [
+    ["browser", "Run Ward browser journeys"],
+    ["release-gate", "Run the release-gate journeys"],
+    ["release-gate", "Run the second release-gate suite"],
+    ["release-gate", "Run the third release-gate suite"],
+  ])
+    assert.match(step(job, name).text, /^ {10}WARD_JOURNEY_SHARDS: "2"$/mu, `${job}: ${name} runs two shards`);
+  assert.equal([...source.matchAll(/WARD_JOURNEY_SHARDS:/gu)].length, 4, "two shards only where the contract says");
   // Static checks always run. Every expensive gate consumes its own verified evidence.
   assert.doesNotMatch(jobs.get("static"), /needs.reuse/u);
   assert.ok(!jobs.has("secret-scan"), "the secret scan runs inside the scope plan job");
@@ -651,11 +884,7 @@ function requireWorkflow(source) {
     }
     if (body.includes("actions/setup-node@")) {
       assert.match(body, /node-version-file: \.nvmrc/u);
-      exact(
-        job,
-        "Install and record the pinned npm toolchain",
-        'npm install --global --ignore-scripts --no-audit --no-fund "$(node -p "require(\'./package.json\').packageManager")" && node --version && npm --version',
-      );
+      exact(job, "Install and record the pinned npm toolchain", NPM_PROVISION);
       const entries = steps(job);
       const provision = entries.findIndex(
         (entry) => entry.fields.get("name") === "Install and record the pinned npm toolchain",
@@ -696,6 +925,7 @@ function requireWorkflow(source) {
     BROWSER_REUSED: "needs.reuse.outputs.browser_verified",
     RELEASE_REUSED: "needs.reuse.outputs.release_verified",
     BUILD_REUSED: "needs.reuse.outputs.build_verified",
+    SWEEP_ONLY: "needs.reuse.outputs.sweep_only",
     PLAN_RESULT: "needs.plan.result",
     REUSE_RESULT: "needs.reuse.result",
     STATIC_RESULT: "needs.static.result",
@@ -743,18 +973,28 @@ function requireWorkflow(source) {
           test "$STATIC_RESULT" = success
           test "$SECRET_SCAN_RESULT" = success
           if [ "$DRAFT" = true ]; then
-            require_scope "$BACKEND_SCOPE" "$BACKEND_RESULT"
             test "$GITHUB_EVENT_NAME" = pull_request
-            require_scope "$UNIT_SCOPE" "$UNIT_RESULT"
-            require_scope "$UNIT_SCOPE" "$COVERAGE_RESULT"
             require_scope "$BUILD_SCOPE" "$BUILD_RESULT"
+            test "$BACKEND_RESULT" = skipped
+            test "$UNIT_RESULT" = skipped
+            test "$COVERAGE_RESULT" = skipped
             test "$BROWSER_BUILD_RESULT" = skipped
             test "$BROWSER_RESULT" = skipped
             test "$RELEASE_GATE_RESULT" = skipped
-            echo "::error title=Draft fast lane::Quick checks passed. Browser, phone and accessibility checks run when this pull request is marked ready; only that run can pass this check."
+            echo "::error title=Draft fast lane::Quick checks passed. Unit, backend, browser, phone and accessibility checks run when this pull request is marked ready; only that run can pass this check."
             exit 1
           fi
-          test "$UNIT_REUSED" = "$COVERAGE_REUSED"
+          case "$SWEEP_ONLY" in
+            true)
+              test "$GITHUB_EVENT_NAME" = push
+              test "$GITHUB_REF" = refs/heads/main
+              test "$REUSE_RESULT" = success
+              test "$UNIT_REUSED" = false
+              test "$COVERAGE_REUSED" = true
+              ;;
+            false|"") test "$UNIT_REUSED" = "$COVERAGE_REUSED" ;;
+            *) exit 1 ;;
+          esac
           require_gate "$BACKEND_SCOPE" "$BACKEND_RESULT" "$BACKEND_REUSED"
           require_gate "$UNIT_SCOPE" "$UNIT_RESULT" "$UNIT_REUSED"
           require_gate "$UNIT_SCOPE" "$COVERAGE_RESULT" "$COVERAGE_REUSED"
@@ -768,7 +1008,7 @@ function requireWorkflow(source) {
           fi`,
   );
 }
-requireWorkflow(workflow);
+requireWorkflow(workflow, setupAction);
 // Exercise the actual aggregate shell across every scope combination and every
 // failure/cancellation/missing-result branch, including the trusted reuse route.
 const verdictShell = /^ {8}run: \|\n([\s\S]*)$/mu.exec(workflow.slice(workflow.indexOf("  required:\n")))?.[1];
@@ -804,6 +1044,7 @@ for (let bits = 0; bits < 16; bits++) {
       BROWSER_REUSED: String(reused(2)),
       RELEASE_REUSED: String(reused(3)),
       BUILD_REUSED: String(reused(4)),
+      SWEEP_ONLY: mask ? "false" : "",
       DRAFT: "false",
       GITHUB_EVENT_NAME: mask ? "push" : "pull_request",
       GITHUB_REF: mask ? "refs/heads/main" : "refs/pull/1/merge",
@@ -850,6 +1091,27 @@ for (let bits = 0; bits < 16; bits++) {
       "unit and coverage evidence must be reused together",
     );
     verdictCases += 3;
+    // D-166: main ran only the sweep in fresh shards and reused the pull request run's coverage.
+    if (mask && enabled(1) && !reused(1)) {
+      const sweepOnly = { ...values, SWEEP_ONLY: "true", COVERAGE_REUSED: "true", COVERAGE_RESULT: "skipped" };
+      assert.equal(runVerdict(sweepOnly), 0, JSON.stringify({ bits, mask, sweepOnly: true }));
+      verdictCases++;
+      for (const change of [
+        { UNIT_RESULT: "skipped" },
+        { UNIT_RESULT: "failure" },
+        { UNIT_REUSED: "true", UNIT_RESULT: "skipped" },
+        { COVERAGE_REUSED: "false" },
+        { COVERAGE_RESULT: "success" },
+        { GITHUB_EVENT_NAME: "pull_request" },
+        { GITHUB_REF: "refs/heads/other" },
+        { REUSE_RESULT: "failure" },
+        { SWEEP_ONLY: "yes" },
+        { UNIT_SCOPE: "false", UNIT_RESULT: "skipped" },
+      ]) {
+        assert.notEqual(runVerdict({ ...sweepOnly, ...change }), 0, JSON.stringify(change));
+        verdictCases++;
+      }
+    }
     if (mask)
       for (const [key, value] of [
         ["GITHUB_EVENT_NAME", "pull_request"],
@@ -894,13 +1156,21 @@ for (const [before, after] of [
   ["if: always()", "if: success()"],
   ['          if [ "$DRAFT" = true ]; then', '          if [ "$DRAFT" = never ]; then'],
   [
-    '            exit 1\n          fi\n          test "$UNIT_REUSED" = "$COVERAGE_REUSED"',
-    '            true\n          fi\n          test "$UNIT_REUSED" = "$COVERAGE_REUSED"',
+    '            exit 1\n          fi\n          case "$SWEEP_ONLY" in',
+    '            true\n          fi\n          case "$SWEEP_ONLY" in',
+  ],
+  ['            false|"") test "$UNIT_REUSED" = "$COVERAGE_REUSED" ;;', '            false|"") true ;;'],
+  ['              test "$COVERAGE_REUSED" = true\n', "              true\n"],
+  ['              test "$UNIT_REUSED" = false\n', "              true\n"],
+  [
+    "          WARD_GATE_ONLY_LEGAL_SWEEP: ${{ needs.reuse.outputs.sweep_only == 'true' && '1' || '0' }}",
+    "          WARD_GATE_ONLY_LEGAL_SWEEP: '1'",
   ],
   ["    types: [opened, synchronize, reopened, ready_for_review]", "    types: [opened, synchronize, reopened]"],
   ["&& github.event.pull_request.draft != true }}", "}}"],
   ["shard: [1, 2, 3, 4]", "shard: [1, 2, 3]"],
   ["group: [1, 2]", "group: [1]"],
+  ['          WARD_JOURNEY_SHARDS: "2"\n', '          WARD_JOURNEY_SHARDS: "3"\n'],
   ["            browser: webkit\n", "            browser: chromium\n"],
   ["            second_part: referrals\n", "            second_part: journeys\n"],
   [
@@ -939,7 +1209,14 @@ for (const [before, after] of [
     "!cancelled() && needs.plan.result == 'success' && needs.plan.outputs.build",
     "!cancelled() && needs.plan.outputs.build",
   ],
-  ["    needs: [plan, reuse, static, build]\n", "    needs: [plan, reuse]\n"],
+  ["    needs: [plan, reuse, static]\n", "    needs: [plan, reuse]\n"],
+  [
+    "github.event.pull_request.draft != true && needs.static.result == 'success' }}",
+    "github.event.pull_request.draft != true }}",
+  ],
+  ["unit_verified != 'true' && github.event.pull_request.draft != true", "unit_verified != 'true'"],
+  ["          WARD_UNIT_DURATIONS_FILE: ${{ runner.temp }}/ward-unit-durations/unit-durations.json\n", ""],
+  ["          - pair: phone checks\n", "          - pair: phone journeys\n"],
   ["    needs: [plan, reuse, browser-build, static, build]\n", "    needs: [plan, browser-build]\n"],
   [" && needs.static.result == 'success' && (needs.build.result == 'success'", " && (needs.build.result == 'success'"],
   [
@@ -959,7 +1236,11 @@ for (const [before, after] of [
     "name: Upload successful third-suite reports\n        if: ${{ !cancelled() && steps.gate-third.outcome == 'success' }}",
     "name: Upload successful third-suite reports\n        if: ${{ false }}",
   ],
-  ["needs.reuse.outputs.backend_verified != 'true' }}", "true }}"],
+  [
+    "needs.reuse.outputs.backend_verified != 'true' && github.event.pull_request.draft != true }}",
+    "true && github.event.pull_request.draft != true }}",
+  ],
+  ["backend_verified != 'true' && github.event.pull_request.draft != true }}", "backend_verified != 'true' }}"],
   ["branches: [main]", "branches: [other]"],
   [
     "        env:\n          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}\n        run: node scripts/ward-flow/check-patient-identifiers.mjs",
@@ -969,7 +1250,54 @@ for (const [before, after] of [
 ]) {
   const changed = workflow.replace(before, after);
   assert.notEqual(changed, workflow, before);
-  assert.throws(() => requireWorkflow(changed), before);
+  assert.throws(() => requireWorkflow(changed, setupAction), before);
+}
+// The same probes against the shared setup action, plus its wiring in the workflow.
+for (const [before, after] of [
+  ["run: npm install --global --ignore-scripts --no-audit --no-fund", "run: echo npm installation omitted"],
+  [
+    "      run: node scripts/install-locked-dependencies.mjs",
+    "      run: node scripts/install-locked-dependencies.mjs || true",
+  ],
+  ["      id: node-modules\n", "      id: unused-node-modules\n"],
+  ["      id: install\n", "      id: unused-install\n"],
+  ["        WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}", "        WARD_INSTALL_RESTORED: true"],
+  [
+    "        path: node_modules\n        key: ward-node-modules-",
+    "        path: node_modules\n        restore-keys: ward-\n        key: ward-node-modules-",
+  ],
+  ["        key: ward-node-modules-${{ runner.os }}-", "        key: ward-node-modules-"],
+  ["        node-version-file: .nvmrc\n", "        node-version: 24\n"],
+  ["        cache: npm\n", ""],
+  ["      shell: bash\n      run: npm", "      shell: bash {0}\n      run: npm"],
+  ["    - name: Restore installed packages\n", "    - name: Restore installed packages\n      if: ${{ false }}\n"],
+  [
+    "      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+    "      uses: actions/cache/restore@v4",
+  ],
+  ["    value: ${{ steps.node-modules.outputs.cache-primary-key }}", "    value: ward-node-modules"],
+  ["    value: ${{ steps.node-modules.outputs.cache-hit }}", "    value: 'false'"],
+]) {
+  const changed = setupAction.replace(before, after);
+  assert.notEqual(changed, setupAction, before);
+  assert.throws(() => requireWorkflow(workflow, changed), before);
+}
+for (const [before, after] of [
+  [`        uses: ./.github/actions/ward-setup\n`, "        uses: ./.github/actions/other\n"],
+  [
+    "        id: install\n        uses: ./.github/actions/ward-setup\n",
+    "        id: setup\n        uses: ./.github/actions/ward-setup\n",
+  ],
+  [
+    `        uses: ./.github/actions/ward-setup\n`,
+    "        if: ${{ false }}\n        uses: ./.github/actions/ward-setup\n",
+  ],
+  ["steps.install.outputs.cache-hit != 'true'", "true"],
+  ["key: ${{ steps.install.outputs.cache-primary-key }}", "key: ward-node-modules"],
+]) {
+  const changed = workflow.replace(before, after);
+  assert.notEqual(changed, workflow, before);
+  assert.throws(() => requireWorkflow(changed, setupAction), before);
 }
 assert.deepEqual(parseNameStatus("M\tdocs/ward-flow/README.md\n"), [{ status: "M", file: "docs/ward-flow/README.md" }]);
 // A document no unit test reads; tests/ward-ci-scope.test.ts covers documents unit tests do read.

@@ -505,3 +505,52 @@
     padding-top: 0;
   }
 }
+
+/* Redesign (12 Nov 2026): the same 2:1 grid as Now and History from the tablet-landscape width up.
+   The team, who to contact and the timeline lead; the order and the documents sit beside them. */
+@media (min-width: 1001px) {
+  .pane[data-layout="community"] {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: var(--wf-s-4);
+    align-items: start;
+  }
+
+  .pane[data-layout="community"] > * {
+    grid-column: 1;
+  }
+
+  .pane[data-layout="community"] > .cols {
+    display: contents;
+  }
+
+  .pane[data-layout="community"] > .cols > :first-child {
+    grid-column: 1;
+  }
+
+  .pane[data-layout="community"] > .cols > .col {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    gap: var(--wf-s-4);
+  }
+}
+
+/* The team card lays its four facts out from its own width: two by two when four across would
+   break "Case manager" over two lines. */
+.hero {
+  container: community-team / inline-size;
+}
+
+@container community-team (max-width: 700px) {
+  .stats {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stats > .stat:nth-child(odd) {
+    border-left: 0;
+  }
+
+  .stats > .stat:nth-child(n + 3) {
+    border-top: 1px solid var(--wf-line);
+  }
+}
