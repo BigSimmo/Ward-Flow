@@ -283,7 +283,13 @@ export function PullAcceptedReferral({
    * toast), or, with no host, offers PR C's toast Undo for the whole Undo window (A9-02). One Undo
    * per pull either way (review P4-10).
    */
-  function pulledNow(pulledAt: number, undo: (at: number) => WardFlowEvent, outcome: WardCommandOutcome | undefined) {
+  function pulledNow(
+    pulledAt: number,
+    undo: (at: number) => WardFlowEvent,
+    outcome: WardCommandOutcome | undefined,
+    /** What Undo leaves behind: a new journey has started without the bed; a pulled-again one stays open. */
+    left = "The movement has started without the bed.",
+  ) {
     if (!desk) return;
     if (onPulled) {
       onPulled({
@@ -303,7 +309,7 @@ export function PullAcceptedReferral({
         success: `Bed pulled at ${unitName} for ${name}`,
         who: name,
         undo,
-        undone: `${BED_PULL_UNDONE} The movement has started without the bed.`,
+        undone: `${BED_PULL_UNDONE} ${left}`,
         undoToastMs: BED_PULL_UNDO_TOAST_MS,
         onAccepted: onDone,
       },
@@ -330,6 +336,8 @@ export function PullAcceptedReferral({
             pulledAt,
             (at) => bedPullUndoEvent(deskRole, at, target ?? { movementId, unitId, stageIndex: -1 }),
             outcome,
+            // Re-check note 3: Undo after pull again leaves the same journey open, as it was.
+            "The movement stays open without the bed.",
           );
       },
     );

@@ -39,7 +39,7 @@ import {
   useIsPhone,
   useOptionalToast,
 } from "@/components/wf";
-import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
+import { capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
 import { bedStates, networkNamedHolds } from "@/components/ward-management/ward-bed-states";
 import {
   designationSummary,
@@ -166,7 +166,7 @@ type WardRow = {
   states: ReturnType<typeof bedStates>;
   occupancy: number;
   ready: number;
-  /** Inside `ready`: released beds still being made ready. */
+  /** Beds being made ready, off Ready since D-179 item 8: the hollow squares' own figure (`bedStates`). */
   pendingPreparation: number;
   /** Wave 4 bed squares (D-191): discharges still due today and not held up (`isFreeingToday`). */
   dischargesToday: number;
@@ -273,7 +273,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
           // Occupied or Pulled: the one occupancy count (`ward-occupancy.ts`).
           occupancy: unit.beds > 0 ? wardBedsInUse(unit, admissions, bedReleases) / unit.beds : 0,
           ready: states.ready,
-          pendingPreparation: bedsPendingPreparation(unit.id, bedReleases),
+          pendingPreparation: states.beingMadeReady,
           dischargesToday: bedsFreeingTodayTotal(bedReleases, now, new Set([unit.id])) ?? 0,
           heldUp: heldUpReleases(
             bedReleases.filter((release) => release.unitId === unit.id),

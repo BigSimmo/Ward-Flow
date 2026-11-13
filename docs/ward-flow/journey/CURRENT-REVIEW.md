@@ -197,3 +197,5 @@ After the merge, the import-map guard pass moved `pull-bed-facts.ts`, `pull-bed-
 `bed-squares.tsx` to the ward-management root. That changed only imports in `referrals/pull-accepted-referral.tsx` and
 `capacity/capacity-ward-drawer.tsx` (and the bed-squares input name `beingMadeReady`), and removed one unused hero
 prop in `ward/ward-screen.tsx`. No dispatch changed; those 15 digests were refreshed again.
+Re-check note 3 (same PR): after Undo of a pull again, `referrals/pull-accepted-referral.tsx` says "The movement stays
+open without the bed." instead of "has started"; only the toast words change, so its 2 digests were refreshed.
