@@ -58,7 +58,8 @@ export function WardDeclineReasons({
             size="md"
             data-placement-action
             disabledReason={ready ? undefined : DECLINE_SUBMIT_UNAVAILABLE_REASON}
-            reasonDisplay="tooltip"
+            // "page": the lock line below already draws the reason, so no second touch copy (check B4).
+            reasonDisplay="page"
             type="submit"
             onClick={(event) => {
               if (!ready) event.preventDefault();

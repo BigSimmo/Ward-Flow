@@ -212,7 +212,9 @@ export function PullBedChoiceSheet({
               type="submit"
               data-placement-action
               disabledReason={lockLine}
-              reasonDisplay="tooltip"
+              // "page": the lock line below already draws the reason at every width, so the kit
+              // draws no second touch copy (check B4: "Choose a bed first" showed twice on a phone).
+              reasonDisplay="page"
               onClick={(event) => {
                 if (!ready) event.preventDefault();
               }}

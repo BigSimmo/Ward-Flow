@@ -149,6 +149,19 @@ describe("Ward: Confirm arrival with no pulled bed (F-2)", () => {
     expect(document.activeElement).toBe(within(restored).getByRole("button", { name: /^Pull the bed/u }));
   });
 
+  it("draws the bed lock line once: the kit draws no second touch copy (check B4)", () => {
+    const { row } = renderWard();
+    fireEvent.click(within(row).getByRole("button", { name: /^Confirm arrival/u }));
+    const step = screen.getByTestId("ward-pull-then-arrive");
+    expect(within(step).getByRole("button", { name: /^Pull the bed/u })).toHaveAttribute("aria-disabled", "true");
+    // The sheet's own lock line says it; the kit's touch-only copy would say it again on a phone.
+    expect(step.querySelector("[data-touch-reason]")).toBeNull();
+    const drawn = Array.from(step.querySelectorAll('[aria-hidden="true"]')).filter(
+      (line) => line.textContent === "Choose a bed first",
+    );
+    expect(drawn).toHaveLength(1);
+  });
+
   it("never lists a closed bed and sends nothing on Cancel", () => {
     const { movement, row } = renderWard();
     fireEvent.click(within(row).getByRole("button", { name: /^Confirm arrival/u }));
