@@ -116,12 +116,14 @@
   opacity: 0.6;
 }
 
+/* Item 8: a 4px inset round the 32px clock buttons (the approved picture), so the whole panel fits
+   1280 x 600; phones keep the 8px inset round their 40px buttons. */
 .clockRow {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-2);
-  padding: var(--wf-s-2) var(--wf-s-3);
+  padding: var(--wf-s-1) var(--wf-s-1) var(--wf-s-1) var(--wf-s-3);
   border-radius: var(--wf-r-md);
   background: var(--wf-surface-2);
 }
@@ -145,7 +147,8 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 40px;
+  /* The kit's sm height: 32px on a laptop, 44px on touch (tokens); 40px on a phone (below). */
+  min-height: var(--wf-h-sm);
   padding: 0 12px;
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-md);
@@ -277,8 +280,13 @@
   .practice summary {
     position: relative;
   }
-  .choice {
+  .choice,
+  .small,
+  .reset {
     min-height: 40px;
+  }
+  .clockRow {
+    padding: var(--wf-s-2) var(--wf-s-3);
   }
   .small::after,
   .reset::after {
