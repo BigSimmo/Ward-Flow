@@ -43,23 +43,73 @@
   padding: var(--wf-s-3) var(--wf-s-4);
 }
 
-/* One referral per row: who, the referral facts, then Referral and Start triage. */
+/* Redesign (13 Nov 2026): the app's 2:1 grid from 62.5625rem up. The queue (and the search
+   results above it) is the main column; the side column is reference and follows it below that. */
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--wf-s-4);
+  align-items: start;
+  min-width: 0;
+}
+
+.mainCol,
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+  min-width: 0;
+}
+
+@media (min-width: 62.5625rem) {
+  .grid {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  }
+}
+
+/* Tablet: the two reference cards sit side by side under the queue. */
+@media (min-width: 46.5rem) and (max-width: 62.5rem) {
+  .side {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+/* The one row pattern: a 32px tinted chip, a bold title over one quiet line, the figure and the
+   actions on the right edge. */
+.chip {
+  display: inline-grid;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-accent-tint);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-accent-ink);
+}
+
+.chip[data-done] {
+  background: var(--wf-fit-tint);
+  color: var(--wf-success-ink);
+}
+
 .queue {
   display: flex;
   flex-direction: column;
   margin: 0;
   padding: 0;
   list-style: none;
-  /* Flat rows in the card, not a box inside a box (9 Nov 2026 polish). */
-  border-top: 1px solid var(--wf-line);
 }
 
 .row {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.6fr) auto;
+  grid-template-columns: 32px minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: var(--wf-s-2) var(--wf-s-4);
-  padding: var(--wf-s-3) 0;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
   min-width: 0;
 }
 
@@ -67,37 +117,112 @@
   border-top: 1px solid var(--wf-line);
 }
 
-.rowWho,
-.rowFacts {
+.rowWho {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
 }
 
-.rowTags {
+/* Each fact carries its middle dot in its own left padding. The line is pulled left by that padding
+   and clipped there, so a dot never starts a line, wrapped or not. */
+.rowLine {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--wf-s-1) var(--wf-s-2);
-}
-
-.wait,
-.retriage {
+  margin-left: calc(var(--wf-s-4) * -1);
+  clip-path: inset(0 0 0 var(--wf-s-4));
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
   color: var(--wf-ink-2);
 }
 
+.rowLine > * {
+  position: relative;
+  margin-left: var(--wf-s-4);
+}
+
+.rowLine > *::before {
+  content: "·";
+  position: absolute;
+  left: calc(var(--wf-s-4) * -1);
+  width: var(--wf-s-4);
+  color: var(--wf-ink-3);
+  text-align: center;
+}
+
+.rowLine b {
+  font-weight: 500;
+  color: var(--wf-ink-1);
+}
+
+.wait {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+  text-align: right;
+  white-space: nowrap;
+}
+
 .wait b {
+  display: block;
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
   font-weight: 600;
   color: var(--wf-ink-1);
 }
 
 .rowActions {
   display: flex;
+  grid-column: 4;
   align-items: center;
-  gap: var(--wf-s-2);
+  gap: var(--wf-s-1);
+}
+
+/* Side column rows. */
+.sideRows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sideRow {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  min-width: 0;
+}
+
+.sideRow + .sideRow {
+  border-top: 1px solid var(--wf-line);
+}
+
+.sideRow a {
+  text-decoration: none;
+}
+
+.sideText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sideTitle {
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
+}
+
+.sideEmpty {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
 }
 
 /* The referral drawer's facts. */
@@ -131,17 +256,26 @@
 .body {
   display: flex;
   flex-direction: column;
-  gap: var(--wf-s-3);
   min-width: 0;
+}
+
+.order {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
 }
 
 .list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.list > li + li {
+  border-top: 1px solid var(--wf-line);
 }
 
 .person {
@@ -150,11 +284,10 @@
   gap: var(--wf-s-3);
   width: 100%;
   min-height: 40px;
-  padding: var(--wf-s-2) var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
   box-sizing: border-box;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-surface);
+  border: 0;
+  background: none;
   color: var(--wf-ink-1);
   font: inherit;
   text-align: left;
@@ -167,7 +300,7 @@
 
 .person:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 1px;
+  outline-offset: -2px;
 }
 
 .personText {
@@ -219,9 +352,7 @@
 
 .empty {
   margin: 0;
-  padding: var(--wf-s-3);
-  border: 1px dashed var(--wf-line-3);
-  border-radius: var(--wf-r-md);
+  padding: var(--wf-s-3) var(--wf-s-4);
   color: var(--wf-ink-2);
 }
 
@@ -238,24 +369,47 @@
 }
 
 /* The Signed panel, above the read-only form. */
-.signed {
-  display: flex;
-  flex-direction: column;
+/* The signed card (redesign, 13 Nov 2026): a ticked head with what to do next, the signed entry
+   flush under a hairline, and what went to the record as its foot. */
+.signedHead {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: center;
   gap: var(--wf-s-3);
-  min-width: 0;
+  padding: var(--wf-s-4);
 }
 
-.signedHead {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--wf-s-2) var(--wf-s-3);
+.signedText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
 }
 
 .signedTitle {
   margin: 0;
   font-size: var(--wf-fs-15);
+  line-height: var(--wf-lh-15);
   font-weight: 600;
+}
+
+.signedHead > .actions {
+  grid-column: 1 / -1;
+}
+
+.signedDoc {
+  border-top: 1px solid var(--wf-line);
+}
+
+.signedDoc > article {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: none;
+}
+
+.signedFoot {
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
 }
 
 .actions {
@@ -283,13 +437,20 @@
        paints at its measured place on the first frame (phone load audit, 10 Nov 2026). */
     --wf-band-phone-x: var(--wf-s-4);
   }
-  /* A phone stacks each referral: who, the facts, then Referral and Start triage side by side. */
+  /* The source tabs already carry each source's count on a phone. */
+  .sources {
+    display: none;
+  }
+  /* A phone stacks each referral: who beside its chip and wait, then Referral and Start triage. */
   .row {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 32px minmax(0, 1fr) auto;
+    align-items: start;
   }
   .rowActions {
     display: grid;
+    grid-column: 1 / -1;
     grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--wf-s-2);
   }
   .rowActions > * {
     position: relative;
@@ -363,11 +524,6 @@
 .heroTop .searchRow.searchRow {
   flex-direction: row;
   align-items: stretch;
-}
-
-/* The queue is the card's first thing now (its head moved into the tabs), so no rule above it. */
-.body > .queue:first-child {
-  border-top: 0;
 }
 
 .add.add {
