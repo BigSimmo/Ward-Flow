@@ -157,3 +157,11 @@ shows a legal form's tag as the form and the status as recorded ("status not rec
 always "involuntary". `patients/patient-now-screen.tsx` makes Mark absent's Undo message say "Back on the ward" when
 the person was not on leave; the RECORD_ABSENT_WITHOUT_LEAVE dispatch, its gate and its payload are unchanged. Digests
 refreshed. Evidence: `tests/ward-clinical-d187-legal.dom.test.tsx`, run locally.
+
+Later in the same PR (D-186 item 4), four more cited sources swap a hand-written "status is not Voluntary" test
+for the named rule `isNotVoluntary` in `ward-legal-meaning.ts`: `movements/movement-workflow-actions.tsx` (the
+review-flag kind), `ward-derivations.ts` (`expectFlagKindFor`), `ward-flow-record-events.ts` (the RECORD_ED_OUTCOME
+"for discharge" gate) and `ward-flow-referral-send-events.ts` (the REFER_TO_COMMUNITY_TEAM gate). Each gives the same
+answer for every `LegalStatus` value, proved per site and through `wardFlowReducer` by
+`tests/ward-clinical-d186-named-rules.test.ts`. No handler, payload, guard outcome or place scope changed; digests
+refreshed.

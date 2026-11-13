@@ -1794,7 +1794,7 @@
       {
         "path": "src/components/ward-management/ward-derivations.ts",
         "line": 1,
-        "sha256": "c254f1512e5602170a15419774de985744bf603ba81113e8ecd46f21d5adccfe"
+        "sha256": "51bf1be7f47bb3653574d2f229ff28df55ebc95e8d8cee202ee74a46cc0c83b1"
       },
       {
         "path": "src/components/ward-management/ward-duplicate-bed-requests.ts",
@@ -1839,7 +1839,7 @@
       {
         "path": "src/components/ward-management/ward-flow-record-events.ts",
         "line": 606,
-        "sha256": "5cc4fde885cc7c9b44aabd7b260b5f94371b7d4f06e26736e406c40972fb8d21"
+        "sha256": "cba036c7a855d0877b0e066893d9f3ac46105f9cc632efe968b5d6559e39dbdc"
       },
       {
         "path": "src/components/ward-management/ward-flow-record-legal-events.ts",
@@ -1864,7 +1864,7 @@
       {
         "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
         "line": 1219,
-        "sha256": "644830b71eeb2fa2bbe44499954aab3ceb97f4ac99fc2f84f29619632e89e8ff"
+        "sha256": "5145d6761048c808021aabfe2796c42734baca8805f85584b2e0da6bbbb8089a"
       },
       {
         "path": "src/components/ward-management/ward-flow-storage-validation.ts",
