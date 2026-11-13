@@ -113,7 +113,9 @@ describe("gate board status card review fixes", () => {
       "held",
       ctx({ ...base, stage: "accepted_awaiting_bed", transport: undefined, transportNeed: undefined }),
     ).cells.find((cell) => cell.key === "transport");
-    expect(waiting?.sub).toBe("Needs the bed pulled");
+    // Design parts item 6: the reason is drawn once, as the lock line under Log booking ("not yet",
+    // so no `never`), and the row's own line keeps its hint.
+    expect(waiting?.sub).toBe("Book by phone, then log it");
     expect(waiting?.action).toEqual({ kind: "unavailable", label: "Log booking", reason: "Needs the bed pulled" });
   });
 

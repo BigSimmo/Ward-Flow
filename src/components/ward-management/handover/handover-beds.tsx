@@ -75,15 +75,6 @@ const BED_CHIPS: { id: BedChip; label: string; test: (ward: HandoverWard, now: I
   { id: "holds", label: "Wards with discharges held up", test: (ward) => ward.holds > 0 },
 ];
 
-const SERVICE_TOKEN: Record<string, string> = {
-  "East Metro": "var(--wf-svc-east)",
-  "North Metro": "var(--wf-svc-north)",
-  "South Metro": "var(--wf-svc-south)",
-  WACHS: "var(--wf-svc-wachs)",
-  CAHS: "var(--wf-svc-cahs)",
-  Private: "var(--wf-svc-private)",
-};
-
 const COLUMN_COUNT = 9;
 
 const off = <span className={styles.off}>None</span>;
@@ -533,11 +524,6 @@ export function HandoverBeds({ rows, wards: allWards, held, now, waitingForBed, 
                   <tr className={styles.groupRow}>
                     <th scope="rowgroup" colSpan={COLUMN_COUNT}>
                       <span className={styles.groupHead}>
-                        <span
-                          className={styles.serviceDot}
-                          style={{ background: SERVICE_TOKEN[group.service] ?? "var(--wf-svc-statewide)" }}
-                          aria-hidden="true"
-                        />
                         <b>{group.service}</b>
                         <CountPill n={group.wards.length} />
                         <span className={styles.why}>

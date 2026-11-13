@@ -17,9 +17,11 @@ export {
 } from "./use-is-phone";
 export { StatusGlyph, Dot, type WfTone } from "./status-glyph";
 export { Icon } from "./icon";
-export { SrOnly, Kbd, Count, CountBubble, CountCircle, Spinner, IconTile } from "./primitives";
+export { SrOnly, Kbd, Count, CountBubble, CountCircle, Spinner, IconTile, WindowWord } from "./primitives";
 export { FormalName } from "./formal-name";
 export { Button, DisabledReason, buttonClass, type ButtonSize } from "./button";
+// Shared design parts (D-192): WhoDoesThis, RowUndo, SyntheticMark and FullScreenFrame are
+// imported from their own files until screens use them here (WindowWord is used by Ward home).
 export { Badge } from "./badge";
 export { Card, CardHead, CardBody, CardFoot } from "./card";
 export { Hero, HeroStat, type HeroNextStep } from "./hero";
@@ -103,6 +105,7 @@ export {
   publishLiveClock,
   publishLiveRefresh,
   useLiveFreshness,
+  useLivePause,
   useSharedRefreshLate,
 } from "./live";
 export {
@@ -140,6 +143,7 @@ export { TimePresets, timePresetClockText } from "./time-presets";
 export { phoneRows } from "./phone-rows";
 export { ConfirmHost, hasConfirmHost, requestConfirm, type ConfirmRequest } from "./confirm-dialog";
 export {
+  DATE_FIELD_ERROR,
   DateField,
   DateTimeField,
   isoDateAsTyped,
@@ -154,3 +158,9 @@ export { ListPicker, type ListPickerOption, type ListPickerProps } from "./list-
 // that ignores the chosen service says "Network-wide" (scope from ward-figure-scope.ts, owners from ward-page-owners.ts).
 export { FigureLink, figureLinkName, type FigureOwner } from "./figure-link";
 export { NETWORK_WIDE, ScopeNote } from "./figure-scope";
+// Shared design parts (D-192, 13 Nov 2026): the full-screen frame that keeps the synthetic-data mark
+// in view when a table or chart is enlarged. (The loading row imports the mark by its own file.)
+export { FullScreenFrame, FullScreenMarkSlot } from "./full-screen-frame";
+// Shared design parts (D-192): who does an action that is never yours, and the in-row Undo.
+export { WhoDoesThis } from "./who-does-this";
+export { RowUndo } from "./row-undo";

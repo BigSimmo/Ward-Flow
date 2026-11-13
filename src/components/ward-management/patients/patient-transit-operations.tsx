@@ -37,7 +37,8 @@ import {
 import { MovementWorkspaceCockpit } from "../movements/movement-workspace-cockpit";
 import { useRoleGate, useRouteRole } from "../ward-role-gate";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
-import { ChipGroup, FilterChip, StatusGlyph, buttonClass } from "@/components/wf";
+import { ChipGroup, FilterChip, StatusGlyph, buttonClass, RowUndo } from "@/components/wf";
+import { undoWindowEnds } from "../ward-undo-until";
 import { useUndoableStep } from "../use-undoable-step";
 import { BED_PULL_UNDONE, bedPullUndoEvent } from "../ward-bed-pull-undo";
 import { BED_PULL_UNDO_TOAST_MS } from "../ward-operational-defaults";
@@ -60,7 +61,7 @@ import ph from "../referrals/referral-match-phone.module.css";
 import styles from "./patient-transit-operations.module.css";
 import { FindAWard, wardMatchesQuery } from "@/components/ward-management/referrals/find-a-ward";
 import { ExtendHoldControl } from "@/components/ward-management/ward-extend-hold";
-import { splitDuration } from "@/components/ward-management/ward-clock";
+import { calendarDateOf, splitDuration } from "@/components/ward-management/ward-clock";
 import { PULL_NO_LIMIT_RECORDED } from "@/components/ward-management/ward-bed-hold";
 
 /** All operational facts and eligibility are calculated from the current provider state. */
@@ -78,18 +79,29 @@ export function PatientTransitOperations({
   /** Inside a sheet that already names it (the Patient Now mockups): no section heading. */
   bare?: boolean;
 }) {
-  const { units, admissions, referrals, patients, movements, dispatch, rejections, readAuditEvents, configuration } =
-    useWardFlowSelect(
-      "units",
-      "admissions",
-      "referrals",
-      "patients",
-      "movements",
-      "dispatch",
-      "rejections",
-      "readAuditEvents",
-      "configuration",
-    );
+  const {
+    units,
+    admissions,
+    referrals,
+    patients,
+    movements,
+    dispatch,
+    rejections,
+    readAuditEvents,
+    configuration,
+    dayZero,
+  } = useWardFlowSelect(
+    "units",
+    "admissions",
+    "referrals",
+    "patients",
+    "movements",
+    "dispatch",
+    "rejections",
+    "readAuditEvents",
+    "configuration",
+    "dayZero",
+  );
   // Audit 1 (CS-09, Josh 20 Oct): the gap dialogs name the person and UMRN, never "this patient".
   const subjectPatient = resolveSubjectPatient(movement, { patients, referrals, movements });
   const identity = patientIdentityLine(subjectPatient);
@@ -245,6 +257,21 @@ export function PatientTransitOperations({
       ? "No open ward referrals to withdraw"
       : null;
   const remaining = movement.pullExpiresAt === undefined ? undefined : movement.pullExpiresAt - now;
+  // D-192 (shared design parts item 4): after the toast, the Bed row keeps a quiet "Undo pull · until
+  // 14:47" for the rest of the Undo window. The same guarded undo as the toast: it releases only this
+  // pull, as made in error, and the engine refuses it once the pull is released or replaced.
+  const releasePullGate = gate("RELEASE_PULL");
+  let pullIndex = -1;
+  for (let index = movement.stageChanges.length - 1; index >= 0; index -= 1) {
+    if (movement.stageChanges[index].to === "pulled") {
+      pullIndex = index;
+      break;
+    }
+  }
+  const rowUndoPull =
+    open && movement.stage === "pulled" && destination && pullIndex >= 0 && releasePullGate.allowed
+      ? { stageIndex: pullIndex, unitId: destination.id, endsAt: undoWindowEnds(movement.stageChanges[pullIndex].at) }
+      : undefined;
   const searchStage = ["placement_requested", "destination_review", "accepted_awaiting_bed"].includes(movement.stage);
   const selectedTargets = selected.filter(
     (id) => candidates.some((c) => c.unit.id === id && c.verdict.eligible) && !movement.referredUnitIds.includes(id),
@@ -645,6 +672,24 @@ export function PatientTransitOperations({
                 : `Bed pulled · ${splitDuration(remaining)} left · Pull time limit ${clock(movement.pullExpiresAt!)}${movement.pullExtensions?.length ? " · extended" : ""}`}
             </p>
           )}
+          {rowUndoPull ? (
+            <RowUndo
+              verb="pull"
+              until={calendarDateOf(rowUndoPull.endsAt, dayZero)}
+              now={calendarDateOf(now, dayZero).getTime()}
+              onUndo={() =>
+                runStep(
+                  bedPullUndoEvent(routeRole, now, {
+                    movementId: movement.id,
+                    unitId: rowUndoPull.unitId,
+                    stageIndex: rowUndoPull.stageIndex,
+                    ...(routeRole === "ward" ? { actingUnitId: rowUndoPull.unitId } : {}),
+                  }),
+                  { success: BED_PULL_UNDONE, who: patientName },
+                )
+              }
+            />
+          ) : null}
           {open && movement.stage === "pulled" && (
             <ExtendHoldControl
               movement={movement}

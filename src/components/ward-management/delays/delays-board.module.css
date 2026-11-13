@@ -2904,7 +2904,8 @@ button.legalChip {
     font-variant-numeric: tabular-nums;
   }
 
-  /* The order switch pins through the shared `pinnedSwitch`; this sets its band. */
+  /* The order switch moved up into the pinned tab row (page tops, 9 Nov 2026), so this head no
+     longer pins: pinned, its empty band painted over the tab row (spec item 9). */
   .tableCard > .chead:first-child {
     margin-bottom: 0;
     padding: var(--wf-s-2) 0;

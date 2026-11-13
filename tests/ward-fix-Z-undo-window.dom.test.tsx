@@ -96,7 +96,9 @@ describe("D-187 (F-49): an Undo lasts the 5 minutes its message promises", () =>
     await act(async () => {
       fireEvent.click(screen.getByText("Record"));
     });
-    expect(screen.getByTestId("toast")).toHaveTextContent(`Undo within ${UNDO_WINDOW_MINUTES} min.`);
+    // D-192 (shared design parts item 4): one clock time, the step's time (10:42) plus the window.
+    expect(screen.getByTestId("toast")).toHaveTextContent(`Referred · Undo until 10:4${2 + UNDO_WINDOW_MINUTES}`);
+    expect(screen.getByTestId("toast")).not.toHaveTextContent("Undo within");
     await act(async () => {
       vi.advanceTimersByTime(WINDOW_MS - 1000);
     });
@@ -124,7 +126,10 @@ describe("D-187 (F-49): an Undo lasts the 5 minutes its message promises", () =>
     await act(async () => {
       fireEvent.click(screen.getByTestId("ward-patient-archive-confirm"));
     });
-    expect(screen.getByTestId("toast")).toHaveTextContent(`Undo within ${UNDO_WINDOW_MINUTES} min.`);
+    // D-192: the board clock reads 00:00 here, so the window ends at 00:05.
+    expect(screen.getByTestId("toast")).toHaveTextContent(
+      `Synthetic record's record archived · Undo until 00:0${UNDO_WINDOW_MINUTES}`,
+    );
     await act(async () => {
       vi.advanceTimersByTime(WINDOW_MS - 1000);
     });

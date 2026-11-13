@@ -1,0 +1,105 @@
+/* Shared design parts item 8 (13 Nov 2026): one slim strip under the app bar while See it as shows
+   another desk, full width with a hairline below (no coloured side edge, DESIGN-SYSTEM §1.4), and
+   Back to coordinator as an underlined link at the right. Surface and ink tokens; it sits in flow
+   in the layout's training holder, as the training line does. */
+.bar {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--wf-s-2);
+  align-items: center;
+  min-height: 36px;
+  padding: 0 var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.icon {
+  flex: 0 0 auto;
+  color: var(--wf-ink-3);
+}
+
+/* One line: a long place name shortens with an ellipsis so the way back always shows. */
+.text {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.text strong {
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.back {
+  position: relative;
+  flex: 0 0 auto;
+  min-height: var(--wf-target);
+  margin: 0;
+  padding: 0 var(--wf-s-1);
+  border: 0;
+  border-radius: var(--wf-r-xs);
+  background: none;
+  color: var(--wf-accent-ink);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  white-space: nowrap;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.back:hover {
+  text-decoration-thickness: 2px;
+}
+
+.back:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.back:disabled {
+  color: var(--wf-ink-3);
+  text-decoration: none;
+  cursor: default;
+}
+
+/* Phones: the eye goes, and the words wrap to a second line rather than cutting the desk's name
+   (design parts item 9: names wrap before any ellipsis); the link stays at the right with a 48px tap
+   area from an invisible cover (the kit's phone rule). */
+@media (max-width: 46.4375rem) {
+  .bar {
+    padding: var(--wf-s-1) var(--wf-s-3);
+  }
+
+  .text {
+    overflow: visible;
+    white-space: normal;
+  }
+
+  .icon {
+    display: none;
+  }
+
+  .back::after {
+    content: "";
+    position: absolute;
+    inset: calc((48px - 100%) / -2) 0;
+  }
+}
+
+@media (forced-colors: active) {
+  .back:focus-visible {
+    outline-color: Highlight;
+  }
+}
+
+@media print {
+  .bar {
+    display: none;
+  }
+}

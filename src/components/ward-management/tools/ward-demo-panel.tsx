@@ -2,10 +2,10 @@
 
 import { downloadBlob } from "@/components/ward-management/ward-download";
 
-import { ChevronDown } from "lucide-react";
-import { type ChangeEvent, useId, useLayoutEffect, useRef, useState } from "react";
+import { ChevronDown, Pause, Play } from "lucide-react";
+import { type ChangeEvent, createContext, useContext, useId, useLayoutEffect, useRef, useState } from "react";
 
-import { Dialog } from "@/components/wf";
+import { Dialog, useLivePause } from "@/components/wf";
 
 import { RESET_KEEPS_CLOCK, WardDemoReset, demoDataReach } from "../demo-reset/ward-demo-reset";
 import { WardPracticeMode } from "../demo-reset/ward-practice-mode";
@@ -34,11 +34,39 @@ import { useExecutiveStatistics } from "../statistics/executive-statistics-conte
  * seven scenarios as one list, so the separate Demo reset block and its three choices go there.
  * Phone Tools keeps both until a phone mock-up is approved.
  *
- * Demo menu layout (pop-demo, approved by Josh 31 Oct 2026; layout and wording only): Scenario and
- * See it as are compact two-column grids, the choice in use reads "Current", the clock is one row,
- * Practise a placement folds into a closed row with a chevron, and Save to file, Load from file and
- * Reset demo sit in a footer pinned to the foot of the scroll. The safety lines stay word for word.
+ * Demo menu layout (pop-demo, approved by Josh 31 Oct 2026; layout and wording only): the choice in
+ * use reads "Current", the clock is one row, Practise a placement folds into a closed row with a
+ * chevron, and Save to file and Load from file sit in a footer pinned to the foot of the scroll. The
+ * safety lines stay word for word.
+ *
+ * Shared design parts item 8 (13 Nov 2026): the clock row (+15 min, +1 hour and Pause) and Reset
+ * demo come first, then Scenario, then See it as, as wrapping 32px choices, so the panel fits a
+ * 1366 x 768 or 1280 x 600 laptop without scrolling to Reset. Pause is the page's own pause, the one
+ * a tap on its Live chip runs (`useLivePause`); it shows only on a page that can pause.
  */
+/** The world change waiting on its confirm: Reset demo, or a scenario card. */
+type DemoConfirm = { kind: "reset" } | { kind: "load"; scenario: WardScenario; workedExamples?: boolean };
+type DemoConfirmHold = readonly [DemoConfirm | null, (next: DemoConfirm | null) => void];
+
+/**
+ * Review E-14 (F-142): a pending confirm held above a layout switch. The Tools sheet draws the panel
+ * in its right pane from 1280 wide and as its own page below that, so crossing the line remounts the
+ * panel; holding the confirm in the sheet keeps it open through the switch. The hold ends with the
+ * sheet, so closing Tools drops it. Without a provider the panel holds its own.
+ */
+export const WardDemoConfirmHold = createContext<DemoConfirmHold | null>(null);
+
+/**
+ * A pending confirm is dropped when demo controls go off, so it can never reopen by itself when
+ * they come back (review finding on DA-10). Adjusted during render, not in an effect.
+ */
+export function useDemoConfirmHold(): DemoConfirmHold {
+  const demoOn = useDemoControlsAvailable();
+  const [pending, setPending] = useState<DemoConfirm | null>(null);
+  if (!demoOn && pending) setPending(null);
+  return [pending, setPending];
+}
+
 /**
  * `grow` lets the panel take its full height inside a scroller that already scrolls (the Tools
  * sheet), so it never becomes a second scroller and its footer flows after the content.
@@ -61,10 +89,25 @@ function ExecutiveDemoPanel({ grow = false }: { grow?: boolean }) {
   return (
     <div className={demo.body} data-grow={grow || undefined} data-testid="ward-tools-demo-panel">
       <div className={demo.scroll}>
-        <p className={styles.demoNotice}>Demo tools. They change the synthetic data only, never a clinical record.</p>
         <p className={styles.note} data-testid="ward-tools-demo-off">
           {DEMO_CONTROLS_OFF}
         </p>
+        <section className={demo.first} aria-label="Demo clock and reset">
+          <div className={demo.clockRow}>
+            <span className={demo.clock}>
+              Demo clock {report && <b>{formatInstantWithDay(report.network.asAt.now, report.network.asAt.now)}</b>}
+            </span>
+            <button type="button" disabled className={demo.small}>
+              +15 min
+            </button>
+            <button type="button" disabled className={demo.small}>
+              +1 hour
+            </button>
+          </div>
+          <button type="button" disabled className={demo.reset} data-testid="ward-tools-demo-reset">
+            Reset demo
+          </button>
+        </section>
         <section className={demo.group} aria-label="Scenario">
           <h3 className={demo.groupHead}>Scenario</h3>
           <div className={demo.grid} role="group" aria-label="Demo scenario">
@@ -82,23 +125,8 @@ function ExecutiveDemoPanel({ grow = false }: { grow?: boolean }) {
             ))}
           </div>
         </section>
-        <div className={demo.clockRow}>
-          <span className={demo.clock}>
-            Demo clock {report && <b>{formatInstantWithDay(report.network.asAt.now, report.network.asAt.now)}</b>}
-          </span>
-          <button type="button" disabled className={demo.small}>
-            +15 min
-          </button>
-          <button type="button" disabled className={demo.small}>
-            +1 hour
-          </button>
-        </div>
+        <p className={styles.demoNotice}>Demo tools. They change the synthetic data only, never a clinical record.</p>
       </div>
-      <footer className={demo.foot}>
-        <button type="button" disabled className={demo.reset} data-testid="ward-tools-demo-reset">
-          Reset demo
-        </button>
-      </footer>
     </div>
   );
 }
@@ -127,6 +155,7 @@ function OperationalDemoPanel({ oneList = false, grow = false }: { oneList?: boo
   const examplesOn = workedExamplesShown({ movements, referrals });
   const examplesOffered = WORKED_EXAMPLE_SCENARIOS.includes(scenario);
   const now = useWardFlowClock();
+  const pause = useLivePause();
   const raise = useWardRaise("demo");
   const demoOn = useDemoControlsAvailable();
   const offId = useId();
@@ -134,12 +163,10 @@ function OperationalDemoPanel({ oneList = false, grow = false }: { oneList?: boo
   const [message, setMessage] = useState<string | null>(null);
   // The world change waiting on its confirm: Reset demo, or a scenario card (overall review, 20 Oct
   // 2026: a card replaced all the demo data in one tap, so it now asks first, the same as Reset).
-  const [confirming, setConfirming] = useState<
-    { kind: "reset" } | { kind: "load"; scenario: WardScenario; workedExamples?: boolean } | null
-  >(null);
-  // A pending confirm is dropped when demo controls go off, so it can never reopen by itself when
-  // they come back (review finding on DA-10). Adjusted during render, not in an effect.
-  if (!demoOn && confirming) setConfirming(null);
+  // Held by the Tools sheet when the panel sits in one, so a layout switch does not drop it.
+  const ownHold = useDemoConfirmHold();
+  const [confirming, setConfirming] = useContext(WardDemoConfirmHold) ?? ownHold;
+  // useDemoConfirmHold drops a pending confirm when demo controls go off (DA-10), wherever it is held.
   const reach = demoDataReach(shared?.enabled === true);
   // With the one tap Demo reset on, its three scenarios load from there, after a confirm, so the
   // picker above does not offer them a second time.
@@ -255,12 +282,59 @@ function OperationalDemoPanel({ oneList = false, grow = false }: { oneList?: boo
   return (
     <div className={demo.body} data-grow={grow || undefined} data-testid="ward-tools-demo-panel">
       <div className={demo.scroll}>
-        <p className={styles.demoNotice}>Demo tools. They change the synthetic data only, never a clinical record.</p>
         {demoOn ? null : (
           <p id={offId} className={styles.note} data-testid="ward-tools-demo-off">
             {DEMO_CONTROLS_OFF}
           </p>
         )}
+        <section className={demo.first} aria-label="Demo clock and reset">
+          <div className={demo.clockRow}>
+            <span className={demo.clock}>
+              Demo clock <b>{formatInstant(now)}</b>
+            </span>
+            {/* D-150: the signed-in site runs on real Perth time, so its clock is not advanced. */}
+            {shared?.enabled ? null : (
+              <>
+                <button
+                  type="button"
+                  className={demo.small}
+                  {...lock}
+                  onClick={() => raise("ADVANCE_CLOCK", { minutes: 15 })}
+                >
+                  +15 min
+                </button>
+                <button
+                  type="button"
+                  className={demo.small}
+                  {...lock}
+                  onClick={() => raise("ADVANCE_CLOCK", { minutes: 60 })}
+                >
+                  +1 hour
+                </button>
+              </>
+            )}
+            {/* The page's own pause, as a tap on its Live chip; it changes no demo data. */}
+            {pause ? (
+              <button type="button" className={demo.small} data-testid="ward-tools-demo-pause" onClick={pause.toggle}>
+                {pause.paused ? (
+                  <Play aria-hidden="true" strokeWidth={1.75} />
+                ) : (
+                  <Pause aria-hidden="true" strokeWidth={1.75} />
+                )}
+                {pause.paused ? "Resume" : "Pause"}
+              </button>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            className={demo.reset}
+            {...lock}
+            data-testid="ward-tools-demo-reset"
+            onClick={() => setConfirming({ kind: "reset" })}
+          >
+            Reset demo
+          </button>
+        </section>
         <section className={demo.group} aria-label="Scenario">
           <h3 className={demo.groupHead}>Scenario</h3>
           <div className={demo.grid} role="group" aria-label="Demo scenario">
@@ -305,32 +379,7 @@ function OperationalDemoPanel({ oneList = false, grow = false }: { oneList?: boo
           </section>
         ) : null}
         <WardDemoRoles enabled={demoOn} />
-        <div className={demo.clockRow}>
-          <span className={demo.clock}>
-            Demo clock <b>{formatInstant(now)}</b>
-          </span>
-          {/* D-150: the signed-in site runs on real Perth time, so its clock is not advanced. */}
-          {shared?.enabled ? null : (
-            <>
-              <button
-                type="button"
-                className={demo.small}
-                {...lock}
-                onClick={() => raise("ADVANCE_CLOCK", { minutes: 15 })}
-              >
-                +15 min
-              </button>
-              <button
-                type="button"
-                className={demo.small}
-                {...lock}
-                onClick={() => raise("ADVANCE_CLOCK", { minutes: 60 })}
-              >
-                +1 hour
-              </button>
-            </>
-          )}
-        </div>
+        <p className={styles.demoNotice}>Demo tools. They change the synthetic data only, never a clinical record.</p>
         {oneList ? null : (
           <WardDemoReset className={styles.resetBlock} headingClassName={styles.resetHeading} offNoteId={offId} />
         )}
@@ -366,15 +415,6 @@ function OperationalDemoPanel({ oneList = false, grow = false }: { oneList?: boo
             />
           </div>
         ) : null}
-        <button
-          type="button"
-          className={demo.reset}
-          {...lock}
-          data-testid="ward-tools-demo-reset"
-          onClick={() => setConfirming({ kind: "reset" })}
-        >
-          Reset demo
-        </button>
         {/* Beside the file controls, so a save or load result is seen without scrolling the lists. */}
         <p className={styles.liveNote} role="status">
           {message}

@@ -1320,7 +1320,8 @@ export function PatientSearchPage() {
               type="button"
               onClick={resetAllFilters}
               data-testid="ward-patient-search-reset-filters"
-              aria-label={activeFilterCount > 0 ? `Reset ${activeFilterCount} active filters` : "Reset"}
+              // Spec item 9 (13 Nov 2026): the name starts with the visible words, "Reset (n)".
+              aria-label={`Reset (${activeFilterCount}), ${activeFilterCount === 0 ? "no active filters" : activeFilterCount === 1 ? "1 active filter" : `${activeFilterCount} active filters`}`}
             >
               Reset ({activeFilterCount})
             </button>

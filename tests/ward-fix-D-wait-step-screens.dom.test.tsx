@@ -99,7 +99,7 @@ describe("3.1 the night view drops a step's suggestion once everyone there has i
         <NightViewScreen />
       </WardFlowProvider>,
     );
-    expect(screen.getByTestId("night-step-1")).toHaveTextContent("Suggested next step: Ask wards with a free bed");
+    expect(screen.getByTestId("night-step-1")).toHaveTextContent("Next escalation step: Ask wards with a free bed");
   });
 
   it("hides it when every person at the step has it recorded, and keeps the count", () => {
@@ -110,8 +110,8 @@ describe("3.1 the night view drops a step's suggestion once everyone there has i
       </WardFlowProvider>,
     );
     const step1 = screen.getByTestId("night-step-1");
-    expect(step1).not.toHaveTextContent("Suggested next step");
+    expect(step1).not.toHaveTextContent("Next escalation step");
     expect(within(step1).getByText(/waiting/u)).toBeInTheDocument();
-    expect(screen.getByTestId("night-step-2")).toHaveTextContent("Suggested next step");
+    expect(screen.getByTestId("night-step-2")).toHaveTextContent("Next escalation step");
   });
 });

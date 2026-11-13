@@ -294,7 +294,8 @@ export function WardReferralInbox({ unitId, embedded = false }: { unitId: string
                         ignoreUnavailableActivation(e);
                         return;
                       }
-                      answer(entry.id, "Referral declined", {
+                      // F-109 (A14-18): this ward declined; the referral's other destinations may still be waiting.
+                      answer(entry.id, `${unitName} declined`, {
                         type: "DECLINE_REFERRAL",
                         ...decisionBase,
                         referralId: entry.id,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Pause, Play } from "lucide-react";
 import { cx } from "./cx";
 import { clk, dur, FUTURE_START_TEXT } from "./format";
@@ -28,6 +28,52 @@ export type LiveChipProps = {
   onTogglePause?: () => void;
   className?: string;
 };
+
+/*
+ * The page's pause (shared design parts item 8, 13 Nov 2026). A Live chip that can pause publishes
+ * its toggle here while it is on screen, so the Demo panel's Pause runs the same action as a tap on
+ * the chip, and says Resume while the page is paused. Nothing is published where no chip can pause.
+ */
+export type LivePauseControl = { readonly paused: boolean; readonly toggle: () => void };
+let livePause: LivePauseControl | null = null;
+const livePauseListeners = new Set<() => void>();
+
+function setLivePause(next: LivePauseControl | null) {
+  livePause = next;
+  for (const listener of livePauseListeners) listener();
+}
+
+function subscribeLivePause(listener: () => void) {
+  livePauseListeners.add(listener);
+  return () => {
+    livePauseListeners.delete(listener);
+  };
+}
+
+/** The pause of the page on screen, or null when its Live chip cannot pause (or there is none). */
+export function useLivePause(): LivePauseControl | null {
+  return useSyncExternalStore(
+    subscribeLivePause,
+    () => livePause,
+    () => null,
+  );
+}
+
+function usePublishLivePause(paused: boolean, onTogglePause: (() => void) | undefined) {
+  const toggleRef = useRef(onTogglePause);
+  useEffect(() => {
+    toggleRef.current = onTogglePause;
+  });
+  const canPause = onTogglePause !== undefined;
+  useEffect(() => {
+    if (!canPause) return;
+    const entry: LivePauseControl = { paused, toggle: () => toggleRef.current?.() };
+    setLivePause(entry);
+    return () => {
+      if (livePause === entry) setLivePause(null);
+    };
+  }, [canPause, paused]);
+}
 
 /*
  * The clock the phone Live chip shows ("Live HH:MM"). The app shell publishes its own clock here
@@ -230,6 +276,7 @@ export function LiveChip({ state: requested, age, asAt, onHero = false, onToggle
   // connection, so no page shows a live dot over a session that is not updating. CS-13: and Stale
   // once the last good refresh is too old.
   const freshness = useLiveFreshness(requested === "live");
+  usePublishLivePause(requested === "paused", onTogglePause);
   const state: LiveState = requested !== "live" ? requested : freshness.state;
   // M8: Stale is said in words ("Not updating since 10:42"), replacing "Stale as at 10:42".
   const word = state === "stale" ? notUpdatingWords(asAt ?? freshness.since) : WORD[state];

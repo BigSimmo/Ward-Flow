@@ -206,3 +206,8 @@ Two citations pointed at changed lines and were moved by hand: the collection gu
 `ward-flow-transport-events.ts` (now line 275) and the collection gaps in `patient-transit-operations.tsx`
 (now line 816). Evidence: the `tests/ward-clinical-*` and `tests/ward-after-c-*` files, run locally (785 tests,
 58 files, on the merged tree).
+
+**Main with PR E (#1658) merged into the clinical PR (14 November 2026).** Both sides' handler changes are kept
+unchanged; the merge adds no behaviour. Citations in `ward/ward-screen.tsx` and `patients/patient-transit-operations.tsx`
+were moved to the same statements in the merged files. The Mark handover ready citation now points at the one
+`HANDOVER_READY` dispatch in `readyHandover` (line 167), which carries the fit to travel reason (D-187 item 10).

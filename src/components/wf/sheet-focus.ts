@@ -73,7 +73,13 @@ const MAX_CONSECUTIVE_RECLAIMS = 12;
  */
 const NEVER_INERT_TAGS = new Set(["SCRIPT", "STYLE", "LINK", "TEMPLATE", "NOSCRIPT", "NEXT-ROUTE-ANNOUNCER"]);
 
-type SheetEntry = { id: string; root: HTMLElement | null; interactionRoots: readonly HTMLElement[] };
+type SheetEntry = {
+  id: string;
+  root: HTMLElement | null;
+  interactionRoots: readonly HTMLElement[];
+  /** Opening order: a layer that re-registers keeps it, so it goes back to its own place. */
+  order: number;
+};
 
 function sheetContains(sheet: SheetEntry, element: Element) {
   return (
@@ -82,6 +88,16 @@ function sheetContains(sheet: SheetEntry, element: Element) {
 }
 
 const openSheets: SheetEntry[] = [];
+let nextSheetOrder = 0;
+/**
+ * C20 (critique v2, 13 Nov 2026): layers popped in this task, kept until the next microtask. A
+ * layer whose effect re-runs (a panel that re-registers on resize) pops and pushes in one commit;
+ * it goes back to its own place in the stack instead of jumping above the pop-up opened over it,
+ * which then stopped answering Escape and Tab. A layer that really closed is forgotten before it
+ * could open again, so a later open still goes on top.
+ */
+const reRegistering = new Map<string, SheetEntry>();
+let reRegisterFlushQueued = false;
 const inertedElements = new Set<HTMLElement>();
 const stackListeners = new Set<() => void>();
 let bodyScrollLockPreviousOverflow = "";
@@ -361,7 +377,19 @@ let releaseSheetPageScroll: (() => void) | null = null;
 
 export function pushSheet(id: string, root: HTMLElement | null = null, interactionRoots: readonly HTMLElement[] = []) {
   if (openSheets.length === 0 && !releaseSheetPageScroll) releaseSheetPageScroll = lockPageScroll();
-  openSheets.push({ id, root, interactionRoots });
+  const returning = reRegistering.get(id);
+  reRegistering.delete(id);
+  if (returning) {
+    // The same handle comes back, at its own place: above the layers opened before it, below the
+    // ones opened after.
+    returning.root = root;
+    returning.interactionRoots = interactionRoots;
+    const above = openSheets.findIndex((sheet) => sheet.order > returning.order);
+    openSheets.splice(above === -1 ? openSheets.length : above, 0, returning);
+  } else {
+    nextSheetOrder += 1;
+    openSheets.push({ id, root, interactionRoots, order: nextSheetOrder });
+  }
   syncBackgroundInert();
   notifyStackListeners();
 }
@@ -397,7 +425,15 @@ export function updateSheetInteractionRoots(id: string, roots: readonly HTMLElem
 export function popSheet(id: string) {
   for (let index = openSheets.length - 1; index >= 0; index -= 1) {
     if (openSheets[index].id === id) {
-      openSheets.splice(index, 1);
+      const [entry] = openSheets.splice(index, 1);
+      reRegistering.set(id, entry);
+      if (!reRegisterFlushQueued) {
+        reRegisterFlushQueued = true;
+        queueMicrotask(() => {
+          reRegisterFlushQueued = false;
+          reRegistering.clear();
+        });
+      }
       break;
     }
   }

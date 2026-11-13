@@ -66,7 +66,8 @@ describe("closing the exact bed from the bed drawer", () => {
     expect(card(bed)).toHaveAttribute("data-state", "closed");
     expect(bedsIn("ready")).toHaveLength(ready.length - 1);
     expect(bedsIn("ready")).not.toContain(bed);
-    expect(screen.getByText(`Bed ${bed} closed. It is not offered until it is reopened.`)).toBeInTheDocument();
+    // D-192 (shared design parts item 4): the toast title loses its full stop and names the Undo time.
+    expect(screen.getByText(`Bed ${bed} closed. It is not offered until it is reopened`)).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId("ward-drawer-reopen-bed"));
     expect(activeClosedBeds(flow!.units.find((unit) => unit.id === UNIT)!)).toEqual([]);

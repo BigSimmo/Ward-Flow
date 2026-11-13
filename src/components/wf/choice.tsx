@@ -7,7 +7,7 @@ import { DisabledReason } from "./button";
 import { cx } from "./cx";
 import { Icon } from "./icon";
 import { PanelBoundary } from "./panel-boundary";
-import { Count } from "./primitives";
+import { Count, WindowWord, type CountWindow } from "./primitives";
 import { controlTone, StatusGlyph, type WfTone } from "./status-glyph";
 import styles from "./choice.module.css";
 
@@ -16,6 +16,12 @@ export type ChoiceItem<T extends string = string> = {
   label: ReactNode;
   /** Count in `.k`, behind the label. */
   count?: number | string;
+  /**
+   * The count's time window ("any date"), drawn quiet after it (shared design parts item 2). Tabs
+   * and pill tabs put it after a middle dot; `Segmented` puts it under the label. Show it only when
+   * the window differs from what the page title already says, or one strip mixes windows.
+   */
+  window?: CountWindow;
   /** Glyph before the label. */
   tone?: WfTone;
   /** Segmented and HeroTrack only: render the item as a link (route tabs). */
@@ -93,6 +99,7 @@ export function Tabs<T extends string>({ items, value, onChange, label, idPrefix
             {item.tone ? <StatusGlyph tone={controlTone(item.tone)} size={9} /> : null}
             {item.label}
             {item.count != null ? <Count n={item.count} className={styles.k} /> : null}
+            {item.window ? <WindowWord word={item.window} /> : null}
           </button>
         );
       })}
@@ -157,6 +164,7 @@ export function PillTabs<T extends string>({
             {item.tone ? <StatusGlyph tone={controlTone(item.tone)} size={9} /> : null}
             {item.label}
             {item.count != null ? <Count n={item.count} className={styles.k} /> : null}
+            {item.window ? <WindowWord word={item.window} /> : null}
           </button>
         );
       })}
@@ -212,7 +220,19 @@ export type SegmentedProps<T extends string> = {
    */
   disabledReason?: string;
   className?: string;
+  /**
+   * `track` (the default): one switch, options side by side. `answers`: a form answer row (spec item
+   * 15, C18, 13 Nov 2026). Each option is sized to its words and wraps, never cut mid-word; four or
+   * more options become separate chips across the full width; on a phone three or more become a
+   * one-per-line list of 40px rows with a radio mark. Two options stay a switch.
+   */
+  layout?: "track" | "answers";
 };
+
+/** Answer rows of this many options or more list one per line on a phone (spec item 15). */
+const ANSWER_LIST_MIN = 3;
+/** Answer rows of this many options or more become separate wrapping chips (spec item 15). */
+const ANSWER_CHIPS_MIN = 4;
 
 /**
  * Segmented control: `radiogroup` with roving tabindex, counts in `.k`. When items carry `href`
@@ -228,6 +248,7 @@ export function Segmented<T extends string>({
   unavailable = false,
   disabledReason,
   className,
+  layout = "track",
 }: SegmentedProps<T>) {
   const reasonId = useId();
   const off = Boolean(disabledReason);
@@ -239,15 +260,28 @@ export function Segmented<T extends string>({
     variant === "hero" ? styles.trk : styles.seg,
     size === "md" && styles.md,
     (unavailable || off) && styles.unavailable,
+    layout === "answers" && styles.answers,
+    layout === "answers" && items.length >= ANSWER_CHIPS_MIN && styles.answerChips,
+    layout === "answers" && items.length >= ANSWER_LIST_MIN && styles.answerList,
     className,
   );
-  const content = (item: ChoiceItem<T>) => (
+  const main = (item: ChoiceItem<T>) => (
     <>
       {item.tone ? <StatusGlyph tone={controlTone(item.tone)} size={9} /> : null}
       {item.label}
       {item.count != null ? <Count n={item.count} className={styles.k} /> : null}
     </>
   );
+  // A window word sits under the label and count, so equal segments keep their width.
+  const content = (item: ChoiceItem<T>) =>
+    item.window ? (
+      <span className={styles.segStack}>
+        <span className={styles.segMain}>{main(item)}</span>
+        <WindowWord word={item.window} className={styles.segWin} />
+      </span>
+    ) : (
+      main(item)
+    );
 
   if (items.some((item) => item.href)) {
     return (

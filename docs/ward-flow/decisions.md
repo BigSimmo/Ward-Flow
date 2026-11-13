@@ -214,12 +214,17 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-189](#d-189-handling-the-open-sitting-questions-and-how-the-remaining-items-are-built-13-november-2026)                                              | Handling the open sitting questions, and how the remaining items are built             | Active                                           |
 | [D-190](#d-190-the-six-pr-fix-plan-13-november-2026)                                                                                                    | The six-PR fix plan                                                                    | Active                                           |
 | [D-191](#d-191-home-ward-and-capacity-mock-ups-approved-13-november-2026)                                                                               | Home, Ward and Capacity mock-ups approved                                              | Active                                           |
+| [D-192](#d-192-shared-design-parts-approved-for-building-wave-3-pr-e-13-november-2026)                                                                  | Shared design parts approved for building (wave 3, PR E)                               | Active                                           |
 | [D-193](#d-193-checked-travel-times-wait-until-after-the-demo-13-november-2026)                                                                         | Checked travel times wait until after the demo                                         | Active                                           |
 | [D-194](#d-194-time-audit-answers-13-november-2026)                                                                                                     | Time audit answers                                                                     | Active                                           |
 | [D-195](#d-195-merge-each-pull-request-when-its-checks-pass-13-november-2026)                                                                           | Merge each pull request when its checks pass                                           | Active                                           |
 | [D-196](#d-196-threads-decide-on-their-own-to-keep-work-moving-13-november-2026)                                                                        | Threads decide on their own to keep work moving                                        | Active                                           |
 | [D-197](#d-197-system-fixes-calls-taken-under-d-196-13-november-2026)                                                                                   | System-fixes calls taken under D-196                                                   | Active                                           |
+| [D-198](#d-198-one-owner-per-screen-for-forecast-words-and-reserved-bed-retired-13-november-2026)                                                       | One owner per screen for forecast words; "reserved bed" retired                        | Active                                           |
 | [D-199](#d-199-ed-and-ward-phone-limits-raised-past-the-allowance-13-november-2026)                                                                     | ED and Ward phone limits raised past the allowance                                     | Active                                           |
+| [D-200](#d-200-shared-design-parts-and-the-home-ward-and-capacity-redesign-go-live-together-13-november-2026)                                           | E and F go live together after the 14 November release                                 | Active                                           |
+| [D-201](#d-201-overnight-merging-without-josh-13-november-2026)                                                                                         | Overnight merging without Josh                                                         | Active                                           |
+| [D-202](#d-202-joint-go-summary-recommendations-14-november-2026)                                                                                       | Joint go summary recommendations                                                       | Active                                           |
 | [D-204](#d-204-a-signed-triage-shows-the-desks-name-14-november-2026)                                                                                   | A signed triage shows the desk's name                                                  | Active                                           |
 | [D-207](#d-207-fit-to-travel-recorded-as-not-cleared-and-the-clinical-go-14-november-2026)                                                              | Fit to travel: not cleared, and the clinical go                                        | Active                                           |
 
@@ -2395,6 +2400,20 @@ is inferred.
 - **Build defaults (8:56 PM AWST, "Yes to all recommendations and update coordinator"):** the Home, Ward and Capacity pull request makes no TV edits and builds the bed squares. The window word is dropped where the page title already says "now". The Home forecast line reads "Tomorrow N short · range … · From ward dates".
 - **Boundary:** synthetic data only. Sets no clinical value.
 
+## D-192. Shared design parts approved for building, wave 3, PR E (13 November 2026)
+
+- **Date:** 13 November 2026, 8:36 PM AWST (12:36 UTC). **Decided by:** Josh, choosing "Approve all, recommended words" on the decision card in the "Redesign shared design parts" thread, after the review page https://claude.ai/artifact/6ocLc57jWNs6BKRUJKSuBL (17 items, before and after on the real app). Numbered D-192 because the master plan thread reserved it for PR E; D-174 to D-191 belong to other open PRs.
+- **Decision:** build the 17 shared design parts as one PR (PR E) and record these rulings:
+  1. Health-service brand colours leave every screen. A service shows as its short name in a neutral tag, or nothing where the name is already written beside it (F-78).
+  2. A count shows its time window as a quiet word ("Discharges · any date") only when it differs from what the page title already says or when one strip mixes windows. Window words: now, today, by tomorrow, next 4h, next 24h, last 24h, this week, since 07:00, any date. Which window each count uses stays with F-105.
+  3. Undo messages carry one clock time ("Undo until 10:47"), sit bottom-right on desktop and above the pinned bar on phone, and Undo stays on the row for the whole window. The window stays at today's stated 5 minutes.
+  4. Words: Tools "Suggested now" becomes "Needs you"; ED Who to call "Suggested next step" becomes "Next escalation step"; Home and Capacity "Forecast" and "likely" become "From ward dates" (the forecast line drops "likely").
+  5. A desk never sees a button it can never use; one quiet line names who does it. A button unavailable for now keeps its reason drawn under it, on phone too.
+  6. Every enlarged or full-screen view carries a small neutral "Synthetic data" tag.
+  7. The Demo panel puts the clock, a Pause and Reset demo first; phone Tools gains a Help row; viewing as another desk shows a slim bar with "Back to coordinator".
+- **Why:** these fix approved audit findings (F-03, F-39, F-49, F-54, F-57, F-60, F-61, F-62, F-78, F-94, F-103, F-109 and design critique v2 items 19 to 23) once, in the kit, so every page inherits them.
+- **Boundary:** synthetic data only. No clinical value, clinical rule or safety wording changes. Undo logic, desk permissions, focus paths, count definitions and the header progress label are built in PR C; PR E adds the shared look and kit parts. Approves no release.
+
 ## D-193. Checked travel times wait until after the demo (13 November 2026)
 
 - **Date:** 13 November 2026, 8:36 PM AWST (12:36 UTC). D-192 is claimed by open PR #1658, the shared design parts pull request. **Decided by:** Josh, in the Ward Flow project chat ("Please defer the travel times").
@@ -2458,6 +2477,16 @@ is inferred.
   19. **Ward page "Discharges today"** counts only open releases dated today; a past-date release stays under "Past date" (F-151, Audit G FS-1).
 - **Boundary:** clinical values, legal calls, Josh's sign-off gates, anything irreversible or outward-facing, and project-rule exceptions still go to Josh.
 
+## D-198. One owner per screen for forecast words, and "reserved bed" retired (13 November 2026)
+
+- **Date:** 13 November 2026, about 10:00 PM AWST (14:00 UTC). **Decided by:** the "Plan fixes for every audit finding" thread under Josh's standing autonomy direction (D-196), not by Josh. It settles review item E-1 on PR #1658 and the overlap between PR E and PR F.
+- **Decision:**
+  1. One owner per screen for the D-192 ruling 4 words "Forecast" and "likely". PR F changes every page-level line (Home planned list, the three Capacity files, the Ward phone row). PR E changes only the shared kit words and the Home beds-gap line. The TV line goes in PR C if it fits, otherwise after the demo.
+  2. The Home ED-wait row reads "18 reach 24 hours in ED by tomorrow unless placed", and "Forecast · 10 at Armadale ED · See who" becomes "From ward dates · 10 at Armadale ED · See who". PR F builds both.
+  3. "reserved bed" joins the word list's banned words (say "Pulled", D-81). The one ED medical-deterioration safety line that uses it stays word for word, as a listed exception, and goes on the clinical sign-off sitting list.
+- **Why:** two PRs editing the same lines would clash and could leave a page half-changed; "reserved bed" means the same as Pulled and confuses the bed states.
+- **Boundary:** wording only. No clinical value, clinical rule or safety wording changes; the safety line is untouched until the clinical sitting rules on it.
+
 ## D-199. ED and Ward phone limits raised past the allowance (13 November 2026)
 
 - **Date:** 13 November 2026, 11:37 PM AWST (15:37 UTC). D-198 is claimed by open PR #1658. **Decided by:** Josh, choosing "Yes, raise ED and Ward by ~7 KB" on a decision card in the Fixes thread.
@@ -2465,9 +2494,41 @@ is inferred.
 - **Why:** both pages' own code is the same size as main; the growth is the shared script every page loads (real fix and time-audit code), after a trim that took 6 to 20 KB off every page. The next lever, swapping `tailwind-merge`, is too large a change before the demo. Detail: `docs/script-budget-history/2026-11-13-pr-c-system-fixes.md`.
 - **Follow-up (14 November 2026, 12:46 AM AWST, 16:46 UTC):** Josh chose "Yes, raise Ward, ED, Referrals" on a second card in the Fixes thread, after the CI fixes added about 0.3 KB to the shared script (the Ward desk's bed seats, F-150). Final limits: ED 545.8 (+7.3), Ward 625.6 (+7.4), Referrals 595.3 (+5.4, past the 5 KB allowance).
 
+## D-200. Shared design parts and the Home, Ward and Capacity redesign go live together (13 November 2026)
+
+- **Date:** 14 November 2026, 12:48 AM AWST (13 November, 16:48 UTC). **Decided by:** Josh, "Please go ahead with all your recommendations", taking the coordinator's joint-go recommendation for PR E (#1658) and PR F.
+- **Decision:**
+  1. The joint go for PR E and PR F comes after the 6 am Perth release on 14 November, so the two never reach the live site one without the other. D-201, seven minutes later, gave the go and lets the merges run overnight on its own conditions.
+  2. Until that go, each stays ready (checks green, reviewed) with auto-merge off. At the go both are armed; whichever merges second carries the FM-13 change (the Home pull message passes its Undo time to the shared toast).
+  3. They go live together at the next normal release. If the second merge looks likely to run past 9 pm Perth (21:00 UTC), the coordinator is told at once, so Josh can pause the release.
+  4. Before the go, the two are walked together locally at 1366 x 768.
+- **Why:** E changes the shared parts F's pages are built from. Shipping one without the other would show the room half of each design.
+- **Boundary:** a release-timing ruling only; it approves no release and changes no clinical value.
+
+## D-201. Overnight merging without Josh (13 November 2026)
+
+- **Date:** 14 November 2026, 12:55 AM AWST (13 November, 16:55 UTC). **Decided by:** Josh, "Go ahead with all recommendations and autonomously and ensure you autonomously merge the GitHub PRs as well overnight", as worded by the plan thread in `merge-day-checklists.md`.
+- **Decision:** the joint E and F go (D-200) is given, and the owning threads merge their own pull requests overnight, by auto-merge only:
+  1. PR C (#1660) merges itself when green. The clinical PR (#1656) stays held.
+  2. PR E (#1658) and PR F each get ready on their own: checks green, must-fix review items closed, merge checklist items 1 to 8 done, including the joint local walk at 1366 x 768.
+  3. E arms first, and only once F is also ready and F's local trial of main with E passes. After E lands, F merges main in, takes the FM-13 change (the Home pull message passes its Undo time to the shared toast), goes green and arms.
+  4. E arms by 3:30 AM AWST (19:30 UTC) at the latest, so both can go live together at the 6 am release. Past that time neither arms until the 6 am release has run, and both merge during the day; D-200 still holds.
+  5. If F looks like missing 5:30 AM AWST (21:30 UTC) after E has landed, the coordinator is told at once.
+- **Why:** Josh asked for the merges to go ahead overnight without him, while D-200 keeps the two designs reaching the live site together.
+- **Boundary:** merge timing only. It approves no release, and changes no clinical value and no hold.
+
+## D-202. Joint go summary recommendations (14 November 2026)
+
+- **Date:** 14 November 2026, 1:19 AM AWST (13 November, 17:19 UTC). **Decided by:** Josh, "Go ahead with all recommendations" on `joint-go-summary.md`, relayed by the plan thread.
+- **Decision:**
+  1. "Obs not recorded" on the Ward page stays as built: it also counts beds pulled for a person who has not arrived, as "Staff on constant obs" does (26 October rule). Its screen-reader label says "including pulled beds".
+  2. The ED site page and Statistics may rise more than 5 KB over PR C's phone limits in the shared design parts PR (#1658), but only after a trim has been tried. The final measured figures are recorded in `script-budget.json` and its history.
+- **Why:** the reviewer's and the plan thread's recommendations, accepted together so the joint E and F go (D-201) is not held on a sub-kilobyte size gap.
+- **Boundary:** the clinical questions in the same summary (observation level on every pull) are not covered; they are asked separately. No clinical value changes.
+
 ## D-204. A signed triage shows the desk's name (14 November 2026)
 
-- **Date:** 14 November 2026, 7:05 AM AWST (13 November, 23:05 UTC). D-200 is claimed by open PR #1658. D-201 is claimed by open PR #1658. D-202 is claimed by open PR #1658. D-203 is claimed by open PR #1659. **Decided by:** Josh, "Yes to all recommendations above. Defer 2 and 3" in the Ward Flow project chat, answering the coordinator's post whose first item recommended that a signed triage show the desk's name instead of the nurse persona's name (go question 4 for the held clinical PR).
+- **Date:** 14 November 2026, 7:05 AM AWST (13 November, 23:05 UTC). D-203 is claimed by open PR #1659. **Decided by:** Josh, "Yes to all recommendations above. Defer 2 and 3" in the Ward Flow project chat, answering the coordinator's post whose first item recommended that a signed triage show the desk's name instead of the nurse persona's name (go question 4 for the held clinical PR).
 - **Decision:** a signed triage, its summary, its iSoBAR "Identify" line, the patient card's "Signed … by" line and an unsigned triage's "Reviewer" name the desk by its own name ("Bed coordinator", "ED clinician", "Nurse in charge"), never the desk's sample persona. This changes how D-189 item 9(f) (A9-29) is shown; the signer is still read from the saved record's desk.
 - **Still open:** the words for fit to travel recorded as "Not cleared" (go question 2). The held clinical PR keeps its hold until Josh says "lift the hold".
 - **Boundary:** synthetic data only. No clinical value, threshold or rule changes. Built in the held clinical PR (#1656).

@@ -77,6 +77,12 @@ const APPROVED_SHARED_MODULES = new Map([
       "when extracted; it does not approve the rest of components/ui.",
   ],
   [
+    "@/components/wf/synthetic-mark",
+    "Shared design parts (D-192, 13 Nov 2026): the synthetic-data mark on the loading row, which every route shows at first paint. " +
+      "Imported by its own file because the loading boundary is server-rendered on every route, and reaching the kit barrel there " +
+      "put the whole kit's script and styles into every page's first load (about 50 KB, measured 13 Nov 2026).",
+  ],
+  [
     "@/components/wf/tooltip",
     "the existing portal, viewport positioning and focus/Escape lifecycle for the drawn closed-rail card; avoids clipping inside the required scrolling rail without duplicating overlay infrastructure (visual wave Task 1)",
   ],
@@ -326,7 +332,9 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
     // Ward Flow imported it.
     // 13 -> 14 on 2026-11-13: @/components/wf/format, the future-start sentence the clock shares with
     // the kit's Live timer (RC 2.5, F-35), read from the kit's leaf rather than its barrel.
-    expect(APPROVED_SHARED_MODULES.size).toBe(14);
+    // 14 -> 15 on 2026-11-13: @/components/wf/synthetic-mark, the loading row's mark, kept off the barrel
+    // so the loading boundary does not carry the whole kit (D-192).
+    expect(APPROVED_SHARED_MODULES.size).toBe(15);
     // ⚠️ AND THE MEMBERSHIP, NOT ONLY THE COUNT. A size pin cannot tell a widening from a SWAP:
     // remove one approved module, add another, and the count stays unchanged while Ward Flow's seam
     // has changed — which is the thing this list exists to control. The argument is already made
@@ -342,6 +350,7 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
       "@/components/wf/missing-value",
       "@/components/wf/sheet",
       "@/components/wf/sheet-focus",
+      "@/components/wf/synthetic-mark",
       "@/components/wf/tooltip",
       "@/lib/brand-mark",
       "@/lib/client-store-factory",

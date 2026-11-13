@@ -198,6 +198,8 @@ describe("Mark handover ready once 3 of 3 are clear (A4-9)", () => {
       label: "Mark handover ready",
       reason: "ED only",
     });
+    // A step this desk can never take is left out (F-54), and named in a WhoDoesThis line instead.
+    expect(buildPatientStatus("held", { ...context, roleLimit: () => null }).next).toBeUndefined();
   });
 
   it("pins it as the phone's one primary", () => {
@@ -206,6 +208,24 @@ describe("Mark handover ready once 3 of 3 are clear (A4-9)", () => {
     const bar = screen.getByTestId("ward-patient-phone-action-bar");
     fireEvent.click(within(bar).getByRole("button", { name: "Mark handover ready" }));
     expect(onHandoverReady).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves out a never-for-this-desk step and draws a not-yet reason under the button", () => {
+    // Design parts item 6 on PR C's F-54: a step this desk can never take is not drawn at all; a role
+    // limit "for now" or any other unavailable step is "not yet", its lock line always drawn.
+    const never = render(<PatientStatusCard mode="held" context={{ ...context, roleLimit: () => null }} />);
+    expect(never.container.querySelector("[data-touch-reason]")).toBeNull();
+    expect(never.container.querySelector("[data-wf-reason]")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Mark handover ready" })).toBeNull();
+    never.unmount();
+    const notYet = render(
+      <PatientStatusCard
+        mode="held"
+        context={{ ...context, movement: { ...ready, stage: "accepted_awaiting_bed", transport: undefined } }}
+      />,
+    );
+    const drawn = [...notYet.container.querySelectorAll("[data-wf-reason]")];
+    expect(drawn.map((line) => line.textContent)).toContain("Needs the bed pulled");
   });
 });
 
@@ -267,6 +287,7 @@ describe("Handover (A4-28, A4-26, S-31)", () => {
     expect(checks).not.toHaveTextContent("Every ward feed is current");
     expect(checks).toHaveTextContent(/counts are stale|wards with stale counts/);
     fireEvent.click(screen.getByTestId("ward-handover-sign-off-button"));
-    expect(screen.getAllByText("Handover signed off.")).toHaveLength(1);
+    // D-192 (shared design parts item 4): the title loses its full stop; the kit adds " · Undo until HH:MM".
+    expect(screen.getAllByText("Handover signed off")).toHaveLength(1);
   });
 });

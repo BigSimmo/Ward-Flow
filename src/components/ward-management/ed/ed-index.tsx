@@ -54,6 +54,7 @@ import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/wa
 
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
 import { edShortName } from "@/components/ward-management/ward-sites";
+import { ServiceNameTag } from "@/components/ward-management/service-name-tag";
 import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
 import { edHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -1198,8 +1199,8 @@ function PhoneEdList({
         <PhoneListRow
           name={
             <span className={styles.phoneName}>
-              <span className={styles.svcDot} data-service={item.summary.service} aria-hidden="true" />
               {item.short}
+              <ServiceNameTag service={item.summary.service} />
             </span>
           }
           meta={

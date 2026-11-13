@@ -1458,10 +1458,11 @@
   border: 1px solid var(--line-strong);
 }
 
+/* F-78: a legal form is not a health service, so its badge is the kit's neutral Badge look. */
 .badgePurple {
-  background: var(--svc-south-bg, var(--surface-2));
-  color: var(--svc-south-ink, var(--ink));
-  border: 1px solid var(--svc-south-border, var(--line));
+  background: var(--wf-track);
+  color: var(--wf-ink-1);
+  border: 1px solid transparent;
 }
 
 .badgeInfo {
@@ -5103,6 +5104,17 @@
   white-space: nowrap;
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   color: var(--wf-ink-2);
+}
+
+/* D-192 (shared design parts item 9): a place name in the Referral cell wraps to two lines before any
+ * "…", as the Wait column's step line does (.a2Sub). */
+.a2Facts.a2Place > *,
+.a2Facts.a2Place [class]:not(svg) {
+  display: -webkit-box;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 /* A bed-hold or transit pill stays one line with its status glyph beside the words; the glyph

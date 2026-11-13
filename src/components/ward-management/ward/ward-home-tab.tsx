@@ -40,7 +40,13 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { ArrowLeftRight, BedSingle, ChevronRight, LayoutGrid, List, ListChecks } from "lucide-react";
 import { WardPlaceOrMove } from "./ward-place-or-move";
-import { tileStateLine, WardHomeTileText, WardHomeTodayStrip, WardPhoneTomorrowRow } from "./ward-home-tab-today";
+import {
+  tileStateLine,
+  WardHomeTileText,
+  WardHomeTodayStrip,
+  WardPhoneFlowRow,
+  WardPhoneTomorrowRow,
+} from "./ward-home-tab-today";
 import { useWardTomorrowOutlook } from "./ward-home-outlook";
 import {
   Button,
@@ -1205,13 +1211,15 @@ export function WardHomeTab({
           <Segmented
             label="Ward flow list"
             items={[
-              { id: "referrals", label: "Referrals", count: incoming.length },
-              { id: "admissions", label: "Admissions", count: expectedRows.length + leaveRows.length },
+              // Count windows (design parts item 2): admissions and discharges are open items at any date.
+              { id: "referrals", label: "Referrals", count: incoming.length, window: "now" },
               {
-                id: "discharges",
-                label: "Discharges",
-                count: outRows.length,
+                id: "admissions",
+                label: "Admissions",
+                count: expectedRows.length + leaveRows.length,
+                window: "any date",
               },
+              { id: "discharges", label: "Discharges", count: outRows.length, window: "any date" },
             ]}
             value={flowTab}
             onChange={setFlowTab}
@@ -1706,29 +1714,12 @@ export function WardHomeTab({
               </span>
               <ChevronRight strokeWidth={1.75} size={18} aria-hidden="true" className={styles.needsChevron} />
             </button>
-            <button
-              type="button"
-              className={styles.needsRow}
-              aria-haspopup="dialog"
-              onClick={() => {
-                onPhonePanelChange?.("flow");
-              }}
-              data-testid="ward-phone-row-flow"
-            >
-              <span className={styles.needsIcon} data-tone="info" aria-hidden="true">
-                <ArrowLeftRight strokeWidth={1.75} size={18} aria-hidden="true" />
-              </span>
-              <span className={styles.needsText}>
-                <b>Ward flow</b>
-                <span>
-                  {incoming.length} {incoming.length === 1 ? "referral" : "referrals"} ·{" "}
-                  {expectedRows.length + leaveRows.length}{" "}
-                  {expectedRows.length + leaveRows.length === 1 ? "admission" : "admissions"} · {outRows.length}{" "}
-                  {outRows.length === 1 ? "discharge" : "discharges"}
-                </span>
-              </span>
-              <ChevronRight strokeWidth={1.75} size={18} aria-hidden="true" className={styles.needsChevron} />
-            </button>
+            <WardPhoneFlowRow
+              referrals={incoming.length}
+              admissions={expectedRows.length + leaveRows.length}
+              discharges={outRows.length}
+              onSheet={onPhonePanelChange}
+            />
             <WardPhoneTomorrowRow outlook={outlook} onTab={setFlowTab} onSheet={onPhonePanelChange} />
           </div>
         </section>

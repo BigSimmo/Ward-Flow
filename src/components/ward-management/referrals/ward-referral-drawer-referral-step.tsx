@@ -660,6 +660,8 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
                       : `${sectionId}-ed-arrival-hint`
                   }
                   invalid={attempted.referral && edArrivalWrong}
+                  // The drawer Field above draws the error once the step is tried, so the box draws none.
+                  errorText={false}
                   value={edNeeds.expectedArrival ?? ""}
                   onValueChange={(time) => setEdNeeds((n) => ({ ...n, expectedArrival: time || undefined }))}
                   // PR #1474 review: typed but not a real time blocks Send until fixed or cleared (empty stays optional).

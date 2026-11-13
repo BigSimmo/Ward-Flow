@@ -134,14 +134,26 @@
   white-space: nowrap;
 }
 
+/* Spec item 9 (13 Nov 2026): a cell's height is a floor (a table cell's `height` grows with its
+   content, as `min-height` does elsewhere; `min-height` itself does nothing on a cell). Names and
+   places wrap instead of ending in "…"; `tableClasses.twoLines` on a cell's text keeps it to two
+   lines before any "…". */
 .table td {
   height: var(--wf-row);
   padding: var(--wf-cell-pad-y, 0) var(--wf-s-3);
   border-bottom: 1px solid var(--wf-line);
-  white-space: nowrap;
+  white-space: normal;
   overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: break-word;
   max-width: 0;
+}
+
+.twoLines {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .table th:first-child,

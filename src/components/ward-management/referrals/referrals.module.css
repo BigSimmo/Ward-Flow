@@ -1864,10 +1864,6 @@
   border-top-color: var(--warn);
 }
 
-.kpiCard:nth-child(4) {
-  border-top-color: var(--svc-north);
-}
-
 .kpiCard:nth-child(5) {
   border-top-color: var(--good);
 }

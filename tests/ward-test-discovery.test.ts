@@ -50,6 +50,12 @@ const WARD_STAR_RE = /^ward-/;
 const EXCEPTIONS: Record<string, string> = {
   "figma-tokens.test.ts":
     "named for the Figma token tooling; Ward registry imports verify concrete mapped fixtures, not just route directories",
+  "wf-phone-touch-and-wrap.test.ts":
+    "a kit (wf) test, named with the kit's prefix; it reads Ward screen stylesheets and one held-up label to prove the kit's phone touch and wrap rules reach them (D-192)",
+  "wf-popover-choice-focus.dom.test.tsx":
+    "a kit (wf) test, named with the kit's prefix; it renders the Ward rail to prove the kit's choice pop-up returns focus (D-192)",
+  "wf-synthetic-mark-full-screen.dom.test.tsx":
+    "a kit (wf) test, named with the kit's prefix; it renders the Movements screen to prove the kit's synthetic mark stays in view when a chart is enlarged (D-192)",
 };
 
 function walkTestFiles(dir: string): string[] {

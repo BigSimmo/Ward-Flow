@@ -46,8 +46,14 @@ import {
   sentenceStart,
   viewingDeskLine,
 } from "@/components/ward-management/shell/ward-rail-helpers";
-import { Dot, SrOnly, durMinutes, useIsPhone } from "@/components/wf";
-import { setGlarePreference, setThemePreference } from "@/lib/theme-client";
+import { Dot, Kbd, SrOnly, durMinutes, useIsPhone } from "@/components/wf";
+import {
+  APPEARANCE_CHOICES,
+  AppearanceRadioGroup,
+  CHECKED_APPEARANCE_SELECTOR,
+  appearanceChoice,
+  chooseAppearance,
+} from "@/components/ward-management/shell/ward-appearance-choices";
 import {
   closeWardDrawer,
   isPhoneViewport,
@@ -119,21 +125,10 @@ import { useServiceScope } from "@/components/ward-management/shell/ward-service
  * - Selection is a slate tint with a fine edge. No bar or stripe on any edge (owner ruling Q-11).
  * - Status markers are round: a filled amber circle at or over 85%, a neutral ring under it.
  *
- * The chosen service still shows as a dot next to a WORD, never a bar (owner answer 52): open, it
- * reads "Service: South Metro"; closed, the dot keeps the short form ("South"). Under All services
+ * The chosen service shows as a WORD, never a bar (owner answer 52) and, since F-78, never a
+ * brand-colour dot: open, it reads "Service: South Metro"; closed, the short form ("South"). Under All services
  * it renders nothing at all, because there is no state to echo.
  */
-
-// Item 52's swatch key, mirroring `ed.module.css`'s own `data-svc` attribute-selector convention
-// rather than an inline colour, so the CSS stays the one place that names a token.
-const SERVICE_SWATCH_KEY: Record<HealthService, "north" | "south" | "east" | "wachs" | "cahs" | "private"> = {
-  "North Metro": "north",
-  "South Metro": "south",
-  "East Metro": "east",
-  WACHS: "wachs",
-  CAHS: "cahs",
-  Private: "private",
-};
 
 // The closed rail's short form. Metro is the only word ever dropped.
 const SERVICE_SHORT_LABEL: Record<HealthService, string> = {
@@ -204,28 +199,6 @@ function getTabletLandscapeSnapshot() {
     typeof window.matchMedia === "function" &&
     window.matchMedia(TABLET_LANDSCAPE_RAIL_QUERY).matches
   );
-}
-
-// UX audit (21 Oct 2026): the same four themes as Settings, Display (settings-15 made Glare a fourth).
-const APPEARANCE_CHOICES = [
-  { id: "auto", label: "Auto" },
-  { id: "light", label: "Light" },
-  { id: "dark", label: "Dark" },
-  { id: "glare", label: "Bright light" },
-] as const;
-
-type AppearanceChoice = (typeof APPEARANCE_CHOICES)[number]["id"];
-
-/** Glare is its own preference that uses light, so picking any other theme turns it off. */
-function chooseAppearance(next: AppearanceChoice) {
-  // The real bar's `applyGlare` and `applyAppearance`, inlined so the rail does not import the bar.
-  if (next === "glare") {
-    setGlarePreference(true);
-  } else {
-    setGlarePreference(false);
-    setThemePreference(next === "auto" ? "system" : next);
-  }
-  announceToWardShell(`Appearance set to ${next}.`);
 }
 
 /**
@@ -309,8 +282,9 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   // Nav order follows the signed-in person, not the route (device audit item 6).
   // ROLE BRANCH (bed_manager): Capacity counts the desk's own site's ready beds (`preview-nav-counts.ts`).
   const { counts, shellRole: role } = useNextNavCounts();
-  const { open, appearance: storedAppearance, glare } = useWardDocumentPreferences();
-  const appearance: AppearanceChoice = glare ? "glare" : storedAppearance;
+  const documentPreferences = useWardDocumentPreferences();
+  const { open } = documentPreferences;
+  const appearance = appearanceChoice(documentPreferences);
   const service = useServiceScope();
   const toggleRef = useRef<HTMLButtonElement>(null);
   const moreTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -399,6 +373,11 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   const boardClock = formatInstant(now);
   const shiftProgress = computeShiftProgress(boardMinute);
   const appearanceRef = useRef<HTMLDivElement>(null);
+  // Opening Appearance moves focus to the current theme, so the keys act on the choices at once.
+  useEffect(() => {
+    if (!appearanceOpen) return;
+    appearanceRef.current?.querySelector<HTMLElement>(CHECKED_APPEARANCE_SELECTOR)?.focus({ preventScroll: true });
+  }, [appearanceOpen]);
   const alertsRef = useRef<HTMLDivElement>(null);
 
   // Every figure below comes from the derivation. Over-the-line words count places, never Alerts (#793).
@@ -802,12 +781,6 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
 
       {service ? (
         <p className={styles.serviceLine} data-testid="ward-rail-service">
-          <span
-            className={styles.serviceDot}
-            data-service={SERVICE_SWATCH_KEY[service]}
-            data-testid="ward-rail-service-dot"
-            aria-hidden="true"
-          />
           {shownOpen ? `Service: ${service}` : SERVICE_SHORT_LABEL[service]}
         </p>
       ) : null}
@@ -1127,17 +1100,17 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
             >
               <div className={styles.appearancePopoverHead}>
                 <SunMoon aria-hidden="true" className={styles.appearancePopoverIcon} strokeWidth={1.75} />
-                <span>Theme</span>
+                <span id="ward-rail-theme-label">Theme</span>
               </div>
-              <div className={styles.appearancePills}>
-                {APPEARANCE_CHOICES.map((choice) => (
-                  <button
-                    key={choice.id}
-                    type="button"
-                    aria-pressed={appearance === choice.id}
-                    onClick={() => chooseAppearance(choice.id)}
-                    className={styles.appearancePillBtn}
-                  >
+              {/* Spec item 14 (C07, 13 Nov 2026): a real radio group. Opening moves focus to the current
+                  choice, arrows move, Enter or Space picks, Escape closes and returns to Appearance. */}
+              <AppearanceRadioGroup
+                value={appearance}
+                className={styles.appearancePills}
+                buttonClassName={styles.appearancePillBtn}
+                aria-labelledby="ward-rail-theme-label"
+                renderChoice={(choice) => (
+                  <>
                     <span className={styles.appearancePreview} aria-hidden="true">
                       {choice.id === "auto" ? (
                         <>
@@ -1152,9 +1125,12 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
                       <span className={styles.appearanceRadio} aria-hidden="true" />
                       {choice.label}
                     </span>
-                  </button>
-                ))}
-              </div>
+                  </>
+                )}
+              />
+              <p className={styles.appearanceKeys} aria-hidden="true">
+                <Kbd>Arrows</Kbd> move · <Kbd>Enter</Kbd> picks · <Kbd>Esc</Kbd> closes
+              </p>
             </div>
 
             <button

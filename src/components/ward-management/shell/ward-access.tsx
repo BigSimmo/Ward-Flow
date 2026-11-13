@@ -52,7 +52,7 @@ import type { AuditReview } from "@/components/ward-management/ward-audit";
 import { isBreakGlassReviewId } from "@/components/ward-management/ward-break-glass-review-id";
 import type { RecordRead, WardRecordActor } from "@/components/ward-management/ward-discharge-records";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
 import {
   WardFlowOverride,
@@ -1179,10 +1179,15 @@ export function WardPrintAttribution({
   const shell = useWardShellPublic();
   if (!shell) return null;
   const { now } = shell;
+  const stamped = at ?? now;
+  // F-109 (A14-23): the time is the demo's scripted board clock, not the printer's real clock, so
+  // it says "board time" beside the browser's own date and AWST. `formatInstantWithDay` always
+  // starts with the clock face, so the rest is its day words ("yesterday", ", 2 days ago").
+  const clock = formatInstant(stamped);
+  const day = formatInstantWithDay(stamped, now).slice(clock.length);
   return (
     <span className={className} data-testid="ward-print-attribution">
-      {lead} {ACCESS_ROLE_LABELS[access.role]}, {shell.placeLabel}, at {formatInstantWithDay(at ?? now, now)}. Synthetic
-      data.
+      {lead} {ACCESS_ROLE_LABELS[access.role]}, {shell.placeLabel}, at {clock} board time{day}. Synthetic data.
     </span>
   );
 }

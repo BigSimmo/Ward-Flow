@@ -4,6 +4,7 @@ import { cookies, headers } from "next/headers";
 import { resolveMetadataBase } from "@/lib/metadata-base";
 import {
   APP_THEME_COLORS,
+  FIRST_PAINT_STYLE,
   GLARE_BOOTSTRAP_SCRIPT,
   GLARE_COOKIE_NAME,
   GLARE_ON_VALUE,
@@ -141,6 +142,11 @@ export default async function RootLayout({
       data-mode={glareMode}
       suppressHydrationWarning
     >
+      <head>
+        {/* Item 12 (13 Nov 2026): the dark canvas from the very first frame, before any stylesheet
+            arrives (FIRST_PAINT_STYLE in src/lib/theme.ts). style-src allows inline styles. */}
+        <style dangerouslySetInnerHTML={{ __html: FIRST_PAINT_STYLE }} />
+      </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         {/* Applies the resolved theme before first paint on every route (standalone
             pages don't mount useTheme, and hydration-time toggling flashes light).

@@ -157,9 +157,9 @@
 }
 
 .presenceBannerCard.community {
-  background: var(--accent-soft);
-  border-color: var(--svc-south);
-  color: var(--svc-south);
+  background: var(--wf-track);
+  border-color: var(--wf-line-2);
+  color: var(--wf-ink-1);
 }
 
 .presenceBannerCard.scheduled {
@@ -204,7 +204,7 @@
 }
 
 .presenceDot.community {
-  background: var(--svc-south);
+  background: var(--wf-ink-3);
 }
 
 .presenceDot.scheduled {
@@ -332,16 +332,12 @@
   border: 1px solid var(--danger);
 }
 
-.statusPill.form4a {
-  background: var(--accent-soft);
-  color: var(--svc-north);
-  border: 1px solid var(--svc-north);
-}
-
+/* F-78: Forms 4A and 5A are not health services; they take the kit's neutral Badge look. */
+.statusPill.form4a,
 .statusPill.form5a {
-  background: var(--accent-soft);
-  color: var(--svc-south);
-  border: 1px solid var(--svc-south);
+  background: var(--wf-track);
+  color: var(--wf-ink-1);
+  border: 1px solid transparent;
 }
 
 .statusPill.voluntary {

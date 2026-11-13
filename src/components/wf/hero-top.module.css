@@ -158,13 +158,17 @@ a.figLink::after,
   font-weight: 550;
 }
 
+/* Spec item 9 (13 Nov 2026): the sub-line wraps to two lines before any "…", so a link in it stays
+   in view. */
 .actSub {
+  display: -webkit-box;
   margin: 0;
   overflow: hidden;
   font: 400 var(--wf-fs-12) / 16px var(--wf-font);
   color: var(--wf-hero-ink-3);
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .actButton.actButton {
@@ -266,20 +270,27 @@ a.figLink::after,
   max-width: 100%;
   min-height: 30px;
   margin: 0;
-  padding: 0 12px;
+  /* Spec item 9: half the one-line height, so one line is still a pill and two lines read as a
+     rounded box rather than a stretched capsule. */
+  padding: 5px 12px;
   border: 1px solid var(--wf-on-hero-line);
-  border-radius: var(--wf-r-pill);
+  border-radius: 15px;
   background: var(--wf-on-hero-fill);
   color: var(--wf-on-hero-ink, var(--wf-hero-ink-2));
   font: 500 var(--wf-fs-13) / 18px var(--wf-font);
   white-space: nowrap;
 }
 
-/* One line (QA, 9 Nov 2026): the words end in an ellipsis on a narrow phone; the action keeps its size. */
+/* Spec item 9 (13 Nov 2026, was one line from QA 9 Nov): the words wrap to two lines before any
+   "…" on a narrow phone, so "5h old" is never hidden; the action keeps its size and place. */
 .pillText {
+  display: -webkit-box;
   min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .pillDot {
@@ -533,6 +544,22 @@ a.cellBody {
   color: var(--wf-hero-success);
 }
 
+@property --wf-row-fade-start {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes wfRowFadeStart {
+  0% {
+    --wf-row-fade-start: 0px;
+  }
+  10%,
+  100% {
+    --wf-row-fade-start: 36px;
+  }
+}
+
 /* Phone: chips and cells run to the screen's edges, scroll sideways under a soft fade and snap per
    item; chips keep a 48px tap area; the act button may use its short label. */
 @media (max-width: 46.4375rem) {
@@ -562,8 +589,36 @@ a.cellBody {
     scroll-padding-right: 48px;
     scroll-snap-type: x proximity;
     scrollbar-width: none;
-    -webkit-mask-image: linear-gradient(90deg, black calc(100% - 36px), transparent);
-    mask-image: linear-gradient(90deg, black calc(100% - 36px), transparent);
+    /* F-61 (PR E review, 13 Nov 2026): the start fade is 0 until the row scrolls (below). */
+    -webkit-mask-image: linear-gradient(
+      90deg,
+      transparent 0,
+      black var(--wf-row-fade-start),
+      black calc(100% - 36px),
+      transparent
+    );
+    mask-image: linear-gradient(
+      90deg,
+      transparent 0,
+      black var(--wf-row-fade-start),
+      black calc(100% - 36px),
+      transparent
+    );
+  }
+
+  /* F-61: once scrolled away from the start the row fades there too, and a chip focused or snapped
+     from the keyboard stops clear of that fade, as it does at the right. Scroll-driven: a row that
+     does not overflow, or a browser without scroll timelines, keeps the right-hand fade only. */
+  @supports (animation-timeline: scroll()) {
+    .chips,
+    .cells {
+      scroll-padding-left: 48px;
+      animation-name: wfRowFadeStart;
+      animation-duration: 1ms;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: scroll(self inline);
+    }
   }
 
   /* While a chip's menu is open it is pinned to the window below the row (wf/menu usePanelFit). The
@@ -613,6 +668,19 @@ a.cellBody {
     min-height: 40px;
   }
 
+  /* Spec item 9: band cells keep their 40px face; the cover reaches 48px inside the row's padding. */
+  button.cellBody,
+  a.cellBody {
+    position: relative;
+  }
+
+  button.cellBody::after,
+  a.cellBody::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+
   a.figLink,
   .figButton,
   .bandAsideLink,
@@ -621,9 +689,23 @@ a.cellBody {
     margin: -12px -8px;
   }
 
+  /* Spec item 9 (13 Nov 2026): every phone control is drawn 40px with a 48px tap cover. "Ask" was
+     42px (its 18px line plus the padding above); it is drawn 40px like the figure links. */
+  .pillAction {
+    padding-block: 11px;
+    margin-block: -11px;
+  }
+
   a.figLink::after,
-  .figButton::after {
-    content: none;
+  .figButton::after,
+  .pillAction::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+
+  .pillAction {
+    position: relative;
   }
 }
 

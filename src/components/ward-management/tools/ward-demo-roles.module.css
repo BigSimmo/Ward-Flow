@@ -16,12 +16,8 @@
   text-transform: uppercase;
   color: var(--wf-ink-2);
 }
-/* The one-line note sits on its own quiet line under the heading, at every width. */
-.section h3 span {
-  flex-basis: 100%;
-  font-weight: 400;
-  letter-spacing: 0;
-  text-transform: none;
+/* The one-line note sits on its own quiet line under the choices, at every width. */
+.section .note {
   color: var(--wf-ink-3);
 }
 .section p {
@@ -29,10 +25,12 @@
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-2);
 }
+/* Wrapping choices sized to their words, 32px on a laptop and 40px on a phone, as Scenario's
+   (shared design parts item 8, 13 Nov 2026). */
 .grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
 }
 .choice,
 .exit {
@@ -44,13 +42,14 @@
   cursor: pointer;
 }
 .choice {
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 2px var(--wf-s-2);
-  min-height: 44px;
-  padding: 6px var(--wf-s-3);
+  min-height: var(--wf-h-sm);
+  max-width: 100%;
+  padding: 2px var(--wf-s-3);
   text-align: left;
   overflow-wrap: anywhere;
 }
@@ -129,6 +128,9 @@
   .choice,
   .exit {
     position: relative;
+  }
+  .choice {
+    min-height: 40px;
   }
   .exit::after {
     content: "";

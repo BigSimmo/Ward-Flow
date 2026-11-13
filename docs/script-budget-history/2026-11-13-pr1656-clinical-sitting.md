@@ -21,3 +21,10 @@ of `e43c4fde` (before the knip clean-up, which only drops unused exports) measur
 and 643.5 KB, each within 5 KB of main's (589.1, 621.5, 680.6 and 640.6 KB). The growth is approved clinical content and
 was not traced module by module; no trim was taken. Capacity, the Ward page and the bed meeting sheet shrank, and their
 limits are left as they were.
+
+After PR E (#1658) merged, main `a1c90573` was merged in. A local production build of the merged tree then measured every
+budgeted route over main's new limits by 0.5 to 2.8 KB, because both PRs' additions now load together. Each limit is set to
+the measured size plus 0.3 KB, within 5 KB of main's: `/ward-flow` 592.3 (+0.8), Referrals 599.3 (+3.1), ED 549.4
+(+0.8), the Ward page 628.2 (+1.1), Movement 627.0 (+1.8), Capacity 663.2 (+1.3), ED arm 688.7 (+2.4), the bed meeting
+sheet 599.7 (+1.4) and Statistics 645.0 (+0.8). No trim was taken: the growth is the combined approved content of the two
+pull requests, and Josh asked on 14 November to avoid slow, low-yield work before the demo.
