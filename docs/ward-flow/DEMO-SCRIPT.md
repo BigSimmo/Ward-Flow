@@ -18,8 +18,10 @@ owns._
 
 ## Read this first
 
-- **Ward Flow is a prototype on synthetic data.** It is not clinical decision support, not a medical
-  device and not approved for clinical use. Say so at the start and at the end.
+- **Ward Flow is a prototype on synthetic data.** It is not clinical decision support and not approved for
+  clinical use. Say so at the start and at the end. If asked whether it is a medical device, say: "We
+  believe it sits outside the medical device definition. No regulatory adviser has confirmed that
+  yet." Do not state it as settled.
 - **The app never decides.** It never places a patient, scores risk, suggests a best ward, re-sorts
   the ED queue, works out a Mental Health Act time or releases a pulled bed. Every step in this
   script is a person's click.
@@ -147,8 +149,8 @@ close the panel. Then point to **Calder Ridgeholt**'s form column on the same bo
 > "The ED can now see where its referral stands without ringing anyone: sent, accepted
 > by Dabakarn, no bed yet, no transport yet.
 >
-> Her form ended at the examination, and the app is prompting for the next form to be recorded. A
-> person records it; the app does not.
+> The app shows her form as ended at the examination, and it is prompting for the next form to be
+> recorded. A person records it; the app does not. That rule still needs legal review.
 >
 > Now look at this patient's form: 'Time not entered'. Ward Flow never works out when a form
 > expires. If a time is shown, it is the one typed from the paper form. If it wasn't written, the
@@ -356,11 +358,13 @@ Say these with confidence:
   the same journey, transport and arrival as an ED one.
 - **Role access by desk.** Each desk (coordinator, ward, ED, community team, transport officer, bed
   manager) sees and does only what its role needs. A ward never sees which other wards were asked.
-  Today's demo runs as the coordinator desk.
+  This is built in the shared version, and its checks are not finished. Today's demo runs as the
+  coordinator desk.
 - **Single-gender wards.** The check uses the gender recorded at referral, not sex. A single-gender
-  ward cannot be overridden for a patient whose recorded gender is the other binary gender, and it
-  refuses when gender has not been recorded. There is no room or wing model. For a non-binary
-  patient, one coordinator records a reason and ticks that it was checked with the ward.
+  ward cannot be overridden for a patient whose recorded gender is the other binary gender. There is
+  no room or wing model. For a patient whose gender is not recorded as female or male (non-binary,
+  a different term, or not recorded), one coordinator records a reason and ticks that it was checked
+  with the ward before the ward can be offered.
 - **Overrides are recorded.** The actions that need an override need a reason from a fixed list, and
   recorded overrides show in the governance view. Routine steps do not all record a reason.
 - **Alerts.** The Alerts screen shows the quiet conditions as well, so silence is not mistaken for a
@@ -372,6 +376,7 @@ Do not claim:
 
 - compliance with any clinical safety standard, or that the prototype already meets the conditions
   for a pilot;
+- that it "is not a medical device" as a settled fact. No regulatory adviser has given a view;
 - that any policy is implemented, or that any organisation has endorsed or reviewed it;
 - any connection to a hospital system, ambulance service or transport provider;
 - that other sites see changes in real time in this demo. The demo runs in one browser. A shared
@@ -415,7 +420,8 @@ Do not claim:
 **"What about country sites?"**
 
 > "Country wards are on the same statewide map. A country legal extension is recorded as typed from
-> the paper; nothing is calculated. Air transport is not built yet."
+> the paper; nothing is calculated. RFDS can be recorded as the carrier. Nothing specific to air
+> transport is built."
 
 **"What would it take to use this with real patients?"**
 
