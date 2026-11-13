@@ -213,6 +213,42 @@ describe("default error words under the kit date and time boxes", () => {
     expect(screen.queryByText(DATE_FIELD_ERROR)).toBeNull();
   });
 
+  // F-139 (PR E review): unfinished text says so once the person leaves the box, never while typing.
+  it("marks an unfinished date on leaving the box, and clears it once typing resumes", () => {
+    render(<Pair />);
+    const date = screen.getByRole("textbox", { name: "Date" });
+    for (const unfinished of ["1/1/26", "1/1", "31/10/202"]) {
+      fireEvent.change(date, { target: { value: unfinished } });
+      expect(screen.queryByText(DATE_FIELD_ERROR)).toBeNull();
+      expect(date).not.toHaveAttribute("aria-invalid", "true");
+      fireEvent.blur(date);
+      expect(screen.getByText(DATE_FIELD_ERROR)).toBeInTheDocument();
+      expect(date).toHaveAttribute("aria-invalid", "true");
+      expect(date.getAttribute("aria-describedby")?.split(" ")).toContain(screen.getByText(DATE_FIELD_ERROR).id);
+    }
+    fireEvent.change(date, { target: { value: "1/1/202" } });
+    expect(screen.queryByText(DATE_FIELD_ERROR)).toBeNull();
+    fireEvent.change(date, { target: { value: "1/1/2026" } });
+    fireEvent.blur(date);
+    expect(screen.queryByText(DATE_FIELD_ERROR)).toBeNull();
+    fireEvent.change(date, { target: { value: "" } });
+    fireEvent.blur(date);
+    expect(screen.queryByText(DATE_FIELD_ERROR)).toBeNull();
+    expect(date).not.toHaveAttribute("aria-invalid", "true");
+  });
+
+  it("marks an unfinished date in a date-and-time pair on leaving the date box", () => {
+    render(<DateTimeField label="Written" data-testid="pair" />);
+    const date = screen.getByTestId("pair-date");
+    fireEvent.change(date, { target: { value: "1/1/26" } });
+    expect(screen.queryByText(DATE_FIELD_ERROR)).toBeNull();
+    fireEvent.blur(date);
+    expect(screen.getByText(DATE_FIELD_ERROR)).toBeInTheDocument();
+    expect(date).toHaveAttribute("aria-invalid", "true");
+    fireEvent.change(date, { target: { value: "1/1/2026" } });
+    expect(screen.queryByText(DATE_FIELD_ERROR)).toBeNull();
+  });
+
   it("lets the caller's own words win", () => {
     render(<Pair dateError="Date written cannot be in the future" />);
     fireEvent.change(screen.getByRole("textbox", { name: "Date" }), { target: { value: "31/02/2026" } });

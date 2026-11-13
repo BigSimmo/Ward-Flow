@@ -18,6 +18,7 @@ import styles from "./form.module.css";
  *   date is shown as typed (D5, D-70).
  * - A finished entry that is not a real day (31/02/2026) is marked invalid and says so under the box:
  *   `DATE_FIELD_ERROR` by default (spec item 13, 13 Nov 2026), or the caller's Field `error` words.
+ *   Unfinished text ("1/1/26") says the same once the person leaves the box (F-139).
  *
  * Example:
  *
@@ -54,6 +55,16 @@ function looksFinished(text: string): boolean {
   return (text.match(/\d/gu)?.length ?? 0) >= 8;
 }
 
+/**
+ * Typed date text that is not a real day: a finished entry that does not parse (31/02/2026), or, once
+ * the person has left the box, any unfinished text ("1/1/26", "1/1"). While typing, only a finished
+ * entry counts, so "31/10" is not flagged mid-way (F-139, PR E review, 13 Nov 2026).
+ */
+function dateTextWrong(text: string, left: boolean): boolean {
+  if (parseTypedDate(text) !== null) return false;
+  return looksFinished(text) || (left && text.trim() !== "");
+}
+
 /** The words under a date box whose typed day does not exist, or a caller's check finds unfinished. */
 export const DATE_FIELD_ERROR = "Type a real date, DD/MM/YYYY";
 
@@ -81,11 +92,14 @@ export function DateField({
   invalid,
   placeholder = "DD/MM/YYYY",
   errorText = DATE_FIELD_ERROR,
+  onBlur,
   "aria-describedby": describedBy,
   ...inputProps
 }: DateFieldProps) {
   const [localTyped, setTyped] = useState(() => isoDateAsTyped(value));
   const typed = rawText ?? localTyped;
+  // Set when the person leaves the box, cleared when they type again (F-139).
+  const [left, setLeft] = useState(false);
   // A new value from the caller (a reset, or a record loaded) replaces the typed text; the person's
   // own unfinished typing (value "") is left alone.
   const [lastValue, setLastValue] = useState(value);
@@ -93,7 +107,7 @@ export function DateField({
     setLastValue(value);
     if (rawText === undefined && value !== (parseTypedDate(typed) ?? "")) setTyped(isoDateAsTyped(value));
   }
-  const wrong = looksFinished(typed) && parseTypedDate(typed) === null;
+  const wrong = dateTextWrong(typed, left);
   const { errorId, line } = useControlError(wrong && errorText !== false ? errorText : null);
   return (
     <>
@@ -107,8 +121,13 @@ export function DateField({
         value={typed}
         invalid={invalid || wrong}
         aria-describedby={cx(describedBy, errorId) || undefined}
+        onBlur={(event) => {
+          setLeft(true);
+          onBlur?.(event);
+        }}
         onChange={(event) => {
           const text = event.target.value;
+          setLeft(false);
           setTyped(text);
           onRawTextChange?.(text);
           onValueChange(parseTypedDate(text) ?? "");
@@ -278,6 +297,7 @@ export function DateTimeField({
   const [date, setDate] = useState(parts.date);
   const [timeText, setTimeText] = useState(parts.time);
   const [dateText, setDateText] = useState(() => isoDateAsTyped(parts.date));
+  const [dateLeft, setDateLeft] = useState(false);
   // A new value from the caller (a reset, or a record loaded) replaces both parts. `lastValue` is
   // also what this box last sent, so the caller echoing it back leaves the typing alone.
   const [lastValue, setLastValue] = useState(current);
@@ -295,7 +315,7 @@ export function DateTimeField({
     onValueChange?.(joined);
   };
   const timeWrong = timeTextWrong(timeText);
-  const dateWrong = looksFinished(dateText) && parseTypedDate(dateText) === null;
+  const dateWrong = dateTextWrong(dateText, dateLeft);
   // One line under the pair, for whichever box is wrong first.
   const { errorId, line } = useControlError(dateWrong ? DATE_FIELD_ERROR : timeWrong ? TIME_FIELD_ERROR : null);
   return (
@@ -304,7 +324,11 @@ export function DateTimeField({
         id={id}
         errorText={false}
         aria-describedby={errorId}
-        onRawTextChange={setDateText}
+        onRawTextChange={(text) => {
+          setDateLeft(false);
+          setDateText(text);
+        }}
+        onBlur={() => setDateLeft(true)}
         value={date}
         required={required}
         disabled={disabled}
