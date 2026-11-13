@@ -51,6 +51,7 @@ import {
   type ReferralCandidate,
   referralPersonFacts,
   referralAddressingStateLabel,
+  referralDestinationKindLabel,
   referralSuburbLabel,
 } from "@/components/ward-management/ward-referrals";
 import { getReferralPriority, referralPriorityLabel, PriorityGlyph } from "./referral-priority";
@@ -92,7 +93,7 @@ import {
 import { eligibility } from "@/components/ward-management/ward-eligibility";
 import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import { outcomeLabel } from "./referral-board-model";
-import { outcomeDetail } from "./referral-ward-names";
+import { destinationWords, outcomeDetail } from "./referral-ward-names";
 import { ReferralInformationNeedsPanel } from "./referral-information-needs-lazy";
 
 type ReferralMatchViewProps = {
@@ -474,7 +475,13 @@ export function ReferralMatchView({
       reason,
     });
     setCheckToken((token) => token + 1);
-    onDecision?.("Referral declined", completion);
+    // F-109 (A14-18): one destination said no, and the referral's other destinations may still be
+    // waiting, so the toast names the destination that declined rather than the whole referral.
+    const declined = destinationKind === "psychiatric_ward" ? ward : edAddressing;
+    const where = declined
+      ? destinationWords(declined.destination, units)
+      : referralDestinationKindLabel(destinationKind);
+    onDecision?.(`${where} declined`, completion);
   }
 
   /**

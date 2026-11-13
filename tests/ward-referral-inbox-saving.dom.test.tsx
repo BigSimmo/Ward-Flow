@@ -8,6 +8,7 @@ import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/wa
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { ToastProvider } from "@/components/wf/toast-provider";
 
 /**
  * Audit row P053: while one answer is saving, Accept, Waiting list and Decline are unavailable, so
@@ -101,5 +102,26 @@ describe("referral inbox answers while saving (P053)", () => {
     });
     expect(accept).not.toHaveAttribute("aria-disabled");
     expect(waitlist).not.toHaveAttribute("aria-disabled");
+  });
+});
+
+describe("referral inbox decline toast (F-109, A14-18)", () => {
+  it("names this ward as the one that declined, not the whole referral", () => {
+    render(
+      <ToastProvider>
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <Refer />
+          <WardReferralInbox unitId={UNIT.id} />
+        </WardFlowProvider>
+      </ToastProvider>,
+    );
+    const inbox = within(screen.getByRole("region", { name: "Ward referral inbox" }));
+    fireEvent.click(
+      within(inbox.getByRole("group", { name: "Decline reason" })).getByRole("button", { name: "No suitable bed" }),
+    );
+    fireEvent.click(inbox.getByRole("button", { name: "Decline referral" }));
+    const name = UNIT.name.replace(/[.*+?^${}()|[\]\\/]/gu, "\\$&");
+    expect(screen.getByText(new RegExp(`^${name} declined`, "u"))).toBeInTheDocument();
+    expect(screen.queryByText(/^Referral declined/u)).toBeNull();
   });
 });
