@@ -722,7 +722,6 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
                     aria-expanded={panel === "scope"}
                     onClick={() => setPanel("scope")}
                   >
-                    <span className={bar.scopeDot} aria-hidden="true" />
                     <span className={bar.scopeBadgeLabel}>{displayedScope}</span>
                     <ChevronDown className={bar.scopeCaret} aria-hidden="true" />
                   </button>

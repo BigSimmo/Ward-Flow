@@ -1851,31 +1851,6 @@ button.registerRow:hover {
     color: var(--wf-ink-1);
   }
 
-  .edCode::before {
-    content: "";
-    flex: 0 0 8px;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--ed-svc, var(--wf-svc-private));
-  }
-
-  .edButton[data-service="EMHS"] {
-    --ed-svc: var(--wf-svc-east);
-  }
-  .edButton[data-service="NMHS"] {
-    --ed-svc: var(--wf-svc-north);
-  }
-  .edButton[data-service="SMHS"] {
-    --ed-svc: var(--wf-svc-south);
-  }
-  .edButton[data-service="WACHS"] {
-    --ed-svc: var(--wf-svc-wachs);
-  }
-  .edButton[data-service="CAHS"] {
-    --ed-svc: var(--wf-svc-cahs);
-  }
-
   .edWaiting {
     display: inline-flex;
     align-items: center;
