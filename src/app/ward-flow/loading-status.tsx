@@ -1,5 +1,5 @@
 import { WardLoadingRows } from "@/components/ward-management/shell/ward-loading-rows";
-import { SyntheticMark } from "@/components/wf";
+import { SyntheticMark } from "@/components/wf/synthetic-mark";
 
 import styles from "./loading.module.css";
 
