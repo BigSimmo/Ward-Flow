@@ -915,14 +915,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           },
         );
       };
-      const pullToastId = toast?.push(
-        bedPulledToast(
-          who,
-          roleLimitReason(pullRole, "RELEASE_PULL"),
-          pull && (() => onUndoPull(pull)),
-          nowRef.current,
-        ),
-      );
+      const undoPull = pull && (() => onUndoPull(pull));
+      const limit = roleLimitReason(pullRole, "RELEASE_PULL");
+      const pullToastId = toast?.push(bedPulledToast(who, limit, undoPull, nowRef.current));
       // The row's own Undo closes this toast once it has released the pull (review, PR F).
       if (pullToastId !== undefined) pullThenArrive.rememberPullToast(check.movementId, pullToastId);
       focusWardArrival(check.movementId);
