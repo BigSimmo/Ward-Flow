@@ -191,7 +191,10 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-166](#d-166-ci-runs-faster-without-dropping-a-check-12-november-2026)                                                                                | CI runs faster without dropping a check                                                | Active                                           |
 | [D-167](#d-167-the-triage-page-has-a-left-sign-off-nav-and-joined-section-steps-13-november-2026)                                                       | The Triage page has a left sign-off nav and joined section steps                       | Active                                           |
 | [D-168](#d-168-the-demo-script-follows-the-13-november-pre-demo-audit-13-november-2026)                                                                 | The demo script follows the 13 November pre-demo audit                                 | Active                                           |
+| [D-169](#d-169-demo-script-wording-follows-the-hard-questions-audit-13-november-2026)                                                                   | Demo script wording follows the hard questions audit                                   | Active                                           |
 | [D-170](#d-170-clinical-wording-rulings-from-the-13-november-audit-13-november-2026)                                                                    | Clinical wording rulings from the 13 November audit                                    | Active                                           |
+| [D-171](#d-171-hosted-database-brought-to-schema-18-migrations-017-and-018-13-november-2026)                                                            | Hosted database brought to schema 18 (migrations 017 and 018)                          | Active                                           |
+| [D-172](#d-172-the-community-desks-ed-heads-up-stays-as-built-in-d-154-13-november-2026)                                                                | The community desk's ED heads-up stays as built in D-154                               | Active                                           |
 
 ---
 
@@ -2076,6 +2079,15 @@ is inferred.
   4. **Setup and rules:** the demo runs on the public demo; Reset demo is pressed as the audience sits down because Keira leaves "Later today" about an hour after it; the script no longer says Reset returns the clock to 10:42; and Reload page, not Try again, recovers a failed page load.
 - **Boundary:** documentation only. Changes no app behaviour, clinical rule or permission. Approves no release.
 
+## D-169. Demo script wording follows the hard questions audit (13 November 2026)
+
+- **Date:** 13 November 2026, 12:52 PM AWST (04:52 UTC). **Decided by:** Josh, "Yes to all recommendations" in the Ward Flow project thread "Prepare for hard demo questions (prompt 7)", accepting the three recommendations of the hard questions audit (audit prompt 7).
+- **Decision:**
+  1. **Five script wording fixes** go into `DEMO-SCRIPT.md` as one script-only change: the script no longer states "not a medical device" as settled; Keira's form is "shown as ended" by a rule that still needs legal review; a patient whose gender is not recorded as female or male takes the same recorded, ward-checked route as a non-binary patient; RFDS can be recorded as the carrier, with nothing specific to air transport built; and role access is described as built in the shared version, with its checks not finished.
+  2. **Invented ward descriptions:** the next on-screen audit checks where the "what each ward admits" lines show under real ward names.
+  3. **Cost:** the answer in the room is that there is no price today.
+- **Boundary:** documentation only. Changes no app behaviour, clinical rule or permission. Gives no regulatory, legal or clinical view. Approves no release.
+
 ## D-170. Clinical wording rulings from the 13 November audit (13 November 2026)
 
 - **Date:** 13 November 2026, 1:04 PM AWST (05:04 UTC). **Decided by:** Josh, "Yes to all recommendations. Lock them in and update coordinator" in the Ward Flow project thread "Audit clinical wording (prompt 3)", answering the seven numbered questions of the clinical wording audit (audit prompt 3). Fifteen minutes later (1:19 PM AWST, 05:19 UTC) he wrote "Yes to all recommendations and update coordinator" to the four follow-up recommendations for items 3, 4, 6 and 7. Numbered D-170 because D-169 is claimed by PR #1649 (demo script wording).
@@ -2088,3 +2100,17 @@ is inferred.
   6. **Triage windows:** the four triage see-by windows are signed as they are once Josh confirms they match the triage form; until he confirms, they stay unsigned. The Frequent presenter number is signed as a prototype default, not a clinical threshold. No value is proposed or changed here.
   7. **Ward profile panel:** the invented "Admits" lines are removed until a service supplies its own words, the "Forms held" row is dropped, and the forensic chip changes from "CLMA" to "CLMI Act", added to the glossary as the Criminal Law (Mental Impairment) Act 2023. The Act name was given from memory, so the fix checks it against the WA legislation site before it is built.
 - **Boundary:** records the rulings only. This PR changes no app wording, script or sample data; the fixes are built later under the audit plan. None of the wording was checked against the Act's text. Still open: Josh's confirmation that the triage windows match the form. Sets no clinical value. Approves no release.
+
+## D-171. Hosted database brought to schema 18 (migrations 017 and 018) (13 November 2026)
+
+- **Date:** 13 November 2026, 1:34 PM AWST (05:34 UTC). **Decided by:** Josh, choosing "Apply 017 then 018" on a decision card in the Ward Flow project thread "Audit Ward Flow performance". He had said "Go ahead" to applying migration 018 after PR #1624 merged (11 November). D-170 is claimed by open PR #1650.
+- **Finding:** the hosted Ward Flow Supabase database (project `zakzoemeedfepxcstsou`) was still at schema 16. Migration 017 (Help remembered by account, 4 November) had never been applied, so 018 could not go on alone.
+- **Decision:** apply 017 and then 018 together, after the release carrying PR #1624 was live (the backend refuses a schema newer than it knows). This was done at 05:37 UTC in one transaction under advisory lock `782322`, with a starting-version check, the checksum-verified migration files and the runtime grants, as `migrate-supabase.mjs` does. Afterwards: schema 18, the four new indexes present, the runtime role can read, add and update `account_preferences` but not delete, browser roles have no access, and row security is on.
+- **Boundary:** synthetic data only. Schema and grants only, with rollback files 018 then 017. No release, Railway or clinical change.
+
+## D-172. The community desk's ED heads-up stays as built in D-154 (13 November 2026)
+
+- **Date:** 13 November 2026, 1:46 PM AWST (05:46 UTC). **Decided by:** Josh, "Ok yes to all recommendations" in the Ward Flow project chat. The recommendation for the community desk ED heads-up (PR #1606, item 46) was to leave it as it is. Numbered D-172 because D-170 is taken by open PR #1650 and D-171 by PR #1651. The two other answers in the same message, on Legal forms Print and Export and on an ended This-shift staff request, were already recorded as D-157 and D-158 on 12 November and are built on main.
+- **Decision:** the item 46 "Your patients in ED" card stays as D-154 built it. A community team desk in local mode gets the narrow scoped list (UMRN, ED name and recorded time for its open-episode patients). In shared mode the server still sends no such list, so a shared community desk's card stays empty. Sending the list from `scopeWardFlowState`, the way D-152 sends `diversionReturns`, is not built now.
+- **Why:** the shared-mode gap fails closed and exposes nothing extra. Widening what the community role receives from the server is a privacy change (D-14, D-87) that can wait for real-data planning.
+- **Boundary:** synthetic data only. No code change. Item 46 with real data still needs the D-87 privacy review. Approves no merge or release.
