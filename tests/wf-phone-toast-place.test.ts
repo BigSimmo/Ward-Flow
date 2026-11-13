@@ -23,4 +23,10 @@ describe("phone toast place", () => {
     const rule = phone.slice(phone.indexOf("[data-wf-phone-action-bar]"));
     expect(rule.slice(0, rule.indexOf("}"))).toMatch(/var\(--wf-phone-action-bar-h, 65px\) \+ var\(--wf-s-6\)/u);
   });
+
+  it("draws on a solid surface, never see-through", () => {
+    const toast = phone.slice(phone.indexOf("  .toast {"), phone.indexOf("}", phone.indexOf("  .toast {")));
+    expect(toast).toMatch(/--toast-bg: light-dark\(var\(--wf-ink-1\), var\(--wf-track\)\);/u);
+    expect(toast).not.toMatch(/transparent\)/u);
+  });
 });

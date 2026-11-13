@@ -358,10 +358,8 @@
   }
 
   .toast {
-    --toast-bg: light-dark(
-      color-mix(in srgb, var(--wf-ink-1) 92%, transparent),
-      color-mix(in srgb, var(--wf-track) 97%, transparent)
-    );
+    /* D-192: the phone toast is a solid surface, so the row under it never shows through. */
+    --toast-bg: light-dark(var(--wf-ink-1), var(--wf-track));
     --toast-ink: light-dark(var(--wf-surface), var(--wf-ink-1));
     --toast-ring: light-dark(transparent, var(--wf-line-2));
     gap: 10px;
