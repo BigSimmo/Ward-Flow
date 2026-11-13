@@ -40,6 +40,7 @@ import { WardComingAndGoing } from "./ward-coming-and-going";
 import { WardDeclineReasons } from "./ward-decline-reasons";
 import {
   arrivalRows,
+  arrivalsExpectedToday,
   dischargeTodayRows,
   lastFreedToday,
   leaveRows as comingLeaveRows,
@@ -645,7 +646,15 @@ export function WardHomeTab({
   const nameOf = (movement: Movement) => resolvePatientIdentity(movement).formalName;
   // Accepted referrals with no movement yet stay off this page: the shared pull step needs the full
   // referral, which FD-23 keeps from ward-only modules (tests/ward-referral-screen-boundary.test.ts).
-  const comingArrivals = arrivalRows({ accepted, beds: bedsList ?? [], unit, now, nameOf, desk: deskRole });
+  // Review F-3: "Arrivals · today" lists only people expected today, by the hero's own rule.
+  const comingArrivals = arrivalRows({
+    accepted: arrivalsExpectedToday(accepted, now),
+    beds: bedsList ?? [],
+    unit,
+    now,
+    nameOf,
+    desk: deskRole,
+  });
   const comingLeave = comingLeaveRows(unitLeaveBeds, bedsList ?? [], now);
   const needsALook = needsALookRows(pendingBedReleases, bedsList ?? [], now);
   const dischargesToday = dischargeTodayRows(pendingBedReleases, bedsList ?? [], now);
@@ -1071,7 +1080,8 @@ export function WardHomeTab({
   function confirmArrival(row: ComingRow) {
     // Ruling 11 (D-191): with no pulled bed the pull step comes first, then the arrival.
     if (!row.movementId) return;
-    if (!row.hasPulledBed && onPullThenArrive) {
+    // Only a row still waiting for its bed: the engine pulls at that stage alone (PULL_PATIENT).
+    if (row.action === "pull" && !row.hasPulledBed && onPullThenArrive) {
       onPullThenArrive(row.movementId);
       return;
     }

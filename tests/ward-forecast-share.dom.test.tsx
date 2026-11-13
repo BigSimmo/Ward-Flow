@@ -1,4 +1,4 @@
-import { render, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { WardBoard } from "@/components/ward-management/board/ward-board";
@@ -79,9 +79,13 @@ describe("each ward's part in tomorrow's forecast (forecast integration, 27 Oct 
         <CapacityScreen />
       </WardFlowProvider>,
     );
-    // The anchor Home links to is the Bed forecast card itself.
+    // Wave 4 (D-191, ruling 8): the anchor Home links to is the Forecast card, and its Open shows the
+    // full forecast, "Beds ahead" since D-198.
     const target = document.getElementById(anchor ?? "");
     expect(target).not.toBeNull();
-    expect(target?.getAttribute("aria-labelledby")).toBe("capacity-forecast-title");
+    expect(target?.getAttribute("aria-labelledby")).toBe("capacity-forecast-card-title");
+    expect(document.getElementById("capacity-forecast-card-title")?.textContent).toMatch(/^Forecast/u);
+    fireEvent.click(within(target!).getByRole("button", { name: "Open" }));
+    expect(screen.getByRole("region", { name: "Beds ahead" })).toBeTruthy();
   });
 });

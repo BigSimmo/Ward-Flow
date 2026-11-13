@@ -110,10 +110,11 @@ describe("Coming and going (wave 4)", () => {
     expect(within(list).getAllByRole("listitem")).toHaveLength(12);
   });
 
-  it("words tomorrow as a free figure when no shortfall is likely", () => {
+  it('words tomorrow as a free figure with no "likely" (D-191 revision, D-198)', () => {
     expect(tomorrowLine({ ...outlook, likely: 2, low: 0, high: 3 })).toBe(
-      "2 likely free · range 0 free to 3 free · From ward dates",
+      "2 free · range 0 free to 3 free · From ward dates",
     );
+    expect(tomorrowLine({ ...outlook, likely: 2, low: 0, high: 3 })).not.toMatch(/likely/);
   });
 });
 

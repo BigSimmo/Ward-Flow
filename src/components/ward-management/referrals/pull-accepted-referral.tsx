@@ -49,6 +49,9 @@ import styles from "./pull-accepted-referral.module.css";
 /** The form's own "No form" answer, kept apart from "not answered yet" (""). */
 const NO_FORM = "none";
 
+/** The lock line under Pull the bed while "Check every" is blank (D-188 (tightened 13 Nov), D-187). */
+export const CHOOSE_INTERVAL_LINE = "Choose how often to check";
+
 /** A fact's source on its label line: the record's name, "Not recorded", or who changed it. */
 function SourceLine({ id, source }: { id: string; source: PullFactSource }) {
   return (
@@ -162,9 +165,9 @@ export function PullAcceptedReferral({
   const [legalStatus, setLegalStatus] = useState<LegalStatus | "">(recorded.legalStatus ?? "");
   const [legalForm, setLegalForm] = useState(recordedForm);
   const [level, setLevel] = useState<RecordedObservationLevel | "">(recordedLevel);
-  const [intervalMinutes, setIntervalMinutes] = useState<number>(
-    recorded.observation?.intervalMinutes ?? INTERMITTENT_INTERVAL_MINUTES[0],
-  );
+  // D-188 (tightened 13 Nov), D-187 "Intermittent blank": with no interval recorded, "Check every"
+  // opens with nothing chosen (never the first interval in the list) and must be chosen before the pull.
+  const [intervalMinutes, setIntervalMinutes] = useState<number | "">(recorded.observation?.intervalMinutes ?? "");
   // The refusal of the one-tap pull, which offers the journey on its own.
   const [pullRefused, setPullRefused] = useState(false);
   // True once the journey alone was started after a refusal; its link then opens it.
@@ -200,7 +203,9 @@ export function PullAcceptedReferral({
     observation:
       level !== "" &&
       (level !== recordedLevel ||
-        (level === "intermittent" && recorded.observation?.intervalMinutes !== intervalMinutes)),
+        (level === "intermittent" &&
+          intervalMinutes !== "" &&
+          recorded.observation?.intervalMinutes !== intervalMinutes)),
   };
   const sourceOf = (fact: PullFact, held: boolean) =>
     pullFactSource(held, changed[fact], recordedFrom, desk ?? "coordinator");
@@ -229,7 +234,8 @@ export function PullAcceptedReferral({
       ? "This community referral has no referring team recorded"
       : undefined) ??
     (referral.ageBand === undefined ? "This referral has no age band recorded" : undefined) ??
-    chooseFactsLine(missing);
+    chooseFactsLine(missing) ??
+    (level === "intermittent" && intervalMinutes === "" ? CHOOSE_INTERVAL_LINE : undefined);
 
   function pull(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -240,13 +246,14 @@ export function PullAcceptedReferral({
   /** Starts the accepted journey, with its bed pulled unless the pull was refused and declined. */
   function start(pullBed: boolean) {
     if (!desk || !destination || !referral.ageBand || legalStatus === "" || legalForm === "" || level === "") return;
+    if (level === "intermittent" && intervalMinutes === "") return;
     setMessage(undefined);
     // The recorded level is carried whole, with any review time a person typed; a changed level is new.
     const observation: Observation =
       recorded.observation?.level === level &&
       (level !== "intermittent" || recorded.observation.intervalMinutes === intervalMinutes)
         ? { ...recorded.observation }
-        : level === "intermittent"
+        : level === "intermittent" && intervalMinutes !== ""
           ? { ...observationAt(level), intervalMinutes }
           : observationAt(level);
     const keepsDueAt = recorded.legalFormDueAt !== undefined && legalForm === recorded.legalFormCode;
@@ -397,9 +404,10 @@ export function PullAcceptedReferral({
             <Select
               value={intervalMinutes}
               disabled={journeyStarted}
-              onChange={(event) => setIntervalMinutes(Number(event.target.value))}
+              onChange={(event) => setIntervalMinutes(event.target.value === "" ? "" : Number(event.target.value))}
               data-testid="ward-pull-accepted-interval"
             >
+              <option value="">Choose how often</option>
               {INTERMITTENT_INTERVAL_MINUTES.map((minutes) => (
                 <option key={minutes} value={minutes}>
                   {minutes} minutes

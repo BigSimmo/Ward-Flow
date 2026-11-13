@@ -26,7 +26,11 @@ vi.mock("@/components/ward-management/referrals/accepted-ward-referral", async (
 });
 
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
-import { PullAcceptedReferral } from "@/components/ward-management/referrals/pull-accepted-referral";
+import {
+  CHOOSE_INTERVAL_LINE,
+  PullAcceptedReferral,
+} from "@/components/ward-management/referrals/pull-accepted-referral";
+import { INTERMITTENT_INTERVAL_MINUTES } from "@/components/ward-management/ward-observation";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { ToastProvider } from "@/components/wf";
@@ -86,5 +90,39 @@ describe("Pull the bed: observation recorded as not recorded, D-188 (tightened 1
     const journey = current!.movements.find((movement) => movement.referralId === first!.referral.id)!;
     expect(journey.stage).toBe("pulled");
     expect(journey.observation.level).toBe("general");
+  });
+
+  it("D-188 (tightened 13 Nov), D-187: Intermittent with no interval recorded leaves Check every blank and the pull locked", async () => {
+    render(
+      <ToastProvider>
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <Capture />
+          <FormFirst />
+        </WardFlowProvider>
+      </ToastProvider>,
+    );
+    const [first] = acceptedReferralsAwaitingPull(current!.referrals, current!.units, current!.movements);
+    const observation = screen.getByTestId("ward-pull-accepted-observation");
+    fireEvent.click(within(observation).getByRole("radio", { name: "Intermittent" }));
+    const interval = screen.getByTestId<HTMLSelectElement>("ward-pull-accepted-interval");
+    // Nothing pre-selected: never the first interval in the list.
+    expect(interval.value).toBe("");
+    const confirm = screen.getByTestId("ward-pull-accepted-confirm");
+    expect(confirm).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByText(CHOOSE_INTERVAL_LINE, { selector: "[id$='-why']" })).toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(confirm);
+    });
+    expect(current!.movements.some((movement) => movement.referralId === first!.referral.id)).toBe(false);
+
+    const chosen = INTERMITTENT_INTERVAL_MINUTES[1]!;
+    fireEvent.change(interval, { target: { value: String(chosen) } });
+    expect(confirm).not.toHaveAttribute("aria-disabled", "true");
+    await act(async () => {
+      fireEvent.click(confirm);
+    });
+    const journey = current!.movements.find((movement) => movement.referralId === first!.referral.id)!;
+    expect(journey.stage).toBe("pulled");
+    expect(journey.observation).toMatchObject({ level: "intermittent", intervalMinutes: chosen });
   });
 });

@@ -48,6 +48,12 @@ export type BedSquaresProps = {
   notes?: readonly BedSquaresNote[];
   size?: "map" | "board";
   figure?: "md" | "lg";
+  /**
+   * The head figure when it is not the solid squares: the current ready rule (owner ruling 5 Sep 2026)
+   * still counts a bed being made ready, so the figure stays the selector's and that bed is drawn
+   * hollow from inside it. Drop once PR C's F-26 takes those beds out of ready.
+   */
+  readyFigure?: number;
   head?: boolean;
   className?: string;
   testId?: string;
@@ -186,12 +192,13 @@ export function BedSquares({
   notes = [],
   size = "map",
   figure = "md",
+  readyFigure,
   head = true,
   className,
   testId,
 }: BedSquaresProps) {
   const beds = BED_SQUARE_ORDER.reduce((sum, state) => sum + clamp(counts[state]), 0);
-  const ready = clamp(counts.ready);
+  const ready = clamp(readyFigure ?? counts.ready);
   return (
     <div
       className={cx(styles.bedSquares, size === "board" && styles.board, figure === "lg" && styles.lg, className)}
@@ -200,7 +207,11 @@ export function BedSquares({
       {head ? (
         <p className={styles.head}>
           {/* Zero is written as 0 (Josh, 3 Nov 2026), in quiet ink. */}
-          <b className={styles.n} data-zero={ready === 0 ? "true" : "false"}>
+          <b
+            className={styles.n}
+            data-zero={ready === 0 ? "true" : "false"}
+            data-testid={testId ? `${testId}-ready` : undefined}
+          >
             {ready}
           </b>
           <span className={styles.of}>

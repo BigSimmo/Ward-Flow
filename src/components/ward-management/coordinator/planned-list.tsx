@@ -7,7 +7,6 @@ import { useState, type ReactNode } from "react";
 import { Card, CardHead, Count, SrOnly, StatusGlyph, type WfTone } from "@/components/wf";
 import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
 import { edHref } from "@/components/ward-management/shell/ward-facade";
-import { targetText } from "@/components/ward-management/forecast/ed-access-risk";
 import { forecastEdName, useForecastModel } from "@/components/ward-management/forecast/use-forecast-model";
 import { shiftEndInstant } from "@/components/ward-management/ward-board-time-features";
 import {
@@ -16,6 +15,7 @@ import {
   formatInstantWithDay,
   MINUTES_PER_DAY,
   perthDayLabel,
+  splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -179,6 +179,13 @@ function AgendaRow({ row, now }: { row: PlannedRow; now: Instant }) {
 
 type AccessForecast = { total: number; target: string; at: Instant; atEd: number; edId: string };
 
+/** The configured ED access target as a length of time: "24 hours", or "12h 30m" off the hour. */
+function targetHours(minutes: number): string {
+  if (minutes % 60 !== 0) return splitDuration(minutes);
+  const hours = minutes / 60;
+  return `${hours} ${hours === 1 ? "hour" : "hours"}`;
+}
+
 /** The ED access forecast's first breach, read from today's forecast model. */
 function useAccessForecast(now: Instant): AccessForecast | undefined {
   const { risk } = useForecastModel(now);
@@ -188,7 +195,7 @@ function useAccessForecast(now: Instant): AccessForecast | undefined {
   if (!first || first.atRisk === 0) return undefined;
   return {
     total: risk.atRisk.length,
-    target: targetText(risk.targetMinutes),
+    target: targetHours(risk.targetMinutes),
     at: now + (first.firstMinutesLeft ?? 0),
     atEd: first.atRisk,
     edId: first.edId,
@@ -203,11 +210,12 @@ function AccessForecastRow({ forecast, now }: { forecast: AccessForecast; now: I
       <div className={styles.main}>
         <p className={styles.who}>
           <span className={styles.nameText}>
-            {forecast.total} likely to pass the {forecast.target} ED target
+            {/* D-198: plain words, no "likely"; the target is the configured ED access target. */}
+            {forecast.total} reach {forecast.target} in ED by tomorrow unless placed
           </span>
         </p>
         <p className={styles.line}>
-          Forecast · {forecast.atEd} at {forecastEdName(forecast.edId)} ·{" "}
+          From ward dates · {forecast.atEd} at {forecastEdName(forecast.edId)} ·{" "}
           <Link href={edHref(forecast.edId)} className={styles.link}>
             See who
           </Link>
@@ -255,7 +263,7 @@ function TomorrowFoot({ now, forecast }: { now: Instant; forecast: AccessForecas
         {forecast ? (
           <div data-testid="home-planned-access-forecast">
             <dt>
-              <b className={styles.figure}>{forecast.total}</b> likely to pass the {forecast.target} ED target
+              <b className={styles.figure}>{forecast.total}</b> reach {forecast.target} in ED by tomorrow unless placed
             </dt>
             <dd>
               by {formatInstant(forecast.at)} · {forecast.atEd} at {forecastEdName(forecast.edId)} ·{" "}

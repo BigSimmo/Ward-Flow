@@ -87,7 +87,8 @@ export function BedForecast({
   const actions = (
     <div className={styles.headActions}>
       <Segmented
-        label="Forecast view"
+        // D-198: the switch's name drops "Forecast view"; it picks how the days are split.
+        label={siteName ? "Site or by ward" : "Network or by ward"}
         items={[
           { id: "network" as const, label: siteName ? "Site" : "Network" },
           { id: "ward" as const, label: "By ward" },
@@ -104,9 +105,9 @@ export function BedForecast({
   return (
     <Card
       aria-labelledby={stacked ? undefined : "capacity-forecast-title"}
-      aria-label={stacked ? "Bed forecast" : undefined}
-      // Home's "Bed forecast" link (HOME_FORECAST_HREF) lands here.
-      id={stacked ? undefined : "capacity-forecast"}
+      aria-label={stacked ? "Beds ahead" : undefined}
+      // Wave 4 (D-191): Home's "Forecast" link (HOME_FORECAST_HREF) lands on the Forecast card, which
+      // owns the "capacity-forecast" id; this panel sits behind that card's Open.
       className={stacked ? styles.fcStacked : undefined}
     >
       {/* Polish (Josh, 31 Oct 2026): the title alone, no grey line; the sources sentence moved into
@@ -116,7 +117,7 @@ export function BedForecast({
       ) : (
         <CardHead
           id="capacity-forecast-title"
-          title="Bed forecast"
+          title="Beds ahead"
           meta={networkWide ? "Network-wide" : undefined}
           action={actions}
         />
@@ -133,10 +134,11 @@ export function BedForecast({
         {tomorrow ? (
           <Kpi
             label="Tomorrow"
-            srLabel={`, likely by ${formatInstantWithDay(tomorrow.until, now)}`}
+            srLabel={`, by ${formatInstantWithDay(tomorrow.until, now)}`}
             value={gapWords(tomorrow.likely)}
             tone={tomorrow.likely}
-            sub={`Could be ${gapWords(tomorrow.low)} to ${gapWords(tomorrow.high)}`}
+            // D-198: plain words, no "likely" or "could be".
+            sub={`From ward dates: ${gapWords(tomorrow.low)} to ${gapWords(tomorrow.high)}`}
           />
         ) : null}
         {twoDays ? (
@@ -145,7 +147,7 @@ export function BedForecast({
             value={gapWords(twoDays.likely)}
             tone={twoDays.likely}
             soft
-            sub={`Likely; could be ${gapWords(twoDays.low)} to ${gapWords(twoDays.high)}`}
+            sub={`From ward dates: ${gapWords(twoDays.low)} to ${gapWords(twoDays.high)}`}
           />
         ) : null}
         {/* Feature 21 (Josh, 9 Nov 2026): the third day, 72 hours out, read as softly as the second. Polish
@@ -156,7 +158,7 @@ export function BedForecast({
             value={gapWords(threeDays.likely)}
             tone={threeDays.likely}
             soft
-            sub={`Likely; could be ${gapWords(threeDays.low)} to ${gapWords(threeDays.high)}`}
+            sub={`From ward dates: ${gapWords(threeDays.low)} to ${gapWords(threeDays.high)}`}
           />
         ) : null}
         <Kpi

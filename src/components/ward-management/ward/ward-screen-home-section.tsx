@@ -122,9 +122,9 @@ type WardScreenHomeSectionProps = {
   pendingPreparation: number;
   /** WH4: the ward's own confirm, for the phone round's Confirm discharge. */
   confirmBedRelease: (releaseId: string) => void;
-  /** Wave 4 (W7): the inline Undo on an arrival row just pulled. */
+  /** Wave 4 (W7, ruling 3): the inline Undo on an arrival row just pulled ("Undo pull · until HH:MM"). */
   undoPullFor?: (movementId: string) => { label: string; run: () => void } | null;
-  /** Ruling 11 (D-191): Confirm arrival with no pulled bed opens the pull step first. */
+  /** Ruling 11 (D-191): Confirm arrival with no pulled bed opens the pull step (which bed) first. */
   onPullThenArrive?: (movementId: string) => void;
 };
 
@@ -385,14 +385,9 @@ export function WardScreenHomeSection({
           </>
         }
         undoPullFor={undoPullFor}
-        onPullThenArrive={
-          onPullThenArrive ??
-          ((movementId) => {
-            // Ruling 11 (D-191): a started movement pulls with PULL_PATIENT, then its arrival opens.
-            handlePullPatient(movementId, unit.id);
-            openArrival(movementId);
-          })
-        }
+        // Ruling 11 (D-191, review F-2): the ward screen's pull step asks which ready bed, pulls, then
+        // opens the arrival. Without it, Confirm arrival opens the arrival as before.
+        onPullThenArrive={onPullThenArrive}
       />
     </section>
   );

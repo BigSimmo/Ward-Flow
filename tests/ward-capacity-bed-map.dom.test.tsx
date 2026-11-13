@@ -168,10 +168,10 @@ describe("Capacity bed map — the network's whole bed supply, one square per be
       const strip = card.querySelector("i")?.parentElement;
       expect(strip, ward.unit.id).toHaveAttribute("aria-hidden", "true");
       // Wave 4: "1 ready of 20 beds"; occupied and pulled are said on the note line and in the drawer.
-      // The head leaves out a bed being made ready (drawn hollow, notes item 1), as the Ward page does.
-      const offered = ward.ready - Math.min(ward.pendingPreparation, ward.ready);
+      // A bed being made ready is drawn hollow, but the head keeps the ready figure: owner ruling
+      // 5 Sep 2026 until PR C's F-26 changes the ready rule for every figure at once (notes item 1).
       expect(card.textContent ?? "", ward.unit.id).toMatch(
-        new RegExp(`${offered}\\s*ready of ${ward.unit.beds} ${ward.unit.beds === 1 ? "bed" : "beds"}`, "u"),
+        new RegExp(`${ward.ready}\\s*ready of ${ward.unit.beds} ${ward.unit.beds === 1 ? "bed" : "beds"}`, "u"),
       );
     }
   });

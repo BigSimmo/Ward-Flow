@@ -63,7 +63,8 @@ export function ForecastCard({
     .join(" · ");
   const items = helpItems(forecastModel.levers, networkRows, now);
   return (
-    <Card aria-labelledby="capacity-forecast-card-title" data-testid={testId}>
+    // Home's "Forecast" link (HOME_FORECAST_HREF) lands on this card; its Open shows the full forecast.
+    <Card id="capacity-forecast" aria-labelledby="capacity-forecast-card-title" data-testid={testId}>
       <CardHead
         id="capacity-forecast-card-title"
         title="Forecast"

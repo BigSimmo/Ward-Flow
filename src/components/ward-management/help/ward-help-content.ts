@@ -113,7 +113,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
       {
         question: "What is Later today?",
         answer:
-          "The rest of the shift, from times the records already hold, against your default targets, such as people likely to pass the ED access target.",
+          "The rest of the shift, from times the records already hold, against your default targets, such as people who reach the ED access target by tomorrow unless placed.",
       },
     ],
   },

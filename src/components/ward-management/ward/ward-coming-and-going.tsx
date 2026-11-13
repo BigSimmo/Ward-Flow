@@ -8,7 +8,18 @@
 
 import { useState, type ReactNode } from "react";
 import { Undo2 } from "lucide-react";
-import { Button, Card, CardHead, ShowMoreRow, SrOnly, StatusGlyph, foldHidden, foldLimit, cx } from "@/components/wf";
+import {
+  Badge,
+  Button,
+  Card,
+  CardHead,
+  ShowMoreRow,
+  SrOnly,
+  StatusGlyph,
+  foldHidden,
+  foldLimit,
+  cx,
+} from "@/components/wf";
 import type { WardTomorrowOutlook } from "./ward-home-outlook";
 import type { ComingRow } from "./ward-coming-and-going-rows";
 import styles from "./ward-coming-and-going.module.css";
@@ -48,10 +59,12 @@ function rangeEnd(value: number): string {
   return value < 0 ? `${-value} short` : `${value} free`;
 }
 
-/** "Tomorrow 1 short · range 1 short to 2 free · From ward dates" (forecast line, D-191 revision). */
+/**
+ * "Tomorrow 1 short · range 1 short to 2 free · From ward dates" (forecast line, D-191 revision and
+ * D-198 words, as Home's beds-gap foot reads): no "likely" in either case.
+ */
 export function tomorrowLine(outlook: WardTomorrowOutlook): string {
-  const head = outlook.likely < 0 ? `${-outlook.likely} short` : `${outlook.likely} likely free`;
-  return `${head} · range ${rangeEnd(outlook.low)} to ${rangeEnd(outlook.high)} · From ward dates`;
+  return `${rangeEnd(outlook.likely)} · range ${rangeEnd(outlook.low)} to ${rangeEnd(outlook.high)} · From ward dates`;
 }
 
 // PR E swap: the window word becomes the kit's WindowWord (`wf/window-word`) once PR E lands.
@@ -111,6 +124,12 @@ export function WardComingAndGoing(props: ComingAndGoingProps) {
             ) : (
               <span className={styles.rowName}>{row.name}</span>
             )}
+            {/* Ruling 12 (D-191): the legal tag as recorded. PR E swap: the kit's Badge `tag`. */}
+            {row.tag ? (
+              <Badge size="sm" className={styles.rowTag}>
+                {row.tag}
+              </Badge>
+            ) : null}
           </p>
           {row.lines.map((line) => (
             <p key={line} className={styles.rowLine}>

@@ -314,7 +314,8 @@ export function wardExtras(
 /**
  * A ward's squares under the current ready rule. `bedStates().ready` still counts a bed being made
  * ready (owner ruling 5 Sep 2026; F-26 in PR C changes it), so those beds are drawn hollow from
- * inside the ready count and the strip still sums to the ward's beds.
+ * inside the ready count and the strip still sums to the ward's beds. The head figure stays
+ * `ward.ready` (pass it as `readyFigure`).
  */
 export function wardSquareCounts(ward: BedMapWard, dischargesToday: number) {
   const prep = Math.min(ward.pendingPreparation, ward.ready);
@@ -395,6 +396,9 @@ function WardCard({
       <BedSquares
         figure="lg"
         counts={wardSquareCounts(ward, extra?.dischargesToday ?? 0)}
+        // Owner ruling 5 Sep 2026: a bed being made ready is never subtracted from Ready (the hero's
+        // figure); it is drawn hollow inside it and named on the note line, until PR C's F-26.
+        readyFigure={ward.ready}
         tag={bedSquaresTag(ward.unit)}
         notes={wardNotes(ward, row, now, extra, staffRequested)}
         testId={`capacity-map-squares-${ward.unit.id}`}

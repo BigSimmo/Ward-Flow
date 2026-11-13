@@ -75,11 +75,17 @@ export function wardTomorrowOutlook(
   };
 }
 
-/** The headline figure's words: "3 likely free", "0 likely free" or "Likely 1 short". */
+/**
+ * The headline figure's words: "1 short" or "0 free" (D-198: no "likely", numbers kept, as the
+ * forecast line "Tomorrow N short · range … · From ward dates" reads). `lead` stays for callers.
+ */
 export function outlookHeadline(likely: number): { lead: string; figure: number; tail: string } {
-  return likely < 0
-    ? { lead: "Likely", figure: -likely, tail: "short" }
-    : { lead: "", figure: likely, tail: "likely free" };
+  return likely < 0 ? { lead: "", figure: -likely, tail: "short" } : { lead: "", figure: likely, tail: "free" };
+}
+
+/** The out and in figures, D-198 words: "From ward dates: 0 out, 2 booked in" (no "likely"). */
+export function outlookOutAndIn(outlook: Pick<WardTomorrowOutlook, "likelyOut" | "bookedIn">): string {
+  return `From ward dates: ${outlook.likelyOut} out, ${outlook.bookedIn} booked in`;
 }
 
 /** What the ward can do to firm the figure up, such as "2 discharges unconfirmed", or null. */
@@ -100,12 +106,10 @@ export function outlookPlannedLaterNote(outlook: WardTomorrowOutlook): string | 
     : null;
 }
 
-/** The one plain line, such as "Likely 1 short tomorrow. 2 discharges unconfirmed." */
+/** The one plain line, D-198 words: "From ward dates: 1 short tomorrow. 2 discharges unconfirmed." */
 export function outlookSentence(outlook: WardTomorrowOutlook): string {
-  const lead =
-    outlook.likely < 0
-      ? `Likely ${-outlook.likely} short tomorrow.`
-      : `${outlook.likely} ${outlook.likely === 1 ? "bed" : "beds"} likely free tomorrow.`;
+  const head = outlookHeadline(outlook.likely);
+  const lead = `From ward dates: ${head.figure} ${head.tail} tomorrow.`;
   const open = outlookOpenWork(outlook);
   return open === null ? lead : `${lead} ${open}.`;
 }

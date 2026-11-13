@@ -1,6 +1,8 @@
 import type { WfTone } from "@/components/wf";
 import type { BedRelease, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
-import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { dayOf, formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { legalFormNowWords } from "@/components/ward-management/ward-legal-form-progression";
+import { transportNeedState } from "@/components/ward-management/ward-derivations-transport";
 import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import { heldUntilExtendedLabel } from "@/components/ward-management/ward-bed-hold-extension";
 import { deliveredAwaitingWard, movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
@@ -22,6 +24,8 @@ export type ComingRow = {
   key: string;
   /** Surname first, as recorded; the bed's label when nobody is named. */
   name: string;
+  /** Arrivals: the legal tag as recorded ("Form 3B", "Voluntary"), ruling 12. Absent when none is recorded. */
+  tag?: string;
   /** The movement the row acts on (arrivals only). */
   movementId?: string;
   /** Ward desk: a pull row also offers Confirm arrival (ruling 11: the pull comes first). */
@@ -51,6 +55,49 @@ export function pulledBedFor(movement: Movement, beds: readonly BedItem[]): BedI
       ((admissionId !== undefined && (bed.stayAdmissionId === admissionId || bed.admissionId === admissionId)) ||
         bed.movementId === movement.id),
   );
+}
+
+/** When this person is expected at the ward: the recorded ETA, else the transport's, else the planned move time. */
+function expectedArrivalAt(movement: Movement): Instant | undefined {
+  return movement.arrivalDetails?.estimatedArrivalAt ?? movement.transport?.estimatedAt ?? movement.plannedMoveAt;
+}
+
+/**
+ * Ruling 9 (D-191), review F-3: "Arrivals · today" counts only people expected at the ward today.
+ * A person whose recorded expected time (ETA, transport ETA or planned move time) is on a later day
+ * is left out. A late arrival (expected before today, not yet arrived) and a person with no expected
+ * time recorded stay in: nothing on the record places them on another day. Hero and list read this one rule.
+ */
+export function arrivalsExpectedToday<T extends Movement>(accepted: readonly T[], now: Instant): T[] {
+  return accepted.filter((movement) => {
+    const at = expectedArrivalAt(movement);
+    return at === undefined || dayOf(at) <= dayOf(now);
+  });
+}
+
+/** Ruling 12 (D-191): the legal tag as recorded, in the Fixes wording ("Form 3B", else "Voluntary"). */
+export function arrivalLegalTag(movement: Movement): string {
+  return legalFormNowWords(movement) ?? movement.legalStatus;
+}
+
+/**
+ * Notes 4 (F-41): the transport line read from the transport record. `quiet` lines are said in ink-3:
+ * "No transport booked" before a bed is pulled or held, "Transport not recorded" after.
+ */
+export function arrivalTransportLine(movement: Movement, now: Instant): { text: string; quiet: boolean } {
+  const leg = movement.transport;
+  if (leg && leg.cancelledAt === undefined) {
+    const step =
+      leg.arrivedAt !== undefined
+        ? `arrived ${formatInstantWithDay(leg.arrivedAt, now)}`
+        : leg.collectedAt !== undefined
+          ? `collected ${formatInstantWithDay(leg.collectedAt, now)}`
+          : "booked";
+    return { text: `${leg.provider} · ${step}`, quiet: false };
+  }
+  if (transportNeedState(movement) === "not_needed") return { text: "No transport needed", quiet: false };
+  const beforeTravel = movement.stage === "accepted_awaiting_bed" || movement.stage === "pulled";
+  return { text: beforeTravel ? "No transport booked" : "Transport not recorded", quiet: true };
 }
 
 /** Arrivals · today: accepted people for this ward (ETA and hold words as Ward flow had them). */
@@ -88,12 +135,16 @@ export function arrivalRows({
             ? (heldUntilExtendedLabel(movement, now) ?? hold.label)
             : movementStatusLabel(movement));
     const first = [originName(movement), stageWords, bedWord(bed)].filter(Boolean).join(" · ");
+    const transport = arrivalTransportLine(movement, now);
+    const noBed = awaitingBed ? "No bed pulled" : bed ? undefined : "Bed not recorded";
+    const quiet = [noBed, transport.quiet ? transport.text : undefined].filter(Boolean).join(" · ");
     return {
       key: movement.id,
       movementId: movement.id,
       name,
-      lines: [first],
-      quietLine: awaitingBed ? "No bed pulled" : bed ? undefined : "Bed not recorded",
+      tag: arrivalLegalTag(movement),
+      lines: transport.quiet ? [first] : [first, transport.text],
+      quietLine: quiet || undefined,
       when: eta === undefined ? undefined : `${late ? "Due" : "ETA"} ${formatInstantWithDay(eta, now)}`,
       tone: hold?.state === "lapsed" ? "danger" : late || hold?.state === "at-risk" ? "warning" : "info",
       action: awaitingBed ? "pull" : desk === "ward" ? "confirm-arrival" : null,

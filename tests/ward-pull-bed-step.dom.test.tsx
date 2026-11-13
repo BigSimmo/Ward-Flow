@@ -141,6 +141,10 @@ describe("Pull the bed form (D-188)", () => {
     renderWith(<FormFirst />);
     const [first] = acceptedReferralsAwaitingPull(current!.referrals, current!.units, current!.movements);
     const before = JSON.stringify(current!.referrals.find((referral) => referral.id === first!.referral.id));
+    // Review F-13: the person's own record is not changed either (D-188 point b).
+    const patientOf = () =>
+      JSON.stringify(current!.patients.find((patient) => patient.id === first!.referral.patientId));
+    const patientBefore = patientOf();
     answerOpenFacts();
     fireEvent.click(
       within(screen.getByTestId("ward-pull-accepted-legal-status")).getByRole("radio", {
@@ -156,6 +160,7 @@ describe("Pull the bed form (D-188)", () => {
     // D-188 point a: the movement's stage change names the desk that pulled.
     expect(journey.stageChanges.at(-1)).toMatchObject({ to: "pulled", by: "coordinator" });
     expect(JSON.stringify(current!.referrals.find((referral) => referral.id === first!.referral.id))).toBe(before);
+    expect(patientOf()).toBe(patientBefore);
   });
 });
 

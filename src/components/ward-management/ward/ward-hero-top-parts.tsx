@@ -5,8 +5,6 @@ import { formatInstant } from "@/components/ward-management/ward-clock";
 import { BED_RELEASES_HELD_UP_ANY_DATE_LABEL } from "@/components/ward-management/ward-derivations";
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
 import { WardPackPrintedLine } from "./ward-pack-printed-line";
-import { bedIsOccupied, type Admission } from "@/components/ward-management/ward-admissions";
-import { observationIsRecorded } from "@/components/ward-management/ward-observation";
 import styles from "./ward-hero-top-parts.module.css";
 
 /** Count label "Label · window" (shared parts spec 2). PR E swap: the kit's WindowWord. */
@@ -16,17 +14,6 @@ function windowed(label: string, window: string) {
       {label} <span className={styles.win}>· {window}</span>
     </>
   );
-}
-
-/**
- * Wave 4 (D-191, ruling 10, A16-16): stays on this ward with no observation level recorded. A count
- * only; no level is shown or proposed.
- */
-export function obsNotRecordedCount(unitId: string, admissions: readonly Admission[]): number {
-  return admissions.filter(
-    (admission) =>
-      admission.unitId === unitId && bedIsOccupied(admission) && !observationIsRecorded(admission.observation),
-  ).length;
 }
 
 export type WardHeroTopInput = {
@@ -43,7 +30,7 @@ export type WardHeroTopInput = {
   pastDateCount: number;
   bedCountsStale: boolean;
   staffedSpecialling: number;
-  /** Ruling 10: stays with no observation level recorded. */
+  /** Ruling 10: stays with no observation level recorded (`obsNotRecordedCount`, ward-screen-derivations). */
   obsNotRecorded: number;
   /** The bed board's filter, so a figure that sets it says it is pressed. */
   bedFilter: WardBedFilter;

@@ -97,6 +97,10 @@ button.rowName {
   cursor: pointer;
 }
 
+.rowTag {
+  flex: none;
+}
+
 button.rowName:hover {
   text-decoration: underline;
 }

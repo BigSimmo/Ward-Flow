@@ -400,8 +400,9 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
       <Drawer
         open={popup?.kind === "forecast"}
         onClose={() => setPopup(null)}
-        title="Bed forecast"
-        description={networkWide ? "Network-wide" : undefined}
+        // D-198: plain words, no "Bed forecast"; the Forecast card that opens it keeps its title.
+        title="Beds ahead"
+        description={networkWide ? "From ward dates · Network-wide" : "From ward dates"}
         mobileSize="viewport"
         testId="ward-capacity-forecast-sheet"
       >

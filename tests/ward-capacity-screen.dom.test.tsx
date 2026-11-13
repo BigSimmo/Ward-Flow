@@ -142,9 +142,9 @@ function mismatchCells(): HTMLElement[] {
 /** One of the bed forecast's three figures ("Now", "Tomorrow", "In 2 days"): value and sub-line. */
 function forecastFigure(label: string): { value: string; sub: string } {
   // Wave 4 (D-191, ruling 8): the full forecast sits behind the Forecast card's Open.
-  if (!screen.queryByRole("region", { name: "Bed forecast" }))
+  if (!screen.queryByRole("region", { name: "Beds ahead" }))
     fireEvent.click(screen.getByTestId("capacity-forecast-open"));
-  const forecast = screen.getByRole("region", { name: "Bed forecast" });
+  const forecast = screen.getByRole("region", { name: "Beds ahead" });
   const term = within(forecast)
     .getAllByRole("term")
     .find((dt) => dt.firstChild?.textContent === label || dt.textContent?.trim().startsWith(label));
@@ -287,10 +287,10 @@ describe("the Capacity screen", () => {
       const [card] = cardsOf(row.unit);
       // Capacity issue 5 (Josh, 3 Nov 2026): the bed map card shows a known zero as the digit 0,
       // replacing the 6 Sep ruling that spelt it "None". The drawer below keeps its word.
-      // Wave 4 (notes item 1): the card's head leaves out a bed being made ready (drawn hollow).
+      // Wave 4 (notes item 1): a bed being made ready is drawn hollow, but the card's figure stays the
+      // ready count, as the hero and drawer say, until PR C's F-26 (owner ruling 5 Sep 2026).
       const cardFigure = card?.querySelector("b")?.textContent?.trim() ?? "";
-      const offered = row.ready - Math.min(row.pendingPreparation ?? 0, row.ready);
-      expect(cardFigure, `${row.unit.id}'s card does not show its ready count`).toBe(String(offered));
+      expect(cardFigure, `${row.unit.id}'s card does not show its ready count`).toBe(String(row.ready));
 
       const { figure } = bedsNow(openWardDrawer(row.unit));
       expect(figure, `${row.unit.id} has ${row.ready} ready bed(s) and its drawer does not say so`).toBe(
@@ -759,17 +759,18 @@ describe("tomorrow's beds forecast", () => {
     renderScreen();
     expect(forecastFigure("Tomorrow")).toEqual({
       value: gapWords(tomorrow!.likely),
-      sub: `Could be ${gapWords(tomorrow!.low)} to ${gapWords(tomorrow!.high)}`,
+      // D-198: plain words, no "likely" or "could be".
+      sub: `From ward dates: ${gapWords(tomorrow!.low)} to ${gapWords(tomorrow!.high)}`,
     });
     // Capacity issue 3 (Josh, 3 Nov 2026): 48 hours leads with the likely figure, drawn softer, and
     // gives the range under it.
     expect(forecastFigure("In 2 days")).toEqual({
       value: gapWords(twoDays!.likely),
-      sub: `Likely; could be ${gapWords(twoDays!.low)} to ${gapWords(twoDays!.high)}`,
+      sub: `From ward dates: ${gapWords(twoDays!.low)} to ${gapWords(twoDays!.high)}`,
     });
     // PR #423 prototype disclosure: the forecast states its limits. Since the redesign they sit in
     // its "How this is worked out" fold, under the visible "Estimate only".
-    const panel = screen.getByRole("region", { name: "Bed forecast" });
+    const panel = screen.getByRole("region", { name: "Beds ahead" });
     expect(within(panel).getByText("Estimate only")).toBeVisible();
     const how = within(panel).getByText("How this is worked out").closest("details") as HTMLElement;
     expect(how, "the forecast has no 'How this is worked out' fold").not.toBeNull();

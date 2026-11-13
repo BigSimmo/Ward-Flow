@@ -68,6 +68,14 @@ describe("BedSquares", () => {
     });
   });
 
+  it("keeps the selector's ready figure when a bed being made ready is drawn hollow inside it", () => {
+    // Owner ruling 5 Sep 2026: a bed being made ready is never subtracted from Ready (until F-26).
+    const counts = bedSquareCounts({ beds: 10, ready: 1, prep: 1 });
+    render(<BedSquares counts={counts} readyFigure={2} testId="sq" />);
+    expect(screen.getByTestId("sq-ready").textContent).toBe("2");
+    expect(screen.getByTestId("sq").textContent).toContain("2ready of 10 beds");
+  });
+
   it("names every square state in the key", () => {
     render(<BedSquaresKey />);
     expect(screen.getByLabelText("Bed squares key").textContent).toBe(

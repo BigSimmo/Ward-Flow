@@ -98,6 +98,14 @@ describe("Later today agenda (notes item 1)", () => {
     expect(screen.getByTestId("home-planned-group-shift")).toHaveTextContent("Synthetic, Person");
     expect(screen.getByTestId("home-planned-group-later")).toHaveTextContent(/Nothing recorded after .+ yet\./u);
     expect(screen.getByTestId("home-tomorrow")).toHaveTextContent("Not a prediction.");
+    // D-198: the ED wait line says what happens unless someone is placed, with no "likely" and no
+    // "Forecast ·"; the target is the configured one (24 hours by default), not a fixed figure.
+    const edWait = screen.getAllByTestId("home-planned-access-forecast");
+    expect(edWait.length).toBeGreaterThan(0);
+    for (const line of edWait) {
+      expect(line).toHaveTextContent(/\d+ reach 24 hours in ED by tomorrow unless placed/u);
+      expect(line).not.toHaveTextContent(/likely|Forecast ·/iu);
+    }
   });
 });
 
