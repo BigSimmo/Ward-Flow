@@ -1940,7 +1940,9 @@ fieldset.formRow {
 @media (max-width: 46.4375rem) {
   .screen :global([data-testid="ward-out-of-area-days-away"]) > ul {
     margin-inline: 0;
-    padding: 0;
+    /* Keep the shared row's 4px top and bottom padding: it holds the cells' 48px tap cover inside
+       the row, so the row is never taller inside than out and cannot drag up and down on an iPhone. */
+    padding-inline: 0;
     overflow-x: visible;
     -webkit-mask-image: none;
     mask-image: none;
