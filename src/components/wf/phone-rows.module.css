@@ -51,15 +51,15 @@
     -webkit-mask-image: linear-gradient(
       to right,
       transparent 0,
-      #000 var(--wf-row-fade-start),
-      #000 calc(100% - 28px),
+      black var(--wf-row-fade-start),
+      black calc(100% - 28px),
       transparent
     );
     mask-image: linear-gradient(
       to right,
       transparent 0,
-      #000 var(--wf-row-fade-start),
-      #000 calc(100% - 28px),
+      black var(--wf-row-fade-start),
+      black calc(100% - 28px),
       transparent
     );
     -webkit-mask-clip: no-clip;
