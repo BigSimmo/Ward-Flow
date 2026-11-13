@@ -551,7 +551,8 @@ export function WardHomeTab({
       criteriaTag?.label ?? "",
       pulledFor ? `For ${name}` : name,
       tileStateLine(shownNote, days),
-      ...spokenState,
+      // A pulled tile's shown line already says "Pulled · …": don't read the state twice.
+      ...(pulledFor ? [] : spokenState),
     ]
       .filter(Boolean)
       .join(", ");
