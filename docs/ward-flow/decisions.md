@@ -192,6 +192,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-167](#d-167-the-triage-page-has-a-left-sign-off-nav-and-joined-section-steps-13-november-2026)                                                       | The Triage page has a left sign-off nav and joined section steps                       | Active                                           |
 | [D-168](#d-168-the-demo-script-follows-the-13-november-pre-demo-audit-13-november-2026)                                                                 | The demo script follows the 13 November pre-demo audit                                 | Active                                           |
 | [D-169](#d-169-demo-script-wording-follows-the-hard-questions-audit-13-november-2026)                                                                   | Demo script wording follows the hard questions audit                                   | Active                                           |
+| [D-170](#d-170-clinical-wording-rulings-from-the-13-november-audit-13-november-2026)                                                                    | Clinical wording rulings from the 13 November audit                                    | Active                                           |
 | [D-171](#d-171-hosted-database-brought-to-schema-18-migrations-017-and-018-13-november-2026)                                                            | Hosted database brought to schema 18 (migrations 017 and 018)                          | Active                                           |
 | [D-172](#d-172-the-community-desks-ed-heads-up-stays-as-built-in-d-154-13-november-2026)                                                                | The community desk's ED heads-up stays as built in D-154                               | Active                                           |
 
@@ -2086,6 +2087,19 @@ is inferred.
   2. **Invented ward descriptions:** the next on-screen audit checks where the "what each ward admits" lines show under real ward names.
   3. **Cost:** the answer in the room is that there is no price today.
 - **Boundary:** documentation only. Changes no app behaviour, clinical rule or permission. Gives no regulatory, legal or clinical view. Approves no release.
+
+## D-170. Clinical wording rulings from the 13 November audit (13 November 2026)
+
+- **Date:** 13 November 2026, 1:04 PM AWST (05:04 UTC). **Decided by:** Josh, "Yes to all recommendations. Lock them in and update coordinator" in the Ward Flow project thread "Audit clinical wording (prompt 3)", answering the seven numbered questions of the clinical wording audit (audit prompt 3). Fifteen minutes later (1:19 PM AWST, 05:19 UTC) he wrote "Yes to all recommendations and update coordinator" to the four follow-up recommendations for items 3, 4, 6 and 7. Numbered D-170 because D-169 is claimed by PR #1649 (demo script wording).
+- **Decision:**
+  1. **Next form:** a patient page no longer names Form 6A as the next form. It says "Next form to record", with no form number. A form is shown as ended at arrival only when a person records that it ended; "ended at the examination" is unchanged. This replaces Josh's 13 October 2026 default of a single "Record Form 6A" prompt.
+  2. **Demo story:** the script keeps the ambulance booking and the Form 4A check for Keira's move inside Royal Perth, and gains one presenter sentence saying the booking is shown to demonstrate the step. After the demo the story moves to a patient who crosses sites.
+  3. **Examination outcome:** "revoked" comes out of the examination outcome wording in all seven places. The list says "No order made, does not proceed", the chip says "No order made", and the notice says "The examination made no order. The patient is not coming."
+  4. **Sample legal status:** the four sample people on a Form 4A with no examination recorded become "Referred for psychiatric examination". The three on a Form 3B whose examination records an inpatient order keep "Involuntary inpatient", because item 1 changes how their old form reads. Only sample data changes.
+  5. **Transport check:** the check says "Transport or transfer order not uploaded", with no form number.
+  6. **Triage windows:** the four triage see-by windows are signed as they are once Josh confirms they match the triage form; until he confirms, they stay unsigned. The Frequent presenter number is signed as a prototype default, not a clinical threshold. No value is proposed or changed here.
+  7. **Ward profile panel:** the invented "Admits" lines are removed until a service supplies its own words, the "Forms held" row is dropped, and the forensic chip changes from "CLMA" to "CLMI Act", added to the glossary as the Criminal Law (Mental Impairment) Act 2023. The Act name was given from memory, so the fix checks it against the WA legislation site before it is built.
+- **Boundary:** records the rulings only. This PR changes no app wording, script or sample data; the fixes are built later under the audit plan. None of the wording was checked against the Act's text. Still open: Josh's confirmation that the triage windows match the form. Sets no clinical value. Approves no release.
 
 ## D-171. Hosted database brought to schema 18 (migrations 017 and 018) (13 November 2026)
 
