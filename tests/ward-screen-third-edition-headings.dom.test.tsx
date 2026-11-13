@@ -205,7 +205,8 @@ describe("the ward screen's third-edition panel names", () => {
         `"${label}" is the visible heading but not the landmark label — the two layers disagree`,
       ).toBeInTheDocument();
     }
-    const referrals = screen.getByRole("heading", { name: /Referrals · now/u });
+    // The kit's window word (PR E) hides its dot from screen readers, so the name reads "N Referrals now".
+    const referrals = screen.getByRole("heading", { name: /Referrals now/u });
     expect(referrals).toBeVisible();
     expect(screen.getByRole("region", { name: "Awaiting your answer" })).toBeInTheDocument();
   });
