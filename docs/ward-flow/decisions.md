@@ -209,6 +209,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-184](#d-184-the-system-fixes-merge-before-the-demo-13-november-2026)                                                                                 | The system fixes merge before the demo                                                 | Active                                           |
 | [D-185](#d-185-design-critique-v2-answers-and-the-brand-mark-for-the-demo-13-november-2026)                                                             | Design critique v2 answers and the brand mark for the demo                             | Active                                           |
 | [D-190](#d-190-the-six-pr-fix-plan-13-november-2026)                                                                                                    | The six-PR fix plan                                                                    | Active                                           |
+| [D-191](#d-191-home-ward-and-capacity-mock-ups-approved-13-november-2026)                                                                               | Home, Ward and Capacity mock-ups approved                                              | Active                                           |
 
 ---
 
@@ -2285,3 +2286,23 @@ is inferred.
   7. The merged documents branch `claude/delete-handover-2026-11-13` is deleted.
   8. Audit 7's business questions and a regulatory view are taken in one sitting after the demo.
 - **Boundary:** sets no clinical value.
+
+## D-191. Home, Ward and Capacity mock-ups approved (13 November 2026)
+
+- **Date:** 13 November 2026, 8:31 PM AWST (12:31 UTC), with follow-ups at 8:34 PM, 8:51 PM and 8:56 PM AWST. **Decided by:** Josh, "Yes to all" on the decision card "Approve the Home, Ward and Capacity mock-ups and their 13 recommendations?" in the Ward Flow thread "Redesign Home, Ward and Capacity" (review page v1.1), and "Yes to all 4" on the four build questions in the project chat. This settles the "Still open" line of D-188, which the clinical sign-off pull request records.
+- **Decision:** the Home, Ward (coordinator and ward desk, bed board on a phone, All wards header) and Capacity (with the executive desk and bed meeting sheet) designs are approved, with these 13 points:
+  1. **Pull the bed (clinical, see D-188):** legal status, form and observation level are filled in from the record, each showing its source. The clinician or ward coordinator pulling the bed can change any of them, and a changed value names that person as its source. A fact the record does not hold is left blank ("Not recorded"), with nothing guessed or selected.
+  2. Home's Needs you loses "Waiting on others". Late planned arrivals go to Past planned time. Discharge notifications stay in Alerts.
+  3. After a pull the row stays with "Undo pull · until HH:MM", and focus moves to the next row.
+  4. The 85% figure reads "In use", as on Capacity, with the amber dot kept, not "at risk".
+  5. "Held up" means due by tomorrow (overdue, today or tomorrow) on Capacity, Ward, the TV, the sheet and Home. Discharges keeps "any date" as its own group, and "by tomorrow" joins the window words.
+  6. "Short" adds each bed type's shortfall and never subtracts a spare youth bed.
+  7. Bed squares drop the 4 November coloured discharge cells. Held up is said in words on the note line, in one pattern for Ward, Capacity and All wards that moves into the kit.
+  8. A shorter Capacity Overview: one hero action (Bed meeting sheet), Find a bed on the map, the forecast chart behind the Forecast card, and the Planned card only on its tab.
+  9. The Ward hero's third figure is "Arrivals · today", replacing "ready by 15:00".
+  10. Ward shows a quiet "Obs not recorded" count beside "Staff on constant obs" (clinical; no level proposed).
+  11. Confirming an arrival with no pulled bed opens the pull step first, asking which ready bed, then the arrival. Closed beds are never offered.
+  12. Arrival rows keep the legal tag as recorded, in the fix round's wording (clinical wording).
+  13. Planned admissions get full synthetic names (F-148).
+- **Build answers (8:51 PM AWST):** both the ward-desk clinician and the ward coordinator may pull a bed, and the record names which one did. A change on the pull form stays on the pull, shown as "changed by …", and does not update the patient record. The person is named by desk role, since there are no personal sign-ins. Points 5 and 6 are built in the system-fixes pull request; the page waves relabel.
+- **Boundary:** synthetic data only. Sets no clinical value.
