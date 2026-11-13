@@ -56,19 +56,28 @@
   color: var(--wf-ink-2);
 }
 
-.grid {
+/* Shared design parts item 8 (13 Nov 2026): the clock row and Reset demo come first. */
+.first {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
+  gap: var(--wf-s-2);
+}
+
+/* Scenario and See it as are wrapping choices sized to their words, 32px on a laptop (the kit's sm
+   height), so the panel fits 1366 x 768 and 1280 x 600 without scrolling. Phones keep 40px. */
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
 }
 
 .choice {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--wf-s-2);
-  min-height: 44px;
-  padding: 6px var(--wf-s-3);
+  min-height: var(--wf-h-sm);
+  max-width: 100%;
+  padding: 2px var(--wf-s-3);
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-md);
   background: var(--wf-surface);
@@ -135,6 +144,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   min-height: 40px;
   padding: 0 12px;
   border: 1px solid var(--wf-line-2);
@@ -152,6 +162,7 @@
 }
 
 .reset {
+  width: 100%;
   border-color: color-mix(in srgb, var(--wf-warning) 55%, var(--wf-line-2));
   background: color-mix(in srgb, var(--wf-warning) 10%, var(--wf-surface));
 }
@@ -255,7 +266,7 @@
   color: var(--wf-ink-3);
 }
 
-/* Phones: the 40px buttons (44px scenario cards) keep their face and reach a 48px tap area through a
+/* Phones: the 40px buttons and scenario choices keep their face and reach a 48px tap area through a
    transparent cover, the house pattern (home-list's list tabs). Neighbours sit 6px or more apart, so
    no cover reaches another control. The Practise row's cover reaches up into the gap above it only,
    so it never sits over the opened section's first line. */
@@ -265,6 +276,9 @@
   .reset,
   .practice summary {
     position: relative;
+  }
+  .choice {
+    min-height: 40px;
   }
   .small::after,
   .reset::after {

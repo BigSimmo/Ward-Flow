@@ -4956,7 +4956,7 @@
       "control": "Global Search offers Advance demo clock (+15m), dispatching minutes=15 under role demo; the Demo panel also offers +15 min and +1 hour. D-150 (11 Nov 2026): the signed-in shared site runs on real Perth time, so both controls are hidden in shared mode and remain on the public demo only. Imperative search navigation and desk switching first consult the composed unsaved-work guard."
     },
     "review": {
-      "reviewedOn": "2026-11-11",
+      "reviewedOn": "2026-11-13",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -4975,8 +4975,8 @@
         },
         {
           "path": "src/components/ward-management/tools/ward-demo-panel.tsx",
-          "line": 271,
-          "sha256": "ba6e115ccc6fb129eb4b2aeb72e975e106930bdd55c7e6cc5cdc17a0d8bb685f"
+          "line": 255,
+          "sha256": "a4f7397eae3816131934a75226a562bc931fce057fb320d0889f9ea2961e3ad9"
         },
         {
           "path": "src/components/ward-management/ward-flow-provider.tsx",
@@ -5013,7 +5013,7 @@
       "control": "Reset scenario"
     },
     "review": {
-      "reviewedOn": "2026-11-05",
+      "reviewedOn": "2026-11-13",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -5032,8 +5032,8 @@
         },
         {
           "path": "src/components/ward-management/tools/ward-demo-panel.tsx",
-          "line": 197,
-          "sha256": "ba6e115ccc6fb129eb4b2aeb72e975e106930bdd55c7e6cc5cdc17a0d8bb685f"
+          "line": 203,
+          "sha256": "a4f7397eae3816131934a75226a562bc931fce057fb320d0889f9ea2961e3ad9"
         }
       ]
     }
@@ -5064,7 +5064,7 @@
       "control": "Both pickers ask before replacing the synthetic world. The separate Demo reset waits for the command outcome, keeps choices unavailable while it is pending, and reports a current accepted replacement as complete. Failed, refused, cancelled or unknown completion is not reported as success, and obsolete or unmounted results do not announce into a replacement workspace."
     },
     "review": {
-      "reviewedOn": "2026-11-05",
+      "reviewedOn": "2026-11-13",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -5083,8 +5083,8 @@
         },
         {
           "path": "src/components/ward-management/tools/ward-demo-panel.tsx",
-          "line": 197,
-          "sha256": "ba6e115ccc6fb129eb4b2aeb72e975e106930bdd55c7e6cc5cdc17a0d8bb685f"
+          "line": 203,
+          "sha256": "a4f7397eae3816131934a75226a562bc931fce057fb320d0889f9ea2961e3ad9"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",

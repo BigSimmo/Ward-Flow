@@ -113,7 +113,9 @@ export {
   publishLiveClock,
   publishLiveRefresh,
   useLiveFreshness,
+  useLivePause,
   useSharedRefreshLate,
+  type LivePauseControl,
 } from "./live";
 export {
   Field,
