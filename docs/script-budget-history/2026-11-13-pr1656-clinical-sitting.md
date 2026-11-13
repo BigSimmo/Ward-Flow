@@ -1,0 +1,10 @@
+# 13 November 2026, PR #1656 (held clinical PR, D-186 and D-187)
+
+All nine phone limits raised by 0.3 KB: `/ward-flow` 582.3 to 582.6, `/ward-flow/referrals` 586.8 to 587.1,
+`/ward-flow/ed` 536.4 to 536.7, `/ward-flow/ward/rph-adult-secure` 615.8 to 616.1, `/ward-flow/movements/WF-001`
+613.5 to 613.8, `/ward-flow/capacity` 660.0 to 660.3, `/ward-flow/ed/arm-ed` 674.7 to 675.0, `/ward-flow/bed-meeting`
+593.8 to 594.1 and `/ward-flow/statistics` 633.9 to 634.2. Measured with two local production builds at the same
+checkout path (main `92630b1e` against the PR at `d61696f5`), every route grew by the same 0.2 KB, so the growth is in
+the shared shell: the seven triage timings Josh had listed in the values register (D-186 item 16), the one legal
+reading for the patient page (D-186 item 7) and the two named legal rules (D-187 item 3). They are approved content,
+so no trim was taken; CI found Movements 0.1 KB over its limit (613.5 KB against main's 613.4 KB) before the raise.
