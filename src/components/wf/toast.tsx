@@ -15,18 +15,25 @@ import { Button } from "./button";
 import { cx } from "./cx";
 import styles from "./overlay.module.css";
 import { StatusGlyph, type WfTone } from "./status-glyph";
-import { useCountdown, useDocumentHidden } from "./toast-timing";
+import { undoToastMs, undoUntilText, useCountdown, useDocumentHidden } from "./toast-timing";
 
 /**
  * An Undo window on the toast. A 2px line under the toast shrinks over `durationMs` and pauses
  * while the toast is hovered or holds focus. Under reduced motion the line hides and the time left
  * shows in words. The window is fixed when the toast mounts: give the toast a new `key` to start a
  * new one.
+ *
+ * With `until` (shared design parts item 4, Josh 13 Nov 2026) the toast names one clock time instead:
+ * "Bed pulled for … · Undo until 14:47", with no seconds left and no shrinking line, and it stays at
+ * least ten seconds (`UNDO_TOAST_MIN_MS`). The row the step changed keeps its own Undo (`RowUndo`)
+ * for the rest of the window.
  */
 export type ToastUndo = {
   /** Defaults to "Undo". */
   label?: string;
   durationMs: number;
+  /** When the Undo window ends: a Date (shown as the Perth clock time) or an "HH:MM" string. */
+  until?: Date | string;
   /** Return false when temporarily blocked to keep this toast's existing Undo window. */
   onUndo: () => void | false;
   /**
@@ -112,7 +119,7 @@ type UndoPhase = "running" | "undone" | "expired";
  * stylesheet turns animations off; the line only mirrors it. Pausing keeps the time left.
  */
 function useUndoWindow(undo: ToastUndo | undefined, paused: boolean) {
-  const durationMs = undo?.durationMs ?? 0;
+  const durationMs = undo ? undoToastMs(undo) : 0;
   const [phase, setPhase] = useState<UndoPhase>("running");
   const [secondsLeft, setSecondsLeft] = useState(() => Math.ceil(durationMs / 1000));
   const remainingRef = useRef(durationMs);
@@ -233,6 +240,9 @@ export function ToastView({
   );
   // Alt+N lands on the first control that acts: a running Undo, the action, the next step or close.
   const primary = undo && phase === "running" ? "undo" : action ? "action" : nextStep ? "next" : "close";
+  // One clock time in the words: no "Ns left" and no shrinking line beside it.
+  const until = undo?.until;
+  const hasUntil = until !== undefined;
 
   return (
     <div
@@ -241,11 +251,12 @@ export function ToastView({
         undo
           ? ({
               ...style,
-              "--wf-undo-ms": `${Math.max(0, undo.durationMs)}ms`,
+              "--wf-undo-ms": `${Math.max(0, undoToastMs(undo))}ms`,
             } as CSSProperties)
           : style
       }
       data-undo={undo ? phase : undefined}
+      data-undo-until={hasUntil ? "" : undefined}
       data-paused={(undo || timed) && (paused || (timed && hidden)) ? "true" : undefined}
       data-leaving={leaving ? "true" : undefined}
       aria-hidden={leaving || undefined}
@@ -257,11 +268,14 @@ export function ToastView({
     >
       {tone ? <StatusGlyph tone={tone} /> : null}
       <div className={styles.toastText}>
-        <span className={styles.toastTitle}>{title}</span>
+        <span className={styles.toastTitle}>
+          {title}
+          {hasUntil ? <span data-undo-until-text="">{` · ${undoUntilText(until)}`}</span> : null}
+        </span>
         {body ? <span className={styles.toastBody}>{body}</span> : null}
       </div>
       {meta ? <span className={styles.toastMeta}>{meta}</span> : null}
-      {undo && phase === "running" ? (
+      {undo && !hasUntil && phase === "running" ? (
         // Words for reduced motion only; hidden from the live region so it never reads a running tally.
         <span className={cx(styles.toastMeta, styles.undoWords)} aria-hidden="true" data-undo-left="">
           {secondsLeft}s left
@@ -322,7 +336,7 @@ export function ToastView({
           onClick={onClose}
         />
       ) : null}
-      {undo ? <span className={styles.undoBar} aria-hidden="true" data-undo-bar="" /> : null}
+      {undo && !hasUntil ? <span className={styles.undoBar} aria-hidden="true" data-undo-bar="" /> : null}
     </div>
   );
 }

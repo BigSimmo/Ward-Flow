@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 
+import { WardLoadingRows } from "./ward-loading-rows";
 import styles from "./ward-loading-shape.module.css";
 
 type Shape = "home" | "capacity" | "waiting" | "plain";
@@ -40,7 +41,7 @@ function HomeShape() {
         ))}
       </div>
       <div className={styles.columns}>
-        <Block className={styles.list} />
+        <WardLoadingRows className={styles.list} rows={5} />
         <div className={styles.side}>
           <Block className={styles.fit} />
           <Block className={styles.place} />
@@ -60,7 +61,7 @@ function CapacityShape() {
           <Block key={key} className={styles.mismatch} />
         ))}
       </div>
-      <Block className={styles.forecast} />
+      <WardLoadingRows className={styles.forecast} rows={4} />
     </>
   );
 }
@@ -77,7 +78,7 @@ function WaitingShape() {
         ))}
       </div>
       <div className={`${styles.columns} ${styles.wide}`}>
-        <Block className={styles.table} />
+        <WardLoadingRows className={styles.table} rows={6} />
         <div className={styles.side}>
           <Block className={styles.fit} />
           <Block className={styles.place} />
@@ -91,7 +92,8 @@ function WaitingShape() {
  * Loading state (pop-state-loading, approved by Josh 31 Oct 2026): the shared placeholder's grey
  * blocks take the shape of the page that is on its way, so Home, Capacity and Waiting land where
  * the blocks were instead of jumping. Every other page keeps today's plain two blocks. Decoration
- * only: the placeholder's "Loading page" status says what is happening.
+ * only: the placeholder's "Loading page" status says what is happening. Item 12 (13 Nov 2026): the
+ * list-shaped blocks hold grey rows (`WardLoadingRows`); the others are filled with the track.
  */
 export function WardLoadingShape({ paths }: { paths: WardLoadingShapePaths }) {
   const shape = shapeOf(usePathname() ?? "", paths);
@@ -106,7 +108,7 @@ export function WardLoadingShape({ paths }: { paths: WardLoadingShapePaths }) {
       ) : (
         <>
           <Block className={styles.plain} />
-          <Block className={styles.plainTall} />
+          <WardLoadingRows className={styles.plainTall} rows={3} />
         </>
       )}
     </div>
