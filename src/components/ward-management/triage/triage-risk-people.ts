@@ -5,7 +5,7 @@
  * without a provider. Synthetic data only.
  */
 import { resolvePatientNowRecord } from "@/components/ward-management/patients/patient-now-adapter";
-import { rankByNameStart } from "@/components/ward-management/referrals/referral-patient-rank";
+import { rankByNameStart } from "@/components/ward-management/ward-patient-name-rank";
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import type { Admission, PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { calendarDateOf, perthCalendarDay, type Instant } from "@/components/ward-management/ward-clock";

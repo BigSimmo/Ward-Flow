@@ -536,7 +536,7 @@ export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
     reason: "Seclusion rooms by a fixed state table.",
   },
   {
-    file: "referrals/referral-patient-rank.ts",
+    file: "ward-patient-name-rank.ts",
     match: "a.rank - b.rank || a.index - b.index",
     list: "patients",
     key: "where the typed text matches the name (family, given, other), then original order",
