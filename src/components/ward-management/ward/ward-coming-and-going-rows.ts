@@ -18,7 +18,7 @@ import { wardDischargesDueToday, wardFlowReleaseGroup } from "./ward-home-tab-mo
  * the "by tomorrow" and "still due today" windows).
  */
 
-export type ComingRowAction = "pull" | "confirm-arrival" | null;
+type ComingRowAction = "pull" | "confirm-arrival" | null;
 
 export type ComingRow = {
   key: string;
@@ -47,7 +47,7 @@ export type ComingRow = {
 const bedWord = (bed: BedItem | undefined) => (bed ? `Bed ${String(bed.bedNumber).padStart(2, "0")}` : undefined);
 
 /** The bed pulled for an accepted person at this ward, if any. */
-export function pulledBedFor(movement: Movement, beds: readonly BedItem[]): BedItem | undefined {
+function pulledBedFor(movement: Movement, beds: readonly BedItem[]): BedItem | undefined {
   const admissionId = (movement as { admissionId?: string }).admissionId;
   return beds.find(
     (bed) =>

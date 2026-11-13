@@ -73,7 +73,7 @@ function CountLabel({ label, window }: { label: string; window: string }) {
 }
 
 /** The neutral cohort and lock tag, from the record ("Adult · Locked"). */
-export function executiveWardTag(ward: Pick<ExecutiveWard, "cohort" | "lockedBeds" | "beds">): string {
+function executiveWardTag(ward: Pick<ExecutiveWard, "cohort" | "lockedBeds" | "beds">): string {
   const lock = ward.lockedBeds <= 0 ? "Open" : ward.lockedBeds >= ward.beds.total ? "Locked" : "Mixed";
   return `${ward.cohort} · ${lock}`;
 }

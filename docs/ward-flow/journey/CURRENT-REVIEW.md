@@ -139,3 +139,26 @@ and END_LEAVE_BED `raise()` calls, payloads and guards are unchanged; they moved
 SET_CONFIGURATION save is unchanged and moved down one line. The six whole-file digests and lines in
 `actions.json` were refreshed. Evidence: `tests/ward-count-breakdown.dom.test.tsx` and `tests/ward-desk-qr.test.ts`,
 run locally.
+
+## 13 November 2026 — wave 4 Home, Ward and Capacity redesign (PR #1659, D-191)
+
+Five cited review sources changed, compared dispatch by dispatch with main `ea4cd8b57`. Twenty of the 22
+mapped dispatch sites are unchanged and only moved: `ward/ward-screen.tsx` (ACCEPT_REFERRAL, ACCEPT_IN_PRINCIPLE,
+DECLINE, RELEASE_PULL, RECORD_LEAVING, END_LEAVE_BED, CONFIRM_BED_RELEASE, CLEAR_BED_RELEASE_BLOCK,
+CONFIRM_CAPACITY, MARK_NOTICE_READ, CONFIRM_MORNING_ROLLUP), `alerts/alerts-screen.tsx` (RECORD_ESCALATION,
+RELEASE_PULL, ACKNOWLEDGE_INBOX_ITEM, DISPATCH_BROADCAST_ALERT, STAND_DOWN_BROADCAST_ALERT; the screen now keeps
+a just-pulled row with its Undo), and `capacity/capacity-screen.tsx` and `capacity/capacity-ward-drawer.tsx`
+(REQUEST_CAPACITY_REFRESH). Two changed:
+
+- `ward/ward-screen.tsx` PULL_PATIENT: same payload (`movementId`, `unitId`, `actingUnitId: unitId`) and guard;
+  the handler now passes an optional decision report to `runMovementCommand`, so the new pull-then-arrive step
+  can show its own outcome. No engine change.
+- `referrals/pull-accepted-referral.tsx` RAISE_REFERRAL (the Pull the bed form, D-191 and D-188): the ward desk
+  may now pull as well as the coordinator, which the engine already allowed (`EVENT_ROLE.RAISE_REFERRAL`
+  includes `ward`); a ward desk sends `actingUnitId` and may pull only its own ward's bed. The form fills from
+  the record and stays editable; observation is required; the payload fields are unchanged. Engine guards are
+  unchanged, so the RAISE_REFERRAL prose still holds.
+
+Whole-file digests and lines for these five files were refreshed in `actions.json` (the other two
+catalogues do not cite them). Evidence: `tests/ward-pull-bed-step.dom.test.tsx`, `tests/ward-coordinator-path-pull.dom.test.tsx`, `tests/ward-pull-observation-not-recorded.dom.test.tsx`, the Alerts screen tests
+and the capacity screen tests, run locally with `vitest related`.

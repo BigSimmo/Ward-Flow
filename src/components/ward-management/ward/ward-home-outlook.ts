@@ -89,7 +89,7 @@ export function outlookOutAndIn(outlook: Pick<WardTomorrowOutlook, "likelyOut" |
 }
 
 /** What the ward can do to firm the figure up, such as "2 discharges unconfirmed", or null. */
-export function outlookOpenWork(outlook: WardTomorrowOutlook): string | null {
+function outlookOpenWork(outlook: WardTomorrowOutlook): string | null {
   const open = [
     outlook.unconfirmed > 0
       ? `${outlook.unconfirmed} ${outlook.unconfirmed === 1 ? "discharge" : "discharges"} unconfirmed`

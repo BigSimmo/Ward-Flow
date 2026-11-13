@@ -102,13 +102,13 @@ export type BedMeetingDischarges = {
   moreHeldUpRows: number;
 };
 
-export type BedMeetingHeldUpRow = { id: string; ward: string; reason: string; dueAt: Instant };
+type BedMeetingHeldUpRow = { id: string; ward: string; reason: string; dueAt: Instant };
 
 /**
  * The hero's "short" figure (`bedKindGaps` and `bedKindTotals`, as Capacity's hero reads them), so
  * the sheet says the same number. Network-wide, as Capacity's own band is.
  */
-export type BedMeetingShort = {
+type BedMeetingShort = {
   /** `bedsThatFit - waiting` over every bed type; negative is short. */
   gap: number;
   /** People still needing a bed ("Need a bed"). */

@@ -60,7 +60,7 @@ export type BedSquaresProps = {
 };
 
 /** Left-to-right order of the squares. */
-export const BED_SQUARE_ORDER: readonly BedSquareState[] = ["ready", "prep", "free", "use", "closed"];
+const BED_SQUARE_ORDER: readonly BedSquareState[] = ["ready", "prep", "free", "use", "closed"];
 
 /** The key's words for each square, in order. */
 export const BED_SQUARE_LABELS: Readonly<Record<BedSquareState, string>> = {

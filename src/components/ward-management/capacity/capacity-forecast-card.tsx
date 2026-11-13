@@ -6,13 +6,13 @@ import { ChevronRight } from "lucide-react";
 import { Badge, Button, Card, CardHead } from "@/components/wf";
 import type { BedKindId } from "./capacity-derivations";
 
-import { helpItems, tagText } from "./capacity-bed-forecast";
+import { helpItems, tagText } from "./capacity-forecast-help";
 import { LeverPopup, type HelpItem } from "./capacity-lever-popup";
 import type { CapacityModel } from "./capacity-model";
 import styles from "./capacity-page.module.css";
 
 /** "17 short", "9 spare", "enough". */
-export function gapShortWords(gap: number): string {
+function gapShortWords(gap: number): string {
   if (gap === 0) return "enough";
   return gap < 0 ? `${-gap} short` : `${gap} spare`;
 }

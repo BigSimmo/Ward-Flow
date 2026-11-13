@@ -137,10 +137,6 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
   "ward/ward-arrivals-corridor.tsx": { cover: "page form" },
   "ward/ward-bed-dossier-drawer.tsx": { cover: "popup", why: "The bed drawer is modal." },
   "ward/ward-bed-move-reason-form.tsx": { cover: "held" },
-  "ward/ward-pull-then-arrive.tsx": {
-    cover: "popup",
-    why: "The pull step's bed choice opens only inside its Sheet (ruling 11, review F-2).",
-  },
   "restrictive-practice/seclusion-forms-view.tsx": {
     cover: "popup",
     why: "Start, end, room and incident each open in their own Dialog (FS3).",

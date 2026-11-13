@@ -141,10 +141,10 @@ function read(paths: string[]) {
 /**
  * 🔴 **THE DECLARATION SURFACE IS WIDER THAN THE FILE TYPE, AND THIS GUARD LEARNED THAT TWICE.**
  *
- * A custom property can also be declared at RUNTIME, from a JSX inline style — and the bed strip
- * does exactly that: `wards/bed-strip.tsx` sets `--strip-ready`, `--strip-pulled` and
- * `--strip-closed` per ward from its counts, which `bed-strip.module.css` then reads as
- * `flex-grow: var(--strip-ready)`. **Those are per-row values that cannot live in a stylesheet: one
+ * A custom property can also be declared at RUNTIME, from a JSX inline style — and the bed squares
+ * do exactly that: `bed-squares/bed-squares.tsx` sets `--sq-n` per ward from its bed count, which
+ * `bed-squares.module.css` then reads as `repeat(var(--sq-n, 1), …)` (the old bed strip's
+ * `--strip-*` widths did the same until wave 4, D-191, replaced it). **Those are per-row values that cannot live in a stylesheet: one
  * declared value would be one strip for every ward.** (The hub's own `--bar-*` widths, the first
  * case found, left with the Places bed bar under review point 21, 31 Oct 2026.)
  *
@@ -287,9 +287,7 @@ describe("every var() in Ward Flow's stylesheets names a token that exists", () 
       runtimeDeclared.size,
       "no custom property was collected from JSX — the runtime scan is dead",
     ).toBeGreaterThan(0);
-    for (const name of ["--strip-ready", "--strip-pulled", "--strip-closed"]) {
-      expect(runtimeDeclared, `${name} is set from bed-strip.tsx and must count as declared`).toContain(name);
-    }
+    expect(runtimeDeclared, "--sq-n is set from bed-squares.tsx and must count as declared").toContain("--sq-n");
   });
 
   it("proves the two patterns discriminate, rather than matching everything or nothing", () => {

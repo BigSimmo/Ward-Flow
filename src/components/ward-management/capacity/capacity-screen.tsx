@@ -33,9 +33,7 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import type { BedRelease } from "@/components/ward-management/ward-model";
 
 import { bedMeetingSheet } from "./bed-meeting-derivations";
-import { BedForecast } from "./capacity-bed-forecast";
 import { BedMapCards, BedMapHighlights, type Highlight } from "./capacity-bed-map-cards";
-import { ComingIn } from "./capacity-coming-in";
 import { ForecastCard } from "./capacity-forecast-card";
 import { HeldUpCard } from "./capacity-held-up-rail";
 import { CapacityHero } from "./capacity-hero";
@@ -71,6 +69,22 @@ const CapacityWardFoot = dynamic(
 );
 const CapacityWardSidebar = dynamic(
   withLoadRetry(() => import("./capacity-open-parts").then((m) => m.CapacityWardSidebar)),
+  {
+    ssr: false,
+  },
+);
+// Wave 4 put the forecast chart behind the Forecast card's Open, so it loads on first open too
+// (phone size limit, 13 Nov 2026).
+const BedForecast = dynamic(
+  withLoadRetry(() => import("./capacity-open-parts").then((m) => m.BedForecast)),
+  {
+    ssr: false,
+  },
+);
+// Wave 4 moved Planned moves to its own tab, which always starts closed, so its list and drawers
+// load when the tab is first chosen (phone size limit, 13 Nov 2026).
+const ComingIn = dynamic(
+  withLoadRetry(() => import("./capacity-coming-in").then((m) => m.ComingIn)),
   {
     ssr: false,
   },

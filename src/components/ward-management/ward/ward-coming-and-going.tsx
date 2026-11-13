@@ -25,7 +25,7 @@ import type { ComingRow } from "./ward-coming-and-going-rows";
 import styles from "./ward-coming-and-going.module.css";
 
 /** About eight rows, then "Show N more" (design rule). */
-export const COMING_ROW_LIMIT = 8;
+const COMING_ROW_LIMIT = 8;
 
 export type ComingAndGoingProps = {
   /** Phone: the card sits in the page between the squares and the round. */

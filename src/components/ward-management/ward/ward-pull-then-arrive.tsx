@@ -8,21 +8,24 @@
 // that row for the Undo window; Undo is the existing RELEASE_PULL as "pull made in error", fenced
 // to that exact pull (`expectedPull`). No engine or event change.
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Lock } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 
-import { Button, Radio, Sheet, useOptionalToast } from "@/components/wf";
+import { useOptionalToast } from "@/components/wf";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { UNDO_WINDOW_MINUTES } from "@/components/ward-management/ward-operational-defaults";
-import { boardBedFits, fitReason, type BoardBed, type BoardPick } from "./ward-bed-board-logic";
+import type { BoardBed } from "./ward-bed-board-logic";
 import { useWardCommandCompletion, wardCommandFailure } from "./use-ward-command-completion";
-import styles from "./ward-pull-then-arrive.module.css";
 
-/** The lock line under a "not yet" Pull the bed. */
-export const CHOOSE_BED_LINE = "Choose a bed first";
+// The bed choice opens only from a row's Confirm arrival, so it loads then (phone size limit, 13 Nov 2026).
+const PullBedChoiceSheet = dynamic(
+  withLoadRetry(() => import("./ward-pull-bed-choice-sheet").then((m) => m.PullBedChoiceSheet)),
+  { ssr: false },
+);
 
 /** A pull sent from a Ward row. Its kept Undo and its arrival are read from the record, never guessed. */
 type SentPull = {
@@ -216,117 +219,5 @@ export function WardPullBedChoice({
       onChoose={step.choose}
       onCancel={step.cancel}
     />
-  );
-}
-
-/** Which of this ward's ready beds the person is going into. */
-export function PullBedChoiceSheet({
-  movement,
-  name,
-  unitName,
-  beds,
-  isMixed,
-  onChoose,
-  onCancel,
-}: {
-  movement: Movement;
-  name: string;
-  unitName: string;
-  beds: readonly BoardBed[];
-  isMixed: boolean;
-  onChoose: (bedNumber: number) => void;
-  onCancel: () => void;
-}) {
-  const [bed, setBed] = useState<number | undefined>();
-  const pick: BoardPick = {
-    kind: "movement",
-    movementId: movement.id,
-    name,
-    secureBedNeeded: movement.security === "Secure",
-  };
-  // The Bed board's own rule: ready, not held for anyone, not being made ready, the right kind.
-  const offered = beds.filter((candidate) => boardBedFits(beds, candidate, pick, isMixed));
-  const closed = beds
-    .filter((candidate) => candidate.status === "closed")
-    .map((candidate) => Number(candidate.bedNumber));
-  const closedLine =
-    closed.length === 0
-      ? undefined
-      : closed.length === 1
-        ? `Bed ${pad(closed[0]!)} is closed and not listed.`
-        : `${closed.length} closed beds are not listed.`;
-  const ready = bed !== undefined && offered.some((candidate) => Number(candidate.bedNumber) === bed);
-  const lockLine = offered.length === 0 ? `No ready bed fits at ${unitName}.` : CHOOSE_BED_LINE;
-
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (ready) onChoose(bed);
-  }
-
-  return (
-    <Sheet
-      open
-      onClose={onCancel}
-      title="Pull the bed"
-      description={`No bed is pulled for ${name} at ${unitName}. Choose the bed they are going into, then confirm the arrival.`}
-      testId="ward-pull-then-arrive"
-    >
-      <form onSubmit={submit} className={styles.form}>
-        <fieldset className={styles.fieldset}>
-          <legend className={styles.legend}>Bed</legend>
-          {offered.length === 0 ? (
-            <p className={styles.none}>{lockLine}</p>
-          ) : (
-            <div className={styles.choices}>
-              {offered.map((candidate) => {
-                const number = Number(candidate.bedNumber);
-                return (
-                  <Radio
-                    key={number}
-                    className={styles.choice}
-                    name={`ward-pull-bed-${movement.id}`}
-                    value={String(number)}
-                    checked={bed === number}
-                    onChange={() => setBed(number)}
-                    label={
-                      <span>
-                        Bed {pad(number)} <span className={styles.why}>· {fitReason(candidate, pick, isMixed)}</span>
-                      </span>
-                    }
-                  />
-                );
-              })}
-            </div>
-          )}
-          {closedLine ? <p className={styles.note}>{closedLine}</p> : null}
-        </fieldset>
-        <div className={styles.foot}>
-          <span className={ready ? undefined : styles.notYet}>
-            <Button
-              variant="pri"
-              size="md"
-              type="submit"
-              data-placement-action
-              disabledReason={ready ? undefined : lockLine}
-              reasonDisplay="tooltip"
-              onClick={(event) => {
-                if (!ready) event.preventDefault();
-              }}
-            >
-              Pull the bed
-            </Button>
-            {ready ? null : (
-              <span className={styles.lock} aria-hidden="true">
-                <Lock size={12} strokeWidth={1.75} aria-hidden="true" />
-                {lockLine}
-              </span>
-            )}
-          </span>
-          <Button variant="ghost" size="md" type="button" onClick={onCancel}>
-            Cancel
-          </Button>
-        </div>
-      </form>
-    </Sheet>
   );
 }
