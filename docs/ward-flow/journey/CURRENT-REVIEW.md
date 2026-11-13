@@ -151,3 +151,9 @@ with the same rule the screen used: the live movement in force, else the current
 and passes it to the band. No handler, payload, guard, place scope or dispatch changed, so their whole-file review
 digests in `actions.json`, `event-dispositions.json` and `machines.json` were refreshed. Evidence:
 `tests/ward-clinical-d186-wording.test.ts` and `tests/ward-clinical-d186-legal-now.test.ts`, run locally.
+
+Later in the same PR (D-187 items 4 and 16), two more cited sources changed only in words. `ward/ward-arrivals-corridor.tsx`
+shows a legal form's tag as the form and the status as recorded ("status not recorded" when blank) instead of
+always "involuntary". `patients/patient-now-screen.tsx` makes Mark absent's Undo message say "Back on the ward" when
+the person was not on leave; the RECORD_ABSENT_WITHOUT_LEAVE dispatch, its gate and its payload are unchanged. Digests
+refreshed. Evidence: `tests/ward-clinical-d187-legal.dom.test.tsx`, run locally.

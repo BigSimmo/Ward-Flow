@@ -2056,7 +2056,7 @@
         {
           "path": "src/components/ward-management/ward/ward-arrivals-corridor.tsx",
           "line": 630,
-          "sha256": "572956c1b4769defd00bc1a5dc027ff2d76c476388cee6d36833c8321e3824a4"
+          "sha256": "5ffbb1eda08c9cff558b9abd39d711eda22212909ce395c5ae6d9272822175cd"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
@@ -2241,7 +2241,7 @@
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
           "line": 524,
-          "sha256": "dab2fa762094b1575bbf0e703348321df9f3c65f290966ea4b418184aaeb42b1"
+          "sha256": "484e2206ebe9be6bb096af52633222fa440e2639a3cb95f3d8710c187ca559b2"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
@@ -3485,7 +3485,7 @@
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
           "line": 722,
-          "sha256": "dab2fa762094b1575bbf0e703348321df9f3c65f290966ea4b418184aaeb42b1"
+          "sha256": "484e2206ebe9be6bb096af52633222fa440e2639a3cb95f3d8710c187ca559b2"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
@@ -3564,7 +3564,7 @@
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
           "line": 739,
-          "sha256": "dab2fa762094b1575bbf0e703348321df9f3c65f290966ea4b418184aaeb42b1"
+          "sha256": "484e2206ebe9be6bb096af52633222fa440e2639a3cb95f3d8710c187ca559b2"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
@@ -3628,7 +3628,7 @@
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
           "line": 701,
-          "sha256": "dab2fa762094b1575bbf0e703348321df9f3c65f290966ea4b418184aaeb42b1"
+          "sha256": "484e2206ebe9be6bb096af52633222fa440e2639a3cb95f3d8710c187ca559b2"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
@@ -3702,7 +3702,7 @@
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
           "line": 643,
-          "sha256": "dab2fa762094b1575bbf0e703348321df9f3c65f290966ea4b418184aaeb42b1"
+          "sha256": "484e2206ebe9be6bb096af52633222fa440e2639a3cb95f3d8710c187ca559b2"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
@@ -5435,7 +5435,7 @@
         {
           "path": "src/components/ward-management/ward/ward-arrivals-corridor.tsx",
           "line": 662,
-          "sha256": "572956c1b4769defd00bc1a5dc027ff2d76c476388cee6d36833c8321e3824a4"
+          "sha256": "5ffbb1eda08c9cff558b9abd39d711eda22212909ce395c5ae6d9272822175cd"
         },
         {
           "path": "src/components/ward-management/ed/ed-screen-referred.tsx",
@@ -5874,7 +5874,7 @@
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
           "line": 755,
-          "sha256": "dab2fa762094b1575bbf0e703348321df9f3c65f290966ea4b418184aaeb42b1"
+          "sha256": "484e2206ebe9be6bb096af52633222fa440e2639a3cb95f3d8710c187ca559b2"
         },
         {
           "path": "src/components/ward-management/discharges/discharge-detail-panes.tsx",
@@ -6098,7 +6098,7 @@
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
           "line": 1459,
-          "sha256": "dab2fa762094b1575bbf0e703348321df9f3c65f290966ea4b418184aaeb42b1"
+          "sha256": "484e2206ebe9be6bb096af52633222fa440e2639a3cb95f3d8710c187ca559b2"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
