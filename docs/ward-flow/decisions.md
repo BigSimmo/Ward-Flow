@@ -221,6 +221,9 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-200](#d-200-shared-design-parts-and-the-home-ward-and-capacity-redesign-go-live-together-13-november-2026)                                           | E and F go live together after the 14 November release                                 | Active                                           |
 | [D-201](#d-201-overnight-merging-without-josh-13-november-2026)                                                                                         | Overnight merging without Josh                                                         | Active                                           |
 | [D-202](#d-202-joint-go-summary-recommendations-14-november-2026)                                                                                       | Joint go summary recommendations                                                       | Active                                           |
+| [D-203](#d-203-scoped-takeover-of-pr-e-and-pr-f-by-the-e-thread-14-november-2026)                                                                       | Scoped takeover of PR E and PR F by the E thread (undone the same day)                 | Undone                                           |
+| D-204                                                                                                                                                   | Claimed by open PR #1656                                                               | Not recorded here                                |
+| [D-205](#d-205-release-now-once-each-pr-merges-14-november-2026)                                                                                        | Release now, once each PR merges and its main CI passes                                | Active                                           |
 
 ---
 
@@ -2444,3 +2447,20 @@ is inferred.
   2. The ED site page and Statistics may rise more than 5 KB over PR C's phone limits in the shared design parts PR (#1658), but only after a trim has been tried. The final measured figures are recorded in `script-budget.json` and its history.
 - **Why:** the reviewer's and the plan thread's recommendations, accepted together so the joint E and F go (D-201) is not held on a sub-kilobyte size gap.
 - **Boundary:** the clinical questions in the same summary (observation level on every pull) are not covered; they are asked separately. No clinical value changes.
+
+## D-203. Scoped takeover of PR E and PR F by the E thread (14 November 2026)
+
+- **Date:** 14 November 2026, 7:01 AM AWST (13 November, 23:01 UTC). **Decided by:** Josh, on a decision card from the plan thread.
+- **Decision:** the E thread (Audit C) takes over PR F (#1659) as well as PR E (#1658) until both merge, because the F thread had reported a usage limit. It may arm auto-merge on both under D-201. No other PR, no force-push, no stacking.
+- **Why:** so the joint E and F go (D-200, D-201) did not wait days for the F thread.
+- **Undone:** at 23:16 UTC the same day, because the F thread resumed; F stays with its own thread. The E thread pushed nothing to F's branch and passed its F work over as patches.
+
+D-204 is claimed by open PR #1656 and is recorded there.
+
+## D-205. Release now once each PR merges (14 November 2026)
+
+- **Date:** 14 November 2026, 7:15 AM AWST (13 November, 23:15 UTC). **Decided by:** Josh, "Please launch everything live that is working now".
+- **Decision:** a release-now go (the "release now" of AGENTS.md hard rule 12) for each PR as it merges, once its merge commit's main CI passes. The plan thread runs the release; E and F still go live together (D-200).
+- **Boundary:** only work that has merged and passed main CI. No clinical value changes, no live data writes.
+
+D-206 is claimed by the Fixes PR (#1661). The next free number is D-207.

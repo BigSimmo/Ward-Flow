@@ -199,3 +199,6 @@ After the merge, the import-map guard pass moved `pull-bed-facts.ts`, `pull-bed-
 prop in `ward/ward-screen.tsx`. No dispatch changed; those 15 digests were refreshed again.
 Re-check note 3 (same PR): after Undo of a pull again, `referrals/pull-accepted-referral.tsx` says "The movement stays
 open without the bed." instead of "has started"; only the toast words change, so its 2 digests were refreshed.
+After PR E (#1658) merged, `ward/ward-screen.tsx` passes the board clock to the bed-pulled toast so it can say
+"Undo until HH:MM" (D-192, FM-13); the RELEASE_PULL it undoes with and every other dispatch in the file are
+unchanged. Its 12 digests were refreshed.
