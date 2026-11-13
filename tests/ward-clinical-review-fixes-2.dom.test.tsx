@@ -7,6 +7,7 @@ import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { WardObsLeaveTvView } from "@/components/ward-management/bed-meeting/tv-function-views";
 import { wardReferralInboxEntries } from "@/components/ward-management/referrals/referral-inbox";
 import { DESK_PERSONAS } from "@/components/ward-management/shell/ward-desk-personas";
+import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import { TriageScreen } from "@/components/ward-management/triage/triage-risk-form";
 import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -204,7 +205,8 @@ describe("R10: a signed triage keeps naming the desk that signed it (A9-29)", ()
         </ToastProvider>
       </WardFlowProvider>,
     );
-    const signer = DESK_PERSONAS.coordinator.name;
+    // D-204: the signed tag names the desk, not its sample persona.
+    const signer = WARD_FLOW_ROLE_LABELS.coordinator;
     const signAndSend = screen.getAllByRole("button", { name: "Sign and send" })[0]!;
     expect(signAndSend).not.toHaveAttribute("aria-disabled", "true");
     fireEvent.click(signAndSend);
@@ -215,9 +217,10 @@ describe("R10: a signed triage keeps naming the desk that signed it (A9-29)", ()
     expect(tag).toHaveTextContent(`by ${signer}`);
 
     act(() => setDeskRole("ed", TRIAGE_PATH));
-    expect(DESK_PERSONAS.ed.name).not.toBe(signer);
+    expect(WARD_FLOW_ROLE_LABELS.ed).not.toBe(signer);
     expect(screen.getByTestId("triage-signed-tag")).toHaveTextContent(`by ${signer}`);
-    expect(screen.getByTestId("triage-signed-tag")).not.toHaveTextContent(DESK_PERSONAS.ed.name);
+    expect(screen.getByTestId("triage-signed-tag")).not.toHaveTextContent(WARD_FLOW_ROLE_LABELS.ed);
+    expect(screen.getByTestId("triage-signed-tag")).not.toHaveTextContent(DESK_PERSONAS.coordinator.name);
   });
 });
 
