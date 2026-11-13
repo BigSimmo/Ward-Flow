@@ -69,14 +69,14 @@ describe("Start a triage search", () => {
 });
 
 describe("a world person on the banner", () => {
-  it("reads the record: surname first, DD/MM/YYYY, legal as typed, no previous triage", () => {
+  it("reads the record: surname first, DD/MM/YYYY, legal on record, no previous triage", () => {
     const person = triagePersonFromWorld(world({ legalStatus: "Form 1A", origin: "Peel Health Campus ED" }));
     expect(person.name).toBe("Ridgewell, Ada");
     expect(person.meta).toBe("Female · 41y");
     expect(person.dob).toBe("03/02/1985");
     expect(person.nowAt).toBe("Peel Health Campus ED");
     expect(person.legal).toBe("Form 1A");
-    expect(legalLine(person)).toBe("Form 1A, as typed. Not legally checked.");
+    expect(legalLine(person)).toBe("Form 1A, on record. Not legally checked.");
     expect(person.last).toBeNull();
     expect(person.recordHref).toBe("/ward-flow/people/code900");
   });
@@ -193,7 +193,7 @@ describe("the document", () => {
   it("starts with the key line, keeps PSOLIS order and ends with the signature", () => {
     const model = summaryModel(exampleTriage(), { at: "07/11/2026 10:42", by: "Dr S. Chen" });
     expect(model.keyLine).toBe(
-      "Urgency not chosen · Outcome not set · Community treatment order, Form 5A 28/01/2027 23:59 (as typed) · Reviewed 06/11/2026 09:42 Phone · Dr S. Chen",
+      "Urgency not chosen · Outcome not set · Community treatment order (as chosen), Form 5A 28/01/2027 23:59 (as typed) · Reviewed 06/11/2026 09:42 Phone · Dr S. Chen",
     );
     expect(model.parts.map((p) => p.title)).toEqual([
       "Review details",

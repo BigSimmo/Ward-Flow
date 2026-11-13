@@ -1018,7 +1018,10 @@ export function PatientNowScreen({
   // PT1 (Josh, 3 Nov 2026): the band leads with legal, observation and risk for every state.
   // H10: risk flags and the working diagnosis come from the one referral the movement in focus
   // names, and only when this desk's scoped workspace holds it (patient-referral-safety.ts).
-  const glanceMovement = movementInForce ? liveMovement : stayCurrent ? heroStayMovement : liveMovement;
+  // D-186 Q7: the band's movement is the one legal reading's (the adapter keeps the rule it had here:
+  // the live movement in force, else the current stay's own, else the live movement).
+  const legalNow = resolved.legalNow;
+  const glanceMovement = legalNow.movement;
   const referralSafety = referralSafetyFacts(
     glanceMovement,
     glanceMovement?.referralId === undefined
@@ -1055,6 +1058,7 @@ export function PatientNowScreen({
       mode={mode}
       patient={livePatient}
       movement={glanceMovement}
+      legalNow={legalNow}
       admission={stayCurrent ? resolved.liveAdmission : undefined}
       leaveBed={stayLeaveBed}
       stayWithheld={statusContext.stayWithheld}

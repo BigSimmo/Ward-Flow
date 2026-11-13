@@ -73,9 +73,9 @@ export const TRIAGE_LEGAL_CODES: readonly TriageLegalCode[] = LEGAL.map(([code])
 
 /** When risk is to be reviewed, as chosen on the form. */
 export const REVIEW = [
-  ["24h", "24 hours"],
-  ["72h", "72 hours"],
-  ["7d", "7 days"],
+  ["24h", `${CLINICAL_VALUES.triageReviewRiskSoon.value} hours`],
+  ["72h", `${CLINICAL_VALUES.triageReviewRiskMid.value} hours`],
+  ["7d", `${CLINICAL_VALUES.triageReviewRiskWeek.value} days`],
   ["move", "At transfer"],
   ["dis", "At discharge"],
 ] as const;

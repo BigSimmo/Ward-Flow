@@ -162,6 +162,14 @@ describe("clinical values file", () => {
       triageUrgencyC: 12,
       triageUrgencyD: 48,
       triageUrgencyE: 14,
+      // Listed unchanged by D-186 item 16 (13 Nov 2026): the triage follow-up and risk review windows.
+      triageFollowUpSoon: 24,
+      triageFollowUpHint: 72,
+      triageFollowUpWeek: 7,
+      triageRecentDischarge: 28,
+      triageReviewRiskSoon: 24,
+      triageReviewRiskMid: 72,
+      triageReviewRiskWeek: 7,
       // D-104 (Josh, 9 Nov 2026): approved default, quoted from memory, synthetic until checked.
       frequentPresenterEdPresentations: 4,
       // M16 (Josh, 10 Nov 2026, D-130): numbers screens typed inline, signed as they were.

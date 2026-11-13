@@ -741,6 +741,59 @@ export const CLINICAL_VALUES = {
     value: 14,
     unit: "days",
   },
+  // ---- Triage follow-up and risk review (listed by D-186 item 16, 13 Nov 2026) --------------------
+  // The windows the triage form offers for a follow-up contact and for the next risk review, and the
+  // look-back that brings the follow-up hint. They were typed in the triage files; D-186 lists them here
+  // unchanged, synthetic until Josh signs them. Nothing flags or escalates from them.
+  triageFollowUpSoon: {
+    status: "synthetic",
+    name: "Triage follow-up choice: contact within",
+    group: "Triage urgency",
+    value: 24,
+    unit: "hours",
+  },
+  triageFollowUpHint: {
+    status: "synthetic",
+    name: "Triage follow-up choice, and the window the hint suggests: contact within",
+    group: "Triage urgency",
+    value: 72,
+    unit: "hours",
+  },
+  triageFollowUpWeek: {
+    status: "synthetic",
+    name: "Triage follow-up choice: contact within (longest)",
+    group: "Triage urgency",
+    value: 7,
+    unit: "days",
+  },
+  triageRecentDischarge: {
+    status: "synthetic",
+    name: "Triage follow-up hint shows after a hospital discharge within",
+    group: "Triage urgency",
+    value: 28,
+    unit: "days",
+  },
+  triageReviewRiskSoon: {
+    status: "synthetic",
+    name: "Triage review risk by choice",
+    group: "Triage urgency",
+    value: 24,
+    unit: "hours",
+  },
+  triageReviewRiskMid: {
+    status: "synthetic",
+    name: "Triage review risk by choice (middle)",
+    group: "Triage urgency",
+    value: 72,
+    unit: "hours",
+  },
+  triageReviewRiskWeek: {
+    status: "synthetic",
+    name: "Triage review risk by choice (longest)",
+    group: "Triage urgency",
+    value: 7,
+    unit: "days",
+  },
   // ---- Patient flags (care plans and safety flags, D-104, Josh, 9 Nov 2026) -----------------------
   // The Frequent presenter tag shows when a person's ED presentations in the last twelve months reach
   // this count. Josh approved the default from memory; synthetic until it is checked and signed.

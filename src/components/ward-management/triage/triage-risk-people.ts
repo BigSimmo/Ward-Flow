@@ -4,9 +4,14 @@
  * the referrals still waiting for a triage. Pure: the screens hand in the records, so this is tested
  * without a provider. Synthetic data only.
  */
+import { resolvePatientNowRecord } from "@/components/ward-management/patients/patient-now-adapter";
 import { rankByNameStart } from "@/components/ward-management/referrals/referral-patient-rank";
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
-import { calendarDateOf, perthCalendarDay } from "@/components/ward-management/ward-clock";
+import type { Admission, PlannedAdmission } from "@/components/ward-management/ward-admissions";
+import { calendarDateOf, perthCalendarDay, type Instant } from "@/components/ward-management/ward-clock";
+import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
+import type { Patient } from "@/components/ward-management/ward-patients";
+import { stayLegalStatus } from "@/components/ward-management/ward-stay-legal";
 
 import {
   FACTOR_NAME,
@@ -34,7 +39,7 @@ export type WorldPersonInput = {
   dob: string;
   /** Where they are now, or "Not recorded". */
   origin: string;
-  /** Legal status as typed on the record, or "Not recorded". */
+  /** Legal status as recorded, or "Not recorded". */
   legalStatus: string;
   /** The coded record address the patient page opens on. */
   recordAddress: string;
@@ -110,7 +115,8 @@ export function triagePersonFromWorld(input: WorldPersonInput): TriagePerson {
     nowAt: input.origin || NOT_RECORDED,
     team: NOT_RECORDED,
     legal,
-    legalTag: "As typed · Not legally checked.",
+    // D-186 (Q11): the record's status reads "On record"; the form's own choice reads "Chosen today".
+    legalTag: "On record · Not legally checked.",
     alert: alerts[0] ?? null,
     alertCount: alerts.length,
     alerts,
@@ -134,7 +140,46 @@ export function searchTriagePeople(people: readonly TriagePerson[], query: strin
   return rankByNameStart(matches, text).slice(0, limit);
 }
 
-/** Legal status in record words for a row: as typed, never checked, or not recorded. */
+/** Legal status in record words for a row: on record, never checked, or not recorded. */
 export function legalLine(person: TriagePerson): string {
-  return person.legal ? `${person.legal}, as typed. Not legally checked.` : "Legal status not recorded.";
+  return person.legal ? `${person.legal}, on record. Not legally checked.` : "Legal status not recorded.";
+}
+
+/** The records `wardStayFacts` reads: the live workspace collections, as the patient page is handed them. */
+export type WardStayRecords = {
+  patients: readonly Patient[];
+  movements: readonly Movement[];
+  referrals: readonly Referral[];
+  admissions: readonly Admission[];
+  units: readonly Unit[];
+  plannedAdmissions?: readonly PlannedAdmission[];
+};
+
+/**
+ * D-186 (Q10, audit A9-19): a person on a ward stay with no open movement, read as the patient page
+ * reads them. The stay is the one the patient page resolves (`resolvePatientNowRecord`), so the two
+ * screens never disagree; its place is the stay's ward and its legal status is the one stay reader
+ * (`stayLegalStatus`: the movement that brought them, a converted booking, then the record). Null when
+ * the person is not on a ward stay, so the banner keeps "Not recorded". Nothing is computed or checked.
+ */
+export function wardStayFacts(
+  patientId: string,
+  records: WardStayRecords,
+  now: Instant,
+): { origin: string; legalStatus: string } | null {
+  const { patients, movements, referrals, admissions, units, plannedAdmissions } = records;
+  const stay = resolvePatientNowRecord(
+    patientId,
+    patients,
+    movements,
+    referrals,
+    admissions,
+    units,
+    now,
+  )?.liveAdmission;
+  if (stay?.state !== "occupied") return null;
+  return {
+    origin: units.find((unit) => unit.id === stay.unitId)?.name ?? NOT_RECORDED,
+    legalStatus: stayLegalStatus(stay, { movements, patients, referrals, plannedAdmissions }) ?? NOT_RECORDED,
+  };
 }

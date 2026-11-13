@@ -664,7 +664,11 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
                   label="Urgency"
                   value={state.urgency ? `${state.urgency} ${TIER_SHORT[state.urgency]}` : notSet}
                 />
-                <HeroStat label="Legal" value={state.legal ? <LegalName name={LEGAL_NAME[state.legal]} /> : notSet} />
+                {/* D-186 (Q11): the form's own status reads "Chosen today"; the record's chip reads "On record". */}
+                <HeroStat
+                  label="Legal, chosen today"
+                  value={state.legal ? <LegalName name={LEGAL_NAME[state.legal]} /> : notSet}
+                />
                 <HeroStat label="Risk flags" value={flagCount} />
                 <HeroStat label="Review" value={state.review ? REVIEW_SHORT[state.review] : notSet} />
               </>
@@ -688,7 +692,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
                   Community team <TeamPop patientId={person.id} recordHref={person.recordHref} />
                 </span>
               </p>
-              {/* Alert first, then allergies, legal status in full words (as typed), then the rest. */}
+              {/* Alert first, then allergies, legal status on record in full words, then the rest. */}
               <HeroChips label="Alerts, allergies and legal" className={styles.bannerTags}>
                 {signed ? (
                   <HeroChip
@@ -710,7 +714,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
                 {person.legal ? (
                   <HeroChip value={<LegalName name={person.legal} />} label={person.legalTag} />
                 ) : (
-                  <HeroChip value="Legal status" label="Not recorded. Not legally checked." />
+                  <HeroChip value="Legal on record" label="Not recorded. Not legally checked." />
                 )}
                 {person.alertCount > 1 ? (
                   <HeroChip
@@ -807,8 +811,10 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
                   <SummaryDocument form={formApi} signed={{ at: signedAt, by: SIGNED_IN }} />
                 </div>
                 <p className={`${startStyles.quiet} ${startStyles.signedFoot}`} data-testid="triage-signed-record-line">
-                  Signed to the patient record: urgency, outcome, legal status, review and risk flags only. The typed
-                  assessment, mental state, formulation and plan are not part of that record.
+                  {/* D-186 (Q14): every field signing saves (`TriageSignedRecord` in triage-record.ts). */}
+                  Signed to the patient record as codes: urgency, outcome, legal status, review, the risk flags marked
+                  present, problems, actions, venue and referral type, with when it was signed and by which desk. The
+                  typed assessment, mental state, formulation and plan are not part of that record.
                 </p>
               </Card>
             ) : null}

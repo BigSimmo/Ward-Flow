@@ -39,6 +39,9 @@ const FORECAST_ALERT_SOURCE =
 const TRIAGE_URGENCY_SOURCE =
   "WA mental health triage scale urgency categories, as on the triage form (SMHMR900); listed 7 Nov 2026, awaiting Josh's sign-off";
 
+const TRIAGE_FOLLOW_UP_SOURCE =
+  'Typed in the triage files before 13 Nov 2026 ("JOSH SETS THESE before clinical use"); listed unchanged by D-186 item 16, awaiting Josh\'s sign-off';
+
 const CLINICAL_VALUE_NOTES = {
   tierOneOverdue: {
     source: "D-54 (10 Oct 2026); one rule since the L4 site review, 12 Oct 2026",
@@ -287,6 +290,13 @@ const CLINICAL_VALUE_NOTES = {
   triageUrgencyC: { source: TRIAGE_URGENCY_SOURCE },
   triageUrgencyD: { source: TRIAGE_URGENCY_SOURCE },
   triageUrgencyE: { source: TRIAGE_URGENCY_SOURCE },
+  triageFollowUpSoon: { source: TRIAGE_FOLLOW_UP_SOURCE },
+  triageFollowUpHint: { source: TRIAGE_FOLLOW_UP_SOURCE },
+  triageFollowUpWeek: { source: TRIAGE_FOLLOW_UP_SOURCE },
+  triageRecentDischarge: { source: TRIAGE_FOLLOW_UP_SOURCE },
+  triageReviewRiskSoon: { source: TRIAGE_FOLLOW_UP_SOURCE },
+  triageReviewRiskMid: { source: TRIAGE_FOLLOW_UP_SOURCE },
+  triageReviewRiskWeek: { source: TRIAGE_FOLLOW_UP_SOURCE },
   frequentPresenterEdPresentations: {
     source:
       "Josh's product default, 9 Nov 2026 (D-104, care plans and safety flags); quoted from memory, check before clinical use",

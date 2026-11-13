@@ -354,7 +354,7 @@ describe("Ward Flow Master Search Hub — every flagged state carries a word, no
      *
      *     /not\s+(?:mha\s+)?authoris(?:ed|ation)|voluntary(?:\s+only)?/i
      *
-     * The screen rendered "Not authorised — voluntary admissions only" (since D-185, "Not set up for
+     * The screen rendered "Not authorised — voluntary admissions only" (since D-186, "Not set up for
      * involuntary admissions (demo) — voluntary admissions only"), which satisfies BOTH
      * branches, so the alternation was invisible. But a rewording that dropped the authorisation
      * half and kept "voluntary admissions only" would still have passed — **losing the fact that
@@ -371,7 +371,7 @@ describe("Ward Flow Master Search Hub — every flagged state carries a word, no
     expect(
       previewTextFor("SJGS Adult Secure"),
       "the selected ward's preview no longer states its Mental Health Act authorisation status",
-      // D-185 (13 Nov 2026): the chip reads "Not set up for involuntary admissions (demo)".
+      // D-186 (13 Nov 2026): the chip reads "Not set up for involuntary admissions (demo)".
     ).toMatch(/not\s+set\s+up\s+for\s+involuntary\s+admissions/iu);
     expect(
       previewTextFor("SJGS Adult Secure"),

@@ -14,6 +14,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { formProgression, formProgressionShort } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
 import { clock } from "./patient-now-records";
+import { patientLegalNow, type PatientLegalNow } from "./patient-now-adapter";
 import styles from "./patient-now-cards.module.css";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 
@@ -120,6 +121,11 @@ export function PatientWhyCard({
  * recorded; a lapse time shows only when a person typed the expiry from the form (D5), as typed,
  * the same words the Forms and Delays pages show (audit A3-3; legal times only as typed, 31 Oct 2026). Superseded and ended forms are in
  * Documents.
+ *
+ * D-186 Q7 (audit A9-31): the status and the form here come from the same legal reading as the top
+ * band (`PatientLegalNow`, worked out once in the adapter), so the two never disagree. With a stay
+ * current and no form on record, the card says "No form recorded", the recorded fact, not "No form
+ * in force" beside a band that reads "Involuntary inpatient".
  */
 export function PatientLegalNowCard({
   movement,
@@ -127,9 +133,12 @@ export function PatientLegalNowCard({
   onAllForms,
   now,
   absent = false,
+  legalNow,
 }: {
   movement?: Movement;
   patient?: Patient;
+  /** The page's one legal reading, the same value the top band reads (D-186 Q7). */
+  legalNow?: PatientLegalNow;
   onAllForms: () => void;
   /** The demo clock, for the typed expiry's words ("Ends 15:42 as typed"). */
   now?: Instant;
@@ -141,6 +150,12 @@ export function PatientLegalNowCard({
   // Access audit (31 Oct 2026): a desk that cannot open Legal forms (the site bed manager) gets no link.
   const canOpenHref = useCanOpenHref();
   const canRecordForm = movement !== undefined && canOpenHref(recordFormHref(movement.id));
+  // The page passes its one legal reading; a card drawn on its own reads its props by the same rule.
+  const legal = legalNow ?? patientLegalNow({ liveMovement: movement, patient });
+  // The movement whose forms are listed: the one passed as in force, else the band's own source
+  // while a placement or stay is current.
+  const formMovement = movement ?? (legal.current ? legal.movement : undefined);
+  const current = movement !== undefined || absent || legal.current;
   const rows: Array<{
     tone: WfTone;
     code: string;
@@ -150,20 +165,20 @@ export function PatientLegalNowCard({
     ended?: boolean;
     pending?: boolean;
   }> = [];
-  if (movement?.legalForm) {
-    const recordedAt = movement.legalFormReceivedAt ?? movement.formedAt;
+  if (formMovement?.legalForm) {
+    const recordedAt = formMovement.legalFormReceivedAt ?? formMovement.formedAt;
     // Audit S-6: after an inpatient order at the examination, or an arrival on an order, the old
     // form shows as ended and Form 6A is the one form to record next.
-    const progression = formProgression(movement);
-    const expiry = now !== undefined && !progression ? formTimeLeft(movement, now, thresholds) : undefined;
+    const progression = formProgression(formMovement);
+    const expiry = now !== undefined && !progression ? formTimeLeft(formMovement, now, thresholds) : undefined;
     rows.push({
       tone: progression ? "neutral" : expiry && expiry.standing !== "later" ? expiry.tone : "success",
-      code: `Form ${movement.legalForm.code}`,
+      code: `Form ${formMovement.legalForm.code}`,
       // A3-8: the code is already in `code`, so the name is the register title alone, said once.
       // Audit S-6: a form the examination or arrival moved on from reads as ended.
       name: progression
         ? formProgressionShort(progression)
-        : (formTitleForCode(movement.legalForm.code) ?? "Title not in the forms register"),
+        : (formTitleForCode(formMovement.legalForm.code) ?? "Title not in the forms register"),
       // The typed expiry is already in `left` ("Ends 15:42 as typed"), so the time is not said twice.
       time: expiry ? undefined : recordedAt !== undefined ? clock(recordedAt) : undefined,
       left: expiry?.text,
@@ -176,20 +191,20 @@ export function PatientLegalNowCard({
         name: "To record: inpatient treatment order",
         pending: true,
       });
-    if (movement.legalForm.continuedBy)
+    if (formMovement.legalForm.continuedBy)
       rows.push({
         tone: "success",
-        code: `Form ${movement.legalForm.continuedBy.code}`,
+        code: `Form ${formMovement.legalForm.continuedBy.code}`,
         name: "Continues the form above",
-        time: clock(movement.legalForm.continuedBy.recordedAt),
+        time: clock(formMovement.legalForm.continuedBy.recordedAt),
       });
   }
-  if (movement?.examination)
+  if (formMovement?.examination)
     rows.push({
       tone: "success",
       code: "Examination",
       name: "Psychiatric examination recorded",
-      time: clock(movement.examination.at),
+      time: clock(formMovement.examination.at),
     });
   // D-38: a community treatment order in force is shown with when it was recorded, never a lapse time.
   const order = activeCommunityTreatmentOrder(patient);
@@ -200,7 +215,7 @@ export function PatientLegalNowCard({
       name: "Community treatment order, in force",
       time: clock(order.recordedAt),
     });
-  const status = movement?.legalStatus ?? patient?.legalStatus;
+  const status = legal.status;
   const onOrder = status !== undefined && status !== "Voluntary";
   const statusNote =
     absent && onOrder
@@ -208,6 +223,10 @@ export function PatientLegalNowCard({
       : rows.some((row) => row.left)
         ? "As recorded · expiry typed from the form"
         : "As recorded · no lapse time shown";
+  // With a stay or placement current, the band names the status, so the card says only that no form
+  // is on record. With nothing current, the band reads "No order in force" and the card agrees.
+  const showNoForm = rows.length === 0 && !movement && !(absent && onOrder);
+  const noFormTitle = current ? "No form recorded" : "No form in force";
   const isPhone = useIsPhone();
   if (isPhone)
     /* v10 Patient, phone: "Legal now" and "Forms" head the section; each row is the form and
@@ -259,11 +278,11 @@ export function PatientLegalNowCard({
               </span>
             </li>
           ))}
-          {rows.length === 0 && !movement && !(absent && onOrder) ? (
+          {showNoForm ? (
             <li className={styles.phItem}>
               <StatusGlyph tone="neutral" size={10} />
               <span className={styles.phItemText}>
-                <strong>No form in force</strong>
+                <strong>{noFormTitle}</strong>
                 <span>Earlier forms are in Forms</span>
               </span>
             </li>
@@ -319,11 +338,11 @@ export function PatientLegalNowCard({
         ))}
         {/* PT1 round 2: with the status in the band, an empty card would be a bare heading, so a
             record with no form says so plainly. */}
-        {rows.length === 0 && !movement && !(absent && onOrder) ? (
+        {showNoForm ? (
           <div className={styles.item}>
             <StatusGlyph tone="neutral" size={10} />
             <span className={styles.itemText}>
-              <strong>No form in force</strong>
+              <strong>{noFormTitle}</strong>
               <span>Earlier forms are in Forms</span>
             </span>
           </div>

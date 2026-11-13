@@ -57,7 +57,7 @@ export type DocPart = { letter: string; title: string; edit: SectionId; blocks: 
 export type SummaryModel = {
   kicker: string;
   name: string;
-  /** Urgency · Outcome · Legal as typed · Reviewed time and mode · Reviewer. */
+  /** Urgency · Outcome · Legal as chosen, with any form as typed · Reviewed time and mode · Reviewer. */
   keyLine: string;
   /** In PSOLIS order: review details, assessment, mental state, decision, risk, formulation and plan. */
   parts: DocPart[];
@@ -244,7 +244,8 @@ export function summaryModel(state: TriageState, signed?: SignedBy): SummaryMode
       state.urgency ? `Urgency ${state.urgency}, ${TIER_LONG[state.urgency].toLowerCase()}` : "Urgency not chosen",
       state.outcome ?? "Outcome not set",
       state.legal
-        ? `${LEGAL_NAME[state.legal]}${hasLegalForm(state) && t.legalForm.trim() ? `, ${t.legalForm.trim().replace(/\s*·\s*/g, " ")}` : ""} (as typed)`
+        ? // D-186 (Q11): the status was picked from buttons, so "as chosen"; only the form and date are typed.
+          `${LEGAL_NAME[state.legal]} (as chosen)${hasLegalForm(state) && t.legalForm.trim() ? `, ${t.legalForm.trim().replace(/\s*·\s*/g, " ")} (as typed)` : ""}`
         : "Legal not set",
       mode ? `Reviewed ${mode}` : "Review time not set",
       signed?.by ?? SIGNED_IN,

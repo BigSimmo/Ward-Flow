@@ -12,7 +12,7 @@ import type { ReactNode } from "react";
 import { StatusGlyph, type WfTone } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { LeaveBed, Movement } from "@/components/ward-management/ward-model";
-import { activeCommunityTreatmentOrder, type Patient } from "@/components/ward-management/ward-patients";
+import type { Patient } from "@/components/ward-management/ward-patients";
 import { observationSummary } from "@/components/ward-management/ward-observation";
 import { riskFlagLabel } from "@/components/ward-management/referrals/referral-risk-flags";
 import type { FormTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
@@ -22,6 +22,7 @@ import {
   legalFormEnd,
 } from "@/components/ward-management/legal-forms/legal-form-progression";
 import type { PatientMode } from "./patient-mode";
+import { patientLegalNow, type PatientLegalNow } from "./patient-now-adapter";
 import { interpreterRequired } from "./patient-flight-header";
 import styles from "./patient-glance.module.css";
 
@@ -71,6 +72,8 @@ export type PatientGlanceProps = {
   mode: PatientMode;
   patient?: Patient & { confidential?: boolean };
   movement?: Movement;
+  /** D-186 Q7: the page's one legal reading, shared with the Legal now card. */
+  legalNow?: PatientLegalNow;
   admission?: Admission;
   leaveBed?: LeaveBed;
   /** The stay is shown with ward and dates only to this desk (H-0096). */
@@ -94,9 +97,21 @@ export type PatientGlanceProps = {
 const PLACING: readonly PatientMode[] = ["find", "held", "transit"];
 const ON_STAY: readonly PatientMode[] = ["ward", "leave", "awol", "ed"];
 
-function legalTile({ patient, movement, formTimeLeft, mode, onOpenForms, recordCto }: PatientGlanceProps): GlanceTile {
-  const status = movement?.legalStatus ?? patient?.legalStatus;
-  const cto = activeCommunityTreatmentOrder(patient);
+function legalTile({
+  patient,
+  movement,
+  legalNow,
+  formTimeLeft,
+  mode,
+  onOpenForms,
+  recordCto,
+}: PatientGlanceProps): GlanceTile {
+  // D-186 Q7 (audit A9-31): the status, form and community order come from the page's one legal
+  // reading, the same value the Legal now card reads. A band drawn on its own (tests) reads its
+  // movement through the same rule.
+  const legal = legalNow ?? patientLegalNow({ liveMovement: movement, patient });
+  const status = legal.status;
+  const cto = legal.communityOrder;
   const open = (PLACING.includes(mode) || ON_STAY.includes(mode)) && mode !== "idle";
   const base = { key: "legal", icon: Scale, label: "Legal", onOpen: onOpenForms, openLabel: "Open legal forms" };
   // Stress test (round 2): with nothing open, a stale "Involuntary inpatient" in the band would read
@@ -125,7 +140,7 @@ function legalTile({ patient, movement, formTimeLeft, mode, onOpenForms, recordC
   // Audit S-6: a referral or transport form that ended at arrival or at the examination is never
   // shown as in force; the band names it as ended and the inpatient order still to record.
   // A form recorded as ended is read before the neutral 5A/5B arrival wording (as the Legal forms page).
-  const end = legalFormEnd(movement);
+  const end = legalFormEnd(legal.movement);
   if (end?.kind === "progressed")
     return {
       ...base,
@@ -134,14 +149,14 @@ function legalTile({ patient, movement, formTimeLeft, mode, onOpenForms, recordC
       sub: `${formProgressionPhrase(end.progression)} · Form ${end.progression.nextCode} to record`,
       tone: "warning",
     };
-  if (end?.kind === "recorded" && movement?.legalForm)
+  if (end?.kind === "recorded" && legal.form)
     return {
       ...base,
       value: status ?? "Not recorded",
       quiet: status === undefined,
-      sub: `Form ${movement.legalForm.code} ${FORM_RECORDED_ENDED.toLowerCase()}`,
+      sub: `Form ${legal.form.code} ${FORM_RECORDED_ENDED.toLowerCase()}`,
     };
-  const form = movement?.legalForm ? `Form ${movement.legalForm.code}` : cto ? `Form ${cto.form}` : undefined;
+  const form = legal.form ? `Form ${legal.form.code}` : cto ? `Form ${cto.form}` : undefined;
   return {
     ...base,
     value: status ?? "Not recorded",
