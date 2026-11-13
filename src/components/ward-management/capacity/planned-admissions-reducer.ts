@@ -41,13 +41,13 @@ import {
   REFERRAL_GENDERS,
   genderReviewNeeded,
   type Cohort,
-  type LegalStatus,
   type Movement,
   type MovementId,
   type ReferralGender,
   type Unit,
 } from "../ward-model";
 import { cohortFitsAge, patientCohort } from "../ward-patients";
+import { isDetained } from "../ward-legal-meaning";
 import { NOT_RECORDED_OBSERVATION } from "@/components/ward-management/ward-observation";
 
 export type RejectFn = (state: WardFlowState, event: WardFlowEvent, reason: string) => WardFlowState;
@@ -80,9 +80,6 @@ type PlannedAdmissionEvent = Extract<
   }
 >;
 
-/** The statuses that take a locked bed first when one is free. */
-const LOCKED_FIRST: readonly LegalStatus[] = ["Involuntary inpatient", "Detained awaiting examination"];
-
 /**
  * The booking seen as the movement `eligibility()` reads, so a conversion is checked by the same
  * gates as a pulled bed: gender designation first (no override path), then every suitability gate.
@@ -100,7 +97,9 @@ function plannedAdmissionMovementView(planned: PlannedAdmission, unit: Unit): Mo
     flaggedUrgent: false,
     urgency: 3,
     cohort: planned.ageBand,
-    security: LOCKED_FIRST.includes(planned.legalStatus) ? "Secure" : "Open",
+    // D-186 item 4: the "detained" rule (`isDetained`) decides which bookings take a locked bed
+    // first: detained awaiting examination or an involuntary inpatient, never a referral.
+    security: isDetained(planned.legalStatus) ? "Secure" : "Open",
     sex: planned.sex,
     ...(planned.gender === undefined ? {} : { gender: planned.gender }),
     observation: NOT_RECORDED_OBSERVATION,

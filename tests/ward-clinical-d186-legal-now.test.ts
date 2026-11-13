@@ -11,6 +11,7 @@ import { PatientLegalNowCard } from "@/components/ward-management/patients/patie
 import { PatientGlance } from "@/components/ward-management/patients/patient-glance";
 import { patientMode, type PatientMode } from "@/components/ward-management/patients/patient-mode";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { applyHardCasesOverlay, HARD_CASE_IDS } from "@/components/ward-management/ward-hard-cases-demo";
 import type { Movement } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -142,9 +143,21 @@ describe("D-186 Q7: the band and Legal now read one legal reading", () => {
   });
 
   it("a missing person on an order: both name the status, and the card shows only what is recorded (D-187 item 8)", () => {
-    // PT-095 is absent without leave in the seed; only the recorded status is set here.
-    const state = withStatus("PT-095", "Involuntary inpatient");
-    const { band, card, legalNow, mode } = render(state, "PT-095");
+    // Nobody is absent without leave in the ordinary seed since PR C (the worked examples that held
+    // one are opt-in, A16-14). The hard cases add one involuntary inpatient absent without leave;
+    // the person is found through that leave bed, never a hard-coded id, and only the status is set.
+    const withHardCases = applyHardCasesOverlay(seed, NOW_ANCHOR);
+    const absentBed = withHardCases.leaveBeds.find((bed) => bed.id === HARD_CASE_IDS.involuntaryAwolLeaveBed);
+    expect(absentBed?.absentWithoutLeave, "the hard cases hold an involuntary absence").toBeDefined();
+    const patientId = withHardCases.admissions.find((admission) => admission.id === absentBed!.admissionId)?.patientId;
+    expect(patientId, "the absent stay names its person").toBeTruthy();
+    const state = {
+      ...withHardCases,
+      patients: withHardCases.patients.map((p) =>
+        p.id === patientId ? { ...p, legalStatus: "Involuntary inpatient" as const } : p,
+      ),
+    };
+    const { band, card, legalNow, mode } = render(state, patientId!);
     expect(mode).toBe("awol");
     expect(band).toContain("Involuntary inpatient");
     expect(card).toContain("Involuntary inpatient");

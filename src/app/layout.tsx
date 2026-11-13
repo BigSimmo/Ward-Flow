@@ -61,6 +61,9 @@ const baseMetadata: Metadata = {
   title: BRAND_NAME,
   description: BRAND_DESCRIPTION,
   robots: PRIVATE_APP_ROBOTS_METADATA,
+  // D-189 item 5: the crisis numbers are copy-only ("Not checked"), so iOS Safari must not turn
+  // them into call links.
+  formatDetection: { telephone: false },
   appleWebApp: {
     capable: true,
     title: BRAND_NAME,

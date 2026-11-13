@@ -20,6 +20,7 @@ import {
   type Movement,
   type MovementStage,
   type StepBackReason,
+  type TransportExceptionGap,
   type TransportExceptionReason,
 } from "../ward-model";
 import {
@@ -44,6 +45,7 @@ import { TransportExceptionDialog } from "@/components/ward-management/transport
 import {
   arrivalGaps,
   collectionGaps,
+  handoverReadyGaps,
   type TransportBookingAnswers,
 } from "@/components/ward-management/ward-transport-checks";
 import {
@@ -145,6 +147,18 @@ export function PatientTransitOperations({
   const [overrideUnitIds, setOverrideUnitIds] = useState<string[]>([]);
   const [booking, setBooking] = useState(false);
   const [collectCheck, setCollectCheck] = useState(false);
+  const [handoverCheck, setHandoverCheck] = useState(false);
+  // One raise for Mark handover ready, with the fit to travel reason when one was asked (D-187 item 10).
+  const readyHandover = (exception?: { gaps: TransportExceptionGap[]; reason: TransportExceptionReason }) => {
+    noteAttempt();
+    dispatch({
+      type: "HANDOVER_READY",
+      role: routeRole,
+      now,
+      movementId: movement.id,
+      ...(exception ? { exception } : {}),
+    });
+  };
   const [arriveCheck, setArriveCheck] = useState(false);
   // A34: the one transport booking form's answers, kept until the save is accepted (audit 24-3 SV-5).
   const [bookingAnswers, setBookingAnswers] = useState<TransportBookingAnswers>(BLANK_TRANSPORT_BOOKING);
@@ -706,13 +720,34 @@ export function PatientTransitOperations({
               onClick={() => {
                 if (!handoverGate.allowed) return;
                 closeBooking();
-                noteAttempt();
-                dispatch({ type: "HANDOVER_READY", role: routeRole, now, movementId: movement.id });
+                // D-187 item 10: no medical clearance recorded asks for a reason first. Never a block.
+                if (handoverReadyGaps(movement).length > 0) {
+                  setHandoverCheck(true);
+                  return;
+                }
+                readyHandover();
               }}
             >
               Mark handover ready · sending team
             </button>
           )}
+          <TransportExceptionDialog
+            open={handoverCheck}
+            who={identity}
+            action="Mark handover ready"
+            gaps={handoverReadyGaps(movement)}
+            onClose={() => setHandoverCheck(false)}
+            onConfirm={(reason) => {
+              setHandoverCheck(false);
+              readyHandover({ gaps: handoverReadyGaps(movement), reason });
+            }}
+            onContinueWithoutReason={() => {
+              // D-189 item 9(e): the press goes through without a reason, and none is recorded.
+              setHandoverCheck(false);
+              readyHandover();
+            }}
+            testId="ward-patient-handover-check"
+          />
           {open && movement.stage === "pulled" && (activeJob || noTransport) && handoverMine && handoverGate.note}
           {open && movement.stage === "handover_ready" && activeJob && (
             <div className={styles.actionStack}>
@@ -764,7 +799,7 @@ export function PatientTransitOperations({
                     return;
                   }
                   // Audit S-2 / A4-11: no Form 4A or no fit to travel warns and records a reason.
-                  if (collectionGaps(movement).length > 0) {
+                  if (collectionGaps(movement, units).length > 0) {
                     setCollectCheck(true);
                     return;
                   }
@@ -778,7 +813,7 @@ export function PatientTransitOperations({
                 open={collectCheck}
                 who={identity}
                 action="Mark moving"
-                gaps={collectionGaps(movement)}
+                gaps={collectionGaps(movement, units)}
                 onClose={() => setCollectCheck(false)}
                 onConfirm={(reason) => {
                   setCollectCheck(false);
@@ -788,7 +823,7 @@ export function PatientTransitOperations({
                     role: routeRole,
                     now,
                     movementId: movement.id,
-                    exception: { gaps: collectionGaps(movement), reason },
+                    exception: { gaps: collectionGaps(movement, units), reason },
                   });
                 }}
                 testId="ward-patient-collect-check"

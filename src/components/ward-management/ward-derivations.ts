@@ -52,6 +52,7 @@ import {
 } from "@/components/ward-management/ward-model";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import { unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
+import { authorisationBlocksPlacement } from "@/components/ward-management/ward-authorisation";
 import {
   EXPECT_FLAG_INVOLUNTARY_MINUTES,
   EXPECT_FLAG_VOLUNTARY_MINUTES,
@@ -360,6 +361,10 @@ export function examinationBedHeldNotice(movement: Pick<Movement, "examination">
  * change, and it is surfaced as an exception for a human to resolve. It NEVER re-sorts,
  * re-suggests or un-accepts the patient: nothing in this prototype auto-allocates, and that
  * rule does not bend because the trigger was a status change.
+ *
+ * D-189 items 8(a) and 9(a): read through the one switch, `authorisationBlocksPlacement`. While every
+ * ward's authorisation is "not stated" (Q42 unsigned) this finds nothing, so neither the Exceptions
+ * item, the Delays "no eligible bed" reason nor the cockpit notice is raised by the invented flag.
  */
 export function destinationNoLongerLawful(movement: Movement, units: Unit[]): Unit | undefined {
   if (!isOpen(movement)) return undefined;
@@ -372,7 +377,7 @@ export function destinationNoLongerLawful(movement: Movement, units: Unit[]): Un
   if (movement.acceptedUnitId === undefined) return undefined;
   const unit = getUnitByIdMap(units).get(movement.acceptedUnitId);
   if (unit === undefined) return undefined;
-  return unit.authorised ? undefined : unit;
+  return authorisationBlocksPlacement(unit) ? unit : undefined;
 }
 
 /**

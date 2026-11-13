@@ -12,7 +12,6 @@ import {
   LEGAL,
   MSE,
   REVIEW,
-  SIGNED_IN,
   TIER_LONG,
   WHO_TOLD,
   type SectionId,
@@ -28,6 +27,7 @@ import {
   sinceLastText,
   type TriageState,
 } from "./triage-risk-state";
+import { DEFAULT_REVIEWER } from "./triage-signer";
 import {
   ALL_PROGRAMS,
   PROGRAMS,
@@ -161,7 +161,11 @@ const names = (list: readonly { name: string }[]) => list.map((f) => f.name).joi
  * then six headed parts of label: value facts, mental state one line per domain, risk as Present,
  * Not known and Not present lists with past and current apart, then the signature block.
  */
-export function summaryModel(state: TriageState, signed?: SignedBy): SummaryModel {
+/**
+ * The document for one triage. A9-29: a signed one names `signed.by`, the desk that signed it; an
+ * unsigned one names `reviewer`, the desk filling it in (the form passes its own desk).
+ */
+export function summaryModel(state: TriageState, signed?: SignedBy, reviewer = DEFAULT_REVIEWER): SummaryModel {
   const t = state.text;
   const person = state.person;
   const notes = parseHeadedText(t.note);
@@ -248,7 +252,7 @@ export function summaryModel(state: TriageState, signed?: SignedBy): SummaryMode
           `${LEGAL_NAME[state.legal]} (as chosen)${hasLegalForm(state) && t.legalForm.trim() ? `, ${t.legalForm.trim().replace(/\s*·\s*/g, " ")} (as typed)` : ""}`
         : "Legal not set",
       mode ? `Reviewed ${mode}` : "Review time not set",
-      signed?.by ?? SIGNED_IN,
+      signed?.by ?? reviewer,
     ].join(" · "),
     parts: [
       {
@@ -419,7 +423,7 @@ export function summaryModel(state: TriageState, signed?: SignedBy): SummaryMode
     ],
     signature: signed
       ? [`Signed ${signed.at} by ${signed.by}`, "Prints as SMHMR900 and SMHMR905"]
-      : [`Not signed. Reviewer: ${SIGNED_IN}`, "Prints as SMHMR900 and SMHMR905 once signed"],
+      : [`Not signed. Reviewer: ${reviewer}`, "Prints as SMHMR900 and SMHMR905 once signed"],
     foot: [hasLegalForm(state) ? "Legal form as typed. Not legally checked." : "", "Synthetic record"].filter(Boolean),
   };
 }

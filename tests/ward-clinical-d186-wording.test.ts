@@ -86,14 +86,17 @@ describe("Q8: a hospital is not set up for involuntary admissions (demo)", () =>
       open: true,
       blockerIsActive: false,
     }).find((entry) => entry.key === "unlawful");
-    expect(item?.chip).toBe("Not set up for involuntary admissions (demo)");
-    expect(item?.say).toMatch(/needs a ward set up for involuntary admissions \(demo\)/);
-    expect(item?.say).not.toMatch(/authorised/i);
+    // D-189 item 9(a): every ward's authorisation is "not stated" until Q42 is signed, so the item is
+    // not raised. Its wording, kept behind the switch, is still D-186 item 8's.
+    expect(item).toBeUndefined();
+    const text = source("movements/movement-workspace-derivations.ts");
+    expect(text).toContain('chip: "Not set up for involuntary admissions (demo)"');
+    expect(text).toMatch(/needs a ward set up for involuntary admissions \(demo\)/);
   });
 
   it.each([
-    ["hub/hub-screen.tsx", "Not set up for involuntary admissions (demo) — voluntary admissions only"],
-    ["capacity/capacity-ward-drawer.tsx", '"Set up for involuntary admissions (demo)"'],
+    // D-189 items 6 and 8(a) replaced the hub pill (removed) and the drawer's Yes or No ("Not stated").
+    ["capacity/capacity-ward-drawer.tsx", '["Involuntary admissions", AUTHORISATION_NOT_STATED]'],
     ["movements/movement-workspace-cockpit.tsx", "is not set up for involuntary admissions (demo), which"],
   ])("%s states the shared wording and no longer says not authorised", (path, wording) => {
     const text = source(path).replace(/\s+/g, " ");

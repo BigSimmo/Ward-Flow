@@ -79,3 +79,23 @@ export function exampleTriage(): TriageState {
     },
   };
 }
+
+/**
+ * Each field of a signed triage record (`TriageSignedRecord`), in the words the signed line and How
+ * to's What gets saved use (D-186, Q14). The record-key check is in ward-clinical-d186-triage.test.ts;
+ * the rendered texts are checked in the Triage .dom tests.
+ */
+export const SIGNED_RECORD_WORDS: Readonly<Record<string, string>> = {
+  patientId: "patient record",
+  at: "when it was signed",
+  by: "by which desk",
+  urgency: "urgency",
+  outcome: "outcome",
+  legal: "legal status",
+  review: "review",
+  riskFlags: "risk flags marked present",
+  problems: "problems",
+  actions: "actions",
+  venue: "venue",
+  referralType: "referral type",
+};

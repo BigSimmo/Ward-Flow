@@ -44,6 +44,8 @@ export type FormApi = {
   now: number;
   /** Closes any slide-out and goes to a section, or to the field a target names. */
   jump: (section: SectionId, target?: Target) => void;
+  /** A9-29: the persona of the desk filling in the form, who signs it (`signerName`). */
+  reviewer: string;
 };
 
 type Option = readonly [value: string, label: string] | string;

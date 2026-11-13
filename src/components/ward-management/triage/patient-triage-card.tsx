@@ -16,22 +16,21 @@ import { MONTH_SHORT } from "@/components/ward-management/ward-month-names";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WARD_TRIAGE_NEW_HREF } from "@/components/ward-management/ward-nav";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
-import { SIGNED_IN_COORDINATOR_NAME } from "@/components/ward-management/ward-staff-names-seed";
 
 import { triageHrefFor } from "./triage-href";
 import { LEGAL, REVIEW, TIER_LONG, triagesFor, type TriageSignedRecord } from "./triage-record";
+import { signerName } from "./triage-signer";
 import styles from "./patient-triage-card.module.css";
 
-/** The signed-in synthetic clinician who signs, as the form names them (`SIGNED_IN`). */
-const REVIEWER = SIGNED_IN_COORDINATOR_NAME;
 const MONTHS = MONTH_SHORT;
 const LEGAL_NAME: Readonly<Record<string, string>> = Object.fromEntries(LEGAL);
 const REVIEW_NAME: Readonly<Record<string, string>> = Object.fromEntries(REVIEW);
 
-function signedLine(record: TriageSignedRecord, dayZero: Date): string {
+/** The card's "Signed 07 Nov 10:42 by …" line. A9-29: it names the desk that signed, from the record. */
+export function triageSignedLine(record: TriageSignedRecord, dayZero: Date): string {
   const moment = calendarDateOf(record.at, dayZero);
   const day = perthCalendarDay(moment);
-  return `Signed ${String(day.day).padStart(2, "0")} ${MONTHS[day.monthIndex]} ${perthClockTime(moment)} by ${REVIEWER}`;
+  return `Signed ${String(day.day).padStart(2, "0")} ${MONTHS[day.monthIndex]} ${perthClockTime(moment)} by ${signerName(record.by)}`;
 }
 
 /** One signed triage in words: urgency, outcome, legal status as chosen, the review and the flag count. */
@@ -78,7 +77,7 @@ export function PatientTriageCard({ patientId }: { patientId: string | undefined
         {latest ? (
           <>
             <p className={styles.signed} data-testid="patient-triage-signed">
-              {signedLine(latest, dayZero)}
+              {triageSignedLine(latest, dayZero)}
             </p>
             <ul className={styles.facts} aria-label="Last signed triage">
               {triageRecordWords(latest).map((line) => (
@@ -96,7 +95,8 @@ export function PatientTriageCard({ patientId }: { patientId: string | undefined
           className={`${buttonClass({ size: "sm" })} ${styles.action}`}
           data-testid="patient-triage-start"
         >
-          Triage
+          {/* A9-20(b): once a triage is signed, the action says it starts another one. */}
+          {latest ? "Start another triage" : "Triage"}
         </Link>
       ) : null}
     </section>

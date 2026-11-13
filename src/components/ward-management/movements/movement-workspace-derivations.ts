@@ -397,6 +397,7 @@ export function attentionItems({
     });
   }
 
+  // D-189 item 9(a): never raised while every ward's authorisation is "not stated" (Q42 unsigned).
   const unlawful = destinationNoLongerLawful(movement, units);
   if (unlawful) {
     items.push({

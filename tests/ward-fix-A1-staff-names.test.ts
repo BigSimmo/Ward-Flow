@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { recordExtrasFor } from "@/components/ward-management/patients/patient-record-extras";
 import { DESK_PERSONAS } from "@/components/ward-management/shell/ward-desk-personas";
 import { SETTINGS_DEMO_PROFILE } from "@/components/ward-management/settings/settings-profile";
-import { SIGNED_IN } from "@/components/ward-management/triage/triage-risk-data";
+import { signerName } from "@/components/ward-management/triage/triage-signer";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { GENERATED_GIVEN_NAMES_BY_SEX } from "@/components/ward-management/ward-generated-names-seed";
 import { DELIBERATE_LOOKALIKE_PATIENT_IDS } from "@/components/ward-management/ward-patients-seed";
@@ -174,7 +174,8 @@ describe("staff names (A16-02, A16-21, A15-06)", () => {
       if (persona.role !== "Demo desk") expect(STAFF_FORMS.has(persona.name), persona.name).toBe(true);
     expect(DESK_PERSONAS.coordinator.name).toBe(SIGNED_IN_COORDINATOR_NAME);
     expect(SETTINGS_DEMO_PROFILE.name).toBe(SIGNED_IN_COORDINATOR_NAME);
-    expect(SIGNED_IN).toBe(SIGNED_IN_COORDINATOR_NAME);
+    // A9-29: a triage names the desk that signed it, so the coordinator desk signs as this persona.
+    expect(signerName("coordinator")).toBe(SIGNED_IN_COORDINATOR_NAME);
   });
 });
 

@@ -869,6 +869,7 @@ export function MovementWorkspaceCockpit({
                     </dd>
                   </div>
                 </dl>
+                {/* D-189 item 9(a): never shown while every ward's authorisation is "not stated". */}
                 {destinationNoLongerLawful(patient, units) ? (
                   <p className={styles.candidateRisk}>
                     {destinationNoLongerLawful(patient, units)?.name} is not set up for involuntary admissions (demo),

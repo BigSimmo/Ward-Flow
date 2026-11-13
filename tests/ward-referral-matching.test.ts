@@ -155,15 +155,18 @@ describe("legal_status", () => {
     expect(gate(verdict, "legal_status")?.pass).toBe(true);
   });
 
-  it("a referral that needs an involuntary bed is refused by an unauthorised (voluntary-only) unit", () => {
+  // D-189 items 8(a) and 9(a) (Josh, 13 Nov 2026): until Q42 is signed the sample flag is not read, so
+  // a unit flagged false is not refused. The gate is information only and marks the need.
+  it("D-189: a referral that needs an involuntary bed is not refused by a unit the sample data flags false", () => {
     const verdict = verdictFor(referral({ involuntaryBedNeeded: true }), unit({ authorised: false }), NOW);
-    expect(gate(verdict, "legal_status")?.pass).toBe(false);
+    expect(gate(verdict, "legal_status")).toMatchObject({ pass: true, info: true, need: true });
   });
 
-  it("gives the legal_status gate a different detail string for an authorised unit than an unauthorised one, when a referral needs an involuntary bed", () => {
+  it("D-189: gives the legal_status gate the same 'not stated' detail whatever the sample flag says", () => {
     const authorised = verdictFor(referral({ involuntaryBedNeeded: true }), unit({ authorised: true }), NOW);
     const unauthorised = verdictFor(referral({ involuntaryBedNeeded: true }), unit({ authorised: false }), NOW);
-    expect(gate(authorised, "legal_status")?.detail).not.toBe(gate(unauthorised, "legal_status")?.detail);
+    expect(gate(authorised, "legal_status")?.detail).toBe("Involuntary admissions: not stated");
+    expect(gate(unauthorised, "legal_status")?.detail).toBe("Involuntary admissions: not stated");
   });
 
   // Positive shape, not a denylist of judging fragments — the same fix as the forensic gate's
@@ -175,9 +178,6 @@ describe("legal_status", () => {
     const authorised = verdictFor(referral({ involuntaryBedNeeded: true }), unit({ authorised: true }), NOW);
     const unauthorised = verdictFor(referral({ involuntaryBedNeeded: true }), unit({ authorised: false }), NOW);
     const notNeeded = verdictFor(referral({ involuntaryBedNeeded: false }), unit({ authorised: true }), NOW);
-
-    expect(gate(authorised, "legal_status")?.detail).toContain("Test Unit");
-    expect(gate(unauthorised, "legal_status")?.detail).toContain("Test Unit");
 
     for (const detail of [
       gate(authorised, "legal_status")?.detail,

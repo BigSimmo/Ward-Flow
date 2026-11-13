@@ -245,17 +245,17 @@ describe("ward capacity board", () => {
    * 🔴 **SPLIT 2026-09-05. The MHA half is re-pointed at the live screen; the sex-mix and
    * specialling halves stay parked, because nothing reachable shows either of them.**
    */
-  it("names every ward's Mental Health Act authorisation on the network view, both directions", () => {
+  // D-189 items 6 and 8(a) (Josh, 13 Nov 2026): no ward is shown as authorised or not authorised
+  // until Q42 is signed. Both a flagged and an unflagged ward read "Not stated", never Yes or No.
+  it("reads every ward's involuntary admissions as not stated, whatever the sample flag says", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <CapacityScreen />
       </WardFlowProvider>,
     );
 
-    expect(drawerFact(openWardDrawer("sjgs-adult-secure"), "Set up for involuntary admissions (demo)")).toBe("No");
-
-    // Both directions, or this would pass on a screen that said "No" on every ward.
-    expect(drawerFact(openWardDrawer("scgh-adult-open"), "Set up for involuntary admissions (demo)")).toBe("Yes");
+    expect(drawerFact(openWardDrawer("sjgs-adult-secure"), "Involuntary admissions")).toBe("Not stated");
+    expect(drawerFact(openWardDrawer("scgh-adult-open"), "Involuntary admissions")).toBe("Not stated");
   });
 
   /*

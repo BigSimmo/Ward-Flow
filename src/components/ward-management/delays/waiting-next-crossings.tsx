@@ -46,7 +46,8 @@ function nextCrossings(rows: readonly BoardRow[], window = RUNWAY_WINDOW): Cross
   return out.sort((a, b) => a.at - b.at);
 }
 
-const TONE = { "8h": "warning", "24h": "danger", form: "info" } as const;
+// D-194 item 3 (review R5): reaching 24 hours is neutral, never act-now red. The count's words stay for the walk.
+const TONE = { "8h": "warning", "24h": "neutral", form: "info" } as const;
 
 export function NextCrossings({
   rows,
@@ -87,7 +88,7 @@ export function NextCrossings({
           <b className={styles.nxSumN}>{pass8}</b>
           <span className={styles.nxSumL}>{`pass ${H8}`}</span>
         </span>
-        <span className={styles.nxStat} data-tone="danger">
+        <span className={styles.nxStat} data-tone="neutral">
           <span className={styles.nxStatIcon} aria-hidden="true">
             <Hourglass size={15} aria-hidden="true" />
           </span>

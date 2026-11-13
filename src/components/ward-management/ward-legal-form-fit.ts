@@ -8,6 +8,9 @@ import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning"
  * no form for a status that rests on one. Which form fits which status is not judged here.
  *
  * `formCode` is the chosen form's code, `null` for "No form", or `undefined` while unanswered.
+ *
+ * D-186 item 5: this is the pairing half of the legal order rules, which live together in
+ * `ward-legal-order-rules.ts` (`legalRecordWarnings`) for the record actions and the sample check.
  */
 export function legalFormStatusWarning(
   legalStatus: LegalStatus | "" | undefined,

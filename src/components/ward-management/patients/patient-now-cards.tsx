@@ -1,3 +1,4 @@
+import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning";
 import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
 import { activeCommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
 import { useId, useState, type ReactNode } from "react";
@@ -223,7 +224,8 @@ export function PatientLegalNowCard({
       time: clock(order.recordedAt),
     });
   const status = legal.status;
-  const onOrder = status !== undefined && status !== "Voluntary";
+  // D-186 item 4: the named "not voluntary" rule. A referral counts; nothing recorded does not.
+  const onOrder = isNotVoluntary(status);
   // D-187 item 8 (Q29): a missing person shows only the recorded status and form. The card no
   // longer says the order stays in force while absent; which status shows is unchanged.
   const statusNote = rows.some((row) => row.left)

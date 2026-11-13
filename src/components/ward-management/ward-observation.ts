@@ -36,6 +36,11 @@ export const INTERMITTENT_INTERVAL_MINUTES: readonly number[] = [
   CLINICAL_VALUES.observationIntermittentShort.value,
   CLINICAL_VALUES.observationIntermittentLong.value,
 ];
+/**
+ * D-187 item 19 (Q44): the inline error when Intermittent is recorded with no interval chosen. No
+ * interval starts chosen on any form; each form refuses Intermittent without one, in these words.
+ */
+export const NO_INTERVAL_ERROR = `Choose how often to check: ${INTERMITTENT_INTERVAL_MINUTES.join(" or ")} minutes.`;
 
 export type Observation = {
   level: ObservationLevel;

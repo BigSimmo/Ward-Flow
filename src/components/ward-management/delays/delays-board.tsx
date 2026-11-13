@@ -1177,7 +1177,8 @@ export function DelaysBoard({
                     label: tile.name,
                     value: tile.rows.length,
                     sub: tile.rows.length > 0 ? splitDuration(longest) : undefined,
-                    subTone: band === 3 ? ("danger" as const) : band >= 1 ? ("warning" as const) : undefined,
+                    // D-194 item 3 (review R5): past 24 hours is neutral, as in the list; 8 to 24 hours stays amber.
+                    subTone: band === 1 || band === 2 ? ("warning" as const) : undefined,
                     pressed: filters.owner === tile.owner,
                     testId: `delays-owner-${tile.owner}`,
                     onClick: () =>

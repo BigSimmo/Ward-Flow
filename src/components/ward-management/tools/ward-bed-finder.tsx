@@ -12,6 +12,7 @@ import { heldBedsByKind } from "../ward-movement-bed-hold";
 import { designationSummary, lockedBedsFree, openBedsFree } from "../ward-bed-designation";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import { sexDesignationAccepts } from "../ward-eligibility";
+import { authorisationBlocksPlacement } from "../ward-authorisation";
 import { unitHealthService } from "../ward-service-scope";
 import { siteByCode } from "../ward-sites";
 import { COHORTS, HEALTH_SERVICES, type BedRelease, type Cohort, type HealthService, type Unit } from "../ward-model";
@@ -77,11 +78,21 @@ export const DEFAULT_BED_FINDER_FILTERS: BedFinderFilters = {
 };
 
 /**
+ * D-189 items 8(a) and 9(i): the Voluntary or Involuntary choice stays required, so its shape holds
+ * when Q42 is signed, but authorisation is "not stated" for every ward, so it narrows nothing.
+ */
+export const BED_FINDER_AUTHORISATION_HINT =
+  "Authorisation is not stated for any ward, so this does not narrow the list.";
+
+/**
  * The finder's note: what the quick filter leaves out, so nobody reads its list as a fit list (M118,
- * 10 Nov 2026). It checks cohort, authorisation and sex only, and drops forensic wards (D7).
+ * 10 Nov 2026). It checks cohort and sex only, and drops forensic wards (D7). Authorisation reads
+ * through `authorisationBlocksPlacement`, which narrows nothing while every ward is "not stated".
+ * Review R6: the note no longer says the referral checks "every rule", as authorisation is not
+ * checked while it is not stated; the referral's own gates (`ward-eligibility.ts`) still run.
  */
 export const BED_FINDER_NOTE =
-  "A to Z, not ranked. Forensic wards are left out. This quick filter does not check security, bay mix or a gender-diverse designation. The referral checks every rule before a bed is offered.";
+  "A to Z, not ranked. Forensic wards are left out. This quick filter does not check security, bay mix or a gender-diverse designation. The referral still runs the other bed checks before a bed is offered.";
 
 /**
  * Tools, Find a bed (Tools review item 19, 15 Oct 2026; rewritten for audit 24-1 decision 1,
@@ -107,7 +118,7 @@ export function findBeds(
       // A forensic ward is never offered (D7), so the quick filter leaves it out as every engine path does (M118).
       .filter((unit) => !unit.forensic)
       .filter((unit) => unit.cohort === filters.cohort)
-      .filter((unit) => !involuntary || unit.authorised)
+      .filter((unit) => !involuntary || !authorisationBlocksPlacement(unit))
       .filter((unit) => wardForAccepts(unit.sexDesignation, filters.sex))
       .map((unit) => {
         // Capped at the board's Ready figure, so this never shows more beds than the board or the bed
@@ -195,7 +206,7 @@ function ExecutiveBedFinder({ onNavigate }: { onNavigate: () => void }) {
             // A forensic ward is never offered (D7), here as in the operational finder (M118).
             !ward.forensic &&
             ward.cohort === filters.cohort &&
-            (filters.legalStatus !== "involuntary" || ward.authorised) &&
+            (filters.legalStatus !== "involuntary" || !authorisationBlocksPlacement(ward)) &&
             wardForAccepts(ward.sexDesignation, filters.sex),
         )
         .map((ward) => ({
@@ -237,6 +248,9 @@ function ExecutiveBedFinder({ onNavigate }: { onNavigate: () => void }) {
         ]}
         onChange={set("legalStatus")}
       />
+      <p className={styles.note} role="note" data-testid="ward-bed-finder-authorisation-hint">
+        {BED_FINDER_AUTHORISATION_HINT}
+      </p>
       <Choice
         label="Home service"
         value={filters.home}
@@ -355,7 +369,7 @@ function OperationalBedFinder({ onNavigate }: { onNavigate: () => void }) {
           {BED_FINDER_GENDER_REVIEW}
         </p>
       ) : null}
-      {/* Required, with no default: Involuntary keeps the list to authorised wards. */}
+      {/* Required, with no default (D-189 item 8(a): it narrows nothing until Q42 is signed). */}
       <Choice<BedFinderLegalStatus>
         label="Legal status"
         value={filters.legalStatus}
@@ -365,6 +379,9 @@ function OperationalBedFinder({ onNavigate }: { onNavigate: () => void }) {
         ]}
         onChange={set("legalStatus")}
       />
+      <p className={styles.note} role="note" data-testid="ward-bed-finder-authorisation-hint">
+        {BED_FINDER_AUTHORISATION_HINT}
+      </p>
       {/* Labels the wards in that service. It never moves them up the list. */}
       <Choice
         label="Home service"
@@ -404,7 +421,7 @@ function OperationalBedFinder({ onNavigate }: { onNavigate: () => void }) {
         </>
       ) : (
         <p className={styles.result} role="status">
-          Choose Voluntary or Involuntary under Legal status to list wards. Involuntary lists only authorised wards.
+          Choose Voluntary or Involuntary under Legal status to list wards.
         </p>
       )}
       <p className={styles.note}>{BED_FINDER_NOTE}</p>

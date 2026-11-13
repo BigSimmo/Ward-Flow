@@ -48,12 +48,7 @@ export const HubPlaceRow = memo(function HubPlaceRow({
           </span>
           <span className={styles.resultSub}>
             {(entry.kind === "ward"
-              ? [
-                  entry.site,
-                  entry.cohort,
-                  entry.security === undefined ? undefined : SECURITY_WORD[entry.security],
-                  entry.authorised === false ? "Voluntary only" : undefined,
-                ]
+              ? [entry.site, entry.cohort, entry.security === undefined ? undefined : SECURITY_WORD[entry.security]]
               : [entry.site, entry.service]
             )
               .filter(Boolean)

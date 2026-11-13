@@ -230,8 +230,13 @@ describe("clinical values file", () => {
 
 // ---- No threshold typed anywhere else -----------------------------------------------------------
 
-/** A SCREAMING_SNAKE name that reads as a threshold or timing. */
-const THRESHOLD_NAME = /^[A-Z][A-Z0-9_]*(?:MINUTES|HOURS|DAYS|PERCENT|THRESHOLD)[A-Z0-9_]*$/;
+/**
+ * A SCREAMING_SNAKE name that reads as a threshold or timing, the unit word anywhere in it, first
+ * word included (`HOURS_24` slipped past the old pattern, time audit T4, D-194).
+ */
+const THRESHOLD_NAME = /^(?=[A-Z])[A-Z0-9_]*(?:MINUTES|HOURS|DAYS|PERCENT|THRESHOLD)[A-Z0-9_]*$/;
+/** A unit conversion such as `MINUTES_PER_HOUR = 60`: a fact about the clock, never a threshold. */
+const UNIT_CONVERSION = /^(?:MINUTES|HOURS|DAYS)_PER_(?:MINUTE|HOUR|DAY|WEEK)$/;
 /** Unit factors an initializer may multiply by and still be a typed number. */
 const UNIT_FACTORS = new Set(["MINUTES_PER_HOUR", "MINUTES_PER_DAY", "HOURS_PER_DAY"]);
 
@@ -258,6 +263,7 @@ function typedThresholdsIn(file: string, source: string): string[] {
       ts.isVariableDeclaration(node) &&
       ts.isIdentifier(node.name) &&
       THRESHOLD_NAME.test(node.name.text) &&
+      !UNIT_CONVERSION.test(node.name.text) &&
       node.initializer !== undefined &&
       isTypedNumber(node.initializer)
     )
@@ -419,11 +425,16 @@ describe("no clinical threshold typed outside the values file", () => {
       "const BED_COUNT_LIMIT = 3;",
       "const LONG_WAIT_MINUTES = CLINICAL_VALUES.longWait.value;",
       "const HALF_MINUTES = LONG_WAIT_MINUTES / 2;",
+      "const HOURS_24 = 24 * 60;",
+      "const DAYS_AHEAD = 7;",
+      "const MINUTES_PER_DAY = 24 * 60;",
     ].join("\n");
     expect(typedThresholdsIn("planted.ts", planted)).toEqual([
       "TV_BED_ALERT_PERCENT",
       "AWOL_REVIEW_MINUTES",
       "STAY_DAYS",
+      "HOURS_24",
+      "DAYS_AHEAD",
     ]);
   });
 

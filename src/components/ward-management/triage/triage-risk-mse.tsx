@@ -142,7 +142,12 @@ export function MentalStateBody({ form }: { form: FormApi }) {
           />
           {/* 7 Nov 2026: one short foot; the placeholder and Show phrases already say how to add. */}
           <div className={styles.boxFoot}>
-            <span>{phrasesOpen ? "Tap a phrase again to remove it." : "One line per domain."}</span>
+            {/* A9-22(d): a line counts only when it starts with the domain's exact name and a colon, so say so. */}
+            <span>
+              {phrasesOpen
+                ? "Tap a phrase again to remove it."
+                : "One line per domain. Start each line with the domain's name and a colon, as in Speech:"}
+            </span>
             <span className={styles.mono} data-testid="triage-mse-count">
               {mseAnsweredCount(state)} of {MSE.length} domains
             </span>

@@ -45,6 +45,7 @@ import {
 import { WARD_FLOW_ROLE_LABELS, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { isLegalClockFormCode } from "@/components/ward-management/ward-legal-clock";
 import { examinationOutcomeInSentence } from "@/components/ward-management/ward-legal-forms";
+import { isExaminationAwaitingReleaseBlocker } from "@/components/ward-management/ward-examination-hold-up";
 import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning";
 import {
   BLOCKERS_MEANING_NOTHING_IS_BLOCKING,
@@ -624,7 +625,11 @@ export function reduceRecordedFactEvent(
           ...movement,
           examination: { at: event.now, outcome: event.outcome },
           supersededExaminations,
-          blocker: STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease,
+          // F-15, D-170 item 3: the hold-up names the outcome, never "revoked".
+          blocker:
+            event.outcome === "community_order"
+              ? STAGE_TRANSITION_BLOCKERS.examinationCommunityOrderAwaitingRelease
+              : STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease,
           examRevoked: event.outcome === "revoked" ? true : movement.examRevoked,
         };
         const next = replaceMovement(state, movement.id, flagged);
@@ -725,7 +730,7 @@ export function reduceRecordedFactEvent(
       const examinationRevokedHoldingBed =
         (examinationOutcome === "community_order" || examinationOutcome === "revoked") &&
         movementHoldsBedByStage(movement);
-      const awaitingRelease = movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease;
+      const awaitingRelease = isExaminationAwaitingReleaseBlocker(movement.blocker);
       if (examinationRevokedHoldingBed || awaitingRelease) {
         return reject(
           state,

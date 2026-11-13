@@ -71,6 +71,12 @@ function answerBookingFacts(form: HTMLElement) {
   });
   fireEvent.click(within(form).getByTestId("ward-patient-escort-no"));
   answerLegalStatus(form);
+  answerFitToTravelReason(form);
+}
+
+/** D-187 item 10: WF-004 has no medical clearance recorded, so booking asks for a reason. */
+function answerFitToTravelReason(form: HTMLElement) {
+  fireEvent.change(within(form).getByTestId("ward-patient-legal-reason"), { target: { value: "paper_sighted" } });
 }
 
 /** Josh, 31 Oct 2026: the legal answer starts unticked. WF-004's Legal now is involuntary. */
@@ -266,10 +272,13 @@ describe("Patient Transport & Transfer Coordination section", () => {
     fireEvent.change(within(form).getByTestId("ward-patient-input-cad"), { target: { value: "CAD-SYNTHETIC-7" } });
     pickEta(form);
     pressSave(form);
+    // D-187 item 10 and D-189 item 9(e): no medical clearance is recorded, so the fit to travel reason
+    // is asked, but it is not an answer left: the booking may save without one.
     expect(within(form).getByTestId("ward-patient-book-transport-left")).toHaveTextContent(
       "3 answers left: provider, escort answer, legal status",
     );
     answerLegalStatus(form);
+    answerFitToTravelReason(form);
     expect(control.calls).toHaveLength(0);
     fireEvent.change(within(form).getByTestId("ward-patient-select-provider"), {
       target: { value: "Patient transport service" },

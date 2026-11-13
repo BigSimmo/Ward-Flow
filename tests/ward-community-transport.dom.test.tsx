@@ -109,6 +109,9 @@ function TransportProbe({ movementId }: { movementId: string }) {
       </span>
       <span data-testid="transport-probe-has-job">{movement?.transport ? "yes" : "no"}</span>
       <span data-testid="transport-probe-rejections">{rejections.length}</span>
+      <span data-testid="transport-probe-exceptions">
+        {(movement?.transport?.exceptions ?? []).map((entry) => `${entry.step}:${entry.reason}`).join(",")}
+      </span>
       <button
         type="button"
         data-testid="prebook-transport"
@@ -155,7 +158,7 @@ function renderTeamScreen(movementId: string | null, patientId: Admission["patie
   );
 }
 
-function fillAndConfirmBooking(movementId: string) {
+function fillAndConfirmBooking(movementId: string, fitReason: string | null = "paper_sighted") {
   fireEvent.click(screen.getByTestId(`ward-community-book-transport-${movementId}`));
   const dialog = screen.getByTestId(`ward-community-book-transport-dialog-${movementId}`);
   fireEvent.change(within(dialog).getByTestId(`ward-community-transport-provider-${movementId}`), {
@@ -171,6 +174,10 @@ function fillAndConfirmBooking(movementId: string) {
   });
   // Josh, 31 Oct 2026: neither Today nor Tomorrow starts chosen.
   fireEvent.click(within(dialog).getByTestId(`ward-community-transport-estimated-day-today-${movementId}`));
+  // D-187 item 10: no medical clearance is recorded, so the booking asks for a reason. D-189 item
+  // 9(e): it may save without one.
+  const reason = within(dialog).getByTestId(`ward-community-transport-legal-reason-${movementId}`);
+  if (fitReason !== null) fireEvent.change(reason, { target: { value: fitReason } });
   const confirm = within(dialog).getByTestId(`ward-community-book-transport-confirm-${movementId}`);
   expect(confirm).not.toHaveAttribute("aria-disabled");
   fireEvent.click(confirm);
@@ -196,6 +203,26 @@ describe("community admitted table — transport booking and cancel", () => {
     expect(screen.getByTestId("transport-probe-booked-by").textContent).toBe(`community:${TEAM.id}`);
     expect(screen.queryByTestId(`ward-community-book-transport-${movementId}`)).toBeNull();
     expect(screen.getByTestId(`ward-community-cancel-transport-${movementId}`)).toBeTruthy();
+  });
+
+  it("books without a fit to travel reason when none is chosen, and records none (D-189 item 9(e))", () => {
+    const { movementId } = pulledMovementWithoutTransport();
+    renderTeamScreen(movementId);
+
+    fillAndConfirmBooking(movementId, null);
+
+    expect(screen.getByTestId("transport-probe-rejections").textContent).toBe("0");
+    expect(screen.getByTestId("transport-probe-has-job").textContent).toBe("yes");
+    expect(screen.getByTestId("transport-probe-exceptions").textContent).toBe("");
+  });
+
+  it("records the chosen fit to travel reason with the booking", () => {
+    const { movementId } = pulledMovementWithoutTransport();
+    renderTeamScreen(movementId);
+
+    fillAndConfirmBooking(movementId);
+
+    expect(screen.getByTestId("transport-probe-exceptions").textContent).toBe("booked:paper_sighted");
   });
 
   it("a booking made by this team shows cancel; submitting dispatches CANCEL_TRANSPORT with reason and actingPlaceId", () => {

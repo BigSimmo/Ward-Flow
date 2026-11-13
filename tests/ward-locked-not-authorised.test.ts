@@ -52,7 +52,10 @@ describe("a locked ward that cannot lawfully detain", () => {
     }
   });
 
-  it("FAILS the authorisation gate for an involuntary movement, and fails it for that reason", () => {
+  // D-189 items 8(a) and 9(a) (Josh, 13 Nov 2026): until Q42 is signed the sample flag is not read, so
+  // the gate no longer fails here. It passes as information only, marking the person's need, and its
+  // words say authorisation is not stated. Locked doors still never imply authorisation.
+  it("D-189: the authorisation gate is information only for an involuntary movement, and says not stated", () => {
     const involuntary = wardMovements.find((movement) => movement.legalStatus !== "Voluntary");
     expect(involuntary, "the fixture has no involuntary movement to test with").toBeDefined();
 
@@ -61,16 +64,12 @@ describe("a locked ward that cannot lawfully detain", () => {
       const authorisation = verdict.gates.find((gate) => gate.gate === "authorisation");
 
       expect(authorisation, `${unit.id}: no authorisation gate found`).toBeDefined();
-      expect(authorisation?.pass, `${unit.id} is unauthorised but passed the authorisation gate`).toBe(false);
+      expect(authorisation).toMatchObject({ pass: true, info: true, need: true });
+      expect(authorisation?.detail).toBe("Involuntary admissions: not stated");
 
-      // ⚠️ Two guards in series mask each other. If the security gate were also failing here, this
-      // test would pass while proving nothing about authorisation. Assert the bed-kind gate PASSES,
-      // so the refusal is demonstrably about lawfulness and not about the doors.
+      // The bed-kind gate still passes: the doors decide security, never authorisation.
       const security = verdict.gates.find((gate) => gate.gate === "security");
-      expect(
-        security?.pass,
-        `${unit.id}: the security gate blocked first, so the authorisation refusal above proves nothing`,
-      ).toBe(true);
+      expect(security?.pass, `${unit.id}: the security gate should pass on a locked ward`).toBe(true);
     }
   });
 });

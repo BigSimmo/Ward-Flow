@@ -13,7 +13,10 @@ import {
   type AbsenceStep,
   type LeaveBed,
   type Movement,
+  type Referral,
 } from "@/components/ward-management/ward-model";
+import { referralState } from "@/components/ward-management/ward-referrals";
+import { isOwnStay } from "./patient-now-adapter";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { bedHold, PULL_NO_LIMIT_RECORDED } from "@/components/ward-management/ward-bed-hold";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
@@ -175,6 +178,11 @@ export interface PatientStatusContext {
    * (`openReferralFor`). With nothing else open the card says so instead of "Not currently active".
    */
   openReferral?: { sentTo: string; owner: string; raisedAt: number };
+  /**
+   * A9-20(a): a referral for this person is still waiting for triage (`referralWaitingForTriage`).
+   * With nothing else open the card says so instead of "Not currently active".
+   */
+  referralWaitingForTriage?: boolean;
   /** A16-11: the person's booked planned admission (`bookedPlannedAdmissionFor`), when there is one. */
   plannedAdmission?: { unitName: string; expectedArrivalAt: number };
   /**
@@ -189,6 +197,30 @@ export interface PatientStatusContext {
  * Top 25 item 24: time since absent and, past `awolBedHoldWarning`, the bed hold review warning.
  * The bed stays held (the leave bed is the hold); the warning asks a person to review it.
  */
+/**
+ * A9-20(a): whether a referral for this person is still waiting for triage, read as the Triage
+ * page's queue reads it: queued, not marked triaged, and no triage signed for the person at or after
+ * it was raised (a signed triage answers every referral raised before it).
+ */
+export function referralWaitingForTriage(
+  patientId: string | undefined,
+  referrals: readonly Referral[],
+  triages: readonly { readonly patientId?: string | null; readonly at: number }[] | undefined,
+): boolean {
+  if (patientId === undefined) return false;
+  const lastTriageAt = Math.max(
+    -Infinity,
+    ...(triages ?? []).filter((triage) => isOwnStay(triage, patientId)).map((triage) => triage.at),
+  );
+  return referrals.some(
+    (referral) =>
+      isOwnStay(referral, patientId) &&
+      referral.triagedAt === undefined &&
+      referralState(referral) === "queued" &&
+      lastTriageAt < referral.raisedAt,
+  );
+}
+
 function awolTrackerMeta(since: number, now: number, stayUnitName?: string, holdReview = false): string {
   const away = Math.max(0, now - since);
   const holdWarning = CLINICAL_VALUES.awolBedHoldWarning.value;
@@ -922,6 +954,7 @@ function statusFor(
   // A record with nothing open. Where else they have stayed is not read here (archived D-14): the screen
   // shows only what the patient record itself holds.
   const activeEngagement = recordExtrasFor(patient?.id)?.community?.find((item) => item.status === "active");
+  const waitingForTriage = ctx.referralWaitingForTriage === true;
   // Root cause 2.3: a next contact whose day has passed is not shown as all good. Unreadable text
   // and "Not booked" stay neutral, as nothing is known either way.
   const nextContactPassed = recordedDayPassed(
@@ -935,10 +968,18 @@ function statusFor(
     // PT1 (Josh, 3 Nov 2026): a community team caring for the person makes the record Community
     // active. Team, care coordinator and GP sit in the band's at a glance row, so this card keeps
     // only what it adds: the next contact and the CTO action.
-    verdict: activeEngagement ? "Community active" : "Not currently active",
-    meta: activeEngagement
-      ? "No open referral, placement or ward stay. A community team is caring for this person."
-      : "No open referral, placement or ward stay. The record is in the tabs above.",
+    // A9-20(a) (Audit 9): a person whose referral waits for triage has an open referral, so the
+    // card says so before "Not currently active".
+    verdict: waitingForTriage
+      ? "Referral waiting for triage"
+      : activeEngagement
+        ? "Community active"
+        : "Not currently active",
+    meta: waitingForTriage
+      ? "A referral is waiting for triage. No placement or ward stay yet."
+      : activeEngagement
+        ? "No open referral, placement or ward stay. A community team is caring for this person."
+        : "No open referral, placement or ward stay. The record is in the tabs above.",
     cells: [
       ...(activeEngagement
         ? [

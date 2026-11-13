@@ -45,16 +45,7 @@ import { raiseReferralHref } from "@/components/ward-management/shell/ward-facad
 
 import { DecisionBody } from "./triage-risk-decision";
 import { FOLDABLE, foldedSections, foldLine } from "./triage-risk-fold";
-import {
-  LEGAL_SHORT,
-  LEGAL,
-  REVIEW,
-  SECTIONS,
-  SIGNED_IN,
-  TIER_LONG,
-  TIER_SHORT,
-  type SectionId,
-} from "./triage-risk-data";
+import { LEGAL_SHORT, LEGAL, REVIEW, SECTIONS, TIER_LONG, TIER_SHORT, type SectionId } from "./triage-risk-data";
 import { MentalStateBody } from "./triage-risk-mse";
 import { perthWallClockDate, reviewTimeStamp } from "./triage-risk-text";
 import { SectionCard, StatusMark, type FormApi } from "./triage-risk-parts";
@@ -64,6 +55,7 @@ import { AllFactorsDrawer, SummaryDocument, SummaryDrawer } from "./triage-risk-
 import { HowToDrawer } from "./triage-risk-how";
 import { ContactsPop, TeamPop } from "./triage-risk-pops";
 import { seeBy } from "./triage-see-by";
+import { signerName } from "./triage-signer";
 import { navigateWithDirtyGuard, useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { SignRail } from "./triage-risk-side";
 import { TriageStart } from "./triage-risk-start";
@@ -387,12 +379,20 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
   const toast = useOptionalToast();
   const [state, setState] = useState<TriageState>(initial);
   const person = state.person;
-  const [signedAt, setSignedAt] = useState<string | null>(null);
+  // R10 (A9-29): the signed entry keeps when it was signed and the desk that signed it, captured at
+  // the moment of signing, so a desk switched while the form is open never renames the signer.
+  const [signedEntry, setSignedEntry] = useState<{ at: string; by: string } | null>(null);
+  const signedAt = signedEntry?.at ?? null;
   const [confirming, setConfirming] = useState(false);
   const { now: boardNow, dayZero } = useWardFlowSelect("now", "dayZero");
   const routeRole = useRouteRole();
   // Raised by name as this desk at the board clock, as every screen does (tests/ward-flow-raise.test.ts).
   const raise = useWardRaise(routeRole);
+  // A9-29: the desk that signs is the desk that raises the signing, so the form names its persona.
+  // Once signed, every surface (chip, rail, document, copied summary and handover) names the signer
+  // saved with the entry, never the desk open now.
+  const deskReviewer = signerName(routeRole);
+  const reviewer = signedEntry?.by ?? deskReviewer;
   const signGate = useRoleGate({ patientId: person.id })("RECORD_TRIAGE_SIGNED");
   const bedRequestHref = raiseReferralHref({ patientId: person.id });
   const canRequestBed = useCanOpenHref()(bedRequestHref);
@@ -443,8 +443,9 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
       openSummary,
       now,
       jump,
+      reviewer,
     }),
-    [state, say, isPhone, openSummary, now, jump],
+    [state, say, isPhone, openSummary, now, jump, reviewer],
   );
 
   const reqs = useMemo(() => requirements(state, now), [state, now]);
@@ -470,6 +471,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
     state.text.revTime,
     perthWallClockDate(now),
     state.urgency ? TIER_LONG[state.urgency] : "",
+    now,
   );
   // Leaving drops typed text (it is never stored), so warn before any way out once something is entered.
   useDirtyStateGuard({
@@ -523,9 +525,9 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
     return () => window.removeEventListener("keydown", onKey);
   }, [sheet, openSummary]);
 
-  const signedNow = () => {
+  const signedNow = (by: string) => {
     setSheet(null);
-    setSignedAt(reviewTimeStamp(calendarDateOf(boardNow, dayZero)));
+    setSignedEntry({ at: reviewTimeStamp(calendarDateOf(boardNow, dayZero)), by });
     scrollPageTop();
     announceToWardShell(`Signed. Triage for ${person.name} is read-only.`);
   };
@@ -535,17 +537,21 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
     const fields = triageSignedFields(state);
     if (!fields || signing) return;
     setSigning(true);
+    // The desk raising the signing is the signer the record saves (`TriageSignedRecord.by`).
+    const signer = deskReviewer;
     signTriage(
       () => raise("RECORD_TRIAGE_SIGNED", fields),
       (outcome) => {
         setSigning(false);
-        if (outcome.status === "accepted") signedNow();
+        if (outcome.status === "accepted") signedNow(signer);
         else say(outcome.message ?? NOT_SIGNED);
       },
     );
   };
   const copySummary = () =>
-    copyTextToClipboard(summaryText(summaryModel(state, signedAt ? { at: signedAt, by: SIGNED_IN } : undefined))).then(
+    copyTextToClipboard(
+      summaryText(summaryModel(state, signedAt ? { at: signedAt, by: reviewer } : undefined, reviewer)),
+    ).then(
       () => say("Summary copied."),
       () => say("Copy not allowed here. Select the summary text instead."),
     );
@@ -698,7 +704,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
                   <HeroChip
                     value="Signed"
                     tone="success"
-                    label={`${signedAt} by ${SIGNED_IN}`}
+                    label={`${signedAt} by ${reviewer}`}
                     testId="triage-signed-tag"
                   />
                 ) : null}
@@ -769,7 +775,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
               left={left}
               percent={percent}
               signed={signed}
-              signedLine={signedAt ? `${signedAt} by ${SIGNED_IN}` : undefined}
+              signedLine={signedAt ? `${signedAt} by ${reviewer}` : undefined}
               doneLine={(section) => foldLine(state, section)[0] ?? ""}
               onJump={(section, target) => {
                 navLock.current = Date.now() + 1200;
@@ -814,7 +820,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
                   </div>
                 </div>
                 <div className={startStyles.signedDoc}>
-                  <SummaryDocument form={formApi} signed={{ at: signedAt, by: SIGNED_IN }} />
+                  <SummaryDocument form={formApi} signed={{ at: signedAt, by: reviewer }} />
                 </div>
                 <p className={`${startStyles.quiet} ${startStyles.signedFoot}`} data-testid="triage-signed-record-line">
                   {/* D-186 (Q14): every field signing saves (`TriageSignedRecord` in triage-record.ts). */}
@@ -925,7 +931,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
         reqs={reqs}
         jump={jump}
         signButton={signed ? null : signButton("sheet")}
-        signed={signedAt ? { at: signedAt, by: SIGNED_IN } : undefined}
+        signed={signedAt ? { at: signedAt, by: reviewer } : undefined}
       />
       <HowToDrawer
         open={sheet === "how"}
@@ -959,7 +965,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
           </div>
           <div>
             <dt>Reviewer</dt>
-            <dd>{SIGNED_IN}</dd>
+            <dd>{reviewer}</dd>
           </div>
         </dl>
       </Dialog>

@@ -18,14 +18,16 @@ import {
   type PackSlotKey,
   collectionGaps,
   legalNowTransportStatus,
+  type TransportSiteUnits,
 } from "@/components/ward-management/ward-transport-checks";
+import { TRANSPORT_PAPERWORK_STATUS_WORDS } from "@/components/ward-management/ward-transport-paperwork";
 
 import { OfficerOnly } from "./officer-crew-only";
 import styles from "./officer.module.css";
 
 /**
  * THE TRANSPORT FORMS PACK (Josh, 9 Oct 2026, Transport page A). A transfer needs one of Form 1A,
- * 1B or 3D, plus Form 4A, plus a risk assessment. Each slot is read from the movement's own
+ * 1B or 3D, plus a transport order (Form 4A; the paperwork rule also accepts 4C), plus a risk assessment. Each slot is read from the movement's own
  * `uploadedForms`, matched on the recorded form name, so the pack shows only what the record holds.
  * Uploading reuses `UPLOAD_PATIENT_FORM`: the file name and size are recorded, never its contents.
  * Sending the pack to a transport officer has no event yet, so it is a Preview control.
@@ -36,7 +38,9 @@ type PackSlot = { key: PackSlotKey; label: string; codes: string[]; hint: string
 
 export const PACK_SLOTS: PackSlot[] = [
   { key: "legal", label: "Referral or order", codes: ["1A", "1B", "3D"], hint: "Form 1A, 1B or 3D" },
-  { key: "order", label: "Transport order", codes: ["4A"], hint: "Form 4A" },
+  // D-187 item 7: the slot itself stays open (it uploads a Form 4A), but the check that reads it is the
+  // one paperwork rule, which also accepts a Form 4C and is not signed (D-189 item 8(b)).
+  { key: "order", label: "Transport order", codes: ["4A"], hint: `Form 4A · ${TRANSPORT_PAPERWORK_STATUS_WORDS}` },
   { key: "risk", label: "Risk assessment", codes: [], hint: "Signed risk assessment" },
 ];
 
@@ -324,11 +328,12 @@ export function jobIsInvoluntary(movement: Movement): boolean {
 }
 
 /** The Forms cell of a job row: dots, then only the gap that blocks the next step (deep audit, 4 Nov 2026). */
-export function OfficerFormsCell({ movement }: { movement: Movement }) {
+export function OfficerFormsCell({ movement, units }: { movement: Movement; units: TransportSiteUnits }) {
   if (!packRequired(movement)) return <span className={styles.muted}>Not needed</span>;
   const forms = packCount(movement);
   const blocksCollection =
-    movement.transport?.collectedAt === undefined && collectionGaps(movement).includes("transport_order_missing");
+    movement.transport?.collectedAt === undefined &&
+    collectionGaps(movement, units).includes("transport_order_missing");
   return (
     <span className={styles.formsCell} title={`${forms} of ${PACK_SLOTS.length} forms recorded`}>
       <span className={styles.formDots} aria-hidden="true">
@@ -339,7 +344,8 @@ export function OfficerFormsCell({ movement }: { movement: Movement }) {
       {forms === PACK_SLOTS.length ? (
         <span data-complete="true">All forms</span>
       ) : blocksCollection ? (
-        <span className={styles.formsMissing}>Form 4A needed</span>
+        // D-170 item 5: no form number; D-189 item 8(b) and review R4: "rule not signed", in the one rule's words.
+        <span className={styles.formsMissing}>{`Order not uploaded · ${TRANSPORT_PAPERWORK_STATUS_WORDS}`}</span>
       ) : (
         <span className={styles.formsQuiet}>{PACK_SLOTS.length - forms} to upload</span>
       )}

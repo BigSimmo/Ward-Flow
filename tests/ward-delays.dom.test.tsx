@@ -88,3 +88,16 @@ describe("Delays screen typography floor and DOM assertions (O-16.2)", () => {
     ).toEqual([]);
   });
 });
+
+describe("waits past 24 hours are neutral in colour (D-24, restored by D-194)", () => {
+  it("draws the Past 24 hours band and the shape of the day's top band without danger red", () => {
+    const board = readFileSync("src/components/ward-management/delays/delays-board.module.css", "utf8");
+    expect(board).toMatch(/\.band3 \{\s*background: var\(--wf-neutral\);/u);
+    const shape = readFileSync("src/components/ward-management/movements/movements-shape-of-day.module.css", "utf8");
+    expect(shape).not.toMatch(/data-band="3"[^{]*\{[^}]*--wf-danger/u);
+    expect(shape).not.toMatch(/data-tone="danger"/u);
+    // D-24 item 6: no 24-hour line or zone on the spread chart; the unused red .r24 rule is gone.
+    expect(board).not.toMatch(/\.gBeyond\b/u);
+    expect(board).not.toMatch(/\.r24\b/u);
+  });
+});

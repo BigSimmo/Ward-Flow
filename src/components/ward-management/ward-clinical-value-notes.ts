@@ -254,7 +254,8 @@ const CLINICAL_VALUE_NOTES = {
     source: "D-63 (16 Oct 2026), common Australian small cell practice (counts under 5)",
   },
   coverLength: {
-    source: "D-63 (16 Oct 2026), one shift, the same figure as the break glass shift",
+    source:
+      "D-63 (16 Oct 2026), the same figure as the break glass counting window; worded in hours, not one shift (D-194)",
   },
   sessionLimit: {
     source:

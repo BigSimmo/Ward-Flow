@@ -18,13 +18,13 @@ import {
   FACTOR_NAME,
   LEGAL,
   REVIEW,
-  SIGNED_IN,
   TIER_LONG,
   type PreviousTriage,
   type TriagePerson,
   type TriageReferral,
 } from "./triage-risk-data";
 import type { TriageSignedRecord } from "./triage-record";
+import { signerName } from "./triage-signer";
 
 /** What the step needs from one world record (`sampleProfile` and the person's open referral). */
 export type WorldPersonInput = {
@@ -80,11 +80,13 @@ export function previousTriageFrom(record: TriageSignedRecord, dayZero: Date): P
   const pastFlags = record.riskFlags.filter((key) => key.includes(".bg."));
   const nowFlags = record.riskFlags.filter((key) => key.includes(".now."));
   const names = pastFlags.map((key) => FACTOR_NAME[key] ?? key);
+  // A9-29: the desk that signed it, from the record, not a fixed clinician.
+  const by = signerName(record.by);
   return {
-    label: `Last triage · ${when} · ${SIGNED_IN}`,
+    label: `Last triage · ${when} · ${by}`,
     when,
     urgencyText: `${record.urgency} ${TIER_LONG[record.urgency].toLowerCase()}`,
-    by: SIGNED_IN,
+    by,
     outcome: record.outcome,
     legal: LEGAL_NAME[record.legal] ?? NOT_RECORDED,
     review: REVIEW_NAME[record.review] ?? NOT_RECORDED,
@@ -183,4 +185,16 @@ export function wardStayFacts(
     origin: units.find((unit) => unit.id === stay.unitId)?.name ?? NOT_RECORDED,
     legalStatus: stayLegalStatus(stay, { movements, patients, referrals, plannedAdmissions }) ?? NOT_RECORDED,
   };
+}
+
+/**
+ * Review R9 (D-186 item 10): the legal status the banner shows for someone not on a ward stay, read
+ * from the patient page's one legal reading (`legalNow`) for the record the page opens by the same
+ * address (a `WF-` movement, else the patient). The status shows as the status, never a form code in
+ * its place; the form stays on the patient page. "Not recorded" when the record holds no status.
+ */
+export function recordLegalStatus(recordKey: string, records: WardStayRecords, now: Instant): string {
+  const { patients, movements, referrals, admissions, units } = records;
+  const resolved = resolvePatientNowRecord(recordKey, patients, movements, referrals, admissions, units, now);
+  return resolved?.legalNow.status ?? NOT_RECORDED;
 }

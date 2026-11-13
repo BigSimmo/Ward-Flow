@@ -901,9 +901,11 @@ test.describe("@mockup Emergency department screen", () => {
     // Owner's third ruling, 2026-09-17: the three phone-logged facts, required and never defaulted.
     await page.getByTestId("ward-ed-transport-cad-number-WF-016").fill("CAD-ROLES-0016");
     await page.getByTestId("ward-ed-transport-legal-status-voluntary-WF-016").check();
-    // A34: a status that differs from Legal now asks why before it books.
+    // A34 and D-187 item 10: no medical clearance is recorded for WF-016, so the booking asks for a
+    // reason every time (fit to travel not recorded), as a status differing from Legal now does.
     const legalReason016 = page.getByTestId("ward-ed-transport-legal-reason-WF-016");
-    if (await legalReason016.isVisible()) await legalReason016.selectOption("treating_team_confirmed");
+    await expect(legalReason016).toBeVisible();
+    await legalReason016.selectOption("treating_team_confirmed");
     await page.getByTestId("ward-ed-transport-estimated-time-WF-016").fill("14:30");
     // Josh, 31 Oct 2026: neither Today nor Tomorrow starts chosen.
     await page.getByTestId("ward-ed-transport-estimated-day-today-WF-016").check();
@@ -912,6 +914,13 @@ test.describe("@mockup Emergency department screen", () => {
     await expect(readyHandover).not.toHaveAttribute("aria-disabled", "true");
     if ((await unfoldEd16.getAttribute("aria-expanded")) !== "true") await unfoldEd16.click();
     await readyHandover.click();
+    // D-187 item 10: with no medical clearance recorded, Mark handover ready asks for the reason
+    // first (never a block).
+    const handoverCheck016 = page.getByTestId("ward-ed-handover-check-WF-016");
+    await expect(handoverCheck016).toBeVisible();
+    await page.getByTestId("ward-ed-handover-check-WF-016-reason").selectOption("treating_team_confirmed");
+    await handoverCheck016.getByRole("button", { name: "Mark handover ready, record reason", exact: true }).click();
+    await expect(handoverCheck016).toHaveCount(0);
 
     // `HANDOVER_READY` writes a brand-new `transport` object with no timestamps at all
     // (`ward-flow-reducer.ts`'s own `case "HANDOVER_READY"`), so `transportLeg` resolves it to
@@ -1446,9 +1455,11 @@ test.describe("@mockup Role switcher — the loop", () => {
     // Owner's third ruling, 2026-09-17: the three phone-logged facts, required and never defaulted.
     await page.getByTestId("ward-ed-transport-cad-number-WF-315").fill("CAD-ROLES-0315");
     await page.getByTestId("ward-ed-transport-legal-status-voluntary-WF-315").check();
-    // A34: a status that differs from Legal now asks why before it books.
+    // A34 and D-187 item 10: no medical clearance is recorded for WF-315, so the booking asks for a
+    // reason every time (fit to travel not recorded), as a status differing from Legal now does.
     const legalReason315 = page.getByTestId("ward-ed-transport-legal-reason-WF-315");
-    if (await legalReason315.isVisible()) await legalReason315.selectOption("treating_team_confirmed");
+    await expect(legalReason315).toBeVisible();
+    await legalReason315.selectOption("treating_team_confirmed");
     await page.getByTestId("ward-ed-transport-estimated-time-WF-315").fill("14:30");
     // Josh, 31 Oct 2026: neither Today nor Tomorrow starts chosen.
     await page.getByTestId("ward-ed-transport-estimated-day-today-WF-315").check();
@@ -1460,6 +1471,13 @@ test.describe("@mockup Role switcher — the loop", () => {
 
     if ((await unfoldEd315.getAttribute("aria-expanded")) !== "true") await unfoldEd315.click();
     await handoverButton.click();
+    // D-187 item 10: with no medical clearance recorded, Mark handover ready asks for the reason
+    // first (never a block).
+    const handoverCheck315 = page.getByTestId("ward-ed-handover-check-WF-315");
+    await expect(handoverCheck315).toBeVisible();
+    await page.getByTestId("ward-ed-handover-check-WF-315-reason").selectOption("treating_team_confirmed");
+    await handoverCheck315.getByRole("button", { name: "Mark handover ready, record reason", exact: true }).click();
+    await expect(handoverCheck315).toHaveCount(0);
     const sheetAfterHandover = await openEdPatientSheet(page, "WF-315");
     await expect(sheetAfterHandover.getByTestId("ward-ed-outstanding-WF-315")).toHaveAttribute(
       "data-kind",

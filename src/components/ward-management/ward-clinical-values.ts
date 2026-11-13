@@ -586,14 +586,14 @@ export const CLINICAL_VALUES = {
   },
   breakGlassPerShift: {
     ...SIGNED_BY_JOSH_16_OCT,
-    name: "Break glass openings in one shift before the coordinator is told it is a pattern",
+    name: "Break glass openings in the counting window before the coordinator is told it is a pattern",
     group: "Access and privacy",
     value: 3,
     unit: "count",
   },
   breakGlassShift: {
     ...SIGNED_BY_JOSH_16_OCT,
-    name: "One shift, when counting break glass openings for a pattern, is the last",
+    name: "Counting window for a break glass pattern, the last",
     group: "Access and privacy",
     value: 12,
     unit: "hours",
@@ -628,7 +628,7 @@ export const CLINICAL_VALUES = {
   },
   coverLength: {
     ...SIGNED_BY_JOSH_16_OCT,
-    name: "Cover for a second ward or ED, given for one shift, lasts at most",
+    name: "Cover for a second ward or ED lasts at most",
     group: "Access and privacy",
     value: 12,
     unit: "hours",

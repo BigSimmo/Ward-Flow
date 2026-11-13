@@ -1,6 +1,3 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-
 import { describe, expect, it } from "vitest";
 
 import { resolvePatientNowRecord } from "@/components/ward-management/patients/patient-now-adapter";
@@ -24,7 +21,7 @@ import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { stayLegalStatus } from "@/components/ward-management/ward-stay-legal";
 
-import { exampleTriage } from "./helpers/triage-example";
+import { exampleTriage, SIGNED_RECORD_WORDS } from "./helpers/triage-example";
 
 // D-186 (Josh, 13 Nov 2026; the clinical sitting's Q10, Q11, Q12 and Q14): the Triage banner reads the
 // ward and legal status the patient page shows, its two legal lines are "Chosen today" and "On record",
@@ -32,8 +29,9 @@ import { exampleTriage } from "./helpers/triage-example";
 // everything signing saves. Wording and display only; no clinical value changes. Synthetic data only.
 
 const seed = seedWardFlowState();
-const source = (file: string) =>
-  readFileSync(resolve(process.cwd(), "src/components/ward-management/triage", file), "utf8").replace(/\s+/g, " ");
+// What the screen draws (the hook's stay and legal reading, the labels, the sheets, How to and the
+// signed line) is checked rendered, in ward-clinical-triage-wording.dom.test.tsx and
+// ward-clinical-review-fixes-2.dom.test.tsx, not by reading the source as text (CQ-10).
 
 /** Seed people with no open movement, so the referral model alone would say "Not recorded". */
 const withoutOpenMovement = seed.patients.filter((patient) => !patientKeyFor(patient.id, seed)?.startsWith("WF-"));
@@ -95,30 +93,12 @@ describe("Q10: the banner reads a ward stay as the patient page does", () => {
     expect(person.legal).toBe(facts.legalStatus);
     expect(person.legalTag).toBe("On record · Not legally checked.");
   });
-
-  it("is fed from the stay only when the person has no open movement", () => {
-    const hook = readFileSync(
-      resolve(process.cwd(), "src/components/ward-management/triage/use-triage-people.ts"),
-      "utf8",
-    ).replace(/\s+/g, " ");
-    expect(hook).toContain('const stay = key.startsWith("WF-") ? null : wardStayFacts(');
-    expect(hook).toContain("origin: stay?.origin ?? profile.origin");
-    expect(hook).toContain("legalStatus: stay?.legalStatus ?? profile.legalStatus");
-  });
 });
 
 describe('Q11: "Chosen today" and "On record"; a picked status reads "as chosen"', () => {
-  it("labels the banner figure as the form's choice and the chip as the record", () => {
-    const form = source("triage-risk-form.tsx");
-    expect(form).toContain('label="Legal, chosen today"');
-    expect(form).toContain('<HeroChip value="Legal on record" label="Not recorded. Not legally checked." />');
-    expect(form).not.toContain('<HeroStat label="Legal"');
-  });
-
   it("reads the record's status as on record in the start rows and Patient and referral", () => {
     const person = triagePersonFromWorld(world({ legalStatus: "Community treatment order" }));
     expect(legalLine(person)).toBe("Community treatment order, on record. Not legally checked.");
-    expect(source("triage-risk-sheets.tsx")).toContain("person.legal ? legalLine(person)");
   });
 
   it("reads the chosen status as chosen and only the typed form and date as typed", () => {
@@ -132,12 +112,6 @@ describe('Q11: "Chosen today" and "On record"; a picked status reads "as chosen"
     expect(foldLine(noForm, "dec")).toContain("Voluntary (as chosen)");
     expect(summaryModel(noForm).keyLine).toContain("Voluntary (as chosen)");
     expect(summaryModel(noForm).keyLine).not.toContain("as typed");
-  });
-
-  it('reads an earlier triage\'s status "as chosen", as the patient record card does', () => {
-    const sheets = source("triage-risk-sheets.tsx");
-    expect(sheets).toContain("`${item.legal} (as chosen)`");
-    expect(sheets).not.toContain("as chosen then");
   });
 });
 
@@ -155,12 +129,6 @@ describe("Q12: crisis numbers read Not checked until checked", () => {
       expect(service.checkedBy).toBeNull();
       expect(service.checkedOn).toBeNull();
     }
-  });
-
-  it("keeps the note that the numbers were typed from memory", () => {
-    expect(source("triage-risk-safety.ts")).toContain(
-      "they are typed here from memory for the prototype and have not been verified",
-    );
   });
 
   it("puts Not checked beside each number, and nothing beside a service with no number", () => {
@@ -211,38 +179,11 @@ describe("Q14: the signed line and How to name everything signing saves", () => 
     venue: "ed",
     referralType: "self",
   });
-  /** Each saved field, in the words both texts use. */
-  const WORDS: Record<string, string> = {
-    patientId: "patient record",
-    at: "when it was signed",
-    by: "by which desk",
-    urgency: "urgency",
-    outcome: "outcome",
-    legal: "legal status",
-    review: "review",
-    riskFlags: "risk flags marked present",
-    problems: "problems",
-    actions: "actions",
-    venue: "venue",
-    referralType: "referral type",
-  };
 
+  // The signed line and How to's What gets saved are checked rendered, word by word, in
+  // ward-clinical-review-fixes-2.dom.test.tsx and ward-clinical-triage-wording.dom.test.tsx.
   it("names every field of the signed record, and the record holds no other", () => {
     const record = (signed.triages ?? []).at(-1)!;
-    expect(Object.keys(record).sort()).toEqual(Object.keys(WORDS).sort());
-    const line = source("triage-risk-form.tsx").toLowerCase();
-    const how = source("triage-risk-how.tsx").toLowerCase();
-    for (const words of Object.values(WORDS)) {
-      if (words !== "patient record") expect(how, words).toContain(words);
-      expect(line, words).toContain(words);
-    }
-  });
-
-  it("no longer says only urgency, outcome, legal status, review and risk flags", () => {
-    expect(source("triage-risk-form.tsx")).not.toContain("review and risk flags only");
-    expect(source("triage-risk-how.tsx")).not.toContain("review date and the risk flags marked present go on");
-    expect(source("triage-risk-form.tsx")).toContain(
-      "Signed to the patient record as codes: urgency, outcome, legal status, review, the risk flags marked present, problems, actions, venue and referral type, with when it was signed and by which desk.",
-    );
+    expect(Object.keys(record).sort()).toEqual(Object.keys(SIGNED_RECORD_WORDS).sort());
   });
 });

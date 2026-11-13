@@ -295,6 +295,19 @@ export const FOLLOW_UP_WINDOWS = {
   recentDischargeDays: CLINICAL_VALUES.triageRecentDischarge.value,
 } as const;
 
+/**
+ * Review question 6 (labelling only): true while any follow-up window the choices and the hint offer
+ * is unsigned in the values register, so the form marks them "Window not signed." as the see-by
+ * window is marked. No value changes.
+ */
+export const FOLLOW_UP_WINDOWS_UNSIGNED = (
+  [
+    CLINICAL_VALUES.triageFollowUpSoon,
+    CLINICAL_VALUES.triageFollowUpHint,
+    CLINICAL_VALUES.triageFollowUpWeek,
+  ] as readonly { status: string }[]
+).some((entry) => entry.status !== "signed");
+
 export const FOLLOW_UP_CHOICES = [
   ["24h", `Within ${FOLLOW_UP_WINDOWS.soonHours} h`],
   ["72h", `Within ${FOLLOW_UP_WINDOWS.hintHours} h`],

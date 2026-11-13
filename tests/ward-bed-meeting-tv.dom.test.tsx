@@ -728,18 +728,16 @@ describe("the ward and ED TV views", () => {
     expect(header).toHaveTextContent("Synthetic prototype, not for clinical use");
   });
 
-  it("names a long wait in words, not by colour alone (TV-10)", () => {
+  it("names a long wait in words, in a neutral colour (TV-10, D-24 restored by D-194)", () => {
     renderTv();
     const css = readFileSync("src/components/ward-management/bed-meeting/bed-meeting-tv.module.css", "utf8");
-    // Core pages redesign (31 Oct 2026): a triangle marks a long wait, not an underline that read as a link.
-    // Review 5 Nov 2026: the triangle is drawn (clip-path), never a typed "▲" glyph.
-    expect(css).toMatch(
-      /\.table tr\[data-long\] td\[data-wait\]::before \{[^}]*clip-path: polygon\(50% 0, 100% 100%, 0 100%\)/u,
-    );
+    // D-194 (Josh, 13 Nov 2026): no act-now red, triangle or typed "▲" on a wait past 24 hours.
+    expect(css).not.toMatch(/\[data-long\][^{]*::before/u);
+    expect(css).not.toMatch(/\[data-long\][^{]*\{[^}]*--wf-danger/u);
     expect(css).not.toMatch(/content: "▲"/u);
-    // Past the 24 hour mark the time reads in days, so the words say it as well as the colour.
+    // Past the 24 hour mark the time reads in days, so the words say it.
     for (const row of screen.getByTestId("bed-meeting-tv").querySelectorAll("li[data-long]")) {
-      expect(row.querySelector("svg")).not.toBeNull();
+      expect(row.querySelector("svg")).toBeNull();
       expect(row).toHaveTextContent(/\d+d/u);
     }
   });

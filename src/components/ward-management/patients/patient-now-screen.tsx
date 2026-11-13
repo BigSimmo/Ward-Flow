@@ -110,7 +110,12 @@ preloadWhenIdle(
 import { useUndoableStep } from "../use-undoable-step";
 import { resolvePatientNowRecord } from "./patient-now-adapter";
 import { PATIENT_MODES, patientMode } from "./patient-mode";
-import { dayLabel, statusCardFocusTargets, type PatientStatusContext } from "./patient-status-card";
+import {
+  dayLabel,
+  referralWaitingForTriage,
+  statusCardFocusTargets,
+  type PatientStatusContext,
+} from "./patient-status-card";
 import { focusAfterAction, handFocusTo } from "../focus-after-action";
 import { cadNumberLine } from "@/components/ward-management/ward-cad-number";
 import type { LeaveKind, WardChangeForm } from "./patient-ward-change-card";
@@ -205,6 +210,7 @@ export function PatientNowScreen({
     rejections,
     worldGeneration,
     plannedAdmissions,
+    triages,
   } = useWardFlowSelect(
     "patients",
     "movements",
@@ -217,6 +223,7 @@ export function PatientNowScreen({
     "rejections",
     "worldGeneration",
     "plannedAdmissions",
+    "triages",
   );
   const now = useWardFlowClock();
   // The held bed review warning sits behind its own flag: paused by D-65, on by default since 20 Oct 2026.
@@ -816,6 +823,7 @@ export function PatientNowScreen({
   // work, so a person with only those is never "Not active".
   const openReferral = acceptedWardFor ? undefined : openReferralFor(livePatient?.id, referrals);
   const plannedBooking = bookedPlannedAdmissionFor(livePatient?.id, plannedAdmissions);
+  const waitingForTriage = referralWaitingForTriage(livePatient?.id, referrals, triages);
   const statusContext: PatientStatusContext = {
     awolHoldReview,
     movement: liveMovement,
@@ -843,6 +851,8 @@ export function PatientNowScreen({
           raisedAt: openReferral.raisedAt,
         }
       : undefined,
+    // A9-20(a): only read when nothing else is open, so a ward answer or a stay still leads.
+    referralWaitingForTriage: waitingForTriage,
     plannedAdmission: plannedBooking
       ? {
           unitName: units.find((unit) => unit.id === plannedBooking.unitId)?.name ?? "a ward not recorded",
@@ -1122,6 +1132,7 @@ export function PatientNowScreen({
         : openReferral
           ? "community"
           : undefined,
+    waitingForTriage,
   });
   // PT1 round 3 (Josh, 3 Nov 22:29Z): the patient's journey in six plain steps, from the record.
   const careSteps = patientCareJourney({

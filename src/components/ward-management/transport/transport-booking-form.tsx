@@ -15,6 +15,10 @@
  *   Legal now is shown under the legal question as plain text to check against
  *   (`LEGAL_STATUS_FROM_LEGAL_NOW` is off). An answer that differs from Legal now asks for a
  *   reason, recorded as the booking's exception.
+ * - Fit to travel (D-187 item 10, D-189 item 9(e)): booking with no medical clearance recorded asks
+ *   for a reason every time, from the same choices as at collection. Booking is never refused for it:
+ *   Save stays available with no reason chosen, and then no reason is recorded. A status that
+ *   differs from Legal now still needs its reason.
  * - The answers still missing are named at the top, and one button moves to the first (blocker
  *   mock-up, 26 Oct; redesign, Josh 31 Oct 2026). With none left it says so. Pressing Save early
  *   also moves to the first missing answer, rather than doing nothing.
@@ -32,8 +36,10 @@ import { Button, Field, Select, StatusGlyph, TextInput } from "@/components/wf";
 import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import {
+  TRANSPORT_EXCEPTION_GAP_LABELS,
   TRANSPORT_EXCEPTION_REASON_LABELS,
   cadNumberSentence,
+  fitToTravelGaps,
   holdEndsBeforeEta,
   instantFromEstimatedTimeInputs,
   legalNowText,
@@ -51,6 +57,7 @@ import {
   BOOKABLE_TRANSPORT_PROVIDERS,
   TRANSPORT_LEGAL_STATUSES,
   type Movement,
+  type TransportExceptionGap,
   type TransportExceptionReason,
   type TransportLegalStatus,
   type TravelMode,
@@ -83,7 +90,7 @@ export type TransportBookingSubmission = {
   transportLegalStatus: TransportLegalStatus;
   /** Absent when no estimated time was given; it warns (card 3). */
   estimatedAt?: Instant;
-  exception?: { gaps: ["legal_status_differs"]; reason: TransportExceptionReason };
+  exception?: { gaps: TransportExceptionGap[]; reason: TransportExceptionReason };
 };
 
 /** The parts of the form a test or another control can find. */
@@ -196,8 +203,33 @@ export function etaPresetAnswers(
   return { estimatedTime: clockText(target), estimatedDay: dayOf(target) > dayOf(now) ? "tomorrow" : "today" };
 }
 
-/** Legal now as the form uses it: the status in force, and the record it is read from. */
-type LegalNowRecord = Pick<Movement, "legalStatus" | "legalForm"> & Partial<Pick<Movement, "pullExpiresAt">>;
+/** Legal now as the form uses it: the status in force, the record it is read from, and fit to travel. */
+type LegalNowRecord = Pick<Movement, "legalStatus" | "legalForm"> &
+  Partial<Pick<Movement, "pullExpiresAt" | "medicalClearance">>;
+
+/**
+ * The checks open on this booking, in a fixed order: the transport status differs from Legal now,
+ * and fit to travel not recorded (D-187 item 10). Each one asks for the one coded reason; only a
+ * status that differs needs one before booking (`transportBookingReasonRequired`).
+ */
+export function transportBookingGaps(
+  record: LegalNowRecord | undefined,
+  transportLegalStatus: TransportLegalStatus | undefined,
+): TransportExceptionGap[] {
+  if (record === undefined) return [];
+  return [
+    ...(transportStatusClashes(record, transportLegalStatus) ? (["legal_status_differs"] as const) : []),
+    ...fitToTravelGaps(record.medicalClearance),
+  ];
+}
+
+/**
+ * Whether the booking must have a reason before it saves: only when the transport status differs
+ * from Legal now. Fit to travel alone asks but never holds the booking (D-189 item 9(e)).
+ */
+function transportBookingReasonRequired(gaps: readonly TransportExceptionGap[]): boolean {
+  return gaps.includes("legal_status_differs");
+}
 
 /**
  * The complete booking, or `undefined` while any answer is missing or refused. The one rule every
@@ -221,15 +253,15 @@ export function transportBookingSubmission(
     (estimatedTime.trim() !== "" && estimatedAt === undefined)
   )
     return undefined;
-  const clash = record !== undefined && transportStatusClashes(record, transportLegalStatus);
-  if (clash && legalReason === "") return undefined;
+  const gaps = transportBookingGaps(record, transportLegalStatus);
+  if (transportBookingReasonRequired(gaps) && legalReason === "") return undefined;
   return {
     provider,
     escortRequired,
     cadNumber: cadNumber.trim(),
     transportLegalStatus,
     ...(estimatedAt === undefined ? {} : { estimatedAt }),
-    ...(clash && legalReason !== "" ? { exception: { gaps: ["legal_status_differs"], reason: legalReason } } : {}),
+    ...(gaps.length > 0 && legalReason !== "" ? { exception: { gaps, reason: legalReason } } : {}),
   };
 }
 
@@ -315,7 +347,8 @@ export function TransportBookingForm({
   const missingNames = missing.map((answer) => ANSWER_PARTS[answer][0]);
   const warningNames = transportAnswerWarnings(answers);
   const clash = record !== undefined && transportStatusClashes(record, answers.transportLegalStatus);
-  const reasonMissing = clash && legalReason === "";
+  const gaps = transportBookingGaps(record, answers.transportLegalStatus);
+  const reasonMissing = transportBookingReasonRequired(gaps) && legalReason === "";
   const estimatedAt = instantFromEstimatedTimeInputs(answers.estimatedTime, answers.estimatedDay, now);
   const holdEnd =
     record?.pullExpiresAt === undefined
@@ -544,14 +577,21 @@ export function TransportBookingForm({
         ) : null}
       </fieldset>
 
-      {clash ? (
+      {gaps.length > 0 ? (
         <Field
-          label="Why does it differ from Legal now?"
+          label={clash ? "Why does it differ from Legal now?" : "Reason"}
           id={did("legal-reason")}
           help={
             <span className={styles.warn}>
               <StatusGlyph tone="warning" size={9} />
-              Differs from Legal now ({legalNowText(record!)}). Record why.
+              {gaps
+                .map((gap) =>
+                  gap === "legal_status_differs"
+                    ? `Differs from Legal now (${legalNowText(record!)})`
+                    : TRANSPORT_EXCEPTION_GAP_LABELS[gap],
+                )
+                .join(". ")}
+              {clash ? ". Record why." : ". Record why, or save without a reason."}
             </span>
           }
         >

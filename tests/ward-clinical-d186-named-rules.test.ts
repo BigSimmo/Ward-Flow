@@ -31,6 +31,8 @@ const EVERY: Record<LegalStatus, true> = {
   "Involuntary inpatient": true,
 };
 const ALL = Object.keys(EVERY) as LegalStatus[];
+/** The live wards the paperwork rule reads for the destination's site. */
+const UNITS = seedWardFlowState().units;
 
 describe("the status list itself", () => {
   it("covers every LegalStatus value the booking list carries", () => {
@@ -79,7 +81,7 @@ describe("D-186 item 4: each changed helper follows isNotVoluntary for every sta
   });
 
   it.each(ALL)("%s: the transport Form 4A notice", (status) => {
-    expect(transportLegalFormNotice(edMovement(status)) !== undefined).toBe(isNotVoluntary(status));
+    expect(transportLegalFormNotice(edMovement(status), UNITS) !== undefined).toBe(isNotVoluntary(status));
   });
 
   it.each(ALL)("%s: the expectation review flag kind", (status) => {

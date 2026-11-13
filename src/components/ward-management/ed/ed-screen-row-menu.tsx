@@ -2,7 +2,7 @@
 
 // A board row's actions: every control the row's menu offers, and the actions group the person
 // sheet shows. Split out of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { Dialog, DisabledReason } from "@/components/wf";
 import { MOVEMENT_STAGES, type Movement } from "@/components/ward-management/ward-model";
@@ -10,6 +10,8 @@ import { edShortName } from "@/components/ward-management/ward-sites";
 import { currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
 import { movementReferralLink, transportNeedState } from "@/components/ward-management/ward-derivations";
 import { canSetArrivalPlan } from "@/components/ward-management/referrals/arrival-time-modal";
+import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
+import { handoverReadyGaps, type FitToTravelClearance } from "@/components/ward-management/ward-transport-checks";
 import type { EdBoardRowModel } from "./ed-screen-board-row";
 import type { EdScreenContext } from "./ed-screen-context";
 import type { EdRowFacts } from "./ed-screen-row-facts";
@@ -72,6 +74,78 @@ export function EdConfirmedStep({
         }}
       />
     </>
+  );
+}
+
+/**
+ * D-187 item 10 (Q31): Mark handover ready with no medical clearance recorded asks for a reason
+ * first, every time, from the same choices as at collection. It is never blocked: the person may
+ * continue without a reason, and the engine takes the press without one (D-189 item 9(e)). The board's primary action and the row menu
+ * both press it; one dialog per row (`EdHandoverCheck`) asks, so the question survives the menu
+ * closing. Which row is asking is kept here, outside the row, because the board rows are plain
+ * render functions.
+ */
+let edHandoverCheckFor: string | undefined;
+const edHandoverCheckListeners = new Set<() => void>();
+function setEdHandoverCheckFor(movementId: string | undefined) {
+  edHandoverCheckFor = movementId;
+  for (const listener of edHandoverCheckListeners) listener();
+}
+function subscribeEdHandoverCheck(listener: () => void) {
+  edHandoverCheckListeners.add(listener);
+  return () => edHandoverCheckListeners.delete(listener);
+}
+
+/** Press Mark handover ready: record it, or ask for the reason first when fit to travel is open. */
+export function pressEdHandoverReady(
+  row: { movement: Movement; medicalClearance: FitToTravelClearance },
+  ctx: Pick<EdScreenContext, "now" | "recordEdStep">,
+) {
+  if (handoverReadyGaps(row.movement, row.medicalClearance).length > 0) {
+    setEdHandoverCheckFor(row.movement.id);
+    return;
+  }
+  ctx.recordEdStep({ type: "HANDOVER_READY", role: "ed", now: ctx.now, movementId: row.movement.id });
+}
+
+/** The reason dialog for one row's Mark handover ready. Renders nothing until that row asks. */
+export function EdHandoverCheck({
+  row,
+  ctx,
+}: {
+  row: EdBoardRowModel;
+  ctx: Pick<EdScreenContext, "now" | "recordEdStep">;
+}) {
+  const openFor = useSyncExternalStore(
+    subscribeEdHandoverCheck,
+    () => edHandoverCheckFor,
+    () => undefined,
+  );
+  const gaps = handoverReadyGaps(row.movement, row.medicalClearance);
+  return (
+    <TransportExceptionDialog
+      open={openFor === row.movement.id && gaps.length > 0}
+      who={row.patientInfo.formalName}
+      action="Mark handover ready"
+      gaps={gaps}
+      onClose={() => setEdHandoverCheckFor(undefined)}
+      onConfirm={(reason) => {
+        setEdHandoverCheckFor(undefined);
+        ctx.recordEdStep({
+          type: "HANDOVER_READY",
+          role: "ed",
+          now: ctx.now,
+          movementId: row.movement.id,
+          exception: { gaps, reason },
+        });
+      }}
+      onContinueWithoutReason={() => {
+        // D-189 item 9(e): the press goes through without a reason, and none is recorded.
+        setEdHandoverCheckFor(undefined);
+        ctx.recordEdStep({ type: "HANDOVER_READY", role: "ed", now: ctx.now, movementId: row.movement.id });
+      }}
+      testId={`ward-ed-handover-check-${row.movement.id}`}
+    />
   );
 }
 
@@ -389,17 +463,7 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
         title={handoverBlocked ?? undefined}
         data-next-step={primaryAction === "handover" ? "" : undefined}
         className={`${styles.acceptButton}${primaryAction === "handover" ? ` ${styles.primaryActionButton}` : ""}`}
-        onClick={
-          handoverBlocked
-            ? ignoreUnavailableActivation
-            : () =>
-                recordEdStep({
-                  type: "HANDOVER_READY",
-                  role: "ed",
-                  now,
-                  movementId: movement.id,
-                })
-        }
+        onClick={handoverBlocked ? ignoreUnavailableActivation : () => pressEdHandoverReady(row, ctx)}
       >
         Mark handover ready
       </button>

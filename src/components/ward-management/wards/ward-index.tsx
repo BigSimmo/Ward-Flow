@@ -59,6 +59,7 @@ import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provid
 import type { HealthService, Unit } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import { SAMPLE_OBSERVATION_MIX_LABEL } from "@/components/ward-management/ward-sample-choices";
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
 import { BedStrip, BedStripLegend } from "@/components/ward-management/wards/bed-strip";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -1094,7 +1095,10 @@ function WardProfileFacts({
       {showStaff ? (
         <>
           <dt>Observation staff in use</dt>
-          <dd>{row.specialling}</dd>
+          {/* Review question 8 (D-189 item 2): the sample day's observation levels, labelled as on the ward page. */}
+          <dd>
+            {row.specialling} · <span data-testid="ward-index-obs-sample">{SAMPLE_OBSERVATION_MIX_LABEL}</span>
+          </dd>
         </>
       ) : null}
     </dl>

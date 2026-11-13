@@ -81,6 +81,17 @@ export const REVIEW = [
   ["dis", "At discharge"],
 ] as const;
 export type TriageReviewCode = (typeof REVIEW)[number][0];
+/**
+ * Review question 6 (labelling only): true while any "Review risk by" window is unsigned in the values
+ * register, so the form marks the choices "Window not signed." as the see-by window is marked.
+ */
+export const REVIEW_WINDOWS_UNSIGNED = (
+  [
+    CLINICAL_VALUES.triageReviewRiskSoon,
+    CLINICAL_VALUES.triageReviewRiskMid,
+    CLINICAL_VALUES.triageReviewRiskWeek,
+  ] as readonly { status: string }[]
+).some((entry) => entry.status !== "signed");
 export const TRIAGE_REVIEW_CODES: readonly TriageReviewCode[] = REVIEW.map(([code]) => code);
 
 /** The most RAMP factors one record may name (the form has fewer than sixty). */

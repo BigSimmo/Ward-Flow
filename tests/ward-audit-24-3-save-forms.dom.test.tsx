@@ -366,6 +366,10 @@ describe("SV-2 community transport dialogs (shared mode)", () => {
     });
     // The redesigned form starts with neither Today nor Tomorrow chosen (Josh, 31 Oct 2026).
     fireEvent.click(within(dialog).getByTestId(`ward-community-transport-estimated-day-today-${id}`));
+    // D-187 item 10: no medical clearance is recorded, so the booking asks for a reason.
+    fireEvent.change(within(dialog).getByTestId(`ward-community-transport-legal-reason-${id}`), {
+      target: { value: "paper_sighted" },
+    });
     await press(within(dialog).getByTestId(`ward-community-book-transport-confirm-${id}`));
     expect(dispatch).toHaveBeenCalledTimes(1);
     if (mode === "accepted") {

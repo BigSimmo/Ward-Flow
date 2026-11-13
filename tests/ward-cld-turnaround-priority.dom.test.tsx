@@ -341,18 +341,27 @@ describe("human turnaround preference control", () => {
     expect(events.mock.calls[0]![0].type).toBe("FLAG_REFERRAL_TURNAROUND_PRIORITY");
   });
 
-  it.each(["no locked beds", "unauthorised receiving unit"])("does not offer staging for %s", (reason) => {
+  it("does not offer staging for no locked beds", () => {
     const f = fixture();
     const arm = f.referral.destinations[0]!;
     if (arm.destination.kind !== "psychiatric_ward") throw new Error("Expected synthetic ward fixture");
     arm.destination.secureBedNeeded = true;
-    if (reason === "no locked beds") f.state.units[0]!.lockedBeds = 0;
-    else {
-      arm.destination.involuntaryBedNeeded = true;
-      f.state.units[0]!.authorised = false;
-    }
+    f.state.units[0]!.lockedBeds = 0;
     renderFixture(f);
     expect(screen.queryByRole("button", { name: "Flag turnaround priority" })).toBeNull();
+  });
+
+  // D-189 items 8(a) and 9(a): until Q42 is signed the invented authorisation flag does not stop
+  // staging, so a unit the sample data flags false is offered as any other.
+  it("D-189: offers staging at a receiving unit the sample data flags false", () => {
+    const f = fixture();
+    const arm = f.referral.destinations[0]!;
+    if (arm.destination.kind !== "psychiatric_ward") throw new Error("Expected synthetic ward fixture");
+    arm.destination.secureBedNeeded = true;
+    arm.destination.involuntaryBedNeeded = true;
+    f.state.units[0]!.authorised = false;
+    renderFixture(f);
+    expect(screen.getByRole("button", { name: "Flag turnaround priority" })).toBeInTheDocument();
   });
 
   it.each(["no criteria", "expired criteria", "CLD disabled", "placed movement"])(

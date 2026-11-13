@@ -12,10 +12,12 @@ import {
 } from "@/components/ward-management/ward-bed-designation";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { siteByCode } from "@/components/ward-management/ward-sites";
+import { authorisationBlocksPlacement } from "@/components/ward-management/ward-authorisation";
 import { COHORTS, type Cohort } from "@/components/ward-management/ward-model";
 import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import {
+  BED_FINDER_AUTHORISATION_HINT,
   BED_FINDER_GENDER_REVIEW,
   BED_FINDER_NOTE,
   BED_FINDER_WARD_FOR,
@@ -213,7 +215,7 @@ function FilterPanel({ filters, onChange }: { filters: Filters; onChange: (next:
           ))}
         </ChipGroup>
       </FilterRow>
-      {/* Required, with no default: Involuntary keeps the list to authorised wards. */}
+      {/* Required, with no default (D-189 item 8(a): it narrows nothing until Q42 is signed). */}
       <FilterRow label="Legal status">
         <Segmented<Legal | "">
           label="Legal status"
@@ -224,6 +226,9 @@ function FilterPanel({ filters, onChange }: { filters: Filters; onChange: (next:
           }}
         />
       </FilterRow>
+      <p className={styles.note} role="note" data-testid="ward-bed-finder-authorisation-hint">
+        {BED_FINDER_AUTHORISATION_HINT}
+      </p>
     </div>
   );
 }
@@ -276,7 +281,7 @@ function ExecutiveResults({ filters, onNavigate }: { filters: Filters; onNavigat
         // A forensic ward is never offered (D7), here as in the operational finder (M118).
         !ward.forensic &&
         ward.cohort === filters.cohort &&
-        (filters.legalStatus !== "involuntary" || ward.authorised) &&
+        (filters.legalStatus !== "involuntary" || !authorisationBlocksPlacement(ward)) &&
         wardForAccepts(ward.sexDesignation, filters.sex),
     )
     .map((ward) => ({

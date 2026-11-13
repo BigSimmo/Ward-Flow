@@ -1,6 +1,6 @@
 /**
  * Unit coverage for the four `hub-derivations.ts` exports that shipped with no test of their own:
- * `networkBeds`, `unauthorisedWards`, `groupedResults` and `needsAttention`.
+ * `networkBeds`, `groupedResults` and `needsAttention` (`unauthorisedWards` was removed by D-189 item 6).
  *
  * ⚠️ **FIXTURE FACTS, NOT RE-DERIVED ARITHMETIC.** Every expected number below is either a count
  * read straight off `ward-sites.ts`'s own accessors (`allUnits().length`,
@@ -20,7 +20,6 @@ import {
   hubEntries,
   needsAttention,
   networkBeds,
-  unauthorisedWards,
   type HubEntry,
 } from "@/components/ward-management/hub/hub-derivations";
 import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
@@ -91,21 +90,14 @@ describe("networkBeds — the network's beds in one row, never added together", 
   });
 });
 
-describe("unauthorisedWards — names, not a count", () => {
+describe("D-189 items 6 and 8(a): no hub entry states authorisation", () => {
   /**
-   * Defect this catches: inverting the predicate (returning authorised wards instead of
-   * unauthorised ones) or dropping the `kind === "ward"` guard. St John of God Subiaco's two units
-   * are the only `authorised: false` wards in the fixture (`ward-sites.ts`'s own "Private and not
-   * authorised under the Mental Health Act" comment); every other ward is `authorised: true`.
+   * `unauthorisedWards` named St John of God Subiaco's two units as "Voluntary only". Until Q42 is
+   * signed no hospital is shown as authorised or not, so entries no longer carry the flag at all.
    */
-  it("returns exactly the two unauthorised wards, by id, in fixture order", () => {
-    const result = unauthorisedWards(ENTRIES);
-    expect(result.map((entry) => entry.id)).toEqual(["sjgs-adult-open", "sjgs-adult-secure"]);
-  });
-
-  it("excludes an authorised ward — the floor that tells 'unauthorised only' from 'every ward'", () => {
-    const result = unauthorisedWards(ENTRIES);
-    expect(result.some((entry) => entry.id === "rph-adult-secure")).toBe(false);
+  it("carries no authorised field on any entry, including the two flagged SJGS wards", () => {
+    expect(ENTRIES.some((entry) => entry.id === "sjgs-adult-secure")).toBe(true);
+    expect(ENTRIES.filter((entry) => "authorised" in entry)).toEqual([]);
   });
 });
 

@@ -54,7 +54,20 @@ describe("the ward overview before a ward accepts", () => {
     const detail = await screen.findByTestId(`ward-referral-detail-${awaiting!.id}`);
 
     expect(detail).toHaveTextContent(/nihilistic ideas/i);
-    expect(detail).toHaveTextContent("Passes the 7 bed checks.");
+    // D-189 item 8(a): authorisation is information only, so six bed checks, not seven.
+    expect(detail).toHaveTextContent("Passes the 6 bed checks.");
+    // D-187 item 9: the four recorded facts show as "To check", with the referral letter's risks.
+    const toCheck = within(detail).getByTestId("ward-referral-fit-to-check");
+    expect(toCheck).toHaveTextContent("To check");
+    expect(within(toCheck).getByTestId("ward-referral-fit-to-check-risk")).toHaveTextContent(/^Recorded risk: /u);
+    expect(within(toCheck).getByTestId("ward-referral-fit-to-check-risk")).not.toHaveTextContent("Not recorded");
+    expect(within(toCheck).getByTestId("ward-referral-fit-to-check-escort")).toHaveTextContent(/^Escort need: /u);
+    expect(within(toCheck).getByTestId("ward-referral-fit-to-check-observation")).toHaveTextContent(
+      /^Observation level: /u,
+    );
+    expect(within(toCheck).getByTestId("ward-referral-fit-to-check-clearance")).toHaveTextContent(
+      /^Medical clearance: /u,
+    );
     expect(within(detail).getByTestId("ward-referral-referrer")).toHaveTextContent("Dr Rafe Velloran");
     for (const name of otherWardNames) expect(detail).not.toHaveTextContent(name);
     expect(detail.textContent ?? "").not.toMatch(/WF-/u);

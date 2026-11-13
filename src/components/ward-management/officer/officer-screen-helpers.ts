@@ -11,7 +11,7 @@ import { type Instant, dayOf, formatInstantWithDay } from "@/components/ward-man
 import { CAD_TO_FOLLOW, cadNumberToFollow } from "@/components/ward-management/ward-cad-number";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import type { Movement, TransportJob, Unit } from "@/components/ward-management/ward-model";
-import { STAGE_TRANSITION_BLOCKERS } from "@/components/ward-management/ward-flow-reducer";
+import { isExaminationAwaitingReleaseBlocker } from "@/components/ward-management/ward-examination-hold-up";
 import type { WfTone } from "@/components/wf";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { wardLabel } from "@/components/ward-management/ward-absence-labels";
@@ -86,10 +86,7 @@ export const OFFICER_ACTION_REJECTION_LABELS: Record<string, string> = {
  * two predicates omitted it, so the officer was offered buttons the reducer then refused.
  */
 export function revokedHoldingBedReason(movement: Movement, action: string, who?: string): string | undefined {
-  if (
-    examinationRevokedWhileBedHeld(movement) ||
-    movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease
-  ) {
+  if (examinationRevokedWhileBedHeld(movement) || isExaminationAwaitingReleaseBlocker(movement.blocker)) {
     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
     return `${who ?? "This patient"} cannot be ${action}: ${EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE.charAt(0).toLowerCase()}${EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE.slice(1)}`;
   }

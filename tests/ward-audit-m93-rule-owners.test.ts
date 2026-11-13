@@ -56,14 +56,14 @@ const DESCRIBERS = new Set(
 );
 
 // Screens that compare a legal status with "Voluntary" themselves (10 Nov 2026). May only shrink.
+// D-186 item 4: shortlist-panel.tsx now uses `isNotVoluntary` (removed 13 Nov 2026).
 const KNOWN_LEGAL_STATUS_COPIES = [
-  "coordinator/shortlist-panel.tsx",
   "ed/ed-preview.tsx",
   "ed/ed-screen-desktop.tsx",
   "ed/ed-screen-person-sheet.tsx",
   "movements/movement-workflow-actions.tsx",
-  "patients/patient-documents-tab.tsx",
-  "patients/patient-now-cards.tsx",
+  // patient-documents-tab.tsx and patient-now-cards.tsx left the list: both now use the named
+  // "not voluntary" rule (D-186 item 4, held clinical PR).
   "referrals/ward-referral-drawer-referral-step.tsx",
   "search/patient-search.tsx",
 ].map((f) => `${WM}/${f}`);

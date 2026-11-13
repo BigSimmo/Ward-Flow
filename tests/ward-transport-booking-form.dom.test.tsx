@@ -25,10 +25,13 @@ import type { TransportBookingAnswers } from "@/components/ward-management/ward-
 afterEach(cleanup);
 
 const NOW = 3 * MINUTES_PER_DAY + 10 * 60 + 42;
-const INVOLUNTARY: Pick<Movement, "legalStatus" | "legalForm" | "pullExpiresAt"> = {
+// D-187 item 10: cleared, so these tests pin the other answers; an uncleared booking asks for a
+// reason (tests/ward-clinical-d189-transport-legal-fit-to-travel.dom.test.tsx).
+const INVOLUNTARY: Pick<Movement, "legalStatus" | "legalForm" | "pullExpiresAt" | "medicalClearance"> = {
   legalStatus: "Involuntary inpatient",
   legalForm: undefined,
   pullExpiresAt: NOW + 60,
+  medicalClearance: { cleared: true, at: NOW - 30 },
 };
 
 function Harness({
@@ -36,7 +39,7 @@ function Harness({
   onSubmit,
   now = NOW,
 }: {
-  record: Pick<Movement, "legalStatus" | "legalForm" | "pullExpiresAt"> | undefined;
+  record: Pick<Movement, "legalStatus" | "legalForm" | "pullExpiresAt" | "medicalClearance"> | undefined;
   onSubmit: (booking: TransportBookingSubmission) => void;
   now?: number;
 }) {

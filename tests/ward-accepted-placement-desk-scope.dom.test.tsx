@@ -109,7 +109,9 @@ describe("accepted referral placement asks the Intermittent interval", () => {
       target: { value: "intermittent" },
     });
     const interval = screen.getByRole("combobox", { name: "Check every" });
-    expect([...(interval as HTMLSelectElement).options].map((option) => option.value)).toEqual(["15", "30"]);
+    // D-187 item 19 (review R1): the interval starts blank, so a placeholder comes before 15 and 30.
+    expect([...(interval as HTMLSelectElement).options].map((option) => option.value)).toEqual(["", "15", "30"]);
+    expect((interval as HTMLSelectElement).value).toBe("");
     fireEvent.change(screen.getByRole("combobox", { name: "Observation level" }), {
       target: { value: "within_sight" },
     });

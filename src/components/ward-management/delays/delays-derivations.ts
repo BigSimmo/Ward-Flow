@@ -33,7 +33,7 @@ import {
 import { isAwaitingAnswer } from "@/components/ward-management/ward-referrals";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import { bedHoldLapsed } from "@/components/ward-management/ward-bed-hold";
-import { STAGE_TRANSITION_BLOCKERS } from "@/components/ward-management/ward-flow-reducer";
+import { isExaminationAwaitingReleaseBlocker } from "@/components/ward-management/ward-examination-hold-up";
 
 export type DelayCause =
   // ⚠️ AUDIT GAP 3 CLOSED. This used to be one cause, `legal_expiring`, covering both
@@ -284,7 +284,7 @@ export function causeOf(movement: Movement, units: Unit[], now: Instant, thresho
   if (
     movement.examination?.outcome === "revoked" ||
     examinationRevokedWhileBedHeld(movement) ||
-    movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease
+    isExaminationAwaitingReleaseBlocker(movement.blocker)
   ) {
     return "awaiting_coordinator";
   }

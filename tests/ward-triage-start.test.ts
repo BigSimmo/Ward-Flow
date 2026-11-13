@@ -175,11 +175,12 @@ describe("a previous triage, read from a signed record", () => {
     expect(last.pastSummary).toMatch(/^Previous violence\. Carries these flags only/);
   });
 
-  it("names its codes in words and the synthetic reviewer", () => {
+  it("names its codes in words and the desk that signed it", () => {
     expect(last.urgencyText).toBe("C within 12 hours");
     expect(last.legal).toBe("Community treatment order");
     expect(last.review).toBe("72 hours");
-    expect(last.label).toMatch(/^Last triage · \d{2} [A-Z][a-z]{2} · Dr S\. Orlenby$/);
+    // A9-29: the record was signed on the ward desk, so it names the ward persona, not a fixed clinician.
+    expect(last.label).toMatch(/^Last triage · \d{2} [A-Z][a-z]{2} · K\. Vance RN$/);
   });
 
   it("puts that triage on the person, so the next one compares with it", () => {

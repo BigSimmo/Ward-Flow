@@ -1,4 +1,3 @@
-import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type {
   Cohort,
   LegalStatus,
@@ -8,9 +7,14 @@ import type {
   ReferralGender,
   Security,
 } from "@/components/ward-management/ward-model";
-import type { ObservationLevel } from "@/components/ward-management/ward-observation";
+import { NO_INTERVAL_ERROR, type ObservationLevel } from "@/components/ward-management/ward-observation";
 import { minuteOfDayFromClockText } from "@/components/ward-management/ward-clock";
 import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning";
+import {
+  TRANSPORT_EXCEPTION_GAP_LABELS,
+  transportOrderGap,
+  type TransportSiteUnits,
+} from "@/components/ward-management/ward-transport-checks";
 
 /**
  * THE ED SCREEN'S BLOCKED-REASON RULES — why a control on the ED screen is unavailable, or why an
@@ -46,6 +50,11 @@ export type ReferralDraftAnswers = {
   urgency: 1 | 2 | 3 | undefined;
   /** Fix plan item 10: the observation level, unanswered until a person chooses one. */
   observation: ObservationLevel | undefined;
+  /**
+   * D-187 item 19: Intermittent only, the minutes between checks a person chose. Anything but a
+   * number (unchosen, or not passed) refuses an Intermittent referral; no interval starts chosen.
+   */
+  observationIntervalMinutes?: number | null;
   /** The typed next review time, `HH:MM`. Blank is a complete answer (none recorded). */
   observationReviewTime?: string;
   highAcuity: boolean | undefined;
@@ -104,6 +113,7 @@ export function referralDraftBlockedReason(draft: ReferralDraftAnswers): string 
   if (draft.observation === undefined) {
     return "Choose an observation level before raising this referral. None is chosen for you.";
   }
+  if (observationIntervalMissing(draft)) return NO_INTERVAL_ERROR;
   if (draft.highAcuity === undefined) {
     return "State whether high-acuity nursing is required before raising this referral. None is chosen for you.";
   }
@@ -123,6 +133,11 @@ export function referralDraftBlockedReason(draft: ReferralDraftAnswers): string 
     return "Type the observation review time as a clock time, for example 14:30, or leave it blank.";
   }
   return undefined;
+}
+
+/** D-187 item 19: Intermittent with no interval a person chose. */
+function observationIntervalMissing(draft: ReferralDraftAnswers): boolean {
+  return draft.observation === "intermittent" && typeof draft.observationIntervalMinutes !== "number";
 }
 
 /** The typed form expiry time box (L31) sends the typing when it is not yet a real HH:MM time. */
@@ -146,6 +161,7 @@ export type ReferralDraftField =
   | "legalStatus"
   | "urgency"
   | "observation"
+  | "observationInterval"
   | "observationReviewTime"
   | "highAcuity"
   | "legalFormDueAtDate"
@@ -167,6 +183,7 @@ export function referralDraftMissingFields(draft: ReferralDraftAnswers): Referra
   if (draft.legalStatus === undefined) missing.push("legalStatus");
   if (draft.urgency === undefined) missing.push("urgency");
   if (draft.observation === undefined) missing.push("observation");
+  if (observationIntervalMissing(draft)) missing.push("observationInterval");
   if (draft.highAcuity === undefined) missing.push("highAcuity");
   if ((draft.legalFormDueAtDate !== "") !== (draft.legalFormDueAtTime !== "")) {
     missing.push(draft.legalFormDueAtDate === "" ? "legalFormDueAtDate" : "legalFormDueAtTime");
@@ -337,24 +354,21 @@ export function bookTransportBlockedReason(movement: Movement, who?: string): st
 
 /**
  * WLQ-5, owner ruling 2026-09-15: a WARNING beside the booking control, never a block, when
- * transport is about to be booked for an involuntary patient with no Form 4A recorded.
+ * transport is about to be booked and the transport paperwork check is open.
  *
- * States only the fact the record holds — that no Form 4A is recorded — and nothing else. Never a
- * duration, never a claim about what the Mental Health Act requires: see `ward-legal-figure-guard`
- * and `ED_ACCESS_TARGET_MINUTES`'s own comment for why this file is careful about that distinction.
- * `legalFormName` resolves the title from the Chief Psychiatrist register the same way every other
- * form mention on this screen does, rather than a locally invented label.
+ * D-186 item 6 (13 Nov 2026): this used to be a second copy of the order rule (a recorded Form 4A
+ * only). It now reads the one paperwork rule (`ward-transport-paperwork.ts`), which also clears on a
+ * Form 4C, recorded or uploaded (D-187 item 7), and says "rule not signed" until Josh signs the
+ * table (D-189 item 8(b)). It uses the same words as the collection check (D-170 item 5: no form
+ * number). States only what the record holds; never a duration or a claim about the Act.
  *
- * A Voluntary patient gets no sentence at all — there is no legal form question for them — and
- * neither does a patient who already carries a 4A: the fact the record holds in that case is that
- * the form IS recorded, which is not a warning. `bookTransportBlockedReason` above decides whether
- * booking may happen at all; this decides only whether this sentence accompanies it, and the
- * booking stays fully possible in every case.
+ * A Voluntary patient gets no sentence at all, and neither does a patient with an order on file.
+ * `bookTransportBlockedReason` above decides whether booking may happen at all; this decides only
+ * whether this sentence accompanies it, and the booking stays fully possible in every case.
  */
-export function transportLegalFormNotice(movement: Movement): string | undefined {
-  if (!isNotVoluntary(movement.legalStatus)) return undefined;
-  if (movement.legalForm?.code === "4A") return undefined;
-  return `No ${legalFormName({ code: "4A" })} is recorded for this patient.`;
+export function transportLegalFormNotice(movement: Movement, units: TransportSiteUnits): string | undefined {
+  if (!transportOrderGap(movement, units)) return undefined;
+  return `${TRANSPORT_EXCEPTION_GAP_LABELS.transport_order_missing}.`;
 }
 
 /**

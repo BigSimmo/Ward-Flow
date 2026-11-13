@@ -1,6 +1,3 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-
 import { describe, expect, it } from "vitest";
 
 import {
@@ -15,13 +12,15 @@ import { LEGAL } from "@/components/ward-management/triage/triage-record";
 import { isbarText } from "@/components/ward-management/triage/triage-risk-isbar";
 import { SAFETY_PLAN_SERVICES, serviceText } from "@/components/ward-management/triage/triage-risk-safety";
 import { blankTriage, type TriageState } from "@/components/ward-management/triage/triage-risk-state";
+import { foldLine } from "@/components/ward-management/triage/triage-risk-fold";
+import { triagePersonFromWorld } from "@/components/ward-management/triage/triage-risk-people";
 import { summaryModel, summaryText } from "@/components/ward-management/triage/triage-risk-summary";
 import { GENDER_PLACEMENT_REFUSAL } from "@/components/ward-management/ward-change-reasons";
 import { sexDesignationAccepts } from "@/components/ward-management/ward-eligibility";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { REFERRAL_GENDERS } from "@/components/ward-management/ward-model-vocabulary";
 
-import { EXAMPLE_PERSON } from "./helpers/triage-example";
+import { EXAMPLE_PERSON, exampleTriage } from "./helpers/triage-example";
 
 // D-187 (Josh, 13 Nov 2026; the clinical sitting's Q36, Q39, Q43 and Q44). Item 14: the bed finder's
 // "Ward for" offers the recorded genders, and those beyond Female and Male filter no ward and show the
@@ -30,8 +29,6 @@ import { EXAMPLE_PERSON } from "./helpers/triage-example";
 // "Contradicts" rows. Item 19 (the Intermittent interval) is in the matching .dom test. Wording and
 // display only; no clinical value changes. Synthetic data only.
 
-const source = (file: string) =>
-  readFileSync(resolve(process.cwd(), "src/components/ward-management/triage", file), "utf8").replace(/\s+/g, " ");
 const line = (text: string, start: string) => text.split("\n").find((l) => l.startsWith(start)) ?? "";
 
 describe("D-187 item 17 (Q39): the copied handover's Recommendation carries the safety plan", () => {
@@ -105,21 +102,26 @@ describe("D-187 item 18 (Q43): the Triage wording sheet's Contradicts rows", () 
     expect(answered).toMatch(/\nCurrent: present: None recorded\n/u);
   });
 
-  it("TW-198: the sign dialog says one entry, as the page foot does (TW-202)", () => {
-    const form = source("triage-risk-form.tsx");
-    expect(form).toContain("Signing records one entry, which prints as SMHMR900 and SMHMR905. Check what you chose.");
-    expect(form).not.toContain("Signing creates both records");
-    expect(form).toContain("One entry prints as SMHMR900 and SMHMR905.");
-  });
-
+  // TW-198 (the sign dialog says one entry, as the page foot does, TW-202) is checked rendered in
+  // ward-clinical-review-fixes-2.dom.test.tsx and ward-clinical-triage-wording.dom.test.tsx, as are the
+  // banner's "Legal, chosen today", the earlier triage's "(as chosen)" and How to's saved fields.
   it("TW-26, TW-36, TW-52, TW-167, TW-178, TW-195 and TW-201 stay as D-186 left them", () => {
-    expect(source("triage-risk-form.tsx")).toContain('label="Legal, chosen today"');
-    expect(source("triage-risk-people.ts")).toContain('legalTag: "On record · Not legally checked."');
-    expect(source("triage-risk-fold.ts")).toContain("(as chosen)");
-    expect(source("triage-risk-summary.ts")).toContain("(as chosen)");
-    expect(source("triage-risk-sheets.tsx")).toContain("(as chosen)");
-    for (const file of ["triage-risk-form.tsx", "triage-risk-how.tsx"])
-      expect(source(file)).toContain("problems, actions, venue and referral type");
+    const person = triagePersonFromWorld({
+      patientId: "PT-SYN-187",
+      name: "Ridgewell, Ada",
+      age: "41",
+      gender: "F",
+      umrn: "UM900001",
+      dob: "1985-02-03",
+      origin: "Not recorded",
+      legalStatus: "Community treatment order",
+      recordAddress: "code900",
+      openReferral: null,
+    });
+    expect(person.legalTag).toBe("On record · Not legally checked.");
+    const state = exampleTriage();
+    expect(foldLine(state, "dec").join(" · ")).toContain("Community treatment order (as chosen)");
+    expect(summaryModel(state).keyLine).toContain("Community treatment order (as chosen)");
   });
 });
 

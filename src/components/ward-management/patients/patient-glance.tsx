@@ -27,14 +27,25 @@ import { patientLegalNow, type PatientLegalNow } from "./patient-now-adapter";
 import { interpreterRequired } from "./patient-flight-header";
 import styles from "./patient-glance.module.css";
 
-/** The five state tags Josh asked for (PT1). The mode words still say the finer state. */
-export type PatientStateTag = "In ED" | "Inpatient" | "In placement" | "Community active" | "Referred" | "Not active";
+/**
+ * The state tags Josh asked for (PT1). The mode words still say the finer state. A9-20(a): a person
+ * whose only open record is a referral still waiting for triage reads "Referral waiting for triage".
+ */
+export type PatientStateTag =
+  | "In ED"
+  | "Inpatient"
+  | "In placement"
+  | "Community active"
+  | "Referred"
+  | "Referral waiting for triage"
+  | "Not active";
 
 export function patientStateTag({
   mode,
   movement,
   communityActive,
   openWork,
+  waitingForTriage = false,
 }: {
   mode: PatientMode;
   movement?: Movement;
@@ -45,6 +56,8 @@ export function patientStateTag({
    * planned admission; "community" is a referral awaiting only a community team's answer.
    */
   openWork?: "bed" | "community";
+  /** A9-20(a): a referral for this person is queued and not yet triaged (`referralWaitingForTriage`). */
+  waitingForTriage?: boolean;
 }): { tag: PatientStateTag; tone: WfTone } {
   if (mode === "find" || mode === "held") {
     // Still waiting at the emergency department until the bed is pulled and they move.
@@ -61,6 +74,8 @@ export function patientStateTag({
   if (openWork === "bed") return { tag: "In placement", tone: "info" };
   if (communityActive) return { tag: "Community active", tone: "success" };
   if (openWork === "community") return { tag: "Referred", tone: "info" };
+  // A9-20(a): the same words as the status card, in place of "Not active" only.
+  if (waitingForTriage) return { tag: "Referral waiting for triage", tone: "info" };
   return { tag: "Not active", tone: "neutral" };
 }
 

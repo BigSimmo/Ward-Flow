@@ -218,12 +218,12 @@ export function SummaryDocument({
   const { state, say } = form;
   const [open, setFull] = useState(false);
   const full = open || Boolean(signed);
-  const model = summaryModel(state, signed);
+  const model = summaryModel(state, signed, form.reviewer);
   const copy = () =>
     copyText(summaryText(model), "Summary copied.", "Copy not allowed here. Select the summary text instead.", say);
   const copyIsbar = () =>
     copyText(
-      isbarText(state, signed),
+      isbarText(state, signed, form.reviewer),
       "iSoBAR copied.",
       "Copy not allowed here. Select the summary text instead.",
       say,

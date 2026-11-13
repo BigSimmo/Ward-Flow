@@ -9,6 +9,15 @@ import { cadNumberProblem, providerNeedsCadNumber } from "@/components/ward-mana
 import { minuteOfDayFromClockText, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { legalFormNowWords } from "@/components/ward-management/legal-forms/legal-form-progression";
+import { originSiteCode } from "@/components/ward-management/ward-movement-origin";
+import {
+  legalNowTransportStatus,
+  packRequirement,
+  TRANSPORT_ORDER_PATTERN,
+  TRANSPORT_PAPERWORK_STATUS_WORDS,
+  transportOrderMissing,
+  transportOrderOnFile,
+} from "@/components/ward-management/ward-transport-paperwork";
 import {
   TRANSPORT_EXCEPTION_GAPS,
   TRANSPORT_EXCEPTION_REASONS,
@@ -19,13 +28,26 @@ import {
   type TransportExceptionReason,
   type TransportLegalStatus,
   type TransportProvider,
+  type Unit,
 } from "@/components/ward-management/ward-model";
+
+/** The paperwork rule's reads, kept importable from here (`ward-transport-paperwork.ts`). */
+export { legalNowTransportStatus, packRequirement };
 
 export const TRANSPORT_EXCEPTION_GAP_LABELS: Record<TransportExceptionGap, string> = {
   legal_status_differs: "Transport status differs from Legal now",
-  // D-170 item 5: no form number. The check still looks for an uploaded Form 4A (1.5 is open).
-  transport_order_missing: "Transport or transfer order not uploaded",
+  // D-170 item 5: no form number. D-189 item 8(b): the paperwork table is not signed, so the check
+  // says so (`ward-transport-paperwork.ts`).
+  transport_order_missing: `Transport or transfer order not uploaded · ${TRANSPORT_PAPERWORK_STATUS_WORDS}`,
   fit_to_travel_missing: "Fit to travel not recorded",
+};
+
+/** The step an exception was recorded at, in words: one label per step, never "Booked" for all. */
+export const TRANSPORT_EXCEPTION_STEP_LABELS: Record<TransportException["step"], string> = {
+  booked: "Booked",
+  handover_ready: "Handover ready",
+  collected: "Collected",
+  arrived: "Arrived",
 };
 
 export const TRANSPORT_EXCEPTION_REASON_LABELS: Record<TransportExceptionReason, string> = {
@@ -33,16 +55,6 @@ export const TRANSPORT_EXCEPTION_REASON_LABELS: Record<TransportExceptionReason,
   treating_team_confirmed: "Confirmed with the treating team",
   urgent_to_follow: "Urgent move, record to follow",
 };
-
-/**
- * The transport status the legal form in force gives (Legal now). A voluntary patient travels
- * voluntarily; a person referred, detained or an involuntary inpatient travels involuntarily.
- * Undefined only when the record holds no legal status at all.
- */
-export function legalNowTransportStatus(movement: Pick<Movement, "legalStatus">): TransportLegalStatus | undefined {
-  if (movement.legalStatus === undefined) return undefined;
-  return movement.legalStatus === "Voluntary" ? "voluntary" : "involuntary";
-}
 
 /**
  * Legal now in words for the booking form: the status and the form, from the one current legal
@@ -69,7 +81,8 @@ export type PackSlotKey = "legal" | "order" | "risk";
 
 export const PACK_SLOT_PATTERN: Record<PackSlotKey, RegExp> = {
   legal: /\bForm\s*(1A|1B|3D)\b/i,
-  order: /\bForm\s*4A\b/i,
+  // The one order matcher (D-186 item 6): Form 4A or 4C, from the paperwork rule.
+  order: TRANSPORT_ORDER_PATTERN,
   risk: /\brisk assessment\b/i,
 };
 
@@ -83,22 +96,6 @@ export function packForm(
     if (PACK_SLOT_PATTERN[key].test(forms[index]!.formName)) return forms[index];
   }
   return undefined;
-}
-
-/**
- * Whether this job needs the transport forms pack, read from the legal form in force (Legal now)
- * and the booking. Josh, 9 Oct 2026: a voluntary transfer needs no forms; an unrecorded status
- * still needs the pack. Audit A4-12: Legal now decides first, so an unrecorded booking for a
- * voluntary patient no longer asks for Form 1A and 4A. "unknown" is a job with no status anywhere.
- */
-export function packRequirement(
-  movement: Pick<Movement, "legalStatus" | "transport">,
-): "required" | "not_required" | "unknown" {
-  const inForce = legalNowTransportStatus(movement);
-  const booked = movement.transport?.transportLegalStatus;
-  if (inForce === "involuntary" || booked === "involuntary") return "required";
-  if (inForce === "voluntary" || booked === "voluntary") return "not_required";
-  return "unknown";
 }
 
 /* ------------------------------------------------------------------ bed hold and ETA */
@@ -115,18 +112,91 @@ export function holdEndsBeforeEta(
 
 /* ------------------------------------------------------------------ collection */
 
+/** The fields the paperwork rule reads from a movement: status, booking, forms and both sites. */
+export type TransportPaperworkRecord = Pick<
+  Movement,
+  "legalStatus" | "transport" | "legalForm" | "uploadedForms" | "originEdId" | "originCommunity" | "acceptedUnitId"
+> &
+  Partial<Pick<Movement, "referredUnitIds">>;
+
+/** The live wards a caller holds (`state.units`), read for a destination's site. */
+export type TransportSiteUnits = readonly Pick<Unit, "id" | "siteCode">[];
+
 /**
- * The checks still open when the patient is collected: the Form 4A transport order for a job that
- * needs the pack (A4-11), and fit to travel (S-2). Each is a warning with a recorded reason.
+ * Both ends of a move as site codes: the origin's, and the accepted (else first referred) ward's,
+ * read from the caller's live `units` (never the frozen fixture). A ward not in them leaves the
+ * destination unknown, and the paperwork rule then asks for the order.
+ */
+export function movementTransportSiteCodes(
+  movement: TransportPaperworkRecord,
+  units: TransportSiteUnits,
+): {
+  origin: string | undefined;
+  destination: string | undefined;
+} {
+  const destinationId = movement.acceptedUnitId ?? movement.referredUnitIds?.[0];
+  return {
+    origin: originSiteCode(movement),
+    destination: destinationId === undefined ? undefined : units.find((unit) => unit.id === destinationId)?.siteCode,
+  };
+}
+
+/** The paperwork rule for this movement: an order is needed and none is recorded or uploaded. */
+export function transportOrderGap(movement: TransportPaperworkRecord, units: TransportSiteUnits): boolean {
+  const sites = movementTransportSiteCodes(movement, units);
+  return transportOrderMissing(movement, sites.origin, sites.destination);
+}
+
+/**
+ * The order fact a crew reads (Movements check-in drawer): the same one rule as the collection
+ * check, so a person who passes it never reads "Not recorded" here (review R3, D-189 item 8(b)).
+ */
+export function transportOrderFactWords(movement: TransportPaperworkRecord, units: TransportSiteUnits): string {
+  const value = transportOrderGap(movement, units)
+    ? "Not recorded"
+    : transportOrderOnFile(movement)
+      ? "Recorded"
+      : "Not needed";
+  return `${value} · ${TRANSPORT_PAPERWORK_STATUS_WORDS}`;
+}
+
+/**
+ * The checks still open when the patient is collected: the transport or transfer order, from the
+ * one paperwork rule (A4-11, D-186 item 6), and fit to travel (S-2). Each is a warning with a
+ * recorded reason.
  */
 export function collectionGaps(
-  movement: Pick<Movement, "legalStatus" | "transport" | "uploadedForms" | "medicalClearance">,
+  movement: TransportPaperworkRecord & Pick<Movement, "medicalClearance">,
+  units: TransportSiteUnits,
 ): TransportExceptionGap[] {
   const gaps: TransportExceptionGap[] = [];
-  if (packRequirement(movement) !== "not_required" && packForm(movement, "order") === undefined)
-    gaps.push("transport_order_missing");
+  if (transportOrderGap(movement, units)) gaps.push("transport_order_missing");
   if (movement.medicalClearance?.cleared !== true) gaps.push("fit_to_travel_missing");
   return gaps;
+}
+
+/**
+ * D-187 item 10 (Q31): fit to travel at booking and at Mark handover ready. Without medical
+ * clearance recorded the screen asks for a reason every time; neither step is blocked, and the
+ * engine accepts the press without one (D-189 item 9(e)).
+ */
+export type FitToTravelClearance = Pick<NonNullable<Movement["medicalClearance"]>, "cleared"> | undefined;
+
+export function fitToTravelGaps(clearance: FitToTravelClearance): TransportExceptionGap[] {
+  return clearance?.cleared === true ? [] : ["fit_to_travel_missing"];
+}
+
+/**
+ * The checks open at Mark handover ready: fit to travel, for a journey with a live transport job.
+ * A journey with no transport job is asked at arrival instead (`arrivalGaps`), so it is not asked
+ * twice, and the reason is kept on the job it describes.
+ */
+export function handoverReadyGaps(
+  movement: Pick<Movement, "transport" | "medicalClearance">,
+  clearance: FitToTravelClearance = movement.medicalClearance,
+): TransportExceptionGap[] {
+  if (movement.transport === undefined || movement.transport.cancelledAt !== undefined) return [];
+  return fitToTravelGaps(clearance);
 }
 
 /**

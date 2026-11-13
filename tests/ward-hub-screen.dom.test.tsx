@@ -341,42 +341,22 @@ function previewTextFor(wardName: string): string {
 }
 
 describe("Ward Flow Master Search Hub — every flagged state carries a word, not only a colour", () => {
-  it("an unauthorised ward states the Mental Health Act fact in words when selected", () => {
+  it("D-189 items 6 and 8(a): a flagged ward's preview states no authorisation, either way", () => {
+    /*
+     * Until 13 Nov 2026 this case asserted that SJGS Adult Secure's preview said "Not set up for
+     * involuntary admissions (demo) — voluntary admissions only", and its history (the regex split
+     * and the scope bug the control below catches) is in git. D-189 items 6 and 8(a) (Josh): no
+     * hospital is shown as authorised or not authorised until Q42 is signed, so the tag, the pill,
+     * the "Voluntary only" glance list and figure, and the row word are gone. Asserted on a ward the
+     * sample data flags false, so a screen that still read the flag would fail here.
+     */
     renderHub();
     clickRow("SJGS Adult Secure");
-
-    /*
-     * Whatever colour or icon the screen also uses, the sentence itself must be readable — this is
-     * the assertion a colour-only flag (never proven by jsdom, which does not render CSS) fails.
-     *
-     * 🔴 **THIS WAS ONE REGEX WITH A TOP-LEVEL `|` UNTIL 2026-09-07, AND THE TWO BRANCHES WERE
-     * DIFFERENT CLINICAL FACTS RATHER THAN TWO SPELLINGS OF ONE.**
-     *
-     *     /not\s+(?:mha\s+)?authoris(?:ed|ation)|voluntary(?:\s+only)?/i
-     *
-     * The screen rendered "Not authorised — voluntary admissions only" (since D-186, "Not set up for
-     * involuntary admissions (demo) — voluntary admissions only"), which satisfies BOTH
-     * branches, so the alternation was invisible. But a rewording that dropped the authorisation
-     * half and kept "voluntary admissions only" would still have passed — **losing the fact that
-     * `hub-screen.tsx`'s own comment says "decides who may legally be admitted"**, on a test whose
-     * name is "states the Mental Health Act fact in words".
-     *
-     * ⚠️ **Alternation is right for two SPELLINGS of one claim and wrong for two CLAIMS.** The same
-     * shape let a defect back into `ward-statistics-service-screen.dom.test.tsx` earlier today,
-     * where `(placed|accepted)` accepted the very word a correction had removed.
-     *
-     * Asserted as two separate expectations rather than one combined regex, so the failure names
-     * WHICH half went missing — the reason to split is the message, not the logic.
-     */
-    expect(
-      previewTextFor("SJGS Adult Secure"),
-      "the selected ward's preview no longer states its Mental Health Act authorisation status",
-      // D-186 (13 Nov 2026): the chip reads "Not set up for involuntary admissions (demo)".
-    ).toMatch(/not\s+set\s+up\s+for\s+involuntary\s+admissions/iu);
-    expect(
-      previewTextFor("SJGS Adult Secure"),
-      "the preview no longer states the consequence — voluntary admissions only",
-    ).toMatch(/voluntary/iu);
+    const preview = previewTextFor("SJGS Adult Secure");
+    expect(preview).not.toMatch(/set\s+up\s+for\s+involuntary\s+admissions|voluntary\s+(?:admissions\s+)?only/iu);
+    expect(preview).not.toMatch(/not\s+(?:mha\s+)?authoris(?:ed|ation)/iu);
+    expect(screen.queryByTestId("hub-figure-voluntary")).toBeNull();
+    expect(screen.getByTestId("hub-figure-to-check")).toBeInTheDocument();
   });
 
   it("THE CONTROL — an authorised ward's preview does NOT state it, which is what proves the scope is real", () => {
