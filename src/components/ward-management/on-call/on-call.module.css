@@ -41,9 +41,8 @@
   white-space: nowrap;
 }
 
-/* ---------- service tag: colour as a dot, the name carries the meaning ---------- */
+/* ---------- service: the name carries it, never a colour (F-78) ---------- */
 .svc {
-  --svc: var(--wf-svc-statewide);
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -53,43 +52,15 @@
   white-space: nowrap;
 }
 
-.svc[data-tone="north"] {
-  --svc: var(--wf-svc-north);
-}
-.svc[data-tone="east"] {
-  --svc: var(--wf-svc-east);
-}
-.svc[data-tone="south"] {
-  --svc: var(--wf-svc-south);
-}
-.svc[data-tone="cahs"] {
-  --svc: var(--wf-svc-cahs);
-}
-.svc[data-tone="wachs"] {
-  --svc: var(--wf-svc-wachs);
-}
-.svc[data-tone="private"] {
-  --svc: var(--wf-svc-private);
-}
-
-.svcDot {
-  width: 8px;
-  height: 8px;
-  flex: 0 0 8px;
-  border-radius: 50%;
-  background: var(--svc);
-  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--svc) 25%, transparent);
-}
-
 .svcStrong {
   font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
   color: var(--wf-ink-1);
 }
 
-.svcStrong .svcDot {
-  width: 10px;
-  height: 10px;
-  flex-basis: 10px;
+/* The short-name tag before a name in a by-role row. */
+.svcTag {
+  margin-right: 6px;
+  vertical-align: middle;
 }
 
 .code {
@@ -1731,11 +1702,6 @@
   white-space: normal;
 }
 
-.phoneRowName > b .svc {
-  margin-right: 6px;
-  vertical-align: middle;
-}
-
 .phoneRowMeta {
   display: flex;
   align-items: center;
@@ -1930,7 +1896,6 @@
 }
 
 @media (forced-colors: active) {
-  .svcDot,
   .daySeg,
   .daySegNow {
     background: CanvasText;

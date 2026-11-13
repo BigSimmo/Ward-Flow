@@ -301,9 +301,9 @@
 }
 
 .presenceTag.community {
-  background: var(--surface-2);
-  color: var(--svc-south);
-  box-shadow: inset 0 0 0 1px var(--svc-south);
+  background: var(--wf-track);
+  color: var(--wf-ink-1);
+  box-shadow: none;
 }
 
 .presenceTag.scheduled {
@@ -1423,16 +1423,12 @@
   border: 1px solid var(--danger);
 }
 
-.statusPill.form4a {
-  background: var(--accent-soft);
-  color: var(--svc-north);
-  border: 1px solid var(--svc-north);
-}
-
+/* F-78: Forms 4A and 5A are not health services; they take the kit's neutral Badge look. */
+.statusPill.form4a,
 .statusPill.form5a {
-  background: var(--accent-soft);
-  color: var(--svc-south);
-  border: 1px solid var(--svc-south);
+  background: var(--wf-track);
+  color: var(--wf-ink-1);
+  border: 1px solid transparent;
 }
 
 .statusPill.voluntary {
@@ -1543,9 +1539,9 @@
 }
 
 .presenceBannerCard.community {
-  background: var(--accent-soft);
-  border-color: var(--svc-south);
-  color: var(--svc-south);
+  background: var(--wf-track);
+  border-color: var(--wf-line-2);
+  color: var(--wf-ink-1);
 }
 
 .presenceBannerCard.scheduled {
@@ -2060,28 +2056,6 @@
     transform: scale(0.95);
     opacity: 0.8;
   }
-}
-
-/* Health Service Color Allocation */
-
-.svcEast {
-  background: var(--svc-east);
-  border: 1px solid var(--svc-east);
-}
-
-.svcNorth {
-  background: var(--svc-north);
-  border: 1px solid var(--svc-north);
-}
-
-.svcSouth {
-  background: var(--svc-south);
-  border: 1px solid var(--svc-south);
-}
-
-.svcWachs {
-  background: var(--svc-wachs);
-  border: 1px solid var(--svc-wachs);
 }
 
 /* Card Trajectory & Alignment (Image 3) */

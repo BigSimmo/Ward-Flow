@@ -7,7 +7,7 @@ import { DisabledReason } from "./button";
 import { cx } from "./cx";
 import { Icon } from "./icon";
 import { PanelBoundary } from "./panel-boundary";
-import { Count } from "./primitives";
+import { Count, WindowWord, type CountWindow } from "./primitives";
 import { controlTone, StatusGlyph, type WfTone } from "./status-glyph";
 import styles from "./choice.module.css";
 
@@ -16,6 +16,12 @@ export type ChoiceItem<T extends string = string> = {
   label: ReactNode;
   /** Count in `.k`, behind the label. */
   count?: number | string;
+  /**
+   * The count's time window ("any date"), drawn quiet after it (shared design parts item 2). Tabs
+   * and pill tabs put it after a middle dot; `Segmented` puts it under the label. Show it only when
+   * the window differs from what the page title already says, or one strip mixes windows.
+   */
+  window?: CountWindow;
   /** Glyph before the label. */
   tone?: WfTone;
   /** Segmented and HeroTrack only: render the item as a link (route tabs). */
@@ -93,6 +99,7 @@ export function Tabs<T extends string>({ items, value, onChange, label, idPrefix
             {item.tone ? <StatusGlyph tone={controlTone(item.tone)} size={9} /> : null}
             {item.label}
             {item.count != null ? <Count n={item.count} className={styles.k} /> : null}
+            {item.window ? <WindowWord word={item.window} /> : null}
           </button>
         );
       })}
@@ -157,6 +164,7 @@ export function PillTabs<T extends string>({
             {item.tone ? <StatusGlyph tone={controlTone(item.tone)} size={9} /> : null}
             {item.label}
             {item.count != null ? <Count n={item.count} className={styles.k} /> : null}
+            {item.window ? <WindowWord word={item.window} /> : null}
           </button>
         );
       })}
@@ -241,13 +249,23 @@ export function Segmented<T extends string>({
     (unavailable || off) && styles.unavailable,
     className,
   );
-  const content = (item: ChoiceItem<T>) => (
+  const main = (item: ChoiceItem<T>) => (
     <>
       {item.tone ? <StatusGlyph tone={controlTone(item.tone)} size={9} /> : null}
       {item.label}
       {item.count != null ? <Count n={item.count} className={styles.k} /> : null}
     </>
   );
+  // A window word sits under the label and count, so equal segments keep their width.
+  const content = (item: ChoiceItem<T>) =>
+    item.window ? (
+      <span className={styles.segStack}>
+        <span className={styles.segMain}>{main(item)}</span>
+        <WindowWord word={item.window} className={styles.segWin} />
+      </span>
+    ) : (
+      main(item)
+    );
 
   if (items.some((item) => item.href)) {
     return (

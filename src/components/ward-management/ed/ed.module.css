@@ -1458,10 +1458,11 @@
   border: 1px solid var(--line-strong);
 }
 
+/* F-78: a legal form is not a health service, so its badge is the kit's neutral Badge look. */
 .badgePurple {
-  background: var(--svc-south-bg, var(--surface-2));
-  color: var(--svc-south-ink, var(--ink));
-  border: 1px solid var(--svc-south-border, var(--line));
+  background: var(--wf-track);
+  color: var(--wf-ink-1);
+  border: 1px solid transparent;
 }
 
 .badgeInfo {

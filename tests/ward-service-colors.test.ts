@@ -1,74 +1,52 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
-import {
-  getHealthServiceColorDefinition,
-  getHealthServiceBadgeStyle,
-  getHealthServiceDotStyle,
-} from "@/components/ward-management/ward-service-colors";
+import { getHealthServiceDefinition } from "@/components/ward-management/ward-service-colors";
+import { serviceShortName } from "@/components/ward-management/service-name-tag";
 
-describe("WA Health Services Color Key & Brand Specification", () => {
+const root = process.cwd();
+const read = (path: string) => readFileSync(join(root, path), "utf8");
+
+describe("WA health services are named, never coloured (F-78)", () => {
   it("covers every declared HealthService in the application model", () => {
     for (const service of HEALTH_SERVICES) {
-      const def = getHealthServiceColorDefinition(service);
+      const def = getHealthServiceDefinition(service);
       expect(def).toBeDefined();
-      expect(def.brandHex).toMatch(/^#[0-9a-fA-F]{6}$/);
-      expect(def.dotColor).toMatch(/^#[0-9a-fA-F]{6}$/);
-      expect(def.light.bg).toBeDefined();
-      expect(def.light.border).toBeDefined();
-      expect(def.light.ink).toBeDefined();
+      expect(def.code).toMatch(/^[A-Z]+$/);
+      expect(def.facilities.length).toBeGreaterThan(0);
     }
   });
 
-  it("allocates the verified official brand colors for Western Australia HSPs", () => {
-    // East Metro (EMHS) -> Primary Green #00825e (from EMHS.css)
-    const emhs = getHealthServiceColorDefinition("East Metro");
-    expect(emhs.code).toBe("EMHS");
-    expect(emhs.brandHex.toLowerCase()).toBe("#00825e");
-
-    // North Metro (NMHS) -> Primary Red #990057 (from NMHS.css)
-    const nmhs = getHealthServiceColorDefinition("North Metro");
-    expect(nmhs.code).toBe("NMHS");
-    expect(nmhs.brandHex.toLowerCase()).toBe("#990057");
-
-    // South Metro (SMHS) -> Primary Purple #5a2476 (from SMHS.css)
-    const smhs = getHealthServiceColorDefinition("South Metro");
-    expect(smhs.code).toBe("SMHS");
-    expect(smhs.brandHex.toLowerCase()).toBe("#5a2476");
-
-    // WA Country Health Service (WACHS) -> Primary Blue #005b94 (from WACHS.css)
-    const wachs = getHealthServiceColorDefinition("WACHS");
-    expect(wachs.code).toBe("WACHS");
-    expect(wachs.brandHex.toLowerCase()).toBe("#005b94");
-
-    // Child & Adolescent Health Service (CAHS) -> Primary Blue #0076be (from CAHS.css)
-    const cahs = getHealthServiceColorDefinition("CAHS");
-    expect(cahs.code).toBe("CAHS");
-    expect(cahs.brandHex.toLowerCase()).toBe("#0076be");
-
-    // Statewide -> WA Health Blue / Coordination
-    const statewide = getHealthServiceColorDefinition("Statewide");
-    expect(statewide.code).toBe("STATEWIDE");
-    expect(statewide.brandHex.toLowerCase()).toBe("#0071a5");
+  it("carries no brand colour values", () => {
+    const source = read("src/components/ward-management/ward-service-colors.ts");
+    expect(source).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+    expect(source).not.toMatch(/rgba?\(/);
+    expect(source).not.toMatch(/brandHex|dotColor|Sourced directly/);
   });
 
-  it("returns appropriate badge and dot styles using CSS variables", () => {
-    const badgeStyle = getHealthServiceBadgeStyle("North Metro");
-    expect(badgeStyle.backgroundColor).toContain("--svc-north-bg");
-    expect(badgeStyle.borderColor).toContain("--svc-north-border");
-    expect(badgeStyle.color).toContain("--svc-north-ink");
-
-    const dotStyle = getHealthServiceDotStyle("North Metro");
-    expect(dotStyle.backgroundColor).toContain("--svc-north");
+  it("resolves service names to the short names used in the neutral tag", () => {
+    expect(getHealthServiceDefinition("East Metro").code).toBe("EMHS");
+    expect(getHealthServiceDefinition("North Metro").code).toBe("NMHS");
+    expect(getHealthServiceDefinition("South Metro").code).toBe("SMHS");
+    expect(serviceShortName("North Metro")).toBe("NMHS");
+    expect(serviceShortName("South Metro")).toBe("SMHS");
+    expect(serviceShortName("East Metro")).toBe("EMHS");
+    expect(serviceShortName("WACHS")).toBe("WACHS");
+    expect(serviceShortName("Private")).toBe("Private");
+    expect(serviceShortName("Statewide")).toBe("Statewide");
   });
 
   it("resolves unrecognised or null service to Statewide safely", () => {
-    const defNull = getHealthServiceColorDefinition(null);
-    expect(defNull.code).toBe("STATEWIDE");
+    expect(getHealthServiceDefinition(null).code).toBe("STATEWIDE");
+    expect(getHealthServiceDefinition(undefined).code).toBe("STATEWIDE");
+    expect(getHealthServiceDefinition("Unknown Future Service").code).toBe("STATEWIDE");
+  });
 
-    const defUndefined = getHealthServiceColorDefinition(undefined);
-    expect(defUndefined.code).toBe("STATEWIDE");
-
-    const defUnknown = getHealthServiceColorDefinition("Unknown Future Service");
-    expect(defUnknown.code).toBe("STATEWIDE");
+  it("keeps the --wf-svc-* tokens as neutral aliases with no hue", () => {
+    const tokens = read("src/app/ward-flow-v9-tokens.css");
+    const lines = tokens.split("\n").filter((line) => /^\s*--wf-svc-[a-z]+:/.test(line));
+    expect(lines).toHaveLength(7);
+    for (const line of lines) expect(line).toMatch(/:\s*var\(--wf-(ink|line)-[0-9]\);/);
   });
 });

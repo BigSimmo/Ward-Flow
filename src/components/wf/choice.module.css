@@ -390,6 +390,29 @@
   max-width: 100%;
 }
 
+/* A segment with a count window (`ChoiceItem.window`): label and count, then the window word under
+   them in ink-3, so the segment keeps its width and nothing wraps (shared design parts item 2). */
+.segStack {
+  display: inline-grid;
+  justify-items: center;
+  row-gap: 2px;
+  padding-block: 4px;
+}
+
+.segMain {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.segWin > :first-child {
+  display: none;
+}
+
+.trk .segWin {
+  color: var(--wf-hero-ink-3);
+}
+
 /* Hook class on the Count inside segments, so the hero track can recolour it. */
 .k {
   flex: 0 0 auto;

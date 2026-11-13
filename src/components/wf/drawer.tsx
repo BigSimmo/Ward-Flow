@@ -22,11 +22,18 @@ import { useId, type ComponentPropsWithoutRef, type ReactNode } from "react";
 
 import { buttonClass } from "./button";
 import { PillTabs, TabPanel } from "./choice";
+import type { CountWindow } from "./primitives";
 import { cx } from "./cx";
 import s from "./drawer.module.css";
 import { Sheet } from "./sheet";
 
-export type DrawerTab<T extends string = string> = { id: T; label: ReactNode; count?: number | string };
+export type DrawerTab<T extends string = string> = {
+  id: T;
+  label: ReactNode;
+  count?: number | string;
+  /** The count's time window ("any date"), after a middle dot (`ChoiceItem.window`). */
+  window?: CountWindow;
+};
 
 type DataAttributes = { [key: `data-${string}`]: string | undefined };
 

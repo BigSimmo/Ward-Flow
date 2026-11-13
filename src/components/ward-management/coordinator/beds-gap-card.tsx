@@ -13,7 +13,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 
 import styles from "./home-cards.module.css";
 
-/** Beds that fit's Forecast link opens the forecast panel on Capacity itself. */
+/** Beds that fit's From ward dates link opens the forecast panel on Capacity itself. */
 export const HOME_FORECAST_HREF = "/ward-flow/capacity#capacity-forecast";
 
 /**
@@ -175,11 +175,12 @@ export function BedsGapCard({ now, bedsReady, condensed }: { now: Instant; bedsR
             </tbody>
           </table>
           <p className={styles.fitFoot}>
-            <b>{gapRangeWord(totals.gap)}</b> across all four. Tomorrow likely{" "}
-            <b>{gapRangeWord(tomorrow.total.likely)}</b>, range {gapRangeWord(tomorrow.total.low)} to{" "}
-            {gapRangeWord(tomorrow.total.high)}.{" "}
+            {/* Words (shared design parts item 11, 13 Nov 2026): no "likely" or "Forecast"; the figures
+                come from the wards' dates, so the link says so. */}
+            <b>{gapRangeWord(totals.gap)}</b> across all four. Tomorrow <b>{gapRangeWord(tomorrow.total.likely)}</b>,
+            range {gapRangeWord(tomorrow.total.low)} to {gapRangeWord(tomorrow.total.high)}.{" "}
             <Link href={HOME_FORECAST_HREF} className={styles.headLink} data-testid="home-beds-gap-forecast-link">
-              Forecast
+              From ward dates
               <ChevronRight size={14} aria-hidden="true" />
             </Link>
           </p>

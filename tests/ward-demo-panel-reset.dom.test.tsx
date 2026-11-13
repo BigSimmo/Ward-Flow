@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { WardDemoPanel } from "@/components/ward-management/tools/ward-demo-panel";
@@ -11,6 +11,7 @@ import {
   useWardFlowClock,
 } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { LiveChip } from "@/components/wf";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/ward-flow/capacity",
@@ -167,9 +168,10 @@ describe("Reset demo in Tools, Demo (DA-10)", () => {
 });
 
 // pop-demo (Josh, 31 Oct 2026): layout and wording only. Scenario and See it as are grids, Practise
-// a placement is a closed row, and Save to file, Load from file and Reset demo share one footer.
+// a placement is a closed row, and Save to file and Load from file share one footer. Shared design
+// parts item 8 (13 Nov 2026): the clock row and Reset demo come first, before Scenario.
 describe("Demo menu layout (pop-demo)", () => {
-  it("heads the grids, folds practice away and keeps the file and reset buttons in the footer", () => {
+  it("heads the grids, folds practice away, puts the clock and Reset first and keeps the files in the footer", () => {
     renderPanel();
     expect(within(panel()).getByRole("heading", { name: "Scenario" })).toBeTruthy();
     expect(within(panel()).getByRole("region", { name: "See it as" })).toBeTruthy();
@@ -179,12 +181,48 @@ describe("Demo menu layout (pop-demo)", () => {
     expect(current.textContent).toContain("Current");
     const practice = within(panel()).getByText("Practise a placement", { selector: "summary" });
     expect(practice.closest("details")?.open).toBe(false);
-    const footer = screen.getByTestId("ward-tools-demo-reset").closest("footer")!;
+    const first = within(panel()).getByRole("region", { name: "Demo clock and reset" });
+    expect(within(first).getByTestId("ward-tools-demo-reset")).toBeTruthy();
+    expect(within(first).getByRole("button", { name: "+15 min" })).toBeTruthy();
+    const scenarioHeading = within(panel()).getByRole("heading", { name: "Scenario" });
+    expect(first.compareDocumentPosition(scenarioHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const seeItAs = within(panel()).getByRole("region", { name: "See it as" });
+    expect(scenarioHeading.compareDocumentPosition(seeItAs) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const footer = panel().querySelector("footer")!;
     expect(within(footer).getByRole("button", { name: "Save to file" })).toBeTruthy();
     expect(within(footer).getByRole("button", { name: "Load from file" })).toBeTruthy();
     expect(footer.textContent).toContain(
       "Scenario files hold synthetic demo data only. Never type real patient details.",
     );
     expect(panel().textContent).toContain("Demo tools. They change the synthetic data only, never a clinical record.");
+  });
+});
+
+// Shared design parts item 8: Pause in the clock row runs the page's own pause, the one a tap on the
+// Live chip runs, and shows only on a page whose chip can pause.
+describe("Demo clock Pause", () => {
+  it("is absent where no Live chip can pause", () => {
+    renderPanel();
+    expect(within(panel()).queryByTestId("ward-tools-demo-pause")).toBeNull();
+  });
+
+  it("pauses and resumes the page through its Live chip's action", () => {
+    function PausablePage() {
+      const [paused, setPaused] = useState(false);
+      return <LiveChip state={paused ? "paused" : "live"} onTogglePause={() => setPaused((value) => !value)} />;
+    }
+    renderPanel((panel) => (
+      <>
+        <PausablePage />
+        {panel}
+      </>
+    ));
+    const pause = within(panel()).getByTestId("ward-tools-demo-pause");
+    expect(pause).toHaveTextContent("Pause");
+    fireEvent.click(pause);
+    expect(within(panel()).getByTestId("ward-tools-demo-pause")).toHaveTextContent("Resume");
+    expect(screen.getByRole("button", { name: /pause demo updates/u })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(within(panel()).getByTestId("ward-tools-demo-pause"));
+    expect(within(panel()).getByTestId("ward-tools-demo-pause")).toHaveTextContent("Pause");
   });
 });

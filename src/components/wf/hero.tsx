@@ -7,7 +7,7 @@ import { Button } from "./button";
 import { cx } from "./cx";
 import { useHeroFootSlot } from "./hero-foot-slot";
 import { HeroCondensedLine } from "./phone-fold";
-import { SrOnly } from "./primitives";
+import { SrOnly, WindowWord, type CountWindow } from "./primitives";
 import { StatusGlyph, type WfTone } from "./status-glyph";
 import { useScrollRegionFocus } from "./use-scroll-region-focus";
 import styles from "./hero.module.css";
@@ -258,6 +258,12 @@ export type HeroStatProps = {
    */
   total?: ReactNode;
   label: ReactNode;
+  /**
+   * The count's time window ("today", "any date"): quiet words after the label and a middle dot,
+   * under the label on a phone, and part of the spoken name ("14 Discharges any date"). Show it only
+   * when the window differs from what the page title already says, or the strip mixes windows.
+   */
+  window?: CountWindow;
   /** Glyph before the label. Red (danger) only when it needs action now. */
   tone?: WfTone;
   /** A small trend beside the value. */
@@ -286,6 +292,7 @@ export function HeroStat({
   value,
   total,
   label,
+  window,
   tone,
   trend,
   onToggle,
@@ -298,6 +305,13 @@ export function HeroStat({
 }: HeroStatProps) {
   const isFilter = pressed !== undefined;
   const isToggle = !isFilter && !command;
+  const labelSpan = (
+    <span className={styles.label}>
+      {tone ? <StatusGlyph tone={tone} size={9} /> : null}
+      {label}
+      {onToggle && isToggle ? <ChevronDown className={styles.statChevron} size={14} aria-hidden="true" /> : null}
+    </span>
+  );
   const body = (
     <>
       <span className={styles.valueLine}>
@@ -317,11 +331,14 @@ export function HeroStat({
         )}
         {trend ? <span className={styles.trend}>{trend}</span> : null}
       </span>
-      <span className={styles.label}>
-        {tone ? <StatusGlyph tone={tone} size={9} /> : null}
-        {label}
-        {onToggle && isToggle ? <ChevronDown className={styles.statChevron} size={14} aria-hidden="true" /> : null}
-      </span>
+      {window ? (
+        <span className={styles.labelRow}>
+          {labelSpan}
+          <WindowWord word={window} className={styles.win} />
+        </span>
+      ) : (
+        labelSpan
+      )}
     </>
   );
   if (!onToggle) return <div className={cx(styles.stat, inline && styles.inline, className)}>{body}</div>;

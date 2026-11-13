@@ -1201,7 +1201,7 @@ function DirectoryRow({
         <button type="button" className={styles.roleButton} onClick={() => actions.onPick(entry.id)}>
           <span className={styles.roleCell}>
             <b>
-              {byRole ? <ServiceTag service={entry.service} label="" /> : null}
+              {byRole ? <ServiceTag service={entry.service} /> : null}
               <span className={styles.truncate}>{name}</span>
             </b>
             <span>{sub}</span>

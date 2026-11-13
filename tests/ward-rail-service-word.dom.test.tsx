@@ -104,7 +104,8 @@ describe("the rail's chosen-service word (item 52)", () => {
     setServiceScope("South Metro");
     renderRail();
     expect(screen.getByTestId("ward-rail-service")).toHaveTextContent("Service: South Metro");
-    expect(screen.getByTestId("ward-rail-service-dot")).toBeInTheDocument();
+    // F-78: the service is its word only; no brand-colour dot.
+    expect(screen.queryByTestId("ward-rail-service-dot")).not.toBeInTheDocument();
   });
 
   it('reads just "South" when the rail is closed — the short form, not the full name', () => {

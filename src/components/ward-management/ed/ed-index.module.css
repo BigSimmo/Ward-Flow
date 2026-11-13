@@ -1079,38 +1079,6 @@
   min-width: 0;
 }
 
-.svcDot {
-  flex: none;
-  width: 8px;
-  height: 8px;
-  border-radius: var(--wf-r-pill);
-  background: var(--svc, var(--wf-ink-3));
-}
-
-.svcDot[data-service="North Metro"] {
-  --svc: var(--wf-svc-north);
-}
-
-.svcDot[data-service="South Metro"] {
-  --svc: var(--wf-svc-south);
-}
-
-.svcDot[data-service="East Metro"] {
-  --svc: var(--wf-svc-east);
-}
-
-.svcDot[data-service="WACHS"] {
-  --svc: var(--wf-svc-wachs);
-}
-
-.svcDot[data-service="CAHS"] {
-  --svc: var(--wf-svc-cahs);
-}
-
-.svcDot[data-service="Private"] {
-  --svc: var(--wf-svc-private);
-}
-
 @media (max-width: 46.4375rem) {
   .filters {
     gap: var(--wf-s-3);

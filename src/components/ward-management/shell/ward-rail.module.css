@@ -315,31 +315,6 @@
   white-space: nowrap;
 }
 
-.serviceDot {
-  flex-shrink: 0;
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  /* Private has no service token; it keeps the neutral base colour. */
-  background: var(--wf-neutral);
-}
-
-.serviceDot[data-service="north"] {
-  background: var(--svc-north);
-}
-
-.serviceDot[data-service="south"] {
-  background: var(--svc-south);
-}
-
-.serviceDot[data-service="east"] {
-  background: var(--svc-east);
-}
-
-.serviceDot[data-service="wachs"] {
-  background: var(--svc-wachs);
-}
-
 /* ── Shift card ────────────────────────────────────────────────────────────────────────────── */
 
 .shiftCockpit {

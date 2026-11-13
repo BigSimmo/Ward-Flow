@@ -1,0 +1,47 @@
+/* Shared design parts item 8 (13 Nov 2026): one slim line under the app bar while See it as shows
+   another desk. Surface and ink tokens with a hairline all round (no coloured side edge,
+   DESIGN-SYSTEM §1.4); it sits in flow in the layout's training holder, as the training line does. */
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  gap: var(--wf-s-2);
+  align-items: center;
+  margin: var(--wf-s-2) var(--wf-s-3) 0;
+  padding: var(--wf-s-1) var(--wf-s-1) var(--wf-s-1) var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.icon {
+  flex: 0 0 auto;
+  color: var(--wf-ink-3);
+}
+
+.text {
+  flex: 1 1 12rem;
+  min-width: 0;
+  margin: 0;
+}
+
+.text strong {
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+/* Phones: the eye goes so the line and its button fit one row. */
+@media (max-width: 46.4375rem) {
+  .icon {
+    display: none;
+  }
+}
+
+@media print {
+  .bar {
+    display: none;
+  }
+}
