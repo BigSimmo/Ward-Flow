@@ -44,7 +44,7 @@ describe("arriving a patient into a seeded pulled stay", () => {
   it("moves one bed from Pulled to Occupied and leaves Ready alone", () => {
     const { state, movement, unitId } = deliveredSeededPull();
     const unitBefore = state.units.find((unit) => unit.id === unitId)!;
-    const before = bedStates(unitBefore, state.admissions, state.bedReleases, state.leaveBeds);
+    const before = bedStates(unitBefore, state.admissions, state.bedReleases, state.leaveBeds, []);
     const next = wardFlowReducer(state, {
       type: "PATIENT_ARRIVED",
       role: "ward",
@@ -55,7 +55,7 @@ describe("arriving a patient into a seeded pulled stay", () => {
     expect(next.rejections).toHaveLength(state.rejections.length);
     expect(next.admissions.find((admission) => admission.id === movement.admissionId)?.state).toBe("occupied");
     const unitAfter = next.units.find((unit) => unit.id === unitId)!;
-    const after = bedStates(unitAfter, next.admissions, next.bedReleases, next.leaveBeds);
+    const after = bedStates(unitAfter, next.admissions, next.bedReleases, next.leaveBeds, []);
     expect(after.occupied).toBe(before.occupied + 1);
     expect(after.pulled).toBe(before.pulled - 1);
     expect(after.ready).toBe(before.ready);

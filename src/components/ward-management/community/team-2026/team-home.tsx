@@ -17,6 +17,10 @@ import { openReferrals, recordMidlandContact, todaysMidlandContacts, useMidlandD
 import { Initials } from "./parts";
 import { MIDLAND_ACT_NOW_ATTR } from "./midland-top";
 import t from "./team-2026.module.css";
+import { referenceTeamDetail } from "@/components/ward-management/reference/ward-reference-teams";
+
+/** The Midland team's generated reference record (invented number and mailbox, suburb only). */
+const MIDLAND_CONTACT = referenceTeamDetail("Midland Community Mental Health Service");
 
 export type TeamGo = (
   section: "home" | "caseload" | "hospital" | "referrals" | "clinicians",
@@ -439,12 +443,16 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
           <Card className={home.v6Card}>
             <CardHead icon={Phone} title="How to reach" aside={<span className={t.meta}>Invented for the demo</span>} />
             <dl className={t.dl}>
-              <div>
-                <dt>Intake</dt>
-                <dd>
-                  <span className={t.mono}>08 5550 0107</span>
-                </dd>
-              </div>
+              {/* A15-16 and A15-18 (13 Nov 2026): intake line, mailbox and suburb come from the generated
+                  reference record, never typed here. */}
+              {MIDLAND_CONTACT?.publishedPhone ? (
+                <div>
+                  <dt>Intake</dt>
+                  <dd>
+                    <span className={t.mono}>{MIDLAND_CONTACT.publishedPhone}</span>
+                  </dd>
+                </div>
+              ) : null}
               <div>
                 <dt>Duty officer</dt>
                 <dd>
@@ -455,14 +463,18 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
                 <dt>After hours</dt>
                 <dd>Mental Health Emergency Response Line</dd>
               </div>
-              <div>
-                <dt>Referrals</dt>
-                <dd>midland@example.health</dd>
-              </div>
-              <div>
-                <dt>Address</dt>
-                <dd>281 Great Eastern Highway, Midland</dd>
-              </div>
+              {MIDLAND_CONTACT?.referralEmail ? (
+                <div>
+                  <dt>Referrals</dt>
+                  <dd>{MIDLAND_CONTACT.referralEmail}</dd>
+                </div>
+              ) : null}
+              {MIDLAND_CONTACT?.suburb ? (
+                <div>
+                  <dt>Suburb</dt>
+                  <dd>{MIDLAND_CONTACT.suburb}</dd>
+                </div>
+              ) : null}
             </dl>
           </Card>
         </div>

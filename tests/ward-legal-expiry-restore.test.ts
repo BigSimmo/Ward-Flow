@@ -84,17 +84,21 @@ describe("restored recorded legal expiry", () => {
     expect(expiryAlerts(movement)).toHaveLength(breached ? 1 : 0);
   });
 
-  it.each(["arrival", "examination"])("keeps an ended expiry as history after %s", (endedWhen) => {
+  // A1 (Josh, 13 Nov 2026): the arrival or the examination alone ends nothing. The typed expiry
+  // stays in force until a person records the form ended, and only then becomes history.
+  it.each(["arrival", "examination"])("keeps the typed expiry until a person records the end, after %s", (when) => {
     const movement: Movement = {
       ...withExpiry(0),
       legalStatus: "Involuntary inpatient",
-      ...(endedWhen === "arrival"
+      ...(when === "arrival"
         ? { closure: { at: NOW, outcome: "arrived" as const, reason: "arrived" } }
         : { examination: { at: NOW, outcome: "inpatient_order" as const } }),
     };
     expect(movement.legalForm?.dueAt).toBe(0);
-    expect(currentLegalDueAt(movement)).toBeUndefined();
-    expect(expiryAlerts(movement)).toEqual([]);
+    expect(currentLegalDueAt(movement)).toBe(0);
+    const ended: Movement = { ...movement, legalForm: { ...movement.legalForm!, endedBy: "form_3e" } };
+    expect(currentLegalDueAt(ended)).toBeUndefined();
+    expect(expiryAlerts(ended)).toEqual([]);
   });
 
   it.each(["1A", "3B", "6A"])("does not infer a time for Form %s when none was written", (code) => {

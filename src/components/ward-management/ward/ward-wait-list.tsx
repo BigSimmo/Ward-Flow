@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { Button, Count, StatusGlyph } from "@/components/wf";
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
+import { legalFormNowWords } from "@/components/ward-management/ward-legal-form-progression";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
@@ -33,7 +34,9 @@ export function wardWaitList(movements: readonly Movement[], unitId: string): Mo
 /** The legal status as recorded on the journey, with its form code when one is recorded. */
 function legalAsRecorded(movement: Movement): string {
   const status = movement.legalStatus ?? "Legal status not recorded";
-  return movement.legalForm ? `${status}, Form ${movement.legalForm.code}` : status;
+  // 1.1 (K1): the one current legal position ("Form 3B ended" once a person records the end).
+  const form = legalFormNowWords(movement);
+  return form ? `${status}, ${form}` : status;
 }
 
 /**

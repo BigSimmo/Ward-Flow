@@ -7,7 +7,8 @@ import {
   FORM_RECORDED_ENDED,
   formProgressionPhrase,
   legalFormEnd,
-} from "@/components/ward-management/legal-forms/legal-form-progression";
+  NEXT_FORM_TO_RECORD,
+} from "@/components/ward-management/ward-legal-form-progression";
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { criteriaLedTileChip, dischargeCriteriaStatus } from "@/components/ward-management/ward-discharge-criteria";
 import {
@@ -229,7 +230,7 @@ export function wardBedRoster({
     const legalEnd = patientLegalForm ? legalFormEnd(linkedMovement) : undefined;
     const legalStatusLabel =
       legalEnd?.kind === "progressed"
-        ? `Form ${legalEnd.progression.nextCode} not recorded (${formProgressionPhrase(legalEnd.progression)})`
+        ? `${NEXT_FORM_TO_RECORD} (${formProgressionPhrase(legalEnd.progression)})`
         : legalEnd?.kind === "recorded" && patientLegalForm
           ? `Form ${patientLegalForm.code} ${FORM_RECORDED_ENDED.toLowerCase()}`
           : patientLegalForm

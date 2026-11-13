@@ -32,10 +32,11 @@ function tightest(tomorrow: ForecastByKind): string {
 
 function biggestBlocker(levers: readonly ForecastLever[]): string {
   const held = levers.find((lever) => lever.kind === "clear_held_up");
-  if (!held || held.kind !== "clear_held_up") return "No release due tomorrow is held up.";
+  // A9-04: "discharges", never "releases" (words list), and the span the lever counts: due by tomorrow.
+  if (!held || held.kind !== "clear_held_up") return "No discharge due by tomorrow is held up.";
   const named = held.reasons.slice(0, 2).map((entry) => `${entry.count} for ${reasonWord(entry.reason)}`);
   const list = named.length === 2 ? `${named[0]} and ${named[1]}` : named[0];
-  return `${held.beds} ${held.beds === 1 ? "release" : "releases"} held up, ${list}.`;
+  return `${held.beds} held-up ${held.beds === 1 ? "discharge" : "discharges"} due by tomorrow, ${list}.`;
 }
 
 function edRisk(risk: EdAccessRisk, edName: (edId: string) => string): string {
@@ -67,7 +68,7 @@ function bestAction(levers: readonly ForecastLever[]): string {
     case "clear_held_up":
       return `Clear held-up discharges, starting with ${reasonWord(top.reasons[0]!.reason)}. ${upTo}`;
     case "review_overdue":
-      return `Check ${top.beds} overdue ${top.beds === 1 ? "release" : "releases"} with wards. It widens the range only.`;
+      return `Check ${top.beds} overdue ${top.beds === 1 ? "discharge" : "discharges"} not held up with wards. It widens the range only.`;
   }
 }
 

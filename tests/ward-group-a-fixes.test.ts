@@ -364,7 +364,7 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
         role: "coordinator",
         now: NOW + 20,
         movementId,
-        reason: "The examination was revoked",
+        reason: "The examination made no order",
         whereabouts: "Back at the sending emergency department",
       });
 

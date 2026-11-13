@@ -20,6 +20,7 @@ import {
 } from "@/components/ward-management/ward-change-reasons";
 import type { LegalStatus } from "@/components/ward-management/ward-model";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
+import { EXAMINATION_OUTCOME_LABEL } from "@/components/ward-management/ward-legal-forms";
 import type { EdBoardRowModel } from "./ed-screen-board-row";
 import type { EdScreenContext } from "./ed-screen-context";
 import {
@@ -212,7 +213,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
                 [
                   { value: "inpatient_order", label: "Inpatient treatment order" },
                   { value: "community_order", label: "Community treatment order" },
-                  { value: "revoked", label: "Revoked — does not proceed" },
+                  { value: "revoked", label: EXAMINATION_OUTCOME_LABEL.revoked },
                   // Owner item 7 (2026-09-17): settles nothing and exists
                   // only to say a repeat examination is coming — offered on
                   // every visit to this panel, including a repeat one, the

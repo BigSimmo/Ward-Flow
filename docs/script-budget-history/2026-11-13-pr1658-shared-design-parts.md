@@ -1,16 +1,18 @@
 # 13 Nov 2026, shared design parts (PR E, D-192)
 
-Every limit is raised, on top of `main` at `92630b1`, each by less than the 5 KB a PR may add:
+Every limit is raised, on top of `main` at `ea4cd8b` (after PR #1657 merged), each by less than the 5 KB a PR may add:
 
-- Home `/ward-flow`: 582.3 to 583.7 (+1.4)
-- Referrals `/ward-flow/referrals`: 586.8 to 589.2 (+2.4)
-- ED `/ward-flow/ed`: 536.4 to 538.3 (+1.9)
-- Ward `/ward-flow/ward/rph-adult-secure`: 615.8 to 619.2 (+3.4)
-- Movement `/ward-flow/movements/WF-001`: 613.5 to 615.5 (+2.0)
-- Capacity `/ward-flow/capacity`: 660.0 to 663.7 (+3.7)
-- ED site `/ward-flow/ed/arm-ed`: 674.7 to 679.0 (+4.3)
-- Bed meeting `/ward-flow/bed-meeting`: 593.8 to 596.7 (+2.9)
-- Statistics `/ward-flow/statistics`: 633.9 to 636.6 (+2.7)
+- Home `/ward-flow`: 585.2 to 586.6 (+1.4)
+- Referrals `/ward-flow/referrals`: 589.9 to 591.9 (+2.0)
+- ED `/ward-flow/ed`: 538.5 to 540.1 (+1.6)
+- Ward `/ward-flow/ward/rph-adult-secure`: 618.2 to 621.6 (+3.4)
+- Movement `/ward-flow/movements/WF-001`: 616.9 to 618.5 (+1.6)
+- Capacity `/ward-flow/capacity`: 662.4 to 666.0 (+3.6)
+- ED site `/ward-flow/ed/arm-ed`: 677.9 to 681.9 (+4.0)
+- Bed meeting `/ward-flow/bed-meeting`: 596.3 to 599.0 (+2.7)
+- Statistics `/ward-flow/statistics`: 636.4 to 639.1 (+2.7)
+
+After merging `main` at `ea4cd8b`, measured in KB: Home 586.4, Referrals 591.7, ED 539.9, Ward 621.4, Movement 618.3, Capacity 665.8, ED site 681.7, Bed meeting 598.8 and Statistics 638.9; each limit is the measurement plus 0.2. The figures below are the first measurement, on top of `92630b1`.
 
 Measured with a local `next build --webpack` and `scripts/check-script-budget.mjs`. In KB: Home 583.5, Referrals 588.0, ED 538.1, Ward 618.3, Movement 615.3, Capacity 663.5, ED site 678.1, Bed meeting 596.5 and Statistics 636.4. The shared shell every route loads is 483.2 KB. Each limit is the measurement plus 0.2.
 

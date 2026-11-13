@@ -54,7 +54,12 @@ export const BRAND_CATCHPHRASE_BARE = "From referral to bed";
  */
 // 26 September 2026: Ward Flow wording, replacing the former clinical app's "From question to source" (the
 // coordinator's recommendation on Josh's card; one commit, so it is easy to change).
-export const BRAND_DESCRIPTION = `Private psychiatric bed-flow coordination prototype for WA hospitals — ${BRAND_CATCHPHRASE_BARE.toLowerCase()}.`;
+// A15-20 (Josh, 13 Nov 2026): "for WA hospitals" could read as commissioned by them, so the public
+// line says the data is invented instead.
+export const BRAND_DESCRIPTION = `Prototype with invented data: psychiatric bed flow, ${BRAND_CATCHPHRASE_BARE.toLowerCase()}.`;
+
+/** A15-20: the words the link preview picture carries, so a shared link says what it is. */
+export const BRAND_OG_LABEL = "Synthetic prototype";
 
 /**
  * What the Ward Flow navigation drawer *is*, for assistive technology.
@@ -67,6 +72,6 @@ export const BRAND_DESCRIPTION = `Private psychiatric bed-flow coordination prot
  */
 export const BRAND_MENU_DESCRIPTION = "Recent chats, navigation, and settings.";
 
-/** Alt text for the share/OG card. A colon rather than a dash, because
- *  BRAND_DESCRIPTION already carries one and two in a sentence read as a stutter. */
-export const BRAND_OG_ALT = `${BRAND_NAME}: ${BRAND_DESCRIPTION}`;
+/** Alt text for the share/OG card. A full stop rather than a colon, because BRAND_DESCRIPTION
+ *  already carries one and two in a sentence read as a stutter. */
+export const BRAND_OG_ALT = `${BRAND_NAME}. ${BRAND_OG_LABEL}. ${BRAND_DESCRIPTION}`;

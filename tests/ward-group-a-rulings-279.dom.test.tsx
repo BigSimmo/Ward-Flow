@@ -43,7 +43,7 @@ describe("ruling (1): stopped journeys are an explicit release-held-bed row", ()
       role: "coordinator",
       now: NOW + 20,
       movementId: ID,
-      reason: "The examination was revoked",
+      reason: "The examination made no order",
       whereabouts: "Back at the sending emergency department",
     });
 

@@ -1,6 +1,8 @@
 import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { downloadCsv } from "@/components/ward-management/statistics/statistics-csv";
+import { currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
+import { FORM_RECORDED_ENDED } from "@/components/ward-management/ward-legal-form-ended";
 
 /** Where and when the file was taken, as `downloadCsv` writes it above the rows. */
 export type ListExportProvenance = NonNullable<Parameters<typeof downloadCsv>[2]>;
@@ -11,7 +13,8 @@ export type ListExportProvenance = NonNullable<Parameters<typeof downloadCsv>[2]
  * final ruling). The board resolves the UMRN, bay and labels and hands them in, so this module never
  * reads a patient record.
  */
-export type EdExportMovement = Pick<Movement, "id" | "openedAt" | "urgency" | "legalStatus" | "legalForm">;
+export type EdExportMovement = Pick<Movement, "id" | "openedAt" | "urgency" | "legalStatus" | "legalForm"> &
+  Partial<Pick<Movement, "examination" | "closure">>;
 
 export type EdExportContext<M extends EdExportMovement = EdExportMovement> = {
   readonly department: string;
@@ -33,8 +36,21 @@ export const ED_EXPORT_HEADER = [
   "Urgency tier",
   "Legal status",
   "Form",
+  "Form end",
   "Stage",
 ] as const;
+
+/**
+ * 1.6 (K29, M17): the form's end as the screens show it, from the one current legal position: the
+ * time typed from the form ("Tue 11 Nov, 15:42 as typed"), "Recorded as ended" once a person
+ * records its end, or that no expiry was typed. Never a count or a time worked out from it (D-93).
+ */
+function formEndWords(movement: EdExportMovement, at: (instant: Instant) => string): string {
+  const legal = currentLegalPosition(movement);
+  if (!legal.form) return "";
+  if (legal.ended) return FORM_RECORDED_ENDED;
+  return legal.dueAt === undefined ? "No expiry recorded from the form" : `${at(legal.dueAt)} as typed`;
+}
 
 export function edExportLines<M extends EdExportMovement>(
   movements: readonly M[],
@@ -51,7 +67,8 @@ export function edExportLines<M extends EdExportMovement>(
       splitDuration(ctx.minutesOf(movement)),
       movement.urgency,
       movement.legalStatus,
-      movement.legalForm ? `Form ${movement.legalForm.code}` : "Not recorded",
+      currentLegalPosition(movement).formWords ?? "Not recorded",
+      formEndWords(movement, ctx.at),
       ctx.stageOf(movement),
     ]),
   ];

@@ -76,6 +76,7 @@ export function ReferralConfirmation({ s }: { s: WardReferralDrawerState }) {
     contact,
     setContact,
     catchmentTeam,
+    catchmentNotKnown,
     sourceKind,
     sendingWard,
     destType,
@@ -269,7 +270,8 @@ export function ReferralConfirmation({ s }: { s: WardReferralDrawerState }) {
                 </div>
                 <div>
                   <dt>Catchment</dt>
-                  <dd>{catchmentTeam}</dd>
+                  {/* C13: the side rail's words, never a blank line. */}
+                  <dd>{catchmentNotKnown ? "Catchment not known" : catchmentTeam.trim() || "To confirm"}</dd>
                 </div>
                 <div>
                   <dt>Clearance</dt>

@@ -51,6 +51,14 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
  */
 export const RELEASES_HELD_UP_LABEL = BED_RELEASE_BLOCKED_FIGURE_LABEL;
 
+/**
+ * A9-04 (Josh, 13 Nov 2026): the menu's Discharges line says "held up due by tomorrow", the TV's
+ * words for the same count (`blockedToday`, overdue dates included). "Releases held up" stays on
+ * the Ward page only (words list, Q305), and Capacity's "any date" count is a different span. No
+ * comma, so the More pages row shows the span and not only "held up".
+ */
+export const DISCHARGES_HELD_UP_NAV_NOUN = "held up due by tomorrow";
+
 export type WardNavCount = {
   value: number;
   /** What the number counts, in words. Becomes part of the link's accessible name. */
@@ -167,7 +175,7 @@ function deriveWardNavCounts(input: WardNavCountInput): WardNavCounts {
     },
     discharges: {
       value: rollup.service.blockedToday,
-      noun: RELEASES_HELD_UP_LABEL.toLowerCase(),
+      noun: DISCHARGES_HELD_UP_NAV_NOUN,
       urgent: rollup.service.blockedToday > 0,
     },
     referrals: {

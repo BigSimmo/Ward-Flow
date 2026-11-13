@@ -35,7 +35,8 @@ describe("the ward overview before a ward accepts", () => {
     );
 
     const card = screen.getByTestId(`ward-incoming-${awaiting!.id}`);
-    expect(card).toHaveTextContent(person.displayName);
+    // A9-01: surname first, as everywhere else.
+    expect(card).toHaveTextContent(person.formalName);
     expect(card).toHaveTextContent(person.umrn);
     expect(card).not.toHaveTextContent("Incoming patient");
     for (const name of otherWardNames) expect(card).not.toHaveTextContent(name);
@@ -53,7 +54,7 @@ describe("the ward overview before a ward accepts", () => {
     const detail = await screen.findByTestId(`ward-referral-detail-${awaiting!.id}`);
 
     expect(detail).toHaveTextContent(/nihilistic ideas/i);
-    expect(detail).toHaveTextContent("Fits this ward.");
+    expect(detail).toHaveTextContent("Passes the 7 bed checks.");
     expect(within(detail).getByTestId("ward-referral-referrer")).toHaveTextContent("Dr Kalan Moongate");
     for (const name of otherWardNames) expect(detail).not.toHaveTextContent(name);
     expect(detail.textContent ?? "").not.toMatch(/WF-/u);

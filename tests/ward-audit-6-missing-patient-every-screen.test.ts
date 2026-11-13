@@ -133,7 +133,7 @@ describe("audit 6: a person marked absent without leave reaches every screen aft
       unitLeaveBeds,
       admissions: after.admissions,
       bedReleases: after.bedReleases,
-      states: bedStates(unit, after.admissions, after.bedReleases, after.leaveBeds),
+      states: bedStates(unit, after.admissions, after.bedReleases, after.leaveBeds, []),
       accepted: after.movements.filter((movement) => isOpen(movement) && movement.acceptedUnitId === unit.id),
       movements: after.movements,
       resolvePatientIdentity: createPatientResolver(after),
@@ -209,6 +209,7 @@ describe("audit 6: a person marked absent without leave reaches every screen aft
       bedReleases: after.bedReleases,
       leaveBeds: after.leaveBeds,
       movements: after.movements,
+      referrals: after.referrals,
       now: NOW,
       identify: (subject) => `person ${subject.id}`,
     });

@@ -23,7 +23,7 @@ function CrewProbe() {
 function openPolicePatient() {
   fireEvent.click(screen.getByTestId("ward-ed-row-name-WF-009"));
   fireEvent.click(
-    within(screen.getByTestId("ward-ed-phone-sheet-WF-009")).getByRole("button", { name: "Open patient" }),
+    within(screen.getByTestId("ward-ed-phone-sheet-WF-009")).getByRole("button", { name: "Where their time went" }),
   );
   return screen.findByTestId("ward-ed-crew-times");
 }
@@ -107,7 +107,7 @@ describe("ED patient record — brought by police or ambulance (D-141)", () => {
     );
     fireEvent.click(screen.getByTestId("ward-ed-row-name-WF-005"));
     fireEvent.click(
-      within(screen.getByTestId("ward-ed-phone-sheet-WF-005")).getByRole("button", { name: "Open patient" }),
+      within(screen.getByTestId("ward-ed-phone-sheet-WF-005")).getByRole("button", { name: "Where their time went" }),
     );
     const block = await screen.findByTestId("ward-ed-brought-by");
     const group = within(block).getByRole("radiogroup", { name: "Brought by" });

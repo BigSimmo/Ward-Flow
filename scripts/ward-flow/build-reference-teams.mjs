@@ -12,7 +12,11 @@
  * 🔴 THE PHONE NUMBERS AND MAILBOXES ARE INVENTED (owner, 20 Oct 2026). The pack's real published
  * numbers and WA Health mailboxes were replaced with numbers in the reserved fictitious range
  * 08 5550 0xxx and addresses on the reserved example.invalid domain, so nobody can ring or email a
- * real service from the demo. Service names, hours and addresses are unchanged.
+ * real service from the demo. Service names and hours are unchanged.
+ *
+ * 🔴 STREET ADDRESSES ARE CUT TO THE SUBURB (A15-16, Josh, 13 Nov 2026). The pack holds the
+ * service's real street address; the demo shows only the suburb (`suburbOf`), so an invented phone
+ * line never sits beside a real door. An address whose last part is not plainly a suburb gives null.
  *
  * 🔴 It carries NO NUMERIC CAPACITY FIELD OF ANY KIND, for the same structural reason
  * `ward-reference-registry.ts` carries none: a figure that cannot be generated into `src/` cannot
@@ -52,6 +56,26 @@ function orNull(value) {
   return trimmed === "" ? null : trimmed;
 }
 
+/** Street words that end an address part which is a street, not a suburb. */
+const STREET_WORD =
+  /\b(?:Street|Streets|Road|Avenue|Drive|Parade|Place|Terrace|Highway|Crescent|Square|Lane|Way|Court|Close)$/u;
+/** Words that name a building or service, not a suburb. */
+const BUILDING_WORD = /\b(?:Hospital|Health|Service|Centre|Center|Clinic|Block|Unit|Level|Tower|Plaza)\b/u;
+
+/**
+ * A15-16: the suburb of a pack address, or null. Only the last comma part, and only when it is
+ * plainly a suburb: no digit, no street word and no building word. Null means "suburb not given".
+ */
+export function suburbOf(address) {
+  const full = orNull(address);
+  if (full === null) return null;
+  const parts = full.split(",").map((part) => part.trim());
+  if (parts.length < 2) return null;
+  const last = parts.at(-1);
+  if (!last || /\d/u.test(last) || STREET_WORD.test(last) || BUILDING_WORD.test(last)) return null;
+  return last;
+}
+
 export function buildReferenceTeams(packJson) {
   const rows = packJson.entities.filter(isCommunityService);
   const kept = rows
@@ -63,7 +87,7 @@ export function buildReferenceTeams(packJson) {
       publishedPhone: orNull(row.published_phone),
       publishedHours: orNull(row.published_hours),
       referralEmail: orNull(row.referral_email),
-      address: orNull(row.address),
+      suburb: suburbOf(row.address),
       directoryStatus: orNull(row.directory_status),
       recordedOn: orNull(row.original_record_date),
     }));
@@ -83,7 +107,7 @@ function render(teams) {
         `      publishedPhone: ${JSON.stringify(t.publishedPhone)},\n` +
         `      publishedHours: ${JSON.stringify(t.publishedHours)},\n` +
         `      referralEmail: ${JSON.stringify(t.referralEmail)},\n` +
-        `      address: ${JSON.stringify(t.address)},\n` +
+        `      suburb: ${JSON.stringify(t.suburb)},\n` +
         `      directoryStatus: ${JSON.stringify(t.directoryStatus)},\n` +
         `      recordedOn: ${JSON.stringify(t.recordedOn)},\n` +
         `    },\n` +
@@ -118,7 +142,8 @@ export type ReferenceTeamDetail = {
   readonly publishedPhone: string | null;
   readonly publishedHours: string | null;
   readonly referralEmail: string | null;
-  readonly address: string | null;
+  /** The suburb only, never a street address (A15-16). Null where the pack gives none plainly. */
+  readonly suburb: string | null;
   /** e.g. whether the service is listed in a public directory at all. */
   readonly directoryStatus: string | null;
   /** The date the pack recorded this row. Render it beside the detail; it is how old this is. */

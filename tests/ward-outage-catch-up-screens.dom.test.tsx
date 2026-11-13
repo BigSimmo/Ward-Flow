@@ -96,12 +96,15 @@ describe("item 24: outage packs older than 24 hours", () => {
       NOW_ANCHOR,
     );
     const band = screen.getByTestId("ward-downtime-old-packs");
-    expect(band).toHaveTextContent("Outage packs older than 24 hours");
-    expect(band).toHaveTextContent(`1 of ${seed.units.length} wards`);
+    // Root-cause fix 3.3: "never printed" is worded apart from "over 24h old".
+    expect(band).toHaveTextContent("Outage packs never printed");
+    expect(band).toHaveTextContent(`1 outage pack never printed · all ${seed.units.length} wards`);
     expect(within(band).getByTestId(`ward-downtime-old-pack-${ward.id}`)).toHaveTextContent(
       `${ward.name} ${NEVER_PRINTED}`,
     );
     printed([ward.id], NOW_ANCHOR - DAY - 30);
+    expect(band).toHaveTextContent("Outage packs over 24h old");
+    expect(band).toHaveTextContent(`1 outage pack over 24h old · all ${seed.units.length} wards`);
     expect(screen.getByTestId(`ward-downtime-old-pack-${ward.id}`)).toHaveTextContent(
       `${ward.name} ${formatInstant(NOW_ANCHOR - DAY - 30)} yesterday`,
     );
@@ -114,7 +117,7 @@ describe("item 24: outage packs older than 24 hours", () => {
   it("folds a long list of never-printed wards behind Show more", () => {
     renderIn(<DowntimeOldPacksBand now={NOW_ANCHOR} />);
     const band = screen.getByTestId("ward-downtime-old-packs");
-    expect(band).toHaveTextContent(`${seed.units.length} of ${seed.units.length} wards`);
+    expect(band).toHaveTextContent(`${seed.units.length} outage packs never printed · all ${seed.units.length} wards`);
     expect(within(band).getAllByText(NEVER_PRINTED)).toHaveLength(6);
     fireEvent.click(screen.getByTestId("ward-downtime-old-packs-more"));
     expect(within(band).getAllByText(NEVER_PRINTED)).toHaveLength(seed.units.length);
@@ -138,7 +141,10 @@ describe("the downtime pack screen", () => {
     expect(screen.queryByTestId("ward-downtime-last-printed")).toBeNull();
     expect(screen.getByTestId("ward-downtime-old-packs")).toHaveTextContent(NEVER_PRINTED);
     fireEvent.click(print);
-    expect(screen.getByTestId("ward-downtime-last-printed")).toHaveTextContent(
+    // Root-cause fix 3.3: nothing is recorded until the person says it printed.
+    expect(screen.queryByTestId("ward-downtime-last-printed")).toBeNull();
+    fireEvent.click(await screen.findByRole("button", { name: "Yes" }));
+    expect(await screen.findByTestId("ward-downtime-last-printed")).toHaveTextContent(
       `Last printed ${formatInstant(NOW_ANCHOR)}`,
     );
     expect(screen.queryByTestId("ward-downtime-old-packs")).toBeNull();

@@ -182,7 +182,7 @@ describe("M39 hostile input", () => {
     }
   });
 
-  it("keeps an unsafe referrer phone from an older record inside a tel: link and shows it as text", () => {
+  it("shows an unsafe referrer phone from an older record as text, with no dial link (A15-14)", () => {
     // Stored referrals are not re-checked, so one saved before M39 still renders inert.
     const { referral: saved } = savedReferral("Synthetic history", { ...INTAKE, reasonForReferral: HOSTILE[0] });
     const referral = {
@@ -198,7 +198,8 @@ describe("M39 hostile input", () => {
       </WardFlowProvider>,
     );
     expect(container.textContent).toContain(HOSTILE[3]);
-    expect(container.querySelector("a[href^='tel:']")?.getAttribute("href")).toBe(`tel:${HOSTILE[3]}`);
+    // A15-14 (13 Nov 2026): demo numbers are copy only, so no tel: link carries the text at all.
+    expect(container.querySelector("a[href^='tel:']")).toBeNull();
     expectInert(container);
   });
 

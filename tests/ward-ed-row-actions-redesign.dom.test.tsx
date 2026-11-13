@@ -124,7 +124,7 @@ describe("the examination outcome popup", () => {
     expect(radios.map((radio) => radio.closest("label")?.textContent)).toEqual([
       "Inpatient treatment order",
       "Community treatment order",
-      "Revoked — does not proceed",
+      "No order made, does not proceed",
       "Further examination ordered",
     ]);
     for (const radio of radios) expect(radio).not.toBeChecked();

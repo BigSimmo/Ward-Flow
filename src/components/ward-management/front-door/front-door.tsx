@@ -343,7 +343,7 @@ function SignInDoor({
 /** The public demo's own entrance on the Ward Flow sign-in page: the demo, and nothing to sign in to. */
 function DemoFirstDoor({ demoUrl }: { demoUrl: string }) {
   return (
-    <DoorScreen label="Ward Flow demo" note={false}>
+    <DoorScreen label="Ward Flow demo" note={false} demo>
       <div className={styles.card}>
         <div className={styles.stack}>
           <span className={styles.demoBadge}>

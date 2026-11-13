@@ -597,9 +597,9 @@ export const DESK_JOBS: readonly HowTo[] = [
     id: "ed-examination",
     topic: "Beds and referrals",
     title: "Record an examination",
-    keywords: "examination exam assessed inpatient treatment order revoked further ed",
+    keywords: "examination exam assessed inpatient treatment order no order made revoked further ed",
     answer:
-      "Open the patient's actions on My ED board and choose Record examination. Choose Inpatient treatment order, Community treatment order, Revoked, or Further examination ordered, then Save outcome.",
+      "Open the patient's actions on My ED board and choose Record examination. Choose Inpatient treatment order, Community treatment order, No order made, does not proceed, or Further examination ordered, then Save outcome.",
     desks: ["ed"],
     acts: ["RECORD_EXAMINATION"],
     go: "home",

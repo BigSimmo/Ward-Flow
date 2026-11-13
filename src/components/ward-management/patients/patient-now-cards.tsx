@@ -11,7 +11,12 @@ import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { formTitleForCode } from "@/lib/form-register";
 import type { Instant } from "@/components/ward-management/ward-clock";
-import { formProgression, formProgressionShort } from "@/components/ward-management/legal-forms/legal-form-progression";
+import {
+  currentLegalPosition,
+  FORM_RECORDED_ENDED,
+  formProgressionShort,
+  NEXT_FORM_TO_RECORD,
+} from "@/components/ward-management/ward-legal-form-progression";
 import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
 import { clock } from "./patient-now-records";
 import styles from "./patient-now-cards.module.css";
@@ -152,28 +157,29 @@ export function PatientLegalNowCard({
   }> = [];
   if (movement?.legalForm) {
     const recordedAt = movement.legalFormReceivedAt ?? movement.formedAt;
-    // Audit S-6: after an inpatient order at the examination, or an arrival on an order, the old
-    // form shows as ended and Form 6A is the one form to record next.
-    const progression = formProgression(movement);
-    const expiry = now !== undefined && !progression ? formTimeLeft(movement, now, thresholds) : undefined;
+    // Audit S-6, D-170 item 1 and A1 (13 Nov 2026): the form shows as recorded until a person records
+    // that it ended; after an inpatient order at the examination, or an arrival on an order, one row
+    // prompts "Next form to record", with no form number.
+    const position = currentLegalPosition(movement);
+    const progression = position.nextForm;
+    const expiry = now !== undefined ? formTimeLeft(movement, now, thresholds) : undefined;
     rows.push({
-      tone: progression ? "neutral" : expiry && expiry.standing !== "later" ? expiry.tone : "success",
+      tone: position.ended ? "neutral" : expiry && expiry.standing !== "later" ? expiry.tone : "success",
       code: `Form ${movement.legalForm.code}`,
       // A3-8: the code is already in `code`, so the name is the register title alone, said once.
-      // Audit S-6: a form the examination or arrival moved on from reads as ended.
-      name: progression
-        ? formProgressionShort(progression)
+      name: position.ended
+        ? FORM_RECORDED_ENDED
         : (formTitleForCode(movement.legalForm.code) ?? "Title not in the forms register"),
       // The typed expiry is already in `left` ("Ends 15:42 as typed"), so the time is not said twice.
       time: expiry ? undefined : recordedAt !== undefined ? clock(recordedAt) : undefined,
       left: expiry?.text,
-      ended: progression?.ended === true,
+      ended: position.ended,
     });
     if (progression)
       rows.push({
         tone: "warning",
-        code: `Form ${progression.nextCode}`,
-        name: "To record: inpatient treatment order",
+        code: NEXT_FORM_TO_RECORD,
+        name: formProgressionShort(progression),
         pending: true,
       });
     if (movement.legalForm.continuedBy)

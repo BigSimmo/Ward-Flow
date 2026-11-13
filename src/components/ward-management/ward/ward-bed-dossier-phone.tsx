@@ -8,11 +8,7 @@ import { ChevronRight, X } from "lucide-react";
 import styles from "./ward-bed-dossier-drawer.module.css";
 import { type BedItem } from "./ward-bed-tone";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
-import {
-  LEAVING_DESTINATIONS,
-  stayDayNumber,
-  type LeavingDestination,
-} from "@/components/ward-management/ward-admissions";
+import { LEAVING_DESTINATIONS, type LeavingDestination } from "@/components/ward-management/ward-admissions";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { BlockerEditor, type BlockerSave } from "./ward-bed-blocker-editor";
 import { Button, Icon, StatusGlyph, buttonClass, cx, type WfTone } from "@/components/wf";
@@ -49,7 +45,8 @@ interface PhoneBedSheetProps {
   isOccupied: boolean;
   isAwayAtEd: boolean;
   tone: WfTone | null;
-  stayDays: number | null;
+  /** Which day of the stay today is (Perth calendar days, arrival day = Day 1), or null. */
+  stayDay: number | null;
   observation: string;
   expectedPlan: ReactNode;
   timeline: { at: number; tone: WfTone; label: string }[];
@@ -122,7 +119,7 @@ export function PhoneBedSheet({
   occupantAlias,
   isOccupied,
   tone,
-  stayDays,
+  stayDay,
   observation,
   expectedPlan,
   timeline,
@@ -256,7 +253,7 @@ export function PhoneBedSheet({
             <>
               <div className={styles.phoneFacts}>
                 {/* Redesign: the same four facts as the desktop drawer. */}
-                <FactTile label="Stay" value={stayDays === null ? "Not recorded" : `Day ${stayDayNumber(stayDays)}`} />
+                <FactTile label="Stay" value={stayDay === null ? "Not recorded" : `Day ${stayDay}`} />
                 <FactTile label="Legal" value={shortLegal(bedItem?.legalStatusLabel)} />
                 <FactTile label="Going out" value={goingOut} tone={bedItem?.pastDate ? "warning" : null} />
                 <FactTile label="Observation" value={observationShort} />

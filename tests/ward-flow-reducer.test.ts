@@ -1487,7 +1487,7 @@ describe("arrival capacity floor", () => {
     });
     state = walk(state, "WF-017", pullSteps);
     expect(movement(state, "WF-017").stage).toBe("pulled");
-    const counts = bedStates(unitOf(state), state.admissions, state.bedReleases, state.leaveBeds);
+    const counts = bedStates(unitOf(state), state.admissions, state.bedReleases, state.leaveBeds, []);
     expect(counts.ready).toBe(0);
     expect(counts.ready + counts.pulled + counts.closed + counts.occupied).toBe(unitOf(state).beds);
     const third = raiseVoluntarySecure(state);

@@ -48,6 +48,7 @@ import type { Admission } from "../ward-admissions";
 import type { Movement } from "../ward-model";
 import { createPatientResolver } from "../ward-patient-resolver";
 import { supportNotificationSubjects } from "../ward-support-notifications";
+import { recordedDayPassed } from "./patient-date-passed";
 import styles from "./patient-care-plans-card.module.css";
 
 type Gate = (eventType: WardFlowEvent["type"]) => { allowed: boolean; reason?: string };
@@ -400,7 +401,18 @@ export function PatientCarePlansCard({
               </div>
               <div>
                 <dt>Review</dt>
-                <dd className={styles.mono}>{typedDay(plan.reviewOn)}</dd>
+                <dd>
+                  <span className={styles.mono}>{typedDay(plan.reviewOn)}</span>
+                  {/* Root cause 2.3: the tribunal date's own "date passed" pattern, for the review date. */}
+                  {recordedDayPassed(plan.reviewOn, todayIso) ? (
+                    <>
+                      {" "}
+                      <Badge size="sm" tone="warning">
+                        Review date passed
+                      </Badge>
+                    </>
+                  ) : null}
+                </dd>
               </div>
               <div>
                 <dt>Key contact</dt>

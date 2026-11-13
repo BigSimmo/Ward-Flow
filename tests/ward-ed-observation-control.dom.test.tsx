@@ -27,9 +27,10 @@ function openFirstPatient() {
   const name = screen.getAllByTestId(/^ward-ed-row-name-/u)[0];
   const id = name.getAttribute("data-testid")!.replace("ward-ed-row-name-", "");
   fireEvent.click(name);
-  // The person sheet's "Open patient" opens the patient record.
+  // The person sheet's "Where their time went" opens the department's patient record (A12-04:
+  // "Open patient" now goes to the patient page).
   fireEvent.click(
-    within(screen.getByTestId(`ward-ed-phone-sheet-${id}`)).getByRole("button", { name: "Open patient" }),
+    within(screen.getByTestId(`ward-ed-phone-sheet-${id}`)).getByRole("button", { name: "Where their time went" }),
   );
   return id;
 }

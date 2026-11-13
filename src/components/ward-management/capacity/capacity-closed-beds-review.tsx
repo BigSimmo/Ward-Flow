@@ -59,7 +59,7 @@ export function ClosedBedsPastReview({
               {!executive && canOpen(href) ? (
                 <Link
                   href={href}
-                  aria-label={`Open ${unit.name} to review bed ${mark.bedNumber}`}
+                  aria-label={`Open ward: ${unit.name}, to review bed ${mark.bedNumber}`}
                   className={buttonClass({ variant: "ghost", size: "sm" })}
                 >
                   Open ward

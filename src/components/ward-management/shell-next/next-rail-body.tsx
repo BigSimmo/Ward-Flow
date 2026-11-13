@@ -892,7 +892,9 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
           {/* shell-next (Josh, 30 Oct 2026): Bed alerts stay about capacity. The card leads with
               occupancy, one row per place with its meter and the 85% tick, says in words how many
               are over the line, and gives the ready beds as the second line. A site, service or
-              ward desk reads its own wards first. The card still opens the full list below. */}
+              ward desk reads its own wards first. The card still opens the full list below.
+              Audit A5-01 (13 Nov 2026): on a window under 850px tall the card folds to its one-line
+              pill (`.capacityFold`, ward-rail.module.css), so the menu fits a laptop screen. */}
           <button
             type="button"
             className={`${styles.capacityPulseStrip} ${railParts.capacityCard}`}
@@ -917,7 +919,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
                 <ChevronDown aria-hidden="true" strokeWidth={1.75} />
               </span>
             </span>{" "}
-            <span className={railParts.capacityRows} aria-hidden="true">
+            <span className={`${railParts.capacityRows} ${styles.capacityFold}`} aria-hidden="true">
               {capacityRows.map((row) => (
                 <span key={row.key} className={styles.alertRow} title={`${row.counts}, beds in use`}>
                   <span className={styles.alertRowName}>{row.name}</span>{" "}
@@ -929,7 +931,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
                 </span>
               ))}
             </span>{" "}
-            <span className={railParts.capacityReady} aria-hidden="true">
+            <span className={`${railParts.capacityReady} ${styles.capacityFold}`} aria-hidden="true">
               {readyLine}
             </span>
           </button>

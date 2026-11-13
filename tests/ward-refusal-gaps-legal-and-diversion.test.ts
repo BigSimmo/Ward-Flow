@@ -181,7 +181,7 @@ describe("RECORD_DIVERSION: 'already arrived' and 'already stopped or cancelled'
   it("diverting after a stop is refused as a closed movement, never as 'already stopped or cancelled'", () => {
     const stopped = stopTransport(driveTo("collected"), NOW + 3);
     const reasons = added(stopped, recordDiversion(stopped, NOW + 4));
-    expect(reasons).toEqual(["cannot divert a closed movement (The examination was revoked)"]);
+    expect(reasons).toEqual(["cannot divert a closed movement (The examination made no order)"]);
     expect(reasons[0]).not.toContain("already stopped or cancelled");
   });
 });

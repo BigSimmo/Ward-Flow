@@ -32,7 +32,7 @@ import {
 import type { ReferralChart } from "@/components/ward-management/referrals/referral-submission";
 import { formTitleForCode } from "@/lib/form-register";
 import { LegalLimitsNotChecked } from "../legal-limits-not-checked";
-import { formProgression } from "../legal-forms/legal-form-progression";
+import { currentLegalPosition, formProgression, NEXT_FORM_TO_RECORD } from "../ward-legal-form-progression";
 import { clockStanding, standingWord, STANDING_TONE } from "../legal-forms/legal-forms-view";
 import { fieldsMatchEveryWord } from "../search/search-text";
 import {
@@ -165,8 +165,9 @@ export function PatientDocumentsTab({
   );
   const openNowBy = openNow && openNow.by !== "Author not recorded here" ? openNow.by : undefined;
 
-  // The same reading as Legal now (audit S-6): after an inpatient order at the examination, or an
-  // arrival on an order, the movement's form has ended and Form 6A is the one form to record next.
+  // The same reading as Legal now (audit S-6; D-170 item 1 and A1, 13 Nov 2026): after an inpatient
+  // order at the examination, or an arrival on an order, the form stays as recorded (in force until
+  // a person records its end) and one row prompts "Next form to record", with no form number.
   const progression = formProgression(movement);
   const formSource = edById(movement?.originEdId)?.name;
 
@@ -180,6 +181,7 @@ export function PatientDocumentsTab({
   });
   if (movement && legalForm) {
     const continued = legalForm.continuedBy;
+    const recordedEnd = currentLegalPosition(movement).ended;
     if (continued)
       live.push(
         legalRow({
@@ -195,8 +197,6 @@ export function PatientDocumentsTab({
           standing: movementInForce,
         }),
       );
-    const examinedAt =
-      progression?.endedWhen === "at the examination" && movement.examination ? movement.examination.at : undefined;
     live.push(
       legalRow({
         key: `movement-${legalForm.code}`,
@@ -207,27 +207,23 @@ export function PatientDocumentsTab({
         dateText: movement.formedAt !== undefined ? at(movement.formedAt) : undefined,
         sortAt: movement.formedAt !== undefined ? msOf(movement.formedAt) : Number.NaN,
         by: openNowBy,
-        status: progression?.ended || !movementInForce ? "Ended" : continued ? "Continued" : "In force",
-        statusNote: progression?.ended
-          ? `${progression.endedWhen.charAt(0).toUpperCase()}${progression.endedWhen.slice(1)}${
-              examinedAt !== undefined ? `, ${at(examinedAt)}` : ""
-            }`
-          : undefined,
-        typedEndAt: progression ? undefined : continued ? continued.continuedFormDueAt : legalForm.dueAt,
-        standing: !progression && movementInForce && !continued,
+        // Ended only when the stay is history or a person recorded the form ended (A1).
+        status: !movementInForce || recordedEnd ? "Ended" : continued ? "Continued" : "In force",
+        typedEndAt: continued ? continued.continuedFormDueAt : legalForm.dueAt,
+        standing: movementInForce && !continued && !recordedEnd,
       }),
     );
     if (progression)
-      live.push(
-        legalRow({
-          key: `to-record-${progression.nextCode}`,
-          code: progression.nextCode,
-          episode: "current",
-          sortAt: Number.NaN,
-          status: "To record",
-          pending: true,
-        }),
-      );
+      live.push({
+        key: "to-record-next",
+        title: NEXT_FORM_TO_RECORD,
+        category: "Legal",
+        live: true,
+        episode: "current",
+        sortAt: Number.NaN,
+        status: "To record",
+        pending: true,
+      });
     for (const earlier of legalForm.earlierContinuations ?? [])
       live.push(
         legalRow({

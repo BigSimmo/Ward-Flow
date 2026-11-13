@@ -31,6 +31,7 @@ import { DEMO_COMMUNITY_STAFF } from "./community-demo-cohort";
 import { teamSinceItems, elapsedSinceOrUnderADay } from "./community-screen-helpers";
 import type { CommunityScreenView } from "./community-screen";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { DemoPhoneNumber } from "@/components/ward-management/demo-phone-number";
 
 /**
  * The side column's sample roster (v6 "On duty today"). Illustrative only, the same eight example
@@ -289,7 +290,7 @@ export function communityHowToReachPanel(view: CommunityScreenView) {
                       <div>
                         <dt>Phone</dt>
                         <dd className={v6.mono}>
-                          <a href={`tel:${contact.publishedPhone.replace(/[^\d+]/g, "")}`}>{contact.publishedPhone}</a>
+                          <DemoPhoneNumber number={contact.publishedPhone} who={team.name} />
                         </dd>
                       </div>
                     )}
@@ -307,10 +308,10 @@ export function communityHowToReachPanel(view: CommunityScreenView) {
                         </dd>
                       </div>
                     )}
-                    {contact.address === null ? null : (
+                    {contact.suburb === null ? null : (
                       <div>
-                        <dt>Address</dt>
-                        <dd>{contact.address}</dd>
+                        <dt>Suburb</dt>
+                        <dd>{contact.suburb}</dd>
                       </div>
                     )}
                   </dl>

@@ -13,16 +13,23 @@ import {
 } from "@/components/ward-management/ward-clock";
 import { typedClock, typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import {
-  EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE,
+  currentLegalPosition,
+  FORM_RECORDED_ENDED,
+  legalFormNowWords,
+} from "@/components/ward-management/ward-legal-form-progression";
+import {
+  examinationBedHeldNotice,
   examinationRevokedWhileBedHeld,
 } from "@/components/ward-management/ward-derivations";
 import { noFormWords as formNotHeldWords } from "@/components/ward-management/ward-legal-status";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
+import { examinationOutcomeShort } from "@/components/ward-management/ward-legal-forms";
 import { edWaitStep } from "@/components/ward-management/ward-ed-wait-steps";
 import { EscalationLastOutcome, EscalationStepCall } from "@/components/ward-management/escalation-step-call";
 import { buttonClass, StatusGlyph } from "@/components/wf";
 import { CardSafetyTagsLazy as CardSafetyTags } from "@/components/ward-management/patients/card-safety-tags-lazy";
 import { EdActionsMenu } from "./ed-board-controls";
+import { edJourneyState, edJourneyWords } from "./ed-bed-search-step";
 import type { EdBoardRowModel } from "./ed-screen-board-row";
 import type { EdScreenContext } from "./ed-screen-context";
 import { edRowReferralStatus } from "./ed-referral-status";
@@ -53,6 +60,7 @@ export function renderEdBoardTableRow(
     acceptedUnit,
     bedSearch,
     nextAction,
+    openWardReferral,
   } = row;
   const {
     readmissionFact,
@@ -81,6 +89,11 @@ export function renderEdBoardTableRow(
   // At or over, never strictly over: the one ED long-wait rule (ward-pressure.ts, ops-16, 13 Oct
   // 2026) is red "once the longest wait reaches the ED access target".
   const overTarget = minutesInDepartment >= accessTarget;
+  // 3.1 (K6, Josh 13 Nov 2026): the step reads the journey too, from the same reading as "Waiting on
+  // a ward", so an accepted, pulled or booked person is never told "Ask wards". Thresholds unchanged.
+  const journey = edJourneyState(movement, openWardReferral !== undefined);
+  const waitStep = edWaitStep(minutesInDepartment, journey);
+  const journeyWords = edJourneyWords(journey);
   const waitTone = edWaitTone(movement.urgency, minutesInDepartment, accessTarget);
   const openSheet = () => {
     setPhoneSheetReason(undefined);
@@ -89,15 +102,18 @@ export function renderEdBoardTableRow(
   // CS-14 (Audit 1, Josh 20 Oct 2026): no form is "None" only for a voluntary patient; for anyone
   // else nothing is recorded, which is not the same as no form.
   const noFormWords = movement.legalStatus === "Voluntary" ? "None" : "Not recorded";
-  const formWords = movement.legalForm ? `Form ${movement.legalForm.code}` : formNotHeldWords(movement.legalStatus);
+  // 1.1 (K1) and A1: the one current legal position, so this row reads as every other screen: the
+  // form as recorded until a person records that it ended.
+  const legal = currentLegalPosition(movement);
+  const formWords = legalFormNowWords(movement) ?? formNotHeldWords(movement.legalStatus);
   // CS-11 (Audit 1, Josh 20 Oct 2026): past the expiry typed on the form shows in words with the
   // danger mark, never the same amber dot as "close". The typed time only: nothing is computed.
-  const formExpiryPassed =
-    movement.legalForm?.dueAt !== undefined && clockState(movement.legalForm.dueAt, now, thresholds) === "breached";
+  const formExpiryPassed = legal.dueAt !== undefined && clockState(legal.dueAt, now, thresholds) === "breached";
   // H11 (Josh, 3 Nov 2026): the full wording, word for word, behind the row's short expiry line.
-  const formExpiryFullWords =
-    movement.legalForm?.dueAt !== undefined
-      ? `${typedTimePhrase(movement.legalForm.dueAt, now)} (limits not legally checked)`
+  const formExpiryFullWords = legal.ended
+    ? FORM_RECORDED_ENDED
+    : legal.dueAt !== undefined
+      ? `${typedTimePhrase(legal.dueAt, now)} (limits not legally checked)`
       : undefined;
   const clearedWords =
     medicalClearance === undefined ? "Pending" : medicalClearance.cleared ? "Cleared" : "Not cleared";
@@ -113,10 +129,11 @@ export function renderEdBoardTableRow(
       clearance={medicalClearance}
       arrivedAt={movement.openedAt}
       reviewed={movement.examination !== undefined}
-      revokedNotice={examinationRevokedWhileBedHeld(movement) ? EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE : undefined}
+      revokedNotice={examinationRevokedWhileBedHeld(movement) ? examinationBedHeldNotice(movement) : undefined}
+      revokedChip={movement.examination ? examinationOutcomeShort(movement.examination.outcome) : undefined}
       earlierExaminations={(movement.supersededExaminations ?? []).map(
         (record) =>
-          `Earlier examination · ${record.outcome.replace(/_/g, " ")}, ${formatInstantWithDay(record.at, now)}`,
+          `Earlier examination · ${examinationOutcomeShort(record.outcome)}, ${formatInstantWithDay(record.at, now)}`,
       )}
       now={now}
       onOpenRecord={openSheet}
@@ -276,33 +293,35 @@ export function renderEdBoardTableRow(
           {waitTone ? <StatusGlyph tone={waitTone} size={8} /> : null}
           <b className={styles.a2Mono}>{splitDuration(minutesInDepartment)}</b>
         </span>
-        {edWaitStep(minutesInDepartment) ? (
-          <span
-            className={styles.a2Sub}
-            data-testid={`ward-ed-wait-step-${movement.id}`}
-            title={edWaitStep(minutesInDepartment)?.label}
-          >
-            Step {edWaitStep(minutesInDepartment)?.step}
-            <EscalationLastOutcome movement={movement} step={edWaitStep(minutesInDepartment)!.step} now={now} />
+        {waitStep ? (
+          <span className={styles.a2Sub} data-testid={`ward-ed-wait-step-${movement.id}`} title={waitStep.label}>
+            Step {waitStep.step}
+            <EscalationLastOutcome movement={movement} step={waitStep.step} now={now} />
           </span>
         ) : null}
-        {/* Six features build (Josh's sign-off, 9 Nov 2026): the step's suggested next step, as a prompt. */}
-        {edWaitStep(minutesInDepartment) ? (
+        {/* Six features build (Josh's sign-off, 9 Nov 2026): the step's suggested next step, as a prompt.
+            3.1: once the step's own action is recorded, the journey's neutral words stand instead. */}
+        {waitStep && waitStep.actionDone ? (
+          <span className={styles.a2Sub} data-testid={`ward-ed-wait-journey-${movement.id}`}>
+            {journeyWords}
+          </span>
+        ) : waitStep ? (
           <span
             className={styles.a2Sub}
             data-testid={`ward-ed-wait-next-step-${movement.id}`}
-            title={`Suggested next step: ${edWaitStep(minutesInDepartment)?.nextStep}`}
+            title={`Suggested next step: ${waitStep.nextStep}`}
           >
-            <span aria-hidden="true">{edWaitStep(minutesInDepartment)?.nextStepShort}</span>
-            <span className="sr-only">Suggested next step: {edWaitStep(minutesInDepartment)?.nextStep}</span>
+            <span aria-hidden="true">{waitStep.nextStepShort}</span>
+            <span className="sr-only">Suggested next step: {waitStep.nextStep}</span>
           </span>
         ) : null}
         {/* Escalation calls (item 3, D-133): who to call at this step, and what happened. A closed
-            movement keeps its last outcome above but offers no call, which the engine would refuse. */}
-        {edWaitStep(minutesInDepartment) && !movement.closure ? (
+            movement keeps its last outcome above but offers no call, which the engine would refuse.
+            3.1: nor does a step whose action the journey already records. */}
+        {waitStep && !waitStep.actionDone && !movement.closure ? (
           <EscalationStepCall
             movement={movement}
-            step={edWaitStep(minutesInDepartment)!.step}
+            step={waitStep.step}
             minutesInDepartment={minutesInDepartment}
             patientName={patientInfo.formalName}
             now={now}
@@ -345,7 +364,7 @@ export function renderEdBoardTableRow(
               patientName={patientInfo.formalName}
               umrn={patientInfo.umrn}
               bay={phoneBay.replace(/^Bay /, "")}
-              recordCode={movement.legalForm?.code}
+              recordCode={legal.form?.code}
               writtenTimeEntered={movement.formedAt !== undefined}
               emptyWords={noFormWords}
               now={now}
@@ -355,7 +374,7 @@ export function renderEdBoardTableRow(
               {/* H11 (Josh, 3 Nov 2026): the short line on the row, the time exactly as typed and
                   "not checked" still in view; the full wording is the button's description and
                   heads its menu. */}
-              {movement.legalForm?.dueAt !== undefined ? (
+              {legal.dueAt !== undefined ? (
                 <span
                   className={handover.formNote}
                   aria-hidden="true"
@@ -367,8 +386,7 @@ export function renderEdBoardTableRow(
                   {formExpiryWarningText !== undefined ? (
                     <StatusGlyph tone={formExpiryPassed ? "danger" : "warning"} size={8} />
                   ) : null}{" "}
-                  {isClockBreached(movement.legalForm.dueAt, now) ? "ended" : "ends"}{" "}
-                  {typedClock(movement.legalForm.dueAt, now)}, not checked
+                  {isClockBreached(legal.dueAt, now) ? "ended" : "ends"} {typedClock(legal.dueAt, now)}, not checked
                 </span>
               ) : null}
             </FormCell>

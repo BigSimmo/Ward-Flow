@@ -200,7 +200,10 @@ describe("Case 2 — the hero headline states availableNow alone", () => {
 describe("Case 20 — each ward's drawer states its own occupied, pulled and closed beds, never another ward's or the group's rolled-up total", () => {
   it("matches an independently-computed bedStates for that unit alone, on every ward", () => {
     const states = new Map(
-      networkRows.map((row) => [row.unit.id, bedStates(row.unit, seed.admissions, seed.bedReleases, seed.leaveBeds)]),
+      networkRows.map((row) => [
+        row.unit.id,
+        bedStates(row.unit, seed.admissions, seed.bedReleases, seed.leaveBeds, []),
+      ]),
     );
     expect(
       new Set([...states.values()].map((state) => state.occupied)).size,

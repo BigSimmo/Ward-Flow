@@ -41,6 +41,7 @@ import {
 } from "@/components/ward-management/shell/ward-sound-store";
 import {
   defaultWardConfiguration,
+  describeInvalidConfiguration,
   mergeConfiguration,
   validateConfiguration,
   type WardConfiguration,
@@ -190,6 +191,8 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   });
   // Round 3: Save opens a review first; "file" when a loaded rules file put the draft there.
   const [review, setReview] = useState<"draft" | "file" | null>(null);
+  // C09: a refused rules file keeps its reason beside Load, rather than in a passing toast.
+  const [loadError, setLoadError] = useState<string | null>(null);
   // Show changed only: held here so desktop can keep the switch in the sticky section bar.
   const [changedOnly, setChangedOnly] = useState(false);
   const [localConfigurationFailure, setConfigurationFailure] = useState<string | null>(null);
@@ -573,8 +576,9 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
       return;
     }
     if (savingRef.current || !file) return;
+    setLoadError(null);
     if (file.size > 10 * 1024 * 1024) {
-      showToast("Configuration file exceeds 10 MB limit.");
+      setLoadError("The rules file was not loaded: it is over 10 MB. Choose another file.");
       return;
     }
     const reader = new FileReader();
@@ -594,13 +598,13 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
           setPhoneSheet(null);
           setReview("file");
         } else {
-          showToast("Invalid configuration file format.");
+          setLoadError(`The rules file was not loaded: ${describeInvalidConfiguration(payload)}. Choose another file.`);
         }
       } catch {
-        showToast("Invalid configuration file format.");
+        setLoadError("The rules file was not loaded: it is not a rules file saved from Settings. Choose another file.");
       }
     };
-    reader.onerror = () => showToast("This rules file could not be read. Select it again.");
+    reader.onerror = () => setLoadError("This rules file could not be read. Select it again.");
     reader.readAsText(file);
   };
 
@@ -905,6 +909,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
           onDownload={handleExport}
           onLoad={handleImport}
           loadUnavailable={configurationBlockReason}
+          loadError={loadError}
         />
         <SettingsReferenceCard reference={reference} onReferenceChange={setReference} thresholds={thresholds} />
       </SettingsFold>

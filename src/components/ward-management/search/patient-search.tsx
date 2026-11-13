@@ -49,6 +49,11 @@ import {
 } from "@/components/ward-management/ward-clock";
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import {
+  currentLegalPosition,
+  FORM_RECORDED_ENDED,
+  legalFormNowWords,
+} from "@/components/ward-management/ward-legal-form-progression";
+import {
   useDueSoonThresholds,
   useWardFlowClock,
   useWardFlowSelect,
@@ -502,14 +507,18 @@ export function PatientSearchPage() {
         // The movement's own legal record and urgency. A table keyed by movement id and a default
         // of "Voluntary" used to stand in here, and an age of 38 and a sex of "Male" filled any gap
         // (25 September 2026 audit, A5).
-        const legal = m.legalForm ? `Form ${m.legalForm.code}` : m.legalStatus;
+        // 1.1 (K1): the one current legal position, "Form 3B ended" once a person records the end.
+        const legalPosition = currentLegalPosition(m);
+        const legal = legalFormNowWords(m) ?? m.legalStatus;
         const urgency = `Tier ${m.urgency}`;
         const patientAge = recordedAge(info.patient, calendarDateOf(now, dayZero));
 
-        const movementDueAt = m.legalForm?.dueAt;
+        const movementDueAt = legalPosition.dueAt;
         let legalExpires = "Voluntary status";
         if (legal !== "Voluntary") {
-          if (movementDueAt !== undefined) {
+          if (legalPosition.ended) {
+            legalExpires = FORM_RECORDED_ENDED;
+          } else if (movementDueAt !== undefined) {
             // Legal times only as typed (31 Oct 2026): never a running "1h 15m overdue".
             legalExpires = typedTimeLine(movementDueAt, now);
           } else {
@@ -549,7 +558,7 @@ export function PatientSearchPage() {
           clinicalNote: NO_CLINICAL_NOTE,
           personRecordId: info.patient?.id ?? null,
           openedAtInstant: m.openedAt,
-          legalDueAt: m.legalForm?.dueAt ?? null,
+          legalDueAt: legalPosition.dueAt ?? null,
           originalSubject: { kind: "movement", movement: m },
         });
       } else if (r.kind === "referral") {

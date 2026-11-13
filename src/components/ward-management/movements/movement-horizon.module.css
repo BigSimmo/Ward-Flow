@@ -9,6 +9,8 @@
   --horizon-row-min: 48px;
   display: flex;
   flex-direction: column;
+  /* C25: in the phone sheet's flex column, overflow: hidden let it shrink to its 2px border. */
+  flex-shrink: 0;
   min-width: 0;
   width: 100%;
   overflow: hidden;

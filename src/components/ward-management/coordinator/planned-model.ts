@@ -3,6 +3,7 @@ import type { WardConfiguration } from "@/components/ward-management/ward-config
 import { bedIsOccupied, type Admission, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { decisionTargetReading } from "@/components/ward-management/ward-decision-targets";
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
@@ -17,6 +18,13 @@ import { allEmergencyDepartments } from "@/components/ward-management/ward-sites
  * (`configuration`) coming due. Records (not targets) for the rest of today follow under "After
  * your shift", so today's expected discharges are not lost at 15:00. Nothing is predicted and no
  * legal time is computed or counted down (D-70): legal form times stay as typed on Legal forms.
+ *
+ * Past planned time (root-cause fix 2.2, approved by Josh 13 Nov 2026): a record whose time has
+ * passed with nothing done stays in view, first, instead of dropping off the list. A planned move
+ * and a planned admission stay until someone acts (the move leaves, the arrival is recorded or the
+ * booking changes). A booked transport stays until its own inbox item, "Booking estimate passed",
+ * appears. An expected discharge stays for the rest of today; earlier ones already read "Date
+ * passed" on Capacity, the census, Discharges and Handover.
  */
 export type PlannedKind = "move" | "transport" | "discharge" | "admission" | "target";
 
@@ -32,6 +40,8 @@ export type PlannedRow = {
   recordId?: string;
   /** After the shift ends (later today). Targets are never listed here. */
   later: boolean;
+  /** The time has passed and nobody has acted yet ("Past planned time"). Targets are never listed here. */
+  past: boolean;
 };
 
 type PlannedInput = {
@@ -45,8 +55,12 @@ type PlannedInput = {
   until: Instant;
   /** The end of today: records (not targets) up to here follow the shift's rows. */
   endOfDay: Instant;
+  /** The start of today: an expected discharge that passed earlier today stays under Past planned time. */
+  startOfDay?: Instant;
   nameOf: (subject: Movement | Admission | PlannedAdmission) => ResolvedPatientInfo;
 };
+
+const BOOKING_ESTIMATE_PASSED_AFTER_MINUTES = CLINICAL_VALUES.bookingEstimatePassed.value;
 
 const STEP_WORDS: Record<string, string> = {
   referral_decision: "Referral decision target",
@@ -56,6 +70,7 @@ const STEP_WORDS: Record<string, string> = {
 
 export function plannedRows(input: PlannedInput): PlannedRow[] {
   const { movements, admissions, plannedAdmissions, units, configuration, now, until, endOfDay, nameOf } = input;
+  const startOfDay = input.startOfDay ?? endOfDay - 24 * 60;
   // Targets: the rest of the shift only. Records: the rest of today.
   const within = (at: Instant | null | undefined): at is Instant =>
     at !== undefined && at !== null && at > now && at <= until;
@@ -73,15 +88,20 @@ export function plannedRows(input: PlannedInput): PlannedRow[] {
     who: info.formalName,
     ...(info.patient ? { recordId: info.patient.id } : {}),
   });
-  const rows: Omit<PlannedRow, "later">[] = [];
+  // Past planned time: the time has passed. Each kind below says how long its row stays.
+  const passed = (at: Instant | null | undefined): at is Instant => at !== undefined && at !== null && at <= now;
+  const rows: Omit<PlannedRow, "later" | "past">[] = [];
 
   for (const movement of movements) {
     if (!isOpen(movement)) continue;
     const person = who(nameOf(movement));
-    if (movement.acceptedUnitId && today(movement.plannedMoveAt)) {
+    // A late move stays until it leaves (moving) or closes.
+    const moveAt = movement.plannedMoveAt;
+    const moveLate = movement.stage !== "moving" && passed(moveAt);
+    if (movement.acceptedUnitId && moveAt !== undefined && moveAt !== null && (today(moveAt) || moveLate)) {
       rows.push({
         id: `move:${movement.id}`,
-        at: movement.plannedMoveAt,
+        at: moveAt,
         kind: "move",
         what: movement.stage === "accepted_awaiting_bed" ? "Planned move, bed not pulled yet" : "Planned move",
         ...person,
@@ -90,10 +110,13 @@ export function plannedRows(input: PlannedInput): PlannedRow[] {
     }
     const job = movement.transport;
     if (job && job.cancelledAt === undefined && job.arrivedAt === undefined && job.stoppedAt === undefined) {
-      if (today(job.estimatedAt)) {
+      // A passed estimate stays until the inbox's "Booking estimate passed" item takes over.
+      const estimatedAt = job.estimatedAt;
+      const transportLate = passed(estimatedAt) && now - estimatedAt < BOOKING_ESTIMATE_PASSED_AFTER_MINUTES;
+      if (estimatedAt !== undefined && (today(estimatedAt) || transportLate)) {
         rows.push({
           id: `transport:${movement.id}:${job.id}`,
-          at: job.estimatedAt,
+          at: estimatedAt,
           kind: "transport",
           what: `Transport booked (${job.provider}), time the booker was given`,
           ...person,
@@ -138,10 +161,13 @@ export function plannedRows(input: PlannedInput): PlannedRow[] {
   }
 
   for (const admission of admissions) {
-    if (admission.state === "departed" || !today(admission.expectedDischargeAt)) continue;
+    const dischargeAt = admission.expectedDischargeAt;
+    if (admission.state === "departed" || dischargeAt === null || dischargeAt === undefined) continue;
+    // A discharge that passed earlier today stays; earlier days already read "Date passed" elsewhere.
+    if (!today(dischargeAt) && !(passed(dischargeAt) && dischargeAt >= startOfDay)) continue;
     rows.push({
       id: `discharge:${admission.id}`,
-      at: admission.expectedDischargeAt,
+      at: dischargeAt,
       kind: "discharge",
       what: admission.dischargeConfirmedAt ? "Discharge, confirmed" : "Expected discharge, not yet confirmed",
       ...who(nameOf(admission)),
@@ -150,7 +176,9 @@ export function plannedRows(input: PlannedInput): PlannedRow[] {
   }
 
   for (const booking of plannedAdmissions) {
-    if (booking.state !== "booked" || !today(booking.expectedArrivalAt)) continue;
+    // A late booking stays until the arrival is recorded or the booking is changed or cancelled.
+    if (booking.state !== "booked" || !(today(booking.expectedArrivalAt) || passed(booking.expectedArrivalAt)))
+      continue;
     // The resolver reads the booking's own link (archived D-14 keeps that read in one place).
     const info = nameOf(booking);
     rows.push({
@@ -163,7 +191,9 @@ export function plannedRows(input: PlannedInput): PlannedRow[] {
     });
   }
 
-  return rows.map((row) => ({ ...row, later: row.at > until })).sort((a, b) => a.at - b.at || a.id.localeCompare(b.id));
+  return rows
+    .map((row) => ({ ...row, later: row.at > until, past: row.at <= now }))
+    .sort((a, b) => a.at - b.at || a.id.localeCompare(b.id));
 }
 
 /**
@@ -208,6 +238,7 @@ export function tomorrowOutlook(
       ...who(nameOf(admission)),
       where: ward(admission.unitId),
       later: true,
+      past: false,
     });
   }
 
@@ -223,6 +254,7 @@ export function tomorrowOutlook(
       ...(info.patient ? who(info) : { who: booking.initials ? `Initials ${booking.initials}` : "Name not recorded" }),
       where: ward(booking.unitId),
       later: true,
+      past: false,
     });
   }
 

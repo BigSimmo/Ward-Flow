@@ -6,6 +6,7 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import { wardLabel } from "@/components/ward-management/ward-absence-labels";
 import { dayOf, type DueSoonThresholds, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
+import { isFreeingToday } from "@/components/ward-management/ward-shared-figures";
 import type {
   BedRelease,
   HealthService,
@@ -203,7 +204,9 @@ export function bedMeetingSheet(input: BedMeetingInput): BedMeetingSheet {
   // Discharges — the Discharges board's own grouping.
   const unitName = (unitId: string) => wardLabel(unitId, units.find((unit) => unit.id === unitId)?.name);
   const groups = groupDischarges(scopedReleases, now);
-  const dueToday = (release: BedRelease) => dayOf(release.expectedAt) === dayOf(now);
+  // A16-05: "due today" is the shared `isFreeingToday` rule, the same span as `freeingToday`, so the
+  // sheet's today rows and its "held up" subcount never take in a date that has already passed.
+  const dueToday = (release: BedRelease) => isFreeingToday(release, now);
   const orderedReleases: { release: BedRelease; row: BedMeetingDischargeRow }[] = [
     ...groups.blocked.map((release) => ({
       release,
@@ -238,9 +241,7 @@ export function bedMeetingSheet(input: BedMeetingInput): BedMeetingSheet {
     ).length,
     beyondToday: groups.excludedBeyondToday,
     freeingToday: bedsFreeingTodayTotal(scopedReleases, now, scopedUnitIds) ?? 0,
-    heldUpToday: scopedReleases.filter(
-      (release) => release.state !== "discharged" && release.blocker !== null && dueToday(release),
-    ).length,
+    heldUpToday: scopedReleases.filter((release) => release.blocker !== null && dueToday(release)).length,
     rows: dischargeRows.slice(0, BED_MEETING_ROW_LIMIT),
     moreRows: Math.max(0, dischargeRows.length - BED_MEETING_ROW_LIMIT),
     todayRows: todayDischargeRows.slice(0, BED_MEETING_ROW_LIMIT),

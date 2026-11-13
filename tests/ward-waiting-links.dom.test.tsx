@@ -107,8 +107,10 @@ describe("screens link into a view", () => {
       examination: undefined,
       legalForm: { ...base.legalForm!, code: "1A", dueAt: NOW_ANCHOR - 30 },
     };
-    // The form ended at the examination, so its old due time no longer counts (as on Delays).
-    const ended: Movement = { ...due, examination: { ...base.examination, outcome: "inpatient_order" } as never };
+    // A1 (13 Nov 2026): the examination alone ends nothing, so the due time still counts after it.
+    const examined: Movement = { ...due, examination: { ...base.examination, outcome: "inpatient_order" } as never };
+    // A person recorded the form ended, so its old due time no longer counts (as on Delays).
+    const ended: Movement = { ...examined, legalForm: { ...due.legalForm!, endedBy: "form_3e" } };
     const queue = (movement: Movement) =>
       render(
         <PriorityQueue
@@ -122,6 +124,9 @@ describe("screens link into a view", () => {
       );
     queue(due);
     expect(screen.getByTestId(`ward-queue-row-${due.id}`)).toHaveTextContent(/Form 1A/u);
+    cleanup();
+    queue(examined);
+    expect(screen.getByTestId(`ward-queue-row-${examined.id}`)).toHaveTextContent(/Form 1A/u);
     cleanup();
     queue(ended);
     expect(screen.getByTestId(`ward-queue-row-${ended.id}`)).not.toHaveTextContent(/Form 1A/u);

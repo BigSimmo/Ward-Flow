@@ -2,6 +2,7 @@ import type { WardFlowState } from "../ward-flow-reducer";
 import { wardStatistics } from "../ward-statistics";
 import { bedIsOccupied, daysInBed, endedInWardTransfer, STAY_BANDS, stayBand } from "../ward-admissions";
 import { dayOf, MINUTES_PER_DAY, isClockBreached } from "../ward-clock";
+import { currentLegalDueAt } from "../ward-legal-form-progression";
 import { openBedsNow, bedsPendingPreparation } from "../ward-bed-availability";
 import { dischargeDateCoverage } from "./statistics-ward-discharge-dates";
 import { readyNotYetGone } from "./statistics-ward-ready";
@@ -331,9 +332,11 @@ export function executiveEdSummary(
   release.subset(stillInEd, physicalWaiting);
   const legalClockBreachedCount = c(
     "legalClockBreached",
-    figures.departmentMovements.filter(
-      (movement) => movement.legalForm?.dueAt !== undefined && isClockBreached(movement.legalForm.dueAt, input.now),
-    ).length,
+    // 1.1 (K1): the typed end still in force, so a form a person recorded as ended is not counted.
+    figures.departmentMovements.filter((movement) => {
+      const dueAt = currentLegalDueAt(movement);
+      return dueAt !== undefined && isClockBreached(dueAt, input.now);
+    }).length,
   );
   release.subset(total, legalClockBreachedCount);
   return {

@@ -7,6 +7,7 @@ import { durMinutes } from "@/components/wf";
 import { communityTeamById, communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
 import { hubEntries } from "@/components/ward-management/hub/hub-derivations";
+import { networkNamedHolds } from "@/components/ward-management/ward-bed-states";
 import { isOfficerJob } from "@/components/ward-management/officer/officer-jobs";
 import { usePersonaDeskId } from "@/components/ward-management/settings/persona-sync";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -128,6 +129,7 @@ export function useTourFacts(role: TourRole): {
           bedReleases,
           admissions,
           leaveBeds,
+          namedHolds: networkNamedHolds(movements, referrals),
           now,
         }).find((candidate) => candidate.id === unit.id);
         if (entry?.beds !== undefined) {

@@ -31,7 +31,7 @@ import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/w
  * over the real site fixture with the board clock pinned at 10:42. Silent about paint and layout.
  */
 
-const MOCK_NUMBER = /^08 0000 \d{4}$/u;
+const MOCK_NUMBER = /^08 5550 \d{4}$/u;
 
 function renderOnCall() {
   return render(
@@ -152,7 +152,7 @@ describe("the on-call screen", () => {
     const { container } = renderOnCall();
     // Page tops (Josh, 9 Nov 2026): the State bed desk is the act row; the bed flow lines and the
     // crisis line are one slim Key lines row, three shown and the rest one tap away.
-    expect(screen.getByTestId("ward-on-call-act")).toHaveTextContent(/^State bed desk08 0000 \d{4}until 20:00/u);
+    expect(screen.getByTestId("ward-on-call-act")).toHaveTextContent(/^State bed desk08 5550 \d{4}until 20:00/u);
     const strip = within(screen.getByRole("list", { name: "Key lines" }));
     const keys = () =>
       strip
@@ -170,7 +170,7 @@ describe("the on-call screen", () => {
 
   it("has no copy-only Call button, and Copy number still copies the number (D-72)", async () => {
     renderOnCall();
-    expect(panel().queryByRole("button", { name: /^Call 08 0000/u })).not.toBeInTheDocument();
+    expect(panel().queryByRole("button", { name: /^Call 08 5550/u })).not.toBeInTheDocument();
     fireEvent.click(panel().getAllByRole("button", { name: /^Copy .*number$/u })[0]!);
     await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
     // D-71 item 7: every copy starts with the synthetic line, the number on the line after it.
@@ -417,7 +417,7 @@ describe("the on-call screen", () => {
     expect(card.getByText("State bed flow coordinator")).toBeVisible();
     fireEvent.click(card.getByRole("button", { name: "Copy as text" }));
     await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
-    expect(writeText.mock.calls[0]![0]).toMatch(/State bed desk 08 0000 \d{4}, 08:00 to 20:00/u);
+    expect(writeText.mock.calls[0]![0]).toMatch(/State bed desk 08 5550 \d{4}, 08:00 to 20:00/u);
     expect(await card.findByTestId("ward-on-call-notice")).toHaveTextContent("Downtime card copied");
   });
 

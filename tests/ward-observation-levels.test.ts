@@ -281,12 +281,15 @@ describe("saves made before observation levels still load", () => {
     return state;
   }
 
-  it("reads true as Constant within sight and false as General, and nothing else", () => {
+  // Root-cause fix 3.5 (Josh, 13 Nov 2026): the old flag said only "no one-to-one", never General,
+  // so false now reads as Not recorded.
+  it("reads true as Constant within sight and false as Not recorded, never General", () => {
     const upgraded = upgradeLegacyObservationRows(legacySave()) as unknown as WardFlowState;
     for (const row of [...upgraded.movements, ...upgraded.admissions]) {
       expect("specialling" in row).toBe(false);
-      expect(["general", "within_sight"]).toContain(row.observation.level);
+      expect(["not_recorded", "within_sight"]).toContain(row.observation.level);
     }
+    expect(upgraded.admissions.some((admission) => admission.observation.level === "not_recorded")).toBe(true);
     expect(upgraded.movements.some((movement) => movement.observation.level === "within_sight")).toBe(true);
   });
 

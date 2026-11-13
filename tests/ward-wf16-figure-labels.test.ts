@@ -20,7 +20,7 @@ describe("WF-16 figure labels", () => {
   const { units, admissions, bedReleases, leaveBeds, movements } = seed;
   const totals = units.reduce(
     (sum, unit) => {
-      const states = bedStates(unit, admissions, [...bedReleases], leaveBeds);
+      const states = bedStates(unit, admissions, [...bedReleases], leaveBeds, []);
       const figures = wardBedUseFigures(unit, admissions, bedReleases);
       return {
         occupied: sum.occupied + wardOccupiedBeds(unit, admissions, bedReleases),

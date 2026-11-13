@@ -253,7 +253,7 @@ export function buildTiles(
       : Math.max(
           0,
           Math.min(
-            states.pulled - bedStates(unit, admissions, [...bedReleases], []).pulled,
+            states.pulled - bedStates(unit, admissions, [...bedReleases], [], []).pulled,
             emptyPoolCount - closedCount,
           ),
         );
@@ -410,7 +410,7 @@ export function buildOccupants(
     .map((admission) => ({
       key: admission.id,
       days: daysInBed(admission, now),
-      dayNumber: stayDayNumber(daysInBed(admission, now)),
+      dayNumber: stayDayNumber(admission, now),
       bandLabel: stayBand(admission, now)?.label ?? null,
       pastDate: isPastExpectedDischarge(admission, now),
       sex: admission.sex,

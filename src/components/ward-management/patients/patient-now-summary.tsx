@@ -477,7 +477,10 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
               ? "Referral closed · no active transfer"
               : liveMovement?.stage === "arrived"
                 ? "Arrived · transfer complete"
-                : modeMeta.label
+                : // A16-11: with nothing on the journey or ward, the state tag names any open referral.
+                  mode === "idle" && stateTag
+                  ? stateTag.tag
+                  : modeMeta.label
         }
         // Redesign (Josh, 30 Oct): one place per fact. Legal status lives in Legal now (or the Not
         // active card's Legal status row); on the ward the day count and discharge date live in the

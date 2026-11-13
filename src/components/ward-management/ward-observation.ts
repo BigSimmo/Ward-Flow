@@ -17,7 +17,19 @@ import { CLINICAL_VALUES, OBSERVATION_LEVEL_NAMES } from "@/components/ward-mana
  * they vary by health service. Stored records keep the code below, never the name.
  */
 export const OBSERVATION_LEVELS = ["general", "intermittent", "within_sight", "arms_length", "two_staff"] as const;
-export type ObservationLevel = (typeof OBSERVATION_LEVELS)[number];
+
+/**
+ * NOT RECORDED (root-cause fix 3.5, approved by Josh 13 Nov 2026). Where the app makes a stay itself
+ * (a planned arrival turned into a stay, a save from before observation levels, a stay hidden from a
+ * desk) nobody chose a level, so the record says so rather than holding General. It reads "Not
+ * recorded", is never counted as General, and is not one of the choices in `OBSERVATION_LEVELS`: a
+ * person records a level, they do not pick "not recorded". It counts no staff, as the absent level
+ * did before; how an unrecorded level should be treated clinically is Josh's call (none proposed).
+ */
+const OBSERVATION_NOT_RECORDED = "not_recorded";
+/** A level a person can record. */
+type RecordedObservationLevel = (typeof OBSERVATION_LEVELS)[number];
+export type ObservationLevel = RecordedObservationLevel | typeof OBSERVATION_NOT_RECORDED;
 
 /** The intervals a person can choose for Intermittent observation, shortest first. */
 export const INTERMITTENT_INTERVAL_MINUTES: readonly number[] = [
@@ -64,6 +76,18 @@ export const GENERAL_OBSERVATION: Observation = Object.freeze({
   reviewAt: null,
 });
 
+/** No level recorded: nobody chose one. Never shown or counted as General. */
+export const NOT_RECORDED_OBSERVATION: Observation = Object.freeze({
+  level: OBSERVATION_NOT_RECORDED,
+  intervalMinutes: null,
+  reviewAt: null,
+});
+
+/** True when a person recorded a level (anything but "not recorded"). */
+export function observationIsRecorded(observation: Pick<Observation, "level"> | undefined): boolean {
+  return observation !== undefined && observation.level !== OBSERVATION_NOT_RECORDED;
+}
+
 /** Shorthand for seeds and tests: a level with no interval or review time beyond what it needs. */
 export function observationAt(level: ObservationLevel, reviewAt: Instant | null = null): Observation {
   return {
@@ -90,7 +114,7 @@ export function observationRatio(level: ObservationLevel): string | null {
 }
 
 export function observationLevelName(level: ObservationLevel): string {
-  return OBSERVATION_LEVEL_NAMES[level];
+  return level === OBSERVATION_NOT_RECORDED ? "Not recorded" : OBSERVATION_LEVEL_NAMES[level];
 }
 
 /**
@@ -99,6 +123,7 @@ export function observationLevelName(level: ObservationLevel): string {
  */
 export function observationSummary(observation: Observation): string {
   const name = observationLevelName(observation.level);
+  if (observation.level === OBSERVATION_NOT_RECORDED) return name;
   if (observation.level === "general") {
     const hours = CLINICAL_VALUES.observationGeneral.value;
     return hours === 1 ? `${name}, hourly` : `${name}, every ${hours} hours`;
@@ -115,7 +140,11 @@ export function isObservation(value: unknown): value is Observation {
   const record = value as Record<string, unknown>;
   // Exactly these three keys: an extra one could carry typed text past the storage fence.
   if (Object.keys(record).sort().join() !== "intervalMinutes,level,reviewAt") return false;
-  if (!OBSERVATION_LEVELS.includes(record.level as ObservationLevel)) return false;
+  if (
+    record.level !== OBSERVATION_NOT_RECORDED &&
+    !OBSERVATION_LEVELS.includes(record.level as RecordedObservationLevel)
+  )
+    return false;
   const interval = record.intervalMinutes;
   if (record.level === "intermittent") {
     if (typeof interval !== "number" || !INTERMITTENT_INTERVAL_MINUTES.includes(interval)) return false;

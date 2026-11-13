@@ -454,7 +454,8 @@ function OperationalServiceScreen({ serviceId }: { serviceId: string }) {
         phone: (
           <ServicePhone
             states={serviceUnits.map((unit) => {
-              const unheld = bedStates(unit, admissions, bedReleases, leaveBeds);
+              // Hold-free on purpose: in use is the beds taken by a stay, never the Ready figure.
+              const unheld = bedStates(unit, admissions, bedReleases, leaveBeds, []);
               return {
                 unit,
                 states: bedStates(unit, admissions, bedReleases, leaveBeds, namedHolds),

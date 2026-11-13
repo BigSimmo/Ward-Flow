@@ -9,7 +9,7 @@ import { unitHasOpenBeds } from "@/components/ward-management/ward-bed-designati
 import { involuntaryBedNeededForLegalStatus } from "@/components/ward-management/ward-eligibility";
 import { SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { bedStates } from "@/components/ward-management/ward-bed-states";
+import { bedStates, networkNamedHolds } from "@/components/ward-management/ward-bed-states";
 import {
   RECORDED_SEXES,
   type AtsCategory,
@@ -40,6 +40,7 @@ import {
   type ReferralContact,
   type ReferralGenderAnswer,
   type ReferralNeeds,
+  referrerPhoneError,
 } from "./referral-submission";
 import { originName, sourceWardName } from "@/components/ward-management/ward-movement-origin";
 
@@ -389,11 +390,15 @@ export function useWardCapacity(): WardCapacityRecord[] {
   const bedReleases = flow?.bedReleases;
   const admissions = flow?.admissions;
   const leaveBeds = flow?.leaveBeds;
+  const movements = flow?.movements;
+  const referrals = flow?.referrals;
   return useMemo(() => {
     if (!units || !bedReleases) return [];
+    // A16-25 (3.4): a bed named for an incoming patient is held, as on Capacity.
+    const holds = networkNamedHolds(movements ?? [], referrals ?? []);
     return units.map((unit) => {
       // The ruled bed boxes (`ward-bed-states.ts`): Ready · Pulled · Closed · Occupied.
-      const states = bedStates(unit, admissions ?? [], bedReleases, leaveBeds ?? []);
+      const states = bedStates(unit, admissions ?? [], bedReleases, leaveBeds ?? [], holds);
       return {
         unitId: unit.id,
         siteCode: unit.siteCode,
@@ -408,7 +413,7 @@ export function useWardCapacity(): WardCapacityRecord[] {
         pendingPreparation: bedsPendingPreparation(unit.id, [...bedReleases]),
       };
     });
-  }, [units, bedReleases, admissions, leaveBeds]);
+  }, [units, bedReleases, admissions, leaveBeds, movements, referrals]);
 }
 
 export type DrawerCategory = "community" | "ed" | "ward";
@@ -497,7 +502,10 @@ export function documentationItems(draft: DocumentationDraft): number {
 export function contactFieldErrors(contact: ReferralContact): Partial<Record<keyof ReferralContact, string>> {
   const errors: Partial<Record<keyof ReferralContact, string>> = {};
   if (!contact.name.trim()) errors.name = "Name not recorded. You can still send.";
-  if (!/^[+\d\s().-]+$/.test(contact.phone) || contact.phone.replace(/\D/g, "").length < 8)
+  // C14: a typed number Send refuses says so in Send's own words; only a short one is a warning.
+  const phoneRefused = referrerPhoneError(contact.phone);
+  if (phoneRefused) errors.phone = phoneRefused;
+  else if (!/^[+\d\s().-]+$/.test(contact.phone) || contact.phone.replace(/\D/g, "").length < 8)
     errors.phone = contact.phone.trim()
       ? "This phone number cannot be rung. You can still send."
       : "Phone number not recorded. You can still send.";

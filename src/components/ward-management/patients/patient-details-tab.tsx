@@ -17,6 +17,7 @@ import {
 import { genderReviewNeeded, SEX_DESIGNATIONS, type Movement, type RecordedSex } from "../ward-model";
 import { sexDesignationAccepts } from "../ward-eligibility";
 import { legalStatusTextIsInvoluntary } from "../ward-support-notifications";
+import { currentLegalPosition } from "../ward-legal-form-progression";
 import { calendarDateOf } from "../ward-clock";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { communityTeamById, communityTeamSlug } from "../community/community-derivations";
@@ -215,7 +216,6 @@ export function PatientDetailsTab({
   // they differ. One side recorded and the other not is a difference too.
   const sexDiffers = placement !== undefined && placement.sex !== patient?.sex;
   const genderDiffers = placement !== undefined && placement.gender !== patient?.gender;
-  const legalDiffers = movement !== undefined && patient !== undefined && movement.legalStatus !== patient.legalStatus;
   const mismatch = Boolean(
     placement &&
     patient &&
@@ -353,13 +353,16 @@ export function PatientDetailsTab({
     placement?.cohort && patient?.dateOfBirth && today && !cohortFitsAge(placement.cohort, patient.dateOfBirth, today)
       ? patientCohort(patient.dateOfBirth, today)
       : undefined;
+  // A16-09 and 1.1 (Josh, 13 Nov 2026): one legal status, from the one current legal position, so
+  // the Details tab reads as every other view. The stay's (the movement's) status wins over the
+  // patient record's own: the stay is where the ED and the ward record each change. The patient
+  // record's status shows only when there is no stay. Never two lines.
   const legal: Fact[] = [
     {
-      label: legalDiffers ? "Movement legal status" : "Legal status",
-      value: legalValue(movement?.legalStatus ?? patient?.legalStatus),
+      label: "Legal status",
+      value: legalValue(currentLegalPosition(movement, patient?.legalStatus).status),
       wide: !active,
     },
-    ...(legalDiffers ? [{ label: "Patient legal status", value: legalValue(patient?.legalStatus) }] : []),
     ...(cto ? [{ label: "Community treatment order", value: `Form ${cto.form} in force` }] : []),
     // Placement facts exist only with an active movement; otherwise they are left out.
     ...(placement

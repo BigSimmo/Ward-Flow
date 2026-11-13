@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { edClinicalRows } from "@/components/ward-management/bed-meeting/tv-clinical-derivations";
+import { ED_EXPORT_HEADER, edExportLines } from "@/components/ward-management/ed/ed-export";
 import {
   currentLegalDueAt,
   FORM_RECORDED_ENDED,
@@ -39,7 +40,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * (`tests/ward-legal-as-typed-guard.test.ts`), which reads every screen's source.
  *
  * Fixed 10 Nov 2026 (D-125): the TV names the form in full and an ended form reads the same on the
- * TV, downtime pack and print. The ED list download stays an `it.todo` for Josh.
+ * TV, downtime pack and print. 13 Nov 2026 (1.6): the ED list download carries the form's end too.
  */
 
 const MOVEMENT_ID = "WF-001";
@@ -88,6 +89,7 @@ function outputsAt(state: WardFlowState, now: Instant): Outputs {
     bedReleases: state.bedReleases,
     leaveBeds: state.leaveBeds,
     movements: state.movements,
+    referrals: state.referrals,
     now,
     identify: () => "Synthetic person",
   });
@@ -277,7 +279,31 @@ describe("M17: one form, edited, replaced and lapsed, reads the same on every ou
     expect(outputs.tv.startsWith(`${legalFormName(movementOf(second).legalForm!)},`)).toBe(true);
   });
 
-  it.todo(
-    "M17 gap: the ED list download (ed-export.ts) writes 'Form 3A' with no written or typed end time; D-93 covers screens, print, TV and the downtime pack, so Josh to say whether the export counts as print",
-  );
+  // 1.6 (K29, 13 Nov 2026): the ED list download carries the form's end, from the one current legal
+  // position, as the screens show it: the typed time as typed, then "Recorded as ended".
+  it("writes the form's end in the ED list download, as typed, then as recorded ended", () => {
+    const { second } = journey();
+    const at = (instant: Instant) => `T${instant}`;
+    const ctx = {
+      department: "Synthetic ED",
+      umrnOf: () => "UM000001",
+      bayOf: () => "Bay 01",
+      stageOf: () => "x",
+      minutesOf: () => 0,
+      at,
+    };
+    const formEndColumn = ED_EXPORT_HEADER.indexOf("Form end");
+    expect(formEndColumn).toBeGreaterThan(0);
+    const live = movementOf(second);
+    expect(edExportLines([live], ctx)[1]![formEndColumn]).toBe(`${at(live.legalForm!.dueAt!)} as typed`);
+    const ended = apply(second, {
+      type: "RECORD_LEGAL_FORM_DETAILS",
+      role: "ed",
+      now: NOW + 3,
+      movementId: MOVEMENT_ID,
+      formCode: "3A",
+      endedBy: "revoked",
+    });
+    expect(edExportLines([movementOf(ended)], ctx)[1]![formEndColumn]).toBe(FORM_RECORDED_ENDED);
+  });
 });

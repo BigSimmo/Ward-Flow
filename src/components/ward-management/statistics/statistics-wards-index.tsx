@@ -28,7 +28,7 @@ import { wardStatisticsHref } from "@/components/ward-management/shell/ward-faca
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { bedIsOccupied, daysInBed } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
-import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
+import { BED_STATE_LABELS, bedStates, networkNamedHolds } from "@/components/ward-management/ward-bed-states";
 import {
   IN_USE_CAPTION,
   IN_USE_NOUN,
@@ -177,13 +177,15 @@ function ExecutiveWardsIndex() {
 }
 function OperationalWardsIndex() {
   const live = useStatisticsLive();
-  const { units, admissions, bedReleases, leaveBeds } = live.state;
+  const { units, admissions, bedReleases, leaveBeds, movements, referrals } = live.state;
   const now = live.now;
+  // A16-25 (3.4): a bed named for an incoming patient is held, as on Capacity.
+  const namedHolds = useMemo(() => networkNamedHolds(movements, referrals), [movements, referrals]);
   const rows = useMemo(
     () =>
       units.map((unit) => {
         const site = siteByCode(unit.siteCode);
-        const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+        const states = bedStates(unit, admissions, bedReleases, leaveBeds, namedHolds);
         const current = admissions.filter(
           (admission) => admission.unitId === unit.id && admissionStagePosition(admission) !== "ended",
         );
@@ -211,7 +213,7 @@ function OperationalWardsIndex() {
           mean: stays.length > 0 ? stays.reduce((total, days) => total + days, 0) / stays.length : null,
         };
       }),
-    [units, admissions, bedReleases, leaveBeds, now],
+    [units, admissions, bedReleases, leaveBeds, namedHolds, now],
   );
 
   return <WardsIndexView rows={rows} now={now} paused={live.paused} togglePause={live.togglePause} />;

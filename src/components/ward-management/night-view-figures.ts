@@ -1,3 +1,4 @@
+import { edJourneyState } from "@/components/ward-management/ed/ed-bed-search-step";
 import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
 import {
   availability,
@@ -78,7 +79,11 @@ export function nightReadyBeds(
   };
 }
 
-type NightStepRow = EdWaitStep & { count: number };
+/**
+ * `actionDone`: how many of `count` already have the step's own action recorded on their journey
+ * (3.1, K6), such as Step 1 for a person a ward has accepted. The count itself is unchanged.
+ */
+type NightStepRow = EdWaitStep & { count: number; actionDoneCount: number };
 
 export type NightEdWaits = {
   /** Everyone waiting in an ED: Waiting's title figure (`waitingInEds().total`). */
@@ -100,15 +105,20 @@ const STEP_STARTS = [
 export function nightEdWaits(movements: readonly Movement[], now: Instant): NightEdWaits {
   const waitingNow = edOpenSummaries(movements, now).flatMap((summary) => summary.open);
   const counts = new Map<number, number>();
+  const done = new Map<number, number>();
   let underFirstStep = 0;
   for (const movement of waitingNow) {
-    const step = edWaitStep(minutesInEd(movement, now));
-    if (step) counts.set(step.step, (counts.get(step.step) ?? 0) + 1);
-    else underFirstStep += 1;
+    // The movement's own record only: the night view holds no referrals, so an ED-sent referral not
+    // yet on the movement reads as not asked, and the suggestion stays (never hidden in error).
+    const step = edWaitStep(minutesInEd(movement, now), edJourneyState(movement, false));
+    if (step) {
+      counts.set(step.step, (counts.get(step.step) ?? 0) + 1);
+      if (step.actionDone) done.set(step.step, (done.get(step.step) ?? 0) + 1);
+    } else underFirstStep += 1;
   }
   const steps = STEP_STARTS.map((minutes) => edWaitStep(minutes))
     .filter((step): step is EdWaitStep => step !== undefined)
-    .map((step) => ({ ...step, count: counts.get(step.step) ?? 0 }));
+    .map((step) => ({ ...step, count: counts.get(step.step) ?? 0, actionDoneCount: done.get(step.step) ?? 0 }));
   return { waiting: waitingNow.length, underFirstStep, steps };
 }
 

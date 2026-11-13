@@ -82,7 +82,8 @@ export function CallSheet() {
   });
   const late = groups.filter((group) => group.nextCallbackAt !== undefined && group.nextCallbackAt <= now).length;
   return (
-    <div className={styles.sheet} data-print-output data-testid="ward-call-sheet">
+    // C23: `data-wf-print-doc` (ward-flow-print.css) unclips the Sheet around it, so it prints in full.
+    <div className={styles.sheet} data-print-output data-wf-print-doc="call-sheet" data-testid="ward-call-sheet">
       <div className={styles.head}>
         <div className={styles.headText}>
           {groups.length > 0 ? (

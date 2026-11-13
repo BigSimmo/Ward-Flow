@@ -148,7 +148,7 @@ function BedMeetingSheetView({
           data-testid="bed-meeting-discharges"
         >
           <h3 id="bed-meeting-discharges" className={styles.sectionTitle}>
-            Expected discharges, today and tomorrow
+            Expected discharges, due by tomorrow
           </h3>
           <p className={styles.summary}>
             <Count value={discharges.heldUp} /> held up · <Count value={discharges.confirmed} /> confirmed ·{" "}
@@ -156,7 +156,7 @@ function BedMeetingSheetView({
             today
           </p>
           {discharges.rows.length === 0 ? (
-            <p className={styles.empty}>No discharges expected today or tomorrow.</p>
+            <p className={styles.empty}>No discharges due by tomorrow.</p>
           ) : (
             <ul className={styles.list}>
               {discharges.rows.map((row) => (

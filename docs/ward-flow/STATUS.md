@@ -1,9 +1,9 @@
 # Ward Flow — status
 
-<!-- last-checked: 2026-11-10 -->
+<!-- last-checked: 2026-11-13 -->
 
 **The one page for where Ward Flow stands now.** Audience: Josh, staff testers and every builder.
-Owner: Documentation. Checked on 10 November 2026 against `main` at `a6e405b2` (PR #1594) by reading
+Owner: Documentation. Checked on 13 November 2026 against `main` at `cb685b5` (PR #1650) by reading
 the merged pull request titles and searching source. No browser, hosted or deployment check was run
 for this page. Work items live in the [backlog](backlog.md). Older status is in
 [the status history](../history/status-to-2026-11-03.md).
@@ -12,6 +12,36 @@ Synthetic data only. Do not enter real patient information. Ward Flow is not app
 deployment.
 
 ## Now
+
+### Merged 10 to 13 November 2026
+
+About 50 pull requests merged after #1594, #1597 to #1654. In themes:
+
+- **Master audit and clinical fixes:** the master audit's non-clinical fixes (D-129 to D-131, #1598),
+  clinical audit fixes (D-125 to D-130, #1599; group 3, D-139, #1600), arrival support lines and under 18
+  on an adult ward (D-134, #1609), the forecast double count, ended legal form wording and ED 24-hour
+  boundary (D-145, #1621), and the live audit fixes of 11 November (D-148 to D-151, #1626).
+- **Audit batches:** audit fixes groups 1 and 2 (D-132, D-138, #1601, #1604), Batch 2 ward arrival and
+  beds (D-134, #1608), Batch 3 shift change and follow-up (D-136, #1605), Batch 4 outages and pilot
+  control (D-135, D-142, #1603), Batch 5 counts, screens and print (D-137, #1607), plus the legal export
+  and staff request fixes (D-155, D-156, #1635).
+- **Redesigns:** the patient screen as a dashboard grid (D-165, #1644) and the Triage page with a left
+  sign-off nav (D-167, #1646).
+- **Home and the community desk:** the changes-since strip on one line (D-161, #1638), escalations named
+  first with movements off the strip (D-163, D-164, #1641), every return to ED shown in shared mode
+  (D-152, #1629) and a narrow scoped list for the community desk's ED heads-up (D-154, #1632).
+- **Phone and search:** phone search start screen, Go to tiles and results (#1597), chip rows that move
+  only sideways (D-144, #1602, #1610, #1617), and the review fixes of 10 to 12 November (D-159, #1637)
+  and 12 November (D-162, #1639).
+- **Performance, hardening and CI:** performance audit fixes (D-146, #1624, #1622), one ward access
+  object per desk so the idle lock fires (#1611), handled 500, 503 and 413 errors reported to Sentry
+  (#1616), demo-code addresses trusted only from a configured proxy (#1615), uptime unknown shown red
+  (#1613), nightly cross-browser runs (#1614), and CI sped up without dropping a check (D-166, #1645,
+  #1647, #1643, #1625, #1628, #1631).
+- **Records and demo script:** glossary ruling (D-143, #1612), D-153 (#1630), D-168 and D-169 demo
+  script wording (#1648, #1649, #1642), D-170 clinical wording audit (#1650), D-171 hosted database at
+  schema 18 (#1651), D-172 community desk heads-up stays as built (#1652) and the coordinator handover
+  (#1654).
 
 ### Merged 9 to 10 November 2026
 
@@ -86,7 +116,7 @@ To list every merge since a date or revision:
 - **Pilot readiness:** the steps in the [roadmap](roadmap.md#2-pilot-readiness).
 - **Audits of 9 and 10 November:** the latest rulings are D-121 (working rules, guards and Josh's PC)
   and D-122 (clinical and privacy answers). The documentation fixes ship in one PR. D-122's clinical
-  items ship in one held clinical PR. Earlier audits: clinical values (D-106) and working rules and
+  items have merged with the clinical audit fixes (#1599, #1609, #1621). Earlier audits: clinical values (D-106) and working rules and
   documentation (D-107).
 
 ### Waiting on Josh
@@ -101,7 +131,7 @@ gone. The 16 November date for the sign-in test was dropped (Q390). Two asks are
    force-push or deletion (D-121 item 1).
 2. If not done yet, add the Actions event policy for `pull_request_target` before GitHub's second
    brownout on 16 November 2026 (D-114). GitHub blocks it by default from 2 December.
-3. Check the held clinical PR for D-122 when it opens. It merges only after you check it.
+3. Check the merged clinical audit fixes for D-122 (#1599, #1609, #1621) and the D-170 wording audit.
 4. Sign-in renewal test (Q390): sign in with a test account in the morning, and make one save after
    lunch without signing in again.
 5. In Supabase: turn off "Allow new users to sign up", and turn off the organisation's AI SQL, log and

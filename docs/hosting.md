@@ -70,8 +70,9 @@ regression passing. Broad gates were not repeated after this final fix at the ow
 
 Owner approved hosting the shared backend (16 October 2026) so live sign-in and saving can be
 tested. Two services were added to the same Ward Flow project and environment, Singapore region,
-both following `BigSimmo/Ward-Flow` `main` at the time (now `live`). The open public demo (`ward-flow`) is unchanged and
-stays in local mode, because shared mode puts a sign-in screen in front of every page.
+both following `BigSimmo/Ward-Flow` `main` at the time (now `live`). The public demo (`ward-flow`) is unchanged and
+stays in local mode, because shared mode puts a sign-in screen in front of every page. Since 10 November 2026 the
+public demo asks for a demo code ([front door decision](ward-flow/governance/FRONT-DOOR-DECISION.md)).
 
 | Item     | Backend                                                                                                                 | Signed-in site                                              |
 | -------- | ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |

@@ -64,6 +64,10 @@ export function DemonstrationChart({
       </svg>
       <div className={styles.axis}>
         <span>{values.length} days ago</span>
+        {/* C10: the line runs from the series' low to its high, not from zero, so the axis says so. */}
+        <span data-testid={testId ? `${testId}-scale` : undefined}>
+          Scale {format(low)} to {format(high)}
+        </span>
         <span>Today</span>
       </div>
     </article>

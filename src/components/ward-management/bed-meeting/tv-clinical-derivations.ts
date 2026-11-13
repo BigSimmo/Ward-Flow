@@ -17,7 +17,8 @@ import {
   FORM_RECORDED_ENDED,
   formProgression,
   formRecordedEnded,
-} from "@/components/ward-management/legal-forms/legal-form-progression";
+  NEXT_FORM_TO_RECORD,
+} from "@/components/ward-management/ward-legal-form-progression";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { riskFlagLabel } from "@/components/ward-management/referrals/referral-risk-flags";
@@ -113,10 +114,8 @@ function legalFact(status: string | undefined, movement: Movement | undefined, n
   const progression = formProgression(movement);
   if (progression)
     return {
-      // D-127: a community treatment order is not shown as ended at arrival.
-      text: `Form ${progression.nextCode} to record, ${
-        progression.ended ? `Form ${progression.endedCode} ended` : `on Form ${progression.endedCode} at arrival`
-      }`,
+      // D-170 item 1 and A1: the form as recorded and the next form to record, never an inferred end.
+      text: `${NEXT_FORM_TO_RECORD}, on Form ${progression.formCode} ${progression.when}`,
       tone: "danger",
     };
   // D-93: the form by its full name, as every other output names it (M17, 10 Nov 2026).
@@ -236,7 +235,7 @@ export function wardClinicalRows(input: WardClinicalInputs): WardClinicalRow[] {
             : String(bedNumber).padStart(2, "0"),
         bedNumber,
         name: nameOf(movement ?? admission),
-        dayNumber: days === null ? null : stayDayNumber(days),
+        dayNumber: days === null ? null : stayDayNumber(admission, now),
         where,
         obs: obsFact(admission.observation),
         constantObs: isConstantObservation(admission.observation),

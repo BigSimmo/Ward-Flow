@@ -27,8 +27,9 @@ const move = (overrides: Partial<Movement>): Movement => ({
 describe("nextStep", () => {
   it("asks for the next form once the form has moved on", () => {
     const step = nextStep(move({ closure: { outcome: "arrived" } as Movement["closure"] }), NOW);
-    expect(step).toMatchObject({ action: "next-form", title: "Record Form 6A" });
-    expect(step.detail).toBe("Form 1A ended at arrival.");
+    // D-170 item 1 and A1: no form number for the next form, and the form stays as recorded.
+    expect(step).toMatchObject({ action: "next-form", title: "Next form to record" });
+    expect(step.detail).toBe("On Form 1A at arrival.");
   });
 
   it("offers extend or the next form when the typed end time has gone by, repeating it only as typed", () => {

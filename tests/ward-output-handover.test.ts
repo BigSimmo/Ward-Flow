@@ -147,12 +147,15 @@ describe("Handover output audit repairs", () => {
         ...(kind === "progressed" ? { examination: { at: 600, outcome: "inpatient_order" } } : {}),
       });
       const row = rowOf(record);
-      expect(isDueBy(row, 600, 700)).toBe(kind === "current");
-      expect(groupOf(row, 600, 700)).toBe(kind === "current" ? "due" : "bed");
-      expect(nextStep(row, 600, 700, () => 0).text.includes("time passed")).toBe(kind === "current");
-      expect(Boolean(printField("due", row))).toBe(kind === "current");
+      // A1 (Josh, 13 Nov 2026): the examination alone ends nothing, so a progressed form's typed time
+      // is still current; only a recorded end makes it history.
+      const inForce = kind === "current" || kind === "progressed";
+      expect(isDueBy(row, 600, 700)).toBe(inForce);
+      expect(groupOf(row, 600, 700)).toBe(inForce ? "due" : "bed");
+      expect(nextStep(row, 600, 700, () => 0).text.includes("time passed")).toBe(inForce);
+      expect(Boolean(printField("due", row))).toBe(inForce);
       if (kind === "ended" || kind === "progressed") {
-        expect(row.formDueAt).toBeUndefined();
+        expect(row.formDueAt).toBe(kind === "progressed" ? 599 : undefined);
         expect(record.legalForm!.dueAt).toBe(599);
         expect(isbarText(row, 600)).not.toContain("no due time typed");
       }

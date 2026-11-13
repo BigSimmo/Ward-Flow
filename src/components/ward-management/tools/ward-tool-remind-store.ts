@@ -9,6 +9,13 @@ import { createBrowserStore } from "@/lib/client-store-factory";
 import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
 import type { Instant } from "@/components/ward-management/ward-clock";
 
+/**
+ * Root cause 5.2 (Josh approved, 13 Nov 2026, Q8): reminders and the call log are kept in this
+ * browser only, in demo and signed-in modes alike, and are not part of the shared record. Every
+ * place they are shown or made says so in these words. Moving them into the shared record comes later.
+ */
+export const DEVICE_ONLY_LABEL = "On this device only";
+
 export const REMIND_REASONS = ["Check the bed", "Call back", "Chase a form", "Review transport"] as const;
 export type RemindReason = (typeof REMIND_REASONS)[number];
 export type RemindKind = "ward" | "bed" | "movement";

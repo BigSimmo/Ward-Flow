@@ -77,14 +77,17 @@ const LEAVE_ROWS = 8;
  * Print uses the browser's own print, as the other lists do. Synthetic records only.
  */
 export function LeaveScreen() {
-  const { leaveBeds, units, admissions, bedReleases, resolvePatientIdentity, dayZero } = useWardFlowSelect(
-    "leaveBeds",
-    "units",
-    "admissions",
-    "bedReleases",
-    "resolvePatientIdentity",
-    "dayZero",
-  );
+  const { leaveBeds, units, admissions, bedReleases, movements, referrals, resolvePatientIdentity, dayZero } =
+    useWardFlowSelect(
+      "leaveBeds",
+      "units",
+      "admissions",
+      "bedReleases",
+      "movements",
+      "referrals",
+      "resolvePatientIdentity",
+      "dayZero",
+    );
   const now = useWardFlowClock();
   const access = useEffectiveWardAccess();
   const canOpenHref = useCanOpenHref();
@@ -116,12 +119,12 @@ export function LeaveScreen() {
     const places = wardPlaceLookup(units);
     const names = wardNames(units);
     return leaveTrackerRows(
-      { leaveBeds, units, admissions, bedReleases },
+      { leaveBeds, units, admissions, bedReleases, movements, referrals },
       now,
       (unitId) => unitInScope(access.scope, unitId, places),
       (unit) => names.get(unit.id) ?? unit.name,
     );
-  }, [leaveBeds, units, admissions, bedReleases, now, access]);
+  }, [leaveBeds, units, admissions, bedReleases, movements, referrals, now, access]);
   const needsAction = rows.filter((row) => row.status === "absent" || row.status === "overdue");
   const shown = needsActionOnly ? needsAction : rows;
   const dueToday = rows.filter((row) => row.status === "due_today").length;

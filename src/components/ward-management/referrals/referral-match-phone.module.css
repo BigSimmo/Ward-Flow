@@ -325,6 +325,13 @@
   min-width: 0;
 }
 
+/* Audit A5-08 (13 Nov 2026): on a 390px phone a zero basis left Decline (or Back) 43px for a 47px
+   word, so it read "Decli…" beside Referral and Patient, which size from their labels. The quiet
+   row's first button now sizes from its label too and never shrinks below it. */
+.foot[data-in-drawer] > :first-child {
+  flex: 1 0 auto;
+}
+
 /* Note 11 (Josh, 9 Nov 2026): the main button is always the band's second child. `:last-child` missed
    it when a reason waiting on the button added a screen-reader line after it, so a ward referral's
    "Choose a ward first" squeezed into the quiet row. */

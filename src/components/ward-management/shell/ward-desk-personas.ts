@@ -1,6 +1,7 @@
 import { useContext } from "react";
 
 import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { SIGNED_IN_COORDINATOR_NAME } from "@/components/ward-management/ward-staff-names-seed";
 
 import { SharedSessionContext } from "./ward-shared-session-context";
 
@@ -26,7 +27,16 @@ export const DEMO_DESK_ROLE = "Demo desk";
 export const SIGNED_IN_DESK_ROLE = "Signed in";
 
 export const DESK_PERSONAS: Record<WardChromeRole, DeskPersona> = {
-  coordinator: { id: "chen", name: "Dr S. Chen", initials: "SC", role: "Bed coordinator", greeting: "Dr S. Chen" },
+  // A15-06 (Audit 15, Josh 13 Nov 2026): an invented name from the one staff list, not a title, an
+  // initial and a common surname that a clinician in the room could carry. The id stays "chen" so a
+  // saved desk choice still finds this persona.
+  coordinator: {
+    id: "chen",
+    name: SIGNED_IN_COORDINATOR_NAME,
+    initials: "SO",
+    role: "Bed coordinator",
+    greeting: SIGNED_IN_COORDINATOR_NAME,
+  },
   ed: {
     id: "gallagher",
     name: "Sr M. Gallagher",

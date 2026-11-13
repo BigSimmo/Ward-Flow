@@ -37,7 +37,14 @@ export function releaseText(row: EdAccessRiskRow, now: Instant, showWards: boole
   const when = formatInstantWithDay(row.nextRelease.at, now);
   const where = showWards && row.acceptedUnitName ? ` at ${row.nextRelease.unitName}` : "";
   const held = row.nextRelease.blocker ? `, held up for ${shortBlocker(row.nextRelease.blocker).toLowerCase()}` : "";
-  return `Next ${kind} release ${when}${where}${held}. Others are ahead in the line.`;
+  // A16-07 (3.6): the line is said only when someone is ahead; the first in line has nobody.
+  const ahead = row.ahead > 0 ? ` ${aheadText(row.ahead)}` : "";
+  return `Next ${kind} release ${when}${where}${held}.${ahead}`;
+}
+
+/** "1 person ahead in the line", "3 people ahead in the line". */
+function aheadText(count: number): string {
+  return `${count} ${count === 1 ? "person" : "people"} ahead in the line.`;
 }
 
 /** How many people the card lists before "Show all" (Q192). */

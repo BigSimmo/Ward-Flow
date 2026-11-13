@@ -17,7 +17,7 @@ import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-pro
 import type { Movement } from "@/components/ward-management/ward-model";
 
 import { ageBandWord, extendedWord, onceOnlyExtensionWarning, regionWord } from "./legal-form-ledger";
-import { legalFormEnd } from "./legal-form-progression";
+import { legalFormEnd, NEXT_FORM_TO_RECORD } from "./legal-form-progression";
 import { currentLegalDueAt, legalDeadlineText } from "./legal-forms-derivations";
 import { nextStep, type NextStepAction } from "./legal-forms-next-step";
 import { STANDING_TONE, clockStanding, standingSuffix, standingWord, typedTimeStanding } from "./legal-forms-view";
@@ -63,7 +63,7 @@ export function LegalFormSummary({
   const legalForm = movement.legalForm;
   const end = legalFormEnd(movement);
   const standing = clockStanding(movement, now, thresholds);
-  // Audit S-6: a form ended by the examination or arrival keeps its typed expiry as history only.
+  // A form a person recorded as ended keeps its typed expiry as history only (A1: never inferred).
   // Legal times only as typed (Josh, 31 Oct 2026): the typed clock time and its warning words, never
   // a running figure or a bar filling towards it.
   const dueAt = currentLegalDueAt(movement);
@@ -87,10 +87,10 @@ export function LegalFormSummary({
           ) : (
             <>
               <span className={p.clockBig}>
-                {end?.kind === "recorded" || end?.progression.ended
+                {end?.kind === "recorded"
                   ? "Ended"
                   : end
-                    ? `Form ${end.progression.nextCode} to record`
+                    ? NEXT_FORM_TO_RECORD
                     : movement.formedAt !== undefined
                       ? "No expiry typed"
                       : standingWord(standing, thresholds)}

@@ -3,7 +3,7 @@ import { allEmergencyDepartments, siteByCode } from "@/components/ward-managemen
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
-import { bedStates } from "@/components/ward-management/ward-bed-states";
+import { bedStates, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { BedRelease, LeaveBed, Site, Unit } from "@/components/ward-management/ward-model";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -153,13 +153,18 @@ export function hubEntries(input: {
   bedReleases: BedRelease[];
   admissions?: readonly Admission[];
   leaveBeds?: readonly LeaveBed[];
+  /**
+   * Every journey and referral that may hold a named bed (`networkNamedHolds`), so the hub's Ready
+   * is Capacity's Ready (A16-25, 3.4). Required: `[]` only where there are truly none.
+   */
+  namedHolds: readonly ReservationReferral[];
   now: Instant;
 }): HubEntry[] {
-  const { units, sites, bedReleases, admissions = [], leaveBeds = [], now } = input;
+  const { units, sites, bedReleases, admissions = [], leaveBeds = [], namedHolds, now } = input;
 
   const wardEntries: HubEntry[] = units.map((unit) => {
     const site = siteByCode(unit.siteCode);
-    const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+    const states = bedStates(unit, admissions, bedReleases, leaveBeds, namedHolds);
     return {
       id: unit.id,
       kind: "ward",

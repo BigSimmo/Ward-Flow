@@ -48,6 +48,8 @@ demo code out for up to 10 minutes, and a shared venue network counts as one add
    reload; if you must reload, book the transport again. Do not press **Lock as TV**: it puts every
    open tab on the TV view at once, and the lock survives Reset demo. If the menu vanishes, press
    **Unlock**, then **Unlock**.
+   Time Act 2 and the Close as you go. In the audit run the Close ran past its 30 seconds and
+   Act 2 had the least room, so trim your own words there first.
 4. As the audience sits down (not earlier), press the **Board time** clock in the header. **Tools**
    opens at **Scenario and clock**; scroll down inside the panel if **Reset demo** is not showing (on
    a laptop screen it is at the bottom of the panel). Check the scenario is **Standard day**, and pick
@@ -63,8 +65,8 @@ fine; say it is a demonstration clock, not the time now. If you want a 10:42 sta
 Ward Flow tab and open the demo in one new tab just before the audience arrives, then Reset demo (a
 new tab opened while another Ward Flow tab is open takes that tab's clock). A reload does not put a
 drifted clock back: open a new tab. Do not reload after midnight: the demo starts a fresh day and
-loses every click. Do not press **+1 hour** before Act 2: Keira leaves Home's **Later today** list
-about an hour after the last Reset demo.
+loses every click. Keira's planned move is an hour after the last Reset demo; after that she stays
+on Home under **Past planned time** instead of **Later today**.
 
 The left-hand menu is the coordinator's own short menu: **Home**, **Capacity**, **Movements**,
 **Waiting**, **All EDs** and **Referrals**, with **More** for every other page. **Handover** is a
@@ -79,6 +81,8 @@ scrolls inside itself.
   menu and the browser's Back button.
 - **Do not open the TV view in a new tab or a second tab mid-demo.** If you want to show the TV, show
   it in Act 1 and come back.
+- **Rehearse Act 4 once in the same browser window** before the audience arrives. If the connection
+  drops during the transport booking, do not reload; if you must reload, book the transport again.
 - **Wait a second after each page opens** before clicking. Clicks in the first moment after a page
   loads can be ignored.
 
@@ -104,7 +108,7 @@ wait up to 10 minutes and try again.
 | -   | 10:30-11:00 | Home                                         | Close                                             |
 
 The patient is **Keira Pellingworth, UM100045** (synthetic): at Royal Perth Hospital ED, accepted by
-Dabakarn and waiting for a bed. Her Form 3B ended at the examination, and the next form is not
+Dabakarn and waiting for a bed. Her Form 3B is still shown as recorded, and the next form is not
 recorded yet.
 
 ---
@@ -161,27 +165,29 @@ filters **Under a form** and **No bed yet**.
 > under which legal form. The ED's list stays in the order the ED keeps it. Ward Flow does not
 > re-sort it or score anyone."
 
-**Do:** click **Pellingworth, Keira**. A panel opens. Point to **Where the referral is** (Referral
+**Do:** scroll down to **Under 8 hours** and click **Pellingworth, Keira**. A panel opens. Point to **Where the referral is** (Referral
 sent, Dabakarn accepted, Bed pulled for this patient: No bed yet, Transport: Not booked yet), then
-to the panel's **Legal form** card ("Ended", "Form 3B ended at the examination"). Press **Esc** to
-close the panel. Then point to **Flint, Oona**'s form column on the same board (scroll down to her
-row first; it is under the pinned column heads on a laptop screen): "Form 1A", "Time not entered".
+scroll down inside the panel to its **Legal form** card: Form 3B is still shown as recorded, with the next form to
+record. Press **Esc** to close the panel. Then point to **Flint, Oona**'s form column on the same
+board (the row just below Keira's):
+"Form 1A", "Time not entered".
 
 **Say:**
 
 > "The ED can now see where its referral stands without ringing anyone: sent, accepted
 > by Dabakarn, no bed yet, no transport yet.
 >
-> The app shows her form as ended at the examination, and it is prompting for the next form to be
-> recorded. A person records it; the app does not. That rule still needs legal review.
+> The app still shows her form as recorded. It shows a form as ended only when a person records
+> that it ended, and it is prompting for the next form to be recorded. A person records it; the app
+> does not. That rule still needs legal review.
 >
 > Now look at this patient's form: 'Time not entered'. Ward Flow never works out when a form
 > expires. If a time is shown, it is the one typed from the paper form. If it wasn't written, the
 > app says so rather than guessing."
 
-**Do:** in the left-hand menu press **Home**. Under **Later today**, scroll down to and click
-**Pellingworth, Keira** ("Planned move, bed not pulled yet"). Her page opens. If she is not under
-Later today (her planned move is an hour after the last Reset demo), press **/**, type `Keira` or
+**Do:** in the left-hand menu press **Home**. Under **Later today**, scroll down to **Rest of your
+shift** and press **Show … more**, then click **Pellingworth, Keira** ("Planned move, bed not
+pulled yet"). After her planned time she moves up to **Past planned time · not done yet**. Her page opens. If you cannot find her on Home, press **/**, type `Keira` or
 `UM100045` and press **Enter**. Or press **Reset demo** and start Act 2 again. Point to the strip at
 the top of her page (In ED, Bed agreed, Moving, On ward, Discharge, Community). Press **Placement
 steps**: step 3 of seven is lit. Then press **Hide placement steps**. Then point to the status
@@ -269,12 +275,12 @@ is collecting** choose **Ambulance (St John)**. Type a synthetic number such as 
 except typed text." **From here, avoid reloads and typed addresses.**
 
 **Do:** press **Mark handover ready** (**Placement steps** now lights step 5 of seven). Wait for the
-"Handover ready" message to clear, or press its **X**, then press the **Destination** row ("Dabakarn
+"Handover ready" message to clear, or press its **X**. On a 1366 x 768 screen, scroll down a little, then press the **Destination** row ("Dabakarn
 accepted · bed pulled"). The **Destination and placement** panel opens. Press, in order, **Provider
 accepted job**, **Vehicle en route** and **Mark moving · patient collected**.
 
-**Do:** a check appears ("Mark moving for … ?") listing what is not recorded yet, here the Form 4A
-transport order. Under **Reason** choose **Paper copy sighted** and press **Mark moving, record
+**Do:** a check appears ("Mark moving for … ?") listing what is not recorded yet, here the transport
+or transfer order. Under **Reason** choose **Paper copy sighted** and press **Mark moving, record
 reason**.
 
 **Say:**
@@ -319,8 +325,8 @@ strip, which counts staff assigned to constant observation (none on this ward ju
 Pick two of these three if time is short. None of them needs typing.
 
 **A. The ward sees the full referral before it answers.** In the left-hand menu press **More**,
-then **All wards**, and press **Open ward** on **SJGM Adult Open**. Scroll to **Ward flow**. Under
-**Awaiting your answer**, press **Saoirse Loxbury** (synthetic). The full referral opens: reason,
+then **All wards**, and press **Open ward** on **SJGM Adult Open**. Under
+**Awaiting your answer**, press **Loxbury, Saoirse** (synthetic). The full referral opens: reason,
 risk, legal, observation, medical clearance, physical health, medications, referrer, arrival and
 documents. Close it with **Esc**. Do not accept or decline.
 
@@ -379,9 +385,9 @@ Say these with confidence:
   record asks for a recorded reason.
 - **One decline list.** Wards and coordinators decline from the same list of reasons, with a few
   kept for wards only.
-- **Asking wards.** For an open community referral, the coordinator can ask more wards: normally
-  three at once; a fourth needs a recorded reason. Wards that declined don't count. An accepted
-  community referral moves through the same journey, transport and arrival as an ED one.
+- **Asking wards.** For an open community referral, the coordinator can ask more wards, usually up
+  to three waiting at once. Wards that declined don't count. An accepted community referral moves through
+  the same journey, transport and arrival as an ED one.
 - **Role access by desk.** Each desk (coordinator, ward, ED, community team, transport officer, bed
   manager) sees and does only what its role needs. A ward never sees which other wards were asked.
   This is built in the shared version, and its checks are not finished. Today's demo runs as the
@@ -441,9 +447,8 @@ Do not claim:
 **"What about community teams?"**
 
 > "A community team can send a short referral and see whether a ward accepted. The coordinator
-> normally asks three wards at once; a fourth needs a recorded reason. Once accepted, the journey,
-> transport and arrival work the same as from an ED. The journey names the team, never a home
-> address."
+> usually asks up to three wards at once. Once accepted, the journey, transport and arrival work the
+> same as from an ED. The journey names the team, never a home address."
 
 **"What about country sites?"**
 
@@ -535,7 +540,7 @@ Things that happen without a wrong press:
 | 3   | Referrals, Coldharbour, Cyril (Place tab) | Show 1 more with a bed ready; choose a ward (do not accept); Esc; browser Back; Pull the bed, Pull the bed; Esc                               |
 | 4   | Keira's page                              | Record clearance; Log booking; Mark handover ready; Destination row; Provider accepted job, Vehicle en route, Mark moving · patient collected |
 | 5   | Destination and placement                 | Confirm arrival · receiving ward, Confirm arrival; Esc; More, All wards, Open ward (Dabakarn)                                                 |
-| 6   | SJGM Adult Open; More, Legal forms; clock | Saoirse Loxbury, Esc; Seclusion tab; Board time, Demo clock                                                                                   |
+| 6   | SJGM Adult Open; More, Legal forms; clock | Loxbury, Saoirse, Esc; Seclusion tab; Board time, Demo clock                                                                                  |
 | -   | Home                                      | -                                                                                                                                             |
 
 Before every run, as the audience sits down: **Board time** clock, **Reset demo**, confirm. Avoid

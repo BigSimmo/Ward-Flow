@@ -25,7 +25,8 @@ export type ReferenceTeamDetail = {
   readonly publishedPhone: string | null;
   readonly publishedHours: string | null;
   readonly referralEmail: string | null;
-  readonly address: string | null;
+  /** The suburb only, never a street address (A15-16). Null where the pack gives none plainly. */
+  readonly suburb: string | null;
   /** e.g. whether the service is listed in a public directory at all. */
   readonly directoryStatus: string | null;
   /** The date the pack recorded this row. Render it beside the detail; it is how old this is. */
@@ -41,7 +42,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
       publishedPhone: "08 5550 0115",
       publishedHours: null,
       referralEmail: null,
-      address: "Unit 4, 40 Fourth Road, Armadale",
+      suburb: "Armadale",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
       recordedOn: "2026-09-11",
@@ -55,7 +56,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
       publishedPhone: "08 5550 0108",
       publishedHours: null,
       referralEmail: null,
-      address: "Tenancy 3, 10 Orchard Avenue, Armadale",
+      suburb: "Armadale",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
       recordedOn: "2026-09-11",
@@ -69,7 +70,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
       publishedPhone: "08 5550 0106",
       publishedHours: null,
       referralEmail: null,
-      address: "Bentley Health Service, Mills Street",
+      suburb: null,
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
       recordedOn: "2026-09-11",
@@ -83,7 +84,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
       publishedPhone: "08 5550 0101",
       publishedHours: "08:30–16:30 Monday–Friday",
       referralEmail: "wanneroo.referrals@example.invalid",
-      address: "81 Exmouth Drive, Butler",
+      suburb: "Butler",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
       recordedOn: "2026-09-11",
@@ -97,7 +98,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
       publishedPhone: "08 5550 0105",
       publishedHours: null,
       referralEmail: null,
-      address: "74 Murray Street, Perth",
+      suburb: "Perth",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
       recordedOn: "2026-09-11",
@@ -111,7 +112,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
       publishedPhone: "08 5550 0116",
       publishedHours: null,
       referralEmail: null,
-      address: "Units 11–13, 30 Ainsbury Parade, Clarkson",
+      suburb: "Clarkson",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
       recordedOn: "2026-09-11",
@@ -125,7 +126,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
       publishedPhone: "08 5550 0117",
       publishedHours: null,
       referralEmail: null,
-      address: "Tower B Plaza, 48 Barry Marshall Parade, Murdoch",
+      suburb: "Murdoch",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
       recordedOn: "2026-09-11",
@@ -139,7 +140,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
       publishedPhone: "08 5550 0113",
       publishedHours: null,
       referralEmail: null,
-      address: "L Block, Alma Street, Fremantle",
+      suburb: "Fremantle",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
       recordedOn: "2026-09-11",
@@ -153,7 +154,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
       publishedPhone: "08 5550 0118",
       publishedHours: null,
       referralEmail: null,
-      address: "Units 2/3, Level D, 32 Endeavour Road, Hillarys",
+      suburb: "Hillarys",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
       recordedOn: "2026-09-11",
@@ -167,7 +168,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
       publishedPhone: "08 5550 0111",
       publishedHours: null,
       referralEmail: null,
-      address: "6 Lemnos Street, Shenton Park",
+      suburb: "Shenton Park",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
       recordedOn: "2026-09-11",
@@ -181,7 +182,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
       publishedPhone: "08 5550 0107",
       publishedHours: "08:30–16:30 Monday–Friday, excluding public holidays",
       referralEmail: null,
-      address: "281 Great Eastern Highway, Midland",
+      suburb: "Midland",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
       recordedOn: "2026-09-11",
@@ -195,7 +196,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
       publishedPhone: "08 5550 0103",
       publishedHours: "08:30–16:30 Monday–Friday",
       referralEmail: "stirling.referrals@example.invalid",
-      address: "Unit 1/20 Chesterfield Road, Mirrabooka",
+      suburb: "Mirrabooka",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
       recordedOn: "2026-09-11",
@@ -209,7 +210,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
       publishedPhone: "08 5550 0150",
       publishedHours: "08:30–16:30 Monday–Friday",
       referralEmail: "stirling.referrals@example.invalid",
-      address: "Block H, Osborne Place, Stirling",
+      suburb: "Stirling",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
       recordedOn: "2026-09-11",
@@ -223,7 +224,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
       publishedPhone: "08 5550 0100",
       publishedHours: null,
       referralEmail: null,
-      address: "G Block, Osborne Park Hospital",
+      suburb: null,
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
       recordedOn: "2026-09-11",
@@ -237,7 +238,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
       publishedPhone: "08 5550 0114",
       publishedHours: null,
       referralEmail: null,
-      address: "7/5 Goddard Street, Rockingham",
+      suburb: "Rockingham",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
       recordedOn: "2026-09-11",
@@ -251,7 +252,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
       publishedPhone: "08 5550 0119",
       publishedHours: null,
       referralEmail: null,
-      address: "Level 1, 91 Allnutt Street, Mandurah East",
+      suburb: "Mandurah East",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
       recordedOn: "2026-09-11",
@@ -265,7 +266,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
       publishedPhone: "08 5550 0110",
       publishedHours: null,
       referralEmail: null,
-      address: "50 Montsalvat Drive, Greenfields",
+      suburb: "Greenfields",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
       recordedOn: "2026-09-11",
@@ -279,7 +280,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
       publishedPhone: "08 5550 0120",
       publishedHours: null,
       referralEmail: null,
-      address: "5/6 Ameer Street, Rockingham",
+      suburb: "Rockingham",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
       recordedOn: "2026-09-11",
@@ -293,7 +294,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
       publishedPhone: "08 5550 0109",
       publishedHours: null,
       referralEmail: null,
-      address: "Cnr Clifton and Ameer Streets, Rockingham",
+      suburb: "Rockingham",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
       recordedOn: "2026-09-11",
@@ -307,7 +308,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
       publishedPhone: "08 5550 0121",
       publishedHours: null,
       referralEmail: null,
-      address: "231 Stubbs Terrace, Shenton Park",
+      suburb: "Shenton Park",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
       recordedOn: "2026-09-11",
@@ -321,7 +322,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
       publishedPhone: "08 5550 0104",
       publishedHours: "08:30–16:30 Monday–Friday",
       referralEmail: "subiaco.att@example.invalid",
-      address: "303 Rokeby Road, Subiaco",
+      suburb: "Subiaco",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
       recordedOn: "2026-09-11",
@@ -335,7 +336,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
       publishedPhone: "08 5550 0122",
       publishedHours: null,
       referralEmail: null,
-      address: "1 Midland Square, Midland",
+      suburb: "Midland",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
       recordedOn: "2026-09-11",
@@ -349,7 +350,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
       publishedPhone: "08 5550 0102",
       publishedHours: "08:30–16:30 Monday–Friday",
       referralEmail: "wanneroo.referrals@example.invalid",
-      address: "2 Cafaggio Crescent, Wanneroo",
+      suburb: "Wanneroo",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
       recordedOn: "2026-09-11",
@@ -363,7 +364,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
       publishedPhone: "08 5550 0112",
       publishedHours: null,
       referralEmail: null,
-      address: "2 Cafaggio Crescent, Wanneroo",
+      suburb: "Wanneroo",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
       recordedOn: "2026-09-11",
@@ -377,7 +378,7 @@ const TEAMS: ReadonlyMap<string, ReferenceTeamDetail> = new Map([
       publishedPhone: "08 5550 0123",
       publishedHours: null,
       referralEmail: null,
-      address: "316 Erindale Road, Warwick",
+      suburb: "Warwick",
       directoryStatus:
         "Listed in public provider/service sources; current operational team identifier not owner-ratified",
       recordedOn: "2026-09-11",

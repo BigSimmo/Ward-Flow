@@ -3,7 +3,7 @@ import dynamic from "next/dynamic";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
-import { BedSingle, Clock, DoorOpen, FileBadge, Stethoscope, Ambulance, UserRound, Users } from "lucide-react";
+import { BedSingle, Clock, DoorOpen, FileBadge, Send, Stethoscope, Ambulance, UserRound, Users } from "lucide-react";
 import { Button, StatusGlyph, useIsPhone, type WfTone } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
@@ -19,11 +19,17 @@ import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { legalStatusTextIsInvoluntary } from "@/components/ward-management/ward-support-notifications";
-import { formatInstantWithDay, perthDayLabel } from "@/components/ward-management/ward-clock";
+import {
+  calendarDateOf,
+  formatInstantWithDay,
+  perthDayLabel,
+  perthIsoDay,
+} from "@/components/ward-management/ward-clock";
 import { clock, dur } from "./patient-now-records";
 import type { PatientMode } from "./patient-mode";
 import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
 import { recordExtrasFor } from "./patient-record-extras";
+import { recordedDayPassed } from "./patient-date-passed";
 import { stayProgress } from "./patient-now-ward";
 // Loads with the other ward cards, only for a stay (phone script budget).
 const PatientStayProgress = dynamic(
@@ -166,6 +172,13 @@ export interface PatientStatusContext {
    * where the bed is held, instead of reading "Not active".
    */
   acceptedReferral?: { unitName: string; boardHref?: string };
+  /**
+   * A16-11 (Josh, 13 Nov 2026): the newest referral for this person still awaiting an answer
+   * (`openReferralFor`). With nothing else open the card says so instead of "Not currently active".
+   */
+  openReferral?: { sentTo: string; owner: string; raisedAt: number };
+  /** A16-11: the person's booked planned admission (`bookedPlannedAdmissionFor`), when there is one. */
+  plannedAdmission?: { unitName: string; expectedArrivalAt: number };
   /**
    * Flag `awol-bed-hold-review` (paused by D-65, on everywhere since Josh's 20 Oct 2026 "turn on all
    * features"): with the tracker on, whether it also asks for a review of the held bed past
@@ -743,8 +756,55 @@ function statusFor(
       }
     : undefined;
 
+  // A16-11: a referral awaiting an answer and a booked planned admission are open records too.
+  const openReferralCell: StatusCell | undefined = ctx.openReferral
+    ? {
+        key: "referral",
+        icon: Send,
+        label: "Referral",
+        owner: ctx.openReferral.owner,
+        tone: "info",
+        value: ctx.openReferral.sentTo,
+        sub: `Awaiting answer. Raised ${formatInstantWithDay(ctx.openReferral.raisedAt, now)}`,
+      }
+    : undefined;
+  const plannedCell: StatusCell | undefined = ctx.plannedAdmission
+    ? {
+        key: "planned",
+        icon: BedSingle,
+        label: "Planned admission",
+        owner: "Ward",
+        tone: "info",
+        value: `Booked on ${ctx.plannedAdmission.unitName}`,
+        sub: `Expected ${formatInstantWithDay(ctx.plannedAdmission.expectedArrivalAt, now)}`,
+      }
+    : undefined;
+  const openCells = [acceptedBedCell ?? openReferralCell, plannedCell].filter(
+    (cell): cell is StatusCell => cell !== undefined,
+  );
+
   const ctoOrder = mode === "cto" ? patient?.communityTreatmentOrder : undefined;
   if (mode === "idle" || (mode === "cto" && !ctoOrder)) {
+    if (!ctx.acceptedReferral && openCells.length > 0) {
+      return {
+        tone: "info",
+        verdict: openReferralCell ? "Referred, awaiting answer" : "Planned admission booked",
+        meta: openReferralCell
+          ? "A referral is awaiting an answer. No placement or ward stay yet."
+          : "A planned admission is booked. No placement or ward stay yet.",
+        cells: [
+          ...openCells,
+          {
+            key: "catchment",
+            icon: Users,
+            label: "Community team",
+            owner: "Community",
+            value: patient?.catchmentCommunityTeam ?? "Not recorded",
+            sub: "Recorded catchment",
+          },
+        ],
+      };
+    }
     if (ctx.acceptedReferral && acceptedBedCell) {
       return {
         tone: "info",
@@ -768,13 +828,23 @@ function statusFor(
   if (mode === "cto" && patient && ctoOrder) {
     const order = ctoOrder;
     return {
-      tone: acceptedBedCell ? "info" : "neutral",
-      verdict: acceptedBedCell ? "Accepted, on a CTO" : "Not currently active, on a CTO",
+      tone: openCells.length > 0 ? "info" : "neutral",
+      verdict: acceptedBedCell
+        ? "Accepted, on a CTO"
+        : openReferralCell
+          ? "Referred, on a CTO"
+          : plannedCell
+            ? "Planned admission, on a CTO"
+            : "Not currently active, on a CTO",
       meta: ctx.acceptedReferral
         ? `Accepted at ${ctx.acceptedReferral.unitName}. Next: pull the bed`
-        : "No open referral, placement or ward stay. The order below is in force.",
+        : openReferralCell
+          ? "A referral is awaiting an answer. The order below is in force."
+          : plannedCell
+            ? "A planned admission is booked. The order below is in force."
+            : "No open referral, placement or ward stay. The order below is in force.",
       cells: [
-        ...(acceptedBedCell ? [acceptedBedCell] : []),
+        ...openCells,
         {
           key: "cto",
           icon: FileBadge,
@@ -803,6 +873,12 @@ function statusFor(
   // A record with nothing open. Where else they have stayed is not read here (archived D-14): the screen
   // shows only what the patient record itself holds.
   const activeEngagement = recordExtrasFor(patient?.id)?.community?.find((item) => item.status === "active");
+  // Root cause 2.3: a next contact whose day has passed is not shown as all good. Unreadable text
+  // and "Not booked" stay neutral, as nothing is known either way.
+  const nextContactPassed = recordedDayPassed(
+    activeEngagement?.nextContact,
+    perthIsoDay(calendarDateOf(now, ctx.dayZero)),
+  );
   return {
     tone: "neutral",
     // Redesign (Josh, 1 Nov 2026): Now is for a current presentation only, so a record with nothing
@@ -822,9 +898,15 @@ function statusFor(
               icon: Users,
               label: "Next community contact",
               owner: "Community",
-              tone: "success" as const,
+              tone:
+                nextContactPassed === true
+                  ? ("warning" as const)
+                  : nextContactPassed === false
+                    ? ("success" as const)
+                    : ("neutral" as const),
               value: activeEngagement.nextContact?.split(",")[0] ?? "Not booked",
               sub: `${activeEngagement.program}, ${activeEngagement.team}`,
+              ...(nextContactPassed ? { time: "Date passed" } : {}),
             },
           ]
         : []),

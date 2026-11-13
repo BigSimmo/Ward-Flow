@@ -196,6 +196,20 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-171](#d-171-hosted-database-brought-to-schema-18-migrations-017-and-018-13-november-2026)                                                            | Hosted database brought to schema 18 (migrations 017 and 018)                          | Active                                           |
 | [D-172](#d-172-the-community-desks-ed-heads-up-stays-as-built-in-d-154-13-november-2026)                                                                | The community desk's ED heads-up stays as built in D-154                               | Active                                           |
 | [D-173](#d-173-turning-off-supabase-open-sign-up-is-deferred-13-november-2026)                                                                          | Turning off Supabase open sign-up is deferred                                          | Active                                           |
+| [D-174](#d-174-audit-findings-name-the-system-cause-and-the-fix-round-ships-in-two-pull-requests-13-november-2026)                                      | Audit findings name the system cause, and the fix round ships in two pull requests     | Active                                           |
+| [D-175](#d-175-audit-16-and-the-demo-data-root-cause-review-approved-fixes-13-november-2026)                                                            | Audit 16 and the demo-data root-cause review: approved fixes                           | Active                                           |
+| [D-176](#d-176-clinical-check-pack-answers-13-november-2026)                                                                                            | Clinical check pack answers                                                            | Active                                           |
+| [D-177](#d-177-audit-15-answers-on-the-public-footprint-13-november-2026)                                                                               | Audit 15 answers on the public footprint                                               | Active                                           |
+| [D-178](#d-178-audits-4-and-5-answers-13-november-2026)                                                                                                 | Audits 4 and 5 answers                                                                 | Active                                           |
+| [D-179](#d-179-audit-9-answers-from-a-real-shift-13-november-2026)                                                                                      | Audit 9 answers from a real shift                                                      | Active                                           |
+| [D-180](#d-180-audits-12-and-14-answers-13-november-2026)                                                                                               | Audits 12 and 14 answers                                                               | Active                                           |
+| [D-181](#d-181-fix-round-answers-13-november-2026)                                                                                                      | Fix round answers                                                                      | Active                                           |
+| [D-182](#d-182-audit-chat-and-end-report-answers-13-november-2026)                                                                                      | Audit chat and end-report answers                                                      | Active                                           |
+| [D-183](#d-183-end-report-addendum-answers-13-november-2026)                                                                                            | End report addendum answers                                                            | Active                                           |
+| [D-184](#d-184-the-system-fixes-merge-before-the-demo-13-november-2026)                                                                                 | The system fixes merge before the demo                                                 | Active                                           |
+| [D-185](#d-185-design-critique-v2-answers-and-the-brand-mark-for-the-demo-13-november-2026)                                                             | Design critique v2 answers and the brand mark for the demo                             | Active                                           |
+| [D-190](#d-190-the-six-pr-fix-plan-13-november-2026)                                                                                                    | The six-PR fix plan                                                                    | Active                                           |
+| [D-191](#d-191-home-ward-and-capacity-mock-ups-approved-13-november-2026)                                                                               | Home, Ward and Capacity mock-ups approved                                              | Active                                           |
 | [D-192](#d-192-shared-design-parts-approved-for-building-wave-3-pr-e-13-november-2026)                                                                  | Shared design parts approved for building (wave 3, PR E)                               | Active                                           |
 
 ---
@@ -2125,6 +2139,175 @@ is inferred.
 - **Decision:** Josh's own action from D-145 item 5, turning off Supabase open sign-up, is deferred. The site stays on synthetic data, so nothing changes now. It must still be done before any real data, and it stays on the real-data gate.
 - **Why:** the shared site holds synthetic data only, so an outside Supabase account that gets past the site lock reaches no real patient information.
 - **Boundary:** synthetic data only. No code change and no provider change. Changes no clinical rule or signed value, and approves no release.
+
+## D-174. Audit findings name the system cause, and the fix round ships in two pull requests (13 November 2026)
+
+- **Date:** 13 November 2026. **Decided by:** Josh in the Ward Flow project chat, relayed to the fix thread "Fixes": 4:39 PM AWST (08:39 UTC), "the specific mistakes for the demo data is not about the demo data... it is about the system and behaviour that made or displayed that mistake"; 4:58 PM AWST, start all safe, approved, non-clinical fixes now; 5:07 PM AWST, the decision card option "Two PRs, big changes after demo"; 5:51 PM AWST, "await my posting the audit from 12 and 14 however before fixes". Numbered D-174 because D-173 is claimed by open PR #1653.
+- **Decision:**
+  1. **Root cause rule:** a mistake seen in sample data is a finding about the generator, calculation, logic or display that made or showed it. The fix corrects that behaviour and adds a guard test. Hand-editing one sample record is not a fix.
+  2. **Two pull requests:** the demo-safe fixes go in one pull request. The sample-day generator, travel band, worked-example, hold-up list and other after-demo changes go in a second pull request labelled `hold` until after the demo.
+  3. **Hold:** neither pull request is marked ready or merged until the findings of Audits 12 and 14 are folded in. Draft pull requests may run CI.
+- **Boundary:** sets no clinical value. Approves no merge or release; a release still needs Josh's "release now" or the daily run.
+
+## D-175. Audit 16 and the demo-data root-cause review: approved fixes (13 November 2026)
+
+- **Date:** 13 November 2026. **Decided by:** Josh in the Ward Flow project threads "Audit 16" and "Trace demo-data mistakes to system causes": 4:38 PM AWST "ok go ahead with all your recommendations please" (Audit 16, all 12); 4:44 PM "yes to all your recommendations and pass along" (the system parts of A16-08 to A16-11); 4:52 PM "yes to all four" (the revised fixes); 4:53 PM the root-cause review answers, in the narrower form the coordinator advised.
+- **Decision:**
+  1. **Audit 16:** all recommendations, built as system fixes under D-174. Travel bands are shown only when someone has checked them; until then a pair reads as not checked. Hold-up reasons are split by occupied or empty bed (the two lists are a draft for Josh to sign). The Armadale worked examples become a presenter switch after the demo. A sample-day check suite guards the seed.
+  2. **Root-cause question 1:** only small fixes on the demo path go before the demo; the rest follow, grouped by cause.
+  3. **Question 2:** the app may hold "observation not recorded"; a missing level is never shown as General.
+  4. **Question 3:** Home gains a "Past planned time" group, so a late planned move does not drop off.
+  5. **Question 4:** Day N counts Perth calendar days, and the arrival day is Day 1.
+  6. **Question 5 (wording only):** the fit sentence names what was checked and says that recorded risks, escort need and medical clearance are not part of the check.
+  7. **Question 8:** reminders and the call log say "on this device only" now; a shared record comes before real data.
+  8. **Question 10:** four rows join the real-data go/no-go list (C10 to C13).
+- **Still Josh's (clinical):** whether any recorded risk becomes a fit check (question 5); whether "Involuntary" filters and detained counts include people referred for examination (question 6); the ED wait ladder against the values register (question 7); which legal status and form pairings get a warning (question 9); the Calder, Keira, Saoirse and Cyril sample-record calls; the length-of-stay spread and the hold-up lists.
+- **Boundary:** synthetic data only. Sets no clinical value.
+
+## D-176. Clinical check pack answers (13 November 2026)
+
+- **Date:** 13 November 2026, 4:09 PM AWST (08:09 UTC). **Decided by:** Josh, agreeing every recommendation on the tick sheet of the clinical check pack (audit prompt 17), in the Ward Flow project thread "Build the clinical check pack".
+- **Decision:**
+  1. **A1:** a legal form, such as Keira's Form 3B, shows as recorded on every screen until a person records it ended. This changes the D-168 direction for the script and the D-170 item 1 reading of an old form.
+  2. **B1, B2:** the form numbers 6A and 4A stay out of the script's Say lines; the D-170 presenter sentence stays.
+  3. **C1 to C5:** the triage see-by windows and the frequent presenter number stay unsigned until Josh compares them with a current SMHMR900. Triage stays out of the demo. **C6:** the windows carry a visible "not signed" label.
+  4. **D1:** the glossary describes SMHMR as the form-number prefix of WA's statewide mental health documents, with no expansion of the letters.
+  5. **E1:** the forensic chip goes with the "Forms held" row. Elsewhere the Act is named in full: Criminal Law (Mental Impairment) Act 2023.
+  6. **F1, F4:** said as scripted. **F2:** the script says "usually up to three wards at once". **F3:** the Undo and three-ward limits join the values register after the demo.
+- **Frequent presenter number:** D-170 item 6 signed it as a prototype default; C5 leaves it unsigned. Josh chose unsigned on 13 November 2026 (D-181 item 3), which replaces D-170 item 6.
+- **Boundary:** sets no clinical value.
+
+## D-177. Audit 15 answers on the public footprint (13 November 2026)
+
+- **Date:** 13 November 2026, 5:03 PM AWST "Go ahead with all your recommendations and update the coordinator chat", and 5:05 PM AWST "Yes to all recommendations" on the five open choices, in the Ward Flow project thread "Audit 15".
+- **Decision:** all Audit 15 recommendations are approved for the fix round. Of the five choices: the demo phone numbers copy and never dial (A15-14); reference addresses show the suburb only (A15-16); the seclusion room list stays and only the invented incidents and staff request leave wards that carry a real ward's own name (A15-27); neutral health-service colours wait until after the demo (A15-30); the coordinator handover page is deleted (A15-02).
+- **Still Josh's:** the privacy route for A15-01 part 1, the crisis numbers (A15-17, clinical) and his own settings checks (A15-10, A15-22, A15-24).
+- **Boundary:** synthetic data only. Approves no release.
+
+## D-178. Audits 4 and 5 answers (13 November 2026)
+
+- **Date:** 13 November 2026, about 5:48 PM AWST (09:48 UTC). **Decided by:** Josh, "yes to all recommendations" for the venue resilience audit (Audit 4) and the layout audit (Audit 5), in the Ward Flow project chat, and again "Yes to all recommendations" in the "Audit 5" thread.
+- **Decision:** the script gains the Audit 4 presenter lines (the 15-minute idle cover and Carry on, an offline booking is not kept, the Act 2 fallback). The app fixes follow: the cause of an offline booking lost on reload, a server check before a full page load, a half-filled booking holding a reload, retrying a part that did not load, and a lint rule for unhandled loads. All Audit 5 layout fixes are approved, with its after-demo items after the demo.
+- **Boundary:** the 15-minute idle limit is a signed value and does not change. Sets no clinical value.
+
+## D-179. Audit 9 answers from a real shift (13 November 2026)
+
+- **Date:** 13 November 2026, 5:50 PM AWST (09:50 UTC). **Decided by:** Josh, "yes to all your recommendations" in the Ward Flow project thread "Audit 9", confirmed for question 7 at 5:54 PM AWST.
+- **Decision:**
+  1. **Before the demo:** only A9-01 to A9-04 (surname first on the Act 6A card and panel, the script's Undo and fallback lines, and the held-up discharges line). The rest of Audit 9 waits until after the demo.
+  2. **Standing rule (question 2):** no clinical choice starts selected on any form. Bed security, discharge destination, and the kind of leave and its return time start empty and ask.
+  3. **Question 3, wording only:** the clearance card says what the app does today. Whether transport and handover wait for fit to travel stays Josh's to rule.
+  4. **Question 4:** the Home pull form shows what was recorded and who recorded it, after a mock-up.
+  5. **Question 5:** one ward's acceptance keeps closing a parallel ED review request, and says so. **Question 6:** handover sign-off stays allowed with checks open; the button counts them and History records them.
+  6. **Question 7:** the Triage safety plan rule is Josh's, as the form applies it (`triage-risk-state.ts`): a safety plan is needed at urgency A or B, when any current risk is marked present, or when an alert other than a background one is recorded. No app change.
+  7. **Questions 8 to 10:** Review details stays open until Aboriginal or Torres Strait Islander status and interpreter need are answered; a reviewed time in the future shows no See by time; a triage signed on a desk carries that desk's own sample person.
+  8. **Question 11:** "ready" no longer includes a bed still being made ready, on every screen together. This replaces the 5 September 2026 owner ruling that such a bed is still offered and counted.
+  9. **Question 12:** a site bed manager's TV shows only that site. **Question 13:** the small-number rule in Executive Statistics stays; only its wording changes. **Question 14:** deferred to the community redesign.
+- **Boundary:** synthetic data only. Sets no clinical value beyond confirming the safety plan rule as built.
+
+## D-180. Audits 12 and 14 answers (13 November 2026)
+
+- **Date:** 13 November 2026, 4:44 PM to 5:59 PM AWST, in the other Ward Flow chat (the audit chat), handed to this project at 6:42 PM AWST (10:42 UTC) with "Ok here is 12 and 14" and "Please continue with all recommendations also". The handover file is the source; its times are Perth time.
+- **Decision:**
+  1. **Recovery card (4:44 PM):** the recovery-card lines and the new recovery wording for Keira leaving Later today go ahead. "Mark absent" and "Record no transport needed" stay as they are for the demo and are decided after it.
+  2. **Test records (4:52 PM and 4:55 PM):** PT-A06 and TEST-Helper4 are cleared from the live signed-in site with the app's own controls in Josh's signed-in browser, never by a database edit. The temporary handover file is removed in this project's own PR.
+  3. **The fix pull request (4:55 PM):** six items from the underlying-system check are approved: the legal-form family reads the ended state the patient page uses, says "Next form to record" and labels the check "Transport or transfer order not uploaded" (K1, K14, K18); the ED step-1 "Ask wards" prompt stops once a ward has accepted (K6); "Open patient" on the ED board opens the patient page (A12-04); Esc closes the Record a form box and the ED transport booking box (A12-08); the hotspot line goes in the script (L1); a "Change" control beside "No transport needed" after the demo (K37).
+  4. **Script (5:13 PM and 5:47 PM):** A14-P1 is handled before the demo by a script line; the seven Audit 14 script edits go into one docs pull request before the demo. A14-P2, A14-12 and A14-13 wait until after it.
+  5. **Order (5:59 PM):** the docs pull request first, then the fix pull request. The after-demo list in the handover's section 9 follows the demo.
+- **Boundary:** sets no clinical value. The handover's clinical questions (section 8) are for Josh's tick sheet and nothing is built from them.
+
+## D-181. Fix round answers (13 November 2026)
+
+- **Date:** 13 November 2026, 6:46 PM AWST (10:46 UTC). **Decided by:** Josh, "Yes to all 15" in the Ward Flow project chat, answering the fix thread's 15 numbered recommendations.
+- **Decision:**
+  1. The three legal-panel exports left unused by removing the "Forms held" row and the forensic chip are deleted.
+  2. Josh's 4:55 PM yes (D-180 item 3) is the clinical check for Keira's form lines: a form shows as recorded until a person records it ended.
+  3. The frequent presenter number stays unsigned. This replaces D-170 item 6.
+  4. Whether transport booking and "Mark handover ready" wait for fit to travel: no change before the demo; decided after it.
+  5. A bed being made ready may still be pulled, and is shown separately from ready beds (with D-179 item 8).
+  6. The hold-up reason lists are signed as drafted: an empty bed can only be "Awaiting clean"; an occupied bed takes every other reason.
+  7. Travel times stay "not checked" until after the demo, when Josh supplies checked times for the site pairs used.
+  8. The sample's length-of-stay spread (a fixed shuffle per ward) is kept as a sample choice, labelled as such.
+  9. The worked examples are on in the demo and off for real data.
+  10. An arrival with no pulled bed creates a named stay. This replaces the unrecorded 25 September 2026 ruling that an arrival never creates a stay.
+  11. A typed date of birth no longer stops saving. A follow-up counts such a person as "age not recorded" rather than Adult.
+  12. GP, crisis-service and inter-hospital referrals keep their bed pull on the ward board for now.
+  13. On a short laptop screen the menu hides its grey second lines so "More" stays in view.
+  14. An observation level that is not recorded is counted separately and never as constant observation.
+  15. The invented "Mental Health Transport" booking contact stays, labelled as sample data.
+- **Boundary:** synthetic data only. Items 6, 7 and 8 sign sample and reference choices, not clinical thresholds.
+
+## D-182. Audit chat and end-report answers (13 November 2026)
+
+- **Date:** 13 November 2026, 4:56 PM to 6:47 PM AWST. **Decided by:** Josh, in the audit chat (handed over at 6:42 PM) and the Ward Flow project chat. The end report's Addendum 1, section A8, lists these as rulings 16, 19, 21 and 23; the others there are D-180 and D-181.
+- **Decision:**
+  1. **No fixes in the audit chat (4:56 PM and 5:49 PM):** fixes are built only in the main Ward Flow project. The cloud report is the one combined Audit 14 report.
+  2. **The demo code (5:49 PM):** the message that holds it is deleted, and the code is changed after the demo.
+  3. **"Continue with all recommendations" (6:43 PM),** for the end report's section 2B: Audit 3's nine after-demo wording fixes go in the held pull request, with the legal-rule sentences and the "not authorised" wording shown to Josh first; the forensic chip is removed, not renamed; whether a bed still being made ready may be matched ahead of time is not changed now and is decided with the after-demo build; the other seven scenarios get a root-cause trace after the demo, at low priority; the avoid list stands; releases are frozen once the re-check passes and the freeze is cleared after the demo (the switch is Josh's); the public-site pass runs after the fixes are released and the deep audit after the demo.
+  4. **"Go ahead with all final recommendations" (6:47 PM)** answered a message setting out the merge order: the documents pull request first, then the fix pull request, each by auto-merge once its checks pass. It is not a "release now". Josh confirmed this at 7:04 PM (11:04 UTC) with "Go ahead with all recommendations": the demo date is unknown, so nothing reaches the live site beyond the normal 6 am update and there is no manual release.
+- **Boundary:** sets no clinical value. The open clinical calls stay on Josh's tick sheet.
+
+## D-183. End report addendum answers (13 November 2026)
+
+- **Date:** 13 November 2026, 7:04 PM AWST (11:04 UTC). **Decided by:** Josh, "Yes to all recommendations" in the Audit 19 thread, answering the end report's Addendum 1, part A2 (ruling 24 in its A8 list).
+- **Decision:**
+  1. Two gates join the "before real data" list: the sign-in token can be read by page scripts, and the TV shows full names with no privacy review done ([REAL-DATA-GO-NO-GO](governance/REAL-DATA-GO-NO-GO.md) rows C14 and C15).
+  2. A new word for "Suggested now" and "Suggested next step", and one word in place of "Forecast" and "likely", are chosen after the demo from options the fix thread shows Josh. Nothing is renamed before then.
+  3. Audit 7's open business questions, and a regulatory adviser's view on whether Ward Flow is a medical device, are taken in one sitting after the demo.
+  4. The clinical tick sheet is answered in one sitting after the demo.
+- **Not decided by this answer:** the demo date and screen size, and A15-01 (Josh's privacy decision).
+- **Boundary:** sets no clinical value. Nothing is built from T9, T25 or T26.
+
+## D-184. The system fixes merge before the demo (13 November 2026)
+
+- **Date:** 13 November 2026, 8:01 PM AWST (12:01 UTC). **Decided by:** Josh, on a decision card in the Fixes thread, after saying the demo is about two weeks away and "I want all the work done please".
+- **Decision:** the second pull request (the sample-day generator and the system fixes) merges before the demo, by about 20 November, once its checks pass and the fixes are re-checked. Nothing merges after 22 November, so Josh rehearses on the final screens. This replaces the "after the demo" part of D-174; the two-PR split stays.
+- **Boundary:** sets no clinical value. Clinical calls from the tick sheet still wait for Josh's sitting.
+
+## D-185. Design critique v2 answers and the brand mark for the demo (13 November 2026)
+
+- **Date:** 13 November 2026, 8:08 PM AWST (12:08 UTC). **Decided by:** Josh, "Yes to all recommendations please" in the project chat, answering the appraisal of design critique v2 (32 findings).
+- **Decision:**
+  1. The 27 agreed items go ahead in the PRs the appraisal names: 14 small demo-safe fixes in the first fix PR, 3 in the system-fixes PR, 5 in the shared-parts wave and 4 in the page waves. The five rejected findings stay rejected.
+  2. The app keeps the care-cross mark for the demo. A Ward Flow mark of its own is chosen after the demo.
+  3. Where a fix largely changes a screen's design, Josh sees a mock-up first. Small wording and bug fixes do not need one.
+- **Not decided by this answer:** whether an "Intermittent" observation level starts with no interval (critique item 18). That is a clinical call for Josh's sitting.
+- **Boundary:** sets no clinical value.
+
+## D-190. The six-PR fix plan (13 November 2026)
+
+- **Date:** 13 November 2026, 8:11 PM AWST (12:11 UTC). **Decided by:** Josh, approving every recommendation of the master fix plan in the Ward Flow project chat. D-186 to D-189 are held for the clinical sitting: D-186, D-187, D-188 and D-189 are reserved by open PR #1656, the clinical sign-off pull request.
+- **Decision:**
+  1. The demo is about 27 November 2026. Rehearse at 1366x768 until the room's screen size is known.
+  2. The order of work is: fix the system, then the clinical sitting, then shared parts, then pages (pull requests B to F).
+  3. Layout fixes are folded into each page's redesign. Capacity is the third page in the first page wave.
+  4. F-112 goes to the clinical sitting. F-116 is accepted as a prototype risk. F-118 is a rehearsal note in the first fix PR. F-120 is checked.
+  5. A full clinical read of the Triage wording joins the clinical sitting.
+  6. The 36 older role views are retired in a later page wave.
+  7. The merged documents branch `claude/delete-handover-2026-11-13` is deleted.
+  8. Audit 7's business questions and a regulatory view are taken in one sitting after the demo.
+- **Boundary:** sets no clinical value.
+
+## D-191. Home, Ward and Capacity mock-ups approved (13 November 2026)
+
+- **Date:** 13 November 2026, 8:31 PM AWST (12:31 UTC), with follow-ups at 8:34 PM, 8:51 PM and 8:56 PM AWST. **Decided by:** Josh, "Yes to all" on the decision card "Approve the Home, Ward and Capacity mock-ups and their 13 recommendations?" in the Ward Flow thread "Redesign Home, Ward and Capacity" (review page v1.1), and "Yes to all 4" on the four build questions in the project chat. This settles the "Still open" line of D-188, which the clinical sign-off pull request records.
+- **Decision:** the Home, Ward (coordinator and ward desk, bed board on a phone, All wards header) and Capacity (with the executive desk and bed meeting sheet) designs are approved, with these 13 points:
+  1. **Pull the bed (clinical, see D-188):** legal status, form and observation level are filled in from the record, each showing its source. The clinician or ward coordinator pulling the bed can change any of them, and a changed value names that person as its source. A fact the record does not hold is left blank ("Not recorded"), with nothing guessed or selected.
+  2. Home's Needs you loses "Waiting on others". Late planned arrivals go to Past planned time. Discharge notifications stay in Alerts.
+  3. After a pull the row stays with "Undo pull · until HH:MM", and focus moves to the next row.
+  4. The 85% figure reads "In use", as on Capacity, with the amber dot kept, not "at risk".
+  5. "Held up" means due by tomorrow (overdue, today or tomorrow) on Capacity, Ward, the TV, the sheet and Home. Discharges keeps "any date" as its own group, and "by tomorrow" joins the window words.
+  6. "Short" adds each bed type's shortfall and never subtracts a spare youth bed.
+  7. Bed squares drop the 4 November coloured discharge cells. Held up is said in words on the note line, in one pattern for Ward, Capacity and All wards that moves into the kit.
+  8. A shorter Capacity Overview: one hero action (Bed meeting sheet), Find a bed on the map, the forecast chart behind the Forecast card, and the Planned card only on its tab.
+  9. The Ward hero's third figure is "Arrivals · today", replacing "ready by 15:00".
+  10. Ward shows a quiet "Obs not recorded" count beside "Staff on constant obs" (clinical; no level proposed).
+  11. Confirming an arrival with no pulled bed opens the pull step first, asking which ready bed, then the arrival. Closed beds are never offered.
+  12. Arrival rows keep the legal tag as recorded, in the fix round's wording (clinical wording).
+  13. Planned admissions get full synthetic names (F-148).
+- **Build answers (8:51 PM AWST):** both the ward-desk clinician and the ward coordinator may pull a bed, and the record names which one did. A change on the pull form stays on the pull, shown as "changed by …", and does not update the patient record. The person is named by desk role, since there are no personal sign-ins. Points 5 and 6 are built in the system-fixes pull request; the page waves relabel.
+- **Build defaults (8:56 PM AWST, "Yes to all recommendations and update coordinator"):** the Home, Ward and Capacity pull request makes no TV edits and builds the bed squares. The window word is dropped where the page title already says "now". The Home forecast line reads "Tomorrow N short · range … · From ward dates".
+- **Boundary:** synthetic data only. Sets no clinical value.
 
 ## D-192. Shared design parts approved for building, wave 3, PR E (13 November 2026)
 

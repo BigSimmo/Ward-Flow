@@ -4,6 +4,7 @@ import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles"
 import { wardSites } from "@/components/ward-management/ward-sites";
 import { referenceEntity } from "@/components/ward-management/reference/ward-reference-registry";
 import { REFERENCE_TEAM_NAMES, referenceTeamDetail } from "@/components/ward-management/reference/ward-reference-teams";
+import { DEMO_LANDLINE_EXCHANGE, demoLandline } from "@/components/ward-management/demo-phone-numbers";
 import { NETWORK_ON_CALL_ROLES, SERVICE_ON_CALL_ROLES, type OnCallRole } from "./on-call-roster";
 
 /**
@@ -11,8 +12,8 @@ import { NETWORK_ON_CALL_ROLES, SERVICE_ON_CALL_ROLES, type OnCallRole } from ".
  * design, with mock records and the time each number is available until).
  *
  * 🔴 **EVERY NUMBER AND EMAIL HERE IS A MOCK, MADE BY TWO FUNCTIONS AND NOTHING ELSE.** A number is
- * `MOCK_NUMBER_PREFIX` plus a four digit serial: the (08) 0000 exchange is unassigned, so it cannot
- * reach a person. An email uses the reserved `.invalid` domain, so it cannot be delivered. This is the
+ * the next one in this file's block of the ACMA fiction range (08) 5550 xxxx (`demoLandline`,
+ * A15-14 and A15-19, 13 Nov 2026), so it cannot reach a person. An email uses the reserved `.invalid` domain, so it cannot be delivered. This is the
  * pattern the Tools contact directory already uses for its owner-requested mock contacts. No real
  * number, published or otherwise, is copied onto this page, including the community teams the
  * reference pack holds published lines for. `tests/ward-on-call-holds-no-people.test.ts` asserts every
@@ -29,7 +30,7 @@ import { NETWORK_ON_CALL_ROLES, SERVICE_ON_CALL_ROLES, type OnCallRole } from ".
 
 /** Set to false to show "Not held" in every number slot instead of a mock number. */
 export const SHOW_MOCK_CONTACTS = true;
-export const MOCK_NUMBER_PREFIX = "08 0000";
+export const MOCK_NUMBER_PREFIX = DEMO_LANDLINE_EXCHANGE;
 const MOCK_EMAIL_DOMAIN = "example.invalid";
 
 export type DirectoryService = "Statewide" | HealthService;
@@ -232,7 +233,7 @@ export function buildOnCallDirectory(sites: readonly Site[] = wardSites): Direct
   let serial = 0;
   const number = () => {
     serial += 1;
-    return SHOW_MOCK_CONTACTS ? `${MOCK_NUMBER_PREFIX} ${1000 + serial}` : null;
+    return SHOW_MOCK_CONTACTS ? demoLandline("onCallDirectory", serial) : null;
   };
   const email = (local: string) => (SHOW_MOCK_CONTACTS ? [local, MOCK_EMAIL_DOMAIN].join("@") : null);
   const line = (label: string, window: ContactWindow | null): ContactLine => ({ label, number: number(), window });
@@ -376,6 +377,17 @@ export function buildOnCallDirectory(sites: readonly Site[] = wardSites): Direct
     "Non urgent transfers",
     [line("Bookings", [420, 1140])],
     { email: email("patient.transport"), emailWindow: [420, 1140], note: "Non urgent transfers between sites." },
+  );
+  // A15-29 (13 Nov 2026): the officer's booking list reads this directory instead of its own list,
+  // so the one provider it named that had no row here gets one.
+  statewide(
+    "Transport and retrieval",
+    "sw-mhtx",
+    "Mental Health Transport",
+    "Statewide",
+    "Mental health transfers",
+    [line("Bookings", null)],
+    { note: "Mental health patient transfers." },
   );
   statewide(
     "Transport and retrieval",
@@ -801,6 +813,13 @@ function computeAvailability(entry: DirectoryEntry, minute: number): Availabilit
   }
   const step = steps.find((candidate) => lineAt(entry, minute + candidate)) ?? CLOCK_DAY;
   return { kind: "off", email: false, opens: mod(minute + step), wait: step, next: lineAt(entry, minute + step) };
+}
+
+let defaultDirectory: DirectoryEntry[] | undefined;
+/** A15-29: one directory row by id, from the default site list, for screens that name a row. */
+export function directoryEntryById(id: string): DirectoryEntry | undefined {
+  defaultDirectory ??= buildOnCallDirectory();
+  return defaultDirectory.find((entry) => entry.id === id);
 }
 
 /** The number to show now: the answering line, else the next to open, else the first. */

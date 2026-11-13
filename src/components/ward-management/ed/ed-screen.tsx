@@ -25,7 +25,8 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
-import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
+import { patientHref, raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
+import { useRouter } from "next/navigation";
 import { edScreenActions } from "./ed-screen-actions";
 import { EdBoardSection } from "./ed-screen-board";
 import { EdAccessRiskCard } from "@/components/ward-management/forecast/forecast-lazy";
@@ -188,6 +189,9 @@ export function EdScreen({ edId }: EdScreenProps) {
   // coordinator's ED board keeps it. The hero's Raise referral and the department strip follow the
   // same role in `ed-overview.tsx`.
   const edDesk = useEffectiveWardAccess().role === "ed";
+  // A12-04 (Josh, 13 Nov 2026): "Open patient" on this board opens the patient page, as on All EDs.
+  // Optional, so the board still renders where no app router is mounted (the screen tests).
+  const router = useOptionalEdRouter();
   const isTabletPortrait = useIsTabletPortrait();
   /** Mockups: the board is list rows with one Next button on every width; edits live in the sheet. */
   /*
@@ -393,6 +397,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     boardTable,
     needsRailSlides,
     recordEdStep,
+    openPatientPage: (patientId) => router?.push(patientHref(patientId)),
     submitReferral,
     referralFieldsDisabled: referralSave.referralFieldsDisabled,
     referralSaveMessage: referralSave.referralSaveMessage,
@@ -535,4 +540,16 @@ export function EdScreen({ edId }: EdScreenProps) {
       ) : null}
     </div>
   );
+}
+
+/**
+ * The app router, or null where none is mounted (the screen tests and previews). Kept here rather
+ * than importing the ward screens' helper, so the ED screen's bundle takes nothing new (A12-04).
+ */
+function useOptionalEdRouter(): ReturnType<typeof useRouter> | null {
+  try {
+    return useRouter();
+  } catch {
+    return null;
+  }
 }

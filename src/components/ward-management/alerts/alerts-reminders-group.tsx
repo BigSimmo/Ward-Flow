@@ -9,7 +9,11 @@ import { Check } from "lucide-react";
 
 import { Button } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { removeReminder, useReminders } from "@/components/ward-management/tools/ward-tool-remind-store";
+import {
+  DEVICE_ONLY_LABEL,
+  removeReminder,
+  useReminders,
+} from "@/components/ward-management/tools/ward-tool-remind-store";
 
 import { GroupHead } from "./alerts-queue";
 import styles from "./alerts.module.css";
@@ -28,7 +32,12 @@ export function AlertsRemindersGroup({ now }: { now: Instant }) {
   if (due.length === 0) return null;
   return (
     <section className={styles.group} aria-label="Your reminders" data-testid="ward-alerts-reminders">
-      <GroupHead tone="info" label="Your reminders" count={due.length} aside="set in Tools" />
+      <GroupHead
+        tone="info"
+        label="Your reminders"
+        count={due.length}
+        aside={`set in Tools · ${DEVICE_ONLY_LABEL.toLowerCase()}`}
+      />
       <ul className={styles.reminderList}>
         {due.map((reminder) => {
           const at = formatInstantWithDay(reminder.dueAt, now);

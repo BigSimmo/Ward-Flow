@@ -20,7 +20,7 @@ Already settled, so not asked again: Broome's Mabu Liyan is not forensic (owner 
 
 ## First: the five facts the placement rules lean on
 
-These decide who the app offers a bed to, so a wrong value here gives a wrong offer.
+These decide which wards the app lists as fitting, so a wrong value here gives a wrong list.
 
 1. **Geraldton: is the adult ward female-only?** The app has "Geraldton Adult Open" as a 7-bed
    female-only ward with no locked beds. It is one of only two single-sex wards in the app.

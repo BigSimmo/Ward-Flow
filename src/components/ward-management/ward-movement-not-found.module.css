@@ -38,7 +38,8 @@
   min-width: 10rem;
   padding: 0 var(--wf-s-4);
   border-radius: var(--wf-r-ctl);
-  background: var(--wf-accent);
+  /* C04: the kit primary fill (button.module.css .pri). The accent is light in dark mode, so white on it read at 2:1. */
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
   color: var(--wf-on-accent);
   font-weight: 600;
   text-decoration: none;
