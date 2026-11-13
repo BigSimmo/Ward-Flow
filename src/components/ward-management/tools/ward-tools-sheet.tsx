@@ -17,6 +17,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  CircleHelp,
   Clock3,
   FileClock,
   FileText,
@@ -67,6 +68,7 @@ import { useExecutiveStatisticsControl } from "@/components/ward-management/stat
 // D-91: the one suburb lookup card, shared with Community and the ward's Discharges tab.
 import { SuburbLookupCard } from "@/components/ward-management/community/community-suburb-lookup-card";
 import { buttonClass, Count, SearchField, SrOnly } from "@/components/wf";
+import { openWardHelp } from "@/components/ward-management/help/ward-help-events";
 
 import { ToolFeed, ReceiveNextFeedMessage, useFeedWaitingCount } from "./ward-tool-feed";
 import { ToolFigures } from "./ward-tool-figures";
@@ -1105,11 +1107,38 @@ function ToolsSheetView({
           }}
         />
 
-        {/* Suggested now (Josh, 8 Nov 2026): the coordinator's few things that need them, each one tap
-            from its tool. Only what is due shows; with nothing due, the section is gone. */}
+        {/* Shared design parts item 8 (13 Nov 2026): on a phone, Help is a row here too, so a page with
+            Back (no header Menu) still reaches it. It opens the header Menu's Help, this screen first. */}
+        {!words && isPhone ? (
+          <section className={styles.quick} aria-label="Help">
+            <div className={styles.card}>
+              <button
+                type="button"
+                className={styles.row}
+                data-testid="ward-tools-help"
+                onClick={() => {
+                  onNavigate();
+                  openWardHelp("tasks");
+                }}
+              >
+                <span className={styles.rowIcon} data-group="look" aria-hidden="true">
+                  <CircleHelp aria-hidden="true" strokeWidth={1.75} />
+                </span>
+                <span className={styles.rowText}>
+                  <strong>How this screen works</strong> <em>Help for this page</em>
+                </span>{" "}
+                <ChevronRight className={styles.rowEnd} aria-hidden="true" strokeWidth={1.75} />
+              </button>
+            </div>
+          </section>
+        ) : null}
+
+        {/* Needs you (Josh, 8 Nov 2026; words from shared design parts item 11, 13 Nov 2026, the same
+            as Home's Needs you tab): the coordinator's few things that need them, each one tap from
+            its tool. Only what is due shows; with nothing due, the section is gone. */}
         {!words && role === "coordinator" && suggestions.length > 0 ? (
-          <section className={styles.quick} aria-label="Suggested now">
-            <h3 className={styles.groupHeading}>Suggested now</h3>
+          <section className={styles.quick} aria-label="Needs you">
+            <h3 className={styles.groupHeading}>Needs you</h3>
             <div className={styles.card}>
               {suggestions.map((item) => {
                 const face = (
