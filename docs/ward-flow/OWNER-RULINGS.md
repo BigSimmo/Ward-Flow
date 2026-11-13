@@ -347,7 +347,7 @@ safe global key across 30 files.
 | `D-186` | `decisions.md`:2132 | D-186. Clinical sign-off sitting, part 1: timing and the audit-backed recommendations (13 November 2026) |
 | `D-187` | `decisions.md`:2154 | D-187. Clinical sign-off sitting, part 2: the recommendations for Q17 to Q44 (13 November 2026) |
 | `D-188` | `decisions.md`:2180 | D-188. The Home pull form is filled from the record and can be changed (13 November 2026) |
-| `D-189` | `decisions.md`:2187 | D-189. Handling the sitting questions that had no recommendation (13 November 2026) |
+| `D-189` | `decisions.md`:2187 | D-189. Handling the open sitting questions, and how the remaining items are built (13 November 2026) |
 | `D9-1` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | `D9-2` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
 | `D9-3` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:126 | D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION) |
@@ -834,7 +834,7 @@ safe global key across 30 files.
 - `D-186` — line 2132, heading: "D-186. Clinical sign-off sitting, part 1: timing and the audit-backed recommendations (13 November 2026)"
 - `D-187` — line 2154, heading: "D-187. Clinical sign-off sitting, part 2: the recommendations for Q17 to Q44 (13 November 2026)"
 - `D-188` — line 2180, heading: "D-188. The Home pull form is filled from the record and can be changed (13 November 2026)"
-- `D-189` — line 2187, heading: "D-189. Handling the sitting questions that had no recommendation (13 November 2026)"
+- `D-189` — line 2187, heading: "D-189. Handling the open sitting questions, and how the remaining items are built (13 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 
