@@ -434,11 +434,13 @@
     background: color-mix(in srgb, var(--toast-ink) 14%, transparent);
   }
 
+  /* The cover starts inside the button's 1px border, so 5px each way makes the phone toast's Undo
+     and close 48px targets (review EH-3, as the kit buttons, E-16). */
   .toast .toastAction::after,
   .toast .toastClose::after {
     content: "";
     position: absolute;
-    inset: -4px;
+    inset: -5px;
   }
 
   .undoBar {

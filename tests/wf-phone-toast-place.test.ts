@@ -29,4 +29,9 @@ describe("phone toast place", () => {
     expect(toast).toMatch(/--toast-bg: light-dark\(var\(--wf-ink-1\), var\(--wf-track\)\);/u);
     expect(toast).not.toMatch(/transparent\)/u);
   });
+
+  it("gives Undo and close a 48px tap cover (review EH-3)", () => {
+    const rule = phone.slice(phone.indexOf(".toast .toastClose::after {"));
+    expect(rule.slice(0, rule.indexOf("}"))).toMatch(/inset: -5px;/u);
+  });
 });
