@@ -432,7 +432,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     generation: worldGeneration,
     shared,
     onAccepted: (source) => {
-      if (MIDLAND_DEMO_TEAM.test(teamId)) recordMidlandContact("team");
+      if (!shared?.enabled && MIDLAND_DEMO_TEAM.test(teamId)) recordMidlandContact("team");
       if (source === "modal") setActiveModalType((current) => (current === "contact" ? null : current));
       else setToastMessage("Team contact logged. This does not record patient or referral contact.");
     },
@@ -448,8 +448,9 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   const hasExplicitProps = Boolean(admissions || referrals);
   const isDemoMode = demonstration && !hasExplicitProps;
   // The live Midland page carries the locked mock-up's demo team (Q126, Q132: Midland only). Supplied
-  // records, and the older demonstration cohort, keep their own lists.
-  const midlandDemo = !hasExplicitProps && !demonstration && MIDLAND_DEMO_TEAM.test(teamId);
+  // records, and the older demonstration cohort, keep their own lists. The signed-in shared site
+  // shows the shared records instead: the Midland demo lives only in this browser (audit 6).
+  const midlandDemo = !hasExplicitProps && !demonstration && !shared?.enabled && MIDLAND_DEMO_TEAM.test(teamId);
   const midlandDecisions = useMidlandDecisions();
 
   const { demoTeamReferrals, demoVisibleReferrals, demoVisibleInpatients, demoVisibleEgress, demoVisibleCaseload } =

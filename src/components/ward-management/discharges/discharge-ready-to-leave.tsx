@@ -5,13 +5,15 @@ import { useId } from "react";
 
 import { Frac, StatusGlyph, ToastView, cx, useIsPhone } from "@/components/wf";
 
+import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import styles from "./discharge-ready-to-leave.module.css";
 
 /**
  * Ready to leave (v10 Discharges, row panel > Milestones). Five items a release needs before the
  * person goes. The items come from the coordinator brief and the starting ticks are invented for
  * the demo (open for Josh: wording, and whether each item needs an owner and a time). Ticking is
- * page state only; it never changes a release, a record or the engine.
+ * page state only; it never changes a release, a record or the engine. The signed-in shared site
+ * hides it (audit 7): invented ticks must never sit beside shared records.
  */
 const READY_TO_LEAVE_ITEMS = [
   { id: "crisis-plan", label: "Crisis plan" },
@@ -57,11 +59,13 @@ export function ReadyToLeave({
   const headingId = useId();
   // v10 phone: a glyph list (green tick or open circle), not checkbox squares.
   const isPhone = useIsPhone();
+  const sharedMode = useOptionalWardFlowSelect("shared")?.shared?.enabled === true;
   const items: readonly { id: ReadyToLeaveItemId; label: string }[] = onCto
     ? [...READY_TO_LEAVE_ITEMS, CTO_HANDOVER_ITEM]
     : READY_TO_LEAVE_ITEMS;
   const done = items.filter((item) => ticked.includes(item.id)).length;
   const changedLabel = lastChange ? items.find((item) => item.id === lastChange.itemId)?.label : undefined;
+  if (sharedMode) return null;
   return (
     <section className={styles.readyPanel} aria-labelledby={headingId} data-testid="ward-discharge-ready-to-leave">
       <header className={styles.head}>

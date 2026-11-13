@@ -159,6 +159,10 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-139](#d-139-phone-statistics-ward-list-a-to-z-and-leave-return-times-as-typed-10-november-2026)                                                      | Phone Statistics ward list A to Z, and leave return times as typed                     | Active                                           |
 | [D-143](#d-143-mhert-is-mherl-in-the-glossary-smhmr-deferred-11-november-2026)                                                                          | MHERT is MHERL in the glossary; SMHMR deferred                                         | Active                                           |
 | [D-144](#d-144-chip-rows-move-only-sideways-on-a-phone-11-november-2026)                                                                                | Chip rows move only sideways on a phone                                                | Active                                           |
+| [D-150](#d-150-close-this-bed-stays-one-tap-with-undo-and-an-optional-reason-11-november-2026)                                                          | Close this bed stays one tap, with Undo and an optional reason                         | Active                                           |
+| [D-151](#d-151-archive-allowed-when-only-ended-referrals-and-audit-rows-name-the-record-11-november-2026)                                               | Archive allowed when only ended referrals and audit rows name the record               | Active                                           |
+| [D-152](#d-152-the-signed-in-shared-board-shows-real-perth-time-11-november-2026)                                                                       | The signed-in shared board shows real Perth time                                       | Active                                           |
+| [D-153](#d-153-waiting-saves-stay-in-memory-with-a-tile-marker-and-a-leave-warning-11-november-2026)                                                    | Waiting saves stay in memory, with a tile marker and a leave warning                   | Active                                           |
 
 ---
 
@@ -1726,3 +1730,32 @@ is inferred.
 - **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, on a decision card in the Ward Flow project thread "Stop chip rows dragging up and down", choosing "Lock rows to sideways only" over measuring on his iPhone first. Numbered D-144 because D-133 to D-143 belong to other threads. D-140 is claimed by open PR #1606, and D-141 is claimed by open PR #1606. D-142 is claimed by open PR #1603.
 - **Decision:** on a phone, the page-top quick-link chip rows, the Home quick bar, the shared phone chip row and Home's "Waiting in ED" strip take `touch-action: pan-x`. A finger on one of these rows can only move it sideways. The accepted trade-off is that a vertical swipe starting on one of these rows does not scroll the page. Reason: iPhone still slid the rows up and down after three layout fixes (#1596, #1602, #1610), and the cause could not be reproduced off the device.
 - **Boundary:** presentation only, synthetic data. Changes no clinical value or rule, and approves no merge or release.
+
+## D-150. Close this bed stays one tap, with Undo and an optional reason (11 November 2026)
+
+- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, in the Ward Flow project thread "Verify the live audit findings": "Go ahead with all recommendations" (06:47 UTC), approving the four recommendations in the verified live audit report (Claude Doc "Ward Flow live audit: verified findings and fix plan"). D-145 to D-149 are claimed by other threads.
+- **Decision:** "Close this bed" in the bed drawer still saves on one tap, with no confirm step, and keeps its Undo toast. After closing, staff may pick a reason from the existing fixed closure reason list. A reason is optional.
+- **Why:** the live audit (item 4) found no confirm and no reason. A confirm step would slow the nurse in charge; Undo already covers a mistaken tap, and an optional reason keeps the record useful.
+- **Boundary:** workflow only, synthetic data. Changes no clinical value or rule, and approves no merge or release.
+
+## D-151. Archive allowed when only ended referrals and audit rows name the record (11 November 2026)
+
+- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, in the Ward Flow project thread "Verify the live audit findings": "Go ahead with all recommendations" (06:47 UTC), approving the four recommendations in the verified live audit report (Claude Doc "Ward Flow live audit: verified findings and fix plan"). D-145 to D-149 are claimed by other threads.
+- **Decision:** the coordinator may archive a patient record added in error when the only other references to it are withdrawn or cancelled referrals and audit rows. Any live referral, stay, bed, legal form or movement still blocks it. When archive is not available, the record says why instead of hiding the panel. Archive stays coordinator only, with a reason, a confirm step and the 5-minute Undo. This extends Josh's 26 October 2026 archive rule (#816: archive only, coordinator only, for records added in error), which had no D-number.
+- **Why:** the live audit (item 9) found that test patient PT-A06 could never be archived because a withdrawn referral named it, so test and mistaken records stayed on the shared site for good.
+- **Follow-up:** archiving PT-A06 and the old TEST-Helper4 records on the live site is a live write, done in the app after release.
+- **Boundary:** synthetic data. Changes no clinical value, and approves no merge or release.
+
+## D-152. The signed-in shared board shows real Perth time (11 November 2026)
+
+- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, in the Ward Flow project thread "Verify the live audit findings": "Go ahead with all recommendations" (06:47 UTC), approving the four recommendations in the verified live audit report (Claude Doc "Ward Flow live audit: verified findings and fix plan"). D-145 to D-149 are claimed by other threads.
+- **Decision:** on the signed-in shared site, board time is the real current Perth time. The scripted demonstration clock stays on the public demo and local demo only, and the advance-clock control cannot move the shared board.
+- **Why:** the live audit (item 5) found the shared board labelled AWST while running about 48 minutes fast, because a shared world always started its clock at 10:42. Recorded times, handover and downtime prints would disagree with paper records.
+- **Boundary:** synthetic data. Changes no clinical value or rule, and approves no merge or release.
+
+## D-153. Waiting saves stay in memory, with a tile marker and a leave warning (11 November 2026)
+
+- **Date:** 11 November 2026 (`2026-11-11`). **Decided by:** Josh, in the Ward Flow project thread "Verify the live audit findings": "Go ahead with all recommendations" (06:47 UTC), approving the four recommendations in the verified live audit report (Claude Doc "Ward Flow live audit: verified findings and fix plan"). D-145 to D-149 are claimed by other threads.
+- **Decision:** waiting saves stay in page memory only (D-18, D-72 and D-124 stand). A bed tile with a change still waiting to save shows a "waiting to save" marker, and the browser warns before the page is closed or reloaded while saves are waiting. Nothing is stored on the device.
+- **Why:** the live audit (item 3) found a closed bed still showing "Ready" while its change waited offline, and a reload lost the change with no warning.
+- **Boundary:** privacy rulings unchanged; synthetic data. Changes no clinical value or rule, and approves no merge or release.
