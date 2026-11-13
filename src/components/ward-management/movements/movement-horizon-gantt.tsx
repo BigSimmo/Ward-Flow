@@ -12,7 +12,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { IconTile, buttonClass } from "@/components/wf";
+import { IconTile, buttonClass, useMediaQuery } from "@/components/wf";
 import { FullScreenFrame, FullScreenMarkSlot } from "@/components/wf/full-screen-frame";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 
@@ -163,6 +163,10 @@ export function MovementHorizonGantt({
   const [zoom, setZoom] = useState<ZoomHours>(48);
   const [scrub, setScrub] = useState<number>(0);
   const [isEnlarged, setIsEnlarged] = useState<boolean>(false);
+  // Design parts item 7: where the full-screen synthetic-data tag sits, the first free place on the
+  // right. Up to 1100px the controls wrap under the title, so the title row has room (and on a phone
+  // the tag sits beside Service, by CSS); wider, the head row is full and the legend row takes it.
+  const markOnHead = useMediaQuery("(max-width: 68.75rem)");
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   const [activeCorridorTab, setActiveCorridorTab] = useState<CorridorTab>("accepted");
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
@@ -346,6 +350,7 @@ export function MovementHorizonGantt({
               : `${visibleLanes.length} of ${lanes.length} receiving wards`}
           </span>
         </div>
+        {markOnHead ? <FullScreenMarkSlot /> : null}
 
         <div className={styles.phControls}>
           <div className={styles.serviceFilterWrap}>
@@ -498,7 +503,7 @@ export function MovementHorizonGantt({
                 Pull time passed
               </li>
             </ul>
-            <FullScreenMarkSlot />
+            {markOnHead ? null : <FullScreenMarkSlot />}
           </div>
 
           {/* Split Container: Gantt Grid + Side Corridor Register */}

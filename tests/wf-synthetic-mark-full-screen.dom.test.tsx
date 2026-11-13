@@ -90,6 +90,42 @@ describe("enlarged views carry the mark", () => {
     expect(within(dialog).getByTitle(FULL)).toBeInTheDocument();
   });
 
+  it("puts the timeline's mark on the title row up to 1100px, beside the head's controls", () => {
+    // Design parts item 7 (approved 820 and 390 pictures): there the controls wrap under the title, so
+    // the title row (on a phone, the Service row, by CSS) holds the mark, not the legend row.
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query === "(max-width: 68.75rem)",
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      onchange: null,
+      dispatchEvent: () => false,
+    })) as unknown as typeof window.matchMedia;
+    try {
+      render(
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <MovementsScreen />
+        </WardFlowProvider>,
+      );
+      const timelineSwitch = screen.queryByRole("switch", { name: "Show timeline" });
+      if (timelineSwitch && timelineSwitch.getAttribute("aria-checked") !== "true") fireEvent.click(timelineSwitch);
+      fireEvent.click(screen.getAllByRole("button", { name: "Enlarge" })[0]);
+      const dialog = screen.getByRole("dialog", { name: "Full screen movement timeline" });
+      expect(marksIn(dialog)).toHaveLength(1);
+      const heading = within(dialog).getByRole("heading", { name: /hour timeline$/u });
+      const head = heading.parentElement?.parentElement as HTMLElement;
+      expect(marksIn(head)).toHaveLength(1);
+      expect(
+        marksIn(within(dialog).getByRole("list", { name: "Movement horizon legend" }).parentElement!),
+      ).toHaveLength(0);
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+
   // The ED handover board waits for PR C (avoid list); this case returns when the mark is wired there.
   it.todo("the enlarged ED handover table");
 });

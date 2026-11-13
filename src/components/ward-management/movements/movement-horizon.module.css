@@ -86,6 +86,29 @@
   flex-wrap: wrap;
 }
 
+/* Design parts item 7: up to 1100px, full screen, the synthetic-data tag ends the title row (the
+   controls wrap under it). On a phone the title row is full, so the controls join the head row and
+   the tag follows Service, at the right of that row; the other controls wrap below. */
+@media (max-width: 46.4375rem) {
+  .fullscreen .panelSubHeader {
+    justify-content: flex-start;
+    gap: var(--wf-s-2);
+  }
+
+  .fullscreen .phScopeInfo {
+    flex: 1 0 100%;
+    order: -2;
+  }
+
+  .fullscreen .phControls {
+    display: contents;
+  }
+
+  .fullscreen .serviceFilterWrap {
+    order: -1;
+  }
+}
+
 /* Pressed-button groups drawn as the v6 segmented track. They stay `role="group"` with
  * `aria-pressed` buttons because each is a toggle the chart's tests and keyboard users rely on. */
 .zoomGroup {
