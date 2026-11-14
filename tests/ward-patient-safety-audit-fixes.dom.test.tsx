@@ -166,7 +166,7 @@ describe("Legal now on the patient record", () => {
         <LegalFormsScreen initialMovementId={open.id} recordOnOpen />
       </WardFlowProvider>,
     );
-    const sheet = within(screen.getByTestId("ward-legal-record"));
+    expect(screen.getByTestId("ward-legal-record")).toBeInTheDocument();
     expect(recordFieldValue("Patient")).toBe(open.id);
   });
 
