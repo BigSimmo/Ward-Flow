@@ -2866,11 +2866,7 @@ button.helpLink {
 /* Josh's fifth notes (8 Nov 2026): the counts-confirmed chip and its Ask read as one joined control
    in the hero strip, replacing the "This shift" card's first section. */
 
-/* Page tops (Josh, 9 Nov 2026): the title's quieter second half and the pill's count, as on Home. */
-.titleSoft {
-  color: var(--wf-hero-ink-3);
-  font-weight: 500;
-}
+/* Page tops (Josh, 9 Nov 2026): the pill's count, as on Home. */
 .pillCount {
   font-family: var(--wf-mono);
   font-weight: 600;
