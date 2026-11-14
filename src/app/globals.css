@@ -239,13 +239,13 @@
        (lg 18 · xl 20 · 2xl 24 come from Tailwind's default scale)
        lg-minus    17px  one notch under lg — display titles a shade under 18
        2xl-minus   22px  one notch under 2xl — wide-screen nowrap headings */
-  --text-3xs: 0.75rem;
-  --text-2xs: 0.75rem;
-  --text-sm-minus: 0.8125rem;
-  --text-base-minus: 0.9375rem;
-  --text-lg-minus: 1.0625rem;
-  --text-2xl-minus: 1.375rem;
-  --text-3xl-minus: 1.625rem;
+  --text-3xs: var(--wf-fs-12);
+  --text-2xs: var(--wf-fs-12);
+  --text-sm-minus: var(--wf-fs-13);
+  --text-base-minus: var(--wf-fs-15);
+  --text-lg-minus: var(--wf-fs-16);
+  --text-2xl-minus: var(--wf-fs-20);
+  --text-3xl-minus: var(--wf-fs-28);
 
   /* Fluid display heading for the hero / mode-home titles (hybrid-fluid type:
      the large display heading scales continuously; body / UI text stays on the
@@ -253,7 +253,7 @@
      baseline (23.2px at ≤~393px) is unchanged, then it ramps to the 2.15rem cap
      by ~1033px — no breakpoint jumps. Generates the `text-hero` utility.
      clamp() font sizes are not flagged by scripts/check-type-scale.mjs. */
-  --text-hero: clamp(1.75rem, 1.2rem + 2vw, 2.25rem);
+  --text-hero: var(--wf-fs-28);
   /* Companion line-height marks --text-hero as a font-SIZE token (Tailwind v4
      `--text-<name>--line-height` convention) so downstream tooling never
      misreads the clamp() value as a font-family list. Call sites that set an
@@ -2300,4 +2300,18 @@ html:has([data-wf-bar-notes] > :not([data-wf-offline-slot]), [data-wf-offline-no
   html:has([data-wf-phone-foot-bar]) {
     --wf-phone-foot-lift: 6rem;
   }
+}
+
+/* R-STYLE-4: one icon line weight. CSS beats the stroke-width attribute, so every Lucide icon, kit
+   or not, draws at 1.75. The kit `Icon` sizes are 14, 16, 18 and 21. */
+svg.lucide {
+  stroke-width: 1.75;
+}
+
+/* R-STYLE-10: typed text never leaves its box. Put this on every container that shows free text
+   (a note, a name, a comment). A long unbroken string breaks anywhere it must; ordinary words and
+   names keep wrapping at spaces, in full, never cut with an ellipsis. */
+.wf-typed {
+  overflow-wrap: anywhere;
+  min-width: 0;
 }

@@ -50,7 +50,7 @@
 }
 
 .figValue {
-  font: 600 18px / 22px var(--wf-mono);
+  font: 600 var(--wf-fs-20) / 24px var(--wf-mono);
   letter-spacing: -0.015em;
   font-variant-numeric: tabular-nums;
   color: var(--wf-hero-ink);
@@ -59,7 +59,7 @@
 
 .figUnit {
   margin-left: 2px;
-  font: 500 12.5px / 1 var(--wf-mono);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
   color: var(--wf-hero-ink-2);
 }
 
@@ -76,7 +76,7 @@
 }
 
 .figLabel {
-  font: 400 12.5px / 16px var(--wf-font);
+  font: 400 var(--wf-fs-13) / 16px var(--wf-font);
   color: var(--wf-hero-ink-2);
   white-space: nowrap;
 }
@@ -150,7 +150,7 @@ a.figLink::after,
 
 .actTitle {
   margin: 0;
-  font: 600 14.5px / 20px var(--wf-font);
+  font: 600 var(--wf-fs-14) / 20px var(--wf-font);
   color: var(--wf-hero-ink);
 }
 
@@ -177,7 +177,7 @@ a.figLink::after,
   height: 34px;
   padding: 0 13px;
   border-radius: 9px;
-  font-size: 13.5px;
+  font-size: var(--wf-fs-13);
 }
 
 .phoneOnly {
@@ -211,7 +211,7 @@ a.figLink::after,
   border-radius: var(--wf-r-pill);
   background: transparent;
   color: var(--wf-hero-ink);
-  font: 500 13.5px / 1 var(--wf-font);
+  font: 500 var(--wf-fs-13) / 1 var(--wf-font);
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
@@ -735,7 +735,7 @@ a.cellBody {
   }
 
   .figValue {
-    font-size: 19px;
+    font-size: var(--wf-fs-20);
     line-height: 24px;
   }
 
