@@ -523,6 +523,8 @@ export type HandoverSignOffRecord = {
    * as "Whole network". Absent on every older sign-off, which keeps "Ward not recorded".
    */
   network?: true;
+  /** D-179 Question 6: how many sign-off checks were still open when signed. Absent on older saves. */
+  openChecks?: number;
 };
 
 /** Record that a team was contacted. Not a sent message. */

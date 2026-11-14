@@ -14,7 +14,11 @@ import {
   HeroQuickChips,
   HeroTop,
 } from "@/components/wf";
+import { useContext } from "react";
+
 import { useCanLeaveDemo, useLeaveDemo } from "@/components/ward-management/shell/leave-demo";
+import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 import styles from "./about-demo.module.css";
@@ -36,6 +40,64 @@ const IS = [
   "Run on invented records only",
   "Kept in this browser",
 ] as const;
+
+/**
+ * untested-537 (14 Nov 2026): the signed-in site saves to the shared workspace and logs record
+ * openings, so it must not repeat the demo's "nothing is saved on a server". These rows replace the
+ * demo's own when a signed-in session is present (SharedSessionContext).
+ */
+const IDLE_MINUTES = CLINICAL_VALUES.idleLock.value;
+const SESSION_HOURS = CLINICAL_VALUES.sessionLimit.value;
+
+const SIGNED_IN_IS = [
+  "A prototype of bed flow across WA mental health services",
+  "Run on invented records only",
+  "Shared between signed-in desks",
+] as const;
+
+const SIGNED_IN_KEPT: readonly Row[] = [
+  {
+    id: "sign-in",
+    title: "Your sign-in",
+    sub: `This tab only. Ends when the tab closes, after ${IDLE_MINUTES} minutes without use, or after ${SESSION_HOURS} hours.`,
+    meta: "This tab",
+  },
+  {
+    id: "device",
+    title: "Display settings, pins and reminders",
+    sub: "Kept by code or ward name, never a patient's name.",
+    meta: "This device",
+  },
+  {
+    id: "offline",
+    title: "App files for offline use",
+    sub: "Code and icons only, never pages or records.",
+    meta: "This device",
+  },
+];
+
+const SIGNED_IN_SENT: readonly Row[] = [
+  {
+    id: "changes",
+    title: "Your changes",
+    sub: "Saved to the shared workspace with your role and the time, so other desks see them.",
+    meta: "Shared server",
+  },
+  {
+    id: "views",
+    title: "Opening a patient's record",
+    sub: "Logged with your account and role, for the access review.",
+    meta: "Logged",
+  },
+  {
+    id: "error",
+    title: "Error report, if a page breaks",
+    sub: "The kind of error, which screen, the version and your desk. Never a name or anything you typed.",
+    meta: "4 fields",
+    figure: true,
+  },
+  { id: "outside", title: "Analytics, adverts, other sites", meta: "None" },
+];
 
 const IS_NOT = ["Connected to any hospital record", "Clinical decision support", "Approved for clinical use"] as const;
 
@@ -136,20 +198,30 @@ function GroupHead({ id, label, count }: { id: string; label: string; count: num
 export function AboutDemoScreen() {
   const canLeave = useCanLeaveDemo();
   const leave = useLeaveDemo();
+  const signedIn = useContext(SharedSessionContext) !== null;
+  const isLines = signedIn ? SIGNED_IN_IS : IS;
+  const kept = signedIn ? SIGNED_IN_KEPT : KEPT;
+  const sent = signedIn ? SIGNED_IN_SENT : SENT;
 
   return (
     <main id="main-content" className={styles.main} data-testid="ward-about-demo">
-      <Hero level={1} title="About this demo" titleMeta="Synthetic data only · Not for clinical use">
+      <Hero
+        level={1}
+        title={signedIn ? "About Ward Flow" : "About this demo"}
+        titleMeta="Synthetic data only · Not for clinical use"
+      >
         <HeroTop
           quickBar={false}
           figures={
             <HeroFigures
-              label="This demo"
+              label={signedIn ? "Ward Flow" : "This demo"}
               testId="about-figures"
               items={[
                 { id: "patients", value: 0, label: "real patients", testId: "about-figure-patients" },
                 { id: "outside", value: 0, label: "outside sites", testId: "about-figure-outside" },
-                { id: "pass", value: 8, unit: "h", label: "demo pass", testId: "about-figure-pass" },
+                signedIn
+                  ? { id: "pass", value: SESSION_HOURS, unit: "h", label: "sign-in limit", testId: "about-figure-pass" }
+                  : { id: "pass", value: 8, unit: "h", label: "demo pass", testId: "about-figure-pass" },
               ]}
             />
           }
@@ -197,7 +269,7 @@ export function AboutDemoScreen() {
               <div>
                 <h3 className={styles.capsLabel}>It is</h3>
                 <ul className={styles.isList}>
-                  {IS.map((line) => (
+                  {isLines.map((line) => (
                     <li key={line}>
                       <Check size={14} aria-hidden="true" className={styles.isGlyph} />
                       {line}
@@ -230,15 +302,15 @@ export function AboutDemoScreen() {
               icon={Lock}
               id="about-privacy-title"
               title="Your privacy"
-              meta="Checked against the app's code, 13 Nov 2026"
+              meta={`Checked against the app's code, ${signedIn ? "14" : "13"} Nov 2026`}
             />
             <section aria-labelledby="about-kept-title" data-testid="about-kept">
-              <GroupHead id="about-kept-title" label="Kept in this browser" count={KEPT.length} />
-              <Rows rows={KEPT} testId="about-kept-facts" />
+              <GroupHead id="about-kept-title" label="Kept in this browser" count={kept.length} />
+              <Rows rows={kept} testId="about-kept-facts" />
             </section>
             <section aria-labelledby="about-sent-title" data-testid="about-sent">
-              <GroupHead id="about-sent-title" label="Sent from this browser" count={SENT.length} />
-              <Rows rows={SENT} testId="about-sent-facts" />
+              <GroupHead id="about-sent-title" label="Sent from this browser" count={sent.length} />
+              <Rows rows={sent} testId="about-sent-facts" />
             </section>
           </Card>
         </div>
@@ -250,8 +322,12 @@ export function AboutDemoScreen() {
               <li>
                 <span className={styles.stepNo}>1</span>
                 <span className={styles.rowMain}>
-                  <span className={styles.rowTitle}>Leave the demo</span>
-                  <span className={styles.rowSub}>Clears the demo, your pins and reminders, and ends your pass.</span>
+                  <span className={styles.rowTitle}>{signedIn ? "Sign out" : "Leave the demo"}</span>
+                  <span className={styles.rowSub}>
+                    {signedIn
+                      ? "Ends your sign-in in this tab. Your saved changes stay on the shared workspace."
+                      : "Clears the demo, your pins and reminders, and ends your pass."}
+                  </span>
                 </span>
               </li>
               <li>

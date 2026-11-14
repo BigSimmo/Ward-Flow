@@ -91,6 +91,32 @@ describe("offline entry time (H1)", () => {
     expect(result.world.state.handoverSignOffs.at(-1)!.at).toBe(actedAt);
   });
 
+  it("refuses a waiting save entered more than 12 hours ago, or at an impossible minute", () => {
+    const created = new Date("2026-11-13T00:30:00Z");
+    const world = seedWorld(created);
+    const sentAt = worldNow(world, new Date("2026-11-13T23:00:00Z"));
+    for (const actedAt of [sentAt - 12 * 60 - 1, 0, -5]) {
+      const result = applyCommand(
+        world,
+        { type: "RECORD_HANDOVER_SIGN_OFF", role: "coordinator", now: actedAt },
+        new Date("2026-11-13T23:00:00Z"),
+        { actedAt },
+      );
+      expect(result.outcome).toBe("denied");
+      expect(result.reason).toMatch(
+        /^This change was entered offline more than 12 hours ago, at .+\. Review the record and enter it again$/,
+      );
+      expect(result.world).toBe(world);
+    }
+    const edge = applyCommand(
+      world,
+      { type: "RECORD_HANDOVER_SIGN_OFF", role: "coordinator", now: sentAt - 12 * 60 },
+      new Date("2026-11-13T23:00:00Z"),
+      { actedAt: sentAt - 12 * 60 },
+    );
+    expect(edge.outcome).toBe("accepted");
+  });
+
   it("never applies an acted time to the demo controls", () => {
     const world = seedWorld(made);
     const actedAt = worldNow(world, made);

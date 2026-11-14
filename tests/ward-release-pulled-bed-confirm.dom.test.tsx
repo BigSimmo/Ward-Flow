@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
@@ -14,6 +14,7 @@ import { DIVERSION_REASONS, TRANSPORT_WHEREABOUTS } from "@/components/ward-mana
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { setDeskRole } from "@/components/ward-management/ward-role-gate";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardArrivalsCorridor } from "@/components/ward-management/ward/ward-arrivals-corridor";
 
@@ -291,4 +292,49 @@ describe("the movement cockpit asks before releasing a pulled bed (CT-07)", () =
     fireEvent.click(screen.getByRole("button", { name: "Release pulled bed" }));
     expect(screen.getByTestId("live-held")).toHaveTextContent("released");
   });
+});
+
+// Untested-537 INV-ACTION-146/147 (14 Nov 2026): the site bed manager may not release a stopped or
+// diverted journey's pulled bed (EVENT_ROLE), so the ward corridor no longer opens the release for it.
+describe("the ward corridor's bed releases follow the desk's own role", () => {
+  it.each(["diverted", "stopped"] as const)(
+    "a %s journey: the site bed manager's release is greyed and asks nothing",
+    (ending) => {
+      cleanup();
+      setDeskRole("bed_manager", "/ward-flow/movements/patient");
+      const { movementId, unitId, steps } = journeySteps(ending);
+      const state = reduce(steps);
+      const movement = state.movements.find((m) => m.id === movementId)!;
+      const unit = state.units.find((u) => u.id === unitId)!;
+      const dispatch = vi.fn();
+      render(
+        <WardArrivalsCorridor
+          unit={unit}
+          accepted={ending === "diverted" ? [movement] : []}
+          heldAfterStop={ending === "stopped" ? [movement] : []}
+          now={NOW}
+          resolvePatientIdentity={identity}
+          releaseOpenFor={undefined}
+          toggleRelease={vi.fn()}
+          releaseReason={undefined}
+          setReleaseReason={vi.fn()}
+          submitRelease={vi.fn()}
+          lastActionRejection={undefined}
+          dispatch={dispatch}
+          setCheckToken={vi.fn()}
+          priorRejectionCountRef={{ current: 0 }}
+          rejections={[]}
+          overrideReasonForm={() => null}
+        />,
+      );
+      const release = screen.getByTestId(
+        ending === "diverted" ? `ward-release-diverted-bed-${movementId}` : `ward-release-stopped-bed-${movementId}`,
+      );
+      expect(release).toBeDisabled();
+      fireEvent.click(release);
+      expect(screen.queryByRole("button", { name: "Keep as is" })).toBeNull();
+      expect(dispatch).not.toHaveBeenCalled();
+      cleanup();
+    },
+  );
 });
