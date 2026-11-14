@@ -56,6 +56,7 @@ import {
 } from "./movements-screen-helpers";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 
 /** The ED wait cue's words on a Movements row (P099): wait time, never a form deadline. */
 const WAIT_FLAG_WORDS = { soon: "Long wait", over: "Over target" };
@@ -205,6 +206,8 @@ export function StageRow({
   const thresholds = useDueSoonThresholds();
   const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   const sender = useSenderPresentation();
+  // INV-CM (14 Nov 2026): the ward name links to its Bed board only when this desk may open it.
+  const canOpen = useCanOpenHref();
   const presentation = movementPresentation(movement, sender.movementFor(movement));
   const progressText = movementProgressText(presentation);
   const rowRef = useRef<HTMLLIElement>(null);
@@ -412,13 +415,17 @@ export function StageRow({
             <span className={flow.routeTo}>
               <ArrowRight size={12} className={flow.routeArrow} aria-hidden="true" />
               <SrOnly> to </SrOnly>
-              <Link
-                href={`/ward-flow/board/${movement.acceptedUnitId}`}
-                className={flow.wardLink}
-                title={`Open ${destinationLabel} Bed board`}
-              >
-                {destinationLabel}
-              </Link>
+              {canOpen(`/ward-flow/board/${movement.acceptedUnitId}`) ? (
+                <Link
+                  href={`/ward-flow/board/${movement.acceptedUnitId}`}
+                  className={flow.wardLink}
+                  title={`Open ${destinationLabel} Bed board`}
+                >
+                  {destinationLabel}
+                </Link>
+              ) : (
+                destinationLabel
+              )}
             </span>
           ) : (
             <SrOnly>, no destination yet</SrOnly>
