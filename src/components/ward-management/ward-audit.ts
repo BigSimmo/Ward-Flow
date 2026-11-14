@@ -1264,9 +1264,9 @@ export function captureAuditEvent(
 }
 
 /**
- * D-222: a History line for a save with no typed capture. The outcome is the branch's own verdict
- * when it gave one; otherwise a new refusal means refused, and a changed state means accepted. A
- * save that changed nothing and was not refused is no save, so it writes no line.
+ * D-222: a History line for a save with no typed capture, accepted saves only. The outcome is the
+ * branch's own verdict when it gave one; otherwise a changed state with no new refusal is accepted.
+ * A refused save, or one that changed nothing, writes no line.
  */
 function historyLine(
   before: WardFlowState,
@@ -1278,15 +1278,11 @@ function historyLine(
   if (category === null) return null;
   let outcome = base.outcome;
   let reasonCode = base.reasonCode;
+  // D-222 choice 4: the signed-in database table keeps every refusal.
   if (outcome !== "accepted") {
-    if (after.rejections.length > before.rejections.length) {
-      outcome = "denied";
-    } else if (after === before) {
-      return null;
-    } else {
-      outcome = "accepted";
-      reasonCode = "none";
-    }
+    if (after === before || after.rejections.length > before.rejections.length) return null;
+    outcome = "accepted";
+    reasonCode = "none";
   }
   if (!historyWritesOutcome(category, outcome)) return null;
   let subject = base.subject.kind === "unresolved" ? otherSubject(before, event) : base.subject;
