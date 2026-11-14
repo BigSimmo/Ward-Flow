@@ -15,17 +15,14 @@ import styles from "./ward-home-tab.module.css";
 import { pendingDepartureLogRows, type WardShiftLogRow } from "./ward-departure-log";
 import { wardSafeRejectionReason } from "./ward-rejection-text";
 import type { Unit, Movement, Rejection, DeclineReason } from "@/components/ward-management/ward-model";
-import { EXTRA_TRAVEL_HOLD_MINUTES, MOVEMENT_DECLINE_REASONS } from "@/components/ward-management/ward-model";
-import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
+import { EXTRA_TRAVEL_HOLD_MINUTES } from "@/components/ward-management/ward-model";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { withdrawalReasonLabels } from "@/components/ward-management/ward-change-reasons";
 import { formatInstantWithDay, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import { currentShiftStartInstant, releasesDueByShiftEnd } from "@/components/ward-management/ward-board-time-features";
-import { bedHold, pullHoldText, pulledWithoutLimitLabel } from "@/components/ward-management/ward-bed-hold";
-import { heldUntilExtendedLabel } from "@/components/ward-management/ward-bed-hold-extension";
-import { deliveredAwaitingWard, movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
+import { pullHoldText } from "@/components/ward-management/ward-bed-hold";
 import type { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
-import { HELD_UP_BY_TOMORROW_LABEL, heldUpDueByTomorrow } from "@/components/ward-management/ward-held-up";
+import { heldUpDueByTomorrow } from "@/components/ward-management/ward-held-up";
 import {
   BED_RELEASE_BLOCKED_FIGURE_LABEL,
   deriveAfternoonDischarges,
@@ -39,15 +36,23 @@ import { AwaitingFitLines, AwaitingIdentity, WardReferralDetailDrawer } from "./
 import { OverrideRegister, WardAcceptDialog } from "./ward-on-demand";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
-import { ArrowLeftRight, BedSingle, ChevronRight, LayoutGrid, List, ListChecks } from "lucide-react";
+import { LayoutGrid, List } from "lucide-react";
 import { WardPlaceOrMove } from "./ward-place-or-move";
+import { pulledTileNote, tileStateLine, WardHomeTileText } from "./ward-home-tab-today";
+import { WardComingAndGoing, type ComingRowUndo } from "./ward-coming-and-going";
+import { WardDeclineReasons } from "./ward-decline-reasons";
 import {
-  tileStateLine,
-  WardHomeTileText,
-  WardHomeTodayStrip,
-  WardPhoneFlowRow,
-  WardPhoneTomorrowRow,
-} from "./ward-home-tab-today";
+  arrivalRows,
+  arrivalsExpectedToday,
+  dischargeTodayRows,
+  lastFreedToday,
+  leaveRows as comingLeaveRows,
+  needsALookRows,
+  shortDateLabel,
+  type ComingRow,
+} from "./ward-coming-and-going-rows";
+import { WardEverySquares, bedSquareFor } from "./ward-every-bed-squares";
+import { BedSquare, BedSquaresKey } from "@/components/ward-management/bed-squares";
 import { useWardTomorrowOutlook } from "./ward-home-outlook";
 import {
   Button,
@@ -67,24 +72,17 @@ import {
 import { bedGlyphTone, type BedItem } from "./ward-bed-tone";
 import { CriteriaLedTag } from "./ward-criteria-led-tag";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
-import { pullBlockedReason } from "./ward-pull-blocked";
 import { useWalkRound, WardWalkRound, bedStripWord, walkRoundBeds, type WalkRoundMark } from "./ward-walk-round";
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
 import { observationRatio, observationSummary } from "@/components/ward-management/ward-observation";
-import { originName } from "@/components/ward-management/ward-movement-origin";
 import { declineTargetLeftNote } from "./decline-target-left";
-import { useBusiestFlowTabDefault } from "./ward-flow-busiest";
 import { WardPhoneRoundList } from "./ward-phone-round-list";
 import { NOT_CONFIRMED_SINCE_OUTAGE, OutageMeta, useWardOutageCatchUp } from "./ward-outage-tags";
 import {
-  canSubmitDecline,
-  DECLINE_SUBMIT_UNAVAILABLE_REASON,
   declineReasonText,
   referralAnswerBlocked,
   WARD_ACTION_REJECTION_LABELS,
   wardDischargesDueToday,
-  wardFlowFoot,
-  wardFlowReleaseGroup,
   type WardFlowTab,
   type WardShiftView,
 } from "./ward-home-tab-model";
@@ -161,8 +159,12 @@ interface WardHomeTabProps {
   absencesOnOrder?: ReturnType<typeof absentOnOrder>;
   /** Opens the bed's dossier. */
   onSelectBed?: (bedNumber: number) => void;
-  /** The ward figures section, shown as the foot of Every bed. */
-  figures?: React.ReactNode;
+  /** A quiet line under the bed squares (the coordinator's refresh request). */
+  squaresAfter?: React.ReactNode;
+  /** Wave 4 (W7): the inline Undo on an arrival row just pulled ("Undo pull · until 10:46"). */
+  undoPullFor?: (movementId: string) => ComingRowUndo | null;
+  /** Ruling 11 (D-191): Confirm arrival with no pulled bed opens the pull step, then the arrival. */
+  onPullThenArrive?: (movementId: string) => void;
   /** The bed board's filter, owned by the screen so the hero pills can set it. */
   bedFilter?: WardBedFilter;
   onBedFilterChange?: (filter: WardBedFilter) => void;
@@ -221,7 +223,6 @@ export function WardHomeTab({
   withdrawn,
   overridesHere,
   now,
-  presentation,
   visibleIncoming,
   declineOpenFor,
   toggleDecline,
@@ -250,11 +251,12 @@ export function WardHomeTab({
   bedsList,
   absencesOnOrder = [],
   onSelectBed,
-  figures,
+  squaresAfter,
+  undoPullFor,
+  onPullThenArrive,
   bedFilter: bedFilterProp,
   onBedFilterChange,
   bedQuery = "",
-  flowTab: flowTabProp,
   onFlowTabChange,
   shiftView: shiftViewProp,
   onShiftViewChange,
@@ -283,7 +285,8 @@ export function WardHomeTab({
     leaveBeds = [],
     admissions = [],
     configuration,
-  } = useWardFlowSelect("bedReleases", "leaveBeds", "admissions", "configuration");
+    dayZero,
+  } = useWardFlowSelect("bedReleases", "leaveBeds", "admissions", "configuration", "dayZero");
   const outlook = useWardTomorrowOutlook(unit, accepted, now); // WH3: tomorrow for this ward alone
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
   const [localChecks, setLocalChecks] = useState<Record<string, Instant | null>>({
@@ -326,16 +329,10 @@ export function WardHomeTab({
     }
   }
 
-  const [innerFlowTab, setInnerFlowTab] = useState<WardFlowTab>("referrals");
-  // Ward flow opens on its busiest list (approved 31 Oct 2026). Shown only: it is never written to
-  // the address, and any list the person picks replaces it.
-  const [busiestFlowTab, setBusiestFlowTab] = useState<WardFlowTab | null>(null);
-  const chosenFlowTab = flowTabProp ?? innerFlowTab;
-  const flowTab = busiestFlowTab ?? chosenFlowTab;
+  // Wave 4: Ward flow's list switch is gone, so a "referrals" pick only scrolls to the part.
   const setFlowTab = (next: WardFlowTab) => {
-    setBusiestFlowTab(null);
     startTransition(() => {
-      (onFlowTabChange ?? setInnerFlowTab)(next);
+      onFlowTabChange?.(next);
     });
   };
   const [innerShiftView, setInnerShiftView] = useState<WardShiftView>("todo");
@@ -356,16 +353,24 @@ export function WardHomeTab({
 
   function focusAwaiting() {
     setFlowTab("referrals");
-    if (phoneSheets) {
-      onPhonePanelChange?.("flow");
-      return;
-    }
     window.requestAnimationFrame(() => {
       const target = document.getElementById("ward-awaiting-answer");
       target?.scrollIntoView({ block: "nearest" });
       target?.focus();
     });
   }
+  // Wave 4: Coming and going sits in the page on a phone too, so a request to open the old Ward flow
+  // sheet (the Referrals tab's "Answer on Ward home") moves to the waiting referrals instead.
+  const flowAsked = phonePanel === "flow";
+  useEffect(() => {
+    if (!flowAsked) return;
+    onPhonePanelChange?.(null);
+    window.requestAnimationFrame(() => {
+      const target = document.getElementById("ward-awaiting-answer");
+      target?.scrollIntoView({ block: "nearest" });
+      target?.focus();
+    });
+  }, [flowAsked, onPhonePanelChange]);
 
   function runAlert(alert: (typeof liveFormAlerts)[number]) {
     if (alert.actionTarget === "answer") {
@@ -480,7 +485,7 @@ export function WardHomeTab({
               : bed.blockReason
                 ? `Held up, ${String(bed.blockReason)}`
                 : bed.pastDate
-                  ? "Past expected date"
+                  ? "Past date"
                   : bed.dischargeBarrier
                     ? String(bed.dischargeBarrier)
                     : leaving
@@ -497,25 +502,29 @@ export function WardHomeTab({
     // U1 (site review, 12 Oct 2026): the tile's status word is short so it never truncates
     // ("Discharge confir…", "Held up, Awaiti…"). The full note stays in the accessible name, the
     // list view and the bed panel.
-    const tileNote = hold
-      ? hold.short
-      : delivered
-        ? "Confirm arrival"
-        : awayAtEd
-          ? `At ED ${bed.awayAtEdHours}h`
-          : bed.blockReason
-            ? "Held up"
-            : bed.pastDate
-              ? "Past date"
-              : bed.dischargeBarrier
-                ? "Held up"
-                : leaving
-                  ? bed.dischargeConfirmed
-                    ? "Confirmed out"
-                    : "Discharge due"
-                  : bed.isSpecialling && bed.observation
-                    ? `Constant ${observationRatio(bed.observation.level)}`
-                    : note;
+    // FM-11 (Ward notes item 9): a pulled tile says "Pulled" and the journey's stage, then the hold.
+    const pulledNote = bed.status === "incoming" && !delivered ? pulledTileNote(bed.pulledStage, hold?.short) : null;
+    const tileNote = pulledNote
+      ? pulledNote
+      : hold
+        ? hold.short
+        : delivered
+          ? "Confirm arrival"
+          : awayAtEd
+            ? `At ED ${bed.awayAtEdHours}h`
+            : bed.blockReason
+              ? "Held up"
+              : bed.pastDate
+                ? "Past date"
+                : bed.dischargeBarrier
+                  ? "Held up"
+                  : leaving
+                    ? bed.dischargeConfirmed
+                      ? "Confirmed out"
+                      : "Discharge due"
+                    : bed.isSpecialling && bed.observation
+                      ? `Constant ${observationRatio(bed.observation.level)}`
+                      : note;
     const glyph = bedGlyphTone(bed);
     // C3 (phone simplification, 19 Oct 2026): one word for the phone bed strip, from the same state.
     const stripWord = bedStripWord(bed, { free, preparing, awayAtEd, leaving });
@@ -536,13 +545,23 @@ export function WardHomeTab({
       .join(", ");
     // CB-3 (axe 4.14 label-content-name-mismatch): the tile's name reads its own words first, in order.
     const shownNote = free ? (stateWord === name ? "" : stateWord) : note === name ? "" : tileNote;
-    const tileName = [bed.bedLabel, criteriaTag?.label ?? "", name, tileStateLine(shownNote, days), ...spokenState]
+    // FM-11: a pulled bed names who it is for ("For Marrowvale, Gianna"), shown and spoken.
+    const pulledFor = bed.status === "incoming" && bed.patientAlias !== undefined;
+    const tileName = [
+      bed.bedLabel,
+      criteriaTag?.label ?? "",
+      pulledFor ? `For ${name}` : name,
+      tileStateLine(shownNote, days),
+      // A pulled tile's shown line already says "Pulled · …": don't read the state twice.
+      ...(pulledFor ? [] : spokenState),
+    ]
       .filter(Boolean)
       .join(", ");
     return {
       bed,
       free,
       shownNote,
+      pulledFor,
       tileName,
       // Q7 (4 Nov 2026): the Ready chip and hero pill count as the hero and board do (`boardReadyCounts`).
       // D-179 item 8: a bed still being made ready is not Ready.
@@ -643,109 +662,32 @@ export function WardHomeTab({
   const bedByAdmission = (admissionId: string | undefined) =>
     admissionId === undefined ? undefined : (bedsList ?? []).find((item) => item.admissionId === admissionId);
 
-  // Ward flow, Admissions: accepted arrivals first, then people due back from leave.
-  type FlowRow = {
-    placement?: boolean;
-    key: string;
-    title: string;
-    when?: string;
-    detail: string;
-    tone: WfTone;
-    action: string;
-    primary?: boolean;
-    /** Why the action cannot run now; the button stays visible, greyed, with this reason. */
-    blocked?: string;
-    /** The movement this row acts on, so an engine refusal shows under its own row. */
-    movementId?: string;
-    run: () => void;
-  };
-  const expectedRows: FlowRow[] = accepted.map((movement, index): FlowRow => {
-    const eta = movement.arrivalDetails?.estimatedArrivalAt;
-    // WT-07: once Delivered, the patient is at the ward, so the ETA is no longer late.
-    const late = eta !== undefined && eta < now && !deliveredAwaitingWard(movement);
-    const displayName = resolvePatientIdentity(movement).formalName;
-    // A1-6 (audit round 2): an accepted patient waiting for a bed is pulled from this row, the
-    // same action and the same check as All arrivals, so the sheet is no longer a detour.
-    const canPull = movement.stage === "accepted_awaiting_bed" && onPullPatient !== undefined;
-    const blocked = canPull ? pullBlockedReason(movement, unit, displayName) : undefined;
-    // Audit A1-3: a pulled arrival names its hold, from the one bed-hold rule.
-    const hold = movement.stage === "pulled" ? bedHold(movement.pullExpiresAt, now) : null;
-    return {
-      key: movement.id,
-      movementId: movement.id,
-      title: displayName,
-      when: eta === undefined ? undefined : `${late ? "Due" : "ETA"} ${formatInstantWithDay(eta, now)}`,
-      // A greyed Pull a bed says why in words on the row, not only on hover. A lapsed hold
-      // outranks a late ETA (the coral overdue); the ETA stays in `when` as "Due".
-      detail:
-        blocked ??
-        (hold?.state === "lapsed"
-          ? hold.label
-          : late
-            ? "Late"
-            : hold
-              ? (heldUntilExtendedLabel(movement, now) ?? hold.label)
-              : (pulledWithoutLimitLabel(movement) ?? movementStatusLabel(movement))),
-      tone: hold?.state === "lapsed" ? "danger" : late ? "warning" : hold?.state === "at-risk" ? "warning" : "info",
-      action: canPull ? "Pull the bed" : "Open",
-      placement: canPull,
-      primary: index === 0,
-      blocked,
-      run: canPull
-        ? () => onPullPatient?.(movement.id, unit.id)
-        : () => {
-            // A1-7 (audit round 2): on a phone, close the sheet first so the patient's card in
-            // All arrivals is what the person lands on, not a page moving behind the sheet.
-            if (phoneSheets) onPhonePanelChange?.(null);
-            onOpenArrival?.(movement.id);
-          },
-    };
+  // Wave 4 (D-191): Coming and going, one list in place of Ward flow's three-way switch. Every row
+  // names the person and the bed; the counts use the selectors this page already had.
+  const deskRole = useEffectiveWardAccess().role;
+  const nameOf = (movement: Movement) => resolvePatientIdentity(movement).formalName;
+  // Accepted referrals with no movement yet stay off this page: the shared pull step needs the full
+  // referral, which FD-23 keeps from ward-only modules (tests/ward-referral-screen-boundary.test.ts).
+  // Review F-3: "Arrivals · today" lists only people expected today, by the hero's own rule.
+  // Review P4-4: the rest of the accepted list is due on a later day, said under the group.
+  const arrivingToday = arrivalsExpectedToday(accepted, now);
+  const laterArrivals = accepted.length - arrivingToday.length;
+  const comingArrivals = arrivalRows({
+    accepted: arrivingToday,
+    beds: bedsList ?? [],
+    unit,
+    now,
+    nameOf,
+    desk: deskRole,
   });
-  const leaveRows: FlowRow[] = unitLeaveBeds.map((leaveBed): FlowRow => {
-    const bed = bedByAdmission(leaveBed.admissionId);
-    return {
-      key: `leave-${leaveBed.id}`,
-      title: bed?.bedLabel ?? "Bed on leave",
-      when: formatInstantWithDay(leaveBed.expectedReturn, now),
-      detail: "On approved leave, expected back",
-      tone: "neutral",
-      action: "Open",
-      run: () => (bed ? onSelectBed?.(Number(bed.bedNumber)) : onOpenDischarges?.()),
-    };
-  });
-
-  // Ward flow, Discharges: this ward's open bed releases, held up first, then past date, today, later.
-  // A release names its bed, never the patient.
-  const outRows = [...pendingBedReleases]
-    .sort((left, right) => left.expectedAt - right.expectedAt)
-    .map((release) => {
-      const bed = bedByAdmission(release.admissionId);
-      const group = wardFlowReleaseGroup(release, now);
-      const tone: WfTone = release.blocker ? "danger" : release.state === "confirmed" ? "success" : "neutral";
-      return {
-        key: release.id,
-        group,
-        title: bed?.bedLabel ?? "Discharge",
-        when: formatInstantWithDay(release.expectedAt, now),
-        detail: release.blocker
-          ? `Held up · ${release.blocker}`
-          : release.state === "confirmed"
-            ? "Confirmed"
-            : `Expected${release.waitingOn ? ` · ${release.waitingOn}` : ""}`,
-        tone,
-        run: () => (bed ? onSelectBed?.(Number(bed.bedNumber)) : onOpenDischarges?.()),
-      };
-    });
-  // Ward flow opens on its busiest list instead of an empty one (approved 31 Oct 2026).
-  useBusiestFlowTabDefault(
-    { referrals: incoming.length, admissions: expectedRows.length + leaveRows.length, discharges: outRows.length },
-    chosenFlowTab,
-    setBusiestFlowTab,
-  );
+  const comingLeave = comingLeaveRows(unitLeaveBeds, bedsList ?? [], now);
+  // Review FS-9: the time column says the date ("14 Nov"), as Capacity's held-up rail does.
+  const rowDate = shortDateLabel(dayZero, now);
+  const needsALook = needsALookRows(pendingBedReleases, bedsList ?? [], now, rowDate);
+  const dischargesToday = dischargeTodayRows(pendingBedReleases, bedsList ?? [], now, rowDate);
 
   // This shift: one to do list, sorted into act now, later today and done. Every row is a recorded
   // fact or one of the ward's own reminder ticks, which are listed but never counted as to do.
-  const confirmedOut = pendingBedReleases.filter((release) => release.state === "confirmed").length;
   // D-191 item 5 (Josh, 13 Nov 2026): held up is due by tomorrow, as everywhere but Discharges.
   const heldUp = heldUpDueByTomorrow(pendingBedReleases, now);
   type TodoRow = {
@@ -1010,57 +952,6 @@ export function WardHomeTab({
   }
   const todoOpen = actNow.length + laterToday.filter((row) => !row.tick).length;
 
-  function renderFlowRow(row: FlowRow) {
-    return (
-      <li key={row.key} className={styles.flowRow}>
-        <StatusGlyph tone={row.tone} size={9} />
-        <span className={styles.flowMain}>
-          {/* Redesign: the time belongs to the bed or person it dates, so it sits on their line and
-              the detail under them has the row's full width (it was cut to "Awaiting…"). */}
-          <span className={styles.flowTitleLine}>
-            <span className={styles.flowTitle}>{row.title}</span>
-            {row.when ? <span className={styles.flowWhen}>{row.when}</span> : null}
-          </span>
-          <span className={styles.flowDetail}>{row.detail}</span>
-          {row.movementId && lastActionRejection?.movementId === row.movementId ? (
-            <span className={styles.noticeProminent} role="alert">
-              {WARD_ACTION_REJECTION_LABELS[lastActionRejection.attempted] ?? lastActionRejection.attempted} not
-              recorded: {wardSafeRejectionReason(lastActionRejection.reason)}
-            </span>
-          ) : null}
-        </span>
-        {row.placement ? (
-          <Button
-            variant="pri"
-            size="md"
-            data-placement-action
-            disabledReason={row.blocked}
-            reasonDisplay="tooltip"
-            onClick={row.run}
-          >
-            {row.action}
-            <SrOnly> {row.title}</SrOnly>
-          </Button>
-        ) : (
-          <button
-            type="button"
-            className={buttonClass({ variant: row.primary ? "pri" : "sec", size: "sm" })}
-            aria-disabled={row.blocked ? "true" : undefined}
-            title={row.blocked}
-            onClick={row.blocked ? ignoreUnavailableActivation : row.run}
-          >
-            {row.action}
-            <SrOnly>
-              {" "}
-              {row.title}
-              {row.blocked ? `. ${row.blocked}` : ""}
-            </SrOnly>
-          </button>
-        )}
-      </li>
-    );
-  }
-
   // Polish (1 Nov 2026): three columns, each a quiet head with its count, then one row a task with
   // its action on the right and any time or count under the detail.
   function renderTodoColumn(id: string, title: string, tone: WfTone, rows: TodoRow[]) {
@@ -1148,18 +1039,29 @@ export function WardHomeTab({
     );
   }
 
-  const heldRows = outRows.filter((row) => row.group === "held");
-  const pastRows = outRows.filter((row) => row.group === "past");
-  const todayRows = outRows.filter((row) => row.group === "today");
-  const dueToday = wardDischargesDueToday(pendingBedReleases, now);
-  const laterRows = outRows.filter((row) => row.group === "later");
-  const answered = recentAnswers.slice(0, 6);
   const declineLeftNote = declineTargetLeftNote(declineOpenFor, incoming, recentAnswers, (id) =>
     withdrawn.some((movement) => movement.id === id),
   );
 
+  // Wave 4 (D-191): the squares, from the same bed rows as the tiles, so a tile's mark matches its square.
+  const freeingToday = new Set(wardDischargesDueToday(pendingBedReleases, now).map((release) => release.admissionId));
+  const squareOf = (bed: BedItem) =>
+    bedSquareFor(bed, bed.admissionId !== undefined && freeingToday.has(bed.admissionId));
+  const everySquares = (
+    <WardEverySquares
+      unit={unit}
+      squares={bedRows.map((row) => squareOf(row.bed))}
+      heldUp={heldUp.length}
+      pulled={bedTally.pulled}
+      onLeave={unitLeaveBeds.length}
+      after={squaresAfter}
+    />
+  );
+
   const bedKeyBlock = (
     <div className={styles.bedKey}>
+      {/* Wave 4 (D-191): the squares' key, then the row glyphs, in one line at the card foot. */}
+      <BedSquaresKey className={styles.squaresKey} />
       <span className={styles.keyItems} role="group" aria-label="Symbol key">
         <span>
           <StatusGlyph tone="danger" size={9} />
@@ -1177,12 +1079,7 @@ export function WardHomeTab({
           <StatusGlyph tone="neutral" size={9} />
           Waiting
         </span>
-        <span>
-          <StatusGlyph tone="success" size={9} />
-          Ready
-        </span>
       </span>
-      {/* Audit 11 Oct 2026: the four bed counts sit once, in Ward figures, right now, just below. */}
       {onOpenBeds ? (
         <button type="button" className={styles.keyLink} onClick={onOpenBeds}>
           Full bed list
@@ -1199,47 +1096,44 @@ export function WardHomeTab({
     </span>
   );
 
+  function refusalUnder(movementId: string) {
+    return lastActionRejection?.movementId === movementId ? (
+      <span className={styles.noticeProminent} role="alert">
+        {WARD_ACTION_REJECTION_LABELS[lastActionRejection.attempted] ?? lastActionRejection.attempted} not recorded:{" "}
+        {wardSafeRejectionReason(lastActionRejection.reason)}
+      </span>
+    ) : null;
+  }
+
+  function confirmArrival(row: ComingRow) {
+    // Ruling 11 (D-191): with no pulled bed the pull step comes first, then the arrival.
+    if (!row.movementId) return;
+    // Only a row still waiting for its bed: the engine pulls at that stage alone (PULL_PATIENT).
+    if (row.action === "pull" && !row.hasPulledBed && onPullThenArrive) {
+      onPullThenArrive(row.movementId);
+      return;
+    }
+    onOpenArrival?.(row.movementId);
+  }
+
   function renderFlowCard() {
     return (
-      <Card
-        className={`${styles.flowCard} ${styles.v6Card}`}
-        id={phoneSheets ? undefined : "ward-flow"}
-        aria-labelledby={phoneSheets ? undefined : "ward-home-flow"}
-        aria-label={phoneSheets ? "Ward flow" : undefined}
-      >
-        {phoneSheets ? null : <CardHead id="ward-home-flow" icon={ArrowLeftRight} title="Ward flow" meta={liveMark} />}
-        <div className={styles.flowSwitch}>
-          <Segmented
-            label="Ward flow list"
-            items={[
-              // Count windows (design parts item 2): admissions and discharges are open items at any date.
-              { id: "referrals", label: "Referrals", count: incoming.length, window: "now" },
-              {
-                id: "admissions",
-                label: "Admissions",
-                count: expectedRows.length + leaveRows.length,
-                window: "any date",
-              },
-              { id: "discharges", label: "Discharges", count: outRows.length, window: "any date" },
-            ]}
-            value={flowTab}
-            onChange={setFlowTab}
-          />
-        </div>
-        <div className={styles.flowBody}>
-          <div className={styles.flowPane} data-active={flowTab === "referrals"}>
+      <WardComingAndGoing
+        phone={phoneSheets}
+        updated={liveMark}
+        arrivals={comingArrivals}
+        laterArrivals={laterArrivals}
+        backFromLeave={comingLeave}
+        referralsWaiting={incoming.length}
+        answeredToday={recentAnswers.length}
+        referrals={
+          <>
             <section
               id="ward-awaiting-answer"
               aria-label="Awaiting your answer"
               tabIndex={-1}
               className={styles.awaitingCard}
             >
-              <div className={styles.groupHead}>
-                <h3 id="ward-awaiting-heading" className={styles.groupTitle}>
-                  {presentation === "answer" ? "Bed request" : "Awaiting your answer"}
-                </h3>
-                <Count n={incoming.length} />
-              </div>
               {declineLeftNote ? (
                 <p className={styles.noticeProminent} role="status" data-testid="ward-decline-target-left">
                   {declineLeftNote}
@@ -1352,53 +1246,13 @@ export function WardHomeTab({
                         {overrideReasonForm(movement.id)}
 
                         {declineOpen && !blocked ? (
-                          <form
-                            onSubmit={(event) => {
-                              submitDecline(event, movement.id);
-                            }}
-                            data-testid={`ward-decline-form-${movement.id}`}
+                          <WardDeclineReasons
+                            movementId={movement.id}
+                            declineReason={declineReason}
+                            onReason={(reason) => setDeclineReason(reason)}
+                            onSubmit={(event) => submitDecline(event, movement.id)}
                             className={styles.declineForm}
-                          >
-                            <fieldset className={styles.declineFieldset}>
-                              <legend>Decline reason for this patient</legend>
-                              {MOVEMENT_DECLINE_REASONS.map((reason) => (
-                                <label key={reason}>
-                                  <input
-                                    type="radio"
-                                    name={`decline-reason-${movement.id}`}
-                                    value={reason}
-                                    checked={declineReason === reason}
-                                    onChange={() => {
-                                      setDeclineReason(reason);
-                                    }}
-                                  />{" "}
-                                  {DECLINE_REASON_LABELS[reason]}
-                                </label>
-                              ))}
-                            </fieldset>
-                            <Button
-                              variant="sec"
-                              size="md"
-                              data-placement-action
-                              disabledReason={
-                                !canSubmitDecline(declineReason) ? DECLINE_SUBMIT_UNAVAILABLE_REASON : undefined
-                              }
-                              reasonDisplay="tooltip"
-                              type="submit"
-                              onClick={(event) => {
-                                if (!canSubmitDecline(declineReason)) {
-                                  event.preventDefault();
-                                }
-                              }}
-                            >
-                              Confirm decline
-                            </Button>
-                            {!canSubmitDecline(declineReason) ? (
-                              <span id={`ward-decline-submit-reason-${movement.id}`} className="sr-only">
-                                {DECLINE_SUBMIT_UNAVAILABLE_REASON}
-                              </span>
-                            ) : null}
-                          </form>
+                          />
                         ) : null}
                       </li>
                     );
@@ -1406,145 +1260,27 @@ export function WardHomeTab({
                 </ul>
               )}
             </section>
-            <section aria-labelledby="ward-answered-today" className={styles.flowGroup}>
-              <div className={styles.groupHead}>
-                <h3 id="ward-answered-today" className={styles.groupTitle}>
-                  Answered
-                </h3>
-                <Count n={recentAnswers.length} />
-              </div>
-              {answered.length === 0 ? (
-                <p className={styles.groupEmpty}>No answer recorded yet.</p>
-              ) : (
-                <ul className={styles.flowList}>
-                  {answered.map((answer) => (
-                    <li key={answer.key} className={styles.flowRow}>
-                      <StatusGlyph tone={answer.reason ? "closed" : "success"} size={9} />
-                      <span className={styles.flowMain}>
-                        <span className={styles.flowTitle}>{answer.outcome}</span>
-                        {/* S-23 (audit round 2): an accepted row names who this ward took by UMRN. A
-                            declined referral was never this ward's patient, so it stays anonymous. */}
-                        <span className={styles.flowDetail}>
-                          {answer.reason
-                            ? declineReasonText(answer.reason)
-                            : `UMRN ${resolvePatientIdentity({ movementId: answer.movementId }).umrn}`}
-                        </span>
-                      </span>
-                      <span className={styles.flowWhen}>
-                        {answer.at === undefined ? "Time not recorded" : formatInstantWithDay(answer.at, now)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-          </div>
-
-          <div className={styles.flowPane} data-active={flowTab === "admissions"}>
-            <section aria-labelledby="ward-flow-expected" className={styles.flowGroup}>
-              <div className={styles.groupHead}>
-                <h3 id="ward-flow-expected" className={styles.groupTitle}>
-                  Expected
-                </h3>
-                <Count n={expectedRows.length} />
-              </div>
-              {expectedRows.length === 0 ? (
-                <p className={styles.groupEmpty}>Nobody is accepted, pulled or en route.</p>
-              ) : (
-                <ul className={styles.flowList}>{expectedRows.map(renderFlowRow)}</ul>
-              )}
-            </section>
-            <section aria-labelledby="ward-flow-leave" className={styles.flowGroup}>
-              <div className={styles.groupHead}>
-                <h3 id="ward-flow-leave" className={styles.groupTitle}>
-                  Back from leave
-                </h3>
-                <Count n={leaveRows.length} />
-              </div>
-              {leaveRows.length === 0 ? (
-                <p className={styles.groupEmpty}>Nobody is on approved leave.</p>
-              ) : (
-                <ul className={styles.flowList}>{leaveRows.map(renderFlowRow)}</ul>
-              )}
-            </section>
-          </div>
-
-          <div className={styles.flowPane} data-active={flowTab === "discharges"}>
-            {outRows.length === 0 ? (
-              <p className={styles.groupEmpty}>No discharges expected.</p>
-            ) : (
-              (
-                [
-                  ["held", HELD_UP_BY_TOMORROW_LABEL, "danger", heldRows],
-                  ["past", "Past date", "warning", pastRows],
-                  ["today", "Today and tomorrow", "info", todayRows],
-                  ["later", "Later", "neutral", laterRows],
-                ] as const
-              )
-                .filter(([, , , rows]) => rows.length > 0)
-                .map(([id, title, tone, rows]) => (
-                  <section key={id} aria-labelledby={`ward-flow-out-${id}`} className={styles.flowGroup}>
-                    <div className={styles.groupHead}>
-                      <StatusGlyph tone={tone} size={9} />
-                      <h3 id={`ward-flow-out-${id}`} className={styles.groupTitle}>
-                        {title}
-                      </h3>
-                      <Count n={rows.length} />
-                    </div>
-                    <ul className={styles.flowList}>
-                      {rows.map((row) =>
-                        renderFlowRow({
-                          key: row.key,
-                          title: row.title,
-                          when: row.when,
-                          detail: row.detail,
-                          tone: row.tone,
-                          action: "Open",
-                          run: row.run,
-                        }),
-                      )}
-                    </ul>
-                  </section>
-                ))
-            )}
-          </div>
-        </div>
-        <div className={styles.flowFoot}>
-          {flowTab === "referrals" ? (
-            <>
-              <span>
-                {recentAnswers.length} answered · {incoming.length} waiting
-              </span>
+            {incoming.length > 0 ? (
               <Link className={styles.keyLink} href={`/ward-flow/ward/${unit.id}/answer`}>
                 Answer one by one
               </Link>
-            </>
-          ) : flowTab === "admissions" ? (
-            <>
-              {/* F-105 (D-191 item 5): the tab's count is every open admission at any date, said here. */}
-              <span>{wardFlowFoot.admissions(expectedRows.length, leaveRows.length)}</span>
-              {onOpenArrivals ? (
-                <button type="button" className={styles.keyLink} onClick={onOpenArrivals}>
-                  All arrivals
-                </button>
-              ) : null}
-            </>
-          ) : (
-            <>
-              <span>{wardFlowFoot.discharges(outRows.length, confirmedOut, heldRows.length)}</span>
-              <button
-                type="button"
-                className={styles.keyLink}
-                onClick={() => {
-                  onOpenDischarges?.();
-                }}
-              >
-                All discharges
-              </button>
-            </>
-          )}
-        </div>
-      </Card>
+            ) : null}
+          </>
+        }
+        needsALook={needsALook}
+        dischargesToday={dischargesToday}
+        lastFreed={lastFreedToday(dischargedBedReleases, bedsList ?? [], now)}
+        outlook={outlook}
+        openReleases={pendingBedReleases.length}
+        undoFor={(movementId) => undoPullFor?.(movementId) ?? null}
+        refusalFor={refusalUnder}
+        onPull={(row) => row.movementId && onPullPatient?.(row.movementId, unit.id)}
+        onConfirmArrival={confirmArrival}
+        onOpenArrival={(movementId) => onOpenArrival?.(movementId)}
+        onOpenBed={(bedNumber) => onSelectBed?.(bedNumber)}
+        onOpenArrivals={onOpenArrivals}
+        onOpenDischarges={onOpenDischarges}
+      />
     );
   }
 
@@ -1620,12 +1356,6 @@ export function WardHomeTab({
     );
   }
 
-  // WH3 (Josh, 3 Nov 2026): the day's bed flow beside This shift, from the same rows Ward flow lists.
-  function openFlow(tab: WardFlowTab) {
-    setFlowTab(tab);
-    document.getElementById("ward-flow")?.scrollIntoView({ block: "nearest" });
-  }
-
   // Phone: the place or move line sits above the round while someone is waiting for a bed.
   const phoneBoardHint =
     phoneSheets && !bedArea && !walkingOnPhone && onOpenBoard ? (
@@ -1636,99 +1366,15 @@ export function WardHomeTab({
       {/* Visual desk, 22 Oct 2026: an absence is silence, never "0 being made ready". */}
       {pendingPreparation > 0 ? <span className="sr-only">{pendingPreparation} being made ready</span> : null}
 
+      {/* Wave 4 (D-191): on a phone the squares, then Coming and going in place (no My list hop),
+          then the round. */}
       {phoneSheets && !bedArea && !walkingOnPhone ? (
-        <section className={styles.phoneSection} aria-labelledby="ward-phone-needs">
-          {/* Option B (Josh, 20 Oct 2026): what needs this ward in one card. The answers waiting,
-              then This shift and Ward flow as rows, which were chips above the tabs. */}
-          <h2 className={styles.phoneSectionHead}>
-            <span id="ward-phone-needs">{presentation === "answer" ? "Bed request" : "My list"}</span>
-          </h2>
-          <div className={styles.needsCard}>
-            {incoming.length === 0 ? (
-              <div className={styles.phoneClear} data-testid="ward-phone-all-clear">
-                {/* A1-22 (audit round 2): one line when nothing is waiting. */}
-                <p className={styles.phoneClearTitle}>
-                  <StatusGlyph tone="success" size={12} />
-                  Awaiting your answer: all clear
-                  <span className={styles.phoneClearText}>
-                    <span className={styles.phoneClearSep}>· </span>Answered {recentAnswers.length}
-                    {expectedRows.length > 0 ? ` · ${expectedRows.length} coming in` : ""}
-                  </span>
-                </p>
-              </div>
-            ) : (
-              <>
-                <h3 className={styles.needsLabel}>
-                  <span id="ward-phone-awaiting">Awaiting your answer</span>
-                  <Count n={incoming.length} />
-                </h3>
-                <ul className={styles.phoneAwaitList}>
-                  {incoming.map((movement) => (
-                    <li key={movement.id}>
-                      <button
-                        type="button"
-                        className={styles.phoneAwaitRow}
-                        aria-haspopup="dialog"
-                        onClick={() => {
-                          setFlowTab("referrals");
-                          onPhonePanelChange?.("flow");
-                        }}
-                      >
-                        <span className={styles.phoneAwaitText}>
-                          {/* D-79: a ward sees who is coming before it answers, never where else they were referred. */}
-                          <span className={styles.phoneAwaitName}>
-                            {resolvePatientIdentity(movement).formalName} · {movement.cohort}
-                          </span>
-                          <span className={styles.phoneAwaitMeta}>
-                            {[
-                              resolvePatientIdentity(movement).umrn,
-                              movement.sex,
-                              movement.legalStatus,
-                              originName(movement),
-                            ]
-                              .filter(Boolean)
-                              .join(" · ")}
-                          </span>
-                        </span>
-                        <span className={styles.phoneAwaitWait}>
-                          <b>{durMinutes(Math.max(0, now - movement.openedAt))}</b>
-                          <span>waiting</span>
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-            <button
-              type="button"
-              className={styles.needsRow}
-              aria-haspopup="dialog"
-              onClick={() => {
-                onPhonePanelChange?.("shift");
-              }}
-              data-testid="ward-phone-row-shift"
-            >
-              <span className={styles.needsIcon} data-tone="warning" aria-hidden="true">
-                <ListChecks strokeWidth={1.75} size={18} aria-hidden="true" />
-              </span>
-              <span className={styles.needsText}>
-                <b>This shift</b>
-                <span>
-                  {todoOpen} to do{actNow.length > 0 ? ` · ${actNow.length} due now` : ""}
-                </span>
-              </span>
-              <ChevronRight strokeWidth={1.75} size={18} aria-hidden="true" className={styles.needsChevron} />
-            </button>
-            <WardPhoneFlowRow
-              referrals={incoming.length}
-              admissions={expectedRows.length + leaveRows.length}
-              discharges={outRows.length}
-              onSheet={onPhonePanelChange}
-            />
-            <WardPhoneTomorrowRow outlook={outlook} onTab={setFlowTab} onSheet={onPhonePanelChange} />
-          </div>
-        </section>
+        <>
+          <section className={styles.phoneSquares} aria-label={`Beds at ${unit.name}, in squares`}>
+            {everySquares}
+          </section>
+          {renderFlowCard()}
+        </>
       ) : null}
 
       <div className={styles.homeTop} data-board={bedArea ? "true" : undefined}>
@@ -1755,7 +1401,6 @@ export function WardHomeTab({
             <CardHead
               id="ward-home-every-bed"
               className={styles.bedsHead}
-              icon={BedSingle}
               title="Every bed"
               meta={<OutageMeta on={outageTags}>{liveMark}</OutageMeta>}
               action={
@@ -1766,21 +1411,13 @@ export function WardHomeTab({
                     items={[
                       { id: "all", label: "All", count: bedRows.length },
                       { id: "look", label: "Needs a look", count: bedRows.filter((row) => row.look).length },
-                      { id: "leaving", label: "Discharge due", count: bedRows.filter((row) => row.leaving).length },
+                      { id: "leaving", label: "Discharges today", count: bedRows.filter((row) => row.leaving).length },
                       { id: "free", label: "Ready", count: bedRows.filter((row) => row.readyNow).length },
-                      // The hero's Occupied and Ready by pills set filters this group does not list,
-                      // so the active one joins it while on and a radio is always checked.
+                      // The hero's Occupied figure sets a filter this group does not list, so it joins
+                      // the group while on and a radio is always checked.
                       ...(bedFilter === "occupied"
                         ? [{ id: "occupied" as const, label: "Occupied", count: bedTally.occupied }]
-                        : bedFilter === "shift-end"
-                          ? [
-                              {
-                                id: "shift-end" as const,
-                                label: "Ready by shift end",
-                                count: bedRows.filter((row) => row.readyByShiftEnd).length,
-                              },
-                            ]
-                          : []),
+                        : []),
                     ]}
                     value={bedFilter}
                     onChange={setBedFilter}
@@ -1813,6 +1450,7 @@ export function WardHomeTab({
               }
             />
           )}
+          {phoneSheets ? null : <div className={styles.squaresHead}>{everySquares}</div>}
           {highlighting && bedRows.length > 0 ? (
             <p className={styles.highlightNote} data-testid="ward-bed-highlight-note">
               <span>
@@ -1874,7 +1512,10 @@ export function WardHomeTab({
                     }}
                   >
                     <span className={styles.bedTileTop} aria-hidden="true">
-                      <b>{row.number}</b>
+                      <span className={styles.bedTileNum}>
+                        <BedSquare state={squareOf(row.bed)} className={styles.bedTileSquare} />
+                        <b>{row.number}</b>
+                      </span>
                       {row.criteriaTag ? " " : null}
                       {row.criteriaTag ? <CriteriaLedTag chip={row.criteriaTag} className={styles.bedTileTag} /> : null}
                       {row.glyph ? <StatusGlyph tone={row.glyph} size={10} /> : null}
@@ -1885,6 +1526,7 @@ export function WardHomeTab({
                       note={row.shownNote}
                       days={row.days}
                       outage={outageTags}
+                      pulledFor={row.pulledFor}
                     />
                   </button>
                 </li>
@@ -1948,7 +1590,6 @@ export function WardHomeTab({
             </div>
           )}
           {phoneSheets ? null : bedKeyBlock}
-          {!phoneSheets && figures ? <div className={styles.bedFigures}>{figures}</div> : null}
         </Card>
         {phoneBoardHint !== null && boardWaitingCount === 0 ? phoneBoardHint : null}
         {phoneSheets && !bedArea && !walkingOnPhone ? (
@@ -1965,21 +1606,7 @@ export function WardHomeTab({
           </details>
         ) : null}
 
-        {phoneSheets ? (
-          <PhoneSheet
-            open={phonePanel === "flow"}
-            onClose={() => onPhonePanelChange?.(null)}
-            title="Ward flow"
-            description={`Referrals, admissions and discharges for ${unit.name}`}
-            height="tall"
-            className={styles.phoneSheetBody}
-            data-testid="ward-phone-flow-sheet"
-          >
-            {renderFlowCard()}
-          </PhoneSheet>
-        ) : (
-          <div className={styles.flowWrap}>{renderFlowCard()}</div>
-        )}
+        {phoneSheets ? null : <div className={styles.flowWrap}>{renderFlowCard()}</div>}
       </div>
 
       {phoneSheets ? (
@@ -1996,35 +1623,6 @@ export function WardHomeTab({
         </PhoneSheet>
       ) : (
         <>
-          <WardHomeTodayStrip
-            hidden={bedArea != null}
-            unitId={unit.id}
-            now={now}
-            todoOpen={todoOpen}
-            actNow={actNow.length}
-            checksDone={checksDone}
-            checksTotal={shiftChecks.length}
-            shiftSummary={shiftSummary}
-            nextTask={(actNow[0] ?? laterToday.find((row) => !row.tick))?.title}
-            shiftSheetOpen={shiftSheetOpen}
-            onOpenShift={() => {
-              setShiftView("todo");
-              setShiftSheetOpen(true);
-            }}
-            dischargesToday={dueToday.length}
-            heldUp={outRows.filter((row) => row.group === "held").length}
-            confirmedToday={dueToday.filter((release) => release.state === "confirmed").length}
-            arrivals={expectedRows.length}
-            backFromLeave={leaveRows.length}
-            nextEta={
-              accepted
-                .map((movement) => movement.arrivalDetails?.estimatedArrivalAt)
-                .filter((eta): eta is number => eta !== undefined && eta >= now)
-                .sort((left, right) => left - right)[0]
-            }
-            outlook={outlook}
-            onOpenFlow={openFlow}
-          />
           <Drawer
             open={shiftSheetOpen}
             onClose={() => setShiftSheetOpen(false)}

@@ -1,0 +1,95 @@
+/* Wave 4 H10: the phone act-now row for an accepted referral (home-390 mock). Tokens only. */
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  list-style: none;
+}
+
+.row:first-child {
+  border-top: 0;
+}
+
+.glyph {
+  flex: none;
+  display: flex;
+  align-items: center;
+  min-height: 20px;
+}
+
+.main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  width: 100%;
+}
+
+.who {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.name {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / 20px var(--wf-font);
+  text-decoration: none;
+}
+
+a.name:hover {
+  text-decoration: underline;
+}
+
+a.name:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-xs);
+}
+
+.age {
+  flex: none;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.mono {
+  font-family: var(--wf-mono);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+/* Tags wrap on a phone, never "…" (A5-15). */
+.tag {
+  max-width: 100%;
+}
+
+.tag > span {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.line {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  overflow-wrap: anywhere;
+}
+
+.action {
+  display: flex;
+  padding-top: var(--wf-s-1);
+}

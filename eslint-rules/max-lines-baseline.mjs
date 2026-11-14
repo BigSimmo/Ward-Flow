@@ -37,6 +37,8 @@
 // ward-flow-events, ward-patients-seed and postgres.mjs are under the default in code lines and
 // came off the list. Main's later +5 for the reducer (batch 3 items 21 and 23) carries over: 1854 + 5 = 1859.
 // Main's Batch 4 +6 for the reducer (three outage and pilot events) carries over too: 1859 + 6 = 1865.
+// 13 Nov 2026 (PR #1659): the My ward redesign took ward-home-tab down to 1569 code lines, so its cap
+// follows it down to that size plus about 150 lines.
 export const MAX_LINES_DEFAULT = 1500;
 export const MAX_LINES_HEADROOM = 300;
 // ESLint max-lines options shared by eslint.config.mjs and tests/max-lines-baseline.test.ts.
@@ -47,6 +49,6 @@ export const MAX_LINES_BASELINE = {
   "src/components/ward-management/ward/ward-screen.tsx": 2174,
   "src/components/ward-management/coordinator/shortlist-panel.tsx": 2256,
   "src/components/ward-management/movements/movement-workspace-cockpit.tsx": 2059,
-  "src/components/ward-management/ward/ward-home-tab.tsx": 1991,
+  "src/components/ward-management/ward/ward-home-tab.tsx": 1720,
   "src/components/ward-management/ward/ward-answer-view.tsx": 1630,
 };

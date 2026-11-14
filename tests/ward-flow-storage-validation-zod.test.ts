@@ -17,6 +17,7 @@ import {
 import { ABSENCE_STEPS, REFERRAL_DECLINE_REASONS } from "@/components/ward-management/ward-model";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { SNOOZE_REASON_IDS } from "@/components/ward-management/ward-inbox-snooze";
+import { mayCarryAdverseExample } from "@/components/ward-management/ward-demo-adverse-wards";
 
 type Json = Record<string, unknown>;
 // Mutation targets are arbitrary JSON, reached by chains a static type would only obscure.
@@ -33,6 +34,23 @@ const forced = new Set<string>();
 /** The standard seed with every optional record shape the fence knows about filled in. */
 function richState(): Json {
   const s = clone(seedWardFlowStateAt(0)) as Row;
+  // The demo network no longer seeds invented incidents (live re-check, Josh, 14 Nov 2026), but the
+  // fence still needs the incident shape swept. Put back the records the example overlay used to
+  // seed, exactly as it built them, so the swept paths and recorded verdicts stay the same.
+  const categories = ["aggression_to_staff", "self_harm", "property_damage", "contraband_found", "fall", "medication"];
+  s.units
+    .filter((u: Row) => u.restrictivePractice?.seclusionRoom?.by === "Nurse in charge")
+    .forEach((u: Row, index: number) => {
+      const anchor = u.restrictivePractice.seclusionRoom.at + 200 + index * 13;
+      const count = mayCarryAdverseExample(u as { name: string }) ? 1 + (index % 2) : 0;
+      u.restrictivePractice.incidents = Array.from({ length: count }, (_, n) => ({
+        id: `RI-EX-${u.id}-${n + 1}`,
+        category: categories[(index + n * 2) % categories.length],
+        at: anchor - 70 - ((index * 53 + n * 190) % 900),
+        recordedAt: anchor - 60 - ((index * 53 + n * 190) % 900),
+        recordedBy: "Nurse in charge",
+      }));
+    });
   const unit = s.units[0];
   // An arrival recorded against a full ward keeps its bounded count disagreement.
   const arrivedIndex = s.movements.findIndex((m: Row) => m.stage === "arrived" && m.closure?.outcome === "arrived");

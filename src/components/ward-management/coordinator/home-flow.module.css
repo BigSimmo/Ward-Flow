@@ -204,3 +204,12 @@
     display: none;
   }
 }
+
+/* Review EH-4: on a phone "More for this list" shows only its icon (about 38 px wide), so its tap
+   cover widens to 48 px, as the kit's icon-only button does. The cover is invisible; the button
+   looks the same. */
+@media (max-width: 46.4375rem) {
+  .moreCover.moreCover.moreCover::after {
+    inset: -4px min(0px, calc((100% - 48px) / 2));
+  }
+}

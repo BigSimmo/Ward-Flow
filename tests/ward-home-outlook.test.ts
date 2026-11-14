@@ -13,6 +13,7 @@ import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 import {
   outlookHeadline,
   outlookPlannedLaterNote,
+  outlookOutAndIn,
   outlookSentence,
   wardTomorrowOutlook,
   type WardTomorrowOutlook,
@@ -146,17 +147,20 @@ describe("Tomorrow card words", () => {
   });
 
   it("says a shortfall as one and a zero as the digit", () => {
-    expect(outlookHeadline(-1)).toEqual({ lead: "Likely", figure: 1, tail: "short" });
-    expect(outlookHeadline(0)).toEqual({ lead: "", figure: 0, tail: "likely free" });
-    expect(outlookSentence(outlook({ likely: 0 }))).toBe("0 beds likely free tomorrow.");
+    // D-198: no "likely", numbers kept.
+    expect(outlookHeadline(-1)).toEqual({ lead: "", figure: 1, tail: "short" });
+    expect(outlookHeadline(0)).toEqual({ lead: "", figure: 0, tail: "free" });
+    expect(outlookSentence(outlook({ likely: 0 }))).toBe("From ward dates: 0 free tomorrow.");
+    expect(outlookSentence(outlook({ likely: -1 }))).toBe("From ward dates: 1 short tomorrow.");
+    expect(outlookOutAndIn(outlook({ likelyOut: 0, bookedIn: 2 }))).toBe("From ward dates: 0 out, 2 booked in");
   });
 
   it("reads as one plain line with what would firm it up", () => {
     expect(outlookSentence(outlook({ likely: -1, unconfirmed: 2 }))).toBe(
-      "Likely 1 short tomorrow. 2 discharges unconfirmed.",
+      "From ward dates: 1 short tomorrow. 2 discharges unconfirmed.",
     );
     expect(outlookSentence(outlook({ likely: 1, unconfirmed: 1, notFlagged: 3 }))).toBe(
-      "1 bed likely free tomorrow. 1 discharge unconfirmed, 3 dates not flagged.",
+      "From ward dates: 1 free tomorrow. 1 discharge unconfirmed, 3 dates not flagged.",
     );
   });
 

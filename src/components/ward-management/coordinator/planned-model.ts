@@ -27,7 +27,7 @@ import { allEmergencyDepartments } from "@/components/ward-management/ward-sites
  * appears. An expected discharge stays for the rest of today; earlier ones already read "Date
  * passed" on Capacity, the census, Discharges and Handover.
  */
-export type PlannedKind = "move" | "transport" | "discharge" | "admission" | "target";
+type PlannedKind = "move" | "transport" | "discharge" | "admission" | "target";
 
 export type PlannedRow = {
   id: string;

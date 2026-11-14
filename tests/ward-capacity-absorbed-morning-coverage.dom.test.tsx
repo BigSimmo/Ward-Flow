@@ -177,7 +177,11 @@ describe("Case 2 — the hero headline states availableNow alone", () => {
     expect(
       headline.textContent?.replace(/\s+/gu, " ").trim(),
       `the hero must state exactly ${netTotals.ready} beds ready of ${netTotals.beds}`,
-    ).toBe(`${netTotals.ready}/ ${netTotals.beds} ${netTotals.ready === 1 ? "bed ready" : "beds ready"}`);
+      // Wave 4 (D-191): the count label carries its window, "Ready · now"; D-179 item 8 says the
+      // beds still being made ready beside it.
+    ).toBe(
+      `${netTotals.ready}/ ${netTotals.beds} Ready · now${netTotals.pendingPreparation ? `, ${netTotals.pendingPreparation} being made ready` : ""}`,
+    );
   });
 });
 

@@ -72,7 +72,7 @@ function setUp() {
 
 // WH2 (3 Nov 2026): This shift's To do list sits in a sheet opened from its summary on Ward home.
 const openThisShift = () => {
-  if (!screen.queryByTestId("ward-shift-sheet")) fireEvent.click(screen.getByTestId("ward-shift-summary"));
+  if (!screen.queryByTestId("ward-shift-sheet")) fireEvent.click(screen.getByTestId("ward-hero-act-now"));
 };
 
 const reminderButtons = () => {

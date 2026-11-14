@@ -67,6 +67,8 @@ import {
   Menu,
   PillTabs,
   Segmented,
+  SrOnly,
+  StatusGlyph,
   type HeroNextStep,
 } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
@@ -81,7 +83,7 @@ import { BedsGapCard, HomePlacementDrawer, HomeReleaseSheet, MyListCard } from "
 import list from "./home-list.module.css";
 import flowStyles from "./home-flow.module.css";
 import { HomePinnedCard } from "./home-pinned-card";
-import { homeActNowAnswer } from "./home-act-now-words";
+import { homeActNowParts } from "./home-act-now-words";
 import { HomeSinceBanner } from "./home-since-banner-lazy";
 import { HomeOutageCatchUp } from "./home-outage-catch-up-lazy";
 import { oldPackCounts, oldPackWords, wardsWithOldPack } from "@/components/ward-management/ward-downtime-pack-prints";
@@ -212,7 +214,7 @@ function HomeListMoreMenu() {
         <button
           type="button"
           {...props}
-          className={`${buttonClass({ variant: "ghost", size: "sm" })} ${folderTabClasses.more}`}
+          className={`${buttonClass({ variant: "ghost", size: "sm" })} ${folderTabClasses.more} ${flowStyles.moreCover}`}
           data-testid="ward-home-more"
         >
           <Ellipsis size={16} strokeWidth={1.75} aria-hidden="true" />
@@ -601,14 +603,14 @@ export function CoordinatorScreen() {
   const releaseAlert = releaseAlertId ? alertEntries.find((entry) => entry.item.id === releaseAlertId) : undefined;
   const waitEntries = alertEntries.filter((entry) => entry.group === "wait");
   // Home flow mock-up (Q340): a waiting alert is a mark on its patient's Flow row.
-  // Every waiting title on a patient is kept; a waiting alert with no patient stays a row in Needs you.
+  // Every waiting title on a patient is kept. Ruling 2 (D-191): a waiting alert with no patient is no
+  // longer a row in Needs you; it stays in Alerts (and a late planned arrival is in Past planned time).
   const waitingMarks = new Map<string, string>();
   for (const entry of waitEntries) {
     if (!entry.movement) continue;
     const prior = waitingMarks.get(entry.movement.id);
     waitingMarks.set(entry.movement.id, prior ? `${prior} · ${entry.item.title}` : entry.item.title);
   }
-  const unmarkedWait = waitEntries.filter((entry) => !entry.movement);
   const alertHandlers: QueueHandlers = {
     selectedId: selectedAlertId,
     onSelect: (entry) => {
@@ -657,7 +659,7 @@ export function CoordinatorScreen() {
   );
   // The bed figures (beds ready, occupancy) stay network-wide on purpose (a placement may use any
   // ward), so with a service chosen they say so beside the figure.
-  const networkWord = service === null ? "" : " network-wide";
+  const networkWord = service === null ? "" : " · network-wide";
   const bedsReady = counts.capacity?.value ?? 0;
   // The highlight chips count the queue they highlight (after the ED and service filters), P002/P003.
   const chips = homeChipFigures(queue, now, selectedEd?.siteCode);
@@ -729,7 +731,8 @@ export function CoordinatorScreen() {
     nextActCount > 0
       ? {
           // A9-04: names the accepted referrals with no bed pulled, which Handover's Act now leaves out.
-          answer: homeActNowAnswer(nextActCount, toPull.length, nextScope),
+          // Wave 4 (D-191, notes item 4): the head here, the parts on their own line under it.
+          answer: homeActNowParts(nextActCount, toPull.length, nextScope).head,
           action: {
             label: actPressed ? "Show all" : "Show act now",
             pressed: actPressed,
@@ -758,6 +761,8 @@ export function CoordinatorScreen() {
               },
             }
           : { answer: `Nothing needs you now${nextScope}` };
+  // Wave 4 (D-191): "3 alerts, 1 accepted with no bed pulled" on its own line under the head.
+  const actDetail = nextActCount > 0 ? homeActNowParts(nextActCount, toPull.length, nextScope).detail : undefined;
   // Josh, 4 Nov 2026 (2i question 5): the Checking line sits under the step whenever a bed count is
   // stale or a ward is not reporting (every size since the sticky header redesign, 9 Nov 2026).
   // Batch 4 item 24 (Josh approved the drawing 11 Nov 2026, D-142): a pointer to the wards whose
@@ -821,13 +826,17 @@ export function CoordinatorScreen() {
             }
           >
             <HeroTop
+              className={heroStyles.heroTop}
               figures={
                 <HeroFigures
                   items={[
                     {
                       id: "ed",
                       value: edJourneys.total,
-                      label: `open ED movements${service === null ? "" : ` in ${service}`}`,
+                      // PR E swap: the kit's `window` prop once HeroFigures takes it (none shown here).
+                      // Wave 4 (D-191, notes item 4): count labels as nouns, as Capacity says them. The
+                      // window word ("now") is left out because the page title already says "right now".
+                      label: `Open movements${service === null ? "" : ` in ${service}`}`,
                       testId: "home-figure-ed",
                       // Item 5: tap the figure to see who is in it, from the same journeys it counts.
                       renderPress: (press) => (
@@ -848,7 +857,7 @@ export function CoordinatorScreen() {
                     {
                       id: "beds",
                       value: bedsReady,
-                      label: `${bedsReady === 1 ? "bed" : "beds"} ready${networkWord}`,
+                      label: `Ready${networkWord}`,
                       testId: "home-figure-beds",
                       renderPress: (press) => (
                         <CountBreakdown
@@ -872,9 +881,19 @@ export function CoordinatorScreen() {
                           {
                             id: "occupancy",
                             value: `${Math.round(statewideOccupancy)}%`,
-                            // D-109 (Josh, 9 Nov 2026): the line tests the whole number shown, so "85%" never sits beside "beds in use".
+                            // D-109 (Josh, 9 Nov 2026): the line tests the whole number shown. Ruling 4 (D-191):
+                            // the figure reads "In use", as Capacity; at or over the alert line it keeps an
+                            // amber dot (said in words to a screen reader) in place of the words "at risk".
                             label:
-                              Math.round(statewideOccupancy) >= BED_ALERT_THRESHOLD_PERCENT ? "at risk" : "beds in use",
+                              Math.round(statewideOccupancy) >= BED_ALERT_THRESHOLD_PERCENT ? (
+                                <span className={heroStyles.figGlyphLabel}>
+                                  <StatusGlyph tone="warning" size={9} />
+                                  In use
+                                  <SrOnly>, at or over the {BED_ALERT_THRESHOLD_PERCENT}% bed alert line</SrOnly>
+                                </span>
+                              ) : (
+                                "In use"
+                              ),
                             href: "/ward-flow/capacity",
                             testId: "home-figure-occupancy",
                             linkTestId: "ward-home-occupancy-link",
@@ -889,7 +908,18 @@ export function CoordinatorScreen() {
                   kind={nextKind ?? "none"}
                   title={heroNext.answer}
                   titleTestId="hero-next-answer"
-                  sub={checkingLine}
+                  sub={
+                    actDetail || checkingLine ? (
+                      <>
+                        {actDetail ? (
+                          <span className={heroStyles.actLine} data-testid="hero-next-detail">
+                            {actDetail}
+                          </span>
+                        ) : null}
+                        {checkingLine ? <span className={heroStyles.actLine}>{checkingLine}</span> : null}
+                      </>
+                    ) : undefined
+                  }
                   action={
                     heroNext.action
                       ? {
@@ -914,7 +944,8 @@ export function CoordinatorScreen() {
                   service={service}
                   population={
                     <span data-testid="ward-home-ed-population">
-                      <b>{edJourneys.stillInEd}</b> in ED · <b>{edJourneys.inTransit}</b> in transit
+                      {/* Wave 4 (D-191, notes item 4): the count label nouns; no window word under "right now". */}
+                      <b>{edJourneys.stillInEd}</b> Waiting · <b>{edJourneys.inTransit}</b> In transit
                     </span>
                   }
                 />
@@ -1000,10 +1031,11 @@ export function CoordinatorScreen() {
                   untouched, and both render nothing until there is something to show. */}
               {/* Batch 4 item 25 (D-142): after a recorded outage, the wards still to confirm. */}
               {shownView === "needs" ? <HomeOutageCatchUp now={now} /> : null}
-              <HomeSinceBanner now={now} />
+              {/* Wave 4 (D-191, notes item 7): on Needs you the line sits inside its card. */}
+              {shownView === "needs" ? null : <HomeSinceBanner now={now} />}
               <HomePinnedCard now={now} phone={isPhone} />
               {shownView === "planned" ? (
-                <PlannedList now={now} rows={plannedRows} title="Later today" />
+                <PlannedList now={now} rows={plannedRows} title="Later today" tabbed />
               ) : shownView === "queue" ? (
                 <PriorityQueue
                   flowStage={flowStage}
@@ -1033,8 +1065,7 @@ export function CoordinatorScreen() {
                 <MyListCard
                   act={actEntries}
                   toPull={toPull}
-                  wait={unmarkedWait}
-                  hideWait={unmarkedWait.length === 0}
+                  since={<HomeSinceBanner now={now} inline />}
                   referralCap={Math.max(0, 8 - actEntries.length - toPull.length) || 2}
                   referrals={referralQueue}
                   units={units}

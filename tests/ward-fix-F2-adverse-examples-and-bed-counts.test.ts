@@ -7,6 +7,7 @@ import { WARD_SCENARIOS } from "@/components/ward-management/ward-scenarios";
 import {
   adverseExampleWard,
   mayCarryAdverseExample,
+  mayCarryInventedIncident,
   wardCarriesRealName,
 } from "@/components/ward-management/ward-demo-adverse-wards";
 import { allUnits } from "@/components/ward-management/ward-sites";
@@ -20,6 +21,22 @@ import { allUnits } from "@/components/ward-management/ward-sites";
  * exception, recorded by id.
  * A15-29: designations that only exercise a matching rule sit on generic-label wards.
  */
+
+describe("Live re-check (Josh, 14 Nov 2026): no invented incident under a real hospital", () => {
+  it("allows an invented incident only on a fictional ward", () => {
+    expect(mayCarryInventedIncident({ name: "FSH Adult Secure" })).toBe(false);
+    expect(mayCarryInventedIncident({ name: "RGH Adult Secure" })).toBe(false);
+    expect(mayCarryInventedIncident({ name: "Mental Health Unit" })).toBe(false);
+    expect(mayCarryInventedIncident({ name: "Fictional Quartz Adult Ward 1" })).toBe(true);
+  });
+
+  it("seeds no incident on the demo network, and still seeds them on the fictional network", () => {
+    const incidentsOf = (state: ReturnType<typeof seedWardFlowState>) =>
+      state.units.flatMap((unit) => unit.restrictivePractice?.incidents ?? []);
+    expect(incidentsOf(seedWardFlowState())).toEqual([]);
+    expect(incidentsOf(seedWardFlowState("wa-synthetic")).length).toBeGreaterThan(0);
+  });
+});
 
 describe("A15-27 the shared rule for adverse examples", () => {
   it("tells a real ward name from a generic or fictional label", () => {
@@ -63,8 +80,6 @@ describe("A15-27 the shared rule for adverse examples", () => {
 
   it("still seeds the examples, on generic-label wards, and keeps every secure ward's room status", () => {
     const state = seedWardFlowState();
-    const incidents = state.units.flatMap((unit) => unit.restrictivePractice?.incidents ?? []);
-    expect(incidents.length).toBeGreaterThan(0);
     expect(state.units.some((unit) => (unit.closedBeds ?? []).length > 0)).toBe(true);
     expect(state.units.some((unit) => unit.isClosed && mayCarryAdverseExample(unit))).toBe(true);
     expect((state.staffRequests ?? []).length).toBe(1);

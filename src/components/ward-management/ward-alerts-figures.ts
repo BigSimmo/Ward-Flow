@@ -46,7 +46,7 @@ export type AlertsNowFigures = {
 
 /**
  * The figures for the active (not snoozed) task rows and the count of accepted referrals awaiting a
- * bed pull (`acceptedReferralsAwaitingPull(...).length`, coordinator desk only).
+ * bed pull (`acceptedReferralsAwaitingPull(...).length`, the coordinator desk, or the ward desk for its own wards).
  */
 export function alertsNowFigures(activeItems: readonly { id: string }[], awaitingPull: number): AlertsNowFigures {
   let act = 0;

@@ -56,12 +56,17 @@ async function settleUntil(done: () => boolean) {
 }
 
 beforeEach(() => {
+  // Each tab takes its clock from the wall clock. Hold the date still so a minute boundary between
+  // tab A's snapshot and tab B's sync cannot move `now` by one (seen on CI, PR #1662).
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-11-14T02:30:30Z"));
   posted.length = 0;
   channels.clear();
   vi.stubGlobal("BroadcastChannel", FakeChannel);
 });
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   window.sessionStorage.clear();
   resetOtherTabDayForTests();

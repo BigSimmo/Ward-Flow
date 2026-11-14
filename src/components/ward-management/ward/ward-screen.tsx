@@ -140,6 +140,9 @@ import { WardScreenTopBar } from "./ward-screen-top-bar";
 import { useWardScreenFigures } from "./use-ward-screen-figures";
 import { WardAcceptedReferralPlacement } from "./ward-accepted-referral-placement";
 import { WardScreenHomeSection } from "./ward-screen-home-section";
+import { useWardPullThenArrive, WardPullBedChoice } from "./ward-pull-then-arrive";
+import { obsNotRecordedCount } from "./ward-screen-derivations";
+import { arrivalsExpectedToday } from "./ward-coming-and-going-rows";
 import { WardAcceptDialog, WardScreenDecisionJobs } from "./ward-on-demand";
 import type { DecisionReport } from "./ward-decisions-cockpit";
 import { signOffUndo } from "./ward-sign-off-undo";
@@ -255,6 +258,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // `CONFIRM_CAPACITY` or `PULL_PATIENT` updates `state.units`, this screen must show the current
   // bed counts (and gate `pullBlockedReason` on them) rather than the stale fixture value.
   const unit = units.find((candidate) => candidate.id === unitId);
+  // Review F-2 (ruling 11, answer d; ruling 3): the pull step before an arrival, and each row's
+  // inline Undo after a pull made here. `pull` and `openArrival` are this screen's own, declared below.
+  const pullThenArrive = useWardPullThenArrive(unitId, raise, { handlePullPatient, openArrival });
 
   // Declared unconditionally, before the early return below — React hooks must run in the same
   // order on every render, and the not-found branch never touches either of these.
@@ -909,14 +915,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           },
         );
       };
-      toast?.push(
-        bedPulledToast(
-          who,
-          roleLimitReason(pullRole, "RELEASE_PULL"),
-          pull && (() => onUndoPull(pull)),
-          nowRef.current,
-        ),
-      );
+      const undoPull = pull && (() => onUndoPull(pull));
+      const limit = roleLimitReason(pullRole, "RELEASE_PULL");
+      const pullToastId = toast?.push(bedPulledToast(who, limit, undoPull, nowRef.current));
+      // The row's own Undo closes this toast once it has released the pull (review, PR F).
+      if (pullToastId !== undefined) pullThenArrive.rememberPullToast(check.movementId, pullToastId);
       focusWardArrival(check.movementId);
     }
     if (!refused && check.undo && toast) {
@@ -1449,16 +1452,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     );
   }
 
-  function handlePullPatient(movementId: string, unitId: string) {
+  function handlePullPatient(movementId: string, unitId: string, report?: DecisionReport) {
     if (!units.some((u) => u.id === unitId)) return;
-    runMovementCommand(
-      movementId,
-      "PULL_PATIENT",
-      () => raise("PULL_PATIENT", { movementId, unitId, actingUnitId: unitId }),
-      undefined,
-      undefined,
-      nextPullTarget(movements, movementId, unitId, unitId),
-    );
+    const record = () => raise("PULL_PATIENT", { movementId, unitId, actingUnitId: unitId });
+    const pull = nextPullTarget(movements, movementId, unitId, unitId);
+    runMovementCommand(movementId, "PULL_PATIENT", record, undefined, report, pull);
   }
 
   function submitOverride(event: FormEvent<HTMLFormElement>, movementId: string) {
@@ -1938,7 +1936,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const pickBedFilter = (next: WardBedFilter) => {
     const chosen = bedFilter === next && next !== "all" ? "all" : next;
     setBedFilter(chosen);
-    if (chosen === "shift-end") setFlowTab("discharges");
     showHome("bed-capacity");
   };
   const openShiftTodo = () => {
@@ -1952,13 +1949,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     states,
     now,
     isPhone,
-    pendingPreparation,
-    readyByShiftEnd,
+    // Review F-3: only people expected today, the same rule the Arrivals list uses.
+    arrivalsToday: arrivalsExpectedToday(accepted, now).length,
+    openArrivals: () => showHome("ward-flow"),
     actNowCount,
     heldUpCount: blockedReleases.length,
     pastDateCount: bedsList.filter((bed) => bed.pastDate).length,
     bedCountsStale,
     staffedSpecialling,
+    obsNotRecorded: obsNotRecordedCount(unit.id, admissions ?? []),
     bedFilter,
     pickBedFilter,
     openShiftTodo,
@@ -2347,7 +2346,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           handleConfirmBedsAndMorningRollup={handleConfirmBedsAndMorningRollup}
           openCapacityModal={openCapacityModal}
           openArrival={openArrival}
-          handlePullPatient={handlePullPatient}
+          handlePullPatient={(movementId) => pullThenArrive.pullAndKeep(movementId)}
           openDischargesTab={openDischargesTab}
           bedsList={bedsList}
           setSelectedBed={setSelectedBed}
@@ -2382,7 +2381,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           blockedReleases={blockedReleases}
           pendingPreparation={pendingPreparation}
           confirmBedRelease={confirmBedRelease}
+          undoPullFor={pullThenArrive.undoPullFor}
+          onPullThenArrive={pullThenArrive.onPullThenArrive}
         />
+        <WardPullBedChoice step={pullThenArrive} unitName={unit.name} beds={bedsList} isMixed={isMixed} />
 
         {/* ───────── REFERRALS: the ward's own referral inbox (WH7, WH9) ───────── */}
         <WardScreenReferralsTab
@@ -2418,7 +2420,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           readyByShiftEnd={readyByShiftEnd}
           now={now}
           setActiveTab={setActiveTab}
-          handlePullPatient={handlePullPatient}
+          // Review P4-2 (D-188, every pull): the All arrivals pull asks for a level when none is recorded.
+          handlePullPatient={(movementId) => pullThenArrive.pullAndKeep(movementId)}
           accepted={accepted}
           heldAfterStop={heldAfterStop}
           resolvePatientIdentity={resolvePatientIdentity}

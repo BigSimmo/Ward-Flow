@@ -5,48 +5,131 @@
  * receives only the aggregate report (`ExecutiveWorkspace`), never the operational board, so the
  * operational Capacity screen had no workspace to read and fell to the error boundary. This view
  * draws Capacity from that report instead: bed counts only, no patient and no action.
+ *
+ * Wave 4 (C7, notes item 7, D-191): the same slate hero as Capacity ("Beds ready and in use", four
+ * count labels, an as-at pill and a By service band in neutral words), then the kit table "Beds by
+ * ward" grouped by service with a bed-squares strip per ward and a totals row. No buttons: the
+ * desk never sees an action it cannot use (shared spec 6). On a phone the table is a read-only
+ * list in the bed-squares phone form, with the later service groups folded.
  */
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
+
 import {
   Card,
-  CardBody,
   CardHead,
   Hero,
+  HeroBand,
   HeroFigures,
+  HeroPill,
   HeroTop,
+  LiveChip,
   ShowMoreRow,
   SrOnly,
+  WindowWord,
   cx,
   foldHidden,
   foldLimit,
   tableClasses,
+  useIsPhone,
 } from "@/components/wf";
+import {
+  BED_SQUARE_LABELS,
+  BedSquare,
+  BedSquares,
+  BedSquaresStrip,
+  bedSquareCounts,
+  bedSquaresNotes,
+  type BedSquareState,
+} from "@/components/ward-management/bed-squares";
 import {
   useExecutiveStatistics,
   useExecutiveStatisticsControl,
 } from "@/components/ward-management/statistics/executive-statistics-context";
+import type { ExecutiveReportingFoundation } from "@/components/ward-management/statistics/executive-statistics-contract";
+import { occupancyText } from "@/components/ward-management/statistics/statistics-occupancy";
 import { ExecutiveStatisticsUnavailable } from "@/components/ward-management/statistics/statistics-small-numbers";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { formatSheetMoment } from "@/components/ward-management/ward-clock";
-import pageTop from "@/components/ward-management/page-top-title.module.css";
-import pageStyles from "./capacity-page.module.css";
-import styles from "./capacity-executive.module.css";
+import { formatInstant, formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
+import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
+import pageTop from "@/components/ward-management/page-top-title.module.css";
+
+import styles from "./capacity-executive.module.css";
 
 const FOOTER_NOTE = "Synthetic prototype · bed counts only · Not approved for clinical use";
-/** F-51 (C01, design critique v2): the kit's list rule, eight rows then Show more (DESIGN-SYSTEM.md). */
+
+type ExecutiveWard = ExecutiveReportingFoundation["wards"][number];
+type ExecutiveService = ExecutiveReportingFoundation["services"][number];
+
+/** The executive's squares say only what the table says: ready, being made ready, in use, closed. */
+const EXECUTIVE_KEY: readonly BedSquareState[] = ["ready", "prep", "use", "closed"];
+
+/** Phone: the first two service groups open, the rest folded (notes item 7). */
+const PHONE_OPEN_GROUPS = 2;
+/** F-51 (C01, design critique v2, PR C): the kit's list rule, eight ward rows then Show more (DESIGN-SYSTEM.md). */
 const WARDS_FIRST = 8;
+
+/** "Label · window": the kit's window word in the hero's quiet ink (count labels, shared spec 2). */
+function CountLabel({ label, window }: { label: string; window: Parameters<typeof WindowWord>[0]["word"] }) {
+  return (
+    <>
+      {label}
+      <WindowWord word={window} className={styles.win} />
+    </>
+  );
+}
+
+/** The neutral cohort and lock tag, from the record ("Adult · Locked"). */
+function executiveWardTag(ward: Pick<ExecutiveWard, "cohort" | "lockedBeds" | "beds">): string {
+  const lock = ward.lockedBeds <= 0 ? "Open" : ward.lockedBeds >= ward.beds.total ? "Locked" : "Mixed";
+  return `${ward.cohort} · ${lock}`;
+}
+
+/**
+ * The squares from the report's own bed counts. No discharge hatch: the executive report holds no
+ * per-ward discharge count it may show (small numbers), so in use is every bed not ready, being
+ * made ready or closed.
+ */
+function wardSquares(ward: ExecutiveWard) {
+  return bedSquareCounts({
+    beds: ward.beds.total,
+    ready: ward.beds.ready,
+    beingMadeReady: ward.beds.beingMadeReady,
+    closed: ward.beds.closed,
+  });
+}
+
+type ServiceGroup = { service: ExecutiveService; wards: ExecutiveWard[] };
+
+/** The coordinator's bed map order (`wardServiceOrder`: North, East, South, WACHS, CAHS, Private). */
+const serviceRank = (service: ExecutiveService) => {
+  const rank = wardServiceOrder.indexOf(service.service);
+  return rank === -1 ? wardServiceOrder.length : rank;
+};
+
+function serviceGroups(data: ExecutiveReportingFoundation): ServiceGroup[] {
+  return [...data.services]
+    .sort((a, b) => serviceRank(a) - serviceRank(b))
+    .map((service) => ({ service, wards: data.wards.filter((ward) => ward.service === service.service) }))
+    .filter((group) => group.wards.length > 0);
+}
+
+function inUseText(beds: { total: number; inUse: number }): string {
+  return occupancyText({ beds: beds.total, inUse: beds.inUse });
+}
 
 export function ExecutiveCapacityScreen() {
   const zone = useClockZoneLabel();
   const data = useExecutiveStatistics();
-  const { paused } = useExecutiveStatisticsControl();
-  const [allWards, setAllWards] = useState(false);
+  const { paused, togglePause } = useExecutiveStatisticsControl();
+  const isPhone = useIsPhone();
   // The skip link and the prototype disclosure stay even while the report is absent.
+  // A9-17 (PR C): inside the page wrapper, so it never draws unstyled.
   if (!data)
     return (
-      <div className={pageStyles.screen} data-ward-design="redesign-2026-10">
-        <main id="main-content" className={pageStyles.main} data-testid="ward-capacity-executive-unavailable">
+      <div className={styles.screen} data-ward-design="redesign-2026-10">
+        <main id="main-content" className={styles.main} data-testid="ward-capacity-executive-unavailable">
           <ExecutiveStatisticsUnavailable />
           <WardPrototypeFooter testId="ward-capacity-executive-footer" note={FOOTER_NOTE} />
         </main>
@@ -54,124 +137,322 @@ export function ExecutiveCapacityScreen() {
     );
   const { network } = data;
   // The counts are as at the report's time, which a held report keeps while the board clock moves.
-  const asAt = formatSheetMoment(network.asAt.now, new Date(network.asAt.dayZero), { includeYearAndZone: true, zone });
+  const asAt = formatInstant(network.asAt.now);
+  // The pill takes PR C's time words (C owns time wording): day, year and the clock's zone label.
+  const asAtMoment = formatSheetMoment(network.asAt.now, new Date(network.asAt.dayZero), {
+    includeYearAndZone: true,
+    zone,
+  });
   const beds = network.beds;
-  const scopeLabel = network.scope.kind === "statewide" ? "Whole network" : network.scope.service;
-  // A9-17 (Josh, 13 Nov 2026): the page was bare markup with no page wrapper, hero or kit table, so
-  // it drew unstyled in both themes. It now has Capacity's own page wrapper, the band hero and the
-  // kit table, with a totals row that adds up the rows above it.
-  const totals = network.wards.reduce(
-    (sum, ward) => ({
-      total: sum.total + ward.beds.total,
-      ready: sum.ready + ward.beds.ready,
-      beingMadeReady: sum.beingMadeReady + ward.beds.beingMadeReady,
-      inUse: sum.inUse + ward.beds.inUse,
-      closed: sum.closed + ward.beds.closed,
-    }),
-    { total: 0, ready: 0, beingMadeReady: 0, inUse: 0, closed: 0 },
-  );
-  const num = tableClasses.num;
-  const shownWards = allWards ? network.wards.length : foldLimit(network.wards.length, WARDS_FIRST);
-  const hiddenWards = foldHidden(network.wards.length, WARDS_FIRST);
+  // PR C's scope words: a service-scoped report names its service, as the Capacity hero names a site.
+  const scopeService = network.scope.kind === "service" ? network.scope.service : null;
+  const groups = serviceGroups(data);
+  const wardCount = data.wards.length;
   return (
-    <div className={pageStyles.screen} data-ward-design="redesign-2026-10">
-      <main id="main-content" className={pageStyles.main} data-testid="ward-capacity-executive">
+    <div className={styles.screen} data-ward-design="redesign-2026-10" data-testid="ward-capacity-executive-screen">
+      <main id="main-content" className={styles.main} data-testid="ward-capacity-executive">
         <Hero
           level={1}
           className={pageTop.hero}
+          eyebrow={scopeService ?? undefined}
+          phoneEyebrow={scopeService ? "show" : undefined}
           title={
             <>
               <SrOnly>Capacity, </SrOnly>
-              Beds <span className={pageTop.soft}>ready and in use</span>
+              Beds <span className={styles.titleSoft}>ready and in use</span>
             </>
           }
-          foot={
-            <span>
-              {beds.ready} beds ready of {beds.total}
-              {beds.beingMadeReady > 0 ? ` · ${beds.beingMadeReady} still being made ready` : ""} · {scopeLabel} · bed
-              counts only, no patient details.
-            </span>
-          }
-          footAside={
-            <span data-testid="ward-capacity-executive-as-at">
-              As at {asAt}
-              {paused ? " · report paused" : ""}
-            </span>
-          }
+          aside={<LiveChip state={paused ? "paused" : "live"} onHero onTogglePause={togglePause ?? undefined} />}
         >
           <HeroTop
             quickBar={false}
             figures={
-              <HeroFigures
-                label={`${scopeLabel} beds`}
-                testId="ward-capacity-executive-figures"
-                items={[
-                  {
-                    id: "ready",
-                    value: beds.ready,
-                    unit: `/ ${beds.total}`,
-                    label: beds.ready === 1 ? "bed ready" : "beds ready",
-                  },
-                  { id: "made-ready", value: beds.beingMadeReady, label: "being made ready" },
-                  { id: "in-use", value: beds.inUse, label: "in use" },
-                  { id: "closed", value: beds.closed, label: "closed" },
-                ]}
+              // On a phone the four figures share the row and their labels wrap (local style, `.execFigs`).
+              <div className={styles.execFigs}>
+                <HeroFigures
+                  label={scopeService ? `${scopeService} beds` : "Network beds"}
+                  testId="ward-capacity-executive-figures"
+                  items={[
+                    {
+                      id: "ready",
+                      value: beds.ready,
+                      unit: `/ ${beds.total}`,
+                      label: <CountLabel label="Ready" window="now" />,
+                      testId: "ward-capacity-executive-ready",
+                    },
+                    {
+                      id: "prep",
+                      value: beds.beingMadeReady,
+                      label: <CountLabel label="Being made ready" window="now" />,
+                      testId: "ward-capacity-executive-prep",
+                    },
+                    {
+                      id: "in-use",
+                      value: inUseText(beds),
+                      label: <CountLabel label="In use" window="now" />,
+                      testId: "ward-capacity-executive-in-use",
+                    },
+                    {
+                      id: "closed",
+                      value: beds.closed,
+                      label: <CountLabel label="Closed" window="now" />,
+                      testId: "ward-capacity-executive-closed",
+                    },
+                  ]}
+                />
+              </div>
+            }
+            pill={
+              <HeroPill
+                testId="ward-capacity-executive-as-at"
+                text={`As at ${asAtMoment} · bed counts only, no patient details${paused ? " · report paused" : ""}`}
               />
+            }
+            band={
+              groups.length > 0 ? (
+                // On a phone By service sits two across rather than scrolling sideways (local style,
+                // `.execBand`).
+                <div className={styles.execBand}>
+                  <HeroBand
+                    variant="wrap"
+                    title={
+                      <>
+                        By service
+                        <WindowWord word="now" className={styles.win} />
+                      </>
+                    }
+                    testId="ward-capacity-executive-services"
+                    cells={groups.map(({ service }) => ({
+                      id: service.service,
+                      label: service.service,
+                      value: (
+                        <>
+                          {service.beds.ready} <span className={styles.bandWord}>ready</span>
+                        </>
+                      ),
+                      note: `${inUseText(service.beds)} in use · ${service.beds.closed} closed`,
+                      testId: `ward-capacity-executive-service-${service.service}`,
+                    }))}
+                  />
+                </div>
+              ) : undefined
             }
           />
         </Hero>
-        <Card aria-labelledby="ward-capacity-executive-beds">
-          <CardHead id="ward-capacity-executive-beds" title="Beds by ward" meta={`${network.wards.length} wards`} />
-          <CardBody flush>
-            <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Beds by ward, scrollable table">
-              <table className={cx(tableClasses.table, styles.table)} aria-labelledby="ward-capacity-executive-beds">
-                <thead>
-                  <tr>
-                    <th scope="col">Ward</th>
-                    <th scope="col">Beds</th>
-                    <th scope="col">Ready</th>
-                    <th scope="col">Being made ready</th>
-                    <th scope="col">In use</th>
-                    <th scope="col">Closed</th>
-                  </tr>
-                </thead>
-                <tbody id="ward-capacity-executive-rows">
-                  {network.wards.slice(0, shownWards).map((ward) => (
-                    <tr key={ward.id}>
-                      <th scope="row">{ward.name}</th>
-                      <td className={num}>{ward.beds.total}</td>
-                      <td className={num}>{ward.beds.ready}</td>
-                      <td className={num}>{ward.beds.beingMadeReady}</td>
-                      <td className={num}>{ward.beds.inUse}</td>
-                      <td className={num}>{ward.beds.closed}</td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className={styles.total} data-testid="ward-capacity-executive-total">
-                    <th scope="row">All {network.wards.length} wards</th>
-                    <td className={num}>{totals.total}</td>
-                    <td className={num}>{totals.ready}</td>
-                    <td className={num}>{totals.beingMadeReady}</td>
-                    <td className={num}>{totals.inUse}</td>
-                    <td className={num}>{totals.closed}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-            {hiddenWards > 0 ? (
-              <ShowMoreRow
-                onClick={() => setAllWards((was) => !was)}
-                expanded={allWards}
-                controls="ward-capacity-executive-rows"
-              >
-                {allWards ? "Show fewer" : `Show ${hiddenWards} more`}
-              </ShowMoreRow>
-            ) : null}
-          </CardBody>
+        <Card aria-labelledby="ward-capacity-executive-beds" className={styles.card}>
+          <CardHead
+            id="ward-capacity-executive-beds"
+            title="Beds by ward"
+            meta={`${wardCount} ${wardCount === 1 ? "ward" : "wards"} · counts as at ${asAt}`}
+          />
+          <ExecutiveKey />
+          {isPhone ? (
+            <ExecutivePhoneList groups={groups} />
+          ) : (
+            <ExecutiveTable groups={groups} total={beds} wardCount={wardCount} />
+          )}
         </Card>
         <WardPrototypeFooter testId="ward-capacity-executive-footer" note={FOOTER_NOTE} />
       </main>
+    </div>
+  );
+}
+
+/** The key for the four states the executive squares draw. PR E swap: kit bed-squares key. */
+function ExecutiveKey() {
+  return (
+    <p className={styles.key} aria-label="Bed squares key" data-testid="ward-capacity-executive-key">
+      {EXECUTIVE_KEY.map((state) => (
+        <span key={state} className={styles.keyItem}>
+          <BedSquare state={state} />
+          {BED_SQUARE_LABELS[state]}
+        </span>
+      ))}
+    </p>
+  );
+}
+
+function Num({ children }: { children: ReactNode }) {
+  return <td className={cx(tableClasses.num, styles.num)}>{children}</td>;
+}
+
+/** The service groups holding only the first `rows` wards, in order; a group left empty is dropped. */
+function cutGroups(groups: readonly ServiceGroup[], rows: number): ServiceGroup[] {
+  const out: ServiceGroup[] = [];
+  let left = rows;
+  for (const group of groups) {
+    if (left <= 0) break;
+    const wards = group.wards.slice(0, left);
+    left -= wards.length;
+    out.push({ ...group, wards });
+  }
+  return out;
+}
+
+function ExecutiveTable({
+  groups,
+  total,
+  wardCount,
+}: {
+  groups: ServiceGroup[];
+  total: ExecutiveReportingFoundation["network"]["beds"];
+  wardCount: number;
+}) {
+  // F-51 (PR C): eight ward rows, then Show more; the totals row still adds up every ward. The cut
+  // runs across the service groups in order, and a group with no row left is not drawn.
+  const [allWards, setAllWards] = useState(false);
+  const shown = allWards ? wardCount : foldLimit(wardCount, WARDS_FIRST);
+  const hidden = foldHidden(wardCount, WARDS_FIRST);
+  const shownGroups = cutGroups(groups, shown);
+  return (
+    <>
+      {/* The table may be wider than a tablet's column: it scrolls sideways and is reachable by keyboard. */}
+      <div className={styles.tableWrap} role="region" aria-label="Beds by ward, scrolls sideways" tabIndex={0}>
+        <table
+          id="ward-capacity-executive-rows"
+          className={cx(tableClasses.table, styles.table)}
+          aria-labelledby="ward-capacity-executive-beds"
+        >
+          <thead>
+            <tr>
+              <th scope="col">Ward</th>
+              <th scope="col" className={styles.squaresCell}>
+                <SrOnly>Bed picture</SrOnly>
+              </th>
+              <th scope="col" className={tableClasses.num}>
+                Ready
+              </th>
+              <th scope="col" className={tableClasses.num}>
+                Being made ready
+              </th>
+              <th scope="col" className={tableClasses.num}>
+                In use
+              </th>
+              <th scope="col" className={tableClasses.num}>
+                Closed
+              </th>
+              <th scope="col" className={tableClasses.num}>
+                Beds
+              </th>
+            </tr>
+          </thead>
+          {shownGroups.map(({ service, wards }) => (
+            <tbody key={service.service} data-testid={`ward-capacity-executive-group-${service.service}`}>
+              <tr className={styles.groupRow}>
+                <th scope="rowgroup" colSpan={7}>
+                  {service.service}{" "}
+                  <span className={styles.ink3}>
+                    · {wards.length} {wards.length === 1 ? "ward" : "wards"} · {inUseText(service.beds)} in use
+                  </span>
+                </th>
+              </tr>
+              {wards.map((ward) => (
+                <tr key={ward.id}>
+                  <th scope="row">
+                    <span className={styles.wardName}>{ward.name}</span>
+                    <span className={styles.wardTag}>{executiveWardTag(ward)}</span>
+                  </th>
+                  <td className={styles.squaresCell}>
+                    <BedSquaresStrip counts={wardSquares(ward)} />
+                  </td>
+                  <Num>{ward.beds.ready}</Num>
+                  <Num>{ward.beds.beingMadeReady}</Num>
+                  <Num>{ward.beds.inUse}</Num>
+                  <Num>{ward.beds.closed}</Num>
+                  <Num>{ward.beds.total}</Num>
+                </tr>
+              ))}
+            </tbody>
+          ))}
+          <tfoot>
+            <tr className={styles.totalRow} data-testid="ward-capacity-executive-total">
+              <th scope="row">
+                All {wardCount} {wardCount === 1 ? "ward" : "wards"}
+              </th>
+              <td />
+              <Num>{total.ready}</Num>
+              <Num>{total.beingMadeReady}</Num>
+              <Num>{total.inUse}</Num>
+              <Num>{total.closed}</Num>
+              <Num>{total.total}</Num>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      {hidden > 0 ? (
+        <ShowMoreRow
+          onClick={() => setAllWards((was) => !was)}
+          expanded={allWards}
+          controls="ward-capacity-executive-rows"
+        >
+          {allWards ? "Show fewer" : `Show ${hidden} more`}
+        </ShowMoreRow>
+      ) : null}
+    </>
+  );
+}
+
+/** Phone: a read-only list in the bed-squares phone form, later service groups folded. */
+function ExecutivePhoneList({ groups }: { groups: ServiceGroup[] }) {
+  const [open, setOpen] = useState<ReadonlySet<string>>(
+    () => new Set(groups.slice(0, PHONE_OPEN_GROUPS).map((group) => group.service.service)),
+  );
+  const toggle = (service: string) =>
+    setOpen((current) => {
+      const next = new Set(current);
+      if (next.has(service)) next.delete(service);
+      else next.add(service);
+      return next;
+    });
+  return (
+    <div data-testid="ward-capacity-executive-list">
+      {groups.map(({ service, wards }) => {
+        const expanded = open.has(service.service);
+        const listId = `ward-capacity-executive-list-${service.service.replace(/\W+/gu, "-")}`;
+        const Chevron = expanded ? ChevronDown : ChevronRight;
+        return (
+          <section key={service.service} className={styles.group} aria-label={`${service.service} beds`}>
+            <h3 className={styles.groupHead}>
+              <button
+                type="button"
+                aria-expanded={expanded}
+                aria-controls={expanded ? listId : undefined}
+                onClick={() => toggle(service.service)}
+              >
+                <Chevron size={16} strokeWidth={1.75} aria-hidden="true" />
+                <span className={styles.groupName}>{service.service}</span>
+                <span className={styles.ink3}>
+                  {wards.length} {wards.length === 1 ? "ward" : "wards"}
+                </span>
+                <span className={styles.groupFigs}>
+                  <b>{service.beds.ready}</b> ready · {inUseText(service.beds)} in use
+                </span>
+              </button>
+            </h3>
+            {expanded ? (
+              <ul className={styles.wards} id={listId}>
+                {wards.map((ward) => (
+                  <li key={ward.id} className={styles.ward}>
+                    <span className={styles.wardName}>{ward.name}</span>
+                    <BedSquares
+                      counts={wardSquares(ward)}
+                      tag={executiveWardTag(ward)}
+                      // Counts only (notes item 7): no admit windows, staff requests or review dates.
+                      notes={bedSquaresNotes({
+                        pulled: ward.beds.pulled,
+                        prep: ward.beds.beingMadeReady,
+                        closed: ward.beds.closed,
+                        onLeave: ward.beds.onLeave,
+                      })}
+                      testId={`ward-capacity-executive-ward-${ward.id}`}
+                    />
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </section>
+        );
+      })}
     </div>
   );
 }

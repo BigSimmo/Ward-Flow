@@ -28,7 +28,8 @@ import {
 } from "./ward-board-model";
 
 import { useState, type Dispatch, type SetStateAction } from "react";
-import { Segmented, Select, ShowMoreRow, StatusGlyph } from "@/components/wf";
+import { Menu, Segmented, ShowMoreRow, StatusGlyph } from "@/components/wf";
+import { BedSquares, bedSquaresNotes, bedSquaresTag } from "@/components/ward-management/bed-squares";
 import redesign from "./ward-board-panels.module.css";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 
@@ -99,22 +100,18 @@ export function WardBoardGridColumn({
     leaving: "Soonest to leave",
     recorded: "Bed order",
   };
-  const orderOptions = BOARD_ORDERS.map((order) => (
-    <option key={order} value={order}>
-      {BOARD_ORDER_LABELS[order]}
-    </option>
-  ));
-  const orderSelect = (
-    <select
-      id="ward-board-order-select"
-      name="wardBoardOrder"
-      value={bedOrder}
-      onChange={(event) => setBedOrder(event.target.value as BoardOrder)}
-      aria-label="Order the beds"
-    >
-      {orderOptions}
-    </select>
-  );
+  // Wave 4 (D-191, notes 10, A5-09): on a phone the bed squares head the sheet, from the same tiles.
+  // A bed being made ready is an empty tile with `preparing`; it is drawn hollow, never as Ready,
+  // matching the hero and the Ready filter.
+  const kinds = { ready: 0, prep: 0, use: 0, closed: 0, pulled: 0 };
+  for (const tile of tiles) {
+    if (tile.kind === "empty") {
+      if (tile.preparing) kinds.prep += 1;
+      else kinds.ready += 1;
+    } else if (tile.kind === "closed" || tile.kind === "blocked") kinds.closed += 1;
+    else kinds.use += 1;
+    if (tile.kind === "waiting") kinds.pulled += 1;
+  }
   return (
     <div className={styles.gridColumn}>
       {/* ✅ **THE GRID HAD NO HEADING AT ALL** — measured across the whole component, not inferred.
@@ -127,26 +124,47 @@ export function WardBoardGridColumn({
         </span>
       </header>
       {isPhone ? (
-        <div className={redesign.phoneBar}>
-          {/* Final polish: the kit's select for Show; the sort button is still the order select
-              itself, drawn as an icon, and its name is unchanged. */}
-          <Select
-            value={bedFilter}
-            onChange={(event) => chooseFilter(event.target.value as BoardFilter)}
-            aria-label="Show"
-            data-testid="ward-board-filter-select"
-          >
-            {BOARD_FILTERS.map((filter) => (
-              <option key={filter} value={filter}>
-                {`${BOARD_FILTER_LABELS[filter]} · ${countText(filter)}`}
-              </option>
-            ))}
-          </Select>
-          <span className={styles.phoneSort}>
-            {orderSelect}
-            <ArrowDownUp size={20} strokeWidth={1.75} aria-hidden="true" />
-          </span>
-        </div>
+        <>
+          <BedSquares
+            counts={{ ready: kinds.ready, prep: kinds.prep, free: 0, use: kinds.use, closed: kinds.closed }}
+            tag={bedSquaresTag(unit)}
+            notes={bedSquaresNotes({ pulled: kinds.pulled, closed: kinds.closed })}
+            figure="lg"
+            className={redesign.phoneSquares}
+            testId="ward-board-squares"
+          />
+          {/* Wave 4 (notes 10, A5-09): kit chips (40 px) and a 44 px sort button replace the two
+              browser selects, 16 px clear of the sheet edge. */}
+          <div className={redesign.phoneBar}>
+            <Segmented<BoardFilter>
+              label="Show"
+              size="md"
+              value={bedFilter}
+              onChange={chooseFilter}
+              items={BOARD_FILTERS.map((filter) => ({
+                id: filter,
+                label: filter === "all" ? "All" : BOARD_FILTER_LABELS[filter],
+                count: countText(filter),
+              }))}
+            />
+            <Menu
+              label="Order the beds"
+              align="end"
+              items={BOARD_ORDERS.map((order) => ({
+                id: order,
+                label: BOARD_ORDER_LABELS[order],
+                checked: order === bedOrder,
+                checkable: "radio" as const,
+                onSelect: () => setBedOrder(order),
+              }))}
+              trigger={(props) => (
+                <button {...props} type="button" className={redesign.phoneSortButton} aria-label="Order the beds">
+                  <ArrowDownUp size={20} strokeWidth={1.75} aria-hidden="true" />
+                </button>
+              )}
+            />
+          </div>
+        </>
       ) : (
         // Final polish (31 Oct 2026): the filters as the kit's segmented control and Order as the
         // kit's select, as the other redesigned pages, in place of the board's black pills.
