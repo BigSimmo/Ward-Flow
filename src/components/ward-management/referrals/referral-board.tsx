@@ -327,7 +327,7 @@ export function ReferralBoard({
 
   // Audit 24-1 B-03: the queued referral on screen, by id and name, so one decided at another desk
   // closes with a notice naming them rather than handing the panel to the next person in the queue.
-  const [watchedReferral, setWatchedReferral] = useState<{ id: string; name: string }>();
+  const [watchedReferral, setWatchedReferral] = useState<{ id: string; name: string; since: number }>();
   const [decidedHereId, setDecidedHereId] = useState<string>();
   const [leftNotice, setLeftNotice] = useState<string>();
 
@@ -424,7 +424,10 @@ export function ReferralBoard({
       setSelectedReferralId(null);
       // R-BEDS-15: this desk's own decline reads as its own; another desk's names that desk.
       const left = referrals.find((referral) => referral.id === watchedReferral.id);
-      const arm = left?.destinations.findLast((addressing) => addressing.decidedAt !== undefined);
+      // Only a decision made after it was chosen, so an earlier decline is never named as the reason it left.
+      const arm = left?.destinations.findLast(
+        (addressing) => addressing.decidedAt !== undefined && addressing.decidedAt > watchedReferral.since,
+      );
       const clock = arm?.decidedAt !== undefined ? formatInstant(arm.decidedAt) : undefined;
       const armUnit = units.find(
         (unit) =>
@@ -443,7 +446,14 @@ export function ReferralBoard({
     setWatchedReferral(undefined);
   } else if (selectedInQueue) {
     if (watchedReferral?.id !== selectedInQueue.id)
-      setWatchedReferral({ id: selectedInQueue.id, name: nameOf(selectedInQueue) });
+      setWatchedReferral({
+        id: selectedInQueue.id,
+        name: nameOf(selectedInQueue),
+        since: Math.max(
+          -Infinity,
+          ...selectedInQueue.destinations.map((addressing) => addressing.decidedAt ?? -Infinity),
+        ),
+      });
   } else if (watchedReferral) {
     setWatchedReferral(undefined);
   }

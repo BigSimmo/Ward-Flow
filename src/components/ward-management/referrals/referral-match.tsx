@@ -963,8 +963,8 @@ export function ReferralMatchView({
         <span className={ph.who}>
           <span className={ph.nm}>{c.unit.name}</span>
           <span className={ph.sub}>
-            {/* "Travel time not recorded" is said once above the list, so a row names a band only when it has one. */}
-            {bandOf.get(c.unit.id) ? `${bandOf.get(c.unit.id)} · ` : ""}
+            {/* When no ward has a travel time, "Travel time not recorded" is said once above the list instead. */}
+            {everyCandidateUnrecorded ? "" : `${bandOf.get(c.unit.id) ?? NOT_RECORDED_LABEL} · `}
             {kind === "stale"
               ? staleCountWords(c.unit, now)
               : placementFit(c.verdict).kind === "not_suitable"
