@@ -21,7 +21,7 @@ import styles from "./ward-shared-save-status.module.css";
 /** Offline with saves waiting on this page (Tier 1 item 1). "Held" is only for a leave bed (D-85). */
 function waitingMessage(waiting: number): string {
   // ST7 (design audit, 5 Nov 2026): every offline line starts "You're offline." (DESIGN-SYSTEM §6).
-  return `You're offline. ${waiting === 1 ? "1 change is" : `${waiting} changes are`} waiting on this page and will send by themselves when you're back online.`;
+  return `You're offline. ${waiting === 1 ? "1 change is waiting on this page and will send by itself" : `${waiting} changes are waiting on this page and will send by themselves`} when you're back online.`;
 }
 
 const RELOAD_WARNING = "Not confirmed yet. Do not reload: reloading now would lose this action. Press Retry first.";
