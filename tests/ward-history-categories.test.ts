@@ -47,24 +47,22 @@ describe("History category table (D-222, item 10)", () => {
     expect(demoOnly).toEqual(["ADVANCE_CLOCK", "RESET_SCENARIO", "SET_SCENARIO"]);
   });
 
-  it("agrees with today's classifier on every type it already writes", () => {
-    let writtenToday = 0;
+  it("classifies every type the table does not exclude, with the table's own category", () => {
     for (const type of EVENT_TYPES) {
-      const today = classifyAuditEvent(bare(type));
-      if (today === null) continue;
-      writtenToday += 1;
-      expect(AUDIT_CATEGORY[type], type).toBe(today);
+      const row = AUDIT_CATEGORY[type];
+      expect(classifyAuditEvent(bare(type)), type).toBe(isHistoryExclusion(row) ? null : row);
     }
-    // 56 types write today; three of them (the accepts and the pull) only with an override, and the
-    // raise only with a legal form, so a bare event reaches 52 of them.
-    expect(writtenToday).toBe(52);
   });
 
   it("keeps the four refined events refined, with the table as their plain fallback", () => {
-    for (const type of REFINED_HISTORY_EVENT_TYPES) expect(classifyAuditEvent(bare(type)), type).toBeNull();
+    for (const type of REFINED_HISTORY_EVENT_TYPES)
+      expect(classifyAuditEvent(bare(type)), type).toBe(AUDIT_CATEGORY[type]);
     expect(classifyAuditEvent({ ...bare("PULL_PATIENT"), overrideReason: "x" } as unknown as WardFlowEvent)).toBe(
       "override",
     );
+    expect(
+      classifyAuditEvent({ ...bare("RAISE_REFERRAL"), draft: { legalFormCode: "1A" } } as unknown as WardFlowEvent),
+    ).toBe("legal-form");
     expect(AUDIT_CATEGORY.PULL_PATIENT).toBe("pulled-bed");
     expect(AUDIT_CATEGORY.ACCEPT_IN_PRINCIPLE).toBe("referral-answer");
     expect(AUDIT_CATEGORY.ACCEPT_REFERRAL).toBe("referral-answer");

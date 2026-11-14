@@ -51,6 +51,7 @@ import {
 } from "../../src/components/ward-management/ward-flow-reducer";
 import { isValidSharedWardFlowState } from "../../src/components/ward-management/ward-shared-state-validation";
 import { checkSyntheticPayload } from "../../src/lib/synthetic-data-guard";
+import { boundAudit, PERSISTED_AUDIT_EVENTS } from "../../src/components/ward-management/ward-audit";
 import {
   SITE_FEATURE_SWITCH_ROLE,
   siteFeatureSwitchRefusal,
@@ -130,26 +131,10 @@ export function demoOnlyCommand(value: unknown): boolean {
 }
 
 /**
- * The newest audit entries kept in the saved workspace. The database audit table is the full
- * record; the workspace copy only feeds the on-screen views, and an unbounded copy eventually
- * passes the 8 MB row limit so every save fails. Entries an audit review names are always kept,
- * and so are this scenario's newest record-access receipts, because an open record is read
- * against its receipt.
+ * The newest audit entries kept in the saved workspace: the same bound the reducer keeps
+ * (`boundAudit`, `ward-audit.ts`, D-222). The database audit table is the full record.
  */
-export const PERSISTED_AUDIT_EVENTS = 1000;
-export function boundAudit(state: WardFlowState): WardFlowState {
-  const excess = state.auditEvents.length - PERSISTED_AUDIT_EVENTS;
-  if (excess <= 0) return state;
-  const kept = new Set(state.auditReviews.map((review) => review.eventId));
-  state.auditEvents
-    .filter((entry) => entry.category === "record-access" && entry.generation === state.worldGeneration)
-    .slice(-PERSISTED_AUDIT_EVENTS)
-    .forEach((entry) => kept.add(entry.id));
-  return {
-    ...state,
-    auditEvents: state.auditEvents.filter((entry, index) => index >= excess || kept.has(entry.id)),
-  };
-}
+export { PERSISTED_AUDIT_EVENTS, boundAudit };
 
 /**
  * Closed records older than this leave the live workspace for the archive table (Josh, 25 Oct
@@ -943,7 +928,7 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date, op
     const partialReferral =
       event.type === "REFER_TO_UNITS" &&
       rawNext.auditEvents
-        .slice(world.state.auditEvents.length)
+        .filter((audit) => audit.sequence > world.state.auditSequence)
         .some(
           (audit) =>
             (audit.category === "referral" || audit.category === "override") &&
@@ -974,7 +959,10 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date, op
   const next = serialise({ ...rawNext, rejections: [] });
   if (!isValidSharedWardFlowState(next)) throw new Error("invalid-command");
   const reset = next.worldGeneration !== world.state.worldGeneration;
-  const domainAudit = reset ? next.auditEvents : next.auditEvents.slice(world.state.auditEvents.length);
+  // By sequence, not position: the day keeps only its newest entries, so a full day's length stays put.
+  const domainAudit = reset
+    ? next.auditEvents
+    : next.auditEvents.filter((entry) => entry.sequence > world.state.auditSequence);
   const saved = boundAudit(next);
   if (saved !== next && !isValidSharedWardFlowState(saved)) throw new Error("invalid-command");
   return {

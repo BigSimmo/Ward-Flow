@@ -63,6 +63,7 @@ import {
   actionLabels,
   actor,
   categoryLabels,
+  isReviewableEvent,
   outcomeLabels,
   readGovernanceEvents,
   reviewLabels,
@@ -206,7 +207,7 @@ export function GovernanceWorkbench(props: WorkbenchProps) {
     if (adminDesk) return "review";
     if (askedTab === "registers") return "registers";
     const read = readGovernanceEvents(props.api);
-    const waiting = read?.status === "allowed" && read.value.some((event) => event.category !== "review");
+    const waiting = read?.status === "allowed" && read.value.some(isReviewableEvent);
     return waiting ? "review" : "gaps";
   });
   const shownTab = adminDesk && tab !== "review" && tab !== "audit" ? "review" : tab;
@@ -308,7 +309,7 @@ function GovernanceSession({
     : events;
   const historyFor = reviewHistoryLookup(reviews);
   const reviewState = (event: AuditEvent) => historyFor(event).at(-1)?.decision ?? "unreviewed";
-  const reviewable = rows.filter((event) => event.category !== "review");
+  const reviewable = rows.filter(isReviewableEvent);
   const toReview = reviewable.filter((event) => reviewState(event) !== "reviewed").reverse();
   const reviewedCount = reviewable.filter((event) => reviewState(event) === "reviewed").length;
   const followUp = reviewable.filter((event) => reviewState(event) === "follow-up-required").length;
@@ -318,7 +319,7 @@ function GovernanceSession({
       (event) =>
         (category === "all" || event.category === category) &&
         (outcome === "all" || event.outcome === outcome) &&
-        (reviewFilter === "all" || (event.category !== "review" && reviewState(event) === reviewFilter)),
+        (reviewFilter === "all" || (isReviewableEvent(event) && reviewState(event) === reviewFilter)),
     )
     .reverse();
   // On a phone or a portrait tablet the event opens over the list, so nothing opens unasked there.
@@ -372,7 +373,7 @@ function GovernanceSession({
   const reviewSettled =
     pending !== null && pending.status !== "pending" && (pending.status !== "accepted" || reviewAttempt !== undefined);
   const reviewPending = pending !== null && !reviewSettled;
-  const canReview = allowed && selected !== null && selected.category !== "review" && !reviewPending;
+  const canReview = allowed && selected !== null && isReviewableEvent(selected) && !reviewPending;
 
   // Undo (pass 2 engine): once a review is confirmed, a toast offers Undo for a few seconds.
   // Undo dispatches `UNDO_AUDIT_REVIEW` with the new review's id; a refusal shows its reason.
