@@ -226,6 +226,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-201](#d-201-overnight-merging-without-josh-13-november-2026)                                                                                         | Overnight merging without Josh                                                         | Active                                           |
 | [D-202](#d-202-joint-go-summary-recommendations-14-november-2026)                                                                                       | Joint go summary recommendations                                                       | Active                                           |
 | [D-204](#d-204-a-signed-triage-shows-the-desks-name-14-november-2026)                                                                                   | A signed triage shows the desk's name                                                  | Active                                           |
+| [D-206](#d-206-codeql-storage-alerts-are-false-positives-for-the-demo-14-november-2026)                                                                 | CodeQL storage alerts are false positives for the demo                                 | Active                                           |
 | [D-207](#d-207-fit-to-travel-recorded-as-not-cleared-and-the-clinical-go-14-november-2026)                                                              | Fit to travel: not cleared, and the clinical go                                        | Active                                           |
 
 ---
@@ -2533,9 +2534,16 @@ is inferred.
 - **Still open:** the words for fit to travel recorded as "Not cleared" (go question 2). The held clinical PR keeps its hold until Josh says "lift the hold".
 - **Boundary:** synthetic data only. No clinical value, threshold or rule changes. Built in the held clinical PR (#1656).
 
+## D-206. CodeQL storage alerts are false positives for the demo (14 November 2026)
+
+- **Date:** 14 November 2026, 7:15 AM AWST (13 November, 23:15 UTC). D-203 is claimed by open PR #1659. D-205 is claimed by open PR #1659. **Decided by:** Josh, in the Fixes thread ("Go ahead with recommendations"), on the recommendation to dismiss these alerts.
+- **Decision:** the CodeQL "clear-text storage of sensitive information" alerts #35, #36, #37, #39, #40, #41, #50 and #51, and the "incomplete string escaping" alert #30, are dismissed on GitHub as false positives with the note "synthetic demo data only; revisit in privacy review before real data". Every other alert raised on PR C (#1660) is fixed in code in PR #1661.
+- **Why:** the prototype keeps its synthetic demo day, drafts, "since last look" snapshots, chosen service and mockup device in the browser's session or local storage by design; nothing stored is a password, token or real patient record. For #30, escaping backslashes would print doubled backslashes inside the code spans of `docs/skipped-tests-inventory.md`.
+- **Follow-up:** the privacy review required before any real data covers what the browser stores, for how long, and on shared ward PCs. A dismissal can be reopened.
+
 ## D-207. Fit to travel recorded as not cleared, and the clinical go (14 November 2026)
 
-- **Date:** 14 November 2026, 7:12 AM AWST (13 November, 23:12 UTC). D-205 is claimed by open PR #1659. D-206 is claimed by open PR #1661. **Decided by:** Josh, in the Ward Flow project chat: "1. Lift the hold", then "Fit to travel: not cleared" in answer to the coordinator's question on the words for go question 2, and "Go ahead with recommendations" in the clinical PR's thread.
+- **Date:** 14 November 2026, 7:12 AM AWST (13 November, 23:12 UTC). D-205 is claimed by open PR #1659. **Decided by:** Josh, in the Ward Flow project chat: "1. Lift the hold", then "Fit to travel: not cleared" in answer to the coordinator's question on the words for go question 2, and "Go ahead with recommendations" in the clinical PR's thread.
 - **Decision:** when medical clearance is recorded as "Not cleared", the fit to travel check at booking, Mark handover ready, collection and arrival reads "Fit to travel: not cleared", and a saved reason names it the same way. "Fit to travel not recorded" stays for a journey with no clearance recorded. Both still ask for a reason and never block (D-187 item 10, D-189 item 9(e)). This settles go question 2.
 - **Clinical go:** Josh lifted the hold on the clinical PR (#1656). It may merge once its required checks pass. Review questions 2, 4 and 9 and the items labelled "not signed", "to verify" or "not stated" stay open for the clinical sitting.
 - **Boundary:** synthetic data only. No clinical value or threshold changes. Built in #1656.

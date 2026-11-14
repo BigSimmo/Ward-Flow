@@ -176,7 +176,7 @@ export function collectFacts(root = ROOT) {
   ];
 }
 
-const escapeCell = (text) => String(text).replace(/\|/gu, "\\|");
+const escapeCell = (text) => String(text).replace(/\\/gu, "\\\\").replace(/\|/gu, "\\|");
 
 export function renderFactsDoc(facts, terms) {
   const database = facts.find((f) => f.name === "database-provider")?.value ?? "";

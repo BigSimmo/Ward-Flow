@@ -33,9 +33,14 @@ export async function createWardPwaProxy(baseURL: string) {
       response.on("close", () => held.delete(response));
       return;
     }
+    // Only the path comes from the request: the host and port stay the runner's loopback app, so an
+    // absolute-form request line cannot send the proxy anywhere else (CodeQL SSRF, PR C follow-up).
+    const target = new URL(request.url ?? "/", "http://localhost");
     const forwarded = http.request(
-      new URL(request.url ?? "/", upstreamOrigin),
       {
+        hostname: upstreamOrigin.hostname,
+        port: upstreamOrigin.port,
+        path: `${target.pathname}${target.search}`,
         method: request.method,
         headers: { ...request.headers, host: upstreamOrigin.host },
       },
