@@ -161,7 +161,7 @@ describe("ED detail consumes released executive figures", () => {
     expect(pause).toHaveBeenCalledOnce();
     fireEvent.click(screen.getByTestId("ward-statistics-export"));
     const lines = vi.mocked(downloadCsv).mock.calls.at(-1)![1];
-    expect(lines).toContainEqual(["Open ED movements", 10]);
+    expect(lines).toContainEqual(["ED journeys open", 10]);
     expect(lines).toContainEqual(["Still in ED", "not shown"]);
     expect(lines).toContainEqual(["In transit or recorded departure", "fewer than 5"]);
     expect(lines).toContainEqual(["Longest wait", "1d 1h"]);

@@ -104,7 +104,7 @@ function hoursLabel(minutes: number): string {
 export function StatisticsEdSwarm({
   rows,
   labelWidth = 168,
-  label = "Each open ED movement, by time since opening",
+  label = "Each person waiting in ED, by time since opening",
   testId = "ward-statistics-ed-swarm",
 }: {
   rows: readonly EdSwarmRow[];

@@ -175,7 +175,7 @@ function operationalMessage(id: Exclude<MessageId, "summary">, input: BedSummary
   const zone = input.zone ?? clockZoneLabel(false);
   const readyLine = `Ready beds: ${f.readyTotal} of ${f.beds}${f.pending > 0 ? `, ${f.pending} pending preparation` : ""}.`;
   const readyByServiceLine = `Ready by service: ${f.readyByService || "none"}.`;
-  const waitingLine = `Open ED movements: ${f.waiting.total}${f.waitingByService ? ` (${f.waitingByService})` : ""}.`;
+  const waitingLine = `ED journeys open: ${f.waiting.total}${f.waitingByService ? ` (${f.waitingByService})` : ""}.`;
   const stillLine = `Still in ED: ${f.waiting.stillInEd}. In transit or recorded departure: ${f.waiting.inTransit}.`;
   const longestLine = `Longest wait: ${f.longest ?? "none open"}.`;
   if (id === "escalation") {

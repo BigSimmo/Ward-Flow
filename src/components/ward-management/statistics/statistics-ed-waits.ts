@@ -9,6 +9,7 @@ import {
   VERY_LONG_WAIT_MINUTES,
 } from "@/components/ward-management/ward-operational-defaults";
 import type { Movement } from "@/components/ward-management/ward-model";
+import { inEdOver } from "@/components/ward-management/ward-shared-figures";
 
 /**
  * 🔴 **EVERY HEADLINE FIGURE ON THE ED STATISTICS SCREEN WAS COMPUTED INSIDE ITS OWN RENDER, AND
@@ -95,6 +96,42 @@ export function edWaitFigures(movements: readonly Movement[], edId: string, now:
 /** Journey reporting includes transport while the operational physical ED wait stays separate. */
 export function edJourneyWaitFigures(movements: readonly Movement[], edId: string, now: Instant): EdWaitFigures {
   return edPopulationFigures(movements, edId, now, (movement) => isOpen(movement) && isEdOriginJourney(movement));
+}
+
+/**
+ * WHAT STATISTICS SHOWS FOR ONE ED (D-220 item 3, Josh 14 Nov 2026): two populations, each named.
+ *
+ * - "ED journeys open" (`onTheList`, with `urgent`, `unplaced`, `departmentMovements` and
+ *   `allDepartmentMovements`): every open ED-origin journey, people in transit included, as
+ *   `edJourneyWaitFigures` counts.
+ * - Waiting in ED (`waitingInEd`, `waitingMovements`, `over8h`, `over24h`, `over48h`,
+ *   `longestWait`): people still in the department, as Waiting and the rail count them
+ *   (`edWaitFigures`). The over-8-hour and over-24-hour counts, the wait bands (`edWaitBands`), the
+ *   median and the longest wait read this population.
+ *
+ * Unlike `EdWaitFigures`, `waitingMovements` is NOT the list `onTheList` counts.
+ */
+export type EdStatisticsFigures = EdWaitFigures & {
+  /** People still in the department awaiting a bed: `waitingMovements.length`. */
+  readonly waitingInEd: number;
+  /** Of the people waiting in ED, those in the department for 8 hours or more. */
+  readonly over8h: number;
+};
+
+export function edStatisticsFigures(movements: readonly Movement[], edId: string, now: Instant): EdStatisticsFigures {
+  const journeys = edJourneyWaitFigures(movements, edId, now);
+  const waiting = edWaitFigures(movements, edId, now);
+  return {
+    ...journeys,
+    waitingInEd: waiting.onTheList,
+    waitingMovements: waiting.waitingMovements,
+    // Waiting's own "Over 8h" rule (`inEdOver`), so Statistics and Waiting cannot drift.
+    over8h: waiting.departmentMovements.filter((movement) => inEdOver(movement, now, ED_SEVERE_PRESSURE_WAIT_MINUTES))
+      .length,
+    over24h: waiting.over24h,
+    over48h: waiting.over48h,
+    longestWait: waiting.longestWait,
+  };
 }
 
 function edPopulationFigures(

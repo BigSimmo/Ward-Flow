@@ -124,11 +124,11 @@ describe("the network figures export (issue #618)", () => {
   it("words a small count of people for the executive and keeps beds exact", async () => {
     asDesk("coordinator");
     const exact = await networkFigures();
-    expect(figure(exact, "Open ED movements")).toBe("3");
+    expect(figure(exact, "ED journeys open")).toBe("3");
 
     asDesk("executive");
     const worded = await networkFigures();
-    expect(figure(worded, "Open ED movements")).toBe("fewer than 5");
+    expect(figure(worded, "ED journeys open")).toBe("fewer than 5");
     expect(figure(worded, "Still open")).toBe("fewer than 5");
     expect(figure(worded, "Beds")).toBe(figure(exact, "Beds"));
     expect(figure(worded, "Beds ready now")).toBe(figure(exact, "Beds ready now"));
