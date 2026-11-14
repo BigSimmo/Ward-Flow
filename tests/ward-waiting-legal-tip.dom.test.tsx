@@ -39,7 +39,7 @@ describe("P197 Waiting Legal column tip", () => {
     const tip = screen.getByTestId("tooltip");
     expect(tip.textContent).toMatch(
       new RegExp(
-        `^Form ${code}${title ? ` \\(${title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\)` : ""}(, End(s|ed) .+ as typed( · (within \\S+|passed))?)?$`,
+        `^Form ${code}${title ? ` \\(${title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\)` : ""}(, End(s|ed) .+?( · (within \\S+|passed))?)?$`,
       ),
     );
     expect(tip.textContent).not.toMatch(/\b(left|overdue)\b/);

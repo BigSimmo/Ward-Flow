@@ -1,6 +1,6 @@
 # Desk guide: Keys and interactions
 
-<!-- last-checked: 2026-10-31 -->
+<!-- last-checked: 2026-11-14 -->
 
 The keys Ward Flow answers to. Each line is copied from Help in the app, under Keyboard shortcuts.
 

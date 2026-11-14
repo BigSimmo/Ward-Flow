@@ -155,13 +155,13 @@ describe("legalDeadlineText (byte-for-byte — the wording the build contract's 
   it("states a real, upcoming deadline", () => {
     const movement = synthetic({ legalForm: { code: "4A", kind: "transport", dueAt: NOW + 90 } });
     // D-93 (31 Oct 2026): the typed time only, never "Form expires in 1h 30m".
-    expect(legalDeadlineText(movement, NOW)).toBe("Form expiry ends 12:12 as typed");
+    expect(legalDeadlineText(movement, NOW)).toBe("Form expiry ends 12:12");
   });
 
   it("states a real, passed deadline", () => {
     const movement = synthetic({ legalForm: { code: "4C", kind: "transfer", dueAt: NOW - 45 } });
     // D-93 (31 Oct 2026): the typed time only, never "Form expiry passed 45m ago".
-    expect(legalDeadlineText(movement, NOW)).toBe("Form expiry ended 09:57 as typed");
+    expect(legalDeadlineText(movement, NOW)).toBe("Form expiry ended 09:57");
   });
 
   it("uses the shortlist panel's exact wording for a structurally clockless form (1A, 3B, 3D), always paired with real elapsed time", () => {
@@ -371,7 +371,8 @@ describe("legal expiry reminders (item 13 synthetic demo, typed expiries only)",
     expect(summary).toEqual({ withinUrgent: 1, withinSoon: 2, urgentHours: 1, soonHours: 3 });
     const text = legalExpiryReminderText(summary);
     expect(text).toContain("Synthetic demo reminder: 3 recorded form expiries are close (1 within 1h, 2 within 3h).");
-    expect(text).toContain("not legally checked");
+    // D-218 (Josh, 14 Nov 2026): the "not legally checked" tail is gone; "Synthetic demo" stays.
+    expect(text).not.toContain("not legally checked");
     expect(text, "no Act section numbers on screen (D5)").not.toMatch(/\bs(?:ection)?\.?\s*\d/i);
     expect(legalExpiryReminderText({ withinUrgent: 0, withinSoon: 0, urgentHours: 1, soonHours: 3 })).toBeUndefined();
   });

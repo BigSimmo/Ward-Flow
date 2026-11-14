@@ -78,10 +78,30 @@ afterEach(() => {
 
 describe("output audit rendered wording", () => {
   it("labels bed totals as the wards actually captured in the snapshot", () => {
-    view.pack = pack();
+    const counts = { beds: 4, ready: 1, pulled: 0, occupied: 3, closed: 0, beingMadeReady: 0, onLeave: 0 };
+    view.pack = {
+      ...pack(),
+      wards: [
+        {
+          unitId: "synthetic-ward",
+          name: "Synthetic ward",
+          service: "Adult",
+          beds: 4,
+          counts,
+          pendingPreparation: 0,
+        },
+      ],
+      totals: { ...counts, pendingPreparation: 0 },
+    };
     render(<DowntimePackScreen />);
     expect(screen.getByRole("rowheader", { name: "Wards in this snapshot" })).toBeTruthy();
     expect(screen.queryByText("All wards")).toBeNull();
+  });
+
+  it("prints no bed figures for a desk that sees no ward (R-FIGS-8, D-214)", () => {
+    view.pack = pack();
+    render(<DowntimePackScreen />);
+    expect(screen.queryByRole("rowheader", { name: "Wards in this snapshot" })).toBeNull();
   });
 
   it.each([

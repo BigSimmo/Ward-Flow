@@ -228,7 +228,7 @@ export function heroHighlights(now: Instant, accessTarget: number): HeroHighligh
     { id: "tier1", label: "Tier 1", test: (m) => isOpen(m) && m.urgency === 1 },
     {
       id: "past",
-      label: `Past ${hours(accessTarget)}`,
+      label: `Over ${hours(accessTarget)}`,
       tone: "danger",
       // Audit 24-4 NA2-10 (25 Oct 2026): people still in an ED, as Waiting's "Over 24h" counts them.
       test: (m) => inEdOver(m, now, accessTarget),

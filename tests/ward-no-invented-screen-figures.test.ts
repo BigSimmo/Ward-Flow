@@ -157,12 +157,6 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     name: /^(?:CHART_\w+|MIDDAY_MINUTES|LATE_AFTERNOON_MINUTES)$/,
   },
   {
-    id: "perth-utc-offset",
-    why: "Western Australia's fixed UTC+8 offset (12 Oct 2026 site review, L7): a time-zone fact used to anchor day 0, not a clinical limit.",
-    file: /^ward-clock\.ts$/,
-    name: /^PERTH_UTC_OFFSET_MINUTES$/,
-  },
-  {
     id: "phone-alert-hold",
     why: "How long an officer or community phone alert id stays live so a failed delivery can be retried (D-80, 24 Oct 2026); never shown, not a limit.",
     file: /^ward-role-alerts\.ts$/,

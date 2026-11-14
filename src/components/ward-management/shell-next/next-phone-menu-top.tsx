@@ -58,7 +58,7 @@ export function NextPhoneMenuTop({
     referrals,
   );
   const rows = deskCapacityRows(access, units, admissions ?? [], bedReleases, bedAlerts);
-  const overLine = overLineLabel(rows);
+  const overLine = overLineLabel(rows, bedAlerts.services);
   const readyBeds = counts.capacity?.value ?? bedAlerts.totalFreeBeds;
   const note = cardScopeNote(rows, access, service);
   const body = (

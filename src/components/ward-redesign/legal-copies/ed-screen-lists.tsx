@@ -22,7 +22,6 @@ import { EdReferredPanel } from "@/components/ward-management/ed/ed-screen-refer
 import type { DepartmentTabKey } from "@/components/ward-management/ed/use-ed-screen-state";
 import { edStageLabel } from "@/components/ward-management/ed/ed-referral-status";
 import styles from "@/components/ward-management/ed/ed.module.css";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { typedTimeStanding } from "@/components/ward-redesign/legal-forms/typed-time-words";
 import legal from "./legal-copies.module.css";
@@ -439,14 +438,14 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
                       : standing.word
                         ? "warn"
                         : "quiet";
-                // The stamp keeps the typed clock time only; the words "as typed" sit in the line below.
+                // The stamp keeps the typed clock time only; the line below adds the warning word.
                 const stamp = due === null || due === undefined ? "no deadline" : formatInstantWithDay(due, now);
                 const typedLine =
                   due === null || due === undefined
                     ? undefined
                     : due < now
-                      ? `ended ${formatInstantWithDay(due, now)} as typed`
-                      : `ends ${formatInstantWithDay(due, now)} as typed${standing.word ? ` · ${standing.word}` : ""}`;
+                      ? `ended ${formatInstantWithDay(due, now)}`
+                      : `ends ${formatInstantWithDay(due, now)}${standing.word ? ` · ${standing.word}` : ""}`;
                 const patientInfo = resolveSubjectPatient(m, {
                   patients: registryPatients,
                   referrals,
@@ -472,14 +471,7 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
                       </span>
                       <span className={`${styles.lstWhy} ${legal.legalLine}`}>
                         {m.legalForm ? legalFormName(m.legalForm) : "Form"}
-                        {typedLine === undefined ? (
-                          ". No deadline is recorded against it."
-                        ) : (
-                          <>
-                            {` · ${typedLine} `}
-                            <LegalLimitsNotChecked variant="tag" />
-                          </>
-                        )}
+                        {typedLine === undefined ? ". No deadline is recorded against it." : ` · ${typedLine}`}
                       </span>
                     </span>
                     <span className={styles.lstEnd}>

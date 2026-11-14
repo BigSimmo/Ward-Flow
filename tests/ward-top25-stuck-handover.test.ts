@@ -52,6 +52,11 @@ describe("Top 25 item 12: stuck handover on the transport awaiting departure row
     expect(off.id).toBe(on.id);
   });
 
+  it("flags strictly after the target minute, as every timed rule does (R-HOME-14)", () => {
+    expect(row(awaitingDeparture(target), target)!.title).toBe("Transport awaiting departure");
+    expect(row(awaitingDeparture(target + 1), target)!.title).toBe("Handover waiting too long");
+  });
+
   it("threads through the shared task list", () => {
     const movement = awaitingDeparture(target + 30);
     const items = taskItems({ ...seeded, movements: [movement], stuckHandoverMinutes: target }, now);

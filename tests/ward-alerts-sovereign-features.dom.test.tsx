@@ -137,7 +137,7 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
     // D-93 (31 Oct 2026): legal form times only as typed. The row shows "Ended 09:42 as typed",
     // and the overdue duration this test used to pin is gone. The clock runs for every row, so a
     // pull or a decision target may rightly read "2d overdue"; the check is on the legal rows.
-    const legalRows = screen.getAllByText(/^Ended .+ as typed$/u).map((typed) => typed.closest("li")!);
+    const legalRows = screen.getAllByText(/^Ended .+$/u).map((typed) => typed.closest("li")!);
     expect(legalRows[0]).toBeVisible();
     for (const row of legalRows) {
       expect(within(row).queryByText(expected, { exact: true })).toBeNull();

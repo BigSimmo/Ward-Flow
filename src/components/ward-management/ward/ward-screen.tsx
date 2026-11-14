@@ -40,7 +40,7 @@ import {
   wardIntakeConstraintLabels,
 } from "@/components/ward-management/ward-change-reasons";
 import { dayOf, formatInstant, formatInstantWithDay, minuteOfDay } from "@/components/ward-management/ward-clock";
-import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import { CLINICAL_VALUES, isBedCountStale } from "@/components/ward-management/ward-clinical-values";
 import {
   BED_RELEASE_BLOCKED_FIGURE_LABEL,
   deriveAfternoonDischarges,
@@ -1907,7 +1907,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     stoppedHolds: heldAfterStop.length,
   });
   const readyByShiftEnd = releasesDueByShiftEnd(bedReleases, unit.id, now).length;
-  const bedCountsStale = now - unit.allocatable.confirmedAt > unit.allocatable.staleAfterMinutes;
+  const bedCountsStale = isBedCountStale(unit.allocatable.confirmedAt, now);
   // The ward switch lists the other wards on this site, or failing that in this health service.
   const accessibleUnits = units.filter((candidate) => candidate.id !== unit.id && canOpenHref(unitHref(candidate.id)));
   const siteUnits = accessibleUnits.filter((candidate) => candidate.siteCode === unit.siteCode);
@@ -2001,7 +2001,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         items={[
           {
             id: "stale",
-            label: `Bed counts older than ${durMinutes(unit.allocatable.staleAfterMinutes)}`,
+            label: `Bed counts older than ${durMinutes(CLINICAL_VALUES.bedCountFresh.value)}`,
             value: bedCountsStale ? 1 : 0,
             tone: bedCountsStale ? "warning" : undefined,
           },

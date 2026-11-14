@@ -1,0 +1,30 @@
+/*
+ * src/components/ward-management/arrival-identity-dialog.module.css
+ *
+ * R-MOVE-10 (Josh, 14 Nov 2026): the arrival identity check lists name, UMRN, date of birth with
+ * age, and where the person came from, label beside value.
+ */
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 16px;
+  margin: 0;
+}
+
+.facts dt {
+  color: var(--wf-ink-3);
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--wf-ink-1);
+}
+
+.name {
+  font-weight: 600;
+}
+
+.mono {
+  font-family: var(--wf-mono);
+}

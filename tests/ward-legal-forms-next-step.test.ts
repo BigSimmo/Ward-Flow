@@ -36,7 +36,7 @@ describe("nextStep", () => {
     const step = nextStep(move({ legalForm: { code: "1A", dueAt: NOW - 10 }, formedAt: undefined }), NOW);
     expect(step.action).toBe("extend");
     expect(step.title).toBe("Extend or record the next form");
-    expect(step.detail).toMatch(/^Form 1A ended .* as typed\.$/);
+    expect(step.detail).toMatch(/^Form 1A ended \S+\.$/); // D-218: no "as typed"
   });
 
   it("asks for the time written before anything else still to record", () => {

@@ -9,7 +9,6 @@
 import type { ReactNode } from "react";
 import { Check } from "lucide-react";
 import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { typedTimeStanding } from "@/components/ward-redesign/legal-forms/typed-time-words";
 import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import { JourneyStrip, PhoneSheet, StatusGlyph } from "@/components/wf";
@@ -186,7 +185,7 @@ export function renderEdPersonSheet(
         </div>
         {movement.legalForm ? (
           <div>
-            <dt>Form due (as written)</dt>
+            <dt>Form due</dt>
             <dd className={legal.legalValue}>
               {movement.legalForm.dueAt === undefined ? (
                 "Not written"
@@ -198,8 +197,7 @@ export function renderEdPersonSheet(
                   {`${movement.legalForm.dueAt < now ? "Ended" : "Ends"} ${formatInstantWithDay(
                     movement.legalForm.dueAt,
                     now,
-                  )} as typed${movement.legalForm.dueAt >= now && typedStanding.word ? ` · ${typedStanding.word}` : ""}`}{" "}
-                  <LegalLimitsNotChecked variant="tag" />
+                  )}${movement.legalForm.dueAt >= now && typedStanding.word ? ` · ${typedStanding.word}` : ""}`}
                 </>
               )}
             </dd>

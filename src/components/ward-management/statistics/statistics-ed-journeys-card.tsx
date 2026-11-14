@@ -127,7 +127,7 @@ export function StatisticsEdJourneysCard({
         <Foot
           link={canOpen(STATISTICS_EDS_HREF) ? <MoreLink href={STATISTICS_EDS_HREF}>Open EDs</MoreLink> : undefined}
         >
-          <span id="edFilterCount">{`Marked from ${hoursLabel(ED_ELEVATED_PRESSURE_WAIT_MINUTES)} and ${hoursLabel(ED_SEVERE_PRESSURE_WAIT_MINUTES)}`}</span>
+          <span id="edFilterCount">{`Marked from ${hoursLabel(ED_ELEVATED_PRESSURE_WAIT_MINUTES)} and ${hoursLabel(ED_SEVERE_PRESSURE_WAIT_MINUTES)}. Counts every open movement, including people whose bed is already given, so it can be higher than Waiting.`}</span>
         </Foot>
       }
     >

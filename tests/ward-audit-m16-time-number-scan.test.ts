@@ -318,18 +318,11 @@ const ALLOWED: readonly Allowed[] = [
     n: 1,
     why: "an alternative figure listed for Josh to compare, not in use",
   },
-  { file: "ward-clock.ts", expr: "8 * 60", n: 1, why: "the WA time zone offset (UTC+8, no daylight saving)" },
   {
     file: "ward-eligibility.ts",
     expr: "minutes < 120",
     n: 1,
     why: "wording: the bed count's age reads in minutes under two hours, then whole hours (H8, D-210)",
-  },
-  {
-    file: "ward-flow-scenario-file.ts",
-    expr: "8 * 60",
-    n: 1,
-    why: "the WA time zone offset, for a saved file's Perth date",
   },
   {
     file: "ward-operational-defaults.ts",

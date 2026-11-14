@@ -4,10 +4,11 @@
  * read and show a time a person typed. Nothing here computes a legal limit (rule D5).
  */
 
-import { perthDateText } from "@/components/ward-management/ward-clock";
+import { perthDateText, perthDateTimeLocal } from "@/components/ward-management/ward-clock";
+import { WARD_TIME_ZONE } from "@/lib/ward-time-zone";
 
 const perthDateTime = new Intl.DateTimeFormat("en-GB", {
-  timeZone: "Australia/Perth",
+  timeZone: WARD_TIME_ZONE,
   year: "numeric",
   month: "2-digit",
   day: "2-digit",
@@ -29,7 +30,7 @@ export function formatStatutoryDateTime(d: Date): string {
     hour: "2-digit",
     minute: "2-digit",
     hourCycle: "h23",
-    timeZone: "Australia/Perth",
+    timeZone: WARD_TIME_ZONE,
   });
   return `${dayStr}, ${timeStr}`;
 }
@@ -51,7 +52,8 @@ export function parseDateTimeInput(dateStr: string, timeStr: string): Date | nul
   const [year, month, day] = dateStr.split("-").map(Number);
   const [hours, minutes] = (timeStr || "00:00").split(":").map(Number);
   if (year < 100 || month < 1 || month > 12 || day < 1 || day > 31 || hours > 23 || minutes > 59) return null;
-  // Perth observes UTC+08:00 throughout the year. Interpret the typed wall time there.
-  const parsed = new Date(Date.UTC(year, month - 1, day, hours - 8, minutes));
+  // Interpret the typed wall time in the app's zone (`WARD_TIME_ZONE`, Perth by default).
+  const parsed = perthDateTimeLocal(`${dateStr}T${timeStr || "00:00"}`);
+  if (!parsed) return null;
   return toDateInputValue(parsed) === dateStr && toTimeInputValue(parsed) === (timeStr || "00:00") ? parsed : null;
 }

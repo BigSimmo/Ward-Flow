@@ -799,7 +799,7 @@ describe("WardGlobalSearch inside the provider (search review)", () => {
   it("answers 'over 24 hours' with the people waiting that long, ahead of every other group", () => {
     renderProvided("over 24 hours");
     const heading = screen.getByTestId("ward-global-search-group-answers");
-    expect(heading).toHaveTextContent("Waiting past 24 hours");
+    expect(heading).toHaveTextContent("Waiting over 24 hours");
     expect(screen.getAllByTestId(/^ward-global-search-group-/)[0]).toBe(heading);
     expect(screen.getByTestId("ward-global-search-kind-answers")).toBeEnabled();
   });

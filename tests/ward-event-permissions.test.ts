@@ -723,3 +723,19 @@ describe("PATIENT_ARRIVED destination ward permissions", () => {
     expect(unchangedMovement.stage).toBe("moving");
   });
 });
+
+describe("R-STRUCT-4 (Josh, 14 Nov 2026): the three refusals the signed rules allow are settled", () => {
+  it("the site bed manager confirms bed numbers (AK-A-03) but makes no referral decision", () => {
+    expect(EVENT_ROLE.CONFIRM_CAPACITY).toContain("bed_manager");
+    expect(EVENT_ROLE.DECLINE).not.toContain("bed_manager");
+    expect(EVENT_ROLE.ACCEPT_IN_PRINCIPLE).not.toContain("bed_manager");
+  });
+
+  it("the ED and the accepting ward save an arrival plan", () => {
+    expect(EVENT_ROLE.SET_ARRIVAL_DETAILS).toEqual(expect.arrayContaining(["ed", "ward"]));
+  });
+
+  it("the ward and the coordinator record a planned admission's arrival", () => {
+    expect(EVENT_ROLE.CONVERT_PLANNED_ADMISSION).toEqual(expect.arrayContaining(["ward", "coordinator"]));
+  });
+});

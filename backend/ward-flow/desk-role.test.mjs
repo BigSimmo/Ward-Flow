@@ -51,3 +51,30 @@ test("a service coordinator's command is recorded as the coordinator's too, not 
   assert.equal(engine.deskCommand(service, demo), demo);
   assert.notEqual(engine.commandRefusal(world, service, demo, at), null);
 });
+
+test("a site bed manager confirms a ward's beds at its site as itself, and the ward's role is not lent to it", async () => {
+  // Desks-R2-1 (AK-A-03: the site bed manager confirms beds). The answer page sent the confirm as
+  // the ward, which the server refused; sent under the desk's own role it is accepted.
+  const engine = await import("./dist/engine.mjs");
+  const at = new Date("2026-10-07T10:00:00Z");
+  const world = engine.seedWorld(at);
+  const unit = world.state.units.find((candidate) => candidate.siteCode === "RPH");
+  assert.ok(unit, "a synthetic Royal Perth ward");
+  const bedManager = engine.parseAccess("bed_manager", { kind: "site", siteCode: "RPH" });
+  assert.ok(bedManager, "a synthetic site bed manager desk");
+  const confirm = {
+    type: "CONFIRM_CAPACITY",
+    unitId: unit.id,
+    actingUnitId: unit.id,
+    value: 0,
+    expectedRevision: unit.allocatable.revision ?? 0,
+  };
+  const asItself = engine.deskCommand(bedManager, { ...confirm, role: "bed_manager" });
+  assert.equal(engine.commandRefusal(world, bedManager, asItself, at), null);
+  const asWard = engine.deskCommand(bedManager, { ...confirm, role: "ward" });
+  assert.equal(engine.commandRefusal(world, bedManager, asWard, at), "This change is not part of your role.");
+  const other = world.state.units.find((candidate) => candidate.siteCode && candidate.siteCode !== "RPH");
+  assert.ok(other, "a synthetic ward at another site");
+  const elsewhere = { ...confirm, role: "bed_manager", unitId: other.id, actingUnitId: other.id };
+  assert.notEqual(engine.commandRefusal(world, bedManager, elsewhere, at), null);
+});

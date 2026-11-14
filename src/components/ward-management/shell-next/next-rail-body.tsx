@@ -361,7 +361,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   // shell-next: whose figures these are, the bed alert rows for the desk's own place, and pins.
   const countNote = countScopeNote(deskAccess, service);
   const capacityRows = deskCapacityRows(deskAccess, units, admissions ?? [], bedReleases, bedAlerts);
-  const overLine = overLineLabel(capacityRows);
+  const overLine = overLineLabel(capacityRows, bedAlerts.services);
   const firstRow = capacityRows[0];
   const capacityRowsLabel = capacityRowsSpoken(capacityRows);
   const readyBeds = counts.capacity?.value ?? bedAlerts.totalFreeBeds;

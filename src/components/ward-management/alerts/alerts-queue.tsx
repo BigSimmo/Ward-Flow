@@ -22,7 +22,8 @@ import {
   type AlertGroup,
   type AlertSubject,
 } from "./alerts-model";
-import { UMRN_NOT_RECORDED } from "@/components/ward-management/ward-patient-resolver";
+import { UMRN_NOT_RECORDED, UMRN_NOT_SHOWN } from "@/components/ward-management/ward-patient-resolver";
+import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import styles from "./alerts.module.css";
 import homeStyles from "@/components/ward-management/coordinator/home-list.module.css";
 import parts from "./alerts-screen-parts.module.css";
@@ -379,11 +380,17 @@ export function AlertPhoneRowLayout({
 
 /** A patient with their UMRN; a missing UMRN reads as plain words, not in bold mono as if it were a number. */
 export function AlertWho({ name, umrn }: { name: string; umrn: string | undefined }) {
+  // Stress test CS-7 (14 Nov 2026): the transport officer's copy holds no record number by design
+  // (role access plan, 15 Oct 2026), so a blank there is withheld, not unrecorded.
+  const withheld = useRouteRole() === "officer";
+  const missing = !umrn || umrn === UMRN_NOT_RECORDED || umrn === UMRN_NOT_SHOWN;
   return (
     <span className={styles.who}>
       <strong className={styles.name}>{name}</strong>{" "}
-      {!umrn || umrn === UMRN_NOT_RECORDED ? (
-        <span className={parts.umrnMissing}>{UMRN_NOT_RECORDED}</span>
+      {missing ? (
+        <span className={parts.umrnMissing}>
+          {umrn === UMRN_NOT_SHOWN || (withheld && !umrn) ? UMRN_NOT_SHOWN : UMRN_NOT_RECORDED}
+        </span>
       ) : (
         <strong className={styles.umrn}>{umrn}</strong>
       )}

@@ -320,7 +320,6 @@ export function HandoverPrintSheet({
         live board before acting.
       </span>
       <span className={styles.spacer} />
-      <span>Form times as typed, not legally checked</span>
       <span>Ward Flow prototype</span>
     </footer>
   );

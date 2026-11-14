@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Badge, Button, StatusGlyph } from "@/components/wf";
+import { Button, StatusGlyph } from "@/components/wf";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
@@ -73,9 +73,6 @@ export function CheckFoot({ entry }: { entry: DirectoryEntry }) {
     <div className={`${styles.recordFoot} ${own.foot}`} data-testid="ward-on-call-check-foot">
       <StatusGlyph tone={due ? "warning" : "success"} size={10} />
       <span className={styles.recordText}>Synthetic · {lastCheckText(check)}</span>
-      <Badge size="sm" variant="plain">
-        Not verified
-      </Badge>
       {note ? (
         <span className={own.note} data-testid="ward-on-call-not-checked">
           {note}

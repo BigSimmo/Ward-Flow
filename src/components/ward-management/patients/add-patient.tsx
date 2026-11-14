@@ -60,6 +60,7 @@ import {
   useIsPhone,
   useOptionalToast,
 } from "@/components/wf";
+import { realIdentifierWarning } from "../ward-real-identifier-guard";
 import { useDirtyStateGuard } from "../use-dirty-state-guard";
 import {
   AddPatientMoreDetails,
@@ -733,6 +734,15 @@ export function AddPatientForm() {
     },
   ];
 
+  const identifierWarning = realIdentifierWarning([
+    draft.umrn,
+    extras.medicareNumber,
+    extras.mobilePhone,
+    extras.otherPhone,
+    extras.nextOfKinPhone,
+    extras.supportPersonPhone,
+    extras.gpPhone,
+  ]);
   const duplicateCheck = (
     <section
       className={styles.dupInline}
@@ -1055,6 +1065,12 @@ export function AddPatientForm() {
                   />
                 </Field>
               </CardBody>
+              {/* R-STRUCT-35: a quiet words-only warning, never a block. */}
+              {identifierWarning ? (
+                <p className={styles.dupMeta} role="note" data-testid="ward-add-patient-real-identifier">
+                  {identifierWarning}
+                </p>
+              ) : null}
               {/* Redesign: the duplicate check runs under the identity fields as they are typed. */}
               {duplicateCheck}
             </Card>

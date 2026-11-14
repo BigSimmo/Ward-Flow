@@ -54,3 +54,13 @@ export function psychReviewStage(movement: Movement, now: Instant, minutesInDepa
 function waitText(minutes: number): string {
   return minutes < 1 ? "" : ` · ${splitDuration(minutes).replace(" ", "\u00a0")}`;
 }
+
+/**
+ * R-STRUCT-28 (Josh, 14 Nov 2026; Desks-R4-3): the psychiatric review status in one word set, for the
+ * row sheet and its header alike. "Awaiting review" only once a review has been asked for, so a nurse
+ * never reads that a psychiatrist is coming when no one was asked.
+ */
+export function psychReviewStatusWords(movement: Pick<Movement, "examination" | "psychReview">): string {
+  if (movement.examination) return "Examination recorded";
+  return movement.psychReview ? "Awaiting review" : "Not asked yet";
+}

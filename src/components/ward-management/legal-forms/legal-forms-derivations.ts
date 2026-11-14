@@ -1,6 +1,7 @@
 import type { WardChipLevel } from "@/components/ward-management/ward-chip";
 import {
   clockState,
+  dayOf,
   type DueSoonThresholds,
   type Instant,
   isClockBreached,
@@ -17,6 +18,7 @@ import {
   formProgressionPhrase,
   legalFormEnd,
   NEXT_FORM_TO_RECORD,
+  ORDER_ENDING_FORM_CODE,
 } from "./legal-form-progression";
 export { currentLegalDueAt } from "./legal-form-progression";
 import { typedClock, typedTimePhrase } from "./legal-time-as-typed";
@@ -57,6 +59,21 @@ import { typedClock, typedTimePhrase } from "./legal-time-as-typed";
  *  part of this population — see the scope sentence the screen renders beside it. */
 export function legalFormPopulation(movements: Movement[]): Movement[] {
   return movements.filter(isOpen).filter((movement) => movement.legalForm !== undefined);
+}
+
+/**
+ * R-LEGAL-12 (Josh, 14 Nov 2026): how many people on the list had their order end today, so the
+ * "on a form" figure can say why it dropped ("· 1 ended today"). An order ends today when a Form 3E
+ * written today is the form on file. A form a person recorded as ended carries no time, so it is
+ * not counted here. Display only; the day is the clock's day (`dayOf`), as every "today" line reads.
+ */
+export function legalOrdersEndedToday(movements: Movement[], now: Instant): number {
+  return legalFormPopulation(movements).filter((movement) => {
+    const form = currentLegalPosition(movement).form;
+    if (form?.code !== ORDER_ENDING_FORM_CODE) return false;
+    const at = movement.formedAt ?? form.earlierForms?.at(-1)?.at;
+    return at !== undefined && dayOf(at) === dayOf(now);
+  }).length;
 }
 
 /**
@@ -116,8 +133,9 @@ export function legalFormGroupRows(movements: Movement[], now: Instant, group: L
   // Audit H6 (14 Nov 2026): these rows are the Forms page's "Forms in force". A form a person recorded
   // as ended is not in force, so it is neither counted there nor listed under "Time not written". The
   // downtime pack still prints it as ended (`legalFormOrdered`).
+  // R-LEGAL-12 (Josh, 14 Nov 2026): nor is a Form 3E on file, which ends the order before it.
   const rows = legalFormPopulation(movements).filter(
-    (movement) => !currentLegalPosition(movement).ended && legalFormGroupOf(movement) === group,
+    (movement) => currentLegalPosition(movement).inForce && legalFormGroupOf(movement) === group,
   );
   if (group === "with-deadline") {
     return rows.sort((a, b) => minutesUntil(currentLegalDueAt(a)!, now) - minutesUntil(currentLegalDueAt(b)!, now));
@@ -202,7 +220,7 @@ export function legalDeadlineText(movement: Movement, now: Instant, dayZero?: Da
   if (end?.kind === "recorded") {
     return position.typedEndAt === undefined
       ? "Form ended"
-      : `Form ended; expiry as typed was ${typedClock(position.typedEndAt, now, dayZero)}`;
+      : `Form ended; expiry was ${typedClock(position.typedEndAt, now, dayZero)}`;
   }
   if (position.dueAt !== undefined) {
     // Legal times only as typed (31 Oct 2026): "Form expiry ends 15:42 as typed", never a count.
@@ -242,7 +260,7 @@ export function legalFormBreakdown(rows: Movement[], now: Instant): LegalFormBre
     // Audit H6 (14 Nov 2026): forms in force only, read through the one current legal position.
     const position = currentLegalPosition(movement);
     const form = position.form;
-    if (!form || position.ended) continue;
+    if (!form || !position.inForce) continue;
     const code = form.code;
     let entry = byCode.get(code);
     if (!entry) {
@@ -385,8 +403,8 @@ export function legalExpiryReminderSummary(
 
 /**
  * The reminder sentence shown above the list, or `undefined` when no recorded expiry is inside a
- * warning window. Always carries "Synthetic demo" and "not legally checked", so it cannot be read
- * as a live statutory alert.
+ * warning window. Always carries "Synthetic demo", so it cannot be read as a live statutory alert
+ * (the "not legally checked" tail went in D-218, Josh 14 Nov 2026).
  */
 export function legalExpiryReminderText(summary: LegalExpiryReminderSummary): string | undefined {
   const parts: string[] = [];
@@ -395,5 +413,5 @@ export function legalExpiryReminderText(summary: LegalExpiryReminderSummary): st
   if (summary.withinSoon > 0) parts.push(`${summary.withinSoon} within ${formatReminderHours(summary.soonHours)}`);
   if (parts.length === 0) return undefined;
   const total = summary.withinUrgent + summary.withinSoon;
-  return `Synthetic demo reminder: ${total} recorded form ${total === 1 ? "expiry is" : "expiries are"} close (${parts.join(", ")}). Typed from the form, not legally checked.`;
+  return `Synthetic demo reminder: ${total} recorded form ${total === 1 ? "expiry is" : "expiries are"} close (${parts.join(", ")}).`;
 }

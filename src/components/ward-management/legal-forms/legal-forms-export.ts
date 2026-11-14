@@ -28,7 +28,7 @@ export function legalEndAsTyped(
   const typed = legal.dueAt;
   if (typed === undefined)
     return legal.nextForm ? formProgressionPhrase(legal.nextForm) : "No expiry recorded from the form";
-  return `${isClockBreached(typed, now) ? "Ended" : "Ends"} ${formatSheetMoment(typed, dayZero)} as typed`;
+  return `${isClockBreached(typed, now) ? "Ended" : "Ends"} ${formatSheetMoment(typed, dayZero)}`;
 }
 
 /** The form by its full register name ("Form 4C (Transfer order)"), never a bare code alone. */
@@ -63,7 +63,7 @@ export const LEGAL_FORMS_EXPORT_HEADER = [
   "ED",
   "Receiving ward",
   "Referral made",
-  "Ends, as typed",
+  "Ends",
   "Form received",
 ] as const;
 
@@ -87,9 +87,7 @@ export function legalFormsExportLines<M extends LegalFormsExportMovement>(
       ctx.wardName(movement) ?? "No receiving ward",
       at(movement.formedAt),
       legalEndAsTyped(movement, ctx.now, ctx.dayZero),
-      movement.legalFormReceivedAt === undefined
-        ? "Not recorded"
-        : `${at(movement.legalFormReceivedAt)}${movement.legalFormReceivedTyped ? " as typed" : ""}`,
+      movement.legalFormReceivedAt === undefined ? "Not recorded" : at(movement.legalFormReceivedAt),
     ]),
   ];
 }

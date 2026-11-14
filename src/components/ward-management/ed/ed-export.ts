@@ -42,14 +42,14 @@ export const ED_EXPORT_HEADER = [
 
 /**
  * 1.6 (K29, M17): the form's end as the screens show it, from the one current legal position: the
- * time typed from the form ("Tue 11 Nov, 15:42 as typed"), "Recorded as ended" once a person
+ * time typed from the form ("Tue 11 Nov, 15:42"), "Recorded as ended" once a person
  * records its end, or that no expiry was typed. Never a count or a time worked out from it (D-93).
  */
 function formEndWords(movement: EdExportMovement, at: (instant: Instant) => string): string {
   const legal = currentLegalPosition(movement);
   if (!legal.form) return "";
   if (legal.ended) return FORM_RECORDED_ENDED;
-  return legal.dueAt === undefined ? "No expiry recorded from the form" : `${at(legal.dueAt)} as typed`;
+  return legal.dueAt === undefined ? "No expiry recorded from the form" : at(legal.dueAt);
 }
 
 export function edExportLines<M extends EdExportMovement>(

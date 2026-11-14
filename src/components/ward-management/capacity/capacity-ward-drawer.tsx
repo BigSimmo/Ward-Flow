@@ -31,11 +31,15 @@ import type { HorizonDay, HorizonRow } from "@/components/ward-management/foreca
 import type { BedRelease } from "@/components/ward-management/ward-model";
 import { WardClosuresDialog } from "./capacity-ward-closures-dialog";
 import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
+import { BED_COUNT_FRESH_MINUTES } from "@/components/ward-management/ward-clinical-values";
 import { bedKindsServed, isConfirmationFresh } from "./capacity-gap-words";
 import { capacityRequestIsOpen } from "@/components/ward-management/ward/ward-buzz-keys";
 import { OnBehalfReasonForm } from "../on-behalf-reason-form-lazy";
 import type { OnBehalfReasonId } from "../ward-on-behalf-reason";
 import { authorisationValue } from "../ward-authorisation";
+import { currentLegalMismatchesFor } from "../ward-stay-legal";
+import { LegalMismatchBadge } from "../legal-mismatch-badge";
+import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 
 const DISCHARGES_HREF = "/ward-flow/discharges";
 
@@ -68,15 +72,29 @@ export function CapacityWardSidebar({
   // Josh, 4 Nov 2026: on a phone "Open patient" beside each discharge row is a 40px icon button.
   const isPhone = useIsPhone();
   const refreshSave = useWardFormSave(`capacity-ward-refresh:${row.unit.id}`);
-  const { bedReleases, refreshRequests, dispatch, readDischargeRecords, openDischargeRecord, readDischargeRecord } =
-    useWardFlowSelect(
-      "bedReleases",
-      "refreshRequests",
-      "dispatch",
-      "readDischargeRecords",
-      "openDischargeRecord",
-      "readDischargeRecord",
-    );
+  const {
+    bedReleases,
+    refreshRequests,
+    dispatch,
+    readDischargeRecords,
+    openDischargeRecord,
+    readDischargeRecord,
+    movements,
+    patients,
+    referrals,
+  } = useWardFlowSelect(
+    "bedReleases",
+    "refreshRequests",
+    "dispatch",
+    "readDischargeRecords",
+    "openDischargeRecord",
+    "readDischargeRecord",
+    "movements",
+    "patients",
+    "referrals",
+  );
+  // R-LEGAL-4 (Josh, 14 Nov 2026): people accepted for this ward with a recorded legal mismatch.
+  const legalMismatches = currentLegalMismatchesFor(movements, row.unit.id);
   const recordActors = useWardRecordActors();
   const recordActor =
     recordActors.find((actor) => actor.role === "ward" && actor.actingUnitId === row.unit.id) ?? recordActors[0]!;
@@ -214,7 +232,7 @@ export function CapacityWardSidebar({
                 {/* Polish (Josh, 31 Oct 2026): said only when the count is past its limit. */}
                 {fresh ? null : (
                   <span className={`${local.mutedXs} ${local.warnInk}`}>
-                    Past this ward’s {row.unit.allocatable.staleAfterMinutes} minute confirmation threshold
+                    Past the {BED_COUNT_FRESH_MINUTES} minute confirmation threshold
                   </span>
                 )}
                 {request ? (
@@ -280,6 +298,17 @@ export function CapacityWardSidebar({
                     Bed records are mid-update. Gender mix may not be settled.
                   </li>
                 ) : null}
+              </ul>
+            ) : null}
+
+            {legalMismatches.length > 0 ? (
+              <ul className={local.wdNotices} aria-label="Legal mismatch" data-testid="capacity-ward-legal-mismatch">
+                {legalMismatches.map((movement) => (
+                  <li key={movement.id}>
+                    <LegalMismatchBadge movement={movement} />
+                    {resolveSubjectPatient(movement, { patients, referrals }).formalName}
+                  </li>
+                ))}
               </ul>
             ) : null}
 

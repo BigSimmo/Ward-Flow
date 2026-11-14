@@ -418,11 +418,6 @@ const AROUND: readonly Around[] = [
         body: "Every open movement with a legal form, and the expiry time a person typed from that form.",
       },
       {
-        target: id("legal-limits-not-checked"),
-        title: "Times as typed",
-        body: "Ward Flow does not work out legal periods. The times are copied from the paper form and are not legally checked.",
-      },
-      {
         target: { sel: '#main-content [role="radiogroup"][aria-label="View"]' },
         title: "On a form, Checklist and History",
         body: "On a form lists everyone with a form now. Checklist shows what each form still needs. History holds closed moves. Seclusion and restraint, for the desks that see it, shows the seclusion and restraint forms.",
@@ -504,11 +499,6 @@ const AROUND: readonly Around[] = [
     name: "Seclusion",
     keywords: "restraint restrictive practice incident room",
     steps: [
-      {
-        target: id("seclusion-scope-note"),
-        title: "An operational view",
-        body: "Times are as typed, and nothing works out a legal limit.",
-      },
       {
         target: [id("seclusion-live"), id("seclusion-figure-live")],
         title: "In use now",
@@ -772,7 +762,7 @@ const AROUND: readonly Around[] = [
         device: "desk",
         target: starts("ward-ed-form-pick-"),
         title: "Legal form",
-        body: "The form on file. Type any expiry time from the paper form; nothing works it out.",
+        body: "The form on file. Type any expiry time from the paper form.",
       },
       {
         device: "desk",
@@ -802,7 +792,7 @@ export const MORE_JOBS: readonly HowTo[] = [
     title: "Record a new legal form",
     keywords: "mha form written renew continuation paper legal",
     answer:
-      "Open Legal forms and choose the patient. Use Record next form when a new form is written, typing the time from the paper form. Ward Flow never works out the expiry: it keeps the time as typed.",
+      "Open Legal forms and choose the patient. Use Record next form when a new form is written, typing the time from the paper form.",
     desks: ["ed", "coordinator", "ward"],
     acts: ["RECORD_LEGAL_FORM_WRITTEN"],
     go: "legal-forms",
@@ -883,7 +873,7 @@ export const MORE_JOBS: readonly HowTo[] = [
     title: "Record seclusion, restraint or an incident",
     keywords: "seclusion restraint restrictive practice incident room start end",
     answer:
-      "Open Forms, then Seclusion and restraint. Start seclusion or restraint when it begins and Record end when it finishes, or Record incident for an incident. Times are as typed, and nothing works out a legal limit.",
+      "Open Forms, then Seclusion and restraint. Start seclusion or restraint when it begins and Record end when it finishes, or Record incident for an incident.",
     desks: ["ward", "coordinator"],
     acts: ["RECORD_RESTRICTIVE_PRACTICE_START", "RECORD_WARD_INCIDENT"],
     go: "seclusion",

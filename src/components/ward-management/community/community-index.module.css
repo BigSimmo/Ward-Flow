@@ -317,6 +317,11 @@
   cursor: pointer;
 }
 
+/* The full words show on paper only; on screen the button's name carries them for a screen reader. */
+.readsAlikePrint {
+  display: none;
+}
+
 .readsAlike:hover {
   text-decoration: underline;
 }
@@ -1081,5 +1086,19 @@
     position: sticky;
     top: var(--wf-header-height, 3.5rem);
     z-index: 6;
+  }
+}
+
+/* INV-PRINT-012: the reads-alike warning is a button on screen and the global print rule hides
+   buttons. The warning is a safety note, so paper keeps it as plain text. */
+@media print {
+  .readsAlike {
+    display: inline-flex !important;
+    white-space: normal;
+    cursor: auto;
+  }
+
+  .readsAlikePrint {
+    display: inline;
   }
 }

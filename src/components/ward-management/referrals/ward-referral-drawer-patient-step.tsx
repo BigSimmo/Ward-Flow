@@ -3,7 +3,6 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { Search, User, UserPlus, X } from "lucide-react";
 import Link from "next/link";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { COHORTS, type Cohort } from "@/components/ward-management/ward-model";
 import { GENDERS, type Gender } from "@/components/ward-management/ward-patients";
 import { RECORDED_SEXES, type RecordedSex } from "@/components/ward-management/ward-model-vocabulary";
@@ -749,10 +748,6 @@ export function ReferralPatientStep({
               <p className={styles.priorityValue}>{legalShown.legalStatus}</p>
               <p className={styles.priorityMeta}>Expiry {legalShown.recordedExpiry}</p>
               <CarriedNote note={carriedNotes.legalStatus} field="legal-summary" />
-              <p className={styles.priorityMeta}>
-                <StatusGlyph tone="neutral" size={9} />
-                <LegalLimitsNotChecked variant="tag" />
-              </p>
             </div>
             <div className={styles.priorityCell}>
               <p className={styles.eyebrow}>Clinical acuity</p>

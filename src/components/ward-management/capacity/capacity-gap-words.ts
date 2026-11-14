@@ -6,6 +6,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WfTone } from "@/components/wf";
 import type { Unit } from "@/components/ward-management/ward-model";
 import type { BedKindGap } from "./capacity-derivations";
+import { isBedCountStale } from "@/components/ward-management/ward-clinical-values";
 
 /**
  * Mirrors `capacityIsFresh` in `ward-eligibility.ts` (private there, so not importable) rather than
@@ -26,7 +27,7 @@ import type { BedKindGap } from "./capacity-derivations";
  * says so.
  */
 export function isConfirmationFresh(unit: Unit, now: Instant): boolean {
-  return now - unit.allocatable.confirmedAt <= unit.allocatable.staleAfterMinutes;
+  return !isBedCountStale(unit.allocatable.confirmedAt, now);
 }
 
 /**

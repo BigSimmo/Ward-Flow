@@ -130,7 +130,9 @@ test.describe("@mockup triage and risk", () => {
     const card = page.getByTestId("patient-triage-card");
     await expect(card).toContainText("Signed ");
     await expect(card).toContainText("Urgency C, within 12 hours");
-    await expect(card).toContainText("Community treatment order (as chosen). Not legally checked.");
+    await expect(card).toContainText("Community treatment order");
+    // D-218 (Josh, 14 Nov 2026): no "(as chosen)" or "Not legally checked" after the status.
+    await expect(card).not.toContainText("legally checked");
     await expect(card).not.toContainText("Synthetic test patient");
   });
 

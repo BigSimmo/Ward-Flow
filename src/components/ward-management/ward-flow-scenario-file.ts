@@ -1,4 +1,4 @@
-import type { Instant } from "@/components/ward-management/ward-clock";
+import { wardZoneOffsetMs, type Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { checkSyntheticPayload } from "@/lib/synthetic-data-guard";
 import { WARD_FLOW_SCENARIO_FILE_MAX_BYTES } from "./ward-flow-scenario-file-limits";
@@ -115,7 +115,7 @@ export function buildScenarioFile(
   if (readScenarioFile(json, stateVersion).ok !== true)
     return { ok: false, reason: "This scenario could not be saved safely. Nothing was saved." };
   // Perth wall time, whatever the device's zone (Audit 1, TM-2, Josh 20 Oct).
-  const perth = new Date(savedAt.getTime() + 8 * 60 * 60_000);
+  const perth = new Date(savedAt.getTime() + wardZoneOffsetMs(savedAt.getTime()));
   const stamp = `${perth.getUTCFullYear()}-${pad(perth.getUTCMonth() + 1)}-${pad(perth.getUTCDate())}-${pad(perth.getUTCHours())}${pad(perth.getUTCMinutes())}`;
   return { ok: true, json, fileName: `ward-flow-scenario-${stamp}.json` };
 }

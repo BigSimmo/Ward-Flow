@@ -16,6 +16,8 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { WardIndex } from "@/components/ward-management/wards/ward-index";
+import { bedsFreeingTodayTotal } from "@/components/ward-management/capacity/capacity-derivations";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { allUnits, NOW_ANCHOR, unitById } from "@/components/ward-management/ward-sites";
 
 /**
@@ -266,6 +268,20 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     );
     fireEvent.click(screen.getByRole("button", { name: "Clear highlight" }));
     expect(before.every((bed) => bed.dataset.dim === undefined && bed.dataset.lit === undefined)).toBe(true);
+  });
+
+  it("counts Discharges today on the ward page as Capacity does (REG2-8, R-FIGS-12)", () => {
+    const seed = seedWardFlowState();
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardScreen unitId="rph-adult-secure" />
+      </WardFlowProvider>,
+    );
+    const capacity = bedsFreeingTodayTotal(seed.bedReleases, NOW_ANCHOR, new Set(["rph-adult-secure"]));
+    const choices = screen.getByRole("radiogroup", { name: "Highlight beds" });
+    expect(within(choices).getByRole("radio", { name: /^Discharges today/u })).toHaveTextContent(
+      new RegExp(`^Discharges today\\D*${capacity}$`, "u"),
+    );
   });
 
   it("renders the Ward Console third edition action bar, tab navigation, and interactive telemetry drawer", () => {

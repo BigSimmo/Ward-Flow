@@ -268,7 +268,7 @@ describe("LegalFormsScreen shows only a recorded due time (owner, 20 Oct 2026, r
     fireEvent.click(within(panel).getByRole("button", { name: /^Form \w+$/ }));
     const sheet = screen.getByTestId("ward-legal-requirements");
     expect(within(sheet).getByTestId("ward-legal-requirements-due")).toHaveTextContent(
-      "Ward Flow does not work out when a form ends",
+      "Only the due time recorded from the form is shown.",
     );
     expect(sheet).not.toHaveTextContent(COMPUTED_ACT_PERIOD);
     expect(sheet).not.toHaveTextContent(/\bs \d+/u);
@@ -335,7 +335,7 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
     const row = document.querySelector(`[data-record-key="${target.id}"]`) as HTMLElement;
     fireEvent.click(within(row).getAllByRole("button")[0]!);
     const panel = screen.getByTestId("ward-legal-selected");
-    expect(within(panel).getByText(/^Ended, as typed from the form/u)).toBeInTheDocument();
+    expect(within(panel).getByText(/^Ended/u)).toBeInTheDocument();
 
     fireEvent.click(within(panel).getByRole("button", { name: "Extend recorded form" }));
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-date"), {
@@ -344,14 +344,14 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-expiry"), { target: { value: "23:45" } });
     fireEvent.click(screen.getByTestId("ward-legal-forms-renew-confirm"));
 
-    expect(within(panel).getByText(/^Ends, as typed from the form/u)).toBeInTheDocument();
+    expect(within(panel).getByText(/^Ends/u)).toBeInTheDocument();
     // Design audit (Josh, 1 Nov 2026): the toast names the person, surname first, both ways.
     const name = resolveSubjectPatient(target, { patients: seed.patients, referrals: seed.referrals }).formalName;
     expect(name).toMatch(/^[^,]+, .+$/u);
     expect(screen.getByText(`Form ${target.legalForm?.code ?? ""} extended for ${name}`)).toBeInTheDocument();
     const undoBtn = screen.getByRole("button", { name: "Undo" });
     fireEvent.click(undoBtn);
-    expect(within(panel).getByText(/^Ended, as typed from the form/u)).toBeInTheDocument();
+    expect(within(panel).getByText(/^Ended/u)).toBeInTheDocument();
     expect(screen.getByText(`Form extension undone for ${name}.`)).toBeInTheDocument();
   });
 

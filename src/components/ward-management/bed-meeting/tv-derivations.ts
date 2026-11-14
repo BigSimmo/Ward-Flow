@@ -28,6 +28,7 @@ import {
 import { groupDischarges } from "@/components/ward-management/discharges/discharge-board-model";
 import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
 import { isEdInitiatedWithdrawal } from "@/components/ward-management/ed/ed-screen-model";
+import { BED_COUNT_FRESH_MINUTES } from "@/components/ward-management/ward-clinical-values";
 import { isConfirmationFresh } from "@/components/ward-management/capacity/capacity-gap-words";
 import { bedsPendingPreparationToOffer } from "@/components/ward-management/ward-bed-availability";
 import { type Admission, admissionsForUnit } from "@/components/ward-management/ward-admissions";
@@ -130,23 +131,22 @@ function originLabel(movement: Movement): string {
 /**
  * CS-10 (Audit 1, Josh 20 Oct 2026): how old the ready figure is. A bed meeting allocates against
  * it, so the TV says when the counted wards last confirmed their beds, by Capacity's own rule
- * (`isConfirmationFresh`: within the ward's own `staleAfterMinutes`). `oldestAt` is the oldest
+ * (`isConfirmationFresh`: within the one signed bed count time, `bedCountFresh`, owner ruling 14 Nov 2026). `oldestAt` is the oldest
  * confirmation among the wards not confirmed in time when there are any, otherwise among all.
  */
 export type TvBedCountAge = {
   wards: number;
   notConfirmed: number;
   oldestAt: Instant | undefined;
-  /** P025: the wards' own `staleAfterMinutes`, lowest and highest, so the TV can say which it used. */
-  staleAfter: { min: number; max: number } | undefined;
+  /** The one signed bed count time (minutes), so the TV can say which it used. */
+  staleAfter: number | undefined;
 };
 
 function bedCountAge(units: Unit[], now: Instant): TvBedCountAge {
   const late = units.filter((unit) => !isConfirmationFresh(unit, now));
   const counted = late.length > 0 ? late : units;
   const oldestAt = counted.length === 0 ? undefined : Math.min(...counted.map((unit) => unit.allocatable.confirmedAt));
-  const minutes = units.map((unit) => unit.allocatable.staleAfterMinutes);
-  const staleAfter = minutes.length === 0 ? undefined : { min: Math.min(...minutes), max: Math.max(...minutes) };
+  const staleAfter = units.length === 0 ? undefined : BED_COUNT_FRESH_MINUTES;
   return { wards: units.length, notConfirmed: late.length, oldestAt, staleAfter };
 }
 

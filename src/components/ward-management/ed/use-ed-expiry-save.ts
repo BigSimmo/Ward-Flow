@@ -7,6 +7,7 @@ import { useWardCommandCompletion, wardCommandFailure, wardCommandKey } from "..
 import { BLANK_TYPED_EXPIRY_DRAFT, instantFromDateAndTimeInputs } from "./ed-screen-model";
 import type { useEdRowPanels } from "./use-ed-screen-state";
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
+import { useRecordedDeskRole } from "../use-recorded-desk-role";
 
 type Attempt = {
   movementId: string;
@@ -27,6 +28,8 @@ export function useEdExpirySave({
   const context = useOptionalWardFlowSelect("worldGeneration", "shared");
   const world = context?.worldGeneration;
   const shared = context?.shared;
+  // Demo-Rules-LG-6: an expiry typed at the coordinator's desk is recorded as the coordinator's.
+  const role = useRecordedDeskRole("ed");
   const [attempt, setAttempt] = useState<Attempt>();
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string>();
@@ -116,7 +119,7 @@ export function useEdExpirySave({
         setPending(true);
         setMessageFor(movementId);
         setMessage(undefined);
-        const outcome = dispatch({ type: "RECORD_LEGAL_FORM_EXPIRY", role: "ed", now, movementId, dueAt });
+        const outcome = dispatch({ type: "RECORD_LEGAL_FORM_EXPIRY", role, now, movementId, dueAt });
         if (!outcome || !("then" in outcome)) return outcome;
         return outcome.then((answer) => {
           if (current.current === started && answer.isCurrent && !answer.isCurrent()) finish();

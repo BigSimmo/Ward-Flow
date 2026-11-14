@@ -1685,7 +1685,7 @@ Source-contract SHA256: 6d1a3c042d9faf223fdcc08357525768d8098c157bdc4edc5a0328ec
   tests: tests/ward-site-handover-sign-off.test.ts
   tests: tests/ward-handover-site-sign-off.dom.test.tsx
   Reviewed source: src/components/ward-management/site-sign-off/site-handover-sign-off-reducer.ts:26; SHA256 dc671972ed160a7492f79cde72ca6dab6dad70b59921bd378ecee4721b326db5
-  Reviewed source: src/components/ward-management/site-sign-off/site-handover-sign-off.ts:80; SHA256 abebadfb3e48655f6e362172ed644ae06615e26916f33334ce17419955567a33
+  Reviewed source: src/components/ward-management/site-sign-off/site-handover-sign-off.ts:81; SHA256 02afea85b4c5eff2860f33142f9b9a7aa3ebdde438395c3b0db3141f5bc5d20a
   Reviewed source: src/components/ward-management/ward-access-state.ts:741; SHA256 7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:597; SHA256 f305e4436a9f754ff704a5fb04ede91c3bd1ea989ce540b23b1d02e5141e23d5
 - RECORD_TRIAGE_SIGNED — modelled; event roles: ed, community, ward, coordinator
@@ -1767,7 +1767,7 @@ Source-contract SHA256: 6d1a3c042d9faf223fdcc08357525768d8098c157bdc4edc5a0328ec
   tests: tests/ward-site-features-card.dom.test.tsx
   Reviewed source: src/components/ward-management/ward-flow-pilot-control-events.ts:51; SHA256 bdd8a6e00ebe08750497e083d9e58b225b5803e45015caa5ab388a681418e8a2
   Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2293; SHA256 aad0dd053bd79e35e7761f53bbd4a8c7eeb93b13b89a7304dea271c5cdb3ebfd
-  Reviewed source: src/components/ward-management/ward-site-feature-switches.ts:102; SHA256 28c257371212025f04befc60adc5bf0d36c87b1d1d5173b082ccd7a03d84c7e0
+  Reviewed source: src/components/ward-management/ward-site-feature-switches.ts:102; SHA256 efb478281ff75eea1474b4ba92703e87f1bbff1c7ea67a6e150d7927c5c83cae
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:612; SHA256 f305e4436a9f754ff704a5fb04ede91c3bd1ea989ce540b23b1d02e5141e23d5
 - RECORD_DOWNTIME_PACK_PRINTED — modelled; event roles: coordinator, bed_manager, ward, ed
   Source-reviewed command model: when each ward's downtime pack was printed or saved as a PDF, never the pack itself (Batch 4 item 24, D-135).
@@ -1963,7 +1963,7 @@ Source-contract SHA256: 6d1a3c042d9faf223fdcc08357525768d8098c157bdc4edc5a0328ec
   effects: The alert reads overdue only once the clock is strictly past answerBy with no asked ward answered (the one clock rule, audit L2); it then raises a pull_now_overdue Act now row until a ward answers, the bed is pulled or the alert is stood down (M2, D-210).
   tests: tests/ward-global-alerts.test.ts
   Reviewed source: src/components/ward-management/alerts/ward-broadcast-reducer.ts:293; SHA256 cd46a2fc3599a4dbc092b05eda177f7da454de1cd8642597fa17bf3281a11907
-  Reviewed source: src/components/ward-management/alerts/ward-broadcast-model.ts:317; SHA256 1aeb828f932bd5e75ed4e02922d1352ca43ed17162914fcee1e16fa182e698ff
+  Reviewed source: src/components/ward-management/alerts/ward-broadcast-model.ts:317; SHA256 b312224489228e012341ed03d203ea80112908238f785b3475ea75b787a25892
   Reviewed source: src/components/ward-management/ward-flow-events.ts:2450; SHA256 db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142
   Reviewed source: src/components/ward-management/ward-access-state.ts:783; SHA256 7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d
 - REPLY_BROADCAST_ALERT — modelled; event roles: ward, bed_manager, coordinator

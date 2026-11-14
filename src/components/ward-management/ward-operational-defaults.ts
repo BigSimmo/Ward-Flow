@@ -25,7 +25,7 @@ import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-valu
 const MINUTES_PER_HOUR = 60;
 
 /** The words every screen shows beside one of these figures. */
-export const OPERATIONAL_DEFAULT_LABEL = "your default, not a legal limit";
+export const OPERATIONAL_DEFAULT_LABEL = "your default";
 
 export interface OperationalDefault {
   /** What the rule does, in the words the settings screen lists it under. */
@@ -104,7 +104,7 @@ export const ED_SEVERE_PRESSURE_WAIT_MINUTES = CLINICAL_VALUES.edSeverePressure.
  */
 export const LONG_WAIT_MINUTES = CLINICAL_VALUES.longWait.value;
 /** The words screens use for it, built from the value: "past 24 hours". */
-export const LONG_WAIT_TEXT = `past ${LONG_WAIT_MINUTES / MINUTES_PER_HOUR} hours`;
+export const LONG_WAIT_TEXT = `over ${LONG_WAIT_MINUTES / MINUTES_PER_HOUR} hours`;
 /**
  * Whether a wait counts as long: at or past `LONG_WAIT_MINUTES`, so exactly 24 hours counts. One
  * boundary for every screen (Josh, 11 Nov 2026): the ED screen used "past" (>) while Alerts, the
@@ -139,6 +139,14 @@ export const YOUTH_SERVICE_NOTE_UP_TO_YEARS = CLINICAL_VALUES.youthServiceNoteUp
  */
 export const SILENT_WARD_FIRST_REMINDER_MINUTES = CLINICAL_VALUES.silentWardFirstReminder.value;
 export const SILENT_WARD_SECOND_REMINDER_MINUTES = CLINICAL_VALUES.silentWardSecondReminder.value;
+
+/**
+ * Silent ward reminders (Top 25 item 7). From the second reminder on, the
+ * line also suggests asking another ward. Owner ruling, 15 Oct 2026: reminders only, nothing is
+ * reallocated automatically, so this is words on the row and never an action.
+ */
+export const SILENT_WARD_ANOTHER_WARD_SUGGESTION =
+  "Consider asking another ward as well. Nothing is moved automatically.";
 /**
  * The one shift pattern every screen uses (Josh, 26 Sept 2026, "All yes": one pattern, the side
  * rail's): 07:00 to 15:00, 15:00 to 23:00 and 23:00 to 07:00. The reminders count to the end of the

@@ -28,6 +28,7 @@ import type { EdScreenContext } from "./ed-screen-context";
 import { EdActionList } from "./ed-board-controls";
 import { renderEdBoardTableRow } from "./ed-screen-desktop";
 import {
+  formExpiryLevel,
   formExpiryLine,
   formExpiryWarning,
   instantFromDateAndTimeInputs,
@@ -75,6 +76,7 @@ function edBoardRowModel(movement: Movement, ctx: EdScreenContext) {
   const medicalClearance = movementMedicalClearance(movement, referrals);
   const formExpiryText = movement.legalForm ? formExpiryLine(movement.legalForm, now, dayZero) : undefined;
   const formExpiryWarningText = movement.legalForm ? formExpiryWarning(movement.legalForm, now, thresholds) : undefined;
+  const formExpiryTone = movement.legalForm ? formExpiryLevel(movement.legalForm, now, thresholds) : undefined;
   const item = outstandingItem(movement);
   // Owner, 26 Sept 2026: resolved early so the blocked-reason sentences below can
   // name the patient instead of the WF journey number. Surname first (D-83, ED board redesign 31 Oct
@@ -257,6 +259,7 @@ function edBoardRowModel(movement: Movement, ctx: EdScreenContext) {
     medicalClearance,
     formExpiryText,
     formExpiryWarningText,
+    formExpiryTone,
     item,
     patientInfo,
     examBlocked,

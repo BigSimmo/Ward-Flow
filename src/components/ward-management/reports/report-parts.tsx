@@ -1,6 +1,7 @@
 "use client";
 
 import { calendarDateOf, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { WARD_TIME_ZONE } from "@/lib/ward-time-zone";
 
 /**
  * Parts shared by the report pages (downtime pack and patient chronology). The hero chips, the
@@ -10,9 +11,9 @@ import { calendarDateOf, formatInstant, type Instant } from "@/components/ward-m
 /** "Sat 10 Oct", the report date form (no commas). */
 export function reportDay(instant: Instant, dayZero: Date): string {
   const date = calendarDateOf(instant, dayZero);
-  const weekday = date.toLocaleDateString("en-AU", { weekday: "short", timeZone: "Australia/Perth" });
-  const day = date.toLocaleDateString("en-AU", { day: "numeric", timeZone: "Australia/Perth" });
-  const month = date.toLocaleDateString("en-AU", { month: "short", timeZone: "Australia/Perth" });
+  const weekday = date.toLocaleDateString("en-AU", { weekday: "short", timeZone: WARD_TIME_ZONE });
+  const day = date.toLocaleDateString("en-AU", { day: "numeric", timeZone: WARD_TIME_ZONE });
+  const month = date.toLocaleDateString("en-AU", { month: "short", timeZone: WARD_TIME_ZONE });
   return `${weekday} ${day} ${month}`;
 }
 

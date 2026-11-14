@@ -988,3 +988,11 @@
   outline-offset: 2px;
   border-radius: var(--wf-r-xs);
 }
+
+/* INV-PRINT-025: the alert's title is a button on screen, and the global print rule hides buttons. Paper keeps it as text. */
+@media print {
+  .hrowTitle {
+    display: block !important;
+    cursor: auto;
+  }
+}

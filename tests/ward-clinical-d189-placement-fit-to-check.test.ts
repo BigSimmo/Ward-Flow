@@ -108,7 +108,7 @@ describe("the fit check's To check group", () => {
     expect(fit.patientCheckNames).not.toContain("MHA authorisation");
     // Go question 3 (Josh, 13 Nov 2026) adds the authorisation sentence for this status.
     expect(patientFitLine(fit)).toBe(
-      `Passes the ${fit.patientTotal} bed checks. ${FIT_TO_CHECK_LINE} Involuntary admissions: authorised (Chief Psychiatrist register, 7 Sep 2026).`,
+      `Passes the ${fit.patientTotal} bed checks. ${FIT_TO_CHECK_LINE} Involuntary admissions: authorised for the hospital (Chief Psychiatrist register, 7 Sep 2026), ward not checked.`,
     );
     expect(FIT_TO_CHECK_LINE).toBe("To check: recorded risk, escort need, observation level and medical clearance.");
   });
@@ -122,10 +122,10 @@ describe("go question 3 (Josh, 13 Nov 2026): authorisation joins To check when t
     const fit = referralFit(eligibility(subject, unit, NOW).gates, unit, NOW);
     expect(fit.patientIssues).toEqual([]);
     expect(fit.authorisationToCheck).toBe(
-      "Involuntary admissions: authorised (Chief Psychiatrist register, 7 Sep 2026)",
+      "Involuntary admissions: authorised for the hospital (Chief Psychiatrist register, 7 Sep 2026), ward not checked",
     );
     expect(patientFitLine(fit)).toBe(
-      `Passes the ${fit.patientTotal} bed checks. ${FIT_TO_CHECK_LINE} Involuntary admissions: authorised (Chief Psychiatrist register, 7 Sep 2026).`,
+      `Passes the ${fit.patientTotal} bed checks. ${FIT_TO_CHECK_LINE} Involuntary admissions: authorised for the hospital (Chief Psychiatrist register, 7 Sep 2026), ward not checked.`,
     );
     // Still information only: never counted and never a fail.
     expect(fit.patientCheckNames).not.toContain("MHA authorisation");
@@ -136,7 +136,7 @@ describe("go question 3 (Josh, 13 Nov 2026): authorisation joins To check when t
     const unit = fittingUnit(subject);
     const fit = referralFit(eligibility(subject, unit, NOW).gates, unit, NOW);
     expect(fit.authorisationToCheck).toBe(
-      "Involuntary admissions: authorised (Chief Psychiatrist register, 7 Sep 2026)",
+      "Involuntary admissions: authorised for the hospital (Chief Psychiatrist register, 7 Sep 2026), ward not checked",
     );
   });
 
