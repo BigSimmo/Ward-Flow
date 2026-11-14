@@ -208,7 +208,7 @@ export function BedSquares({
             data-testid={testId ? `${testId}-ready` : undefined}
           >
             {ready}
-          </b>
+          </b>{" "}
           <span className={styles.of}>
             ready of {beds} {beds === 1 ? "bed" : "beds"}
           </span>

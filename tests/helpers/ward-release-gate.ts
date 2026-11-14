@@ -425,31 +425,28 @@ export function wardDesk(unitId: string, unitName: string) {
  */
 export async function openWardList(page: Page, list: "Admissions" | "Discharges") {
   await openWardFlow(page, list);
-  const button = list === "Admissions" ? "All arrivals" : "All discharges";
-  await page.getByRole("button", { name: button, exact: true }).click();
+  // "All discharges · N open" carries its open count, so it is matched by its start.
+  const button = list === "Admissions" ? /^All arrivals$/u : /^All discharges\b/u;
+  await page.getByTestId("ward-coming-and-going").getByRole("button", { name: button }).click();
   await expect(page.locator(list === "Admissions" ? "#tab-coming" : "#tab-out")).toHaveAttribute("data-active", "true");
 }
 
 /**
- * Shows one pane of the ward's Ward flow card: Referrals (awaiting this ward's answer), Admissions
- * or Discharges. On a phone the card is a sheet opened from Ward home's Needs you card.
+ * Shows one part of the ward's Coming and going card: Referrals (awaiting this ward's answer),
+ * Arrivals or Discharges. Wave 4 (D-191): the card sits in place on the Home tab on a phone and a
+ * computer alike, with no list switch and no phone sheet, so this opens Home and finds the part.
  */
 export async function openWardFlow(page: Page, pane: "Referrals" | "Admissions" | "Discharges") {
-  if (isPhoneLayout(page)) {
-    const sheet = page.getByRole("dialog", { name: "Ward flow" });
-    if (!(await sheet.isVisible())) {
-      // Option B (20 Oct 2026): Ward flow is a row in Ward home's "Needs you" card, not a chip.
-      // The Home tab also stays selected on a full Arrivals or Discharges list, which hides the row.
-      const row = page.getByTestId("ward-phone-row-flow");
-      if (!(await row.isVisible())) await page.locator("#tabBtn-attn").click();
-      await row.click();
-    }
-    await expect(sheet).toBeVisible();
-  } else {
-    await page.locator("#tabBtn-attn").click();
-  }
-  const radio = page.getByRole("radio", { name: new RegExp(`^${pane}`, "u") });
-  if ((await radio.getAttribute("aria-checked")) !== "true") await radio.click();
+  const home = page.locator("#tabBtn-attn");
+  if ((await home.getAttribute("aria-selected")) !== "true") await home.click();
+  const card = page.getByTestId("ward-coming-and-going");
+  await expect(card).toBeVisible();
+  const heading = {
+    Referrals: "ward-coming-referrals",
+    Admissions: "ward-coming-arrivals",
+    Discharges: "ward-coming-out",
+  }[pane];
+  await card.locator(`#${heading}`).scrollIntoViewIfNeeded();
 }
 
 /** Back to the ward's Home tab, where its bed figures live. */
