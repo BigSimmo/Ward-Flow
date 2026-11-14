@@ -179,21 +179,9 @@
     backdrop-filter: none;
   }
 
-  /* Tablet widths have no room beside a 32rem drawer (Codex review, 14 Nov 2026): the toast moves to
-     the top right instead, clear of the drawer's footer actions and of the rail. */
-  :global(
-      html:has(
-        :is([role="dialog"], [role="alertdialog"])[aria-modal="true"]:is(
-            [data-sheet-placement="right"],
-            [data-sheet-placement="responsive-right"]
-          )
-      )
-    )
-    .toastRegion {
-    top: var(--wf-s-6);
-    bottom: auto;
-  }
-
+  /* Tablet widths have no room beside a 32rem drawer, so the toast keeps its default bottom-right
+     place there. A top-right place was tried (Codex review, 14 Nov 2026) and dropped: it covered the
+     drawer's close button and the header's Change view button for the whole Undo window. */
   /* R-STYLE-5 / R-FIGS-20 (Josh): the toast stays bottom right of the work area. Beside an open right
      drawer it sits left of the drawer (32rem, the widest the kit draws, plus the 24px gutter), so it
      never covers the drawer's footer actions and never reaches the left rail or account button. A
