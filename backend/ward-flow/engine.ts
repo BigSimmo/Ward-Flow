@@ -27,6 +27,7 @@ import { commandScopeRefusal, scopeWardFlowState } from "../../src/components/wa
 import { HEALTH_SERVICES, type HealthService } from "../../src/components/ward-management/ward-model";
 import { uploadedFileTypeOf } from "../../src/components/ward-management/ward-uploaded-file";
 import { CLINICAL_VALUES } from "../../src/components/ward-management/ward-clinical-values";
+import { lateNoticesDue } from "../../src/components/ward-management/ward-late-notices";
 import { demoDayZero } from "../../src/components/ward-management/ward-clock";
 import {
   BREAK_GLASS_REASONS,
@@ -994,6 +995,47 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date, op
     },
     reason: null,
     partly,
+  };
+}
+
+/**
+ * X1b-5 (Josh, 14 Nov 2026, D-221 item 7): the five-minute sweep's late notices. Every open journey
+ * that now reads late and has an addressee not yet told gets its notices raised, through the
+ * ordinary backfill event marked `automatic`, so History reads "Raised automatically". A journey
+ * whose notices were scheduled when its time was saved is already told, so nothing is written for
+ * it: `raised` is empty and `world` is returned as it was.
+ */
+export function raiseDueLateNotices(
+  world: SharedWorld,
+  at: Date,
+): { world: SharedWorld; raised: string[]; domainAudit: WardFlowState["auditEvents"] } {
+  const unchanged = { world, raised: [], domainAudit: [] };
+  if (!validWorld(world)) return unchanged;
+  const now = worldNow(world, at);
+  let state = world.state;
+  const raised: string[] = [];
+  for (const movement of world.state.movements) {
+    if (movement.closure !== undefined || !lateNoticesDue(movement, state.notices, now)) continue;
+    const next = wardFlowReducer(state, {
+      type: "EVALUATE_ARRIVAL_LATENESS",
+      role: "coordinator",
+      now,
+      movementId: movement.id,
+      automatic: true,
+    });
+    if (next.notices === state.notices) continue;
+    state = next;
+    raised.push(movement.id);
+  }
+  if (raised.length === 0) return unchanged;
+  const next = serialise({ ...state, rejections: [] });
+  if (!isValidSharedWardFlowState(next)) return unchanged;
+  const saved = boundAudit(next);
+  if (saved !== next && !isValidSharedWardFlowState(saved)) return unchanged;
+  return {
+    world: { ...world, state: saved },
+    raised,
+    domainAudit: next.auditEvents.slice(world.state.auditEvents.length),
   };
 }
 

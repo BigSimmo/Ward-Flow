@@ -150,6 +150,8 @@ const SCHEMAS: Partial<Record<WardFlowEvent["type"], z.ZodType>> = {
   }),
   RELEASE_PULL: z.looseObject({ movementId: id, reason: z.union([label, record]), actingUnitId: id.optional() }),
   TRANSPORT_EN_ROUTE: z.looseObject({ movementId: id }),
+  // X1b-5: only the server's own sweep raises late notices "automatically"; a desk may not claim it.
+  EVALUATE_ARRIVAL_LATENESS: z.looseObject({ movementId: id, automatic: z.never().optional() }),
   PATIENT_COLLECTED: z.looseObject({ movementId: id, exception: record.optional() }),
   PATIENT_ARRIVED: z.looseObject({ movementId: id, actingUnitId: id.optional(), exception: record.optional() }),
   RECORD_ESCALATION: z.looseObject({ movementId: id, triedUnitIds: ids, contact: text }),

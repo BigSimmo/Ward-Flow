@@ -19,7 +19,6 @@ import { adjustSexMix, eligibility, mixSexOf } from "@/components/ward-managemen
 import { heldUnitAuthorisationRefusal } from "@/components/ward-management/ward-held-legal-check";
 import { authorisationBlocksPlacement } from "@/components/ward-management/ward-authorisation";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
-import { ARRIVAL_LATE_AFTER_MINUTES, isArrivalLate } from "@/components/ward-management/ward-legal-clock";
 import {
   MOVEMENT_STAGES,
   TRANSPORT_LEGAL_STATUSES,
@@ -93,6 +92,7 @@ export function reduceTransportEvent(
     makeNotice,
     movementHoldsBedByStage,
     movementSourceAdmission,
+    reconcileMovementLateNotices,
     reject,
     replaceAdmission,
     replaceMovement,
@@ -1366,100 +1366,34 @@ export function reduceTransportEvent(
         ...(firstRecording ? { updatedAt: event.now, updatedBy: event.role } : {}),
       };
 
-      let updatedMovement: Movement = {
+      const updatedMovement: Movement = {
         ...movement,
         // Audit 2 E-13 (Josh, 20 Oct 2026): the bed-hold timer is kept. An arrival plan is not an
         // arrival, and only a person releases or moves a held bed.
         arrivalDetails,
       };
 
-      let next = {
+      // D-221: the late notices for this time are scheduled by the reducer's post-step
+      // (`withLateNoticesReconciled`), as for every other save that changes a journey.
+      return {
         ...state,
         movements: state.movements.map((m) => (m.id === movement.id ? updatedMovement : m)),
       };
-
-      if (
-        isArrivalLate(
-          event.estimatedArrivalAt,
-          updatedMovement.stage,
-          event.now,
-          updatedMovement.closure !== undefined,
-        ) &&
-        updatedMovement.arrivalLateNotifiedAt === undefined
-      ) {
-        updatedMovement = { ...updatedMovement, arrivalLateNotifiedAt: event.now };
-        next = {
-          ...next,
-          movements: next.movements.map((m) => (m.id === movement.id ? updatedMovement : m)),
-        };
-        const notices = [
-          makeNotice(
-            event.now,
-            next.notices.length,
-            "arrival_late_referrer",
-            { role: "ed", placeId: movement.originEdId },
-            { movementId: movement.id },
-            `Arrival for ${movement.id} is more than ${ARRIVAL_LATE_AFTER_MINUTES} minutes past the planned time and they have not arrived.`,
-          ),
-        ];
-        if (movement.acceptedUnitId) {
-          notices.push(
-            makeNotice(
-              event.now,
-              next.notices.length + 1,
-              "arrival_late_ward",
-              { role: "ward", placeId: movement.acceptedUnitId },
-              { movementId: movement.id, unitId: movement.acceptedUnitId },
-              `Arrival for ${movement.id} is more than ${ARRIVAL_LATE_AFTER_MINUTES} minutes past the planned time and they have not arrived.`,
-            ),
-          );
-        }
-        return appendNotices(next, notices);
-      }
-
-      return next;
     }
 
     case "EVALUATE_ARRIVAL_LATENESS": {
+      // D-221 item 8: notices now store themselves when the time is saved. This event stays for
+      // journeys saved before that, and for the server's five-minute sweep: it brings this journey's
+      // late notices up to date now, and changes nothing when they already are.
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
       if (movement.closure) return reject(state, event, "This movement is closed.");
-      if (movement.arrivalLateNotifiedAt !== undefined) return state;
-      if (
-        !isArrivalLate(
-          movement.arrivalDetails?.estimatedArrivalAt,
-          movement.stage,
-          event.now,
-          movement.closure !== undefined,
-        )
-      ) {
-        return state;
+      const reconciled = reconcileMovementLateNotices(state, movement.id, event.now);
+      if (reconciled !== state) {
+        decision.outcome = "accepted";
+        decision.reasonCode = "none";
       }
-      const updated: Movement = { ...movement, arrivalLateNotifiedAt: event.now };
-      const next = replaceMovement(state, movement.id, updated);
-      const notices = [
-        makeNotice(
-          event.now,
-          next.notices.length,
-          "arrival_late_referrer",
-          { role: "ed", placeId: movement.originEdId },
-          { movementId: movement.id },
-          `Arrival for ${movement.id} is more than ${ARRIVAL_LATE_AFTER_MINUTES} minutes past the planned time and they have not arrived.`,
-        ),
-      ];
-      if (movement.acceptedUnitId) {
-        notices.push(
-          makeNotice(
-            event.now,
-            next.notices.length + 1,
-            "arrival_late_ward",
-            { role: "ward", placeId: movement.acceptedUnitId },
-            { movementId: movement.id, unitId: movement.acceptedUnitId },
-            `Arrival for ${movement.id} is more than ${ARRIVAL_LATE_AFTER_MINUTES} minutes past the planned time and they have not arrived.`,
-          ),
-        );
-      }
-      return appendNotices(next, notices);
+      return reconciled;
     }
 
     default: {

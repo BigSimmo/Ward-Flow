@@ -98,7 +98,8 @@ export type AuditActor = {
   role: WardFlowRole | null;
   actingUnitId: string | null;
   actingTeamId?: string;
-  attribution: "declared-prototype-role";
+  /** `system`: raised automatically by the server, with no desk (D-221 item 7, X1b-5). */
+  attribution: "declared-prototype-role" | "system";
 };
 export type AuditSubject =
   | { kind: "admission"; admissionId: string; unitId: string; patientId: PatientId | null }
@@ -465,6 +466,9 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
 }
 
 function auditActor(state: WardFlowState, event: WardFlowEvent): AuditActor {
+  // X1b-5 (D-221 item 7): the server's five-minute sweep raises due late notices with no desk.
+  if (event.type === "EVALUATE_ARRIVAL_LATENESS" && event.automatic === true)
+    return { role: null, actingUnitId: null, attribution: "system" };
   const role = enumValue(Object.keys(WARD_FLOW_ROLE_LABELS) as WardFlowRole[], event.role);
   return {
     role,

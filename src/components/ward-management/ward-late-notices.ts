@@ -177,3 +177,13 @@ export function reconcileLateNotices({
   }
   return { schedule, cancel: unraised.map((notice) => notice.id), marker };
 }
+
+/**
+ * X1b-5 (Josh, 14 Nov 2026, D-221 item 7): whether the server's five-minute sweep has anything to
+ * raise for this journey now: it reads late and one of its addressees has not been told. A journey
+ * whose notices were scheduled at the save is already told, so the sweep writes nothing for it.
+ */
+export function lateNoticesDue(movement: LateNoticeMovement, notices: readonly Notice[], now: Instant): boolean {
+  if (arrivalTiming(movement, now).state !== "late") return false;
+  return reconcileLateNotices({ before: undefined, after: movement, notices, now }).schedule.length > 0;
+}

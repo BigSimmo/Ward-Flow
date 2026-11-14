@@ -79,6 +79,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { type BroadcastAlert } from "./alerts/ward-broadcast-model";
 import { reducePlannedAdmissionEvent } from "./capacity/planned-admissions-reducer";
 import { reduceInboxEvent } from "./ward-inbox-reducer";
+import { reconcileLateNotices, type LateNoticePlan } from "./ward-late-notices";
 import type { RecordedFactEventHelpers } from "./ward-flow-record-events";
 import { reduceObservationLevelEvent } from "./ward-flow-observation-events";
 import type { UndoEventHelpers } from "./ward-flow-undo-events";
@@ -575,7 +576,7 @@ export function seedWardFlowState(
   scenario: WardScenario = "standard",
   options: { workedExamples?: boolean } = {},
 ): WardFlowState {
-  return withSeedClockFaceRecords(seedAuthoredWorld(scenario, options), NOW_ANCHOR);
+  return withSeedLateNotices(withSeedClockFaceRecords(seedAuthoredWorld(scenario, options), NOW_ANCHOR), NOW_ANCHOR);
 }
 
 /** The seed before its clock-face records (time audit G1, `ward-seed-clock.ts`). */
@@ -669,7 +670,18 @@ export function seedWardFlowStateAt(
     NOW_ANCHOR,
     now,
   );
-  return withSeedClockFaceRecords(moved, now, options.dayZero);
+  return withSeedLateNotices(withSeedClockFaceRecords(moved, now, options.dayZero), now);
+}
+
+/**
+ * D-221: the seed's open journeys get the late notices a save of their times would have stored
+ * (WF-RD03's marker had none), through the same reconcile the reducer runs after every save.
+ */
+function withSeedLateNotices(state: WardFlowState, now: Instant): WardFlowState {
+  let next = state;
+  for (const movement of state.movements)
+    if (movement.closure === undefined) next = reconcileMovementLateNotices(next, movement.id, now);
+  return next;
 }
 
 /**
@@ -1498,6 +1510,78 @@ function withStepUndo(state: WardFlowState, next: WardFlowState, event: WardFlow
   };
 }
 
+/**
+ * D-221 (Josh, 14 Nov 2026): applies one journey's late-notice plan (`ward-late-notices.ts`): drops
+ * the not-yet-raised notices it cancels, stores the ones it schedules through the usual notice id
+ * rule and gate, and sets the journey's `arrivalLateNotifiedAt` marker (removed when cleared).
+ */
+function withLateNoticePlan(state: WardFlowState, movementId: string, plan: LateNoticePlan): WardFlowState {
+  let next = state;
+  if (plan.cancel.length > 0) {
+    const cancelled = new Set(plan.cancel);
+    next = { ...next, notices: next.notices.filter((notice) => !cancelled.has(notice.id)) };
+  }
+  if (plan.schedule.length > 0) {
+    const count = next.notices.length;
+    next = appendNotices(
+      next,
+      plan.schedule.map((draft, index) =>
+        makeNotice(draft.raisedAt, count + index, draft.kind, draft.to, draft.about, draft.sentence),
+      ),
+    );
+  }
+  const movement = next.movements.find((candidate) => candidate.id === movementId);
+  if (movement && movement.arrivalLateNotifiedAt !== plan.marker) {
+    const marked: Movement = { ...movement };
+    if (plan.marker === undefined) delete marked.arrivalLateNotifiedAt;
+    else marked.arrivalLateNotifiedAt = plan.marker;
+    next = replaceMovement(next, movementId, marked);
+  }
+  return next;
+}
+
+/**
+ * D-221 items 2 and 8: brings one journey's stored late notices up to date at `now`, as if it had
+ * just been saved. Used by the backfill event (`EVALUATE_ARRIVAL_LATENESS`, kept for records saved
+ * before notices were scheduled), the seed and the server's five-minute sweep. Returns `state`
+ * itself when nothing changes.
+ */
+export function reconcileMovementLateNotices(state: WardFlowState, movementId: string, now: Instant): WardFlowState {
+  const movement = state.movements.find((candidate) => candidate.id === movementId);
+  if (!movement) return state;
+  const plan = reconcileLateNotices({ before: undefined, after: movement, notices: state.notices, now });
+  if (plan.schedule.length === 0 && plan.cancel.length === 0 && plan.marker === movement.arrivalLateNotifiedAt)
+    return state;
+  return withLateNoticePlan(state, movementId, plan);
+}
+
+/**
+ * D-221 (Josh, 14 Nov 2026), the reducer post-step: every journey this event changed (compared by
+ * reference) has its late notices reconciled, so a saved ETA, a booking, an arrival, a diversion, a
+ * closure, an undo or a step back schedules, moves or withdraws the pair with one call, written by
+ * the desk that saved. A reseed is left to the seed's own pass.
+ */
+function withLateNoticesReconciled(before: WardFlowState, after: WardFlowState, event: WardFlowEvent): WardFlowState {
+  if (after.movements === before.movements) return after;
+  if (event.type === "RESET_SCENARIO" || event.type === "SET_SCENARIO") return after;
+  const earlier = new Map(before.movements.map((movement) => [movement.id, movement]));
+  let next = after;
+  for (const movement of after.movements) {
+    const previous = earlier.get(movement.id);
+    if (previous === movement) continue;
+    const plan = reconcileLateNotices({ before: previous, after: movement, notices: next.notices, now: event.now });
+    next = withLateNoticePlan(next, movement.id, plan);
+  }
+  // A journey this event removed (an Undo of the save that made it) takes its unraised notices with it.
+  const kept = new Set(after.movements.map((movement) => movement.id));
+  for (const previous of before.movements) {
+    if (kept.has(previous.id)) continue;
+    const plan = reconcileLateNotices({ before: previous, after: undefined, notices: next.notices, now: event.now });
+    if (plan.cancel.length > 0) next = withLateNoticePlan(next, previous.id, plan);
+  }
+  return next;
+}
+
 /** Capture is one reducer-boundary append; clinical branches supply their actual verdict. */
 export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): WardFlowState {
   if (event.type === "RAISE_REFERRAL" && event.pullBed === true) return raiseAndPullBed(state, event);
@@ -1516,7 +1600,11 @@ export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): War
   if (protectedEvent) {
     const recorded = advanceResourceRevisions(
       state,
-      reducerSlices().reduceProtectedRecordEvent(state, event, PROTECTED_RECORD_EVENT_HELPERS),
+      withLateNoticesReconciled(
+        state,
+        reducerSlices().reduceProtectedRecordEvent(state, event, PROTECTED_RECORD_EVENT_HELPERS),
+        event,
+      ),
     );
     // Audit A1-12: a recorded discharge ("Has left") keeps what it changed, so its toast can undo it.
     return event.type === "RECORD_PATIENT_DISCHARGE" ? withStepUndo(state, recorded, event) : recorded;
@@ -1538,7 +1626,11 @@ export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): War
     if (!safeCounter(revision) || revision >= Number.MAX_SAFE_INTEGER) return state;
   }
   const decision: AuditDecision = { outcome: "denied", reasonCode: "transition" };
-  let next = withReferralDecisionUndo(state, reduceClinicalEvent(state, event, decision), event);
+  let next = withReferralDecisionUndo(
+    state,
+    withLateNoticesReconciled(state, reduceClinicalEvent(state, event, decision), event),
+    event,
+  );
   if (event.type !== "RESET_SCENARIO" && event.type !== "SET_SCENARIO") {
     next = withStepUndo(state, advanceResourceRevisions(state, next), event);
   }
@@ -2158,6 +2250,13 @@ export function reduceClinicalEvent(
     case "RELEASE_INBOX_ITEM_OWNERSHIP":
     case "SNOOZE_INBOX_ITEM":
     case "UNSNOOZE_INBOX_ITEM": {
+      // D-221: a late notice is stored when its time is saved and raised later. Until it is raised
+      // nobody has been shown it, so nobody can have read it.
+      if (event.type === "MARK_NOTICE_READ") {
+        const notice = state.notices.find((candidate) => candidate.id === event.noticeId);
+        if (notice && notice.raisedAt > event.now)
+          return reject(state, event, `notice ${event.noticeId} has not been raised yet`);
+      }
       const next = reduceInboxEvent(state, event, decision, reject);
       if (next) return next;
       return state;
@@ -2480,6 +2579,7 @@ export type PlacementEventHelpers = typeof PLACEMENT_EVENT_HELPERS;
 const TRANSPORT_EVENT_HELPERS = {
   STAGE_TRANSITION_BLOCKERS,
   appendNotices,
+  reconcileMovementLateNotices,
   bedNumberRefusal,
   heldBedRefusal,
   departAdmission,
