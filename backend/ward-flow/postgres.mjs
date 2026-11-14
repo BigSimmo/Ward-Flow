@@ -110,11 +110,6 @@ const NOT_APPLIED_RESULT = {
   error:
     "This save was checked after the page reloaded and had not arrived, so it was not applied. Review the board before entering it again.",
 };
-/**
- * X1b-5: the audit row's actor for a write no person made (the five-minute late-notice sweep). The
- * nil UUID is never an account: account ids are random (v4), and config refuses it as a workspace.
- */
-export const SYSTEM_ACTOR_ID = "00000000-0000-0000-0000-000000000000";
 export function storedAuditChanges(changes) {
   if (!changes || changes.reset !== true || !Array.isArray(changes.domainAudit)) return changes;
   return {
@@ -1221,47 +1216,6 @@ export function createWorkspaceStore(
         await evaluatePush(client, row.payload, row.payload, at, null);
       });
       await deliverOnce();
-    },
-    /**
-     * X1b-5 (Josh, 14 Nov 2026, D-221 item 7): the five-minute timer calls this whether or not push
-     * is on. Open journeys that now read late and whose referrer or ward has not been told get their
-     * late notices raised (`engine.raiseDueLateNotices`). It writes only when something is due: one
-     * save under the workspace lock, with one audit row by the system actor (History reads "Raised
-     * automatically"). Notices scheduled when the time was saved are already stored, so a sweep
-     * after them finds nothing to do. Returns how many journeys were raised.
-     */
-    async sweepLateNotices() {
-      const raised = await transaction(async (client, at) => {
-        const row = await lockedWorld(client, "UPDATE");
-        if (!row || !engine.validWorld(row.payload)) return 0;
-        const swept = engine.raiseDueLateNotices(row.payload, at);
-        if (!swept.raised.length) return 0;
-        const before = row.payload;
-        const priorRevision = Number(row.revision);
-        row.revision = priorRevision + 1;
-        row.payload = swept.world;
-        await saveWorld(client, row, swept.world, row.revision, at);
-        await audit(client, null, SYSTEM_ACTOR_ID, {
-          action: "EVALUATE_ARRIVAL_LATENESS",
-          outcome: "accepted",
-          priorRevision,
-          revision: row.revision,
-          changes: { automatic: true, domainAudit: swept.domainAudit },
-        });
-        if (push) {
-          // As on a save: a push evaluation error never costs the notices.
-          await client.query("SAVEPOINT push_evaluation");
-          try {
-            await evaluatePush(client, swept.world, before, at, null);
-          } catch (error) {
-            await client.query("ROLLBACK TO SAVEPOINT push_evaluation");
-            log({ event: "ward_backend_push_evaluation_failure", ...errorFields(error) });
-          }
-        }
-        return swept.raised.length;
-      });
-      if (raised && push) await deliverOnce();
-      return raised;
     },
     read,
     /**
