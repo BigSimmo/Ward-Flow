@@ -12,10 +12,10 @@ import {
   referralAddressingStateLabel,
   referralDestinationLabel,
   referralState,
-  referralWithdrawn,
   referralClocks,
 } from "@/components/ward-management/ward-referrals";
-import { referralClosedForFollowUp } from "./referral-owner-and-calls-model";
+
+export { referralAllWardsDeclined } from "@/components/ward-management/ward-referrals";
 import {
   OVERDUE_AFTER_ANY_TIER_MINUTES,
   OVERDUE_AFTER_MINUTES_BY_TIER,
@@ -33,24 +33,6 @@ export const GENDER_REVIEW_FLAG = "Coordinator to review: gender or sex not reco
 
 /** R-BEDS-13: the tag a queued referral carries once every asked ward has declined. */
 export const ALL_ASKED_DECLINED_TAG = "All asked wards declined";
-
-/**
- * R-BEDS-13: a community referral that every asked ward declined stays in the coordinator's queue
- * until it is placed, closed or handed back, so someone is still asked to find it a bed. Derived
- * from the record alone (no new record): declined, nothing accepted or withdrawn, and not open to a
- * community answer elsewhere.
- */
-export function referralAllWardsDeclined(referral: Referral): boolean {
-  const wards = referral.destinations.filter((arm) => arm.destination.kind === "psychiatric_ward");
-  return (
-    referral.source === "community" &&
-    wards.length > 0 &&
-    referralState(referral) === "declined" &&
-    !referralWithdrawn(referral) &&
-    referralClosedForFollowUp(referral) === undefined &&
-    wards.every((arm) => arm.state === "declined" || arm.withdrawnAt !== undefined)
-  );
-}
 
 export function referralNeedsGenderReview(referral: Referral): boolean {
   const ward = referral.destinations.find((addressing) => addressing.destination.kind === "psychiatric_ward");

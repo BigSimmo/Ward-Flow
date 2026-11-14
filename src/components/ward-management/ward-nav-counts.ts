@@ -1,7 +1,7 @@
 import { BED_RELEASE_BLOCKED_FIGURE_LABEL, isOpen } from "@/components/ward-management/ward-derivations";
 import { SEVERE_CAUSES, delayGroups } from "@/components/ward-management/delays/delays-derivations";
 import { serviceRollup } from "@/components/ward-management/ward-morning-rollup";
-import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
+import { coordinatorReferralQueue } from "@/components/ward-management/ward-referrals";
 import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
 import { rememberLastCall } from "@/components/ward-management/ward-last-call";
 import type {
@@ -180,19 +180,12 @@ function deriveWardNavCounts(input: WardNavCountInput): WardNavCounts {
     },
     referrals: {
       /*
-       * `queued` is `referralState`'s word for "no destination has accepted and they have not all
-       * declined" — a referral still waiting on somebody. An accepted or fully-declined referral is
-       * finished with and is not work.
-       *
-       * ⚠️ `referralState` alone is not enough — it stays "queued" for a referral whose only
-       * destination has been withdrawn, because `RECORD_REFERRER_WITHDRAWAL` never touches `state`
-       * (O-17.11). The added `some(isAwaitingAnswer)` excludes a referral with nothing left
-       * genuinely awaiting an answer, the same rule `referralQueueOrder` (`ward-referrals.ts`) now
-       * applies.
+       * The coordinator's queue (`coordinatorReferralQueue`): a referral still genuinely awaiting an
+       * answer (a withdrawn destination does not count, O-17.11), plus one every asked ward declined
+       * (R-BEDS-13), which stays as work until someone acts. Home and the Referrals board show the
+       * same list.
        */
-      value: referrals.filter(
-        (referral) => referralState(referral) === "queued" && referral.destinations.some(isAwaitingAnswer),
-      ).length,
+      value: coordinatorReferralQueue(referrals).length,
       noun: "awaiting a decision",
       urgent: false,
     },
