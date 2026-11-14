@@ -62,10 +62,6 @@
       "src/components/ward-management/ward-movements.ts": 1,
       "src/components/ward-redesign/pop-search/search-preview.tsx": 1
     },
-    "ready-now": {
-      "src/components/ward-management/statistics/executive-statistics-projector.ts": 1,
-      "src/components/ward-management/statistics/statistics-network-cards.tsx": 1
-    },
     "waiting-in-ed": {
       "src/components/ward-management/bed-meeting/bed-meeting-agenda.ts": 1,
       "src/components/ward-management/ed/ed-screen-derivations.ts": 1,

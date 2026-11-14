@@ -255,7 +255,7 @@ function ExecutiveStatisticsScreen() {
         occupiedPct: beds.total ? Math.round((beds.inUse / beds.total) * 100) : null,
         availableNow: beds.ready,
         pendingPreparation: data.capacity.pendingPreparation,
-        waitingCount: people.waitingInEd,
+        waitingCount: people.edJourneysOpen,
         stillOpenCount: people.stillOpen,
         admissionsCount: people.admissionsArrivedToday,
         dischargesCount: people.admissionsEndedToday,

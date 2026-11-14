@@ -486,7 +486,7 @@ function ExecutiveJourneyView({ data, onShowBoard }: { data: ExecutiveReportingF
     <JourneyPresentation
       {...{ onShowBoard, stages, hospitals, waitingSummary }}
       waitingRows={[]}
-      totalWaiting={data.network.people.waitingInEd}
+      totalWaiting={data.network.people.edJourneysOpen}
       totalReady={data.network.beds.ready}
       totalPreparing={data.network.beds.beingMadeReady}
     />

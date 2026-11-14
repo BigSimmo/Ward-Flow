@@ -102,7 +102,7 @@ describe("Network views consume only the released executive report", () => {
           exportFigures={{
             stem: "network",
             scope: "Whole network",
-            figures: () => [["Open ED movements", report.network.people.waitingInEd]],
+            figures: () => [["Open ED movements", report.network.people.edJourneysOpen]],
           }}
         />,
       ),
@@ -114,11 +114,11 @@ describe("Network views consume only the released executive report", () => {
       {
         stem: "network",
         scope: "Whole network",
-        figures: () => [["Open ED movements", report.network.people.waitingInEd]],
+        figures: () => [["Open ED movements", report.network.people.edJourneysOpen]],
       },
       "Synthetic as-at",
     );
-    expect(lines.at(-1)).toEqual(["Open ED movements", releasedCountText(report.network.people.waitingInEd)]);
+    expect(lines.at(-1)).toEqual(["Open ED movements", releasedCountText(report.network.people.edJourneysOpen)]);
     expect(csvCell({ kind: "withheld" })).toBe('"not shown"');
     expect(csvCell({ kind: "small" })).toBe('"fewer than 5"');
   });
@@ -234,7 +234,7 @@ describe("Network views consume only the released executive report", () => {
           beingMadeReady={beds.beingMadeReady}
           occupied={beds.inUse}
           occupiedPct={beds.total ? (beds.inUse / beds.total) * 100 : 0}
-          waitingInEd={report.network.people.waitingInEd}
+          waitingInEd={report.network.people.edJourneysOpen}
           endedToday={report.network.people.admissionsEndedToday}
           wards={report.wards.map((ward) => ({
             id: ward.id,

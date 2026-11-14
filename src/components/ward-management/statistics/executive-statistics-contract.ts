@@ -75,7 +75,7 @@ const networkAggregate = z.strictObject({
   ),
   beds: bedCounts,
   people: z.strictObject({
-    waitingInEd: releasedCount,
+    edJourneysOpen: releasedCount,
     stillOpen: releasedCount,
     admissionsArrivedToday: releasedCount,
     admissionsEndedToday: releasedCount,
@@ -134,7 +134,7 @@ export function isExecutiveNetworkAggregate(value: unknown): value is ExecutiveN
       return false;
   }
   const movementFigures = [
-    aggregate.people.waitingInEd,
+    aggregate.people.edJourneysOpen,
     aggregate.people.stillOpen,
     aggregate.people.refused,
     aggregate.people.escalated,
