@@ -1,7 +1,7 @@
 import type { AuditDecision } from "./ward-audit";
 import type { Instant } from "./ward-clock";
 import type { WardFlowEvent } from "./ward-flow-events";
-import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
+import { roleOfRecordedLabel, WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
 import type { WardFlowState } from "./ward-flow-reducer";
 import type { Movement, Notice } from "./ward-model";
 import { currentLegalDueAt } from "./ward-legal-form-progression";
@@ -375,6 +375,21 @@ export function reduceInboxEvent(
       decision.reasonCode = "none";
       const acknowledgement: InboxAcknowledgement = { at: event.now, by: WARD_FLOW_ROLE_LABELS[event.role] };
       const existing = state.inboxAcknowledgements[inboxItemId] ?? [];
+      // B7: idempotent per role within the row's current occurrence. `by` is a role, never a person,
+      // so a repeat by the same role (a double click, a retried save) adds nothing a reader can tell
+      // apart; the first entry wins, as RECORD_ARRIVED_IN_DEPARTMENT keeps its first recording. Any
+      // earlier entry by that role counts, not only the latest, so A, B, A still reads as two roles.
+      // Entries from before `inboxRowSince` belong to an earlier occurrence of a reused row id, so a
+      // new occurrence can be acknowledged again. Stored labels are read through
+      // `roleOfRecordedLabel` (Q66). Accepted, not refused: the role's acknowledgement is on record,
+      // and a refusal would tell the drawer (and a held sign-out, D-125) that it failed.
+      const since = inboxRowSince(state, inboxItemId);
+      const alreadyByRole = existing.some(
+        (entry) => roleOfRecordedLabel(entry.by) === event.role && (since === undefined || entry.at >= since),
+      );
+      if (alreadyByRole) {
+        return state;
+      }
       return {
         ...state,
         inboxAcknowledgements: { ...state.inboxAcknowledgements, [inboxItemId]: [...existing, acknowledgement] },

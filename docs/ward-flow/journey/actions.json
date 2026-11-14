@@ -231,8 +231,8 @@
         },
         {
           "path": "src/components/ward-management/ed/ed-lists-desktop.tsx",
-          "line": 191,
-          "sha256": "46294754d3699f5a0d2e9c1eae29aef1d353aaf00b0dfbc9efee463766acaf83"
+          "line": 190,
+          "sha256": "3ce8d1f2917d97941217f056d625435bab4d3352fd5f78e7f046f0c1c560c368"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
@@ -287,8 +287,8 @@
         },
         {
           "path": "src/components/ward-management/ed/ed-lists-desktop.tsx",
-          "line": 371,
-          "sha256": "46294754d3699f5a0d2e9c1eae29aef1d353aaf00b0dfbc9efee463766acaf83"
+          "line": 370,
+          "sha256": "3ce8d1f2917d97941217f056d625435bab4d3352fd5f78e7f046f0c1c560c368"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
@@ -838,7 +838,7 @@
         {
           "path": "src/components/ward-management/ed/ed-screen.tsx",
           "line": 337,
-          "sha256": "328a3cd47aa16083b5b3b8553280a9e4eaa1ed55c74f649d92f77fbca46e7296"
+          "sha256": "e8e2a215f350a6eb73db538ebd9177b09c445ecb4876a9f7499f9a43462185cf"
         },
         {
           "path": "src/components/ward-management/referrals/pull-accepted-referral.tsx",
@@ -2142,7 +2142,7 @@
         {
           "path": "src/components/ward-management/ed/ed-screen-row-facts.tsx",
           "line": 96,
-          "sha256": "4a1e24daee0a799a7948eea72ad1648562b9c83882bdd741fd6993105e0fe24b"
+          "sha256": "d69d8155cf8f5554a26f3dc7b80a259e61e36ad1854031f28722e7ac030a74a2"
         },
         {
           "path": "src/components/ward-management/patients/patient-status-card.tsx",
@@ -4731,7 +4731,7 @@
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 323,
-          "sha256": "85f4085b71ed6928d5d7af6996fbcfb0b70bfea21ff5e8df68ee0481c1ce8f21"
+          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
         },
         {
           "path": "src/components/ward-management/shell/ward-bar-state.ts",
@@ -4751,12 +4751,12 @@
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 330,
-          "sha256": "85f4085b71ed6928d5d7af6996fbcfb0b70bfea21ff5e8df68ee0481c1ce8f21"
+          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 334,
-          "sha256": "85f4085b71ed6928d5d7af6996fbcfb0b70bfea21ff5e8df68ee0481c1ce8f21"
+          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
         }
       ]
     }
@@ -4770,7 +4770,7 @@
     "roles": ["coordinator"],
     "does": "Records that the coordinator has seen a row and is on top of it, without removing or hiding it.",
     "needs": "The row names a real category and a real record. Two categories joined on 14 Nov 2026 (D-210): pull_now_overdue, an overdue Pull now named by its movement (M2), and the coordinator-only bed_held_elsewhere, named by its referral and a real row only while that bed is held for someone in a bed on another journey (M11).",
-    "changes": "Logs the acknowledgement. Touches nothing else.",
+    "changes": "Logs the acknowledgement once per role for each time the row appears; a repeat by the same role is accepted and saves nothing. Touches nothing else.",
     "reasons": [],
     "refuses": [
       {
@@ -4805,7 +4805,7 @@
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 345,
-          "sha256": "85f4085b71ed6928d5d7af6996fbcfb0b70bfea21ff5e8df68ee0481c1ce8f21"
+          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
         },
         {
           "path": "src/components/ward-management/ward-tasks-drawer.tsx",
@@ -4820,12 +4820,12 @@
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 349,
-          "sha256": "85f4085b71ed6928d5d7af6996fbcfb0b70bfea21ff5e8df68ee0481c1ce8f21"
+          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 371,
-          "sha256": "85f4085b71ed6928d5d7af6996fbcfb0b70bfea21ff5e8df68ee0481c1ce8f21"
+          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
         }
       ]
     }
@@ -4882,7 +4882,7 @@
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 384,
-          "sha256": "85f4085b71ed6928d5d7af6996fbcfb0b70bfea21ff5e8df68ee0481c1ce8f21"
+          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
         },
         {
           "path": "src/components/ward-management/ward-tasks-drawer.tsx",
@@ -4897,17 +4897,17 @@
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 387,
-          "sha256": "85f4085b71ed6928d5d7af6996fbcfb0b70bfea21ff5e8df68ee0481c1ce8f21"
+          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 404,
-          "sha256": "85f4085b71ed6928d5d7af6996fbcfb0b70bfea21ff5e8df68ee0481c1ce8f21"
+          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 408,
-          "sha256": "85f4085b71ed6928d5d7af6996fbcfb0b70bfea21ff5e8df68ee0481c1ce8f21"
+          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
         }
       ]
     }
@@ -4956,7 +4956,7 @@
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 419,
-          "sha256": "85f4085b71ed6928d5d7af6996fbcfb0b70bfea21ff5e8df68ee0481c1ce8f21"
+          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
         },
         {
           "path": "src/components/ward-management/ward-tasks-drawer.tsx",
@@ -4966,12 +4966,12 @@
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 422,
-          "sha256": "85f4085b71ed6928d5d7af6996fbcfb0b70bfea21ff5e8df68ee0481c1ce8f21"
+          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 426,
-          "sha256": "85f4085b71ed6928d5d7af6996fbcfb0b70bfea21ff5e8df68ee0481c1ce8f21"
+          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
         }
       ]
     }

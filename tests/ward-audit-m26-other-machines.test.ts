@@ -1283,7 +1283,7 @@ describe("M26 refusals the diagrams promise", () => {
     expect(refused(received!.state, badReason)).toBe(true);
   });
 
-  it("inbox: a second acknowledgement is a second real fact, and a live fact cannot be ticked away", () => {
+  it("inbox: a repeat acknowledgement by the same role adds nothing, and a live fact cannot be ticked away", () => {
     const [acked] = inboxSpec.fixtures().acknowledged!;
     const again = wardFlowReducer(acked!.state, {
       type: "ACKNOWLEDGE_INBOX_ITEM",
@@ -1292,7 +1292,8 @@ describe("M26 refusals the diagrams promise", () => {
       inboxItemId: acked!.id,
     } as WardFlowEvent);
     expect(refused(acked!.state, again)).toBe(false);
-    expect(again.inboxAcknowledgements[acked!.id]).toHaveLength(2);
+    // B7: `by` is a role, so the same role's repeat is accepted without a second record.
+    expect(again.inboxAcknowledgements[acked!.id]).toHaveLength(1);
     const ticked = wardFlowReducer(acked!.state, {
       type: "COMPLETE_INBOX_ITEM",
       role: "coordinator",

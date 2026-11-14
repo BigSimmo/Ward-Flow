@@ -230,6 +230,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-205](#d-205-release-now-once-each-pr-merges-14-november-2026)                                                                                        | Release now, once each PR merges and its main CI passes                                | Active                                           |
 | [D-206](#d-206-codeql-storage-alerts-are-false-positives-for-the-demo-14-november-2026)                                                                 | CodeQL storage alerts are false positives for the demo                                 | Active                                           |
 | [D-207](#d-207-fit-to-travel-recorded-as-not-cleared-and-the-clinical-go-14-november-2026)                                                              | Fit to travel: not cleared, and the clinical go                                        | Active                                           |
+| [D-208](#d-208-appraised-findings-fix-three-real-display-bugs-14-november-2026)                                                                         | Appraised findings: fix three real display bugs                                        | Active                                           |
 | [D-210](#d-210-mechanics-and-clock-audit-fixes-14-november-2026)                                                                                        | Mechanics and clock audit fixes, one PR                                                | Active                                           |
 
 ---
@@ -2564,9 +2565,20 @@ is inferred.
 - **Clinical go:** Josh lifted the hold on the clinical PR (#1656). It may merge once its required checks pass. Review questions 2, 4 and 9 and the items labelled "not signed", "to verify" or "not stated" stay open for the clinical sitting.
 - **Boundary:** synthetic data only. No clinical value or threshold changes. Built in #1656.
 
+## D-208. Appraised findings: fix three real display bugs (14 November 2026)
+
+- **Date:** 14 November 2026, 8:40 AM AWST (00:40 UTC). **Decided by:** Josh, "yes to all recommendations" on the appraisal of a pasted list of 15 findings, in the thread "Check which remaining-issue findings are real".
+- **Decision:**
+  1. Fix in one small PR: ED bays show "Bay not recorded" instead of a number made up from the record's id (B3); the TV unlock box in the demo no longer asks for a password it does not need (A2); a repeated acknowledgement of the same task by the same role is not saved twice (B7). This replaces the event's earlier append-only design: the record names only the role, and only the coordinator acknowledges, so a second entry added nothing but a duplicate.
+     Ward bed tiles (B4) are not changed. The positional tags the finding named were never shown; the tiles follow the bed-number rule (locked beds are numbered first) that the placement checks also use, so relabelling tiles alone would offer placements the checks then refuse. The remaining gap, a stay whose recorded bed kind differs from its bed number's kind, needs the bed seating to change and waits until after the demo.
+  2. Test accounts: one read-only Supabase read of the 8 test accounts' access dates. Result: all expire 2 February 2027, so the reported 16 November expiry was wrong and nothing changes.
+  3. The old audit worktree on Josh's PC stays until after the demo. A read-only check found its branch merged into `main` (#1501) and no unsaved files, so removing it later loses nothing.
+- **Why:** of the 15 findings, 3 were wrong, 1 already fixed, 1 a repeat and 3 only partly right. These were real and cheap to fix, and B3 cut against D-21 (show only what is recorded).
+- **Boundary:** no clinical value or rule changes.
+
 ## D-210. Mechanics and clock audit fixes (14 November 2026)
 
-- **Date:** 14 November 2026, 9:53 AM AWST (01:53 UTC). D-208 is claimed by open PR #1663. D-209 is claimed by open PR #1668. **Decided by:** Josh, in the "Fix app mechanics and clock faults" thread: "Yes to all recommendations. Except ED will alert the ED team screens please and clinician roles. fix everything in 1 PR", answering the ten questions of the mechanics and clock audit (`audit-handover/mechanics-clock-audit-2026-11-14.md`).
+- **Date:** 14 November 2026, 9:53 AM AWST (01:53 UTC). D-209 is claimed by open PR #1668. **Decided by:** Josh, in the "Fix app mechanics and clock faults" thread: "Yes to all recommendations. Except ED will alert the ED team screens please and clinician roles. fix everything in 1 PR", answering the ten questions of the mechanics and clock audit (`audit-handover/mechanics-clock-audit-2026-11-14.md`).
 - **Decision:**
   1. **Offline saves** record the time the person acted. The engine accepts it only when it is not later than the server's time and not earlier than the record's last change; history shows "entered offline, sent HH:MM". Otherwise the save is refused and the person is asked to redo it.
   2. **A typed legal expiry that passes** for a person admitted on a form raises Act now on the ward desk, a coordinator alert and the Forms counts. For a person still in ED, the alert also reaches the ED team screens (ED desk) and the ED clinician role, as well as the coordinator.

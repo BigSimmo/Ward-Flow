@@ -67,7 +67,9 @@ describe("ED board on phone", () => {
     expect(document.querySelector('[data-testid^="ward-ed-expand-"]')).toBeNull();
     for (const row of rows) {
       expect(within(row).getAllByRole("button")).toHaveLength(1);
-      expect(row.textContent).toMatch(/Bay \d+/);
+      // B3 (D-21): no ED bay is recorded, so the row says so instead of inventing one.
+      expect(row.textContent).toContain("Bay not recorded");
+      expect(row.textContent).not.toMatch(/Bay \d+/);
     }
   });
 

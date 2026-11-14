@@ -11,7 +11,7 @@ import {
   elapsedOpenMinutes,
   isUnderAForm,
 } from "@/components/ward-management/ed/ed-home-derivations";
-import { edBayAssignments, movementMedicalClearance } from "@/components/ward-management/ed/ed-screen-model";
+import { movementMedicalClearance } from "@/components/ward-management/ed/ed-screen-model";
 import {
   currentLegalDueAt,
   currentLegalStanding,
@@ -343,6 +343,7 @@ function attentionFor(row: WardClinicalRow, leave: LeaveBed | undefined, now: In
 export type EdClinicalRow = {
   id: string;
   name: string;
+  /** The recorded ED bay; empty while none is recorded (B3, D-21), shown as "Not recorded". */
   bay: string;
   waitMinutes: number;
   band: "over" | "eight" | "under";
@@ -375,7 +376,6 @@ export function edClinicalRows(input: EdClinicalInputs): EdClinicalRow[] | undef
     (row) => row.ed.id === edId,
   );
   if (!summary) return undefined;
-  const bays = edBayAssignments(summary.open);
   const unitName = (id: string | undefined) =>
     id === undefined ? undefined : units.find((unit) => unit.id === id)?.name;
 
@@ -417,7 +417,8 @@ export function edClinicalRows(input: EdClinicalInputs): EdClinicalRow[] | undef
       return {
         id: movement.id,
         name: input.nameOf(movement),
-        bay: (bays.get(movement.id) ?? "").replace(/^Bay /, ""),
+        // B3 (D-21): no ED bay is recorded on a movement, so none is shown.
+        bay: "",
         waitMinutes,
         band,
         urgency: movement.urgency as 1 | 2 | 3,

@@ -157,7 +157,9 @@ export function TvLockControl({
         open={asking}
         onClose={close}
         title="Unlock this TV"
-        description="Enter your account password to leave the TV view."
+        description={
+          needsPassword ? "Enter your account password to leave the TV view." : "Unlock to leave the TV view."
+        }
         size="sm"
         className={styles.unlock}
         data-testid="tv-unlock-dialog"
