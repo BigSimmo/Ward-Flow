@@ -479,7 +479,7 @@ export function reduceRecordedLegalEvent(
       }
       // A Form 5B continues a current Form 5A; it cannot continue one a person recorded as ended.
       if (event.formCode === "5B" && movement.legalForm?.code === "5A" && currentLegalPosition(movement).ended) {
-        return reject(state, event, "This Form 5A is recorded as ended, so a Form 5B cannot continue it.");
+        return reject(state, event, "This Form 5A is recorded as ended, so a Form 5B cannot continue it. If the end was recorded in error, correct it first.");
       }
       // D-187 item 6 / D-186 item 5: a continuation with no form on file is accepted. The screen warns
       // (`followOnFormWarning` in `ward-legal-order-rules.ts`); the engine never refuses for it.
