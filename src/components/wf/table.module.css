@@ -132,6 +132,12 @@
   color: var(--wf-ink-3);
   text-align: left;
   white-space: nowrap;
+  /* R-STYLE-2: a column is never narrower than "Not recorded" on two lines at 12px. */
+  min-width: var(--wf-col-min, 5rem);
+}
+
+.table th.num {
+  text-align: right;
 }
 
 /* Spec item 9 (13 Nov 2026): a cell's height is a floor (a table cell's `height` grows with its
@@ -146,6 +152,7 @@
   overflow: hidden;
   overflow-wrap: break-word;
   max-width: 0;
+  min-width: var(--wf-col-min, 5rem);
 }
 
 .twoLines {
