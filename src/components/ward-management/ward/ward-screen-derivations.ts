@@ -38,6 +38,7 @@ import { patientAgeYears } from "@/components/ward-management/ward-patients";
 import { WARD_LOCKED_BED_SPLITS } from "@/components/ward-management/ward-sites";
 import { layoutBedNumbers, wardStaySeats } from "./ward-bed-layout";
 import { activeClosedBeds } from "@/components/ward-management/ward-ready-beds";
+import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
 import { bedReviewLine } from "../ward-bed-closure-review";
 import { arrivalIsLate } from "./ward-screen-helpers";
 import type { Admission } from "@/components/ward-management/ward-admissions";
@@ -135,9 +136,7 @@ export function wardBedRoster({
   const freeSlots = states.ready + states.beingMadeReady;
   const rawBeds = Array.from({ length: unit.beds }, (_, i) => {
     const bedNumber = i + 1;
-    const designation: "Locked" | "Open" | undefined = isMixed ? (i < lockedBeds ? "Locked" : "Open") : undefined;
-    const podId = isMixed ? (i < lockedBeds ? "locked" : "open") : "all";
-    const podLabel = isMixed ? `${unit.name} ${designation} Beds` : unit.name;
+    // H10: the Locked/Open tag and pod are set below, once the tile's bed number is known.
     const isHdu = false;
 
     // v10 "counts agree": the tiles follow the ruled four bed states (`bedStates`), the same
@@ -275,9 +274,6 @@ export function wardBedRoster({
     return {
       bedNumber,
       bedLabel: `Bed ${String(bedNumber).padStart(2, "0")}`,
-      podId,
-      podLabel,
-      designation,
       isHdu,
       status,
       statusText,
@@ -378,16 +374,31 @@ export function wardBedRoster({
   const seatedBeds = wardStaySeats(unit, admissions ?? []);
   // H-0978 / WS-15 (Josh 26 Oct 2026, "close the exact bed"): a bed closed by number is counted in
   // Closed by `bedStates`, and the layout puts its own number on a Closed tile.
+  // H10, D-MCA (Josh, 14 Nov 2026): on a mixed ward the Ready tiles sit in beds of the kinds the
+  // ward's free figures say are free (locked first), so a free tile never shows a kind the count lacks.
+  const lockedReady = isMixed ? Math.min(lockedBedsFree(unit), freeSlots) : 0;
+  let readySeen = 0;
   const bedNumbers = layoutBedNumbers(
     rawBeds.map((bed) => ({
       stayAdmissionId: bed.stayAdmissionId,
       free: bed.status === "ready",
       closed: bed.status === "closed",
+      ...(isMixed && bed.status === "ready"
+        ? { kind: readySeen++ < lockedReady ? ("locked" as const) : ("open" as const) }
+        : {}),
     })),
     (admissionId) => recordedBeds.get(admissionId),
     heldBeds.map((held) => held.bed),
     (admissionId) => seatedBeds.get(admissionId),
     activeClosedBeds(unit).map((mark) => mark.bedNumber),
+    isMixed ? lockedBeds : 0,
+  );
+  // H10 (and D-208 B4): a stay's tile reads the bed kind its stay recorded, which is its bed
+  // number's kind whenever the records agree; every other tile reads its number's kind.
+  const stayKinds = new Map(
+    (admissions ?? []).flatMap((admission) =>
+      admission.unitId === unit.id && admission.bedKind !== undefined ? [[admission.id, admission.bedKind]] : [],
+    ) as [string, "locked" | "open"][],
   );
   // A4-24: place each "Being made ready" marker on the bed its stay vacated when that bed is now a
   // ready tile, then any remaining markers on the lowest-numbered ready beds, oldest release first.
@@ -414,17 +425,17 @@ export function wardBedRoster({
       const bedNumber = bedNumbers[index];
       const closedMark = bed.status === "closed" ? closedMarks.get(bedNumber) : undefined;
       const preparingReleaseId = bed.status === "ready" ? preparingByBed.get(bedNumber) : undefined;
-      const designation: "Locked" | "Open" | undefined = isMixed
-        ? bedNumber <= lockedBeds
-          ? "Locked"
-          : "Open"
-        : undefined;
+      const kind =
+        (bed.status !== "ready" && bed.stayAdmissionId !== undefined
+          ? stayKinds.get(bed.stayAdmissionId)
+          : undefined) ?? (bedNumber <= lockedBeds ? "locked" : "open");
+      const designation: "Locked" | "Open" | undefined = isMixed ? (kind === "locked" ? "Locked" : "Open") : undefined;
       return {
         ...bed,
         bedNumber,
         bedLabel: `Bed ${String(bedNumber).padStart(2, "0")}`,
         designation,
-        podId: isMixed ? (bedNumber <= lockedBeds ? "locked" : "open") : "all",
+        podId: isMixed ? kind : "all",
         podLabel: isMixed ? `${unit.name} ${designation} Beds` : unit.name,
         heldFor: bed.status === "ready" ? heldBeds.find((held) => held.bed === bedNumber)?.name : undefined,
         preparing: preparingReleaseId !== undefined,

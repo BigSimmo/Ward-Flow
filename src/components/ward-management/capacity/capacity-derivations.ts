@@ -19,6 +19,7 @@ import {
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedIsOccupied, remainingSpeciallingCapacity } from "@/components/ward-management/ward-admissions";
 import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-bed-designation";
+import { bedKindSeatConflicts } from "@/components/ward-management/ward-bed-numbers";
 import { bedStates, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import {
   numberedReservationBeds,
@@ -376,6 +377,11 @@ export type NetworkWardRow = {
   arrivalCapacityConflicts?: number;
   reservationReleaseCapacityConflicts?: number;
   /**
+   * H10, D-MCA (Josh, 14 Nov 2026): stays recorded in one bed kind with no bed of that kind
+   * (`bedKindSeatConflicts`). The layout never seats them in the other kind's beds by itself.
+   */
+  bedKindConflicts?: number;
+  /**
    * How many one-to-one specialling slots this ward could still staff, and how many it is authored
    * to staff at all. **Owner ruling 2026-09-06: specialling headroom goes on the network view**,
    * because `ward-flow-reducer.ts` REFUSES a pull when `remainingSpeciallingCapacity(...) <= 0`, and
@@ -542,6 +548,7 @@ function networkWardRow(unit: Unit, inputs: NetworkWardInputs): NetworkWardRow {
     // the same whether or not a caller supplied releases.
     arrivalCapacityConflicts: unit.arrivalCapacityConflicts?.length ?? 0,
     reservationReleaseCapacityConflicts: unit.reservationReleaseCapacityConflicts?.length ?? 0,
+    bedKindConflicts: admissions === undefined ? 0 : bedKindSeatConflicts(unit, admissions).length,
     bedRecordsMidUpdate:
       Object.values(unit.sexMix).reduce((sum, count) => sum + count, 0) !==
       unitCapacity(unit, [...(releases ?? [])]).occupied - occupantsInNeitherSexBucket(unit.id, admissions),

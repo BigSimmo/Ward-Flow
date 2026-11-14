@@ -4,6 +4,7 @@ import type { WardFlowState } from "./ward-flow-reducer";
 import { withSeededReviewIds } from "./ward-governance-seed";
 import { upgradeLegacyDeclineReasons } from "./ward-decline-legacy";
 import { upgradeLegacyObservationRows } from "./ward-observation-legacy";
+import { withDerivedStayBeds } from "./ward-bed-numbers";
 
 const object = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
@@ -15,8 +16,10 @@ const object = (v: unknown): v is Record<string, unknown> => typeof v === "objec
  */
 export function withInboxStreamADefaults<T extends WardFlowState>(state: T): T {
   const stored = state as T & Partial<Pick<WardFlowState, "inboxOwnership" | "inboxSnoozes">>;
+  // H10, D-MCA (Josh, 14 Nov 2026): a save from before bed kinds and numbers were one fact takes
+  // them once here (`withDerivedStayBeds`), the same derivation the seed uses.
   return withSeededReviewIds({
-    ...upgradeLegacyDeclineReasons(state),
+    ...upgradeLegacyDeclineReasons(withDerivedStayBeds(state)),
     inboxOwnership: stored.inboxOwnership ?? {},
     inboxSnoozes: stored.inboxSnoozes ?? {},
   });

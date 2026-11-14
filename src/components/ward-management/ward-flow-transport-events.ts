@@ -1,6 +1,7 @@
 import { INBOX_CATEGORIES } from "./ward-inbox-reducer";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
 import { lockedBedsFree, numberedBedKind, openBedsFree } from "./ward-bed-designation";
+import { chooseBedNumber } from "./ward-bed-numbers";
 import type { Admission } from "./ward-admissions";
 import { emptyCareJourney } from "./ward-care-journey";
 import { finiteInstant, type AuditDecision } from "./ward-audit";
@@ -498,6 +499,17 @@ export function reduceTransportEvent(
         linkedAdmission?.bedKind === numberedBedKind(unit, heldBed)
           ? heldBed
           : undefined;
+      // H10, D-MCA (Josh, 14 Nov 2026): when the held bed is gone, the patient still arrives, in the
+      // lowest free bed of the kind their pull took, so the kind and the number stay one fact.
+      const arrivalBedNumber =
+        heldBedNumber ??
+        (linkedAdmission?.bedKind === undefined
+          ? undefined
+          : chooseBedNumber(unit, state, linkedAdmission.bedKind, {
+              movementId: movement.id,
+              referralId: movement.referralId,
+              admissionId: linkedAdmission.id,
+            }));
       // A seeded pulled stay (`movementId` null) is already counted as a taken bed and in the sex
       // mix (`bedStates`), so its arrival takes no second bed. Before this, arriving one moved
       // Occupied up by two and Ready down by one (release gate, 15 Oct 2026).
@@ -674,7 +686,7 @@ export function reduceTransportEvent(
           state: "occupied",
           gender: movement.gender,
           arrivedAt: event.now,
-          ...(heldBedNumber === undefined ? {} : { bedNumber: heldBedNumber }),
+          ...(arrivalBedNumber === undefined ? {} : { bedNumber: arrivalBedNumber }),
           ...(isBedTurnaround ? { blockReason: "Awaiting clean" } : {}),
         });
       } else if (unpulled) {
@@ -686,6 +698,15 @@ export function reduceTransportEvent(
           heldBedRefusal(withUnit, unit, reservedBed, movement.id, movement.referralId) === null
             ? reservedBed
             : undefined;
+        // H10, D-MCA (Josh, 14 Nov 2026): the stay takes a real bed of the kind it takes, the reserved
+        // bed when that is still free and of that kind, recorded with the kind as a pull's is.
+        const unpulledBedNumber =
+          reservedBedFree !== undefined && numberedBedKind(unit, reservedBedFree) === unpulledBedKind
+            ? reservedBedFree
+            : chooseBedNumber(unit, state, unpulledBedKind, {
+                movementId: movement.id,
+                referralId: movement.referralId,
+              });
         const referral = movement.referralId ? findReferral(withUnit, movement.referralId) : undefined;
         const arrivedStay: Admission = {
           id: unpulledStayId ?? `AD-ARR-${String(withUnit.admissionSequence + 1).padStart(2, "0")}`,
@@ -703,7 +724,7 @@ export function reduceTransportEvent(
           homeRegion: referral?.homeRegion ?? null,
           tentativeDiagnosis: movement.tentativeDiagnosis ?? null,
           bedKind: unpulledBedKind,
-          ...(reservedBedFree === undefined ? {} : { bedNumber: reservedBedFree }),
+          ...(unpulledBedNumber === undefined ? {} : { bedNumber: unpulledBedNumber }),
           state: "occupied",
           pulledAt: event.now,
           arrivedAt: event.now,

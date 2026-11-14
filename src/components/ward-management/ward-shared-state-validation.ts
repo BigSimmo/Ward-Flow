@@ -6,6 +6,7 @@ import type { WardFlowState } from "./ward-flow-reducer";
 import { upgradeLegacyDeclineReasons } from "./ward-decline-legacy";
 import { diversionReturnsResolve } from "./community/diversion-return-review";
 import { upgradeLegacyObservationRows } from "./ward-observation-legacy";
+import { withDerivedStayBeds } from "./ward-bed-numbers";
 import {
   SUPPORT_NOTIFICATION_OCCASIONS,
   SUPPORT_NOTIFICATION_OUTCOMES,
@@ -147,12 +148,17 @@ export function isValidSharedWardFlowState(value: unknown): value is WardFlowSta
       dischargeCriteria: { ...record, items: record.items.filter((item) => !isPatientSpecificItem(item)) },
     });
   }
-  return isValidStoredWardFlowState({
+  const valid = isValidStoredWardFlowState({
     ...state,
     admissions,
     repatriations: [],
     ...(state.supportNotifications === undefined ? {} : { supportNotifications: [] }),
   });
+  // H10, D-MCA (Josh, 14 Nov 2026): a workspace saved before bed kinds and numbers were one fact
+  // reads each current stay's kind and number once, in place, as the seed derives them. Only once
+  // the shape is known good, and it adds nothing the schema does not already accept.
+  if (valid) state.admissions = withDerivedStayBeds(state).admissions;
+  return valid;
 }
 
 /** `upgradeLegacyObservationRows`, applied to the given parsed state's own arrays. */

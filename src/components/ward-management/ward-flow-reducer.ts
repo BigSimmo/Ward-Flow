@@ -1,4 +1,5 @@
 import { reducerSlices } from "./ward-flow-reducer-slice-registry";
+import { withDerivedStayBeds } from "./ward-bed-numbers";
 import {
   findMovement,
   findUnit,
@@ -628,7 +629,11 @@ function seedAuthoredWorld(
   const demo = network ? seed : applyLoopChecksDemoOverlay(withExamples, NOW_ANCHOR);
   // Feature item 13's intake windows and the staff request belong to a clock face, so they are
   // added after any reseed shift (`withSeedClockFaceRecords`, time audit G1).
-  return applyExampleListsOverlay(network ? demo : applyWaitlistDemoOverlay(demo, NOW_ANCHOR), NOW_ANCHOR);
+  // H10, D-MCA (Josh, 14 Nov 2026): seeded stays carry no bed kind or number; each takes them once,
+  // from its seat and the ward's own free locked and open figures (`withDerivedStayBeds`).
+  return withDerivedStayBeds(
+    applyExampleListsOverlay(network ? demo : applyWaitlistDemoOverlay(demo, NOW_ANCHOR), NOW_ANCHOR),
+  );
 }
 
 /**

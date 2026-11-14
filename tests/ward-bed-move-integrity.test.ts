@@ -215,7 +215,8 @@ describe("numbered bed designation integrity", () => {
   it("preserves an unknown historical kind on Undo of a single-kind seeded stay", () => {
     const state = seedWardFlowStateAt(0);
     const stay = state.admissions.find((row) => row.unitId === "scgh-adult-open" && row.state === "occupied")!;
-    expect(stay.bedKind).toBeUndefined();
+    // H10 (D-MCA): seeded stays now take a derived kind; an older save's stay with none is the case here.
+    delete stay.bedKind;
     const moved = send(state, {
       type: "PLACE_IN_BED",
       role: "ward",
