@@ -8,6 +8,10 @@ import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flo
 import { openMeetingAction } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import { useBedMeetingRecord } from "@/components/ward-management/bed-meeting/use-bed-meeting-done";
 
+import {
+  SILENT_WARD_ANOTHER_WARD_SUGGESTION,
+  SILENT_WARD_SECOND_REMINDER_MINUTES,
+} from "@/components/ward-management/ward-operational-defaults";
 import { movementOfferNoReplyWaits, noReplyTimeLabel, type NoReplyWait } from "./referral-no-reply";
 import styles from "./referral-no-reply-timers.module.css";
 
@@ -148,6 +152,11 @@ export function NoReplyTimerList({
           ) : null}
         </li>
       ))}
+      {waits.some((wait) => wait.waitedMinutes >= SILENT_WARD_SECOND_REMINDER_MINUTES) ? (
+        <li className={styles.row} data-testid="ward-patient-answer-another-ward">
+          {SILENT_WARD_ANOTHER_WARD_SUGGESTION}
+        </li>
+      ) : null}
     </ul>
   );
 }

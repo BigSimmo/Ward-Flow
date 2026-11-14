@@ -24,7 +24,17 @@ export function Kbd({ children, className }: { children: ReactNode; className?: 
  * week" is Monday to Sunday; "any date" is every open item.
  */
 export type CountWindow =
-  "now" | "today" | "by tomorrow" | "next 4h" | "next 24h" | "last 24h" | "this week" | "since 07:00" | "any date";
+  | "now"
+  | "today"
+  | "by tomorrow"
+  | "next 4h"
+  | "next 24h"
+  | "last 24h"
+  | "this week"
+  | "since 07:00"
+  | "any date"
+  | "last 7 days"
+  | "next 7 days";
 
 /**
  * A count's time window, drawn quiet (ink-3) after a middle dot: "Discharges 14 · any date". The

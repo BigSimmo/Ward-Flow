@@ -13,7 +13,6 @@ import type { EdScreenContext } from "@/components/ward-management/ed/ed-screen-
 import { outstandingItem } from "@/components/ward-management/ed/ed-screen-model";
 import { recordedEdDeparture } from "@/components/ward-management/ward-ed-presence";
 import { formTitleForCode } from "@/lib/form-register";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { ReferralIntakeSummary } from "@/components/ward-management/referrals/referral-intake-summary";
 import redesign from "./ed-board-redesign.module.css";
 
@@ -321,10 +320,7 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
                       {due === undefined || due === null ? (
                         <span className={redesign.listQuiet}>Not recorded</span>
                       ) : (
-                        <span>
-                          {`${due < now ? "ended" : "ends"} ${formatInstantWithDay(due, now)} as typed`}{" "}
-                          <LegalLimitsNotChecked variant="tag" />
-                        </span>
+                        <span>{`${due < now ? "ended" : "ends"} ${formatInstantWithDay(due, now)}`}</span>
                       )}
                     </td>
                   </tr>

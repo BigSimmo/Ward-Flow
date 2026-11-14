@@ -22,7 +22,7 @@ import {
   rememberDowntimePack,
   type DowntimePack,
 } from "@/components/ward-management/reports/downtime-pack";
-import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
+import { BEDS_NOT_IN_VIEW, DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
 import { DowntimePackBoundary, useDowntimePackOwner } from "@/components/ward-management/reports/downtime-pack-context";
 import { useTakeDowntimePack } from "@/components/ward-management/reports/use-take-downtime-pack";
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
@@ -566,6 +566,14 @@ describe("read-only report screens", () => {
     expect(lastDowntimePack()).not.toBeNull();
     expect(lastDowntimePack()).not.toBe(first);
     expect(screen.queryByText("Taking snapshot")).toBeNull();
+  });
+
+  it("prints no bed figures for a desk that sees no ward, only the line saying so (R-FIGS-8)", () => {
+    inProvider(<DowntimePackScreen />, { pack: OLD_PACK });
+    expect(screen.getByTestId("ward-downtime-no-beds").textContent).toBe(BEDS_NOT_IN_VIEW);
+    expect(screen.queryByTestId("ward-downtime-beds")).toBeNull();
+    expect(screen.queryByText("beds ready")).toBeNull();
+    expect(screen.getByText("in the ED queue")).toBeTruthy();
   });
 
   it("keeps a pack from this world, but not one from another world generation", () => {

@@ -139,13 +139,6 @@
   font-size: var(--wf-fs-13);
 }
 
-.note {
-  margin: 0;
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-  line-height: 1.4;
-}
-
 .more {
   display: inline-flex;
   align-items: center;

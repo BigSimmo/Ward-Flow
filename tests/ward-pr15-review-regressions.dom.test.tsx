@@ -208,7 +208,8 @@ describe("PR15 recorded facts and unavailable data", () => {
     // in the role panel beside the table.
     // Page tops (Josh, 9 Nov 2026): the heading names the page; the answering count is a figure.
     expect(within(hud).getByRole("heading", { level: 1, name: /^On-call: Who to call now$/u })).toBeTruthy();
-    expect(within(screen.getByTestId("ward-on-call-role-panel")).getByText("Not verified")).toBeTruthy();
+    // D-218 (Josh, 14 Nov 2026): the "Not verified" badge is gone; the synthetic line stays.
+    expect(within(screen.getByTestId("ward-on-call-role-panel")).queryByText("Not verified")).toBeNull();
     expect(hud.textContent).not.toMatch(/networks active|On Standby|EDs active/);
   });
 });

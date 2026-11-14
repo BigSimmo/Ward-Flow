@@ -43,6 +43,7 @@ import { bedStates, readyBedsNow, type ReservationReferral } from "@/components/
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 import { communityOriginLabel, sourceWardName } from "@/components/ward-management/ward-movement-origin";
 import { currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
+import { hasCurrentLegalMismatch, LEGAL_MISMATCH_WARNING } from "@/components/ward-management/ward-stay-legal";
 import type { SenderMovementPartialView } from "@/components/ward-management/ward-partial-view-contract";
 import { SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
 import { coordinatorOwnsAcceptedAwaitingBed } from "@/components/ward-management/ward-shared-figures";
@@ -540,7 +541,7 @@ export function dueLong(row: HandoverRow, now: Instant, dayZero?: Date): string 
     parts.push(
       isTimePassed(row.formDueAt, now)
         ? `Form ${row.formCode} time passed`
-        : `Form ${row.formCode} due ${typedClock(row.formDueAt, now, dayZero)} as typed`,
+        : `Form ${row.formCode} due ${typedClock(row.formDueAt, now, dayZero)}`,
     );
   }
   return parts.length ? parts.join(". ") : null;
@@ -594,6 +595,9 @@ export function nextStep(
   } else {
     text = row.escalated ? "Ask a ward, escalated to state desk" : "Ask a ward";
   }
+  // Master stress test D1a-E-2 (14 Nov 2026): a recorded legal mismatch leads the step, so "Pull the
+  // bed" is never read without it. Words only; the step itself is unchanged (D-16).
+  if (hasCurrentLegalMismatch(row.movement)) text = `${LEGAL_MISMATCH_WARNING} ${text}`;
   if (isTimePassed(row.formDueAt, now)) text = `Form ${row.formCode} time passed. ${text}`;
   return { text, tone };
 }
@@ -667,7 +671,7 @@ export function isbarLines(
     row.formCode && row.formEnded
       ? `, Form ${row.formCode} ended`
       : row.formCode && row.formDueAt !== undefined
-        ? `, Form ${row.formCode} due ${typedClock(row.formDueAt, now, dayZero)} as typed`
+        ? `, Form ${row.formCode} due ${typedClock(row.formDueAt, now, dayZero)}`
         : row.formCode
           ? `, Form ${row.formCode}, no due time typed`
           : "";
@@ -827,7 +831,7 @@ export function toHandoverWard(
     ready: readyBedsNow(unit, admissions, bedReleases, holds),
     pendingPreparation: bedsPendingPreparation(unit.id, bedReleases),
     confirmedAt: unit.empty.confirmedAt,
-    staleAfter: unit.empty.staleAfterMinutes,
+    staleAfter: CLINICAL_VALUES.bedCountFresh.value,
     // Audit 24-4 NA2-03: the Pulled box Capacity and Home print, never closed beds.
     held: bedStates(unit, admissions, bedReleases, [], holds).pulled,
     longStays: here.filter((admission) => (daysInBed(admission, now) ?? 0) >= CLINICAL_VALUES.longStayPrompt.value)

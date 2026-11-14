@@ -16,7 +16,6 @@ Home
 
 - A person always chooses the bed. Nothing is placed automatically.
 - Wait lists stay in wait order. Flags highlight a row but never move it.
-- The app never works out Mental Health Act times. It shows only times someone typed from the paper form.
 
 ## Colour code
 

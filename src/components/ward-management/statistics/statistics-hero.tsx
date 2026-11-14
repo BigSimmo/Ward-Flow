@@ -498,7 +498,7 @@ export function StatisticsPage({
           top={top}
         />
         {children}
-        <WardPrototypeFooter testId="ward-statistics-section-footer" note="Synthetic data" />
+        <WardPrototypeFooter testId="ward-statistics-section-footer" />
       </main>
     </div>
   );

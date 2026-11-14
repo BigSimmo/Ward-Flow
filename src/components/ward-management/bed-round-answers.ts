@@ -3,6 +3,7 @@ import type { BroadcastAlert } from "@/components/ward-management/alerts/ward-br
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { byServiceThenName } from "@/components/ward-management/ward-derivations-shortlist";
 import type { Unit } from "@/components/ward-management/ward-model";
+import { isBedCountStale } from "@/components/ward-management/ward-clinical-values";
 
 /**
  * Bed round answers on the agenda (feature build plan batch 3, item 12; D-136 item 3). Each ward
@@ -10,7 +11,7 @@ import type { Unit } from "@/components/ward-management/ward-model";
  * your beds" asks (`ask-wards.ts`) and the ward's own bed figure and its age. Nothing new is stored.
  *
  * A ward counts as confirmed when its bed figure was confirmed by a desk (not a feed), is still
- * inside the figure's own time limit (`staleAfterMinutes`), and is no older than the latest
+ * inside the signed bed count time (`bedCountFresh`), and is no older than the latest
  * "Please confirm your beds" ask that named the ward. Not confirmed is a fact, never a judgement.
  *
  * 🔒 D-126 (Josh, 10 Nov 2026): wards stay in the one fixed order, health service then ward name,
@@ -45,7 +46,7 @@ export function bedRoundAnswers(
     const confirmed =
       figure.source === "ward" &&
       figure.confirmedAt <= now &&
-      now - figure.confirmedAt <= figure.staleAfterMinutes &&
+      !isBedCountStale(figure.confirmedAt, now) &&
       (askedAt === undefined || figure.confirmedAt >= askedAt);
     return confirmed ? { unit, confirmed, confirmedAt: figure.confirmedAt } : { unit, confirmed };
   });

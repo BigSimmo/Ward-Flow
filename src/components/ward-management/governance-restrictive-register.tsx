@@ -227,7 +227,7 @@ export function GovernanceRestrictiveRegister({ units, now }: { units: readonly 
       <Card aria-label="Seclusion and restraint, finished">
         <CardHead
           title="Seclusion and restraint, finished"
-          meta={`${finished.length} recorded · times as typed`}
+          meta={`${finished.length} recorded`}
           level={2}
           action={
             <Link href={SECLUSION_IN_USE_HREF} className={buttonClass({ variant: "ghost", size: "sm" })}>

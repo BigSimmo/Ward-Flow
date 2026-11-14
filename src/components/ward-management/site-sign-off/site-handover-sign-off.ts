@@ -5,6 +5,7 @@ import type { Unit } from "@/components/ward-management/ward-model";
 import { SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
 import { broadcastKind, isAlertActive, latestReplies } from "@/components/ward-management/alerts/ward-broadcast-model";
 import { wardsInBroadcastScope } from "@/components/ward-management/alerts/global-alert-view";
+import { isBedCountStale } from "@/components/ward-management/ward-clinical-values";
 
 /**
  * SITE HANDOVER SIGN-OFF (Josh, 31 Oct 2026 14:08 UTC, questions 61 to 63; D-80 "handover sign-off").
@@ -147,9 +148,9 @@ function startOfDay(now: Instant): Instant {
   return now - minuteOfDay(now);
 }
 
-/** A bed figure is unconfirmed once it is older than its own stale limit (the handover sheet's rule). */
+/** A bed figure is unconfirmed once it is older than the signed bed count time (the handover sheet's rule). */
 export function bedFigureUnconfirmed(unit: Unit, now: Instant): boolean {
-  return now - unit.allocatable.confirmedAt > unit.allocatable.staleAfterMinutes;
+  return isBedCountStale(unit.allocatable.confirmedAt, now);
 }
 
 /**

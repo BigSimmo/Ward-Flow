@@ -2,7 +2,6 @@
 
 import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
 import { Activity, Ambulance, BedSingle, HeartHandshake, MapPin, Shield, Target } from "lucide-react";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import {
   ATS_CATEGORIES,
   URGENCY_LEVELS,
@@ -333,12 +332,7 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
       </section>
 
       <section className={styles.refCard}>
-        <CardHead icon={Shield} title={community ? "Legal status" : "Legal status and urgency"}>
-          <span className={styles.asideText}>
-            <StatusGlyph tone="neutral" size={9} />
-            <LegalLimitsNotChecked variant="tag" />
-          </span>
-        </CardHead>
+        <CardHead icon={Shield} title={community ? "Legal status" : "Legal status and urgency"} />
         <div className={styles.cardBody}>
           <div className={styles.fieldGrid} data-layout={community ? undefined : "wide-narrow"}>
             <Field

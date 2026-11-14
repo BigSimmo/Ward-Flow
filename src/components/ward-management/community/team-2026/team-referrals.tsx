@@ -42,7 +42,9 @@ import { SENT, STAFF, type DemoReferral } from "./midland-demo";
 import { useMidlandDemo } from "./use-midland-demo";
 import { Person, Tag, initialsOf } from "./parts";
 import {
+  midlandClearCount,
   midlandSavedLine,
+  onNextMidlandClear,
   openReferrals,
   recordMidlandDecision,
   undoMidlandDecision,
@@ -109,13 +111,24 @@ export function useAnswer(name: string, id?: string) {
     let persisted = true;
     if (id) persisted = recordMidlandDecision(id, line, boardMoment);
     else setLocal(line);
-    toastId.current =
+    // Demo-Actions-D1a-S-2: the row that accepted is often gone (moved to Answered) before Reset
+    // demo, so the effect above cannot see the clear. The toast is dismissed from the clear itself,
+    // and its Undo does nothing once a reset has happened since it was offered.
+    const offeredAt = midlandClearCount();
+    const pushed =
       toast?.push({
         tone: persisted ? "success" : "warning",
         title: `Accepted ${name}`,
         body: midlandSavedLine(Boolean(id), persisted),
-        action: { label: "Undo", onAction: undo },
+        action: {
+          label: "Undo",
+          onAction: () => {
+            if (midlandClearCount() === offeredAt) undo();
+          },
+        },
       }) ?? null;
+    toastId.current = pushed;
+    if (id && pushed !== null && dismiss) onNextMidlandClear(() => dismiss(pushed));
   };
   const say = (title: string) => toast?.push({ tone: "info", title });
   return { accepted, accept, undo, say };

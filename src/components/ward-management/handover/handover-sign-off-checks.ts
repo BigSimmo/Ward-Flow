@@ -2,6 +2,7 @@ import { formatInstantWithDay, type Instant, isTimePassed } from "@/components/w
 import { groupOf, handoverSignedBefore, wardIsStale, type HandoverRow, type HandoverWard } from "./handover-model";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import type { SignOffCheck } from "./handover-panels";
+import { isBedCountStale } from "@/components/ward-management/ward-clinical-values";
 
 /**
  * The sign-off checklist, shared by the side panel and the sign-off bar so the two never disagree.
@@ -30,8 +31,7 @@ export function handoverSignOffChecks({
   // past that figure's own limit, the rule the Wards page counts by (allocatable), so sign-off can
   // never say every feed is current while Wards shows a stale ward.
   const staleWards = wards.filter(
-    (ward) =>
-      wardIsStale(ward, now) || now - ward.unit.allocatable.confirmedAt > ward.unit.allocatable.staleAfterMinutes,
+    (ward) => wardIsStale(ward, now) || isBedCountStale(ward.unit.allocatable.confirmedAt, now),
   );
   const actRows = rows.filter((row) => groupOf(row, now, cutoff) === "act");
   // Flagged urgent rows need an owner too; they are counted on their own line.

@@ -19,7 +19,7 @@ import {
 } from "@/components/ward-management/ward-operational-defaults";
 
 import { countCellText } from "./capacity-derivations";
-import type { BedMeetingSheet } from "./bed-meeting-derivations";
+import { bedMeetingSheetScope, type BedMeetingSheet } from "./bed-meeting-derivations";
 import styles from "./bed-meeting-sheet.module.css";
 
 /**
@@ -76,7 +76,7 @@ function BedMeetingSheetView({
   const zone = useClockZoneLabel();
   const stamp = asAtStamp(now, flow?.dayZero, zone);
   const { capacity, discharges, ed, delays, waitingLongest, stuckReferrals } = sheet;
-  const scope = sheet.service === null ? "All services" : sheet.service;
+  const scope = bedMeetingSheetScope(sheet);
 
   return (
     <article className={styles.sheet} data-testid="bed-meeting-sheet" aria-labelledby="bed-meeting-sheet-title">
@@ -321,7 +321,6 @@ function BedMeetingSheetView({
         )}
       </div>
 
-      <p className={styles.footer}>Legal time limits are not checked.</p>
       {flow !== null ? <WardPrintFooter /> : null}
     </article>
   );

@@ -29,6 +29,7 @@ import { useWardModalFocus, useWardPageScrollLock } from "@/components/ward-mana
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { dispatchPermission } from "@/components/ward-management/ward-role-permissions";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import { CardSafetyTags } from "@/components/ward-management/patients/card-safety-tags";
 import { ArrivalStaffingNote } from "@/components/ward-management/ward-arrival-staffing-note";
@@ -220,6 +221,13 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   // v10 pass 3: Accept dispatches at once and offers Undo on the layout's toast; this page's own
   // toast line carries the outcome where no toast region is mounted.
   const routeRole = useRouteRole();
+  // Desks-R2-1 (AK-A-03): the site bed manager confirms beds as itself; sent as the ward, the server
+  // refuses it ("not part of your role"), as the ward screen's own confirm already knows.
+  const raiseCapacity = useWardRaise(routeRole === "bed_manager" ? "bed_manager" : "ward");
+  // Josh, 14 Nov 2026 (AK-A-03, D-192 item 5): a desk whose role may not answer referrals (the site
+  // bed manager) is not shown Decline or Accept, only one quiet line naming who answers.
+  const mayDecline = dispatchPermission(routeRole, "DECLINE").allowed;
+  const mayAccept = dispatchPermission(routeRole, "ACCEPT_IN_PRINCIPLE").allowed;
   const { run: runStep } = useUndoableStep({
     dispatch,
     rejections,
@@ -492,7 +500,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
     event.preventDefault();
     const parsed = Number(capacityValue);
     if (!Number.isFinite(parsed) || parsed < 0) return;
-    raise("CONFIRM_CAPACITY", {
+    raiseCapacity("CONFIRM_CAPACITY", {
       unitId: currentUnit.id,
       actingUnitId: currentUnit.id,
       value: Math.floor(parsed),
@@ -1330,78 +1338,85 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                       ) : null}
 
                       {/* DA-19 (design audit, 20 Oct 2026): the not-wired "Ask a question" is gone. */}
-                      <div className={styles.decisionArea}>
-                        {/* D-75 item 5: the desk's one-step accept offers the same hold choice as the phone sheet. */}
-                        {isPhone || blocked ? null : (
-                          <label className={styles.holdInline} htmlFor={`ward-accept-hold-${activeMovement.id}`}>
-                            <span className={styles.formLabel}>Pull time limit</span>
-                            <select
-                              id={`ward-accept-hold-${activeMovement.id}`}
-                              className={styles.formSelect}
-                              value={
-                                holdChosenFor(activeMovement.id)
-                                  ? extendedHoldFor(activeMovement.id)
-                                    ? "extended"
-                                    : "standard"
-                                  : ""
-                              }
-                              onChange={(e) => chooseHold(activeMovement.id, e.target.value === "extended")}
-                            >
-                              <option value="" disabled>
-                                Choose a time limit
-                              </option>
-                              {holdChoices.map((choice) => (
-                                <option key={choice.label} value={choice.extended ? "extended" : "standard"}>
-                                  {choice.label}
+                      {/* D-218: a desk that can never answer sees no buttons and no who-does-it line. */}
+                      {!mayDecline && !mayAccept ? null : (
+                        <div className={styles.decisionArea}>
+                          {/* D-75 item 5: the desk's one-step accept offers the same hold choice as the phone sheet. */}
+                          {isPhone || blocked || !mayAccept ? null : (
+                            <label className={styles.holdInline} htmlFor={`ward-accept-hold-${activeMovement.id}`}>
+                              <span className={styles.formLabel}>Pull time limit</span>
+                              <select
+                                id={`ward-accept-hold-${activeMovement.id}`}
+                                className={styles.formSelect}
+                                value={
+                                  holdChosenFor(activeMovement.id)
+                                    ? extendedHoldFor(activeMovement.id)
+                                      ? "extended"
+                                      : "standard"
+                                    : ""
+                                }
+                                onChange={(e) => chooseHold(activeMovement.id, e.target.value === "extended")}
+                              >
+                                <option value="" disabled>
+                                  Choose a time limit
                                 </option>
-                              ))}
-                            </select>
-                          </label>
-                        )}
-                        <button
-                          type="button"
-                          data-testid={`ward-decline-toggle-${activeMovement.id}`}
-                          data-placement-action="decline"
-                          aria-disabled={blocked ? "true" : undefined}
-                          aria-describedby={blocked ? `ward-decline-unavailable-${activeMovement.id}` : undefined}
-                          title={blocked ?? undefined}
-                          aria-expanded={declineOpen}
-                          className={buttonClass({ variant: "sec", size: decisionSize })}
-                          onClick={blocked ? undefined : () => toggleDecline(activeMovement.id)}
-                        >
-                          Decline
-                        </button>
-                        {holdPending ? (
-                          <DisabledReason id={`ward-accept-hold-reason-${activeMovement.id}`}>
-                            {HOLD_CHOICE_REASON}
-                          </DisabledReason>
-                        ) : null}
-                        <button
-                          type="button"
-                          data-testid={`ward-accept-${activeMovement.id}`}
-                          data-placement-action
-                          aria-disabled={blocked || holdPending ? "true" : undefined}
-                          aria-describedby={
-                            blocked
-                              ? `ward-accept-unavailable-${activeMovement.id}`
-                              : holdPending
-                                ? `ward-accept-hold-reason-${activeMovement.id}`
-                                : undefined
-                          }
-                          title={blocked ?? undefined}
-                          className={buttonClass({ variant: "pri", size: decisionSize })}
-                          onClick={() => {
-                            if (blocked || holdPending) return;
-                            if (isPhone) {
-                              openPhoneAccept();
-                              return;
-                            }
-                            handleAccept(activeMovement.id, extendedHoldFor(activeMovement.id));
-                          }}
-                        >
-                          Accept in principle
-                        </button>
-                      </div>
+                                {holdChoices.map((choice) => (
+                                  <option key={choice.label} value={choice.extended ? "extended" : "standard"}>
+                                    {choice.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          )}
+                          {mayDecline ? (
+                            <button
+                              type="button"
+                              data-testid={`ward-decline-toggle-${activeMovement.id}`}
+                              data-placement-action="decline"
+                              aria-disabled={blocked ? "true" : undefined}
+                              aria-describedby={blocked ? `ward-decline-unavailable-${activeMovement.id}` : undefined}
+                              title={blocked ?? undefined}
+                              aria-expanded={declineOpen}
+                              className={buttonClass({ variant: "sec", size: decisionSize })}
+                              onClick={blocked ? undefined : () => toggleDecline(activeMovement.id)}
+                            >
+                              Decline
+                            </button>
+                          ) : null}
+                          {holdPending && mayAccept ? (
+                            <DisabledReason id={`ward-accept-hold-reason-${activeMovement.id}`}>
+                              {HOLD_CHOICE_REASON}
+                            </DisabledReason>
+                          ) : null}
+                          {mayAccept ? (
+                            <button
+                              type="button"
+                              data-testid={`ward-accept-${activeMovement.id}`}
+                              data-placement-action
+                              aria-disabled={blocked || holdPending ? "true" : undefined}
+                              aria-describedby={
+                                blocked
+                                  ? `ward-accept-unavailable-${activeMovement.id}`
+                                  : holdPending
+                                    ? `ward-accept-hold-reason-${activeMovement.id}`
+                                    : undefined
+                              }
+                              title={blocked ?? undefined}
+                              className={buttonClass({ variant: "pri", size: decisionSize })}
+                              onClick={() => {
+                                if (blocked || holdPending) return;
+                                if (isPhone) {
+                                  openPhoneAccept();
+                                  return;
+                                }
+                                handleAccept(activeMovement.id, extendedHoldFor(activeMovement.id));
+                              }}
+                            >
+                              Accept in principle
+                            </button>
+                          ) : null}
+                        </div>
+                      )}
 
                       {/* Inline Decline Form: below the buttons that open it, so the reasons appear in view (UX audit 21 Oct 2026). */}
                       {declineOpen && !blocked && !isPhone ? (

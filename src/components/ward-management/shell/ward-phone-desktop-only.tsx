@@ -50,8 +50,9 @@ export function WardPhoneDesktopOnly() {
   return (
     // H-0882 (26 Oct 2026): the card is the page on a phone, so it is the main landmark and the skip
     // link's target. It renders ahead of the route, so its id is the one the skip link finds; the
-    // route's own main is hidden while the card shows (the module CSS).
-    <main id="main-content" className={styles.ground} data-phone-desktop-only>
+    // route's own main is hidden while the card shows (the module CSS). Deep-DP4-4: its own id, so a
+    // page never holds two main-content ids; the skip link (ward-main-focus-target) finds the shown one.
+    <main id="phone-desktop-only-main" className={styles.ground} data-phone-desktop-only>
       <section className={styles.card} aria-labelledby="ward-phone-desktop-only-title">
         <Monitor aria-hidden="true" className={styles.icon} strokeWidth={1.75} />
         <h1 id="ward-phone-desktop-only-title" className={styles.title}>

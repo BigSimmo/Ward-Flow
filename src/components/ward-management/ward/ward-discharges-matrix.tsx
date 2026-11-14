@@ -14,6 +14,7 @@ import {
   type Instant,
 } from "@/components/ward-management/ward-clock";
 import { SuburbTeamPanel } from "./suburb-team-panel";
+import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 
 /**
  * Owner ruling R7 (2026-09-06): the ward records one waiting-on value, the one that will take
@@ -45,6 +46,9 @@ export function WardDischargesMatrix({
 }: WardDischargesMatrixProps) {
   const [subTab, setSubTab] = useState<"all" | "scheduled" | "leave" | "barriers" | "suburb">("all");
   const [, startTransition] = useTransition();
+  // Demo-Actions-AC1-2: a desk whose role may not end a leave bed (the site bed manager) is not
+  // offered Ended, which saved nothing (DESIGN-SYSTEM.md, Actions; F-54).
+  const mayEndLeave = useRoleGate()("END_LEAVE_BED").allowed;
 
   return (
     <div className={styles.dischargesWrap}>
@@ -187,13 +191,15 @@ export function WardDischargesMatrix({
                   </span>
                 </div>
                 <div>
-                  <button
-                    type="button"
-                    className={`${styles.btnDischargeAction} ${styles.btnSec}`}
-                    onClick={() => endLeaveBed(leaveBed.id)}
-                  >
-                    Ended
-                  </button>
+                  {mayEndLeave ? (
+                    <button
+                      type="button"
+                      className={`${styles.btnDischargeAction} ${styles.btnSec}`}
+                      onClick={() => endLeaveBed(leaveBed.id)}
+                    >
+                      Ended
+                    </button>
+                  ) : null}
                 </div>
               </div>
             ))

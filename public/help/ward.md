@@ -16,7 +16,6 @@ My ward
 
 - You never see which other wards the patient was referred to.
 - You cannot change another ward's beds or answers.
-- The app never works out Mental Health Act times. It shows only times someone typed from the paper form.
 
 ## Colour code
 

@@ -6,6 +6,8 @@ import type { InboxItem } from "./ward-derivations";
 import { transportNeedState } from "./ward-derivations";
 import { INBOX_CATEGORIES } from "./ward-inbox-reducer";
 import type { Movement } from "./ward-model";
+import { SILENT_WARD_SECOND_REMINDER_MINUTES } from "./ward-operational-defaults";
+import { SILENT_WARD_ANOTHER_WARD_SUGGESTION } from "./ward-operational-defaults";
 
 /**
  * DECISION TARGETS — stream A, 9 Oct 2026.
@@ -179,7 +181,12 @@ export function decisionTargetInboxItems(
       tone: reading.overdue ? "danger" : "warning",
       icon: Timer,
       title: reading.overdue ? definition.overdueTitle : definition.label,
-      detail: `${reading.text} · target ${splitDuration(reading.targetMinutes)}, default set in Settings`,
+      detail:
+        `${reading.text} · target ${splitDuration(reading.targetMinutes)}, default set in Settings` +
+        // The second reminder (4 hours): the same words as the Waiting board (`silentWardReminder`).
+        (reading.step === "referral_decision" && now - reading.startedAt >= SILENT_WARD_SECOND_REMINDER_MINUTES
+          ? ` · ${SILENT_WARD_ANOTHER_WARD_SUGGESTION}`
+          : ""),
       owner: definition.owner,
       movementId: movement.id,
       dueAt: reading.dueAt,

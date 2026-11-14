@@ -37,6 +37,9 @@ export type FormProgression = {
 export type LegalPositionSource = Pick<Movement, "legalForm"> &
   Partial<Pick<Movement, "legalStatus" | "examination" | "closure">>;
 
+/** The form that ends the order before it: Form 3E, "Order that person cannot continue to be detained". */
+export const ORDER_ENDING_FORM_CODE = "3E";
+
 /** D-170 item 1: the prompt, word for word, everywhere. No form number. */
 export const NEXT_FORM_TO_RECORD = "Next form to record";
 
@@ -118,6 +121,12 @@ export type CurrentLegalPosition = {
   formWords: string | undefined;
   /** Whether a person recorded the form as ended. Never inferred. */
   ended: boolean;
+  /**
+   * R-LEGAL-12 (Josh, 14 Nov 2026): whether a form is on file and still in force. Not when a person
+   * recorded it ended, and not when the form on file is a Form 3E ("Order that person cannot
+   * continue to be detained"), which ends the order before it. Counts read this; display only.
+   */
+  inForce: boolean;
   /** How a person recorded it ended ("revoked", "form_3e" and so on), when they did. */
   endedBy: LegalFormEnding | undefined;
   /** The end time typed from the form, kept as typed, even after a recorded end (history only). */
@@ -139,6 +148,7 @@ export function currentLegalPosition(
     form,
     formWords: form ? `Form ${form.code}` : undefined,
     ended: form?.endedBy !== undefined,
+    inForce: form !== undefined && form.endedBy === undefined && form.code !== ORDER_ENDING_FORM_CODE,
     endedBy: form?.endedBy,
     typedEndAt: typeof typed === "number" && Number.isFinite(typed) ? typed : undefined,
     dueAt: movement ? currentLegalDueAt(movement) : undefined,

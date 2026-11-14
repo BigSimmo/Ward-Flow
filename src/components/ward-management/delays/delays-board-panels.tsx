@@ -21,7 +21,6 @@ import {
   type Unit,
 } from "@/components/ward-management/ward-model";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { TierTile, useIsPhone } from "@/components/wf";
 import { answerSilenceReminder, isCleared } from "./delays-derivations";
@@ -43,7 +42,7 @@ import { edHref, movementHref, unitHref } from "@/components/ward-management/she
 import styles from "./delays-board.module.css";
 import { RowTimeline, ago, originLabel } from "./delays-board-rows";
 import { CoordinatorFootMenu, EdBoardFootPeek, MovementRecordLink } from "./delays-board-foot";
-import { standingSuffix, typedTimeStanding } from "@/components/ward-management/legal-forms/legal-forms-view";
+import { typedTimeStanding } from "@/components/ward-management/legal-forms/legal-forms-view";
 import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import redesign from "./waiting.module.css";
 import polish from "./waiting-polish.module.css";
@@ -134,7 +133,8 @@ export function PersonPanel({
       >
         {`Escalated ${ago(now - escalation.at)}`}
       </button>
-    ) : wardDesk ? null : (
+    ) : wardDesk || escalationGate.never ? null : (
+      // Hand check 099 (14 Nov 2026): a desk that can never escalate is not shown the button (D-192).
       <button
         type="button"
         className={buttonClass({ variant: escalationGate.allowed ? "pri" : "sec", size: "md" })}
@@ -283,11 +283,9 @@ export function PersonPanel({
             <div className={styles.grow}>
               <b>
                 {typedStanding.word ? <Glyph tone={typedStanding.tone} /> : null}
-                {`${legalFormName(legalForm)} ${typedTimePhrase(typedEnd, now, dayZero).replace(/ as typed$/, "")}`}
+                {`${legalFormName(legalForm)} ${typedTimePhrase(typedEnd, now, dayZero)}`}
               </b>
-              <span className={styles.mute}>
-                As typed on the form{standingSuffix(typedStanding)} <LegalLimitsNotChecked variant="tag" />
-              </span>
+              {typedStanding.word ? <span className={styles.mute}>{typedStanding.word}</span> : null}
             </div>
           </div>
         ) : null}

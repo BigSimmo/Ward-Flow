@@ -846,7 +846,7 @@ function EdTvView({ sheet, now, scenario }: { sheet: EdTvSheet; now: number; sce
             testId: "ed-tv-waiting",
           },
           {
-            label: `Past ${target}`,
+            label: `Over ${target}`,
             value: summary.pastAccessTarget,
             detail: `The department's access target is ${target}`,
             tone: summary.pastAccessTarget > 0 ? "danger" : undefined,
@@ -1283,6 +1283,7 @@ export function BedMeetingTvScreen({
         sheet: bedMeetingSheet({
           ...siteInputs,
           service: siteScope.service,
+          scopeName: siteScope.name,
           thresholds,
           referrals,
           referralLimitMinutes: configuration.referralDecisionTargetMinutes,

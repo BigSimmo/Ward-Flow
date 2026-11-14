@@ -44,9 +44,9 @@ function sent(arms: Partial<ReferralAddressing>[] = [{}]): Referral {
 }
 
 describe("Not opened yet", () => {
-  it("shows at 30 minutes with no opened receipt, and not at 29", () => {
-    expect(referralNotOpenedUnitIds(sent(), SENT + 29)).toEqual([]);
-    expect(referralNotOpenedUnitIds(sent(), SENT + 30)).toEqual(["rph-adult-secure"]);
+  it("shows after 30 minutes with no opened receipt, and not at exactly 30", () => {
+    expect(referralNotOpenedUnitIds(sent(), SENT + 30)).toEqual([]);
+    expect(referralNotOpenedUnitIds(sent(), SENT + 31)).toEqual(["rph-adult-secure"]);
   });
 
   it("goes once the ward opens it, answers it, is withdrawn or puts the person on its waiting list", () => {
@@ -88,16 +88,16 @@ describe("Not opened yet", () => {
     expect(cells[5]).toMatch(/^D-133 \(Josh, 10 Nov 2026\)/u);
   });
 
-  it("renders a small worded tag on the row at 30 minutes and nothing at 29", () => {
+  it("renders a small worded tag on the row after 30 minutes and nothing at 30", () => {
     const { rerender } = render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <ReferralNotOpenedTag referral={sent()} now={SENT + 29} testId="tag" />
+        <ReferralNotOpenedTag referral={sent()} now={SENT + 30} testId="tag" />
       </WardFlowProvider>,
     );
     expect(screen.queryByTestId("tag")).not.toBeInTheDocument();
     rerender(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <ReferralNotOpenedTag referral={sent()} now={SENT + 30} testId="tag" />
+        <ReferralNotOpenedTag referral={sent()} now={SENT + 31} testId="tag" />
       </WardFlowProvider>,
     );
     expect(screen.getByTestId("tag")).toHaveTextContent(NOT_OPENED_TAG);
@@ -110,7 +110,7 @@ describe("Not opened yet", () => {
     });
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <ReferralNotOpenedTag referral={sent()} now={SENT + 30} testId="tag" />
+        <ReferralNotOpenedTag referral={sent()} now={SENT + 31} testId="tag" />
       </WardFlowProvider>,
     );
     expect(screen.queryByTestId("tag")).not.toBeInTheDocument();

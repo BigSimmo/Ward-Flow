@@ -11,6 +11,7 @@ import { Button, Menu, SrOnly, StatusGlyph, type WfTone } from "@/components/wf"
 import { alertKindOf, minutesText, shownAgeFrom } from "./alerts-model";
 import type { LinkedQueueItem } from "./alert-linked-groups";
 import type { QueueEntry } from "./alerts-queue";
+import { usePrinting } from "@/components/ward-management/use-printing";
 import styles from "./alerts-screen-parts.module.css";
 
 /**
@@ -122,6 +123,8 @@ export function KindGroup({
   renderEntry: (entry: QueueEntry) => ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  // INV-PRINT-025: paper lists every member, as the screen does once "Show each" is pressed.
+  const printing = usePrinting();
   // The group row reads like its members: their glyph first, the oldest wait on the right.
   const first = group.entries[0];
   const tone: WfTone =
@@ -164,7 +167,7 @@ export function KindGroup({
           <ChevronDown size={14} aria-hidden="true" className={open ? styles.flip : undefined} />
         </span>
       </button>
-      {open ? <ul className={listClassName}>{group.entries.map(renderEntry)}</ul> : null}
+      {open || printing ? <ul className={listClassName}>{group.entries.map(renderEntry)}</ul> : null}
     </li>
   );
 }

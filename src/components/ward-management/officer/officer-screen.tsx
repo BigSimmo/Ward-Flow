@@ -62,7 +62,11 @@ import {
 import { transportLeg } from "@/components/ward-management/ward-derivations";
 import { transportDelay } from "@/components/ward-management/transport/transport-delay";
 import { OfficerStageCell } from "./officer-stage-cell";
-import { movementUmrn, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import {
+  UMRN_NOT_SHOWN,
+  movementUmrn,
+  resolveSubjectPatient,
+} from "@/components/ward-management/ward-patient-resolver";
 import { formatDateOfBirth } from "@/components/ward-management/ward-patients";
 import {
   formatInstant,
@@ -221,9 +225,17 @@ export function OfficerScreen() {
     const info = resolveSubjectPatient(movement, { patients, referrals, movements });
     return {
       name: info.patient ? info.formalName : "Name not recorded",
-      umrn: info.umrn,
+      // R-MOVE-5 (Josh, 14 Nov 2026): this desk's copy holds no record number by design (role access
+      // plan, 15 Oct 2026), so a blank is withheld, not unrecorded.
+      umrn: info.patient && info.umrn.trim() === "" ? UMRN_NOT_SHOWN : info.umrn,
       dob: info.patient?.dateOfBirth ? formatDateOfBirth(info.patient.dateOfBirth) : "not recorded",
     };
+  };
+  // R-MOVE-5: the date of birth is the officer's second identifier beside the name, on the next-job
+  // card and the job panel. The officer's own copy already carries it; nothing new reaches the desk.
+  const dobFor = (movement: Movement): string | undefined => {
+    const dateOfBirth = resolveSubjectPatient(movement, { patients, referrals, movements }).patient?.dateOfBirth;
+    return dateOfBirth ? formatDateOfBirth(dateOfBirth) : undefined;
   };
   const toggleIdentityChecked = (movement: Movement) =>
     setIdentityCheckedIds((current) => {
@@ -1012,13 +1024,11 @@ export function OfficerScreen() {
               </span>
             </div>
             <strong className={styles.nextCardName}>{officerListPatientName(topJob)}</strong>
+            <span className={styles.nextCardLine} data-testid="ward-officer-next-identity">
+              {dobFor(topJob) ? `DOB ${dobFor(topJob)} · ` : null}
+              {umrnFor(topJob) ? <span className={styles.mono}>{umrnFor(topJob)}</span> : UMRN_NOT_SHOWN}
+            </span>
             <span className={styles.nextCardLine}>
-              {/* B6-36: no leading separator when this desk is not shown the UMRN. */}
-              {umrnFor(topJob) ? (
-                <>
-                  <span className={styles.mono}>{umrnFor(topJob)}</span> ·{" "}
-                </>
-              ) : null}
               {originShortFor(topJob)}
               <span aria-hidden="true"> → </span>
               <SrOnly> to </SrOnly>
@@ -1402,6 +1412,7 @@ export function OfficerScreen() {
               job={{ ...selectedJob, transport: selectedJob.transport }}
               name={officerPatientName(selectedJob)}
               umrn={umrnFor(selectedJob)}
+              dob={dobFor(selectedJob)}
               context={detailContext}
               tools={<>{detailExtraActions(selectedJob)}</>}
               onClose={closeJob}

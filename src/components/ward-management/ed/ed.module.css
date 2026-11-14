@@ -4381,6 +4381,12 @@
   color: var(--wf-ink-2);
 }
 
+/* Master stress test RV1a-1 and D1a-E-2: a form expiry within the urgent warning or passed, and a
+   recorded legal mismatch, read in the danger ink, as Forms and Delays do. */
+.accessWarning[data-level="danger"] {
+  color: var(--danger);
+}
+
 .arrivalLate {
   border-color: var(--wf-line);
 
@@ -5739,4 +5745,14 @@
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
   font-variant-numeric: tabular-nums;
   color: var(--wf-ink-2);
+}
+
+/* INV-PRINT-003: the name on a handover row is a button on screen, and the global print rule hides
+   buttons, so paper showed the UMRN alone. The printed sheet keeps the name beside the UMRN, as the
+   New referral row already does. */
+@media print {
+  .a2Name {
+    display: inline !important;
+    cursor: auto;
+  }
 }

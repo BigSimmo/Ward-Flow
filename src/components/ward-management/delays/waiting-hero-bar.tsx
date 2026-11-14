@@ -6,9 +6,8 @@
  * (page tops, 9 Nov 2026; delays-board.tsx).
  */
 import { SILENT_MINUTES, ownerName, type BoardRow } from "./delays-board-model";
-import { SrOnly, useIsPhone } from "@/components/wf";
+import { useIsPhone } from "@/components/wf";
 import { TierKey } from "@/components/ward-management/tier-key";
-import { TYPED_TIME_KEY } from "./waiting-typed-time";
 import board from "./delays-board.module.css";
 import waitingKeys from "./waiting.module.css";
 import styles from "./waiting-polish.module.css";
@@ -23,22 +22,14 @@ export function moveWord(owner: BoardRow["owner"]): string {
 
 /**
  * Round 4: the table's one key line. The tier key, the wait bar's Active and Quiet key (moved down
- * from the crowded title row) and the colour key for typed legal times, word for word.
+ * from the crowded title row). The typed-time caveat line is gone (D-218, Josh 14 Nov 2026).
  */
-export function WaitingKeyRow({ anyTypedTime }: { anyTypedTime: boolean }) {
+export function WaitingKeyRow() {
   const isPhone = useIsPhone();
   if (isPhone) {
-    // Josh, 4 Nov 2026: on a phone the tier key and the typed-time caveat fold into one line. The
-    // caveat is a safety line, so it is shortened, never dropped, and read in full to a screen reader.
     return (
       <div className={`${waitingKeys.keyRow} ${styles.keyRow} ${styles.keyRowPhone}`}>
         <TierKey compact />
-        {anyTypedTime ? (
-          <p className={waitingKeys.typedKey}>
-            <span aria-hidden="true">Times as typed, not legally checked</span>
-            <SrOnly>{TYPED_TIME_KEY}</SrOnly>
-          </p>
-        ) : null}
       </div>
     );
   }
@@ -59,7 +50,6 @@ export function WaitingKeyRow({ anyTypedTime }: { anyTypedTime: boolean }) {
           {`Quiet ${SILENT_MINUTES / 60}h+`}
         </span>
       </span>
-      {anyTypedTime ? <p className={waitingKeys.typedKey}>{TYPED_TIME_KEY}</p> : null}
     </div>
   );
 }

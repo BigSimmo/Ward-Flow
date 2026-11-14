@@ -385,7 +385,7 @@ function EdsIndexView({
           <>
             <HeroStat
               value={shown(over24)}
-              label={`Past ${LONG_HOURS}h`}
+              label={`Over ${LONG_HOURS}h`}
               tone={positive(over24) ? "warning" : undefined}
             />
             <HeroStat value={shown(unplaced)} label="No ward yet" />
@@ -412,7 +412,7 @@ function EdsIndexView({
           <HeroStat value={waitText(networkMedian)} label="Median" />
           <HeroStat
             value={shown(over24)}
-            label={`Past ${LONG_HOURS}h`}
+            label={`Over ${LONG_HOURS}h`}
             tone={positive(over24) ? "warning" : undefined}
           />
           <HeroStat value={shown(unplaced)} label="No ward yet" />
@@ -472,9 +472,7 @@ function EdsIndexView({
               testId="ward-statistics-eds-phone-swarm"
             >
               {renderSwarm(96)}
-              <p className={phone.note}>
-                {`The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines are local defaults, not legal limits.`}
-              </p>
+              <p className={phone.note}>{`The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines are local defaults.`}</p>
             </PhoneSheetRow>
           )}
         </PhoneBody>
@@ -494,7 +492,7 @@ function EdsIndexView({
                   items={[
                     { id: "all", label: "All" },
                     { id: "unplaced", label: "No ward yet", count: shown(unplaced) },
-                    { id: "over24", label: `Past ${LONG_HOURS}h`, count: shown(over24) },
+                    { id: "over24", label: `Over ${LONG_HOURS}h`, count: shown(over24) },
                   ]}
                 />
               )
@@ -508,7 +506,7 @@ function EdsIndexView({
                   ? undefined
                   : [
                       "Each mark is one open ED movement. Times run from when the movement opened.",
-                      `The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines are local defaults, not legal limits.`,
+                      `The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines are local defaults.`,
                       "An open movement stays the ED’s until arrival.",
                     ]
               }
@@ -543,10 +541,10 @@ function EdsIndexView({
                       <SortTh id="name" label="ED" sort={sort} asc={asc} onSort={onSort} />
                       <SortTh id="waiting" label="Open" sort={sort} asc={asc} onSort={onSort} numeric />
                       <SortTh id="unplaced" label="No ward yet" sort={sort} asc={asc} onSort={onSort} numeric />
-                      <SortTh id="over24" label={`Past ${LONG_HOURS}h`} sort={sort} asc={asc} onSort={onSort} numeric />
+                      <SortTh id="over24" label={`Over ${LONG_HOURS}h`} sort={sort} asc={asc} onSort={onSort} numeric />
                       <SortTh
                         id="over48"
-                        label={`Past ${VERY_LONG_HOURS}h`}
+                        label={`Over ${VERY_LONG_HOURS}h`}
                         sort={sort}
                         asc={asc}
                         onSort={onSort}
@@ -617,7 +615,7 @@ function EdsIndexView({
                   </tfoot>
                 </table>
               </div>
-              <Foot>{`Past ${VERY_LONG_HOURS}h is part of past ${LONG_HOURS}h, so the two are never added`}</Foot>
+              <Foot>{`Over ${VERY_LONG_HOURS}h is part of over ${LONG_HOURS}h, so the two are never added`}</Foot>
             </StatCard>
 
             <StatCard

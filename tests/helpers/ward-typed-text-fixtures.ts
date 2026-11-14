@@ -327,7 +327,8 @@ export const TYPED_TEXT_FIXTURES: readonly TypedTextFixture[] = [
   {
     label: "REFER_TO_COMMUNITY_TEAM",
     type: "REFER_TO_COMMUNITY_TEAM",
-    // `team` must be one of `communityTeamOptions()`, so it is chosen, not typed.
+    // `team` must be one of `communityTeamOptions()` and `purpose` one of
+    // `COMMUNITY_REFERRAL_PURPOSES`, so both are chosen, not typed. The ED form always sends a purpose.
     build: onSeed((seed, now) =>
       firstAccepted(
         seed,
@@ -337,6 +338,7 @@ export const TYPED_TEXT_FIXTURES: readonly TypedTextFixture[] = [
           now,
           movementId: movement.id,
           team: communityTeamOptions()[0]!,
+          purpose: "follow_up",
           reason: M.communityReferralReason,
         })),
         "REFER_TO_COMMUNITY_TEAM",

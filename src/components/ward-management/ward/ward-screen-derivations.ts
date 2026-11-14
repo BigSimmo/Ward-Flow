@@ -1,6 +1,7 @@
 // The ward screen's pure derivations: the alerts its Home tab lists and the bed roster its board
 // draws. Split out of `ward-screen.tsx` (18 October 2026) to keep that file under the line cap.
 
+import { CLINICAL_VALUES, formatClinicalFigure } from "@/components/ward-management/ward-clinical-values";
 import { bedIsOccupied, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import {
   currentLegalDueAt,
@@ -22,7 +23,7 @@ import {
 import { bedHold as bedHoldOf } from "@/components/ward-management/ward-bed-hold";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { calendarDateOf, dayOf, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
-import { deliveredAwaitingWard } from "@/components/ward-management/ward-stage-copy";
+import { deliveredAwaitingWard, divertedAwaitingRelease } from "@/components/ward-management/ward-stage-copy";
 import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
 import { admissionCriteriaEligibility, admissionLegalStatus } from "@/components/ward-management/ward-flow-reducer";
 import {
@@ -335,8 +336,12 @@ export function wardBedRoster({
           : undefined,
       // FM-11 (Ward notes item 9): a pulled bed names the stage of the journey it is held for, so its
       // tile reads "Pulled · moving". Delivered has its own words ("Arrived at ward"), so none here.
+      // Together-X1b-3: a diverted journey is not moving to this bed, so the tile reads "Pulled" only.
       pulledStage:
-        status === "incoming" && linkedMovement && !deliveredAwaitingWard(linkedMovement)
+        status === "incoming" &&
+        linkedMovement &&
+        !deliveredAwaitingWard(linkedMovement) &&
+        !divertedAwaitingRelease(linkedMovement)
           ? linkedMovement.stage
           : undefined,
     };
@@ -469,6 +474,11 @@ type WardLiveFormAlertsInputs = {
    * (`admittedLegalExpiryPassed`, audit M1). Left out, none.
    */
   admittedLegalPassed?: readonly Movement[];
+  /**
+   * R-HOME-11 (Josh, 14 Nov 2026): how many people on this ward have stayed `longStayPrompt` days
+   * with no expected discharge date recorded. Left out or 0, no row.
+   */
+  longStayNoPlanCount?: number;
 };
 
 export function wardLiveFormAlerts({
@@ -480,6 +490,7 @@ export function wardLiveFormAlerts({
   unit,
   dayZero,
   admittedLegalPassed = [],
+  longStayNoPlanCount = 0,
 }: WardLiveFormAlertsInputs) {
   const liveFormAlerts = [
     // Integration QA (3 Nov 2026): a referral waiting is one row, "Referrals waiting", raised by
@@ -557,6 +568,21 @@ export function wardLiveFormAlerts({
       actionLabel: "Open discharges",
       actionTarget: "discharges" as const,
     })),
+    // R-HOME-11 and Demo-Rules-RV1b-7 (Josh, 14 Nov 2026): a quiet, words-only prompt at the signed
+    // long-stay line. It blocks nothing and clears when a discharge plan (expected date) is recorded.
+    ...(longStayNoPlanCount > 0
+      ? [
+          {
+            key: "long-stay-no-plan",
+            tone: "info" as const,
+            title: "Discharge plan prompt",
+            countdown: `${longStayNoPlanCount} ${longStayNoPlanCount === 1 ? "stay" : "stays"}`,
+            text: `${longStayNoPlanCount === 1 ? "One stay has" : `${longStayNoPlanCount} stays have`} reached ${formatClinicalFigure(CLINICAL_VALUES.longStayPrompt.value, CLINICAL_VALUES.longStayPrompt.unit)} with no discharge plan recorded. Clears when an expected discharge date is recorded.`,
+            actionLabel: "Open discharges",
+            actionTarget: "discharges" as const,
+          },
+        ]
+      : []),
   ];
   return { liveFormAlerts };
 }

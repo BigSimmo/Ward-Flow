@@ -18,7 +18,7 @@ const bandsFor = (waited: number) =>
 
 describe("Delays wait bands follow the long-wait value (T8)", () => {
   it("titles the top band from the value", () => {
-    expect(WAIT_BANDS[0]?.title).toBe("Past 30 hours");
+    expect(WAIT_BANDS[0]?.title).toBe("Over 30h");
   });
 
   it("puts every wait in exactly one band, with the top band starting at the value", () => {

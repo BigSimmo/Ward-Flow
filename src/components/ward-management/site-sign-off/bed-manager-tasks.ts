@@ -10,6 +10,7 @@ import {
   siteUnansweredBedCalls,
   siteWards,
 } from "./site-handover-sign-off";
+import { BED_COUNT_FRESH_MINUTES } from "@/components/ward-management/ward-clinical-values";
 
 /**
  * THE SITE BED MANAGER'S OWN TASKS (Josh, 31 Oct 2026 14:08 UTC, question 61; D-80 "its own tasks").
@@ -91,7 +92,7 @@ export function bedManagerTasks(
         action: BED_MANAGER_TASK_ACTIONS.confirm_bed_numbers,
         group: "due_now",
         unitId: unit.id,
-        dueAt: unit.allocatable.confirmedAt + unit.allocatable.staleAfterMinutes,
+        dueAt: unit.allocatable.confirmedAt + BED_COUNT_FRESH_MINUTES,
       });
 
   // One task per ward asked, because the reply is the ward's answer (REPLY_BROADCAST_ALERT names it).

@@ -212,8 +212,8 @@ Short labels win. Josh rejected "For you / With other desks" as too wordy (Q179)
 - Sentence case, verbs first, 24-hour times, digits, short durations ("2d 14h"), dates as "2 Nov".
 - Titles five words at most, actions six. A row's second line is two to four words (Q313).
 - Count windows: a figure shows its window as a quiet word after the label ("Discharges · any date") only when it differs from what the page title already says, or when one strip mixes windows. Words: now, today, by tomorrow, next 4h, next 24h, last 24h, this week, since 07:00, any date (D-192).
-- Say a time once: "Sent 3 days ago · Due 2 days ago". Legal-form times are only as typed, never a countdown (D-93); "within 1h" stays on Forms (Q152).
-- Fewer warnings: say it once, quietly. Safeguard wording stays word for word ("Not legally checked.").
+- Say a time once: "Sent 3 days ago · Due 2 days ago". A legal-form time shows as entered from the form, never a countdown (D-93), with no "as typed" suffix (D-218); "within 1h" stays on Forms (Q152).
+- Fewer warnings: say it once, quietly. No hedging or disclaimer phrases ("as typed", "not legally checked", "not verified"); a table cell holds the value or a short label, and any needed explanation appears once, in the header or a tooltip (D-218). Warnings that ask someone to act keep their exact words.
 - Screen-reader labels say what the screen shows (Q271).
 - Browser tab: the sidebar name + " — Ward Flow" (Q272).
 
@@ -294,7 +294,7 @@ Each page may take **one signature part**: a bespoke visual that shows its own d
 - [ ] Icons from the table in section 4 at 1.75 stroke; status marks from `StatusGlyph`, no typed symbols, and only where they change the next action.
 - [ ] No coloured side edges; no text under 12px; phone controls 40px; desktop tabs 30px.
 - [ ] At most one on-hero button plus one quick-link chip row (D-159), one filled button per panel, eight rows then Show more.
-- [ ] Words from section 6; patient names surname first, staff names as written, both in full; times as typed.
+- [ ] Words from section 6; patient names surname first, staff names as written, both in full; legal times as entered, with no countdown and no disclaimer (D-218).
 - [ ] At most one signature part, inside the limits in section 8.
 - [ ] Synthetic data only; no names or typed text in URLs, screenshots or logs.
 

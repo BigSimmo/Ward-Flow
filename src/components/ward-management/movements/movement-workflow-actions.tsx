@@ -293,7 +293,9 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
           )}
         </form>
       )}
-      {open && (
+      {/* Demo-Rules-LG-7: a desk that can never record either (the site bed manager) is not shown
+          them; a desk that may record one is not shown the other's button (F-54). */}
+      {open && !(continuationGate.never && extensionGate.never) && (
         <details>
           <summary>Record paper continuation or country extension</summary>
           <label>
@@ -322,73 +324,77 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
             Expiry written on paper
             <DateTimeField label="Expiry" value={expiry} onValueChange={setExpiry} />
           </label>
-          <button
-            type="button"
-            aria-disabled={continuationUnavailable ? "true" : undefined}
-            aria-describedby={continuationUnavailable ? `workflow-continuation-reason-${movement.id}` : undefined}
-            title={continuationUnavailable ? continuationReason : undefined}
-            {...continuationGate.buttonProps}
-            onClick={
-              continuationUnavailable
-                ? ignoreUnavailableActivation
-                : () => {
-                    if (!Number.isFinite(started) || (expiry && !Number.isFinite(due))) {
-                      setLocalError("Enter the date and time written on the form.");
-                      return;
+          {continuationGate.never ? null : (
+            <button
+              type="button"
+              aria-disabled={continuationUnavailable ? "true" : undefined}
+              aria-describedby={continuationUnavailable ? `workflow-continuation-reason-${movement.id}` : undefined}
+              title={continuationUnavailable ? continuationReason : undefined}
+              {...continuationGate.buttonProps}
+              onClick={
+                continuationUnavailable
+                  ? ignoreUnavailableActivation
+                  : () => {
+                      if (!Number.isFinite(started) || (expiry && !Number.isFinite(due))) {
+                        setLocalError("Enter the date and time written on the form.");
+                        return;
+                      }
+                      // F2: the same order check as the Forms page and the engine (MHA 2014 fields block).
+                      const orderProblem = legalFormTimeOrderProblem(started, expiry ? due : undefined, now);
+                      if (orderProblem) {
+                        setLocalError(`${orderProblem}.`);
+                        return;
+                      }
+                      before();
+                      raise("RECORD_LEGAL_FORM_CONTINUATION", {
+                        movementId: movement.id,
+                        ...acting,
+                        formCode: form,
+                        startedAt: started,
+                        ...(expiry ? { paperExpiresAt: due } : {}),
+                      });
                     }
-                    // F2: the same order check as the Forms page and the engine (MHA 2014 fields block).
-                    const orderProblem = legalFormTimeOrderProblem(started, expiry ? due : undefined, now);
-                    if (orderProblem) {
-                      setLocalError(`${orderProblem}.`);
-                      return;
-                    }
-                    before();
-                    raise("RECORD_LEGAL_FORM_CONTINUATION", {
-                      movementId: movement.id,
-                      ...acting,
-                      formCode: form,
-                      startedAt: started,
-                      ...(expiry ? { paperExpiresAt: due } : {}),
-                    });
-                  }
-            }
-          >
-            Record legal form continuation
-          </button>
-          {continuationGate.note}
-          {continuationUnavailable ? (
+              }
+            >
+              Record legal form continuation
+            </button>
+          )}
+          {continuationGate.never ? null : continuationGate.note}
+          {continuationUnavailable && !continuationGate.never ? (
             <span id={`workflow-continuation-reason-${movement.id}`} className="sr-only">
               {continuationReason}
             </span>
           ) : null}
-          <button
-            type="button"
-            aria-disabled={countryExtensionUnavailable ? "true" : undefined}
-            aria-describedby={
-              countryExtensionUnavailable ? `workflow-country-extension-reason-${movement.id}` : undefined
-            }
-            title={countryExtensionUnavailable ? countryExtensionReason : undefined}
-            {...extensionGate.buttonProps}
-            onClick={
-              countryExtensionUnavailable
-                ? ignoreUnavailableActivation
-                : () => {
-                    if (!Number.isFinite(due)) {
-                      setLocalError("Enter the new expiry written on the extension form.");
-                      return;
+          {extensionGate.never ? null : (
+            <button
+              type="button"
+              aria-disabled={countryExtensionUnavailable ? "true" : undefined}
+              aria-describedby={
+                countryExtensionUnavailable ? `workflow-country-extension-reason-${movement.id}` : undefined
+              }
+              title={countryExtensionUnavailable ? countryExtensionReason : undefined}
+              {...extensionGate.buttonProps}
+              onClick={
+                countryExtensionUnavailable
+                  ? ignoreUnavailableActivation
+                  : () => {
+                      if (!Number.isFinite(due)) {
+                        setLocalError("Enter the new expiry written on the extension form.");
+                        return;
+                      }
+                      before();
+                      raise("RECORD_COUNTRY_EXTENSION", {
+                        movementId: movement.id,
+                        paperExpiresAt: due,
+                      });
                     }
-                    before();
-                    raise("RECORD_COUNTRY_EXTENSION", {
-                      movementId: movement.id,
-                      paperExpiresAt: due,
-                    });
-                  }
-            }
-          >
-            Record country paper extension
-          </button>
-          {extensionGate.note}
-          {countryExtensionUnavailable ? (
+              }
+            >
+              Record country paper extension
+            </button>
+          )}
+          {extensionGate.never ? null : extensionGate.note}
+          {countryExtensionUnavailable && !extensionGate.never ? (
             <span id={`workflow-country-extension-reason-${movement.id}`} className="sr-only">
               {countryExtensionReason}
             </span>

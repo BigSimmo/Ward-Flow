@@ -655,6 +655,10 @@
 }
 
 .inlineLink {
+  /* Demo-Actions-REG1-7: a 40px tap target on a phone, the owner-rule minimum. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
   margin-left: auto;
   font-weight: 600;
   color: var(--wf-accent-ink);

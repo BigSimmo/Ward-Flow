@@ -231,7 +231,7 @@ export function summaryModel(state: TriageState, signed?: SignedBy, reviewer = D
           : "Directive or guardian not asked.",
     );
 
-  const legalForm = hasLegalForm(state) && t.legalForm.trim() ? ` · ${t.legalForm.trim()} (as typed)` : "";
+  const legalForm = hasLegalForm(state) && t.legalForm.trim() ? ` · ${t.legalForm.trim()}` : "";
   const legal = state.legal ? `${LEGAL_NAME[state.legal]}${legalForm}` : "";
   const mode = [t.revTime.trim(), state.how ? HOW_NAME[state.how] : ""].filter(Boolean).join(" ");
   const referrer = [[t.refName.trim(), t.refRole.trim()].filter(Boolean).join(", "), t.refPhone.trim()]
@@ -248,8 +248,7 @@ export function summaryModel(state: TriageState, signed?: SignedBy, reviewer = D
       state.urgency ? `Urgency ${state.urgency}, ${TIER_LONG[state.urgency].toLowerCase()}` : "Urgency not chosen",
       state.outcome ?? "Outcome not set",
       state.legal
-        ? // D-186 (Q11): the status was picked from buttons, so "as chosen"; only the form and date are typed.
-          `${LEGAL_NAME[state.legal]} (as chosen)${hasLegalForm(state) && t.legalForm.trim() ? `, ${t.legalForm.trim().replace(/\s*·\s*/g, " ")} (as typed)` : ""}`
+        ? `${LEGAL_NAME[state.legal]}${hasLegalForm(state) && t.legalForm.trim() ? `, ${t.legalForm.trim().replace(/\s*·\s*/g, " ")}` : ""}`
         : "Legal not set",
       mode ? `Reviewed ${mode}` : "Review time not set",
       signed?.by ?? reviewer,
@@ -424,7 +423,7 @@ export function summaryModel(state: TriageState, signed?: SignedBy, reviewer = D
     signature: signed
       ? [`Signed ${signed.at} by ${signed.by}`, "Prints as SMHMR900 and SMHMR905"]
       : [`Not signed. Reviewer: ${reviewer}`, "Prints as SMHMR900 and SMHMR905 once signed"],
-    foot: [hasLegalForm(state) ? "Legal form as typed. Not legally checked." : "", "Synthetic record"].filter(Boolean),
+    foot: ["Synthetic record"],
   };
 }
 

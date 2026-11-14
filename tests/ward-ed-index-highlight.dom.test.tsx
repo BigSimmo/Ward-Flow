@@ -47,7 +47,7 @@ describe("All EDs — hero chips", () => {
   it("hides EDs a chip does not match, says so, and clears", () => {
     renderIndex();
     const total = cards().length;
-    const chip = highlightToggles().find((toggle) => /past 24h/iu.test(toggle.textContent ?? ""))!;
+    const chip = highlightToggles().find((toggle) => /over 24h/iu.test(toggle.textContent ?? ""))!;
     expect(chip, "no past 24h highlight").toBeDefined();
     fireEvent.click(chip);
     expect(chip).toHaveAttribute("aria-pressed", "true");

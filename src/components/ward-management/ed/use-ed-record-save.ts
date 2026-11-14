@@ -7,6 +7,7 @@ import type { WardCommandOutcome } from "../ward-shared-client";
 import { useWardCommandCompletion, wardCommandFailure, wardCommandKey } from "../ward/use-ward-command-completion";
 import type { useEdRowPanels } from "./use-ed-screen-state";
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
+import { useRecordedDeskRole } from "../use-recorded-desk-role";
 
 type Kind = "urgency" | "legalStatus" | "receipt";
 type Panels = ReturnType<typeof useEdRowPanels>;
@@ -45,6 +46,8 @@ export function useEdRecordSave({
   const context = useOptionalWardFlowSelect("worldGeneration", "shared");
   const world = context?.worldGeneration;
   const shared = context?.shared;
+  // Demo-Rules-LG-6: a receipt correction from the coordinator's desk is recorded as the coordinator's.
+  const receiptRole = useRecordedDeskRole("ed");
   const [attempt, setAttempt] = useState<Attempt>();
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string>();
@@ -198,7 +201,7 @@ export function useEdRecordSave({
     if (panels.receiptCorrectionReasonDraft === undefined) return;
     save("receipt", {
       type: "CORRECT_LEGAL_FORM_RECEIPT",
-      role: "ed",
+      role: receiptRole,
       now,
       movementId,
       reason: panels.receiptCorrectionReasonDraft,
