@@ -38,7 +38,7 @@ type Position = {
 };
 
 /** Where the tip goes: the asked side, flipped when the other side has more room, then clamped. */
-function resolveTipPosition(
+export function resolveTipPosition(
   triggerRect: DOMRect,
   tooltipRect: DOMRect,
   placement: NonNullable<TooltipProps["placement"]>,

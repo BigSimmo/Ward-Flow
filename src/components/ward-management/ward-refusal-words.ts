@@ -22,6 +22,44 @@ export const REFUSAL_CHANGED_FIRST = "Someone else changed this first. Check the
 /** Said in place of a reason written for developers. */
 export const REFUSAL_NOT_RECORDABLE = "Ward Flow could not record this change. Check the board and try again";
 
+/**
+ * R-STYLE-17 (Josh, 14 Nov 2026): a refusal is one short line saying why, then what to do next.
+ * `refusalLine("Transport is booked", "Cancel the transport booking first, then undo the pull")`
+ * reads "Transport is booked. Cancel the transport booking first, then undo the pull."
+ */
+export function refusalLine(why: string, next: string): string {
+  const sentence = (text: string) => {
+    const trimmed = capitalised(text.trim().replace(/[\s.]+$/u, ""));
+    return trimmed ? `${trimmed}.` : "";
+  };
+  return [sentence(why), sentence(next)].filter(Boolean).join(" ");
+}
+
+/**
+ * Engine reasons that have their own line, matched before the generic rules, so a reason that
+ * names an action code still reads as a specific next step (B2d-Q-1) and never falls back to
+ * "could not record this change". Add a pattern here when a desk can meet the refusal.
+ */
+const SPECIFIC_REFUSALS: ReadonlyArray<readonly [RegExp, string]> = [
+  [
+    /transport job booked; cancel it \(CANCEL_TRANSPORT\) before releasing the pull/u,
+    refusalLine("Transport is booked", "Cancel the transport booking first, then undo the pull"),
+  ],
+  [
+    /transport job booked; cancel it \(CANCEL_TRANSPORT\) before releasing and reopening the search/u,
+    refusalLine("Transport is booked", "Cancel the transport booking first, then release the bed"),
+  ],
+  [
+    /transport job booked; cancel it \(CANCEL_TRANSPORT\) before withdrawing the acceptance/u,
+    refusalLine("Transport is booked", "Cancel the transport booking first, then withdraw the acceptance"),
+  ],
+];
+
+/** The specific line for a known engine reason, or undefined when there is none. */
+export function specificRefusalText(reason: string): string | undefined {
+  return SPECIFIC_REFUSALS.find(([pattern]) => pattern.test(reason))?.[1];
+}
+
 function capitalised(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
@@ -31,6 +69,8 @@ function capitalised(text: string): string {
  * words and case; a screen that starts a sentence with it capitalises it there.
  */
 export function refusalReasonText(reason: string): string {
+  const specific = specificRefusalText(reason);
+  if (specific) return specific;
   if (STALE.test(reason)) return REFUSAL_CHANGED_FIRST;
   const rest = reason.replace(LEADING_CODE, "");
   if (rest.trim() === "" || CODE_NAME.test(rest) || FIELD_NAME.test(rest)) return REFUSAL_NOT_RECORDABLE;
