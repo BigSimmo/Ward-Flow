@@ -94,16 +94,28 @@ export function useAnswer(name: string, id?: string) {
   const [local, setLocal] = useState<string | null>(null);
   const accepted = id ? (decisions[id]?.line ?? null) : local;
   const undo = () => (id ? undoMidlandDecision(id) : setLocal(null));
+  // Live re-check (14 Nov 2026): the "Accepted …" toast outlived Reset demo, offering Undo on a
+  // decision that was already gone. When the saved decision goes (Reset demo, or Undo from the row),
+  // its toast goes with it.
+  const toastId = useRef<string | null>(null);
+  const dismiss = toast?.dismiss;
+  const decided = id ? Boolean(decisions[id]) : true;
+  useEffect(() => {
+    if (decided || !toastId.current || !dismiss) return;
+    dismiss(toastId.current);
+    toastId.current = null;
+  }, [decided, dismiss]);
   const accept = (line: string) => {
     let persisted = true;
     if (id) persisted = recordMidlandDecision(id, line, boardMoment);
     else setLocal(line);
-    toast?.push({
-      tone: persisted ? "success" : "warning",
-      title: `Accepted ${name}`,
-      body: midlandSavedLine(Boolean(id), persisted),
-      action: { label: "Undo", onAction: undo },
-    });
+    toastId.current =
+      toast?.push({
+        tone: persisted ? "success" : "warning",
+        title: `Accepted ${name}`,
+        body: midlandSavedLine(Boolean(id), persisted),
+        action: { label: "Undo", onAction: undo },
+      }) ?? null;
   };
   const say = (title: string) => toast?.push({ tone: "info", title });
   return { accepted, accept, undo, say };

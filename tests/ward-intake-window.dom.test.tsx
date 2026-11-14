@@ -27,7 +27,7 @@ function renderWard(unitId: string) {
 
 describe("tonight's intake hours on the ward hero (feature item 13)", () => {
   it("shows a seeded window", () => {
-    renderWard("rph-adult-secure");
+    renderWard("rgh-adult-secure");
     expect(screen.getByTestId("ward-intake-window-line").textContent).toBe("Tonight: admit 21:00 to 02:00");
   });
 

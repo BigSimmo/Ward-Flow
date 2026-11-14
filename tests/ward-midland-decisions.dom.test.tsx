@@ -98,3 +98,34 @@ describe("the phone home Act now list", () => {
     undoMidlandDecision("r1");
   });
 });
+
+// Live re-check (14 Nov 2026): the "Accepted …" toast and its Undo outlived Reset demo.
+describe("the Accept toast goes when its decision is cleared", () => {
+  beforeEach(() => window.localStorage.clear());
+  it("dismisses the toast on Reset demo", async () => {
+    const { render, screen, fireEvent, cleanup, act } = await import("@testing-library/react");
+    const { ToastProvider } = await import("@/components/wf");
+    const { useAnswer } = await import("@/components/ward-management/community/team-2026/team-referrals");
+    const first = REFERRALS[0]!;
+    function Probe() {
+      const { accept } = useAnswer(first.n, first.id);
+      return (
+        <button type="button" onClick={() => accept("Accepted for Midland")}>
+          Accept
+        </button>
+      );
+    }
+    render(
+      <ToastProvider>
+        <Probe />
+      </ToastProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Accept" }));
+    expect(screen.getByText(`Accepted ${first.n}`)).toBeTruthy();
+    act(() => {
+      clearWardFlowDemoState();
+    });
+    expect(screen.queryByText(`Accepted ${first.n}`)).toBeNull();
+    cleanup();
+  });
+});
