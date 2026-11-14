@@ -10,7 +10,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-import { EdScreen, edBayAssignments } from "@/components/ward-management/ed/ed-screen";
+import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
 import { ReferralMatchView } from "@/components/ward-management/referrals/referral-match";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -254,7 +254,7 @@ describe("Track C Referral Board fixes", () => {
 });
 
 describe("Track C ED screen fixes", () => {
-  it("Synchronizes patient bay in the detail drawer with patientBay", () => {
+  it("B3 (D-21): shows no invented bay, only that none is recorded, on the row and in the drawer", () => {
     const department = allEmergencyDepartments()[0];
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -266,45 +266,19 @@ describe("Track C ED screen fixes", () => {
     const row = screen.getAllByTestId(/^ward-ed-patient-WF-/u)[0];
     const name = row.querySelector<HTMLButtonElement>('button[title^="View patient details"]');
     expect(name).not.toBeNull();
-    const bay = row.children[2]?.textContent; // Patient, In ED, Bay (ED handover table, 1 Nov 2026)
+    // Patient, In ED, Bay (ED handover table, 1 Nov 2026): no movement records an ED bay.
+    expect(row.children[2]?.textContent).toBe("Not recorded");
+    expect(row.textContent).not.toMatch(/Bay \d/u);
     expect(within(row).getByText("UMRN")).toBeInTheDocument();
     fireEvent.click(name!);
 
     // ED A2 (11 Oct 2026): the name opens the person sheet, whose Facts section carries the bay.
     const factsSection = screen.getByText("Facts").closest("section")!;
     const bayDt = within(factsSection).getByText("Bay");
-    const bayDd = bayDt.nextElementSibling;
-    expect(bayDd?.textContent).not.toBe("not recorded");
-    expect(bayDd?.textContent).toMatch(/^Bay \d{2}$/u);
-    expect(bayDd?.textContent).toBe(`Bay ${bay}`);
-  });
-
-  it("A2-19: hands out a different bay to ids whose own number would share one", () => {
-    const bays = edBayAssignments([
-      { id: "WF-004", openedAt: 1 },
-      { id: "WF-016", openedAt: 2 },
-      { id: "WF-028", openedAt: 3 },
-    ]);
-    expect(new Set(bays.values()).size).toBe(3);
-    expect(bays.get("WF-004")).toBe("Bay 05");
-  });
-
-  it("A2-19: no two people on any ED board share a bay", () => {
-    let checked = 0;
-    for (const department of allEmergencyDepartments()) {
-      const { unmount } = render(
-        <WardFlowProvider initialNow={NOW_ANCHOR}>
-          <EdScreen edId={department.id} />
-        </WardFlowProvider>,
-      );
-      const bays = screen
-        .queryAllByTestId(/^ward-ed-patient-WF-[^-]+$/u)
-        .map((row) => row.children[2]?.textContent ?? ""); // Patient, In ED, Bay
-      expect(new Set(bays).size, `${department.id} has a shared bay: ${bays.join(", ")}`).toBe(bays.length);
-      checked += bays.length;
-      unmount();
-    }
-    expect(checked, "no ED rows were found, so nothing was checked").toBeGreaterThan(12);
+    expect(bayDt.nextElementSibling?.textContent).toBe("Not recorded");
+    // The sheet's heading line names the missing bay in a whole phrase, never "Bay Bay ...".
+    expect(document.body.textContent).toMatch(/bay not recorded/iu);
+    expect(document.body.textContent).not.toMatch(/Bay \d|Bay Bay/u);
   });
 
   it("Wired priority flag actions can be clicked without throwing or jamming", () => {

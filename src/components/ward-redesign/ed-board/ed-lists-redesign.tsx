@@ -28,7 +28,6 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
     registryPatients,
     recordEdStep,
     setSelectedPatientId,
-    patientBay,
     awaitingReviewPatients,
     expects,
     underFormPatients,
@@ -110,7 +109,7 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
                         <span className={redesign.listUmrn}>{person.umrn}</span>
                       </span>
                     </td>
-                    <td className={redesign.listMono}>{linked ? patientBay(linked.id).replace(/^Bay /, "") : "–"}</td>
+                    <td className={redesign.listMono}>{linked ? "Not recorded" : "–"}</td>
                     <td>{[linked?.cohort, linked?.sex].filter(Boolean).join(" · ") || "–"}</td>
                     <td>
                       <span className={redesign.listTag} data-tone="accent">
@@ -205,7 +204,7 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
                 return (
                   <tr key={m.id}>
                     <td>{name(m.id, person.formalName, person.umrn)}</td>
-                    <td className={redesign.listMono}>{patientBay(m.id).replace(/^Bay /, "")}</td>
+                    <td className={redesign.listMono}>Not recorded</td>
                     <td>
                       {m.cohort} · {m.sex}
                     </td>
@@ -313,7 +312,7 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
                 return (
                   <tr key={m.id}>
                     <td>{name(m.id, person.formalName, person.umrn)}</td>
-                    <td className={redesign.listMono}>{patientBay(m.id).replace(/^Bay /, "")}</td>
+                    <td className={redesign.listMono}>Not recorded</td>
                     <td>
                       <span className={redesign.listTag}>Form {m.legalForm?.code}</span>{" "}
                       <span className={redesign.listQuiet}>{formTitleForCode(m.legalForm?.code ?? "")}</span>

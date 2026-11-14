@@ -384,7 +384,7 @@ export function renderEdRowControls(row: EdBoardRowModel, ctx: EdScreenContext, 
 /** The cards under a row's actions in the person sheet: placement, checklist, journey and facts. */
 export function renderEdRowExpandedCards(row: EdBoardRowModel, ctx: EdScreenContext) {
   const { movement, item, patientInfo } = row;
-  const { now, referrals, thisEdId, journeyEventsFor, planDrafts, setPlanDrafts, patientBay } = ctx;
+  const { now, referrals, thisEdId, journeyEventsFor, planDrafts, setPlanDrafts } = ctx;
   return (
     <>
       <EdMedicalPlacementControls movementId={movement.id} actingPlaceId={thisEdId} />
@@ -456,7 +456,7 @@ export function renderEdRowExpandedCards(row: EdBoardRowModel, ctx: EdScreenCont
           </div>
           <div>
             <dt>Bay</dt>
-            <dd>{patientBay(movement.id)}</dd>
+            <dd>Not recorded</dd>
           </div>
         </dl>
       </section>

@@ -352,7 +352,7 @@ export function renderEdBoardTableRow(
       </td>
       {isTabletPortrait ? null : (
         <>
-          <td className={styles.a2Mono}>{phoneBay.replace(/^Bay /, "")}</td>
+          <td className={styles.a2Mono}>Not recorded</td>
           <td className={handover.pickCell}>
             <PresentationCell
               movementId={movement.id}
@@ -367,7 +367,7 @@ export function renderEdBoardTableRow(
               movementId={movement.id}
               patientName={patientInfo.formalName}
               umrn={patientInfo.umrn}
-              bay={phoneBay.replace(/^Bay /, "")}
+              bay={phoneBay}
               recordCode={legal.form?.code}
               writtenTimeEntered={movement.formedAt !== undefined}
               emptyWords={noFormWords}

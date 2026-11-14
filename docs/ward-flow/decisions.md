@@ -222,6 +222,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-201](#d-201-overnight-merging-without-josh-13-november-2026)                                                                                         | Overnight merging without Josh                                                         | Active                                           |
 | [D-202](#d-202-joint-go-summary-recommendations-14-november-2026)                                                                                       | Joint go summary recommendations                                                       | Active                                           |
 | [D-206](#d-206-codeql-storage-alerts-are-false-positives-for-the-demo-14-november-2026)                                                                 | CodeQL storage alerts are false positives for the demo                                 | Active                                           |
+| [D-208](#d-208-appraised-findings-fix-the-four-real-display-bugs-14-november-2026)                                                                      | Appraised findings: fix the four real display bugs                                     | Active                                           |
 
 ---
 
@@ -2452,3 +2453,13 @@ is inferred.
 - **Decision:** the CodeQL "clear-text storage of sensitive information" alerts #35, #36, #37, #39, #40, #41, #50 and #51, and the "incomplete string escaping" alert #30, are dismissed on GitHub as false positives with the note "synthetic demo data only; revisit in privacy review before real data". Every other alert raised on PR C (#1660) is fixed in code in PR #1661.
 - **Why:** the prototype keeps its synthetic demo day, drafts, "since last look" snapshots, chosen service and mockup device in the browser's session or local storage by design; nothing stored is a password, token or real patient record. For #30, escaping backslashes would print doubled backslashes inside the code spans of `docs/skipped-tests-inventory.md`.
 - **Follow-up:** the privacy review required before any real data covers what the browser stores, for how long, and on shared ward PCs. A dismissal can be reopened.
+
+## D-208. Appraised findings: fix the four real display bugs (14 November 2026)
+
+- **Date:** 14 November 2026, 8:40 AM AWST (00:40 UTC). D-207 is claimed by open PR #1656. **Decided by:** Josh, "yes to all recommendations" on the appraisal of a pasted list of 15 findings, in the thread "Check which remaining-issue findings are real".
+- **Decision:**
+  1. Fix in one small PR: Ward bed tiles on wards that mix locked and open beds show each tile's real bed kind, not a tag by tile position (B4); ED bays show "Bay not recorded" instead of a number made up from the record's id (B3); the TV unlock box in the demo no longer asks for a password it does not need (A2); a repeated acknowledgement of the same task by the same role is not saved twice (B7). This replaces the event's earlier append-only design: the record names only the role, and only the coordinator acknowledges, so a second entry added nothing but a duplicate.
+  2. Test accounts: one read-only Supabase read of the 8 test accounts' access dates. Result: all expire 2 February 2027, so the reported 16 November expiry was wrong and nothing changes.
+  3. The old audit worktree on Josh's PC stays until after the demo.
+- **Why:** of the 15 findings, 3 were wrong, 1 already fixed, 1 a repeat and 3 only partly right. These four were real and cheap to fix, and B4 and B3 cut against D-21 (show only what is recorded).
+- **Boundary:** no clinical value or rule changes.
