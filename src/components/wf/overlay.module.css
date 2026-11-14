@@ -344,11 +344,6 @@
    (ui/tooltip.module.css): ink on light, track in dark with the line-2 ring. Desktop and tablet
    keep the glass card above. Every toast keeps its X (GEN1, 3 Nov 2026). */
 @media (max-width: 46.4375rem) {
-  /* INV-A11-024/025 (14 Nov 2026): menu items meet the 40px phone target ("Open on TV" was 36px). */
-  .item {
-    min-height: 40px;
-  }
-
   /* F-15: above the dock's top (--wf-dock-clear, which counts the home indicator), not a fixed
      92px that the dock overlapped on Face ID iPhones. Pages without the dock use the same sum. The gap
      is 12px unless the shell sets --wf-toast-dock-gap (the new frame sets 24px, from the mock-ups). */
@@ -474,6 +469,13 @@
     right: 14px;
     background: var(--toast-ink);
     opacity: 0.5;
+  }
+}
+
+/* INV-A11-025 (14 Nov 2026): menu items meet the 40px phone target ("Open on TV" was 36px). */
+@media (max-width: 46.4375rem) {
+  .item {
+    min-height: 40px;
   }
 }
 

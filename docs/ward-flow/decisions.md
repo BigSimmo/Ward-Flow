@@ -243,6 +243,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-218](#d-218-no-legal-disclaimer-wording-on-screens-14-november-2026)                                                                                 | No legal disclaimer wording on screens                                                 | Active                                           |
 | [D-224](#d-224-explanatory-tips-open-on-tap-14-november-2026)                                                                                           | Explanatory tips open on tap                                                           | Active                                           |
 | [D-225](#d-225-design-fix-phasing-14-november-2026)                                                                                                     | Design fix phasing                                                                     | Active                                           |
+| [D-229](#d-229-demo-pause-holds-board-time-and-seeded-wait-lists-match-the-engine-14-november-2026)                                                     | Demo Pause holds Board time; seeded wait lists match the engine                        | Active                                           |
 
 ---
 
@@ -2711,6 +2712,17 @@ is inferred.
 - **Defaults taken from the plan:** "Record gender" sits beside "Not recorded"; the clock is named "Board time"; one review word, the one the list uses.
 - **Boundary:** design and wording only. No clinical value, threshold or saved field changes.
 
-Numbers D-219 to D-223 belong to the figures and timing thread: D-219 is reserved by open PR #1673. D-220 is reserved by open PR #1673. D-221 is reserved by open PR #1673. D-222 is reserved by open PR #1673. D-223 is reserved by open PR #1673.
+D-219 is claimed by open PR #1673. D-220 is claimed by open PR #1673. D-221 is claimed by open PR #1673. D-222 is claimed by open PR #1673. D-223 is claimed by open PR #1673. D-226 is claimed by open PR #1675. D-227 is claimed by open PR #1675. D-228 is claimed by open PR #1675.
 
-The next free number is D-226.
+## D-229. Demo Pause holds Board time, and seeded wait lists match the engine (14 November 2026)
+
+- **Date:** 14 November 2026, 11:00 PM AWST (15:00 UTC). **Decided by:** Josh, in the Ward Flow project chat, asking for every open stress-test issue to be fixed ("Otherwise confirm all issues and launch appropriate threads to fix and address all of them", 14:56 UTC), then "Yes to all recommendations" (15:02 UTC). Built in the "Fix demo and seed data issues" thread.
+- **Decision:**
+  1. **Pause holds Board time** (stress test D1a-S-1). On this device's demo, the Demo panel's Pause stops Board time as well as freezing the page's lists, and Resume carries on from the paused minute. +15 min and +1 hour still move a paused clock. Reset or a scenario card ends the pause and starts the new day at the paused minute. Loading a file, a restored save or a reload also ends it; after a reload the paused minutes count as time passed. The shared board's clock is the server's, so there Pause stays the page's own pause. This replaces "Pause does not stop Board time, by design" (INV-SCENARIO-011).
+  2. **Seeded wait lists are written as the engine writes a waitlist answer** (D1a-E-1): a live referral, a "waitlisted" answer and, for the worked example, the decline that carries its reason. Worked example RD-05 and the standard day's two Royal Perth Adult Secure wait lists now show on the ED board and person page as they do on the ward. A seed check covers every scenario, with and without the worked examples.
+  3. **A refused demo day with more patients than beds says why** (RV2-18): "a ward holds more patients than it has beds", as the two-ward-stays refusal already did.
+  4. **Seeded ward bed counts stay fresh through the demo.** A count older than the signed bed count time refuses a pull (D-214), and the presenter may wait up to 15 minutes after Reset, so each seeded count is confirmed 6 to 15 minutes before the start. Graylands Older Adult stays stale on purpose, as the ward the script names as still to confirm.
+- **Handed on:** the header step count after Mark handover ready (REG2-6, card X12) and the person page for a named ward wait-list stay with no referral (Lead-VM-1) go to design Lane D, whose patient-page work replaces that count and owns that page.
+- **Boundary:** synthetic data only. No clinical value or rule changes.
+
+The next free number is D-230.
