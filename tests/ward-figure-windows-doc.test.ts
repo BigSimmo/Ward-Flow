@@ -10,7 +10,7 @@ import { FIGURE_WINDOWS } from "@/components/ward-management/figures/figure-wind
  * different things about where a window starts. Reads a doc, not app source.
  *
  * Do not edit the table by hand. Rewrite it with:
- * UPDATE_FIGURE_WINDOWS_DOC=1 node scripts/run-vitest.mjs run tests/figure-windows-doc.test.ts
+ * UPDATE_FIGURE_WINDOWS_DOC=1 node scripts/run-vitest.mjs run tests/ward-figure-windows-doc.test.ts
  */
 
 const DOC_PATH = path.join(import.meta.dirname, "..", "docs", "ward-flow", "statistics-definitions.md");

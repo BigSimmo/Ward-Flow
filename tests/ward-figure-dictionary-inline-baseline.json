@@ -1,5 +1,5 @@
 {
-  "$comment": "Figures spec 3.7 (D-220). Exact count per file of each figure's defining expression outside its home. Lower a number when a screen moves to its row; never raise one. Read by tests/figure-dictionary-inline.test.ts.",
+  "$comment": "Figures spec 3.7 (D-220). Exact count per file of each figure's defining expression outside its home. Lower a number when a screen moves to its row; never raise one. Read by tests/ward-figure-dictionary-inline.test.ts.",
   "markers": {
     "need-a-bed": ["\"placement_requested\"[\\s\\S]{0,120}\"destination_review\""],
     "no-ward-yet": ["flowStageOf\\([^)]*\\)\\s*===\\s*\"bed\""],

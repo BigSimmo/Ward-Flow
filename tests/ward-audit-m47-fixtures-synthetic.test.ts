@@ -23,6 +23,7 @@ const rel = (file: string) => path.relative(ROOT, file).split(path.sep).join("/"
 const FIXTURE_REGISTER: Record<string, string> = {
   "tests/fixtures/mutate-self-test.txt": "tooling: a mutation-testing self check, no records",
   "tests/fixtures/patient-search-lookalikes.ts": "synthetic: invented names, record numbers and dates of birth",
+  "tests/fixtures/permission-ak-a.ts": "synthetic: the signed permission answer key (roles, actions and expected answers), no patient data",
   "tests/fixtures/ward-flow-storage-validation-verdicts.json": "tooling: bit strings of validator verdicts, no records",
   "data/mha-2014-sections.json": "public law: Mental Health Act 2014 (WA) section titles",
   "data/mha-2014-sections.source.json": "public law: source of the section titles",
