@@ -47,7 +47,8 @@ describe("Add patient long names and suburbs (warn, never block)", () => {
     const given = screen.getByLabelText("Given name") as HTMLInputElement;
     const suburb = screen.getByLabelText("Suburb") as HTMLInputElement;
     expect(given).not.toHaveAttribute("maxlength");
-    expect(suburb).not.toHaveAttribute("maxlength");
+    // Only the server's 4,000-character limit applies to optional text (R-STRUCT-34), never a short cap.
+    expect(suburb).toHaveAttribute("maxlength", "4000");
     fireEvent.change(screen.getByLabelText(/Record number|UMRN/i), { target: { value: "UM999998" } });
     fireEvent.change(given, { target: { value: "Testable" } });
     fireEvent.change(screen.getByLabelText("Family name"), { target: { value: "Newcomer" } });

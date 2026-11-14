@@ -11,3 +11,10 @@
   align-items: center;
   gap: var(--wf-s-2);
 }
+
+/* R-STRUCT-29: the newest contact recorded today, a plain line beside Record contact. */
+.lastContact {
+  font-size: 0.8125rem;
+  color: var(--wf-hero-ink-2);
+  white-space: nowrap;
+}

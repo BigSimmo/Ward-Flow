@@ -11,19 +11,7 @@ import { useOfficerDiversionSave } from "./use-officer-diversion-save";
 import { ReturnEarlyAlerts } from "@/components/ward-management/out-of-area/return-early-alerts";
 import { useTransportCommandFeedback } from "./use-transport-command-feedback";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Circle,
-  ClipboardList,
-  ListChecks,
-  Lock,
-  MapPin,
-  Search,
-  Shield,
-  ShieldCheck,
-  Ambulance,
-  User,
-  X,
-} from "lucide-react";
+import { Circle, ClipboardList, ListChecks, Lock, MapPin, Search, ShieldCheck, Ambulance, X } from "lucide-react";
 
 import {
   Button,
@@ -124,10 +112,11 @@ import {
   revokedHoldingBedReason,
   stageSince,
   stageStartedAt,
+  transportLegalStatusLabel,
 } from "./officer-screen-helpers";
 import { renderArrivalsCard } from "./officer-arrivals-card";
 import { OfficerOrderNote, useOfficerDelayedFilter } from "./officer-order-note";
-import { type OfficerDetailTab, type OfficerJobDetailContext } from "./officer-job-detail";
+import { DIVERTED_END_LINE, type OfficerDetailTab, type OfficerJobDetailContext } from "./officer-job-detail";
 import { OfficerJobPanel, formsMissingNote } from "./officer-job-panel";
 import { OfficerDeliveredRow } from "./officer-history-row";
 import {
@@ -634,6 +623,14 @@ export function OfficerScreen() {
   ) => {
     const step = nextStep(movement);
     if (!step) return null;
+    // R-MOVE-3: nothing more for the officer after a diversion.
+    if (movement.transport?.diversion) {
+      return (
+        <p className={styles.nextNote} data-testid={`${testId}-diverted-${movement.id}`}>
+          {DIVERTED_END_LINE}
+        </p>
+      );
+    }
     return (
       <Button
         variant={step.blocked ? "sec" : variant}
@@ -849,7 +846,7 @@ export function OfficerScreen() {
         />
       }
       act={
-        firstNeed && firstHeld ? (
+        isPhone ? undefined : firstNeed && firstHeld ? (
           <HeroAct
             tone="warning"
             testId="ward-officer-act"
@@ -878,52 +875,32 @@ export function OfficerScreen() {
               testId: "ward-officer-copy-handover",
             },
             ...providerChips,
-            ...(isPhone
-              ? [
-                  {
-                    id: "escort",
-                    label: "Escort",
-                    icon: <User {...CHIP_ICON} />,
-                    count: escortCount,
-                    countTone: "quiet" as const,
-                    pressed: escortHighlight,
-                    onClick: () => setEscortHighlight((on) => !on),
-                  },
-                  {
-                    id: "involuntary",
-                    label: "Involuntary",
-                    icon: <Shield {...CHIP_ICON} />,
-                    count: involuntaryCount,
-                    countTone: "quiet" as const,
-                    pressed: involuntaryHighlight,
-                    onClick: () => setInvoluntaryHighlight((on) => !on),
-                  },
-                ]
-              : []),
           ]}
         />
       }
       band={
-        <HeroBand
-          title="Job stages"
-          variant="inline"
-          testId="ward-officer-stages"
-          cells={(
-            [
-              ["requested", "To accept", awaitingDeparture],
-              ["accepted", "Crew to send", crewToSend],
-              ["en_route", "En route", crewEnRoute],
-              ["collected", "Collected", inCustody],
-            ] as const
-          ).map(([which, label, value]) => ({
-            id: which,
-            label,
-            value,
-            pressed: pill === which,
-            onClick: () => togglePill(which),
-            ariaLabel: `${label} ${value}, highlight these jobs`,
-          }))}
-        />
+        isPhone ? undefined : (
+          <HeroBand
+            title="Job stages"
+            variant="inline"
+            testId="ward-officer-stages"
+            cells={(
+              [
+                ["requested", "To accept", awaitingDeparture],
+                ["accepted", "Crew to send", crewToSend],
+                ["en_route", "En route", crewEnRoute],
+                ["collected", "Collected", inCustody],
+              ] as const
+            ).map(([which, label, value]) => ({
+              id: which,
+              label,
+              value,
+              pressed: pill === which,
+              onClick: () => togglePill(which),
+              ariaLabel: `${label} ${value}, highlight these jobs`,
+            }))}
+          />
+        )
       }
     />
   );
@@ -1010,14 +987,12 @@ export function OfficerScreen() {
         ) : null}
         <ReturnEarlyAlerts desk={{ role: "officer" }} now={now} />
 
-        {isPhone ? needCard : null}
-
         {/* Transport mock-up: phone only. On a larger screen the first row of the job list is the
             next action, and this card drew without its phone styles. */}
         {isPhone && topJob && topJob.transport ? (
           <Card className={styles.nextCard} aria-label="Next action">
             <div className={styles.nextCardHead}>
-              <span className={styles.eyebrow}>Next action</span>
+              <span className={styles.eyebrow}>Next job</span>
               <span className={styles.nextCardStage}>
                 <StatusGlyph tone={LEG_TONE[officerLeg(topJob.transport) ?? "Requested"]} size={9} />
                 {transportLeg(topJob.transport)}
@@ -1034,15 +1009,30 @@ export function OfficerScreen() {
               <SrOnly> to </SrOnly>
               {destinationLabelFor(topJob)}
             </span>
-            {late(topJob) && topJob.arrivalDetails ? (
-              <span className={cx(styles.nextCardLine, styles.warnText)}>
-                <StatusGlyph tone="warning" size={9} /> Past ward ETA{" "}
-                {formatInstantWithDay(topJob.arrivalDetails.estimatedArrivalAt, now)}
-              </span>
-            ) : packOutstanding(topJob) ? (
-              <span className={cx(styles.nextCardLine, styles.warnText)}>
-                <StatusGlyph tone="warning" size={9} /> {PACK_SLOTS.length - packCount(topJob)} of {PACK_SLOTS.length}{" "}
-                forms still to upload
+            <span className={styles.nextCardLine} data-testid="ward-officer-nextcard-facts">
+              DOB {identityFor(topJob).dob}
+              {topJob.heldBedNumber !== undefined ? ` · Bed ${topJob.heldBedNumber}` : ""}
+              {" · "}
+              {transportLegalStatusLabel(topJob.transport) === "Not recorded"
+                ? "Legal status not recorded"
+                : transportLegalStatusLabel(topJob.transport)}
+              {" · "}
+              {topJob.transport.escortRequired ? "Escort" : "No escort"}
+            </span>
+            {(() => {
+              const expected = expectedArrival(topJob);
+              return expected ? (
+                <span className={cx(styles.nextCardLine, late(topJob) ? styles.warnText : undefined)}>
+                  {late(topJob) ? <StatusGlyph tone="warning" size={9} /> : null}
+                  {late(topJob) ? "Past ward ETA " : expected.booked ? "Est. " : "Ward ETA "}
+                  {formatInstantWithDay(expected.at, now)}
+                </span>
+              ) : null;
+            })()}
+            {packRequired(topJob) ? (
+              <span className={cx(styles.nextCardLine, packOutstanding(topJob) ? styles.warnText : undefined)}>
+                {packOutstanding(topJob) ? <StatusGlyph tone="warning" size={9} /> : null}
+                Forms {packCount(topJob)} of {PACK_SLOTS.length}
               </span>
             ) : null}
             <div className={styles.nextCardActions}>
@@ -1066,6 +1056,8 @@ export function OfficerScreen() {
             ) : null}
           </Card>
         ) : null}
+        {/* R-MOVE-2: on a phone the next job leads; the jobs needing a booking follow. */}
+        {isPhone ? needCard : null}
 
         <div className={styles.layout} data-open={panelOpen ? "true" : undefined}>
           <div className={styles.leftColumn}>

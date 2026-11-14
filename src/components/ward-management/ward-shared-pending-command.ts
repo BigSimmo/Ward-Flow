@@ -86,6 +86,32 @@ export function markOwnSave(
 }
 
 /**
+ * D-237 (Together-X1b-2): the records the server says this tab's own save changed (`covered`), each
+ * at the revision it landed at. Nobody else changed them between the save's basis and then, so a
+ * later command from this tab with no popup reports them as seen there (`ownSeenSince`).
+ */
+export function noteOwnSeen(ownSeen: Map<string, number>, to: number | undefined, covered: unknown) {
+  if (to === undefined || !Array.isArray(covered)) return;
+  for (const token of covered) if (typeof token === "string") ownSeen.set(token, Math.max(ownSeen.get(token) ?? 0, to));
+  // The server takes at most 1,000; leaving the oldest out only makes a later clash possible, never a lost change.
+  for (const token of ownSeen.keys()) {
+    if (ownSeen.size <= OWN_SEEN_MAX) break;
+    ownSeen.delete(token);
+  }
+}
+const OWN_SEEN_MAX = 500;
+
+/** The own-save records newer than `revision`, as `seen` for a command checked from there; older ones are dropped. */
+export function ownSeenSince(ownSeen: Map<string, number>, revision: number): Record<string, number> {
+  const seen: Record<string, number> = {};
+  for (const [token, at] of ownSeen) {
+    if (at > revision) seen[token] = at;
+    else ownSeen.delete(token);
+  }
+  return seen;
+}
+
+/**
  * Tier 1 item 1: a save held while offline is pinned to the board it was made on, so when it is
  * sent later the server refuses it if another desk changed the record meanwhile, rather than it
  * overwriting that change (CS-19). One already tied to an open popup keeps that popup's basis.

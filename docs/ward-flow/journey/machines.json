@@ -1761,13 +1761,13 @@
       },
       {
         "path": "src/components/ward-management/patients/add-patient.tsx",
-        "line": 90,
-        "sha256": "6a2fdbab2bc2d0b9eb671cb48c8e02fd7152a914c47f833ad9311fb3b9203537"
+        "line": 91,
+        "sha256": "3bab046b5982a585e31d1708e18acc61aa2dae0af44b9e7d3e2a842ec108b310"
       },
       {
         "path": "src/components/ward-management/patients/patient-now-screen.tsx",
         "line": 1,
-        "sha256": "2cf02bf24c9ea8af16a3ea69216013467877daf2c491820777faec377a14df03"
+        "sha256": "1b11af4f60b9e919ffb15cb7ad1ce86d410f9bad2a17c8a4477d39bcdd320c49"
       },
       {
         "path": "src/components/ward-management/shell/ward-broadcast-banner-body.tsx",

@@ -73,6 +73,7 @@ import {
   type IndigenousStatusChoice,
   type PatientExtras,
   SEX_ITEMS,
+  overLimitFieldLabel,
   SEX_UNCHOSEN,
   type SexChoice,
 } from "./add-patient-sections";
@@ -613,7 +614,12 @@ export function AddPatientForm() {
         setLastRejection(duplicateUmrnRefusal(existing.umrn.trim()));
         document.getElementById("ward-add-patient-umrn")?.focus();
       } else {
-        setLastRejection(message ?? "Patient could not be added. Check the identity details and existing records.");
+        const tooLong = overLimitFieldLabel(submission.form.extras);
+        setLastRejection(
+          tooLong
+            ? `${tooLong} is too long. Shorten it and add again.`
+            : (message ?? "Patient could not be added. Check the identity details and existing records."),
+        );
       }
       setIsSubmitting(false);
     };
@@ -1064,6 +1070,21 @@ export function AddPatientForm() {
                     onChange={(event) => setDraftField("umrn")(event.target.value.replace(/\s+/g, "").toUpperCase())}
                   />
                 </Field>
+                <div className={styles.choiceField}>
+                  <div className={styles.choiceLabelRow}>
+                    <span className={styles.choiceLabel}>Sex</span>
+                    <span className={styles.choiceHint}>Wards need it to accept</span>
+                  </div>
+                  <div data-testid="ward-add-patient-sex">
+                    <Segmented
+                      label="Sex"
+                      items={SEX_ITEMS}
+                      value={sexChoice}
+                      onChange={setSexChoice}
+                      className={cx(styles.segmented, styles.segmentedWrap)}
+                    />
+                  </div>
+                </div>
               </CardBody>
               {/* R-STRUCT-35: a quiet words-only warning, never a block. */}
               {identifierWarning ? (
@@ -1098,7 +1119,7 @@ export function AddPatientForm() {
                 onExtra={setExtra}
                 indigenousStatus={indigenousStatus}
                 onIndigenousStatus={setIndigenousStatus}
-                aboutAdded={(sexChoice !== SEX_UNCHOSEN ? 1 : 0) + (genderChoice !== GENDER_UNCHOSEN ? 1 : 0)}
+                aboutAdded={genderChoice !== GENDER_UNCHOSEN ? 1 : 0}
                 suburbHelp={longTextWarning(extras.suburb, "suburb")}
                 openFolds={openFolds}
                 onFold={(id, open) =>
@@ -1112,21 +1133,6 @@ export function AddPatientForm() {
                 }
                 aboutPerson={
                   <>
-                    <div className={styles.choiceField}>
-                      <div className={styles.choiceLabelRow}>
-                        <span className={styles.choiceLabel}>Sex</span>
-                        <span className={styles.choiceHint}>As recorded</span>
-                      </div>
-                      <div data-testid="ward-add-patient-sex">
-                        <Segmented
-                          label="Sex"
-                          items={SEX_ITEMS}
-                          value={sexChoice}
-                          onChange={setSexChoice}
-                          className={cx(styles.segmented, styles.segmentedWrap)}
-                        />
-                      </div>
-                    </div>
                     <div className={styles.choiceField}>
                       <div className={styles.choiceLabelRow}>
                         <span className={styles.choiceLabel} id="apGenderL">

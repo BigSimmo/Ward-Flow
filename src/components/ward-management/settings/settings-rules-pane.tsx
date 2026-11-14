@@ -281,7 +281,17 @@ export function SettingsRulesPane({
               displayTestId="due-soon-urgent-display"
               noun="final warning before a legal due time"
               max={clampDueSoonUrgent(DUE_SOON_URGENT_RANGE_MINUTES.max, rules.soon)}
-              range={rangeOf("urgent", "setting-due-soon-urgent", DUE_SOON_URGENT_RANGE_MINUTES)}
+              range={{
+                ...rangeOf("urgent", "setting-due-soon-urgent", DUE_SOON_URGENT_RANGE_MINUTES),
+                maxLabel: RULES.find((rule) => rule.key === "urgent")!.display(
+                  clampDueSoonUrgent(DUE_SOON_URGENT_RANGE_MINUTES.max, rules.soon),
+                ),
+              }}
+              clampNote={
+                clampDueSoonUrgent(DUE_SOON_URGENT_RANGE_MINUTES.max, rules.soon) < DUE_SOON_URGENT_RANGE_MINUTES.max
+                  ? `Stays below Early warning (${RULES.find((rule) => rule.key === "soon")!.display(rules.soon)}).`
+                  : undefined
+              }
               onChange={(minutes) => setRule({ dueSoonUrgentMinutes: clampDueSoonUrgent(minutes, rules.soon) })}
               onReset={() => setRule({ dueSoonUrgentMinutes: clampDueSoonUrgent(saved.urgent, rules.soon) })}
             />
