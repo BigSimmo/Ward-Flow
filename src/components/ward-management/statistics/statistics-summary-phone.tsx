@@ -347,7 +347,7 @@ function StatisticsSummaryPhoneView({
     };
   if (sheet?.kind === "eds")
     currentSheet = {
-      title: "Open ED movements",
+      title: "ED journeys open",
       body: (
         <ul className={styles.list}>
           {eds.map((ed) => (
@@ -358,12 +358,12 @@ function StatisticsSummaryPhoneView({
               meta={
                 ed.longest === null
                   ? exactStatisticsCount(ed.waiting) === 0
-                    ? "No open ED movements"
+                    ? "No ED journeys open"
                     : "Longest not recorded"
                   : `Longest ${durMinutes(ed.longest)}`
               }
               value={statisticsCountText(ed.waiting)}
-              time="open ED movements"
+              time="ED journeys open"
               href={ed.openable === false || !canOpen(edStatisticsHref(ed.id)) ? undefined : edStatisticsHref(ed.id)}
             />
           ))}
@@ -416,7 +416,7 @@ function StatisticsSummaryPhoneView({
                         {
                           id: "ed",
                           value: statisticsCountText(waitingInEd),
-                          label: <ShortLabel short="open movements" full="open ED movements" />,
+                          label: <ShortLabel short="journeys open" full="ED journeys open" />,
                         },
                       ]),
                 ]}
@@ -617,21 +617,21 @@ function StatisticsSummaryPhoneView({
             {/* The menu's ED icon; a clock is for time only. */}
             <IconTile icon={Siren} />
             <span className={styles.navText}>
-              <b>Open ED movements</b>
+              <b>ED journeys open</b>
               <span>
                 {!edPresenceKnown ? (
-                  // Role view (executive): "not shown open ED movements" read badly and was cut off.
+                  // Role view (executive): "not shown ED journeys open" read badly and was cut off.
                   held(waitingInEd) ? (
                     "Counts not shown"
                   ) : (
-                    <>{statisticsCountText(waitingInEd)} open ED movements · department totals protected</>
+                    <>{statisticsCountText(waitingInEd)} ED journeys open · department totals protected</>
                   )
                 ) : longestEd === null ? (
-                  `${edsWaiting.length} of ${eds.length} departments with open ED movements`
+                  `${edsWaiting.length} of ${eds.length} departments with ED journeys open`
                 ) : (
                   <>
                     Longest <b className={styles.num}>{durMinutes(longestEd)}</b> · {statisticsCountText(waitingInEd)}{" "}
-                    open movements from {edsWaiting.length} of {eds.length}
+                    journeys open from {edsWaiting.length} of {eds.length}
                   </>
                 )}
               </span>

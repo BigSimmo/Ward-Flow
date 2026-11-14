@@ -46,7 +46,7 @@ const SENT_WHOLE: Record<string, string> = {
  * scope; a break glass opening names the reason picked from the list (the typed words for "Other"
  * are never sent or kept).
  */
-export function openingReason(opening: Pick<RecordOpening, "breakGlassReason">): string {
+function openingReason(opening: Pick<RecordOpening, "breakGlassReason">): string {
   const reason = opening.breakGlassReason;
   if (reason === undefined) return "Reason not sent by the server";
   if (reason === null) return "Within desk scope";

@@ -10,6 +10,7 @@ import {
   type WardFlowState,
 } from "../src/components/ward-management/ward-flow-reducer";
 import { unitInScope, type WardAccess } from "../src/components/ward-management/ward-role-access";
+import { wardBedsInUse } from "../src/components/ward-management/ward-occupancy";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
 /**
@@ -69,6 +70,33 @@ describe("Beds ready now is one figure on every desk (Josh, 14 Nov 2026)", () =>
         expect(readyOf({ ...scoped, bedReleases })).toBe(coordinator);
       });
     }
+
+    it(`keeps named holds out of In use for a ward outside the desk's records (${scenario})`, () => {
+      // Occupancy passes no holds, so a named hold is never a bed in use; the carried counts agree.
+      // Name a free bed for one open journey so the check is not vacuous (codex review, PR #1674).
+      const unit = world.units.find((candidate) => candidate.beds > 2)!;
+      const taken = new Set(
+        world.admissions.filter((row) => row.unitId === unit.id && row.leftAt === null).map((row) => row.bedNumber),
+      );
+      const freeBed = Array.from({ length: unit.beds }, (_, index) => index + 1).find((bed) => !taken.has(bed))!;
+      const journey = world.movements.find(
+        (movement) => movement.closure === undefined && movement.stage !== "arrived" && !movement.admissionId,
+      )!;
+      const held: WardFlowState = {
+        ...world,
+        movements: world.movements.map((movement) =>
+          movement.id === journey.id ? { ...movement, acceptedUnitId: unit.id, heldBedNumber: freeBed } : movement,
+        ),
+      };
+      const scoped = scopeWardFlowState(held, desksFor(held).ed, { now: NOW_ANCHOR, places }).state;
+      expect(scoped.units.find((candidate) => candidate.id === unit.id)?.readyOutOfView?.named).toBe(1);
+      for (const scopedUnit of scoped.units) {
+        const whole = held.units.find((candidate) => candidate.id === scopedUnit.id)!;
+        expect(wardBedsInUse(scopedUnit, held.admissions, held.bedReleases)).toBe(
+          wardBedsInUse(whole, held.admissions, held.bedReleases),
+        );
+      }
+    });
 
     it(`carries only counts for the wards outside a desk's records (${scenario})`, () => {
       const scoped = scopeWardFlowState(world, desksFor(world).ed, { now: NOW_ANCHOR, places }).state;

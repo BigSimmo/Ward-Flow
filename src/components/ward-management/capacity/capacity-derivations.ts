@@ -25,7 +25,8 @@ import {
   numberedReservationBeds,
   type ReservationReferral as BaseReservationReferral,
 } from "@/components/ward-management/ward-movement-bed-hold";
-import { isOpen, unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
+import { unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
+import { needsABed } from "@/components/ward-management/figures/bed-demand";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { isFreeingToday } from "@/components/ward-management/ward-shared-figures";
 import { byServiceThenName } from "@/components/ward-management/ward-derivations-shortlist";
@@ -116,25 +117,6 @@ const ROWS: { id: BedKindId; need: string; who: string }[] = [
 ];
 
 /**
- * A journey still waiting for a bed: open, not admitted and holding no bed. A pulled bed is already
- * out of allocatable supply, so counting its journey as demand again would show a shortfall for a
- * person who already holds that bed (as in the forecast). Shared by `bedKindGaps` and
- * `bedKindBreakdown`, so a Mismatch card and its pop-up always count the same people.
- */
-function waitsForBed(movement: Movement): boolean {
-  return (
-    isOpen(movement) &&
-    movement.admissionId === undefined &&
-    movement.allocatedBed === undefined &&
-    // A journey holding a named bed has that bed already taken off Ready (WF-FIG-017).
-    movement.heldBedNumber === undefined &&
-    (movement.stage === "placement_requested" ||
-      movement.stage === "destination_review" ||
-      movement.stage === "accepted_awaiting_bed")
-  );
-}
-
-/**
  * Each ward's ready beds, reconciled once per ward as the network table and map do. This leaves the
  * recorded observation untouched when a later confirmation includes an already-pulled bed.
  */
@@ -177,7 +159,8 @@ export function bedKindGaps(
 
   // A pulled bed is already removed from allocatable supply. Counting its journey as demand
   // again would show a shortfall for a person who already holds that bed (as in the forecast).
-  const waitingForBed = movements.filter(waitsForBed);
+  // `needsABed` is the one Need a bed rule (D-220), shared with `bedKindBreakdown` and the forecast.
+  const waitingForBed = movements.filter(needsABed);
   const supply = readySupply(units, admissions, [...movements, ...referrals], bedReleases);
 
   return ROWS.map(({ id, need, who }) => {
@@ -207,7 +190,7 @@ export function bedKindBreakdown(
   bedReleases: readonly BedRelease[] = [],
 ): { waiting: Movement[]; wards: { unit: Unit; beds: number }[] } {
   const waiting = movements
-    .filter((movement) => waitsForBed(movement) && bedKindOfMovement(movement.cohort, movement.security) === kind)
+    .filter((movement) => needsABed(movement) && bedKindOfMovement(movement.cohort, movement.security) === kind)
     .sort((x, y) => x.openedAt - y.openedAt);
   const wards = readySupply(units, admissions, [...movements, ...referrals], bedReleases)
     .map(({ unit, ready, held }) => ({ unit, beds: bedsOfKindAtUnit(unit, kind, ready, held) }))
