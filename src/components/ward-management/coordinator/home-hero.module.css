@@ -315,6 +315,8 @@
   display: block;
   white-space: normal;
   overflow-wrap: anywhere;
+  /* R-STYLE-8 sweep: ink-3 read 3.6:1 on the lighter next-step panel; ink-2 keeps 4.5:1. */
+  color: var(--wf-hero-ink-2);
 }
 
 /* Ruling 4 (D-191): "In use" with the amber dot that replaced the words "at risk". */

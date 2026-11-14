@@ -445,14 +445,13 @@ test.describe("@mockup Phone hit boxes: popup and form-step controls (Q377)", ()
 // Screens that fail today. Their fixes sit in screen files owned by other lanes, so each is a
 // test.fixme with the reason; remove the entry when the screen is fixed and the test turns green.
 const KNOWN_CONTRAST_FAILURES: Record<string, string> = {
-  "/ward-flow|light":
-    "Home: .actLine, #home-next-checking and the outage pointer use hero ink-3 on a lighter next-step panel (3.6:1)",
-  "/ward-flow|dark": "Home: same next-step panel text as light (3.6:1)",
-  "/ward-flow|glare": "Home: ward-bar primaryMain 'New' is white on the white bright-light bar (1:1)",
-  "/ward-flow/ed|glare": "ED: ward-bar primaryMain 'New' is white on the white bright-light bar (1:1)",
-  "/ward-flow/statistics|light": "Statistics: zero-count cells and ward codes in grey on grey (2.9:1)",
-  "/ward-flow/statistics|dark": "Statistics: zero-count cells and ward codes (2.4:1)",
-  "/ward-flow/statistics|glare": "Statistics: zero-count cells and ward codes (4.3:1)",
+  // Lane B checked these on screen (14 Nov 2026): both read clearly. The scan misses the "New"
+  // pill painted by .primary::before, and composites the table's scroll-shadow gradient as grey.
+  "/ward-flow|glare": "Scan artefact: ward-bar 'New' sits on its blue ::before pill, which the scan does not see",
+  "/ward-flow/ed|glare": "Scan artefact: ward-bar 'New' sits on its blue ::before pill, which the scan does not see",
+  "/ward-flow/statistics|light": "Scan artefact: zero cells read as on grey from the table's scroll-shadow gradient",
+  "/ward-flow/statistics|dark": "Scan artefact: zero cells read as on grey from the table's scroll-shadow gradient",
+  "/ward-flow/statistics|glare": "Scan artefact: zero cells read as on grey from the table's scroll-shadow gradient",
 };
 
 const CONTRAST_ROUTES = [
