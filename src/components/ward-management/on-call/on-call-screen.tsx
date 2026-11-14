@@ -2,7 +2,6 @@
 
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { InfoTip } from "@/components/wf/info-tip";
 import { Fragment, type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   ChevronDown,
@@ -52,6 +51,7 @@ import {
   tableClasses,
   useIsPhone,
   useIsTabletPortrait,
+  InfoTip,
 } from "@/components/wf";
 import {
   CHECK_DUE_DAYS,

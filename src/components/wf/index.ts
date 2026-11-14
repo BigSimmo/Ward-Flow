@@ -166,3 +166,5 @@ export { RowUndo } from "./row-undo";
 // The synthetic-data mark in a dialog header (the Bed meeting sheet). The loading row still imports
 // it by its own file, so first paint does not load the whole kit.
 export { SyntheticMark } from "./synthetic-mark";
+// The tap-to-open ⓘ that replaces hover-only tips (D-224).
+export { InfoTip, type InfoTipProps } from "./info-tip";

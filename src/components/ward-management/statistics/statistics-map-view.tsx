@@ -19,8 +19,8 @@ import {
   returnFocusToOpener,
   type ChoiceItem,
   type FocusOpener,
+  InfoTip,
 } from "@/components/wf";
-import { InfoTip } from "@/components/wf/info-tip";
 import {
   edStatisticsHref,
   serviceStatisticsHref,
