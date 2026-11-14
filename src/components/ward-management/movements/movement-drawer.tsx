@@ -48,6 +48,7 @@ import { declineReasonLabels } from "./movement-workspace-derivations";
 import { PullNowButton } from "@/components/ward-management/alerts/global-alert-panels";
 import d from "./movement-drawer.module.css";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 // Closing the loop, package D (24 Oct 2026): cancelled-move checklist and acceptance conditions.
 import { MovementLoopChecks } from "@/components/ward-management/loop-checks/loop-checks-lazy";
 
@@ -207,6 +208,8 @@ export function MovementDrawer({
   const thresholds = useDueSoonThresholds();
   const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
 
+  // INV-CM (14 Nov 2026): "Ward board" shows only when this desk may open that board.
+  const canOpen = useCanOpenHref();
   if (movement === undefined) return null;
 
   const open = isOpen(movement);
@@ -218,6 +221,7 @@ export function MovementDrawer({
     movement.acceptedUnitId === undefined
       ? undefined
       : units.find((candidate) => candidate.id === movement.acceptedUnitId);
+  const acceptedBoard = accepted && canOpen(`/ward-flow/board/${accepted.id}`) ? accepted : undefined;
   const acceptedSite = accepted ? siteByCode(accepted.siteCode)?.name : undefined;
   // Owner, 26 Sept 2026: the patient's name, not the WF journey number. D-39: the UMRN.
   const subject = resolveSubjectPatient(movement, { patients, referrals });
@@ -426,11 +430,11 @@ export function MovementDrawer({
           <FileText size={14} aria-hidden="true" />
           Patient record
         </Link>
-        {accepted ? (
+        {acceptedBoard ? (
           <Link
-            href={`/ward-flow/board/${accepted.id}`}
+            href={`/ward-flow/board/${acceptedBoard.id}`}
             className={buttonClass({ variant: "sec", size: "sm" })}
-            title={`Open ${accepted.name} Bed board`}
+            title={`Open ${acceptedBoard.name} Bed board`}
           >
             <BedSingle size={14} aria-hidden="true" />
             Ward board
@@ -800,6 +804,9 @@ function MovementPhoneSheet({
   onClose: () => void;
   onFocusMovement?: (movementId: string) => void;
 }) {
+  // INV-CM (14 Nov 2026): "Ward board" shows only when this desk may open that board.
+  const canOpen = useCanOpenHref();
+  const acceptedBoard = accepted && canOpen(`/ward-flow/board/${accepted.id}`) ? accepted : undefined;
   const router = useRouter();
   const step = open ? movementNextStep(movement) : undefined;
   const target = step && step.kind !== "wait" ? nextStepTarget(step, movement.id) : undefined;
@@ -902,14 +909,14 @@ function MovementPhoneSheet({
             </p>
           </div>
         ) : null}
-        {open || accepted ? (
+        {open || acceptedBoard ? (
           <div className={d.phActions}>
             {open ? <PullNowButton movement={movement} /> : null}
-            {accepted ? (
+            {acceptedBoard ? (
               <Link
-                href={`/ward-flow/board/${accepted.id}`}
+                href={`/ward-flow/board/${acceptedBoard.id}`}
                 className={buttonClass({ variant: "sec", size: "sm" })}
-                title={`Open ${accepted.name} Bed board`}
+                title={`Open ${acceptedBoard.name} Bed board`}
               >
                 <BedSingle size={14} aria-hidden="true" />
                 Ward board

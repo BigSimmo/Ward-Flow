@@ -104,6 +104,9 @@ export function WardScreenBedDrawer({
   const { rejections } = useWardFlowSelect("rejections");
   // Feature 37 (9 Nov 2026): the discharge checklist is ticked by whoever may record the discharge.
   const dischargeCheckGate = useRoleGate()("RECORD_DISCHARGE_CHECK");
+  // INV-ACTION-067 (14 Nov 2026): "Move to another bed" is offered only to a desk that may place a
+  // stay (D-192), so the site bed manager is not refused after pressing it.
+  const moveGate = useRoleGate()("PLACE_IN_BED");
   const { run: runBedStep } = useUndoableStep({
     dispatch,
     rejections,
@@ -349,7 +352,9 @@ export function WardScreenBedDrawer({
             }}
             bedDrawerRef={bedDrawerRef}
             onKeyDown={handleBedDrawerKeyDown}
-            onMove={selectedBedItem?.stayAdmissionId ? () => moveStayOnBoard(selectedBed) : undefined}
+            onMove={
+              selectedBedItem?.stayAdmissionId && moveGate.allowed ? () => moveStayOnBoard(selectedBed) : undefined
+            }
             onOpenBoard={() => {
               closeBedDrawer(false);
               setActiveTab("board");

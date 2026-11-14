@@ -168,7 +168,13 @@ describe("unified Patient Now clinical flight deck", () => {
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Pull the bed" }));
     expect(screen.getByTestId("live-stage")).toHaveTextContent("pulled");
     expect(screen.getAllByText("Bed pulled").length).toBeGreaterThan(0);
-    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    // INV-ACTION-195 (14 Nov 2026): asking wards offers its own Undo toast too, so this presses the
+    // Undo on the Bed pulled toast.
+    const pulledToast = [...document.querySelectorAll<HTMLElement>("[data-wf-toast]")].find((toast) =>
+      toast.textContent?.includes("Bed pulled"),
+    );
+    expect(pulledToast).toBeDefined();
+    fireEvent.click(within(pulledToast!).getByRole("button", { name: "Undo" }));
     expect(screen.getByTestId("live-stage")).toHaveTextContent("accepted_awaiting_bed");
     expect(screen.getByTestId("live-bed-count")).toHaveTextContent(String(ready));
   });
