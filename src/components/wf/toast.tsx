@@ -10,6 +10,7 @@ import {
   Suspense,
   lazy,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -264,6 +265,21 @@ export function ToastView({
   // One clock time in the words: no "Ns left" and no shrinking line beside it.
   const until = undo?.until;
   const hasUntil = until !== undefined;
+  // R-STYLE-5: text wraps to two lines; a longer message shows Details, which opens it out in full.
+  const clampable = data["data-wrap"] !== "true" && !hasUntil;
+  const textRef = useRef<HTMLDivElement>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [overflows, setOverflows] = useState(false);
+  useLayoutEffect(() => {
+    if (!clampable || expanded) return;
+    const measure = () => {
+      const nodes = textRef.current?.querySelectorAll<HTMLElement>(`.${styles.toastTitle}, .${styles.toastBody}`);
+      setOverflows(Array.from(nodes ?? []).some((node) => node.scrollHeight - node.clientHeight > 1));
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [clampable, expanded, title, body]);
 
   return (
     <div
@@ -279,6 +295,8 @@ export function ToastView({
       data-undo={undo ? phase : undefined}
       data-undo-until={hasUntil ? "" : undefined}
       data-paused={(undo || timed) && (paused || (timed && hidden)) ? "true" : undefined}
+      data-clamp={clampable ? "" : undefined}
+      data-expanded={expanded ? "true" : undefined}
       data-leaving={leaving ? "true" : undefined}
       aria-hidden={leaving || undefined}
       inert={leaving || undefined}
@@ -288,7 +306,7 @@ export function ToastView({
       {...data}
     >
       {tone ? <StatusGlyph tone={tone} /> : null}
-      <div className={styles.toastText}>
+      <div className={styles.toastText} ref={textRef}>
         <span className={styles.toastTitle}>
           {title}
           {hasUntil ? <span data-undo-until-text="">{` · ${undoUntilText(until)}`}</span> : null}
@@ -301,6 +319,18 @@ export function ToastView({
         <span className={cx(styles.toastMeta, styles.undoWords)} aria-hidden="true" data-undo-left="">
           {secondsLeft >= 60 ? `${Math.ceil(secondsLeft / 60)} min left` : `${secondsLeft}s left`}
         </span>
+      ) : null}
+      {clampable && (overflows || expanded) ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          className={styles.toastAction}
+          data-testid="toast-details"
+          aria-expanded={expanded}
+          onClick={() => setExpanded((open) => !open)}
+        >
+          {expanded ? "Less" : "Details"}
+        </Button>
       ) : null}
       {action ? (
         <Button
