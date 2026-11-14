@@ -737,10 +737,11 @@ export function PatientTransitOperations({
                       : observationAt(pullLevel);
                   levelSave.submit(
                     () =>
-                      dispatch({
-                        type: "RECORD_OBSERVATION_LEVEL",
-                        role: routeRole,
+                      wardRaise(
+                        dispatch,
+                        routeRole,
                         now,
+                      )("RECORD_OBSERVATION_LEVEL", {
                         target: {
                           kind: "movement",
                           movementId: movement.id,
