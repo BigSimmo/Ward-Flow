@@ -6,6 +6,7 @@ import {
   wardTasksAreActionableForRole,
   type WardChromeRole,
 } from "../src/components/ward-management/ward-chrome-role";
+import { COORDINATOR_STEP_ROLES } from "../src/components/ward-management/ward-desk-stamp";
 import { EVENT_ROLE, type WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
 import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
 import type { Notice } from "../src/components/ward-management/ward-model";
@@ -143,11 +144,15 @@ describe("M4 gap 3: a coordinator acting from another desk's route", () => {
         for (const routeRole of CHROME_ROLES.filter((role) => role !== "coordinator")) {
           const stamped = deskCommand(access, { type, role: routeRole }) as { role: string };
           const roles = EVENT_ROLE[type] as readonly string[];
-          // D-223: a demonstration control is recorded under `demo` (`recordedRole`), whatever was typed.
-          const recorded = roles.includes("demo") ? "demo" : "coordinator";
           const label = `${access.scope.kind} ${routeRole} ${type}`;
-          if (type === "MARK_NOTICE_READ") expect(stamped.role, label).toBe(routeRole);
-          else if (roles.includes(recorded)) expect(stamped.role, label).toBe(recorded);
+          // D-222: a few changes use the typed role to choose the step (`COORDINATOR_STEP_ROLES`), and
+          // the stamp never turns another role into `demo`, so a demonstration control falls through.
+          const keeps =
+            type === "MARK_NOTICE_READ" ||
+            COORDINATOR_STEP_ROLES.some((entry) => entry.type === type && entry.role === routeRole);
+          // A demonstration control sent under another role keeps it, so the reducer refuses it.
+          if (keeps || roles.includes("demo")) expect(stamped.role, label).toBe(routeRole);
+          else if (roles.includes("coordinator")) expect(stamped.role, label).toBe("coordinator");
           else {
             // A change the coordinator does not take keeps its typed role, and the role check refuses it.
             expect(stamped.role, label).toBe(routeRole);

@@ -110,7 +110,7 @@ describe("SET_CONFIGURATION", () => {
     const entry = entries[0];
     expect(entry.outcome).toBe("accepted");
     expect(entry.category).toBe("configuration");
-    if (entry.category === "configuration") {
+    if (entry.category === "configuration" && entry.action === "SET_CONFIGURATION") {
       expect(entry.details.before).toEqual(defaultWardConfiguration());
       expect(entry.details.requested).toEqual(validPayload);
       expect(entry.details.after).toEqual(validPayload);

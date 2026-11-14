@@ -350,3 +350,15 @@ Source digests re-reviewed for D-208 (14 November 2026):
 
 - `ward-inbox-reducer.ts` and `ward-inbox-events.ts`: `ACKNOWLEDGE_INBOX_ITEM` now saves one acknowledgement per role for each time a row appears; a repeat by the same role is accepted and saves nothing. Its "changes" note says so. The other inbox events are unchanged; their cited lines moved down by 15 (reducer) or 1 (events).
 - `ed/ed-lists-desktop.tsx`, `ed/ed-screen.tsx` and `ed/ed-screen-row-facts.tsx`: display only. The bay now reads "Bay not recorded" instead of a number made up from the record's id. Dispatches, roles and guards are unchanged; two `ed-lists-desktop.tsx` citations moved up one line.
+
+## Source review — 14 Nov 2026 (a History line for every save, D-222)
+
+Source digests were re-reviewed file by file. Each cited line was found again by its text and the lines and digests were re-recorded:
+
+- `ward-flow-reducer.ts`: the reducer boundary now writes one History line for every save except the five excluded events (`ward-audit-categories.ts`). A raise-and-pull (`RAISE_REFERRAL` with `pullBed`) writes one line for the tap; the raise and pull inside it write none. Its `changes` note says so. No case, role, payload or guard changed; later citations moved down by seven to thirteen lines.
+- `ward-flow-provider.tsx`: every local change now carries the session desk (`stampDesk`, `ward-desk-stamp.ts`), and its role becomes the role that desk records under, as the signed-in server's `deskCommand` already does. A coordinator's step on a ward page is recorded as the coordinator, for that ward; `PATIENT_ARRIVED` as the officer and `MARK_NOTICE_READ` keep the typed role. The command roles in `EVENT_ROLE` are unchanged. No cited line moved.
+- `ward-access-state.ts`: a desk other than the coordinator now also sees accepted History lines about records it can see, without before and after facts; refusals stay with the coordinator. No field rule for any command changed; citations moved down by eleven to sixteen lines.
+- `ward-flow-protected-record-events.ts`: `REVIEW_AUDIT_EVENT` refuses a History line (`missing-or-inaccessible`), so the line every save writes never reaches the Review list. Its `needs` note says so. Citations moved down by seven or eight lines; no other handler changed.
+- `governance-registers.tsx`: the Review list leaves out History lines (`isReviewableEvent`). The `REVIEW_AUDIT_EVENT` dispatch did not move.
+
+After `build/history` was merged into the phase 2 integration branch (14 Nov 2026), each cited line in the files both sides changed was found again by its text and only lines and digests were re-recorded. `deskCommand` now asks `stampedRole` (built on `recordedRole`) for every desk, so the server and the demo's routing point record the same role.

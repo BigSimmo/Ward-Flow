@@ -3,7 +3,7 @@
  *
  * Plain-English wording for the History lines the six new categories write
  * (`ward-audit-categories.ts`), and the one desk wording every History face shares
- * (`historyActorLabel`). Pure, browser free and not yet read by any screen (phase 1).
+ * (`historyActorLabel`). Pure and browser free.
  *
  * No typed text reaches a line. The wording functions take only an event type, closed-list values,
  * whole numbers and record ids; a place is named through the `HistoryPlaceNames` lookup, which reads
@@ -186,6 +186,8 @@ function pulledBedLine(type: WardFlowEvent["type"], details: PulledBedLineDetail
   switch (type) {
     case "PULL_PATIENT":
       return ward === null ? "Bed pulled" : `Bed pulled on ${ward}`;
+    case "RAISE_REFERRAL":
+      return ward === null ? "Bed request raised and bed pulled" : `Bed request raised and bed pulled on ${ward}`;
     case "RELEASE_PULL": {
       const reason =
         typeof details.reason === "string" && (RELEASE_PULL_REASONS as readonly string[]).includes(details.reason)
@@ -260,6 +262,8 @@ export type HistoryActorInput = {
   asRole?: WardFlowRole | null;
   /** The signed-in account's short display name (signed in only, D-222 choice 2). */
   account?: string | null;
+  /** The access admin, which records under the executive role but is named for itself. */
+  accessAdmin?: true;
 };
 
 /** Initial and surname, as the access admin enters it: letters, spaces, full stops and hyphens. */
@@ -336,7 +340,12 @@ function deskLabel(actor: HistoryActorInput, places: HistoryPlaceNames): string 
 export function historyActorLabel(actor: HistoryActorInput, places: HistoryPlaceNames = {}): string {
   if (actor.attribution === "system") return "Raised automatically";
   if (actor.role === null) return "Not recorded";
-  const desk = actor.attribution === "desk-session" ? deskLabel(actor, places) : WARD_FLOW_ROLE_LABELS[actor.role];
+  const desk =
+    actor.attribution !== "desk-session"
+      ? WARD_FLOW_ROLE_LABELS[actor.role]
+      : actor.accessAdmin
+        ? "Access admin"
+        : deskLabel(actor, places);
   const account = actor.attribution === "desk-session" ? accountName(actor.account) : null;
   return account === null ? desk : `${desk}, ${account}`;
 }

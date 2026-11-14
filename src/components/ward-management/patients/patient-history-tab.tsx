@@ -46,6 +46,8 @@ import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { originName } from "@/components/ward-management/ward-movement-origin";
 import { STAGES, type PatientNowRecord } from "./patient-now-records";
 import { recordExtrasFor, type EpisodeKind, type PastEpisode, type RecordDocument } from "./patient-record-extras";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import { patientHistoryLines } from "./patient-history-lines";
 import s from "./patient-history-tab.module.css";
 
 /** The readmission window, read from the register (`readmissionWindow`), never typed in a label. */
@@ -385,6 +387,8 @@ export function PatientHistoryTab({
   onBackToNow: () => void;
 }) {
   const leaveBeds = useOptionalWardFlowSelect("leaveBeds")?.leaveBeds ?? [];
+  const readAuditEvents = useOptionalWardFlowSelect("readAuditEvents")?.readAuditEvents;
+  const coordinatorDesk = useEffectiveWardAccess().role === "coordinator";
   const patients = useOptionalWardFlowSelect("patients")?.patients ?? [];
   const extras = recordExtrasFor(patientId ?? record.id);
   const current = record.presentations.find((p) => p.current);
@@ -435,6 +439,16 @@ export function PatientHistoryTab({
   );
   if (created) events.push(created);
   events.sort((a, b) => b.at - a.at);
+  // D-222: every save names the desk that made it. The read is the desk's own scoped copy.
+  const auditRead = readAuditEvents?.({ role: "coordinator" });
+  const saved = patientHistoryLines({
+    events: auditRead?.status === "allowed" ? auditRead.value : [],
+    coordinator: coordinatorDesk,
+    movementIds: movement ? [movement.id] : [],
+    referralIds: movement?.referralId ? [movement.referralId] : [],
+    admissionIds: stays.map((stay) => stay.id),
+    places: { unit: unitName },
+  });
 
   const chronology = chronologyHref ? (
     <Link
@@ -447,7 +461,7 @@ export function PatientHistoryTab({
     </Link>
   ) : null;
 
-  const showLead = current !== undefined || events.length > 0 || stays.length > 0;
+  const showLead = current !== undefined || events.length > 0 || stays.length > 0 || saved.length > 0;
   const stageNote = movement && movement.stageChanges.length === 0 ? "Stage times not recorded" : undefined;
   const eventsMeta = [events.length > 0 ? `${events.length} recorded` : undefined, stageNote]
     .filter(Boolean)
@@ -534,6 +548,12 @@ export function PatientHistoryTab({
                 ) : (
                   <p className={s.muted}>No events recorded for this presentation.</p>
                 )}
+              </div>
+            ) : null}
+            {saved.length > 0 ? (
+              <div className={s.block} data-testid="pn-history-saved-changes">
+                <SectionLabel title="Saved changes" meta={`${saved.length}`} />
+                <EventTimeline events={saved} dayZero={dayZero} />
               </div>
             ) : null}
           </div>

@@ -5,7 +5,15 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import type { useWardFlow } from "./ward-flow-provider";
-import type { AuditCategory, AuditEvent } from "./ward-audit";
+import { isHistoryLine, type AuditEvent } from "./ward-audit";
+import {
+  AUDIT_CATEGORY,
+  isReviewableCategory,
+  NEW_HISTORY_CATEGORY_LABELS,
+  type HistoryCategory,
+} from "./ward-audit-categories";
+import type { WardFlowEvent } from "./ward-flow-events";
+import { historyLineWording } from "./ward-history-lines";
 import { LEAVING_DESTINATIONS } from "./ward-admissions";
 import type { WfTone } from "@/components/wf";
 
@@ -37,7 +45,16 @@ export type WorkbenchProps = {
   sampleData?: boolean;
 };
 export const actor = { role: "coordinator" } as const;
-export const categoryLabels: Record<AuditCategory, string> = {
+/**
+ * D-222: the Review list keeps the lines it always had. A review is never reviewed, and History
+ * lines (the new categories, and every save without a typed capture) never join it, so the counts
+ * stay as they were.
+ */
+export function isReviewableEvent(event: AuditEvent): boolean {
+  return isReviewableCategory(event.category) && !isHistoryLine(event);
+}
+export const categoryLabels: Record<HistoryCategory, string> = {
+  ...NEW_HISTORY_CATEGORY_LABELS,
   referral: "Referral",
   override: "Override",
   "legal-status": "Legal status",
@@ -70,7 +87,12 @@ export const reasonLabels: Record<AuditEvent["reasonCode"], string> = {
   revision: "Record changed",
   transition: "Transition not permitted",
 };
+/** D-222: every change type's plain wording, so a History line of any type has a label. */
+const historyActionLabels = Object.fromEntries(
+  Object.keys(AUDIT_CATEGORY).map((type) => [type, historyLineWording(type as WardFlowEvent["type"])]),
+) as Record<WardFlowEvent["type"], string>;
 export const actionLabels: Record<AuditEvent["action"], string> = {
+  ...historyActionLabels,
   RECORD_OBSERVATION_LEVEL: "Observation level changed",
   REFER_TO_UNITS: "Refer to wards",
   PULL_PATIENT: "Pull the bed",
@@ -219,6 +241,12 @@ export function subjectLabel(event: AuditEvent, patientOf: ReturnType<typeof use
       return subject.eventId;
     case "configuration":
       return "Configuration";
+    case "patient":
+      return "Person";
+    case "unit":
+      return "Ward";
+    case "alert":
+      return "Bed call or broadcast";
     case "unresolved":
       if (event.action === "ARCHIVE_PATIENT")
         return event.details.umrn === null ? "Archived record" : `Archived record, UMRN ${event.details.umrn}`;

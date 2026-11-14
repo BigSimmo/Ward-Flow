@@ -5,7 +5,8 @@ import {
   type ObservationChange,
 } from "@/components/ward-management/ward-observation";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import type { AuditEvent } from "@/components/ward-management/ward-audit";
+import { isHistoryLine, type AuditEvent } from "@/components/ward-management/ward-audit";
+import { historyActorLabel, historyLineWording } from "@/components/ward-management/ward-history-lines";
 import {
   changeReasonLabels,
   legalFormReceiptCorrectionReasonLabels,
@@ -732,6 +733,8 @@ function auditBeforeAfter(
   dayZero: Date,
   zone: ClockZoneLabel,
 ): Pick<ChronologyRow, "before" | "after" | "reason"> {
+  // A History line keeps no payload, and a line shared with another desk keeps none either (D-222).
+  if (isHistoryLine(event) || event.details === undefined) return { before: "", after: "", reason: "" };
   switch (event.category) {
     case "patient-record":
       return event.action === "RECORD_OBSERVATION_LEVEL"
@@ -773,16 +776,20 @@ function auditBeforeAfter(
 
 function auditRows(
   events: readonly AuditEvent[],
+  units: readonly Unit[],
   recordKeys: Set<string>,
   wardOfRecord: (record: string) => string | undefined,
   dayZero: Date,
   zone: ClockZoneLabel,
 ): RowDraft[] {
+  const unitName = (id: string) => units.find((unit) => unit.id === id)?.name;
   const rows: RowDraft[] = [];
   for (const event of events) {
     const record = auditRecord(event);
     if (record === null || !recordKeys.has(record)) continue;
-    const wording = eventHistoryWording(event.action, event.actor.role, wardOfRecord(record)) ?? event.action;
+    const wording = isHistoryLine(event)
+      ? historyLineWording(event.action, event.details.line, { unit: unitName })
+      : (eventHistoryWording(event.action, event.actor.role, wardOfRecord(record)) ?? event.action);
     const outcome =
       event.outcome === "accepted"
         ? ""
@@ -790,7 +797,7 @@ function auditRows(
     rows.push({
       record,
       recordedAt: finite(event.at),
-      who: whoLabel(event.actor.role),
+      who: historyActorLabel(event.actor, { unit: unitName }),
       action: `${wording}${outcome}`,
       eventTypes: [dedupeType(event.action, event.actor.role)],
       ...(event.action === "RECORD_OBSERVATION_LEVEL" ? { observationAccepted: event.outcome === "accepted" } : {}),
@@ -855,7 +862,7 @@ export function patientChronology(input: ChronologyInput): PatientChronology {
   ]);
   if (input.auditEvents) {
     const attributed = new Set<RowDraft>();
-    for (const draft of auditRows(input.auditEvents, recordKeys, wardOfRecord, input.dayZero, zone)) {
+    for (const draft of auditRows(input.auditEvents, units, recordKeys, wardOfRecord, input.dayZero, zone)) {
       const mirrored =
         draft.action === "Observation level changed"
           ? drafts.find(

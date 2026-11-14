@@ -72,7 +72,9 @@ afterEach(() => {
   resetOtherTabDayForTests();
 });
 
-/** The main actions, each as the events a person's press sends (seeded from the synthetic network). */
+/** The main actions, each as the events a person's press sends (seeded from the synthetic network).
+ * Every press is at the board's minute: each save writes a History line at its time (D-222), and a
+ * saved day with a line after its clock is refused on restore. */
 function mainActions(): { name: string; events: (state: WardFlowState, now: number) => WardFlowEvent[] }[] {
   const openMovement = (state: WardFlowState) => {
     const movement = state.movements.find(
@@ -125,7 +127,7 @@ function mainActions(): { name: string; events: (state: WardFlowState, now: numb
           {
             type: "PULL_PATIENT",
             role: "ward",
-            now: now + 1,
+            now,
             movementId,
             unitId,
             actingUnitId: unitId,
@@ -142,7 +144,7 @@ function mainActions(): { name: string; events: (state: WardFlowState, now: numb
           {
             type: "PULL_PATIENT",
             role: "ward",
-            now: now + 1,
+            now,
             movementId,
             unitId,
             actingUnitId: unitId,
@@ -150,7 +152,7 @@ function mainActions(): { name: string; events: (state: WardFlowState, now: numb
           {
             type: "RECORD_TRANSPORT_NEED",
             role: "ed",
-            now: now + 2,
+            now,
             movementId,
             needed: false,
           } as unknown as WardFlowEvent,

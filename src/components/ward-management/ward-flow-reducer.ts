@@ -52,7 +52,14 @@ import {
 } from "./ward-turnaround-priority";
 import { recordedMovementMedicalClearance } from "./ward-medical-clearance";
 import { withoutRecordNumbers, withUmrnInPlaceOfMovementIds } from "./ward-patient-resolver";
-import { appendAudit, classifyAuditEvent, finiteInstant, type AuditDecision, type WardAuditState } from "./ward-audit";
+import {
+  appendAudit,
+  classifyAuditEvent,
+  finiteInstant,
+  nestedHistoryEvent,
+  type AuditDecision,
+  type WardAuditState,
+} from "./ward-audit";
 import {
   withUndoRecord,
   type UndoRecord,
@@ -1557,7 +1564,8 @@ export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): War
 /**
  * WT-08 (Josh, 26 Oct 2026): Pull the bed is one tap. The accepted journey starts and its bed is
  * pulled in one event, each half through its own ordinary checks. A refused pull keeps the state as
- * it was and records that refusal, so nothing is left half started.
+ * it was and records that refusal, so nothing is left half started. D-222: the one tap writes one
+ * History line; the two halves write none of their own.
  */
 function raiseAndPullBed(state: WardFlowState, event: Extract<WardFlowEvent, { type: "RAISE_REFERRAL" }>) {
   const raise: typeof event = { ...event };
@@ -1568,22 +1576,27 @@ function raiseAndPullBed(state: WardFlowState, event: Extract<WardFlowEvent, { t
   if (event.acceptedUnitId === undefined) return refuse("Pulling the bed needs the ward that accepted");
   const changedRefusal = event.changedOnPull === undefined ? null : changedOnPullRefusal(event.changedOnPull);
   if (changedRefusal) return refuse(changedRefusal);
-  const started = wardFlowReducer(state, raise);
+  const started = wardFlowReducer(state, nestedHistoryEvent(raise));
   const journey = started.movements.find(
     (movement) => movement.referralId === event.referralId && !state.movements.some(({ id }) => id === movement.id),
   );
-  if (!journey) return started;
-  const pulled = wardFlowReducer(started, {
-    type: "PULL_PATIENT",
-    role: event.role,
-    now: event.now,
-    movementId: journey.id,
-    unitId: event.acceptedUnitId,
-    ...(event.actingUnitId === undefined ? {} : { actingUnitId: event.actingUnitId }),
-  });
+  if (!journey) return appendAudit(state, started, event, { outcome: "denied", reasonCode: "transition" });
+  const pulled = wardFlowReducer(
+    started,
+    nestedHistoryEvent({
+      type: "PULL_PATIENT",
+      role: event.role,
+      now: event.now,
+      movementId: journey.id,
+      unitId: event.acceptedUnitId,
+      ...(event.actingUnitId === undefined ? {} : { actingUnitId: event.actingUnitId }),
+      ...("desk" in event ? { desk: event.desk } : {}),
+    } as Extract<WardFlowEvent, { type: "PULL_PATIENT" }>),
+  );
   const refusal = pulled.rejections.at(-1);
   if (refusal !== started.rejections.at(-1) && refusal !== undefined) return refuse(refusal.reason);
-  return withChangedOnPull(pulled, journey.id, event.changedOnPull);
+  const done = withChangedOnPull(pulled, journey.id, event.changedOnPull);
+  return appendAudit(state, done, event, { outcome: "accepted", reasonCode: "none" });
 }
 
 /**

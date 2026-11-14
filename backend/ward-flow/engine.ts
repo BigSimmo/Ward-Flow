@@ -41,7 +41,7 @@ import {
   type WardAccessScope,
 } from "../../src/components/ward-management/ward-role-access";
 import { deskFor } from "../../src/components/ward-management/ward-desk";
-import { NOT_YOUR_ROLE, UNKNOWN_CHANGE, permit, recordedRole } from "../../src/components/ward-management/ward-permit";
+import { NOT_YOUR_ROLE, UNKNOWN_CHANGE, permit } from "../../src/components/ward-management/ward-permit";
 import { EVENT_ROLE, type WardFlowEvent } from "../../src/components/ward-management/ward-flow-events";
 import { validSharedCommand } from "./command-schemas";
 import { scenarioNetwork } from "../../src/components/ward-management/ward-scenarios";
@@ -54,6 +54,9 @@ import {
 import { isValidSharedWardFlowState } from "../../src/components/ward-management/ward-shared-state-validation";
 import { checkSyntheticPayload } from "../../src/lib/synthetic-data-guard";
 import { SITE_FEATURE_SWITCH_ROLE } from "../../src/components/ward-management/ward-site-feature-switches";
+import { boundAudit, PERSISTED_AUDIT_EVENTS } from "../../src/components/ward-management/ward-audit";
+import { stampDesk, stampedRole } from "../../src/components/ward-management/ward-desk-stamp";
+import { withoutDeskStamp } from "../../src/components/ward-management/ward-desk-stamp-shape";
 import { cleanReferralFields } from "../../src/components/ward-management/referrals/referral-text-clean";
 import { offlineEntryTime } from "../../src/components/ward-management/ward-offline-entry";
 
@@ -129,26 +132,10 @@ export function demoOnlyCommand(value: unknown): boolean {
 }
 
 /**
- * The newest audit entries kept in the saved workspace. The database audit table is the full
- * record; the workspace copy only feeds the on-screen views, and an unbounded copy eventually
- * passes the 8 MB row limit so every save fails. Entries an audit review names are always kept,
- * and so are this scenario's newest record-access receipts, because an open record is read
- * against its receipt.
+ * The newest audit entries kept in the saved workspace: the same bound the reducer keeps
+ * (`boundAudit`, `ward-audit.ts`, D-222). The database audit table is the full record.
  */
-export const PERSISTED_AUDIT_EVENTS = 1000;
-export function boundAudit(state: WardFlowState): WardFlowState {
-  const excess = state.auditEvents.length - PERSISTED_AUDIT_EVENTS;
-  if (excess <= 0) return state;
-  const kept = new Set(state.auditReviews.map((review) => review.eventId));
-  state.auditEvents
-    .filter((entry) => entry.category === "record-access" && entry.generation === state.worldGeneration)
-    .slice(-PERSISTED_AUDIT_EVENTS)
-    .forEach((entry) => kept.add(entry.id));
-  return {
-    ...state,
-    auditEvents: state.auditEvents.filter((entry, index) => index >= excess || kept.has(entry.id)),
-  };
-}
+export { PERSISTED_AUDIT_EVENTS, boundAudit };
 
 /**
  * Closed records older than this leave the live workspace for the archive table (Josh, 25 Oct
@@ -672,13 +659,17 @@ export function archivePartialViewForWorld(
 
 /**
  * H-0694, H-0179, D-222/D-223 (Josh, 14 Nov 2026): every desk's change is recorded under the role of
- * its membership (`recordedRole`, the same answer `permit()` and History's stamp use), never the role
- * its screen sent. A coordinator acting on a ward page is written down as the Bed coordinator, not the
- * ward, and a bed manager's Confirm sent as "ward" is the bed manager's (R2-1). The demonstration
- * controls keep `demo` (refused below for anyone but the statewide coordinator), and marking a notice
- * read keeps its role, which names the notice's addressee (`reduceInboxEvent`).
+ * its membership (`stampedRole`, built on `recordedRole`: the same answer `permit()` and the demo's
+ * routing point use), never the role its screen sent. A coordinator acting on a ward page is written
+ * down as the Bed coordinator, not the ward, and a bed manager's Confirm sent as "ward" is the bed
+ * manager's (R2-1). A demonstration control sent as `demo` keeps it (refused below for anyone but the
+ * statewide coordinator) and is never turned into `demo` from another role; marking a notice read
+ * keeps its role, which names the notice's addressee (`reduceInboxEvent`); the coordinator's
+ * Delivered keeps the officer's step (`COORDINATOR_STEP_ROLES`). A desk stamp the browser sent is
+ * dropped; the server stamps its own in `applyCommand`.
  */
 export function deskCommand(access: WardAccess, supplied: unknown): unknown {
+  supplied = withoutDeskStamp(supplied);
   // Q67 (Josh, 31 Oct 2026): a whole-network desk's handover sign-off that names no ward is recorded
   // as the whole network's, from the desk's membership, so History reads "Whole network". Sign-offs
   // saved before this carry no mark and keep "Ward not recorded"; nothing is guessed for them.
@@ -696,8 +687,7 @@ export function deskCommand(access: WardAccess, supplied: unknown): unknown {
   }
   if (typeof fields?.type !== "string" || !Object.hasOwn(EVENT_ROLE, fields.type)) return fields;
   const type = fields.type as WardFlowEvent["type"];
-  if (type === "MARK_NOTICE_READ" && typeof fields.role === "string") return fields;
-  const role = recordedRole(deskFor(access), type);
+  const role = stampedRole(deskFor(access), fields as WardFlowEvent);
   // A role the change does not take is left as sent, so `commandRefusal` answers it with the plain
   // role refusal rather than the command failing validation.
   if (fields.role === role || !(EVENT_ROLE[type] as readonly string[]).includes(role)) return fields;
@@ -949,8 +939,14 @@ export function breakGlassRefusal(world: SharedWorld, access: WardAccess, patien
  * minute of the server's time, the command is stamped with the server's own time as before. A save
  * that waited keeps the time the person acted within bounds, or is refused.
  */
-export function applyCommand(world: SharedWorld, supplied: unknown, at: Date, options: { actedAt?: unknown } = {}) {
-  supplied = storableCommand(supplied);
+export function applyCommand(
+  world: SharedWorld,
+  supplied: unknown,
+  at: Date,
+  options: { actedAt?: unknown; access?: WardAccess | null; account?: string | null } = {},
+) {
+  // D-222: only the server names the desk. A stamp the browser sent never reaches the reducer.
+  supplied = withoutDeskStamp(storableCommand(supplied));
   if (!validWorld(world) || !validCommand(supplied)) throw new Error("invalid-command");
   const fields = supplied as Record<string, unknown>;
   if (typeof fields.type !== "string" || !Object.hasOwn(EVENT_ROLE, fields.type)) throw new Error("invalid-command");
@@ -970,7 +966,10 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date, op
   );
   if ("refusal" in entered)
     return { world, outcome: "denied" as const, changes: {}, reason: refusalReason(entered.refusal) };
-  const event = { ...fields, type, role, now: entered.now } as WardFlowEvent;
+  // D-222: the membership names the desk on the History line (and the account, once memberships
+  // hold a display name). After the fingerprint, so a retried save still matches its receipt.
+  const sent = { ...fields, type, role, now: entered.now } as WardFlowEvent;
+  const event = options.access ? stampDesk(sent, deskFor(options.access), options.account) : sent;
   // H1: an accepted save that waited says so in its reply, receipt and audit row.
   const enteredOffline = entered.offline ? { actedAt: entered.now, sentAt: entered.sentAt } : null;
   let rawNext: WardFlowState;
@@ -988,7 +987,7 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date, op
     const partialReferral =
       event.type === "REFER_TO_UNITS" &&
       rawNext.auditEvents
-        .slice(world.state.auditEvents.length)
+        .filter((audit) => audit.sequence > world.state.auditSequence)
         .some(
           (audit) =>
             (audit.category === "referral" || audit.category === "override") &&
@@ -1019,7 +1018,10 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date, op
   const next = serialise({ ...rawNext, rejections: [] });
   if (!isValidSharedWardFlowState(next)) throw new Error("invalid-command");
   const reset = next.worldGeneration !== world.state.worldGeneration;
-  const domainAudit = reset ? next.auditEvents : next.auditEvents.slice(world.state.auditEvents.length);
+  // By sequence, not position: the day keeps only its newest entries, so a full day's length stays put.
+  const domainAudit = reset
+    ? next.auditEvents
+    : next.auditEvents.filter((entry) => entry.sequence > world.state.auditSequence);
   const saved = boundAudit(next);
   if (saved !== next && !isValidSharedWardFlowState(saved)) throw new Error("invalid-command");
   return {

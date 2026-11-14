@@ -202,7 +202,8 @@ describe("session audit capture and review", () => {
         outcome,
         details: { reason: null, overrideFactRecorded: false },
       });
-      if (event.category !== "referral") throw new Error("Ordinary referral incorrectly classified");
+      if (event.category !== "referral" || event.action !== "REFER_TO_UNITS")
+        throw new Error("Ordinary referral incorrectly classified");
       expect(event.details.targets.map((target) => [target.unitId, target.outcome])).toEqual([
         [ids[0], outcome === "denied" ? "denied" : "accepted"],
         [ids[1], outcome === "accepted" ? "accepted" : "denied"],
