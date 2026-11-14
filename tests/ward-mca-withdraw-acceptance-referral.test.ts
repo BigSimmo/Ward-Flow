@@ -69,7 +69,7 @@ const template = accepted.movements.find(
 )!;
 const journey = {
   ...template,
-  id: "WF-MCA-H3",
+  id: "WF-MCA-H3" as const,
   referralId: referral.id,
   stage: "accepted_awaiting_bed" as const,
   acceptedUnitId: first?.id,

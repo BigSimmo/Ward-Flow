@@ -13,7 +13,9 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * local demo recorded them against the wrong ward. The acting ward now comes from the desk, as Pull
  * the bed does, and the step is not offered when the bed is elsewhere. Offline, synthetic seed.
  */
-const desk = vi.hoisted(() => ({ access: { role: "ward", scope: { kind: "ward", unitIds: [] as string[] } } }));
+const desk = vi.hoisted(() => ({
+  access: { role: "ward", scope: { kind: "ward", unitIds: [] as string[] } } as WardAccess,
+}));
 vi.mock("@/components/ward-management/ward-role-gate", async (original) => ({
   ...(await original<typeof import("@/components/ward-management/ward-role-gate")>()),
   useRouteRole: () => "ward",
