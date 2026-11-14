@@ -547,3 +547,23 @@ describe("R-STYLE-5 toast place and clamp (lane A)", () => {
     });
   });
 });
+
+describe("Printed list contract (design lane A, 14 Nov 2026)", () => {
+  it("keeps the global button hide but restores [data-print-show] as plain text", () => {
+    const css = readCss("src/app/globals.css");
+    expect(css).toMatch(/header,\s*nav,\s*button\s*\{\s*display:\s*none\s*!important/);
+    expect(css).toMatch(/\[data-print-show\]\s*\{[^}]*display:\s*revert\s*!important/);
+    expect(css).toMatch(/\[data-print-show\]\s*\{[^}]*border:\s*0\s*!important/);
+    expect(css).toMatch(/\[data-print-show\]\s*\{[^}]*color:\s*#000\s*!important/);
+  });
+
+  it("prints Alerts titles and Patients group headings by test id, with no hero and no count line", () => {
+    const css = readCss("src/app/ward-flow-print.css");
+    expect(css).toContain('[data-testid="ward-alerts-page"] [data-testid="ward-alerts-open"]');
+    expect(css).toContain('tbody[id^="ward-patient-search-group-"] th > button');
+    expect(css).toMatch(
+      /\[data-testid="ward-alerts-hero"\],\s*\[data-testid="ward-alerts-today"\],[^{]*\[data-testid="ward-patient-search-cockpit"\][^{]*\{\s*display:\s*none/,
+    );
+    expect(css).toContain('content: "Downtime"');
+  });
+});
