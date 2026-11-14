@@ -988,7 +988,9 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date, op
       domainAudit,
       reset,
       facts: changedFacts(world.state, next, rawNext),
-      ...(enteredOffline ? { enteredOffline } : {}),
+      // A plain key (undefined when not offline) keeps every `changes` shape one object literal, so
+      // `changes.facts` stays readable on the shared result; JSON storage drops the undefined key.
+      enteredOffline: enteredOffline ?? undefined,
     },
     reason: null,
     partly,
