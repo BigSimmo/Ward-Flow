@@ -23,7 +23,7 @@ function Probe() {
   return null;
 }
 let earlyStamp: number | undefined;
-let earlyOutcome: Promise<WardCommandOutcome> | WardCommandOutcome | undefined;
+let earlyOutcome: unknown;
 function EarlyAction({ type }: { type: "signoff" | "reset" | "count" }) {
   const flow = useWardFlow();
   const clock = useWardFlowClock();
@@ -97,7 +97,9 @@ it("replays an early sign-off at the restored board minute", async () => {
   const stamps = saved().state.handoverSignOffs.map((entry: { at: number }) => entry.at);
   expect(stamps).toEqual([NOW_ANCHOR + 180, NOW_ANCHOR + 241]);
   // The caller waiting on the early step still gets its answer.
-  await expect(Promise.resolve(earlyOutcome)).resolves.toMatchObject({ status: "accepted" });
+  await expect(Promise.resolve(earlyOutcome as Promise<WardCommandOutcome>)).resolves.toMatchObject({
+    status: "accepted",
+  });
 });
 
 it("replays an early bed count confirmation as just confirmed, not hours old", () => {

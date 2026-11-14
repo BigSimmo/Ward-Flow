@@ -1,7 +1,8 @@
 // H2 (mechanics and clock audit, 14 Nov 2026): one save pressed offline, then a reload, no longer
 // holds saving for the rest of the sign-in. The client keeps the save "queued" while the browser
 // says it is offline, and the server records a save its receipt check cannot find as not applied
-// (under the workspace lock), so the check gives a final answer and a late arrival is refused.
+// (under the workspace lock), so the check gives a final answer and a late arrival is refused
+// (the store's side: backend/ward-flow/adversarial-receipt-recovery.test.mjs).
 // H1: every save carries the board minute it was pressed at, beside the command.
 import { afterEach, expect, it, vi } from "vitest";
 import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
@@ -12,7 +13,6 @@ import {
   type SharedSnapshot,
   type SharedView,
 } from "../src/components/ward-management/ward-shared-client";
-import { createWorkspaceStore, NOT_APPLIED_FINGERPRINT } from "../backend/ward-flow/postgres.mjs";
 
 const state = JSON.parse(JSON.stringify(seedWardFlowStateAt(0))) as SharedSnapshot["payload"]["state"];
 const care = (admissionId: string) =>
@@ -144,51 +144,4 @@ it("sends the board minute the save was pressed at beside the command (H1)", asy
   } finally {
     vi.useRealTimers();
   }
-});
-
-it("the store's recovery check records an unknown save as not applied, under the workspace lock", async () => {
-  const commands = new Map<string, { status: number; result: Record<string, unknown>; fingerprint: string }>();
-  const statements: string[] = [];
-  const select = async (_sql: string, values: unknown[]) => {
-    const row = commands.get(String(values[2]));
-    return { rows: row ? [row] : [], rowCount: row ? 1 : 0 };
-  };
-  const client = {
-    query: async (sql: string, values: unknown[] = []) => {
-      statements.push(sql.split(" ").slice(0, 2).join(" "));
-      if (sql.startsWith("SELECT 1 FROM ward_flow.workspaces")) return { rows: [{}], rowCount: 1 };
-      if (sql.startsWith("INSERT INTO ward_flow.commands")) {
-        const [, , id, fingerprint, status, result] = values as [string, string, string, string, number, object];
-        if (!commands.has(id)) commands.set(id, { fingerprint, status, result: result as Record<string, unknown> });
-        return { rows: [], rowCount: 1 };
-      }
-      if (sql.startsWith("SELECT status, result")) return select(sql, values);
-      return { rows: [], rowCount: 0 };
-    },
-    release: () => {},
-  };
-  const pool = { query: select, connect: async () => client };
-  const store = createWorkspaceStore(pool, { workspaceId: "synthetic", engine: {} });
-  const id = "55555555-5555-4555-8555-555555555555";
-  // An ordinary receipt read (Activity) still writes nothing.
-  expect(await store.receipt("synthetic-actor", id)).toBeNull();
-  expect(commands.size).toBe(0);
-  expect(await store.receipt("synthetic-actor", id, null, { settle: true })).toEqual({
-    outcome: "refused",
-    commandRevision: 0,
-  });
-  expect(commands.get(id)?.fingerprint).toBe(NOT_APPLIED_FINGERPRINT);
-  expect(statements).toEqual(["BEGIN", "SELECT 1", "INSERT INTO", "SELECT status,", "COMMIT"]);
-  // A save already recorded keeps its own answer.
-  commands.set("66666666-6666-4666-8666-666666666666", {
-    status: 200,
-    result: { outcome: "accepted", commandRevision: 3 },
-    fingerprint: "x",
-  });
-  expect(
-    await store.receipt("synthetic-actor", "66666666-6666-4666-8666-666666666666", null, { settle: true }),
-  ).toEqual({
-    outcome: "accepted",
-    commandRevision: 3,
-  });
 });
