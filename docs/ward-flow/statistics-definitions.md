@@ -1,6 +1,6 @@
 # Statistics definitions (draft)
 
-_Updated 2026-11-10 - first draft for master audit list item M121; Documentation owns._
+_Updated 2026-11-14 - Windows table and D-220 figure names added (figures); first draft 2026-11-10 for master audit list item M121; Documentation owns._
 
 **Status: DRAFT for Josh.** One row per published figure: what it counts, what it divides by, what it
 shows when there are too few to count, and the one place it is worked out. Where the code has more
@@ -19,6 +19,50 @@ screens agree with each other; this page and that test prove the shared number i
 | Delayed bed-days          | Minutes from ready-since (or arrival, if later) to leaving, within the period | (a sum, shown in days)           | A stay with no ready-since date, or cleared, counts nothing. The whole delay goes under the reason recorded now              | `delayedBedDaysByReason` (`ward-delayed-discharge.ts`)                                                                                                                                                                                                                                    |
 | Readmitted within 28 days | Arrivals of a person discharged from a ward in the 28 days before             | (a count; one per arrival)       | 0 is a real count. A prompt to look, not a performance measure                                                               | `readmissionsArrivedIn` and `createReadmissionIndex` (`ward-readmission.ts`)                                                                                                                                                                                                              |
 | Frequent presenter        | ED presentations with a full date in the 12 months up to and including today  | (a count against the threshold)  | A month-only date ("Mar 2026") is not counted. Threshold from `ward-clinical-values.ts` (`frequentPresenterEdPresentations`) | `edPresentationsInWindow` and `frequentPresenterTag` (`ward-patient-care-plans.ts`)                                                                                                                                                                                                       |
+
+## Figure names and populations (D-220, 14 November 2026)
+
+| Figure                                                             | Counts                                                                                                      | One implementation                                                                                                               |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Need a bed                                                         | Open movements from any origin not yet holding a bed (no ward yet, or accepted with no bed pulled or named) | `needsABed` (`figures/bed-demand.ts`); Capacity, the forecast and the bed meeting sheet                                          |
+| No ward yet                                                        | Open movements no ward has accepted                                                                         | `noWardYet` (`figures/bed-demand.ts`); Home's first Flow stage, the TV's ED lane                                                 |
+| Waiting in ED                                                      | People still in an emergency department awaiting a bed                                                      | `waitingInEds` (`ward-shared-figures.ts`)                                                                                        |
+| ED journeys open                                                   | Every open ED movement, people in transit included                                                          | `openEdJourneys` (`ward-shared-figures.ts`); per ED, `edStatisticsFigures(...).onTheList`                                        |
+| Over 8 h, over 24 h in ED; the wait bands; median and longest wait | People waiting in ED, from each movement's start in the ED                                                  | `edStatisticsFigures` and `edWaitBands` (`statistics/statistics-ed-waits.ts`); the signed-in report through `executiveEdSummary` |
+| Held up                                                            | Bed releases with a blocker, due by tomorrow (D-191 item 5)                                                 | `heldUpDueByTomorrow` (`ward-held-up.ts`)                                                                                        |
+| Held up · any date                                                 | Current stays with a blocker, whatever the date                                                             | `blockedDischargesByReason` (`statistics/statistics-derivations.ts`)                                                             |
+
+## Windows
+
+Every count runs over one of these windows, on the board's day (`dayOf`, `ward-clock.ts`), on the
+Perth clock (R-FIGS-14, owner ruling item 12; D-220: the week is Monday 12:00 am to the next Monday
+12:00 am). The rows live in `src/components/ward-management/figures/figure-windows.ts`, whose
+`windowLine` writes a window's real start on screen with am/pm and no zone words ("Sat 14 Nov,
+12:00 am to now"; the app is on Perth time throughout, Josh 14 Nov 2026). On
+the signed-in site a day starts at 8:00 am Perth until PR B moves day 0 to Perth midnight (F2); the
+line shows that start honestly. `tests/figure-windows-doc.test.ts` fails if this table drifts from
+the rows. Do not edit it by hand. Run
+`UPDATE_FIGURE_WINDOWS_DOC=1 node scripts/run-vitest.mjs run tests/figure-windows-doc.test.ts` to rewrite it.
+
+<!-- prettier-ignore-start -->
+<!-- figure-windows:start -->
+
+| Window | Starts | Ends | Used by | Edges set by | Id |
+| --- | --- | --- | --- | --- | --- |
+| Now | The board's time now | The board's time now | Beds in use, occupancy, Beds ready now, Need a bed, Waiting in ED, held up, alerts | A snapshot of the records at `now` | `now` |
+| Today | 12:00 am on the board's day | Now | Referrals today, admitted today, gone today, due today | `dayOf` (`ward-clock.ts`) | `today` |
+| By tomorrow | Any earlier date (overdue included) | 12:00 am the day after tomorrow | Held up (D-191 item 5) | `releaseBand` (`ward-bed-availability.ts`) | `by-tomorrow` |
+| Next 7 days | 12:00 am today | 12:00 am seven days later (today and the next six days) | Discharge planned, expected discharges | `isDueWithinDays` (`statistics/statistics-dates.ts`) | `next-7-days` |
+| Week | Monday 12:00 am | The next Monday 12:00 am; this week so far ends now | Weekly report | `reportWeek` (`reports/weekly-report.ts`) | `week` |
+| ED wait bands | Each journey's start in the ED (`openedAt`) | Now | Over 8 h and over 24 h in ED, the ED wait bands | `inEdOver` (`ward-shared-figures.ts`), `ED_WAIT_BANDS` (`statistics/statistics-ed-waits.ts`) | `ed-wait` |
+| 28 days | 28 days before each arrival | The arrival | Readmitted within 28 days | `READMISSION_WINDOW_DAYS` (`ward-readmission.ts`) | `readmission` |
+| 12 months | 12:00 am the day after today's date 12 months ago | 12:00 am tomorrow (today included) | Frequent presenter | `edPresentationsInWindow` (`ward-patient-care-plans.ts`) | `frequent-presenter` |
+| Hours | The start of the earliest shown hour | Now (the current hour so far) | Session trends | `sessionTrends` (`statistics/statistics-session-trends.ts`) | `hours` |
+| Last 24 hours | 24 hours before now | Now | A release confirmed in the last 24 hours (a rolling window, not the calendar day) | `releaseBand` (`ward-bed-availability.ts`) | `discharged-rolling` |
+| Any date | No start: every open item | No end | Held up · any date | `blockedDischargesByReason` (`statistics/statistics-derivations.ts`) | `any-date` |
+
+<!-- figure-windows:end -->
+<!-- prettier-ignore-end -->
 
 ## Found while writing this
 

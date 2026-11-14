@@ -44,7 +44,7 @@ import {
 import { openEdJourneys } from "@/components/ward-management/ward-shared-figures";
 import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 import { readyBedsNow, totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";
-import { edJourneyWaitFigures as edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
+import { edStatisticsFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
 import {
   HEALTH_SERVICES,
   type BedRelease,
@@ -53,7 +53,6 @@ import {
   type DeclineReason,
 } from "@/components/ward-management/ward-model";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
-import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 
 import {
   Foot,
@@ -369,7 +368,7 @@ function OperationalStatisticsScreen({
         // Bed manager: its own site's ED only. Another ED's row would count only journeys to this site.
         .filter((ed) => siteCode === undefined || ed.siteCode === siteCode)
         .map((ed) => {
-          const figures = edWaitFigures(sourceMovements, ed.id, now);
+          const figures = edStatisticsFigures(sourceMovements, ed.id, now);
           const waits = figures.waitingMovements.map((w) => w.waitMinutes);
           return {
             id: ed.id,
@@ -378,7 +377,7 @@ function OperationalStatisticsScreen({
             waiting: figures.onTheList,
             longest: figures.longestWait ? figures.longestWait.waitMinutes : null,
             median: median(waits),
-            over8: waits.filter((minutes) => minutes >= ED_SEVERE_PRESSURE_WAIT_MINUTES).length,
+            over8: figures.over8h,
             over24: figures.over24h,
             waits,
           };
@@ -640,7 +639,7 @@ function StatisticsSummaryView({
       ["Being made ready", pendingPreparation],
       // Issue #618: counts of people follow the executive's small number rule; beds stay exact.
       ["Discharged today", small(dischargesCount)],
-      ["Open ED movements", small(waitingCount)],
+      ["ED journeys open", small(waitingCount)],
       ["Still open", small(stillOpenCount)],
     ],
   };
@@ -698,7 +697,7 @@ function StatisticsSummaryView({
                 id: ed.id,
                 name: ed.name,
                 code: ed.site,
-                meta: String(statisticsCountText(ed.waiting, operationalSmall)) + " open ED movements",
+                meta: String(statisticsCountText(ed.waiting, operationalSmall)) + " ED journeys open",
               })),
             service: (directory?.services ?? HEALTH_SERVICES).map((name) => {
               const count = allPressureWards.filter((ward) => siteByCode(ward.site)?.service === name).length;
@@ -1038,7 +1037,7 @@ function StatisticsSummaryView({
                       { id: "ready", value: availableNow, label: availableNow === 1 ? "bed ready" : "beds ready" },
                       ...(notShown(waitingCount)
                         ? []
-                        : [{ id: "ed", value: small(waitingCount), label: "open ED movements" }]),
+                        : [{ id: "ed", value: small(waitingCount), label: "ED journeys open" }]),
                       ...(notShown(dischargesCount)
                         ? []
                         : [

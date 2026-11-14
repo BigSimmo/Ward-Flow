@@ -1,0 +1,170 @@
+{
+  "$comment": "Figures spec 3.7 (D-220). Exact count per file of each figure's defining expression outside its home. Lower a number when a screen moves to its row; never raise one. Read by tests/figure-dictionary-inline.test.ts.",
+  "markers": {
+    "need-a-bed": ["\"placement_requested\"[\\s\\S]{0,120}\"destination_review\""],
+    "no-ward-yet": ["flowStageOf\\([^)]*\\)\\s*===\\s*\"bed\""],
+    "ready-now": ["(?:sum|ready|total)\\s*\\+=?\\s*readyBedsNow\\("],
+    "waiting-in-ed": ["filter\\([^)]*isWaitingInEd"],
+    "ed-journeys-open": ["isOpen\\(\\w+\\)\\s*&&\\s*isEdOriginJourney\\("],
+    "ed-over": [
+      ">=\\s*(?:ED_SEVERE_PRESSURE_WAIT_MINUTES|LONG_WAIT_MINUTES|VERY_LONG_WAIT_MINUTES|OVER_8H|OVER_24H)\\b"
+    ],
+    "held-up": ["\\.blockReason\\s*!==\\s*null", "\\.blocker\\s*!==\\s*null"],
+    "occupancy-tone": [">=\\s*NEAR_FULL\\b"],
+    "alerts": ["alertGroupOfId\\(", "actNowCount\\s*\\+"],
+    "referrals-awaiting": ["referralState\\(\\w+\\)\\s*===\\s*\"queued\""],
+    "median": ["\\.length\\s*%\\s*2"]
+  },
+  "homes": {
+    "need-a-bed": ["src/components/ward-management/figures/bed-demand.ts"],
+    "ready-now": ["src/components/ward-management/ward-bed-states.ts"],
+    "waiting-in-ed": [
+      "src/components/ward-management/ward-ed-presence.ts",
+      "src/components/ward-management/ed/ed-home-derivations.ts",
+      "src/components/ward-management/ward-shared-figures.ts"
+    ],
+    "ed-journeys-open": [
+      "src/components/ward-management/ed/ed-home-derivations.ts",
+      "src/components/ward-management/ward-shared-figures.ts"
+    ],
+    "ed-over": ["src/components/ward-management/ward-shared-figures.ts"],
+    "held-up": ["src/components/ward-management/ward-bed-availability.ts"],
+    "alerts": ["src/components/ward-management/ward-alerts-figures.ts"],
+    "referrals-awaiting": ["src/components/ward-management/figures/decision-counts.ts"]
+  },
+  "counts": {
+    "need-a-bed": {
+      "src/components/ward-management/alerts/ward-broadcast-model.ts": 1,
+      "src/components/ward-management/coordinator/home-placement-drawer.tsx": 1,
+      "src/components/ward-management/coordinator/missed-requests-check.ts": 1,
+      "src/components/ward-management/coordinator/shortlist-panel.tsx": 1,
+      "src/components/ward-management/ed/ed-no-bed.ts": 1,
+      "src/components/ward-management/ed/ed-referral-status.ts": 1,
+      "src/components/ward-management/forecast/forecast-by-kind.ts": 1,
+      "src/components/ward-management/handover/handover-model.ts": 2,
+      "src/components/ward-management/handover/handover-panels.tsx": 1,
+      "src/components/ward-management/movements/movement-drawer.tsx": 1,
+      "src/components/ward-management/movements/movement-next-step.ts": 1,
+      "src/components/ward-management/movements/movement-workspace-derivations.ts": 1,
+      "src/components/ward-management/patients/patient-mode.ts": 1,
+      "src/components/ward-management/patients/patient-now-records.ts": 1,
+      "src/components/ward-management/patients/patient-now-screen.tsx": 1,
+      "src/components/ward-management/patients/patient-now-summary.tsx": 1,
+      "src/components/ward-management/patients/patient-transit-operations.tsx": 2,
+      "src/components/ward-management/reports/fixed-questions.ts": 1,
+      "src/components/ward-management/search/global-search-preview.tsx": 1,
+      "src/components/ward-management/statistics/statistics-claims-statistics-screen.ts": 2,
+      "src/components/ward-management/statistics/statistics-journey-view.tsx": 1,
+      "src/components/ward-management/ward-decision-targets.ts": 1,
+      "src/components/ward-management/ward-flow-reducer.ts": 1,
+      "src/components/ward-management/ward-flow-referral-answer-events.ts": 1,
+      "src/components/ward-management/ward-model-vocabulary.ts": 1,
+      "src/components/ward-management/ward-movements.ts": 1,
+      "src/components/ward-redesign/pop-search/search-preview.tsx": 1
+    },
+    "ready-now": {
+      "src/components/ward-management/statistics/executive-statistics-projector.ts": 1,
+      "src/components/ward-management/statistics/statistics-network-cards.tsx": 1
+    },
+    "waiting-in-ed": {
+      "src/components/ward-management/bed-meeting/bed-meeting-agenda.ts": 1,
+      "src/components/ward-management/ed/ed-screen-derivations.ts": 1,
+      "src/components/ward-management/forecast/ed-access-risk.ts": 1
+    },
+    "ed-journeys-open": {
+      "src/components/ward-management/statistics/statistics-ed-waits.ts": 1
+    },
+    "ed-over": {
+      "src/components/ward-management/bed-meeting/bed-meeting-agenda-screen.tsx": 1,
+      "src/components/ward-management/bed-meeting/bed-meeting-tv.tsx": 2,
+      "src/components/ward-management/bed-meeting/tv-clinical-derivations.ts": 1,
+      "src/components/ward-management/capacity/bed-meeting-derivations.ts": 1,
+      "src/components/ward-management/capacity/service-capacity-tracker.ts": 1,
+      "src/components/ward-management/delays/delays-board-graphs.tsx": 2,
+      "src/components/ward-management/delays/delays-board-model.ts": 8,
+      "src/components/ward-management/delays/delays-derivations.ts": 2,
+      "src/components/ward-management/delays/delays-view-model.ts": 4,
+      "src/components/ward-management/delays/wait-bands.ts": 2,
+      "src/components/ward-management/delays/waiting-owner-tiles.tsx": 1,
+      "src/components/ward-management/ed/ed-handover-board.tsx": 1,
+      "src/components/ward-management/ed/ed-index.tsx": 2,
+      "src/components/ward-management/ed/ed-lists-desktop.tsx": 1,
+      "src/components/ward-management/ed/ed-screen-derivations.ts": 1,
+      "src/components/ward-management/movements/movement-drawer.tsx": 1,
+      "src/components/ward-management/movements/movements-screen.tsx": 1,
+      "src/components/ward-management/movements/stage-pipeline.tsx": 1,
+      "src/components/ward-management/reports/weekly-report-screen.tsx": 1,
+      "src/components/ward-management/search/patient-census.ts": 2,
+      "src/components/ward-management/search/patient-search.tsx": 1,
+      "src/components/ward-management/search/record-preview.tsx": 2,
+      "src/components/ward-management/statistics/executive-statistics-derivations.ts": 3,
+      "src/components/ward-management/statistics/executive-statistics-projector.ts": 2,
+      "src/components/ward-management/statistics/statistics-ed-journeys-card.tsx": 3,
+      "src/components/ward-management/statistics/statistics-ed-screen.tsx": 12,
+      "src/components/ward-management/statistics/statistics-ed-swarm.tsx": 4,
+      "src/components/ward-management/statistics/statistics-ed-waits.ts": 2,
+      "src/components/ward-management/statistics/statistics-eds-index.tsx": 3,
+      "src/components/ward-management/statistics/statistics-journey-view.tsx": 1,
+      "src/components/ward-management/statistics/statistics-service-screen.tsx": 1,
+      "src/components/ward-management/ward-operational-defaults.ts": 1,
+      "src/components/ward-management/ward-pressure.ts": 1
+    },
+    "held-up": {
+      "src/components/ward-management/board/ward-board-flow-column.tsx": 1,
+      "src/components/ward-management/board/ward-board-person-entry.tsx": 4,
+      "src/components/ward-management/board/ward-board.tsx": 1,
+      "src/components/ward-management/board/ward-daily-sheet.tsx": 1,
+      "src/components/ward-management/capacity/bed-meeting-derivations.ts": 1,
+      "src/components/ward-management/capacity/beds-forecast-sources.ts": 1,
+      "src/components/ward-management/capacity/capacity-derivations.ts": 1,
+      "src/components/ward-management/capacity/capacity-ward-drawer.tsx": 5,
+      "src/components/ward-management/discharges/discharge-board-model.ts": 3,
+      "src/components/ward-management/discharges/discharge-board.tsx": 1,
+      "src/components/ward-management/discharges/discharge-chart-days.ts": 1,
+      "src/components/ward-management/discharges/discharge-detail-panes.tsx": 1,
+      "src/components/ward-management/discharges/discharge-release-actions.ts": 3,
+      "src/components/ward-management/discharges/use-discharge-workspace-state.tsx": 4,
+      "src/components/ward-management/forecast/forecast-levers.ts": 1,
+      "src/components/ward-management/handover/handover-model.ts": 2,
+      "src/components/ward-management/out-of-area/out-of-area-board.tsx": 1,
+      "src/components/ward-management/reports/fixed-questions.ts": 1,
+      "src/components/ward-management/site-sign-off/site-handover-sign-off.ts": 1,
+      "src/components/ward-management/statistics/executive-statistics-derivations.ts": 1,
+      "src/components/ward-management/statistics/statistics-ward-phone.tsx": 1,
+      "src/components/ward-management/statistics/statistics-ward-screen.tsx": 1,
+      "src/components/ward-management/statistics/statistics-wards-index.tsx": 1,
+      "src/components/ward-management/ward-discharge-dates.ts": 1,
+      "src/components/ward-management/ward-flow-bed-events.ts": 2,
+      "src/components/ward-management/ward-statistics.ts": 1,
+      "src/components/ward-management/ward/ward-screen-overlays.tsx": 2,
+      "src/components/ward-management/ward/ward-screen.tsx": 1
+    },
+    "occupancy-tone": {
+      "src/components/ward-management/wards/ward-index.tsx": 1
+    },
+    "alerts": {
+      "src/components/ward-management/alerts/alerts-model.ts": 1
+    },
+    "referrals-awaiting": {
+      "src/components/ward-management/patients/patient-status-card.tsx": 1,
+      "src/components/ward-management/search/patient-search-model.ts": 1,
+      "src/components/ward-management/search/ward-smart-search.ts": 1,
+      "src/components/ward-management/triage/use-triage-people.ts": 2,
+      "src/components/ward-management/ward-derivations.ts": 1,
+      "src/components/ward-management/ward-referrals.ts": 1
+    },
+    "median": {
+      "src/components/ward-management/referrals/referral-board-hero.tsx": 1,
+      "src/components/ward-management/reports/pilot-measures.ts": 1,
+      "src/components/ward-management/statistics/executive-statistics-derivations.ts": 1,
+      "src/components/ward-management/statistics/statistics-ed-screen.tsx": 1,
+      "src/components/ward-management/statistics/statistics-ed-swarm.tsx": 1,
+      "src/components/ward-management/statistics/statistics-eds-index.tsx": 1,
+      "src/components/ward-management/statistics/statistics-screen-parts.tsx": 1,
+      "src/components/ward-management/statistics/statistics-service-screen.tsx": 1,
+      "src/components/ward-management/statistics/statistics-ward-top.tsx": 1,
+      "src/components/ward-management/ward-derivations-records.ts": 1,
+      "src/components/ward-management/ward-hours-breakdown.ts": 1
+    }
+  }
+}

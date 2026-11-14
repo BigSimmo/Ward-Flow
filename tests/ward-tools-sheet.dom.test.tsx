@@ -367,7 +367,7 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     fireEvent.click(screen.getByTestId("ward-tools-toggle-figures"));
     const figures = screen.getByTestId("ward-stats-drawer-content");
     // Key figures (Q321): four headline figures, everything else one link away on Statistics.
-    for (const label of ["Beds ready", "Occupancy", "Open ED movements", "Waiting in ED"]) {
+    for (const label of ["Beds ready", "Occupancy", "ED journeys open", "Waiting in ED"]) {
       expect(within(figures).getByText(label)).toBeTruthy();
     }
     expect(

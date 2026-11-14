@@ -42,7 +42,7 @@ import { siteByCode } from "../ward-sites";
 import { wardStatistics } from "../ward-statistics";
 import { bedIsOccupied } from "../ward-admissions";
 import { admissionsWithNoCommunityTeam, COMMUNITY_SERVICE_PAGES } from "../community/community-derivations";
-import { edJourneyWaitFigures, edWaitFigures, ED_WAIT_BANDS } from "./statistics-ed-waits";
+import { edJourneyWaitFigures, edStatisticsFigures, edWaitFigures, ED_WAIT_BANDS } from "./statistics-ed-waits";
 import { ED_SEVERE_PRESSURE_WAIT_MINUTES, LONG_WAIT_MINUTES } from "../ward-operational-defaults";
 import { isAwaitingAnswer } from "../ward-referrals";
 import { bedsPendingPreparation, openBedsNow } from "../ward-bed-availability";
@@ -660,14 +660,15 @@ export function projectExecutiveReportingFoundation(
   const noTeamInBed = c("community:noTeamInBed", unlinkedRows.filter(bedIsOccupied).length);
   release.subset(recorded, unlinkedAdmissions);
   release.subset(unlinkedAdmissions, noTeamInBed);
+  // D-220 item 3: over 8 h and over 24 h count the people still waiting in ED, as Waiting does.
   const waits = allEmergencyDepartments().flatMap((ed) =>
-    edJourneyWaitFigures(input.movements, ed.id, input.now).waitingMovements.map((entry) => entry.waitMinutes),
+    edWaitFigures(input.movements, ed.id, input.now).waitingMovements.map((entry) => entry.waitMinutes),
   );
   const over8h = c("movements:edOver8h", waits.filter((value) => value >= ED_SEVERE_PRESSURE_WAIT_MINUTES).length);
   const over24h = c("movements:edOver24h", waits.filter((value) => value >= LONG_WAIT_MINUTES).length);
   const listedOver24h = c(
     "movements:listedOver24h",
-    eds.reduce((sum, ed) => sum + edJourneyWaitFigures(input.movements, ed.id, input.now).over24h, 0),
+    eds.reduce((sum, ed) => sum + edWaitFigures(input.movements, ed.id, input.now).over24h, 0),
   );
   release.partition(
     listedOver24h,
@@ -676,21 +677,14 @@ export function projectExecutiveReportingFoundation(
   release.partition(over24h, [listedOver24h]);
   const listedOver8h = c(
     "movements:listedOver8h",
-    eds.reduce(
-      (sum, ed) =>
-        sum +
-        edJourneyWaitFigures(input.movements, ed.id, input.now).waitingMovements.filter(
-          (entry) => entry.waitMinutes >= ED_SEVERE_PRESSURE_WAIT_MINUTES,
-        ).length,
-      0,
-    ),
+    eds.reduce((sum, ed) => sum + edStatisticsFigures(input.movements, ed.id, input.now).over8h, 0),
   );
   release.partition(
     listedOver8h,
     emergencyDepartments.map((ed) => ed.over8h),
   );
   release.partition(over8h, [listedOver8h]);
-  release.subset(journeyWaiting, over8h);
+  release.subset(physicalWaiting, over8h);
   release.subset(over8h, over24h);
   const edIndex = {
     waiting: journeyWaiting,
@@ -725,7 +719,7 @@ export function projectExecutiveReportingFoundation(
   };
   release.partition(journeyWaiting, [edIndex.stillInEd, edIndex.inTransit]);
   release.partition(
-    journeyWaiting,
+    listedPhysicalWaiting,
     edIndex.bands.map((band) => band.count),
   );
   release.subset(urgentOpen, edIndex.urgent);

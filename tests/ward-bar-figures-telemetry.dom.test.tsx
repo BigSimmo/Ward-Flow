@@ -86,7 +86,7 @@ describe("Figures in the Tools sheet", () => {
     expect(within(tools).getByTestId("ward-tools-page")).toHaveAttribute("aria-label", "Key figures");
     // Tools overhaul Q321: four headline figures; the clusters live on Statistics, one link away.
     const figures = within(tools).getByTestId("ward-stats-drawer-content");
-    for (const label of ["Beds ready", "Occupancy", "Open ED movements", "Waiting in ED"]) {
+    for (const label of ["Beds ready", "Occupancy", "ED journeys open", "Waiting in ED"]) {
       expect(within(figures).getByText(label)).toBeVisible();
     }
     expect(within(figures).getByRole("link", { name: /See all on Statistics/u })).toHaveAttribute(

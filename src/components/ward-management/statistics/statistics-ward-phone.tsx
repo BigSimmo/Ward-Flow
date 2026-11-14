@@ -16,6 +16,7 @@ import { PeopleNotListed } from "./statistics-small-numbers";
 import { BED_LEGEND, StayKey, bandIndexOf, bedColumns } from "./statistics-ward-compact-bed-map";
 import compact from "./statistics-ward-compact.module.css";
 import beds from "./statistics-ward-phone-beds.module.css";
+import { HELD_UP_ANY_DATE_LABEL } from "@/components/ward-management/ward-held-up";
 
 export const ROSTER_FIRST_ROWS = 8;
 
@@ -106,7 +107,7 @@ export function WardPhone({
             items={[
               { id: "roster", label: "Roster", count: roster.length },
               { id: "discharges", label: "Discharges", count: discharges.length },
-              { id: "heldUp", label: "Held up", count: heldUp.length },
+              { id: "heldUp", label: HELD_UP_ANY_DATE_LABEL, count: heldUp.length },
             ]}
           />
           {shown.length === 0 ? (

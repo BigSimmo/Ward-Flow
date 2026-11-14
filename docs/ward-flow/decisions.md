@@ -241,6 +241,11 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-216](#d-216-the-36-sign-off-recommendations-from-the-stress-test-pack-14-november-2026)                                                              | The 36 sign-off recommendations                                                        | Active                                           |
 | [D-217](#d-217-hand-check-answers-medical-trips-and-undo-after-referring-14-november-2026)                                                              | Hand check answers: medical trips and Undo                                             | Active                                           |
 | [D-218](#d-218-no-legal-disclaimer-wording-on-screens-14-november-2026)                                                                                 | No legal disclaimer wording on screens                                                 | Active                                           |
+| [D-219](#d-219-figures-history-late-arrivals-and-permissions-are-built-before-the-freeze-14-november-2026)                                              | Figures, History, late and permissions before the freeze                               | Active                                           |
+| [D-220](#d-220-which-figure-is-which-14-november-2026)                                                                                                  | Which figure is which                                                                  | Active                                           |
+| [D-221](#d-221-late-arrivals-14-november-2026)                                                                                                          | Late arrivals                                                                          | Active                                           |
+| [D-222](#d-222-history-14-november-2026)                                                                                                                | History                                                                                | Active                                           |
+| [D-223](#d-223-permissions-and-the-clock-format-14-november-2026)                                                                                       | Permissions and the clock format                                                       | Active                                           |
 
 ---
 
@@ -2696,4 +2701,62 @@ is inferred.
 - **Unchanged:** D-93 and D-70 behaviour. A legal time is still shown only as the time a person entered from the form, never as a countdown, and nothing works out a Mental Health Act period. Warnings that ask someone to act stay, with their words: the legal status mismatch warning, "Check authorisation", "Save Form N anyway", the real-identifier note, and the "within 1h", "within 3h" and "passed" band words beside their colours. "Not recorded" stays, because it is a state, not a disclaimer. The one synthetic data line in the footer stays (hard rule 1).
 - **Boundary:** wording only. No clinical value, threshold or saved field changes.
 
-The next free number is D-219.
+## D-219. Figures, History, late arrivals and permissions are built before the freeze (14 November 2026)
+
+- **Date:** 14 November 2026, 10:02 PM AWST (14:02 UTC), 10:12 PM AWST (14:12 UTC) and 10:30 PM AWST (14:30 UTC). **Decided by:** Josh. At 14:02 UTC, in the Ward Flow project chat: "Go ahead and launch fixes and plan fixes for all of the issues please except for the design issues". At 14:12 UTC, on the decision card in the "Fix remaining figures, history and timing rules" thread: "Before the 22 Nov freeze". At 14:30 UTC: "Yes to all your recommendations" on that thread's 17 choices (D-220 to D-223).
+- **Decision:** D-215 item 3 (History, late arrivals, Statistics windows, am/pm) and D-216's figure dictionary (R-FIGS-9) and permission source (R-STRUCT-1) are built now, in one PR (#1673), and merged before the 22 November freeze once checks pass, rather than after the demo:
+  1. One figure list is the only source of each published figure. Each row names its counting rule, window and scope, and a guard test stops a screen working a listed figure out on its own.
+  2. One permission source answers who may act, for the screen and the server alike.
+  3. Every accepted save writes one History line naming the desk that acted.
+  4. An arrival is late once the estimate plus the signed 1 hour has passed, with a stored notice to the referrer and the accepting ward.
+  5. Each Statistics window and its start time are written into the definitions in Perth time. Under Josh's wording rule (D-218; 14 November, 10:39 PM AWST, 14:39 UTC: "Extra wording should play a role. Not just policy or empty etc"), screens show the window without the words "Perth time", and a figure's scope is one word or a tap-to-open ⓘ, never a sentence or a visible "how counted" line.
+  6. Screens show times as am/pm. Printed legal times keep the 24-hour clock.
+  7. If History or permissions cannot be built and checked safely by 20 November, Josh is told then rather than the work being rushed into the freeze.
+- **Replaces:** the "after the demo" timing in D-215 item 3 and D-216 for these items.
+- **Boundary:** synthetic data only. No clinical value or threshold changes. Form 3E sequencing (D-215 item 1) is built separately by the clinical rules PR.
+
+## D-220. Which figure is which (14 November 2026)
+
+- **Date:** 14 November 2026, 10:30 PM AWST (14:30 UTC). **Decided by:** Josh, "Yes to all your recommendations" (choices 1 to 4).
+- **Decision:**
+  1. **Need a bed** is everyone with an open journey, from any origin, not yet holding a bed (the Capacity rule). People still physically in an ED are **Waiting in ED**. Open journeys no ward has accepted are **No ward yet**.
+  2. **Held up** on Statistics uses the "due by tomorrow" rule Capacity uses (D-191 item 5). Counts over any date read **Held up · any date**.
+  3. Statistics' over 8 hours, over 24 hours and wait bands count only people still in an ED. **ED journeys open** (including people in transit) is its own labelled figure. This applies to the signed-in executive figures too.
+  4. The Statistics week runs from Monday 12:00 am to the next Monday 12:00 am, Perth time.
+  5. **Discharges today** splits into **Left today** (stays ended since Perth midnight) and **Expected to leave today** (planned date today, not yet left), and **average stay** splits into **Average completed stay** and **Stay so far, median** (R-FIGS-12 and R-FIGS-16, approved in D-216).
+- **Boundary:** no clinical value or threshold changes.
+
+## D-221. Late arrivals (14 November 2026)
+
+- **Date:** 14 November 2026, 10:30 PM AWST (14:30 UTC). **Decided by:** Josh, "Yes to all your recommendations" (choices 5 to 9).
+- **Decision:**
+  1. With no ward ETA recorded, the booking estimate starts the late clock, and the screen says it is the booking estimate.
+  2. The late notice is saved when the time is entered and shown to desks at the estimate plus 1 hour. This counts as stored: it works offline and with no desk open.
+  3. The referrer (including a community team) and the accepting ward get the notice. The coordinator sees it in Act now and the bell.
+  4. Transport marked arrived but not yet confirmed by the ward is not late. A diversion replaces "late".
+  5. The coordinator's "Review late arrival" button is removed; old records keep their entries.
+  6. "Past ETA" shows from the existing 10-minute value (P068, unsigned, unchanged).
+  7. **Sent without anyone saving (Together-X1b-5).** On 14 November, 10:59 PM AWST (14:59 UTC), Josh answered "Yes to your recommendation" on the recheck of X1b-5 (`master-stress-test/run/verify/five-unverified-recheck.md`, option b): on the signed-in site the server's regular 5-minute sweep also checks open journeys and stores any late notice that is due, so a notice no longer depends on a save or on someone pressing a button. The sweep runs whether or not phone push is switched on, and its History line reads "Raised automatically". The demo, which has no server, relies on the notice stored at save (item 2).
+- **Boundary:** the signed 1-hour grace is unchanged.
+
+## D-222. History (14 November 2026)
+
+- **Date:** 14 November 2026, 10:30 PM AWST (14:30 UTC). **Decided by:** Josh, "Yes to all your recommendations" (choices 10 to 13).
+- **Decision:**
+  1. Any desk sees History lines for patients it can already see. Refused saves stay coordinator-only.
+  2. A coordinator acting on a ward's or ED's step reads "Bed coordinator, for <ward or ED>".
+  3. On the signed-in site, History shows a short staff name (initial and surname) that the access admin enters for each account, stored with each line. The demo shows desks only.
+  4. Only reading a notice, opening a referral and the three demo controls write no History line.
+- **Boundary:** History lines carry no typed text.
+
+## D-223. Permissions and the clock format (14 November 2026)
+
+- **Date:** 14 November 2026, 10:30 PM AWST (14:30 UTC). **Decided by:** Josh, "Yes to all your recommendations" (choices 14 to 17).
+- **Decision:**
+  1. A planned admission arriving when the bed count is out of date may use the existing override reasons. The gender check stays non-overridable.
+  2. The signed permission answer key (AK-A) is the test table for the one permission source. Any row where the key and the app disagree is listed for Josh. On 14 November, 10:58 PM AWST (14:58 UTC), Josh ruled on the seven disagreements found: "Yes keep the apps behaviour". The app's answer stands and the answer key is corrected for: a statewide coordinator taking back a site sign-off (bed manager only); a service coordinator signing off a site handover (refused, Q61); a service coordinator changing global settings (refused); the transport officer marking a notice read, recording a directory check and acknowledging a bed call (allowed); a service-level access admin switching a site feature (statewide admin only, D-142).
+  3. A control a desk can never use is hidden (D-192 item 5). Under Josh's wording rule of 14:39 UTC (D-219 item 5), no "who does this" line is shown with it.
+  4. am/pm on screen (D-219 item 6) is built in this PR.
+- **Boundary:** no clinical value changes.
+
+The next free number is D-224.
