@@ -3,7 +3,7 @@
 The route is selective. Its action notes and the additional command models have source review evidence; source digests detect later edits. This does not establish runtime or clinical acceptance.
 
 ## 207 CURRENT ENGINE EVENTS
-Source-contract SHA256: 73b754bc0e0f504db0d011b49a54bf59a349f157489aacc32e686a6c0dea95d0
+Source-contract SHA256: 0bf770452f0e6a0021fcdbb48cbd22bec551dcd5db0c2f1cc8be53cab21c866f
 - RECORD_ADMISSION_CARE — diagram-reviewed; event roles: ward, coordinator, community
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:20
@@ -382,7 +382,7 @@ Source-contract SHA256: 73b754bc0e0f504db0d011b49a54bf59a349f157489aacc32e686a6c
   effects: Keeps the admission and bed occupancy; return is recorded separately through END_LEAVE_BED
   tests: tests/ward-absence-and-cto.test.ts
   tests: tests/ward-away-from-ward-exclusive.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-record-stay-events.ts:425; SHA256 a77aa058cd2483d19672de56e711180b22884b9f87e9e9e11412a1cb8fca3239
+  Reviewed source: src/components/ward-management/ward-flow-record-stay-events.ts:425; SHA256 10920be0e533b539301bea40bbd9de2093b519da8f9a63fd11b1d5216260f0db
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:221; SHA256 f305e4436a9f754ff704a5fb04ede91c3bd1ea989ce540b23b1d02e5141e23d5
   Reviewed source: src/components/ward-management/ward-flow-events.ts:1398; SHA256 1e4337ae828d672fd591f108219bf094bdf436a88f8f77d5805116fd2c92196a
   Reviewed source: src/components/ward-management/ward-access-state.ts:717; SHA256 0c70eed94f905c10a77a440f38806e95e14d237db71b7cf8a62eb5b26fa5e4b1
@@ -399,10 +399,9 @@ Source-contract SHA256: 73b754bc0e0f504db0d011b49a54bf59a349f157489aacc32e686a6c
   payload: admissionId; actingUnitId; step from ABSENCE_STEPS; role and now
   guards: An absence record must exist for the admission
   guards: Step must be listed, not already recorded, and not earlier than absence.since
-  guards: Return order made is refused for a recorded voluntary stay that the patient record does not show as involuntary (A3-13; screens hide it via absenceStepsFor)
   effects: Appends {step,at} to absentWithoutLeave.steps; does not end absence, release a bed or contact anyone
   tests: tests/ward-absence-and-cto.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-record-stay-events.ts:477; SHA256 a77aa058cd2483d19672de56e711180b22884b9f87e9e9e11412a1cb8fca3239
+  Reviewed source: src/components/ward-management/ward-flow-record-stay-events.ts:477; SHA256 10920be0e533b539301bea40bbd9de2093b519da8f9a63fd11b1d5216260f0db
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:222; SHA256 f305e4436a9f754ff704a5fb04ede91c3bd1ea989ce540b23b1d02e5141e23d5
   Reviewed source: src/components/ward-management/ward-flow-events.ts:1407; SHA256 1e4337ae828d672fd591f108219bf094bdf436a88f8f77d5805116fd2c92196a
   Reviewed source: src/components/ward-management/ward-access-state.ts:717; SHA256 0c70eed94f905c10a77a440f38806e95e14d237db71b7cf8a62eb5b26fa5e4b1
@@ -467,7 +466,7 @@ Source-contract SHA256: 73b754bc0e0f504db0d011b49a54bf59a349f157489aacc32e686a6c
   guards: Unknown admission, another unit's admission, or an admission not waiting for transport refused
   effects: Clears the wait only: the bed was already freed when they left the ward (D-115 Ready count unchanged)
   tests: tests/ward-left-ward-transport.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-record-stay-events.ts:225; SHA256 a77aa058cd2483d19672de56e711180b22884b9f87e9e9e11412a1cb8fca3239
+  Reviewed source: src/components/ward-management/ward-flow-record-stay-events.ts:225; SHA256 10920be0e533b539301bea40bbd9de2093b519da8f9a63fd11b1d5216260f0db
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:229; SHA256 f305e4436a9f754ff704a5fb04ede91c3bd1ea989ce540b23b1d02e5141e23d5
   Reviewed source: src/components/ward-management/ward-left-ward.ts:29; SHA256 e1502ae05ba4ab5b28c4d8cf330a7ad579d7420b7e90f3bfaaab6b382b78eee0
 - RECORD_AWAY_AT_EMERGENCY_DEPARTMENT — diagram-reviewed; event roles: ward, coordinator
@@ -498,7 +497,7 @@ Source-contract SHA256: 73b754bc0e0f504db0d011b49a54bf59a349f157489aacc32e686a6c
   effects: Replaces admission.blockReason
   effects: For all linked releases not discharged, updates blocker, blockedBy, blockerRecordedAt and confirmedAt; moves no capacity figure or bed state
   tests: tests/ward-stay-discharge-blocker.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-record-stay-events.ts:317; SHA256 a77aa058cd2483d19672de56e711180b22884b9f87e9e9e11412a1cb8fca3239
+  Reviewed source: src/components/ward-management/ward-flow-record-stay-events.ts:317; SHA256 10920be0e533b539301bea40bbd9de2093b519da8f9a63fd11b1d5216260f0db
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:246; SHA256 f305e4436a9f754ff704a5fb04ede91c3bd1ea989ce540b23b1d02e5141e23d5
   Reviewed source: src/components/ward-management/ward-flow-events.ts:1872; SHA256 1e4337ae828d672fd591f108219bf094bdf436a88f8f77d5805116fd2c92196a
   Reviewed source: src/components/ward-management/ward-access-state.ts:717; SHA256 0c70eed94f905c10a77a440f38806e95e14d237db71b7cf8a62eb5b26fa5e4b1
@@ -1608,7 +1607,7 @@ Source-contract SHA256: 73b754bc0e0f504db0d011b49a54bf59a349f157489aacc32e686a6c
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:584
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1364
-  Event/dispatch reference: src/components/ward-management/ward-flow-record-stay-events.ts:551
+  Event/dispatch reference: src/components/ward-management/ward-flow-record-stay-events.ts:537
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1858
 - RECORD_HOME_SERVICE_RETURN — modelled; event roles: coordinator
   Reviewed command model: Fresh requested record, or request with agreed/not_yet_agreed/declined answer.
@@ -1666,7 +1665,7 @@ Source-contract SHA256: 73b754bc0e0f504db0d011b49a54bf59a349f157489aacc32e686a6c
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:593
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1363
-  Event/dispatch reference: src/components/ward-management/ward-flow-record-stay-events.ts:524
+  Event/dispatch reference: src/components/ward-management/ward-flow-record-stay-events.ts:510
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1857
 - RECORD_SITE_HANDOVER_SIGN_OFF — modelled; event roles: bed_manager, coordinator
   Reviewed command model: Site sign-off with a snapshot of unsigned wards and unanswered bed calls.
@@ -1893,7 +1892,7 @@ Source-contract SHA256: 73b754bc0e0f504db0d011b49a54bf59a349f157489aacc32e686a6c
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:628
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1365
-  Event/dispatch reference: src/components/ward-management/ward-flow-record-stay-events.ts:739
+  Event/dispatch reference: src/components/ward-management/ward-flow-record-stay-events.ts:725
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1859
 - DISPATCH_BROADCAST_ALERT — diagram-reviewed; event roles: coordinator, bed_manager
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
@@ -2083,7 +2082,7 @@ Source-contract SHA256: 73b754bc0e0f504db0d011b49a54bf59a349f157489aacc32e686a6c
   Reviewed command model: Another told/not_applicable record appended.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:652
   Event/dispatch reference: src/components/ward-management/ward-flow-record-events.ts:1366
-  Event/dispatch reference: src/components/ward-management/ward-flow-record-stay-events.ts:751
+  Event/dispatch reference: src/components/ward-management/ward-flow-record-stay-events.ts:737
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1860
   Subject: One completed involuntary arrival/transfer or discharge, and one support party
   Before: No or earlier checklist Tell record
@@ -2097,7 +2096,7 @@ Source-contract SHA256: 73b754bc0e0f504db0d011b49a54bf59a349f157489aacc32e686a6c
   effects: Advisory recording only: neither calculates legal duties/deadlines nor blocks or advances the journey. Typed who/reason invokes typed-text persistence boundary.
   tests: tests/ward-support-notifications.test.ts
   tests: tests/ward-discharge-support-notification.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-record-stay-events.ts:746; SHA256 a77aa058cd2483d19672de56e711180b22884b9f87e9e9e11412a1cb8fca3239
+  Reviewed source: src/components/ward-management/ward-flow-record-stay-events.ts:732; SHA256 10920be0e533b539301bea40bbd9de2093b519da8f9a63fd11b1d5216260f0db
   Reviewed source: src/components/ward-management/ward-flow-events.ts:2558; SHA256 1e4337ae828d672fd591f108219bf094bdf436a88f8f77d5805116fd2c92196a
   Reviewed source: src/components/ward-management/ward-access-state.ts:945; SHA256 0c70eed94f905c10a77a440f38806e95e14d237db71b7cf8a62eb5b26fa5e4b1
 - SEND_RELEASE_SUPPORT_NOTICE — modelled; event roles: ward, coordinator
