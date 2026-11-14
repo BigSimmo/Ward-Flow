@@ -18,3 +18,8 @@ home was statically importing the lazily loaded arrivals corridor for one label,
 checks module for one arrival check, and the arrival identity dialog. The label moved to
 `ward-movement-origin.ts`, the arrival check to the small `ward-arrival-gaps.ts`, and the dialog now
 loads on first use. That brought the ward page back to 644.4 KB.
+
+After merging main with PR #1678 (its own 0.7 KB demo Pause raise, D-229), each limit above takes that
+0.7 KB on top: Coordinator 606.2, Referrals 604.7, ED 557.5, Ward 645.4, Movement 636.5, ED board 697.7,
+Bed meeting 606.7, Statistics 653.5. CI measured the merged tree at 605.8, 604.4, 557.3, 645.1, 636.1,
+697.3, 606.4 and 653.2.
