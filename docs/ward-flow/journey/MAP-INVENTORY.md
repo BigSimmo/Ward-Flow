@@ -2684,7 +2684,7 @@ Source-contract SHA256: 6d1a3c042d9faf223fdcc08357525768d8098c157bdc4edc5a0328ec
   tests: tests/ward-event-permissions.test.ts
   Reviewed source: src/components/ward-management/ward-patient-care-plan-reducer.ts:44; SHA256 ebd947f4ec177d0acb998b35f3ebd66d0ac58b777c9a874e20ed3e67203caa1d
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:698; SHA256 f305e4436a9f754ff704a5fb04ede91c3bd1ea989ce540b23b1d02e5141e23d5
-  Reviewed source: src/components/ward-management/ward-patient-care-plans.ts:98; SHA256 3e4885aba54ec33ef13708fe2bc5cce80397eec18cc1620aab66f16b076834d0
+  Reviewed source: src/components/ward-management/ward-patient-care-plans.ts:98; SHA256 e4c3e8bfa683b5155d38e018f3f5078ef74c0f1841d195b6d6858df5855baf3a
 - RECORD_TRIBUNAL_HEARING — modelled; event roles: ward, community, coordinator
   Source-reviewed command model: a Mental Health Tribunal hearing date held on the patient as typed.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:697
@@ -2701,7 +2701,7 @@ Source-contract SHA256: 6d1a3c042d9faf223fdcc08357525768d8098c157bdc4edc5a0328ec
   tests: tests/ward-event-permissions.test.ts
   Reviewed source: src/components/ward-management/ward-patient-care-plan-reducer.ts:81; SHA256 ebd947f4ec177d0acb998b35f3ebd66d0ac58b777c9a874e20ed3e67203caa1d
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:699; SHA256 f305e4436a9f754ff704a5fb04ede91c3bd1ea989ce540b23b1d02e5141e23d5
-  Reviewed source: src/components/ward-management/ward-patient-care-plans.ts:149; SHA256 3e4885aba54ec33ef13708fe2bc5cce80397eec18cc1620aab66f16b076834d0
+  Reviewed source: src/components/ward-management/ward-patient-care-plans.ts:149; SHA256 e4c3e8bfa683b5155d38e018f3f5078ef74c0f1841d195b6d6858df5855baf3a
 - RECORD_TRIBUNAL_OUTCOME — modelled; event roles: ward, community, coordinator
   Source-reviewed command model: the outcome of the recorded tribunal hearing, held beside its date.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:698
@@ -2734,7 +2734,7 @@ Source-contract SHA256: 6d1a3c042d9faf223fdcc08357525768d8098c157bdc4edc5a0328ec
   tests: tests/ward-event-permissions.test.ts
   Reviewed source: src/components/ward-management/ward-patient-care-plan-reducer.ts:107; SHA256 ebd947f4ec177d0acb998b35f3ebd66d0ac58b777c9a874e20ed3e67203caa1d
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:701; SHA256 f305e4436a9f754ff704a5fb04ede91c3bd1ea989ce540b23b1d02e5141e23d5
-  Reviewed source: src/components/ward-management/ward-patient-care-plans.ts:168; SHA256 3e4885aba54ec33ef13708fe2bc5cce80397eec18cc1620aab66f16b076834d0
+  Reviewed source: src/components/ward-management/ward-patient-care-plans.ts:168; SHA256 e4c3e8bfa683b5155d38e018f3f5078ef74c0f1841d195b6d6858df5855baf3a
 
 ## 111 BOXES ON THE ROUTE MAP  (lane = how it is coloured)
 - [expected] A community team
