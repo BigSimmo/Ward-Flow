@@ -25,6 +25,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { flushSync } from "react-dom";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -1126,11 +1127,23 @@ export function WardIdleLock() {
       timer = arm();
     };
     stillHere.current = reset;
+    // R-STRUCT-44: a device woken past its idle time covers the screen before the page draws again.
+    // Timers held during sleep fire only after the first paint, so check on wake and commit the
+    // cover synchronously (`flushSync`) so names never flash on a shared ward computer.
+    const onWake = () => {
+      if (document.visibilityState !== "visible" || msToLock() > 0) return;
+      window.clearTimeout(timer);
+      flushSync(lock);
+    };
     for (const name of ACTIVITY_EVENTS) window.addEventListener(name, reset, { passive: true });
+    document.addEventListener("visibilitychange", onWake);
+    window.addEventListener("pageshow", onWake);
     return () => {
       window.clearTimeout(timer);
       window.clearInterval(countdown);
       for (const name of ACTIVITY_EVENTS) window.removeEventListener(name, reset);
+      document.removeEventListener("visibilitychange", onWake);
+      window.removeEventListener("pageshow", onWake);
     };
   }, [access, minutes, onTv, session]);
   if (!locked && secondsLeft !== null)
