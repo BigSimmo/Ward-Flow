@@ -2704,7 +2704,7 @@ is inferred.
 ## D-219. Figures, History, late arrivals and permissions are built before the freeze (14 November 2026)
 
 - **Date:** 14 November 2026, 10:02 PM AWST (14:02 UTC), 10:12 PM AWST (14:12 UTC) and 10:30 PM AWST (14:30 UTC). **Decided by:** Josh. At 14:02 UTC, in the Ward Flow project chat: "Go ahead and launch fixes and plan fixes for all of the issues please except for the design issues". At 14:12 UTC, on the decision card in the "Fix remaining figures, history and timing rules" thread: "Before the 22 Nov freeze". At 14:30 UTC: "Yes to all your recommendations" on that thread's 17 choices (D-220 to D-223).
-- **Decision:** D-215 item 3 (History, late arrivals, Statistics windows, am/pm) and D-216's figure dictionary (R-FIGS-9) and permission source (R-STRUCT-1) are built now, in one PR (#1673), and merged before the 22 November freeze once checks pass, rather than after the demo:
+- **Decision:** D-215 item 3 (History, late arrivals, Statistics windows, am/pm) and D-216's figure dictionary (R-FIGS-9) and permission source (R-STRUCT-1) are built now and merged before the 22 November freeze once checks pass, rather than after the demo. #1673 lands the shared figure, History, late-arrival and permission modules and the figure wiring first, so the design lanes are not held up; the remaining wiring follows in this thread's next PR:
   1. One figure list is the only source of each published figure. Each row names its counting rule, window and scope, and a guard test stops a screen working a listed figure out on its own.
   2. One permission source answers who may act, for the screen and the server alike.
   3. Every accepted save writes one History line naming the desk that acted.
