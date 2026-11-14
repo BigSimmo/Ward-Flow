@@ -38,6 +38,11 @@ export type ArrivalTiming =
       pastAt: Instant;
       /** `eta` plus the signed grace: after this minute the row reads "Late arrival". */
       lateAt: Instant;
+      /**
+       * The first minute the row reads "Late arrival" (`lateAt` + 1). The stored late notice is raised
+       * at this same minute, so the tag and the notice appear together.
+       */
+      lateFrom: Instant;
       source: ArrivalTimeSource;
     };
 
@@ -64,8 +69,9 @@ export function arrivalTiming(movement: ArrivalTimingMovement, now: Instant): Ar
   const eta = expected.at;
   const pastAt = eta + ARRIVAL_PAST_ETA_AFTER_MINUTES;
   const lateAt = eta + ARRIVAL_LATE_GRACE_MINUTES;
-  const state = now > lateAt ? "late" : now >= pastAt ? "past_eta" : "due";
-  return { state, eta, pastAt, lateAt, source: expected.source };
+  const lateFrom = lateAt + 1;
+  const state = now >= lateFrom ? "late" : now >= pastAt ? "past_eta" : "due";
+  return { state, eta, pastAt, lateAt, lateFrom, source: expected.source };
 }
 
 /** The yes/no the old `isArrivalLate` callers need, from the one rule. */
