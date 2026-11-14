@@ -100,5 +100,5 @@ export function etaAndNext(
     next = job?.collectedAt === undefined ? "collection" : "arrival";
   }
   if (job?.diversion !== undefined || etaAt === undefined) return { value: next, label: "next step", next };
-  return { value: clock(etaAt), label: `ward ETA · next: ${next}`, next };
+  return { value: clockOn(etaAt, context.now), label: `ward ETA · next: ${next}`, next };
 }
