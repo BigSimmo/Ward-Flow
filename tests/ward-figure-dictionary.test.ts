@@ -16,6 +16,7 @@ import { FIGURE_WINDOWS } from "@/components/ward-management/figures/figure-wind
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { activeTaskItems } from "@/components/ward-management/ward-act-now-items";
 import { alertsNowFigures } from "@/components/ward-management/ward-alerts-figures";
+import { arrivalTiming } from "@/components/ward-management/ward-arrival-timing";
 import { totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
@@ -186,6 +187,15 @@ describe("the alerts and decision rows (Q260, A9-04)", () => {
     const toDecide = referralQueueOrder(state.referrals).length;
     expect(needsYouCount(figures.actNow, toDecide)).toBe(figures.actNow + toDecide);
     expect(figures.outstanding).toBe(figures.actNow + figures.waiting);
+  });
+
+  it("the Late arrival row is the rule the act-now late rows are raised from (D-221)", () => {
+    const late = state.movements.filter((movement) => arrivalTiming(movement, now).state === "late");
+    expect(late.length, "the seed has a late arrival").toBeGreaterThan(0);
+    const lateRows = activeTaskItems(state, now).filter((item) => item.id.startsWith("arrival-late-"));
+    expect(lateRows.map((item) => item.id).sort()).toEqual(
+      late.map((movement) => `arrival-late-${movement.id}`).sort(),
+    );
   });
 });
 

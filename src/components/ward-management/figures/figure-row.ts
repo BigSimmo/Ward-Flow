@@ -53,6 +53,7 @@ type FigureId =
   | "act-now"
   | "needs-you"
   | "open-alerts"
+  | "late"
   | "referrals-awaiting"
   | "team-referrals-to-answer";
 
