@@ -2598,7 +2598,7 @@ is inferred.
 
 ## D-211. Not medically cleared pauses onward transfer (14 November 2026)
 
-- **Date:** 14 November 2026. D-210 is claimed by open PR #1670. **Decided by:** Josh, "continue with all recommendations" on the plan thread's recommendations for the fit to travel check.
+- **Date:** 14 November 2026, 12:16 PM AWST (04:16 UTC). D-210 is claimed by open PR #1670. **Decided by:** Josh, "continue with all recommendations" on the plan thread's recommendations for the fit to travel check, then, in the Ward Flow project chat, "yes go ahead with this" on option 1: keep the rule that a not-cleared journey cannot go on, and fix the screen text that offered a way round it.
 - **Decision:** when medical clearance is recorded as "Not medically cleared", onward transfer stops until the patient is cleared again. The engine's refusal of booking, Mark handover ready, transport accepted, en route, collected and arrived stays. The screens now match it: the booking form and the handover, collection and arrival checks no longer offer "save without a reason" or "Continue without a reason", and say "Onward transfer is paused until re-clearance." instead. "Fit to travel not recorded" (nothing recorded) is unchanged: a reason is still asked for and never required (D-187 item 10, D-189 item 9(e)).
 - **Why:** D-207 said a not-cleared journey asks for a reason and never blocks, but the engine already refused the step, so the screens offered a way on that could not work. A recorded "not cleared" is a clinical stop, not a missing fact.
 - **Replaces:** the "never block" wording of D-207 for "not cleared" only. D-207's words "Fit to travel: not cleared" stay.

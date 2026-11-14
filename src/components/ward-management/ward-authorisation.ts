@@ -20,7 +20,7 @@ export type UnitAuthorisation = "on_register" | "not_on_register" | "not_stated"
 export const AUTHORISATION_NOT_STATED = "Not stated";
 
 /** The register the labels quote, and its date. */
-export const AUTHORISATION_REGISTER_DATE = "7 Sep 2026";
+const AUTHORISATION_REGISTER_DATE = "7 Sep 2026";
 
 /** Sample wards whose hospital's register entry lists their service type (D-209 item 9). */
 const ON_REGISTER: ReadonlySet<string> = new Set([
