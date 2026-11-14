@@ -149,7 +149,8 @@ export function patientFitLine(fit: ReferralFit): string {
  * M14(c) (D-210 (Josh, 14 Nov 2026)): a ward closed to admissions cannot accept, even in principle
  * (`ACCEPT_IN_PRINCIPLE` refuses it), so its card says so rather than offering acceptance.
  */
-export const CLOSED_TO_ADMISSIONS_LINE = "Your ward is closed to admissions, so it cannot accept now. Open it to admissions first.";
+export const CLOSED_TO_ADMISSIONS_LINE =
+  "Your ward is closed to admissions, so it cannot accept now. Open it to admissions first.";
 
 /** The one-line ward sentence for a card, or `undefined` when the ward has nothing to fix. */
 export function wardStateLine(fit: ReferralFit, now: Instant, unit: Unit): string | undefined {
