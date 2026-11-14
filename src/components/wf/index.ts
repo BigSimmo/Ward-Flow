@@ -17,7 +17,17 @@ export {
 } from "./use-is-phone";
 export { StatusGlyph, Dot, type WfTone } from "./status-glyph";
 export { Icon } from "./icon";
-export { SrOnly, Kbd, Count, CountBubble, CountCircle, Spinner, IconTile, WindowWord } from "./primitives";
+export {
+  SrOnly,
+  Kbd,
+  Count,
+  CountBubble,
+  CountCircle,
+  Spinner,
+  IconTile,
+  WindowWord,
+  type CountWindow,
+} from "./primitives";
 export { FormalName } from "./formal-name";
 export { Button, DisabledReason, buttonClass, type ButtonSize } from "./button";
 // Shared design parts (D-192): the parts screens use are exported below (WindowWord is in primitives).
@@ -167,4 +177,4 @@ export { RowUndo } from "./row-undo";
 // it by its own file, so first paint does not load the whole kit.
 export { SyntheticMark } from "./synthetic-mark";
 // The tap-to-open ⓘ that replaces hover-only tips (D-224).
-export { InfoTip, type InfoTipProps } from "./info-tip";
+export { InfoTip } from "./info-tip";

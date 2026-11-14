@@ -7,7 +7,7 @@ import { SharedSessionContext } from "./ward-shared-session-context";
 import styles from "./ward-sign-in-ending.module.css";
 
 /** R-STRUCT-43 and R-STRUCT-51: the strip shows this long before the sign-in limit (or demo code) ends. */
-export const SIGN_IN_ENDING_WARNING_MS = 10 * 60_000;
+const SIGN_IN_ENDING_WARNING_MS = 10 * 60_000;
 
 export type SignInEnd = { kind: "account" | "demo"; endsAt: number };
 

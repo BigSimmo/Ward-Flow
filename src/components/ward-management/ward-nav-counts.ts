@@ -1,7 +1,6 @@
 import { BED_RELEASE_BLOCKED_FIGURE_LABEL, isOpen } from "@/components/ward-management/ward-derivations";
 import { SEVERE_CAUSES, delayGroups } from "@/components/ward-management/delays/delays-derivations";
 import { serviceRollup } from "@/components/ward-management/ward-morning-rollup";
-import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
 import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
 import { rememberLastCall } from "@/components/ward-management/ward-last-call";
 import type {
@@ -18,6 +17,10 @@ import { movementBelongsToService } from "@/components/ward-management/ward-serv
 import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
 import { readyBedsByWard } from "@/components/ward-management/ward-bed-states";
 import type { Admission } from "@/components/ward-management/ward-admissions";
+import { referralsAwaitingDecision } from "@/components/ward-management/figures/decision-counts";
+import { wardDeskAnswerCount } from "@/components/ward-management/referrals/home-ward-offers";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
+import { unitInScope, type WardAccessScope } from "@/components/ward-management/ward-role-access";
 
 /**
  * **THE NUMBERS BESIDE THE SIDEBAR'S DESTINATIONS — owner's approved header/sidebar, 2026-09-06.**
@@ -107,7 +110,34 @@ export type WardNavCountInput = {
   thresholds: DueSoonThresholds;
   /** The service chosen in the header (`useServiceScope`); Waiting's badge follows it as its title does. */
   service?: HealthService | null;
+  /**
+   * The desk's access scope (`useEffectiveWardAccess().scope`). Omitted, the counts are the whole
+   * network's (statewide). R-STRUCT-24 (D-220): every desk adjustment of a badge lives here, so the
+   * rail's two hook forks cannot drift apart.
+   */
+  scope?: WardAccessScope;
+  /**
+   * The community team page's "Referrals to answer" figure (`teamReferralsToAnswer`), read on a team
+   * desk only. The team page counts its own list, so the team desk's Referrals badge reads it too.
+   */
+  teamReferrals?: number;
 };
+
+/** The part of the desk scope a count depends on, as a key that keeps its identity across renders. */
+function scopeCountKey(scope: WardAccessScope | undefined): string {
+  switch (scope?.kind) {
+    case "site":
+      return `site:${scope.siteCode}`;
+    case "service":
+      return `service:${scope.service}`;
+    case "ward":
+      return `ward:${scope.unitIds.join(",")}`;
+    case "team":
+      return "team";
+    default:
+      return "network";
+  }
+}
 
 /**
  * The rail, the phone dock and menu and the sidebar all ask for these counts on every render, and
@@ -128,6 +158,8 @@ export const wardNavCounts = rememberLastCall(
     input.thresholds,
     // Audit EDR-04: no service chosen is one answer, whether a caller passes null or leaves it out.
     input.service ?? null,
+    scopeCountKey(input.scope),
+    input.scope?.kind === "team" ? (input.teamReferrals ?? null) : null,
   ],
   // The coordinator screen asks across every service while the rail asks for the chosen one: keep
   // both answers so neither evicts the other on each render.
@@ -135,7 +167,8 @@ export const wardNavCounts = rememberLastCall(
 );
 
 function deriveWardNavCounts(input: WardNavCountInput): WardNavCounts {
-  const { movements, units, sites, referrals, bedReleases, leaveBeds, admissions, now, thresholds, service } = input;
+  const { movements, units, sites, referrals, bedReleases, leaveBeds, admissions, now, thresholds, service, scope } =
+    input;
   // Waiting's screen filters to the chosen service before titling itself, so its badge counts the same people.
   const waitingMovements = service
     ? movements.filter((movement) => movementBelongsToService(movement, service, units))
@@ -153,7 +186,18 @@ function deriveWardNavCounts(input: WardNavCountInput): WardNavCounts {
     .filter((group) => SEVERE_CAUSES.includes(group.cause))
     .reduce((total, group) => total + group.movements.length, 0);
 
-  const readyWards = readyBedsByWard(units, admissions ?? [], bedReleases, [...movements, ...referrals]);
+  /*
+   * Capacity counts the desk's own place (Josh, 30 Oct 2026, the new sidebar and header): a desk held
+   * to a site, service or ward keeps every ward's beds in view (they hold no patient), so its Capacity
+   * counted the network's ready beds for a site bed manager. The figure is the same rule over the
+   * desk's own wards only, and its breakdown lists those wards, so the two still add up. People
+   * (journeys, referrals, waits) and bed releases are already narrowed by the workspace scope.
+   */
+  const places =
+    scope?.kind === "site" || scope?.kind === "service" || scope?.kind === "ward" ? wardPlaceLookup(units) : null;
+  const placeUnits = places && scope ? units.filter((unit) => unitInScope(scope, unit.id, places)) : units;
+  const readyWards = readyBedsByWard(placeUnits, admissions ?? [], bedReleases, [...movements, ...referrals]);
+  const queued = referralsAwaitingDecision(referrals).length;
 
   const counts: WardNavCounts = {
     // Audit 6 (Josh, 20 Oct 2026): the one ready figure, which leaves out beds pulled for an incoming patient.
@@ -180,19 +224,17 @@ function deriveWardNavCounts(input: WardNavCountInput): WardNavCounts {
     },
     referrals: {
       /*
-       * `queued` is `referralState`'s word for "no destination has accepted and they have not all
-       * declined" — a referral still waiting on somebody. An accepted or fully-declined referral is
-       * finished with and is not work.
-       *
-       * ⚠️ `referralState` alone is not enough — it stays "queued" for a referral whose only
-       * destination has been withdrawn, because `RECORD_REFERRER_WITHDRAWAL` never touches `state`
-       * (O-17.11). The added `some(isAwaitingAnswer)` excludes a referral with nothing left
-       * genuinely awaiting an answer, the same rule `referralQueueOrder` (`ward-referrals.ts`) now
-       * applies.
+       * The referrals still waiting on somebody's answer (`referralsAwaitingDecision`). A9-30 (F-27,
+       * 13 Nov 2026): on a ward desk, a bed offered straight to the ward is the ward's to answer too,
+       * as the board's title and My ward's "Awaiting your answer" count it. R-STRUCT-24 (D-220): a
+       * community team desk reads the team page's own figure, so the badge and the page agree.
        */
-      value: referrals.filter(
-        (referral) => referralState(referral) === "queued" && referral.destinations.some(isAwaitingAnswer),
-      ).length,
+      value:
+        scope?.kind === "team" && input.teamReferrals !== undefined
+          ? input.teamReferrals
+          : scope?.kind === "ward"
+            ? wardDeskAnswerCount(queued, movements, referrals)
+            : queued,
       noun: "awaiting a decision",
       urgent: false,
     },

@@ -149,8 +149,8 @@ describe("comparison across departments", () => {
         reader.onload = () => resolve(String(reader.result));
         reader.readAsText(exported!);
       });
-      expect(csv).toContain('"Open ED movements","not shown"');
-      expect(csv).not.toContain('"Open ED movements","10"');
+      expect(csv).toContain('"ED journeys open","not shown"');
+      expect(csv).not.toContain('"ED journeys open","10"');
       expect(csv).toContain('"Still in ED","not shown"');
       expect(csv).toContain('"In transit or recorded departure","fewer than 5"');
     } finally {
@@ -191,7 +191,7 @@ describe("comparison across departments", () => {
     ).toBeInTheDocument();
     expect(
       within(screen.getByTestId("ward-statistics-eds-swarm-card")).getByRole("heading", {
-        name: "Open ED movements, by ED",
+        name: "Waiting in ED, by ED",
       }),
     ).toBeInTheDocument();
   });
@@ -208,14 +208,14 @@ describe("comparison across departments", () => {
     ]);
     expect(screen.getByTestId("ward-stat-ed-on-the-list").textContent).toBe("2");
     expect(screen.getByTestId("ward-statistics-ed-population")).toHaveTextContent("1 still in ED · 1 in transit");
-    expect(screen.getByRole("heading", { name: "Open ED movements" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Waiting in ED" })).toBeInTheDocument();
     const bands = screen.getByTestId("ward-statistics-ed-bands");
     expect(within(bands).getByRole("heading", { name: "Time since opening" })).toBeInTheDocument();
-    expect(within(bands).getByText("Open ED movements")).toBeInTheDocument();
-    expect(within(bands).getByText("Open ED movements by time since opening")).toBeInTheDocument();
+    expect(within(bands).getByText("Waiting in ED")).toBeInTheDocument();
+    expect(within(bands).getByText("Waiting in ED by time since opening")).toBeInTheDocument();
     expect(
       within(screen.getByTestId("ward-statistics-ed-everyone")).getByRole("heading", {
-        name: "Open ED movements, by ED",
+        name: "Waiting in ED, by ED",
       }),
     ).toBeInTheDocument();
   });
@@ -238,14 +238,15 @@ describe("comparison across departments", () => {
       </WardFlowProvider>,
     );
     const comparison = screen.getByTestId("ward-stat-ed-comparison");
-    expect(within(comparison).getByRole("columnheader", { name: /^Open movements$/u })).toBeInTheDocument();
+    expect(within(comparison).getByRole("columnheader", { name: /^Journeys open$/u })).toBeInTheDocument();
     expect(within(comparison).getByTestId(`ward-stat-ed-comparison-waiting-${department.id}`)).toHaveTextContent(
       /^2$/u,
     );
     const detail = screen.getByTestId("ward-stat-ed-wait-table");
     expect(within(detail).getByRole("columnheader", { name: /^Time since opening$/u })).toBeInTheDocument();
-    const travelling = within(detail).getByTestId("ward-stat-ed-wait-row-WF-column-transit");
-    expect(within(travelling).getAllByRole("cell").at(-1)).toHaveTextContent(/^2h 00m$/u);
+    // D-220: the wait list is the Waiting-in-ED population; a journey in transit has left the ED.
+    expect(within(detail).getByTestId("ward-stat-ed-wait-row-WF-column-here")).toBeInTheDocument();
+    expect(within(detail).queryByTestId("ward-stat-ed-wait-row-WF-column-transit")).toBeNull();
   });
 
   it("has departments to compare at all", () => {

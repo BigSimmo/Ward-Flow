@@ -52,7 +52,7 @@ function OperationalFigures({ onNavigate }: { onNavigate: () => void }) {
       value: String(totalReadyBedsNow(units, admissions, bedReleases, [...movements, ...referrals])),
     },
     { label: "Occupancy", value: occupied.beds ? `${occupancyPercent(occupied)}%` : "—" },
-    { label: "Open ED movements", value: String(ed.total) },
+    { label: "ED journeys open", value: String(ed.total) },
     { label: "Waiting in ED", value: String(ed.stillInEd) },
   ];
   return <FiguresView figures={figures} now={now} scope="Whole network" onNavigate={onNavigate} />;
