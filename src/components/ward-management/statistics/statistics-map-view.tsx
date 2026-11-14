@@ -76,6 +76,7 @@ import {
 import { useCanOpenHref } from "../shell/ward-access";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { WARD_TIME_ZONE } from "@/lib/ward-time-zone";
+import { HELD_UP_ANY_DATE_LABEL } from "@/components/ward-management/ward-held-up";
 
 export type MapLens = "beds" | "ed" | "dis" | "stay";
 
@@ -602,7 +603,8 @@ function MapPresentation({
               { value: String(statisticsCountText(network.dueToday)), label: "Due today" },
               {
                 value: String(statisticsCountText(network.blocked)),
-                label: "Held up",
+                // D-220: any date; "Held up" alone is the by-tomorrow figure.
+                label: HELD_UP_ANY_DATE_LABEL,
                 tone: (exactStatisticsCount(network.blocked) ?? 0) > 0 ? "warning" : undefined,
               },
             ]

@@ -215,12 +215,8 @@ export function journeyStages({
       count: planned.length,
       breakdown: [
         { label: "Today", value: plannedOn(0) },
+        // D-220: no Held up row of its own; Held up is the by-tomorrow figure, on Capacity.
         { label: "Tomorrow", value: plannedOn(1) },
-        {
-          label: "Held up, in the next 7 days",
-          value: planned.filter((admission) => admission.blockReason !== null).length,
-          tone: warnIf(planned.filter((admission) => admission.blockReason !== null).length),
-        },
       ],
     },
     {

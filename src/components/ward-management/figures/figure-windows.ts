@@ -22,7 +22,7 @@ import {
   calendarDateOf,
   dayOf,
   MINUTES_PER_DAY,
-  PERTH_UTC_OFFSET_MS,
+  wardZoneOffsetMs,
   perthCalendarDay,
   perthDateText,
   perthMidnight,
@@ -166,7 +166,7 @@ export function figureWindow(id: StatisticsWindowId): FigureWindow {
 
 /** A real moment's Perth clock face with am/pm ("12:00 am", "8:00 am"), through the one am/pm formatter. */
 function perthAmPm(moment: Date): string {
-  return formatClockAmPm(Math.floor((moment.getTime() + PERTH_UTC_OFFSET_MS) / 60_000));
+  return formatClockAmPm(Math.floor((moment.getTime() + wardZoneOffsetMs(moment.getTime())) / 60_000));
 }
 
 const DAY = { weekday: "short", day: "numeric", month: "short" } as const;

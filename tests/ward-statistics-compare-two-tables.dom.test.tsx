@@ -216,7 +216,7 @@ describe("the comparisons page sets wards beside wards and departments beside de
    * facts about those units, and they were rendering as "we have nothing for you".
    */
   it.each([
-    { table: WARD_TABLE, name: "Held up" },
+    { table: WARD_TABLE, name: "Held up · any date" },
     { table: WARD_TABLE, name: "Long stays" },
     { table: ED_TABLE, name: "On the list" },
     { table: ED_TABLE, name: "Marked urgent" },
@@ -310,7 +310,7 @@ describe("the comparisons page sets wards beside wards and departments beside de
       renderEmpty();
       const cell = (header: string) => cellsUnder(WARD_TABLE, header)[0].toLowerCase();
       const unmeasurable = [cell("Average stay"), cell("Dates met")];
-      const noughts = [cell("Held up"), cell("Long stays")];
+      const noughts = [cell("Held up · any date"), cell("Long stays")];
       for (const absent of unmeasurable) {
         for (const nought of noughts) {
           expect(absent, `an unmeasurable average and a true nought render identically: "${absent}"`).not.toBe(nought);

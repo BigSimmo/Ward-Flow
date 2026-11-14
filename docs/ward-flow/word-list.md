@@ -58,6 +58,17 @@ sub-labels under those four, in order: **Referred**, **Review**, **Accepted**, *
 | **Out of area**    | A patient in a bed outside their home health service. No hyphen in headings or labels.   |                               |
 | **Act now**        | Something due now or overdue. Lists that have it keep it in its own Act now group.       |                               |
 
+## Figure names (D-220, 14 November 2026)
+
+| Say                    | Means                                                                                                                           |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **Need a bed**         | Capacity's figure: open movements from any origin not yet holding a bed (no ward yet, or accepted with no bed pulled or named). |
+| **No ward yet**        | Open movements no ward has accepted. Home's first Flow stage and the TV's ED lane.                                              |
+| **Waiting in ED**      | People still in an emergency department awaiting a bed. Statistics' over 8 h, over 24 h and wait bands count these people.      |
+| **ED journeys open**   | Every open ED movement, people in transit included: "ED journeys open 53 (8 in transit)".                                       |
+| **Held up**            | On a figure: bed releases with a blocker, due by tomorrow (D-191 item 5), on every page.                                        |
+| **Held up · any date** | Every current stay or release with a blocker, whatever its date.                                                                |
+
 ## Records and forms
 
 | Say                     | Means                                                                                                                                       |

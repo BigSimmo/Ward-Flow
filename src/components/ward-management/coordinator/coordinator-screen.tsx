@@ -94,6 +94,7 @@ import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen
 import type { PlacementSubject } from "./home-placement-drawer";
 import { usePlannedRows } from "./planned-rows";
 import { FLOW_STAGES, flowStageOf, type FlowStageId, PriorityQueue, type QueueHighlight } from "./priority-queue";
+import { needsYouCount } from "@/components/ward-management/figures/decision-counts";
 import { WardReadyForNextLines } from "../ward/ward-ready-for-next-lines";
 
 /*
@@ -982,7 +983,8 @@ export function CoordinatorScreen() {
                 {
                   id: "needs",
                   label: "Needs you",
-                  count: actNowCount + referralQueue.length,
+                  // Act now plus the referrals to decide (A9-04), the one Needs you figure (D-220).
+                  count: needsYouCount(actNowCount, referralQueue.length),
                 },
                 { id: "queue", label: "Flow", count: queue.length },
                 ...(isPhone || layout === "tablet-portrait"

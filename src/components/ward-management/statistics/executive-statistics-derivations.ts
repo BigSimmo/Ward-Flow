@@ -921,10 +921,8 @@ export function executiveJourney(
     "planned:tomorrow",
     planned.filter((row) => dayOf(row.expectedDischargeAt!) === dayOf(input.now) + 1).length,
   );
-  const heldUp = c("planned:blocked", planned.filter((row) => row.blockReason !== null).length);
   release.subset(plannedTotal, plannedToday);
   release.subset(plannedTotal, plannedTomorrow);
-  release.subset(plannedTotal, heldUp);
   const left = input.admissions.filter((row) => row.leftAt !== null && dayOf(row.leftAt) === dayOf(input.now));
   const community = c(
     "left:community",
@@ -972,9 +970,9 @@ export function executiveJourney(
       tone: "info" as const,
       figure: countFigure(plannedTotal),
       breakdown: [
+        // D-220: no Held up row of its own; Held up is the by-tomorrow figure, on Capacity.
         breakdown("Today", plannedToday),
         breakdown("Tomorrow", plannedTomorrow),
-        breakdown("Held up, in the next 7 days", heldUp),
       ],
     },
     {
