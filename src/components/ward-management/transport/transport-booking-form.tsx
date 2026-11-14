@@ -240,6 +240,17 @@ function transportBookingReasonRequired(gaps: readonly TransportExceptionGap[]):
  * The complete booking, or `undefined` while any answer is missing or refused. The one rule every
  * screen submits through, so no screen can dispatch a booking the form says is not ready.
  */
+/**
+ * R-MOVE-13: what is wrong with a typed estimated time, or undefined when it is blank or readable.
+ * Reads like the Update arrival form: the entry, then what to type.
+ */
+export function estimatedTimeProblem(typed: string): string | undefined {
+  const text = typed.trim();
+  if (text === "" || minutesFromTimeInput(text) !== undefined) return undefined;
+  if (/^(?:24:?00)$/u.test(text)) return `${text} is not a clock time. Type 00:00 and choose Tomorrow.`;
+  return `${text} is not a clock time. Type it like 14:40 or 1440.`;
+}
+
 export function transportBookingSubmission(
   answers: TransportBookingAnswers,
   legalReason: TransportExceptionReason | "",
@@ -350,9 +361,6 @@ export function TransportBookingForm({
   const holdRef = useHeightThatNeverShrinks<HTMLParagraphElement>();
   const set = (patch: Partial<TransportBookingAnswers>) => onAnswers((current) => ({ ...current, ...patch }));
   const cadProblem = answers.cadNumber.trim() ? cadNumberProblem(answers.cadNumber) : undefined;
-  // Untested-537 INV-A11-029: a typed time that is not a clock time (99:99) says so under the box.
-  const timeUnreadable =
-    answers.estimatedTime.trim() !== "" && minutesFromTimeInput(answers.estimatedTime) === undefined;
   const missing = transportAnswersMissing(answers, now);
   const missingNames = missing.map((answer) => ANSWER_PARTS[answer][0]);
   const warningNames = transportAnswerWarnings(answers);
@@ -366,9 +374,12 @@ export function TransportBookingForm({
     record?.pullExpiresAt === undefined
       ? undefined
       : holdEndsBeforeEta(record as Pick<Movement, "pullExpiresAt">, estimatedAt);
+  const timeProblem = estimatedTimeProblem(answers.estimatedTime);
   const blocked =
     blockedReason ??
     (paused ? TRANSFER_PAUSED_TEXT : undefined) ??
+    // R-MOVE-13: a typed time that cannot be read is named at the field and in the foot, never as "enter the estimated time".
+    (timeProblem ? `Before booking, correct the estimated time.` : undefined) ??
     transportAnswersBlockedReason(answers, now) ??
     (reasonMissing ? "Before booking, choose why the transport status differs from Legal now." : undefined);
   const submission = transportBookingSubmission(answers, legalReason, record, now);
@@ -473,9 +484,7 @@ export function TransportBookingForm({
           <Field
             label="Estimated time"
             id={did("time")}
-            error={
-              timeUnreadable ? <span data-testid={tid("time-problem")}>Type a real time, like 14:30</span> : undefined
-            }
+            error={timeProblem ? <span data-testid={tid("time-problem")}>{timeProblem}</span> : undefined}
           >
             <TextInput
               data-testid={tid("time")}
@@ -483,6 +492,7 @@ export function TransportBookingForm({
               inputMode="numeric"
               placeholder="HH:MM"
               autoComplete="off"
+              aria-invalid={timeProblem ? true : undefined}
               disabled={pending}
               value={answers.estimatedTime}
               onChange={(event) => set({ estimatedTime: event.target.value })}

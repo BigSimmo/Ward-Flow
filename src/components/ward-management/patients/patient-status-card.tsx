@@ -62,6 +62,9 @@ import { unitInScope } from "../ward-role-access";
 import { wardPlaceLookup } from "../ward-access-places";
 import { legalFormNowWords } from "../ward-legal-form-progression";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
+import { edById } from "../ward-sites";
+import { TRANSPORT_WHEREABOUTS } from "../ward-change-reasons";
+import { BLOCKERS_MEANING_NOTHING_IS_BLOCKING } from "../ward-model-vocabulary";
 import { awaitingWardAnswer, isWaitlistReason, waitlistStands } from "../ward-waitlist";
 
 /** One gate or fact on the status card: value, who owns it, when it last changed, at most one action. */
@@ -112,6 +115,8 @@ export interface PatientStatus {
   /** What the meter counts ("clear" for gates, "steps done" for the missing person steps). */
   meterWord?: string;
   meta: string;
+  /** R-STRUCT-25: a quiet Change beside the recorded hold-up, opening the existing picker. */
+  metaAction?: StatusAction;
   cells: StatusCell[];
   /** A checklist in place of the three cells (absent without leave). */
   rows?: StatusRow[];
@@ -150,6 +155,8 @@ export interface PatientStatusContext {
   thresholds?: DueSoonThresholds;
   dayZero: Date;
   onOpenPlacement: () => void;
+  /** R-STRUCT-26: opens the held bed's drawer on its ward (the coordinator decides what happens to the bed). */
+  onReviewBed?: () => void;
   onClearance: (event: MouseEvent<HTMLButtonElement>) => void;
   onBookTransport: () => void;
   /** K37 / F-101: takes back a recorded "no transport needed" (records needed), so booking returns. */
@@ -190,7 +197,7 @@ export interface PatientStatusContext {
    * (accepting pulls no bed and creates no movement). The card says so, and links the ward board
    * where the bed is held, instead of reading "Not active".
    */
-  acceptedReferral?: { unitName: string; boardHref?: string };
+  acceptedReferral?: { unitName: string; boardHref?: string; waiting?: boolean };
   /**
    * A16-11 (Josh, 13 Nov 2026): the newest referral for this person still awaiting an answer
    * (`openReferralFor`). With nothing else open the card says so instead of "Not currently active".
@@ -237,6 +244,11 @@ export function referralWaitingForTriage(
       referralState(referral) === "queued" &&
       lastTriageAt < referral.raisedAt,
   );
+}
+
+/** The receiving ward cell names the accepted ward, or says none is recorded. */
+function receivingWardName(ctx: PatientStatusContext): string {
+  return ctx.acceptedUnitName ?? "Not recorded";
 }
 
 function awolTrackerMeta(since: number, now: number, stayUnitName?: string, holdReview = false): string {
@@ -428,6 +440,72 @@ export function buildPatientStatus(
   };
 }
 
+/**
+ * R-STRUCT-25: the head reads the hold-up the coordinator recorded, in their own picked words, with
+ * Change opening the existing picker. With nothing recorded (or a "nothing is blocking" entry) it
+ * keeps "Bed is the blocker". Who and when are not stored on the movement, so they are not said.
+ */
+function holdUpHead(movement: Movement, ctx: PatientStatusContext): Pick<PatientStatus, "meta" | "metaAction"> {
+  const recorded = movement.blocker.trim();
+  if (recorded === "" || BLOCKERS_MEANING_NOTHING_IS_BLOCKING.some((inactive) => inactive === recorded)) {
+    return { meta: "Bed is the blocker" };
+  }
+  return {
+    meta: recorded,
+    metaAction: { kind: "button", label: "Change", secondary: true, onClick: ctx.onOpenPlacement },
+  };
+}
+
+/** R-STRUCT-26: the diversion as the page's headline, from the stored `transport.diversion`. */
+function divertedStatus(movement: Movement, ctx: PatientStatusContext): PatientStatus | undefined {
+  const diversion = movement.transport?.diversion;
+  if (diversion === undefined) return undefined;
+  const edName = edById(movement.originEdId)?.name;
+  const backAtEd = diversion.place === TRANSPORT_WHEREABOUTS[0];
+  const where = backAtEd ? `back to ${edName ?? "the sending ED"}` : `to ${diversion.place.toLowerCase()}`;
+  const job = movement.transport;
+  return {
+    tone: "danger",
+    verdict: `Diverted ${where}`,
+    meta: `${diversion.by} · ${clock(diversion.at)} · ${diversion.reason}`,
+    cells: [
+      {
+        key: "collected",
+        icon: Ambulance,
+        href: ctx.transportHref,
+        label: "Collected",
+        owner: "ED nurse in charge",
+        tone: "neutral",
+        value: job?.collectedAt !== undefined ? clock(job.collectedAt) : "Not yet",
+        sub: job ? job.provider : "No transport logged",
+      },
+      {
+        key: "arrival",
+        icon: Clock,
+        label: "Arrival",
+        owner: "Receiving ward",
+        tone: "danger",
+        value: "Not coming",
+        sub: `Diverted ${clock(diversion.at)}`,
+      },
+      {
+        key: "receiving",
+        icon: BedSingle,
+        label: "Receiving ward",
+        owner: "Ward nurse in charge",
+        tone: ctx.hasBedHold ? "danger" : "neutral",
+        value: receivingWardName(ctx),
+        sub: ctx.hasBedHold ? "Bed still held" : "No bed held",
+        href: ctx.acceptedUnitName ? ctx.bedHref : undefined,
+        action:
+          ctx.hasBedHold && ctx.onReviewBed
+            ? { kind: "button", label: "Review the bed", onClick: ctx.onReviewBed }
+            : undefined,
+      },
+    ],
+  };
+}
+
 function statusFor(
   mode: PatientMode,
   ctx: PatientStatusContext,
@@ -476,7 +554,7 @@ function statusFor(
       return withMeter({
         tone: "danger",
         verdict: "Cannot move",
-        meta: "Bed is the blocker",
+        ...holdUpHead(movement, ctx),
         cells: [
           {
             key: "bed",
@@ -536,7 +614,7 @@ function statusFor(
     return withMeter({
       tone: "danger",
       verdict: "Cannot move",
-      meta: "Bed is the blocker",
+      ...holdUpHead(movement, ctx),
       cells: [
         bed,
         clearanceCell(movement, ctx.onClearance, ctx.now),
@@ -629,6 +707,8 @@ function statusFor(
   }
 
   if (mode === "transit" && movement) {
+    const diverted = divertedStatus(movement, ctx);
+    if (diverted) return diverted;
     const job = movement.transport && movement.transport.cancelledAt === undefined ? movement.transport : undefined;
     const etaAt = movement.arrivalDetails?.estimatedArrivalAt ?? job?.estimatedAt;
     // D-221: the one arrival-timing rule and phrase (B2d-Q-2: am/pm with its day, never "24:59").
@@ -709,7 +789,7 @@ function statusFor(
           owner: "Ward nurse in charge",
           tone: ctx.hasBedHold ? "success" : "warning",
           clear: ctx.hasBedHold,
-          value: ctx.acceptedUnitName ?? "Not recorded",
+          value: receivingWardName(ctx),
           sub: ctx.hasBedHold ? "Bed pulled" : "No bed pulled yet",
           href: ctx.acceptedUnitName ? ctx.bedHref : undefined,
         },
@@ -881,8 +961,10 @@ function statusFor(
         icon: BedSingle,
         label: "Bed",
         owner: "Ward",
-        value: `Accepted on ${ctx.acceptedReferral.unitName}`,
-        sub: "Accepted referral, no bed pulled yet",
+        value: ctx.acceptedReferral.waiting
+          ? `Waiting on ${ctx.acceptedReferral.unitName}`
+          : `Accepted on ${ctx.acceptedReferral.unitName}`,
+        sub: ctx.acceptedReferral.waiting ? "On the wait-list, no bed yet" : "Accepted referral, no bed pulled yet",
         href: ctx.acceptedReferral.boardHref,
       }
     : undefined;
@@ -939,8 +1021,10 @@ function statusFor(
     if (ctx.acceptedReferral && acceptedBedCell) {
       return {
         tone: "info",
-        verdict: "Accepted, no bed pulled",
-        meta: `Accepted at ${ctx.acceptedReferral.unitName}. Next: pull the bed`,
+        verdict: ctx.acceptedReferral.waiting ? "Waiting for a bed" : "Accepted, no bed pulled",
+        meta: ctx.acceptedReferral.waiting
+          ? ctx.acceptedReferral.unitName
+          : `Accepted at ${ctx.acceptedReferral.unitName}. Next: pull the bed`,
         cells: [
           acceptedBedCell,
           {
@@ -1221,7 +1305,15 @@ export function PatientStatusCard({
               <StatusGlyph tone={status.tone} size={12} />
               {status.verdict}
             </span>
-            <span className={styles.meta}>{status.meta}</span>
+            <span className={styles.meta} data-hold={status.metaAction ? "" : undefined}>
+              {status.meta}
+              {status.metaAction ? (
+                <>
+                  {" "}
+                  <CellAction action={status.metaAction} primary={false} />
+                </>
+              ) : null}
+            </span>
           </span>
           {status.meter ? (
             <span className={styles.meterGroup}>
