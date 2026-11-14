@@ -249,6 +249,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-224](#d-224-explanatory-tips-open-on-tap-14-november-2026)                                                                                           | Explanatory tips open on tap                                                           | Active                                           |
 | [D-225](#d-225-design-fix-phasing-14-november-2026)                                                                                                     | Design fix phasing                                                                     | Active                                           |
 | [D-229](#d-229-demo-pause-holds-board-time-and-seeded-wait-lists-match-the-engine-14-november-2026)                                                     | Demo Pause holds Board time; seeded wait lists match the engine                        | Active                                           |
+| [D-237](#d-237-a-desks-own-save-is-never-another-desks-change-14-november-2026)                                                                         | A desk's own save is never another desk's change                                       | Active                                           |
 
 ---
 
@@ -2789,3 +2790,13 @@ D-226 is claimed by open PR #1675. D-227 is claimed by open PR #1675. D-228 is c
 - **Boundary:** synthetic data only. No clinical value or rule changes.
 
 The next free number is D-230.
+
+D-230 is reserved for another overnight thread (block noted in PR #1677). D-231 is reserved for another overnight thread (block noted in PR #1677). D-232 is reserved for another overnight thread (block noted in PR #1677). D-233 is reserved for another overnight thread (block noted in PR #1677). D-234 is reserved for another overnight thread (block noted in PR #1677). D-235 is reserved for another overnight thread (block noted in PR #1677). D-236 is reserved for another overnight thread (block noted in PR #1677).
+
+## D-237. A desk's own save is never another desk's change (14 November 2026)
+
+- **Date:** 14 November 2026. **Decided by:** Josh, overnight standing permission (15:00 UTC): "As any issues come up please autonomously identify them and find the recommended fix and address them" and "You are to fix all issues", with the design lane D plan he approved at 14:44 UTC.
+- **Decision:** a desk's quick second step on the same record is not refused as "Another desk changed this movement first" because of its own first step (stress test Together-X1b-2, R-MOVE-4). When another desk saved something else in between and no popup is open, the shared client now tells the server which records its own save changed and at which revision (the server's `covered` tokens, sent back as `seen`), as popups already did (CS-19). A real change by another desk is still refused and keeps its words.
+- **Officer wording (R-MOVE-4):** the interim "Your last step is still saving" line is not used, because the cause is fixed. A refused Undo says the job has moved on and to check the board for its current step.
+- **Left for later:** the recorded hold-up on the person page (R-STRUCT-25) shows the hold-up but not who recorded it or when. That needs a new stored field and is not built here.
+- **Boundary:** save mechanics and wording only. No clinical value, threshold or saved field changes.
