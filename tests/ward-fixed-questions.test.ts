@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { fixedQuestionAnswers, type FixedQuestionId } from "@/components/ward-management/reports/fixed-questions";
+import { bedHoldLapsed } from "@/components/ward-management/ward-bed-hold";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -54,7 +55,9 @@ describe("fixedQuestionAnswers", () => {
     expect(row?.detail).toContain("until a person releases it");
   });
 
-  it("counts a pull as past its limit at the limit itself, the same boundary as the bed-hold rule", () => {
+  it("counts a pull as past its limit only after the limit minute, the same boundary as the bed-hold rule", () => {
+    // Audit L2, D-210 (Josh, 14 Nov 2026): one has-time-passed rule (`isTimePassed`), passed when
+    // now > due. At the limit minute itself the pull is still within its limit; a minute later it is past.
     const state = seedWardFlowState();
     const pulled = state.movements.find((movement) => movement.stage === "pulled")!;
     const at = (pullExpiresAt: number) =>
@@ -62,8 +65,11 @@ describe("fixedQuestionAnswers", () => {
         "pulls_past_limit",
         state.movements.map((movement) => (movement.id === pulled.id ? { ...movement, pullExpiresAt } : movement)),
       ).map((row) => row.key);
-    expect(at(NOW_ANCHOR)).toContain(pulled.id);
-    expect(at(NOW_ANCHOR + 1)).not.toContain(pulled.id);
+    expect(at(NOW_ANCHOR)).not.toContain(pulled.id);
+    expect(at(NOW_ANCHOR - 1)).toContain(pulled.id);
+    // The same boundary as the bed-hold rule, read from that rule rather than restated.
+    expect(bedHoldLapsed(NOW_ANCHOR, NOW_ANCHOR)).toBe(false);
+    expect(bedHoldLapsed(NOW_ANCHOR - 1, NOW_ANCHOR)).toBe(true);
   });
 
   it("lists open requests with no ward asked, in recorded order", () => {

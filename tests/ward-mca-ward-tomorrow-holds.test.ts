@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
+import { wardReferralInboxEntries } from "@/components/ward-management/referrals/referral-inbox";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { wardTomorrowOutlook } from "@/components/ward-management/ward/ward-home-outlook";
@@ -37,7 +38,9 @@ describe("M8: Tomorrow on the ward page holds a bed named for an accepted referr
   it("Tomorrow is one lower with the referral's named bed than without it", () => {
     const args = [unit, state.bedReleases, state.admissions, accepted, state.plannedAdmissions, NOW_ANCHOR] as const;
     const without = wardTomorrowOutlook(...args, [])!;
-    const withHold = wardTomorrowOutlook(...args, state.referrals)!;
+    // The ward page passes its own inbox (`wardReferralInbox(unit.id)`), never the full referrals
+    // (FD-23 screen boundary), so the hold must survive that projection.
+    const withHold = wardTomorrowOutlook(...args, wardReferralInboxEntries(state.referrals, unit.id))!;
     expect(withHold.likely).toBe(without.likely - 1);
   });
 });
