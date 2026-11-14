@@ -291,6 +291,11 @@ const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> =
     why: "how many minutes a signed-in save may take to reach the server and still count as an ordinary save rather than one that waited (H1, D-210 ruling 1, 14 Nov 2026); clock slack for save timing, never a clinical limit",
   },
   {
+    file: "figures/figure-windows.ts",
+    name: "ROLLING_HOURS",
+    why: "the length of the rolling 24-hour Statistics window, worked out from MINUTES_PER_DAY to name the window in the definitions (item 12, D-219); a reporting window, never a clinical limit",
+  },
+  {
     file: "staffing/staff-requests.ts",
     name: "STAFF_REQUEST_SHIFT_TOLERANCE_MINUTES",
     why: "how many minutes a staff request may lag behind the shift start it names before the save is refused as already started (D-145); clock slack for a form, never a clinical limit",

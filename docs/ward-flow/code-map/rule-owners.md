@@ -2,7 +2,7 @@
 
 _Started 2026-11-10 for audit item M93. Engine owns. Checked by `tests/ward-audit-m93-rule-owners.test.ts`._
 
-Each workflow rule in [`machines.json`](../journey/machines.json) (the M26 catalogue) is decided in one place. This page names that file for every move. Paths are under `src/components/ward-management/`. `ward-flow-reducer.ts` only routes an event to its slice; `ward-flow-subject-id.ts`, `ward-audit.ts`, `governance-event-facts.tsx` and `ed/ed-screen-model.ts` name or describe an event and decide nothing.
+Each workflow rule in [`machines.json`](../journey/machines.json) (the M26 catalogue) is decided in one place. This page names that file for every move. Paths are under `src/components/ward-management/`. `ward-flow-reducer.ts` only routes an event to its slice; `ward-flow-subject-id.ts`, `ward-audit.ts`, `ward-history-lines.ts` (History wording, D-222), `governance-event-facts.tsx` and `ed/ed-screen-model.ts` name or describe an event and decide nothing.
 
 Eligibility (the "Can this ward take this patient?" gates) is decided in `ward-eligibility.ts`. Who may see a record is decided in `ward-access-scope.ts`.
 

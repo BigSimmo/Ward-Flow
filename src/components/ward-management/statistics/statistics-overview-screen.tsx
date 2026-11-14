@@ -19,7 +19,7 @@ import {
 import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import {
-  admissionStagePosition,
+  blockedDischargesByReason,
   refusedAndNothingPending,
   type AdmissionStagePosition,
 } from "@/components/ward-management/statistics/statistics-derivations";
@@ -61,6 +61,7 @@ import {
 } from "./statistics-network-cards";
 import styles from "./statistics-v6.module.css";
 import detail from "./statistics-detail.module.css";
+import { HELD_UP_ANY_DATE_LABEL } from "@/components/ward-management/ward-held-up";
 
 /**
  * ACROSS ALL SERVICES — the whole-of-prototype and Western Australia section.
@@ -157,13 +158,8 @@ export function StatisticsOverviewScreen() {
     [unitRows],
   );
   const closedTotal = useMemo(() => unitRows.reduce((sum, row) => sum + row.states.closed, 0), [unitRows]);
-  // A blocked discharge: a current admission carrying a block reason (the Wards page's own count).
-  const blockedTotal = useMemo(
-    () =>
-      admissions.filter((admission) => admissionStagePosition(admission) !== "ended" && admission.blockReason !== null)
-        .length,
-    [admissions],
-  );
+  // D-220: every current stay with a recorded blocker, whatever its date ("Held up · any date").
+  const blockedTotal = useMemo(() => blockedDischargesByReason(admissions).totalCount, [admissions]);
 
   const services = useMemo(() => networkServiceRows(unitRows), [unitRows]);
 
@@ -188,7 +184,7 @@ export function StatisticsOverviewScreen() {
               label={`Over ${BED_ALERT_THRESHOLD_PERCENT}%`}
               tone={wardsOverLine > 0 ? "warning" : undefined}
             />
-            <HeroStat value={small(blockedTotal)} label="Held up" />
+            <HeroStat value={small(blockedTotal)} label={HELD_UP_ANY_DATE_LABEL} />
           </>
         ),
       }}
