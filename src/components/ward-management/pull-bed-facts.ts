@@ -110,14 +110,24 @@ export function pulledMovement(movements: readonly Movement[], pulled: PulledBed
 }
 
 /**
- * The pull this Undo is for: the movement's `to: "pulled"` stage change at the pull's own time and
- * desk. Undefined once that pull is no longer the movement's latest stage change (released or
- * replaced), so an Undo never releases a different pull.
+ * How far the recorded pull time may sit from the screen's clock when the pull was sent. A shared
+ * save stamps the pull with the server's own minute, which can differ from the screen's by a minute
+ * boundary or a lagging clock.
+ */
+export const PULL_RECORDED_TIME_SLACK_MINUTES = 5;
+
+/**
+ * The pull this Undo is for: the movement's `to: "pulled"` stage change by the pull's desk, recorded
+ * within a few minutes of the pull's own time. Undefined once that pull is no longer the movement's
+ * latest stage change (released or replaced), so an Undo never releases a different pull.
  */
 export function pullStageIndex(movement: Movement, pulled: PulledBed): number | undefined {
   const index = movement.stageChanges.length - 1;
   const last = movement.stageChanges[index];
-  return movement.stage === "pulled" && last?.to === "pulled" && last.at === pulled.at && last.by === pulled.desk
+  return movement.stage === "pulled" &&
+    last?.to === "pulled" &&
+    last.by === pulled.desk &&
+    Math.abs(last.at - pulled.at) <= PULL_RECORDED_TIME_SLACK_MINUTES
     ? index
     : undefined;
 }
