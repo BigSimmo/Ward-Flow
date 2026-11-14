@@ -1123,6 +1123,8 @@ const storedState = z.looseObject({
   auditCaptureStartedAt: finite,
   clockOffsetMinutes: finite,
   scenario: z.enum(WARD_SCENARIOS),
+  // M12 (14 Nov 2026): absent in older saves, which derive it from their records on restore.
+  workedExamples: z.optional(z.boolean()),
   dischargeRevisions: entries(counter),
   inboxAcknowledgements: entries(z.array(stamped)),
   inboxCompletions: entries(z.array(z.extend(stamped, { kind: z.enum(["completed", "reopened"]) }))),

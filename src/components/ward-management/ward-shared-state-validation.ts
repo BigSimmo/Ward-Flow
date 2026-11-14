@@ -7,6 +7,7 @@ import { upgradeLegacyDeclineReasons } from "./ward-decline-legacy";
 import { diversionReturnsResolve } from "./community/diversion-return-review";
 import { upgradeLegacyObservationRows } from "./ward-observation-legacy";
 import { withDerivedStayBeds } from "./ward-bed-numbers";
+import { workedExamplesShown } from "@/components/ward-management/ward-rulings-demo";
 import {
   SUPPORT_NOTIFICATION_OCCASIONS,
   SUPPORT_NOTIFICATION_OUTCOMES,
@@ -31,6 +32,9 @@ export function isValidSharedWardFlowState(value: unknown): value is WardFlowSta
   // Live audit, 8 Nov 2026: a stored bed release saved without `blocker` or `blockedBy` read as held
   // up with no reason and crashed Discharges. A missing one means none recorded, read in place.
   readMissingReleaseBlockersAsNone(state);
+  // M12: a shared workspace saved before the worked-examples flag derives it once from its whole
+  // records, here on the server's full copy; the next save writes it and every desk is sent it.
+  if (state.workedExamples === undefined) state.workedExamples = workedExamplesShown(state);
   // D-152: a shared copy's returns to ED each name a referral that copy holds.
   if (!diversionReturnsResolve(state)) return false;
   const admissionIds = new Set<string>();

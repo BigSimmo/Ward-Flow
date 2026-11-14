@@ -151,7 +151,7 @@ import {
   referrals,
   wardMovements,
 } from "@/components/ward-management/ward-movements";
-import { applyRulingsDemoOverlay, workedExamplesShown } from "@/components/ward-management/ward-rulings-demo";
+import { applyRulingsDemoOverlay } from "@/components/ward-management/ward-rulings-demo";
 
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import {
@@ -319,6 +319,14 @@ export type WardFlowState = WardAuditAndPilotState & {
   leaveBedSequence: number;
   /** Which synthetic night is seeded — `ward-scenarios.ts`'s operational-numbers-only variants. */
   scenario: WardScenario;
+  /**
+   * M12 (mechanics and clock audit, D-MCA (Josh, 14 Nov 2026)): whether the worked examples are on
+   * in this world. `SET_SCENARIO` sets it and `RESET_SCENARIO` keeps it. Held on the world rather
+   * than read off the example records, which a scoped desk is not sent. A save made before this
+   * field derives it once from its records on restore (`withInboxStreamADefaults`,
+   * `isValidSharedWardFlowState`).
+   */
+  workedExamples: boolean;
   /**
    * Beds expected to free up. `FLAG_BED_RELEASE` appends here, so a ward's flag moves
    * `unitCapacity()`'s `potential` figure. Seeded from `ward-movements.ts`'s `bedReleases`.
@@ -596,6 +604,8 @@ function seedAuthoredWorld(
     referralSequence: 0,
     leaveBedSequence: 0,
     scenario,
+    // The network scenarios carry none of the standard night's worked examples.
+    workedExamples: workedExamples && !network,
     bedReleases: structuredClone(network?.bedReleases ?? bedReleases),
     leaveBeds: structuredClone(network?.leaveBeds ?? leaveBeds),
     refreshRequests: [],
@@ -1746,8 +1756,9 @@ export function reduceClinicalEvent(
       return seedWardFlowStateAt(
         event.now - state.clockOffsetMinutes - NOW_ANCHOR,
         WARD_SCENARIOS.includes(state.scenario) ? state.scenario : "standard",
-        // A16-14: a reset keeps the worked examples if the presenter had switched them on.
-        { workedExamples: workedExamplesShown(state) },
+        // A16-14: a reset keeps the worked examples if the presenter had switched them on. M12: the
+        // world's own flag, not the records this copy holds, which a scoped desk only partly has.
+        { workedExamples: state.workedExamples === true },
       );
 
     case "SET_SCENARIO": {

@@ -16,7 +16,6 @@ import { DEMO_CONTROLS_OFF, useDemoControlsAvailable, useWardRaise } from "../wa
 import type { WardCommandOutcome } from "../ward-shared-client";
 import { DEMO_RESET_SCENARIOS, WARD_SCENARIOS, scenarioLabels, type WardScenario } from "../ward-scenarios";
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
-import { workedExamplesShown } from "@/components/ward-management/ward-rulings-demo";
 import { WardDemoRoles } from "./ward-demo-roles";
 import { resetWardDemoBrowserState } from "../ward-browser-data";
 import styles from "./ward-tools-sheet.module.css";
@@ -139,8 +138,7 @@ function OperationalDemoPanel({ oneList = false, grow = false }: { oneList?: boo
     worldGeneration,
     shared,
     captureCommandLifetime,
-    movements,
-    referrals,
+    workedExamples,
   } = useWardFlowSelect(
     "scenario",
     "saveScenarioFile",
@@ -149,10 +147,11 @@ function OperationalDemoPanel({ oneList = false, grow = false }: { oneList?: boo
     "worldGeneration",
     "shared",
     "captureCommandLifetime",
-    "movements",
-    "referrals",
+    "workedExamples",
   );
-  const examplesOn = workedExamplesShown({ movements, referrals });
+  // M12: the world's own flag. A scoped desk is not sent every example record, so reading them
+  // here showed the examples as off and Load offered to switch them on again.
+  const examplesOn = workedExamples;
   const examplesOffered = WORKED_EXAMPLE_SCENARIOS.includes(scenario);
   const now = useWardFlowClock();
   const pause = useLivePause();

@@ -252,6 +252,8 @@ type WardFlowContextValue = closingLoop.ClosingLoopContext & {
    *  (`ward-demo-controls.tsx`'s scenario switch) can mark the active one without guessing it
    *  from `units` itself. */
   scenario: WardScenario;
+  /** M12: whether the worked examples are on in this world (`WardFlowState.workedExamples`). */
+  workedExamples: boolean;
   /** Task 5 of the audit-wiring plan, 2026-09-16: the coordinator-tunable figures (ED access
    *  target, parallel referral cap, pull hold), live from reducer state — see
    *  `WardFlowState.configuration`'s own doc comment. Read-only here; `SET_CONFIGURATION` is the
@@ -336,6 +338,7 @@ const WARD_FLOW_KEY_SET = {
   now: true,
   dayZero: true,
   scenario: true,
+  workedExamples: true,
   configuration: true,
   broadcastAlerts: true,
   plannedAdmissions: true,
@@ -1406,6 +1409,7 @@ function WardFlowWorld({
       now,
       dayZero,
       scenario: shown.scenario,
+      workedExamples: shown.workedExamples === true,
       configuration: shown.configuration,
       broadcastAlerts: shown.broadcastAlerts ?? EMPTY_ARRAY,
       plannedAdmissions: shown.plannedAdmissions ?? EMPTY_ARRAY,
