@@ -775,7 +775,7 @@ export function CoordinatorScreen() {
   const oldestOverdue = referralQueue
     .filter((referral) => isReferralOverdue(referral, now))
     .sort((a, b) => a.raisedAt - b.raisedAt)[0];
-  const overdueCount = referralQueue.filter((referral) => getReferralPriority(referral, now) === "overdue").length;
+  const overdueCount = referralQueue.filter((referral) => isReferralOverdue(referral, now)).length;
   // R-HOME-1: one line for the referrals to decide; it names the oldest overdue one and opens it (R-HOME-4).
   const decideLine =
     referralQueue.length === 0 ? null : oldestOverdue ? (
