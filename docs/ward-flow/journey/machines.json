@@ -1927,7 +1927,7 @@
       {
         "path": "src/components/ward-management/ward-undo.ts",
         "line": 1,
-        "sha256": "700bbe8f0c0070652f7519c92d73d94f8df66113f63b1cce52fda3c33a066e6b"
+        "sha256": "8a77d97f194f7d71fa902e675eb55ff33b7c1b990d57a833e898ef941003116b"
       },
       {
         "path": "src/components/ward-management/ward-observation.ts",

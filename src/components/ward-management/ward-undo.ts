@@ -368,11 +368,15 @@ function diffRows(slice: string, oldRows: { id: string }[], newRows: { id: strin
   }
   const oldById = new Map(oldRows.map((row) => [row.id, row]));
   const newById = new Map(newRows.map((row) => [row.id, row]));
-  oldRows.forEach((row, index) => {
+  // Recorded last row first: `applyStepUndo` walks the changes backwards, so two or more removed
+  // rows (a closure withdrawing both stored late notices, D-221) go back lowest index first, each
+  // into the place it stood.
+  for (let index = oldRows.length - 1; index >= 0; index -= 1) {
+    const row = oldRows[index];
     const after = newById.get(row.id);
-    if (after === row || (after !== undefined && sameRecord(after, row))) return;
+    if (after === row || (after !== undefined && sameRecord(after, row))) continue;
     changes.push({ slice, mode: "id", id: row.id, index, before: row, after: after ?? null });
-  });
+  }
   newRows.forEach((row, index) => {
     if (!oldById.has(row.id)) changes.push({ slice, mode: "id", id: row.id, index, before: null, after: row });
   });

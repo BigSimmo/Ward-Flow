@@ -5,6 +5,8 @@ import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-
 import { raisedNotices } from "@/components/ward-management/ward-late-notices";
 import type { Movement, Notice } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { undoOf } from "./helpers/ward-legal-figure-sweep";
+import { applyStepUndo, diffForStepUndo } from "@/components/ward-management/ward-undo";
 
 /**
  * D-221 (Josh, 14 Nov 2026), the reducer wiring: every save that changes a journey reconciles its
@@ -86,6 +88,13 @@ describe("a saved ETA stores the late pair", () => {
     expect(journey(arrived, movement.id).stage).toBe("arrived");
     expect(lateFor(arrived, movement.id)).toEqual([]);
     expect(journey(arrived, movement.id).arrivalLateNotifiedAt).toBeUndefined();
+    // Undo puts the withdrawn pair back where each stood, in order.
+    const undone = undoOf(
+      { type: "PATIENT_ARRIVED", role: "coordinator", now: NOW + 40, movementId: movement.id },
+      arrived,
+      NOW + 41,
+    );
+    expect(undone?.state.notices).toEqual(onTheWay.notices);
   });
 
   it("a typed ETA already over an hour past is raised now", () => {
@@ -155,6 +164,17 @@ describe("listing", () => {
     const raised = raisedNotices(saved.notices, eta + 61);
     expect(raised).toBe(saved.notices);
     expect(raisedNotices(state.notices, NOW)).toBe(state.notices);
+  });
+});
+
+describe("undo of a step that removed several rows", () => {
+  it("puts each removed row back where it stood", () => {
+    const rows = ["a", "b", "c", "d"].map((id) => ({ id }));
+    const before = { notices: rows };
+    const after = { notices: [rows[2]!, rows[3]!] };
+    const changes = diffForStepUndo(before, after);
+    const undone = applyStepUndo(after, { changes } as Parameters<typeof applyStepUndo>[1]);
+    expect(undone.notices.map((row) => row.id)).toEqual(["a", "b", "c", "d"]);
   });
 });
 
