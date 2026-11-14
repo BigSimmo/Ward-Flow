@@ -2615,6 +2615,7 @@ is inferred.
 - **Why:** the audit found five root mechanisms behind about 45 faults: the same fact worked out separately on each screen; steps stamped when delivered, not when done; linked records not changed together; capacity mixed into suitability checks; and a setting inferred from the records a desk can see.
 - **Boundary:** synthetic data only. No clinical value or threshold changes. Josh chose to merge before the 22 November freeze (14 November, 04:50 UTC).
 - **Phone size (decision card, 04:33 UTC):** Josh allowed Home and Ward's phone script limits to rise 5.4 and 5.5 KB, past the 5 KB a PR may take alone, because the growth is the engine fixes every screen loads (`docs/script-budget-history/2026-11-14-pr1670-mechanics-clock-fixes.md`).
+- **Movement phone size (decision card, 05:31 UTC):** after #1668 merged first, Josh allowed Movement's phone script limit to rise 5.1 KB over main's (627.8 to 632.9), 0.1 KB past the allowance, as the same shared-engine growth.
 
 ## D-211. Not medically cleared pauses onward transfer (14 November 2026)
 

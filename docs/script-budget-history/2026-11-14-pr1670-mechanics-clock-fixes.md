@@ -36,5 +36,5 @@ limit, else the allowance itself:
   approved.
 - Referrals 599.3 to 601.4 (601.2), ED 549.9 to 554.9 (554.7), ED board 688.7 to 693.7 (693.6),
   Bed meeting 599.7 to 604.2 (604.0), Statistics 645.9 to 650.8 (650.6).
-- Movement 627.8 to 632.8 (measured 632.8, a few hundredths over): the full 5 KB allowance. It
-  needs 0.1 KB more, which waits for Josh's yes.
+- Movement 627.8 to 632.9 (measured 632.8, a few hundredths over the 5 KB allowance): 5.1 KB, with
+  Josh's yes on a decision card (14 Nov 2026, 05:31 UTC, recorded in D-210).
