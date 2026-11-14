@@ -286,6 +286,11 @@ type WardFlowContextValue = closingLoop.ClosingLoopContext & {
   };
   /** False when the shared workspace has switched demo controls off. Optional for test contexts. */
   demoControlsAvailable?: boolean;
+  /**
+   * D-229 (stress test D1a-S-1): the Demo panel's Pause holds Board time, on this device's own demo
+   * only. Absent on the shared board, whose clock is the server's, and in test contexts.
+   */
+  boardClockPause?: { readonly paused: boolean; readonly toggle: () => void };
 };
 
 export type { WardFlowContextValue };
@@ -352,6 +357,7 @@ const WARD_FLOW_KEY_SET = {
   loadScenarioFile: true,
   savingOnDevice: true,
   demoControlsAvailable: true,
+  boardClockPause: true,
   shared: true,
 } as const satisfies Record<WardFlowKey, true>;
 const WARD_FLOW_KEYS = Object.keys(WARD_FLOW_KEY_SET) as WardFlowKey[];
@@ -866,12 +872,60 @@ function WardFlowWorld({
   // Read beside `elapsed`, so the compiled render reads the device clock each time, as it does there.
   const deviceMs = initialNow !== undefined || mountedAtAbsolute === null ? null : deviceClockMs();
   const boardClock = shared.enabled ? shared.boardClock : undefined;
+  // D-229 (stress test D1a-S-1, Josh 14 Nov 2026): the Demo panel's Pause holds Board time on this
+  // device's demo. The pause keeps the board minute less any +15 min/+1 hour steps, so those still
+  // move the clock while it is paused. It holds only the day it was taken on: Reset, a loaded file
+  // or a restored save (a new generation or elapsed baseline) ends it. A reload ends it too.
+  const [boardPause, setBoardPause] = useState<{
+    base: number;
+    elapsed: number;
+    generation: number;
+    restoredElapsed: number;
+  } | null>(null);
+  const heldPause =
+    !shared.enabled &&
+    boardPause !== null &&
+    boardPause.generation === state.worldGeneration &&
+    boardPause.restoredElapsed === container.restoredElapsed
+      ? boardPause
+      : null;
   const now =
     shared.enabled && shared.snapshot
       ? boardClock && deviceMs !== null
         ? anchoredBoardNow(boardClock, deviceMs)
         : sharedBoardNow(shared.snapshot.now, shared.receivedAt)
-      : NOW_ANCHOR + anchorOffsetMinutes + container.restoredElapsed + elapsed + state.clockOffsetMinutes;
+      : heldPause
+        ? heldPause.base + state.clockOffsetMinutes
+        : NOW_ANCHOR + anchorOffsetMinutes + container.restoredElapsed + elapsed + state.clockOffsetMinutes;
+  // The toggle reads the latest render through a ref, so it stays one function for the session.
+  const boardPauseInputs = useRef({ heldPause, elapsed, now, state, container, shared: shared.enabled });
+  useEffect(() => {
+    boardPauseInputs.current = { heldPause, elapsed, now, state, container, shared: shared.enabled };
+  });
+  const toggleBoardPause = useCallback(() => {
+    const inputs = boardPauseInputs.current;
+    if (inputs.shared) return;
+    if (inputs.heldPause) {
+      // Resume carries on from the paused minute: the minutes spent paused leave the elapsed term.
+      dispatchContainer({
+        type: "RESUME_BOARD_CLOCK_INTERNAL",
+        pausedMinutes: inputs.elapsed - inputs.heldPause.elapsed,
+      });
+      setBoardPause(null);
+      return;
+    }
+    setBoardPause({
+      base: inputs.now - inputs.state.clockOffsetMinutes,
+      elapsed: inputs.elapsed,
+      generation: inputs.state.worldGeneration,
+      restoredElapsed: inputs.container.restoredElapsed,
+    });
+  }, [dispatchContainer, setBoardPause]);
+  const boardPaused = heldPause !== null;
+  const boardClockPause = useMemo(
+    () => (shared.enabled ? undefined : { paused: boardPaused, toggle: toggleBoardPause }),
+    [shared.enabled, boardPaused, toggleBoardPause],
+  );
 
   const nowRef = useRef(now);
   useEffect(() => {
@@ -1429,6 +1483,7 @@ function WardFlowWorld({
           : savingOnDevice,
       shared: sharedStatus,
       demoControlsAvailable,
+      boardClockPause,
     }),
     [
       // Individual `state.movements`/`state.patients`/`state.inboxAcknowledgements`/
@@ -1452,6 +1507,7 @@ function WardFlowWorld({
       shared.eventLog,
       sharedStatus,
       demoControlsAvailable,
+      boardClockPause,
       dayZero,
       dispatch,
       focusMovementId,
