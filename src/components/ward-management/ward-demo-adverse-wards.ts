@@ -9,7 +9,8 @@ import type { Unit } from "./ward-model";
  * a ward whose label is generic, its site's code or name and a cohort ("RGH Adult Secure",
  * "Graylands Older Adult"), or on the opt-in fictional network, whose every ward label is fictional.
  * A ward that carries a real ward's own name ("Dabakarn", "Maali (Ward 4.2)", "Mental Health Unit")
- * gets none. Neutral examples (room status, intake hours) are not affected. A15-29 reuses the same
+ * gets none. Room status is not affected. Invented intake hours follow this rule too (live re-check,
+ * 14 Nov 2026: "Admits …" under a real ward's name read as that ward's hours). A15-29 reuses the same
  * rule for designations that exist only to exercise a matching rule.
  */
 const GENERIC_WARD_LABEL = /^\S+ (?:Adult|Older Adult|Youth)(?: Open| Secure)?$/u;

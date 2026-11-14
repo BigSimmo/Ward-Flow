@@ -195,7 +195,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-170](#d-170-clinical-wording-rulings-from-the-13-november-audit-13-november-2026)                                                                    | Clinical wording rulings from the 13 November audit                                    | Active                                           |
 | [D-171](#d-171-hosted-database-brought-to-schema-18-migrations-017-and-018-13-november-2026)                                                            | Hosted database brought to schema 18 (migrations 017 and 018)                          | Active                                           |
 | [D-172](#d-172-the-community-desks-ed-heads-up-stays-as-built-in-d-154-13-november-2026)                                                                | The community desk's ED heads-up stays as built in D-154                               | Active                                           |
-| [D-173](#d-173-turning-off-supabase-open-sign-up-is-deferred-13-november-2026)                                                                          | Turning off Supabase open sign-up is deferred                                          | Active                                           |
+| [D-173](#d-173-turning-off-supabase-open-sign-up-is-deferred-13-november-2026)                                                                          | Turning off Supabase open sign-up is deferred                                          | Done 14 November 2026                            |
 | [D-174](#d-174-audit-findings-name-the-system-cause-and-the-fix-round-ships-in-two-pull-requests-13-november-2026)                                      | Audit findings name the system cause, and the fix round ships in two pull requests     | Active                                           |
 | [D-175](#d-175-audit-16-and-the-demo-data-root-cause-review-approved-fixes-13-november-2026)                                                            | Audit 16 and the demo-data root-cause review: approved fixes                           | Active                                           |
 | [D-176](#d-176-clinical-check-pack-answers-13-november-2026)                                                                                            | Clinical check pack answers                                                            | Active                                           |
@@ -211,7 +211,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-186](#d-186-clinical-sign-off-sitting-part-1-timing-and-the-audit-backed-recommendations-13-november-2026)                                           | Clinical sign-off sitting, part 1: timing and the audit-backed recommendations         | Active                                           |
 | [D-187](#d-187-clinical-sign-off-sitting-part-2-the-recommendations-for-q17-to-q44-13-november-2026)                                                    | Clinical sign-off sitting, part 2: the recommendations for Q17 to Q44                  | Active                                           |
 | [D-188](#d-188-the-home-pull-form-is-filled-from-the-record-and-can-be-changed-13-november-2026)                                                        | The Home pull form is filled from the record and can be changed                        | Active                                           |
-| [D-189](#d-189-handling-the-open-sitting-questions-and-how-the-remaining-items-are-built-13-november-2026)                                              | Handling the open sitting questions, and how the remaining items are built             | Active                                           |
+| [D-189](#d-189-handling-the-open-sitting-questions-and-how-the-remaining-items-are-built-13-november-2026)                                              | Handling the open sitting questions, and how the remaining items are built             | Partly replaced by D-209                         |
 | [D-190](#d-190-the-six-pr-fix-plan-13-november-2026)                                                                                                    | The six-PR fix plan                                                                    | Active                                           |
 | [D-191](#d-191-home-ward-and-capacity-mock-ups-approved-13-november-2026)                                                                               | Home, Ward and Capacity mock-ups approved                                              | Active                                           |
 | [D-192](#d-192-shared-design-parts-approved-for-building-wave-3-pr-e-13-november-2026)                                                                  | Shared design parts approved for building (wave 3, PR E)                               | Active                                           |
@@ -229,8 +229,11 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-204](#d-204-a-signed-triage-shows-the-desks-name-14-november-2026)                                                                                   | A signed triage shows the desk's name                                                  | Active                                           |
 | [D-205](#d-205-release-now-once-each-pr-merges-14-november-2026)                                                                                        | Release now, once each PR merges and its main CI passes                                | Active                                           |
 | [D-206](#d-206-codeql-storage-alerts-are-false-positives-for-the-demo-14-november-2026)                                                                 | CodeQL storage alerts are false positives for the demo                                 | Active                                           |
-| [D-207](#d-207-fit-to-travel-recorded-as-not-cleared-and-the-clinical-go-14-november-2026)                                                              | Fit to travel: not cleared, and the clinical go                                        | Active                                           |
+| [D-207](#d-207-fit-to-travel-recorded-as-not-cleared-and-the-clinical-go-14-november-2026)                                                              | Fit to travel: not cleared, and the clinical go                                        | Partly replaced by D-211                         |
 | [D-208](#d-208-appraised-findings-fix-three-real-display-bugs-14-november-2026)                                                                         | Appraised findings: fix three real display bugs                                        | Active                                           |
+| [D-209](#d-209-nine-open-clinical-items-signed-avoiding-restriction-and-friction-14-november-2026)                                                      | Nine open clinical items signed, avoiding restriction and friction                     | Active                                           |
+| [D-211](#d-211-not-medically-cleared-pauses-onward-transfer-14-november-2026)                                                                           | Not medically cleared pauses onward transfer                                           | Active                                           |
+| [D-212](#d-212-the-master-stress-test-replaces-audits-6-11-and-18-14-november-2026)                                                                     | The master stress test replaces Audits 6, 11 and 18                                    | Active                                           |
 
 ---
 
@@ -1922,7 +1925,7 @@ is inferred.
   2. **Non-clinical fixes:** one lapse check for pull holds, staff requests keep the shift the person chose, one reader for typed times, one length-of-stay calculation, a demo code shorter than 12 characters counts as no code (added after PR #1615 merged; spaces and dashes not counted), and a demo pass stops working when the code changes. Two lines added to the real-data go/no-go list (record ids never built from UMRNs; a check of the push library).
   3. **Features that finish existing screens** (not covered by the D-128 item 9 pause): Leave page links, print and entry point; Help for pages that had none; print and spreadsheet export on Legal forms and Movements. Triage risk reviews due waits until #1564 to #1577 close and needs its own clinical sign-off.
   4. **Code health:** the file line cap counts code lines, not comments or blank lines; one shared CI setup step; shared helpers for the forked side rail; reasons or fixes for unexplained React hook rule switch-offs; patch-level dependency updates.
-  5. **Josh's own action:** turn off Supabase open sign-up before real data.
+  5. **Josh's own action:** turn off Supabase open sign-up before real data. Done 14 November 2026 (see D-173).
 - **Screens approved (11 November 2026, 05:46 UTC):** after the design review page "Leave and export review", Josh chose "Yes, add them" on the decision card. This approves the item 3 screens and two new patterns: an icon-only Print button on phones, and the Export status line hidden until it has something to say (this affects every list with Export).
 - **Clinical sign-off (11 November 2026, 05:51 UTC):** Josh wrote "I approve all of them to remove labels" in the thread "Get all open PRs merged", approving the item 1 fixes in PR #1621 as built, including the Legal forms wording "Form ended; expiry as typed was HH:MM".
 - **Why:** findings from the 11 November review, each checked against source; the clinical items were display bugs, not changes to signed values.
@@ -1956,6 +1959,7 @@ is inferred.
   3. The coordinator's "Record added in error" card no longer hides when archive is not available. It says why in one line.
 - **Why:** the live audit's test patient could never be archived because a withdrawn referral and record-view audit rows named it, so test and mistaken records stayed on the board for good.
 - **Boundary:** synthetic data only. Archiving the live audit's test patient and the old TEST-Helper4 records is a live write that waits for Josh's yes after release.
+- **Done (14 November 2026):** on the live signed-in site, PT-A06 (ZZAUDIT-1111) and both TEST-Helper4 records (UMTEST4001 and TESTH4001) were archived as "Test record" with the app's own archive control.
 - **Note (11 November 2026, 15:34 UTC):** Josh approved, on a decision card in the Ward Flow project thread for PR #1626, adding `ward-patient-archive-reducer.ts` to the D-14 patient-link allowlist (60 to 61 files). The archive step reads `referral.patientId` only to unlink that one record's withdrawn front-door referrals; it reads no other referral and shows nothing.
 
 ## D-150. The signed-in site runs on real Perth time (11 November 2026)
@@ -2159,6 +2163,7 @@ is inferred.
 - **Decision:** Josh's own action from D-145 item 5, turning off Supabase open sign-up, is deferred. The site stays on synthetic data, so nothing changes now. It must still be done before any real data, and it stays on the real-data gate.
 - **Why:** the shared site holds synthetic data only, so an outside Supabase account that gets past the site lock reaches no real patient information.
 - **Boundary:** synthetic data only. No code change and no provider change. Changes no clinical rule or signed value, and approves no release.
+- **Done (14 November 2026):** Josh turned off "Allow new users to sign up" in the Ward Flow Supabase project (`zakzoemeedfepxcstsou`) on 14 November 2026. This closes D-145 item 5 and the real-data gate's sign-up line.
 
 ## D-174. Audit findings name the system cause, and the fix round ships in two pull requests (13 November 2026)
 
@@ -2575,4 +2580,38 @@ is inferred.
 - **Why:** of the 15 findings, 3 were wrong, 1 already fixed, 1 a repeat and 3 only partly right. These were real and cheap to fix, and B3 cut against D-21 (show only what is recorded).
 - **Boundary:** no clinical value or rule changes.
 
-The next free number is D-209.
+## D-209. Nine open clinical items signed, avoiding restriction and friction (14 November 2026)
+
+- **Date:** 14 November 2026, 9:38 AM AWST (01:38 UTC), and 9:48 AM AWST (01:48 UTC) for item 3(b). D-208 is claimed by open PR #1663. **Decided by:** Josh, in the "Sign the nine open clinical items" thread: "Yes to all recommendations please. But avoiding restrictive and friction also. Dont do anything to interrupt the PR1659", then "Intermittent, every 30 min" on the decision card for Saoirse's observation level.
+- **Decision:** the nine items D-189 left open (sitting questions Q17, Q18, Q20, Q22, Q23, Q32, Q40, Q41 and Q42), plus Q28, are settled as follows. Where a choice was open, the least restrictive reading that adds no new block was taken.
+  1. **Calder Ridgeholt and long ED waits (Q17).** Left as is for the demo; the script still avoids her row. Whether a tier 1 person may sit with no form time, review, ward asked or reason stays open for after the demo.
+  2. **Keira Pellingworth (Q18).** Tier 1, a locked bed and General observation are signed as reading true together; her referral records no risk flags; a Form 1A (referral for examination, written in ED four hours before now) is on file before her Form 3B. Still open: the printed Form 3B is headed "Forms 3A and 3B", so whether a 3A also belongs is for the sitting.
+  3. **Saoirse Loxbury (Q20).** (a) She is referred to a locked ward, Graylands Adult Secure, not SJGM Adult Open; her need reads Secure. (b) Her ED observation is Intermittent, every 30 minutes (the register's longer intermittent interval).
+  4. **Cyril Coldharbour (Q22).** Kept as written, including legal status "Not recorded" and medical clearance unconfirmed. Act 3 is unchanged.
+  5. **Observation levels on the sample day (Q23).** Every ward stay stays General, and the "sample mix, not clinical guidance" label stays. No stay is made "Not recorded".
+  6. **Aboriginal status and interpreter need at signing (Q32).** Warn-only, as now; signing never waits for either.
+  7. **Triage see-by windows (Q40).** B 2 hours, C 12 hours, D 48 hours and E 2 weeks are signed for the prototype, matching WA Health's "Triage to Discharge" Mental Health Framework, Version 11.0 (9 August 2021), Appendix 1, Crisis Triage Rating Scale, word for word. The follow-up choices and "Review risk by" stay unsigned.
+  8. **Crisis numbers (Q41).** The five numbers read "checked by Josh on 14 Nov 2026", checked against the Mental Health Commission WA Helplines page (last updated 3 November 2026). No numbers are added. They stay copy-only text (D-189 item 5).
+  9. **Authorised hospitals (Q42).** Sixteen sample wards read "Involuntary admissions: authorised (Chief Psychiatrist register, 7 Sep 2026)"; the two SJG Subiaco wards read "not on the authorised register (7 Sep 2026)"; the four invented older adult wards at RPH, SCGH, FSH and Graylands, and every demo-network ward, read "not stated". Authorisation steers no placement: the fit check, bed finder, held beds, transport and arrival are not filtered or refused by it (D-189 item 8 stays off).
+  10. **Transport paperwork (Q28).** Deferred to the sitting after the demo; the "rule not signed" label stays. A Form 4B on its own does not clear the order check, as today.
+- **Why:** items 7, 8 and 9 match published WA sources read on 14 November 2026. The rest are Josh's clinical calls on synthetic stories. "Avoiding restrictive and friction" means no new block, no steering and the least restrictive observation level that fits.
+- **Boundary:** synthetic data only; a prototype, not validated clinical decision support. No real authorisation status is relied on for a placement.
+
+## D-211. Not medically cleared pauses onward transfer (14 November 2026)
+
+- **Date:** 14 November 2026, 12:16 PM AWST (04:16 UTC). D-210 is claimed by open PR #1670. **Decided by:** Josh, "continue with all recommendations" on the plan thread's recommendations for the fit to travel check, then, in the Ward Flow project chat, "yes go ahead with this" on option 1: keep the rule that a not-cleared journey cannot go on, and fix the screen text that offered a way round it.
+- **Decision:** when medical clearance is recorded as "Not medically cleared", onward transfer stops until the patient is cleared again. The engine's refusal of booking, Mark handover ready, transport accepted, en route, collected and arrived stays. The screens now match it: the booking form and the handover, collection and arrival checks no longer offer "save without a reason" or "Continue without a reason", and say "Onward transfer is paused until re-clearance." instead. "Fit to travel not recorded" (nothing recorded) is unchanged: a reason is still asked for and never required (D-187 item 10, D-189 item 9(e)).
+- **Why:** D-207 said a not-cleared journey asks for a reason and never blocks, but the engine already refused the step, so the screens offered a way on that could not work. A recorded "not cleared" is a clinical stop, not a missing fact.
+- **Replaces:** the "never block" wording of D-207 for "not cleared" only. D-207's words "Fit to travel: not cleared" stay.
+- **Boundary:** synthetic data only. No clinical value or threshold changes. Built in #1668.
+
+## D-212. The master stress test replaces Audits 6, 11 and 18 (14 November 2026)
+
+- **Date:** 14 November 2026, 12:43 PM AWST (04:43 UTC). **Decided by:** Josh, "ok go ahead with next recommendations please" on the Audit G thread's recommendation, then at 12:44 PM AWST (04:44 UTC): "1920×1080 run at this size also as this is the most common size for monitors in hospital", and at 12:47 PM AWST (04:47 UTC), in the Ward Flow project chat, asking to add Audit 6: "Please send audit 18, 11 and audit 6 as well please with the full walkthrough".
+- **Decision:**
+  1. The master stress test replaces Audits 6, 11 and 18; their checklists and full walkthroughs are handed to it. If the stress test has not run by the 22 November freeze, the fallback is one session on Josh's PC.
+  2. Screen checks and demo rehearsal run at 1920 by 1080, the most common hospital monitor size, as well as at 1366 by 768.
+- **Why:** one run instead of three covers the same ground with less waiting before the demo.
+- **Boundary:** no app, clinical value or data changes. Recorded in #1668.
+
+The next free number is D-213.

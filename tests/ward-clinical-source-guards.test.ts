@@ -150,11 +150,11 @@ describe("F-80 (D-189 item 5): crisis numbers stay copy-only text, never a call 
   });
 });
 
-describe("D-186 Q12: the crisis numbers' note", () => {
+describe("D-186 Q12 and D-209 item 8: the crisis numbers' note", () => {
   // A source comment is the only place this note lives, so reading the source is the point.
-  it("keeps the note that the numbers were typed from memory", () => {
+  it("keeps the note that names the check and its source", () => {
     const safety = readFileSync(join(TRIAGE_DIR, "triage-risk-safety.ts"), "utf8").replace(/\s+/g, " ");
-    expect(safety).toContain("they are typed here from memory for the prototype and have not been verified");
+    expect(safety).toContain("checked against the Mental Health Commission WA Helplines page");
   });
 });
 

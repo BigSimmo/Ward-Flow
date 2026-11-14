@@ -1296,24 +1296,24 @@ describe("ward intake constraints (Answer 18, second round, 2026-09-17)", () => 
 
 describe("decline", () => {
   it("drops the unit from the live referral and records why", () => {
-    // WF-010 is seeded at destination_review, referred only to sjgm-adult-open.
+    // WF-010 is seeded at destination_review, referred only to gry-adult-secure (D-209 item 3).
     const next = wardFlowReducer(seeded(), {
       type: "DECLINE",
       role: "ward",
       now: NOW,
       movementId: "WF-010",
-      unitId: "sjgm-adult-open",
-      actingUnitId: "sjgm-adult-open",
+      unitId: "gry-adult-secure",
+      actingUnitId: "gry-adult-secure",
       reason: "belongs_to_another_service",
     });
     const target = movement(next, "WF-010");
     expect(target.declines).toContainEqual({
-      unitId: "sjgm-adult-open",
+      unitId: "gry-adult-secure",
       at: NOW,
       reason: "belongs_to_another_service",
       note: undefined,
     });
-    expect(target.referredUnitIds).not.toContain("sjgm-adult-open");
+    expect(target.referredUnitIds).not.toContain("gry-adult-secure");
     expect(target.stage).toBe("destination_review");
   });
 });

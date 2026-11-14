@@ -88,6 +88,14 @@ export const NOT_RECORDED_OBSERVATION: Observation = Object.freeze({
   reviewAt: null,
 });
 
+/**
+ * D-188, tightened to every pull (Josh, 13 Nov 2026): the engine refuses `PULL_PATIENT` while the
+ * journey's level is "Not recorded", so no screen can pull a bed without one. Each pull button asks
+ * for a level first and records it with `RECORD_OBSERVATION_LEVEL`. No clinical value is involved.
+ */
+export const PULL_NEEDS_OBSERVATION_LEVEL =
+  "No observation level is recorded. Record an observation level before pulling the bed.";
+
 /** True when a person recorded a level (anything but "not recorded"). */
 export function observationIsRecorded(observation: Pick<Observation, "level"> | undefined): boolean {
   return observation !== undefined && observation.level !== OBSERVATION_NOT_RECORDED;

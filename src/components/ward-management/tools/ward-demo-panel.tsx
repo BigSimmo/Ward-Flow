@@ -153,7 +153,12 @@ function OperationalDemoPanel({ oneList = false, grow = false }: { oneList?: boo
     "referrals",
   );
   const examplesOn = workedExamplesShown({ movements, referrals });
-  const examplesOffered = WORKED_EXAMPLE_SCENARIOS.includes(scenario);
+  // The toggle reads its state from the records this desk can see. A scoped desk (one team, site or
+  // service) cannot see the worked examples, so it would read "Show" while they are on; only a
+  // whole-network desk offers it (coordinator decision, 14 Nov 2026; a world-level flag is after the demo).
+  const authority = useWardShellAuthority();
+  const examplesOffered =
+    WORKED_EXAMPLE_SCENARIOS.includes(scenario) && (authority === null || authority.scope.kind === "statewide");
   const now = useWardFlowClock();
   const pause = useLivePause();
   const raise = useWardRaise("demo");

@@ -11,6 +11,7 @@ import {
 import {
   TRANSPORT_EXCEPTION_GAP_LABELS,
   TRANSPORT_EXCEPTION_REASON_LABELS,
+  TRANSFER_PAUSED_TEXT,
 } from "@/components/ward-management/ward-transport-checks";
 
 import styles from "./transport-exception-dialog.module.css";
@@ -23,7 +24,12 @@ import styles from "./transport-exception-dialog.module.css";
  * D-187 item 10 and D-189 item 9(e) (fit to travel at booking and Mark handover ready): the dialog
  * still asks every time, but the step may go on without a reason. A caller that passes
  * `onContinueWithoutReason` gets a "Continue without a reason" choice, which records no reason.
+ *
+ * D-211 (Josh, 14 Nov 2026): fit to travel recorded as "Not medically cleared" is a hard stop, as
+ * the engine already refuses the step. The dialog offers no reason and no "Continue without a
+ * reason"; it says onward transfer is paused until re-clearance. "Not recorded" still asks.
  */
+
 export function TransportExceptionDialog({
   open,
   who,
@@ -67,6 +73,29 @@ export function TransportExceptionDialog({
     }
   };
   const waiting = pending ? "Waiting for confirmation" : undefined;
+  const paused = gaps.includes("fit_to_travel_not_cleared");
+  if (paused)
+    return (
+      <Dialog
+        open={open}
+        onClose={close}
+        title={`${action} for ${who}?`}
+        description={TRANSFER_PAUSED_TEXT}
+        data-testid={testId}
+        secondary={[{ label: "Cancel", onAction: close }]}
+      >
+        {identity ? <p data-testid={`${testId}-identity`}>Check: {identity}</p> : null}
+        <ul aria-label="Not cleared" className={styles.gapList}>
+          {gaps.map((gap) => (
+            <li key={gap} className={styles.gapItem}>
+              <StatusGlyph tone="warning" size={9} />
+              <span>{TRANSPORT_EXCEPTION_GAP_LABELS[gap]}</span>
+            </li>
+          ))}
+        </ul>
+        <p data-testid={`${testId}-paused`}>{TRANSFER_PAUSED_TEXT}</p>
+      </Dialog>
+    );
   return (
     <Dialog
       open={open}

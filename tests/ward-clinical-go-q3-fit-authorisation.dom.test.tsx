@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { render, screen, within } from "@testing-library/react";
+import { authorisationLabel } from "@/components/ward-management/ward-authorisation";
 import { describe, expect, it } from "vitest";
 
 import { WardReferralDetailDrawer } from "@/components/ward-management/ward/ward-referral-detail";
@@ -39,9 +40,11 @@ function toCheckGroup(movement: Movement) {
 describe("go question 3: authorisation in the To check group", () => {
   it("shows the label for a status that needs an involuntary-capable bed", () => {
     const group = toCheckGroup({ ...base, legalStatus: "Involuntary inpatient" });
+    // D-209 item 9: the ward's label from the Chief Psychiatrist's register.
     expect(within(group).getByTestId("ward-referral-fit-to-check-authorisation")).toHaveTextContent(
-      "Involuntary admissions: not stated",
+      authorisationLabel(unit),
     );
+    expect(authorisationLabel(unit)).toMatch(/^Involuntary admissions: /u);
   });
 
   it("shows nothing extra for a voluntary status", () => {

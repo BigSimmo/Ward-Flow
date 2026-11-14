@@ -33,7 +33,7 @@ describe("ward answer phone sheet: the pull time limit starts with nothing chose
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <Harness dispatch={dispatch}>
-          <WardAnswerView unitId="sjgm-adult-open" />
+          <WardAnswerView unitId="gry-adult-secure" />
         </Harness>
       </WardFlowProvider>,
     );
@@ -73,7 +73,7 @@ describe("ward answer phone sheet: the pull time limit starts with nothing chose
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <Capture>
-          <WardAnswerView unitId="sjgm-adult-open" />
+          <WardAnswerView unitId="gry-adult-secure" />
         </Capture>
       </WardFlowProvider>,
     );

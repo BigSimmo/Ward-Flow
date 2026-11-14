@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { WardShellAuthorityProvider } from "@/components/ward-management/shell/ward-shell-public-context";
 import { WardDemoPanel } from "@/components/ward-management/tools/ward-demo-panel";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import {
@@ -119,5 +120,29 @@ describe("A16-14: Tools, Demo has the switch", () => {
       }),
     );
     expect(screen.getByTestId("examples")).toHaveTextContent("off");
+  });
+});
+
+describe("Worked examples toggle on scoped desks", () => {
+  it("is offered on a whole-network desk and hidden on a scoped one, which cannot see the examples", () => {
+    const { unmount } = render(
+      <WardShellAuthorityProvider access={{ role: "coordinator", scope: { kind: "statewide" } }}>
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <WardDemoPanel />
+        </WardFlowProvider>
+      </WardShellAuthorityProvider>,
+    );
+    expect(screen.getByTestId("ward-tools-demo-worked-examples-toggle")).toBeInTheDocument();
+    unmount();
+    render(
+      <WardShellAuthorityProvider
+        access={{ role: "community", scope: { kind: "team", teamName: "Midland Community Team" } }}
+      >
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <WardDemoPanel />
+        </WardFlowProvider>
+      </WardShellAuthorityProvider>,
+    );
+    expect(screen.queryByTestId("ward-tools-demo-worked-examples-toggle")).toBeNull();
   });
 });
