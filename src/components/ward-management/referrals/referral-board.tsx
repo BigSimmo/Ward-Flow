@@ -29,7 +29,7 @@ import { CopyNotesButton } from "./copy-notes-button";
 import { referralAcceptanceNotesText } from "@/components/ward-management/referral-notes-text";
 import { ChevronLeft, ChevronRight, FileText, ListOrdered, TriangleAlert, UserRound } from "lucide-react";
 
-import { formatInstant, formatSheetMoment } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import { overlayOpener } from "@/components/wf/sheet-focus";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -428,7 +428,7 @@ export function ReferralBoard({
       const arm = left?.destinations.findLast(
         (addressing) => addressing.decidedAt !== undefined && addressing.decidedAt > watchedReferral.since,
       );
-      const clock = arm?.decidedAt !== undefined ? formatInstant(arm.decidedAt) : undefined;
+      const clock = arm?.decidedAt !== undefined ? formatInstantWithDay(arm.decidedAt, now) : undefined;
       const armUnit = units.find(
         (unit) =>
           unit.id ===

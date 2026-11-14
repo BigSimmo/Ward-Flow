@@ -8,6 +8,8 @@
  * no event code, field name or revision number reaches the screen.
  */
 
+import { bedCountAgeWords } from "@/components/ward-management/ward-clock";
+
 /** An event type or a constant's name, such as `CONFIRM_CAPACITY` or `REPATRIATION_MODES`. */
 const CODE_NAME = /\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b/;
 /** A field name, such as `homeHospital` or `inboxItemId`. */
@@ -59,13 +61,6 @@ const SPECIFIC_REFUSALS: ReadonlyArray<readonly [RegExp, string]> = [
 const GATE_REFUSAL =
   /^(.+?) (?:is not eligible for [^—]*|does not accept referral \S+|cannot accept referral \S+) — failed gate ([a-z_]+): (.*)$/su;
 
-/** "25678 min" read as "18 days", "130 min" as "2 h", so no raw minutes reach a desk. */
-function ageWords(minutes: number): string {
-  if (minutes >= 2880) return `${Math.floor(minutes / 1440)} days`;
-  if (minutes >= 120) return `${Math.floor(minutes / 60)} h`;
-  return `${minutes} min`;
-}
-
 /**
  * R-BEDS-14: a gate refusal ("failed gate capacity_freshness: Last confirmed 25678 min ago") as one
  * line saying why and what to do next. No gate name or raw minutes reach the screen.
@@ -77,7 +72,9 @@ function gateRefusalText(reason: string): string | undefined {
   if (gate === "capacity_freshness") {
     const minutes = /(\d+) min/u.exec(detail)?.[1];
     return refusalLine(
-      minutes === undefined ? `${ward}'s bed count is out of date` : `Bed count ${ageWords(Number(minutes))} old`,
+      minutes === undefined
+        ? `${ward}'s bed count is out of date`
+        : `Bed count ${bedCountAgeWords(Number(minutes))} old`,
       // A placement can still go ahead with a recorded reason, so the line names that route too. A
       // planned admission's booking has no reason field yet (X2-4), so it is not offered there.
       /This placement needs a recorded override reason/u.test(reason)
@@ -86,7 +83,7 @@ function gateRefusalText(reason: string): string | undefined {
     );
   }
   if (gate === "allocatable_bed") {
-    return refusalLine(`${ward} has no bed free now`, "Ask the ward to confirm its count, or choose another ward");
+    return refusalLine(`${ward} has no Ready bed now`, "Ask the ward to confirm its count, or choose another ward");
   }
   if (/not something a recorded reason can override/u.test(reason)) {
     return refusalLine(`${ward} cannot take this patient`, "Choose another ward");

@@ -19,7 +19,12 @@ import {
   type OverrideReason,
   type WardRequestWithdrawalReason,
 } from "@/components/ward-management/ward-change-reasons";
-import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  bedCountAgeWords,
+  formatInstant,
+  formatInstantWithDay,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { NOT_RECORDED_LABEL, SYNTHETIC_TRAVEL_TIMES_NOTICE } from "@/components/ward-management/ward-distance";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import {
@@ -93,7 +98,6 @@ import {
   unitTurnaroundSource,
 } from "@/components/ward-management/ward-turnaround-priority";
 import {
-  bedCountAgeWords,
   eligibility,
   candidateReason,
   placementFit,

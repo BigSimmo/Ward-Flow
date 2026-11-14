@@ -254,7 +254,7 @@ describe("the ward screen's high-acuity override: the tick", () => {
     const incomingRow = screen.getByTestId("ward-incoming-WF-009");
     const alert = within(incomingRow).getByRole("alert");
     expect(alert).toHaveTextContent(/Accept in principle not recorded/i);
-    expect(alert).toHaveTextContent(/forensic/i);
+    expect(alert).toHaveTextContent(/needs a recorded reason for this placement/); // R-BEDS-14: no gate name
     // The control-defining assertion: this refusal is answerable (the reason form shows), but it
     // is not the acuity refusal, so the tick must not appear beside it.
     expect(alert).not.toHaveTextContent(/high-acuity/i);

@@ -63,7 +63,7 @@ describe("A9-05: No suitable bed is confirmed and leaves Awaiting your answer", 
     });
     await waitFor(() => expect(screen.queryByTestId(`ward-incoming-${TARGET}`)).toBeNull());
     expect(await screen.findByText("Referral waitlisted for this ward.")).toBeInTheDocument();
-    expect(screen.getAllByText("Waitlisted").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/\bWaitlisted\b/).length).toBeGreaterThan(0);
   });
 });
 

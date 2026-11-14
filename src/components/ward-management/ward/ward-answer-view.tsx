@@ -1571,7 +1571,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                         {capacitySave.state === "saving"
                           ? "Saving…"
                           : capacitySave.state === "saved"
-                            ? `Saved ${formatInstant(capacitySave.at ?? now)}`
+                            ? `Saved ${formatInstantWithDay(capacitySave.at ?? now, now)}`
                             : "Not saved · "}
                         {capacitySave.state === "failed" ? (
                           <button type="submit" className={styles.btn}>

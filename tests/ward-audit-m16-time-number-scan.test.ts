@@ -318,11 +318,18 @@ const ALLOWED: readonly Allowed[] = [
     n: 1,
     why: "an alternative figure listed for Josh to compare, not in use",
   },
+
   {
-    file: "ward-eligibility.ts",
+    file: "ward-clock.ts",
     expr: "minutes < 120",
     n: 1,
     why: "wording: the bed count's age reads in minutes under two hours, then whole hours (H8, D-210)",
+  },
+  {
+    file: "ward-clock.ts",
+    expr: "2 * MINUTES_PER_DAY",
+    n: 1,
+    why: "wording: a bed count two or more days old reads in whole days, not hundreds of hours (R-BEDS-14)",
   },
   {
     file: "ward-operational-defaults.ts",

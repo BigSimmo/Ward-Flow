@@ -22,7 +22,7 @@ describe("wardSafeRejectionReason", () => {
       wardSafeRejectionReason(
         "Ward A cannot accept referral R-1 — failed gate allocatable_bed: 0 allocatable. This is not something a recorded reason can override.",
       ),
-    ).toBe("Ward A has no bed free now. Ask the ward to confirm its count, or choose another ward.");
+    ).toBe("Ward A has no Ready bed now. Ask the ward to confirm its count, or choose another ward.");
   });
 
   // CodeRabbit review on #584: the bed designation gate's detail ("female only") reached the ward.

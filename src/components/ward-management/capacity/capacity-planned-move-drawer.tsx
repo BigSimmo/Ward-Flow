@@ -22,8 +22,14 @@ import {
   plannedAdmissionIsOverdue,
   type PlannedAdmission,
 } from "@/components/ward-management/ward-admissions";
-import { dayOf, formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { bedCountAgeMinutes, bedCountAgeWords } from "@/components/ward-management/ward-eligibility";
+import {
+  bedCountAgeWords,
+  dayOf,
+  formatInstant,
+  formatInstantWithDay,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
+import { bedCountAgeMinutes } from "@/components/ward-management/ward-eligibility";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { siteByCode } from "@/components/ward-management/ward-sites";
@@ -205,9 +211,7 @@ export function PlannedMoveDrawer({
               {ready !== undefined ? (
                 <span className={styles.pmPill} data-tone={ready > 0 ? "success" : "neutral"}>
                   {ready} ready now
-                  {countAge !== undefined
-                    ? ` · count ${countAge >= 2880 ? `${Math.floor(countAge / 1440)} days` : bedCountAgeWords(countAge)} old`
-                    : ""}
+                  {countAge !== undefined ? ` · count ${bedCountAgeWords(countAge)} old` : ""}
                 </span>
               ) : null}
             </p>
