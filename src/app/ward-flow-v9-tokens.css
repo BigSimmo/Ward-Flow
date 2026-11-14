@@ -39,7 +39,7 @@
   --wf-hero-edge: #172736;
   --wf-hero-ink: #fff;
   --wf-hero-ink-2: #c3d1de;
-  --wf-hero-ink-3: #a3b8cc;
+  --wf-hero-ink-3: #b0c3d6;
   --wf-danger: #c4513f;
   --wf-danger-ink: #9a3424;
   --wf-warning: #ac720a;
@@ -150,7 +150,7 @@
   --wf-hero-2: #1c2e41;
   --wf-hero-edge: rgba(143, 176, 212, 0.1);
   --wf-hero-ink-2: #c3d1de;
-  --wf-hero-ink-3: #a3b8cc;
+  --wf-hero-ink-3: #b0c3d6;
   --wf-danger: #e27a68;
   --wf-danger-ink: #f2a495;
   --wf-warning: #d9a441;
@@ -211,7 +211,7 @@
     --wf-hero-2: #1c2e41;
     --wf-hero-edge: rgba(143, 176, 212, 0.1);
     --wf-hero-ink-2: #c3d1de;
-    --wf-hero-ink-3: #a3b8cc;
+    --wf-hero-ink-3: #b0c3d6;
     --wf-danger: #e27a68;
     --wf-danger-ink: #f2a495;
     --wf-warning: #d9a441;
@@ -633,6 +633,27 @@ tr[data-dim="true"] > :is(td, th) :is(a, b, strong, em, span, time, abbr, small,
     --wf-data-closed: #b9c4cf;
     --wf-focus-ring: var(--wf-accent);
     --wf-focus-gap: var(--wf-surface);
+    /* Bright light paints the hero and the top bar white, so the dark-band ink rule must not stay in
+       charge (white on white shipped). Remap every ink the hero, band and bar parts read to body ink
+       here, in one place, so the alert badge, clock pill, hero buttons and focus ring follow. */
+    --wf-hero-1: var(--wf-surface-2);
+    --wf-hero-2: var(--wf-track);
+    --wf-hero-edge: var(--wf-line);
+    --wf-hero-glow: transparent;
+    --wf-hero-danger: var(--wf-danger-ink);
+    --wf-hero-warning: var(--wf-warning-ink);
+    --wf-hero-success: var(--wf-success-ink);
+    --wf-hero-info: var(--wf-info-ink);
+    --wf-hero-neutral: var(--wf-ink-3);
+    --wf-hero-ink: var(--wf-ink-1);
+    --wf-hero-ink-2: var(--wf-ink-2);
+    --wf-hero-ink-3: var(--wf-ink-3);
+    --wf-on-hero-ink: var(--wf-ink-1);
+    --wf-on-hero-fill: rgba(5, 8, 11, 0.06);
+    --wf-on-hero-line: rgba(5, 8, 11, 0.35);
+    --wf-on-hero-hl: rgba(5, 8, 11, 0.1);
+    --wf-on-hero-track: rgba(5, 8, 11, 0.08);
+    --wf-on-hero-div: rgba(5, 8, 11, 0.2);
     --wf-glyph: 12px;
     --wf-glass-bar: #ffffff;
     --wf-glass-pop: #ffffff;

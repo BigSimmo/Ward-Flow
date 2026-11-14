@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "playwright/test";
 
+import { applyTheme, scanPaintedContrast, THEMES } from "./helpers/painted-contrast";
 import { WARD_NAV, WARD_VIEWS } from "@/components/ward-management/ward-nav";
 
 /**
@@ -433,5 +434,147 @@ test.describe("@mockup Phone hit boxes: popup and form-step controls (Q377)", ()
     const heights = await rows.evaluateAll((labels) => labels.map((label) => label.getBoundingClientRect().height));
     expect(heights.length).toBeGreaterThan(0);
     for (const height of heights) expect(height).toBeGreaterThanOrEqual(40);
+  });
+});
+
+/**
+ * R-STYLE-8 painted-background contrast. axe leaves text on translucent or frosted layers
+ * undecided, so this resolves each text node's painted background itself and fails under 4.5:1
+ * (3:1 for large text), in Light, Dark and Bright light. See tests/helpers/painted-contrast.ts.
+ */
+// Screens that fail today. Their fixes sit in screen files owned by other lanes, so each is a
+// test.fixme with the reason; remove the entry when the screen is fixed and the test turns green.
+const KNOWN_CONTRAST_FAILURES: Record<string, string> = {
+  "/ward-flow|light":
+    "Home: .actLine, #home-next-checking and the outage pointer use hero ink-3 on a lighter next-step panel (3.6:1)",
+  "/ward-flow|dark": "Home: same next-step panel text as light (3.6:1)",
+  "/ward-flow|glare": "Home: ward-bar primaryMain 'New' is white on the white bright-light bar (1:1)",
+  "/ward-flow/ed|glare": "ED: ward-bar primaryMain 'New' is white on the white bright-light bar (1:1)",
+  "/ward-flow/statistics|light": "Statistics: zero-count cells and ward codes in grey on grey (2.9:1)",
+  "/ward-flow/statistics|dark": "Statistics: zero-count cells and ward codes (2.4:1)",
+  "/ward-flow/statistics|glare": "Statistics: zero-count cells and ward codes (4.3:1)",
+};
+
+const CONTRAST_ROUTES = [
+  { label: "Home", href: "/ward-flow" },
+  { label: "ED", href: "/ward-flow/ed" },
+  { label: "Statistics", href: "/ward-flow/statistics" },
+] as const;
+
+test.describe("@mockup Ward design sweep: painted-background contrast (R-STYLE-8)", () => {
+  test.use({ colorScheme: "light", viewport: { width: 1280, height: 800 } });
+
+  for (const { label, href } of CONTRAST_ROUTES) {
+    for (const theme of THEMES) {
+      test(`${label} (${href}) text keeps 4.5:1 on its painted background in ${theme}`, async ({ page }) => {
+        test.setTimeout(120_000);
+        test.fixme(`${href}|${theme}` in KNOWN_CONTRAST_FAILURES, KNOWN_CONTRAST_FAILURES[`${href}|${theme}`]);
+        await openSettled(page, href);
+        await applyTheme(page, theme);
+        const scan = await scanPaintedContrast(page, { includeText: process.env.CONTRAST_SHOW_TEXT === "1" });
+        console.log(
+          `${label} ${theme}: ${scan.checked} text nodes checked, ${scan.undecided} undecided (image behind)`,
+        );
+        const lines = scan.failures
+          .slice(0, MAX_LISTED_PER_RULE)
+          .map(
+            (failure) =>
+              `  ${failure.ratio}:1 (needs ${failure.required}) ${failure.element} ${failure.foreground} on ${failure.background}` +
+              (failure.sample ? ` "${failure.sample}"` : ""),
+          );
+        expect(scan.checked, "no text was checked").toBeGreaterThan(20);
+        expect(
+          scan.failures.length,
+          `${label} ${theme}: ${scan.failures.length} text nodes under contrast:\n${lines.join("\n")}`,
+        ).toBe(0);
+      });
+    }
+  }
+});
+
+/**
+ * R-STYLE-7 survive 200% text. At phone width with the root text size doubled, the h1 and the top
+ * bar links must not be cut off: no clipped sideways overflow and no clipped second line.
+ */
+test.describe("@mockup Ward design sweep: 200% text at 390 (R-STYLE-7)", () => {
+  test.use({ colorScheme: "light", viewport: { width: 390, height: 844 } });
+
+  for (const { label, href } of [
+    { label: "Home", href: "/ward-flow" },
+    { label: "Waiting", href: "/ward-flow/waiting" },
+    { label: "Referrals", href: "/ward-flow/referrals" },
+  ]) {
+    test(`${label} (${href}) h1 and top bar links are not clipped at 200% text`, async ({ page }) => {
+      test.setTimeout(120_000);
+      await openSettled(page, href);
+      await page.evaluate(() => {
+        document.documentElement.style.fontSize = "200%";
+      });
+      await page.waitForTimeout(500);
+      const clipped = await page.evaluate(() => {
+        const out: string[] = [];
+        const targets = [
+          ...document.querySelectorAll("h1"),
+          ...document.querySelectorAll('[data-testid="ward-bar"] a'),
+        ];
+        for (const element of targets) {
+          const box = element as HTMLElement;
+          if (!box.checkVisibility() || box.getBoundingClientRect().width < 2 || box.classList.contains("sr-only"))
+            continue;
+          const style = getComputedStyle(box);
+          const cutAcross = box.scrollWidth > box.clientWidth + 1 && style.overflowX !== "visible";
+          const cutDown = box.scrollHeight > box.clientHeight + 1 && style.overflowY !== "visible";
+          if (cutAcross || cutDown) {
+            const id = box.getAttribute("data-testid");
+            out.push(
+              `${box.tagName.toLowerCase()}${id ? `[${id}]` : ""}.${String(box.className).split(" ")[0]} ` +
+                `${box.scrollWidth}x${box.scrollHeight} in ${box.clientWidth}x${box.clientHeight} (${style.textOverflow})`,
+            );
+          }
+        }
+        return out;
+      });
+      expect(clipped, `${label} clipped at 200% text:\n${clipped.join("\n")}`).toEqual([]);
+    });
+  }
+});
+
+/**
+ * R-STYLE-9 one short h1 per page: exactly one visible h1 of at most four words on the main routes.
+ * Screens belong to other lanes, so a failing route is listed here rather than fixed from this lane.
+ */
+const H1_ROUTES = [
+  "/ward-flow",
+  "/ward-flow/waiting",
+  "/ward-flow/capacity",
+  "/ward-flow/movements",
+  "/ward-flow/governance",
+  "/ward-flow/statistics",
+  "/ward-flow/referrals",
+  "/ward-flow/alerts",
+  "/ward-flow/discharges",
+  "/ward-flow/handover",
+] as const;
+
+test.describe("@mockup Ward design sweep: one short h1 per page (R-STYLE-9)", () => {
+  test.use({ colorScheme: "light", viewport: { width: 1280, height: 800 } });
+
+  // Failing today (screens belong to other lanes): /ward-flow/capacity h1 has 5 words,
+  // /ward-flow/discharges 8 words, /ward-flow/handover 9 words. Remove the fixme once they are shortened.
+  test.fixme("each main route has exactly one h1 of at most 4 words", async ({ page }) => {
+    test.setTimeout(240_000);
+    const problems: string[] = [];
+    for (const href of H1_ROUTES) {
+      await openSettled(page, href);
+      const headings = await page.evaluate(() =>
+        [...document.querySelectorAll("h1")]
+          .filter((heading) => heading.checkVisibility())
+          .map((heading) => (heading.textContent ?? "").trim().split(/\s+/).filter(Boolean).length),
+      );
+      if (headings.length !== 1)
+        problems.push(`${href}: ${headings.length} visible h1 (word counts ${headings.join(",")})`);
+      else if (headings[0] > 4) problems.push(`${href}: h1 has ${headings[0]} words`);
+    }
+    expect(problems, `h1 problems:\n${problems.join("\n")}`).toEqual([]);
   });
 });
