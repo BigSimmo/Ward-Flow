@@ -2065,8 +2065,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-arrivals-corridor.tsx",
-          "line": 635,
-          "sha256": "b3c0c9bb49ccb7fdf11d5d061f3ca892519f0a86139a83bb24e5b29dff63f82f"
+          "line": 654,
+          "sha256": "6b8a7c215f55240ded0b3f77d6889af5de253407e43bf91b9512a20ea3549948"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
@@ -5488,8 +5488,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-arrivals-corridor.tsx",
-          "line": 667,
-          "sha256": "b3c0c9bb49ccb7fdf11d5d061f3ca892519f0a86139a83bb24e5b29dff63f82f"
+          "line": 686,
+          "sha256": "6b8a7c215f55240ded0b3f77d6889af5de253407e43bf91b9512a20ea3549948"
         },
         {
           "path": "src/components/ward-management/ed/ed-screen-referred.tsx",
