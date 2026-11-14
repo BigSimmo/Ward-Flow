@@ -439,15 +439,16 @@ export function PatientTransitOperations({
                       : {}),
                   });
                 },
-                () => {
+                (outcome) => {
                   setOverrideReason("");
                   noteAttempt();
                   // The wards are now asked: the Ask wards refusal and ticks it answered are done with.
                   if (attempted === "REFER_TO_UNITS") {
                     askSave.clearError();
                     setSelected([]);
-                    // INV-ACTION-195 (14 Nov 2026, D-217): asking wards offers Undo, as the shortlist does.
-                    offerStep(referToUnitsUndoStep(movement.id, patientName));
+                    // INV-ACTION-195 (14 Nov 2026, D-217): asking wards offers Undo, as the shortlist does. The
+                    // accepted outcome ties the toast to this request's own record, not a later one.
+                    offerStep(referToUnitsUndoStep(movement.id, patientName), { completion: outcome });
                   }
                 },
               );
@@ -601,10 +602,11 @@ export function PatientTransitOperations({
                             ? { genderPlacementReason: genderReason, genderPlacementChecked: true as const }
                             : {}),
                         }),
-                      () => {
+                      (outcome) => {
                         setSelected([]);
-                        // INV-ACTION-195 (14 Nov 2026, D-217): asking wards offers Undo, as the shortlist does.
-                        offerStep(referToUnitsUndoStep(movement.id, patientName));
+                        // INV-ACTION-195 (14 Nov 2026, D-217): asking wards offers Undo, as the shortlist does. The
+                        // accepted outcome ties the toast to this request's own record, not a later one.
+                        offerStep(referToUnitsUndoStep(movement.id, patientName), { completion: outcome });
                       },
                     );
                   }
