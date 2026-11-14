@@ -22,6 +22,8 @@ import { resolveSubjectPatient } from "../ward-patient-resolver";
 import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning";
 import { authorisationBlocksPlacement } from "@/components/ward-management/ward-authorisation";
 import { legalRecordWarnings } from "@/components/ward-management/ward-legal-order-rules";
+import { refusedAfter3E, type After3EReason } from "@/components/ward-management/ward-legal-after-3e";
+import { After3EReasonField } from "@/components/ward-management/after-3e-reason-field";
 import styles from "./movement-workspace-cockpit.module.css";
 
 export function MovementWorkflowActions({ movement }: { movement: Movement }) {
@@ -56,6 +58,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
   const [form, setForm] = useState("");
   const [written, setWritten] = useState("");
   const [expiry, setExpiry] = useState("");
+  const [after3EReason, setAfter3EReason] = useState<After3EReason | "">("");
   const unit = units.find((u) => u.id === movement.acceptedUnitId);
   // The engine's own FLAG_LEGAL_MISMATCH rule: the named "not voluntary" rule (D-186 item 4), and no
   // authorisation mismatch while every ward reads "not stated" (D-189 item 9(a)).
@@ -102,13 +105,18 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
       : "Choose a release and reopen reason first.";
   const continuationWarnings = form ? legalRecordWarnings(movement, { continuationFormCode: form }) : [];
   const unsupportedContinuation = !!form && !isLegalClockFormCode(form);
+  // D-226: a continuation after a Form 3E needs the coordinator's listed reason.
+  const after3E = !!form && refusedAfter3E(movement, form);
+  const after3ENeedsReason = after3E && (routeRole !== "coordinator" || after3EReason === "");
   const continuationUnavailable =
-    !continuationGate.allowed || bedElsewhere || !form || !written || unsupportedContinuation;
+    !continuationGate.allowed || bedElsewhere || !form || !written || unsupportedContinuation || after3ENeedsReason;
   const continuationReason = bedElsewhere
     ? "Only the ward that accepted this person can record a continuation."
-    : unsupportedContinuation
-      ? `Form ${form} continuation is not recorded in this prototype.`
-      : "Choose a continuation form and enter the written date and time first.";
+    : after3ENeedsReason
+      ? "Form 3E is recorded. Choose a reason first."
+      : unsupportedContinuation
+        ? `Form ${form} continuation is not recorded in this prototype.`
+        : "Choose a continuation form and enter the written date and time first.";
   const countryExtensionUnavailable = !extensionGate.allowed || !countryExtensionEligible(movement) || !expiry;
   const countryExtensionReason = !countryExtensionEligible(movement)
     ? "A country extension requires a current Form 1A with a country paper setting."
@@ -310,6 +318,14 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
               ))}
             </select>
           </label>
+          {after3E ? (
+            <After3EReasonField
+              coordinator={routeRole === "coordinator"}
+              value={after3EReason}
+              onChange={setAfter3EReason}
+              testId={`workflow-continuation-after-3e-${movement.id}`}
+            />
+          ) : null}
           {continuationWarnings.length > 0 ? (
             // D-186 item 5 / D-187 item 6: warnings, never blocks. The continuation still records.
             <p role="status" data-testid={`workflow-continuation-warnings-${movement.id}`}>
@@ -352,6 +368,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
                         formCode: form,
                         startedAt: started,
                         ...(expiry ? { paperExpiresAt: due } : {}),
+                        ...(after3E && after3EReason ? { after3EReason } : {}),
                       });
                     }
               }
