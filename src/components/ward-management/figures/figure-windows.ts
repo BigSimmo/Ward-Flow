@@ -14,7 +14,7 @@
  * in the doc (ruling item 12).
  *
  * `docs/ward-flow/statistics-definitions.md` carries a "Windows" table built from `FIGURE_WINDOWS`;
- * `tests/figure-windows-doc.test.ts` fails when the two differ.
+ * `tests/ward-figure-windows-doc.test.ts` fails when the two differ.
  *
  * Statistics' Referrals today card and its Left today figure read `windowLine("today")`. Pure: no
  * React, no browser API.

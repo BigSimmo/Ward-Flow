@@ -9,7 +9,7 @@
  *   figures relate ("12 need you: 6 act now, 6 to decide").
  *
  * The rail (`ward-nav-counts.ts`) and Home's Needs you tab read these; the other inline copies of
- * the referral filter are counted in `tests/figure-dictionary-inline-baseline.json`.
+ * the referral filter are counted in `tests/ward-figure-dictionary-inline-baseline.json`.
  */
 import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
 import type { Referral } from "@/components/ward-management/ward-model";

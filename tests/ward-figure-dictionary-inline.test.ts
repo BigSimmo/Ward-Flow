@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-import baseline from "./figure-dictionary-inline-baseline.json";
+import baseline from "./ward-figure-dictionary-inline-baseline.json";
 import { stripSourceComments } from "./helpers/strip-source-comments";
 
 /**
@@ -12,7 +12,7 @@ import { stripSourceComments } from "./helpers/strip-source-comments";
  * Modelled on the M121 `* 100` ratchet and the word list's exact counts. The count is EXACT in both
  * directions: a screen that works a figure out inline again fails, and a screen moved onto its row
  * (`src/components/ward-management/figures/`) fails too until its number in
- * `tests/figure-dictionary-inline-baseline.json` is lowered or removed. Never raise a number to make
+ * `tests/ward-figure-dictionary-inline-baseline.json` is lowered or removed. Never raise a number to make
  * this pass: read the figure from its row or its home function instead.
  *
  * The markers live in the baseline JSON, not in the app, so they cost no bundle bytes. Comments are
@@ -73,7 +73,7 @@ describe("no inline figure: each figure is worked out in its home or read from i
     expect(
       census(id),
       `Inline "${id}" expressions changed. A new one: read the figure from its row or home function. ` +
-        "One removed: lower or remove its number in tests/figure-dictionary-inline-baseline.json.",
+        "One removed: lower or remove its number in tests/ward-figure-dictionary-inline-baseline.json.",
     ).toEqual(counts[id] ?? {});
   });
 });

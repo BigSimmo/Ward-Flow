@@ -14,7 +14,7 @@
  *
  * These are the rules' one home. Capacity (`capacity/capacity-derivations.ts`), the forecast
  * (`capacity/beds-forecast.ts`) and Home's "No ward yet" tab read them;
- * `tests/figure-dictionary.test.ts` pins that they agree.
+ * `tests/ward-figure-dictionary.test.ts` pins that they agree.
  *
  * Pure: no React, no browser API.
  */

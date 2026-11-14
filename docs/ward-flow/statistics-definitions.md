@@ -43,9 +43,9 @@ Perth clock (R-FIGS-14, owner ruling item 12; D-220: the week is Monday 12:00 am
 `windowLine` writes a window's real start on screen with am/pm and no zone words ("Sat 14 Nov,
 12:00 am to now"; the app is on Perth time throughout, Josh 14 Nov 2026). On
 the signed-in site a day starts at 8:00 am Perth until PR B moves day 0 to Perth midnight (F2); the
-line shows that start honestly. `tests/figure-windows-doc.test.ts` fails if this table drifts from
+line shows that start honestly. `tests/ward-figure-windows-doc.test.ts` fails if this table drifts from
 the rows. Do not edit it by hand. Run
-`UPDATE_FIGURE_WINDOWS_DOC=1 node scripts/run-vitest.mjs run tests/figure-windows-doc.test.ts` to rewrite it.
+`UPDATE_FIGURE_WINDOWS_DOC=1 node scripts/run-vitest.mjs run tests/ward-figure-windows-doc.test.ts` to rewrite it.
 
 <!-- prettier-ignore-start -->
 <!-- figure-windows:start -->

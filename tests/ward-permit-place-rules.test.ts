@@ -121,6 +121,9 @@ it("samples real change types", () => {
   for (const type of TYPES) expect(Object.hasOwn(EVENT_ROLE, type), type).toBe(true);
 });
 
+/** The two parity sweeps take 10 to 13 seconds alone and over 30 on a busy CI shard. */
+const PARITY_TIMEOUT_MS = 120_000;
+
 function compare(access: WardAccess, fields: Record<string, unknown>, exact: boolean) {
   for (const type of TYPES) {
     const command = { type, role: access.role, now: NOW_ANCHOR, ...fields };
@@ -134,13 +137,21 @@ function compare(access: WardAccess, fields: Record<string, unknown>, exact: boo
 }
 
 describe("PLACE_RULES gives commandScopeRefusal's answers (phase 1 parity, D-223)", () => {
-  it("matches exactly for every change that names no record", () => {
-    for (const access of DESKS) for (const fields of PLACE_FIELDS) compare(access, fields, true);
-  });
+  it(
+    "matches exactly for every change that names no record",
+    () => {
+      for (const access of DESKS) for (const fields of PLACE_FIELDS) compare(access, fields, true);
+    },
+    PARITY_TIMEOUT_MS,
+  );
 
-  it("matches up to the server's record-reference pass for changes that name records", () => {
-    for (const access of DESKS) for (const fields of RECORD_FIELDS) compare(access, fields, false);
-  });
+  it(
+    "matches up to the server's record-reference pass for changes that name records",
+    () => {
+      for (const access of DESKS) for (const fields of RECORD_FIELDS) compare(access, fields, false);
+    },
+    PARITY_TIMEOUT_MS,
+  );
 
   it("never refuses the whole network", () => {
     const statewide: WardAccess = { role: "coordinator", scope: { kind: "statewide" } };

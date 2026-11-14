@@ -19,7 +19,7 @@
  *
  * Pure: types and one identity helper, no derivation imports.
  */
-import type { CountWindow } from "@/components/wf/primitives";
+import type { CountWindow } from "@/components/wf";
 import type { WardNavId, WardMode } from "@/components/ward-management/ward-nav";
 import type { WardAccessScope } from "@/components/ward-management/ward-role-access";
 import type { StatisticsWindowId } from "@/components/ward-management/figures/figure-windows";
