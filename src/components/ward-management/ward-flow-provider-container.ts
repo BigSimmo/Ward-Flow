@@ -63,18 +63,26 @@ type AdoptSessionAction = {
  *  (`ward-flow-scenario-file.ts`) never reaches the reducer, the event log or a role check. */
 type LoadScenarioFileAction = { type: "LOAD_SCENARIO_FILE_INTERNAL"; world: WardFlowState; restoredElapsed: number };
 
+/** Also not a `WardFlowEvent`: D-229, the Demo panel's Resume takes the paused minutes out of the
+ *  board clock, so Board time carries on from the minute it was paused. It changes no record. */
+type ResumeBoardClockAction = { type: "RESUME_BOARD_CLOCK_INTERNAL"; pausedMinutes: number };
+
 export function syncWorldGlobals(world: WardFlowState): void {
   activateScenarioNetwork(world.scenario);
 }
 
 export function wardFlowContainerReducer(
   container: WardFlowContainer,
-  action: WardFlowEvent | AdoptSessionAction | LoadScenarioFileAction,
+  action: WardFlowEvent | AdoptSessionAction | LoadScenarioFileAction | ResumeBoardClockAction,
 ): WardFlowContainer {
   if (ADOPT_SESSION in action) {
     const adopted = action[ADOPT_SESSION](container);
     syncWorldGlobals(adopted.world);
     return adopted;
+  }
+  if (action.type === "RESUME_BOARD_CLOCK_INTERNAL") {
+    if (!Number.isSafeInteger(action.pausedMinutes) || action.pausedMinutes <= 0) return container;
+    return { ...container, restoredElapsed: container.restoredElapsed - action.pausedMinutes };
   }
   if (action.type === "LOAD_SCENARIO_FILE_INTERNAL") {
     syncWorldGlobals(action.world);

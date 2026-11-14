@@ -246,6 +246,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-221](#d-221-late-arrivals-14-november-2026)                                                                                                          | Late arrivals                                                                          | Active                                           |
 | [D-222](#d-222-history-14-november-2026)                                                                                                                | History                                                                                | Active                                           |
 | [D-223](#d-223-permissions-and-the-clock-format-14-november-2026)                                                                                       | Permissions and the clock format                                                       | Active                                           |
+| [D-229](#d-229-demo-pause-holds-board-time-and-seeded-wait-lists-match-the-engine-14-november-2026)                                                     | Demo Pause holds Board time; seeded wait lists match the engine                        | Active                                           |
 
 ---
 
@@ -2759,4 +2760,17 @@ is inferred.
   4. am/pm on screen (D-219 item 6) is built in this PR.
 - **Boundary:** no clinical value changes.
 
-The next free number is D-224.
+D-224 is claimed by open PR #1672. D-225 is claimed by open PR #1672. D-226 is claimed by open PR #1675. D-227 is claimed by open PR #1675. D-228 is claimed by open PR #1675.
+
+## D-229. Demo Pause holds Board time, and seeded wait lists match the engine (14 November 2026)
+
+- **Date:** 14 November 2026, 11:00 PM AWST (15:00 UTC). **Decided by:** Josh, in the Ward Flow project chat, asking for every open stress-test issue to be fixed ("Otherwise confirm all issues and launch appropriate threads to fix and address all of them", 14:56 UTC), then "Yes to all recommendations" (15:02 UTC). Built in the "Fix demo and seed data issues" thread.
+- **Decision:**
+  1. **Pause holds Board time** (stress test D1a-S-1). On this device's demo, the Demo panel's Pause stops Board time as well as freezing the page's lists, and Resume carries on from the paused minute. +15 min and +1 hour still move a paused clock. Reset or a scenario card ends the pause and starts the new day at the paused minute. Loading a file, a restored save or a reload also ends it; after a reload the paused minutes count as time passed. The shared board's clock is the server's, so there Pause stays the page's own pause. This replaces "Pause does not stop Board time, by design" (INV-SCENARIO-011).
+  2. **Seeded wait lists are written as the engine writes a waitlist answer** (D1a-E-1): a live referral, a "waitlisted" answer and, for the worked example, the decline that carries its reason. Worked example RD-05 and the standard day's two Royal Perth Adult Secure wait lists now show on the ED board and person page as they do on the ward. A seed check covers every scenario, with and without the worked examples.
+  3. **A refused demo day with more patients than beds says why** (RV2-18): "a ward holds more patients than it has beds", as the two-ward-stays refusal already did.
+  4. **Seeded ward bed counts stay fresh through the demo.** A count older than the signed bed count time refuses a pull (D-214), and the presenter may wait up to 15 minutes after Reset, so each seeded count is confirmed 6 to 15 minutes before the start. Graylands Older Adult stays stale on purpose, as the ward the script names as still to confirm.
+- **Handed on:** the header step count after Mark handover ready (REG2-6, card X12) and the person page for a named ward wait-list stay with no referral (Lead-VM-1) go to design Lane D, whose patient-page work replaces that count and owns that page.
+- **Boundary:** synthetic data only. No clinical value or rule changes.
+
+The next free number is D-230.
