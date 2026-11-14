@@ -216,3 +216,29 @@ describe("decision 46: a site bed manager's agenda holds only its own site's rec
     for (const admission of sent.admissions) expect(places.unitSiteCode(admission.unitId)).toBe(siteCode);
   });
 });
+
+// D-179 Question 6 (untested-537 INV-SEQUENCE-005): a sign-off with checks open records how many.
+describe("a sign-off records the checks still open", () => {
+  it("stores a whole-number count, leaves it out at none, and refuses anything else", () => {
+    const counted = wardFlowReducer(seed, {
+      type: "RECORD_HANDOVER_SIGN_OFF",
+      role: "coordinator",
+      now: NOW,
+      openChecks: 4,
+    });
+    expect(counted.handoverSignOffs.at(-1)).toEqual({ at: NOW, by: "coordinator", openChecks: 4 });
+    for (const openChecks of [-1, 1.5, Number.NaN]) {
+      const refused = wardFlowReducer(seed, {
+        type: "RECORD_HANDOVER_SIGN_OFF",
+        role: "coordinator",
+        now: NOW,
+        openChecks,
+      });
+      expect(refused.rejections.at(-1)?.reason).toMatch(/whole number/);
+    }
+    const sent: WardFlowEvent[] = [];
+    recordHandoverSignOff((event) => void sent.push(event), NOW, "coordinator", undefined, false, 3);
+    recordHandoverSignOff((event) => void sent.push(event), NOW, "coordinator", undefined, false, 0);
+    expect(sent.map((event) => ("openChecks" in event ? event.openChecks : undefined))).toEqual([3, undefined]);
+  });
+});

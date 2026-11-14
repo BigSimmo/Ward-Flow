@@ -669,3 +669,70 @@
     border-bottom-color: var(--wf-print-rule) !important;
   }
 }
+
+/* =========================================================================
+ * Printed Alerts and Patients lists (design lane A, 14 Nov 2026; R-FIGS-1, 3, 4, 5, 6, 7).
+ * The page prints from its data, so titles and group headings that are buttons on screen print
+ * as plain text; controls stay off paper. These two screens are listed by test id, so no screen
+ * file carries `data-print-show` (the kit parts carry it themselves; see globals.css).
+ * The hero band and the empty timeline are chrome and stay off paper. One short label says what
+ * the sheet is; the prototype footer line closes it (D-218: no count line).
+ * ========================================================================= */
+@media print {
+  [data-testid="ward-alerts-page"] [data-testid="ward-alerts-open"],
+  [data-testid="ward-patient-search-results-console"] tbody[id^="ward-patient-search-group-"] th > button {
+    display: revert !important;
+    position: static !important;
+    border: 0 !important;
+    background: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    font: inherit !important;
+    font-weight: 600 !important;
+    color: var(--wf-print-ink) !important;
+    text-align: start !important;
+    text-decoration: none !important;
+  }
+
+  [data-testid="ward-alerts-page"] [data-testid="ward-alerts-open"]::after {
+    content: none !important;
+  }
+
+  [data-testid="ward-patient-search-results-console"] tbody[id^="ward-patient-search-group-"] th > button svg,
+  [data-testid="ward-patient-search-results-console"]
+    tbody[id^="ward-patient-search-group-"]
+    th
+    > button
+    [class*="groupHint"] {
+    display: none !important;
+  }
+
+  /* Hero band and the empty timeline: chrome, not the list. Row action links go with them. */
+  [data-testid="ward-alerts-hero"],
+  [data-testid="ward-alerts-today"],
+  [data-testid="ward-alerts-page"] [data-alert-id] a,
+  [data-testid="ward-patient-search-cockpit"],
+  [data-testid="ward-patient-search-shift"] {
+    display: none !important;
+  }
+
+  /* Full printable width on A4, whatever the screen's reading measure. */
+  [data-testid="ward-alerts-page"],
+  [data-testid="ward-patient-search-results-console"] {
+    inline-size: auto !important;
+    max-inline-size: none !important;
+    margin-inline: 0 !important;
+  }
+
+  /* One short label on page 1. */
+  [data-testid="ward-alerts-page"]::before,
+  [data-testid="ward-patient-search-results-console"]::before {
+    content: "Downtime";
+    display: block;
+    margin-block-end: 4pt;
+    font: 600 9pt / 1.2 var(--wf-font-mono, ui-monospace, monospace);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--wf-print-ink);
+  }
+}

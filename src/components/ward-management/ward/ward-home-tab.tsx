@@ -76,6 +76,7 @@ import {
   useIsPhone,
   type WfTone,
 } from "@/components/wf";
+import { MissingValue } from "@/components/wf/missing-value";
 import { bedGlyphTone, type BedItem } from "./ward-bed-tone";
 import { CriteriaLedTag } from "./ward-criteria-led-tag";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
@@ -1845,7 +1846,7 @@ export function WardHomeTab({
                 <li key={answer.key} data-testid={`ward-answer-history-${answer.key}`}>
                   <strong>{resolvePatientIdentity({ movementId: answer.movementId }).formalName}</strong>
                   {answer.at === undefined ? (
-                    <span>Not recorded</span>
+                    <MissingValue reason="not_recorded" />
                   ) : (
                     <time>{formatInstantWithDay(answer.at, now)}</time>
                   )}

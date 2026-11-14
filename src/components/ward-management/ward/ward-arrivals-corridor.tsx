@@ -45,7 +45,7 @@ import {
   type ResolvedPatientInfo,
 } from "@/components/ward-management/ward-patient-resolver";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
-import { useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { pullBlockedReason } from "./ward-pull-blocked";
 import { ExtendHoldControl } from "@/components/ward-management/ward-extend-hold";
 import { PULL_NO_LIMIT_RECORDED } from "@/components/ward-management/ward-bed-hold";
@@ -179,6 +179,9 @@ export function WardArrivalsCorridor({
   // CS-07: Confirm arrival goes through the undo-offering step, so a mis-tap can be taken back
   // (`UNDO_TRANSPORT_STEP`). A refusal is still said inline by the card, as before.
   const routeRole = useRouteRole();
+  // Untested-537 INV-ACTION-146/147: the two stopped or diverted bed releases follow this desk's own
+  // role, so a desk the rules leave out (the site bed manager) is not handed a release it may not make.
+  const roleGate = useRoleGate();
   const { run: runStep } = useUndoableStep({ dispatch, rejections, now, routeRole });
   const confirmArrival = (
     movement: Movement,
@@ -500,18 +503,27 @@ export function WardArrivalsCorridor({
 
                   {movement.transport?.diversion !== undefined &&
                   movement.admissionId !== undefined &&
-                  movement.acceptedUnitId === unit.id ? (
-                    <div>
-                      <button
-                        type="button"
-                        data-testid={`ward-release-diverted-bed-${movement.id}`}
-                        className={`${styles.btnCorridorPull} ${styles.btnCorridorSec} ${styles.fullWidth}`}
-                        onClick={() => setReleaseDivertedId(movement.id)}
-                      >
-                        Release the pulled bed
-                      </button>
-                    </div>
-                  ) : null}
+                  movement.acceptedUnitId === unit.id
+                    ? (() => {
+                        const divertedGate = roleGate("RELEASE_DIVERTED_BED", movement.id);
+                        return divertedGate.never ? null : (
+                          <div>
+                            <button
+                              type="button"
+                              data-testid={`ward-release-diverted-bed-${movement.id}`}
+                              className={`${styles.btnCorridorPull} ${styles.btnCorridorSec} ${styles.fullWidth}`}
+                              {...divertedGate.buttonProps}
+                              onClick={() => {
+                                if (divertedGate.allowed) setReleaseDivertedId(movement.id);
+                              }}
+                            >
+                              Release the pulled bed
+                            </button>
+                            {divertedGate.note}
+                          </div>
+                        );
+                      })()
+                    : null}
 
                   {canRelease && releaseOpen ? (
                     <form
@@ -582,6 +594,7 @@ export function WardArrivalsCorridor({
           {heldAfterStop.map((movement) => {
             const patient = resolvePatientIdentity(movement);
             const patientDistinction = patient.umrn ? `(UMRN: ${patient.umrn})` : "(UMRN not recorded)";
+            const heldGate = roleGate("RELEASE_HELD_BED", movement.id);
             return (
               <article key={movement.id} className={styles.inboundCard} data-state="warn">
                 <div className={styles.patientMeta}>
@@ -591,17 +604,23 @@ export function WardArrivalsCorridor({
                   </div>
                   <p>Transport stopped after collection. The bed stays pulled until released.</p>
                 </div>
-                <div className={styles.corridorActions}>
-                  <button
-                    type="button"
-                    aria-label={`Release pulled bed for ${patient.displayName} ${patientDistinction}`}
-                    className={`${styles.btnCorridorPull} ${styles.btnCorridorSec}`}
-                    data-testid={`ward-release-stopped-bed-${movement.id}`}
-                    onClick={() => setReleaseHeldId(movement.id)}
-                  >
-                    Release pulled bed
-                  </button>
-                </div>
+                {heldGate.never ? null : (
+                  <div className={styles.corridorActions}>
+                    <button
+                      type="button"
+                      aria-label={`Release pulled bed for ${patient.displayName} ${patientDistinction}`}
+                      className={`${styles.btnCorridorPull} ${styles.btnCorridorSec}`}
+                      data-testid={`ward-release-stopped-bed-${movement.id}`}
+                      {...heldGate.buttonProps}
+                      onClick={() => {
+                        if (heldGate.allowed) setReleaseHeldId(movement.id);
+                      }}
+                    >
+                      Release pulled bed
+                    </button>
+                    {heldGate.note}
+                  </div>
+                )}
                 {lastActionRejection?.movementId === movement.id ? (
                   <p className={styles.rejectionNote} role="alert" data-testid={`ward-action-rejection-${movement.id}`}>
                     {WARD_ACTION_REJECTION_LABELS[lastActionRejection.attempted] ?? lastActionRejection.attempted} not

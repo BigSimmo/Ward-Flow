@@ -248,6 +248,11 @@ select.ctl {
   width: 1%;
   white-space: nowrap;
 }
+/* Untested-537 INV-DISPLAY-056: the 1% cell shrank the kit button to one letter per line ("O/p/e/n")
+   at 1920, because the button's label may break anywhere. The action keeps its whole word. */
+.actCell > * {
+  min-width: max-content;
+}
 .urgent {
   background: color-mix(in oklab, var(--wf-danger) 6%, transparent);
 }

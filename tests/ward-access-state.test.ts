@@ -1047,3 +1047,21 @@ describe("a command from a desk", () => {
     expect(statewideView.supportNotifications?.map((record) => record.id)).toEqual(["SN-2"]);
   });
 });
+
+// Untested-537 INV-ALERT-029 (14 Nov 2026): a capacity review buzz reaches the ward it was sent to.
+describe("capacity review buzz scope", () => {
+  it("the ward's own desk keeps its buzz, and no other ward's", () => {
+    const otherUnit = state.units.find((unit) => unit.id !== ownUnit)!.id;
+    const buzzed: WardFlowState = {
+      ...state,
+      refreshRequests: [
+        { id: "buzz:own", unitId: ownUnit, at: NOW_ANCHOR - 5, byRole: "coordinator" },
+        { id: "buzz:other", unitId: otherUnit, at: NOW_ANCHOR - 5, byRole: "coordinator" },
+      ],
+    };
+    const shown = scopeWardFlowState(buzzed, ward, options).state.refreshRequests.map((request) => request.id);
+    expect(shown).toEqual(["buzz:own"]);
+    const ed: WardAccess = { role: "ed", scope: { kind: "ed", edId: state.movements[0]!.originEdId ?? "none" } };
+    expect(scopeWardFlowState(buzzed, ed, options).state.refreshRequests).toEqual([]);
+  });
+});

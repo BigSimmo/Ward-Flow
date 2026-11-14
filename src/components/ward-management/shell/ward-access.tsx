@@ -898,7 +898,11 @@ function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: s
   const toOwnHome =
     !opening &&
     patientId === undefined &&
-    (atWardFlowHome || (signInLanding !== undefined && samePath(signInLanding, pathname))) &&
+    // untested-537 S1 (INV-ROUTE-061): an old /transport link lands on the officer's page; a desk
+    // that is not the officer goes to its own home, as the bare address does (DR-06).
+    (atWardFlowHome ||
+      address?.screen === "officer" ||
+      (signInLanding !== undefined && samePath(signInLanding, pathname))) &&
     !samePath(home, pathname);
   if (toOwnHome) return <OwnHomeRedirect href={home} refused={!atWardFlowHome} status="Opening your home" />;
   if (opening)

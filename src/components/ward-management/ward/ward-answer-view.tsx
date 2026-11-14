@@ -62,6 +62,7 @@ import {
   PhoneSheet,
   ShowMoreRow,
 } from "@/components/wf";
+import { MissingValue } from "@/components/wf/missing-value";
 import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-morning-rollup";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import styles from "./ward-answer-view.module.css";
@@ -1629,7 +1630,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                           {/* R-BEDS-17: the person's name leads, time right-aligned, then the UMRN check and outcome. */}
                           <strong>{resolvePatientIdentity({ movementId: answer.movementId }).formalName}</strong>
                           {answer.at === undefined ? (
-                            <span className={styles.historyTime}>Not recorded</span>
+                            <MissingValue reason="not_recorded" className={styles.historyTime} />
                           ) : (
                             <time className={styles.historyTime}>{formatInstantWithDay(answer.at, now)}</time>
                           )}
