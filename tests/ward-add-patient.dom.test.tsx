@@ -232,6 +232,12 @@ describe("AddPatientForm", () => {
     await waitFor(() => expect(router.push).toHaveBeenCalledTimes(1));
     expect(await screen.findByTestId("toast")).toHaveTextContent("Newcomer, Testable added, UM999999");
   });
+
+  // Untested-537 INV-DISPLAY-014: Add patient carries the synthetic-data footer like every other page.
+  it("carries the synthetic-data footer", () => {
+    renderForm();
+    expect(screen.getByTestId("ward-add-patient-governance")).toHaveTextContent("Synthetic data only");
+  });
 });
 
 describe("PatientSearchPage empty state", () => {
