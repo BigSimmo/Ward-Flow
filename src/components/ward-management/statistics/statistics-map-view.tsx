@@ -884,11 +884,11 @@ function BelowMap({
                 <li key={ed.id}>
                   {aggregate.openableEmergencyDepartmentIds.includes(ed.id) && canOpen(edStatisticsHref(ed.id)) ? (
                     <Link href={edStatisticsHref(ed.id)}>
-                      {ed.name}: {statisticsCountText(ed.onTheList)}
+                      {ed.name}: {statisticsCountText(ed.physicalWaiting)}
                     </Link>
                   ) : (
                     <span>
-                      {ed.name}: {statisticsCountText(ed.onTheList)}
+                      {ed.name}: {statisticsCountText(ed.physicalWaiting)}
                     </span>
                   )}
                 </li>

@@ -486,7 +486,8 @@ function ExecutiveJourneyView({ data, onShowBoard }: { data: ExecutiveReportingF
     <JourneyPresentation
       {...{ onShowBoard, stages, hospitals, waitingSummary }}
       waitingRows={[]}
-      totalWaiting={data.network.people.edJourneysOpen}
+      // D-220 item 3: under "Waiting in ED", only people still in an ED (ED journeys open is its own figure).
+      totalWaiting={data.networkDetails.physicalWaiting}
       totalReady={data.network.beds.ready}
       totalPreparing={data.network.beds.beingMadeReady}
     />
@@ -678,7 +679,7 @@ function JourneyPresentation({
             id="journey-waiting"
             icon={Clock}
             title="Waiting in ED"
-            meta={`${statisticsCountText(totalWaiting)} ED journeys open from ${waitingSummary?.length ?? waitingRows.length} ${(waitingSummary?.length ?? waitingRows.length) === 1 ? "ED" : "EDs"}`}
+            meta={`${statisticsCountText(totalWaiting)} from ${waitingSummary?.length ?? waitingRows.length} ${(waitingSummary?.length ?? waitingRows.length) === 1 ? "ED" : "EDs"}`}
             data-testid="ward-statistics-journey-waiting"
           >
             <CardBody>
