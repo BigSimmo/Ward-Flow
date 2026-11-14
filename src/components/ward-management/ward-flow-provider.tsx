@@ -875,7 +875,8 @@ function WardFlowWorld({
   // D-229 (stress test D1a-S-1, Josh 14 Nov 2026): the Demo panel's Pause holds Board time on this
   // device's demo. The pause keeps the board minute less any +15 min/+1 hour steps, so those still
   // move the clock while it is paused. It holds only the day it was taken on: Reset, a loaded file
-  // or a restored save (a new generation or elapsed baseline) ends it. A reload ends it too.
+  // or a restored save (a new generation or elapsed baseline) ends it (see the layout effect below).
+  // A reload ends it too.
   const [boardPause, setBoardPause] = useState<{
     base: number;
     elapsed: number;
@@ -921,6 +922,16 @@ function WardFlowWorld({
       restoredElapsed: inputs.container.restoredElapsed,
     });
   }, [dispatchContainer, setBoardPause]);
+  // Reset or a scenario card taken while paused builds its day at the paused minute, so the pause
+  // ends with its minutes taken off the clock, as Resume does; the new day then starts where the
+  // board stood. A loaded file or a restored save sets its own clock, so nothing is taken off then.
+  useLayoutEffect(() => {
+    if (boardPause === null || heldPause !== null) return;
+    if (boardPause.restoredElapsed === container.restoredElapsed && !shared.enabled)
+      dispatchContainer({ type: "RESUME_BOARD_CLOCK_INTERNAL", pausedMinutes: elapsed - boardPause.elapsed });
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- ends a pause the new day no longer holds
+    setBoardPause(null);
+  }, [boardPause, heldPause, container.restoredElapsed, shared.enabled, elapsed]);
   const boardPaused = heldPause !== null;
   const boardClockPause = useMemo(
     () => (shared.enabled ? undefined : { paused: boardPaused, toggle: toggleBoardPause }),
@@ -1210,7 +1221,14 @@ function WardFlowWorld({
       return deviceSave.flush();
     if (storageUnavailable) return deviceSave.flush();
     // Fresh audit P-1: a refused or empty action would store the same world again, so skip it.
-    const saveInputs = { state, held: container, locked: typedTextLocked, dayZero, mountedAtAbsolute };
+    const saveInputs = {
+      state,
+      held: container,
+      locked: typedTextLocked,
+      dayZero,
+      mountedAtAbsolute,
+      clockBaseline: container.restoredElapsed,
+    };
     const previousSave = lastDeviceSaveRef.current;
     lastDeviceSaveRef.current = undefined;
     if (deviceSaveUnchanged(previousSave, saveInputs)) {

@@ -82,3 +82,26 @@ it("holds Board time while paused and carries on from the paused minute after Re
   passMinutes(3);
   expect(boardNow()).toBe(NOW_ANCHOR + 23);
 });
+
+it("ends a pause at Reset without counting the paused minutes, so the new day starts where the board stood", () => {
+  render(
+    <WardFlowProvider>
+      <ClockProbe />
+      <WardDemoPanel />
+    </WardFlowProvider>,
+  );
+  passMinutes(5);
+  fireEvent.click(pauseButton());
+  passMinutes(60);
+  expect(boardNow()).toBe(NOW_ANCHOR + 5);
+
+  fireEvent.click(screen.getByTestId("ward-tools-demo-reset"));
+  fireEvent.click(
+    within(screen.getByRole("dialog", { name: "Reset the demo?" })).getByRole("button", { name: "Reset demo" }),
+  );
+  expect(boardNow()).toBe(NOW_ANCHOR + 5);
+  expect(pauseButton()).toHaveTextContent("Pause");
+
+  passMinutes(2);
+  expect(boardNow()).toBe(NOW_ANCHOR + 7);
+});
