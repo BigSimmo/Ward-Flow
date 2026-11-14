@@ -117,7 +117,7 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
       within(flow)
         .getAllByRole("region")
         .map((section) => section.getAttribute("aria-label")),
-    ).toEqual(["Needs a bed", "Bed agreed", "Ready to move", "Moving"]);
+    ).toEqual(["No ward yet", "Bed agreed", "Ready to move", "Moving"]);
     expect(within(flow).getByText("Oldest first in each stage")).toBeInTheDocument();
     expect(screen.queryByTestId("ward-placement-top-of-queue")).not.toBeInTheDocument();
     expect(screen.queryByTestId("home-placement-prompt")).toBeNull(); // notes 4: no at-rest prompt
@@ -309,7 +309,7 @@ describe("Command's Home lists carry Needs you and Flow, the successor to the Pa
     const stages = screen.getByRole("toolbar", { name: "Flow stages" });
     expect(within(stages).getByRole("button", { name: /^All/u })).toHaveTextContent(String(patientRows.length));
     let sum = 0;
-    for (const label of ["Needs a bed", "Bed agreed", "Ready to move", "Moving"]) {
+    for (const label of ["No ward yet", "Bed agreed", "Ready to move", "Moving"]) {
       const section = within(flowCard()).getByRole("region", { name: label });
       const rows = within(section).queryAllByTestId(/^ward-queue-row-/).length;
       sum += rows;
@@ -369,7 +369,7 @@ describe("Command's Home lists carry Needs you and Flow, the successor to the Pa
     // Choosing a Flow stage decides which rows are on screen — it must not touch which record the
     // shortlist is explaining, even when the chosen stage does not list that movement.
     const stages = screen.getByRole("toolbar", { name: "Flow stages" });
-    const otherStage = ["Needs a bed", "Bed agreed", "Ready to move", "Moving"].find(
+    const otherStage = ["No ward yet", "Bed agreed", "Ready to move", "Moving"].find(
       (label) =>
         !within(within(flowCard()).getByRole("region", { name: label })).queryByTestId(
           movementRow.getAttribute("data-testid")!,

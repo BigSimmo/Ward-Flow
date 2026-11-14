@@ -32,13 +32,14 @@ word in the in-app Help glossary is on this list.
 ## A patient's movement
 
 The stage words are Home's set, everywhere a stage is named in one word (Josh, 5 November 2026, design audit
-card 6): **Needs a bed**, **Bed agreed**, **Ready to move**, **Moving**. The detailed steps below are only
+card 6; first stage renamed **No ward yet**, D-220, 14 November 2026): **No ward yet**, **Bed agreed**,
+**Ready to move**, **Moving**. The detailed steps below are only
 sub-labels under those four, in order: **Referred**, **Review**, **Accepted**, **Pulled**, **Handover ready**,
 **Moving**, **Arrived**.
 
 | Stage (Home's set) | Detailed steps under it          |
 | ------------------ | -------------------------------- |
-| **Needs a bed**    | Referred, Review                 |
+| **No ward yet**    | Referred, Review                 |
 | **Bed agreed**     | Accepted, Pulled                 |
 | **Ready to move**  | Handover ready                   |
 | **Moving**         | Moving, then Arrived on the ward |

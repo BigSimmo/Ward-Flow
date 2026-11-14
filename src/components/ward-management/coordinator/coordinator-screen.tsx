@@ -182,7 +182,7 @@ const REFUSED_MARKER_EXPLANATION =
  * Home and Activity (design approved by Josh, 31 Oct 2026, "Yes to all"):
  *
  * - Home flow (Q340, Q341, Q345, 3 Nov 2026): two lists, Needs you and Flow, then the Flow stages as
- *   quieter tabs with counts (Needs a bed, Bed agreed, Ready to move, Moving); Later today (was Planned)
+ *   quieter tabs with counts (No ward yet, Bed agreed, Ready to move, Moving); Later today (was Planned)
  *   is the rest of the shift from times the records already hold (`planned-model.ts`), in the right
  *   column on desktop and a third tab on a phone;
  * - changes since the last look live in Activity (`activity-panel.tsx`), whose review is explicit
