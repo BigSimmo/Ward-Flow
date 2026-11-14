@@ -94,7 +94,7 @@ describe("M103 rendered sheets: print time", () => {
 
   it("the referral letter carries its draft time", () => {
     const { container } = render(inProvider(<Letter />));
-    expect(text(container)).toMatch(/Draft \d{2}:\d{2} demo time/u);
+    expect(text(container)).toMatch(/Draft \d{1,2}:\d{2} [ap]m demo time/u);
   });
 
   it("the daily sheet carries a shift timestamp", () => {

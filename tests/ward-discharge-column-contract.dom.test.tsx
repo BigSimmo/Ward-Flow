@@ -140,7 +140,7 @@ describe("the discharges board's column contract", () => {
       const details = screen.getByTestId("ward-discharge-detail");
       const reported = within(details).getByText("Last reported", { selector: "dt" }).nextElementSibling;
       expect(reported?.textContent, "freshness remains available in the selected release detail").toMatch(
-        /Confirmed \d{2}:\d{2}|Never confirmed/u,
+        /Confirmed \d{1,2}:\d{2} [ap]m|Never confirmed/u,
       );
     }
   });

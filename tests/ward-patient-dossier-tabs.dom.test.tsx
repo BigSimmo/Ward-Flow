@@ -131,7 +131,7 @@ describe("polished patient dossier tabs", () => {
     expect(ready).not.toHaveAttribute("aria-disabled");
     fireEvent.click(ready);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(clinical.getByText(/^Cleared \d{2}:\d{2}$/)).toBeVisible();
+    expect(clinical.getByText(/^Cleared \d{1,2}:\d{2} [ap]m$/)).toBeVisible();
     expect(trigger).toHaveFocus();
     expect(trigger).toHaveTextContent("Update clearance");
   });

@@ -128,7 +128,7 @@ describe("Features at this site", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(switches()).toEqual([{ siteCode: "RPH", feature: "help-ask", at: NOW_ANCHOR, by: "admin" }]);
     expect(within(row()).getByRole("switch")).toHaveAttribute("aria-checked", "false");
-    expect(row()).toHaveTextContent(/^.*Off for everyone here since \d\d:\d\d · Access admin/u);
+    expect(row()).toHaveTextContent(/^.*Off for everyone here since \d{1,2}:\d{2} [ap]m · Access admin/u);
 
     fireEvent.click(within(row()).getByRole("button", { name: /^Undo/u }));
     expect(switches()).toEqual([]);

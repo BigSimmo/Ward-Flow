@@ -50,7 +50,7 @@ describe("an overdue Pull now is act now everywhere the banner is red", () => {
     }
     const row = actNow(state, ANSWER_BY + 1).find((item) => item.id === ROW_ID)!;
     expect(row).toMatchObject({ tone: "danger", kind: "fact", movementId: MOVEMENT, since: ANSWER_BY });
-    expect(row.detail).toMatch(/did not answer by \d\d:\d\d\. Chase the ward\./);
+    expect(row.detail).toMatch(/did not answer by \d{1,2}:\d{2} [ap]m\. Chase the ward\./);
   });
 
   it("counts in the Act now figure the bell, Tasks dock, Home and phone menu read, and on Alerts' Act now list", () => {

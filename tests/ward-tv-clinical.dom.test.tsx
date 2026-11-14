@@ -99,7 +99,7 @@ describe("ward clinical rows", () => {
     expect(numbers).toEqual([...numbers].sort((a, b) => a - b));
     const onLeave = rows.filter((row) => row.where === "leave");
     expect(onLeave.length).toBeGreaterThan(0);
-    for (const row of onLeave) expect(row.whereabouts?.text).toMatch(/due back \d\d:\d\d$/u);
+    for (const row of onLeave) expect(row.whereabouts?.text).toMatch(/due back \d{1,2}:\d{2} [ap]m$/u);
   });
 
   it("puts a person absent without leave first in the handover and never calls it leave", () => {

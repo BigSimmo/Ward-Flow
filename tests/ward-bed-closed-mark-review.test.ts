@@ -117,7 +117,7 @@ describe("closed bed review prompts", () => {
     expect(bedReviewDue(mark, NOW)).toBe(false);
     expect(bedReviewLine(mark, NOW)).toBeNull();
     expect(bedReviewDue({ ...mark, reviewAt: NOW + 30 }, NOW)).toBe(false);
-    expect(bedReviewLine({ ...mark, reviewAt: NOW + 30 }, NOW)).toMatch(/^Review \d\d:\d\d$/);
+    expect(bedReviewLine({ ...mark, reviewAt: NOW + 30 }, NOW)).toMatch(/^Review \d{1,2}:\d{2} [ap]m$/);
     // Audit L2: due once the clock is past the review minute, the one clock rule.
     expect(bedReviewDue({ ...mark, reviewAt: NOW }, NOW)).toBe(false);
     expect(bedReviewDue({ ...mark, reviewAt: NOW - 1 }, NOW)).toBe(true);

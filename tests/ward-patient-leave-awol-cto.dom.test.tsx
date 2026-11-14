@@ -74,7 +74,7 @@ describe("leave, absent without leave and CTO modes (D-38)", () => {
     expect(
       within(screen.getByTestId("ward-patient-gate-due-back")).getByRole("button", { name: "Record return" }),
     ).toBeVisible();
-    expect(screen.getByRole("heading", { name: /^If not back by \d{2}:\d{2}$/ })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /^If not back by \d{1,2}:\d{2} [ap]m$/ })).toBeVisible();
 
     fireEvent.click(within(screen.getByTestId("ward-patient-leave-card")).getByRole("button", { name: "Mark absent" }));
     expect(root).toHaveAttribute("data-patient-mode", "awol");
