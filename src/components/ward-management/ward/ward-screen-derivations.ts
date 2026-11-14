@@ -1,7 +1,7 @@
 // The ward screen's pure derivations: the alerts its Home tab lists and the bed roster its board
 // draws. Split out of `ward-screen.tsx` (18 October 2026) to keep that file under the line cap.
 
-import type { PlannedAdmission } from "@/components/ward-management/ward-admissions";
+import { bedIsOccupied, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import {
   currentLegalDueAt,
   FORM_RECORDED_ENDED,
@@ -47,7 +47,7 @@ import { NAME_NOT_RECORDED } from "@/components/ward-management/ward-patient-res
 import type { Patient } from "@/components/ward-management/ward-patients";
 import type { WardReferralInboxEntry } from "@/components/ward-management/referrals/referral-inbox";
 import type { DueSoonThresholds } from "@/components/ward-management/ward-clock";
-import { isConstantObservation } from "@/components/ward-management/ward-observation";
+import { isConstantObservation, observationIsRecorded } from "@/components/ward-management/ward-observation";
 import { dischargeDateSlipDays } from "@/components/ward-management/ward-discharge-date-trail";
 
 /** The bed roster the Bed board and bed list draw, derived from this ward's records. */
@@ -336,6 +336,12 @@ export function wardBedRoster({
         status === "incoming" && linkedMovement && deliveredAwaitingWard(linkedMovement)
           ? linkedMovement.transport?.arrivedAt
           : undefined,
+      // FM-11 (Ward notes item 9): a pulled bed names the stage of the journey it is held for, so its
+      // tile reads "Pulled · moving". Delivered has its own words ("Arrived at ward"), so none here.
+      pulledStage:
+        status === "incoming" && linkedMovement && !deliveredAwaitingWard(linkedMovement)
+          ? linkedMovement.stage
+          : undefined,
     };
   });
 
@@ -520,6 +526,18 @@ export function wardLiveFormAlerts({
 
 /** One bed on the ward screen's roster. */
 export type WardScreenBed = ReturnType<typeof wardBedRoster>["bedsList"][number];
+
+/**
+ * Wave 4 (D-191, ruling 10, A16-16): stays on this ward with no observation level recorded, the
+ * hero's quiet "Obs not recorded" count. A count only; no level is shown or proposed. Moved here from
+ * the hero's page file (review F-4) so the page holds no count rule.
+ */
+export function obsNotRecordedCount(unitId: string, admissions: readonly Admission[]): number {
+  return admissions.filter(
+    (admission) =>
+      admission.unitId === unitId && bedIsOccupied(admission) && !observationIsRecorded(admission.observation),
+  ).length;
+}
 
 /** Bug B1 (4 Nov 2026): the Ward answer note under the facts, only for what this movement does not
  *  record. No linked person means no name and no age; a linked person without a date of birth has no

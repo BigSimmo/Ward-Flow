@@ -108,10 +108,11 @@ function TomorrowLine({ low, likely, high }: { low: number; likely: number; high
       <div className={styles.mmTomorrowText}>
         <span className={styles.mmKicker}>Tomorrow</span>
         <span className={likely < 0 ? styles.warnInk : styles.okInk}>
-          <b>Likely {gapWords(likely)}</b>
+          {/* D-198: plain words, no "Likely" or "Could be". */}
+          From ward dates: <b>{gapWords(likely)}</b>
         </span>
         <span className={styles.mutedXs}>
-          Could be {gapWords(low)} to {gapWords(high)}
+          Range {gapWords(low)} to {gapWords(high)}
         </span>
       </div>
       <div className={styles.mmRange} aria-hidden="true">

@@ -43,8 +43,8 @@ describe("Home next step follows the service scope", () => {
       const scoped = answer();
       expect(scoped, `the step for ${service}`).toContain(`in ${service}`);
       // The hero figures follow too: the service's movements, and the bed figure says it is network-wide.
-      expect(screen.getByTestId("home-figure-ed")).toHaveTextContent(`open ED movements in ${service}`);
-      expect(screen.getByTestId("home-figure-beds").textContent).toMatch(/ready network-wide$/u);
+      expect(screen.getByTestId("home-figure-ed")).toHaveTextContent(`Open movements in ${service}`);
+      expect(screen.getByTestId("home-figure-beds").textContent).toMatch(/Ready · network-wide$/u);
       // Only the same kind of step can be compared by count: Act now statewide stays Act now or
       // falls back to a later step under a service, which then names its own figure.
       if (/need(s)? a person now/u.test(statewide) && /need(s)? a person now/u.test(scoped)) {

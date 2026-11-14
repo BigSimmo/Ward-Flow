@@ -61,8 +61,10 @@ const FACTS: TourFacts = {
 
 describe("C06: Help and the tour use today's names", () => {
   it("the coordinator's guide opens on Needs you, not the retired My list", () => {
-    expect(DESK_GUIDES.coordinator.startsAt).toContain("Home opens Needs you: Act now, Referrals to decide");
+    // Wave 4 (D-191) removed "Waiting on others", so Needs you has two groups.
+    expect(DESK_GUIDES.coordinator.startsAt).toContain("Home opens Needs you: Act now and Referrals to decide");
     expect(DESK_GUIDES.coordinator.startsAt).not.toContain("My list");
+    expect(DESK_GUIDES.coordinator.startsAt).not.toContain("Waiting on others");
   });
 
   it("the coordinator's phone tab bar step names the dock as it is: Home, Capacity, Alerts and Tools", () => {

@@ -1,6 +1,6 @@
 import type { BedRelease, DeclineReason, Movement, Unit } from "@/components/ward-management/ward-model";
 import { releaseBand } from "@/components/ward-management/ward-bed-availability";
-import { HELD_UP_WINDOW, OPEN_WINDOW, isHeldUpDueByTomorrow } from "@/components/ward-management/ward-held-up";
+import { isHeldUpDueByTomorrow } from "@/components/ward-management/ward-held-up";
 import { dayOf, type Instant } from "@/components/ward-management/ward-clock";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
@@ -102,17 +102,6 @@ export function wardFlowReleaseGroup(release: BedRelease, now: Instant): "held" 
   if (dayOf(release.expectedAt) < dayOf(now)) return "past";
   return releaseBand(release, now) !== "beyond-today" ? "today" : "later";
 }
-
-/**
- * Ward flow's footer lines (F-105, D-191 item 5). Each tab's count is every open item at any date,
- * so the footer says "open, any date"; held up is due by tomorrow and says so.
- */
-export const wardFlowFoot = {
-  admissions: (expected: number, backFromLeave: number) =>
-    `${expected + backFromLeave} ${OPEN_WINDOW}, any date · ${expected} expected`,
-  discharges: (open: number, confirmed: number, heldUp: number) =>
-    `${open} ${OPEN_WINDOW}, any date · ${confirmed} confirmed · ${heldUp} held up ${HELD_UP_WINDOW}`,
-};
 
 /**
  * The discharges the "Discharges today" summary counts: open, unblocked releases whose expected date

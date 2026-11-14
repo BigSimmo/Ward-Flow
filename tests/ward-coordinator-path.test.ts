@@ -80,16 +80,24 @@ describe("WS-02: accepted referrals awaiting a pull", () => {
     const queued = accepted("R3", {}, { state: "queued" });
     const transfer = accepted("R4", { source: "inter_hospital" });
     const journeyed = accepted("R5");
-    const live = [{ referralId: "R5", closure: undefined }] as Pick<Movement, "referralId" | "closure">[];
+    const live = [{ id: "WF-5", referralId: "R5", closure: undefined, stage: "pulled", unwinds: [] }] as Pick<
+      Movement,
+      "id" | "referralId" | "closure" | "stage" | "unwinds"
+    >[];
     expect(acceptedReferralsAwaitingPull([held, withdrawn, queued, transfer, journeyed], units, live)).toEqual([]);
   });
 
   it("offers the pull again once the earlier journey closed as did not proceed", () => {
     const referral = accepted("R1");
-    const closed = [{ referralId: "R1", closure: { outcome: "did_not_proceed" } }] as unknown as Pick<
-      Movement,
-      "referralId" | "closure"
-    >[];
+    const closed = [
+      {
+        id: "M1",
+        referralId: "R1",
+        closure: { outcome: "did_not_proceed" },
+        stage: "accepted_awaiting_bed",
+        unwinds: [],
+      },
+    ] as unknown as Pick<Movement, "id" | "referralId" | "closure" | "stage" | "unwinds">[];
     expect(acceptedReferralsAwaitingPull([referral], units, closed)).toHaveLength(1);
   });
 });

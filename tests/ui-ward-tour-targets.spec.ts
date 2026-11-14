@@ -86,7 +86,7 @@ const LIT: Record<"desk" | "phone", Record<string, readonly string[]>> = {
       "hero",
       "mismatch",
       "meeting",
-      "planned",
+      "held-up",
       "map",
       "help",
       "more-movements",

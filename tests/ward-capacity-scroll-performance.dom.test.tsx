@@ -17,7 +17,7 @@ import { bedMapCards, bedMapGroup, bedMapGroupToggle, bedSquares } from "./helpe
  * frames); this file used to pin that lifecycle. The October 2026 redesign removed the carousel:
  * each ward is a card whose bed squares share one line at any bed count (one grid column per bed),
  * so the map scrolls with the page and needs no measuring at all. This file pins that it stays so:
- * drawing the map, switching Grid and Rows, folding a service and lighting a highlight read no
+ * drawing the map, folding a service and lighting a highlight (Grid and Rows went in wave 4) read no
  * layout, start no observer and schedule no frame.
  */
 const seeded = seedWardFlowState();
@@ -72,14 +72,15 @@ afterEach(() => {
 });
 
 describe("Capacity bed map layout cost", () => {
-  it("draws, switches layout, folds and highlights without reading layout, observing or scheduling a frame", () => {
+  // Wave 4 (D-191): the Grid and Rows switch is gone, so there is no layout to switch; drawing,
+  // folding and highlighting are still held to no layout read, observer or frame.
+  it("draws, folds and highlights without reading layout, observing or scheduling a frame", () => {
     const counts = countMeasurement();
     render(<BedMapOnly />);
     const populated = groups.filter((group) => group.wards.length > 0);
     expect(populated.length, "need at least two services to fold one independently").toBeGreaterThan(1);
+    expect(screen.queryByRole("radio", { name: "Rows" })).toBeNull();
 
-    fireEvent.click(screen.getByRole("radio", { name: "Rows" }));
-    fireEvent.click(screen.getByRole("radio", { name: "Grid" }));
     const toggle = bedMapGroupToggle(bedMapGroup(populated[0]!.service)!);
     fireEvent.click(toggle);
     fireEvent.click(toggle);
@@ -89,10 +90,10 @@ describe("Capacity bed map layout cost", () => {
     expect(counts).toEqual({ layoutReads: 0, observers: 0, frames: 0 });
   });
 
-  it("keeps every ward's bed squares on one line, one column per bed, in Grid and in Rows", () => {
+  it("keeps every ward's bed squares on one line, one column per bed", () => {
     render(<BedMapOnly />);
-    for (const layout of ["Grid", "Rows"] as const) {
-      fireEvent.click(screen.getByRole("radio", { name: layout }));
+    // Wave 4: one layout (the shared bed squares); the strip's column count is its `--sq-n`.
+    for (const layout of ["Bed map"] as const) {
       let checked = 0;
       for (const group of groups) {
         if (group.wards.length === 0) continue;
@@ -101,8 +102,8 @@ describe("Capacity bed map layout cost", () => {
         group.wards.forEach((ward, index) => {
           const squares = bedSquares(cards[index]!);
           expect(squares, `${layout}: ${ward.unit.id}`).toHaveLength(ward.unit.beds);
-          expect(squares[0]!.parentElement!.style.gridTemplateColumns, `${layout}: ${ward.unit.id}`).toMatch(
-            new RegExp(`^repeat\\(${ward.unit.beds},`, "u"),
+          expect(squares[0]!.parentElement!.style.getPropertyValue("--sq-n"), `${layout}: ${ward.unit.id}`).toBe(
+            String(ward.unit.beds),
           );
           checked += 1;
         });

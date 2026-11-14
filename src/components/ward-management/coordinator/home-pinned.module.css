@@ -220,3 +220,20 @@
 .bannerSlot .bannerAction {
   flex: none;
 }
+
+/* Wave 4 (D-191, notes item 7): the since line inside the Needs you card, not a card of its own. */
+.bannerSlot .bannerInline {
+  min-height: 40px;
+  margin: 0;
+  padding: var(--wf-s-1) var(--wf-s-2) var(--wf-s-1) var(--wf-s-4);
+  border: 0;
+  border-bottom: 1px solid var(--wf-line);
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.bannerSlot .bannerInline .bannerAction {
+  margin-left: auto;
+  color: var(--wf-accent-ink);
+}

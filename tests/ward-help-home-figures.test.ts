@@ -6,7 +6,8 @@ describe("Explain this number: Home's figures in Help", () => {
   it("names all three figures and takes the bed alert line from its one source", () => {
     const entry = SCREEN_HELP.command?.questions?.find((each) => /figures at the top of Home/u.test(each.question));
     expect(entry).toBeDefined();
-    for (const words of ["Open ED movements", "Beds ready", "at risk", "beds in use"]) {
+    // Wave 4 (D-191, ruling 4): the figures read "Open movements", "Ready" and "In use", with an amber dot at the line.
+    for (const words of ["Open movements", "Ready", "In use", "amber dot"]) {
       expect(entry?.answer).toContain(words);
     }
     expect(entry?.answer).toContain(`${CLINICAL_VALUES.bedAlertLine.value}% or more`);

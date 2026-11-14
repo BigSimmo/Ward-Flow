@@ -5,6 +5,7 @@ import { unitById, wardSites } from "@/components/ward-management/ward-sites";
 import { clearToasts } from "./helpers/clear-toasts";
 import { chooseEdKitChoice } from "./helpers/ed-kit-choices";
 import { openEdLists } from "./helpers/ward-ed-lists";
+import { openWardList } from "./helpers/ward-release-gate";
 import { homeFlowCard, showAllFlowRows, showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
 /**
@@ -151,10 +152,8 @@ async function ensureToolsOpen(page: Page) {
  * arrivals view still exists and opens from that card's Admissions pane via "All arrivals".
  */
 async function openAllArrivals(page: Page) {
-  await page.locator("#tabBtn-attn").click();
-  await page.getByRole("radio", { name: /^Admissions/u }).click();
-  await page.getByRole("button", { name: "All arrivals", exact: true }).click();
-  await expect(page.locator("#tab-coming")).toHaveAttribute("data-active", "true");
+  // Wave 4 (D-191): All arrivals opens from the Coming and going card, with no Admissions switch.
+  await openWardList(page, "Admissions");
 }
 
 async function ensureToolsClosed(page: Page) {
@@ -417,8 +416,10 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     // ("16 of 20 occupied"); the figure itself is the <b> beside it.
     const occupiedFigure = (scope: Locator) =>
       scope
-        .locator("[data-wf-hero-figure]", { has: scope.page().getByRole("button", { name: /^\d+\b.*\boccupied$/iu }) })
-        .locator("b");
+        // Wave 4 (D-191): the button is the word alone, "Occupied · now".
+        .locator("[data-wf-hero-figure]", { has: scope.page().getByRole("button", { name: /\boccupied\b/iu }) })
+        .locator("b")
+        .first();
     const occupiedBeforeText = await occupiedFigure(wardScreen).innerText();
     const occupiedBeforeCount = Number(/\d+/u.exec(occupiedBeforeText)?.[0] ?? "NaN");
     expect(

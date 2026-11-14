@@ -81,9 +81,9 @@ describe("the bed board never drops a tile or a figure at the DOM/JS level (item
       .getAllByTestId(new RegExp("^ward-board-figure-"))
       .map((el) => el.getAttribute("data-testid"));
     expect(rendered.sort()).toEqual(lineKeys.map((key) => `ward-board-figure-${key}`).sort());
-    // Page tops (9 Nov 2026): the hero figures are lower case ("ready now").
-    expect(screen.getByTestId("ward-board-headline")).toHaveTextContent(/ready now/i);
-    expect(screen.getByTestId("ward-board-band-stats")).toHaveTextContent("Pulled, not arrived");
+    // Wave 4 (D-191): each hero figure names its window ("Ready · now"); Pulled keeps "not arrived" spoken.
+    expect(screen.getByTestId("ward-board-headline")).toHaveTextContent("Ready · now");
+    expect(screen.getByTestId("ward-board-band-stats")).toHaveTextContent("Pulled · now, not arrived");
     expect(screen.getByTestId("ward-board-figure-expectedToday")).toHaveTextContent("Expected today");
   });
 

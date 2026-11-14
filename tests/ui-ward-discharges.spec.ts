@@ -5,7 +5,12 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 
 import { bedReleases } from "@/components/ward-management/ward-movements";
 
-import { capacityBeingMadeReady, capacityReady, openBedBeingMadeReady } from "./helpers/ward-release-gate";
+import {
+  capacityBeingMadeReady,
+  capacityReady,
+  openBedBeingMadeReady,
+  openWardList,
+} from "./helpers/ward-release-gate";
 
 /**
  * Task 8 (Phase 5). One journey: a ward flags a bed coming free, confirms it, blocks it with a
@@ -83,10 +88,8 @@ async function gotoWard(page: Page) {
  */
 async function openBedRecordsTab(page: Page) {
   // Ward Hub (9 Oct 2026): the Discharges tab now opens from the Home tab's Ward flow card.
-  await page.locator("#tabBtn-attn").click();
-  await page.getByRole("radio", { name: /^Discharges/u }).click();
-  await page.getByRole("button", { name: "All discharges", exact: true }).click();
-  await expect(page.locator("#tab-out")).toHaveAttribute("data-active", "true");
+  // Wave 4 (D-191): All discharges opens from the Coming and going card, with no Discharges switch.
+  await openWardList(page, "Discharges");
 }
 
 async function goToCapacityBoard(page: Page) {

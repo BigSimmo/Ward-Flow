@@ -126,22 +126,25 @@ describe("A9-17: the Executive desk's Capacity is drawn with the kit", () => {
     const table = screen.getByRole("table", { name: /Beds by ward/u });
     expect(table.className).not.toBe("");
     const total = screen.getByTestId("ward-capacity-executive-total");
+    // Wave 4 (C7, PR F): the first cell is the bed-picture column, empty on the totals row; the
+    // figures then read Ready, Being made ready, In use, Closed, Beds.
     const cells = within(total)
       .getAllByRole("cell")
+      .slice(1)
       .map((cell) => Number(cell.textContent));
     const sum = (pick: (beds: (typeof data.network.wards)[number]["beds"]) => number) =>
       data.network.wards.reduce((acc, ward) => acc + pick(ward.beds), 0);
     expect(cells).toEqual([
-      sum((b) => b.total),
       sum((b) => b.ready),
       sum((b) => b.beingMadeReady),
       sum((b) => b.inUse),
       sum((b) => b.closed),
+      sum((b) => b.total),
     ]);
     // The totals agree with the report's own network figures (Statistics' totals).
-    expect(cells[0]).toBe(data.network.beds.total);
-    expect(cells[1]).toBe(data.network.beds.ready);
-    expect(cells[3]).toBe(data.network.beds.inUse);
-    expect(cells[4]).toBe(data.network.beds.closed);
+    expect(cells[0]).toBe(data.network.beds.ready);
+    expect(cells[2]).toBe(data.network.beds.inUse);
+    expect(cells[3]).toBe(data.network.beds.closed);
+    expect(cells[4]).toBe(data.network.beds.total);
   });
 });

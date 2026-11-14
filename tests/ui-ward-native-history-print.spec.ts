@@ -8,6 +8,15 @@ async function settled(page: Page) {
   await page.waitForLoadState("networkidle");
 }
 
+/** Wave 4 (D-191): Capacity's bookings sit on its Planned tab, which starts closed. */
+async function openBooking(page: Page) {
+  await page
+    .getByTestId("capacity-tabs")
+    .getByRole("radio", { name: /^Planned/u })
+    .click();
+  await page.getByTestId("ward-planned-book").click();
+}
+
 async function navigate(page: Page, route: string) {
   if (route === "/settings") {
     // DK1 (3 Nov 2026): Settings lives in the account menu on the person card, not as a rail link.
@@ -161,7 +170,7 @@ test.describe("native history and handover print @mockup", () => {
       await page.goBack();
       await settled(page);
       await expect(page).toHaveURL(new RegExp(`${HOME}/capacity$`));
-      await page.getByTestId("ward-planned-book").click();
+      await openBooking(page);
       await page.getByTestId("ward-planned-stay").fill("9");
 
       let prompts = 0;
@@ -209,7 +218,7 @@ test.describe("native history and handover print @mockup", () => {
     await settled(page);
     expect(await page.evaluate(() => window.history.state.__wfHistoryIndex)).toBeUndefined();
     expect(await page.evaluate(() => window.history.state.__NA)).toBe(true);
-    await page.getByTestId("ward-planned-book").click();
+    await openBooking(page);
     await page.getByTestId("ward-planned-stay").fill("8");
     let prompts = 0;
     page.on("dialog", async (dialog) => {
@@ -235,7 +244,7 @@ test.describe("native history and handover print @mockup", () => {
     await page.goBack();
     await settled(page);
     expect(await page.evaluate(() => typeof window.history.state.__wfHistoryIndex)).toBe("number");
-    await page.getByTestId("ward-planned-book").click();
+    await openBooking(page);
     await page.getByTestId("ward-planned-stay").fill("7");
     let prompts = 0;
     page.on("dialog", async (dialog) => {
@@ -270,7 +279,7 @@ test.describe("native history and handover print @mockup", () => {
     await settled(page);
     await page.goBack();
     await settled(page);
-    await page.getByTestId("ward-planned-book").click();
+    await openBooking(page);
     await page.getByTestId("ward-planned-stay").fill("6");
     let prompts = 0;
     page.on("dialog", async (dialog) => {
@@ -296,7 +305,7 @@ test.describe("native history and handover print @mockup", () => {
   test("native hash changes keep a booking form without a false leave prompt", async ({ page }) => {
     await page.goto(`${HOME}/capacity`);
     await settled(page);
-    await page.getByTestId("ward-planned-book").click();
+    await openBooking(page);
     await page.getByTestId("ward-planned-stay").fill("5");
     let prompts = 0;
     page.on("dialog", async (dialog) => {
@@ -327,7 +336,7 @@ test.describe("native history and handover print @mockup", () => {
     await page.evaluate(() => window.history.go(-3));
     await expect(page).toHaveURL(new RegExp(`${HOME}/capacity$`));
     await settled(page);
-    await page.getByTestId("ward-planned-book").click();
+    await openBooking(page);
     await page.getByTestId("ward-planned-stay").fill("4");
     let prompts = 0;
     page.on("dialog", async (dialog) => {

@@ -52,6 +52,42 @@
   min-width: 0;
 }
 
+/* Wave 4 (D-191, notes 10): the chips scroll inside the row and the sort button keeps 16 px clear of
+   the sheet edge; 40 px chips, a 44 px sort button with a 48 px cover. */
+.phoneBar > :first-child {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.phoneBar [role="radio"] {
+  min-height: 40px;
+}
+.phoneSquares {
+  margin-bottom: var(--wf-s-3);
+}
+.phoneSortButton {
+  position: relative;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-right: var(--wf-s-4);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-ctl);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  cursor: pointer;
+}
+.phoneSortButton::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+}
+.phoneSortButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
 /* ── The bed record drawer (drawer review, 6 Nov 2026) ──
    The record opens in the kit PanelDrawer at every width. The body is the drawer's one scroll; the
    head and foot stay put. Flat hairline sections, no cards inside the drawer (D-94: neutral lines,

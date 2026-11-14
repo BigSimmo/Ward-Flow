@@ -113,8 +113,9 @@ export function MeetingTvTop({
                 {
                   id: "discharges",
                   value: freeingToday,
-                  // A14-11, F-105: the same figure and words as the on-screen sheet's headline.
-                  label: labelOf("discharges", "beds freeing today"),
+                  // A14-11, F-105: the same figure and words as the on-screen sheet's headline
+                  // ("Discharges · today", wave 4), so TV and sheet match.
+                  label: labelOf("discharges", "Discharges · today"),
                   testId: "bed-meeting-tv-discharges",
                 },
                 {
