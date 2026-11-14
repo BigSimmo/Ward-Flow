@@ -491,10 +491,11 @@ describe("the offline page", () => {
   });
 
   it("uses plain wording: no em dashes or semicolons in what it says", () => {
-    const words = html
-      .replace(/<style[\s\S]*?<\/style>/, "")
-      .replace(/<!--[\s\S]*?-->/g, "")
-      .replace(/<[^>]+>/g, " ");
+    const words = stripUntilStable(
+      stripUntilStable(html, /<style[\s\S]*?<\/style>/g, ""),
+      /<!--[\s\S]*?-->/g,
+      "",
+    ).replace(/<[^>]+>/g, " ");
     expect(words).not.toMatch(/[—;]/);
   });
 });
@@ -636,3 +637,14 @@ describe("bounded navigation recovery", () => {
     },
   );
 });
+
+/** Removes a pattern until none is left, so a match rebuilt by an earlier removal goes too. */
+function stripUntilStable(text: string, pattern: RegExp, replacement: string): string {
+  let previous: string;
+  let next = text;
+  do {
+    previous = next;
+    next = previous.replace(pattern, replacement);
+  } while (next !== previous);
+  return next;
+}

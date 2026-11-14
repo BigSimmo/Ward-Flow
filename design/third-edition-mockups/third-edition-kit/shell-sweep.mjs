@@ -99,7 +99,7 @@ function extractFirstStyleBody(text) {
 /** All <script ...>...</script> blocks: [{ body, start, end }], document order. */
 function extractAllScriptBlocks(text) {
   const out = [];
-  const re = /<script\b[^>]*>([\s\S]*?)<\/script>/gi;
+  const re = /<script\b[^>]*>([\s\S]*?)<\/script\b[^>]*>/gi;
   let m;
   while ((m = re.exec(text))) {
     out.push({ body: m[1], start: m.index, end: m.index + m[0].length });

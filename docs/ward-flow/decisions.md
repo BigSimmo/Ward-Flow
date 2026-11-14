@@ -224,6 +224,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-203](#d-203-scoped-takeover-of-pr-e-and-pr-f-by-the-e-thread-14-november-2026)                                                                       | Scoped takeover of PR E and PR F by the E thread (undone the same day)                 | Undone                                           |
 | D-204                                                                                                                                                   | Claimed by open PR #1656                                                               | Not recorded here                                |
 | [D-205](#d-205-release-now-once-each-pr-merges-14-november-2026)                                                                                        | Release now, once each PR merges and its main CI passes                                | Active                                           |
+| [D-206](#d-206-codeql-storage-alerts-are-false-positives-for-the-demo-14-november-2026)                                                                 | CodeQL storage alerts are false positives for the demo                                 | Active                                           |
 
 ---
 
@@ -2463,4 +2464,11 @@ D-204 is claimed by open PR #1656 and is recorded there.
 - **Decision:** a release-now go (the "release now" of AGENTS.md hard rule 12) for each PR as it merges, once its merge commit's main CI passes. The plan thread runs the release; E and F still go live together (D-200).
 - **Boundary:** only work that has merged and passed main CI. No clinical value changes, no live data writes.
 
-D-206 is claimed by the Fixes PR (#1661). The next free number is D-207.
+## D-206. CodeQL storage alerts are false positives for the demo (14 November 2026)
+
+- **Date:** 14 November 2026, 7:15 AM AWST (13 November, 23:15 UTC). D-203 is claimed by open PR #1659. D-204 is claimed by open PR #1656. D-205 is claimed by open PR #1659. **Decided by:** Josh, in the Fixes thread ("Go ahead with recommendations"), on the recommendation to dismiss these alerts.
+- **Decision:** the CodeQL "clear-text storage of sensitive information" alerts #35, #36, #37, #39, #40, #41, #50 and #51, and the "incomplete string escaping" alert #30, are dismissed on GitHub as false positives with the note "synthetic demo data only; revisit in privacy review before real data". Every other alert raised on PR C (#1660) is fixed in code in PR #1661.
+- **Why:** the prototype keeps its synthetic demo day, drafts, "since last look" snapshots, chosen service and mockup device in the browser's session or local storage by design; nothing stored is a password, token or real patient record. For #30, escaping backslashes would print doubled backslashes inside the code spans of `docs/skipped-tests-inventory.md`.
+- **Follow-up:** the privacy review required before any real data covers what the browser stores, for how long, and on shared ward PCs. A dismissal can be reopened.
+
+The next free number is D-207.

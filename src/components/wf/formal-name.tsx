@@ -11,7 +11,7 @@ import styles from "./formal-name.module.css";
  */
 export function FormalName({ name, className }: { name: string; className?: string }) {
   const cut = name.indexOf(", ");
-  if (cut <= 0 || cut === name.length - 2) return <>{name}</>;
+  if (cut <= 0 || name.slice(cut + 2) === "") return <>{name}</>;
   return (
     <span className={cx(styles.name, className)} data-formal-name="">
       {name}
