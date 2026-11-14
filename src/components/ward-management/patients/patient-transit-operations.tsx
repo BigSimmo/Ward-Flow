@@ -71,6 +71,7 @@ import ph from "../referrals/referral-match-phone.module.css";
 import styles from "./patient-transit-operations.module.css";
 import { FindAWard, wardMatchesQuery } from "@/components/ward-management/referrals/find-a-ward";
 import { ExtendHoldControl } from "@/components/ward-management/ward-extend-hold";
+import { useDeskActingWard } from "@/components/ward-management/ward-desk-acting-ward";
 import { calendarDateOf, splitDuration } from "@/components/ward-management/ward-clock";
 import { PULL_NO_LIMIT_RECORDED } from "@/components/ward-management/ward-bed-hold";
 
@@ -124,8 +125,9 @@ export function PatientTransitOperations({
   // B2 (site review, 12 Oct 2026): every step is raised as the route's own role, so the history
   // names who acted rather than a borrowed ward, ED or officer.
   const routeRole = useRouteRole();
-  // A ward acts for the ward the patient is accepted at; the other roles name no unit.
-  const wardActing = routeRole === "ward" ? { actingUnitId: movement.acceptedUnitId } : {};
+  // A ward acts for the ward the patient is accepted at; the other roles name no unit. M9: only when
+  // that ward is one of the desk's own; otherwise the desk is not offered Release pull.
+  const { acting: wardActing, bedElsewhere } = useDeskActingWard(routeRole, movement.acceptedUnitId);
   // For BOOK_TRANSPORT, a ward acts for the sending ward (referral origin or source admission unit).
   const wardSendingActing =
     routeRole === "ward"
@@ -1015,7 +1017,7 @@ export function PatientTransitOperations({
                 </button>
               </details>
             )}
-            {movement.stage === "pulled" && (
+            {movement.stage === "pulled" && !bedElsewhere && (
               <details>
                 <summary>Release bed pull</summary>
                 <label>

@@ -6,6 +6,7 @@ import type { Movement } from "@/components/ward-management/ward-model";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { useDeskActingWard } from "@/components/ward-management/ward-desk-acting-ward";
 import { useUndoableStep, type UndoableStepOptions } from "@/components/ward-management/use-undoable-step";
 import { heldUntilExtendedLabel, pullExtensionChoices } from "@/components/ward-management/ward-bed-hold-extension";
 import { PULL_HOLD_MAX_TOTAL_MINUTES } from "@/components/ward-management/ward-operational-defaults";
@@ -31,11 +32,14 @@ export function ExtendHoldControl({
     defaultWardConfiguration().pullHoldMinutes;
   const routeRole = useRouteRole();
   const gate = useRoleGate()("EXTEND_PULL", movement.id);
+  // M9: a ward desk extends only a pull at one of its own wards, acting as that ward.
+  const { acting, bedElsewhere } = useDeskActingWard(routeRole, movement.acceptedUnitId);
   const { run } = useUndoableStep({ dispatch, rejections, now, routeRole });
   const [open, setOpen] = useState(false);
   const chipsId = useId();
   const heldUntil = heldUntilExtendedLabel(movement, now);
-  if (movement.stage !== "pulled" || movement.pullExpiresAt === undefined || movement.closure) return null;
+  if (movement.stage !== "pulled" || movement.pullExpiresAt === undefined || movement.closure || bedElsewhere)
+    return null;
   const choices = pullExtensionChoices(movement, now, pullHoldMinutes);
   const atMaximum = choices.length === 0;
   return (
@@ -79,7 +83,7 @@ export function ExtendHoldControl({
                         now,
                         movementId: movement.id,
                         minutes,
-                        ...(routeRole === "ward" ? { actingUnitId: movement.acceptedUnitId } : {}),
+                        ...acting,
                       },
                       { success: `Pull extended by ${minutes / 60} h` },
                     );

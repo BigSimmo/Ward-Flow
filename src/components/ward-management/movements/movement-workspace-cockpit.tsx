@@ -119,6 +119,8 @@ import {
 } from "@/components/ward-management/movements/movement-workspace-derivations";
 
 import styles from "./movement-workspace-cockpit.module.css";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { deskActingWard } from "@/components/ward-management/ward-desk-acting-ward";
 import { escalationHistory, escalationNextLabel, escalationSentence } from "./escalation-history";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 
@@ -154,6 +156,7 @@ export function MovementWorkspaceCockpit({
   const routeRole = useRouteRole();
   const raise = useWardRaise(role === "ward" ? "ward" : routeRole);
   const gate = useRoleGate();
+  const deskAccess = useEffectiveWardAccess();
   const sender = useSenderPresentation();
   const baseId = useId();
   const lock = (type: WardFlowEventType): RoleGate => gate(type);
@@ -1130,8 +1133,12 @@ export function MovementWorkspaceCockpit({
    */
   function renderActions(movement: Movement) {
     // A ward acts for the ward holding the bed, and cancels transport as the sending ward that booked
-    // it, the same claim the patient page makes (`patient-transit-operations.tsx`).
-    const holdingWard = role === "ward" && movement.acceptedUnitId ? { actingUnitId: movement.acceptedUnitId } : {};
+    // it, the same claim the patient page makes (`patient-transit-operations.tsx`). M9: it acts for
+    // the holding ward only when that ward is one of the desk's own, and otherwise is not offered
+    // the bed's release.
+    const holdingUnitId = role === "ward" ? deskActingWard(deskAccess, movement.acceptedUnitId) : null;
+    const holdingWard = holdingUnitId ? { actingUnitId: holdingUnitId } : {};
+    const bedElsewhere = role === "ward" && holdingUnitId === null;
     const sendingUnitId =
       (movement.referralId
         ? referrals.find((referral) => referral.id === movement.referralId)?.originUnitId
@@ -1586,7 +1593,7 @@ export function MovementWorkspaceCockpit({
             ) : null}
 
             {/* 6. RELEASE HELD BED (AFTER STOP TRANSPORT) */}
-            {isStoppedTransportAwaitingRelease(movement) ? (
+            {isStoppedTransportAwaitingRelease(movement) && !bedElsewhere ? (
               <section className={styles.actionSection} data-testid="ward-patient-release-held-bed">
                 <h3 className={styles.actionSectionTitle}>Release the pulled bed</h3>
                 <p className={styles.actionSay}>
@@ -1707,7 +1714,7 @@ export function MovementWorkspaceCockpit({
             ) : null}
 
             {/* 8. RELEASE DIVERTED BED */}
-            {movement.transport?.diversion !== undefined && movement.admissionId !== undefined ? (
+            {movement.transport?.diversion !== undefined && movement.admissionId !== undefined && !bedElsewhere ? (
               <section className={styles.actionSection} data-testid="ward-patient-release-diverted-bed">
                 <h3 className={styles.actionSectionTitle}>Release the pulled bed</h3>
                 <p className={styles.actionSay}>
