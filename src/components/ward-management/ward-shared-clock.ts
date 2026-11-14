@@ -8,8 +8,9 @@ import type { Instant } from "@/components/ward-management/ward-clock";
  * elapsed on this device since it was received, so a legal due time still turns overdue while polls
  * are failing. Each answer re-anchors it, so a device clock that is wrong by hours never moves the
  * board by more than the minutes since the last answer; a device clock set back reads as no time
- * passed, never as the board running backwards. Display time only: the server keeps its own clock
- * for every save.
+ * passed, never as the board running backwards. The server keeps its own clock for every save; a
+ * save also sends the minute this board showed when it was pressed (`actedAt`), which the server
+ * keeps, within bounds, only for a save that waited (H1, `ward-offline-entry.ts`).
  */
 export function sharedBoardNow(
   snapshotNow: Instant,
