@@ -25,7 +25,6 @@
  * Pure and browser free. Must NOT import `ward-access-state.ts` (governance seed, phone budget).
  */
 import type { Desk } from "@/components/ward-management/ward-desk";
-import type { EligibilityGate } from "@/components/ward-management/ward-eligibility";
 import { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
@@ -100,13 +99,8 @@ export const RECORD_CHECKS: readonly RecordCheck[] = [
   },
 ];
 
-/**
- * D-223 (Josh, 14 Nov 2026), Together-X2-4: a planned admission's arrival recorded while the ward's
- * bed count is old may take a reason from the existing override list, for the bed-count check only.
- * The gender check stays non-overridable (T10), as does every other gate. Phase 2 hands this list to
- * the conversion in `capacity/planned-admissions-reducer.ts`; until then the arrival is refused there.
- */
-export const PLANNED_ARRIVAL_OVERRIDABLE_GATES = ["capacity_freshness"] as const satisfies readonly EligibilityGate[];
+/** D-223, Together-X2-4: the gates a planned arrival may override (`ward-eligibility.ts`). */
+export { PLANNED_ARRIVAL_OVERRIDABLE_GATES } from "@/components/ward-management/ward-eligibility";
 
 /** May `desk` make `change`? See the module comment for the three phases. */
 export function permit(desk: Desk, change: Change, records?: PermitRecords): Permit {

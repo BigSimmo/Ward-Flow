@@ -558,6 +558,9 @@ describe("ward override-surface guard", () => {
     // Audit CS3-12 (Josh, 26 Oct 2026, Part A 3): a bed move to an open bed for a stay that needs a
     // locked bed needs a recorded reason, as at admission.
     "PLACE_IN_BED",
+    // D-223 (Josh, 14 Nov 2026, Together-X2-4): a planned arrival recorded on an old bed count names
+    // a reason; only the bed-count check may be overridden (PLANNED_ARRIVAL_OVERRIDABLE_GATES).
+    "CONVERT_PLANNED_ADMISSION",
   ];
 
   it("the derived overridable set equals its snapshot, so any change is a decision somebody takes", () => {
@@ -781,6 +784,8 @@ describe("ward override-surface guard", () => {
       // Audit 24-1 decision 2: the booking form's Book and Save.
       "src/components/ward-management/capacity/planned-admissions-panel.tsx::BOOK_PLANNED_ADMISSION": 1,
       "src/components/ward-management/capacity/planned-admissions-panel.tsx::CHANGE_PLANNED_ADMISSION": 1,
+      // D-223: Record arrival, with its reason when the bed count is old.
+      "src/components/ward-management/capacity/planned-admissions-panel.tsx::CONVERT_PLANNED_ADMISSION": 1,
       // Top 25 item 8: the step down board's plain Refer (allowlisted above).
       "src/components/ward-management/capacity/step-down-board.tsx::REFER_TO_UNITS": 1,
       // RB5 (item 16, 2026-09-17): this team's own acceptance of its own referral -- see this

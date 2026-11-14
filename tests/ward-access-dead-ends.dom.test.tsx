@@ -275,14 +275,25 @@ describe("3. the broadcast banner speaks for the desk's own role", () => {
     return null;
   }
 
-  function renderBanner() {
-    route.pathname = "/ward-flow/alerts";
+  /**
+   * The coordinator raises the Pull now, then the desk under test reads it. The local dispatch
+   * safety net refuses a coordinator's change sent from another desk, as the server does (D-223).
+   */
+  function renderRaised() {
+    const desk = readWardAccessSnapshot().access;
+    act(() => setWardAccess(coordinator));
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <RaisePullNow />
         <WardBroadcastBanner />
       </WardFlowProvider>,
     );
+    act(() => setWardAccess(desk));
+  }
+
+  function renderBanner() {
+    route.pathname = "/ward-flow/alerts";
+    renderRaised();
   }
 
   it("keeps the coordinator's view of a Pull now on a page with no place, as before", () => {
@@ -309,12 +320,7 @@ describe("3. the broadcast banner speaks for the desk's own role", () => {
   it("still asks a bed manager on its own site's ward page for that ward (D-80)", () => {
     useDesk({ role: "bed_manager", scope: { kind: "site", siteCode: "RPH" } });
     route.pathname = "/ward-flow/ward/rph-adult-secure";
-    render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <RaisePullNow />
-        <WardBroadcastBanner />
-      </WardFlowProvider>,
-    );
+    renderRaised();
     const banner = screen.getByTestId("ward-broadcast-banner");
     expect(banner).toHaveAttribute("data-tone", "act_now");
     expect(within(banner).getByRole("group", { name: "Your answer" })).toBeInTheDocument();

@@ -48,6 +48,8 @@ import { WardStepDownRequest } from "@/components/ward-management/referrals/step
 import dynamic from "next/dynamic";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
+import { usePermitFor } from "@/components/ward-management/shell/use-permit";
+import type { Change } from "@/components/ward-management/ward-permit";
 // Batch 3 item 23: a carer call back, from the ward's bed record. Loaded with the open drawer.
 const CarerCallbackCard = dynamic(
   withLoadRetry(() => import("@/components/ward-management/carer-callback-card").then((m) => m.CarerCallbackCard)),
@@ -192,8 +194,11 @@ export function WardBoardDetailPanel({
   // Demo-Actions-AC1-1/2/3: the bed steps here are offered only to a desk whose role may take them
   // (the permission matrix). The site bed manager keeps Record hold-up and sees no step that would
   // save nothing (DESIGN-SYSTEM.md, Actions; F-54).
+  // D-223: permit() also asks this ward's place, so a desk outside it is offered none of them.
   const roleGate = useRoleGate();
-  const may = (eventType: Parameters<typeof roleGate>[0]) => roleGate(eventType).allowed;
+  const permitFor = usePermitFor();
+  const may = (eventType: Parameters<typeof roleGate>[0]) =>
+    roleGate(eventType).allowed && permitFor({ type: eventType, actingUnitId: unit.id } as Change).kind !== "never";
   // Nothing chosen: no drawer. The bed grid itself is the prompt (drawer review, 6 Nov 2026).
   if (selectedTile === null) return null;
 

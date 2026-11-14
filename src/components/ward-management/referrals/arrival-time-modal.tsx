@@ -12,6 +12,7 @@ import {
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useRoleGate, type RoleGate } from "@/components/ward-management/ward-role-gate";
 import { useDeskActingWard } from "@/components/ward-management/ward-desk-acting-ward";
+import { useDesk } from "@/components/ward-management/shell/use-desk";
 import { formatInstantWithDay, minuteOfDay, minuteOfDayFromClockText } from "@/components/ward-management/ward-clock";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
@@ -70,6 +71,7 @@ export interface ArrivalTimeModalProps {
   isOpen: boolean;
   onClose: () => void;
   movement: Movement;
+  /** The desk saving the plan; left out, the session's desk (`useDesk`). */
   role?: "coordinator" | "ed" | "ward" | "community";
 }
 
@@ -81,7 +83,11 @@ export function ArrivalTimeModal(props: ArrivalTimeModalProps) {
   return props.isOpen ? <ArrivalTimeModalContent key={props.movement.id} {...props} /> : null;
 }
 
-function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinator" }: ArrivalTimeModalProps) {
+function ArrivalTimeModalContent({ isOpen, onClose, movement, role: sentRole }: ArrivalTimeModalProps) {
+  // X1b-6, R2-1 (D-223): the plan is sent as the desk that saves it, never a default coordinator, so
+  // an ED or ward that opens this without naming its role still saves as itself.
+  const desk = useDesk();
+  const role = sentRole ?? desk.actsAs;
   const { dispatch, configuration } = useWardFlowSelect("dispatch", "configuration");
   const identity = patientIdentityLine(usePatientOf()(movement));
   const now = useWardFlowClock();

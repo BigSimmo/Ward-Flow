@@ -38,12 +38,6 @@ function Dispatch() {
 }
 
 function renderBanner(access?: Parameters<typeof setWardAccess>[0]) {
-  if (access) {
-    act(() => {
-      setWardFeatureFlagOnDevice("role-access", true);
-      setWardAccess(access);
-    });
-  }
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <WardAccessScope>
@@ -52,6 +46,14 @@ function renderBanner(access?: Parameters<typeof setWardAccess>[0]) {
       </WardAccessScope>
     </WardFlowProvider>,
   );
+  // The coordinator sends the broadcast first; then the desk under test reads it. The local dispatch
+  // safety net refuses a coordinator's change sent from another desk, as the server does (D-223).
+  if (access) {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess(access);
+    });
+  }
 }
 
 afterEach(() => {

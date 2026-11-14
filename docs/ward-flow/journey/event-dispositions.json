@@ -38,8 +38,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-transport-cad-to-follow.test.ts"]
@@ -78,12 +78,12 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 1398,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-absence-and-cto.test.ts", "tests/ward-away-from-ward-exclusive.test.ts"]
@@ -121,12 +121,12 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 1407,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-absence-and-cto.test.ts"]
@@ -166,12 +166,12 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 1416,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-absence-and-cto.test.ts"]
@@ -207,12 +207,12 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 1423,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-absence-and-cto.test.ts"]
@@ -251,12 +251,12 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 1872,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-stay-discharge-blocker.test.ts"]
@@ -296,12 +296,12 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 1889,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-stay-discharge-blocker.test.ts"]
@@ -352,8 +352,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         },
         {
           "path": "src/components/ward-management/ward-observation.ts",
@@ -405,7 +405,7 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 710,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-turnaround-priority.ts",
@@ -414,8 +414,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-cld-turnaround-priority.test.ts"]
@@ -456,7 +456,7 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 719,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-turnaround-priority.ts",
@@ -465,8 +465,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-cld-turnaround-priority.test.ts"]
@@ -502,12 +502,12 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 734,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-referral-followup.test.ts"]
@@ -549,12 +549,12 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 747,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-referral-followup.test.ts"]
@@ -596,12 +596,12 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 758,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-referral-followup.test.ts", "tests/ward-sender-information-supplied.test.ts"]
@@ -637,12 +637,12 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 782,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         },
         {
           "path": "src/components/ward-management/referrals/referral-owner-and-calls-model.ts",
@@ -689,12 +689,12 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 797,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         },
         {
           "path": "src/components/ward-management/referrals/referral-owner-and-calls-model.ts",
@@ -743,12 +743,12 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 814,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         },
         {
           "path": "src/components/ward-management/referrals/referral-owner-and-calls-model.ts",
@@ -803,8 +803,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         },
         {
           "path": "src/components/ward-management/referrals/referral-owner-and-calls-model.ts",
@@ -848,12 +848,12 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 833,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-closure.test.ts"]
@@ -889,12 +889,12 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 842,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-closure.test.ts", "tests/ward-loop-checks.test.ts"]
@@ -936,12 +936,12 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 850,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 702,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 683,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-bed-closed-mark.test.ts", "tests/ward-bed-closed-mark-kinds.test.ts"]
@@ -984,12 +984,12 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 868,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-bed-meeting-actions.test.ts", "tests/ward-consolidated-meeting-counts-20261104.test.ts"]
@@ -1025,12 +1025,12 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 883,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": [
@@ -1080,8 +1080,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-restrictive-practice.test.ts", "tests/ward-audit-s3-restrictive-practice-departure.test.ts"]
@@ -1127,8 +1127,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-restrictive-practice.test.ts"]
@@ -1171,8 +1171,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-restrictive-practice.test.ts"]
@@ -1212,8 +1212,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-restrictive-practice.test.ts"]
@@ -1256,8 +1256,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-loop-checks.test.ts"]
@@ -1304,8 +1304,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-loop-checks.test.ts"]
@@ -1342,8 +1342,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-loop-checks.test.ts"]
@@ -1389,8 +1389,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-loop-checks.test.ts"]
@@ -1435,8 +1435,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-loop-checks.test.ts"]
@@ -1487,8 +1487,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-patient-archive.test.ts"]
@@ -1528,12 +1528,12 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 1556,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-review-engine-regressions.test.ts", "tests/ward-override-surfaces.test.ts"]
@@ -1573,7 +1573,7 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 1598,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
@@ -1615,8 +1615,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         },
         {
           "path": "src/components/ward-management/ward-inbox-snooze.ts",
@@ -1661,8 +1661,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         },
         {
           "path": "src/components/ward-management/ward-inbox-snooze.ts",
@@ -1714,8 +1714,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         },
         {
           "path": "src/components/ward-management/ward-inbox-snooze.ts",
@@ -1762,8 +1762,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         },
         {
           "path": "src/components/ward-management/ward-inbox-snooze.ts",
@@ -1802,8 +1802,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-ward-diagnosis.test.ts"]
@@ -1838,8 +1838,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-weekend-discharge-review.test.ts"]
@@ -1882,12 +1882,12 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 2148,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-criteria-led-discharge.test.ts"]
@@ -1924,12 +1924,12 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 2168,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-medical-deterioration-ui.dom.test.tsx", "tests/ward-reservation-release-capacity.test.ts"]
@@ -1967,7 +1967,7 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 2202,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -1976,8 +1976,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 886,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 740,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-ed-handover-events.test.ts"]
@@ -2011,7 +2011,7 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 2228,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -2020,8 +2020,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-ed-handover-events.test.ts"]
@@ -2067,8 +2067,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-home-service-return.test.ts"]
@@ -2103,8 +2103,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
@@ -2148,8 +2148,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 741,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 722,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -2191,12 +2191,12 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 2429,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 762,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 740,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-top25-broadcast-extend.dom.test.tsx"]
@@ -2231,12 +2231,12 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 2428,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 762,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 740,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-broadcast-add-units.test.ts"]
@@ -2279,12 +2279,12 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 2450,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 783,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 740,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-global-alerts.test.ts"]
@@ -2322,12 +2322,12 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 2449,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-global-alerts.test.ts", "tests/ward-broadcast-audience-bed-call-wards.test.ts"]
@@ -2361,23 +2361,23 @@
       "sources": [
         {
           "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
-          "line": 334,
-          "sha256": "3bf9cdec8b6fa5353303ada4d49d41f02388e9e05f17bdec7ab44feae3f1e778"
+          "line": 353,
+          "sha256": "455ceafdda9aa19084049d7d08e36033ab6f2b11b4e57477d1e01d4fe002c973"
         },
         {
           "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
-          "line": 298,
-          "sha256": "3bf9cdec8b6fa5353303ada4d49d41f02388e9e05f17bdec7ab44feae3f1e778"
+          "line": 317,
+          "sha256": "455ceafdda9aa19084049d7d08e36033ab6f2b11b4e57477d1e01d4fe002c973"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 2465,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-planned-admissions.test.ts", "tests/ward-audit24-1-planned-booking-authorised.test.ts"]
@@ -2412,23 +2412,23 @@
       "sources": [
         {
           "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
-          "line": 418,
-          "sha256": "3bf9cdec8b6fa5353303ada4d49d41f02388e9e05f17bdec7ab44feae3f1e778"
+          "line": 437,
+          "sha256": "455ceafdda9aa19084049d7d08e36033ab6f2b11b4e57477d1e01d4fe002c973"
         },
         {
           "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
-          "line": 298,
-          "sha256": "3bf9cdec8b6fa5353303ada4d49d41f02388e9e05f17bdec7ab44feae3f1e778"
+          "line": 317,
+          "sha256": "455ceafdda9aa19084049d7d08e36033ab6f2b11b4e57477d1e01d4fe002c973"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 2522,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-planned-admissions.test.ts", "tests/ward-audit24-1-planned-booking-authorised.test.ts"]
@@ -2459,18 +2459,18 @@
       "sources": [
         {
           "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
-          "line": 494,
-          "sha256": "3bf9cdec8b6fa5353303ada4d49d41f02388e9e05f17bdec7ab44feae3f1e778"
+          "line": 513,
+          "sha256": "455ceafdda9aa19084049d7d08e36033ab6f2b11b4e57477d1e01d4fe002c973"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 2522,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-planned-admissions.test.ts"]
@@ -2485,12 +2485,14 @@
       "subject": "A booked plan and its receiving ward",
       "before": "booked plan, no current linked bed/journey, ready eligible capacity",
       "after": "Plan arrived and linked to a new occupied admission",
-      "payload": ["plannedAdmissionId; unitId equal to booking's ward; finite now; role; actingUnitId for ward."],
+      "payload": [
+        "plannedAdmissionId; unitId equal to booking's ward; finite now; role; actingUnitId for ward. Optional overrideReason from OVERRIDE_REASONS when the ward's bed count is old (D-223)."
+      ],
       "scope": "ward or coordinator only; ward must name its own booked ward. Authenticated booking/ward scope additionally applies.",
       "guards": [
         "Plan exists and is booked; unit matches and is open. Linked patient has neither another held/occupied bed nor an open movement.",
         "A Ready bed exists (pulledBedAvailability, counting live pulled admissions) and, when beds are pending preparation, more Ready beds than pending ones. Secure request requires a free locked bed. Other journeys' pending numbered reservations at the ward come off Ready and off the free locked and open counts first.",
-        "Current placement eligibility gates pass; only a recorded same-ward authorisation override waives that specific gate.",
+        "Current placement eligibility gates pass; only a recorded same-ward authorisation override waives that specific gate, and an overrideReason from OVERRIDE_REASONS waives the bed-count freshness gate alone (PLANNED_ARRIVAL_OVERRIDABLE_GATES, D-223). The gender check and every physical bed fact are never waived; a reason off the list is refused.",
         "A gender-placement review requirement refuses this shortcut; use referral journey instead."
       ],
       "effects": [
@@ -2501,24 +2503,25 @@
       "sources": [
         {
           "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
-          "line": 518,
-          "sha256": "3bf9cdec8b6fa5353303ada4d49d41f02388e9e05f17bdec7ab44feae3f1e778"
+          "line": 537,
+          "sha256": "455ceafdda9aa19084049d7d08e36033ab6f2b11b4e57477d1e01d4fe002c973"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 2550,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": [
         "tests/ward-planned-admissions.test.ts",
         "tests/ward-planned-arrival-closed-bed.test.ts",
-        "tests/ward-fix-C2-home-day-obs.test.ts"
+        "tests/ward-fix-C2-home-day-obs.test.ts",
+        "tests/ward-planned-arrival-stale-count-override.test.ts"
       ]
     }
   },
@@ -2553,12 +2556,12 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 2553,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 941,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 740,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-support-notifications.test.ts", "tests/ward-discharge-support-notification.test.ts"]
@@ -2599,8 +2602,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-release-notices.test.ts"]
@@ -2639,8 +2642,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-discharge-dependencies.test.ts"]
@@ -2682,8 +2685,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-discharge-dependencies.test.ts"]
@@ -2722,8 +2725,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-release-notices.test.ts", "tests/ward-top25-admission-checklist.dom.test.tsx"]
@@ -2768,8 +2771,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-undo-and-bed-board.test.ts", "tests/ward-undo-toast-record-seq.dom.test.tsx"]
@@ -2803,8 +2806,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
-          "line": 2627,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "line": 2633,
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -2813,8 +2816,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-undo-and-bed-board.test.ts", "tests/ward-governance.dom.test.tsx"]
@@ -2851,13 +2854,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
-          "line": 2632,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "line": 2638,
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-undo-and-bed-board.test.ts", "tests/ward-release-pull-undo-guard.test.ts"]
@@ -2891,8 +2894,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
-          "line": 2652,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "line": 2658,
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -2901,8 +2904,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-undo-and-bed-board.test.ts", "tests/ward-release-pull-undo-guard.test.ts"]
@@ -2953,8 +2956,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-undo-steps.test.ts"]
@@ -3005,8 +3008,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-undo-steps.test.ts"]
@@ -3059,8 +3062,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": [
@@ -3117,8 +3120,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-undo-steps.test.ts", "tests/ward-support-notifications.test.ts"]
@@ -3169,8 +3172,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-out-of-area-repatriation.test.ts"]
@@ -3224,8 +3227,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-undo-steps.test.ts", "tests/ward-consolidated-authority.test.ts"]
@@ -3276,8 +3279,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         },
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
@@ -3335,8 +3338,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": [
@@ -3391,8 +3394,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-undo-steps.test.ts", "tests/ward-undo-dependent-records.test.ts"]
@@ -3443,8 +3446,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-departure-undo-integrity.test.ts"]
@@ -3495,8 +3498,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-engine-safety.test.ts"]
@@ -3549,8 +3552,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 713,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 694,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         },
         {
           "path": "src/components/ward-management/ward-bed-meeting-undo-event-type.ts",
@@ -3849,8 +3852,8 @@
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
-          "line": 373,
-          "sha256": "7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d"
+          "line": 354,
+          "sha256": "bfc577f4833de68d3e332c4e9d481ecdfe16f427c99953781ed4e41c2bd9a456"
         }
       ],
       "tests": ["tests/ward-triage-signed.test.ts", "tests/ward-event-permissions.test.ts"]
@@ -4481,7 +4484,7 @@
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
           "line": 609,
-          "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+          "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
         }
       ],
       "tests": ["tests/ward-intake-window.test.ts"]

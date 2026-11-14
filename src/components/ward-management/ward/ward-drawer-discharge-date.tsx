@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { Button, Stepper, TimeField } from "@/components/wf";
+import { GatedButton, permitFromRoleGate } from "@/components/wf/gated-action";
 import { dayOf, formatInstantWithDay, type Instant } from "../ward-clock";
 import { clockInputValue } from "../capacity/planned-admissions-draft";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
@@ -56,15 +57,16 @@ export function WardDrawerDischargeDate({
   const recordedDay = recordedAt === null ? undefined : dayOf(recordedAt) - dayOf(now);
   const startOnRecorded = recordedDay !== undefined && DISCHARGE_DAYS.includes(recordedDay);
   if (!open) {
-    // Demo-Actions-AC1-3: a desk that can never set the date is not offered it (F-54).
+    // Demo-Actions-AC1-3: a desk that can never set the date is not offered it (F-54). GatedButton
+    // draws permit()'s answer: hidden, disabled with its reason, or enabled (D-192 item 5, D-223).
     if (gate.never) return null;
     return (
       <span className={styles.actions}>
-        <Button
+        <GatedButton
+          permit={permitFromRoleGate(gate)}
           variant="ghost"
           size="sm"
-          disabledReason={gate.reason}
-          onClick={() => {
+          onPress={() => {
             save.forget();
             setOpenedAt(now);
             setDay(startOnRecorded ? recordedDay : 0);
@@ -74,7 +76,7 @@ export function WardDrawerDischargeDate({
           data-testid="ward-drawer-discharge-date-open"
         >
           {hasDate ? "Change discharge date" : "Set discharge date"}
-        </Button>
+        </GatedButton>
       </span>
     );
   }

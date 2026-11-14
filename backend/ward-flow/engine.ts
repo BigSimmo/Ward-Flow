@@ -40,7 +40,8 @@ import {
   type WardAccess,
   type WardAccessScope,
 } from "../../src/components/ward-management/ward-role-access";
-import { CROSS_ROLE_ALLOWED } from "../../src/components/ward-management/ward-role-permissions";
+import { deskFor } from "../../src/components/ward-management/ward-desk";
+import { NOT_YOUR_ROLE, UNKNOWN_CHANGE, permit, recordedRole } from "../../src/components/ward-management/ward-permit";
 import { EVENT_ROLE, type WardFlowEvent } from "../../src/components/ward-management/ward-flow-events";
 import { validSharedCommand } from "./command-schemas";
 import { scenarioNetwork } from "../../src/components/ward-management/ward-scenarios";
@@ -52,10 +53,7 @@ import {
 } from "../../src/components/ward-management/ward-flow-reducer";
 import { isValidSharedWardFlowState } from "../../src/components/ward-management/ward-shared-state-validation";
 import { checkSyntheticPayload } from "../../src/lib/synthetic-data-guard";
-import {
-  SITE_FEATURE_SWITCH_ROLE,
-  siteFeatureSwitchRefusal,
-} from "../../src/components/ward-management/ward-site-feature-switches";
+import { SITE_FEATURE_SWITCH_ROLE } from "../../src/components/ward-management/ward-site-feature-switches";
 import { cleanReferralFields } from "../../src/components/ward-management/referrals/referral-text-clean";
 import { offlineEntryTime } from "../../src/components/ward-management/ward-offline-entry";
 
@@ -673,13 +671,12 @@ export function archivePartialViewForWorld(
 }
 
 /**
- * H-0694, H-0179: every coordinator desk skips the role check below, so the command is recorded under
- * the desk's own role, never the role its screen sent. A coordinator acting on a ward page is written
- * down as the Bed coordinator, not the ward. This covers a service coordinator as well as the
- * statewide one (access audit, 31 Oct 2026): a service coordinator also skips the role check, so
- * without this its change was recorded as the ward's or ED's. The demonstration controls keep `demo`
- * (refused below for anyone but the statewide coordinator), and marking a notice read keeps its role,
- * which names the notice's addressee (`reduceInboxEvent`).
+ * H-0694, H-0179, D-222/D-223 (Josh, 14 Nov 2026): every desk's change is recorded under the role of
+ * its membership (`recordedRole`, the same answer `permit()` and History's stamp use), never the role
+ * its screen sent. A coordinator acting on a ward page is written down as the Bed coordinator, not the
+ * ward, and a bed manager's Confirm sent as "ward" is the bed manager's (R2-1). The demonstration
+ * controls keep `demo` (refused below for anyone but the statewide coordinator), and marking a notice
+ * read keeps its role, which names the notice's addressee (`reduceInboxEvent`).
  */
 export function deskCommand(access: WardAccess, supplied: unknown): unknown {
   // Q67 (Josh, 31 Oct 2026): a whole-network desk's handover sign-off that names no ward is recorded
@@ -697,17 +694,22 @@ export function deskCommand(access: WardAccess, supplied: unknown): unknown {
     delete fields.byAccessAdmin;
     if (access.role === "admin") return { ...fields, role: SITE_FEATURE_SWITCH_ROLE, byAccessAdmin: true };
   }
-  if (access.role !== "coordinator" || typeof fields?.role !== "string") return fields;
-  if (fields.role === "demo" || fields.role === access.role || fields.type === "MARK_NOTICE_READ") return fields;
-  return { ...fields, role: access.role };
+  if (typeof fields?.type !== "string" || !Object.hasOwn(EVENT_ROLE, fields.type)) return fields;
+  const type = fields.type as WardFlowEvent["type"];
+  if (type === "MARK_NOTICE_READ" && typeof fields.role === "string") return fields;
+  const role = recordedRole(deskFor(access), type);
+  // A role the change does not take is left as sent, so `commandRefusal` answers it with the plain
+  // role refusal rather than the command failing validation.
+  if (fields.role === role || !(EVENT_ROLE[type] as readonly string[]).includes(role)) return fields;
+  return { ...fields, role };
 }
 
 /**
- * Why this desk may not send this command, or `null`. The sender's role comes from its membership,
- * never from the browser: a desk sends only commands its own role may take (`EVENT_ROLE`, or a pair
- * in `CROSS_ROLE_ALLOWED`), and only about records inside its own place. A statewide coordinator may
- * send any command the workflow allows; the demonstration controls are the statewide coordinator's
- * alone. The access admin and the executive change nothing.
+ * Why this desk may not send this command, or `null`. One answer with the screens (R-STRUCT-1,
+ * D-223): `permit()` decides the role, from the membership and never the browser (`deskCommand`
+ * stamps it), then `commandScopeRefusal` runs the same place-rule table and the record-reference
+ * pass. A statewide coordinator may send any command the workflow allows; the demonstration controls
+ * are the statewide coordinator's alone. The access admin and the executive change nothing.
  */
 export function commandRefusal(
   world: SharedWorld,
@@ -718,32 +720,21 @@ export function commandRefusal(
   reviewableBreakGlassEventIds: readonly string[] = [],
 ): string | null {
   const type = supplied.type as WardFlowEvent["type"];
-  const role = supplied.role;
-  if (!Object.hasOwn(EVENT_ROLE, type)) return "This change is not one the workflow knows.";
+  if (!Object.hasOwn(EVENT_ROLE, type)) return UNKNOWN_CHANGE;
+  // The server's desk never switches, so every refusal is final. `permit` also answers, in the
+  // server's order, the site feature switch (D-142), the access admin and executive, the
+  // demonstration controls and the outage record (D-142) before the role. The whole network is asked
+  // the role too: `deskCommand` keeps a typed role the coordinator does not hold, so it is refused
+  // here rather than recorded under a role the desk never had.
+  const desk = deskFor(access, { canSwitch: false });
+  const answer = permit(desk, supplied as Parameters<typeof permit>[1]);
+  if (answer.kind !== "allow") return answer.refusal;
   if (accessIsWholeNetwork(access)) return null;
-  const notYours = "This change is not part of your role.";
-  // Batch 4 item 20 (10 Nov 2026): only an admin switches a feature off at a site. The statewide
-  // coordinator was returned above; the statewide access admin is let through here (D-142, Josh's
-  // amendment to D-80 for this one action); every other desk, a service coordinator too, is refused.
-  if (type === "SET_SITE_FEATURE_SWITCH") return siteFeatureSwitchRefusal(access, supplied);
-  if (access.role === "admin" || access.role === "executive" || role === "demo") return notYours;
-  // Batch 4 item 25 (D-142): an outage record is network-wide, so only the statewide coordinator
-  // (returned above) records one; a service coordinator is refused. The role itself is allowed, so
-  // the permission matrix reads this as a place limit, like the site switch above.
-  if (type === "RECORD_OUTAGE_WINDOW") return "Only the statewide coordinator records an outage.";
-  // A service coordinator is the coordinator inside its service (Josh, 10 Oct 2026: the
-  // coordinator takes every action), so only its place limits it, below.
-  if (access.role !== "coordinator") {
-    const accepted = EVENT_ROLE[type].includes(role as WardFlowEvent["role"]);
-    // A `CROSS_ROLE_ALLOWED` pair lets the desk's screen send the event under the role the event
-    // takes (the ward's Raise referral is sent as the referral's source, ED or community). It never
-    // lends the coordinator's role, which would write the change down as the coordinator's.
-    const borrowed =
-      role !== "coordinator" &&
-      CROSS_ROLE_ALLOWED.some((entry) => entry.routeRole === access.role && entry.event === type);
-    const allowed = accepted && (role === access.role || borrowed);
-    if (!allowed) return notYours;
-  }
+  // Batch 4 item 20: the site switch asks nothing else.
+  if (type === "SET_SITE_FEATURE_SWITCH") return null;
+  // Marking a notice read keeps its addressee role (`deskCommand`): a desk marks only its own, and a
+  // coordinator answers for every desk it oversees.
+  if (type === "MARK_NOTICE_READ" && access.role !== "coordinator" && supplied.role !== desk.role) return NOT_YOUR_ROLE;
   return commandScopeRefusal(world.state, access, supplied, {
     now: worldNow(world, at),
     places: getWardPlaceLookup(world.state.units),

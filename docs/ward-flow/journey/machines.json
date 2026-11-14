@@ -1746,8 +1746,8 @@
     "sources": [
       {
         "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
-        "line": 624,
-        "sha256": "3bf9cdec8b6fa5353303ada4d49d41f02388e9e05f17bdec7ab44feae3f1e778"
+        "line": 651,
+        "sha256": "455ceafdda9aa19084049d7d08e36033ab6f2b11b4e57477d1e01d4fe002c973"
       },
       {
         "path": "src/components/ward-management/legal-forms/legal-forms-screen.tsx",
@@ -1812,7 +1812,7 @@
       {
         "path": "src/components/ward-management/ward-eligibility.ts",
         "line": 56,
-        "sha256": "6ff05971843e74e5eaef62edeffec38f316409744e7fa48ac03acf689504dd88"
+        "sha256": "1d4b7fb6cae16e2b09417b27e1ce7adf8e213afee317c99920a428cdbeea0277"
       },
       {
         "path": "src/components/ward-management/ward-flow-bed-events.ts",
@@ -1832,7 +1832,7 @@
       {
         "path": "src/components/ward-management/ward-flow-events.ts",
         "line": 1,
-        "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+        "sha256": "954148e51875dcbfa24c6ef2f8a898c274ce1c8e6a046328930e7c1a6628406a"
       },
       {
         "path": "src/components/ward-management/ward-flow-placement-events.ts",
