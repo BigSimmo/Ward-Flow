@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { useState } from "react";
+import { pickRecordField } from "./helpers/legal-record-pick";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RecordFormSheet, type RecordDraft } from "@/components/ward-management/legal-forms/legal-forms-sheets";
@@ -52,7 +53,7 @@ describe("legal save session ownership edge", () => {
       );
       const close = vi.fn();
       render(<LegalDraft save={save} close={close} />);
-      fireEvent.change(screen.getByLabelText("Movement"), { target: { value: wardMovements[0]!.id } });
+      pickRecordField("Patient", wardMovements[0]!.id);
       fireEvent.change(screen.getByLabelText("Time on form"), { target: { value: "00:00" } });
       fireEvent.click(screen.getByRole("button", { name: "Save form" }));
       expect(screen.getByLabelText("Time on form")).toBeDisabled();
@@ -72,10 +73,10 @@ describe("legal save session ownership edge", () => {
     expect(screen.queryByLabelText("Clinician")).toBeNull();
     expect(screen.queryByLabelText("Notes")).toBeNull();
     fireEvent.change(screen.getByLabelText("Time on form"), { target: { value: "0000" } });
-    fireEvent.change(screen.getByLabelText("Movement"), { target: { value: wardMovements[0]!.id } });
+    pickRecordField("Patient", wardMovements[0]!.id);
     expect(screen.getByLabelText("Time on form")).toHaveValue("0000");
     expect(screen.queryByTestId("ward-legal-forms-time-cleared")).toBeNull();
-    fireEvent.change(screen.getByLabelText("Movement"), { target: { value: wardMovements[1]!.id } });
+    pickRecordField("Patient", wardMovements[1]!.id);
     expect(screen.getByLabelText("Time on form")).toHaveValue("");
     expect(screen.getByTestId("ward-legal-forms-time-cleared")).toHaveTextContent(
       "Time cleared because the patient changed.",
@@ -94,8 +95,8 @@ describe("legal save session ownership edge", () => {
     render(<LegalDraft save={save} close={close} />);
     const fill = (time: string) => {
       // Clear empties the form type too (MHA forms are never prefilled), so each fill chooses it.
-      fireEvent.change(screen.getByLabelText("Form type"), { target: { value: "1A" } });
-      fireEvent.change(screen.getByLabelText("Movement"), { target: { value: wardMovements[0]!.id } });
+      pickRecordField("Form type", "1A");
+      pickRecordField("Patient", wardMovements[0]!.id);
       fireEvent.change(screen.getByLabelText("Time on form"), { target: { value: time } });
       fireEvent.click(screen.getByRole("button", { name: "Save form" }));
     };

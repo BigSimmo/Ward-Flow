@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { pickRecordField, recordFieldValue } from "./helpers/legal-record-pick";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -166,8 +167,7 @@ describe("Legal now on the patient record", () => {
       </WardFlowProvider>,
     );
     const sheet = within(screen.getByTestId("ward-legal-record"));
-    const movement = sheet.getByLabelText("Movement") as HTMLSelectElement;
-    expect(movement.value).toBe(open.id);
+    expect(recordFieldValue("Patient")).toBe(open.id);
   });
 
   it("leaves the sheet closed on a plain ?movement= link, as a Governance gap sends", () => {
@@ -215,12 +215,12 @@ describe("Record a form opened from a patient record", () => {
     vi.useFakeTimers();
     try {
       const earlier = render(<RecordSheet movement="" />);
-      fireEvent.change(screen.getByLabelText("Movement"), { target: { value: first.id } });
+      pickRecordField("Patient", first.id);
       fireEvent.change(screen.getByLabelText("Time on form"), { target: { value: "00:00" } });
       act(() => vi.advanceTimersByTime(500));
       earlier.unmount();
       render(<RecordSheet movement={second.id} target={second.id} />);
-      expect(screen.getByLabelText("Movement")).toHaveValue(second.id);
+      expect(recordFieldValue("Patient")).toBe(second.id);
       expect(screen.getByLabelText("Time on form")).toHaveValue("");
     } finally {
       cleanup();
