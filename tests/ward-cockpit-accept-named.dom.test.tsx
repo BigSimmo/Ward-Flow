@@ -15,6 +15,7 @@ import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
+import { awaitingWardAnswer } from "@/components/ward-management/ward-waitlist";
 
 /**
  * Q93 (Josh approved, 1 Nov 2026): the Decisions cockpit's Accept opens the same named accept
@@ -31,7 +32,7 @@ const unitId =
         movement.stage === "destination_review" &&
         !movement.acceptedUnitId &&
         !movement.closure &&
-        movement.referredUnitIds.includes(unit.id),
+        awaitingWardAnswer(movement, unit.id),
     ),
   )?.id ?? "rph-adult-secure";
 
