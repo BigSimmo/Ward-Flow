@@ -10,7 +10,7 @@
  * The records come from the fields the place rules read. Outside a provider only
  * the role phase runs.
  */
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -58,4 +58,11 @@ export function usePermit(change: Change): Permit {
   const desk = useDesk();
   const records = usePermitRecords();
   return permit(desk, change, records);
+}
+
+/** `permit()` for this desk, asked once per record: for a list or a row picked at render time. */
+export function usePermitFor(): (change: Change) => Permit {
+  const desk = useDesk();
+  const records = usePermitRecords();
+  return useCallback((change: Change) => permit(desk, change, records), [desk, records]);
 }
