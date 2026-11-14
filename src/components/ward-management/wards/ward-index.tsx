@@ -528,7 +528,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                     value: dischargesToday,
                     label: (
                       <>
-                        Discharges
+                        Expected to leave
                         <WindowWord word="today" className={styles.figWindow} />
                       </>
                     ),

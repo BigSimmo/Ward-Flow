@@ -736,7 +736,10 @@ export type SummaryModel = {
   waitingCount: StatisticsCount;
   stillOpenCount: StatisticsCount;
   admissionsCount: StatisticsCount;
+  /** Left today (R-FIGS-12). */
   dischargesCount: StatisticsCount;
+  /** Expected to leave today (R-FIGS-12); left out of the executive report, which carries no releases. */
+  expectedToLeaveCount?: number;
   arrivals: Counted<
     ReturnType<typeof import("@/components/ward-management/statistics/statistics-derivations").pullToArrival>,
     "measuredCount" | "endedCount" | "awaitingArrivalCount" | "incoherentCount"

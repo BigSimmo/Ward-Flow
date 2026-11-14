@@ -52,7 +52,7 @@ if (!UNIT) throw new Error("ward-sites.ts no longer defines rph-adult-secure");
 
 /** The six measures `wardStatistics` returns, each with the element that must carry it. */
 const NULLABLE = [
-  ["ward-stat-length-of-stay", "averageLengthOfStayDays"],
+  ["ward-stat-length-of-stay", "averageCompletedStayDays"],
   ["ward-stat-empty-bed-minutes", "averageEmptyBedMinutes"],
   ["ward-stat-waitlist-wait", "averageWaitlistWaitMinutes"],
 ] as const;
@@ -100,7 +100,7 @@ describe("a ward statistics page never renders an unmeasurable average as a numb
    */
   it("keeps the fixture producing what the assertions are about", () => {
     const stats = wardStatistics(UNIT!.id, [], NOW_ANCHOR);
-    expect(stats.averageLengthOfStayDays, "fixture no longer yields a null length of stay").toBeNull();
+    expect(stats.averageCompletedStayDays, "fixture no longer yields a null length of stay").toBeNull();
     expect(stats.averageEmptyBedMinutes, "fixture no longer yields a null empty-bed figure").toBeNull();
     expect(stats.averageWaitlistWaitMinutes, "waitlist wait is no longer unconditionally null").toBeNull();
     expect(stats.readyToLeaveCannot, "readyToLeaveCannot is not a true nought here").toBe(0);

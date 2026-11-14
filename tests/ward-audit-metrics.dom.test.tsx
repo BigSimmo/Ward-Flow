@@ -79,7 +79,7 @@ describe("audit metrics rendered regressions", () => {
     expect(rows.map((row) => row.getAttribute("aria-label")?.split(":")[0])).toEqual(["Alpha", "Beta"]);
   });
 
-  it("R08 pools stays across unequal ward populations and excludes wards outside the comparison", () => {
+  it("R08 pools completed stays across unequal ward populations and excludes wards outside the comparison", () => {
     const [alpha, beta, outside] = allUnits();
     const base = wardAdmissions[0];
     const admissions = [
@@ -88,24 +88,24 @@ describe("audit metrics rendered regressions", () => {
         id: `AD-SHORT-${index}`,
         unitId: alpha.id,
         arrivedAt: NOW_ANCHOR - MINUTES_PER_DAY,
-        leftAt: null,
-        state: "occupied",
+        leftAt: NOW_ANCHOR,
+        state: "departed",
       })),
       {
         ...base,
         id: "AD-LONG",
         unitId: beta.id,
         arrivedAt: NOW_ANCHOR - 9 * MINUTES_PER_DAY,
-        leftAt: null,
-        state: "occupied" as const,
+        leftAt: NOW_ANCHOR,
+        state: "departed" as const,
       },
       {
         ...base,
         id: "AD-OUTSIDE",
         unitId: outside.id,
         arrivedAt: NOW_ANCHOR - 100 * MINUTES_PER_DAY,
-        leftAt: null,
-        state: "occupied" as const,
+        leftAt: NOW_ANCHOR,
+        state: "departed" as const,
       },
     ];
     render(
@@ -113,7 +113,9 @@ describe("audit metrics rendered regressions", () => {
         <StatisticsCompareScreen units={[alpha, beta]} admissions={admissions} emergencyDepartments={[]} />
       </WardFlowProvider>,
     );
-    expect(screen.getByText("Average stay", { selector: "span" }).parentElement).toHaveTextContent("3.0 days");
+    expect(screen.getByText("Average completed stay", { selector: "span" }).parentElement).toHaveTextContent(
+      "3.0 days",
+    );
   });
 
   it.each([

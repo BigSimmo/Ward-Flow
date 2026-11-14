@@ -811,7 +811,7 @@ export function projectExecutiveReportingFoundation(
       over8h,
       over24h,
       medianWaitMinutes: median(waits),
-      pooledAverageStayDays: wardStatistics("pooled", pooled, input.now).averageLengthOfStayDays,
+      pooledAverageCompletedStayDays: wardStatistics("pooled", pooled, input.now).averageCompletedStayDays,
       blockedTotal,
       longStayTotal,
       todayBedReferrals,

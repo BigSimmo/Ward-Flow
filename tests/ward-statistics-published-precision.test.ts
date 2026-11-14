@@ -76,7 +76,7 @@ describe("a published average carries only the precision it claims", () => {
       "this fixture divides evenly, so it cannot detect a missing rounding step — choose stays whose total is not divisible by their count",
     ).toBeGreaterThan(1);
 
-    const published = wardStatistics(UNIT, admissions, DAY_ZERO + 10 * MINUTES_PER_DAY).averageLengthOfStayDays;
+    const published = wardStatistics(UNIT, admissions, DAY_ZERO + 10 * MINUTES_PER_DAY).averageCompletedStayDays;
     expect(published).not.toBeNull();
     expect(
       decimalPlaces(published as number),
@@ -119,7 +119,7 @@ describe("a published average carries only the precision it claims", () => {
      * carrying the reason, and they are then deleted together by whoever tidies next.
      */
     const stats = wardStatistics(UNIT, [], DAY_ZERO);
-    expect(stats.averageLengthOfStayDays).toBeNull();
+    expect(stats.averageCompletedStayDays).toBeNull();
     expect(stats.averageEmptyBedMinutes).toBeNull();
   });
 });

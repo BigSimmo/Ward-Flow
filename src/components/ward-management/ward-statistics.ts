@@ -45,28 +45,22 @@ export type DischargeDateOutcomes = {
 export type WardStatistics = {
   unitId: string;
   /**
-   * `arrivedAt` -> `leftAt` (or `now`, for someone still in the bed), averaged and **rounded here
-   * to ONE DECIMAL PLACE**.
+   * AVERAGE COMPLETED STAY (R-FIGS-16, D-216, Josh 14 Nov 2026): `arrivedAt` -> `leftAt` over the
+   * stays that have ENDED, averaged and rounded here to one decimal place (a tenth of a day is real
+   * resolution on a stay measured in weeks; rounding here stops each screen rounding its own way).
    *
-   * 🔴 THIS ROUNDS AT THE DERIVATION BECAUSE, UNTIL 2026-09-06, ONE FIGURE HAD THREE TREATMENTS.
-   * This comment said "averaged in whole days"; nothing rounded; `statistics-compare-screen.tsx`
-   * applied `.toFixed(1)`; and `statistics-ward-screen.tsx` rendered it raw, so **every ward page
-   * published `44.33680555555556 days`** — fourteen decimal places of apparent precision on a
-   * clinical figure derived from invented data. Found by opening the page; no test saw it, because
-   * the suite asks whether the value renders and whether a null is ever shown as a zero. Both are
-   * the right questions. Precision is a third one and nobody was asking it.
-   *
-   * ⚠️ "IN WHOLE DAYS" WAS AMBIGUOUS AND I AM NOT CLAIMING TO KNOW WHICH IT MEANT — it reads as
-   * either "rounded to integers" or "expressed in days rather than hours". That ambiguity is why
-   * the wording is now explicit rather than corrected: a contract a reader can take two ways is a
-   * contract no implementation can violate.
-   *
-   * One decimal rather than integers because the compare screen had already chosen it, a reader has
-   * already seen it, and a tenth of a day is about two and a half hours — real resolution on a stay
-   * measured in weeks. Rounding HERE rather than at each render is what stops the third treatment
-   * coming back.
+   * Until 14 Nov 2026 this was one "average stay" that measured a current stay to `now`, so it mixed
+   * people still on the ward with people who had left (40.5 against 15.1 days in the stress test)
+   * and answered neither question. People on the ward now read `medianStaySoFarDays`. `null` when no
+   * stay on this ward has ended, never `0`.
    */
-  averageLengthOfStayDays: number | null;
+  averageCompletedStayDays: number | null;
+  /**
+   * STAY SO FAR, MEDIAN (R-FIGS-16): the middle of the whole days since arrival of the people on the
+   * ward now (arrived, not left), the same days the Length of stay card buckets. `null` when nobody
+   * on the ward has a recorded arrival.
+   */
+  medianStaySoFarDays: number | null;
   /**
    * How many of this ward's admissions record an arrival AFTER the end of their stay — `leftAt` for
    * someone gone, `now` for a current occupant — excluded from the average above and counted here
@@ -158,6 +152,14 @@ function roundTo(value: number | null, places: number): number | null {
   if (value === null) return null;
   const factor = 10 ** places;
   return Math.round(value * factor) / factor;
+}
+
+/** The middle stay in whole days, the two middle ones averaged and rounded; `null` for none. */
+export function medianDays(days: readonly number[]): number | null {
+  const sorted = [...days].sort((left, right) => left - right);
+  if (sorted.length === 0) return null;
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 1 ? sorted[middle]! : Math.round((sorted[middle - 1]! + sorted[middle]!) / 2);
 }
 
 /**
@@ -268,7 +270,7 @@ function emptyBedGap(admission: Admission): EmptyBedGap {
  *     `arrivedAt` to the `now` it is given — it has no way to know an admission has since ended,
  *     so applying it to a departed admission would keep their stay "growing" after they left.
  *
- * `averageLengthOfStayDays`, `averageEmptyBedMinutes` and `dischargeDateOutcomes` are, by
+ * `averageCompletedStayDays`, `averageEmptyBedMinutes` and `dischargeDateOutcomes` are, by
  * contrast, computed over EVERY admission for this unit including departed ones — a completed
  * stay or a completed empty-bed gap is a historical fact regardless of what state the admission
  * is in now, and excluding departed admissions from those three would silently shrink the ward's
@@ -277,11 +279,21 @@ function emptyBedGap(admission: Admission): EmptyBedGap {
 export function wardStatistics(unitId: string, admissions: Admission[], now: Instant): WardStatistics {
   const forThisUnit = admissions.filter((admission) => admission.unitId === unitId);
 
-  const stays = forThisUnit.map((admission) => lengthOfStay(admission, now));
-  const stayMinutes = stays.flatMap((stay) => (stay.kind === "measured" ? [stay.minutes] : []));
-  const lengthOfStayIncoherentCount = stays.filter((stay) => stay.kind === "incoherent").length;
-  const averageStayMinutes = average(stayMinutes);
-  const averageLengthOfStayDays = averageStayMinutes === null ? null : roundTo(averageStayMinutes / MINUTES_PER_DAY, 1);
+  const stays = forThisUnit.map((admission) => ({ admission, stay: lengthOfStay(admission, now) }));
+  const lengthOfStayIncoherentCount = stays.filter(({ stay }) => stay.kind === "incoherent").length;
+  // R-FIGS-16: completed stays only (a recorded `leftAt`); a current stay is the stay so far below.
+  const completedMinutes = stays.flatMap(({ admission, stay }) =>
+    admission.leftAt !== null && stay.kind === "measured" ? [stay.minutes] : [],
+  );
+  const averageStayMinutes = average(completedMinutes);
+  const averageCompletedStayDays =
+    averageStayMinutes === null ? null : roundTo(averageStayMinutes / MINUTES_PER_DAY, 1);
+  const staySoFarDays = stays.flatMap(({ admission, stay }) =>
+    admission.state !== "departed" && admission.leftAt === null && stay.kind === "measured"
+      ? [Math.floor(stay.minutes / MINUTES_PER_DAY)]
+      : [],
+  );
+  const medianStaySoFarDays = medianDays(staySoFarDays);
 
   const emptyBedGaps = forThisUnit.map((admission) => emptyBedGap(admission));
   const emptyMinutes = emptyBedGaps.flatMap((gap) => (gap.kind === "measured" ? [gap.minutes] : []));
@@ -318,7 +330,8 @@ export function wardStatistics(unitId: string, admissions: Admission[], now: Ins
 
   return {
     unitId,
-    averageLengthOfStayDays,
+    averageCompletedStayDays,
+    medianStaySoFarDays,
     lengthOfStayIncoherentCount,
     averageEmptyBedMinutes,
     emptyBedIncoherentCount,

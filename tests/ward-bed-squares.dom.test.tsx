@@ -32,7 +32,7 @@ describe("BedSquares", () => {
     // No tone colours: held up is a word on the note line, not a square.
     expect(states.every((state) => ["ready", "prep", "free", "use", "closed"].includes(state ?? ""))).toBe(true);
     expect(screen.getByTestId("sq-note").textContent).toBe(
-      "2 discharges today · 1 held up · 2 pulled · 1 being made ready · 1 closed",
+      "2 expected to leave today · 1 held up · 2 pulled · 1 being made ready · 1 closed",
     );
   });
 
@@ -74,7 +74,7 @@ describe("BedSquares", () => {
   it("names every square state in the key", () => {
     render(<BedSquaresKey />);
     expect(screen.getByLabelText("Bed squares key").textContent).toBe(
-      "ReadyBeing made readyDischarge todayIn useClosed",
+      "ReadyBeing made readyExpected to leave todayIn useClosed",
     );
   });
 });

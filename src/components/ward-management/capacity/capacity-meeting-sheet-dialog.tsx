@@ -33,7 +33,7 @@ export const BED_MEETING_SHEET_BODY_LABEL = "Bed meeting sheet, scroll with the 
  * sheet was one long column; this is two, so it fits one printed page and one screen.
  *
  * Wave 4 (C8, notes item 8, D-191): every figure carries its window and copies Capacity's
- * ("Ready · now", "Short · now", "Discharges · today", "Waiting in ED · now"); a "Held up · by
+ * ("Ready · now", "Short · now", "Expected to leave · today", "Waiting in ED · now"); a "Held up · by
  * tomorrow" list by ward, with no patient names; a neutral "Synthetic data" tag; a focusable,
  * named body; and Close, Open on TV and Print sheet in the footer (one filled).
  */
@@ -91,7 +91,7 @@ export function BedMeetingSheetDialog({
     },
     {
       id: "discharges",
-      label: "Discharges",
+      label: "Expected to leave",
       window: "today" as const,
       value: discharges.freeingToday,
       // The held-up count is the "by tomorrow" span (overdue, today and tomorrow), said, so it never
@@ -171,7 +171,7 @@ export function BedMeetingSheetDialog({
         </section>
         <section aria-labelledby="sheet-discharges">
           <h3 id="sheet-discharges" className={styles.sheetHead}>
-            <Kicker>Discharges · today</Kicker>
+            <Kicker>Expected to leave · today</Kicker>
           </h3>
           <ul className={styles.sheetList}>
             {discharges.todayRows.map((row) => (

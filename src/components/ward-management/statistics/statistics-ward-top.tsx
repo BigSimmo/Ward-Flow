@@ -17,6 +17,7 @@ import {
   type HeroFigureItem,
 } from "@/components/wf";
 import { unitHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
+import { medianDays } from "@/components/ward-management/ward-statistics";
 import type { StatisticsHeroTop } from "./statistics-hero";
 import { NO_BEDS_TEXT } from "./statistics-occupancy";
 import { STATISTICS_COMPARE_HREF, STATISTICS_WARDS_HREF } from "./statistics-sections";
@@ -25,14 +26,6 @@ import { setStatisticsSamples } from "./statistics-samples";
 import { ChangeWard } from "./statistics-ward-change-ward";
 import type { WardDetailModel } from "./statistics-wards-index";
 import top from "./statistics-ward-top.module.css";
-
-/** The middle stay in whole days, as the ward page worked it out (the two middle ones averaged). */
-export function medianDays(days: readonly number[]): number | null {
-  const sorted = [...days].sort((left, right) => left - right);
-  if (sorted.length === 0) return null;
-  const middle = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 1 ? sorted[middle]! : Math.round((sorted[middle - 1]! + sorted[middle]!) / 2);
-}
 
 /** The four stay bands, shortened for the phone strip (the card below keeps the long names). */
 const STRIP_LABEL: Record<string, string> = {
@@ -65,7 +58,7 @@ function WardStayBand({ strip }: { strip: WardStayStrip }) {
           <>
             {median === null ? null : (
               <>
-                median <b>{median}</b> {median === 1 ? "day" : "days"}
+                so far, median <b>{median}</b> {median === 1 ? "day" : "days"}
               </>
             )}
             {median !== null && inBeds !== null ? " · " : null}
@@ -148,7 +141,7 @@ export function wardStatisticsTop({
   samples: boolean;
 }): StatisticsHeroTop {
   const { unit, wardOccupancy, occupancyPct, capacity, statistics, oldestPulled, canOpen, countsOnly } = model;
-  const averageStay = statistics.averageLengthOfStayDays;
+  const averageStay = statistics.averageCompletedStayDays;
   const inUse: HeroFigureItem = {
     id: "in-use",
     value: wardOccupancy.inUse,
@@ -162,7 +155,9 @@ export function wardStatisticsTop({
     label: "ready",
   };
   const stayFigure: HeroFigureItem | null =
-    averageStay === null ? null : { id: "stay", value: averageStay, unit: <>&thinsp;days</>, label: "average stay" };
+    averageStay === null
+      ? null
+      : { id: "stay", value: averageStay, unit: <>&thinsp;days</>, label: "average completed stay" };
   const dueFigure: HeroFigureItem = { id: "due", value: dueThisWeekText, label: "discharges due, 7 days" };
   const figures: HeroFigureItem[] = wardDesk
     ? [

@@ -157,7 +157,7 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     // Short and Wards full, as Capacity says them ("ready by" went); the counts confirmed this shift
     // are the pill under them (the old ring and checking foot went with the old top).
     expect(screen.getByTestId("ward-index-figure-ready")).toHaveTextContent(/Ready$/u);
-    expect(screen.getByTestId("ward-index-figure-discharges")).toHaveTextContent(/Discharges · today$/u);
+    expect(screen.getByTestId("ward-index-figure-discharges")).toHaveTextContent(/Expected to leave · today$/u);
     expect(screen.getByTestId("ward-index-figure-short")).toHaveTextContent(/(Short|Spare)$/u);
     expect(screen.queryByTestId("ward-index-figure-ready-by")).toBeNull();
     expect(screen.getByTestId("ward-index-confirmed")).toHaveTextContent(/\d+ of \d+/u);
@@ -279,8 +279,8 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     );
     const capacity = bedsFreeingTodayTotal(seed.bedReleases, NOW_ANCHOR, new Set(["rph-adult-secure"]));
     const choices = screen.getByRole("radiogroup", { name: "Highlight beds" });
-    expect(within(choices).getByRole("radio", { name: /^Discharges today/u })).toHaveTextContent(
-      new RegExp(`^Discharges today\\D*${capacity}$`, "u"),
+    expect(within(choices).getByRole("radio", { name: /^Expected to leave today/u })).toHaveTextContent(
+      new RegExp(`^Expected to leave today\\D*${capacity}$`, "u"),
     );
   });
 

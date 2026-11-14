@@ -188,7 +188,7 @@ describe("Compare two wards on a phone (stats-7)", () => {
     fireEvent.change(screen.getByTestId("ward-statistics-compare-pair-b"), { target: { value: second!.id } });
     const pair = screen.getByTestId("ward-statistics-compare-pair");
     for (const label of [
-      "Average stay",
+      "Average completed stay",
       "Discharges held up",
       "Over 3 months",
       "Occupancy",

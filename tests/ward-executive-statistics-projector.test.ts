@@ -239,7 +239,7 @@ describe("the inactive full reporting bundle", () => {
     const dto = reporting(state);
     const ward = dto.wards[0]!;
     const stats = wardStatistics(ward.id, state.admissions, NOW_ANCHOR);
-    expect(ward.statistics.averageLengthOfStayDays).toBe(stats.averageLengthOfStayDays);
+    expect(ward.statistics.averageCompletedStayDays).toBe(stats.averageCompletedStayDays);
     expect(ward.statistics.averageEmptyBedMinutes).toBe(stats.averageEmptyBedMinutes);
     expect(ward.beds).toEqual(project(state).wards.find((item) => item.id === ward.id)!.beds);
     expect(dto.settings.parallelReferralCap).toBe(state.configuration.parallelReferralCap);

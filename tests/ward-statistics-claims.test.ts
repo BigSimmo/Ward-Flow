@@ -609,8 +609,8 @@ describe("the model-claims register", () => {
    */
   it("recognises a citation that survives its own falsifying edit, using the shape the register shipped", () => {
     const source = collapseWhitespace(
-      "export type WardStatistics = { averageLengthOfStayDays: number | null; };\n" +
-        "const averageLengthOfStayDays = averageStayMinutes === null ? null : averageStayMinutes / MINUTES_PER_DAY;\n",
+      "export type WardStatistics = { averageCompletedStayDays: number | null; };\n" +
+        "const averageCompletedStayDays = averageStayMinutes === null ? null : averageStayMinutes / MINUTES_PER_DAY;\n",
     );
     const base = {
       id: "synthetic/derived-figure",
@@ -620,13 +620,13 @@ describe("the model-claims register", () => {
       sourceFile: "synthetic-source.ts",
       falsifiedBy: {
         change: "The figure stops being derived and is returned as a literal null.",
-        find: "const averageLengthOfStayDays = averageStayMinutes === null ? null : averageStayMinutes / MINUTES_PER_DAY;",
-        replaceWith: "const averageLengthOfStayDays = null;",
+        find: "const averageCompletedStayDays = averageStayMinutes === null ? null : averageStayMinutes / MINUTES_PER_DAY;",
+        replaceWith: "const averageCompletedStayDays = null;",
       },
     };
 
     expect(
-      falsifiabilityProblem(source, { ...base, evidence: "averageLengthOfStayDays: number | null;" }),
+      falsifiabilityProblem(source, { ...base, evidence: "averageCompletedStayDays: number | null;" }),
       "the falsifiability rule no longer recognises a type declaration cited for a computation — the exact shape " +
         "four of the twelve findings had — so it is guarding nothing",
     ).toBe("evidence-survives");
@@ -649,7 +649,7 @@ describe("the model-claims register", () => {
       falsifiabilityProblem(source, {
         ...base,
         evidence: base.falsifiedBy.find,
-        falsifiedBy: { ...base.falsifiedBy, find: "averageLengthOfStayDays" },
+        falsifiedBy: { ...base.falsifiedBy, find: "averageCompletedStayDays" },
       }),
     ).toBe("anchor-ambiguous");
     expect(

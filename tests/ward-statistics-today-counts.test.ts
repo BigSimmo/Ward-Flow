@@ -160,13 +160,13 @@ describe("Admissions today and Discharges today are bound to the calendar day, n
     expect(extractCount(markup, "ward-statistics-admissions-today-count")).toBe(0);
   });
 
-  it("adds a caption naming the calendar day and its midnight-to-midnight bound, on both figures", () => {
+  it("writes the day's window from its real start, 12:00 am to now, on both figures (R-FIGS-14)", () => {
     const markup = markupFor([TODAY_ARRIVAL]);
 
     const admissionsCaption = extractText(markup, "ward-statistics-admissions-today-caption");
     const dischargesCaption = extractText(markup, "ward-statistics-discharges-today-caption");
 
-    expect(admissionsCaption).toMatch(/^[A-Za-z]+ \d{1,2} [A-Za-z]+, midnight to midnight, across all wards$/);
-    expect(dischargesCaption).toBe(admissionsCaption);
+    expect(admissionsCaption).toMatch(/^[A-Z][a-z]{2} \d{1,2} [A-Z][a-z]{2}, 12:00 am to now$/);
+    expect(dischargesCaption).toBe(`, ${admissionsCaption}`);
   });
 });

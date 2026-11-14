@@ -214,7 +214,10 @@ step.
 | **Occupancy**           | The share of beds in use.                                                                                      |
 | **Typical**             | The median: half took less time and half took more.                                                            |
 | **Slowest 1 in 10**     | The time the slowest tenth took longer than.                                                                   |
-| **Stay so far**         | How long people in a bed now have been there. Not a finished length of stay.                                   |
+| **Stay so far**         | How long people in a bed now have been there, as a median. Not a finished length of stay.                      |
+| **Completed stay**      | Arrival to leaving, for a stay that has ended. Average completed stay leaves out people still on the ward.     |
+| **Left today**          | Stays ended since 12:00 am today. Not the same as expected to leave.                                           |
+| **Expected to leave**   | A planned discharge still to happen today. It moves to Left today when they go.                                |
 | **Open ED movement**    | A movement that started at an ED and has not closed, including people in transit.                              |
 | **Fewer than 5**        | Shown in place of a small count of people, so no one can be picked out.                                        |
 | **Not recorded**        | Nobody recorded this figure. Ward Flow does not guess it.                                                      |

@@ -173,7 +173,7 @@ describe("Capacity bed map — the network's whole bed supply, one square per be
   it("names every kind of square in the bed map key, and no Held or Blocked square", () => {
     renderScreen();
     const legend = within(bedMapRegion()).getByLabelText("Bed map key");
-    expect(legend.textContent).toBe("ReadyBeing made readyDischarge todayIn useClosed");
+    expect(legend.textContent).toBe("ReadyBeing made readyExpected to leave todayIn useClosed");
     // Wave 4 (D-191, ruling 7): the 4 Nov discharge colours (C4) are gone. Held up is said in words
     // on the note line, so the key names no held-up square.
     expect(within(legend).queryByText(new RegExp(`^${BED_RELEASE_BLOCKED_LABEL}$`, "u"))).toBeNull();

@@ -238,7 +238,8 @@ export function executiveWardSummary(ward: PublicWard, input: ExecutivePrivateIn
     dischargeDates: { withDate, withoutDate },
     readyToLeave,
     statistics: {
-      averageLengthOfStayDays: statistics.averageLengthOfStayDays,
+      averageCompletedStayDays: statistics.averageCompletedStayDays,
+      medianStaySoFarDays: statistics.medianStaySoFarDays,
       averageEmptyBedMinutes: statistics.averageEmptyBedMinutes,
       emptyBedMinutesShortest: statistics.emptyBedMinutesShortest,
       emptyBedMinutesLongest: statistics.emptyBedMinutesLongest,
@@ -782,7 +783,7 @@ export function executiveSites(
       dueToday,
       blocked,
       longStays: c("longStays", stats.longStays),
-      meanStay: stats.averageLengthOfStayDays,
+      meanStay: stats.averageCompletedStayDays,
     };
   });
 }
@@ -970,8 +971,8 @@ export function executiveJourney(
     },
     {
       id: "discharged" as const,
-      label: "Discharged today",
-      caption: "Left the ward today",
+      label: "Left today",
+      caption: "Stays ended since 12:00 am",
       tone: "success" as const,
       figure: countFigure(endedToday),
       breakdown: [breakdown("Community", community), breakdown("Transferred", transferred), breakdown("Other", other)],

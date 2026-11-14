@@ -145,7 +145,7 @@ function OperationalCompareScreen({
   const pooledAdmissions = admissions
     .filter((admission) => unitIds.has(admission.unitId))
     .map((admission) => ({ ...admission, unitId: "pooled" }));
-  const networkAvgStay = wardStatistics("pooled", pooledAdmissions, now).averageLengthOfStayDays;
+  const networkAvgStay = wardStatistics("pooled", pooledAdmissions, now).averageCompletedStayDays;
   const totalBlockers = wardStats.reduce((s, { statistics }) => s + statistics.readyToLeaveCannot, 0);
   const totalLongStays = wardStats.reduce((s, { statistics }) => s + statistics.longStays, 0);
 
@@ -206,7 +206,7 @@ function OperationalCompareScreen({
 type ComparisonUnit = Pick<Unit, "id" | "name" | "siteCode" | "beds" | "lockedBeds"> & { cohort: string };
 type ComparisonDepartment = Pick<EmergencyDepartment, "id" | "name" | "siteCode"> & { openable?: boolean };
 type ComparisonStatistics = {
-  averageLengthOfStayDays: number | null;
+  averageCompletedStayDays: number | null;
   readyToLeaveCannot: StatisticsCount;
   longStays: StatisticsCount;
   dischargeDateOutcomes: { met: StatisticsCount; missed: StatisticsCount; consideredCount: StatisticsCount };
@@ -238,7 +238,7 @@ const comparisonUnit = (unit: Unit): ComparisonUnit => ({
   lockedBeds: unit.lockedBeds,
 });
 const comparisonStatistics = (statistics: WardStatistics): ComparisonStatistics => ({
-  averageLengthOfStayDays: statistics.averageLengthOfStayDays,
+  averageCompletedStayDays: statistics.averageCompletedStayDays,
   readyToLeaveCannot: statistics.readyToLeaveCannot,
   longStays: statistics.longStays,
   dischargeDateOutcomes: {
@@ -270,7 +270,7 @@ function executiveComparisonModel(data: ExecutiveReportingFoundation, zone: Cloc
     totalBeds: data.network.beds.total,
     readyBeds: data.network.beds.ready,
     pendingPreparationBeds: data.capacity.pendingPreparation,
-    networkAvgStay: data.networkDetails.pooledAverageStayDays,
+    networkAvgStay: data.networkDetails.pooledAverageCompletedStayDays,
     totalBlockers: data.networkDetails.blockedTotal,
     totalLongStays: data.networkDetails.longStayTotal,
     stillOpenCount: data.network.people.stillOpen,
@@ -279,7 +279,7 @@ function executiveComparisonModel(data: ExecutiveReportingFoundation, zone: Cloc
     wardRows: data.wards.map((ward, index) => ({
       unit: units[index]!,
       statistics: {
-        averageLengthOfStayDays: ward.statistics.averageLengthOfStayDays,
+        averageCompletedStayDays: ward.statistics.averageCompletedStayDays,
         readyToLeaveCannot: ward.statistics.readyToLeaveCannot,
         longStays: ward.statistics.longStays,
         dischargeDateOutcomes: {
@@ -359,7 +359,7 @@ function ComparePresentation({
             <HeroStat value={readyBeds} label="Ready" />
             <HeroStat
               value={networkAvgStay === null ? "Not recorded" : `${networkAvgStay.toFixed(1)} days`}
-              label="Average stay"
+              label="Average completed stay"
             />
             <HeroStat value={statisticsCountText(totalBlockers)} label="Discharges held up" />
           </>
@@ -373,7 +373,7 @@ function ComparePresentation({
           {pendingPreparationBeds > 0 ? <HeroStat value={pendingPreparationBeds} label="Being made ready" /> : null}
           <HeroStat
             value={networkAvgStay === null ? "Not recorded" : `${networkAvgStay.toFixed(1)} days`}
-            label="Average stay"
+            label="Average completed stay"
           />
           <HeroStat
             value={statisticsCountText(totalBlockers)}
@@ -441,8 +441,8 @@ function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCom
   const longestTwo = useMemo(
     () =>
       [...wardRows]
-        .filter((row) => row.statistics.averageLengthOfStayDays !== null)
-        .sort((a, b) => (b.statistics.averageLengthOfStayDays ?? 0) - (a.statistics.averageLengthOfStayDays ?? 0))
+        .filter((row) => row.statistics.averageCompletedStayDays !== null)
+        .sort((a, b) => (b.statistics.averageCompletedStayDays ?? 0) - (a.statistics.averageCompletedStayDays ?? 0))
         .slice(0, 2)
         .map((row) => row.unit.id),
     [wardRows],
@@ -655,7 +655,7 @@ type WardMetric = "occupancy" | "stay" | "blocked" | "long";
 // occupancy first, as on the main Statistics page (the L1 count already on each row).
 const WARD_METRICS: Record<WardMetric, { label: string; chart: string; unit: string }> = {
   occupancy: { label: "Occupancy", chart: "Ward occupancy bar chart, percent of beds in use", unit: "percent" },
-  stay: { label: "Stay", chart: "Ward average stay bar chart", unit: "days" },
+  stay: { label: "Completed stay", chart: "Ward average completed stay bar chart", unit: "days" },
   // the word the hero and All wards use for this count.
   blocked: { label: HELD_UP_ANY_DATE_LABEL, chart: "Ward discharges held up bar chart", unit: "people" },
   long: { label: "Long stays", chart: "Ward long stays bar chart", unit: "people" },
@@ -663,7 +663,7 @@ const WARD_METRICS: Record<WardMetric, { label: string; chart: string; unit: str
 
 function wardMetricValue({ statistics, occupancy }: WardRow, metric: WardMetric): ComparisonValue {
   if (metric === "occupancy") return occupancy;
-  if (metric === "stay") return statistics.averageLengthOfStayDays;
+  if (metric === "stay") return statistics.averageCompletedStayDays;
   if (metric === "blocked") return statistics.readyToLeaveCannot;
   return statistics.longStays;
 }
@@ -793,7 +793,7 @@ function WardComparison({ rows, asAt }: { rows: WardRow[]; asAt: string }) {
             />
             {unrecorded.length > 0 ? (
               <p className={compare.unrecorded} data-testid="ward-statistics-compare-ward-chart-unrecorded">
-                {`Average stay not recorded for ${unrecorded.map((entry) => entry.name).join(", ")}`}
+                {`No completed stay for ${unrecorded.map((entry) => entry.name).join(", ")}`}
               </p>
             ) : null}
           </div>
@@ -998,8 +998,8 @@ type PinnedMeasure = {
 const PINNED_MEASURES: PinnedMeasure[] = [
   {
     id: "stay",
-    label: "Average stay",
-    value: (row) => row.statistics.averageLengthOfStayDays,
+    label: "Average completed stay",
+    value: (row) => row.statistics.averageCompletedStayDays,
     text: (v) => `${v.toFixed(1)} days`,
     markAbove: true,
   },
@@ -1333,12 +1333,12 @@ type WardColumnRow = ComparisonStatistics & { occupancy: number };
 const WARD_COLUMNS: readonly CompareColumn<WardColumnRow>[] = [
   { header: "Occupancy", cell: ({ occupancy }) => ({ text: `${occupancy}%` }) },
   {
-    header: "Average stay",
+    header: "Average completed stay",
     // `lengthOfStayMinutes` returns null only when nobody has ARRIVED, so the absence says that.
     cell: (statistics) =>
-      statistics.averageLengthOfStayDays === null
+      statistics.averageCompletedStayDays === null
         ? cannotBeFormed("none arrived")
-        : { text: `${statistics.averageLengthOfStayDays} days` },
+        : { text: `${statistics.averageCompletedStayDays} days` },
   },
   // Both are genuine counts, so a nought is a measurement and renders as one.
   { header: HELD_UP_ANY_DATE_LABEL, cell: (statistics, words) => count(statistics.readyToLeaveCannot, words) },

@@ -221,8 +221,8 @@ export function journeyStages({
     },
     {
       id: "discharged",
-      label: "Discharged today",
-      caption: "Left the ward today",
+      label: "Left today",
+      caption: "Stays ended since 12:00 am",
       tone: "success",
       count: left.length,
       breakdown: [

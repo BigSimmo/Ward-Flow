@@ -23,6 +23,7 @@ import { currentShiftStartInstant, releasesDueByShiftEnd } from "@/components/wa
 import { pullHoldText } from "@/components/ward-management/ward-bed-hold";
 import type { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
 import { heldUpDueByTomorrow } from "@/components/ward-management/ward-held-up";
+import { EXPECTED_TO_LEAVE_TODAY_LABEL } from "@/components/ward-management/ward-leaving-today";
 import {
   BED_RELEASE_BLOCKED_FIGURE_LABEL,
   deriveAfternoonDischarges,
@@ -452,8 +453,8 @@ export function WardHomeTab({
   const freeingByShiftEnd = new Set(
     releasesDueByShiftEnd(bedReleases, unit.id, now).map((release) => release.admissionId),
   );
-  // REG2-8, R-FIGS-12 (Josh, 14 Nov 2026): the "Discharges today" filter lights the beds the
-  // Discharges today card, Capacity and the TV count (`wardDischargesDueToday`, planned for today),
+  // REG2-8, R-FIGS-12 (Josh, 14 Nov 2026): the "Expected to leave today" filter lights the beds the
+  // Expected to leave card, Capacity and the TV count (`wardDischargesDueToday`, planned for today),
   // never a past date or a confirmed discharge on a later day.
   const leavingToday = new Set(wardDischargesDueToday(pendingBedReleases, now).map((release) => release.admissionId));
   const bedRows = (bedsList ?? []).map((bed) => {
@@ -1423,7 +1424,11 @@ export function WardHomeTab({
                     items={[
                       { id: "all", label: "All", count: bedRows.length },
                       { id: "look", label: "Needs a look", count: bedRows.filter((row) => row.look).length },
-                      { id: "leaving", label: "Discharges today", count: bedRows.filter((row) => row.leaving).length },
+                      {
+                        id: "leaving",
+                        label: EXPECTED_TO_LEAVE_TODAY_LABEL,
+                        count: bedRows.filter((row) => row.leaving).length,
+                      },
                       { id: "free", label: "Ready", count: bedRows.filter((row) => row.readyNow).length },
                       // The hero's Occupied figure sets a filter this group does not list, so it joins
                       // the group while on and a radio is always checked.

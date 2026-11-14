@@ -222,7 +222,8 @@ const wardSummary = z.strictObject({
     byReason: z.array(z.strictObject({ reason: publicLabel, count: foundationCount })).max(40),
   }),
   statistics: z.strictObject({
-    averageLengthOfStayDays: duration,
+    averageCompletedStayDays: duration,
+    medianStaySoFarDays: duration,
     averageEmptyBedMinutes: duration,
     emptyBedMinutesShortest: duration,
     emptyBedMinutesLongest: duration,
@@ -508,7 +509,7 @@ const reportingFoundation = z.strictObject({
     over8h: foundationCount,
     over24h: foundationCount,
     medianWaitMinutes: duration,
-    pooledAverageStayDays: duration,
+    pooledAverageCompletedStayDays: duration,
     blockedTotal: foundationCount,
     longStayTotal: foundationCount,
     todayBedReferrals: z.strictObject({

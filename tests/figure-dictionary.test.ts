@@ -62,21 +62,15 @@ describe("every figure row is complete", () => {
     expect(row.basis.trim()).not.toBe("");
     expect(COUNT_WINDOWS).toContain(row.window);
     expect(FIGURE_WINDOWS.map((window) => window.id)).toContain(row.windowId);
-    if (row.status === "reserved") {
-      expect(row.compute, "a reserved row has no function until PR A lands").toBeNull();
-      expect(row.basis).toMatch(/^Reserved: PR A builds/);
-    } else {
-      expect(typeof row.compute).toBe("function");
-      expect(row.how.length, "a built row explains how it is counted").toBeGreaterThan(0);
-    }
+    expect(typeof row.compute).toBe("function");
+    expect(row.how.length, "every row explains how it is counted").toBeGreaterThan(0);
   });
 
-  it("reserves exactly PR A's four figures (R-FIGS-12, R-FIGS-16)", () => {
-    expect(
-      ALL_FIGURES.filter((row) => row.status === "reserved")
-        .map((row) => row.id)
-        .sort(),
-    ).toEqual(["average-completed-stay", "expected-to-leave-today", "left-today", "stay-so-far"]);
+  it("has no reserved row left: PR A's four figures are built (R-FIGS-12, R-FIGS-16)", () => {
+    const ids = ALL_FIGURES.map((row) => row.id);
+    for (const id of ["average-completed-stay", "expected-to-leave-today", "left-today", "stay-so-far"])
+      expect(ids).toContain(id);
+    expect(ALL_FIGURES.every((row) => row.status !== ("reserved" as string))).toBe(true);
   });
 
   it("shows each rail badge from one row per desk", () => {

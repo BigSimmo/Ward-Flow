@@ -68,12 +68,12 @@ describe("wardStatistics — null versus zero", () => {
   it("returns null, never 0, for every averaging figure when there is nothing to average", () => {
     const statistics = wardStatistics(UNIT, [], DAY_ZERO);
 
-    expect(statistics.averageLengthOfStayDays).toBeNull();
+    expect(statistics.averageCompletedStayDays).toBeNull();
     expect(statistics.averageEmptyBedMinutes).toBeNull();
     expect(statistics.averageWaitlistWaitMinutes).toBeNull();
 
     // Explicitly NOT zero — the mistake this whole test exists to catch.
-    expect(statistics.averageLengthOfStayDays).not.toBe(0);
+    expect(statistics.averageCompletedStayDays).not.toBe(0);
     expect(statistics.averageEmptyBedMinutes).not.toBe(0);
   });
 
@@ -157,7 +157,7 @@ describe("wardStatistics — average length of stay", () => {
    * growing after they left; reading `leftAt` (or nothing) for a current occupant would report
    * their stay as zero or missing while they are plainly still in the bed.
    */
-  it("measures a current occupant to now, and a departed admission to leftAt, in the same average", () => {
+  it("averages only completed stays, and gives the current occupant's stay so far separately (R-FIGS-16)", () => {
     const now = DAY_ZERO + 6 * MINUTES_PER_DAY;
 
     const stillHere = anAdmission({ id: "ADM-current", state: "occupied", arrivedAt: DAY_ZERO, leftAt: null });
@@ -171,20 +171,17 @@ describe("wardStatistics — average length of stay", () => {
 
     const statistics = wardStatistics(UNIT, [stillHere, alreadyLeft], now);
 
-    // stillHere: 6 days (arrivedAt -> now). alreadyLeft: 2 days (arrivedAt -> leftAt). Average: 4.
-    // Same shape as the empty-bed run above, removed for the same reason: "a red run says which
-    // swap happened" was a promise two dead assertions could not keep. The swaps are in the message.
-    expect(
-      statistics.averageLengthOfStayDays,
-      "length of stay measures arrivedAt -> leftAt for somebody gone and arrivedAt -> now for " +
-        "somebody still here. 6 means both were measured to now, 2 means both were measured to leftAt",
-    ).toBe(4);
+    // R-FIGS-16 (D-216): the two populations are two figures. alreadyLeft: 2 days (arrivedAt ->
+    // leftAt) is the only completed stay. stillHere: 6 days (arrivedAt -> now) is the stay so far.
+    // 4 would mean the two were mixed again; 6 that the departed stay was measured to now.
+    expect(statistics.averageCompletedStayDays, "a completed stay is arrivedAt -> leftAt, ended stays only").toBe(2);
+    expect(statistics.medianStaySoFarDays, "the stay so far is arrivedAt -> now, people still here").toBe(6);
   });
 
   it("excludes an admission that has not arrived — there is no stay to measure yet", () => {
     const waitlisted = anAdmission({ state: "waitlisted", pulledAt: null, arrivedAt: null });
     const statistics = wardStatistics(UNIT, [waitlisted], DAY_ZERO + 5 * MINUTES_PER_DAY);
-    expect(statistics.averageLengthOfStayDays).toBeNull();
+    expect(statistics.averageCompletedStayDays).toBeNull();
   });
 });
 
@@ -267,11 +264,11 @@ describe("wardStatistics — ready to leave, cannot", () => {
   /**
    * REQUIRED: counts admissions carrying a `blockReason`, and is NOT subtracted from any other
    * figure. The two admissions below have deliberately DIFFERENT lengths of stay (2 days and 6
-   * days), so if a bug excluded the blocked admission from the length-of-stay average (treating
+   * days), so if a bug excluded the blocked admission from the stay so far (treating
    * "blocked" as though it removed the admission from the ward entirely), the average would come
    * out as 6 instead of 4 — a different, wrong number, not a coincidental match.
    */
-  it("counts a blocked admission without removing it from the length-of-stay average", () => {
+  it("counts a blocked admission without removing it from the stay so far", () => {
     const now = DAY_ZERO + 6 * MINUTES_PER_DAY;
     const blocked = anAdmission({
       id: "ADM-blocked",
@@ -289,9 +286,10 @@ describe("wardStatistics — ready to leave, cannot", () => {
     const statistics = wardStatistics(UNIT, [blocked, notBlocked], now);
 
     expect(statistics.readyToLeaveCannot).toBe(1);
-    // Both admissions still contribute: (2 + 6) / 2 = 4, not 6 (which is what excluding the
-    // blocked admission from the average would produce).
-    expect(statistics.averageLengthOfStayDays).toBe(4);
+    // Both admissions still contribute: the median of 2 and 6 is 4, not 6 (which is what excluding
+    // the blocked admission would produce). Neither has left, so there is no completed stay.
+    expect(statistics.medianStaySoFarDays).toBe(4);
+    expect(statistics.averageCompletedStayDays).toBeNull();
   });
 
   it("does not count an admission with no blockReason", () => {
@@ -412,9 +410,9 @@ describe("allWardStatistics", () => {
     const results = allWardStatistics(units, admissions, now);
 
     expect(results.map((entry) => entry.unit.id)).toEqual(units.map((unit) => unit.id));
-    expect(results[0]!.statistics.averageLengthOfStayDays).toBe(3);
-    expect(results[1]!.statistics.averageLengthOfStayDays).toBeNull(); // no admissions on units[1]
-    expect(results[2]!.statistics.averageLengthOfStayDays).toBe(3);
+    expect(results[0]!.statistics.medianStaySoFarDays).toBe(3);
+    expect(results[1]!.statistics.medianStaySoFarDays).toBeNull(); // no admissions on units[1]
+    expect(results[2]!.statistics.medianStaySoFarDays).toBe(3);
   });
 
   it("returns an empty list for an empty unit list, rather than falling back to every unit", () => {

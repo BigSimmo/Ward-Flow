@@ -23,13 +23,13 @@ import * as statistics from "@/components/ward-management/ward-statistics";
 function chartFigure(): HTMLElement {
   // The ward chart opens on Occupancy and its first eight wards: choose Stay, then Show all.
   const card = screen.getByTestId("statistics-compare-ward-chart");
-  if (!screen.queryByText("Ward average stay bar chart")) {
-    fireEvent.click(within(card).getByRole("radio", { name: "Stay" }));
+  if (!screen.queryByText("Ward average completed stay bar chart")) {
+    fireEvent.click(within(card).getByRole("radio", { name: "Completed stay" }));
   }
   const more = within(card).queryByRole("button", { name: /^Show all/ });
   if (more) fireEvent.click(more);
   // The bar list names itself in a visually hidden figcaption.
-  return screen.getByText("Ward average stay bar chart").closest("figure")!;
+  return screen.getByText("Ward average completed stay bar chart").closest("figure")!;
 }
 
 function chartItems(chart: HTMLElement): string[] {
@@ -77,7 +77,7 @@ it("keeps an unavailable average distinct from zero in the ward chart", () => {
     .spyOn(statistics, "allWardStatistics")
     .mockImplementation((...args) =>
       derive(...args).map((entry, index) =>
-        index === 0 ? { ...entry, statistics: { ...entry.statistics, averageLengthOfStayDays: null } } : entry,
+        index === 0 ? { ...entry, statistics: { ...entry.statistics, averageCompletedStayDays: null } } : entry,
       ),
     );
   try {
@@ -93,7 +93,7 @@ it("keeps an unavailable average distinct from zero in the ward chart", () => {
       "an unrecorded average was drawn as a bar",
     ).toBe(false);
     expect(screen.getByTestId("ward-statistics-compare-ward-chart-unrecorded").textContent).toBe(
-      `Average stay not recorded for ${name}`,
+      `No completed stay for ${name}`,
     );
     expect(screen.queryByText(`${name}: 0`)).toBeNull();
   } finally {

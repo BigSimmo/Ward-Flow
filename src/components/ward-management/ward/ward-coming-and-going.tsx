@@ -301,7 +301,7 @@ export function WardComingAndGoing(props: ComingAndGoingProps) {
         )}
       </section>
       <section className={styles.group} aria-labelledby="ward-coming-out">
-        <GroupHead id="ward-coming-out" n={dischargesToday.length} title="Discharges" window="today" />
+        <GroupHead id="ward-coming-out" n={dischargesToday.length} title="Expected to leave" window="today" />
         {dischargesToday.length === 0 ? (
           <p className={styles.empty}>{["None still due today.", props.lastFreed].filter(Boolean).join(" ")}</p>
         ) : (
