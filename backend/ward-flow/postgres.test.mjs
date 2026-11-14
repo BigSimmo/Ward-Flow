@@ -2982,8 +2982,9 @@ test(
       assert.equal((await store.command(deskA, randomUUID(), opened, urgency("WF-002", 1))).status, 200);
       const first = await store.command(deskB, randomUUID(), opened, urgency("WF-001", 2));
       assert.equal(first.status, 200, JSON.stringify(first.body.error ?? null));
-      assert.equal(first.body.covered.length, 1);
-      const seen = { [first.body.covered[0]]: first.body.commandRevision };
+      // The movement and, since D-222, the save's own History line: the popup has seen both.
+      assert.equal(first.body.covered.length, 2);
+      const seen = Object.fromEntries(first.body.covered.map((token) => [token, first.body.commandRevision]));
       // Without saying what the popup saw, its own first save looks like someone else's change.
       assert.equal((await store.command(deskB, randomUUID(), opened, urgency("WF-001", 3))).status, 409);
       const second = await store.command(deskB, randomUUID(), opened, urgency("WF-001", 3), { seen });
