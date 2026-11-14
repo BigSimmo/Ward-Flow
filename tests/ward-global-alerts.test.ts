@@ -52,7 +52,9 @@ describe("Pull now (global alerts, 10 Oct 2026)", () => {
 
   it("asks every ward still considering the referral when nobody has accepted, skipping declines", () => {
     const next = raise(seedWardFlowState(), "WF-017");
-    expect(next.broadcastAlerts[0].targetUnitIds).toEqual(["bty-adult-secure"]);
+    // D-229: the seed's Royal Perth Adult Secure wait list keeps its live referral, as the engine's
+    // waitlist answer does, so that ward is still considering the referral and is asked too.
+    expect(next.broadcastAlerts[0].targetUnitIds).toEqual(["bty-adult-secure", "rph-adult-secure"]);
   });
 
   it("refuses a patient with no ward left to ask, a duplicate, and any role but the coordinator", () => {

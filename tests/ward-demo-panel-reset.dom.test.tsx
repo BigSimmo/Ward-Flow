@@ -201,11 +201,12 @@ describe("Demo menu layout (pop-demo)", () => {
 });
 
 // Shared design parts item 8: Pause in the clock row runs the page's own pause, the one a tap on the
-// Live chip runs, and shows only on a page whose chip can pause.
+// Live chip runs. D-229: on this device's demo it also holds Board time, so it shows on every page
+// (`tests/ward-demo-pause-board-time.dom.test.tsx`).
 describe("Demo clock Pause", () => {
-  it("is absent where no Live chip can pause", () => {
+  it("shows on this device's demo even where no Live chip can pause", () => {
     renderPanel();
-    expect(within(panel()).queryByTestId("ward-tools-demo-pause")).toBeNull();
+    expect(within(panel()).getByTestId("ward-tools-demo-pause")).toHaveTextContent("Pause");
   });
 
   it("pauses and resumes the page through its Live chip's action", () => {
@@ -223,8 +224,13 @@ describe("Demo clock Pause", () => {
     expect(pause).toHaveTextContent("Pause");
     fireEvent.click(pause);
     expect(within(panel()).getByTestId("ward-tools-demo-pause")).toHaveTextContent("Resume");
+    // R-STRUCT-46: one short line says what Pause holds and what to do next.
+    expect(within(panel()).getByTestId("ward-tools-demo-paused")).toHaveTextContent(
+      "Paused: times hold until you press Resume.",
+    );
     expect(screen.getByRole("button", { name: /pause demo updates/u })).toHaveAttribute("aria-pressed", "true");
     fireEvent.click(within(panel()).getByTestId("ward-tools-demo-pause"));
     expect(within(panel()).getByTestId("ward-tools-demo-pause")).toHaveTextContent("Pause");
+    expect(within(panel()).queryByTestId("ward-tools-demo-paused")).toBeNull();
   });
 });
