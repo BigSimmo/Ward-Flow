@@ -489,6 +489,20 @@ export function reduceRecordedStayEvent(
           `RECORD_ABSENCE_STEP was raised acting as unit ${event.actingUnitId} but the absence is on unit ${bed.unitId}`,
         );
       }
+      if (event.step === "return_order_made") {
+        // A3-13 (Josh signed off): a voluntary stay is not on an order, so no return order step.
+        // The screens hide it (absenceStepsFor); the server refuses it too (untested-537, S1).
+        const admission = findAdmission(state, event.admissionId);
+        const patient = admission?.patientId
+          ? state.patients.find((candidate) => candidate.id === admission.patientId)
+          : undefined;
+        const stayStatus = admission
+          ? (dischargeMovement(state, admission)?.legalStatus ?? patient?.legalStatus)
+          : undefined;
+        if (/^voluntary\b/i.test(stayStatus?.trim() ?? "") && !patientRecordIsInvoluntary(patient?.legalStatus)) {
+          return reject(state, event, "A return order is not needed for a voluntary stay");
+        }
+      }
       if (bed.absentWithoutLeave.steps.some((done) => done.step === event.step)) {
         return reject(state, event, `${event.step} is already recorded for admission ${event.admissionId}`);
       }

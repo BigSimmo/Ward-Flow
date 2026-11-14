@@ -432,4 +432,47 @@ describe("absence steps by legal status (A3-13, audit r1 item 5)", () => {
     expect(absenceStepsFor(true)).toHaveLength(ABSENCE_STEPS.length - 1);
     expect(absenceStepsFor(false)).toEqual(ABSENCE_STEPS);
   });
+
+  it("refuses a return order step on a voluntary stay on the server too, and keeps it for an involuntary one", () => {
+    const state = seedWardFlowStateAt(0);
+    const statusOf = (a: (typeof state.admissions)[number]) =>
+      state.movements.find((m) => m.admissionId === a.id)?.legalStatus ??
+      state.patients.find((p) => p.id === a.patientId)?.legalStatus ??
+      "";
+    // The first stay of each kind that can be recorded absent (not already away or on leave).
+    const absentStay = (status: RegExp) => {
+      for (const stay of state.admissions) {
+        if (stay.state !== "occupied" || !status.test(statusOf(stay))) continue;
+        // A voluntary movement for a patient whose record says involuntary still counts as involuntary.
+        if (/^involuntary/i.test(state.patients.find((p) => p.id === stay.patientId)?.legalStatus ?? "")) {
+          if (status.test("Voluntary")) continue;
+        }
+        const absent = wardFlowReducer(state, {
+          type: "RECORD_ABSENT_WITHOUT_LEAVE",
+          role: "ward",
+          now: NOW,
+          admissionId: stay.id,
+          actingUnitId: stay.unitId,
+        });
+        if (absent.leaveBeds.find((b) => b.admissionId === stay.id)?.absentWithoutLeave) return { stay, absent };
+      }
+      throw new Error(`no stay matching ${status}`);
+    };
+    const step = ({ stay, absent }: ReturnType<typeof absentStay>) =>
+      wardFlowReducer(absent, {
+        type: "RECORD_ABSENCE_STEP",
+        role: "ward",
+        now: NOW + 1,
+        admissionId: stay.id,
+        actingUnitId: stay.unitId,
+        step: "return_order_made",
+      });
+    const voluntary = absentStay(/^voluntary\b/i);
+    expect(step(voluntary).rejections.at(-1)?.reason).toBe("A return order is not needed for a voluntary stay");
+    const involuntary = absentStay(/^involuntary\b/i);
+    const kept = step(involuntary);
+    expect(kept.leaveBeds.find((b) => b.admissionId === involuntary.stay.id)!.absentWithoutLeave!.steps).toEqual([
+      { step: "return_order_made", at: NOW + 1 },
+    ]);
+  });
 });
