@@ -13,6 +13,7 @@ import {
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { instantFromDateAndTimeInputs } from "@/components/ward-management/ed/ed-screen-model";
+import { perthCalendarDay } from "@/components/ward-management/ward-clock";
 import { typeDate } from "./helpers/type-date-time";
 
 vi.mock("next/link", () => ({
@@ -20,6 +21,16 @@ vi.mock("next/link", () => ({
 }));
 const ID = "WF-001";
 const DRAFT = { date: "2026-10-25", time: "14:00" };
+/**
+ * The real screen's `dayZero` is the calendar day the test runs on (`demoDayZero(new Date())` in
+ * `ward-flow-provider.tsx`), so a fixed date can fall before WF-001's written time and be refused by
+ * the written-before-expiry order check (audit M13b, D-210). The real-form test types tomorrow's
+ * Perth date instead, as `ward-ed-form-expiry-controls.dom.test.tsx` does.
+ */
+function dateInputValue(date: Date): string {
+  const { year, monthIndex, day } = perthCalendarDay(date);
+  return `${year}-${String(monthIndex + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
 let world = 0;
 let overrideDispatch: WardCommandDispatch | undefined;
 let shared: WardFlowContextValue["shared"];
@@ -106,7 +117,7 @@ describe("ED expiry save confirmation", () => {
     const sheet = within(screen.getByTestId(`ward-ed-phone-sheet-${ID}`));
     const date = sheet.getByTestId(`ward-ed-legal-form-expiry-date-${ID}`);
     const time = sheet.getByTestId(`ward-ed-legal-form-expiry-time-${ID}`);
-    typeDate(date, DRAFT.date);
+    typeDate(date, dateInputValue(new Date(Date.now() + 864e5)));
     fireEvent.change(time, { target: { value: DRAFT.time } });
     fireEvent.submit(sheet.getByTestId(`ward-ed-legal-form-expiry-${ID}`));
     expect(sheet.queryByTestId(`ward-ed-legal-form-expiry-${ID}`)).toBeNull();

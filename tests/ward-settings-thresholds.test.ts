@@ -73,7 +73,7 @@ describe("the thresholds this prototype publishes", () => {
    */
   it("reports the legal-form deadline as reaching nobody on today's data", () => {
     const rows = publishedThresholds(SEED.movements, NOW_ANCHOR, CONFIGURATION);
-    const legalForm = rows.find((row) => row.livesIn.includes("legalForm"));
+    const legalForm = rows.find((row) => row.id === "legal-form-deadline");
     expect(legalForm, "the legal-form row is missing").toBeDefined();
     expect(legalForm?.state).toBe("nothing-reaches-it");
     expect(legalForm?.reached).toBe(0);
@@ -87,7 +87,7 @@ describe("the thresholds this prototype publishes", () => {
   it("turns that row live by itself once something does reach it", () => {
     const farFuture = NOW_ANCHOR + 60 * 24 * 365;
     const rows = publishedThresholds(SEED.movements, farFuture, CONFIGURATION);
-    const legalForm = rows.find((row) => row.livesIn.includes("legalForm"));
+    const legalForm = rows.find((row) => row.id === "legal-form-deadline");
 
     expect(legalForm?.reached, "no movement reached the deadline even a year later").toBeGreaterThan(0);
     expect(legalForm?.state).toBe("fires-now");
