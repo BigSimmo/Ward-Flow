@@ -275,7 +275,7 @@ test.describe("@mockup Ward screen", () => {
     await advanceClockHour.click();
     await advanceClockHour.click();
     await advanceClockHour.click();
-    const advanceClock = panel.getByRole("button", { name: "+15m", exact: true });
+    const advanceClock = panel.getByRole("button", { name: "+15 min", exact: true });
     await advanceClock.click();
     await advanceClock.click();
     await advanceClock.click();

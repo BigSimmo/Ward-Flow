@@ -185,7 +185,7 @@ describe("Demo menu layout (pop-demo)", () => {
     expect(practice.closest("details")?.open).toBe(false);
     const first = within(panel()).getByRole("region", { name: "Demo clock and reset" });
     expect(within(first).getByTestId("ward-tools-demo-reset")).toBeTruthy();
-    expect(within(first).getByRole("button", { name: "+15m" })).toBeTruthy();
+    expect(within(first).getByRole("button", { name: "+15 min" })).toBeTruthy();
     const scenarioHeading = within(panel()).getByRole("heading", { name: "Scenario" });
     expect(first.compareDocumentPosition(scenarioHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     const seeItAs = within(panel()).getByRole("region", { name: "See it as" });

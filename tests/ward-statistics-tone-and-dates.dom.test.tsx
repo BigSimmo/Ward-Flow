@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -69,6 +69,11 @@ function renderInProvider(node: ReactNode, initialDayZero = PINNED_DAY_ZERO) {
   );
 }
 
+// The report opens on this week so far (14 Nov 2026); these cases read the last full week.
+function chooseLastFullWeek() {
+  fireEvent.click(screen.getByRole("radio", { name: "Last full week" }));
+}
+
 // A16-14 (D-175 item 1): the last full week's shorter waits are the Armadale worked examples, which
 // are now opt-in, so these two cases turn them on (without them the week holds at most one wait).
 describe("Weekly ED waits (stats-9)", () => {
@@ -87,12 +92,15 @@ describe("Weekly ED waits (stats-9)", () => {
         </WardFlowProvider>
       </ToastProvider>,
     );
+    chooseLastFullWeek();
     // The seeded last full week has long waits, one still open (the audit's own example).
     const list = screen.getByRole("table", { name: /^ED waits first passing/u });
     const rows = within(list).getAllByRole("row").slice(1);
     expect(rows.length).toBeGreaterThan(0);
     expect(
-      rows.some((row) => Number(/(\d+)d \d+h/u.exec(row.querySelectorAll("td")[1]?.textContent ?? "")?.[1] ?? 0) >= 2),
+      rows.some(
+        (row) => Number(/(\d+) d \d+ h/u.exec(row.querySelectorAll("td")[1]?.textContent ?? "")?.[1] ?? 0) >= 2,
+      ),
     ).toBe(true);
     // D-39: never a WF- journey id; an AD- number or "Not yet admitted".
     expect(list.textContent).not.toMatch(/WF-/u);
@@ -100,7 +108,7 @@ describe("Weekly ED waits (stats-9)", () => {
     // the card foot says when the figure stops ("Waited to Sun 25 Oct").
     expect(screen.getByText(/^Waited to \w{3} \d{1,2} \w{3}$/u)).toBeInTheDocument();
     for (const row of rows) {
-      const days = /(\d+)d \d+h/u.exec(row.querySelectorAll("td")[1]?.textContent ?? "");
+      const days = /(\d+) d \d+ h/u.exec(row.querySelectorAll("td")[1]?.textContent ?? "");
       const red = row.querySelector('svg[class*="danger"]');
       if (days && Number(days[1]) >= 2) expect(red, row.textContent ?? "").not.toBeNull();
       else expect(red, row.textContent ?? "").toBeNull();
@@ -117,13 +125,14 @@ describe("Weekly ED waits (stats-9)", () => {
       </>,
       monday,
     );
+    chooseLastFullWeek();
     const rows = within(screen.getByRole("table", { name: /^ED waits first passing/u }))
       .getAllByRole("row")
       .slice(1);
     let redCount = 0;
     let nonredCount = 0;
     for (const row of rows) {
-      const days = /(\d+)d \d+h/u.exec(row.querySelectorAll("td")[1]?.textContent ?? "");
+      const days = /(\d+) d \d+ h/u.exec(row.querySelectorAll("td")[1]?.textContent ?? "");
       const red = row.querySelector('svg[class*="danger"]');
       if (days && Number(days[1]) >= 2) {
         expect(red, row.textContent ?? "").not.toBeNull();
@@ -141,6 +150,7 @@ describe("Weekly ED waits (stats-9)", () => {
     asPhone();
     const sunday = demoDayZero(new Date("2026-10-18T12:00:00+08:00")).getTime();
     renderInProvider(<WeeklyReportScreen />, sunday);
+    chooseLastFullWeek();
     expect(screen.getByTestId("ward-weekly-ed-count")).toHaveTextContent(/^0$/u);
     expect(screen.getByText(/^No wait first passed/u)).toBeInTheDocument();
     expect(screen.queryByRole("table", { name: /^ED waits first passing/u })).not.toBeInTheDocument();

@@ -24,7 +24,6 @@ import { useServiceScope } from "@/components/ward-management/shell/ward-service
 import { isBedCountStale } from "@/components/ward-management/ward-clinical-values";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { activeActNowItems, activeTaskItems } from "@/components/ward-management/ward-act-now-items";
-import { needsYouCount } from "@/components/ward-management/figures/decision-counts";
 import { alertsNowFigures } from "@/components/ward-management/ward-alerts-figures";
 import { formatInstant, splitDuration } from "@/components/ward-management/ward-clock";
 import { originPlace } from "@/components/ward-management/origin-place";
@@ -735,7 +734,7 @@ export function CoordinatorScreen() {
   const nextScope = service === null ? "" : ` in ${service}`;
   // R-HOME-1 (mock-up HOME-M1): one answer with its parts, "12 need you: 6 act now, 6 to decide". Act now is
   // the one shared figure the bell and Alerts use (`alertsNowFigures`); to decide is the referral queue.
-  const needsYou = needsYouCount(nextActCount, referralQueue.length);
+  const needsYou = nextActCount + referralQueue.length;
   const needsYouParts =
     nextActCount > 0 && referralQueue.length > 0 ? `: ${nextActCount} act now, ${referralQueue.length} to decide` : "";
   const needsYouAnswer = `${needsYou} ${needsYou === 1 ? "needs" : "need"} you${nextScope}${needsYouParts}`;

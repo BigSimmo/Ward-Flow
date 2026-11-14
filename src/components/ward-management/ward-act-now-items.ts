@@ -45,7 +45,6 @@ import {
   type InboxItem,
 } from "@/components/ward-management/ward-derivations";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
-import { WARD_LEAVE_HREF } from "@/components/ward-management/ward-nav";
 import {
   leaveBedReminderAt,
   leaveBedReminderDue,
@@ -354,7 +353,7 @@ export function leaveBedReminderInboxItems(source: Pick<TaskSource, "units" | "l
         detail: `${ward} bed held since ${formatInstantWithDay(leaveBed.confirmedAt, now)}. Open it if the person is not coming back soon. Clears when the bed is opened.`,
         owner: "Nurse in charge",
         movementId: "",
-        href: WARD_LEAVE_HREF,
+        href: "/ward-flow/leave", // the leave page (`WARD_LEAVE_HREF`); a literal here keeps ward-nav out of this file (import cycle)
         dueAt: at,
         since: at,
       };

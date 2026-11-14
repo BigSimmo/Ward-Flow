@@ -145,7 +145,7 @@
       "src/components/ward-management/ward/ward-screen.tsx": 1
     },
     "occupancy-tone": {
-      "src/components/ward-management/wards/ward-index.tsx": 3
+      "src/components/ward-management/wards/ward-index.tsx": 1
     },
     "alerts": {
       "src/components/ward-management/alerts/alerts-model.ts": 1,

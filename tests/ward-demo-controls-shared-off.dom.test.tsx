@@ -53,7 +53,7 @@ describe("demo controls when the shared workspace switches them off", () => {
         <WardDemoPanel />
       </WardFlowProvider>,
     );
-    expect(screen.getByRole("button", { name: "+15m" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "+15 min" })).toBeEnabled();
     expect(screen.queryByText(DEMO_CONTROLS_OFF)).toBeNull();
   });
 
@@ -61,7 +61,7 @@ describe("demo controls when the shared workspace switches them off", () => {
     renderOff(<WardDemoPanel />);
     const note = screen.getByTestId("ward-tools-demo-off");
     expect(note).toHaveTextContent(DEMO_CONTROLS_OFF);
-    for (const name of ["+15m", "+1 hour", "Reset demo", "Load from file"]) {
+    for (const name of ["+15 min", "+1 hour", "Reset demo", "Load from file"]) {
       const button = screen.getByRole("button", { name });
       expect(button, name).toBeDisabled();
       expect(button.getAttribute("aria-describedby"), name).toBe(note.id);

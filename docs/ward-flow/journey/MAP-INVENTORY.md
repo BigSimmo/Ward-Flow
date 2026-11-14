@@ -1215,7 +1215,7 @@ Source-contract SHA256: cbbfb10354282ae8464b3d0b2adf7f25f72caea2805bc78c6d8fa290
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:542; SHA256 f305e4436a9f754ff704a5fb04ede91c3bd1ea989ce540b23b1d02e5141e23d5
   Reviewed source: src/components/ward-management/ward-inbox-events.ts:112; SHA256 cdb61844c8ae2a0448fedabeac25a1f4e332aa87c842754c58f002c22c839c31
   Reviewed source: src/components/ward-management/ward-access-state.ts:713; SHA256 5b1fed421d4882e27b984cace9dc59d78da635fb74e51328b4b9f5a8f22e5369
-  Reviewed source: src/components/ward-management/ward-inbox-snooze.ts:84; SHA256 eda403a5e8fbf768036d873898501882422dad29ebc3c7362c7766a10daaf1dd
+  Reviewed source: src/components/ward-management/ward-inbox-snooze.ts:84; SHA256 035e5cccd991a573b77f73f8bcd517c5ae1b1356995e687e581be6ca6f1e3c08
 - RELEASE_INBOX_ITEM_OWNERSHIP — modelled; event roles: coordinator
   Source-reviewed command model: Ownership history appended with kind=released; ownership relinquished.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:541
@@ -1237,7 +1237,7 @@ Source-contract SHA256: cbbfb10354282ae8464b3d0b2adf7f25f72caea2805bc78c6d8fa290
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:543; SHA256 f305e4436a9f754ff704a5fb04ede91c3bd1ea989ce540b23b1d02e5141e23d5
   Reviewed source: src/components/ward-management/ward-inbox-events.ts:122; SHA256 cdb61844c8ae2a0448fedabeac25a1f4e332aa87c842754c58f002c22c839c31
   Reviewed source: src/components/ward-management/ward-access-state.ts:713; SHA256 5b1fed421d4882e27b984cace9dc59d78da635fb74e51328b4b9f5a8f22e5369
-  Reviewed source: src/components/ward-management/ward-inbox-snooze.ts:84; SHA256 eda403a5e8fbf768036d873898501882422dad29ebc3c7362c7766a10daaf1dd
+  Reviewed source: src/components/ward-management/ward-inbox-snooze.ts:84; SHA256 035e5cccd991a573b77f73f8bcd517c5ae1b1356995e687e581be6ca6f1e3c08
 - SNOOZE_INBOX_ITEM — modelled; event roles: coordinator
   Source-reviewed command model: Latest snoozed entry hides row until chosen return time while fact remains.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:542
@@ -1259,7 +1259,7 @@ Source-contract SHA256: cbbfb10354282ae8464b3d0b2adf7f25f72caea2805bc78c6d8fa290
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:544; SHA256 f305e4436a9f754ff704a5fb04ede91c3bd1ea989ce540b23b1d02e5141e23d5
   Reviewed source: src/components/ward-management/ward-inbox-events.ts:134; SHA256 cdb61844c8ae2a0448fedabeac25a1f4e332aa87c842754c58f002c22c839c31
   Reviewed source: src/components/ward-management/ward-access-state.ts:713; SHA256 5b1fed421d4882e27b984cace9dc59d78da635fb74e51328b4b9f5a8f22e5369
-  Reviewed source: src/components/ward-management/ward-inbox-snooze.ts:84; SHA256 eda403a5e8fbf768036d873898501882422dad29ebc3c7362c7766a10daaf1dd
+  Reviewed source: src/components/ward-management/ward-inbox-snooze.ts:84; SHA256 035e5cccd991a573b77f73f8bcd517c5ae1b1356995e687e581be6ca6f1e3c08
 - UNSNOOZE_INBOX_ITEM — modelled; event roles: coordinator
   Source-reviewed command model: Snooze history appended with kind=returned; active snooze ends now.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:543
@@ -1280,7 +1280,7 @@ Source-contract SHA256: cbbfb10354282ae8464b3d0b2adf7f25f72caea2805bc78c6d8fa290
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:545; SHA256 f305e4436a9f754ff704a5fb04ede91c3bd1ea989ce540b23b1d02e5141e23d5
   Reviewed source: src/components/ward-management/ward-inbox-events.ts:143; SHA256 cdb61844c8ae2a0448fedabeac25a1f4e332aa87c842754c58f002c22c839c31
   Reviewed source: src/components/ward-management/ward-access-state.ts:713; SHA256 5b1fed421d4882e27b984cace9dc59d78da635fb74e51328b4b9f5a8f22e5369
-  Reviewed source: src/components/ward-management/ward-inbox-snooze.ts:84; SHA256 eda403a5e8fbf768036d873898501882422dad29ebc3c7362c7766a10daaf1dd
+  Reviewed source: src/components/ward-management/ward-inbox-snooze.ts:84; SHA256 035e5cccd991a573b77f73f8bcd517c5ae1b1356995e687e581be6ca6f1e3c08
 - SET_ARRIVAL_DETAILS — diagram-reviewed; event roles: coordinator, ed, ward, community
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:544
