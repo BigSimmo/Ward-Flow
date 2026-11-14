@@ -116,6 +116,7 @@ export function useAskMoreWards({
               fit,
               ready: readyBedsFor(unit, ready),
               ...(fit && kind === "stale_count" ? { stale: staleCountWords(unit, now) } : {}),
+              ...(!fit && (kind === "not_suitable" || unit.isClosed) ? { unsuitable: true } : {}),
               reason: unit.isClosed ? "Closed to admissions" : candidateReason(verdict),
             };
           })

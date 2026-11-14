@@ -1,6 +1,6 @@
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
-import type { BedRelease, Movement, Unit } from "@/components/ward-management/ward-model";
+import type { BedRelease, Movement, ReadyCounts, Unit } from "@/components/ward-management/ward-model";
 import {
   numberedReservationBeds,
   type ReservationReferral as BaseReservationReferral,
@@ -25,21 +25,14 @@ import { pulledBedAvailability } from "@/components/ward-management/ward-ready-b
 /** A named hold as the bed counts read it: a journey, a referral, or one ward's inbox entry. */
 export type ReadyHold = BaseReservationReferral | Movement;
 
-export type ReadyPartition = {
-  /** Ready: offered, empty, not pulled, not named for anyone, not being made ready. */
-  ready: number;
-  /** Runtime pulls taken out of the ward's raw unoffered remainder. */
-  pulledFromEmpty: number;
-  /** Runtime pulls taken out of the offered figure. */
-  pulledFromAvailable: number;
-  /** Seeded pulled stays (no journey link): they sit in occupancy. */
-  seededPulled: number;
-  /** Named holds, and how many of them came off the offered figure. */
-  named: number;
-  namedFromReady: number;
-  /** Released beds still being made ready, taken off what was left (D-179 item 8). */
-  beingMadeReady: number;
-};
+/**
+ * The Ready partition: Ready (offered, empty, not pulled, not named for anyone, not being made
+ * ready); runtime pulls taken out of the ward's raw unoffered remainder (`pulledFromEmpty`) and out
+ * of the offered figure (`pulledFromAvailable`); seeded pulled stays, which sit in occupancy
+ * (`seededPulled`); named holds and how many came off the offered figure; and released beds still
+ * being made ready, taken off what was left (D-179 item 8).
+ */
+export type ReadyPartition = ReadyCounts;
 
 /** What `except` leaves out: the journey or referral about to use its own hold. */
 export type ReadyExcept = { movementId?: string; referralId?: string };
@@ -55,6 +48,14 @@ export function readyPartition(
   holds: readonly ReadyHold[],
   except: ReadyExcept = {},
 ): ReadyPartition {
+  // Josh, 14 Nov 2026 (RV2-17): a ward outside this desk's records carries its partition, worked
+  // out from the whole workspace by the same arithmetic below, so every desk reads the same Ready.
+  // A caller that passes no holds (occupancy) reads the stays-only partition, as it would in view.
+  if (unit.readyOutOfView) {
+    const cached =
+      holds.length === 0 && unit.readyOutOfViewStaysOnly ? unit.readyOutOfViewStaysOnly : unit.readyOutOfView;
+    return { ...cached };
+  }
   let livePulled = 0;
   let seededPulled = 0;
   for (const admission of admissions) {

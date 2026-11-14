@@ -875,6 +875,19 @@ function plural(count: number, word: string): string {
   return `${count} ${word}${count === 1 ? "" : "s"}`;
 }
 
+/**
+ * Owner ruling item 5 (Josh, 14 Nov 2026): a bed count goes stale at the one signed time
+ * (`bedCountFresh`, D-63) on every screen, not at each ward's own stored `staleAfterMinutes`.
+ * That ruling supersedes P025 (27 Oct 2026, option B). The stored field stays in the data model.
+ */
+export const BED_COUNT_FRESH_MINUTES: number = CLINICAL_VALUES.bedCountFresh.value;
+
+/** True once a bed count confirmed at `confirmedAt` is older than the signed bed count time at `now`. */
+export function isBedCountStale(confirmedAt: number, now: number): boolean {
+  // Written as a negated <= so a count with no confirmation time (NaN) reads as stale, never fresh.
+  return !(now - confirmedAt <= BED_COUNT_FRESH_MINUTES);
+}
+
 /** A figure in its own unit as people read it: "15 minutes", "4 hours", "7 days", "85%". */
 export function formatClinicalFigure(value: number, unit: ClinicalValueUnit): string {
   if (unit === "percent") return `${value}%`;

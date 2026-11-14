@@ -68,8 +68,8 @@ describe("settings screen due-time warning rows", () => {
       screen.getByText("Early warning").compareDocumentPosition(screen.getByText("Final warning")) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    // The card that holds both rows says once that these are defaults, not legal limits.
-    expect(screen.getByText("Your defaults, not legal limits")).toBeVisible();
+    // The card that holds both rows says once that these are defaults (D-218: no legal-limit hedge).
+    expect(screen.getByText("Your defaults")).toBeVisible();
 
     expect(screen.getByTestId("due-soon-urgent-display")).toHaveTextContent("1h");
     expect(screen.getByTestId("due-soon-display")).toHaveTextContent("3h");

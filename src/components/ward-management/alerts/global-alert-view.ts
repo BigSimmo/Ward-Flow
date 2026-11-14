@@ -150,6 +150,30 @@ export function bannerEntriesForDesk(
   );
 }
 
+/**
+ * Together-X2-6: the desk a signed-in ward or ED acknowledges a directive for from the Broadcasts
+ * tab, or null when it has nothing to acknowledge. The banner shows one alert at a time, so a Pull
+ * now ahead of the directive hid the only Acknowledge; this is the same "asked and not yet answered"
+ * test the banner uses (`bannerEntriesForDesk`), for each of the desk's own places.
+ */
+export function directiveAcknowledgeDesk(
+  alert: BroadcastAlert,
+  access: { role: string; scope: { kind: string; unitIds?: readonly string[]; edId?: string } },
+  movements: readonly Movement[],
+  now: Instant,
+  units: readonly Unit[],
+): AlertDesk | null {
+  if (broadcastKind(alert) !== "directive") return null;
+  const { scope } = access;
+  const desks: AlertDesk[] =
+    access.role === "ward" && scope.kind === "ward"
+      ? (scope.unitIds ?? []).map((id) => ({ role: "ward", id }))
+      : access.role === "ed" && scope.kind === "ed" && scope.edId !== undefined
+        ? [{ role: "ed", id: scope.edId }]
+        : [];
+  return desks.find((desk) => bannerEntriesForDesk([alert], movements, desk, now, units)[0]?.needsAnswer) ?? null;
+}
+
 type ReplyRow = { unitId: string; name: string; reply?: BroadcastReply };
 
 export type ReplyBoard = {

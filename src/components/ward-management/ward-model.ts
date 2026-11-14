@@ -272,6 +272,17 @@ export type WardAdmissionsClosure = {
   transitionMarks?: LoopChecks.ClosureTransitionMark[]; // Closing the loop D4: marked dealt with; cleared with the closure.
 };
 
+/** One ward's Ready partition as counts (`readyPartition` in ward-shared-ready); see `Unit.readyOutOfView`. */
+export type ReadyCounts = {
+  ready: number;
+  pulledFromEmpty: number;
+  pulledFromAvailable: number;
+  seededPulled: number;
+  named: number;
+  namedFromReady: number;
+  beingMadeReady: number;
+};
+
 export type Unit = {
   id: string;
   siteCode: string;
@@ -440,6 +451,19 @@ export type Unit = {
     bedKind?: "locked" | "open";
     bedNumber?: number;
   }[];
+  /**
+   * Josh, 14 Nov 2026 ("all screens align"; RV2-17): on a desk's copy only, never in the saved
+   * state. A desk not sent this ward's stays, bed releases and named holds (an ED, a community team,
+   * Transport, the access admin, or any ward outside a desk's own place) carries the ward's Ready
+   * partition worked out from the whole workspace (`withReadyOutOfView` in ward-access-scope), so
+   * "Beds ready now" reads the same on every desk. Counts only: no stay, person or record id.
+   */
+  readyOutOfView?: ReadyCounts;
+  /**
+   * The same partition with no named holds, for the occupancy readers that leave holds out
+   * (`ward-occupancy.ts` passes none, so a named hold is never counted as a bed in use).
+   */
+  readyOutOfViewStaysOnly?: ReadyCounts;
   /** Who this bed may hold, as a CONSTRAINT — see `SexDesignation`'s own doc comment. Never
    *  compared to a referral's `sex` by equality; `"Undesignated"` accepts either sex. */
   sexDesignation: SexDesignation;

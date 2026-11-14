@@ -700,6 +700,23 @@
   .pinButton {
     display: none;
   }
+
+  /* INV-PRINT-026: the place's name, its detail and its bed-count time sit in a button on screen,
+     and the global print rule hides buttons. Paper keeps the row, and the fold headings that name it. */
+  .resultMain {
+    display: grid !important;
+  }
+
+  .foldButton,
+  .sectionFold {
+    display: flex !important;
+    cursor: auto;
+  }
+
+  .foldIcon,
+  .sectionFoldIcon {
+    display: none;
+  }
 }
 
 /* Phone (simplified): one tidy list of places. The preview pane (glance, needs a check, recent

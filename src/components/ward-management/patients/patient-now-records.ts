@@ -6,7 +6,7 @@
  * as well as dynamic fallback structures for any patient or movement in the system.
  */
 
-import { dayOf, minuteOfDay, splitDuration } from "@/components/ward-management/ward-clock";
+import { dayOf, formatInstant, minuteOfDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { STANDARD_WARD_SITES, wardNetworkOf } from "@/components/ward-management/ward-sites";
 
@@ -584,9 +584,9 @@ export function dur(min: number): string {
 }
 
 export function clock(min: number): string {
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  return `${h < 10 ? "0" : ""}${h}:${m < 10 ? "0" : ""}${m}`;
+  // Demo instants run past 1440 (680:51 is day 28). The face of the clock wraps; callers that need
+  // the day use formatInstantWithDay or dayLabel beside it.
+  return formatInstant(min);
 }
 
 /**

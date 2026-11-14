@@ -160,7 +160,7 @@ export const ED_WAIT_BANDS = [
   middleBand(ED_STATISTICS_FIRST_BAND_EDGE_MINUTES, ED_SEVERE_PRESSURE_WAIT_MINUTES),
   middleBand(ED_SEVERE_PRESSURE_WAIT_MINUTES, ED_STATISTICS_THIRD_BAND_EDGE_MINUTES),
   middleBand(ED_STATISTICS_THIRD_BAND_EDGE_MINUTES, MINUTES_PER_DAY),
-  { label: "Past 24 hours", fromMinutes: MINUTES_PER_DAY },
+  { label: `Over ${MINUTES_PER_DAY / 60}h`, fromMinutes: MINUTES_PER_DAY },
 ] as const;
 
 export type EdWaitBand = {

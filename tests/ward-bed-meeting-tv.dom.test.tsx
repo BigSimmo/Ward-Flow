@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -630,20 +631,20 @@ describe("the ward and ED TV views", () => {
       wards: 1,
       notConfirmed: 0,
       oldestAt: unit.allocatable.confirmedAt,
-      staleAfter: { min: unit.allocatable.staleAfterMinutes, max: unit.allocatable.staleAfterMinutes },
+      staleAfter: CLINICAL_VALUES.bedCountFresh.value,
     });
     const first = render(<WardTvView sheet={fresh} now={NOW_ANCHOR} scenario="Synthetic" />);
     expect(screen.getByTestId("ward-tv-ready-age")).toHaveTextContent(
       `Confirmed ${formatInstantWithDay(unit.allocatable.confirmedAt, NOW_ANCHOR)}`,
     );
-    // P025 (Josh, 27 Oct 2026, option B): each ward keeps its own time, and the TV says it.
+    // Owner ruling 14 Nov 2026 supersedes P025 (27 Oct, each ward its own time): one signed time, no range.
     expect(screen.getByTestId("ward-tv-ready-age")).toHaveTextContent(
-      `late after ${unit.allocatable.staleAfterMinutes} min`,
+      `late after ${CLINICAL_VALUES.bedCountFresh.value} min`,
     );
     first.unmount();
 
-    // Past the ward's own staleAfterMinutes: Capacity's rule, so both screens call it late.
-    const lateAt = NOW_ANCHOR - unit.allocatable.staleAfterMinutes - 30;
+    // Past the signed bed count time: Capacity's rule, so both screens call it late.
+    const lateAt = NOW_ANCHOR - CLINICAL_VALUES.bedCountFresh.value - 30;
     const late = { ...unit, allocatable: { ...unit.allocatable, confirmedAt: lateAt } };
     const units = inputs.units.map((each) => (each.id === unit.id ? late : each));
     const sheet = wardTvSheet({ ...inputs, units, unit: late, thresholds });

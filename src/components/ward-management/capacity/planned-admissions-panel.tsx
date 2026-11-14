@@ -1038,7 +1038,11 @@ export function PlannedAdmissionsPanel({
       </Sheet>
       <ArrivalIdentityDialog
         open={arrivalCheck !== null}
-        who={arrivalCheck ? whoText(arrivalCheck) : ""}
+        person={
+          arrivalCheck?.patientId && role !== "executive"
+            ? patientOf({ patientId: arrivalCheck.patientId }).patient
+            : undefined
+        }
         identity={arrivalCheck ? identityText(arrivalCheck) : ""}
         wardName={arrivalCheck ? unitName(arrivalCheck.unitId) : ""}
         onClose={() => setArrivalCheck(null)}

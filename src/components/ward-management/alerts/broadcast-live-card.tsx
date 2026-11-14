@@ -3,7 +3,7 @@
 // The Broadcast tab's cards (Alerts redesign, 1 Nov 2026, BUILD-SPEC "Broadcast tab"): each live
 // broadcast as a card with its answers or acknowledgements, an action bar along the bottom, the
 // earlier broadcasts and an empty state. Built from the approved mock-up (`bcPanel()`, `earlier()`).
-import { Clock, Copy, Radio, Users } from "lucide-react";
+import { Check, Clock, Copy, Radio, Users } from "lucide-react";
 
 import { Button, durMinutes } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -89,6 +89,7 @@ export function BroadcastLiveCard({
   addUnitsDisabledReason,
   onCopyAnswers,
   onStandDown,
+  onAcknowledge,
 }: {
   alert: BroadcastAlert;
   units: readonly { id: string; name: string }[];
@@ -96,11 +97,14 @@ export function BroadcastLiveCard({
   sentByYou: boolean;
   /** A directive's acknowledgements against the desks this desk can see; undefined shows none. */
   acknowledgements: { acknowledged: number; of: number } | undefined;
-  onExtend: () => void;
-  onAddUnits: () => void;
+  /** Together-X2-6: each lifecycle step is absent for a desk whose role may not take it (a ward). */
+  onExtend?: () => void;
+  onAddUnits?: () => void;
   addUnitsDisabledReason?: string;
   onCopyAnswers: (text: string) => void;
-  onStandDown: () => void;
+  onStandDown?: () => void;
+  /** Together-X2-6: set while this desk has a directive to acknowledge. */
+  onAcknowledge?: () => void;
 }) {
   const confirmStandDown = useConfirmBroadcastStandDown(alert, onStandDown);
   const bedCall = broadcastKind(alert) === "bed_call";
@@ -212,21 +216,32 @@ export function BroadcastLiveCard({
         ) : null}
       </div>
       <div className={css.foot}>
-        <Button icon={Clock} onClick={onExtend}>
-          Extend {durMinutes(DEFAULT_BROADCAST_EXTENSION_MINUTES)}
-        </Button>
-        <Button icon={Users} onClick={onAddUnits} disabledReason={addUnitsDisabledReason} reasonDisplay="tooltip">
-          Add desks
-        </Button>
+        {onAcknowledge ? (
+          <Button variant="pri" icon={Check} onClick={onAcknowledge} title="Acknowledge this directive for your desk">
+            Acknowledge
+          </Button>
+        ) : null}
+        {onExtend ? (
+          <Button icon={Clock} onClick={onExtend}>
+            Extend {durMinutes(DEFAULT_BROADCAST_EXTENSION_MINUTES)}
+          </Button>
+        ) : null}
+        {onAddUnits ? (
+          <Button icon={Users} onClick={onAddUnits} disabledReason={addUnitsDisabledReason} reasonDisplay="tooltip">
+            Add desks
+          </Button>
+        ) : null}
         {board ? (
           <Button variant="ghost" icon={Copy} onClick={() => onCopyAnswers(copyText)}>
             Copy answers
           </Button>
         ) : null}
         <span className={css.spacer} />
-        <Button aria-label="Stand down this alert" onClick={confirmStandDown}>
-          Stand down
-        </Button>
+        {onStandDown ? (
+          <Button aria-label="Stand down this alert" onClick={confirmStandDown}>
+            Stand down
+          </Button>
+        ) : null}
       </div>
     </article>
   );

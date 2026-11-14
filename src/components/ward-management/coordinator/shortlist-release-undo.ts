@@ -17,3 +17,12 @@ export function releaseUndoStep(movementId: string, success: string, undone: str
 export function withdrawUndoStep(movementId: string, name: string): UndoableStep {
   return releaseUndoStep(movementId, `Ward request withdrawn for ${name}.`, "Undone. The ward request is open again.");
 }
+
+/** Item 195: "Refer" to wards offers Undo on its toast, as the signed-in Activity does (`UNDO_REFER_TO_UNITS`). */
+export function referToUnitsUndoStep(movementId: string, name: string): UndoableStep {
+  return {
+    success: `Referred ${name} to wards.`,
+    undone: `Referral to wards undone for ${name}.`,
+    undo: (at) => ({ type: "UNDO_REFER_TO_UNITS", role: "coordinator", now: at, movementId }),
+  };
+}

@@ -726,7 +726,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
                 {person.legal ? (
                   <HeroChip value={<LegalName name={person.legal} />} label={person.legalTag} />
                 ) : (
-                  <HeroChip value="Legal on record" label="Not recorded. Not legally checked." />
+                  <HeroChip value="Legal on record" label="Not recorded" />
                 )}
                 {person.alertCount > 1 ? (
                   <HeroChip

@@ -23,6 +23,7 @@ import { bedHold, PULL_NO_LIMIT_RECORDED } from "@/components/ward-management/wa
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { legalStatusTextIsInvoluntary } from "@/components/ward-management/ward-support-notifications";
+import { hasCurrentLegalMismatch, LEGAL_MISMATCH_WARNING } from "@/components/ward-management/ward-stay-legal";
 import {
   calendarDateOf,
   formatInstantWithDay,
@@ -240,13 +241,13 @@ export function referralWaitingForTriage(
 function awolTrackerMeta(since: number, now: number, stayUnitName?: string, holdReview = false): string {
   const away = Math.max(0, now - since);
   const holdWarning = CLINICAL_VALUES.awolBedHoldWarning.value;
-  const base = `Since ${clock(since)}, away ${formatSince(since, now)}, owner nurse in charge`;
+  const base = `Since ${formatInstantWithDay(since, now)}, away ${formatSince(since, now)}, owner nurse in charge`;
   if (!holdReview || away < holdWarning) return base;
   const bed = stayUnitName ? `Bed on ${stayUnitName}` : "Bed";
   return `${base}. ${bed} held over ${holdWarning % 60 === 0 ? `${holdWarning / 60}h` : dur(holdWarning)}, review the hold`;
 }
 
-function clearanceCell(movement: Movement, onClearance: PatientStatusContext["onClearance"]): StatusCell {
+function clearanceCell(movement: Movement, onClearance: PatientStatusContext["onClearance"], now: number): StatusCell {
   const clearance = movement.medicalClearance;
   return {
     key: "clearance",
@@ -254,7 +255,11 @@ function clearanceCell(movement: Movement, onClearance: PatientStatusContext["on
     label: "Fit to travel",
     owner: "ED doctor",
     tone: clearance ? (clearance.cleared ? "success" : "danger") : "warning",
-    value: clearance ? (clearance.cleared ? `Cleared ${clock(clearance.at)}` : "Not cleared") : "Not recorded",
+    value: clearance
+      ? clearance.cleared
+        ? `Cleared ${formatInstantWithDay(clearance.at, now)}`
+        : "Not cleared"
+      : "Not recorded",
     // A9-09 (Audit 9, 13 Nov 2026): the app records clearance and holds nothing back, so the card says
     // only that, until Josh rules whether transport or handover should wait for it.
     sub: clearance ? "Treating team's stated outcome" : "Not yet stated by the treating team",
@@ -445,7 +450,7 @@ function statusFor(
           value: "Progress unavailable in this view",
           sub: "Destination details are restricted",
         },
-        clearanceCell(movement, ctx.onClearance),
+        clearanceCell(movement, ctx.onClearance, ctx.now),
         withHref(
           transportCell(movement, false, ctx.onBookTransport, undefined, false, ctx.onTransportNeeded),
           ctx.transportHref,
@@ -480,7 +485,7 @@ function statusFor(
             value: progress ? labels[progress] : "Progress unavailable",
             sub: "Destination details are restricted",
           },
-          clearanceCell(movement, ctx.onClearance),
+          clearanceCell(movement, ctx.onClearance, ctx.now),
           withHref(
             transportCell(movement, false, ctx.onBookTransport, undefined, false, ctx.onTransportNeeded),
             ctx.transportHref,
@@ -532,7 +537,7 @@ function statusFor(
       meta: "Bed is the blocker",
       cells: [
         bed,
-        clearanceCell(movement, ctx.onClearance),
+        clearanceCell(movement, ctx.onClearance, ctx.now),
         withHref(
           transportCell(movement, false, ctx.onBookTransport, undefined, false, ctx.onTransportNeeded),
           ctx.transportHref,
@@ -560,7 +565,8 @@ function statusFor(
             : `Bed pulled, ${hold.short}`
           : `Bed pulled · ${PULL_NO_LIMIT_RECORDED}`
         : "Accepted, no bed pulled yet",
-      time: movement.acceptedAt !== undefined ? `Accepted ${clock(movement.acceptedAt)}` : undefined,
+      time:
+        movement.acceptedAt !== undefined ? `Accepted ${formatInstantWithDay(movement.acceptedAt, now)}` : undefined,
       clear: ctx.hasBedHold && !lapsed,
       action: !ctx.hasBedHold
         ? { kind: "button", label: "Pull the bed", onClick: ctx.onOpenPlacement }
@@ -575,7 +581,7 @@ function statusFor(
       meta: ctx.acceptedUnitName ? `Accepted for ${ctx.acceptedUnitName}` : "Acceptance recorded",
       cells: [
         bed,
-        clearanceCell(movement, ctx.onClearance),
+        clearanceCell(movement, ctx.onClearance, ctx.now),
         withHref(
           transportCell(
             movement,
@@ -589,6 +595,12 @@ function statusFor(
         ),
       ],
     });
+    // Master stress test D1a-E-2 (14 Nov 2026): a recorded legal mismatch shows beside Pull the bed.
+    // A warning only; the bed can still be pulled (D-16).
+    if (hasCurrentLegalMismatch(movement)) {
+      status.tone = "warning";
+      status.meta = `${status.meta}. ${LEGAL_MISMATCH_WARNING}`;
+    }
     if (lapsed && hold) {
       status.tone = "danger";
       status.verdict = "Pull expired, bed still pulled";
@@ -669,7 +681,7 @@ function statusFor(
           sub:
             etaAt === undefined
               ? "Typed by the booker or the ward"
-              : `Flags late at ${clock(etaAt + LATE_ARRIVAL_GRACE_MINUTES)}`,
+              : `Flags late at ${formatInstantWithDay(etaAt + LATE_ARRIVAL_GRACE_MINUTES, now)}`,
           action: {
             kind: "button",
             label: etaAt === undefined ? "Set arrival time" : "Update arrival",

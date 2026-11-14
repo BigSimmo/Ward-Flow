@@ -364,10 +364,10 @@
 }
 
 .dupName {
-  overflow: hidden;
+  /* Demo-Feel-B2d-S-1: a long name wraps; it is never cut to "..." where the match is checked. */
+  min-width: 0;
   font-weight: 600;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 .dupKind {

@@ -15,7 +15,6 @@ import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
-import { LEGAL_LIMITS_NOT_CHECKED_NOTICE } from "@/components/ward-management/ward-legal-clock";
 import { copiedText } from "@/components/ward-management/ward-clipboard";
 import { bedSummaryText } from "@/components/ward-management/tools/ward-bed-summary";
 import { ToolRemindMe, useReminderCount } from "@/components/ward-management/tools/ward-tool-remind-me";
@@ -274,10 +273,11 @@ describe("Form times (Q319, D-93)", () => {
     typeDate(screen.getByLabelText("Date on form"), "2026-09-26");
     fireEvent.change(screen.getByLabelText("Time on form"), { target: { value: time } });
     const result = screen.getByTestId("ward-form-times-result");
-    expect(result).toHaveTextContent("as typed");
+    // D-218 (Josh, 14 Nov 2026): the time shows with no "as typed" or legal notice, and still no countdown.
+    expect(result).not.toHaveTextContent("as typed");
     expect(result).toHaveTextContent(time);
     expect(tool.textContent).not.toMatch(countdown);
-    expect(within(tool).getByText(LEGAL_LIMITS_NOT_CHECKED_NOTICE)).toBeTruthy();
+    expect(tool.textContent).not.toMatch(/legally checked/iu);
   });
 });
 

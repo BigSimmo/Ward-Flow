@@ -71,13 +71,18 @@ export function legalCell(
   const standing = typedTimeStanding(row.movement, now, thresholds);
   return (
     <span className={redesign.legalTyped}>
-      {legalTip(`${full}, ${ends} as typed${standingSuffix(standing)}`, <>{short}</>)}
+      {legalTip(`${full}, ${ends}${standingSuffix(standing)}`, <>{short}</>)}
       <span className={redesign.legalTypedTime}>
         <span className={redesign.legalTypedEnds}>
           {standing.word ? <Glyph tone={standing.tone} /> : null}
           {ends}
-        </span>{" "}
-        <span className={redesign.legalTypedWord}>as typed{standingSuffix(standing)}</span>
+        </span>
+        {standing.word ? (
+          <>
+            {" "}
+            <span className={redesign.legalTypedWord}>{standing.word}</span>
+          </>
+        ) : null}
       </span>
     </span>
   );
@@ -231,7 +236,7 @@ export function RowTimeline({ row, units, now }: { row: BoardRow; units: Unit[];
     labels.push({
       p: dueP,
       time: typedClock(now + due, now, dayZero),
-      text: `Form ${row.movement.legalForm.code} ends as typed${standingSuffix(standing)}`,
+      text: `Form ${row.movement.legalForm.code} ends${standingSuffix(standing)}`,
       tone: standing.word ? standing.tone : undefined,
     });
   // A recorded legal time that has already passed stays on the journey, marked where it fell.
@@ -241,7 +246,7 @@ export function RowTimeline({ row, units, now }: { row: BoardRow; units: Unit[];
     labels.push({
       p: passedP,
       time: typedClock(now - passed, now, dayZero),
-      text: `Form ${row.movement.legalForm.code} ended as typed`,
+      text: `Form ${row.movement.legalForm.code} ended`,
       tone: "danger",
     });
   labels.sort((a, b) => a.p - b.p);

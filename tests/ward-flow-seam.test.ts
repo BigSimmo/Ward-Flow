@@ -59,6 +59,11 @@ const WARD_DIRS = [
  */
 const APPROVED_SHARED_MODULES = new Map([
   ["@/components/ui-primitives", "the repository's buttons and form controls"],
+  [
+    "@/lib/ward-time-zone",
+    "The app's one time zone setting (D-213, Josh 14 Nov 2026: 'link it automatically to AWST'). In src/lib because " +
+      "the wf kit's clock reads it and the kit imports no ward code; the backend engine bundles the same file.",
+  ],
   ["@/components/wf/sheet", "the slide-over panel primitive"],
   [
     "@/lib/synthetic-data-guard",
@@ -334,7 +339,9 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
     // the kit's Live timer (RC 2.5, F-35), read from the kit's leaf rather than its barrel.
     // 14 -> 15 on 2026-11-13: @/components/wf/synthetic-mark, the loading row's mark, kept off the barrel
     // so the loading boundary does not carry the whole kit (D-192).
-    expect(APPROVED_SHARED_MODULES.size).toBe(15);
+    // 15 -> 16 on 2026-11-14: @/lib/ward-time-zone, the app's one time zone setting (D-213), read by
+    // the kit's clock as well as the ward code, so it sits outside both.
+    expect(APPROVED_SHARED_MODULES.size).toBe(16);
     // ⚠️ AND THE MEMBERSHIP, NOT ONLY THE COUNT. A size pin cannot tell a widening from a SWAP:
     // remove one approved module, add another, and the count stays unchanged while Ward Flow's seam
     // has changed — which is the thing this list exists to control. The argument is already made
@@ -358,6 +365,7 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
       "@/lib/front-door-pass",
       "@/lib/synthetic-data-guard",
       "@/lib/theme-client",
+      "@/lib/ward-time-zone",
     ]);
     // 4 -> 6 on 2026-09-12, when the sign-in screen arrived as a SIBLING route
     // (`/ward-flow-sign-in`) whose path contains this guard's literal as a prefix. Raised

@@ -19,6 +19,7 @@ import {
   wardFlowReducer,
   type WardFlowState,
 } from "../src/components/ward-management/ward-flow-reducer";
+import { withFreshBedCounts } from "./helpers/fresh-bed-counts";
 import type { Instant } from "../src/components/ward-management/ward-clock";
 import {
   MOVEMENT_STAGES,
@@ -63,7 +64,7 @@ const UNIT_ACCEPTED = "rph-adult-secure";
  * fixture state").
  */
 function buildAcceptedFixture(): WardFlowState {
-  const s0 = seedWardFlowState();
+  const s0 = withFreshBedCounts(seedWardFlowState());
   // T12 (item 9, owner answer 17 September 2026): WF-012 is Non-binary, so referring it needs a
   // reason and a recorded ward check — the fixture predates T12 and never carried either.
   const s1 = wardFlowReducer(s0, {
@@ -252,7 +253,7 @@ describe("STEP_BACK_STAGE — refusals", () => {
   });
 
   it("refuses stepping back a closed movement (test 4)", () => {
-    const seeded = seedWardFlowState();
+    const seeded = withFreshBedCounts(seedWardFlowState());
     const closed = movementIn(seeded, "WF-008");
     expect(closed.stage).toBe("accepted_awaiting_bed");
     expect(closed.closure).toBeDefined();
@@ -621,7 +622,7 @@ describe("WITHDRAW_ACCEPTANCE — refusals", () => {
   });
 
   it("refuses withdrawing an acceptance for a closed movement (test 18)", () => {
-    const seeded = seedWardFlowState();
+    const seeded = withFreshBedCounts(seedWardFlowState());
     const closed = movementIn(seeded, "WF-008");
     expect(closed.stage).toBe("accepted_awaiting_bed");
     expect(closed.closure).toBeDefined();

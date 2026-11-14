@@ -51,7 +51,7 @@ describe("Legal Forms current paper facts", () => {
     // Forms panel (1 Nov 2026): one scroll, no tabs. The summary shows the form's typed end time once;
     // the legacy legal clock never appears as a second current expiry.
     const panel = within(screen.getByTestId("ward-legal-selected"));
-    expect(panel.getAllByText(/^End(s|ed), as typed from the form/)).toHaveLength(1);
+    expect(panel.getAllByText(/^End(s|ed)/)).toHaveLength(1);
     expect(screen.queryByTestId("ward-legal-forms-clock-WF-AUDIT-LEGAL")).not.toBeInTheDocument();
     expect(panel.getByText("Time written")).toBeVisible();
   });

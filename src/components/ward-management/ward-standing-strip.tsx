@@ -25,7 +25,6 @@ import { wardChromeRole, type WardChromeRole } from "@/components/ward-managemen
 import type { Movement } from "@/components/ward-management/ward-model";
 
 import styles from "./ward-standing-strip.module.css";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 
 /**
  * **THE CORE FIGURES, BEHIND A TOGGLE IN THE HEADER — owner's change, 2026-09-07.**
@@ -374,7 +373,6 @@ function WardStatsPanel({ figures, open }: { figures: StandingFigure[]; open: bo
             />
           ))}
         </WardFigureStrip>
-        <LegalLimitsNotChecked variant="tag" />
       </div>
     </div>
   );

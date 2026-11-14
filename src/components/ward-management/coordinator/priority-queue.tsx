@@ -40,7 +40,6 @@ import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-op
 import { PULL_NO_LIMIT_RECORDED, pullHoldText } from "@/components/ward-management/ward-bed-hold";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-service-scope-bar";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { liveTurnaroundPreference } from "@/components/ward-management/ward-turnaround-priority";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 
@@ -331,8 +330,7 @@ export function PriorityQueue({
             {legalBreached ? (
               <span className={styles.queueMark}>
                 <StatusGlyph tone="danger" size={9} />
-                {legalFactor ? legalFactor.detail : "Form due time (as written) passed"}
-                <LegalLimitsNotChecked variant="tag" />
+                {legalFactor ? legalFactor.detail : "Form due time passed"}
               </span>
             ) : null}
             {/* A1-14 (audit 13 Oct 2026): an offer made from Home shows on the row, so the

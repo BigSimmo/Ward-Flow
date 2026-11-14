@@ -25,7 +25,6 @@ import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import { currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
 import { standingSuffix, typedTimeStanding } from "@/components/ward-management/legal-forms/legal-forms-view";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { useDueSoonThresholds, useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -282,9 +281,8 @@ export function MovementDrawer({
           ? "ended"
           : "no recorded expiry"
         : ""
-      : // Legal times only as typed (D-93): "ended 15:42 as typed · passed", never a count.
+      : // Legal times only as typed (D-93): "ended 15:42 · passed", never a count.
         `${typedTimePhrase(dueAt, now, dayZero)}${standingSuffix(standing)}`;
-  const legalTyped = dueAt !== undefined;
 
   // Every ward ever asked: live requests, recorded declines and the accepting ward. A decline
   // removes the ward from the live list, so the live list alone would read "None yet".
@@ -473,7 +471,6 @@ export function MovementDrawer({
         legalTitle={legalTitle}
         legalWhen={legalWhen}
         legalTone={legalTone}
-        legalTyped={legalTyped}
         hasBlocker={hasBlocker && !closure}
         open={open}
         onClose={onClose}
@@ -613,12 +610,6 @@ export function MovementDrawer({
           <span className={d.legalText}>
             <strong>{legalTitle}</strong>
             {legalWhen ? ` · ${legalWhen}` : ""}
-            {legalTyped ? (
-              <>
-                {" "}
-                <LegalLimitsNotChecked variant="tag" />
-              </>
-            ) : null}
           </span>
         </p>
         <dl className={d.grid}>
@@ -786,7 +777,6 @@ function MovementPhoneSheet({
   legalTitle,
   legalWhen,
   legalTone,
-  legalTyped,
   hasBlocker,
   open,
   onClose,
@@ -805,8 +795,6 @@ function MovementPhoneSheet({
   legalWhen: string;
   /** Set when the RECORDED expiry has passed or is near (D5: a typed time, never a computed one). */
   legalTone: WfTone | undefined;
-  /** A typed form time is shown, so the "limits not legally checked" tag goes with it. */
-  legalTyped: boolean;
   hasBlocker: boolean;
   open: boolean;
   onClose: () => void;
@@ -882,12 +870,6 @@ function MovementPhoneSheet({
               {legalWhen ? (
                 <span className={d.phLegalWhen} data-testid="ward-movement-phone-legal-expiry">
                   {legalWhen}
-                  {legalTyped ? (
-                    <>
-                      {" "}
-                      <LegalLimitsNotChecked variant="tag" />
-                    </>
-                  ) : null}
                 </span>
               ) : null}
             </dd>

@@ -5,6 +5,7 @@ import { currentLegalPosition } from "@/components/ward-management/ward-legal-fo
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { classifyLegalStatus, legalStatusIsOnOrder } from "@/components/ward-management/ward-legal-status";
+import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning";
 
 /**
  * A STAY'S LEGAL STATUS, READ ONE WAY (audit A3-1/A3-18, 13 Oct 2026). The movement that brought
@@ -55,6 +56,41 @@ export function legalStatusesDiffer(
 
 /** The patient page's words for the mark. */
 export const LEGAL_STATUSES_DIFFER = "These two legal statuses differ. Check which is current.";
+
+/**
+ * The sentence beside a recorded legal mismatch (`movement.legalMismatch`, FLAG_LEGAL_MISMATCH) at
+ * the step that moves the person: the ED board, the patient page and Handover. A warning only, never
+ * a block (D-16: recorded, never overridden). Wording approved by Josh, 14 Nov 2026 (R-LEGAL-4).
+ */
+export const LEGAL_MISMATCH_WARNING = "Legal status does not match this ward. Check before moving.";
+
+/**
+ * R-LEGAL-4 (Josh, 14 Nov 2026): the short chip for the same flag on lists (Search, Movements, the
+ * Capacity ward drawer), with the sentence as its title. One pattern: chip on lists, sentence at
+ * the moving step. Amber, display only.
+ */
+export const LEGAL_MISMATCH_CHIP = "Legal mismatch";
+
+/** The open journeys accepted for one ward whose recorded legal mismatch still stands (R-LEGAL-4). */
+export function currentLegalMismatchesFor(movements: readonly Movement[], unitId: string): Movement[] {
+  return movements.filter((movement) => movement.acceptedUnitId === unitId && hasCurrentLegalMismatch(movement));
+}
+
+/**
+ * Whether a recorded legal mismatch still describes this journey: it names the ward that accepted
+ * the person, the journey is open, and the recorded status is still the kind the flag named. A flag
+ * for a ward the journey has moved on from, or a status since changed, shows nothing. Read only;
+ * the stored flag is never changed here.
+ */
+export function hasCurrentLegalMismatch(
+  movement: Pick<Movement, "legalMismatch" | "acceptedUnitId" | "legalStatus" | "closure"> | undefined,
+): boolean {
+  const flag = movement?.legalMismatch;
+  if (!movement || !flag || movement.closure || flag.unitId !== movement.acceptedUnitId) return false;
+  return flag.kind === "voluntary_on_locked_ward"
+    ? movement.legalStatus === "Voluntary"
+    : isNotVoluntary(movement.legalStatus);
+}
 
 /** Whether the stay's own journey and its patient record differ, read as the patient page reads them. */
 export function stayLegalStatusesDiffer(admission: Admission, source: StayLegalSource): boolean {

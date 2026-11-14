@@ -25,9 +25,9 @@ describe("18-skill audit remediation invariants", () => {
     }
   });
 
-  it("pins Australia/Perth timezone in readmissionDetailText date formatting", () => {
+  it("pins the app's time zone (WARD_TIME_ZONE, Perth) in readmissionDetailText date formatting", () => {
     const source = readRepoFile("src/components/ward-management/ward-readmission-flag.tsx");
-    expect(source).toMatch(/toLocaleDateString\("en-AU",\s*\{[\s\S]*?timeZone:\s*"Australia\/Perth"/);
+    expect(source).toMatch(/toLocaleDateString\("en-AU",\s*\{[\s\S]*?timeZone:\s*WARD_TIME_ZONE/);
   });
 
   it("checks both pathname and search in WardOfflineLinks before allowing same-page navigation", () => {

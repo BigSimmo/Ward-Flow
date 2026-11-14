@@ -24,8 +24,31 @@ const PLACEHOLDER_IDS = new Set([
   "00000000-0000-4000-8000-000000000000",
   "00000000-0000-4000-8000-000000000001",
 ]);
-/** Perth keeps UTC+8 all year. */
-const PERTH_OFFSET_MS = 8 * 60 * 60_000;
+/**
+ * The app's one time zone: a copy of `WARD_TIME_ZONE` in `src/lib/ward-time-zone.ts`, because this
+ * file is plain JavaScript run with no build step. `day-zero-rebase.test.mjs` holds the two equal.
+ */
+export const WARD_TIME_ZONE = "Australia/Perth";
+const zoneWall = new Intl.DateTimeFormat("en-US", {
+  timeZone: WARD_TIME_ZONE,
+  hourCycle: "h23",
+  year: "numeric",
+  month: "numeric",
+  day: "numeric",
+  hour: "numeric",
+  minute: "numeric",
+});
+/** How far the zone is ahead of UTC at a moment, from the zone's own rules (8 hours for Perth). */
+function zoneOffsetMs(at) {
+  const minute = Math.floor(at / 60_000) * 60_000;
+  const part = Object.fromEntries(zoneWall.formatToParts(new Date(minute)).map((p) => [p.type, Number(p.value)]));
+  return Date.UTC(part.year, part.month - 1, part.day, part.hour, part.minute) - minute;
+}
+/** Midnight at the start of a calendar day in the zone, as epoch milliseconds. */
+function zoneMidnight(year, monthIndex, day) {
+  const asUtc = Date.UTC(year, monthIndex, day);
+  return asUtc - zoneOffsetMs(asUtc - zoneOffsetMs(asUtc));
+}
 const COORDINATOR_UNTIL_MAX_MS = 366 * 24 * 60 * 60_000;
 
 export function readConfig(env = process.env, dependencies = {}) {
@@ -74,8 +97,8 @@ export function readConfig(env = process.env, dependencies = {}) {
   let coordinatorUntil = null;
   if (env.WARD_COORDINATOR_UNTIL) {
     const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(env.WARD_COORDINATOR_UNTIL.trim());
-    const end = match ? Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]) + 1) - PERTH_OFFSET_MS : NaN;
-    const day = match ? new Date(end + PERTH_OFFSET_MS - 1).toISOString().slice(0, 10) : "";
+    const end = match ? zoneMidnight(Number(match[1]), Number(match[2]) - 1, Number(match[3]) + 1) : NaN;
+    const day = match ? new Date(end - 1 + zoneOffsetMs(end - 1)).toISOString().slice(0, 10) : "";
     if (
       day !== env.WARD_COORDINATOR_UNTIL.trim() ||
       end > (dependencies.now?.() ?? Date.now()) + COORDINATOR_UNTIL_MAX_MS
