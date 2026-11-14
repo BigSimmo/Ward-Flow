@@ -20,12 +20,12 @@ const REVIEW_DAYS = 7;
 /** Minutes from `now` to a stored time, as the screens place server times on the demo clock. */
 /**
  * R-FIGS-13 (Josh, 14 Nov 2026): why a record was opened, for the Access log's Reason column. An
- * opening made while the same account held a break glass grant on that person names the grant's
+ * opening made while the same account and membership held a break glass grant on that person names the grant's
  * picked reason (a list id, never typed words); any other opening reads null, inside the desk's
  * own scope. Read from the break glass table both migrations already keep: no new column.
  */
 const BREAK_GLASS_REASON =
-  "(SELECT b.reason FROM ward_flow.break_glass b WHERE b.workspace_id = r.workspace_id AND b.data_mode = r.data_mode AND b.actor_id = r.actor_id AND b.patient_id = r.patient_id AND r.viewed_at >= b.opened_at AND r.viewed_at <= b.until ORDER BY b.id DESC LIMIT 1) AS break_glass_reason";
+  "(SELECT b.reason FROM ward_flow.break_glass b WHERE b.workspace_id = r.workspace_id AND b.data_mode = r.data_mode AND b.actor_id = r.actor_id AND b.membership_id = r.membership_id AND b.patient_id = r.patient_id AND r.viewed_at >= b.opened_at AND r.viewed_at <= b.until ORDER BY b.id DESC LIMIT 1) AS break_glass_reason";
 const minutesBefore = (time, now) => Math.round((new Date(time).getTime() - now.getTime()) / 60_000);
 /** Most record openings one account may log in a minute, so no desk can flood the log. */
 const VIEW_RATE_LIMIT = 60;

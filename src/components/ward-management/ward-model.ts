@@ -459,6 +459,11 @@ export type Unit = {
    * "Beds ready now" reads the same on every desk. Counts only: no stay, person or record id.
    */
   readyOutOfView?: ReadyCounts;
+  /**
+   * The same partition with no named holds, for the occupancy readers that leave holds out
+   * (`ward-occupancy.ts` passes none, so a named hold is never counted as a bed in use).
+   */
+  readyOutOfViewStaysOnly?: ReadyCounts;
   /** Who this bed may hold, as a CONSTRAINT — see `SexDesignation`'s own doc comment. Never
    *  compared to a referral's `sex` by equality; `"Undesignated"` accepts either sex. */
   sexDesignation: SexDesignation;
