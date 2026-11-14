@@ -19,7 +19,6 @@ import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { LEGAL_STATUS_CHANGE_REASONS, OVERRIDE_REASONS } from "@/components/ward-management/ward-change-reasons";
-import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import {
   BOOKABLE_TRANSPORT_PROVIDERS,
   TRANSPORT_PROVIDERS,
@@ -60,6 +59,19 @@ function heldBedMovement(): Movement {
     movement,
     "the fixture must hold an unbooked movement with a bed held, or nothing here is exercised",
   ).toBeDefined();
+  return movement!;
+}
+
+/** D-186 item 6: a held bed, not voluntary, with no Form 4A or 4C on file, so the order notice shows. */
+function heldBedWithoutOrder(): Movement {
+  const movement = seedWardFlowState().movements.find(
+    (candidate) =>
+      candidate.stage === "pulled" &&
+      candidate.transport === undefined &&
+      candidate.legalStatus !== "Voluntary" &&
+      !["4A", "4C"].includes(candidate.legalForm?.code ?? ""),
+  );
+  expect(movement, "the fixture must hold a held bed with no transport order on file").toBeDefined();
   return movement!;
 }
 
@@ -126,6 +138,9 @@ function fillPhoneLoggedFields(movementId: string, cadNumber: string, status: "v
     target: { value: "14:30" },
   });
   fireEvent.click(screen.getByTestId(`ward-ed-transport-estimated-day-today-${movementId}`));
+  // D-187 item 10: no seeded movement has medical clearance recorded, so booking asks for a reason.
+  const reason = screen.queryByTestId(`ward-ed-transport-legal-reason-${movementId}`);
+  if (reason) fireEvent.change(reason, { target: { value: "treating_team_confirmed" } });
 }
 
 describe("booking transport from the sending emergency department", () => {
@@ -354,19 +369,18 @@ describe("booking transport from the sending emergency department", () => {
  * the same discipline the rest of this file holds to.
  */
 describe("the no-4A-recorded notice beside the booking control", () => {
-  const NOTICE_4A = legalFormName({ code: "4A", kind: "transport" });
-
-  it("appears for an involuntary patient with a held bed and no Form 4A recorded", () => {
-    const movement = heldBedMovement();
-    // Non-vacuity for the sentence below: the fixture's held bed is involuntary and its legal
-    // form is a 4C, never a 4A — the exact shape this notice exists to name.
+  it("appears for a not-voluntary patient with a held bed and no transport or transfer order on file", () => {
+    const movement = heldBedWithoutOrder();
+    // Non-vacuity for the sentence below: the held bed is not voluntary and its legal form is
+    // neither a 4A nor a 4C (D-186 item 6: the one paperwork rule).
     expect(movement.legalStatus).not.toBe("Voluntary");
-    expect(movement.legalForm?.code).not.toBe("4A");
+    expect(["4A", "4C"]).not.toContain(movement.legalForm?.code);
 
     renderEdFor(movement);
 
     const notice = screen.getByTestId(`ward-ed-transport-legal-form-notice-${movement.id}`);
-    expect(notice.textContent).toContain(`No ${NOTICE_4A} is recorded for this patient.`);
+    // D-170 item 5 (no form number) and D-189 item 8(b) (the table is not signed).
+    expect(notice.textContent).toContain("Transport or transfer order not uploaded · rule not signed.");
     // Never a duration, never a claim about the Act — the two phrases this file's own screen
     // banner and `ED_ACCESS_TARGET_MINUTES`'s comment both forbid.
     expect(notice.textContent).not.toMatch(/hour|minute|day|deadline|due|overdue|breach|must be/i);
@@ -376,8 +390,15 @@ describe("the no-4A-recorded notice beside the booking control", () => {
     expect(toggle).not.toHaveAttribute("aria-disabled");
   });
 
-  it("is absent for a voluntary patient, and the booking control stays enabled", () => {
+  it("is absent for a patient on a recorded Form 4C (D-187 item 7)", () => {
     const movement = heldBedMovement();
+    expect(movement.legalForm?.code).toBe("4C");
+    renderEdFor(movement);
+    expect(screen.queryByTestId(`ward-ed-transport-legal-form-notice-${movement.id}`)).toBeNull();
+  });
+
+  it("is absent for a voluntary patient, and the booking control stays enabled", () => {
+    const movement = heldBedWithoutOrder();
     renderEdFor(movement);
     expect(screen.getByTestId(`ward-ed-transport-legal-form-notice-${movement.id}`)).toBeInTheDocument();
 

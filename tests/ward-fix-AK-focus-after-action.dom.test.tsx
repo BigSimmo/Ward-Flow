@@ -176,6 +176,8 @@ describe("F-57: the patient page's Transport panel", () => {
     fireEvent.click(within(within(form).getByTestId("ward-patient-eta-presets")).getByRole("button", { name: "+30m" }));
     fireEvent.click(within(form).getByTestId("ward-patient-escort-no"));
     fireEvent.click(within(form).getByTestId("ward-patient-legal-involuntary"));
+    // D-187 item 10: WF-004 has no medical clearance recorded, so booking asks for a reason.
+    fireEvent.change(within(form).getByTestId("ward-patient-legal-reason"), { target: { value: "paper_sighted" } });
     const save = within(form).getByTestId("ward-patient-confirm-transport-btn");
     save.focus();
     fireEvent.click(save);

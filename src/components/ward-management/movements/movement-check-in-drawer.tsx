@@ -28,7 +28,7 @@ import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provid
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useWardShellPublic } from "@/components/ward-management/shell/ward-shell-public-context";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
-import { collectionGaps, packForm, packRequirement } from "@/components/ward-management/ward-transport-checks";
+import { collectionGaps, transportOrderFactWords } from "@/components/ward-management/ward-transport-checks";
 import {
   arrivedBlockedReason,
   collectedBlockedReason,
@@ -117,7 +117,7 @@ export function MovementCheckInDrawer({
             heading: "Record the patient collected",
             blocked: collectedBlockedReason(movement, who),
             run: () => {
-              if (collectionGaps(movement).length > 0) {
+              if (collectionGaps(movement, units).length > 0) {
                 setCollectCheck(true);
                 return;
               }
@@ -151,12 +151,8 @@ export function MovementCheckInDrawer({
   // crew checks before moving the patient, read from the record ("Not recorded" when missing).
   const delivered = job?.arrivedAt !== undefined;
   const legLabel = delivered ? "Delivered" : leg === "Accepted" ? "Booked" : leg;
-  const order =
-    packRequirement(movement) === "not_required"
-      ? "Not needed"
-      : packForm(movement, "order")
-        ? "Recorded"
-        : "Not recorded";
+  // Review R3: the one paperwork rule decides the order fact, with its "rule not signed" words.
+  const order = transportOrderFactWords(movement, units);
   const facts = [
     { id: "provider", label: "Provider", value: job?.provider ?? "Not recorded" },
     {
@@ -291,10 +287,10 @@ export function MovementCheckInDrawer({
           open
           who={name}
           action="Collected"
-          gaps={collectionGaps(movement)}
+          gaps={collectionGaps(movement, units)}
           onClose={() => setCollectCheck(false)}
           onConfirm={async (reason) => {
-            const accepted = await recordCollected({ gaps: collectionGaps(movement), reason });
+            const accepted = await recordCollected({ gaps: collectionGaps(movement, units), reason });
             if (accepted) setCollectCheck(false);
             return accepted;
           }}

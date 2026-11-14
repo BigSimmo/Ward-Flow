@@ -1289,9 +1289,17 @@ describe("emergency department — repeat examination (owner item 7)", () => {
     });
     // Josh, 31 Oct 2026: neither Today nor Tomorrow starts chosen.
     fireEvent.click(screen.getByTestId(`ward-ed-transport-estimated-day-today-${revokedId}`));
+    // D-187 item 10: no medical clearance is recorded, so booking and handover ready ask for a reason.
+    fireEvent.change(screen.getByTestId(`ward-ed-transport-legal-reason-${revokedId}`), {
+      target: { value: "paper_sighted" },
+    });
     fireEvent.click(screen.getByTestId(`ward-ed-book-transport-confirm-${revokedId}`));
 
     fireEvent.click(screen.getByTestId(`ward-ed-handover-${revokedId}`));
+    fireEvent.change(screen.getByTestId(`ward-ed-handover-check-${revokedId}-reason`), {
+      target: { value: "paper_sighted" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Mark handover ready, record reason" }));
 
     fireEvent.click(screen.getByTestId(`ward-ed-examine-toggle-${revokedId}`));
     fireEvent.click(screen.getByRole("radio", { name: "No order made, does not proceed" }));

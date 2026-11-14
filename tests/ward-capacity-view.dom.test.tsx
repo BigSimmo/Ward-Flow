@@ -54,7 +54,7 @@
  * ## The Capacity redesign (Josh, 31 Oct 2026)
  *
  * The network ward table these cases read is gone. Each ward's facts now sit in its ward drawer,
- * opened from its bed map card: Mental Health Act authorisation ("Authorised hospital"), "Ask the
+ * opened from its bed map card: Mental Health Act authorisation ("Set up for involuntary admissions (demo)"), "Ask the
  * ward" (the capacity-refresh control) and the ward's discharge records and bed releases. The
  * excluded-beyond-the-horizon count is stated on Capacity's bed meeting sheet ("N more after
  * tomorrow, not counted"), and held-up releases are counted in "This shift". Every
@@ -159,7 +159,7 @@ function openWardDrawer(unitId: string): HTMLElement {
   return drawer;
 }
 
-/** The value beside a label in the drawer's facts ("Authorised hospital" → "Yes"). */
+/** The value beside a label in the drawer's facts ("Set up for involuntary admissions (demo)" → "Yes"). */
 function drawerFact(drawer: HTMLElement, label: string): string {
   return within(drawer).getByText(label, { selector: "dt" }).nextElementSibling?.textContent ?? "";
 }
@@ -246,17 +246,17 @@ describe("ward capacity board", () => {
    * 🔴 **SPLIT 2026-09-05. The MHA half is re-pointed at the live screen; the sex-mix and
    * specialling halves stay parked, because nothing reachable shows either of them.**
    */
-  it("names every ward's Mental Health Act authorisation on the network view, both directions", () => {
+  // D-189 items 6 and 8(a) (Josh, 13 Nov 2026): no ward is shown as authorised or not authorised
+  // until Q42 is signed. Both a flagged and an unflagged ward read "Not stated", never Yes or No.
+  it("reads every ward's involuntary admissions as not stated, whatever the sample flag says", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <CapacityScreen />
       </WardFlowProvider>,
     );
 
-    expect(drawerFact(openWardDrawer("sjgs-adult-secure"), "Authorised hospital")).toBe("No");
-
-    // Both directions, or this would pass on a screen that said "No" on every ward.
-    expect(drawerFact(openWardDrawer("scgh-adult-open"), "Authorised hospital")).toBe("Yes");
+    expect(drawerFact(openWardDrawer("sjgs-adult-secure"), "Involuntary admissions")).toBe("Not stated");
+    expect(drawerFact(openWardDrawer("scgh-adult-open"), "Involuntary admissions")).toBe("Not stated");
   });
 
   /*

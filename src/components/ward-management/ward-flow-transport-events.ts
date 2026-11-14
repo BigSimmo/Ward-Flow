@@ -16,6 +16,7 @@ import {
 import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import { adjustSexMix, eligibility, mixSexOf } from "@/components/ward-management/ward-eligibility";
 import { heldUnitAuthorisationRefusal } from "@/components/ward-management/ward-held-legal-check";
+import { authorisationBlocksPlacement } from "@/components/ward-management/ward-authorisation";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { ARRIVAL_LATE_AFTER_MINUTES, isArrivalLate } from "@/components/ward-management/ward-legal-clock";
 import {
@@ -34,6 +35,7 @@ import { pulledBedAvailability } from "./ward-ready-beds";
 import { openRestrictivePracticeRefusal } from "./restrictive-practice/ward-restrictive-practice";
 import { sameObservation, journeyObservationWins } from "./ward-observation";
 import type { TransportEventHelpers, WardFlowState } from "./ward-flow-reducer";
+import { isExaminationAwaitingReleaseBlocker } from "@/components/ward-management/ward-examination-hold-up";
 
 /**
  * Handover, transport and arrival: `reduceClinicalEvent`'s cases for these events, moved here
@@ -57,6 +59,18 @@ export type TransportEvent = Extract<
       | "RECORD_TRANSPORT_CAD";
   }
 >;
+
+/**
+ * D-189 items 8(a) and 9(a): until Q42 is signed every ward's authorisation is "not stated", so the
+ * invented flag no longer refuses handover, transport accepted, collection or arrival at a held bed.
+ * The refusal is asked only when `authorisationBlocksPlacement` says the held ward's authorisation
+ * stops a placement, which it never does while it reads "not stated".
+ */
+function heldBedAuthorisationRefusal(state: WardFlowState, movement: Movement): string | null {
+  const unit = state.units.find((candidate) => candidate.id === movement.acceptedUnitId);
+  if (unit === undefined || !authorisationBlocksPlacement(unit)) return null;
+  return heldUnitAuthorisationRefusal(state, movement);
+}
 
 export function reduceTransportEvent(
   state: WardFlowState,
@@ -115,8 +129,15 @@ export function reduceTransportEvent(
       const handoverGenderRefusal = heldUnitGenderRefusal(state, movement, event.now);
       if (handoverGenderRefusal) return reject(state, event, handoverGenderRefusal);
       // Audit 2 E-03: the same re-check for a legal status change since the bed was held.
-      const handoverLegalRefusal = heldUnitAuthorisationRefusal(state, movement);
+      const handoverLegalRefusal = heldBedAuthorisationRefusal(state, movement);
       if (handoverLegalRefusal) return reject(state, event, handoverLegalRefusal);
+      // D-187 item 10 (Q31): handover ready with fit to travel not recorded is never refused. The
+      // screen asks for a reason; when one is given it is kept on the job (D-189 item 9(e)).
+      const handoverException =
+        event.exception === undefined
+          ? undefined
+          : transportExceptionRecord(event.exception, event.now, event.role, "handover_ready");
+      if (typeof handoverException === "string") return reject(state, event, `HANDOVER_READY ${handoverException}`);
       const updated: Movement = {
         ...movement,
         stage: "handover_ready",
@@ -124,6 +145,14 @@ export function reduceTransportEvent(
           ...movement.stageChanges,
           { at: event.now, from: movement.stage, to: "handover_ready", by: event.role },
         ],
+        ...(handoverException && movement.transport
+          ? {
+              transport: {
+                ...movement.transport,
+                exceptions: [...(movement.transport.exceptions ?? []), handoverException],
+              },
+            }
+          : {}),
       };
       return replaceMovement(state, movement.id, updated);
     }
@@ -142,7 +171,7 @@ export function reduceTransportEvent(
         const examinationRevokedHoldingBed =
           (examinationOutcome === "community_order" || examinationOutcome === "revoked") &&
           movementHoldsBedByStage(movement);
-        const awaitingRelease = movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease;
+        const awaitingRelease = isExaminationAwaitingReleaseBlocker(movement.blocker);
         if (examinationRevokedHoldingBed || awaitingRelease) {
           return reject(
             state,
@@ -166,7 +195,7 @@ export function reduceTransportEvent(
       const transportAcceptedGenderRefusal = heldUnitGenderRefusal(state, movement, event.now);
       if (transportAcceptedGenderRefusal) return reject(state, event, transportAcceptedGenderRefusal);
       // Audit 2 E-03: the same re-check for a legal status change since the bed was held.
-      const transportAcceptedLegalRefusal = heldUnitAuthorisationRefusal(state, movement);
+      const transportAcceptedLegalRefusal = heldBedAuthorisationRefusal(state, movement);
       if (transportAcceptedLegalRefusal) return reject(state, event, transportAcceptedLegalRefusal);
       const updated: Movement = {
         ...movement,
@@ -192,7 +221,7 @@ export function reduceTransportEvent(
         const examinationRevokedHoldingBed =
           (examinationOutcome === "community_order" || examinationOutcome === "revoked") &&
           movementHoldsBedByStage(movement);
-        const awaitingRelease = movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease;
+        const awaitingRelease = isExaminationAwaitingReleaseBlocker(movement.blocker);
         if (examinationRevokedHoldingBed || awaitingRelease) {
           return reject(
             state,
@@ -243,7 +272,7 @@ export function reduceTransportEvent(
       const examinationRevokedHoldingBed =
         (examinationOutcome === "community_order" || examinationOutcome === "revoked") &&
         movementHoldsBedByStage(movement);
-      const awaitingRelease = movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease;
+      const awaitingRelease = isExaminationAwaitingReleaseBlocker(movement.blocker);
       if (examinationRevokedHoldingBed || awaitingRelease) {
         return reject(
           state,
@@ -271,7 +300,7 @@ export function reduceTransportEvent(
       const collectedGenderRefusal = heldUnitGenderRefusal(state, movement, event.now);
       if (collectedGenderRefusal) return reject(state, event, collectedGenderRefusal);
       // Audit 2 E-03: the same re-check for a legal status change since the bed was held.
-      const collectedLegalRefusal = heldUnitAuthorisationRefusal(state, movement);
+      const collectedLegalRefusal = heldBedAuthorisationRefusal(state, movement);
       if (collectedLegalRefusal) return reject(state, event, collectedLegalRefusal);
       // The sending ward ends its recorded restriction before collection; once moving, arrival stays recordable.
       const source = movementSourceAdmission(state, movement);
@@ -534,7 +563,7 @@ export function reduceTransportEvent(
         }
         // Audit 2 E-03: the no-transport shortcut skips the three steps above, so re-ask the legal
         // status check here too. Never once moving: arrival is always recorded.
-        const arrivalLegalRefusal = heldUnitAuthorisationRefusal(state, movement);
+        const arrivalLegalRefusal = heldBedAuthorisationRefusal(state, movement);
         if (arrivalLegalRefusal) return reject(state, event, arrivalLegalRefusal);
         // Audit S-3: the sending ward records when seclusion or restraint ended before the stay
         // leaves. Once moving, arrival is always recorded and the seclusion view flags the gap.
@@ -1207,6 +1236,7 @@ export function reduceTransportEvent(
       // #154 (Josh, 27 Oct 2026): a patient who absconds in transit from a ward stay is still that
       // ward's patient, so the sending ward is told to record them absent without leave
       // (`RECORD_ABSENT_WITHOUT_LEAVE`). Nothing is recorded for it: the ward records the absence.
+      // F-91 (K27): the alert says "absent without leave", the app's own term, not "absconded".
       const sendingStay = movementSourceAdmission(state, movement);
       if (event.reason === ABSCONDED_IN_TRANSIT && sendingStay?.state === "occupied") {
         stopNotices.push(
@@ -1216,7 +1246,7 @@ export function reduceTransportEvent(
             "transport_stopped_ward",
             { role: "ward", placeId: sendingStay.unitId },
             { movementId: movement.id, unitId: sendingStay.unitId },
-            `Your patient for ${movement.id} absconded in transit and their whereabouts are unknown. Record them absent without leave.`,
+            `Your patient for ${movement.id} went absent without leave in transit and their whereabouts are unknown. Record them absent without leave.`,
           ),
         );
       }

@@ -24,7 +24,7 @@ import { NOW_ANCHOR, unitById } from "@/components/ward-management/ward-sites";
  * Task 10 (spec item 8). The patient page showed the legal form but not three records the
  * binding spec requires: declines, status/urgency changes, and the escalation record.
  *
- * WF-009 is the fixture's one movement carrying an escalation and its five declines (measured
+ * WF-009 is the fixture's one movement carrying an escalation and its six declines (measured
  * against `ward-movements.ts` directly). WF-010 is the fixture's one movement carrying a
  * hand-authored `statusChanges` entry. Neither carries a hand-authored `urgencyChanges` entry —
  * every fixture movement seeds that array empty — so the urgency-change half of the "changes"
@@ -60,7 +60,9 @@ function DispatchUrgencyChangeOnWF010() {
 
 describe("ward patient page — declines, changes, and escalation", () => {
   it("fixture assumptions: WF-009 carries declines and an escalation, WF-010 carries a status change, WF-001 carries none of the three and is open", () => {
-    expect(WF_009?.declines.length).toBe(5);
+    // Six since D-189 item 8(a): SJGS Adult Secure is no longer ruled out on the invented authorisation
+    // flag, so the sample story gives it a synthetic decline.
+    expect(WF_009?.declines.length).toBe(6);
     expect(WF_009?.escalation).toBeDefined();
     expect(WF_010?.statusChanges.length).toBe(1);
     expect(WF_010?.urgencyChanges.length).toBe(0);
@@ -80,8 +82,8 @@ describe("ward patient page — declines, changes, and escalation", () => {
     );
 
     const declines = screen.getByTestId("ward-patient-declines");
-    // Five declines, each naming its unit by name (never a bare unit id) and a human label for
-    // its reason (never the raw snake_case code).
+    // Six declines (the sixth, SJGS Adult Secure, since D-189 item 8(a)), each naming its unit by name
+    // (never a bare unit id) and a human label for its reason (never the raw snake_case code).
     expect(
       within(declines).getByText(
         (_, node) => node?.textContent === `${unitById("rph-adult-secure")?.name} · No suitable bed`,
@@ -105,6 +107,11 @@ describe("ward patient page — declines, changes, and escalation", () => {
     expect(
       within(declines).getByText(
         (_, node) => node?.textContent === `${unitById("rgh-adult-secure")?.name} · Capability mismatch`,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(declines).getByText(
+        (_, node) => node?.textContent === `${unitById("sjgs-adult-secure")?.name} · No suitable bed`,
       ),
     ).toBeInTheDocument();
 

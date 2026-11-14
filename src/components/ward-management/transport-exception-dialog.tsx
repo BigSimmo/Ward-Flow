@@ -19,6 +19,10 @@ import styles from "./transport-exception-dialog.module.css";
  * Audit fixes A4-11 and S-2 (13 Oct 2026): a transport step with a check still open (no Form 4A
  * uploaded, fit to travel not recorded) is never blocked. This dialog names what is open and asks
  * for a coded reason, which the step records. Cancel leaves everything as it was.
+ *
+ * D-187 item 10 and D-189 item 9(e) (fit to travel at booking and Mark handover ready): the dialog
+ * still asks every time, but the step may go on without a reason. A caller that passes
+ * `onContinueWithoutReason` gets a "Continue without a reason" choice, which records no reason.
  */
 export function TransportExceptionDialog({
   open,
@@ -27,6 +31,7 @@ export function TransportExceptionDialog({
   action,
   gaps,
   onConfirm,
+  onContinueWithoutReason,
   onClose,
   testId = "ward-transport-exception-dialog",
 }: {
@@ -38,6 +43,8 @@ export function TransportExceptionDialog({
   action: string;
   gaps: TransportExceptionGap[];
   onConfirm: (reason: TransportExceptionReason) => void | boolean | Promise<boolean>;
+  /** Only where a ruling lets the step go on with no reason (fit to travel, D-189 item 9(e)). */
+  onContinueWithoutReason?: () => void | boolean | Promise<boolean>;
   onClose: () => void;
   testId?: string;
 }) {
@@ -48,32 +55,52 @@ export function TransportExceptionDialog({
     setReason("");
     onClose();
   };
+  const run = async (step: () => void | boolean | Promise<boolean>) => {
+    setPending(true);
+    try {
+      const accepted = await step();
+      if (accepted !== false) setReason("");
+    } catch {
+      // The caller communicates the failure; retain the coded reason for retry.
+    } finally {
+      setPending(false);
+    }
+  };
+  const waiting = pending ? "Waiting for confirmation" : undefined;
   return (
     <Dialog
       open={open}
       onClose={close}
       title={`${action} for ${who}?`}
-      description="Not recorded yet. The reason is recorded with the step."
+      description={
+        onContinueWithoutReason
+          ? "Not recorded yet. A reason you choose is recorded with the step."
+          : "Not recorded yet. The reason is recorded with the step."
+      }
       // Default width (not "sm"): Cancel, the "Choose a reason first" note and the primary fit one line.
       data-testid={testId}
       primary={{
         label: `${action}, record reason`,
-        disabledReason: pending ? "Waiting for confirmation" : reason === "" ? "Choose a reason first" : undefined,
+        disabledReason: waiting ?? (reason === "" ? "Choose a reason first" : undefined),
         onAction: async () => {
           if (reason === "" || pending) return;
-          setPending(true);
-          try {
-            const accepted = await onConfirm(reason);
-            if (accepted !== false) setReason("");
-          } catch {
-            // The caller communicates the failure; retain the coded reason for retry.
-          } finally {
-            setPending(false);
-          }
+          await run(() => onConfirm(reason));
         },
       }}
       secondary={[
-        { label: "Cancel", onAction: close, disabledReason: pending ? "Waiting for confirmation" : undefined },
+        { label: "Cancel", onAction: close, disabledReason: waiting },
+        ...(onContinueWithoutReason
+          ? [
+              {
+                label: "Continue without a reason",
+                disabledReason: waiting,
+                onAction: async () => {
+                  if (pending) return;
+                  await run(onContinueWithoutReason);
+                },
+              },
+            ]
+          : []),
       ]}
     >
       {identity ? <p data-testid={`${testId}-identity`}>Check: {identity}</p> : null}

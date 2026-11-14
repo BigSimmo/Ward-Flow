@@ -57,7 +57,7 @@ export function onceOnlyExtensionWarning(movement: Movement): string | undefined
   const code = movement.legalForm?.code;
   const extension = code ? ONCE_ONLY_EXTENSION[code] : undefined;
   if (!extension || extensionsOfCurrentForm(movement) === 0) return undefined;
-  return `Form ${code} already has an extension recorded. A Form ${extension} can only be made once, so check the paper.`;
+  return `Form ${code} already has an extension recorded. Form ${extension} is already recorded. Check the paper.`;
 }
 
 /** "Once, as typed" when the current form has an extension recorded, else undefined. */

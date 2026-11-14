@@ -1,4 +1,4 @@
-import { legalStatusIsDetained } from "@/components/ward-management/ward-legal-status";
+import { isDetained } from "@/components/ward-management/ward-legal-meaning";
 import { BellRing, type LucideIcon } from "lucide-react";
 
 import type { Admission } from "./ward-admissions";
@@ -98,20 +98,20 @@ type NotificationRecords = {
 };
 
 /**
- * Whether a patient record's free-text legal status is involuntary. Kept identical to the
- * reducer's discharge guard (`patientRecordIsInvoluntary` in `ward-flow-reducer.ts`): anything
+ * Whether a patient record's free-text legal status is involuntary: the named `isDetained` rule
+ * (D-186 item 4, D-187 item 3), the same reading as the reducer's discharge guard. Anything
  * starting "Involuntary", plus "Detained awaiting examination".
  */
 export function legalStatusTextIsInvoluntary(legalStatus: string | undefined): boolean {
-  return legalStatusIsDetained(legalStatus);
+  return isDetained(legalStatus);
 }
 
 /**
- * Whether a movement's closed legal-status vocabulary is involuntary for this checklist: detained
- * awaiting examination or an involuntary inpatient. "Referred for psychiatric examination" is not.
+ * Whether a movement's closed legal-status vocabulary is involuntary for this checklist: the same
+ * named `isDetained` rule (D-187 item 3). "Referred for psychiatric examination" is not.
  */
 function movementLegalStatusIsInvoluntary(legalStatus: Movement["legalStatus"] | undefined): boolean {
-  return legalStatus === "Detained awaiting examination" || legalStatus === "Involuntary inpatient";
+  return isDetained(legalStatus);
 }
 
 function movementArrivedAt(movement: Movement): Instant | undefined {

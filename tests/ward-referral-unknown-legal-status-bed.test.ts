@@ -90,7 +90,10 @@ describe("acceptance re-checks the legal status (D-69, audit F-03)", () => {
     const gate = referralEligibility(referral, pair.ward, pair.unit, NOW_ANCHOR).gates.find(
       (g) => g.gate === "legal_status",
     );
-    expect(gate?.pass).toBe(!needed);
+    // D-189 items 8(a) and 9(a): the need is marked, but never refuses while authorisation is not stated.
+    expect(gate?.pass).toBe(true);
+    expect(gate?.info).toBe(true);
+    expect(gate?.need === true).toBe(needed);
   });
 
   it("never lets a stored need be cleared by the legal status, and needs an authorised bed with no intake", () => {
@@ -101,7 +104,9 @@ describe("acceptance re-checks the legal status (D-69, audit F-03)", () => {
     expect(wardRequestNeedsInvoluntaryBed({ intake: undefined }, { involuntaryBedNeeded: true })).toBe(true);
   });
 
-  it("refuses an acceptance into an unauthorised ward while the legal status is not recorded", () => {
+  // D-189 items 8(a) and 9(a) (Josh, 13 Nov 2026): until Q42 is signed a ward the sample data flags
+  // false is not refused, whether or not the legal status is recorded.
+  it("D-189: accepts into a ward the sample data flags false, with or without a recorded status", () => {
     const unrecorded = withStatus(pair.referral, NOT_RECORDED);
     const before: WardFlowState = {
       ...state,
@@ -115,8 +120,7 @@ describe("acceptance re-checks the legal status (D-69, audit F-03)", () => {
       referralId: unrecorded.id,
       unitId: pair.unit.id,
     });
-    expect(after.rejections).toHaveLength(1);
-    expect(after.rejections[0]!.reason).toContain("legal_status");
+    expect(after.rejections).toEqual([]);
 
     const voluntary = withStatus(pair.referral, "Voluntary");
     const accepted = wardFlowReducer(

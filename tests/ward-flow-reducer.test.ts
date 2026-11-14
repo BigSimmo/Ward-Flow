@@ -870,7 +870,8 @@ describe("examination", () => {
     expect(target.admissionId).toBe(movement(before, "WF-005").admissionId);
     // The exception is visible on the movement itself, in the same field every other stage
     // transition already uses to say what is holding a movement up.
-    expect(target.blocker).toContain("examination was revoked");
+    // F-15, D-170 item 3: the hold-up says the examination made no order, never "revoked".
+    expect(target.blocker).toContain("the examination made no order");
 
     // WLQ-4 close-out (2026-09-20): while examination is revoked and bed is held, transport
     // cannot be advanced.

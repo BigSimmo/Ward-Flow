@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { foldPatientSearchHaystack, foldPatientSearchText } from "@/components/ward-management/ward-patients";
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
-import { rankByNameStart } from "@/components/ward-management/referrals/referral-patient-rank";
+import { rankByNameStart } from "@/components/ward-management/ward-patient-name-rank";
 import { originIsEdOrCrisis } from "@/components/ward-management/community/community-screen-helpers";
 import { compareFormalNames } from "@/components/ward-management/ward-name-collation";
 

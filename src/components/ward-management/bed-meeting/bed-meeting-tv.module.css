@@ -752,35 +752,11 @@
   font-weight: 700;
 }
 
+/* D-24, restored by D-194 (Josh, 13 Nov 2026): a wait past 24 hours is Josh's default, never a limit,
+ * so it stays in the neutral ink with no act-now red or triangle. It still reads in days ("1d 1h"). */
 .table tr[data-long] td[data-wait],
 .list li[data-long] .wait {
-  color: var(--wf-danger-ink);
   font-weight: 700;
-}
-
-/* TV-10: underlined as well as red, so a long wait never rests on colour alone. The time itself says
- * so too: a wait past the 24 hour mark reads in days ("1d 1h"). */
-/* Core pages redesign (31 Oct 2026): a long wait is marked with a triangle as well as red, instead of an underline that read
- * as a link. The time itself still reads in days past 24 hours ("1d 1h"). */
-/* Review 5 Nov 2026: drawn, not a typed "▲" (DESIGN-SYSTEM icons rule: typed glyphs render as font or
- * emoji and differ by device). The same triangle shape as the kit's act-now StatusGlyph. */
-.table tr[data-long] td[data-wait]::before {
-  content: "";
-  display: inline-block;
-  width: 0.62em;
-  height: 0.55em;
-  margin-right: 0.35em;
-  background: currentColor;
-  clip-path: polygon(50% 0, 100% 100%, 0 100%);
-  vertical-align: 0.05em;
-}
-
-/* Forced colours would repaint the drawn triangle as Canvas and hide it. */
-@media (forced-colors: active) {
-  .table tr[data-long] td[data-wait]::before {
-    background: CanvasText;
-    forced-color-adjust: none;
-  }
 }
 
 .list .wait {

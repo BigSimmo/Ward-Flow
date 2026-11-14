@@ -67,6 +67,7 @@ import {
   STEP_BACK_REASONS,
   TRANSPORT_PROVIDERS,
   type LegalStatus,
+  type Movement,
   type Notice,
 } from "../../src/components/ward-management/ward-model";
 import { WARD_SCENARIOS } from "../../src/components/ward-management/ward-scenarios";
@@ -814,7 +815,7 @@ function candidatesForMovements(
         now,
         movementId,
         unitId,
-        kind: "involuntary_on_voluntary_ward",
+        kind: legalMismatchKindToTry(state.movements.find((m) => m.id === movementId)),
       }));
     case "RELEASE_AND_REOPEN_SEARCH":
       return state.movements
@@ -2230,6 +2231,18 @@ export function buildHeldMovementFor(code: string, now: number): { state: WardFl
   return { state: held, movementId: movement.id };
 }
 
+/**
+ * The one mismatch kind the reducer could accept for this movement. D-189 items 8(a) and 9(a): while
+ * every ward's authorisation reads "not stated", "involuntary_on_voluntary_ward" is never raised, so a
+ * Voluntary movement tries "voluntary_on_locked_ward" (a wholly locked ward), which still is. A
+ * Voluntary movement was always refused the involuntary kind, so no candidate that could pass is lost.
+ */
+function legalMismatchKindToTry(
+  movement: Pick<Movement, "legalStatus"> | undefined,
+): "involuntary_on_voluntary_ward" | "voluntary_on_locked_ward" {
+  return movement?.legalStatus === "Voluntary" ? "voluntary_on_locked_ward" : "involuntary_on_voluntary_ward";
+}
+
 /** These variants share the original movement-major, unit-minor Cartesian order. */
 const PAIR_EVENT_TYPES = new Set<WardFlowEvent["type"]>([
   "FLAG_LEGAL_MISMATCH",
@@ -2258,7 +2271,7 @@ function* pairCandidates(
       preparationProfile.count("pairCandidatesConstructed");
       switch (type) {
         case "FLAG_LEGAL_MISMATCH":
-          yield { ...base, type, unitId: unit.id, kind: "involuntary_on_voluntary_ward" };
+          yield { ...base, type, unitId: unit.id, kind: legalMismatchKindToTry(movement) };
           break;
         case "REFER_TO_UNITS":
           yield { ...base, type, unitIds: [unit.id] };

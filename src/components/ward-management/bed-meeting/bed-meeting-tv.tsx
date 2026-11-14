@@ -37,7 +37,7 @@ import { WARD_BED_MEETING_TV_HREF, WARD_CAPACITY_HREF, bedMeetingTvHref } from "
 import { currentShift } from "@/components/ward-management/ward-board-time-features";
 import { scenarioLabels } from "@/components/ward-management/ward-scenarios";
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
-import { StatusGlyph, cx, heroChipClassName, useSharedRefreshLate } from "@/components/wf";
+import { cx, heroChipClassName, useSharedRefreshLate } from "@/components/wf";
 import { healthServiceAcronym } from "@/components/ward-management/ward-service-scope";
 import { allEmergencyDepartments, edById } from "@/components/ward-management/ward-sites";
 
@@ -309,8 +309,8 @@ function JourneyList({
             {/* C16: a waitlisted stay with no journey has no start time, so no wait is shown for it. */}
             {row.waitMinutes === null ? null : (
               <span className={styles.wait}>
-                {/* Core pages redesign (31 Oct 2026): a long wait carries a glyph as well as red, not an underline that reads as a link. */}
-                {row.waitMinutes >= LONG_WAIT_MINUTES ? <StatusGlyph tone="danger" size={10} /> : null}
+                {/* D-24, restored by D-194 (Josh, 13 Nov 2026): a wait past 24 hours is neutral, no act-now glyph or red;
+                    the time itself reads in days ("1d 1h"). */}
                 {splitDuration(row.waitMinutes)} <span className={styles.waitWord}>waiting</span>
               </span>
             )}
@@ -857,7 +857,7 @@ function EdTvView({ sheet, now, scenario }: { sheet: EdTvSheet; now: number; sce
             label: "Longest wait",
             value: summary.waiting === 0 ? 0 : splitDuration(summary.longestWaitMinutes),
             detail: summary.waiting === 0 ? "Nobody waiting" : "The longest anyone here has waited",
-            tone: summary.longestWaitMinutes >= LONG_WAIT_MINUTES ? "danger" : undefined,
+            tone: undefined, // D-24, restored by D-194: a wait past 24 hours is Josh's default, shown neutral.
             // Final polish: the wait against the long-wait line (full once past it), as the State TV.
             meter: { value: summary.waiting === 0 ? 0 : summary.longestWaitMinutes, max: LONG_WAIT_MINUTES },
             testId: "ed-tv-longest",
@@ -1243,6 +1243,7 @@ export function BedMeetingTvScreen({
           bedReleases,
           now: shownNow,
           nameOf: (subject) => patientOf(subject).formalName,
+          thresholds,
         });
         return { kind: "ward-clinical" as const, unit, rows };
       }
@@ -1262,6 +1263,7 @@ export function BedMeetingTvScreen({
             now: shownNow,
             accessTargetMinutes: accessTarget,
             nameOf,
+            thresholds,
           })
         : undefined;
       if (!department || !rows) return { kind: "missing" as const, what: "emergency department" };

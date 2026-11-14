@@ -55,7 +55,7 @@ export function absenceInboxItems(source: AbsenceTaskSource, now: Instant): Inbo
       tone: "danger",
       icon: UserX,
       title: "Absent without leave on an order",
-      detail: `Missing from ${ward} since ${formatInstantWithDay(leaveBed.absentWithoutLeave.since, now)}, order stays in force`,
+      detail: `Missing from ${ward} since ${formatInstantWithDay(leaveBed.absentWithoutLeave.since, now)}`,
       owner: "Nurse in charge",
       movementId: admission.movementId ?? "",
       ...(patient ? { href: patientHref(patient.id) } : {}),

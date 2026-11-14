@@ -294,6 +294,8 @@ export type Unit = {
    * admissions (it is a capability, not a value to equality-match), a non-authorised bed accepts
    * voluntary only. There is deliberately no separate `legalStatus` field on `Unit` for this same
    * fact: two fields for one fact is how a screen ends up giving two answers.
+   *
+   * Invented, unsigned (Q42). Read it only through `ward-authorisation.ts` (D-189 item 8).
    */
   authorised: boolean;
   /**

@@ -435,7 +435,8 @@ export function RecordPreview({
             </div>
             <div className={styles.dossierMetaRow}>
               <span className={styles.metaDemographics}>
-                {ageText(patient, activeDate)} · born {patient.dateOfBirth} · {patient.sex ?? "Sex unrecorded"}
+                {ageText(patient, activeDate)} · born {patient.dateOfBirth} · {patient.sex ?? "Sex unrecorded"} ·
+                Gender: {patient.gender ?? "Not recorded"}
               </span>
               {aboriginalOrTorresStraitIslanderIdentityLabel(patient.aboriginalOrTorresStraitIslanderStatus) ? (
                 <span className={styles.atsiPill}>
@@ -738,7 +739,7 @@ export function RecordPreview({
     const bannerTag = isComm ? "Community referral" : "Acute referral";
     const subjectName = linkedPatient ? patientDisplayName(linkedPatient) : "Unidentified referral";
     const subjectSubtitle = linkedPatient
-      ? `${linkedPatient.umrn} · ${ageText(linkedPatient, activeDate)} · ${linkedPatient.sex ?? "Sex unrecorded"} · DOB ${linkedPatient.dateOfBirth}`
+      ? `${linkedPatient.umrn} · ${ageText(linkedPatient, activeDate)} · ${linkedPatient.sex ?? "Sex unrecorded"} · Gender: ${linkedPatient.gender ?? "Not recorded"} · DOB ${linkedPatient.dateOfBirth}`
       : `${withdrawn ? "Withdrawn" : "Queued"} referral · Age cohort: ${referral.ageBand}`;
 
     return (
@@ -947,7 +948,8 @@ export function RecordPreview({
           </div>
           <div className={styles.dossierMetaRow}>
             <span className={styles.metaDemographics}>
-              {ageText(linkedPatient, activeDate)} · {linkedPatient?.sex ?? "Sex unrecorded"} · {summary.stageLabel}
+              {ageText(linkedPatient, activeDate)} · {linkedPatient?.sex ?? "Sex unrecorded"} · Gender:{" "}
+              {linkedPatient?.gender ?? "Not recorded"} · {summary.stageLabel}
             </span>
             {aboriginalOrTorresStraitIslanderIdentityLabel(linkedPatient?.aboriginalOrTorresStraitIslanderStatus) ? (
               <span className={styles.atsiPill}>

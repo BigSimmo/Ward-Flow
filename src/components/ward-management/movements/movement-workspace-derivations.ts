@@ -397,14 +397,15 @@ export function attentionItems({
     });
   }
 
+  // D-189 item 9(a): never raised while every ward's authorisation is "not stated" (Q42 unsigned).
   const unlawful = destinationNoLongerLawful(movement, units);
   if (unlawful) {
     items.push({
       key: "unlawful",
       who: unlawful.name,
-      chip: "Not authorised",
+      chip: "Not set up for involuntary admissions (demo)",
       level: "urgent",
-      say: `This patient's legal status now requires an authorised destination, and the ward that accepted them is not one. The placement needs revisiting before they travel.`,
+      say: `This patient's legal status now needs a ward set up for involuntary admissions (demo), and the ward that accepted them is not one. The placement needs revisiting before they travel.`,
     });
   }
 

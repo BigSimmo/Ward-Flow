@@ -534,7 +534,7 @@ export function OfficerScreen() {
     );
   // Collected with no Form 4A or no fit to travel records a coded reason after confirmation.
   const runCollected = (movement: Movement) => {
-    if (collectionGaps(movement).length > 0) {
+    if (collectionGaps(movement, units).length > 0) {
       setCollectCheckId(movement.id);
       return;
     }
@@ -769,6 +769,7 @@ export function OfficerScreen() {
       umrnFor={umrnFor}
       originShortFor={originShortFor}
       destinationLabelFor={destinationLabelFor}
+      units={units}
       onLog={openBooking}
     />
   );
@@ -1238,7 +1239,7 @@ export function OfficerScreen() {
                                 )}
                               </td>
                               <td className={formsVary && !panelOpen ? undefined : styles.etaOff}>
-                                <OfficerFormsCell movement={movement} />
+                                <OfficerFormsCell movement={movement} units={units} />
                               </td>
                               <td className={anyJobEta ? undefined : styles.etaOff}>
                                 {expected ? (
@@ -1432,10 +1433,10 @@ export function OfficerScreen() {
           open
           who={officerPatientName(collectCheck)}
           action="Collected"
-          gaps={collectionGaps(collectCheck)}
+          gaps={collectionGaps(collectCheck, units)}
           onClose={() => setCollectCheckId(null)}
           onConfirm={async (reason) => {
-            const accepted = await recordCollected(collectCheck, { gaps: collectionGaps(collectCheck), reason });
+            const accepted = await recordCollected(collectCheck, { gaps: collectionGaps(collectCheck, units), reason });
             if (accepted) setCollectCheckId(null);
             return accepted;
           }}

@@ -241,6 +241,8 @@ describe("the blocker opens in place when the greyed action is tapped", () => {
     // Josh, 31 Oct 2026: the form starts with nothing chosen, so the legal status is among the
     // answers left. CAD to follow (Josh, 27 Oct 2026): the CAD number is not. Form rule (W32, 5 Nov
     // 2026): a blank estimated time warns, so neither it nor its day is asked until a time is typed.
+    // D-187 item 10 and D-189 item 9(e): no medical clearance is recorded, so the form asks for a fit
+    // to travel reason, but it is not an answer left: the booking may save without one.
     expect(left.textContent).toContain("3 answers left: provider, escort answer, legal status");
     expect(left.getAttribute("role")).toBe("status");
     // The confirm keeps its full sentence for screen readers.
@@ -253,6 +255,9 @@ describe("the blocker opens in place when the greyed action is tapped", () => {
     fireEvent.change(provider, { target: { value: provider.options[1].value } });
     fireEvent.click(within(dialog).getByTestId("ward-ed-transport-escort-yes-WF-011"));
     fireEvent.click(within(dialog).getByTestId("ward-ed-transport-legal-status-involuntary-WF-011"));
+    fireEvent.change(within(dialog).getByTestId("ward-ed-transport-legal-reason-WF-011"), {
+      target: { value: "treating_team_confirmed" },
+    });
     fireEvent.change(within(dialog).getByTestId("ward-ed-transport-estimated-time-WF-011"), {
       target: { value: "13:30" },
     });

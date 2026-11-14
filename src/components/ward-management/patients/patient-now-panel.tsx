@@ -310,6 +310,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
           <PatientLegalNowCard
             movement={movementInForce ? liveMovement : undefined}
             patient={livePatient}
+            legalNow={resolved.legalNow}
             onAllForms={() => openTab("documents")}
             now={now}
             absent={mode === "awol"}

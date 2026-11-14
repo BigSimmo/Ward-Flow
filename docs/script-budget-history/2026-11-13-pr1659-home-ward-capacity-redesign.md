@@ -67,3 +67,10 @@ limit (main with E and the Fixes PR): Home 591.5 to 596.5 (+5.0), Referrals 596.
 "PR E swap" stand-ins moved to kit parts, the kit RowUndo and toast Undo) on top of the trim above, which was
 already tried. Home has 0.3 KB spare, so the next Home change should trim first. Capacity returns to main's 661.9 (this PR no
 longer raises it); it measures 617.4 and can come down in a later PR.
+
+## 14 November 2026: main with the clinical PR (#1656) merged in
+
+Main's limits taken, then measured on the merged tree with `npm run build` and `node scripts/check-script-budget.mjs`:
+Home 597.0, ED 549.4, Ward 631.9, Movement 627.1 and Statistics 645.2 were over. Limits rise to 597.2, 549.9,
+632.2, 627.5 and 645.5, each within 5 KB of main's. The extra weight is the redesigned Home and Ward screens from
+this PR on top of main's own growth from #1656; Referrals, Capacity, ED arm and Bed meeting stay at main's limits.

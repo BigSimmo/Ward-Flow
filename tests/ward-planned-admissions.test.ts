@@ -353,9 +353,12 @@ describe("CONVERT_PLANNED_ADMISSION", () => {
     expect(newest(refused).state).toBe("booked");
   });
 
-  it("applies the suitability gates: an involuntary arrival needs an authorised ward", () => {
+  // D-189 items 8(a) and 9(a): until Q42 is signed the sample authorisation flag refuses no arrival.
+  // Conversion still asks every other suitability gate (see the cohort case in
+  // `ward-audit24-1-planned-booking-authorised.test.ts`).
+  it("D-189: an involuntary arrival at a ward the sample data flags false is not refused for authorisation", () => {
     const booked = book(seedWardFlowState(), { legalStatus: "Involuntary inpatient" });
-    const unauthorised: WardFlowState = {
+    const flagged: WardFlowState = {
       ...booked,
       units: booked.units.map((unit) =>
         unit.id === UNIT
@@ -363,15 +366,15 @@ describe("CONVERT_PLANNED_ADMISSION", () => {
           : unit,
       ),
     };
-    const refused = apply(unauthorised, {
+    const arrived = apply(flagged, {
       type: "CONVERT_PLANNED_ADMISSION",
       role: "coordinator",
       now: NOW,
       plannedAdmissionId: "PA-01",
       unitId: UNIT,
     });
-    expect(lastRejection(refused)).toMatch(/failed gate authorisation/);
-    expect(refused.admissions).toBe(unauthorised.admissions);
+    expect(lastRejection(arrived) ?? "").not.toMatch(/authorisation/);
+    expect(arrived.admissions.length).toBe(flagged.admissions.length + 1);
   });
 
   it("refuses a ward recording another ward's arrival", () => {

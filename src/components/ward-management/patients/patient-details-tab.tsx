@@ -19,6 +19,7 @@ import { sexDesignationAccepts } from "../ward-eligibility";
 import { legalStatusTextIsInvoluntary } from "../ward-support-notifications";
 import { currentLegalPosition } from "../ward-legal-form-progression";
 import { calendarDateOf } from "../ward-clock";
+import { isEdOriginJourney } from "../ward-ed-presence";
 import { monthIndexOfShort } from "@/components/ward-management/ward-month-names";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { communityTeamById, communityTeamSlug } from "../community/community-derivations";
@@ -215,6 +216,7 @@ export function PatientDetailsTab({
   // they differ. One side recorded and the other not is a difference too.
   const sexDiffers = placement !== undefined && placement.sex !== patient?.sex;
   const genderDiffers = placement !== undefined && placement.gender !== patient?.gender;
+  const legalDiffers = movement !== undefined && patient !== undefined && movement.legalStatus !== patient.legalStatus;
   const mismatch = Boolean(
     placement &&
     patient &&
@@ -352,16 +354,19 @@ export function PatientDetailsTab({
     placement?.cohort && patient?.dateOfBirth && today && !cohortFitsAge(placement.cohort, patient.dateOfBirth, today)
       ? patientCohort(patient.dateOfBirth, today)
       : undefined;
-  // A16-09 and 1.1 (Josh, 13 Nov 2026): one legal status, from the one current legal position, so
-  // the Details tab reads as every other view. The stay's (the movement's) status wins over the
-  // patient record's own: the stay is where the ED and the ward record each change. The patient
-  // record's status shows only when there is no stay. Never two lines.
+  // A16-09 and 1.1 (Josh, 13 Nov 2026): the first row reads the one current legal position, so the
+  // Details tab reads as every other view; the stay's (the movement's) status wins over the patient
+  // record's own. D-187 item 1 (Q19, later the same evening) keeps both statuses: when they differ,
+  // the patient record's status shows as a second, plainly named row and a warning says so.
   const legal: Fact[] = [
+    // D-187 item 1 (Q19): both statuses are kept, named plainly. A movement from a ward or the
+    // community is not an ED stay, so it reads "This move".
     {
-      label: "Legal status",
+      label: legalDiffers ? (movement && isEdOriginJourney(movement) ? "This ED stay" : "This move") : "Legal status",
       value: legalValue(currentLegalPosition(movement, patient?.legalStatus).status),
       wide: !active,
     },
+    ...(legalDiffers ? [{ label: "Patient record", value: legalValue(patient?.legalStatus) }] : []),
     ...(cto ? [{ label: "Community treatment order", value: `Form ${cto.form} in force` }] : []),
     // Placement facts exist only with an active movement; otherwise they are left out.
     ...(placement
@@ -482,6 +487,14 @@ export function PatientDetailsTab({
           </Section>
 
           <Section title={placement ? "Legal and placement" : "Legal"}>
+            {/* D-187 item 1 (Q19): a warning, never a block (D-186 item 5). Only while the stay is
+                current: once it has ended, the record is expected to move on from it. */}
+            {legalDiffers && active ? (
+              <p className={styles.attention} role="status" data-testid="ward-person-legal-differs">
+                <StatusGlyph tone="warning" size={12} />
+                <span>These two legal statuses differ. Check which is current.</span>
+              </p>
+            ) : null}
             <FactGrid facts={legal} />
           </Section>
 

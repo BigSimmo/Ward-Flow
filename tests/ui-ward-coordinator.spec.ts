@@ -825,7 +825,8 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
 
     const movement = requireMovement("WF-009");
-    expect(movement.declines.length, "fixture assumption: WF-009 carries five declines").toBe(5);
+    // D-189 item 8(a): authorisation no longer rules SJGS Adult Secure out, so the seed adds its decline.
+    expect(movement.declines.length, "fixture assumption: WF-009 carries six declines").toBe(6);
 
     await pickQueueRow(queue, "WF-009");
     await expect(shortlist.locator('[data-testid="ward-decline-row"]')).toHaveCount(movement.declines.length);
@@ -1166,7 +1167,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
    * Whole-branch review I2 (spec §11): "when every candidate is ineligible, the coordinator can
    * record that it happened — what was tried, why each failed, and who is being contacted."
    * WF-009 is pinned as the fixture case (verified below against the real `eligibleCandidatesAmong`,
-   * never assumed): five declines have exhausted every cohort-matching candidate.
+   * never assumed): six declines have exhausted every cohort-matching candidate.
    *
    * WF-009's fixture (`ward-movements.ts`) already carries a pre-authored `escalation` — the
    * model has held this field since the fixture was written, but nothing could ever write a NEW
@@ -1188,7 +1189,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
       "fixture assumption: WF-009 has no eligible candidate",
     ).toBe(false);
     expect(wf009.escalation, "fixture assumption: WF-009 already carries a pre-authored escalation").toBeDefined();
-    expect(wf009.declines.length, "fixture assumption: WF-009 carries five declines").toBe(5);
+    expect(wf009.declines.length, "fixture assumption: WF-009 carries six declines (D-189 item 8(a))").toBe(6);
 
     const queue = homeFlowCard(page);
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
@@ -1215,7 +1216,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     // A real dispatch, not a local echo of the chosen option: the record now reads the NEW contact,
     // and `triedUnitIds` is `movement.declines` (never the panel's capped `shortlist`), so the
-    // count matches the real five declines exactly.
+    // count matches the real six declines exactly.
     await expect(record).toContainText(NEW_CONTACT);
     await expect(record).not.toContainText(wf009.escalation!.contact);
     await expect(record).toContainText(`tried ${wf009.declines.length} unit`);

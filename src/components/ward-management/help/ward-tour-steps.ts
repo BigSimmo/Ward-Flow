@@ -425,7 +425,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "find-bed",
           { sel: '[data-testid="ward-rail-bed-finder"]' },
           "Find a bed",
-          "Lists the wards that meet the checks you choose, with their ready beds, A to Z by name. It is a quick filter, not a suggestion. The referral still checks every rule.",
+          "Lists the wards that meet the checks you choose, with their ready beds, A to Z by name. It is a quick filter, not a suggestion. The referral still runs its own bed checks.",
           "Open Find a bed and choose one check.",
         ),
       ];
@@ -886,7 +886,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "find-bed",
           { sel: '[data-testid="ward-phone-dock-bed-finder"]' },
           "Find a bed",
-          "Lists the wards that meet the checks you choose, with their ready beds, A to Z by name. It is a quick filter, not a suggestion. The referral still checks every rule.",
+          "Lists the wards that meet the checks you choose, with their ready beds, A to Z by name. It is a quick filter, not a suggestion. The referral still runs its own bed checks.",
         ),
         PHONE_HELP,
       ];

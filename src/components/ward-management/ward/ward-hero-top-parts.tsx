@@ -3,6 +3,7 @@ import type { Unit } from "@/components/ward-management/ward-model";
 import type { BedStateCounts } from "@/components/ward-management/ward-bed-states";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { BED_RELEASE_BLOCKED_FIGURE_LABEL } from "@/components/ward-management/ward-derivations";
+import { SAMPLE_OBSERVATION_MIX_LABEL } from "@/components/ward-management/ward-sample-choices";
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
 import { WardPackPrintedLine } from "./ward-pack-printed-line";
 import styles from "./ward-hero-top-parts.module.css";
@@ -160,6 +161,8 @@ export function wardHeroTopParts({
           // Root-cause fix 3.5: this counts staff, not patients (one person on two-staff constant is 2).
           label: "Staff on constant obs",
           value: staffedSpecialling,
+          // D-189 item 2: the sample day's observation levels are a sample mix until Josh sets one.
+          note: <span data-testid="ward-hero-obs-sample">{SAMPLE_OBSERVATION_MIX_LABEL}</span>,
           ariaLabel: `Staff on constant observation: ${staffedSpecialling}`,
         },
         {

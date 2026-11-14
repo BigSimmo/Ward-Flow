@@ -19,7 +19,8 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * their space: the top lines' box never shrinks, "CAD to follow" takes the help line's place, and the
  * pull time limit warning keeps an empty slot while it is not needed. Synthetic data only.
  */
-type Record = Pick<Movement, "legalStatus" | "legalForm"> & Partial<Pick<Movement, "pullExpiresAt">>;
+type Record = Pick<Movement, "legalStatus" | "legalForm"> &
+  Partial<Pick<Movement, "pullExpiresAt" | "medicalClearance">>;
 
 function Form({ record }: { record: Record }) {
   const [answers, setAnswers] = useState<TransportBookingAnswers>(BLANK_TRANSPORT_BOOKING);
@@ -51,7 +52,12 @@ function layout() {
   });
 }
 
-const involuntary: Record = { legalStatus: "Involuntary inpatient", legalForm: undefined };
+// D-187 item 10: cleared, so this pins the layout alone; an uncleared booking also asks for a reason.
+const involuntary: Record = {
+  legalStatus: "Involuntary inpatient",
+  legalForm: undefined,
+  medicalClearance: { cleared: true, at: NOW_ANCHOR - 30 },
+};
 
 describe("F-106: the Transport panel's controls keep their places as answers are chosen", () => {
   it("keeps every row, in the same order, through Ambulance, +30m, No escort and Involuntary", () => {

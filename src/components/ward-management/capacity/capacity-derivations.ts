@@ -783,8 +783,6 @@ export type NetworkServiceGroupTotals = {
   sexMix: { Female: number; Male: number };
   speciallingFree: number | undefined;
   speciallingStaffable: number;
-  /** How many of this group's own wards are `unit.authorised` — a real count, not a sum of a flag. */
-  authorised: number;
 };
 
 function trackedSum(values: (number | undefined)[]): number | undefined {
@@ -816,6 +814,5 @@ export function networkServiceGroupTotals(rows: NetworkWardRow[]): NetworkServic
     ),
     speciallingFree: trackedSum(rows.map((row) => row.speciallingFree)),
     speciallingStaffable: rows.reduce((sum, row) => sum + row.speciallingStaffable, 0),
-    authorised: rows.filter((row) => row.unit.authorised).length,
   };
 }

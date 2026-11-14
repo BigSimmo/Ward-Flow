@@ -66,14 +66,20 @@ describe("step-down board uses the main matching engine (Top 25 item 8)", () => 
     expect(eligibility(subject, female, NOW_ANCHOR).eligible).toBe(false);
   });
 
-  it("treats an unrecorded legal status as needing an authorised ward", () => {
+  // D-189 item 8(a): the need still holds (D-69), but the gate is information only while every ward's
+  // authorisation is "not stated", so it marks the need rather than failing.
+  it("treats an unrecorded legal status as needing an involuntary-capable bed, as information", () => {
     const { state } = board(() => true);
     const stay = state.admissions.find((admission) => admission.state === "occupied");
     const fromUnit = state.units.find((unit) => unit.id === stay?.unitId);
     const unauthorised = state.units.find((unit) => !unit.authorised);
     if (!stay || !fromUnit || !unauthorised) return;
     const verdict = eligibility(stepDownSubject(stay, fromUnit, undefined), unauthorised, NOW_ANCHOR);
-    expect(verdict.gates.find((gate) => gate.gate === "authorisation")?.pass).toBe(false);
+    expect(verdict.gates.find((gate) => gate.gate === "authorisation")).toMatchObject({
+      pass: true,
+      info: true,
+      need: true,
+    });
   });
 });
 

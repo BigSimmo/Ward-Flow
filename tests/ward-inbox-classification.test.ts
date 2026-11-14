@@ -40,6 +40,10 @@ const MEETING_ACTION_CATEGORIES = 1;
  * day (`dailyCheckId`). It names a day, not a row, so no list ever emits it.
  */
 const NON_ROW_CATEGORIES: readonly (keyof typeof INBOX_CATEGORIES)[] = ["daily_check"];
+// D-189 item 9(a): `destination_unlawful` is still emitted by its own block, but only through
+// `authorisationBlocksPlacement`, which is false for every ward until Q42 is signed, so no movement
+// can reach it today. Its refusal is still walked below by id.
+const DORMANT_CATEGORIES: readonly string[] = ["destination_unlawful"];
 const ROW_CATEGORIES = Object.keys(INBOX_CATEGORIES).filter(
   (key) => !(NON_ROW_CATEGORIES as readonly string[]).includes(key),
 );
@@ -67,7 +71,7 @@ function movementFrom(id: string, overrides: Partial<Movement>): Movement {
  */
 function movementsCoveringEveryCategory(): Movement[] {
   return [
-    // destination_unlawful — a private ward that is never authorised to hold an involuntary patient.
+    // destination_unlawful — dormant under D-189 item 9(a): this movement at a flagged ward raises nothing.
     movementFrom("WF-T01", { legalStatus: "Involuntary inpatient", acceptedUnitId: "sjgs-adult-open" }),
     // legal_timing_breached — a form carrying a deadline already in the past.
     movementFrom("WF-T02", { legalForm: { code: "4A", kind: "transport", dueAt: NOW - 90 } }),
@@ -265,7 +269,7 @@ describe("every action-inbox category is classified as a fact or a commitment", 
     // ANTI-VACUITY. Without this the whole test passes over an empty array — the enumeration
     // "silently returning nothing" failure. Five categories, at least one row each.
     expect(items.length, "the injected movements no longer populate the inbox at all").toBeGreaterThanOrEqual(
-      ROW_CATEGORIES.length,
+      ROW_CATEGORIES.length - DORMANT_CATEGORIES.length,
     );
 
     const unclassified = items.filter((item) => categoryKeyOf(item) === undefined);
@@ -287,7 +291,7 @@ describe("every action-inbox category is classified as a fact or a commitment", 
     // no row can produce would otherwise sit here unexercised, and a category deleted from the
     // builder while its entry remained would pass silently.
     const covered = new Set(items.map((item) => categoryKeyOf(item)));
-    expect([...covered].sort()).toEqual([...ROW_CATEGORIES].sort());
+    expect([...covered].sort()).toEqual(ROW_CATEGORIES.filter((key) => !DORMANT_CATEGORIES.includes(key)).sort());
   });
 
   /**
@@ -415,9 +419,11 @@ describe("COMPLETE_INBOX_ITEM refuses a fact", () => {
         item.id.startsWith(INBOX_CATEGORIES.legal_timing_breached.idPrefix) ||
         item.id.startsWith(INBOX_CATEGORIES.destination_unlawful.idPrefix),
     );
-    expect(items.map((item) => item.id).sort()).toEqual(["destination-unlawful-WF-T01", "legal-WF-T02"]);
+    // D-189 item 9(a): the unlawful-destination row is not raised while authorisation is not stated,
+    // so its id is refused directly as well.
+    expect(items.map((item) => item.id).sort()).toEqual(["legal-WF-T02"]);
 
-    for (const item of items) {
+    for (const item of [...items, { id: `${INBOX_CATEGORIES.destination_unlawful.idPrefix}WF-T01` }]) {
       const next = wardFlowReducer(state, {
         type: "COMPLETE_INBOX_ITEM",
         role: "coordinator",

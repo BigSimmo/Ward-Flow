@@ -123,7 +123,5 @@ describe("M119: the search record preview shows the identity as recorded (fixed 
     });
   }
 
-  it.todo(
-    "M119 gap: the search record preview shows sex only ('Sex unrecorded' when absent), never the recorded gender; Josh to say whether gender belongs there",
-  );
+  // M119 gender gap closed by D-186 item 13: tests/ward-clinical-d186-wording.test.ts covers it.
 });

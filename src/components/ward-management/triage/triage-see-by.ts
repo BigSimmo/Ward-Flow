@@ -7,6 +7,7 @@ import { MONTH_SHORT } from "@/components/ward-management/ward-month-names";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 
 import type { Tier } from "./triage-record";
+import { checkReviewTime } from "./triage-risk-text";
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -67,15 +68,17 @@ export function seeByWindowUnsigned(urgency: Tier): boolean {
 /**
  * The see-by time for an urgency and a reviewed time ("DD/MM/YYYY HH:MM", wall clock). `today` is
  * the board's wall-clock now, for "today" and "tomorrow". Null when there is no urgency, the tier
- * has no window, or the reviewed time is not set.
+ * has no window, or the reviewed time is not set. With `now` (the real moment, board clock), also
+ * null when the reviewed time check refuses it (A9-22(a)): a future time shows no see-by time.
  */
-export function seeBy(urgency: Tier | null, reviewed: string, today: Date, long: string): SeeBy | null {
+export function seeBy(urgency: Tier | null, reviewed: string, today: Date, long: string, now?: number): SeeBy | null {
   if (!urgency) return null;
   const window = WINDOW[urgency];
   if (window === undefined) return null;
   if (window === 0) return { when: "Now", basis: `A, ${long.toLowerCase()}`, unsigned: false };
   const start = parseStamp(reviewed);
   if (!start) return null;
+  if (now !== undefined && !checkReviewTime(reviewed, now).ok) return null;
   const at = new Date(start.getTime() + window);
   const two = (n: number) => String(n).padStart(2, "0");
   const clock = `${two(at.getUTCHours())}:${two(at.getUTCMinutes())}`;

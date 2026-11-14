@@ -17,6 +17,10 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 const NOW = NOW_ANCHOR;
 const seed = seedWardFlowState();
 const base = seed.movements.find((movement) => movement.id === "WF-005")!;
+// A seeded open ED stay on a detention order, for the advocacy notice (offered for a detained move
+// only). WF-005 was that stay until D-187 item 2 made its Form 1A read "Referred for psychiatric
+// examination" (13 Nov 2026), which is not involuntary.
+const DETAINED_STAY = "WF-011";
 
 function movement(overrides: Partial<Movement> = {}): Movement {
   return { ...base, legalStatus: "Voluntary", ...overrides };
@@ -144,46 +148,46 @@ describe("recording", () => {
       role: "ed",
       now: NOW,
       occasion: "admission",
-      movementId: "WF-005",
+      movementId: DETAINED_STAY,
       party: "mhas",
       outcome: "told",
       who: "Advocate on duty",
     });
-    expect(recorded.supportNotifications?.at(-1)).toMatchObject({ subjectId: "WF-005", party: "mhas" });
+    expect(recorded.supportNotifications?.at(-1)).toMatchObject({ subjectId: DETAINED_STAY, party: "mhas" });
     // ED records nothing else.
     const carer = wardFlowReducer(seed, {
       type: "RECORD_SUPPORT_NOTIFICATION",
       role: "ed",
       now: NOW,
       occasion: "admission",
-      movementId: "WF-005",
+      movementId: DETAINED_STAY,
       party: "carer",
       outcome: "told",
       who: "Carer",
     });
     expect(carer.rejections.at(-1)?.reason).toMatch(/only the advocacy service notice/);
 
-    const arrived = arrive(recorded, "WF-005");
-    expect(supportNotificationChecklist(arrived.supportNotifications, "admission", "WF-005").mhas?.outcome).toBe(
+    const arrived = arrive(recorded, DETAINED_STAY);
+    expect(supportNotificationChecklist(arrived.supportNotifications, "admission", DETAINED_STAY).mhas?.outcome).toBe(
       "told",
     );
-    const task = supportNotificationInboxItems(arrived, NOW).find((item) => item.movementId === "WF-005");
+    const task = supportNotificationInboxItems(arrived, NOW).find((item) => item.movementId === DETAINED_STAY);
     expect(task?.detail).toMatch(/^Carer, PSP not recorded/);
   });
 
   it("a ward record after arrival shows as told on the arrival checklist", () => {
-    const arrived = arrive(seed, "WF-005");
+    const arrived = arrive(seed, DETAINED_STAY);
     const recorded = wardFlowReducer(arrived, {
       type: "RECORD_SUPPORT_NOTIFICATION",
       role: "ward",
       now: NOW,
       occasion: "admission",
-      movementId: "WF-005",
+      movementId: DETAINED_STAY,
       party: "mhas",
       outcome: "told",
       who: "Advocate on duty",
     });
-    const moved = recorded.movements.find((candidate) => candidate.id === "WF-005")!;
+    const moved = recorded.movements.find((candidate) => candidate.id === DETAINED_STAY)!;
     expect(line(moved, "mhas_told", { supportNotifications: recorded.supportNotifications, now: NOW })).toMatchObject({
       state: "done",
     });
@@ -199,7 +203,7 @@ describe("the ED arrival checklist card", () => {
   it("ticks MHAS told through the shared support record, nothing ticked by default", async () => {
     render(
       <WardFlowProvider initialNow={NOW}>
-        <Live id="WF-005" />
+        <Live id={DETAINED_STAY} />
       </WardFlowProvider>,
     );
     const card = screen.getByTestId("ward-ed-admission-checklist");

@@ -148,7 +148,7 @@ export function SafetyPlanDrawer({
               ? chips(
                   "services",
                   "Services",
-                  SAFETY_PLAN_SERVICES.map((service) => [serviceText(service), service[0]]),
+                  SAFETY_PLAN_SERVICES.map((service) => [serviceText(service), service.name]),
                 )
               : null}
           </div>

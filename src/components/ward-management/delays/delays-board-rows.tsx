@@ -31,6 +31,7 @@ import {
   typedTimeLine,
   typedTimePhrase,
 } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning";
 import styles from "./delays-board.module.css";
 import redesign from "./waiting.module.css";
 
@@ -146,7 +147,7 @@ export function phonePrefix(
     );
   }
   // A person on an order always shows their form, before the UMRN, even with no typed time.
-  const onOrderForm = form !== undefined && row.movement.legalStatus !== "Voluntary" ? form : undefined;
+  const onOrderForm = form !== undefined && isNotVoluntary(row.movement.legalStatus) ? form : undefined;
   if (row.movement.escalation !== undefined)
     return (
       <>

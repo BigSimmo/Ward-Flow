@@ -128,6 +128,9 @@ export function legalStatusShort(movement: Pick<Movement, "legalForm" | "legalSt
   // 1.1 (K1) and A1: the one current legal position, so the chip on Movements and Delays rows reads
   // "Form 3B ended" once a person records the end, as every other screen does.
   const form = legalFormNowWords(movement);
+  // D-187 item 4 (Q25): a Voluntary person with a form on file shows both, "Voluntary · Form 3B" (or
+  // "Voluntary · Form 3B ended"), so the chip never hides the recorded status behind the form.
+  if (form && movement.legalStatus === "Voluntary") return `${LEGAL_STATUS_SHORT.Voluntary} · ${form}`;
   if (form) return form;
   return LEGAL_STATUS_SHORT[movement.legalStatus] ?? movement.legalStatus;
 }

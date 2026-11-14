@@ -205,3 +205,77 @@ unchanged. Its 12 digests were refreshed.
 Then `ward/ward-screen.tsx` keeps the bed-pulled toast's id so a row's Undo pull can close it (review note 1), and
 moves part of its Home section into `ward/ward-screen-home-section.tsx` to stay within its line limit. No dispatch
 changed; its 12 digests were refreshed again.
+Then main with the clinical PR (#1656) was merged in on 14 November 2026. Both sides' handler changes are kept
+unchanged; the merge adds no behaviour, and the `ward/ward-screen.tsx` digests and lines were refreshed.
+
+## 13 November 2026 — clinical sign-off sitting wording (PR #1656, D-186)
+
+Five cited review sources changed in the held clinical PR, compared line by line with main `92630b1e`.
+`movements/movement-workspace-cockpit.tsx`, `hub/hub-screen.tsx` and `capacity/capacity-ward-drawer.tsx` change
+only on-screen words ("Set up for involuntary admissions (demo)" replaces "authorised"), and
+`ward-discharge-criteria.ts` only rewords two criteria led discharge messages. `patients/patient-now-screen.tsx`
+now takes the band's movement from the one legal reading (`resolved.legalNow`, built in `patient-now-adapter.ts`
+with the same rule the screen used: the live movement in force, else the current stay's own, else the live movement)
+and passes it to the band. No handler, payload, guard, place scope or dispatch changed, so their whole-file review
+digests in `actions.json`, `event-dispositions.json` and `machines.json` were refreshed. Evidence:
+`tests/ward-clinical-d186-wording.test.ts` and `tests/ward-clinical-d186-legal-now.test.ts`, run locally.
+
+Later in the same PR (D-187 items 4 and 16), two more cited sources changed only in words. `ward/ward-arrivals-corridor.tsx`
+shows a legal form's tag as the form and the status as recorded ("status not recorded" when blank) instead of
+always "involuntary". `patients/patient-now-screen.tsx` makes Mark absent's Undo message say "Back on the ward" when
+the person was not on leave; the RECORD_ABSENT_WITHOUT_LEAVE dispatch, its gate and its payload are unchanged. Digests
+refreshed. Evidence: `tests/ward-clinical-d187-legal.dom.test.tsx`, run locally.
+
+Later in the same PR (D-186 item 4), four more cited sources swap a hand-written "status is not Voluntary" test
+for the named rule `isNotVoluntary` in `ward-legal-meaning.ts`: `movements/movement-workflow-actions.tsx` (the
+review-flag kind), `ward-derivations.ts` (`expectFlagKindFor`), `ward-flow-record-events.ts` (the RECORD_ED_OUTCOME
+"for discharge" gate) and `ward-flow-referral-send-events.ts` (the REFER_TO_COMMUNITY_TEAM gate). Each gives the same
+answer for every `LegalStatus` value, proved per site and through `wardFlowReducer` by
+`tests/ward-clinical-d186-named-rules.test.ts`. No handler, payload, guard outcome or place scope changed; digests
+refreshed.
+
+Cited line numbers in the same PR's changed sources were then moved to follow its own edits (64 citations, in
+`actions.json` and `event-dispositions.json`), each mapped line by line from main `92630b1e` so it points at the same
+code text. Only `line` values changed. Two REFER citations into `ward-flow-referral-send-events.ts` (lines 1277 and 1285) were already past the file's end on main and are left for a separate fix.
+
+When PR B (#1657) merged, main was merged into this PR. Each citation keeps main's entry and is mapped line by line
+from main's source to the merged source; digests are the merged files' own. Every cited source that changed on both
+sides holds only changes already reviewed on its own side (PR B's notes and the notes above). The one hand-made
+change is the arrivals corridor tag, which keeps B's "ended" form words with the status as recorded (D-187 item 4):
+display only.
+
+When PR C (#1660) merged, main was merged into this PR the same way: each citation keeps main's entry and is mapped
+line by line onto the merged source. Then the rest of the clinical build (D-186 to D-189) was added. Unlike the
+wording changes above, it does change handlers and guards. Each change is listed here so the digests can be checked:
+
+- **Authorisation (D-189 items 8(a), 9(a)).** `ward-flow-transport-events.ts` asks the held-bed authorisation
+  refusal (HANDOVER_READY, TRANSPORT_ACCEPTED, collection, arrival) only when `authorisationBlocksPlacement` says
+  the held ward's authorisation stops a placement, which it never does while every ward reads "not stated".
+  `ward-flow-reducer.ts` FLAG_LEGAL_MISMATCH and `ward-derivations.ts` (the Exceptions and Delays reason) read
+  the same switch. `ward-eligibility.ts`'s authorisation gate is information only. The bed finders, the fit
+  check, `coordinator/shortlist-panel.tsx` (`isNotVoluntary`), `capacity/planned-admissions-reducer.ts`
+  (`isDetained`) and the hub's "voluntary only" figure no longer read the invented flag.
+- **Fit to travel (D-187 item 10, D-189 item 9(e)).** HANDOVER_READY takes an optional `exception`
+  (`ward-flow-events.ts`) and keeps it on the job with step "handover_ready". A missing exception is never
+  refused. `ed/ed-screen-row-menu.tsx` and `patients/patient-transit-operations.tsx` ask for a reason first and
+  can go on without one. Collection checks now take the live wards (`collectionGaps(movement, units)`) in the
+  transit operations and the three officer screens; the payloads are unchanged.
+- **Examination hold-up (F-15).** RECORD_EXAMINATION sets a named community-order hold-up for the
+  `community_order` outcome. Every guard that read the one "revoked" blocker now uses
+  `isExaminationAwaitingReleaseBlocker`, which also recognises the saved old words, so no refusal is lost.
+- **Legal order (D-186 item 5, D-187 item 6).** `movements/movement-workflow-actions.tsx` shows continuation
+  warnings and still dispatches the same event. The engine refuses nothing new.
+- **Placement interval (D-187 item 19).** `ward/ward-accepted-referral-placement-form.tsx` starts the
+  Intermittent interval blank and refuses to save until 15 or 30 is picked.
+- **Display only.** `patients/patient-status-card.tsx` and `patient-now-screen.tsx` ("Referral waiting for
+  triage", two statuses) and `ward/ward-screen.tsx` (the authorisation label and the sample mix footer).
+
+Two citations pointed at changed lines and were moved by hand: the collection guard in
+`ward-flow-transport-events.ts` (now line 275) and the collection gaps in `patient-transit-operations.tsx`
+(now line 816). Evidence: the `tests/ward-clinical-*` and `tests/ward-after-c-*` files, run locally (785 tests,
+58 files, on the merged tree).
+
+**Main with PR E (#1658) merged into the clinical PR (14 November 2026).** Both sides' handler changes are kept
+unchanged; the merge adds no behaviour. Citations in `ward/ward-screen.tsx` and `patients/patient-transit-operations.tsx`
+were moved to the same statements in the merged files. The Mark handover ready citation now points at the one
+`HANDOVER_READY` dispatch in `readyHandover` (line 167), which carries the fit to travel reason (D-187 item 10).
