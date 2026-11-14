@@ -1013,7 +1013,7 @@ export function OfficerScreen() {
               DOB {identityFor(topJob).dob}
               {topJob.heldBedNumber !== undefined ? ` · Bed ${topJob.heldBedNumber}` : ""}
               {" · "}
-              {transportLegalStatusLabel(topJob.transport) === "Not recorded"
+              {topJob.transport.transportLegalStatus === undefined
                 ? "Legal status not recorded"
                 : transportLegalStatusLabel(topJob.transport)}
               {" · "}

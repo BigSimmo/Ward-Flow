@@ -245,6 +245,11 @@ export function referralWaitingForTriage(
   );
 }
 
+/** The receiving ward cell names the accepted ward, or says none is recorded. */
+function receivingWardName(ctx: PatientStatusContext): string {
+  return ctx.acceptedUnitName ?? "Not recorded";
+}
+
 function awolTrackerMeta(since: number, now: number, stayUnitName?: string, holdReview = false): string {
   const away = Math.max(0, now - since);
   const holdWarning = CLINICAL_VALUES.awolBedHoldWarning.value;
@@ -487,7 +492,7 @@ function divertedStatus(movement: Movement, ctx: PatientStatusContext): PatientS
         label: "Receiving ward",
         owner: "Ward nurse in charge",
         tone: ctx.hasBedHold ? "danger" : "neutral",
-        value: ctx.acceptedUnitName ?? "Not recorded",
+        value: receivingWardName(ctx),
         sub: ctx.hasBedHold ? "Bed still held" : "No bed held",
         href: ctx.acceptedUnitName ? ctx.bedHref : undefined,
         action:
@@ -773,7 +778,7 @@ function statusFor(
           owner: "Ward nurse in charge",
           tone: ctx.hasBedHold ? "success" : "warning",
           clear: ctx.hasBedHold,
-          value: ctx.acceptedUnitName ?? "Not recorded",
+          value: receivingWardName(ctx),
           sub: ctx.hasBedHold ? "Bed pulled" : "No bed pulled yet",
           href: ctx.acceptedUnitName ? ctx.bedHref : undefined,
         },

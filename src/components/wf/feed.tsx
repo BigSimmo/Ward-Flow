@@ -68,7 +68,7 @@ export function Timeline({ items, holdNew = true, label = "Recent activity", cla
             <span className={styles.node}>
               <StatusGlyph tone={item.tone} size={10} />
             </span>
-            <span className={styles.text}>{item.text}</span>
+            <span className={cx(styles.text, "wf-typed")}>{item.text}</span>
             {item.meta != null ? <span className={styles.evMeta}>{item.meta}</span> : <span />}
           </li>
         ))}

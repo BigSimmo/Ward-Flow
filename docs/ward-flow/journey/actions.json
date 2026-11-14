@@ -2155,7 +2155,7 @@
         {
           "path": "src/components/ward-management/patients/patient-status-card.tsx",
           "line": 339,
-          "sha256": "31586f6e6fa11b1d0ce3fad0d08ca56f406f8522b69ab6cafe3963ce71897afb"
+          "sha256": "99868fde7c5eb0827c064060684c0cde7485e43f8250d914275a912260a0fd50"
         },
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
@@ -2414,7 +2414,7 @@
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
           "line": 512,
-          "sha256": "1514d32f1e42d8855efa8a9e389af32c700b3214810a6b8f7282761ef85bee69"
+          "sha256": "978ee241b2e8a3f82169bc8623686da8c68ca5af31ac78e053825383374adcb5"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2483,7 +2483,7 @@
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
           "line": 523,
-          "sha256": "1514d32f1e42d8855efa8a9e389af32c700b3214810a6b8f7282761ef85bee69"
+          "sha256": "978ee241b2e8a3f82169bc8623686da8c68ca5af31ac78e053825383374adcb5"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2560,7 +2560,7 @@
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
           "line": 531,
-          "sha256": "1514d32f1e42d8855efa8a9e389af32c700b3214810a6b8f7282761ef85bee69"
+          "sha256": "978ee241b2e8a3f82169bc8623686da8c68ca5af31ac78e053825383374adcb5"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2637,7 +2637,7 @@
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
           "line": 565,
-          "sha256": "1514d32f1e42d8855efa8a9e389af32c700b3214810a6b8f7282761ef85bee69"
+          "sha256": "978ee241b2e8a3f82169bc8623686da8c68ca5af31ac78e053825383374adcb5"
         },
         {
           "path": "src/components/ward-management/tools/ward-tool-feed.tsx",

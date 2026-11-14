@@ -75,6 +75,7 @@ export function DataRow({
     <Tag
       className={cx(
         styles.row,
+        "wf-typed",
         compact && styles.compact,
         interactive && styles.interactive,
         selected && styles.selected,
