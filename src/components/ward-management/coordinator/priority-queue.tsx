@@ -27,7 +27,12 @@ import {
   type Referral,
   type TurnaroundPriority,
 } from "@/components/ward-management/ward-model";
-import { FORM_TIMING_FACTOR_LABEL, urgencyTierLabel, waitFactors } from "@/components/ward-management/ward-priority";
+import {
+  FORM_TIMING_FACTOR_LABEL,
+  queueWaitStartedAt,
+  urgencyTierLabel,
+  waitFactors,
+} from "@/components/ward-management/ward-priority";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
@@ -221,7 +226,8 @@ export function PriorityQueue({
     // the Referrals board does, so the row never restarts at a later journey start. With no referral
     // time recorded the row shows its time in ED, labelled, and no tier marker.
     const tierWait = tierWaitFromReferral(movement, now);
-    const waitedMinutes = tierWait.recorded ? tierWait.waited : Math.max(0, now - movement.openedAt);
+    // One wait start for the figure and the order (`queueOrder` sorts on `queueWaitStartedAt` too).
+    const waitedMinutes = Math.max(0, now - queueWaitStartedAt(movement));
     const level = !tierWait.recorded ? null : tierWait.overdue ? "over" : tierWait.dueSoon ? "soon" : null;
     // Keep the duration neutral; the overdue label and glyph carry the status.
     const toTarget = tierWait.recorded ? tierWait.overdueAfter - tierWait.waited : Number.POSITIVE_INFINITY;
