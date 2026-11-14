@@ -321,7 +321,7 @@ export function PhoneTabBar({ items, current, label = "Main", className, ...data
                 className={cx(styles.tabLink, selected && styles.tabCurrent)}
               >
                 <span className={styles.tabIcon}>
-                  <Icon icon={item.icon} size={20} />
+                  <Icon icon={item.icon} size={21} />
                 </span>
                 <span className={styles.tabLabel}>{item.label}</span>
                 {item.count != null ? " " : null}
@@ -768,32 +768,35 @@ export function PhoneFilterFold({
   const isPhone = useIsPhone();
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  if (!isPhone) return null;
+  // R-STRUCT-36: past the phone range the button goes, but an open sheet stays open.
+  if (!isPhone && !open) return null;
   const close = () => setOpen(false);
   return (
     <>
-      <Button
-        ref={buttonRef}
-        variant="sec"
-        icon={ListFilter}
-        className={cx(foldStyles.foldButton, className)}
-        data-on={count > 0 ? "true" : undefined}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        data-testid={testId}
-        onClick={() => setOpen(true)}
-      >
-        Filter
-        {count > 0 ? (
-          <>
-            <span className={foldStyles.foldDot} aria-hidden="true">
-              ·
-            </span>
-            <span className={foldStyles.foldCount}>{count}</span>
-            <SrOnly>{count === 1 ? "filter on" : "filters on"}</SrOnly>
-          </>
-        ) : null}
-      </Button>
+      {isPhone ? (
+        <Button
+          ref={buttonRef}
+          variant="sec"
+          icon={ListFilter}
+          className={cx(foldStyles.foldButton, className)}
+          data-on={count > 0 ? "true" : undefined}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          data-testid={testId}
+          onClick={() => setOpen(true)}
+        >
+          Filter
+          {count > 0 ? (
+            <>
+              <span className={foldStyles.foldDot} aria-hidden="true">
+                ·
+              </span>
+              <span className={foldStyles.foldCount}>{count}</span>
+              <SrOnly>{count === 1 ? "filter on" : "filters on"}</SrOnly>
+            </>
+          ) : null}
+        </Button>
+      ) : null}
       <PhoneSheet
         open={open}
         onClose={close}

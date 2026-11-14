@@ -596,9 +596,8 @@
 
 .heroSub {
   margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* R-STYLE-7: the subtitle wraps at 200% text rather than ending in an ellipsis. */
+  overflow-wrap: anywhere;
   font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   color: var(--wf-hero-ink-2);
 }

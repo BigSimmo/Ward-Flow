@@ -246,6 +246,8 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-221](#d-221-late-arrivals-14-november-2026)                                                                                                          | Late arrivals                                                                          | Active                                           |
 | [D-222](#d-222-history-14-november-2026)                                                                                                                | History                                                                                | Active                                           |
 | [D-223](#d-223-permissions-and-the-clock-format-14-november-2026)                                                                                       | Permissions and the clock format                                                       | Active                                           |
+| [D-224](#d-224-explanatory-tips-open-on-tap-14-november-2026)                                                                                           | Explanatory tips open on tap                                                           | Active                                           |
+| [D-225](#d-225-design-fix-phasing-14-november-2026)                                                                                                     | Design fix phasing                                                                     | Active                                           |
 | [D-229](#d-229-demo-pause-holds-board-time-and-seeded-wait-lists-match-the-engine-14-november-2026)                                                     | Demo Pause holds Board time; seeded wait lists match the engine                        | Active                                           |
 
 ---
@@ -2760,7 +2762,20 @@ is inferred.
   4. am/pm on screen (D-219 item 6) is built in this PR.
 - **Boundary:** no clinical value changes.
 
-D-224 is claimed by open PR #1672. D-225 is claimed by open PR #1672. D-226 is claimed by open PR #1675. D-227 is claimed by open PR #1675. D-228 is claimed by open PR #1675.
+## D-224. Explanatory tips open on tap (14 November 2026)
+
+- **Date:** 14 November 2026, 10:44 PM AWST (14:44 UTC). **Decided by:** Josh, agreeing the design list and phasing in the Ward Flow project.
+- **Decision:** every explanatory tip is a small ⓘ that opens with a tap, a click or the keyboard, and closes with Escape, a tap outside or a second press. Hover-only tips are not used, because they do not work on phones or iPads. The kit part is `InfoTip` (`src/components/wf/info-tip.tsx`); a definition or scope that would otherwise be a sentence on screen goes in one (D-218).
+- **Boundary:** design only. No clinical value, threshold or saved field changes.
+
+## D-225. Design fix phasing (14 November 2026)
+
+- **Date:** 14 November 2026, 10:44 PM AWST (14:44 UTC). **Decided by:** Josh, agreeing the design list and phasing ("yes to all recommendations" at 15:02 UTC covered the plan's defaults).
+- **Decision:** the design fixes from the master stress test pack are built in four lanes (A kit, style and print; B Home, alerts, Statistics, TV and demo controls; C beds, legal, ED and ward desk; D movement, patient page and forms), safety and clarity items first, before the 22 November freeze. Speed work (a per-screen speed budget, the demo seed out of the first download, splitting the heaviest screens, first rows first), field types declared once, dropping one change safely and the wording style list come after the 27 November demo, once a speed target is signed. "Pressing a key line copies the number" is dropped. Plan: `master-stress-test/pack/design-build-plan.md`.
+- **Defaults taken from the plan:** "Record gender" sits beside "Not recorded"; the clock is named "Board time"; one review word, the one the list uses.
+- **Boundary:** design and wording only. No clinical value, threshold or saved field changes.
+
+D-226 is claimed by open PR #1675. D-227 is claimed by open PR #1675. D-228 is claimed by open PR #1675.
 
 ## D-229. Demo Pause holds Board time, and seeded wait lists match the engine (14 November 2026)
 
