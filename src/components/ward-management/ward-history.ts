@@ -1,3 +1,4 @@
+import { AFTER_3E_REASONS, isAfter3EReason } from "@/components/ward-management/ward-legal-after-3e";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import type { WardFlowEvent, WardFlowRole } from "@/components/ward-management/ward-flow-events";
@@ -345,6 +346,9 @@ function extractEventReason(event: WardFlowEvent): string {
     const val = eventFieldString(event, field);
     if (val && val.trim().length > 0) return val.trim();
   }
+  // D-226: a form recorded after a Form 3E names the coordinator's listed reason.
+  const after3E = eventFieldString(event, "after3EReason");
+  if (isAfter3EReason(after3E)) return AFTER_3E_REASONS[after3E];
   const leavingDestination = eventFieldString(event, "leavingDestination");
   if (leavingDestination && leavingDestination.trim().length > 0) return `Destination: ${leavingDestination.trim()}`;
   const outcome = eventFieldString(event, "outcome");

@@ -14,6 +14,7 @@ import type { DischargeReasonEvent } from "./ward-delayed-discharge";
 import type { PatientCarePlanEvent } from "./ward-patient-care-plan-events";
 import type { InboxWardFlowEvent } from "./ward-inbox-events";
 import type { Instant } from "@/components/ward-management/ward-clock";
+import type { After3EReason } from "@/components/ward-management/ward-legal-after-3e";
 import type { EdPresentation } from "./ed/ed-presentation";
 import type {
   LegalFormConsentState,
@@ -2213,6 +2214,11 @@ export type WardFlowEvent =
       now: Instant;
       movementId: string;
       formCode: string;
+      /**
+       * D-226: the coordinator's listed reason for recording a form that is refused after a Form 3E
+       * (`ward-legal-after-3e.ts`). Ignored for every other role and every other form.
+       */
+      after3EReason?: After3EReason;
     }
   | {
       /** Q103 (Josh, 1 Nov 2026): the presentations chosen from the fixed ED list; empty clears them. */
@@ -2235,6 +2241,11 @@ export type WardFlowEvent =
       ageBand?: "adult" | "under_18" | null;
       /** Optional expiry typed from the paper; no statutory maximum is computed. */
       paperExpiresAt?: Instant;
+      /**
+       * D-226: the coordinator's listed reason for recording a form that is refused after a Form 3E
+       * (`ward-legal-after-3e.ts`). Ignored for every other role and every other form.
+       */
+      after3EReason?: After3EReason;
     }
   | {
       /**
@@ -2274,6 +2285,11 @@ export type WardFlowEvent =
       region?: "metro" | "country";
       ageBand?: "adult" | "under_18";
       paperExpiresAt?: Instant;
+      /**
+       * D-226: the coordinator's listed reason for recording a form that is refused after a Form 3E
+       * (`ward-legal-after-3e.ts`). Ignored for every other role and every other form.
+       */
+      after3EReason?: After3EReason;
     }
   | {
       /** Raise late-arrival notices when past estimated arrival by more than an hour. */
