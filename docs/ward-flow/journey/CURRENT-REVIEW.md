@@ -286,3 +286,7 @@ the stage and accepted-ward checks, while the journey's observation level is "No
 start-and-pull. The patient page's Pull the bed asks for a level first, records it with `RECORD_OBSERVATION_LEVEL`,
 then pulls, and no longer offers the override card for this refusal. The `PULL_PATIENT` entry's needs and refusals
 list carry the new guard; other citations in the three files were moved to the same statements.
+
+### Worked-examples toggle only on whole-network desks (14 Nov 2026)
+
+Tools, Demo offers Show or Hide worked examples only on a statewide desk or in single-browser mode. In shared mode a scoped desk reads only its own records, so it could not see the examples and the toggle misread their state. `RESET_SCENARIO`'s control note says so; the `ADVANCE_CLOCK`, `SET_SCENARIO` and `RESET_SCENARIO` citations of `tools/ward-demo-panel.tsx` were re-pointed to the edited file. No engine behaviour changed.

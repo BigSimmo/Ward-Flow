@@ -5005,8 +5005,8 @@
         },
         {
           "path": "src/components/ward-management/tools/ward-demo-panel.tsx",
-          "line": 302,
-          "sha256": "e7dc6854074831b9d6ef484a7381f7a1b30d0c45b5adaef522800b48fb83b1fe"
+          "line": 307,
+          "sha256": "ddeb6abc44c8d00cd8ead54ae626a8eb42f238a5d53b93ba5c7dd19b1f950c19"
         },
         {
           "path": "src/components/ward-management/ward-flow-provider.tsx",
@@ -5062,8 +5062,8 @@
         },
         {
           "path": "src/components/ward-management/tools/ward-demo-panel.tsx",
-          "line": 245,
-          "sha256": "e7dc6854074831b9d6ef484a7381f7a1b30d0c45b5adaef522800b48fb83b1fe"
+          "line": 250,
+          "sha256": "ddeb6abc44c8d00cd8ead54ae626a8eb42f238a5d53b93ba5c7dd19b1f950c19"
         }
       ]
     }
@@ -5091,7 +5091,7 @@
     ],
     "screen": {
       "screen": "demo-reset/ward-demo-reset.tsx; tools/ward-demo-panel.tsx",
-      "control": "Both pickers ask before replacing the synthetic world. The separate Demo reset waits for the command outcome, keeps choices unavailable while it is pending, and reports a current accepted replacement as complete. Failed, refused, cancelled or unknown completion is not reported as success, and obsolete or unmounted results do not announce into a replacement workspace. Tools, Demo also offers Show or Hide worked examples on the standard and scarce days: it reloads the current day with workedExamples set, after its own confirm. The one-tap Demo reset's confirm says the demo clock keeps running, and an accepted one-tap load also clears this browser's demo-day leftovers and the Tools reminders and call log, and on the local demo returns the tab to the coordinator's desk (F-65)."
+      "control": "Both pickers ask before replacing the synthetic world. The separate Demo reset waits for the command outcome, keeps choices unavailable while it is pending, and reports a current accepted replacement as complete. Failed, refused, cancelled or unknown completion is not reported as success, and obsolete or unmounted results do not announce into a replacement workspace. Tools, Demo also offers Show or Hide worked examples on the standard and scarce days, on a whole-network desk or in single-browser mode only (a scoped desk cannot see the example records; stop-gap, 14 Nov 2026): it reloads the current day with workedExamples set, after its own confirm. The one-tap Demo reset's confirm says the demo clock keeps running, and an accepted one-tap load also clears this browser's demo-day leftovers and the Tools reminders and call log, and on the local demo returns the tab to the coordinator's desk (F-65)."
     },
     "review": {
       "reviewedOn": "2026-11-05",
@@ -5113,8 +5113,8 @@
         },
         {
           "path": "src/components/ward-management/tools/ward-demo-panel.tsx",
-          "line": 246,
-          "sha256": "e7dc6854074831b9d6ef484a7381f7a1b30d0c45b5adaef522800b48fb83b1fe"
+          "line": 251,
+          "sha256": "ddeb6abc44c8d00cd8ead54ae626a8eb42f238a5d53b93ba5c7dd19b1f950c19"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
