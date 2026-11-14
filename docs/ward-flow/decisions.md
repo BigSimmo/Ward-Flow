@@ -241,6 +241,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-216](#d-216-the-36-sign-off-recommendations-from-the-stress-test-pack-14-november-2026)                                                              | The 36 sign-off recommendations                                                        | Active                                           |
 | [D-217](#d-217-hand-check-answers-medical-trips-and-undo-after-referring-14-november-2026)                                                              | Hand check answers: medical trips and Undo                                             | Active                                           |
 | [D-218](#d-218-no-legal-disclaimer-wording-on-screens-14-november-2026)                                                                                 | No legal disclaimer wording on screens                                                 | Active                                           |
+| [D-237](#d-237-a-desks-own-save-is-never-another-desks-change-14-november-2026)                                                                         | A desk's own save is never another desk's change                                       | Active                                           |
 
 ---
 
@@ -2697,3 +2698,13 @@ is inferred.
 - **Boundary:** wording only. No clinical value, threshold or saved field changes.
 
 The next free number is D-219.
+
+D-219 is claimed by open PR #1673. D-220 is claimed by open PR #1673. D-221 is claimed by open PR #1673. D-222 is claimed by open PR #1673. D-223 is claimed by open PR #1673. D-224 is claimed by open PR #1672. D-225 is claimed by open PR #1672. D-226 is claimed by open PR #1675. D-227 is claimed by open PR #1675. D-228 is claimed by open PR #1675. D-229 is claimed by open PR #1678. D-230 is reserved for another overnight thread (block noted in PR #1677). D-231 is reserved for another overnight thread (block noted in PR #1677). D-232 is reserved for another overnight thread (block noted in PR #1677). D-233 is reserved for another overnight thread (block noted in PR #1677). D-234 is reserved for another overnight thread (block noted in PR #1677). D-235 is reserved for another overnight thread (block noted in PR #1677). D-236 is reserved for another overnight thread (block noted in PR #1677).
+
+## D-237. A desk's own save is never another desk's change (14 November 2026)
+
+- **Date:** 14 November 2026. **Decided by:** Josh, overnight standing permission (15:00 UTC): "As any issues come up please autonomously identify them and find the recommended fix and address them" and "You are to fix all issues", with the design lane D plan he approved at 14:44 UTC.
+- **Decision:** a desk's quick second step on the same record is not refused as "Another desk changed this movement first" because of its own first step (stress test Together-X1b-2, R-MOVE-4). When another desk saved something else in between and no popup is open, the shared client now tells the server which records its own save changed and at which revision (the server's `covered` tokens, sent back as `seen`), as popups already did (CS-19). A real change by another desk is still refused and keeps its words.
+- **Officer wording (R-MOVE-4):** the interim "Your last step is still saving" line is not used, because the cause is fixed. A refused Undo says the job has moved on and to check the board for its current step.
+- **Left for later:** the recorded hold-up on the person page (R-STRUCT-25) shows the hold-up but not who recorded it or when. That needs a new stored field and is not built here.
+- **Boundary:** save mechanics and wording only. No clinical value, threshold or saved field changes.

@@ -1,21 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
   officerRefusalText,
-  STILL_SAVING_LINE,
   UNDO_MOVED_ON_LINE,
 } from "@/components/ward-management/officer/use-transport-command-feedback";
 import { estimatedTimeProblem } from "@/components/ward-management/transport/transport-booking-form";
 
 describe("officer refusal wording (R-MOVE-4)", () => {
   const clash = "Another desk changed this movement first. Review the latest board before trying again.";
-  it("calls a clash right after the desk's own save a save in progress", () => {
-    expect(officerRefusalText(clash, "En route", true)).toBe(STILL_SAVING_LINE);
-  });
-  it("keeps the board's words for a clash with no own save just landed", () => {
-    expect(officerRefusalText(clash, "En route", false)).toBe(clash);
+  it("keeps the board's words for a real clash on a step", () => {
+    expect(officerRefusalText(clash, "En route")).toBe(clash);
   });
   it("says what blocks a refused Undo, without blaming a desk", () => {
-    expect(officerRefusalText(clash, "Undo", true)).toBe(UNDO_MOVED_ON_LINE);
+    expect(officerRefusalText(clash, "Undo")).toBe(UNDO_MOVED_ON_LINE);
     expect(UNDO_MOVED_ON_LINE).not.toMatch(/desk/i);
   });
 });
