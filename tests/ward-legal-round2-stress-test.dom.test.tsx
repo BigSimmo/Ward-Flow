@@ -104,13 +104,13 @@ describe("R-LEGAL-7: the register answer names the hospital, not the ward", () =
 });
 
 describe("R-LEGAL-11: a form after a recorded Form 3E warns, never blocks", () => {
-  it("warns in plain words for any form after a 3E", () => {
+  it("warns in plain words for a form that starts a new order after a 3E (D-226 refuses continuations)", () => {
     const movement = journey(ended3E());
-    expect(afterEndedOrderWarning(movement, "3C")).toBe(
-      "Form 3E is already recorded for this person. Check the paper. If Form 3C is right, save it.",
+    expect(afterEndedOrderWarning(movement, "3A")).toBe(
+      "Form 3E is already recorded for this person. Check the paper. If Form 3A is right, save it.",
     );
-    expect(legalRecordWarnings(movement, { continuationFormCode: "3C" })).toContain(
-      afterEndedOrderWarning(movement, "3C"),
+    expect(legalRecordWarnings(movement, { continuationFormCode: "3A" })).toContain(
+      afterEndedOrderWarning(movement, "3A"),
     );
   });
 
@@ -177,12 +177,12 @@ describe("R-LEGAL-11: Record a form says it on the spot and still saves", () => 
       </WardFlowProvider>,
     );
     const sheet = screen.getByTestId("ward-legal-record");
-    fireEvent.change(within(sheet).getByLabelText("Form type"), { target: { value: "3C" } });
+    fireEvent.change(within(sheet).getByLabelText("Form type"), { target: { value: "3A" } });
     expect(within(sheet).getByTestId("ward-legal-forms-after-3e")).toHaveTextContent(
-      "Form 3E is already recorded for this person. Check the paper. If Form 3C is right, save it.",
+      "Form 3E is already recorded for this person. Check the paper. If Form 3A is right, save it.",
     );
     fireEvent.change(within(sheet).getByLabelText("Time on form"), { target: { value: "09:30" } });
-    const save = within(sheet).getByRole("button", { name: "Save Form 3C anyway" });
+    const save = within(sheet).getByRole("button", { name: "Save Form 3A anyway" });
     fireEvent.click(save);
     expect(onSave).toHaveBeenCalledTimes(1);
   });

@@ -20,6 +20,7 @@
  */
 import { legalFormStatusWarning } from "@/components/ward-management/ward-legal-form-fit";
 import { ORDER_ENDING_FORM_CODE } from "@/components/ward-management/ward-legal-form-progression";
+import { refusedAfter3E } from "@/components/ward-management/ward-legal-after-3e";
 import type { Movement } from "@/components/ward-management/ward-model";
 
 export const FOLLOW_ON_WITH_NO_EARLIER_FORM = "A follow-on form is recorded with no earlier form on file";
@@ -52,6 +53,8 @@ export function afterEndedOrderWarning(
 ): string | null {
   if (!nextFormCode || nextFormCode === ORDER_ENDING_FORM_CODE) return null;
   if (movement?.legalForm?.code !== ORDER_ENDING_FORM_CODE) return null;
+  // D-226: a continuation-type form after a 3E is refused instead (`ward-legal-after-3e.ts`).
+  if (refusedAfter3E(movement, nextFormCode)) return null;
   return `Form 3E is already recorded for this person. Check the paper. If Form ${nextFormCode} is right, save it.`;
 }
 

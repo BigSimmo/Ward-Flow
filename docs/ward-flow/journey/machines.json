@@ -1752,12 +1752,12 @@
       {
         "path": "src/components/ward-management/legal-forms/legal-forms-screen.tsx",
         "line": 1,
-        "sha256": "4f27ece0df5bd1a5b43f1e5f7d89076ca47753285eb0ae18d3d8ab9707c4def7"
+        "sha256": "51250ab5a5267e6a399b1705c0195f20d1282f6ede5aedd61a8878fe9c7b573f"
       },
       {
         "path": "src/components/ward-management/legal-forms/legal-forms-sheets.tsx",
-        "line": 332,
-        "sha256": "caaee176f4849a9832d1fcd19d74647666f61a19d5accfd8b9920bd81c4b6b01"
+        "line": 345,
+        "sha256": "4968f58577c7d83d74b5b77bde52ca0bd371aaf43335c6cf25de2a7f03960459"
       },
       {
         "path": "src/components/ward-management/patients/add-patient.tsx",
@@ -1832,7 +1832,7 @@
       {
         "path": "src/components/ward-management/ward-flow-events.ts",
         "line": 1,
-        "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+        "sha256": "7849e22ccc00c8212a0f44adb718c9b59cac5f5c88cc0be4a2ff9f45ae69d537"
       },
       {
         "path": "src/components/ward-management/ward-flow-placement-events.ts",
@@ -1851,8 +1851,8 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-record-legal-events.ts",
-        "line": 58,
-        "sha256": "56b09d557c3b2e5ba69569b81b773ae58eddce0c108ad0f7e09b7ed56ad728e2"
+        "line": 59,
+        "sha256": "ca5c7a58219098b19b649cb76eaa95d5778e4648e2ade370b88ebabe4da08d9a"
       },
       {
         "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
