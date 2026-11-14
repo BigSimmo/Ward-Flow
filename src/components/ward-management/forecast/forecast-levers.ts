@@ -9,6 +9,7 @@ import { bedIsOccupied, type Admission } from "@/components/ward-management/ward
 import { dayOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
 import { forecastReleaseAt } from "./forecast-release-date";
+import { isExpectedToFree } from "@/components/ward-management/ward-releases-expected-to-free";
 
 export type ForecastLever =
   | { kind: "confirm_dates"; beds: number; likelyUplift: number; wards: string[] }
@@ -47,7 +48,12 @@ function leverSources(
   );
   const due = pending.filter((release) => expectedAt(release) <= until);
   const heldUp = due.filter((release) => release.blocker !== null);
-  const overdue = due.filter((release) => release.blocker === null && dayOf(expectedAt(release)) < dayOf(now));
+  // M6: overdue as `bedsForecast` counts it, from the minute the time passes (`isExpectedToFree`).
+  const overdue = due.filter(
+    (release) =>
+      release.blocker === null &&
+      !isExpectedToFree({ ...release, expectedAt: expectedAt(release) }, now, Number.POSITIVE_INFINITY),
+  );
   return { open, admissionsById, expectedAt, unflagged, heldUp, overdue };
 }
 
@@ -97,7 +103,11 @@ export function forecastLevers(
     {
       kind: "clear_held_up" as const,
       beds: heldUp.length,
-      likelyUplift: heldUp.filter((release) => dayOf(expectedAt(release)) >= dayOf(now)).length,
+      // M6: cleared, a held-up release lifts "likely" only while its time is still ahead, as
+      // `bedsForecast` counts it (`isExpectedToFree`).
+      likelyUplift: heldUp.filter((release) =>
+        isExpectedToFree({ ...release, expectedAt: expectedAt(release) }, now, Number.POSITIVE_INFINITY),
+      ).length,
       reasons,
     },
   ]

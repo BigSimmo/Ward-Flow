@@ -26,6 +26,7 @@ import { numberedBedKind, unitHasOpenBeds } from "@/components/ward-management/w
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, Movement, Unit } from "@/components/ward-management/ward-model";
 import { forecastReleaseAt } from "./forecast-release-date";
+import { isExpectedToFree } from "@/components/ward-management/ward-releases-expected-to-free";
 
 export type KindForecast = {
   id: BedKindId;
@@ -175,7 +176,11 @@ export function forecastByKind(
       bedKindOfBed(openUnits.get(release.unitId)!, admissionById.get(release.admissionId)) === id;
     const due = pending.filter((release) => expectedAt(release) <= until && ofKind(release));
     const clear = due.filter((release) => release.blocker === null);
-    const onTime = clear.filter((release) => dayOf(expectedAt(release)) >= dayOf(now));
+    // M6 (mechanics audit, 14 Nov 2026): the same "still to free" rule as `bedsForecast`
+    // (`isExpectedToFree`); a release whose time has passed is overdue from that minute.
+    const onTime = clear.filter((release) =>
+      isExpectedToFree({ ...release, expectedAt: expectedAt(release) }, now, Number.POSITIVE_INFINITY),
+    );
     const confirmed = onTime.filter((release) => release.state === "confirmed").length;
     const expected = onTime.filter((release) => release.state === "expected").length;
     const unflaggedPlans = admissions.filter((admission) => {

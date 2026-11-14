@@ -2,6 +2,7 @@ import type { BedRelease, DeclineReason, Movement, Unit } from "@/components/war
 import { releaseBand } from "@/components/ward-management/ward-bed-availability";
 import { isHeldUpDueByTomorrow } from "@/components/ward-management/ward-held-up";
 import { dayOf, type Instant } from "@/components/ward-management/ward-clock";
+import { isFreeingToday } from "@/components/ward-management/ward-releases-expected-to-free";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
 
@@ -104,19 +105,16 @@ export function wardFlowReleaseGroup(release: BedRelease, now: Instant): "held" 
 }
 
 /**
- * The discharges the "Discharges today" summary counts: open, unblocked releases whose expected date
- * is today (the board's day, `dayOf(now)`), never a past date, tomorrow or later. A past date is not
- * a discharge today: it stays under "Past date" in Ward flow and in the needs-a-look figures (F-151,
- * Audit G FS-1: a ward with none due today read "2 discharges today"). Held up is counted apart, due
- * by tomorrow (`isHeldUpDueByTomorrow`, D-191 item 5), and the day matches the "Beds freeing today"
- * rule (`isFreeingToday`). Its total and its confirmed count both come from this one list (Codex
- * review on #1383), so a confirmed discharge later in the week cannot hide one still to confirm.
+ * The discharges the "Discharges today" summary counts: open, unblocked releases still to happen
+ * today, by the one "Beds freeing today" rule (`isFreeingToday`) Capacity and the forecast read. A
+ * past date is not a discharge today: it stays under "Past date" in Ward flow and in the needs-a-look
+ * figures (F-151, Audit G FS-1: a ward with none due today read "2 discharges today"). Nor is a time
+ * that passed earlier today: it is overdue from the minute it passes, not from midnight (M6,
+ * mechanics audit 14 Nov 2026; the ward page kept it, Capacity dropped it). Held up is counted
+ * apart, due by tomorrow (`isHeldUpDueByTomorrow`, D-191 item 5). Its total and its confirmed count
+ * both come from this one list (Codex review on #1383), so a confirmed discharge later in the week
+ * cannot hide one still to confirm.
  */
 export function wardDischargesDueToday(releases: readonly BedRelease[], now: Instant): BedRelease[] {
-  return releases.filter(
-    (release) =>
-      release.state !== "discharged" &&
-      dayOf(release.expectedAt) === dayOf(now) &&
-      wardFlowReleaseGroup(release, now) === "today",
-  );
+  return releases.filter((release) => isFreeingToday(release, now) && wardFlowReleaseGroup(release, now) === "today");
 }
