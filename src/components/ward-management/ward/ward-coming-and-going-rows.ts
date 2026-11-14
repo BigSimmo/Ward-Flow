@@ -32,7 +32,7 @@ import { wardDischargesDueToday, wardFlowReleaseGroup } from "./ward-home-tab-mo
  * the "by tomorrow" and "still due today" windows).
  */
 
-type ComingRowAction = "pull" | "confirm-arrival" | null;
+type ComingRowAction = "pull" | "confirm-arrival" | "release-diverted" | null;
 
 export type ComingRow = {
   key: string;
@@ -58,12 +58,12 @@ export type ComingRow = {
   hasPulledBed?: boolean;
   /** Ward desk arrivals: why Confirm arrival cannot be recorded yet (R-MOVE-11), as one refusal line. */
   arriveReason?: string;
+  /** A diverted person (R-MOVE-1): the one button's words, "Release bed 07". */
+  releaseLabel?: string;
 };
 
 /** R-MOVE-11: the corridor's own canArrive rule, so the row says why before the nurse taps. */
-function arriveReasonFor(movement: Movement, unit: Unit, name: string): string | undefined {
-  if (movement.transport?.diversion)
-    return refusalLine(`${name} was diverted`, "Release the pulled bed rather than recording arrival");
+function arriveReasonFor(movement: Movement, unit: Unit): string | undefined {
   const liveJob = movement.transport !== undefined && movement.transport.cancelledAt === undefined;
   const notNeeded =
     (movement.transportNeed?.needed ?? movement.transport?.needed) === false &&
@@ -195,11 +195,15 @@ export function arrivalRows({
       quietLine: quiet || undefined,
       when: eta === undefined ? undefined : `${late ? "Due" : "ETA"} ${formatInstantWithDay(eta, now)}`,
       tone: hold?.state === "lapsed" ? "danger" : late || hold?.state === "at-risk" ? "warning" : "info",
-      action: awaitingBed ? "pull" : desk === "ward" && !diverted ? "confirm-arrival" : null,
+      // R-MOVE-1: a diverted person is not coming, so the ward and coordinator release the bed here.
+      action: awaitingBed ? "pull" : diverted ? "release-diverted" : desk === "ward" ? "confirm-arrival" : null,
+      ...(diverted && !awaitingBed
+        ? { releaseLabel: `Release ${bedWord(bed)?.replace(/^Bed/u, "bed") ?? "pulled bed"}` }
+        : {}),
       blocked,
       alsoArrive: awaitingBed && desk === "ward" && blocked === undefined,
       hasPulledBed: bed !== undefined,
-      ...(!awaitingBed && desk === "ward" ? { arriveReason: arriveReasonFor(movement, unit, name) } : {}),
+      ...(!awaitingBed && !diverted && desk === "ward" ? { arriveReason: arriveReasonFor(movement, unit) } : {}),
     };
   });
 }

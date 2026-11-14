@@ -11,6 +11,7 @@ import Link from "next/link";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { originPlaceLabel } from "./ward-arrivals-corridor";
 import { ArrivalIdentityDialog } from "@/components/ward-management/arrival-identity-dialog";
+import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import { patientIdentityLine } from "@/components/ward-management/ward-patient-resolver";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
@@ -66,6 +67,7 @@ import {
   Card,
   CardHead,
   Count,
+  Dialog,
   Drawer,
   durMinutes,
   PhoneSheet,
@@ -525,7 +527,8 @@ export function WardHomeTab({
     // ("Discharge confir…", "Held up, Awaiti…"). The full note stays in the accessible name, the
     // list view and the bed panel.
     // FM-11 (Ward notes item 9): a pulled tile says "Pulled" and the journey's stage, then the hold.
-    const pulledNote = bed.status === "incoming" && !delivered ? pulledTileNote(bed.pulledStage, hold?.short) : null;
+    const pulledNote =
+      bed.status === "incoming" && !delivered ? pulledTileNote(bed.pulledStage, hold?.short, bed.pulledDiverted) : null;
     const tileNote = pulledNote
       ? pulledNote
       : hold
@@ -1148,6 +1151,9 @@ export function WardHomeTab({
     onOpenArrival?.(row.movementId);
   }
   const [arriveRowId, setArriveRowId] = useState<string | null>(null);
+  // R-MOVE-1: the diverted person's pulled bed, released from the home row after one check.
+  const [releaseDivertedId, setReleaseDivertedId] = useState<string | null>(null);
+  const releaseDivertedMovement = movements.find((item) => item.id === releaseDivertedId);
   const routeRole = useRouteRole();
   const { run: runStep } = useUndoableStep({ dispatch, rejections, now, routeRole });
   const arriveRowMovement = movements.find((item) => item.id === arriveRowId);
@@ -1332,6 +1338,7 @@ export function WardHomeTab({
         refusalFor={refusalUnder}
         onPull={(row) => row.movementId && onPullPatient?.(row.movementId, unit.id)}
         onConfirmArrival={confirmArrival}
+        onReleaseDiverted={(row) => row.movementId && setReleaseDivertedId(row.movementId)}
         onOpenArrival={(movementId) => onOpenArrival?.(movementId)}
         onOpenBed={(bedNumber) => onSelectBed?.(bedNumber)}
         onOpenArrivals={onOpenArrivals}
@@ -1710,6 +1717,38 @@ export function WardHomeTab({
           />
         );
       })()}
+
+      <Dialog
+        open={releaseDivertedMovement !== undefined}
+        onClose={() => setReleaseDivertedId(null)}
+        size="sm"
+        title="Release pulled bed?"
+        description={`The bed pulled at ${unit.name} for ${releaseDivertedMovement ? resolvePatientIdentity(releaseDivertedMovement).displayName : "this patient"} is offered again and the diverted movement is closed. This cannot be undone.`}
+        secondary={[{ label: "Keep as is", onAction: () => setReleaseDivertedId(null) }]}
+        primary={{
+          label: "Release pulled bed",
+          onAction: () => {
+            setReleaseDivertedId(null);
+            if (!releaseDivertedMovement) return;
+            priorRejectionCountRef.current = rejections.length;
+            wardRaise(
+              dispatch,
+              deskRole === "coordinator" ? "coordinator" : "ward",
+              now,
+            )("RELEASE_DIVERTED_BED", {
+              movementId: releaseDivertedMovement.id,
+              actingUnitId: unit.id,
+            });
+          },
+        }}
+        data-testid="ward-home-release-diverted-confirm"
+      >
+        {releaseDivertedMovement ? (
+          <p data-testid="ward-home-release-diverted-identity">
+            Check: {patientIdentityLine(resolvePatientIdentity(releaseDivertedMovement))}
+          </p>
+        ) : null}
+      </Dialog>
 
       <ArrivalIdentityDialog
         open={arriveRowMovement !== undefined}

@@ -58,6 +58,8 @@ export type ComingAndGoingProps = {
   refusalFor?: (movementId: string) => ReactNode;
   onPull: (row: ComingRow) => void;
   onConfirmArrival: (row: ComingRow) => void;
+  /** R-MOVE-1: release the bed pulled for a diverted person (asks first). */
+  onReleaseDiverted?: (row: ComingRow) => void;
   onOpenArrival: (movementId: string) => void;
   onOpenBed: (bedNumber: number) => void;
   onOpenArrivals?: () => void;
@@ -209,6 +211,15 @@ export function WardComingAndGoing(props: ComingAndGoingProps) {
                 Confirm arrival <SrOnly>{row.name}</SrOnly>
               </Button>
             ) : null
+          ) : row.action === "release-diverted" && props.onReleaseDiverted ? (
+            <Button
+              variant="pri"
+              size="sm"
+              data-testid={`ward-coming-release-diverted-${row.key}`}
+              onClick={() => props.onReleaseDiverted?.(row)}
+            >
+              {row.releaseLabel} <SrOnly>{row.name}</SrOnly>
+            </Button>
           ) : row.action === "confirm-arrival" && row.arriveReason ? (
             <Button variant="sec" size="sm" onClick={openRow}>
               Open <SrOnly>{row.name}</SrOnly>
