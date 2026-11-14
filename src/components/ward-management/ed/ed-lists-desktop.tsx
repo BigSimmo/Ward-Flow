@@ -36,7 +36,6 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
     registryPatients,
     recordEdStep,
     setSelectedPatientId,
-    patientBay,
     awaitingReviewPatients,
     expects,
     underFormPatients,
@@ -137,7 +136,7 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
                         </div>
                       </dl>
                     </td>
-                    <td className={handover.listMono}>{linked ? patientBay(linked.id).replace(/^Bay /, "") : "–"}</td>
+                    <td className={handover.listMono}>{linked ? "Not recorded" : "–"}</td>
                     <td>{[linked?.cohort, linked?.sex].filter(Boolean).join(" · ") || "–"}</td>
                     <td>
                       <span
@@ -273,7 +272,7 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
                 return (
                   <tr key={m.id} data-testid={`ward-ed-review-row-${m.id}`}>
                     <td>{name(m.id, person.formalName, person.umrn)}</td>
-                    <td className={handover.listMono}>{patientBay(m.id).replace(/^Bay /, "")}</td>
+                    <td className={handover.listMono}>Not recorded</td>
                     <td>
                       {m.cohort} · {m.sex}
                     </td>
@@ -418,7 +417,7 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
                 return (
                   <tr key={m.id}>
                     <td>{name(m.id, person.formalName, person.umrn)}</td>
-                    <td className={handover.listMono}>{patientBay(m.id).replace(/^Bay /, "")}</td>
+                    <td className={handover.listMono}>Not recorded</td>
                     <td>
                       {legal.form ? (
                         <>

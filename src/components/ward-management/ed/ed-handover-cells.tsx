@@ -106,6 +106,7 @@ export function FormCell({
   movementId: string;
   patientName: string;
   umrn: string;
+  /** The bay as a whole phrase ("Bay not recorded" while no ED bay is recorded, B3/D-21). */
   bay: string;
   recordCode: string | undefined;
   /** Whether the time written on the recorded form has been typed. */
@@ -194,7 +195,7 @@ export function FormCell({
         role="alertdialog"
         size="sm"
         title={pending ? `Set Form ${pending} for ${patientName}?` : ""}
-        description={`${umrn} · Bay ${bay}`}
+        description={`${umrn} · ${bay}`}
         secondary={[{ label: "Cancel", onAction: () => setPending(null) }]}
         primary={{ label: pending ? `Set Form ${pending}` : "Set form", onAction: confirm }}
       >

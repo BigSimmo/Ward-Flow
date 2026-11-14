@@ -49,6 +49,10 @@ describe("TV lock (A11)", () => {
 
     fireEvent.click(screen.getByTestId("tv-unlock"));
     const dialog = screen.getByTestId("tv-unlock-dialog");
+    // A2: the demonstration asks for no password, so its description does not ask for one either.
+    expect(dialog).toHaveTextContent("Unlock to leave the TV view.");
+    expect(dialog).toHaveTextContent("No password in this demonstration.");
+    expect(dialog).not.toHaveTextContent("account password");
     await act(async () => {
       fireEvent.click(within(dialog).getByRole("button", { name: "Unlock" }));
     });
@@ -107,6 +111,7 @@ describe("TV lock (A11)", () => {
     render(<TvLockControl href="/ward-flow/bed-meeting" className="" shared />);
     fireEvent.click(screen.getByTestId("tv-unlock"));
     const dialog = screen.getByTestId("tv-unlock-dialog");
+    expect(dialog).toHaveTextContent("Enter your account password to leave the TV view.");
     expect(dialog).toHaveTextContent("without a connection");
     await act(async () => {
       fireEvent.click(within(dialog).getByRole("button", { name: "Sign in and unlock" }));

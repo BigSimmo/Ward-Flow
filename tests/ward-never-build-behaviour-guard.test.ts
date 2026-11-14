@@ -127,11 +127,11 @@ describe("never-build: the ED queue is never re-sorted by need", () => {
     expect(comparator).not.toMatch(URGENCY_WORDS);
   });
 
-  it("the ED bays are filled by arrival order alone", () => {
+  it("the ED board hands out no bays at all, by need or otherwise (B3, D-21)", () => {
+    // No movement records an ED bay, so no code orders people into bays; the board says so instead.
     const model = readFileSync(`${WARD}/ed/ed-screen-model.ts`, "utf8");
-    const comparator = blockFrom(model, "[...movements].sort(");
-    expect(comparator).toMatch(/openedAt/u);
-    expect(comparator).not.toMatch(URGENCY_WORDS);
+    expect(model).not.toMatch(/edBayAssignments|seedBayNumber|ED_BAY_COUNT/u);
+    expect(model).toContain('ED_BAY_NOT_RECORDED = "Bay not recorded"');
   });
 
   it("the Home queue order reads no urgency, flag, tier or legal field", () => {

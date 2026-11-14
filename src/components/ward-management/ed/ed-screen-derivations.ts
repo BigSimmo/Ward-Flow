@@ -36,12 +36,10 @@ import { fieldsMatchEveryWord } from "@/components/ward-management/search/search
 import { activeTaskItems, inboxItemsForRole } from "@/components/ward-management/ward-act-now-items";
 import {
   ANSWERED_VISIBLE_CAP,
-  bayText,
-  edBayAssignments,
+  ED_BAY_NOT_RECORDED,
   type EdStepEvent,
   isEdInitiatedWithdrawal,
   movementMedicalClearance,
-  seedBayNumber,
   waitLine,
 } from "./ed-screen-model";
 import { edDepartmentTimelineEvents, formatTimelineExamOutcome, type TimelineEvent } from "./ed-screen-timeline";
@@ -161,8 +159,8 @@ export function deriveEdScreen({
         (movement.edOutcome !== undefined && !movement.leftDepartmentAt) ||
         isEdInitiatedWithdrawal(movement)),
   );
-  const bayById = edBayAssignments(patients);
-  const patientBay = (id: string) => bayById.get(id) ?? bayText(seedBayNumber(id));
+  // B3 (D-21): no movement records an ED bay, so the bay is never made up from the id.
+  const patientBay: (id: string) => string = () => ED_BAY_NOT_RECORDED;
 
   /**
    * THE INBOX. Two fields, never one — `edId` AND `purpose`.

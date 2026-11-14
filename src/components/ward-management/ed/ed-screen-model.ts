@@ -636,34 +636,12 @@ export function formExpiryWarning(
  * "breach", "overdue" and "legal" — every one of those words on this figure would let it be
  * misread as the thing Task 6A deleted.
  */
-const ED_BAY_COUNT = 12;
-
-/** The bay a movement id starts from: a stable number from the id (synthetic, no bay is recorded). */
-export function seedBayNumber(id: string): number {
-  const num = parseInt(id.replace(/\D/g, ""), 10) || 1;
-  return (num % ED_BAY_COUNT) + 1;
-}
-
-export const bayText = (bay: number) => `Bay ${String(bay).padStart(2, "0")}`;
-
 /**
- * A2-19 (audit round 2): two people on one ED board could land in the same bay because each bay
- * came from its own id alone. Bays are now handed out per department: each person starts at the
- * id's bay and takes the next free one, oldest first, so no two people on a board share a bay.
+ * B3 (D-21, show only what is recorded): no ED bay is recorded on a movement, so every ED surface
+ * says so in these words instead of inventing a bay from the movement id. A column or field already
+ * headed "Bay" says "Not recorded".
  */
-export function edBayAssignments(movements: readonly { id: string; openedAt: number }[]): Map<string, string> {
-  const taken = new Set<number>();
-  const bays = new Map<string, string>();
-  const ordered = [...movements].sort((a, b) => a.openedAt - b.openedAt || a.id.localeCompare(b.id));
-  const slots = Math.max(ED_BAY_COUNT, ordered.length);
-  for (const movement of ordered) {
-    let bay = seedBayNumber(movement.id);
-    while (taken.has(bay)) bay = (bay % slots) + 1;
-    taken.add(bay);
-    bays.set(movement.id, bayText(bay));
-  }
-  return bays;
-}
+export const ED_BAY_NOT_RECORDED = "Bay not recorded";
 
 /**
  * WLQ-14, owner ruling 2026-09-15: the ED access-block clock above starts when the referral is

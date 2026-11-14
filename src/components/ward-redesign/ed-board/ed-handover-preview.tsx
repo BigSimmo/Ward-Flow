@@ -148,6 +148,7 @@ export function FormCell({
   movementId: string;
   patientName: string;
   umrn: string;
+  /** The bay as a whole phrase ("Bay not recorded" while no ED bay is recorded, B3/D-21). */
   bay: string;
   recordCode: string | undefined;
   /** "None" for a voluntary patient, "Not recorded" for anyone else (CS-14). */
@@ -223,7 +224,7 @@ export function FormCell({
         role="alertdialog"
         size="sm"
         title={pending?.to ? `Set Form ${pending.to} for ${patientName}?` : `Clear the form for ${patientName}?`}
-        description={`${umrn} · Bay ${bay}`}
+        description={`${umrn} · ${bay}`}
         secondary={[{ label: "Cancel", onAction: () => setPending(null) }]}
         primary={{ label: pending?.to ? `Set Form ${pending.to}` : "Clear form", onAction: confirm }}
       >

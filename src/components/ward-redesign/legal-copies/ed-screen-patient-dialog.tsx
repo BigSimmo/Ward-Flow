@@ -40,7 +40,6 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
     openArrivalPlanFromRecord,
     selectedPatientInfo,
     selectedPatientJourneyEvents,
-    patientBay,
     raise,
   } = ctx;
   const baseId = useId();
@@ -163,7 +162,7 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
               </div>
               <div className={styles.pair}>
                 <dt>Bay</dt>
-                <dd className={styles.bayNumber}>{patientBay(selectedPatient.id)}</dd>
+                <dd className={styles.bayNumber}>Not recorded</dd>
               </div>
               <div className={styles.pair}>
                 <dt>Legal status</dt>

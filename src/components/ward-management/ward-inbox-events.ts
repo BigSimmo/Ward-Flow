@@ -23,10 +23,11 @@ export type InboxWardFlowEvent =
        *
        * Records WHO and WHEN, never a boolean — see `InboxAcknowledgement` in `ward-flow-reducer.ts`.
        *
-       * ⚠️ **APPEND-ONLY, AND DELIBERATELY NOT IDEMPOTENT.** A second coordinator acknowledging the
-       * same row after the first is a real, distinct fact (a second person is now also aware of it),
-       * not a duplicate to be collapsed — the same discipline `Override[]`/`StageChange[]`
-       * (`ward-model.ts`) already hold to. There is no un-acknowledge event, on purpose: an
+       * ⚠️ **APPEND-ONLY, ONE ENTRY PER ROLE PER OCCURRENCE.** A different role acknowledging the
+       * same row is a real, distinct fact and is appended. `by` is a role, never a person, so a
+       * repeat by the same role in the row's current occurrence (a double click) is accepted without
+       * a second entry (B7, 14 Nov 2026); a later occurrence of a reused row id can be acknowledged
+       * again. There is no un-acknowledge event, on purpose: an
        * acknowledgement is a historical record of who looked at something, and unlike a completion
        * (below) there is nothing about it to undo.
        *

@@ -114,7 +114,8 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
       {
         department: ctx.department.name,
         umrnOf: (movement) => movementUmrn(movement, lookup),
-        bayOf: (movement) => ctx.patientBay(movement.id),
+        // B3 (D-21): no ED bay is recorded, so the Bay column says so rather than inventing one.
+        bayOf: () => "Not recorded",
         stageOf: (movement) => edStageLabel(movement.stage),
         minutesOf,
         at: (instant) => formatSheetMoment(instant, ctx.dayZero),

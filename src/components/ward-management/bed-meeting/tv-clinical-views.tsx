@@ -438,7 +438,7 @@ export function EdClinicalTvView({
           <span className={styles.meta}>Urgency {row.urgency}</span>
         </td>
         <td className={styles.wait}>{splitDuration(row.waitMinutes)}</td>
-        <td className={styles.bed}>{row.bay}</td>
+        <td className={styles.bed}>{row.bay || "Not recorded"}</td>
         <td>
           <Fact fact={row.legal} empty="Not recorded" />
         </td>
