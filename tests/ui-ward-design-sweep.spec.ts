@@ -464,6 +464,7 @@ const CONTRAST_ROUTES = [
 test.describe("@mockup Ward design sweep: painted-background contrast (R-STYLE-8)", () => {
   test.use({ colorScheme: "light", viewport: { width: 1280, height: 800 } });
 
+  // Owner of each fixme below: the screen lanes under D-225 (Home and Statistics: Lane B).
   for (const { label, href } of CONTRAST_ROUTES) {
     for (const theme of THEMES) {
       test(`${label} (${href}) text keeps 4.5:1 on its painted background in ${theme}`, async ({ page }) => {
@@ -559,6 +560,7 @@ const H1_ROUTES = [
 test.describe("@mockup Ward design sweep: one short h1 per page (R-STYLE-9)", () => {
   test.use({ colorScheme: "light", viewport: { width: 1280, height: 800 } });
 
+  // Owner: the screen lanes under D-225 (Capacity: Lane C; Discharges and Handover: unassigned).
   // Failing today (screens belong to other lanes): /ward-flow/capacity h1 has 5 words,
   // /ward-flow/discharges 8 words, /ward-flow/handover 9 words. Remove the fixme once they are shortened.
   test.fixme("each main route has exactly one h1 of at most 4 words", async ({ page }) => {
