@@ -325,6 +325,12 @@ const ALLOWED: readonly Allowed[] = [
     why: "wording: the bed count's age reads in minutes under two hours, then whole hours (H8, D-210)",
   },
   {
+    file: "ward-offline-entry.ts",
+    expr: "12 * 60",
+    n: 1,
+    why: "safety: a waiting offline save older than 12 h is refused for re-entry (untested-537 M1670-032)",
+  },
+  {
     file: "ward-operational-defaults.ts",
     expr: "12 * MINUTES_PER_HOUR",
     n: 2,
