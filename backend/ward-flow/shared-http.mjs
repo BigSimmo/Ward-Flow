@@ -526,7 +526,12 @@ export function createSharedHandler({
         const commandId = new URL(request.url).searchParams.get("commandId");
         if (!UUID.test(commandId ?? "")) return reply(400, { error: "A command ID is required" });
         if (typeof store.receipt !== "function") return reply(404, { error: "Command receipts are not available" });
-        return reply(200, { receipt: await store.receipt(actorId, (commandId ?? "").toLowerCase(), view) });
+        // H2: `settle=1` (a reload's recovery check) records a save it cannot find as not applied.
+        const settle = new URL(request.url).searchParams.get("settle") === "1";
+        const id = (commandId ?? "").toLowerCase();
+        return reply(200, {
+          receipt: await (settle ? store.receipt(actorId, id, view, { settle }) : store.receipt(actorId, id, view)),
+        });
       }
       if (path === "/v1/workspace/archive" && request.method === "GET") {
         if (view.access.role === "executive")
@@ -810,12 +815,15 @@ export function createSharedHandler({
         typeof body.event.type !== "string" ||
         body.event.type.length > 100 ||
         (body.reply !== undefined && body.reply !== "revision") ||
-        (body.seen !== undefined && !validSeen(body.seen))
+        (body.seen !== undefined && !validSeen(body.seen)) ||
+        // H1: the board minute the person acted at, sent beside the command by newer apps.
+        (body.actedAt !== undefined && !Number.isSafeInteger(body.actedAt))
       )
         return reply(400, { error: "A synthetic command, command ID and valid revision are required" });
       const result = await store.command(actorId, body.commandId.toLowerCase(), body.expectedRevision, body.event, {
         revisionOnly: body.reply === "revision",
         ...(body.seen ? { seen: body.seen } : {}),
+        ...(body.actedAt !== undefined ? { actedAt: body.actedAt } : {}),
         view,
       });
       return reply(result.status, result.body);

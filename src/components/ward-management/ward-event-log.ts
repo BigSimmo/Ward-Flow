@@ -1,4 +1,4 @@
-import type { Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowEvent, WardFlowRole } from "@/components/ward-management/ward-flow-events";
 
 /**
@@ -27,7 +27,27 @@ export type EventLogEntry = {
   plannedAdmissionId?: string;
   /** D-72: the seclusion or restraint episode an end names; the chronology finds its stay. */
   episodeId?: string;
+  /**
+   * H1 (D-MCA (Josh, 14 Nov 2026), ruling 1): a step that waited (offline, or for Retry) and was
+   * recorded at the time the person acted (`now`): the board minute it reached the server. History
+   * says "entered offline, sent 10:45".
+   */
+  sentAt?: Instant;
 };
+
+/** History's note on a step that waited: "entered offline, sent 10:45". */
+export function enteredOfflineNote(sentAt: Instant, now: Instant): string {
+  return `entered offline, sent ${formatInstantWithDay(sentAt, now)}`;
+}
+
+/** The server's note on an accepted save that waited, as the log entry's `now` and `sentAt`. */
+export function enteredOfflineLog(note: unknown): { now: Instant; sentAt: Instant } | Record<string, never> {
+  if (!note || typeof note !== "object") return {};
+  const { actedAt, sentAt } = note as { actedAt?: unknown; sentAt?: unknown };
+  return Number.isSafeInteger(actedAt) && Number.isSafeInteger(sentAt) && (sentAt as number) > (actedAt as number)
+    ? { now: actedAt as number, sentAt: sentAt as number }
+    : {};
+}
 
 const ID_FIELDS = [
   "movementId",

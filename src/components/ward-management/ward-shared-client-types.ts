@@ -4,6 +4,7 @@ import type { WardFlowState } from "./ward-flow-reducer";
 import type { EventLogEntry } from "./ward-event-log";
 import type { BoundWardPartialView } from "./ward-partial-view-contract";
 import type { ExecutiveAggregateSnapshot } from "./ward-shared-executive-snapshot";
+import type { SharedBoardAnchor } from "./ward-shared-clock";
 
 // The shared client's public types, kept apart so ward-shared-client.ts stays under the line limit.
 export type SharedSnapshot = {
@@ -38,6 +39,8 @@ export type SharedView = {
   /** Local display lifetime, changed when the accepted actor/access/variant is replaced or cleared. */
   viewEpoch?: number;
   receivedAt: number;
+  /** L1: where the board clock counts from between answers (`anchorSharedBoard`). */
+  boardClock?: SharedBoardAnchor;
   status: SharedStatus;
   error: string | null;
   /** Payload stays in this tab; only opaque receipt identity may survive a reload. */

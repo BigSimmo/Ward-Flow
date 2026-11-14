@@ -89,7 +89,9 @@ export async function recoverCommandReceipts(host: RecoveryHost) {
     else if (held.phase === "queued") outcome = "unsent";
     else {
       current(held);
-      const { response, value } = await host.request(`/v1/workspace/receipt?commandId=${held.commandId}`);
+      // H2: `settle=1` asks the server to record a save it still cannot find as not applied, under the
+      // workspace lock, so the answer is final and a late arrival is refused.
+      const { response, value } = await host.request(`/v1/workspace/receipt?commandId=${held.commandId}&settle=1`);
       current(held);
       if (!response.ok) throw new Error("Receipt unavailable");
       if (value.receipt === null) {

@@ -1,3 +1,4 @@
+import type { Instant } from "./ward-clock";
 import type { WardFlowEvent } from "./ward-flow-events";
 
 /** A command waiting to be sent to the shared workspace (split from ward-shared-client.ts for its size limit). */
@@ -11,6 +12,12 @@ export type PendingCommand = {
   event: WardFlowEvent;
   /** Asked for while more commands are queued: an accepted reply then carries no snapshot. */
   reply?: "revision";
+  /**
+   * H1 (D-MCA (Josh, 14 Nov 2026), ruling 1): the board minute the person pressed the save at,
+   * beside the command so every retry sends the same body. The server stamps a save that arrives
+   * within a minute with its own time, and keeps this time for one that waited (`ward-offline-entry.ts`).
+   */
+  actedAt?: Instant;
 };
 
 type QueuedCommand = {
@@ -22,6 +29,8 @@ type QueuedCommand = {
   sheets?: readonly object[];
   /** Made or held while this desk was offline, for the "while you were offline" message (audit M10). */
   offline?: boolean;
+  /** H1: the board minute this was asked for at (`PendingCommand.actedAt`). */
+  actedAt?: Instant;
 };
 /**
  * What an open popup has shown (audit CS-19): the revision this tab held when it opened, and the

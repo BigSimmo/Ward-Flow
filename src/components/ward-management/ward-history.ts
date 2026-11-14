@@ -2,6 +2,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import type { WardFlowEvent, WardFlowRole } from "@/components/ward-management/ward-flow-events";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
+import { enteredOfflineNote } from "@/components/ward-management/ward-event-log";
 
 /**
  * "both": the event changes a bed (held, occupied or freed) AND the patient's stay or movement, so
@@ -355,7 +356,10 @@ function extractEventReason(event: WardFlowEvent): string {
  * Follows the role-not-person rule and shows "Not recorded" for missing facts.
  */
 export function buildHistoryEntry(event: WardFlowEvent, now: Instant): WardHistoryEntry {
-  const summary = eventHistoryWording(event.type, event.role) ?? event.type;
+  const wording = eventHistoryWording(event.type, event.role) ?? event.type;
+  // H1 (D-MCA (Josh, 14 Nov 2026), ruling 1): a step that waited shows the time it was done and when it was sent.
+  const sentAt = Reflect.get(event, "sentAt");
+  const summary = Number.isSafeInteger(sentAt) ? `${wording} (${enteredOfflineNote(sentAt as number, now)})` : wording;
 
   const time =
     event.now !== undefined && typeof event.now === "number" && Number.isFinite(event.now)

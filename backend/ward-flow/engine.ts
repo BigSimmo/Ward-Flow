@@ -56,6 +56,7 @@ import {
   siteFeatureSwitchRefusal,
 } from "../../src/components/ward-management/ward-site-feature-switches";
 import { cleanReferralFields } from "../../src/components/ward-management/referrals/referral-text-clean";
+import { offlineEntryTime } from "../../src/components/ward-management/ward-offline-entry";
 
 export { checkSyntheticPayload };
 
@@ -896,7 +897,13 @@ export function breakGlassRefusal(world: SharedWorld, access: WardAccess, patien
   return null;
 }
 
-export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {
+/**
+ * `options.actedAt`: the board minute the person pressed the save at, sent beside the command (H1,
+ * D-MCA (Josh, 14 Nov 2026), ruling 1; `ward-offline-entry.ts`). Absent (an older app), or within a
+ * minute of the server's time, the command is stamped with the server's own time as before. A save
+ * that waited keeps the time the person acted within bounds, or is refused.
+ */
+export function applyCommand(world: SharedWorld, supplied: unknown, at: Date, options: { actedAt?: unknown } = {}) {
   supplied = storableCommand(supplied);
   if (!validWorld(world) || !validCommand(supplied)) throw new Error("invalid-command");
   const fields = supplied as Record<string, unknown>;
@@ -908,7 +915,18 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {
   // is always the sender's own: it is never defaulted to the first allowed role.
   const role = fields.role;
   if (!roles.includes(role as WardFlowEvent["role"])) throw new Error("invalid-command");
-  const event = { ...fields, type, role, now: worldNow(world, at) } as WardFlowEvent;
+  const serverNow = worldNow(world, at);
+  const entered = offlineEntryTime(
+    world.state,
+    { ...fields, type, role, now: serverNow } as WardFlowEvent,
+    options.actedAt,
+    serverNow,
+  );
+  if ("refusal" in entered)
+    return { world, outcome: "denied" as const, changes: {}, reason: refusalReason(entered.refusal) };
+  const event = { ...fields, type, role, now: entered.now } as WardFlowEvent;
+  // H1: an accepted save that waited says so in its reply, receipt and audit row.
+  const enteredOffline = entered.offline ? { actedAt: entered.now, sentAt: entered.sentAt } : null;
   let rawNext: WardFlowState;
   try {
     rawNext = wardFlowReducer(world.state, event);
@@ -961,8 +979,16 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {
   return {
     world: { ...world, state: saved },
     outcome: "accepted" as const,
-    completion: commandMetadata(world.state, next),
-    changes: { domainAudit, reset, facts: changedFacts(world.state, next, rawNext) },
+    completion: {
+      ...commandMetadata(world.state, next),
+      ...(enteredOffline ? { enteredOffline } : {}),
+    },
+    changes: {
+      domainAudit,
+      reset,
+      facts: changedFacts(world.state, next, rawNext),
+      ...(enteredOffline ? { enteredOffline } : {}),
+    },
     reason: null,
     partly,
   };

@@ -11,9 +11,73 @@ import type { Instant } from "@/components/ward-management/ward-clock";
  * passed, never as the board running backwards. Display time only: the server keeps its own clock
  * for every save.
  */
-export function sharedBoardNow(snapshotNow: Instant, receivedAtMs: number, deviceNowMs = Date.now()): Instant {
+export function sharedBoardNow(
+  snapshotNow: Instant,
+  receivedAtMs: number,
+  deviceNowMs = Date.now(),
+  msIntoMinute = 0,
+): Instant {
   if (!Number.isFinite(receivedAtMs) || receivedAtMs <= 0 || !Number.isFinite(deviceNowMs)) return snapshotNow;
-  return snapshotNow + Math.max(0, Math.floor((deviceNowMs - receivedAtMs) / 60_000));
+  const into = Number.isFinite(msIntoMinute) && msIntoMinute > 0 ? msIntoMinute : 0;
+  return snapshotNow + Math.floor((into + Math.max(0, deviceNowMs - receivedAtMs)) / 60_000);
+}
+
+/**
+ * L1 (mechanics and clock audit, 14 Nov 2026): where the shared board clock counts from. `minute`
+ * is the board minute at `at` (this device's time the answer arrived) and `ms` how far into that
+ * minute the server was, so the board turns the minute when the server does, not up to a minute
+ * later. `generation` is the world it belongs to: within one world the board never shows a minute
+ * earlier than it already showed, even when a slow answer after an outage is sampled earlier.
+ */
+export type SharedBoardAnchor = { minute: Instant; at: number; ms: number; generation: number };
+
+type AnchoredSnapshot = {
+  now: Instant;
+  payload: { dayZero?: string; state: { clockOffsetMinutes: number; worldGeneration: number } };
+};
+
+const phaseAt = (anchor: SharedBoardAnchor, at: number) =>
+  (((anchor.ms + Math.max(0, at - anchor.at)) % 60_000) + 60_000) % 60_000;
+
+/** The anchor for an answer received at `receivedAtMs`. `serverTimeMs` is the answer's `serverTime`, when sent. */
+export function anchorSharedBoard(
+  previous: SharedBoardAnchor | undefined,
+  snapshot: AnchoredSnapshot,
+  receivedAtMs: number,
+  serverTimeMs?: number,
+): SharedBoardAnchor {
+  const generation = snapshot.payload.state.worldGeneration;
+  const same = previous !== undefined && previous.generation === generation;
+  const dayZeroMs = typeof snapshot.payload.dayZero === "string" ? Date.parse(snapshot.payload.dayZero) : Number.NaN;
+  // The server's board minute is whole minutes since its day 0 plus the demo offset, so the
+  // milliseconds past that minute come from its own time in the same answer.
+  const fromServer =
+    typeof serverTimeMs === "number" && Number.isFinite(serverTimeMs) && Number.isFinite(dayZeroMs)
+      ? serverTimeMs - dayZeroMs - (snapshot.now - snapshot.payload.state.clockOffsetMinutes) * 60_000
+      : Number.NaN;
+  // An answer without the server's time (a save's reply, an older server) keeps the last phase.
+  const ms =
+    Number.isFinite(fromServer) && fromServer >= 0 && fromServer < 120_000
+      ? fromServer
+      : same
+        ? phaseAt(previous, receivedAtMs)
+        : 0;
+  if (same) {
+    const shown = sharedBoardNow(previous.minute, previous.at, receivedAtMs, previous.ms);
+    if (snapshot.now + Math.floor(ms / 60_000) < shown)
+      return { minute: shown, at: receivedAtMs, ms: phaseAt(previous, receivedAtMs), generation };
+  }
+  return { minute: snapshot.now, at: receivedAtMs, ms, generation };
+}
+
+/** The board minute an anchor reads at this device's `deviceNowMs`. */
+export function anchoredBoardNow(anchor: SharedBoardAnchor, deviceNowMs: number): Instant {
+  return sharedBoardNow(anchor.minute, anchor.at, deviceNowMs, anchor.ms);
+}
+
+/** This device's time, read where the provider's render reads the clock (beside `absoluteWallClockMinutes`). */
+export function deviceClockMs(): number {
+  return Date.now();
 }
 
 /**
