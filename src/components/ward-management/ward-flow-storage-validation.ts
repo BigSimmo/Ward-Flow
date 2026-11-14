@@ -1,7 +1,12 @@
 import { validDischargeRequestNamespace } from "./ward-discharge-records";
 import { isOnBehalfReason } from "./ward-on-behalf-reason";
 import { dischargeFollowThroughFields } from "./ward-discharge-follow-through-storage";
-import { restoreRuleProblem, storedPlacementInvariants } from "./ward-flow-storage-invariants";
+import {
+  restoreRuleProblem,
+  storedCapacityProblem,
+  storedPlacementInvariants,
+  wardOverCapacity,
+} from "./ward-flow-storage-invariants";
 import { hasDuplicateRetainedUmrns } from "./ward-retained-umrn";
 import {
   RESTRICTIVE_PRACTICE_IDS,
@@ -1258,7 +1263,7 @@ function consistent(state: StoredState, value: RecordValue): boolean {
     }
     // Keep the actual arrival and its bounded count disagreement recoverable. This never says
     // how many physical overflow beds exist; only a corroborated arrival can explain this excess.
-    if (unit.sexMix.Female + unit.sexMix.Male > unit.beds + (conflicts?.length ?? 0)) return false;
+    if (wardOverCapacity(unit)) return false;
   }
 
   for (const movement of state.movements) {
@@ -1477,7 +1482,7 @@ function activePatientStays(rows: readonly StoredState["admissions"][number][]) 
 export function storedStateRestoreProblem(value: unknown): string | undefined {
   if (!object(value) || !nested(value) || !storedState.safeParse(value).success) return undefined;
   const state = value as unknown as WardFlowState;
-  return restoreRuleProblem(state, activePatientStays(state.admissions)) ?? undefined;
+  return restoreRuleProblem(state, activePatientStays(state.admissions)) ?? storedCapacityProblem(state) ?? undefined;
 }
 
 export function isValidStoredWardFlowState(value: unknown): value is WardFlowState {
