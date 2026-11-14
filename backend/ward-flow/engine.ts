@@ -721,13 +721,15 @@ export function commandRefusal(
 ): string | null {
   const type = supplied.type as WardFlowEvent["type"];
   if (!Object.hasOwn(EVENT_ROLE, type)) return UNKNOWN_CHANGE;
-  if (accessIsWholeNetwork(access)) return null;
   // The server's desk never switches, so every refusal is final. `permit` also answers, in the
   // server's order, the site feature switch (D-142), the access admin and executive, the
-  // demonstration controls and the outage record (D-142) before the role.
+  // demonstration controls and the outage record (D-142) before the role. The whole network is asked
+  // the role too: `deskCommand` keeps a typed role the coordinator does not hold, so it is refused
+  // here rather than recorded under a role the desk never had.
   const desk = deskFor(access, { canSwitch: false });
   const answer = permit(desk, supplied as Parameters<typeof permit>[1]);
   if (answer.kind !== "allow") return answer.refusal;
+  if (accessIsWholeNetwork(access)) return null;
   // Batch 4 item 20: the site switch asks nothing else.
   if (type === "SET_SITE_FEATURE_SWITCH") return null;
   // Marking a notice read keeps its addressee role (`deskCommand`): a desk marks only its own, and a

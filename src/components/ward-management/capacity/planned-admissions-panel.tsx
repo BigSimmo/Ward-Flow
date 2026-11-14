@@ -9,7 +9,18 @@ import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { CalendarPlus, Ellipsis } from "lucide-react";
 
 import { useUndoableStep } from "../use-undoable-step";
-import { Button, buttonClass, Field, Menu, Select, Sheet, StatusGlyph, TextInput, TimeField } from "@/components/wf";
+import {
+  Button,
+  buttonClass,
+  Field,
+  Menu,
+  Radio,
+  Select,
+  Sheet,
+  StatusGlyph,
+  TextInput,
+  TimeField,
+} from "@/components/wf";
 import {
   PLANNED_ADMISSION_CANCEL_REASONS,
   PLANNED_ADMISSION_CANCEL_REASON_LABELS,
@@ -474,7 +485,7 @@ export function PlannedAdmissionsPanel({
           now,
           plannedAdmissionId: planned.id,
           unitId: planned.unitId,
-          ...(overrideReason ? { overrideReason } : {}),
+          overrideReason,
         }),
       () => setRefusal(null),
     );
@@ -1071,26 +1082,21 @@ export function PlannedAdmissionsPanel({
         testId="ward-planned-arrival-identity"
       >
         {arrivalNeedsReason ? (
-          <Field
-            label="Reason (bed count is old)"
-            hint="Recording the arrival takes a bed before the ward confirms its beds."
-          >
-            <Select
-              value={arrivalReason}
-              onChange={(event) => {
-                const chosen = event.target.value;
-                setArrivalReason(OVERRIDE_REASONS.includes(chosen as OverrideReason) ? (chosen as OverrideReason) : "");
-              }}
-              data-testid="ward-planned-arrival-reason"
-            >
-              <option value="">Choose reason</option>
-              {OVERRIDE_REASONS.map((reason) => (
-                <option key={reason} value={reason}>
-                  {reason}
-                </option>
-              ))}
-            </Select>
-          </Field>
+          // Q36: a kit radio group, never the browser's own drop-down.
+          <fieldset data-testid="ward-planned-arrival-reason">
+            <legend>Reason (bed count is old)</legend>
+            <p>Recording the arrival takes a bed before the ward confirms its beds.</p>
+            {OVERRIDE_REASONS.map((reason) => (
+              <Radio
+                key={reason}
+                name="ward-planned-arrival-reason"
+                value={reason}
+                checked={arrivalReason === reason}
+                onChange={() => setArrivalReason(reason)}
+                label={reason}
+              />
+            ))}
+          </fieldset>
         ) : null}
       </ArrivalIdentityDialog>
     </CapacityPanel>

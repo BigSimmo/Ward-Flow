@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { applyCommand, deskCommand, seedWorld, STATEWIDE, worldNow } from "../backend/ward-flow/engine";
+import { applyCommand, commandRefusal, deskCommand, seedWorld, STATEWIDE, worldNow } from "../backend/ward-flow/engine";
 import {
   noticeIsMarkableByChrome,
   wardTasksAreActionableForRole,
@@ -137,12 +137,24 @@ describe("M4 gap 3: a coordinator acting from another desk's route", () => {
   const service: WardAccess = { role: "coordinator", scope: { kind: "service", service: "East Metro" } };
 
   it("stamps every non-demo event a borrowed route role sends as the coordinator's", () => {
+    const world = seedWorld(at);
     for (const access of [STATEWIDE, service])
       for (const type of EVENT_TYPES)
         for (const routeRole of CHROME_ROLES.filter((role) => role !== "coordinator")) {
           const stamped = deskCommand(access, { type, role: routeRole }) as { role: string };
-          const expected = type === "MARK_NOTICE_READ" ? routeRole : "coordinator";
-          expect(stamped.role, `${access.scope.kind} ${routeRole} ${type}`).toBe(expected);
+          const roles = EVENT_ROLE[type] as readonly string[];
+          // D-223: a demonstration control is recorded under `demo` (`recordedRole`), whatever was typed.
+          const recorded = roles.includes("demo") ? "demo" : "coordinator";
+          const label = `${access.scope.kind} ${routeRole} ${type}`;
+          if (type === "MARK_NOTICE_READ") expect(stamped.role, label).toBe(routeRole);
+          else if (roles.includes(recorded)) expect(stamped.role, label).toBe(recorded);
+          else {
+            // A change the coordinator does not take keeps its typed role, and the role check refuses it.
+            expect(stamped.role, label).toBe(routeRole);
+            expect(commandRefusal(world, access, stamped as Record<string, unknown>, at), label).toBe(
+              "This change is not part of your role.",
+            );
+          }
         }
   });
 
