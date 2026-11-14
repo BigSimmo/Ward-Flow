@@ -179,22 +179,41 @@
     backdrop-filter: none;
   }
 
-  /* Live audit, 8 Nov 2026: top right, an Undo toast covered an open sheet's tabs (Referral
-     sections). While a modal sheet or dialog is open, toasts stack bottom left instead, clear of
-     its header and of the footer actions, which sit right. A left-side sheet keeps the default. */
-  :global(html:has(:is([role="dialog"], [role="alertdialog"])[aria-modal="true"]:not([data-sheet-placement="left"])))
+  /* R-STYLE-5 / R-FIGS-20 (Josh): the toast stays bottom right of the work area. Beside an open right
+     drawer it sits left of the drawer (32rem, the widest the kit draws, plus the 24px gutter), so it
+     never covers the drawer's footer actions and never reaches the left rail or account button. A
+     left-side sheet and a centred dialog keep the default place. */
+  :global(
+      html:has(
+        :is([role="dialog"], [role="alertdialog"])[aria-modal="true"]:is(
+            [data-sheet-placement="right"],
+            [data-sheet-placement="responsive-right"]
+          )
+      )
+    )
     .toastRegion {
-    top: auto;
-    right: auto;
-    bottom: var(--wf-s-6);
-    left: var(--wf-s-6);
-    align-items: flex-start;
-    /* Bottom left already clears the note and the foot bar under a sheet. */
-    --wf-toast-rest: 0px;
-    padding: 0 0 env(safe-area-inset-bottom, 0px);
-    /* Review (8 Nov 2026): on a tablet a 500px right drawer leaves about 268px beside it, so the
-       toast narrows to stay clear of the drawer's footer actions; its text ellipsises as usual. */
-    --wf-toast-max: max(240px, min(560px, calc(100vw - 33rem)));
+    right: calc(min(32rem, 100vw) + var(--wf-s-6));
+    --wf-toast-max: max(240px, min(560px, calc(100vw - 32rem - 3 * var(--wf-s-6))));
+  }
+
+  /* Two lines, then a Details button (ToastView). The whole text can open out to every word. */
+  .toast[data-clamp] .toastTitle,
+  .toast[data-clamp] .toastBody {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+  }
+
+  .toast[data-clamp][data-expanded="true"] .toastTitle,
+  .toast[data-clamp][data-expanded="true"] .toastBody {
+    display: block;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+    overflow: visible;
   }
 }
 
