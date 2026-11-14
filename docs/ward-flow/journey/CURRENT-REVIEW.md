@@ -279,3 +279,10 @@ Two citations pointed at changed lines and were moved by hand: the collection gu
 unchanged; the merge adds no behaviour. Citations in `ward/ward-screen.tsx` and `patients/patient-transit-operations.tsx`
 were moved to the same statements in the merged files. The Mark handover ready citation now points at the one
 `HANDOVER_READY` dispatch in `readyHandover` (line 167), which carries the fit to travel reason (D-187 item 10).
+
+**D-188 follow-up: no bed pull without an observation level (14 November 2026).** `PULL_PATIENT` now refuses, after
+the stage and accepted-ward checks, while the journey's observation level is "Not recorded"
+(`PULL_NEEDS_OBSERVATION_LEVEL` in `ward-observation.ts`). It covers a new pull, restoring a held bed and the one-tap
+start-and-pull. The patient page's Pull the bed asks for a level first, records it with `RECORD_OBSERVATION_LEVEL`,
+then pulls, and no longer offers the override card for this refusal. The `PULL_PATIENT` entry's needs and refusals
+list carry the new guard; other citations in the three files were moved to the same statements.
