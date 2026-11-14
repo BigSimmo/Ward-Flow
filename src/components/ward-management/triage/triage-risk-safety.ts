@@ -27,22 +27,30 @@ export type SafetyPlanService = {
   phone: string | null;
   /** Who checked the name and number against the service (D-186, Q12). Null until Josh supplies it (Q41). */
   checkedBy: string | null;
-  /** When it was checked, as typed (D-186, Q12). Null until Josh supplies it (Q41). */
+  /** When it was checked, as typed (D-186, Q12). Null until Josh supplies it (Q41, D-209 item 8). */
   checkedOn: string | null;
 };
 
 /**
- * Services offered as tap-to-add chips in step 5. JOSH MUST CHECK EVERY NAME AND NUMBER BEFORE
- * CLINICAL USE: they are typed here from memory for the prototype and have not been verified.
- * D-186 (Q12): none is checked yet, so every number reads "Not checked" until both its checked by and
- * checked on are filled in.
+ * Services offered as tap-to-add chips in step 5. D-186 (Q12): a number reads "Not checked" until both
+ * its checked by and checked on are filled in. D-209 item 8 (Josh, 14 Nov 2026): the five numbers were
+ * checked against the Mental Health Commission WA Helplines page (page updated 3 Nov 2026) and match;
+ * the list is kept as it is. Copy-only text, never a call link (D-189 item 5).
  */
+const CHECKED_BY = "Josh";
+const CHECKED_ON = "14 Nov 2026";
+
 export const SAFETY_PLAN_SERVICES: readonly SafetyPlanService[] = [
-  { name: "Mental Health Emergency Response Line (metro WA)", phone: "1300 555 788", checkedBy: null, checkedOn: null },
-  { name: "Lifeline", phone: "13 11 14", checkedBy: null, checkedOn: null },
-  { name: "13YARN", phone: "13 92 76", checkedBy: null, checkedOn: null },
-  { name: "Kids Helpline", phone: "1800 55 1800", checkedBy: null, checkedOn: null },
-  { name: "Emergency", phone: "000", checkedBy: null, checkedOn: null },
+  {
+    name: "Mental Health Emergency Response Line (metro WA)",
+    phone: "1300 555 788",
+    checkedBy: CHECKED_BY,
+    checkedOn: CHECKED_ON,
+  },
+  { name: "Lifeline", phone: "13 11 14", checkedBy: CHECKED_BY, checkedOn: CHECKED_ON },
+  { name: "13YARN", phone: "13 92 76", checkedBy: CHECKED_BY, checkedOn: CHECKED_ON },
+  { name: "Kids Helpline", phone: "1800 55 1800", checkedBy: CHECKED_BY, checkedOn: CHECKED_ON },
+  { name: "Emergency", phone: "000", checkedBy: CHECKED_BY, checkedOn: CHECKED_ON },
   { name: "Community team on-call", phone: null, checkedBy: null, checkedOn: null },
 ];
 

@@ -280,6 +280,10 @@ unchanged; the merge adds no behaviour. Citations in `ward/ward-screen.tsx` and 
 were moved to the same statements in the merged files. The Mark handover ready citation now points at the one
 `HANDOVER_READY` dispatch in `readyHandover` (line 167), which carries the fit to travel reason (D-187 item 10).
 
+**Clinical items signed (D-209, 14 November 2026).** `capacity/capacity-ward-drawer.tsx` now shows the ward's
+register reading on its "Involuntary admissions" row (D-209 item 9). The `REQUEST_CAPACITY_REFRESH` dispatch it
+cites (line 237) is unchanged, so only its digest was refreshed; the action note stands.
+
 **D-188 follow-up: no bed pull without an observation level (14 November 2026).** `PULL_PATIENT` now refuses, after
 the stage and accepted-ward checks, while the journey's observation level is "Not recorded"
 (`PULL_NEEDS_OBSERVATION_LEVEL` in `ward-observation.ts`). It covers a new pull, restoring a held bed and the one-tap

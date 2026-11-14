@@ -108,21 +108,24 @@ describe("the fit check's To check group", () => {
     expect(fit.patientCheckNames).not.toContain("MHA authorisation");
     // Go question 3 (Josh, 13 Nov 2026) adds the authorisation sentence for this status.
     expect(patientFitLine(fit)).toBe(
-      `Passes the ${fit.patientTotal} bed checks. ${FIT_TO_CHECK_LINE} Involuntary admissions: not stated.`,
+      `Passes the ${fit.patientTotal} bed checks. ${FIT_TO_CHECK_LINE} Involuntary admissions: authorised (Chief Psychiatrist register, 7 Sep 2026).`,
     );
     expect(FIT_TO_CHECK_LINE).toBe("To check: recorded risk, escort need, observation level and medical clearance.");
   });
 });
 
 describe("go question 3 (Josh, 13 Nov 2026): authorisation joins To check when the status needs it", () => {
-  it("adds 'Involuntary admissions: not stated' for a status that needs an involuntary-capable bed", () => {
+  // D-209 item 9: the label now reads the Chief Psychiatrist's register (7 Sep 2026) for this ward.
+  it("adds the ward's authorisation label for a status that needs an involuntary-capable bed", () => {
     const subject = movement({ legalStatus: "Involuntary inpatient" });
     const unit = fittingUnit(subject);
     const fit = referralFit(eligibility(subject, unit, NOW).gates, unit, NOW);
     expect(fit.patientIssues).toEqual([]);
-    expect(fit.authorisationToCheck).toBe("Involuntary admissions: not stated");
+    expect(fit.authorisationToCheck).toBe(
+      "Involuntary admissions: authorised (Chief Psychiatrist register, 7 Sep 2026)",
+    );
     expect(patientFitLine(fit)).toBe(
-      `Passes the ${fit.patientTotal} bed checks. ${FIT_TO_CHECK_LINE} Involuntary admissions: not stated.`,
+      `Passes the ${fit.patientTotal} bed checks. ${FIT_TO_CHECK_LINE} Involuntary admissions: authorised (Chief Psychiatrist register, 7 Sep 2026).`,
     );
     // Still information only: never counted and never a fail.
     expect(fit.patientCheckNames).not.toContain("MHA authorisation");
@@ -132,7 +135,9 @@ describe("go question 3 (Josh, 13 Nov 2026): authorisation joins To check when t
     const subject = movement({ legalStatus: undefined });
     const unit = fittingUnit(subject);
     const fit = referralFit(eligibility(subject, unit, NOW).gates, unit, NOW);
-    expect(fit.authorisationToCheck).toBe("Involuntary admissions: not stated");
+    expect(fit.authorisationToCheck).toBe(
+      "Involuntary admissions: authorised (Chief Psychiatrist register, 7 Sep 2026)",
+    );
   });
 
   it("adds nothing for a voluntary status", () => {

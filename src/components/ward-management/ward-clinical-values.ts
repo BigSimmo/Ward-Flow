@@ -82,6 +82,11 @@ const SIGNED_BY_JOSH_20_OCT = { status: "signed", signedBy: "Josh (product owner
  * intervals for the prototype (fix plan item 10) on 21 Oct 2026.
  */
 const SIGNED_BY_JOSH_21_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-21" } as const;
+/**
+ * D-209 item 7 (Josh, 14 Nov 2026): he signed the triage see-by windows B to E for the prototype, as
+ * printed in WA Health's "Triage to Discharge" framework, Version 11.0, Appendix 1.
+ */
+const SIGNED_BY_JOSH_14_NOV = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-11-14" } as const;
 /** Josh approved the role access plan version 2, with its 12 month role ceiling, on 23 Oct 2026 (D-80). */
 const SIGNED_BY_JOSH_23_OCT = { status: "signed", signedBy: "Josh (product owner)", signedOn: "2026-10-23" } as const;
 /**
@@ -715,28 +720,28 @@ export const CLINICAL_VALUES = {
   // window (`triage/triage-see-by.ts`, confirmed by D-122); nothing flags or escalates from them. A is
   // seen straight away, and F and G carry no window.
   triageUrgencyB: {
-    status: "synthetic",
+    ...SIGNED_BY_JOSH_14_NOV,
     name: "Triage urgency B: seen within",
     group: "Triage urgency",
     value: 2,
     unit: "hours",
   },
   triageUrgencyC: {
-    status: "synthetic",
+    ...SIGNED_BY_JOSH_14_NOV,
     name: "Triage urgency C: seen within",
     group: "Triage urgency",
     value: 12,
     unit: "hours",
   },
   triageUrgencyD: {
-    status: "synthetic",
+    ...SIGNED_BY_JOSH_14_NOV,
     name: "Triage urgency D: seen within",
     group: "Triage urgency",
     value: 48,
     unit: "hours",
   },
   triageUrgencyE: {
-    status: "synthetic",
+    ...SIGNED_BY_JOSH_14_NOV,
     name: "Triage urgency E: seen within",
     group: "Triage urgency",
     value: 14,

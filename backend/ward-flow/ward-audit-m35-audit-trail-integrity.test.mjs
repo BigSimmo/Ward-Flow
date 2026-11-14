@@ -151,7 +151,7 @@ test(
         ],
         [
           coordinator,
-          { type: "ACCEPT_IN_PRINCIPLE", role: C, movementId: "WF-010", unitId: "sjgm-adult-open", bedNumber: 1 },
+          { type: "ACCEPT_IN_PRINCIPLE", role: C, movementId: "WF-010", unitId: "gry-adult-secure", bedNumber: 1 },
           200,
         ],
         [nurse, { type: "PATIENT_ARRIVED", role: C, movementId: "WF-014" }, 200],
@@ -159,7 +159,7 @@ test(
         [nurse, { type: "ADVANCE_CLOCK", role: "demo", minutes: 120 }, 200],
         [coordinator, { type: "REQUEST_CAPACITY_REFRESH", role: C, unitId: "rph-adult-secure" }, 200],
         // Sent from an old revision into a bed taken since: refused or stale, never applied.
-        [nurse, { type: "PLACE_IN_BED", role: C, admissionId: "AD-SJGA-01", bedNumber: 1 }, "refused", 1],
+        [nurse, { type: "PLACE_IN_BED", role: C, admissionId: "AD-GRYS-01", bedNumber: 1 }, "refused", 1],
       ];
       const sent = [];
       let revision = 1;

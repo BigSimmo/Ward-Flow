@@ -349,7 +349,7 @@ recorded. It is a count only: no level is shown or suggested.
 Pick two of these three if time is short. None of them needs typing.
 
 **A. The ward sees the full referral before it answers.** In the left-hand menu press **More**,
-then **All wards**, and press **Open ward** on **SJGM Adult Open**. In the **Coming and going**
+then **All wards**, and press **Open ward** on **Graylands Adult Secure**. In the **Coming and going**
 card, under **Referrals · now**, press **Loxbury, Saoirse** (synthetic). The full referral opens:
 reason, risk, legal, observation, medical clearance, physical health, medications, referrer, arrival
 and documents. Point to **To check** under "Passes the 6 bed checks.": five rows for Saoirse, the
@@ -587,7 +587,7 @@ Things that happen without a wrong press:
 | 3   | Referrals, Coldharbour, Cyril (Place tab) | Scroll to the groups; choose a ward under Fits, bed ready (do not accept); Esc; browser Back; Pull the bed, Pull the bed; Esc                                     |
 | 4   | Keira's page                              | Record clearance; Log booking; Mark handover ready; X on both messages; Destination row; Provider accepted job, Vehicle en route, Mark moving · patient collected |
 | 5   | Destination and placement                 | Confirm arrival · receiving ward, Confirm arrival; Esc; More, All wards, Open ward (Dabakarn)                                                                     |
-| 6   | SJGM Adult Open; More, Legal forms; clock | Loxbury, Saoirse, Esc; Seclusion tab; Board time, Demo clock                                                                                                      |
+| 6   | Graylands Adult Secure; More, Legal forms; clock | Loxbury, Saoirse, Esc; Seclusion tab; Board time, Demo clock                                                                                                      |
 | -   | Home                                      | -                                                                                                                                                                 |
 
 Before every run, as the audience sits down: **Board time** clock, **Reset demo**, confirm. Avoid

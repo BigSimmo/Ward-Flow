@@ -35,7 +35,7 @@ import { bedKindsServed, isConfirmationFresh } from "./capacity-gap-words";
 import { capacityRequestIsOpen } from "@/components/ward-management/ward/ward-buzz-keys";
 import { OnBehalfReasonForm } from "../on-behalf-reason-form-lazy";
 import type { OnBehalfReasonId } from "../ward-on-behalf-reason";
-import { AUTHORISATION_NOT_STATED } from "../ward-authorisation";
+import { authorisationValue } from "../ward-authorisation";
 
 const DISCHARGES_HREF = "/ward-flow/discharges";
 
@@ -293,8 +293,8 @@ export function CapacityWardSidebar({
                 rows={[
                   ["Sex designation", row.unit.sexDesignation],
                   ["Gender mix", `Female ${row.unit.sexMix.Female} · Male ${row.unit.sexMix.Male}`],
-                  // D-189 items 6 and 8(a): "not stated" until Q42 is signed, never Yes or No.
-                  ["Involuntary admissions", AUTHORISATION_NOT_STATED],
+                  // D-209 item 9: the register reading for this ward, never a bare Yes or No.
+                  ["Involuntary admissions", authorisationValue(row.unit)],
                 ]}
               />
             </div>

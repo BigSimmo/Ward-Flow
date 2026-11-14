@@ -11,7 +11,7 @@ describe("seeBy", () => {
     expect(seeBy("B", "09/11/2026 10:42", today, TIER_LONG.B)).toEqual({
       when: "12:42 today",
       basis: "B, within 2 hours of review at 10:42",
-      unsigned: true,
+      unsigned: false, // D-209 item 7: B to E signed 14 Nov 2026
     });
   });
 
@@ -24,7 +24,7 @@ describe("seeBy", () => {
     expect(seeBy("E", "09/11/2026 10:42", today, TIER_LONG.E)).toEqual({
       when: "Mon 23 Nov 10:42",
       basis: `E, ${TIER_LONG.E.toLowerCase()} of review at 10:42`,
-      unsigned: true,
+      unsigned: false, // D-209 item 7
     });
   });
 
@@ -52,5 +52,16 @@ describe("seeBy", () => {
       expect(seeByWindowUnsigned(tier)).toBe(entry.status !== "signed");
     }
     expect(seeByWindowUnsigned("A")).toBe(false);
+  });
+
+  it("reads B to E as signed by Josh on 14 Nov 2026 (D-209 item 7)", () => {
+    for (const tier of ["B", "C", "D", "E"] as const) {
+      expect(CLINICAL_VALUES[`triageUrgency${tier}`]).toMatchObject({
+        status: "signed",
+        signedBy: "Josh (product owner)",
+        signedOn: "2026-11-14",
+      });
+      expect(seeByWindowUnsigned(tier)).toBe(false);
+    }
   });
 });

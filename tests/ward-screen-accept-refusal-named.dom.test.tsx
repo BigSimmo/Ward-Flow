@@ -83,7 +83,7 @@ describe("a refused Accept in principle on the ward screen (D-125)", () => {
   it("names the person on the answer view's refusal toast too", async () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardAnswerView unitId="sjgm-adult-open" />
+        <WardAnswerView unitId="gry-adult-secure" />
       </WardFlowProvider>,
     );
     // The answer view's own accept: a READY census square opens the named dialog.

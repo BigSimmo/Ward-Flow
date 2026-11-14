@@ -55,7 +55,9 @@ describe("a locked ward that cannot lawfully detain", () => {
   // D-189 items 8(a) and 9(a) (Josh, 13 Nov 2026): until Q42 is signed the sample flag is not read, so
   // the gate no longer fails here. It passes as information only, marking the person's need, and its
   // words say authorisation is not stated. Locked doors still never imply authorisation.
-  it("D-189: the authorisation gate is information only for an involuntary movement, and says not stated", () => {
+  // D-209 item 9 (Josh, 14 Nov 2026): these wards are not on the Chief Psychiatrist's register of 7 Sep
+  // 2026, and the label says so; the gate still steers nothing.
+  it("D-189, D-209: the authorisation gate is information only for an involuntary movement, and names the register", () => {
     const involuntary = wardMovements.find((movement) => movement.legalStatus !== "Voluntary");
     expect(involuntary, "the fixture has no involuntary movement to test with").toBeDefined();
 
@@ -65,7 +67,7 @@ describe("a locked ward that cannot lawfully detain", () => {
 
       expect(authorisation, `${unit.id}: no authorisation gate found`).toBeDefined();
       expect(authorisation).toMatchObject({ pass: true, info: true, need: true });
-      expect(authorisation?.detail).toBe("Involuntary admissions: not stated");
+      expect(authorisation?.detail).toBe("Involuntary admissions: not on the authorised register (7 Sep 2026)");
 
       // The bed-kind gate still passes: the doors decide security, never authorisation.
       const security = verdict.gates.find((gate) => gate.gate === "security");
