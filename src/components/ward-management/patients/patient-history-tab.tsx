@@ -444,7 +444,6 @@ export function PatientHistoryTab({
   const saved = patientHistoryLines({
     events: auditRead?.status === "allowed" ? auditRead.value : [],
     coordinator: coordinatorDesk,
-    patientId: patientId ?? record.id,
     movementIds: movement ? [movement.id] : [],
     referralIds: movement?.referralId ? [movement.referralId] : [],
     admissionIds: stays.map((stay) => stay.id),

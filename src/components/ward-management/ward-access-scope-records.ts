@@ -216,9 +216,8 @@ export function coordinatorRecordScope(
         return referralIds.has(record.referralId);
       case "bed-release":
         return releaseIds.has(record.releaseId) && unitIn(record.unitId);
-      // D-222: a line about a person this desk sees, or about one of its wards. A bed call stays out.
-      case "patient":
-        return patientIds.has(record.patientId);
+      // D-222: a line about one of this desk's wards. A bed call stays out, and so does a line about
+      // the person record itself (reading its patient link here needs a D-14 allowlist entry).
       case "unit":
         return unitIn(record.unitId);
       default:

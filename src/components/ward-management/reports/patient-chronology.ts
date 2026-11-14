@@ -720,12 +720,8 @@ function admissionRows(admission: Admission, units: readonly Unit[]): RowDraft[]
   return rows;
 }
 
-/** D-222: a line about the person and no single record. */
-const PERSON_RECORD = "Person";
-
 function auditRecord(event: AuditEvent): string | null {
   const subject = event.subject;
-  if (subject.kind === "patient") return PERSON_RECORD;
   if (subject.kind === "movement") return `Movement ${subject.movementId}`;
   if (subject.kind === "referral") return `Referral ${subject.referralId}`;
   if (subject.kind === "admission") return `Admission ${subject.admissionId}`;
@@ -781,7 +777,6 @@ function auditBeforeAfter(
 function auditRows(
   events: readonly AuditEvent[],
   units: readonly Unit[],
-  personId: string,
   recordKeys: Set<string>,
   wardOfRecord: (record: string) => string | undefined,
   dayZero: Date,
@@ -792,7 +787,6 @@ function auditRows(
   for (const event of events) {
     const record = auditRecord(event);
     if (record === null || !recordKeys.has(record)) continue;
-    if (record === PERSON_RECORD && (event.subject as { patientId?: unknown }).patientId !== personId) continue;
     const wording = isHistoryLine(event)
       ? historyLineWording(event.action, event.details.line, { unit: unitName })
       : (eventHistoryWording(event.action, event.actor.role, wardOfRecord(record)) ?? event.action);
@@ -868,15 +862,7 @@ export function patientChronology(input: ChronologyInput): PatientChronology {
   ]);
   if (input.auditEvents) {
     const attributed = new Set<RowDraft>();
-    for (const draft of auditRows(
-      input.auditEvents,
-      units,
-      personId,
-      new Set([...recordKeys, PERSON_RECORD]),
-      wardOfRecord,
-      input.dayZero,
-      zone,
-    )) {
+    for (const draft of auditRows(input.auditEvents, units, recordKeys, wardOfRecord, input.dayZero, zone)) {
       const mirrored =
         draft.action === "Observation level changed"
           ? drafts.find(

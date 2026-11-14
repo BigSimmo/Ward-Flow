@@ -218,9 +218,7 @@ export function subjectPerson(
           ? patientOf({ referralId: subject.referralId })
           : subject.kind === "admission"
             ? patientOf({ id: subject.admissionId })
-            : subject.kind === "patient"
-              ? patientOf({ patientId: subject.patientId })
-              : null;
+            : null;
   if (!info) return null;
   return info.patient ? { name: info.displayName, umrn: info.umrn } : null;
 }
@@ -244,7 +242,7 @@ export function subjectLabel(event: AuditEvent, patientOf: ReturnType<typeof use
     case "configuration":
       return "Configuration";
     case "patient":
-      return patientOf({ patientId: subject.patientId }).displayName;
+      return "Person";
     case "unit":
       return "Ward";
     case "alert":

@@ -1,7 +1,8 @@
 /**
  * D-222 (choice 1): the History lines about one person, for their History tab. Every save writes a
  * line naming the desk that made it; this picks the person's: lines about their journeys, referrals
- * and stays, and lines about the person themselves. A desk other than the coordinator sees accepted
+ * and stays. (Lines about the person record itself wait on a D-14 allowlist decision.) A desk other
+ * than the coordinator sees accepted
  * lines only, with no before/after facts (`sharedHistoryLine`); refusals stay with the coordinator.
  * Pure.
  */
@@ -20,7 +21,6 @@ export type PatientHistoryLineInput = {
   events: readonly AuditEvent[];
   /** The coordinator sees every line, refusals too. */
   coordinator: boolean;
-  patientId?: string;
   movementIds: readonly string[];
   referralIds: readonly string[];
   admissionIds: readonly string[];
@@ -36,8 +36,6 @@ function aboutThisPerson(event: AuditEvent, input: PatientHistoryLineInput): boo
       return input.referralIds.includes(subject.referralId);
     case "admission":
       return input.admissionIds.includes(subject.admissionId);
-    case "patient":
-      return input.patientId !== undefined && subject.patientId === input.patientId;
     default:
       return false;
   }
