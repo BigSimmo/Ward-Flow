@@ -14,6 +14,8 @@ import { DEMO_FIGURES, SENT, staffName } from "./midland-demo";
 import { useMidlandDay, useMidlandDemo } from "./use-midland-demo";
 import { perthClockTime } from "@/components/ward-management/ward-clock";
 import { openReferrals, recordMidlandContact, todaysMidlandContacts, useMidlandDecisions } from "./midland-decisions";
+// The team desk's rail badge reads the same figure (R-STRUCT-24, D-220).
+import { teamReferralsToAnswer } from "./team-referral-count";
 import { useMidlandBoardMoment } from "./use-midland-board-moment";
 import { Initials } from "./parts";
 import { MIDLAND_ACT_NOW_ATTR } from "./midland-top";
@@ -355,7 +357,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
                 value={flow}
                 onChange={setFlow}
                 items={[
-                  { id: "ref", label: "Referrals", count: open.length },
+                  { id: "ref", label: "Referrals", count: teamReferralsToAnswer(decisions) },
                   { id: "adm", label: "Admitted", count: ADMITTED_THIS_WEEK.length },
                   { id: "dis", label: "Leaving", count: 4 },
                 ]}

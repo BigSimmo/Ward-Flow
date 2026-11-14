@@ -99,7 +99,7 @@ describe("Compare uses its released aggregate model", () => {
     installMatchMediaStub(false);
     const data = protectedReport();
     render(wrap(<StatisticsCompareScreen />, data));
-    fireEvent.click(within(wardCard()).getByRole("radio", { name: "Held up" }));
+    fireEvent.click(within(wardCard()).getByRole("radio", { name: "Held up · any date" }));
     // The chart opens on its first eight wards; Show all lists every one.
     fireEvent.click(within(wardCard()).getByRole("button", { name: /^Show all/ }));
     const figure = chart("Ward discharges held up bar chart");
@@ -223,7 +223,7 @@ describe("Compare uses its released aggregate model", () => {
     const data = protectedReport();
     render(wrap(<StatisticsCompareScreen />, data));
     const phone = screen.getByTestId("ward-statistics-compare-phone");
-    fireEvent.click(within(phone).getByRole("button", { name: "Held up" }));
+    fireEvent.click(within(phone).getByRole("button", { name: "Held up · any date" }));
     expect(chart("Ward discharges held up bar chart")).toHaveTextContent("not shown");
     fireEvent.click(within(phone).getByRole("radio", { name: "EDs" }));
     fireEvent.click(within(phone).getByRole("button", { name: "Urgent" }));

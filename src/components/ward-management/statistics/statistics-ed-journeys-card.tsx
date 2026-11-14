@@ -1,6 +1,6 @@
 "use client";
 
-// The summary's Open ED movements card: every ED as a sortable table, or, for a site bed manager with
+// The summary's Emergency departments card (D-220: ED journeys open, and the waits of people still in ED): every ED as a sortable table, or, for a site bed manager with
 // one ED, that ED's five figures as one row of tiles.
 
 import { Badge, CardBody, StatusGlyph, cx, durMinutes, tableClasses } from "@/components/wf";
@@ -66,14 +66,14 @@ export function StatisticsEdJourneysCard({
         <StatusGlyph tone="warning" size={9} />
       ) : null;
     const figures = [
-      { id: "waiting", label: "Open ED movements", value: small(only.waiting), mark: null },
+      { id: "waiting", label: "ED journeys open", value: small(only.waiting), mark: null },
       { id: "longest", label: "Longest", value: waitText(only.longest), mark },
       { id: "median", label: "Median", value: waitText(only.median), mark: null },
       { id: "over8", label: "8h+", value: small(only.over8), mark: null },
       { id: "over24", label: "24h+", value: small(only.over24), mark: null },
     ];
     return (
-      <StatCardR id="eds" title="Open ED movements" data-testid="ward-statistics-emergency-departments">
+      <StatCardR id="eds" title="Emergency departments" data-testid="ward-statistics-emergency-departments">
         <CardBody>
           <dl className={styles.tiles} id="edPressureTable">
             {figures.map((figure) => (
@@ -102,8 +102,8 @@ export function StatisticsEdJourneysCard({
   return (
     <StatCardR
       id="eds"
-      title="Open ED movements"
-      meta={`${small(totalEdWaiting)} open`}
+      title="Emergency departments"
+      meta={`${small(totalEdWaiting)} ED journeys open`}
       data-testid="ward-statistics-emergency-departments"
       aside={
         longestEd && longestEd.longest !== null ? (
@@ -142,7 +142,14 @@ export function StatisticsEdJourneysCard({
           <thead>
             <tr>
               <SortTh id="name" label="ED" sort={edSortCol} asc={edSortAsc} onSort={handleEdSort} />
-              <SortTh id="waiting" label="Open" sort={edSortCol} asc={edSortAsc} onSort={handleEdSort} numeric />
+              <SortTh
+                id="waiting"
+                label="Journeys open"
+                sort={edSortCol}
+                asc={edSortAsc}
+                onSort={handleEdSort}
+                numeric
+              />
               <SortTh id="longest" label="Longest" sort={edSortCol} asc={edSortAsc} onSort={handleEdSort} numeric />
               <SortTh id="over8" label="8h+" sort={edSortCol} asc={edSortAsc} onSort={handleEdSort} numeric />
               <SortTh id="over24" label="24h+" sort={edSortCol} asc={edSortAsc} onSort={handleEdSort} numeric />
