@@ -241,6 +241,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-216](#d-216-the-36-sign-off-recommendations-from-the-stress-test-pack-14-november-2026)                                                              | The 36 sign-off recommendations                                                        | Active                                           |
 | [D-217](#d-217-hand-check-answers-medical-trips-and-undo-after-referring-14-november-2026)                                                              | Hand check answers: medical trips and Undo                                             | Active                                           |
 | [D-218](#d-218-no-legal-disclaimer-wording-on-screens-14-november-2026)                                                                                 | No legal disclaimer wording on screens                                                 | Active                                           |
+| [D-234](#d-234-record-gender-on-the-ed-board-14-november-2026)                                                                                          | Record gender on the ED board                                                          | Active                                           |
 
 ---
 
@@ -2695,5 +2696,12 @@ is inferred.
 - **Replaces:** the wording parts of D-93 ("Ends 15:42 as typed"), D-139 (leave return times "as typed") and the "Not legally checked" notice kept in the 11 November Legal forms sign-off and the Triage banner. Their behaviour is unchanged.
 - **Unchanged:** D-93 and D-70 behaviour. A legal time is still shown only as the time a person entered from the form, never as a countdown, and nothing works out a Mental Health Act period. Warnings that ask someone to act stay, with their words: the legal status mismatch warning, "Check authorisation", "Save Form N anyway", the real-identifier note, and the "within 1h", "within 3h" and "passed" band words beside their colours. "Not recorded" stays, because it is a state, not a disclaimer. The one synthetic data line in the footer stays (hard rule 1).
 - **Boundary:** wording only. No clinical value, threshold or saved field changes.
+
+## D-234. Record gender on the ED board (14 November 2026)
+
+- **Date:** 14 November 2026, 10:56 PM AWST (14:56 UTC). **Decided by:** Josh, in the Ward Flow project: "Remove excessive wordiness, but make a way to record", answering the design plan's question on recording gender (R-LEGAL-6).
+- **Decision:** the ED board's row sheet shows the person's gender, and where it reads "Not yet recorded" it offers the existing Record gender control beside it: a choice with nothing pre-selected and a separate Record gender button. No extra wording is added.
+- **Why:** a gender-designated ward refuses a referral with "Record gender first", and the ED clinician who knows the answer had no place on the board to record it.
+- **Boundary:** reuses the existing `RECORD_MOVEMENT_GENDER` event and roles. No new rule, field, value or wording. Synthetic data only.
 
 The next free number is D-219.

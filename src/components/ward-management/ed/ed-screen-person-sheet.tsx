@@ -19,6 +19,7 @@ import { movementMedicalClearance } from "./ed-screen-model";
 import type { renderEdRowControls } from "./ed-screen-row-facts";
 import styles from "./ed.module.css";
 import { psychReviewStatusWords } from "./ed-psych-review";
+import { EdRecordGender } from "./ed-record-gender";
 
 /**
  * Holds a row's open form back for one commit after the person's sheet opens. Log transport booking
@@ -217,6 +218,23 @@ export function renderEdPersonSheet(
             <dd>{destinationLabel}</dd>
           </div>
         )}
+        <div>
+          <dt>Gender</dt>
+          <dd data-testid={`ward-ed-sheet-gender-${movement.id}`}>
+            {movement.gender ?? "Not yet recorded"}
+            {/* R-LEGAL-6 (D-234, Josh 14 Nov 2026): record it where it reads "Not yet recorded". */}
+            {movement.gender === undefined && !movement.closure ? (
+              <EdRecordGender
+                movement={movement}
+                patientName={patientInfo.formalName}
+                raise={ctx.raise}
+                drafts={ctx.genderRecordDraft}
+                setDrafts={ctx.setGenderRecordDraft}
+                testId="ward-ed-sheet-record-gender"
+              />
+            ) : null}
+          </dd>
+        </div>
         <div>
           <dt>Psychiatric review</dt>
           <dd>{psychReviewStatusWords(movement)}</dd>
