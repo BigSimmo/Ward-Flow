@@ -13,10 +13,11 @@
  * `GatedButton` draws an answer a screen already has: a `Permit`, or a `useRoleGate()` result through
  * `permitFromRoleGate`. Both reuse `Button`; there is no new style.
  *
- * Not exported from `@/components/wf` (`index.ts`): it reads the ward session, so import it by path.
+ * It lives in the ward tree, not the kit, because it reads the ward session (the kit imports no ward
+ * code: `tests/ward-flow-seam.test.ts`).
  */
 import type { ReactNode } from "react";
-import { Button, type ButtonProps } from "./button";
+import { Button, type ButtonProps } from "@/components/wf";
 import { usePermit } from "@/components/ward-management/shell/use-permit";
 import type { Change, Permit } from "@/components/ward-management/ward-permit";
 import type { RoleGate } from "@/components/ward-management/ward-role-gate";

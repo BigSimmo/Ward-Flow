@@ -19,7 +19,7 @@ import {
   TimeField,
   WhoDoesThis,
 } from "@/components/wf";
-import { GatedButton, permitFromRoleGate } from "@/components/wf/gated-action";
+import { GatedButton, permitFromRoleGate } from "@/components/ward-management/shell/gated-action";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import type { WardFlowEvent, WardFlowRole } from "../ward-flow-events";
 import type { Patient } from "../ward-patients";

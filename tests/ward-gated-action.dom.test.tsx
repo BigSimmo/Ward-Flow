@@ -10,7 +10,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
 }));
 
-import { GatedAction, GatedButton, permitFromRoleGate } from "@/components/wf/gated-action";
+import { GatedAction, GatedButton, permitFromRoleGate } from "@/components/ward-management/shell/gated-action";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";

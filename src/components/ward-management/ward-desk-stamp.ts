@@ -27,17 +27,17 @@ import { stampableAccountName, type DeskStamp } from "@/components/ward-manageme
  */
 export const COORDINATOR_STEP_ROLES: readonly {
   readonly type: WardFlowEvent["type"];
-  readonly role: WardFlowRole;
+  readonly stepRole: WardFlowRole;
   readonly reason: string;
 }[] = [
   {
     type: "PATIENT_ARRIVED",
-    role: "officer",
+    stepRole: "officer",
     reason: "The officer's Delivered step ends the transport leg only; the ward records the arrival.",
   },
   {
     type: "MARK_NOTICE_READ",
-    role: "coordinator",
+    stepRole: "coordinator",
     reason: "The role names the notice's addressee, so a coordinator reads any desk's notice as that desk.",
   },
 ];
@@ -46,7 +46,7 @@ function keepsTypedRole(desk: Desk, event: WardFlowEvent): boolean {
   // The role names the notice's addressee, for every desk (`reduceInboxEvent`).
   if (event.type === "MARK_NOTICE_READ") return typeof event.role === "string";
   if (desk.access.role !== "coordinator") return false;
-  return COORDINATOR_STEP_ROLES.some((entry) => entry.type === event.type && entry.role === event.role);
+  return COORDINATOR_STEP_ROLES.some((entry) => entry.type === event.type && entry.stepRole === event.role);
 }
 
 /**
@@ -54,9 +54,10 @@ function keepsTypedRole(desk: Desk, event: WardFlowEvent): boolean {
  * routing point both ask this, so the two record the same role.
  */
 export function stampedRole(desk: Desk, event: WardFlowEvent): WardFlowRole {
-  // A demonstration control sent as `demo` stays so; sent under any other role it is recorded under
-  // the desk's own, so the stamp never turns another role into `demo` and the reducer refuses it.
-  if (EVENT_ROLE[event.type]?.includes("demo")) return event.role === "demo" ? "demo" : desk.role;
+  // A demonstration control is recorded as `demo` (`recordedRole`), but sent under another role it is
+  // recorded under the desk's own: the stamp never turns another role into `demo`, so it is refused.
+  if (EVENT_ROLE[event.type]?.includes("demo"))
+    return typeof event.role === "string" && event.role !== "demo" ? desk.role : "demo";
   return keepsTypedRole(desk, event) ? event.role : recordedRole(desk, event.type);
 }
 

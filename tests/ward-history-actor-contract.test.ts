@@ -97,7 +97,7 @@ describe("Every save writes one History line naming the desk that sent it (D-222
   });
 
   it("pins the coordinator's kept step roles: Delivered stays the officer's step and names the coordinator", () => {
-    expect(COORDINATOR_STEP_ROLES.map(({ type, role }) => `${type}:${role}`)).toEqual([
+    expect(COORDINATOR_STEP_ROLES.map(({ type, stepRole }) => `${type}:${stepRole}`)).toEqual([
       "PATIENT_ARRIVED:officer",
       "MARK_NOTICE_READ:coordinator",
     ]);

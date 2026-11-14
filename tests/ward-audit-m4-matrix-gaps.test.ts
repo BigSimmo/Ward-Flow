@@ -149,7 +149,7 @@ describe("M4 gap 3: a coordinator acting from another desk's route", () => {
           // the stamp never turns another role into `demo`, so a demonstration control falls through.
           const keeps =
             type === "MARK_NOTICE_READ" ||
-            COORDINATOR_STEP_ROLES.some((entry) => entry.type === type && entry.role === routeRole);
+            COORDINATOR_STEP_ROLES.some((entry) => entry.type === type && entry.stepRole === routeRole);
           // A demonstration control sent under another role keeps it, so the reducer refuses it.
           if (keeps || roles.includes("demo")) expect(stamped.role, label).toBe(routeRole);
           else if (roles.includes("coordinator")) expect(stamped.role, label).toBe("coordinator");

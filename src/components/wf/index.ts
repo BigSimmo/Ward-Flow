@@ -29,7 +29,7 @@ export {
   type CountWindow,
 } from "./primitives";
 export { FormalName } from "./formal-name";
-export { Button, DisabledReason, buttonClass, type ButtonSize } from "./button";
+export { Button, DisabledReason, buttonClass, type ButtonProps, type ButtonSize } from "./button";
 // Shared design parts (D-192): the parts screens use are exported below (WindowWord is in primitives).
 export { Badge } from "./badge";
 export { Card, CardHead, CardBody, CardFoot } from "./card";

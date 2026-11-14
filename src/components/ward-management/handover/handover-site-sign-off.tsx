@@ -19,7 +19,7 @@ import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles"
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { usePermit } from "@/components/ward-management/shell/use-permit";
-import { GatedButton } from "@/components/wf/gated-action";
+import { GatedButton } from "@/components/ward-management/shell/gated-action";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";

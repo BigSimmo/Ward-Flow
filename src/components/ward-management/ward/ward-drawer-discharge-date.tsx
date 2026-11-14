@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { Button, Stepper, TimeField } from "@/components/wf";
-import { GatedButton, permitFromRoleGate } from "@/components/wf/gated-action";
+import { GatedButton, permitFromRoleGate } from "@/components/ward-management/shell/gated-action";
 import { dayOf, formatInstantWithDay, type Instant } from "../ward-clock";
 import { clockInputValue } from "../capacity/planned-admissions-draft";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";

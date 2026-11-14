@@ -5,7 +5,7 @@
  * records this desk holds, so a control can be hidden when this desk can never make the change for
  * this record (a place rule), shown disabled with its reason when it cannot for now, or enabled. The
  * shared server asks the same function, so the screen and the server give one answer in one set of
- * words. `GatedAction` (`src/components/wf/gated-action.tsx`) draws the answer.
+ * words. `GatedAction` (`shell/gated-action.tsx`) draws the answer.
  *
  * The records come from the fields the place rules read. Outside a provider only
  * the role phase runs.
