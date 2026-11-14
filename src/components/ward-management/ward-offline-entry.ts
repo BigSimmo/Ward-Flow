@@ -2,6 +2,7 @@ import { auditSubject, type AuditSubject } from "./ward-audit";
 import { formatInstantWithDay, type Instant } from "./ward-clock";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
+import { OFFLINE_ENTRY_MAX_MINUTES } from "./ward-operational-defaults";
 
 /**
  * H1 (mechanics and clock audit, 14 Nov 2026; D-210 (Josh, 14 Nov 2026), ruling 1): a save on the
@@ -12,12 +13,6 @@ import type { WardFlowState } from "./ward-flow-reducer";
  * the record's last change; otherwise it is refused and the person is asked to enter it again.
  */
 const OFFLINE_ENTRY_SLACK_MINUTES = 1;
-/**
- * A waiting save older than this is refused (untested-537 lane L1, INV-M1670-032): records with no
- * stamped last change (handover sign-off, configuration, outage window) otherwise took any earlier
- * time, even 0 or a negative minute. Twelve hours covers a lost signal across a whole shift.
- */
-const OFFLINE_ENTRY_MAX_MINUTES = 12 * 60;
 
 const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
 
@@ -87,7 +82,7 @@ export function offlineEntryTime(
   if (serverNow - acted <= OFFLINE_ENTRY_SLACK_MINUTES) return { now: serverNow, offline: false };
   if (serverNow - acted > OFFLINE_ENTRY_MAX_MINUTES)
     return {
-      refusal: `This change was entered offline more than 12 hours ago, at ${formatInstantWithDay(acted, serverNow)}. Review the record and enter it again`,
+      refusal: `This change was entered offline more than ${OFFLINE_ENTRY_MAX_MINUTES / 60} hours ago, at ${formatInstantWithDay(acted, serverNow)}. Review the record and enter it again`,
     };
   const lastChange = subjectLastChange(state, event, serverNow);
   if (lastChange !== null && acted < lastChange)

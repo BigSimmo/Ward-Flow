@@ -215,7 +215,7 @@ describe("the one transport booking form", () => {
     answerTheCall();
     expect(screen.queryByTestId(id("time-problem"))).toBeNull();
     fireEvent.change(screen.getByTestId(id("time")), { target: { value: "99:99" } });
-    expect(screen.getByTestId(id("time-problem"))).toHaveTextContent("Type a real time, HH:MM");
+    expect(screen.getByTestId(id("time-problem"))).toHaveTextContent("Type a real time, like 14:30");
     expect(screen.getByTestId(id("time"))).toHaveAttribute("aria-invalid", "true");
     fireEvent.click(screen.getByTestId(id("confirm")));
     expect(onSubmit).not.toHaveBeenCalled();

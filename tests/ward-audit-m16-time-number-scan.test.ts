@@ -325,16 +325,10 @@ const ALLOWED: readonly Allowed[] = [
     why: "wording: the bed count's age reads in minutes under two hours, then whole hours (H8, D-210)",
   },
   {
-    file: "ward-offline-entry.ts",
-    expr: "12 * 60",
-    n: 1,
-    why: "safety: a waiting offline save older than 12 h is refused for re-entry (untested-537 M1670-032)",
-  },
-  {
     file: "ward-operational-defaults.ts",
     expr: "12 * MINUTES_PER_HOUR",
-    n: 2,
-    why: "chart span and a Settings range bound (each on the not-clinical list); the forecast lead now reads ward-clinical-values.ts (D-122)",
+    n: 3,
+    why: "chart span, a Settings range bound and the offline-save age bound (untested-537 M1670-032), each on the not-clinical list; the forecast lead now reads ward-clinical-values.ts (D-122)",
   },
   { file: "ward-operational-defaults.ts", expr: "15 * MINUTES_PER_HOUR", n: 2, why: "synthetic shift times (15:00)" },
   {

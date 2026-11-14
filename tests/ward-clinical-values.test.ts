@@ -360,6 +360,11 @@ const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> =
   { file: "ward-operational-defaults.ts", name: "ED_TREND_SPAN_MINUTES", why: "chart window" },
   { file: "ward-operational-defaults.ts", name: "ED_TREND_STEP_MINUTES", why: "chart step" },
   { file: "ward-operational-defaults.ts", name: "SNOOZE_MAX_MINUTES", why: "software snooze bound" },
+  {
+    file: "ward-operational-defaults.ts",
+    name: "OFFLINE_ENTRY_MAX_MINUTES",
+    why: "software bound on how long a save may wait offline before it must be entered again (untested-537 M1670-032)",
+  },
   { file: "ward-operational-defaults.ts", name: "WAIT_FILTER_SHORT_MINUTES", why: "a search filter band" },
   { file: "ward-operational-defaults.ts", name: "MORNING_HANDOVER_MINUTES", why: "a clock time" },
   { file: "ward-operational-defaults.ts", name: "BED_MEETING_MINUTES", why: "a clock time" },

@@ -472,7 +472,9 @@ export function TransportBookingForm({
           <Field
             label="Estimated time"
             id={did("time")}
-            error={timeUnreadable ? <span data-testid={tid("time-problem")}>Type a real time, HH:MM</span> : undefined}
+            error={
+              timeUnreadable ? <span data-testid={tid("time-problem")}>Type a real time, like 14:30</span> : undefined
+            }
           >
             <TextInput
               data-testid={tid("time")}
