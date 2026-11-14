@@ -381,7 +381,7 @@ safe global key across 30 files.
 | `D-208` | `decisions.md`:2572 | D-208. Appraised findings: fix three real display bugs (14 November 2026) |
 | `D-209` | `decisions.md`:2583 | D-209. Nine open clinical items signed, avoiding restriction and friction (14 November 2026) |
 | `D-211` | `decisions.md`:2600 | D-211. Not medically cleared pauses onward transfer (14 November 2026) |
-| `D-212` | `decisions.md`:2608 | D-212. The master stress test replaces Audits 18 and 11 (14 November 2026) |
+| `D-212` | `decisions.md`:2608 | D-212. The master stress test replaces Audits 6, 11 and 18 (14 November 2026) |
 | `D9-1` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | `D9-2` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
 | `D9-3` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:126 | D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION) |
@@ -902,7 +902,7 @@ safe global key across 30 files.
 - `D-208` — line 2572, heading: "D-208. Appraised findings: fix three real display bugs (14 November 2026)"
 - `D-209` — line 2583, heading: "D-209. Nine open clinical items signed, avoiding restriction and friction (14 November 2026)"
 - `D-211` — line 2600, heading: "D-211. Not medically cleared pauses onward transfer (14 November 2026)"
-- `D-212` — line 2608, heading: "D-212. The master stress test replaces Audits 18 and 11 (14 November 2026)"
+- `D-212` — line 2608, heading: "D-212. The master stress test replaces Audits 6, 11 and 18 (14 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 

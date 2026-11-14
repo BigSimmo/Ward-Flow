@@ -233,7 +233,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-208](#d-208-appraised-findings-fix-three-real-display-bugs-14-november-2026)                                                                         | Appraised findings: fix three real display bugs                                        | Active                                           |
 | [D-209](#d-209-nine-open-clinical-items-signed-avoiding-restriction-and-friction-14-november-2026)                                                      | Nine open clinical items signed, avoiding restriction and friction                     | Active                                           |
 | [D-211](#d-211-not-medically-cleared-pauses-onward-transfer-14-november-2026)                                                                           | Not medically cleared pauses onward transfer                                           | Active                                           |
-| [D-212](#d-212-the-master-stress-test-replaces-audits-18-and-11-14-november-2026)                                                                       | The master stress test replaces Audits 18 and 11                                       | Active                                           |
+| [D-212](#d-212-the-master-stress-test-replaces-audits-6-11-and-18-14-november-2026)                                                                     | The master stress test replaces Audits 6, 11 and 18                                    | Active                                           |
 
 ---
 
@@ -2605,11 +2605,11 @@ is inferred.
 - **Replaces:** the "never block" wording of D-207 for "not cleared" only. D-207's words "Fit to travel: not cleared" stay.
 - **Boundary:** synthetic data only. No clinical value or threshold changes. Built in #1668.
 
-## D-212. The master stress test replaces Audits 18 and 11 (14 November 2026)
+## D-212. The master stress test replaces Audits 6, 11 and 18 (14 November 2026)
 
-- **Date:** 14 November 2026, 12:43 PM AWST (04:43 UTC). **Decided by:** Josh, "ok go ahead with next recommendations please" on the Audit G thread's recommendation, then at 12:44 PM AWST (04:44 UTC): "1920×1080 run at this size also as this is the most common size for monitors in hospital".
+- **Date:** 14 November 2026, 12:43 PM AWST (04:43 UTC). **Decided by:** Josh, "ok go ahead with next recommendations please" on the Audit G thread's recommendation, then at 12:44 PM AWST (04:44 UTC): "1920×1080 run at this size also as this is the most common size for monitors in hospital", and at 12:47 PM AWST (04:47 UTC), in the Ward Flow project chat, asking to add Audit 6: "Please send audit 18, 11 and audit 6 as well please with the full walkthrough".
 - **Decision:**
-  1. The master stress test replaces Audits 18 and 11; their checklists are handed to it. If the stress test has not run by the 22 November freeze, the fallback is one session on Josh's PC.
+  1. The master stress test replaces Audits 6, 11 and 18; their checklists and full walkthroughs are handed to it. If the stress test has not run by the 22 November freeze, the fallback is one session on Josh's PC.
   2. Screen checks and demo rehearsal run at 1920 by 1080, the most common hospital monitor size, as well as at 1366 by 768.
 - **Why:** one run instead of three covers the same ground with less waiting before the demo.
 - **Boundary:** no app, clinical value or data changes. Recorded in #1668.
