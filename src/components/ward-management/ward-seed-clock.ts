@@ -1,5 +1,7 @@
 import type { Admission } from "./ward-admissions";
-import { dayOf, MINUTES_PER_DAY, type Instant } from "./ward-clock";
+import { calendarDateOf, dayOf, demoDayZero, MINUTES_PER_DAY, type Instant } from "./ward-clock";
+import { SEED_SAMPLE_DAY, todaysSampleDay } from "./ward-sample-days";
+import { wholeDaysBetween, withPatientCalendarDaysMoved } from "./ward-typed-calendar-days";
 import type { WardFlowState } from "./ward-flow-reducer";
 import type { BedRelease } from "./ward-model";
 import { scenarioNetwork } from "./ward-scenarios";
@@ -106,10 +108,22 @@ export function withSeedCalendarDays(state: WardFlowState, anchor: Instant, now:
 }
 
 /**
- * The seeded records that belong to a clock face, built from the board's own `now`: tonight's intake
- * windows (standard wards only) and the staff request for the shift on now.
+ * The Perth day a seed opens on: the day of `now` counted from the board's `dayZero`. A caller
+ * that holds no calendar (a reset inside the reducer, a fixture) gets today's Perth day, read at
+ * seeding, which is the shared world's day exactly (its clock is real Perth time, D-150).
  */
-export function withSeedClockFaceRecords(state: WardFlowState, now: Instant): WardFlowState {
+function seedDay(now: Instant, dayZero: Date | undefined): Date {
+  return dayZero === undefined ? todaysSampleDay() : demoDayZero(calendarDateOf(now, dayZero));
+}
+
+/**
+ * The seeded records that belong to a clock face or a calendar day, built from the board's own
+ * `now`: tonight's intake windows (standard wards only), the staff request for the shift on now,
+ * and the patients' sample days, moved from the day they were written for to the seed's own day
+ * (mechanics and clock audit CC-5, 14 Nov 2026; `ward-typed-calendar-days.ts`).
+ */
+export function withSeedClockFaceRecords(state: WardFlowState, now: Instant, dayZero?: Date): WardFlowState {
   const windows = scenarioNetwork(state.scenario) ? state : applyIntakeWindowDemoOverlay(state, now);
-  return withSeededStaffRequest(windows, now);
+  const days = wholeDaysBetween(SEED_SAMPLE_DAY, seedDay(now, dayZero));
+  return withSeededStaffRequest({ ...windows, patients: withPatientCalendarDaysMoved(windows.patients, days) }, now);
 }

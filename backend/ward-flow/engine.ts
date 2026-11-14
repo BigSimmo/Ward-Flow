@@ -406,8 +406,9 @@ export function seedWorld(at: Date): SharedWorld {
   return {
     version: 1,
     // D-150: the seed is re-anchored onto the real Perth time, as the public demo's provider does
-    // (`ward-reanchor.ts`), so a new world's clock and its seeded times agree from the start.
-    state: serialise(seedWardFlowStateAt(minutesSince(dayZero, at) - NOW_ANCHOR)),
+    // (`ward-reanchor.ts`), so a new world's clock and its seeded times agree from the start. Its
+    // sample days fall on the world's own day, not the day the server started (CC-5).
+    state: serialise(seedWardFlowStateAt(minutesSince(dayZero, at) - NOW_ANCHOR, "standard", { dayZero })),
     // New worlds share the local demo's Perth calendar. Existing stored origins remain authoritative.
     dayZero: dayZero.toISOString(),
     startedAt: at.toISOString(),

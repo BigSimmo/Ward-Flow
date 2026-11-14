@@ -643,7 +643,8 @@ function seedAuthoredWorld(
 export function seedWardFlowStateAt(
   offsetMinutes: number,
   scenario: WardScenario = "standard",
-  options: { workedExamples?: boolean } = {},
+  // `dayZero`: the board's day 0, when the caller holds one, so sample days fall on the seed's own day (CC-5).
+  options: { workedExamples?: boolean; dayZero?: Date } = {},
 ): WardFlowState {
   // Time audit G1: calendar-day fields move by whole Perth days and clock-face records (tonight's
   // intake windows, the shift's staff request) are built from the board's own now.
@@ -653,7 +654,7 @@ export function seedWardFlowStateAt(
     NOW_ANCHOR,
     now,
   );
-  return withSeedClockFaceRecords(moved, now);
+  return withSeedClockFaceRecords(moved, now, options.dayZero);
 }
 
 /**

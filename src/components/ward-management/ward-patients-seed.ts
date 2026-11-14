@@ -2,7 +2,8 @@ import type { Patient } from "@/components/ward-management/ward-patients";
 import type { RecordedSex, ReferralGender } from "@/components/ward-management/ward-model";
 
 import { GENERATED_FAMILY_NAMES, GENERATED_GIVEN_NAMES_BY_SEX, GIVEN_NAME_COUNT } from "./ward-generated-names-seed";
-import { sampleIsoDay } from "./ward-sample-days";
+// Sample days are written for `SEED_SAMPLE_DAY` and moved to the seed's own day at seeding (CC-5).
+import { SEED_SAMPLE_DAY, sampleIsoDay } from "./ward-sample-days";
 import { GENERAL_PRACTITIONERS, generalPractitionerLine } from "./ward-staff-names-seed";
 
 /** A16-21 (Audit 16, 13 Nov 2026): every GP line comes from the one staff name list, so no GP shares
@@ -97,7 +98,7 @@ export const wardPatients: Patient[] = [
     interpreterLanguage: "Vietnamese — interpreter required",
     // Care plans and safety flags (9 Nov 2026), synthetic: a hearing date that has passed with no
     // outcome recorded, and cultural support the family asked for.
-    tribunalHearing: { date: sampleIsoDay(-5), time: "10:00", recordedAt: -2880, recordedBy: "ward" },
+    tribunalHearing: { date: sampleIsoDay(-5, SEED_SAMPLE_DAY), time: "10:00", recordedAt: -2880, recordedBy: "ward" },
     culturalSupportRequested: "Other cultural support",
   },
   {
@@ -690,8 +691,8 @@ export const wardPatients: Patient[] = [
         id: "PT-036-CP-1",
         type: "Community care plan",
         agreedBy: "Midland Community Team",
-        agreedOn: sampleIsoDay(-242),
-        reviewOn: sampleIsoDay(-58),
+        agreedOn: sampleIsoDay(-242, SEED_SAMPLE_DAY),
+        reviewOn: sampleIsoDay(-58, SEED_SAMPLE_DAY),
         helps: ["Known staff member"],
         status: "Superseded",
         recordedAt: -2880,
@@ -701,8 +702,8 @@ export const wardPatients: Patient[] = [
         id: "PT-036-CP-2",
         type: "Frequent presenter plan",
         agreedBy: "Midland Community Team with ED",
-        agreedOn: sampleIsoDay(-34),
-        reviewOn: sampleIsoDay(58),
+        agreedOn: sampleIsoDay(-34, SEED_SAMPLE_DAY),
+        reviewOn: sampleIsoDay(58, SEED_SAMPLE_DAY),
         contactName: "Case manager, Midland team",
         contactPhone: "08 5550 0990",
         helps: ["Quiet space", "Family or carer involved early", "Contact the community team"],
