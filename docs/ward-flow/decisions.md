@@ -229,9 +229,10 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-204](#d-204-a-signed-triage-shows-the-desks-name-14-november-2026)                                                                                   | A signed triage shows the desk's name                                                  | Active                                           |
 | [D-205](#d-205-release-now-once-each-pr-merges-14-november-2026)                                                                                        | Release now, once each PR merges and its main CI passes                                | Active                                           |
 | [D-206](#d-206-codeql-storage-alerts-are-false-positives-for-the-demo-14-november-2026)                                                                 | CodeQL storage alerts are false positives for the demo                                 | Active                                           |
-| [D-207](#d-207-fit-to-travel-recorded-as-not-cleared-and-the-clinical-go-14-november-2026)                                                              | Fit to travel: not cleared, and the clinical go                                        | Active                                           |
+| [D-207](#d-207-fit-to-travel-recorded-as-not-cleared-and-the-clinical-go-14-november-2026)                                                              | Fit to travel: not cleared, and the clinical go                                        | Partly replaced by D-211                         |
 | [D-208](#d-208-appraised-findings-fix-three-real-display-bugs-14-november-2026)                                                                         | Appraised findings: fix three real display bugs                                        | Active                                           |
 | [D-209](#d-209-nine-open-clinical-items-signed-avoiding-restriction-and-friction-14-november-2026)                                                      | Nine open clinical items signed, avoiding restriction and friction                     | Active                                           |
+| [D-211](#d-211-not-medically-cleared-pauses-onward-transfer-14-november-2026)                                                                           | Not medically cleared pauses onward transfer                                           | Active                                           |
 
 ---
 
@@ -2595,4 +2596,12 @@ is inferred.
 - **Why:** items 7, 8 and 9 match published WA sources read on 14 November 2026. The rest are Josh's clinical calls on synthetic stories. "Avoiding restrictive and friction" means no new block, no steering and the least restrictive observation level that fits.
 - **Boundary:** synthetic data only; a prototype, not validated clinical decision support. No real authorisation status is relied on for a placement.
 
-The next free number is D-210.
+## D-211. Not medically cleared pauses onward transfer (14 November 2026)
+
+- **Date:** 14 November 2026. D-210 is claimed by open PR #1670. **Decided by:** Josh, "continue with all recommendations" on the plan thread's recommendations for the fit to travel check.
+- **Decision:** when medical clearance is recorded as "Not medically cleared", onward transfer stops until the patient is cleared again. The engine's refusal of booking, Mark handover ready, transport accepted, en route, collected and arrived stays. The screens now match it: the booking form and the handover, collection and arrival checks no longer offer "save without a reason" or "Continue without a reason", and say "Onward transfer is paused until re-clearance." instead. "Fit to travel not recorded" (nothing recorded) is unchanged: a reason is still asked for and never required (D-187 item 10, D-189 item 9(e)).
+- **Why:** D-207 said a not-cleared journey asks for a reason and never blocks, but the engine already refused the step, so the screens offered a way on that could not work. A recorded "not cleared" is a clinical stop, not a missing fact.
+- **Replaces:** the "never block" wording of D-207 for "not cleared" only. D-207's words "Fit to travel: not cleared" stay.
+- **Boundary:** synthetic data only. No clinical value or threshold changes. Built in #1668.
+
+The next free number is D-212.

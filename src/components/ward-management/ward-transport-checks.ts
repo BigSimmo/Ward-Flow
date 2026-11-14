@@ -44,6 +44,9 @@ export const TRANSPORT_EXCEPTION_GAP_LABELS: Record<TransportExceptionGap, strin
   fit_to_travel_not_cleared: "Fit to travel: not cleared",
 };
 
+/** D-211 (Josh, 14 Nov 2026): not medically cleared stops the transfer; no reason lets it go on. */
+export const TRANSFER_PAUSED_TEXT = "Onward transfer is paused until re-clearance.";
+
 /** The step an exception was recorded at, in words: one label per step, never "Booked" for all. */
 export const TRANSPORT_EXCEPTION_STEP_LABELS: Record<TransportException["step"], string> = {
   booked: "Booked",
