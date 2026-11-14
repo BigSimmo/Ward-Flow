@@ -241,6 +241,9 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-216](#d-216-the-36-sign-off-recommendations-from-the-stress-test-pack-14-november-2026)                                                              | The 36 sign-off recommendations                                                        | Active                                           |
 | [D-217](#d-217-hand-check-answers-medical-trips-and-undo-after-referring-14-november-2026)                                                              | Hand check answers: medical trips and Undo                                             | Active                                           |
 | [D-218](#d-218-no-legal-disclaimer-wording-on-screens-14-november-2026)                                                                                 | No legal disclaimer wording on screens                                                 | Active                                           |
+| [D-226](#d-226-forms-after-a-form-3e-continuation-forms-refused-coordinator-reason-14-november-2026)                                                    | Forms after a Form 3E: continuations refused, coordinator reason                       | Active                                           |
+| [D-227](#d-227-a-single-sex-ward-of-the-other-sex-reads-not-suitable-14-november-2026)                                                                  | Single-sex ward of the other sex reads Not suitable                                    | Active                                           |
+| [D-228](#d-228-a-fully-locked-ward-reads-locked-for-a-patient-who-needs-an-open-bed-14-november-2026)                                                   | Fully locked ward reads Locked for an open-bed patient                                 | Active                                           |
 
 ---
 
@@ -2696,4 +2699,31 @@ is inferred.
 - **Unchanged:** D-93 and D-70 behaviour. A legal time is still shown only as the time a person entered from the form, never as a countdown, and nothing works out a Mental Health Act period. Warnings that ask someone to act stay, with their words: the legal status mismatch warning, "Check authorisation", "Save Form N anyway", the real-identifier note, and the "within 1h", "within 3h" and "passed" band words beside their colours. "Not recorded" stays, because it is a state, not a disclaimer. The one synthetic data line in the footer stays (hard rule 1).
 - **Boundary:** wording only. No clinical value, threshold or saved field changes.
 
-The next free number is D-219.
+## D-226. Forms after a Form 3E: continuation forms refused, coordinator reason (14 November 2026)
+
+- **Date:** 14 November 2026, 11:02 PM AWST (15:02 UTC). **Decided by:** Josh, "Yes to all recommendations" in the Ward Flow project chat, on the clinical-rules thread's recommendation (option C of the Form 3E options paper, master-stress-test/run/post-demo-build/form-3e-spec.md).
+- **Decision:**
+  1. A recorded Form 3E ends the order before it for counts and screens (already built under R-LEGAL-12). The app never changes the stored legal status itself.
+  2. After a Form 3E, a continuation-type form (3C, 5B, 6C, 6D) is refused with "Form 3E is recorded. Record the form that starts a new order." A form that starts a new order (1A, 3A, 3D, 6A, 6B) is accepted. One list, `FORMS_REFUSED_AFTER_3E` in `ward-legal-after-3e.ts`.
+  3. The coordinator may record it anyway by picking one listed reason: "Paper checked: new order made", "Form 3E recorded in error" or "Other, see paper". No typed text. The reason shows in History. Other desks see the refusal and that the coordinator can record it.
+  4. A continuation-type form with no earlier order on file stays a warning only (D-187 item 6), since someone may arrive with a paper from another hospital.
+- **Why:** stress-test findings Lead-REC-A-2, REG1-9, REG2-7 and LG-3: a 3C or 6C after a 3E was accepted silently. A refusal with a listed way past stops a wrong record without blocking a real paper form.
+- **Replaces:** for these four forms after a 3E only, the "warn, never block" rule for legal order (27 Oct 2026, R-LEGAL-11's "Save Form N anyway"). Everything else stays a warning.
+- **Boundary:** synthetic data only; labels, not legal advice. Both form lists are Josh's clinical call. Release held for Josh's morning summary. Built in the clinical-rules PR.
+
+## D-227. A single-sex ward of the other sex reads "Not suitable" (14 November 2026)
+
+- **Date:** 14 November 2026, 11:02 PM AWST (15:02 UTC). **Decided by:** Josh, "Yes to all recommendations", on the clinical-rules thread's recommendation (finding RV2-10).
+- **Decision:** in Ask wards (Find a ward), a ward that no recorded reason can open, such as a single-sex ward of the other gender, is listed under "Not suitable", greyed and last, and cannot be ticked. It never reads "Review". The gender gate keeps no override (T10, item 8).
+- **Why:** Ask wards said "Review" while the placement drawer said no recorded reason could place the person there.
+- **Boundary:** synthetic data only. No change to who may be placed where.
+
+## D-228. A fully locked ward reads "Locked" for a patient who needs an open bed (14 November 2026)
+
+- **Date:** 14 November 2026, 11:02 PM AWST (15:02 UTC). **Decided by:** Josh, "Yes to all recommendations", on the clinical-rules thread's recommendation (finding RV2-2).
+- **Decision:** in the patient page's Ask wards, a ward whose every bed is locked, for a movement that needs an open bed, shows "Locked" in amber, in its own group after the open wards that fit. It can still be asked, with no reason needed.
+- **Why:** it read "Fits", the same as an open ward. Sometimes the locked bed is the only bed, so it is not blocked; the label stops it reading as an equal fit.
+- **Replaces:** the earlier "by design, no change" note for RV2-2.
+- **Boundary:** synthetic data only. No placement rule changes.
+
+The next free number is D-229. D-224 and D-225 are claimed by open PR #1672 (design lane A). D-219, D-220, D-221, D-222 and D-223 are reserved by open PR #1673 (figures and timing).

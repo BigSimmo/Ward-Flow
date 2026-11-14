@@ -59,9 +59,7 @@ describe("D-226: continuation after a Form 3E on the patient page", () => {
     typeDate(screen.getByLabelText("Form written date and time"), screen.getByTestId("stamp").textContent!);
     const record = screen.getByRole("button", { name: "Record legal form continuation" });
     expect(record).toHaveAttribute("aria-disabled", "true");
-    fireEvent.change(screen.getByRole("combobox", { name: "Reason to record anyway" }), {
-      target: { value: "new_order_made" },
-    });
+    fireEvent.click(screen.getByRole("radio", { name: "Paper checked: new order made" }));
     expect(record).not.toHaveAttribute("aria-disabled");
     fireEvent.click(record);
     expect(screen.getByTestId("form-code")).toHaveTextContent("6C");

@@ -5,6 +5,9 @@
  * for the coordinator only, the listed reason that records it anyway. Shared by the Forms page and
  * the movement's continuation action. Synthetic data only.
  */
+import { useId } from "react";
+
+import { Radio } from "@/components/wf";
 import {
   AFTER_3E_REASONS,
   AFTER_3E_REFUSAL,
@@ -24,6 +27,7 @@ export function After3EReasonField({
   onChange: (reason: After3EReason | "") => void;
   testId: string;
 }) {
+  const name = useId();
   return (
     <div data-testid={testId}>
       <p role="status">
@@ -31,20 +35,19 @@ export function After3EReasonField({
         {coordinator ? null : " The coordinator can record it with a reason."}
       </p>
       {coordinator ? (
-        <label>
-          Reason to record anyway
-          <select
-            value={value}
-            onChange={(event) => onChange(isAfter3EReason(event.target.value) ? event.target.value : "")}
-          >
-            <option value="">Choose reason</option>
-            {Object.entries(AFTER_3E_REASONS).map(([key, words]) => (
-              <option key={key} value={key}>
-                {words}
-              </option>
-            ))}
-          </select>
-        </label>
+        <fieldset>
+          <legend>Reason to record anyway</legend>
+          {Object.entries(AFTER_3E_REASONS).map(([key, words]) => (
+            <Radio
+              key={key}
+              name={name}
+              value={key}
+              label={words}
+              checked={value === key}
+              onChange={() => onChange(isAfter3EReason(key) ? key : "")}
+            />
+          ))}
+        </fieldset>
       ) : null}
     </div>
   );

@@ -13,6 +13,11 @@
  * Synthetic prototype. Labels only, not legal advice.
  */
 import type { LegalClockFormCode } from "@/components/ward-management/ward-legal-clock";
+import {
+  currentLegalPosition,
+  ORDER_ENDING_FORM_CODE,
+  type LegalPositionSource,
+} from "@/components/ward-management/ward-legal-form-progression";
 
 /** The continuation-type forms refused after a Form 3E. Every other recognised code starts a new order. */
 export const FORMS_REFUSED_AFTER_3E: readonly LegalClockFormCode[] = ["3C", "5B", "6C", "6D"];
@@ -34,13 +39,12 @@ export function isAfter3EReason(value: unknown): value is After3EReason {
 export const AFTER_3E_REFUSAL = "Form 3E is recorded. Record the form that starts a new order.";
 
 /**
- * Whether recording `nextCode` now would be refused because the form on file is a 3E. Reads the
- * same current form as the 3C-after-3D rule (`movementRefuses3C`).
+ * Whether recording `code` now would be refused because the form on file is a Form 3E. Reads the
+ * one current legal position (`currentLegalPosition`).
  */
-export function refusedAfter3E(
-  movement: { legalForm?: { code?: string }; legalClock?: { code?: string } } | undefined,
-  nextCode: string,
-): boolean {
-  const current = movement?.legalForm?.code ?? movement?.legalClock?.code;
-  return current === "3E" && (FORMS_REFUSED_AFTER_3E as readonly string[]).includes(nextCode);
+export function refusedAfter3E(movement: LegalPositionSource | undefined, code: string): boolean {
+  return (
+    currentLegalPosition(movement).form?.code === ORDER_ENDING_FORM_CODE &&
+    (FORMS_REFUSED_AFTER_3E as readonly string[]).includes(code)
+  );
 }
