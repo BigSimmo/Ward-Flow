@@ -678,7 +678,7 @@ function JourneyPresentation({
             id="journey-waiting"
             icon={Clock}
             title="Waiting in ED"
-            meta={`${statisticsCountText(totalWaiting)} ED journeys open from ${waitingSummary?.length ?? waitingRows.length} ${(waitingSummary?.length ?? waitingRows.length) === 1 ? "ED" : "EDs"}`}
+            meta={`${statisticsCountText(totalWaiting)} from ${waitingSummary?.length ?? waitingRows.length} ${(waitingSummary?.length ?? waitingRows.length) === 1 ? "ED" : "EDs"}`}
             data-testid="ward-statistics-journey-waiting"
           >
             <CardBody>
