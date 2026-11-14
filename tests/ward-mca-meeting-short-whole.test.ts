@@ -2,13 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import { bedMeetingSheet } from "@/components/ward-management/capacity/bed-meeting-derivations";
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
+import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 
 // Audit M15, D-210 (Josh, 14 Nov 2026): the bed meeting sheet says its figures are for the whole
 // service. A group filter narrows the people lists only; the "short" figure stays whole.
 describe("bed meeting sheet short figure under a group filter", () => {
   const seed = seedWardFlowState();
-  const NOW = seed.movements.reduce((latest, movement) => Math.max(latest, movement.createdAt ?? 0), 0);
+  const NOW = NOW_ANCHOR;
   const base = {
     ...seed,
     now: NOW,
