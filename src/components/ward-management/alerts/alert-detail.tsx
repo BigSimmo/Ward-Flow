@@ -49,6 +49,7 @@ import {
   shownAgeFrom,
   type AlertSubject,
 } from "./alerts-model";
+import { currentInboxOwner } from "@/components/ward-management/ward-inbox-snooze";
 import { typedClock, typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { currentLegalDueAt } from "@/components/ward-management/ward-legal-form-progression";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -312,16 +313,19 @@ export function AlertDetail({
   );
   // P019: an alert you took offers Hand back (the Alerts redesign's name for P019's Release) in place
   // of the greyed "Yours".
-  const takeButton = mine ? (
-    <ReleaseOwnershipButton
-      item={item}
-      subjectLine={subjectLine}
-      disabledReason={actionDisabledReason}
-      fallback={ownButton}
-    />
-  ) : (
-    ownButton
-  );
+  // INV-ACTION-148 (14 Nov 2026): Hand back only on a row this desk actually took. A row that is the
+  // coordinator's by default has nothing to release, and the press was refused.
+  const takeButton =
+    mine && currentInboxOwner(ownership, item.since) !== undefined ? (
+      <ReleaseOwnershipButton
+        item={item}
+        subjectLine={subjectLine}
+        disabledReason={actionDisabledReason}
+        fallback={ownButton}
+      />
+    ) : (
+      ownButton
+    );
   const moreActions = (
     <details className={styles.moreActions} data-testid="alerts-more-actions">
       <summary>More actions</summary>

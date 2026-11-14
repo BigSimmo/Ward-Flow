@@ -103,10 +103,14 @@ describe("the Alerts screen reports on every condition it watches, firing or not
     expect(seen).toHaveTextContent("Seen");
     expect(seen).toHaveAttribute("aria-disabled", "true");
     const take = screen.queryByRole("button", { name: /^Take / });
-    if (take) fireEvent.click(take);
-    // P019: the owner is offered Hand back (the Alerts redesign's name for Release) in place of the greyed "Yours".
-    const yours = screen.getByRole("button", { name: /^Hand back / });
-    expect(yours).toHaveTextContent("Hand back");
+    if (take) {
+      fireEvent.click(take);
+      // P019: the owner is offered Hand back (the Alerts redesign's name for Release) in place of the greyed "Yours".
+      expect(screen.getByRole("button", { name: /^Hand back / })).toHaveTextContent("Hand back");
+    } else {
+      // INV-ACTION-148 (14 Nov 2026): a row never taken has nothing to hand back, so it keeps "Yours".
+      expect(screen.getByRole("button", { name: /^Yours: / })).toHaveTextContent("Yours");
+    }
   });
 
   it("renders every named condition, including the ones with nothing to show", () => {
