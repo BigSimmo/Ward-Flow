@@ -15,7 +15,8 @@
 //   kit          src/components/wf/
 //   lib          src/lib/
 //   ward-root    files directly in src/components/ward-management/ (engine, model, provider)
-//   shell        src/components/ward-management/shell/ and shell-next/ (the chrome that mounts screens)
+//   shell        src/components/ward-management/shell/ and shell-next/ (the chrome that mounts screens),
+//                and figures/ (the one figure list every screen reads, D-219 item 1)
 //   screen:<x>   any other folder under src/components/ward-management/
 //   route        src/app/ (mockups apart)
 //   mockup       src/app/mockups/
@@ -27,7 +28,9 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { relative, runtimeGraph } from "../../tests/helpers/module-graph";
 
 const WARD = "src/components/ward-management/";
-const SHARED_WARD_FOLDERS = new Set(["shell", "shell-next"]);
+// figures/ is the shared figure list (D-219 item 1, D-220): every screen reads its published figures
+// from there, so a screen reading a figure is not one screen reaching into another.
+const SHARED_WARD_FOLDERS = new Set(["shell", "shell-next", "figures"]);
 export const BASELINE_PATH = join(dirname(fileURLToPath(import.meta.url)), "import-map-baseline.json");
 
 export type ImportMapBaseline = {

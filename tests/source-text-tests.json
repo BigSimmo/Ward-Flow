@@ -126,6 +126,7 @@
     "tests/ward-escalation-calls.test.ts",
     "tests/ward-event-reachability.test.ts",
     "tests/ward-facade-agrees-with-screens.test.ts",
+    "tests/ward-figure-dictionary-inline.test.ts",
     "tests/ward-figure.dom.test.tsx",
     "tests/ward-fix-AK-transport-slots.dom.test.tsx",
     "tests/ward-fix-D-legal-position-guard.test.ts",

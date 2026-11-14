@@ -58,6 +58,8 @@ export type { SharedBreakGlassOpening, SharedCoverGiven, SharedRecordView } from
 import type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
 import {
   markOwnSave,
+  noteOwnSeen,
+  ownSeenSince,
   waitingBedKeys,
   pinToBoard,
   sheetBasis,
@@ -249,6 +251,7 @@ export class SharedWorkspaceClient {
     this.roleLifetime = new AbortController();
     this.viewGeneration += 1;
     this.headRevision = 0;
+    this.ownSeen.clear();
     this.sheetSeen = new WeakMap();
   }
   /** Only this command's own refusal is definite; a session ending after send leaves its outcome uncertain. */
@@ -288,6 +291,13 @@ export class SharedWorkspaceClient {
   private restoreMarker: string | null | undefined;
   /** CS-19: popup opening revisions let the server refuse stale edits after another desk changed the record. */
   private sheetSeen = new WeakMap<object, SheetSeen>();
+  /**
+   * D-237 (Together-X1b-2): records this tab's own saves changed, with the revision each landed at,
+   * for a command sent with no popup. When another desk saved in between, `headRevision` cannot move
+   * on, so without this the next step on the same record (Accepted, then En route) was refused as
+   * "Another desk changed this movement first" for this tab's own change.
+   */
+  private readonly ownSeen = new Map<string, number>();
   /** The popups the command in flight was asked for from, while it is in flight. */
   private pendingSheets: readonly object[] | undefined;
   private pendingOffline = false; // The command in flight waited offline (audit M10).
@@ -357,6 +367,7 @@ export class SharedWorkspaceClient {
   private ownSaveLanded(from: number, to: number | undefined, sheets?: readonly object[], covered?: unknown) {
     const tracked = () => new Set([...openSheetHandles(), ...this.queue.flatMap((queued) => queued.sheets ?? [])]);
     markOwnSave(this.sheetSeen, tracked, from, to, sheets, covered);
+    noteOwnSeen(this.ownSeen, to, covered);
   }
   /** Server archive for this desk and world; restored beside live records for History and reports. */
   private archive: {
@@ -1077,12 +1088,14 @@ export class SharedWorkspaceClient {
           const basis = this.basis(queued.sheets);
           this.pendingSheets = basis ? queued.sheets : undefined;
           this.pendingOffline = !!queued.offline;
+          const expectedRevision = basis?.revision ?? Math.max(snapshot.revision, this.headRevision);
+          const seen = basis ? basis.records : ownSeenSince(this.ownSeen, expectedRevision);
           this.pending = {
             classification: "synthetic",
             dataMode: "prototype",
             commandId: queued.commandId,
-            expectedRevision: basis?.revision ?? Math.max(snapshot.revision, this.headRevision),
-            ...(basis && Object.keys(basis.records).length ? { seen: basis.records } : {}),
+            expectedRevision,
+            ...(Object.keys(seen).length ? { seen } : {}),
             event: withoutChartContent(queued.event),
             ...(this.queue.length && !queued.confirmed ? { reply: "revision" as const } : {}),
             ...(queued.actedAt !== undefined ? { actedAt: queued.actedAt } : {}),
