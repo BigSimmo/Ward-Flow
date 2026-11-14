@@ -8,7 +8,7 @@
 // network figure. Every figure is this ward's own.
 import type { Admission, PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import type { Instant } from "@/components/ward-management/ward-clock";
-import type { BedRelease, Movement, Unit } from "@/components/ward-management/ward-model";
+import type { BedRelease, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { bedsForecast } from "@/components/ward-management/capacity/beds-forecast";
 import { openBedReleases } from "@/components/ward-management/ward-bed-availability";
 import { forecastReleaseAt } from "@/components/ward-management/forecast/forecast-release-date";
@@ -47,6 +47,12 @@ export function wardTomorrowOutlook(
   accepted: readonly Movement[],
   plannedAdmissions: readonly PlannedAdmission[],
   now: Instant,
+  /**
+   * The referrals, so a bed already named for an accepted referral is held, as Ready on this page
+   * and the Capacity forecast hold it (M8, mechanics audit 14 Nov 2026; D-115 item 3). Without them
+   * Tomorrow counted that bed as free.
+   */
+  referrals: readonly Referral[] = [],
 ): WardTomorrowOutlook | null {
   if (unit.isClosed) return null;
   const ownAdmissions = admissions.filter((admission) => admission.unitId === unit.id);
@@ -57,6 +63,7 @@ export function wardTomorrowOutlook(
     [...accepted],
     now,
     plannedAdmissions.filter((booking) => booking.unitId === unit.id),
+    referrals,
   ).horizons[0]!;
   const admissionsById = new Map(ownAdmissions.map((admission) => [admission.id, admission]));
   const flaggedTodayPlannedLater = wardDischargesDueToday(openBedReleases(releases, unit.id), now).filter(
@@ -124,6 +131,7 @@ export function useWardTomorrowOutlook(
     bedReleases,
     admissions = [],
     plannedAdmissions = [],
-  } = useWardFlowSelect("bedReleases", "admissions", "plannedAdmissions");
-  return wardTomorrowOutlook(unit, bedReleases ?? [], admissions, accepted, plannedAdmissions, now);
+    referrals = [],
+  } = useWardFlowSelect("bedReleases", "admissions", "plannedAdmissions", "referrals");
+  return wardTomorrowOutlook(unit, bedReleases ?? [], admissions, accepted, plannedAdmissions, now, referrals);
 }
