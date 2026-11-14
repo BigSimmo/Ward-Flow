@@ -730,6 +730,7 @@
     "cohort",
     "forensic",
     "legal_status",
+    "locked_bed_free",
     "prior_decline",
     "security",
     "gender_designation",
