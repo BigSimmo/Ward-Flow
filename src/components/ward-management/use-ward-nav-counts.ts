@@ -1,23 +1,13 @@
 "use client";
 
-import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 
-import {
-  useDueSoonThresholds,
-  useWardFlowClock,
-  useWardFlowSelect,
-  useWardNetwork,
-} from "@/components/ward-management/ward-flow-provider";
 import { WARD_SHELL_ROLE, wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
-import { useAccessShellRole, useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { useAccessShellRole } from "@/components/ward-management/shell/ward-access-store";
 import { useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
-import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
-import { wardNavCounts, type WardNavCounts } from "@/components/ward-management/ward-nav-counts";
+import type { WardNavCounts } from "@/components/ward-management/ward-nav-counts";
+import { useDeskNavCounts } from "@/components/ward-management/use-desk-nav-counts";
 import { wardPlaceIdFor } from "@/components/ward-management/ward-place";
-import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
-import { unitInScope } from "@/components/ward-management/ward-role-access";
-import { totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";
 
 /**
  * The sidebar's role and its counts, for whichever of the three shapes is asking.
@@ -45,12 +35,9 @@ import { totalReadyBedsNow } from "@/components/ward-management/ward-bed-states"
  * they are on. See `wardPlaceIdFor` in `ward-place.ts`: it is a bare id, `undefined` on any route
  * that does not name one, never a resolved or validated place.
  *
- * Capacity counts the desk's own place (Josh, 30 Oct 2026, the new sidebar and header): a desk held
- * to a site, service or ward keeps every ward's beds in view (they hold no patient), so its Capacity
- * counted the network's ready beds (26) for a site bed manager. The figure is the same rule
- * (`totalReadyBedsNow`) over the desk's own wards only. People (journeys, referrals, waits) and bed
- * releases are already narrowed by the workspace scope, so every other count is unchanged. The
- * statewide coordinator, executive and access admin count the whole network, as before.
+ * The counts come from `useDeskNavCounts`, which this hook and its `shell-next` fork both call, so
+ * the two cannot drift (R-STRUCT-24, D-220). Every desk adjustment (Capacity over the desk's own
+ * wards, a ward desk's offers, a team desk's referrals) lives in `wardNavCounts`.
  */
 export function useWardNavCounts(): {
   role: WardChromeRole;
@@ -60,55 +47,16 @@ export function useWardNavCounts(): {
   placeId: string | undefined;
 } {
   const pathname = usePathname() ?? "";
-  const { movements, units, referrals, bedReleases, leaveBeds, admissions } = useWardFlowSelect(
-    "movements",
-    "units",
-    "referrals",
-    "bedReleases",
-    "leaveBeds",
-    "admissions",
-  );
-  const now = useWardFlowClock();
-  const thresholds = useDueSoonThresholds();
-  const network = useWardNetwork();
-  const service = useServiceScope();
   const routeRole = wardChromeRole(pathname);
   // Role access plan: a non-coordinator desk's nav and Tasks follow its own role.
   const deskRole = useAccessShellRole(WARD_SHELL_ROLE);
   // Q201 (Josh, 1 Nov 2026): the menu, phone dock and Tasks follow the desk chosen in "Go to a desk",
   // as the person card and the "Working as" note already do. Role access, when on, still decides.
   const personaRole = useShellPersonaRole();
-  const { scope } = useEffectiveWardAccess();
-  const placeUnits = useMemo(() => {
-    if (scope.kind !== "site" && scope.kind !== "service" && scope.kind !== "ward") return null;
-    const places = wardPlaceLookup(units);
-    return units.filter((unit) => unitInScope(scope, unit.id, places));
-  }, [scope, units]);
-  const counts = wardNavCounts({
-    movements,
-    units,
-    sites: network.sites,
-    referrals,
-    bedReleases,
-    leaveBeds,
-    admissions,
-    now,
-    thresholds,
-    service,
-  });
   return {
     role: deskRole === WARD_SHELL_ROLE ? routeRole : deskRole,
     shellRole: personaRole,
-    counts:
-      placeUnits && counts.capacity
-        ? {
-            ...counts,
-            capacity: {
-              ...counts.capacity,
-              value: totalReadyBedsNow(placeUnits, admissions ?? [], bedReleases, [...movements, ...referrals]),
-            },
-          }
-        : counts,
+    counts: useDeskNavCounts(),
     placeId: wardPlaceIdFor(pathname),
   };
 }

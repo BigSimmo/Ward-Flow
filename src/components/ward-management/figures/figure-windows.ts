@@ -30,7 +30,14 @@ import {
 } from "@/components/ward-management/ward-clock";
 import { formatClockAmPm } from "@/components/ward-management/ward-clock-am-pm";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import {
+  ED_SEVERE_PRESSURE_WAIT_MINUTES,
+  LONG_WAIT_MINUTES,
+} from "@/components/ward-management/ward-operational-defaults";
 import { FREQUENT_PRESENTER_WINDOW_MONTHS } from "@/components/ward-management/ward-patient-care-plans";
+
+/** The rolling release window (`releaseBand`): one day, in hours. */
+const ROLLING_HOURS = MINUTES_PER_DAY / 60;
 
 export type StatisticsWindowId =
   | "now"
@@ -105,7 +112,7 @@ export const FIGURE_WINDOWS: readonly FigureWindow[] = [
     name: "ED wait bands",
     start: "Each journey's start in the ED (`openedAt`)",
     end: "Now",
-    usedBy: "Over 8 h and over 24 h in ED, the ED wait bands",
+    usedBy: `Over ${ED_SEVERE_PRESSURE_WAIT_MINUTES / 60} h and over ${LONG_WAIT_MINUTES / 60} h in ED, the ED wait bands`,
     source: "`inEdOver` (`ward-shared-figures.ts`), `ED_WAIT_BANDS` (`statistics/statistics-ed-waits.ts`)",
   },
   {
@@ -134,10 +141,10 @@ export const FIGURE_WINDOWS: readonly FigureWindow[] = [
   },
   {
     id: "discharged-rolling",
-    name: "Last 24 hours",
-    start: "24 hours before now",
+    name: `Last ${ROLLING_HOURS} hours`,
+    start: `${ROLLING_HOURS} hours before now`,
     end: "Now",
-    usedBy: "A release confirmed in the last 24 hours (a rolling window, not the calendar day)",
+    usedBy: `A release confirmed in the last ${ROLLING_HOURS} hours (a rolling window, not the calendar day)`,
     source: "`releaseBand` (`ward-bed-availability.ts`)",
   },
   {

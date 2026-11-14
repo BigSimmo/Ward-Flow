@@ -155,7 +155,6 @@
       "src/components/ward-management/search/ward-smart-search.ts": 1,
       "src/components/ward-management/triage/use-triage-people.ts": 2,
       "src/components/ward-management/ward-derivations.ts": 1,
-      "src/components/ward-management/ward-nav-counts.ts": 1,
       "src/components/ward-management/ward-referrals.ts": 1
     },
     "median": {
