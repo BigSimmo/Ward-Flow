@@ -409,6 +409,21 @@ export type HistoryLineAuditEvent = AuditBase & {
   details: { kind: "history-line"; line: HistoryLineDetails | null };
 };
 export type AuditEvent = TypedAuditEvent | HistoryLineAuditEvent;
+/**
+ * D-222 (choice 1): a line as a desk other than the coordinator sees it, or `null` when it may not.
+ * Accepted lines only; refusals stay with the coordinator, and so do record-access receipts (their
+ * own rule) and reviews. A typed line's before and after facts are withheld: what changed, the desk
+ * and the time remain. The one shape the stored-state check pins (`RECORD_ADMISSION_CARE`) keeps it.
+ */
+export function sharedHistoryLine(event: AuditEvent): AuditEvent | null {
+  if (event.outcome !== "accepted" || event.category === "record-access" || event.category === "review") return null;
+  if (isHistoryLine(event) && event.details.line === null) return event;
+  const details =
+    event.action === "RECORD_ADMISSION_CARE"
+      ? { kind: "care", operation: null, recorded: null }
+      : { kind: "history-line", line: isHistoryLine(event) ? event.details.line : null };
+  return { ...event, details } as AuditEvent;
+}
 /** A line written by the D-222 table rather than a typed capture. Never on the Review list. */
 export function isHistoryLine(event: AuditEvent): event is HistoryLineAuditEvent {
   return (event.details as { kind?: unknown } | undefined)?.kind === "history-line";

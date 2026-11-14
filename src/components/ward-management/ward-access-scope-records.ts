@@ -216,6 +216,11 @@ export function coordinatorRecordScope(
         return referralIds.has(record.referralId);
       case "bed-release":
         return releaseIds.has(record.releaseId) && unitIn(record.unitId);
+      // D-222: a line about a person this desk sees, or about one of its wards. A bed call stays out.
+      case "patient":
+        return patientIds.has(record.patientId);
+      case "unit":
+        return unitIn(record.unitId);
       default:
         return false;
     }

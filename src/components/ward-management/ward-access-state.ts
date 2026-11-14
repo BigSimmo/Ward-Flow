@@ -23,7 +23,7 @@ import {
 } from "@/components/ward-management/alerts/ward-broadcast-model";
 import { directiveDesks, wardsInBroadcastScope } from "./alerts/global-alert-view";
 import { meetingActionOfInboxId } from "./bed-meeting/bed-meeting-actions";
-import type { AuditEvent, AuditReview } from "@/components/ward-management/ward-audit";
+import { sharedHistoryLine, type AuditEvent, type AuditReview } from "@/components/ward-management/ward-audit";
 import { movementSourceAdmission, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { syntheticGovernanceAuditEvents } from "@/components/ward-management/ward-governance-seed";
 import { adjustSexMix, mixSexOf } from "@/components/ward-management/ward-eligibility";
@@ -146,6 +146,12 @@ const inboxRows =
           }),
         ) as WardFlowState[K]);
 
+/** D-222: a line a desk acted on another ward's behalf stays with that ward's desks. */
+function actedInScope(event: AuditEvent, unitIn: (unitId: string) => boolean): boolean {
+  const acting = event.actor.actingUnitId;
+  return acting === null || unitIn(acting);
+}
+
 /** Is an audit entry about something the desk sees. Configuration and unresolved entries are not. */
 function auditSubjectInScope(event: AuditEvent, context: Context): boolean {
   const subject = event.subject;
@@ -158,6 +164,11 @@ function auditSubjectInScope(event: AuditEvent, context: Context): boolean {
     case "referral":
       return has(context.scoped.referrals, subject.referralId);
     case "bed-release":
+      return context.unitIn(subject.unitId);
+    // D-222: a line about a person this desk sees, or about one of its wards. A bed call stays out.
+    case "patient":
+      return context.scoped.patients.some((patient) => patient.id === subject.patientId);
+    case "unit":
       return context.unitIn(subject.unitId);
     default:
       return false;
@@ -481,17 +492,22 @@ export function scopeWardFlowState(
     reviewableBreakGlassEventIds: options.reviewableBreakGlassEventIds ?? new Set<string>(),
     now: options.now,
   };
-  const auditEvents = state.auditEvents.filter(
-    (event) =>
-      access.role !== "executive" &&
-      (coordinator
-        ? auditSubjectInScope(event, { ...partial, auditEvents: [] }) && auditDetailWardInScope(event, unitIn)
-        : event.category === "record-access" &&
-          event.subject.kind === "admission" &&
-          admissionIds.has(event.subject.admissionId) &&
-          // A dates-only stay opens no record, so it has no receipt to read (audit 26 Oct).
-          !scoped.datesOnlyAdmissionIds.has(event.subject.admissionId)),
-  );
+  const inScope = (event: AuditEvent) =>
+    auditSubjectInScope(event, { ...partial, auditEvents: [] }) && auditDetailWardInScope(event, unitIn);
+  const auditEvents = state.auditEvents.flatMap((event): AuditEvent[] => {
+    if (access.role === "executive") return [];
+    if (coordinator) return inScope(event) ? [event] : [];
+    const receipt =
+      event.category === "record-access" &&
+      event.subject.kind === "admission" &&
+      admissionIds.has(event.subject.admissionId) &&
+      // A dates-only stay opens no record, so it has no receipt to read (audit 26 Oct).
+      !scoped.datesOnlyAdmissionIds.has(event.subject.admissionId);
+    if (receipt) return [event];
+    // D-222 (choice 1): accepted lines about records this desk sees, without their before/after facts.
+    const shared = inScope(event) && actedInScope(event, unitIn) ? sharedHistoryLine(event) : null;
+    return shared ? [shared] : [];
+  });
   const context: Context = { ...partial, auditEvents };
   const next = {} as Record<keyof WardFlowState, unknown>;
   for (const key of Object.keys(FIELD_RULES) as (keyof WardFlowState)[]) next[key] = FIELD_RULES[key](context);
