@@ -206,11 +206,12 @@ describe("the ED screen's form-expiry line reads only the typed expiry", () => {
 
     const line = screen.getByTestId(`ward-ed-form-expiry-${PAST_DUE_ID}`);
     // D-93 (31 Oct 2026): the typed time only, never "(passed 1h 05m ago)".
-    expect(line.textContent ?? "").toMatch(/^Ended .+ as typed$/);
+    expect(line.textContent ?? "").toMatch(/^Ended .+$/);
 
     const warning = screen.getByTestId(`ward-ed-form-expiry-warning-${PAST_DUE_ID}`);
     expect(warning).toHaveTextContent("Warning: past the expiry written on the form. Check the form.");
-    expect(warning).toHaveAttribute("data-level", "warning");
+    // Master stress test LG-1 (14 Nov 2026): passed is red, as on Forms and Delays (D-210 ruling 3).
+    expect(warning).toHaveAttribute("data-level", "danger");
 
     // "Never disables a control": pastDue and clearDue are identical in every field any
     // blocked-reason function on this board reads (stage, transport, closure, acceptedUnitId,
@@ -226,11 +227,14 @@ describe("the ED screen's form-expiry line reads only the typed expiry", () => {
     }
   });
 
-  it("a dueAt inside the warning band but not yet passed shows the close warning, not the passed one", () => {
+  it("a dueAt inside the urgent warning but not yet passed shows Act now, not the passed warning", () => {
     render(<EdScreen edId="arm-ed" />);
+    // Master stress test RV1a-1 (14 Nov 2026): 30 minutes out is within the 1 h urgent warning, so
+    // the ED row is red Act now, as Forms, Delays and the patient page are (D-210 ruling 3).
     const warning = screen.getByTestId(`ward-ed-form-expiry-warning-${CLOSE_DUE_ID}`);
-    expect(warning).toHaveTextContent("Warning: the expiry written on the form is close.");
-    expect(warning).toHaveAttribute("data-level", "warning");
+    expect(warning).toHaveTextContent("Act now: the expiry written on the form is close.");
+    expect(warning).toHaveAttribute("data-level", "danger");
+    expect(screen.getByTestId(`ward-ed-patient-${CLOSE_DUE_ID}`)).toHaveAttribute("data-act-now", "true");
   });
 
   it("past the typed expiry says so in words on the board, and close does not (CS-11)", () => {
@@ -241,9 +245,10 @@ describe("the ED screen's form-expiry line reads only the typed expiry", () => {
     // checked" still in view; the full wording, word for word, is the Form button's description
     // and heads the menu it opens.
     const passed = screen.getByTestId(`ward-ed-form-passed-${PAST_DUE_ID}`);
-    expect(passed).toHaveTextContent(/^ended \d{2}:\d{2}( yesterday)?, not checked$/u);
+    // D-218 (Josh, 14 Nov 2026): no "not checked" or "as typed" hedge on the row or its description.
+    expect(passed).toHaveTextContent(/^ended \d{2}:\d{2}( yesterday)?$/u);
     expect(passed).not.toHaveTextContent(/ago|left|overdue|\dh|\dm/u);
-    const full = /^ended \d{2}:\d{2}( yesterday)? as typed \(limits not legally checked\)$/u;
+    const full = /^ended \d{2}:\d{2}( yesterday)?$/u;
     expect(passed.getAttribute("title")).toMatch(full);
     const pick = screen.getByTestId(`ward-ed-form-pick-${PAST_DUE_ID}`);
     expect(pick).toHaveAccessibleDescription(full);
@@ -256,11 +261,11 @@ describe("the ED screen's form-expiry line reads only the typed expiry", () => {
     expect(formCell.querySelector("svg circle")).toBeNull();
     expect(screen.queryByTestId(`ward-ed-form-passed-${CLOSE_DUE_ID}`)).toBeNull();
     expect(screen.queryByTestId(`ward-ed-form-passed-${CLEAR_DUE_ID}`)).toBeNull();
-    // A time not yet reached reads "ends …, not checked" under the form, with the full words behind it.
+    // A time not yet reached reads "ends …" under the form, with the full words behind it (D-218).
     const ends = screen.getByTestId(`ward-ed-form-ends-${CLEAR_DUE_ID}`);
-    expect(ends).toHaveTextContent(/^ends \d{2}:\d{2}( tomorrow)?, not checked$/u);
+    expect(ends).toHaveTextContent(/^ends \d{2}:\d{2}( tomorrow)?$/u);
     expect(screen.getByTestId(`ward-ed-form-pick-${CLEAR_DUE_ID}`)).toHaveAccessibleDescription(
-      /^ends \d{2}:\d{2}( tomorrow)? as typed \(limits not legally checked\)$/u,
+      /^ends \d{2}:\d{2}( tomorrow)?$/u,
     );
   });
 
@@ -299,7 +304,7 @@ describe("the ED screen's form-expiry line reads only the typed expiry", () => {
   it("a dueAt well clear of the warning band shows no warning at all", () => {
     render(<EdScreen edId="arm-ed" />);
     expect(screen.getByTestId(`ward-ed-form-expiry-${CLEAR_DUE_ID}`).textContent ?? "").toMatch(
-      /^Ends .+ as typed$/, // D-93: never "(3h 20m left)"
+      /^Ends .+$/, // D-93: never "(3h 20m left)"
     );
     expect(screen.queryByTestId(`ward-ed-form-expiry-warning-${CLEAR_DUE_ID}`)).not.toBeInTheDocument();
   });

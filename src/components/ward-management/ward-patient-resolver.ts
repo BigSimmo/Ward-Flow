@@ -209,7 +209,7 @@ export const NAME_NOT_RECORDED = "Name not recorded";
 export const UMRN_NOT_RECORDED = "UMRN not recorded";
 /** The person is recorded, but this desk's access scope leaves their record out (Q29). */
 export const NAME_NOT_SHOWN = "Name not shown on this desk";
-const UMRN_NOT_SHOWN = "UMRN not shown on this desk";
+export const UMRN_NOT_SHOWN = "UMRN not shown on this desk";
 
 /**
  * M103 (Josh, 10 Nov 2026): how a printed sheet names a person, initials and UMRN only, never the

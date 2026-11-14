@@ -21,13 +21,13 @@ const AT_1542 = 15 * 60 + 42;
 describe("legal times on another day show the date, never an age (D1, D-93)", () => {
   it("prints the date for a typed time three days before now", () => {
     const line = typedTimeLine(AT_1542 - 3 * MINUTES_PER_DAY, NOW, DAY_ZERO);
-    expect(line).toBe("Ended Tue 10 Nov 15:42 as typed");
+    expect(line).toBe("Ended Tue 10 Nov 15:42");
     expect(line).not.toMatch(/\bago\b|\bin \d+ days?\b/);
   });
 
   it("prints the date for a typed time three days after now", () => {
     const phrase = typedTimePhrase(AT_1542 + 3 * MINUTES_PER_DAY, NOW, DAY_ZERO);
-    expect(phrase).toBe("ends Mon 16 Nov 15:42 as typed");
+    expect(phrase).toBe("ends Mon 16 Nov 15:42");
     expect(phrase).not.toMatch(/\bago\b|\bin \d+ days?\b/);
   });
 

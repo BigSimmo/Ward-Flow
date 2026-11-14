@@ -47,6 +47,7 @@ import { plural } from "@/components/ward-management/ward-plural";
 import { WardStepDownRequest } from "@/components/ward-management/referrals/step-down-request";
 import dynamic from "next/dynamic";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
+import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 // Batch 3 item 23: a carer call back, from the ward's bed record. Loaded with the open drawer.
 const CarerCallbackCard = dynamic(
   withLoadRetry(() => import("@/components/ward-management/carer-callback-card").then((m) => m.CarerCallbackCard)),
@@ -188,6 +189,11 @@ export function WardBoardDetailPanel({
   unit: Unit;
 }) {
   const [dateTimeWrong, setDateTimeWrong] = useState(false);
+  // Demo-Actions-AC1-1/2/3: the bed steps here are offered only to a desk whose role may take them
+  // (the permission matrix). The site bed manager keeps Record hold-up and sees no step that would
+  // save nothing (DESIGN-SYSTEM.md, Actions; F-54).
+  const roleGate = useRoleGate();
+  const may = (eventType: Parameters<typeof roleGate>[0]) => roleGate(eventType).allowed;
   // Nothing chosen: no drawer. The bed grid itself is the prompt (drawer review, 6 Nov 2026).
   if (selectedTile === null) return null;
 
@@ -261,49 +267,53 @@ export function WardBoardDetailPanel({
     }, 0);
   };
 
+  const mayLeave = may("RECORD_LEAVING");
+  const mayMoveDate = may("UPDATE_EXPECTED_DISCHARGE");
   const foot =
     occupied !== null ? (
       <>
-        <button
-          type="button"
-          className={FOOT_PRIMARY}
-          data-testid="ward-board-record-leaving-submit"
-          onClick={(e) => {
-            const executeLeaving = (leavingDestination: LeavingDestination) => {
-              recordDepartureAndReport(
-                () =>
-                  recordWardDeparture
-                    ? recordWardDeparture(selectedTile.key, unit.id, leavingDestination)
-                    : raise("RECORD_LEAVING", {
-                        admissionId: selectedTile.key,
-                        actingUnitId: unit.id,
-                        leavingDestination,
-                      }),
-                `Recorded discharge: ${tileWho || nameFor(selectedTile.key)} has left the ward.`,
-                selectedTile.key,
-                tileWho || nameFor(selectedTile.key),
-              );
-              closeDetail();
-            };
+        {mayLeave ? (
+          <button
+            type="button"
+            className={FOOT_PRIMARY}
+            data-testid="ward-board-record-leaving-submit"
+            onClick={(e) => {
+              const executeLeaving = (leavingDestination: LeavingDestination) => {
+                recordDepartureAndReport(
+                  () =>
+                    recordWardDeparture
+                      ? recordWardDeparture(selectedTile.key, unit.id, leavingDestination)
+                      : raise("RECORD_LEAVING", {
+                          admissionId: selectedTile.key,
+                          actingUnitId: unit.id,
+                          leavingDestination,
+                        }),
+                  `Recorded discharge: ${tileWho || nameFor(selectedTile.key)} has left the ward.`,
+                  selectedTile.key,
+                  tileWho || nameFor(selectedTile.key),
+                );
+                closeDetail();
+              };
 
-            // Audit CS3-07: with no destination chosen yet, the confirmation asks for one.
-            // Item 18: with transport still pending, it always asks whether they are waiting for it.
-            if (!requireConfirmation && leavingDestination !== "" && !transportPending) {
-              executeLeaving(leavingDestination);
-              return;
-            }
+              // Audit CS3-07: with no destination chosen yet, the confirmation asks for one.
+              // Item 18: with transport still pending, it always asks whether they are waiting for it.
+              if (!requireConfirmation && leavingDestination !== "" && !transportPending) {
+                executeLeaving(leavingDestination);
+                return;
+              }
 
-            dialogTriggerRef.current = e.currentTarget;
-            setPendingConfirm({
-              kind: "leaving",
-              who: tileWho || nameFor(selectedTile.key),
-              admissionId: selectedTile.key,
-              ...(transportPending ? { offerTransport: true } : {}),
-            });
-          }}
-        >
-          Record that they have left
-        </button>
+              dialogTriggerRef.current = e.currentTarget;
+              setPendingConfirm({
+                kind: "leaving",
+                who: tileWho || nameFor(selectedTile.key),
+                admissionId: selectedTile.key,
+                ...(transportPending ? { offerTransport: true } : {}),
+              });
+            }}
+          >
+            Record that they have left
+          </button>
+        ) : null}
         <DrawerFootRow className={redesign.footRow}>
           <button
             type="button"
@@ -326,15 +336,17 @@ export function WardBoardDetailPanel({
           >
             Record hold-up
           </button>
-          <button
-            type="button"
-            className={FOOT_SECONDARY}
-            aria-expanded={editingDate}
-            aria-controls={editingDate ? "ward-board-date-edit" : undefined}
-            onClick={startDateEdit}
-          >
-            Move the date
-          </button>
+          {mayMoveDate ? (
+            <button
+              type="button"
+              className={FOOT_SECONDARY}
+              aria-expanded={editingDate}
+              aria-controls={editingDate ? "ward-board-date-edit" : undefined}
+              onClick={startDateEdit}
+            >
+              Move the date
+            </button>
+          ) : null}
         </DrawerFootRow>
       </>
     ) : undefined;
@@ -380,7 +392,7 @@ export function WardBoardDetailPanel({
                   <h3 id="ward-board-record-heading" className={redesign.recordHeading}>
                     Record for this stay
                   </h3>
-                  {editingDate && dateEdit !== null ? (
+                  {editingDate && dateEdit !== null && mayMoveDate ? (
                     <form
                       id="ward-board-date-edit"
                       className={styles.dateEditForm}
@@ -457,145 +469,157 @@ export function WardBoardDetailPanel({
                       </button>
                     </form>
                   ) : null}
-                  <div data-testid="ward-board-away-at-ed" className={styles.awayAtEdBlock}>
-                    {occupied.awayAtEdHours === null ? (
-                      <button
-                        type="button"
-                        className={`${SEC_BUTTON} ${styles.fullWidthBtn}`}
-                        data-testid="ward-board-record-away-submit"
-                        onClick={(e) => {
-                          const executeAway = () => {
+                  {may(
+                    occupied.awayAtEdHours === null
+                      ? "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT"
+                      : "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
+                  ) ? (
+                    <div data-testid="ward-board-away-at-ed" className={styles.awayAtEdBlock}>
+                      {occupied.awayAtEdHours === null ? (
+                        <button
+                          type="button"
+                          className={`${SEC_BUTTON} ${styles.fullWidthBtn}`}
+                          data-testid="ward-board-record-away-submit"
+                          onClick={(e) => {
+                            const executeAway = () => {
+                              dispatchAndReport(
+                                () =>
+                                  raise("RECORD_AWAY_AT_EMERGENCY_DEPARTMENT", {
+                                    admissionId: selectedTile.key,
+                                    actingUnitId: unit.id,
+                                  }),
+                                `Recorded: ${nameFor(selectedTile.key)} is currently away at an emergency department. Their bed is still held.`,
+                                nameFor(selectedTile.key),
+                              );
+                            };
+
+                            if (!requireConfirmation) {
+                              executeAway();
+                              return;
+                            }
+
+                            dialogTriggerRef.current = e.currentTarget;
+                            setPendingConfirm({
+                              kind: "away_at_ed",
+                              who: nameFor(selectedTile.key),
+                              admissionId: selectedTile.key,
+                            });
+                          }}
+                        >
+                          Gone to an ED
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className={`${SEC_BUTTON} ${styles.fullWidthBtn}`}
+                          data-testid="ward-board-record-returned-submit"
+                          onClick={() =>
                             dispatchAndReport(
                               () =>
-                                raise("RECORD_AWAY_AT_EMERGENCY_DEPARTMENT", {
+                                raise("RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT", {
                                   admissionId: selectedTile.key,
                                   actingUnitId: unit.id,
                                 }),
-                              `Recorded: ${nameFor(selectedTile.key)} is currently away at an emergency department. Their bed is still held.`,
+                              `Returned to ward: ${nameFor(selectedTile.key)} marked back from the emergency department.`,
                               nameFor(selectedTile.key),
-                            );
-                          };
-
-                          if (!requireConfirmation) {
-                            executeAway();
-                            return;
+                            )
                           }
-
-                          dialogTriggerRef.current = e.currentTarget;
-                          setPendingConfirm({
-                            kind: "away_at_ed",
-                            who: nameFor(selectedTile.key),
-                            admissionId: selectedTile.key,
-                          });
-                        }}
-                      >
-                        Gone to an ED
-                      </button>
-                    ) : (
+                        >
+                          Record that they are back on the ward
+                        </button>
+                      )}
+                      <p className={`${styles.personLine} ${styles.awayAtEdNote}`}>This trip does not free the bed.</p>
+                    </div>
+                  ) : null}
+                  {may("RECORD_WARD_DIAGNOSIS") ? (
+                    <WardDiagnosisControl
+                      key={occupied.key}
+                      occupant={occupied}
+                      unitId={unit.id}
+                      raise={raise}
+                      dispatchAndReport={(record, success) => dispatchAndReport(record, success, nameFor(occupied.key))}
+                    />
+                  ) : null}
+                  {may("SET_STEP_DOWN_CANDIDATE") ? (
+                    <div data-testid="ward-board-stepdown-container" className={styles.fullRowSpaced}>
                       <button
                         type="button"
                         className={`${SEC_BUTTON} ${styles.fullWidthBtn}`}
-                        data-testid="ward-board-record-returned-submit"
-                        onClick={() =>
+                        aria-pressed={occupied.stepDownCandidate}
+                        data-testid="ward-board-stepdown-toggle"
+                        onClick={() => {
+                          const nextStepDown = !occupied.stepDownCandidate;
                           dispatchAndReport(
                             () =>
-                              raise("RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT", {
-                                admissionId: selectedTile.key,
-                                actingUnitId: unit.id,
-                              }),
-                            `Returned to ward: ${nameFor(selectedTile.key)} marked back from the emergency department.`,
-                            nameFor(selectedTile.key),
-                          )
-                        }
-                      >
-                        Record that they are back on the ward
-                      </button>
-                    )}
-                    <p className={`${styles.personLine} ${styles.awayAtEdNote}`}>This trip does not free the bed.</p>
-                  </div>
-                  <WardDiagnosisControl
-                    key={occupied.key}
-                    occupant={occupied}
-                    unitId={unit.id}
-                    raise={raise}
-                    dispatchAndReport={(record, success) => dispatchAndReport(record, success, nameFor(occupied.key))}
-                  />
-                  <div data-testid="ward-board-stepdown-container" className={styles.fullRowSpaced}>
-                    <button
-                      type="button"
-                      className={`${SEC_BUTTON} ${styles.fullWidthBtn}`}
-                      aria-pressed={occupied.stepDownCandidate}
-                      data-testid="ward-board-stepdown-toggle"
-                      onClick={() => {
-                        const nextStepDown = !occupied.stepDownCandidate;
-                        dispatchAndReport(
-                          () =>
-                            raise("SET_STEP_DOWN_CANDIDATE", {
-                              actingUnitId: unit.id,
-                              admissionId: occupied.key,
-                              stepDownCandidate: nextStepDown,
-                            }),
-                          nextStepDown
-                            ? `Marked ${nameFor(occupied.key)} as step-down candidate for subacute care.`
-                            : `Removed step-down candidate flag for ${nameFor(occupied.key)}.`,
-                          nameFor(occupied.key),
-                        );
-                      }}
-                    >
-                      {occupied.stepDownCandidate ? (
-                        <>
-                          <StatusGlyph tone="success" /> Marked for step-down
-                        </>
-                      ) : (
-                        "Mark for step-down"
-                      )}
-                    </button>
-                    {/* Feature 12 (9 Nov 2026): the ward asks a step-down ward through its own referral. */}
-                    <WardStepDownRequest
-                      admission={admissions.find((admission) => admission.id === occupied.key)}
-                      fullWidthClassName={styles.fullWidthBtn}
-                    />
-                  </div>
-                  <CarerCallbackCard admissionId={occupied.key} />
-                  {occupied.days !== null && occupied.days >= CLINICAL_VALUES.longStayPrompt.value && (
-                    <div
-                      className={`${styles.barrierSelectGroup} ${styles.fullRowSpaced}`}
-                      data-testid="ward-board-barrier-container"
-                    >
-                      <label
-                        htmlFor="ward-board-barrier-select"
-                        className={cx(styles.leavingLabel, redesign.fieldLabel)}
-                      >
-                        Long-stay barrier (stay: {plural(occupied.days, "day", "days")})
-                      </label>
-                      <Select
-                        id="ward-board-barrier-select"
-                        data-testid="ward-board-barrier-select"
-                        value={occupied.dischargeBarrier ?? "None"}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          dispatchAndReport(
-                            () =>
-                              raise("SET_DISCHARGE_BARRIER", {
+                              raise("SET_STEP_DOWN_CANDIDATE", {
                                 actingUnitId: unit.id,
                                 admissionId: occupied.key,
-                                barrier: val === "None" ? null : (val as DischargeBarrier),
+                                stepDownCandidate: nextStepDown,
                               }),
-                            `Long-stay barrier for ${nameFor(occupied.key)}: ${val}`,
+                            nextStepDown
+                              ? `Marked ${nameFor(occupied.key)} as step-down candidate for subacute care.`
+                              : `Removed step-down candidate flag for ${nameFor(occupied.key)}.`,
                             nameFor(occupied.key),
                           );
                         }}
                       >
-                        <option value="None">None</option>
-                        {DISCHARGE_BARRIERS.map((barrier) => (
-                          <option key={barrier} value={barrier}>
-                            {barrier}
-                          </option>
-                        ))}
-                      </Select>
+                        {occupied.stepDownCandidate ? (
+                          <>
+                            <StatusGlyph tone="success" /> Marked for step-down
+                          </>
+                        ) : (
+                          "Mark for step-down"
+                        )}
+                      </button>
+                      {/* Feature 12 (9 Nov 2026): the ward asks a step-down ward through its own referral. */}
+                      <WardStepDownRequest
+                        admission={admissions.find((admission) => admission.id === occupied.key)}
+                        fullWidthClassName={styles.fullWidthBtn}
+                      />
                     </div>
-                  )}
-                  {occupied.days !== null && (
+                  ) : null}
+                  <CarerCallbackCard admissionId={occupied.key} />
+                  {occupied.days !== null &&
+                    occupied.days >= CLINICAL_VALUES.longStayPrompt.value &&
+                    may("SET_DISCHARGE_BARRIER") && (
+                      <div
+                        className={`${styles.barrierSelectGroup} ${styles.fullRowSpaced}`}
+                        data-testid="ward-board-barrier-container"
+                      >
+                        <label
+                          htmlFor="ward-board-barrier-select"
+                          className={cx(styles.leavingLabel, redesign.fieldLabel)}
+                        >
+                          Long-stay barrier (stay: {plural(occupied.days, "day", "days")})
+                        </label>
+                        <Select
+                          id="ward-board-barrier-select"
+                          data-testid="ward-board-barrier-select"
+                          value={occupied.dischargeBarrier ?? "None"}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            dispatchAndReport(
+                              () =>
+                                raise("SET_DISCHARGE_BARRIER", {
+                                  actingUnitId: unit.id,
+                                  admissionId: occupied.key,
+                                  barrier: val === "None" ? null : (val as DischargeBarrier),
+                                }),
+                              `Long-stay barrier for ${nameFor(occupied.key)}: ${val}`,
+                              nameFor(occupied.key),
+                            );
+                          }}
+                        >
+                          <option value="None">None</option>
+                          {DISCHARGE_BARRIERS.map((barrier) => (
+                            <option key={barrier} value={barrier}>
+                              {barrier}
+                            </option>
+                          ))}
+                        </Select>
+                      </div>
+                    )}
+                  {occupied.days !== null && may("SET_CLINICALLY_READY") && (
                     <ClinicallyReadyControl
                       key={`${occupied.key}-${occupied.clinicallyReady?.since ?? ""}-${occupied.clinicallyReady?.reason ?? ""}`}
                       occupant={occupied}
@@ -612,7 +636,7 @@ export function WardBoardDetailPanel({
               )}
               {/* Where they are going sits last in the body, right above the foot's primary that
                   records it. */}
-              {occupied !== null && (
+              {occupied !== null && mayLeave && (
                 <section className={cx(styles.leaving, redesign.recordSection)} data-testid="ward-board-record-leaving">
                   <LeavingDestinationField
                     id="ward-board-leaving-destination"

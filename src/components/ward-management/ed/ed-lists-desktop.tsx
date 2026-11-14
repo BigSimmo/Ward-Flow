@@ -20,7 +20,6 @@ import {
   FORM_RECORDED_ENDED,
   legalFormNowWords,
 } from "@/components/ward-management/ward-legal-form-progression";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { ReferralIntakeSummary } from "@/components/ward-management/referrals/referral-intake-summary";
 import { psychReviewStage } from "./ed-psych-review";
 import handover from "./ed-handover.module.css";
@@ -434,10 +433,7 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
                       ) : due === undefined || due === null ? (
                         <span className={handover.listQuiet}>Not recorded</span>
                       ) : (
-                        <span>
-                          {`${due < now ? "ended" : "ends"} ${formatInstantWithDay(due, now)} as typed`}{" "}
-                          <LegalLimitsNotChecked variant="tag" />
-                        </span>
+                        <span>{`${due < now ? "ended" : "ends"} ${formatInstantWithDay(due, now)}`}</span>
                       )}
                     </td>
                   </tr>

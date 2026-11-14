@@ -11,6 +11,7 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { URGENCY_LEVELS } from "@/components/ward-management/ward-model";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { ToastProvider } from "@/components/wf";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 
 /**
@@ -570,5 +571,53 @@ describe("ShortlistPanel greyed Override", () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+});
+
+/** Item 195 (Josh, 14 Nov 2026): Refer offers Undo on its toast, as Activity does when signed in. */
+describe("ShortlistPanel: Refer offers Undo (item 195)", () => {
+  function UndoHarness() {
+    const { movements, units, bedReleases, leaveBeds, referrals, now, dispatch, configuration } = useWardFlow();
+    const [selectedUnitId, setSelectedUnitId] = useState<string | undefined>(undefined);
+    return (
+      <>
+        <output data-testid="referred-count">
+          {movements.find((candidate) => candidate.id === "WF-009")?.referredUnitIds.length ?? -1}
+        </output>
+        <ShortlistPanel
+          movement={movements.find((candidate) => candidate.id === "WF-009")}
+          now={now}
+          units={units}
+          bedReleases={bedReleases}
+          leaveBeds={leaveBeds}
+          admissions={wardAdmissions}
+          referrals={referrals}
+          selectedUnitId={selectedUnitId}
+          onSelectUnit={setSelectedUnitId}
+          dispatch={dispatch}
+          parallelReferralCap={configuration.parallelReferralCap}
+        />
+      </>
+    );
+  }
+
+  it("refers, then Undo takes the referral back", () => {
+    render(
+      <ToastProvider>
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <UndoHarness />
+        </WardFlowProvider>
+      </ToastProvider>,
+    );
+    const before = Number(screen.getByTestId("referred-count").textContent);
+    showOverrideWards();
+    fireEvent.click(screen.getByTestId("ward-shortlist-candidate-rph-adult-secure"));
+    fireEvent.click(screen.getByTestId("ward-shortlist-refer"));
+    expect(Number(screen.getByTestId("referred-count").textContent)).toBe(before + 1);
+    expect(screen.getByRole("button", { name: "Undo" }).parentElement?.parentElement?.textContent).toMatch(
+      /^Referred .* to wards/u,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    expect(Number(screen.getByTestId("referred-count").textContent)).toBe(before);
   });
 });

@@ -8,7 +8,7 @@ import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/compon
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { psychReviewStage } from "@/components/ward-management/ed/ed-psych-review";
+import { psychReviewStage, psychReviewStatusWords } from "@/components/ward-management/ed/ed-psych-review";
 import { movementOfferNoReplyWaits, noReplyTimeLabel } from "@/components/ward-management/referrals/referral-no-reply";
 import { wardWaitList } from "@/components/ward-management/ward/ward-wait-list";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -247,5 +247,19 @@ describe("referral response timer", () => {
       dueAt: NOW_ANCHOR + 60,
     });
     expect(refusals(seeded, ward)[0]).toContain("requires role coordinator");
+  });
+});
+
+describe("the row sheet says a review is awaited only once one is asked for (R-STRUCT-28, Desks-R4-3)", () => {
+  it("reads Not asked yet, then Awaiting review, then Examination recorded", () => {
+    const movement = openMovement(seedWardFlowState());
+    const unasked = { ...movement, psychReview: undefined, examination: undefined };
+    expect(psychReviewStatusWords(unasked)).toBe("Not asked yet");
+    expect(psychReviewStage(unasked, NOW_ANCHOR, 30).line).toBe("Review not asked for");
+    const asked = { ...unasked, psychReview: { requestedAt: NOW_ANCHOR - 30 } } as Movement;
+    expect(psychReviewStatusWords(asked)).toBe("Awaiting review");
+    expect(
+      psychReviewStatusWords({ ...asked, examination: movement.examination ?? ({} as Movement["examination"]) }),
+    ).toBe("Examination recorded");
   });
 });

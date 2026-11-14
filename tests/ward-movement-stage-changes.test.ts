@@ -147,12 +147,21 @@ const MOVEMENT_ID = "WF-012";
 const UNIT_DECLINED = "rgh-adult-secure";
 const UNIT_ACCEPTED = "rph-adult-secure";
 
+/** Bed counts go stale after one hour (D-214, 14 Nov 2026): the fixture's wards confirm as the journey starts. */
+function freshSeed(): WardFlowState {
+  const seeded = seedWardFlowState();
+  return {
+    ...seeded,
+    units: seeded.units.map((unit) => ({ ...unit, allocatable: { ...unit.allocatable, confirmedAt: NOW_ANCHOR } })),
+  };
+}
+
 function t(offsetMinutes: number): Instant {
   return NOW_ANCHOR + offsetMinutes;
 }
 
 function buildDrivenFixture() {
-  const s0 = seedWardFlowState();
+  const s0 = freshSeed();
 
   // T12 (item 9, owner answer 17 September 2026): WF-012 is Non-binary, so referring it needs a
   // reason and a recorded ward check — the fixture predates T12 and never carried either.
@@ -435,7 +444,7 @@ function raiseNewReferral(state: WardFlowState, now: Instant) {
 }
 
 function recordCareTransfer() {
-  let state = seedWardFlowState();
+  let state = freshSeed();
   const admission = state.admissions.find((a) => a.state === "occupied" && a.patientId)!;
   const base = state.movements.find((m) => m.cohort === state.units.find((u) => u.id === admission.unitId)?.cohort)!;
   base.admissionId = admission.id;

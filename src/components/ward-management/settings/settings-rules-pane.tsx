@@ -254,13 +254,7 @@ export function SettingsRulesPane({
           </Card>
 
           <Card aria-labelledby="warnings-title" data-rule-card>
-            <CardHead
-              iconPlain
-              id="warnings-title"
-              icon={Gavel}
-              title="Form warnings"
-              meta="Your defaults, not legal limits"
-            />
+            <CardHead iconPlain id="warnings-title" icon={Gavel} title="Form warnings" meta="Your defaults" />
             <RuleRow
               {...common("soon")}
               testId="setting-due-soon-row"
@@ -324,7 +318,7 @@ export function SettingsRulesPane({
             <RuleRow
               {...common("morning")}
               testId="setting-morning-rollup-row"
-              sub="Not a legal limit"
+              sub="Morning bed numbers due"
               subTestId="setting-morning-rollup-desc"
               displayTestId="morning-rollup-display"
               noun="morning bed numbers due time"

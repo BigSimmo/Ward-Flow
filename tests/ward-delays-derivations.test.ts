@@ -391,7 +391,7 @@ describe("waitingSplit", () => {
     expect(bandFor(justUnder8h)).toBe("Under 8 hours");
     expect(bandFor(exactly8h)).toBe("8 to 24 hours");
     expect(bandFor(justUnder24h)).toBe("8 to 24 hours");
-    expect(bandFor(exactly24h)).toBe("Past 24 hours");
+    expect(bandFor(exactly24h)).toBe("Over 24h");
   });
 
   /**
@@ -713,7 +713,7 @@ describe("silent answer reminders — display only, from existing timestamps", (
     // ended at 07:00 under the one shift pattern, so it now reads past end of shift instead.
     expect(silentWardReminder(8 * 60, 12 * 60)).toContain("Ward silent 4 hours");
     // D-22: the reminder marks are Josh's defaults, and the text says so.
-    expect(silentWardReminder(NOW - 120, NOW)).toContain("your default, not a legal limit");
+    expect(silentWardReminder(NOW - 120, NOW)).toContain("(your default)");
     const morningReferral = 8 * 60;
     const afterMorningShift = 15 * 60 + 30;
     expect(silentWardReminder(morningReferral, afterMorningShift)).toContain("07:00–15:00");

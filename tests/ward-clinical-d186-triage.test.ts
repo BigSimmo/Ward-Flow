@@ -91,26 +91,24 @@ describe("Q10: the banner reads a ward stay as the patient page does", () => {
     const person = triagePersonFromWorld(world({ origin: facts.origin, legalStatus: facts.legalStatus }));
     expect(person.nowAt).toBe(facts.origin);
     expect(person.legal).toBe(facts.legalStatus);
-    expect(person.legalTag).toBe("On record · Not legally checked.");
+    expect(person.legalTag).toBe("On record");
   });
 });
 
 describe('Q11: "Chosen today" and "On record"; a picked status reads "as chosen"', () => {
   it("reads the record's status as on record in the start rows and Patient and referral", () => {
     const person = triagePersonFromWorld(world({ legalStatus: "Community treatment order" }));
-    expect(legalLine(person)).toBe("Community treatment order, on record. Not legally checked.");
+    expect(legalLine(person)).toBe("Community treatment order, on record.");
   });
 
   it("reads the chosen status as chosen and only the typed form and date as typed", () => {
     const state = exampleTriage();
-    const legal = "Community treatment order (as chosen), Form 5A · 28/01/2027 23:59 (as typed)";
+    const legal = "Community treatment order, Form 5A · 28/01/2027 23:59";
     expect(foldLine(state, "dec")).toContain(legal);
-    expect(summaryModel(state).keyLine).toContain(
-      "Community treatment order (as chosen), Form 5A 28/01/2027 23:59 (as typed)",
-    );
+    expect(summaryModel(state).keyLine).toContain("Community treatment order, Form 5A 28/01/2027 23:59");
     const noForm = { ...state, legal: "vol" as const };
-    expect(foldLine(noForm, "dec")).toContain("Voluntary (as chosen)");
-    expect(summaryModel(noForm).keyLine).toContain("Voluntary (as chosen)");
+    expect(foldLine(noForm, "dec")).toContain("Voluntary");
+    expect(summaryModel(noForm).keyLine).toContain("Voluntary");
     expect(summaryModel(noForm).keyLine).not.toContain("as typed");
   });
 });

@@ -5,6 +5,7 @@
  * these three files can drift out of sync if a formula changes, so a change here changes every
  * consumer at once rather than needing three coordinated edits.
  */
+import { isPastLimit } from "@/components/ward-management/ward-timed-rule";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { formTimeAsTyped, typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import {
@@ -730,7 +731,7 @@ export function buildActionInbox(
     const waited = now - acceptedAt;
     // Same id, kind and tone either way, so counts, snoozes and act-now figures never move with
     // the flag: only the wording and the owner say the handover is stuck.
-    const stuck = stuckAfter !== undefined && waited >= stuckAfter;
+    const stuck = stuckAfter !== undefined && isPastLimit(waited, stuckAfter);
     items.push({
       id: `${INBOX_CATEGORIES.transport_awaiting_departure.idPrefix}${movement.id}`,
       kind: INBOX_CATEGORIES.transport_awaiting_departure.kind,

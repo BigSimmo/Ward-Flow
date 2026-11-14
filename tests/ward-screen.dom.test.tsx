@@ -549,7 +549,7 @@ describe("ward screen incoming patient arrival confirmation", () => {
     fireEvent.click(arrivalBtn);
     // Walk-through WT-11: the name and UMRN are checked before the arrival is recorded.
     const check = screen.getByTestId("ward-arrival-identity");
-    expect(within(check).getByTestId("ward-arrival-identity-check")).toHaveTextContent(/^Check: .+ · .+/);
+    expect(within(check).getByTestId("ward-arrival-identity-check")).toHaveTextContent(/^Name.+UMRN.+Date of birth.+/);
     fireEvent.click(within(check).getByRole("button", { name: "Confirm arrival" }));
 
     // After arrival, WF-014 closes and is no longer in the "Coming in" list

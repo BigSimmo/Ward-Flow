@@ -1396,7 +1396,7 @@ describe("P3-1 (Ward Lead audit, 2026-09-17): 'Not reviewed' and 'No bed yet' ex
 });
 
 describe("D-24 (owner ruling, 26 Sept 2026): the long-wait flag is a default, never a breach", () => {
-  it("shows 'Waiting past 24 hours' for a movement open past the default, with no breach or standard wording", () => {
+  it("shows 'Waiting over 24 hours' for a movement open past the default, with no breach or standard wording", () => {
     // WF-019 at rgh-ed is seeded open for 2 days 14 hours (ward-movements.ts) specifically so a
     // wait outlasting a day has something real to render against.
     render(
@@ -1408,7 +1408,7 @@ describe("D-24 (owner ruling, 26 Sept 2026): the long-wait flag is a default, ne
     // Needs you opens as a slide-over where the full board table leaves no room beside it
     // (device audit 11 Oct 2026, owner pick A2).
     fireEvent.click(screen.getByTestId("wf-portrait-rail-trigger"));
-    const title = screen.getByText("Waiting past 24 hours");
+    const title = screen.getByText("Waiting over 24 hours");
     const row = title.closest("li");
     expect(row).not.toBeNull();
     expect(row).toHaveTextContent(seedPatientName("WF-019", "formalName"));

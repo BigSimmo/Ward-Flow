@@ -82,6 +82,7 @@ import {
   legalExpiryReminderSummary,
   legalFormBreakdown,
   legalFormGroupRows,
+  legalOrdersEndedToday,
   isLegalDeadlineBreached,
 } from "./legal-forms-derivations";
 import {
@@ -114,9 +115,7 @@ import {
   recentTellSubjects,
   type RecordGap,
 } from "./legal-forms-view";
-import { TYPED_TIME_KEY } from "./legal-time-as-typed";
 import { currentLegalPosition } from "./legal-form-progression";
-import { LegalLimitsNotChecked } from "../legal-limits-not-checked";
 import { PhoneChecklist } from "./legal-forms-phone-checklist";
 import type { LegalFormDetailsSave } from "./legal-form-details";
 import styles from "./legal-forms.module.css";
@@ -424,7 +423,11 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   // Ward role: the ward's own place, named in the title.
   const ownUnitIds = access.scope.kind === "ward" ? access.scope.unitIds : [];
   const ownWardName = units.find((unit) => ownUnitIds.includes(unit.id))?.name;
-  const onFormLabel = routeRole === "ward" && ownWardName ? `on moves to ${ownWardName}` : "on a form";
+  // R-LEGAL-12 (Josh, 14 Nov 2026): the figure counts forms in force only; a quiet note says what ended today.
+  const endedToday = legalOrdersEndedToday(movements, now);
+  const onFormLabel = `${routeRole === "ward" && ownWardName ? `on moves to ${ownWardName}` : "on a form"}${
+    endedToday > 0 ? ` · ${endedToday} ended today` : ""
+  }`;
   // Every count names its noun ("1 form to act on", not "1 Act now"; Josh, 30 Oct 2026).
   const forms = (count: number) => (count === 1 ? "form" : "forms");
   const closedWithForms = movements
@@ -822,8 +825,8 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
     passed === 0
       ? `${actNow} ${forms(actNow)} ${actNow === 1 ? "ends" : "end"} within ${urgentWords}`
       : actUrgent === 0
-        ? `${passed} ${forms(passed)} passed, as typed`
-        : `${passed} passed · ${actUrgent} within ${urgentWords}, as typed`;
+        ? `${passed} ${forms(passed)} passed`
+        : `${passed} passed · ${actUrgent} within ${urgentWords}`;
   const formsTop = (
     <HeroTop
       figures={
@@ -868,7 +871,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
             }
           />
         ) : (
-          <HeroAct tone="calm" title={`None passed or within ${urgentWords}, as typed`} testId="ward-legal-act" />
+          <HeroAct tone="calm" title={`None passed or within ${urgentWords}`} testId="ward-legal-act" />
         )
       }
       chips={
@@ -931,7 +934,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
         ) : (
           <>
             <SrOnly>Legal forms, </SrOnly>
-            Form deadlines <span className={pageTopStyles.soft}>as typed</span>
+            Form deadlines
           </>
         )
       }
@@ -1052,8 +1055,6 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   {highlightCount} of {rows.length} highlighted, all rows stay
                 </p>
               ) : null}
-              {/* The one colour key, near the list (Josh, 30 Oct 2026). */}
-              {shownView === "clocks" && !highlight ? <p className={styles.phoneNote}>{TYPED_TIME_KEY}</p> : null}
               {shownView === "clocks" ? (
                 <section aria-label="Legal forms and deadlines" data-testid="ward-legal-forms-groups">
                   {rows.length === 0 ? (
@@ -1096,11 +1097,6 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
               ) : null}
               {showAdmittedOnAForm ? admittedList : null}
               {shownView === "history" ? historyList : null}
-              {/* FS1: as on desktop, the full notice closes the list it qualifies, so the phone reaches
-                  the people on a form first. */}
-              <div className={styles.listFoot}>
-                <LegalLimitsNotChecked />
-              </div>
             </Card>
             <PhoneSheet open={tasksOpen} onClose={() => setTasksOpen(false)} title="Record and tell">
               {taskStrip}
@@ -1139,13 +1135,10 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   level={2}
                   // The note sits under the title and wraps, so the list's tools keep the right edge.
                   meta={
-                    highlight || shownView === "clocks" ? (
-                      <span className={styles.meta}>
-                        {highlight
-                          ? `${highlightCount} of ${rows.length} highlighted, all rows stay`
-                          : // The one colour key, near the list (Josh, 30 Oct 2026). The group heads say the order.
-                            TYPED_TIME_KEY}
-                      </span>
+                    highlight ? (
+                      <span
+                        className={styles.meta}
+                      >{`${highlightCount} of ${rows.length} highlighted, all rows stay`}</span>
                     ) : undefined
                   }
                   action={
@@ -1190,7 +1183,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                             <span className={tableClasses.th}>Patient</span>
                             <span className={tableClasses.th}>Form</span>
                             <span className={tableClasses.th}>Where</span>
-                            <span className={tableClasses.th}>Ends, as typed</span>
+                            <span className={tableClasses.th}>Ends</span>
                             <span className={tableClasses.th}>Next step</span>
                           </DataRow>
                           <div className={styles.groupHead}>
@@ -1250,10 +1243,6 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
 
                 {showAdmittedOnAForm ? admittedList : null}
                 {shownView === "history" ? historyList : null}
-                {/* The full notice closes the list it qualifies, not a loose line under the hero. */}
-                <div className={styles.listFoot}>
-                  <LegalLimitsNotChecked />
-                </div>
               </Card>
 
               {selected ? (

@@ -158,7 +158,8 @@ export function FormRow({
               <span className={styles.sub}>{standingWord(standing, thresholds)}</span>
             </span>
             <span className={styles.sub}>
-              {standing === "passed" ? "Ended" : "Ends"}, as typed{extended ? ", extended" : ""}
+              {standing === "passed" ? "Ended" : "Ends"}
+              {extended ? ", extended" : ""}
             </span>
           </>
         ) : (
@@ -244,8 +245,13 @@ export function PhoneFormRow({ movement, now, name, umrn, edName, wardName, dimm
         hasDue ? (
           <span className={styles.leftLine}>
             <StatusGlyph tone={STANDING_TONE[standing]} size={9} />
-            {typedClock(dueAt!, now, dayZero)}{" "}
-            <span className={styles.phoneTimeWord}>{standing === "passed" ? "ended, as typed" : "as typed"}</span>
+            {typedClock(dueAt!, now, dayZero)}
+            {standing === "passed" ? (
+              <>
+                {" "}
+                <span className={styles.phoneTimeWord}>ended</span>
+              </>
+            ) : null}
           </span>
         ) : (
           <span className={styles.leftLine}>

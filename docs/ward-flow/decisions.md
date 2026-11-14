@@ -115,7 +115,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-90](#d-90-help-gets-how-do-i-show-me-runs-everywhere-and-help-is-built-without-a-separate-mock-up-step-30-october-2026)                              | Help: How do I and Show me                                                             | Partly replaced by D-91                          |
 | [D-91](#d-91-one-design-home-for-the-redesign-and-joshs-answers-on-help-settings-search-and-notifications-31-october-2026)                              | One design home; Help, Settings, search, notices                                       | Partly replaced by D-107                         |
 | [D-92](#d-92-help-goes-live-before-its-mock-up-review-one-search-box-on-capacity-and-referral-rows-on-home-open-the-panel-31-october-2026)              | Help live before mock-up review                                                        | Active                                           |
-| [D-93](#d-93-legal-form-times-show-only-as-typed-never-as-a-countdown-31-october-2026)                                                                  | Legal form times show only as typed, never as a countdown                              | Active                                           |
+| [D-93](#d-93-legal-form-times-show-only-as-typed-never-as-a-countdown-31-october-2026)                                                                  | Legal form times show only as typed, never as a countdown                              | Wording replaced by D-218                        |
 | [D-94](#d-94-design-rulings-of-31-october-2026)                                                                                                         | Design rulings of 31 October 2026                                                      | Partly replaced (tab size, Q225)                 |
 | [D-95](#d-95-one-page-scroll-and-a-click-outside-closes-a-drawer-3-november-2026)                                                                       | One page scroll; outside click closes                                                  | Active                                           |
 | [D-96](#d-96-a-named-bed-is-pulled-and-its-patient-is-not-also-waiting-8-november-2026)                                                                 | A named bed is pulled, not also waiting                                                | Active                                           |
@@ -161,7 +161,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-136](#d-136-feature-batch-3-shift-change-and-follow-up-two-signed-values-10-november-2026)                                                           | Feature batch 3: two signed values (7-day diversion return, 30-minute handover list)   | Active                                           |
 | [D-137](#d-137-feature-build-batch-5-count-leak-first-tv-change-mark-and-qr-library-10-november-2026)                                                   | Feature build batch 5: count leak first, TV change mark 15 minutes, QR library         | Active                                           |
 | [D-138](#d-138-phone-alert-urgency-by-kind-10-november-2026)                                                                                            | Phone alert urgency by kind                                                            | Active                                           |
-| [D-139](#d-139-phone-statistics-ward-list-a-to-z-and-leave-return-times-as-typed-10-november-2026)                                                      | Phone Statistics ward list A to Z, and leave return times as typed                     | Active                                           |
+| [D-139](#d-139-phone-statistics-ward-list-a-to-z-and-leave-return-times-as-typed-10-november-2026)                                                      | Phone Statistics ward list A to Z, and leave return times as typed                     | Wording replaced by D-218                        |
 | [D-140](#d-140-feature-list-adopted-and-wave-1-begins-10-november-2026)                                                                                 | Feature list adopted, and Wave 1 begins                                                | Active                                           |
 | [D-141](#d-141-batch-1-ed-and-referral-flow-design-approved-with-eleven-answers-11-november-2026)                                                       | Batch 1 design approved, with eleven answers                                           | Active                                           |
 | [D-142](#d-142-batch-4-design-review-and-all-twelve-answers-approved-d-80-amended-for-site-features-11-november-2026)                                   | Batch 4: design review and all twelve answers approved, D-80 amended for site features | Active                                           |
@@ -235,6 +235,12 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-210](#d-210-mechanics-and-clock-audit-fixes-14-november-2026)                                                                                        | Mechanics and clock audit fixes, one PR                                                | Active                                           |
 | [D-211](#d-211-not-medically-cleared-pauses-onward-transfer-14-november-2026)                                                                           | Not medically cleared pauses onward transfer                                           | Active                                           |
 | [D-212](#d-212-the-master-stress-test-replaces-audits-6-11-and-18-14-november-2026)                                                                     | The master stress test replaces Audits 6, 11 and 18                                    | Active                                           |
+| [D-213](#d-213-the-clock-follows-perth-time-from-one-setting-and-the-stored-signed-in-world-is-moved-onto-it-14-november-2026)                          | Clock follows Perth time from one setting                                              | Active                                           |
+| [D-214](#d-214-stress-test-answers-severity-legal-wording-stale-counts-the-site-bed-manager-and-one-beds-ready-figure-14-november-2026)                 | Stress test answers: legal, stale counts, Beds ready                                   | Active                                           |
+| [D-215](#d-215-stress-test-answers-for-after-the-demo-14-november-2026)                                                                                 | Stress test answers for after the demo                                                 | Active                                           |
+| [D-216](#d-216-the-36-sign-off-recommendations-from-the-stress-test-pack-14-november-2026)                                                              | The 36 sign-off recommendations                                                        | Active                                           |
+| [D-217](#d-217-hand-check-answers-medical-trips-and-undo-after-referring-14-november-2026)                                                              | Hand check answers: medical trips and Undo                                             | Active                                           |
+| [D-218](#d-218-no-legal-disclaimer-wording-on-screens-14-november-2026)                                                                                 | No legal disclaimer wording on screens                                                 | Active                                           |
 
 ---
 
@@ -2634,4 +2640,60 @@ is inferred.
 - **Why:** one run instead of three covers the same ground with less waiting before the demo.
 - **Boundary:** no app, clinical value or data changes. Recorded in #1668.
 
-The next free number is D-213.
+## D-213. The clock follows Perth time from one setting, and the stored signed-in world is moved onto it (14 November 2026)
+
+- **Date:** 14 November 2026, 9:53 PM AWST (13:53 UTC). **Decided by:** Josh, in the Ward Flow project chat, answering item 1 of the stress test questions: "The clock should easily be able to be changed. However, please link it automatically to AWST (Perth time), also ensure it is live please and this is reflected in the demo."
+- **Decision:**
+  1. The app's time zone is one setting, `WARD_TIME_ZONE` in `src/lib/ward-time-zone.ts`, default `Australia/Perth` (AWST). Every clock face, day zero, typed time and date label reads it; offsets come from the zone's own rules. The backend config keeps one copy, held equal by a test.
+  2. The stored signed-in world, made by an older build with day zero at a UTC midnight, is moved onto the Perth midnight before it: day zero 8 hours earlier, every stored instant 8 hours later, so every real moment stays put and only the clock face changes (findings Desks-R5-1, Together-X1a-2). The one-off data fix is `backend/ward-flow/proposals/019-perth-day-zero.sql`, run by hand on a copy first, then on the named Ward Flow database in a quiet window, with a backup and an exact rollback.
+  3. The public demo already starts its day at the Perth midnight of the day it opens, through the same setting, and keeps its scripted 10:42 opening time so the script's timed moments line up (D-190 stands). Josh, 10:26 PM AWST (14:26 UTC), decision card: "Keep scripted 10:42 start".
+- **Why:** every signed-in board, referral, letter and legal time read 8 hours behind Perth.
+- **Boundary:** synthetic data only. No clinical value changes. Not a user-facing Settings control.
+
+## D-214. Stress test answers: severity, legal wording, stale counts, the site bed manager and one Beds ready figure (14 November 2026)
+
+- **Date:** 14 November 2026, 9:53 PM AWST (13:53 UTC). **Decided by:** Josh, "Apart from those 2, yes to all recommendations", and for item 7: "Ensure all screens align because I need the behaviour determining those numbers to all align".
+- **Decision:**
+  1. A diversion back to ED that the ward and ED never see (Together-X1b-3) and the Leave page naming the wrong bed (Demo-Rules-RV1b-5) count as Critical for real records. Both are fixed.
+  2. Demo script Act 6A says the signed D-209 item 9 "authorised" wording; the worked examples stay off until the legal-mismatch display is live.
+  3. A recorded legal mismatch reads "Legal status does not match this ward. Check before moving." It shows on the ED board, patient page, Handover, and as a "Legal mismatch" chip on Movements, Search and the Capacity drawer. Display only.
+  4. A ward bed count is stale after the signed 1 hour (`bedCountFresh`, D-63) on every screen. This replaces P025 (27 October 2026, option B: each ward keeps its own time).
+  5. The site bed manager may confirm bed numbers (AK-A-03), and its answer page hides the referral decisions it cannot take, naming who answers.
+  6. "Beds ready now" is one figure on every desk: a desk not sent a ward's records gets a count-only ready partition for it, with no person or record id (Demo-Rules-RV2-17).
+- **Why:** findings from the 14 November master stress test.
+- **Boundary:** synthetic data only; display and permission alignment, no new clinical threshold.
+
+## D-215. Stress test answers for after the demo (14 November 2026)
+
+- **Date:** 14 November 2026, 9:53 PM AWST (13:53 UTC). **Decided by:** Josh, "yes to all recommendations" (items 8 to 13).
+- **Decision:**
+  1. Form 3E: whether it ends the order is decided after the demo; legal form entry stays off the demo script. Until then a record after an ended order warns in plain words and never blocks (AK-L-14), and the Forms count shows only forms in force.
+  2. Speed target: Home appears within 4 seconds on a weak mobile signal. A target, not a CI gate, and it does not block the demo.
+  3. After the demo: every save writes one History line naming the desk that acted; one definition of a late arrival (the estimate plus the signed 1 hour, with a notice to the referrer and the accepting ward); each Statistics window and its start written into the definitions in Perth time; am/pm on screen, with the 24-hour clock kept in printed legal times.
+- **Boundary:** recorded now, built after the demo (see the post-demo backlog).
+
+## D-216. The 36 sign-off recommendations from the stress test pack (14 November 2026)
+
+- **Date:** 14 November 2026, 9:53 PM AWST (13:53 UTC). **Decided by:** Josh, "yes to all recommendations" on item 14.
+- **Decision:** all 36 recommendations tagged "Needs your sign-off" in the stress test pack (`master-stress-test/pack/recs/`) are approved as written, with these choices: Capacity draws its 90% and 98% bands; the 7-day discharge-plan prompt is added; the default broadcast length is 4 hours; one figure dictionary (R-FIGS-9) and one permission source (R-STRUCT-1) come after the demo. The items built in this PR and those deferred are listed in the post-demo backlog.
+- **Boundary:** synthetic data only. No signed value changes except as named in D-214.
+
+## D-217. Hand check answers: medical trips and Undo after referring (14 November 2026)
+
+- **Date:** 14 November 2026, 10:13 PM AWST (14:13 UTC). **Decided by:** Josh, "Yes to all recommendations", on the hand-check questions.
+- **Decision:**
+  1. A medical trip expected to last over 24 hours flags the held bed for review when the trip is recorded, as D-106 describes. Words only; the bed is never freed automatically.
+  2. The public demo offers Undo after the coordinator refers a person to wards, as the signed-in site does.
+- **Boundary:** synthetic data only. No value changes.
+
+## D-218. No legal disclaimer wording on screens (14 November 2026)
+
+- **Date:** 14 November 2026, 10:31 to 10:33 PM AWST (14:31 to 14:33 UTC). **Decided by:** Josh, in the Ward Flow project: "Remove all the excessive wording in the designs in tables. I. E like within 1 hour as typed for forms etc", "Remove all the legal wording like as typed not legally checked please", "Remove from the actual build and mockups", "Remove all things like this" and "Avoid all the excessive legal phrasing in the actual site please!"
+- **Decision:** a standing wording rule for every screen, table, print, copied text, help page and tour step. Ward Flow does not add hedging or disclaimer phrases to what it shows, and a table cell holds the value or a short label only, with any needed explanation once in the header or a tooltip: no "as typed", "not legally checked", "legal limits not checked here", "as entered", "not verified" or "check before relying", and no paragraphs whose only job is to disclaim. A legal form time reads "Ends 15:42" or "Ended 15:42".
+- **Second rule (14:39 UTC):** Josh, "Extra wording should play a role. Not just policy or empty etc". Words stay on a screen only if they tell someone what to do or prevent a mistake. Policy text, filler, empty-state padding and anything the screen already shows are cut. A desk that can never use an action sees no button and no "who does this" line (D-192 item 5 hides the button). Josh's ruling on each open recommendation (remove, a one-word label or tooltip, or keep one short line) is copied into [backlog.md](backlog.md) for the build that takes it up.
+- **Arrival form (14:59 UTC):** Josh, "Yes to your recommendation". The arrival plan form no longer promises that a late notice goes to the referrer and accepting ward (Together-X1b-5), because none is stored yet. The notice itself is built after the demo with the one late-arrival rule (D-215).
+- **Replaces:** the wording parts of D-93 ("Ends 15:42 as typed"), D-139 (leave return times "as typed") and the "Not legally checked" notice kept in the 11 November Legal forms sign-off and the Triage banner. Their behaviour is unchanged.
+- **Unchanged:** D-93 and D-70 behaviour. A legal time is still shown only as the time a person entered from the form, never as a countdown, and nothing works out a Mental Health Act period. Warnings that ask someone to act stay, with their words: the legal status mismatch warning, "Check authorisation", "Save Form N anyway", the real-identifier note, and the "within 1h", "within 3h" and "passed" band words beside their colours. "Not recorded" stays, because it is a state, not a disclaimer. The one synthetic data line in the footer stays (hard rule 1).
+- **Boundary:** wording only. No clinical value, threshold or saved field changes.
+
+The next free number is D-219.

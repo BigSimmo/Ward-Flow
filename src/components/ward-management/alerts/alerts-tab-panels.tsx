@@ -16,7 +16,10 @@ import type { WardFlowState } from "@/components/ward-management/ward-flow-reduc
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
 
 import { type BroadcastAlert, type getActiveBroadcastAlert } from "./ward-broadcast-model";
-import { isAlertLive } from "./global-alert-view";
+import { directiveAcknowledgeDesk, isAlertLive } from "./global-alert-view";
+import { useRoleGate } from "@/components/ward-management/ward-role-gate";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { PullNowCard } from "./global-alert-panels";
 import { GroupHead } from "./alerts-queue";
 import { AlertsRemindersGroup } from "./alerts-reminders-group";
@@ -55,6 +58,16 @@ export function AlertsLiveBroadcasts({
   // itself is under the hero's More (Q184), so no empty state offers it here.
   // The broadcast Add units opened on: if another broadcast replaces it, the dialog closes rather than retarget.
   const [addingUnits, setAddingUnits] = useState<string | null>(null);
+  // Together-X2-6: Extend, Add desks and Stand down only for a desk whose role may take them (the
+  // coordinator and the site bed manager); a ward or ED asked to acknowledge a directive can do it
+  // here, even while a Pull now holds the banner.
+  const gate = useRoleGate();
+  const mayExtend = gate("EXTEND_BROADCAST_ALERT").allowed;
+  const mayAddUnits = gate("ADD_BROADCAST_ALERT_UNITS").allowed;
+  const mayStandDown = gate("STAND_DOWN_BROADCAST_ALERT").allowed;
+  const access = useEffectiveWardAccess();
+  const { movements } = useWardFlowSelect("movements");
+  const ackDesk = activeBroadcast ? directiveAcknowledgeDesk(activeBroadcast, access, movements, now, units) : null;
   if (livePullNows.length === 0 && !activeBroadcast) return null;
   return (
     <div id="alerts-live-broadcast" className={cx(styles.tabBody, tab.tabBody)} data-testid="ward-alerts-live">
@@ -62,7 +75,7 @@ export function AlertsLiveBroadcasts({
         <section className={styles.group} aria-label="Pull now">
           <GroupHead label="Pull now" count={livePullNows.length} />
           {livePullNows.map((alert) => (
-            <PullNowCard key={alert.id} alert={alert} onStandDown={handleStandDown} />
+            <PullNowCard key={alert.id} alert={alert} onStandDown={mayStandDown ? handleStandDown : undefined} />
           ))}
         </section>
       ) : null}
@@ -73,22 +86,41 @@ export function AlertsLiveBroadcasts({
           now={now}
           sentByYou={activeBroadcast.dispatchedByRole === deskRole}
           acknowledgements={broadcastAcks}
-          onExtend={() => {
-            track(
-              {
-                type: "EXTEND_BROADCAST_ALERT",
-                ok: `Extended "${activeBroadcast.title}".`,
-                refused: `Extension of "${activeBroadcast.title}" was not accepted.`,
-              },
-              () => raise("EXTEND_BROADCAST_ALERT", { alertId: activeBroadcast.id }),
-            );
-          }}
-          onAddUnits={() => setAddingUnits(activeBroadcast.id)}
+          onAcknowledge={
+            ackDesk?.id
+              ? () => {
+                  const unitId = ackDesk.id as string;
+                  track(
+                    {
+                      type: "ACKNOWLEDGE_BROADCAST_ALERT",
+                      ok: `Acknowledged "${activeBroadcast.title}".`,
+                      refused: `Acknowledging "${activeBroadcast.title}" was not accepted.`,
+                    },
+                    () => raise("ACKNOWLEDGE_BROADCAST_ALERT", { alertId: activeBroadcast.id, unitId }),
+                  );
+                }
+              : undefined
+          }
+          onExtend={
+            mayExtend
+              ? () => {
+                  track(
+                    {
+                      type: "EXTEND_BROADCAST_ALERT",
+                      ok: `Extended "${activeBroadcast.title}".`,
+                      refused: `Extension of "${activeBroadcast.title}" was not accepted.`,
+                    },
+                    () => raise("EXTEND_BROADCAST_ALERT", { alertId: activeBroadcast.id }),
+                  );
+                }
+              : undefined
+          }
+          onAddUnits={mayAddUnits ? () => setAddingUnits(activeBroadcast.id) : undefined}
           addUnitsDisabledReason={
             addableGroups(activeBroadcast, units).length === 0 ? "Every desk is already asked." : undefined
           }
           onCopyAnswers={onCopyAnswers}
-          onStandDown={() => handleStandDown(activeBroadcast.id)}
+          onStandDown={mayStandDown ? () => handleStandDown(activeBroadcast.id) : undefined}
         />
       ) : null}
       {activeBroadcast && addingUnits === activeBroadcast.id ? (

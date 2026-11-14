@@ -1660,7 +1660,7 @@
         "referral": true,
         "movement": true,
         "asks": "How long ago did the ward last confirm its numbers? A stale figure fails.",
-        "note": "A ward whose only failing check is an old count is still listed and can be asked, worded Bed count N min old, check with the ward (H8, D-210, 14 Nov 2026). The stale limits are unchanged."
+        "note": "A ward whose only failing check is an old count is still listed and can be asked, worded Bed count N min old, check with the ward (H8, D-210, 14 Nov 2026). Every ward now uses the one signed bed count time (1 hour), not its own limit (owner ruling 14 Nov 2026)."
       },
       {
         "gate": "Gender designation",
@@ -1752,22 +1752,22 @@
       {
         "path": "src/components/ward-management/legal-forms/legal-forms-screen.tsx",
         "line": 1,
-        "sha256": "64aab27ff7780ee821110fda1ccf7ec20ad670e469cef57b36ec1a980d31e7fe"
+        "sha256": "4f27ece0df5bd1a5b43f1e5f7d89076ca47753285eb0ae18d3d8ab9707c4def7"
       },
       {
         "path": "src/components/ward-management/legal-forms/legal-forms-sheets.tsx",
-        "line": 329,
-        "sha256": "2e77d1f6a0bd78218d10c0c4d2a7cd236f17be7e60c2c5754a64ad37c57371b5"
+        "line": 332,
+        "sha256": "caaee176f4849a9832d1fcd19d74647666f61a19d5accfd8b9920bd81c4b6b01"
       },
       {
         "path": "src/components/ward-management/patients/add-patient.tsx",
-        "line": 87,
-        "sha256": "2493857b8ea5832e4e49afc2b8d32ae3630ffded73adc8076ac839524e5a4918"
+        "line": 90,
+        "sha256": "6a2fdbab2bc2d0b9eb671cb48c8e02fd7152a914c47f833ad9311fb3b9203537"
       },
       {
         "path": "src/components/ward-management/patients/patient-now-screen.tsx",
         "line": 1,
-        "sha256": "a878e4ba8754fa3d3dcd99b73db5856c753f18664d702a604424c522f03d460e"
+        "sha256": "2cf02bf24c9ea8af16a3ea69216013467877daf2c491820777faec377a14df03"
       },
       {
         "path": "src/components/ward-management/shell/ward-broadcast-banner-body.tsx",
@@ -1802,7 +1802,7 @@
       {
         "path": "src/components/ward-management/ward-derivations.ts",
         "line": 1,
-        "sha256": "0e5b31c06ee6b4c38aea55f92377139525e650146259b998db009e94010d6b50"
+        "sha256": "8b4032cd13aa3584c3df8f9e821539b4b69a3d9db87f443bb4284ef02df27771"
       },
       {
         "path": "src/components/ward-management/ward-duplicate-bed-requests.ts",
@@ -1811,8 +1811,8 @@
       },
       {
         "path": "src/components/ward-management/ward-eligibility.ts",
-        "line": 50,
-        "sha256": "3a3a65ebf3eaf0f49a80eb750ebb9f663321aca06e5051d8ace6f17eac355f86"
+        "line": 56,
+        "sha256": "6ff05971843e74e5eaef62edeffec38f316409744e7fa48ac03acf689504dd88"
       },
       {
         "path": "src/components/ward-management/ward-flow-bed-events.ts",
@@ -1912,7 +1912,7 @@
       {
         "path": "src/components/ward-management/ward-model.ts",
         "line": 1,
-        "sha256": "d68525ef597109b83e9be013c6162ddfe0717ac54beac96185cfa70907fb16f2"
+        "sha256": "45598f7a8812733dffb4cbf9fd97230c97567d8f28dbe77ae2704895ed0d8025"
       },
       {
         "path": "src/components/ward-management/ward-patient-registration-reducer.ts",

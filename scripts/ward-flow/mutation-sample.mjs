@@ -40,10 +40,11 @@ export const MUTANTS = [
   },
   {
     id: "E2",
-    file: ELIGIBILITY,
+    // One bed count limit on every desk (D-214, 14 Nov 2026): the boundary now lives in the shared rule.
+    file: "src/components/ward-management/ward-clinical-values.ts",
     what: "a bed count is stale one minute early (boundary)",
-    find: "now - unit.allocatable.confirmedAt <= unit.allocatable.staleAfterMinutes",
-    replace: "now - unit.allocatable.confirmedAt < unit.allocatable.staleAfterMinutes",
+    find: "return !(now - confirmedAt <= BED_COUNT_FRESH_MINUTES);",
+    replace: "return !(now - confirmedAt < BED_COUNT_FRESH_MINUTES);",
   },
   {
     id: "E3",

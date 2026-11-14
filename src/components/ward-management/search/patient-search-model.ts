@@ -64,8 +64,8 @@ export const SHOW_FACETS: readonly ShowFacet[] = [
   },
   {
     key: "over24",
-    label: `Past ${LONG_WAIT_HOURS} hours`,
-    empty: `No open movement here has waited past ${LONG_WAIT_HOURS} hours.`,
+    label: `Over ${LONG_WAIT_HOURS}h`,
+    empty: `No open movement here has waited over ${LONG_WAIT_HOURS} hours.`,
     test: (movement, now) => waitedHours(movement, now) >= LONG_WAIT_HOURS,
   },
 ];

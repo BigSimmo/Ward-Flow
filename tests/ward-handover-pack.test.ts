@@ -79,7 +79,8 @@ describe("handover pack model", () => {
   it("shows the paper expiry only as typed, never as a count", () => {
     const pack = handoverPackModel(input());
     const expiry = value(pack, "legal", "Paper expiry");
-    expect(expiry).toMatch(/as typed$/);
+    expect(expiry).toMatch(/^End(s|ed) \S/);
+    expect(expiry).not.toMatch(/as typed/); // D-218
     expect(expiry).not.toMatch(/\b\d+\s*[hm]\b|left|overdue|ago/);
     expect(value(handoverPackModel(input({ paperExpiryAt: undefined })), "legal", "Paper expiry")).toBe("Not recorded");
   });

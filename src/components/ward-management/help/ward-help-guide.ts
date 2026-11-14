@@ -38,9 +38,6 @@ export type DeskGuide = {
   readonly limits: readonly string[];
 };
 
-const NO_MHA_TIMES =
-  "The app never works out Mental Health Act times. It shows only times someone typed from the paper form.";
-
 export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
   coordinator: {
     homeName: "Home",
@@ -89,7 +86,6 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
     limits: [
       "A person always chooses the bed. Nothing is placed automatically.",
       "Wait lists stay in wait order. Flags highlight a row but never move it.",
-      NO_MHA_TIMES,
     ],
   },
   ward: {
@@ -136,7 +132,6 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
     limits: [
       "You never see which other wards the patient was referred to.",
       "You cannot change another ward's beds or answers.",
-      NO_MHA_TIMES,
     ],
   },
   ed: {
@@ -175,7 +170,6 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
     limits: [
       "The board never re-sorts the queue. It stays longest wait first.",
       "You cannot accept for a ward or place a patient.",
-      NO_MHA_TIMES,
     ],
   },
   officer: {

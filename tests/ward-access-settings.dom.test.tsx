@@ -422,6 +422,7 @@ describe("the Access tab", () => {
           patient_id: "PT-1001",
           surface: "referral",
           minutes: -90,
+          break_glass_reason: "transport-safety",
         },
         {
           id: 6,
@@ -431,6 +432,7 @@ describe("the Access tab", () => {
           patient_id: "PT-2002",
           surface: "patient",
           minutes: -3,
+          break_glass_reason: null,
         },
         {
           id: 5,
@@ -463,6 +465,17 @@ describe("the Access tab", () => {
     // H-0731: a read the server logged itself names no record.
     expect(rows[2]).toHaveTextContent("TV board sent to this desk");
     expect(rows[2]).not.toHaveTextContent("*");
+    // R-FIGS-13 (Josh, 14 Nov 2026): each row says why the record was opened.
+    expect(within(rows[0]).getByTestId("ward-access-log-reason")).toHaveTextContent(
+      "Reason: Break glass: Transport safety",
+    );
+    expect(within(rows[1]).getByTestId("ward-access-log-reason")).toHaveTextContent("Reason: Within desk scope");
+    expect(within(rows[2]).getByTestId("ward-access-log-reason")).toHaveTextContent(
+      "Reason: Reason not sent by the server",
+    );
+    fireEvent.click(within(log).getByRole("button", { name: /^Break glass/u }));
+    expect(within(log).getAllByTestId("ward-access-log-row")).toHaveLength(1);
+    expect(within(log).getByTestId("ward-access-log-row")).toHaveTextContent("PT-1001");
     expect(log).not.toHaveTextContent("Demo only");
     expect(api.listRecordViews).toHaveBeenCalledTimes(1);
   });

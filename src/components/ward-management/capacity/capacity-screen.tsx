@@ -26,7 +26,7 @@ import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-ser
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
-import { tvServiceParam } from "@/components/ward-management/bed-meeting/tv-derivations";
+import { tvServiceParam, tvSiteScope } from "@/components/ward-management/bed-meeting/tv-derivations";
 import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import { siteLabel } from "@/components/ward-management/ward-absence-labels";
 import { siteByCode } from "@/components/ward-management/ward-sites";
@@ -186,18 +186,22 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
   }, [mapModel, bedReleases]);
   // A figure that does not follow the chosen service says so, quietly.
   const networkWide = service !== null && !siteDesk;
+  // R-FIGS-19 (Josh, 14 Nov 2026): a site desk's sheet counts its own site's wards, as its Capacity
+  // and its TV do (`tvSiteScope`, the TV's own scope), and names the site in its title.
+  const sheetSite = useMemo(() => (siteDesk ? tvSiteScope(access, units) : undefined), [siteDesk, access, units]);
   const sheet = useMemo(
     () =>
       popup?.kind === "sheet"
         ? bedMeetingSheet({
-            units,
+            units: sheetSite?.units ?? units,
             movements,
             bedReleases,
             admissions,
             leaveBeds,
             now,
             thresholds,
-            service,
+            service: sheetSite?.service ?? service,
+            ...(sheetSite ? { scopeName: sheetSite.name } : {}),
             // M103 (Josh, 10 Nov 2026): the printed sheet shows initials and UMRN only.
             nameOf: (movement) => sheetPatientLabel(patientOf(movement)),
             referrals,
@@ -206,6 +210,7 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
         : null,
     [
       popup,
+      sheetSite,
       units,
       movements,
       bedReleases,

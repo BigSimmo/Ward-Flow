@@ -128,4 +128,44 @@ describe("the Accept toast goes when its decision is cleared", () => {
     expect(screen.queryByText(`Accepted ${first.n}`)).toBeNull();
     cleanup();
   });
+
+  // Demo-Actions-D1a-S-2 (14 Nov 2026): the answered row leaves the screen before Reset demo.
+  it("dismisses the toast on Reset demo after the accepting row has gone, and its Undo writes nothing", async () => {
+    const { render, screen, fireEvent, cleanup, act } = await import("@testing-library/react");
+    const { ToastProvider } = await import("@/components/wf");
+    const { useState } = await import("react");
+    const { useAnswer } = await import("@/components/ward-management/community/team-2026/team-referrals");
+    const first = REFERRALS[0]!;
+    function Probe() {
+      const { accept } = useAnswer(first.n, first.id);
+      return (
+        <button type="button" onClick={() => accept("Accepted for Midland")}>
+          Accept
+        </button>
+      );
+    }
+    let hide: () => void = () => {};
+    function Host() {
+      const [shown, setShown] = useState(true);
+      hide = () => setShown(false);
+      return shown ? <Probe /> : null;
+    }
+    render(
+      <ToastProvider>
+        <Host />
+      </ToastProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Accept" }));
+    const undo = screen.getByRole("button", { name: "Undo" });
+    act(() => hide());
+    expect(screen.getByText(`Accepted ${first.n}`)).toBeTruthy();
+    act(() => {
+      clearWardFlowDemoState();
+    });
+    expect(screen.queryByText(`Accepted ${first.n}`)).toBeNull();
+    // A stale Undo pressed after the reset does not write the decisions key back.
+    act(() => undo.click());
+    expect(window.localStorage.getItem(MIDLAND_DECISIONS_KEY)).toBeNull();
+    cleanup();
+  });
 });

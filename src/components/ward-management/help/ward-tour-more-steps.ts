@@ -487,7 +487,7 @@ const LEGAL_FORMS: Further = {
   desk: "more",
   title: "Legal forms",
   body: (where) =>
-    `Legal forms, ${where}, lists every open movement with a legal form. Times are as typed from the paper form, and Ward Flow does not work out legal periods.`,
+    `Legal forms, ${where}, lists every open movement with a legal form and the expiry time recorded from the paper form.`,
 };
 const handover = (desk: DeskPlace): Further => ({
   id: "handover",

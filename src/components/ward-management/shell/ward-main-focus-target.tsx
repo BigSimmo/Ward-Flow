@@ -18,7 +18,7 @@ const MAIN_ID = "main-content";
  * main that is actually shown wins; a browser without `checkVisibility` keeps the first one.
  */
 function visibleMain(): HTMLElement | null {
-  const mains = Array.from(document.querySelectorAll<HTMLElement>(`[id="${MAIN_ID}"]`));
+  const mains = Array.from(document.querySelectorAll<HTMLElement>(`[id="${MAIN_ID}"], main[data-phone-desktop-only]`));
   return mains.find((main) => main.checkVisibility?.() ?? true) ?? null;
 }
 

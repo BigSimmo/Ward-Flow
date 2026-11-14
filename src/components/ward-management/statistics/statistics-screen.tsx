@@ -74,6 +74,7 @@ import { StatisticsWardsCard, useWardTable } from "./statistics-wards-card";
 import { arrivalBandsFor } from "./statistics-bands";
 import { median, shortSiteName, wardFinderEntry, type EdSortKey } from "./statistics-screen-parts";
 import { ReasonCounts, SmallNumberNote, noCountReleased } from "./statistics-count-list";
+import { WARD_TIME_ZONE } from "@/lib/ward-time-zone";
 
 function StatisticsViewLoading({ view }: { view: "journey" | "map" }) {
   // The loading card stands first in its view, so it carries the view switch until the view arrives.
@@ -160,9 +161,9 @@ import type { FinderEntry, FinderKind } from "./statistics-unit-finder";
 
 function formatReportDay(instant: Instant, dayZero: Date): string {
   const date = calendarDateOf(instant, dayZero);
-  const weekday = date.toLocaleDateString("en-AU", { weekday: "long", timeZone: "Australia/Perth" });
-  const day = date.toLocaleDateString("en-AU", { day: "numeric", timeZone: "Australia/Perth" });
-  const month = date.toLocaleDateString("en-AU", { month: "long", timeZone: "Australia/Perth" });
+  const weekday = date.toLocaleDateString("en-AU", { weekday: "long", timeZone: WARD_TIME_ZONE });
+  const day = date.toLocaleDateString("en-AU", { day: "numeric", timeZone: WARD_TIME_ZONE });
+  const month = date.toLocaleDateString("en-AU", { month: "long", timeZone: WARD_TIME_ZONE });
   return `${weekday} ${day} ${month}`;
 }
 
@@ -1211,7 +1212,7 @@ function StatisticsSummaryView({
           )}
         </StatisticsViewSwitch>
 
-        <WardPrototypeFooter testId="ward-statistics-footer" note="Synthetic prototype. Every figure is invented." />
+        <WardPrototypeFooter testId="ward-statistics-footer" />
       </main>
     </div>
   );

@@ -109,7 +109,8 @@ describe('D-186 Q11: "Chosen today" on the form, "On record" on the chip', () =>
     expect(person, "a seed person with no legal status on record").toBeDefined();
     render(<TriageScreen patientId={person!.id} />, { wrapper: world });
     expect(screen.getAllByText("Legal on record").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Not recorded. Not legally checked.").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Not recorded").length).toBeGreaterThan(0);
+    expect(screen.queryByText(/legally checked/u)).toBeNull();
   });
 
   it("prints the page foot's one entry", () => {
@@ -141,14 +142,16 @@ describe('D-186 Q11: "Chosen today" on the form, "On record" on the chip', () =>
 
   it("reads Not recorded in Patient and referral when the record holds no status", () => {
     const sheet = drawer("patient", blankTriage({ ...EXAMPLE_PERSON, legal: null }));
-    expect(sheet.getByText("Not recorded. Not legally checked.")).toBeInTheDocument();
+    expect(sheet.getAllByText(/^Not recorded\.?$/u).length).toBeGreaterThan(0);
+    expect(sheet.queryByText(/legally checked/u)).toBeNull();
   });
 
   it('reads an earlier triage\'s status "as chosen"', () => {
     const sheet = drawer("prev", blankTriage(EXAMPLE_PERSON));
     const row = within(sheet.getByTestId("triage-previous-list"));
-    expect(row.getByText(new RegExp(`${EXAMPLE_PERSON.last!.legal} \\(as chosen\\)`, "u"))).toBeInTheDocument();
-    expect(sheet.queryByText(/as chosen then/u)).toBeNull();
+    // D-218 (Josh, 14 Nov 2026): the status shows with no "(as chosen)" after it.
+    expect(row.getByText(new RegExp(`${EXAMPLE_PERSON.last!.legal}`, "u"))).toBeInTheDocument();
+    expect(sheet.queryByText(/as chosen/u)).toBeNull();
   });
 });
 
