@@ -268,11 +268,7 @@ function shiftName(now: number): string {
  * "Day shift".
  */
 function Footer({ scope, scenario, now }: { scope: string; scenario: string; now: number }) {
-  return (
-    <p className={styles.footer}>
-      {TvFooterText({ scope, shift: shiftName(now), scenario, dayNote: asAtStamp(now).dayNote })}
-    </p>
-  );
+  return <p className={styles.footer}>{TvFooterText({ scope, shift: shiftName(now), scenario })}</p>;
 }
 
 /** People waiting somewhere, longest first: initials, where, stage and how long they have waited. */

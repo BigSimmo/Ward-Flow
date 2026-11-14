@@ -20,6 +20,7 @@ import {
   type ChoiceItem,
   type FocusOpener,
 } from "@/components/wf";
+import { InfoTip } from "@/components/wf/info-tip";
 import {
   edStatisticsHref,
   serviceStatisticsHref,
@@ -388,7 +389,7 @@ function firstWard(site: PresentedSiteFigures): WardFigures<StatisticsCount> | u
   return [...site.wards].sort((a, b) => a.unit.name.localeCompare(b.unit.name))[0];
 }
 
-type Headline = { value: string; label: string; tone?: "warning" | "danger" };
+type Headline = { value: string; label: string; tone?: "warning" | "danger"; tip?: string };
 
 /**
  * Summary, Map view: every site across WA on one map, with lenses for beds, ED waits, discharges and
@@ -579,7 +580,12 @@ function MapPresentation({
         ]
       : lens === "ed"
         ? [
-            { value: String(statisticsCountText(network.edWaiting)), label: "Open ED movements" },
+            {
+              value: String(statisticsCountText(network.edWaiting)),
+              label: "Open ED movements",
+              // R-FIGS-15: what it counts and who, so it is not read against the rail's Waiting figure.
+              tip: "Everyone with an open ED movement now, including people already placed and waiting to leave. Waiting counts only people still in the ED.",
+            },
             {
               // WF-17: keep longest beside an exact open-ED count only.
               value:
@@ -667,6 +673,7 @@ function MapPresentation({
                     <dt className={styles.figureLabel}>
                       {item.tone ? <StatusGlyph tone={item.tone} size={9} /> : null}
                       {item.label}
+                      {item.tip ? <InfoTip about={item.label}>{item.tip}</InfoTip> : null}
                     </dt>
                     <dd className={styles.figureValue}>{item.value}</dd>
                   </div>

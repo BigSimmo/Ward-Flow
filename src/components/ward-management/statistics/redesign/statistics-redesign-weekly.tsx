@@ -10,6 +10,7 @@ import { useState, type ReactNode } from "react";
 import { ClipboardList, Printer, ShieldAlert } from "lucide-react";
 
 import { Badge, Button, Meter, Segmented } from "@/components/wf";
+import { InfoTip } from "@/components/wf/info-tip";
 import type { PilotFigures } from "@/components/ward-management/reports/pilot-measures-section";
 import { countInSentence, PeopleNotListed } from "@/components/ward-management/statistics/statistics-small-numbers";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
@@ -225,6 +226,9 @@ export function WeeklyBody(props: WeeklyBodyProps) {
             title={
               <>
                 <span className={s.mnum}>1</span>Referral to arrival
+                <InfoTip about="Referral to arrival">
+                  Counts only arrivals that had a referral time, so it can be lower than stays started.
+                </InfoTip>
               </>
             }
             now={<Now>{plural(pilot.arrival.arrivals, "arrival", "arrivals")}</Now>}

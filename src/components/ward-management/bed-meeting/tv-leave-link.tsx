@@ -31,16 +31,6 @@ export function TvLeaveLink({ className }: { className: string }) {
  * Audit P128: "Scenario: Quiet day" read as a statement about the network while cards said WATCH.
  * The label names it as the demo data set it is.
  */
-export function TvFooterText({
-  scope,
-  shift,
-  scenario,
-  dayNote,
-}: {
-  scope: string;
-  shift: string;
-  scenario: string;
-  dayNote: string;
-}): string {
-  return `${scope} · ${shift} · Demo data: ${scenario} · Synthetic prototype, ${dayNote}. Read only. Not approved for clinical use.`;
+export function TvFooterText({ scope, shift, scenario }: { scope: string; shift: string; scenario: string }): string {
+  return `${scope} · ${shift} · Demo data: ${scenario} · Synthetic data. Read only. Not approved for clinical use.`;
 }

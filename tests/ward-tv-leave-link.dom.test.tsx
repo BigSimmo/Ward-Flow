@@ -50,7 +50,7 @@ describe("Leave TV view (audit P129)", () => {
 
 describe("TV footer scenario wording (audit P128)", () => {
   it("names the scenario as demo data, not as a statement about today", () => {
-    const text = TvFooterText({ scope: "Statewide", shift: "Day shift", scenario: "Quiet day", dayNote: "today" });
+    const text = TvFooterText({ scope: "Statewide", shift: "Day shift", scenario: "Quiet day" });
     expect(text).toContain("Demo data: Quiet day");
     expect(text).not.toContain("Scenario: Quiet day");
   });
