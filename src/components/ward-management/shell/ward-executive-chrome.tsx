@@ -47,6 +47,7 @@ import {
 } from "./ward-access";
 import { WardDeskPendingClear } from "./ward-access-hold";
 import { WardOfflineBanner } from "./ward-offline-banner";
+import { WardSignInEnding } from "./ward-sign-in-ending";
 import { WardGround } from "../ward-shell";
 import { WardDemoClockPopover } from "../ward-demo-controls";
 import { WardDemoPanel } from "../tools/ward-demo-panel";
@@ -841,6 +842,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
           <WardDeskPendingClear />
           <WardPrintFooter />
           <WardIdleLock />
+          <WardSignInEnding />
         </div>
       </div>
       {isPhone && (

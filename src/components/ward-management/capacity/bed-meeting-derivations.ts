@@ -192,6 +192,8 @@ export type BedMeetingInput = {
   service: HealthService | null;
   /** R-FIGS-19: a site desk's site name, when `units` are already that site's wards only. */
   scopeName?: string;
+  /** INV-FIX-029: a site desk's own EDs, so its ED figures match its Capacity page, not the whole service. */
+  edIds?: readonly string[];
   /** Resolves a movement to the patient's display name — the screen's own resolver. */
   nameOf: (movement: Movement) => string;
   /** Waiting referrals and the "Referral decision" time limit; both or neither. */
@@ -338,7 +340,10 @@ export function bedMeetingSheet(input: BedMeetingInput): BedMeetingSheet {
 
   // Emergency departments — the ED home's own per-department summaries, narrowed to the service.
   const edSummaries = edOpenSummaries(movements, now).filter(
-    (summary) => summary.waiting > 0 && (service === null || edHealthService(summary.ed.id) === service),
+    (summary) =>
+      summary.waiting > 0 &&
+      (service === null || edHealthService(summary.ed.id) === service) &&
+      (input.edIds === undefined || input.edIds.includes(summary.ed.id)),
   );
   const edPeople = edSummaries
     .flatMap((summary) =>

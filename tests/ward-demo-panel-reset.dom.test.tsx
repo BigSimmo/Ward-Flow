@@ -224,8 +224,13 @@ describe("Demo clock Pause", () => {
     expect(pause).toHaveTextContent("Pause");
     fireEvent.click(pause);
     expect(within(panel()).getByTestId("ward-tools-demo-pause")).toHaveTextContent("Resume");
+    // R-STRUCT-46: one short line says what Pause holds and what to do next.
+    expect(within(panel()).getByTestId("ward-tools-demo-paused")).toHaveTextContent(
+      "Paused: times hold until you press Resume.",
+    );
     expect(screen.getByRole("button", { name: /pause demo updates/u })).toHaveAttribute("aria-pressed", "true");
     fireEvent.click(within(panel()).getByTestId("ward-tools-demo-pause"));
     expect(within(panel()).getByTestId("ward-tools-demo-pause")).toHaveTextContent("Pause");
+    expect(within(panel()).queryByTestId("ward-tools-demo-paused")).toBeNull();
   });
 });

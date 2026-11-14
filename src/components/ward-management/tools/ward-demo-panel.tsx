@@ -343,6 +343,12 @@ function OperationalDemoPanel({ oneList = false, grow = false }: { oneList?: boo
               </button>
             ) : null}
           </div>
+          {/* R-STRUCT-46 (Josh, 14 Nov 2026: one short line, why and what next). */}
+          {pause?.paused ? (
+            <p className={demo.pausedLine} role="status" data-testid="ward-tools-demo-paused">
+              Paused: times hold until you press Resume.
+            </p>
+          ) : null}
           <button
             type="button"
             className={demo.reset}

@@ -243,6 +243,22 @@ describe("the bed meeting TV view", () => {
     }
   });
 
+  it("counts only a site's own EDs on a site desk's meeting, as its Capacity page does (INV-FIX-029)", () => {
+    const { inputs } = seedInputs();
+    const whole = bedMeetingSheet({ ...inputs, service: null, thresholds: DEFAULT_DUE_SOON_THRESHOLDS });
+    const busiest = whole.ed.departments[0];
+    if (!busiest || whole.ed.departments.length < 2) throw new Error("expected people waiting in two EDs");
+    const site = bedMeetingSheet({
+      ...inputs,
+      service: null,
+      edIds: [busiest.id],
+      thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
+    });
+    expect(site.ed.waiting).toBe(busiest.waiting);
+    expect(site.ed.departments.map((department) => department.id)).toEqual([busiest.id]);
+    expect(site.ed.longestWaits.every((person) => person.department === busiest.department)).toBe(true);
+  });
+
   it("gives every health service its own bed meeting screen with its wards", () => {
     const { state, inputs } = seedInputs();
     // The service with the most wards, so its table has rows.

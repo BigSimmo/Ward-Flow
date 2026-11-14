@@ -170,6 +170,25 @@ it("signs out, not rearms, when activity comes after the idle deadline (a woken 
   expect(signOut).toHaveBeenCalledTimes(1);
 });
 
+it("covers the screen on wake, before any tap, when the device slept past the idle time (R-STRUCT-44)", () => {
+  render(<WardIdleLock />);
+  // Timers are held while the device sleeps; only the wall clock moves on.
+  vi.setSystemTime(Date.now() + IDLE_MS + 5_000);
+  expect(document.querySelector('[aria-busy="true"], [role="dialog"]')).toBeNull();
+  // No act(): the cover must already be in the page when the wake event returns.
+  document.dispatchEvent(new Event("visibilitychange"));
+  expect(document.querySelector('[aria-busy="true"], [role="dialog"]')).not.toBeNull();
+});
+
+it("does not cover on wake while the idle time has not run out (R-STRUCT-44)", () => {
+  render(<WardIdleLock />);
+  vi.setSystemTime(Date.now() + IDLE_MS - 60_000);
+  act(() => {
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  expect(screen.queryByRole("dialog")).toBeNull();
+});
+
 it("still counts down on time when the device clock is set back mid-session (TC2-09, H-0768)", () => {
   const signOut = vi.fn();
   render(
