@@ -125,7 +125,7 @@ import {
   formatInstantWithDay,
   formatSince,
   isTimePassed,
-  perthClockTime,
+  perthClock24,
   perthIsoDay,
 } from "@/components/ward-management/ward-clock";
 import type { TransportBookingAnswers } from "@/components/ward-management/ward-transport-checks";
@@ -1279,7 +1279,7 @@ export function PatientNowScreen({
             role={routeRole}
             now={now}
             todayIso={perthIsoDay(displayToday)}
-            nowClock={perthClockTime(displayToday)}
+            nowClock={perthClock24(displayToday)}
             hasCarer={(extras?.supports.length ?? 0) > 0}
             episodes={extras?.episodes}
             gate={gate}
