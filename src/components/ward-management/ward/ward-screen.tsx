@@ -1807,7 +1807,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     id: leaveBed.id,
     title: leaveBed.absentWithoutLeave
       ? `Bed held · absent without leave since ${formatInstantWithDay(leaveBed.absentWithoutLeave.since, now)}`
-      : `${stayBedLabel(leaveBed.admissionId) ?? "Bed"} on leave · back ${formatInstant(leaveBed.expectedReturn)}`,
+      : `${stayBedLabel(leaveBed.admissionId) ?? "Bed"} on leave · back ${formatInstantWithDay(leaveBed.expectedReturn, now)}`,
   }));
   // The ward answers its own referrals: the site bed manager sees them but has no Accept (D-80).
   const answerBlockedReason = routeRole === "bed_manager" ? `${unit.name} answers its own referrals.` : undefined;

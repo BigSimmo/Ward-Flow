@@ -3,7 +3,7 @@
 // The patient page's summary section: the flight header with its mode pill, figures, legal and stay
 // facts and the stage strip. Split out of `patient-now-screen.tsx`, which renders it with the values
 // it has already derived.
-import { isTierOverdue, tierOverdueAfterMinutes } from "../ward-shared-figures";
+import { REFERRAL_TIME_NOT_RECORDED, tierOverdueAfterMinutes, tierWaitFromReferral } from "../ward-shared-figures";
 import { TIER_NOT_RECORDED, TIER_QUALIFIER } from "../ward-priority";
 import { securityWord, type Security } from "../ward-model-vocabulary";
 
@@ -264,7 +264,11 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
      identity line; Copy handover and Forms are the band's chips. Nothing here is new: every
      figure is one the page already showed. */
   const movementTop = isLiveBedflow && liveMovement ? liveMovement : undefined;
-  const overTarget = movementTop ? isTierOverdue(urgencyTier, now - movementTop.openedAt) : false;
+  // Audit M5, D-MCA (Josh, 14 Nov 2026): the tier target counts from the referral, as the values
+  // register and the Referrals board do, never from arrival; no referral time is said, not guessed.
+  const tierWait = movementTop ? tierWaitFromReferral({ ...movementTop, urgency: urgencyTier }, now) : undefined;
+  const overTarget = tierWait?.recorded === true && tierWait.overdue;
+  const noReferralTime = tierWait?.recorded === false;
   // D-187 (F-30): no tier keeps tier 3's window but never reads as "T3" (or "Tundefined").
   const targetHours = `${tierOverdueAfterMinutes(urgencyTier) / 60}h`;
   const targetWords =
@@ -282,7 +286,13 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
               id: "wait",
               value: waitedStr,
               /* "Target", not "limit", so it never reads as an Act limit. */
-              label: overTarget ? (isPhone ? targetWords : `since opened · ${targetWords}`) : "since opened",
+              label: overTarget
+                ? isPhone
+                  ? targetWords
+                  : `since opened · ${targetWords}`
+                : noReferralTime && !isPhone
+                  ? `since opened · ${REFERRAL_TIME_NOT_RECORDED.toLowerCase()}`
+                  : "since opened",
               tone: overTarget ? "warning" : undefined,
             },
             { id: "clear", value: clear.clear, unit: ` of ${clear.of}`, label: clear.label },

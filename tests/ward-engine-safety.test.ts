@@ -497,7 +497,7 @@ function describeFailure(seed: number, scenario: WardScenario, events: WardFlowE
 }
 
 /** One seeded sequence. Returns a readable failure, or null, and how many events were refused. */
-function runSeed(seed: number, steps = STEPS) {
+function runSeed(seed: number, steps = STEPS, options: { readonly pullRoute?: boolean } = {}) {
   const scenario = WARD_SCENARIOS[seed % WARD_SCENARIOS.length];
   const random = seededRandom(seed);
   let state = seedWardFlowState(scenario);
@@ -505,7 +505,7 @@ function runSeed(seed: number, steps = STEPS) {
   let refused = 0;
   let locked = false;
   for (let step = 0; step < steps; step += 1) {
-    const event = nextEvent(state, random, step, seed, steps);
+    const event = nextEvent(state, random, step, seed, steps, options);
     events.push(event);
     fuzzProfile.count(`attempted.${event.type}`);
     recordingRandomRun = true;
@@ -877,6 +877,19 @@ describe("engine safety under random event sequences", () => {
           undoneTypes: [...UNDONE_STEP_TYPES].sort(),
           replayExcludedFromCounts: true,
         });
+      }
+    },
+    Math.max(30_000, SEQUENCES * STEPS * 5),
+  );
+
+  // Mechanics and clock audit (14 Nov 2026), D-MCA (Josh, 14 Nov 2026): the same rules hold with the
+  // Referrals board's one-tap pull and ED-source referrals mixed in. A separate run, so the coverage
+  // run above keeps its random stream.
+  it(
+    `keeps beds whole across ${SEQUENCES} seeded sequences with the one-tap pull route`,
+    () => {
+      for (let seed = FIRST_SEED; seed < FIRST_SEED + SEQUENCES; seed += 1) {
+        expect(runSeed(seed, STEPS, { pullRoute: true }).failure, `seed ${seed}`).toBeNull();
       }
     },
     Math.max(30_000, SEQUENCES * STEPS * 5),

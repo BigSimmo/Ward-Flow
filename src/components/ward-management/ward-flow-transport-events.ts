@@ -1337,6 +1337,11 @@ export function reduceTransportEvent(
         );
       }
 
+      // Audit L7, D-MCA (Josh, 14 Nov 2026): a blank or infinite typed arrival time is refused, not stored.
+      if (typeof event.estimatedArrivalAt !== "number" || !Number.isFinite(event.estimatedArrivalAt)) {
+        return reject(state, event, "SET_ARRIVAL_DETAILS estimatedArrivalAt must be a valid timestamp");
+      }
+
       // The first recording keeps its time and role; a later edit is stamped as an update, so the
       // ED timeline, chronology and pilot measures never read the latest edit as the first.
       const firstRecording = movement.arrivalDetails;

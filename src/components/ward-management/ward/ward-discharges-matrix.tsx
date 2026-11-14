@@ -174,7 +174,7 @@ export function WardDischargesMatrix({
                     <span className={styles.metaMuted}>
                       {leaveBed.absentWithoutLeave
                         ? `Absent since ${formatInstantWithDay(leaveBed.absentWithoutLeave.since, now)}`
-                        : `Expected return ${formatInstant(leaveBed.expectedReturn)}`}
+                        : `Expected return ${formatInstantWithDay(leaveBed.expectedReturn, now)}`}
                     </span>
                   </div>
                   <div className={styles.dischargeMetaRow}>

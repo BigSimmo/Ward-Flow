@@ -65,6 +65,9 @@ export function reduceBedMeetingEvent(
       if (event.owner === "ward" && (event.unitId === undefined || !helpers.findUnit(state, event.unitId))) {
         return reject(state, event, `${event.type} names a ward owner without a known ward`);
       }
+      // Audit L7, D-MCA (Josh, 14 Nov 2026): a blank or infinite due time is refused, not stored.
+      if (typeof event.dueAt !== "number" || !Number.isFinite(event.dueAt))
+        return reject(state, event, `${event.type} dueAt must be a valid timestamp`);
       if (event.dueAt <= event.now) return reject(state, event, "The due time must be later than now");
       if (open) return reject(state, event, `This ${subject.kind} already has that action open`);
       // A stable row id is reused for the next occurrence. Append explicit boundaries so an

@@ -121,6 +121,7 @@ import { NextWardAfterRefusal } from "./next-ward-after-refusal";
 import { HomeReferralDecision, HomeReferralNote } from "./home-referral-decision";
 import { PreMatchCleaningNote } from "./prematch-cleaning-note";
 import { TIER_TARGETS_NOTE, queueWaitThresholds } from "./priority-queue";
+import { REFERRAL_TIME_NOT_RECORDED, tierWaitFromReferral } from "@/components/ward-management/ward-shared-figures";
 import { plural } from "@/components/ward-management/ward-plural";
 import {
   capacityLine,
@@ -653,11 +654,11 @@ export function ShortlistPanel({
   const patientIdentity = resolvePatientIdentity(movement);
   const patientWho = patientIdentity.displayName;
   const patientUmrn = patientIdentity.umrn;
-  // Waiting against the tier target, the same figures the queue reads (status from the clinical
-  // values file, labelled where they drive a figure).
-  const waitedMinutes = Math.max(0, now - movement.openedAt);
+  // The tier wait, as the queue reads it: from the referral (audit M5, D-MCA (Josh, 14 Nov 2026)).
+  const tierWait = tierWaitFromReferral(movement, now);
+  const waitedMinutes = tierWait.recorded ? tierWait.waited : Math.max(0, now - movement.openedAt);
   const targetMinutes = queueWaitThresholds(movement.urgency).overdue;
-  const overTarget = waitedMinutes >= targetMinutes;
+  const overTarget = tierWait.recorded && tierWait.overdue;
   const declinedUnitIds = movement.declines.map((decline) => decline.unitId);
   // RA1 (item 18): the same discipline, for `toggleReferTarget` below — a live ward's id, read
   // once rather than through `movement.referredUnitIds` inside that closure.
@@ -1404,7 +1405,7 @@ export function ShortlistPanel({
             data-testid="ward-shortlist-wait-line"
           >
             {overTarget ? <StatusGlyph tone="danger" size={9} /> : null}
-            {`Waiting ${durMinutes(waitedMinutes)} (target ${targetHoursText(targetMinutes)})`}
+            {`Waiting ${durMinutes(waitedMinutes)} (target ${targetHoursText(targetMinutes)})${tierWait.recorded ? "" : ` · ${REFERRAL_TIME_NOT_RECORDED}`}`}
             {overTarget ? <span className={shortlistStyles.waitOverdue}>· overdue</span> : null}
           </p>
         </div>

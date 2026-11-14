@@ -9,6 +9,7 @@ import {
   changesSinceLastLook,
   type ChangesSinceLastLook,
   type LastLookSnapshot,
+  lookIsUsable,
 } from "./since-last-look";
 import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
 import { activeTaskItems } from "@/components/ward-management/ward-act-now-items";
@@ -286,15 +287,11 @@ function useHomeChanges(now: Instant) {
   const shiftStart = currentShiftStartInstant(now);
   // A review from an earlier shift, another account or another world counts from the shift start,
   // and the words then say so ("since 07:00"), never "since your review".
+  // Audit L4, D-MCA (Josh, 14 Nov 2026): Home's since banner takes or sets aside the same review by
+  // the same test (`lookIsUsable`), and counts from the same window.
   const usable = useCallback(
-    (basis: LastLookSnapshot | undefined): basis is LastLookSnapshot =>
-      basis !== undefined &&
-      basis.at >= shiftStart &&
-      basis.at <= now &&
-      basis.userId === current.userId &&
-      basis.scenario === current.scenario &&
-      basis.worldGeneration === current.worldGeneration,
-    [shiftStart, now, current],
+    (basis: LastLookSnapshot | undefined): basis is LastLookSnapshot => lookIsUsable(basis, current, now),
+    [now, current],
   );
   const reviewedAt = usable(stored) ? stored.at : undefined;
   // Item 11: with no review this shift, lines count from the previous shift's start.

@@ -86,7 +86,6 @@ const MAY_ASSERT_TODAY = new Map([
   ["unit.allocatable.confirmedAt", "STILL TO SWEEP - a capacity confirmed yesterday would read as this morning"],
   ["detail.allocatable.confirmedAt", "STILL TO SWEEP - same field, network detail panel"],
   ["release.expectedAt", "STILL TO SWEEP - an expected release can fall tomorrow"],
-  ["leaveBed.expectedReturn", "STILL TO SWEEP - a return from leave is routinely days away"],
   ["latestRefreshRequest.at", "STILL TO SWEEP - a refresh asked for yesterday reads as this morning"],
   ["legalForm.dueAt", "STILL TO SWEEP - needs `now` threaded into legalFormReadinessLine"],
   ["referral.localBedSought.at", "referral surface, owned by another session"],

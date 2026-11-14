@@ -47,6 +47,8 @@ export interface BedItem {
   umrn?: string;
   daysInBed?: number | string | null;
   stayDays?: number | null;
+  /** The stay began on today's Perth calendar day (`stayDayNumber` is 1), not in the last 24 hours. */
+  arrivedToday?: boolean;
   stayBand?: string | null;
   pastDate?: boolean;
   awayAtEdHours?: number | null;

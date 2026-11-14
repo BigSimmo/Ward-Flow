@@ -17,13 +17,13 @@ import {
   daysInBed as admissionStayDays,
   isPastExpectedDischarge,
   stayBand,
+  stayDayNumber,
 } from "@/components/ward-management/ward-admissions";
 import { bedHold as bedHoldOf } from "@/components/ward-management/ward-bed-hold";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import {
   calendarDateOf,
   dayOf,
-  formatInstant,
   formatInstantWithDay,
   splitDuration,
 } from "@/components/ward-management/ward-clock";
@@ -63,6 +63,8 @@ type WardBedRosterInputs = {
   movements: Movement[];
   resolvePatientIdentity: (subject: PatientResolutionSubject) => ResolvedPatientInfo;
   now: number;
+  /** The Settings warnings, for a pulled bed's running-out mark (audit L3, D-MCA (Josh, 14 Nov 2026)). */
+  thresholds?: DueSoonThresholds;
   criteriaLedOn: boolean;
   patients: Patient[];
   /** The arrived booking still names an older converted stay's legal status (review: CodeRabbit). */
@@ -86,6 +88,7 @@ export function wardBedRoster({
   movements,
   resolvePatientIdentity,
   now,
+  thresholds,
   criteriaLedOn,
   patients,
   plannedAdmissions,
@@ -282,6 +285,8 @@ export function wardBedRoster({
       umrn: patientInfo?.umrn,
       daysInBed,
       stayDays,
+      // Audit L5, D-MCA (Josh, 14 Nov 2026): "Arrived today" by the Perth calendar day (Day 1).
+      arrivedToday: stayDays !== null && stayDayNumber(admission, now) === 1,
       stayBand: stayBandObj?.label,
       pastDate: isPastDate,
       awayAtEdHours: awayHours,
@@ -327,7 +332,7 @@ export function wardBedRoster({
       // WT-07: Delivered stops the pull clock; the bed then awaits the ward's arrival check.
       bedHold:
         status === "incoming" && !(linkedMovement && deliveredAwaitingWard(linkedMovement))
-          ? bedHoldOf(linkedMovement?.pullExpiresAt, now)
+          ? bedHoldOf(linkedMovement?.pullExpiresAt, now, thresholds)
           : undefined,
       deliveredAt:
         status === "incoming" && linkedMovement && deliveredAwaitingWard(linkedMovement)
@@ -552,7 +557,8 @@ export function wardLiveFormAlerts({
       countdown: `Open ${splitDuration(Math.max(now - leaveBed.confirmedAt, 0))}`,
       text: leaveBed.absentWithoutLeave
         ? `A bed held for an absence without leave at ${unit.name} is still recorded. Absent since ${formatInstantWithDay(leaveBed.absentWithoutLeave.since, now)}.`
-        : `A bed on leave at ${unit.name} is still recorded. Expected return ${formatInstant(leaveBed.expectedReturn)}.`,
+        : // Time audit T-9 (D-MCA, Josh, 14 Nov 2026): a return from leave is often days away, so it names the day.
+          `A bed on leave at ${unit.name} is still recorded. Expected return ${formatInstantWithDay(leaveBed.expectedReturn, now)}.`,
       actionLabel: "Open discharges",
       actionTarget: "discharges" as const,
     })),

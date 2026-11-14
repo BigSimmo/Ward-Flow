@@ -30,7 +30,7 @@ import {
   coordinatorOwnsAcceptedAwaitingBed,
   inEdTierOverdue,
   isTierOneOpen,
-  isTierOverdue,
+  isTierOverdueFromReferral,
   notWaitingMoreText,
   notWaitingParts,
   openJourneySplit,
@@ -222,8 +222,13 @@ describe("the shared figures agree on the seed (hero, chip, badge and list)", ()
       expect(queueWaitThresholds(tier).overdue, `tier ${tier}`).toBe(tierOverdueAfterMinutes(tier));
     }
     const open = state.movements.filter(isOpen);
-    const homeOverdue = open.filter((m) => now - m.openedAt >= queueWaitThresholds(m.urgency).overdue).length;
-    const ruleOverdue = open.filter((m) => isTierOverdue(m.urgency, now - m.openedAt)).length;
+    // Audit M5, D-MCA (Josh, 14 Nov 2026): the window counts from the referral time.
+    const sinceReferral = (m: (typeof open)[number]) => (m.referredAt === undefined ? undefined : now - m.referredAt);
+    const homeOverdue = open.filter((m) => {
+      const waited = sinceReferral(m);
+      return waited !== undefined && waited >= queueWaitThresholds(m.urgency).overdue;
+    }).length;
+    const ruleOverdue = open.filter((m) => isTierOverdueFromReferral(m, now)).length;
     expect(ruleOverdue, "the seed has overdue waits").toBeGreaterThan(0);
     expect(homeOverdue).toBe(ruleOverdue);
   });
@@ -276,8 +281,9 @@ describe("one Tier 1 and Overdue count everywhere (P002), one owner for accepted
   it("Overdue waits count only people still in an ED, past their tier's window", () => {
     const overdue = open.filter((m) => inEdTierOverdue(m, now));
     expect(overdue.length, "the seed has overdue waits").toBeGreaterThan(0);
-    for (const m of overdue) expect(isWaitingInEd(m) && isTierOverdue(m.urgency, now - m.openedAt)).toBe(true);
-    const pastWindowNotInEd = open.filter((m) => !isWaitingInEd(m) && isTierOverdue(m.urgency, now - m.openedAt));
+    // Audit M5, D-MCA (Josh, 14 Nov 2026): the window counts from the referral time.
+    for (const m of overdue) expect(isWaitingInEd(m) && isTierOverdueFromReferral(m, now)).toBe(true);
+    const pastWindowNotInEd = open.filter((m) => !isWaitingInEd(m) && isTierOverdueFromReferral(m, now));
     expect(pastWindowNotInEd.length, "the seed has people past the window who already left the ED").toBeGreaterThan(0);
     for (const m of pastWindowNotInEd) expect(inEdTierOverdue(m, now)).toBe(false);
   });

@@ -247,14 +247,62 @@ export function isTierOneOpen(movement: Movement): boolean {
   return isOpen(movement) && movement.urgency === 1;
 }
 
+/** When a tier's window starts to show "due soon": an hour before it ends, or halfway for a short window. */
+export function tierDueSoonAfterMinutes(urgency: number | undefined): number {
+  const overdue = tierOverdueAfterMinutes(urgency);
+  return overdue - Math.min(60, overdue / 2);
+}
+
+/** The words for a journey with no referral time, where its tier wait would show (audit M5). */
+export const REFERRAL_TIME_NOT_RECORDED = "Referral time not recorded";
+
 /**
- * OVERDUE WAITS (P002): an open journey whose person is still in an ED (`isWaitingInEd`) and has
- * waited past its tier's window (`isTierOverdue`). Somebody already on the road is not a wait.
+ * THE TIER WAIT, COUNTED FROM REFERRAL (audit M5, ruling 4, D-MCA (Josh, 14 Nov 2026)). The values
+ * register words the tier windows as "Tier N referral shown as overdue after…", and the Referrals
+ * board has always counted them from the referral, so every tier marker on a journey (Home's Overdue
+ * waits, the queue rows and their "late" count, the placement drawer, the shortlist and the patient
+ * page) counts from `Movement.referredAt` too, through `minutesSinceReferral` (WF-02). Time in the
+ * department never stands in for it: with no referral time recorded the wait is `recorded: false`,
+ * and a screen says `REFERRAL_TIME_NOT_RECORDED` instead of marking it overdue. No value changes.
+ */
+export type TierWait =
+  | { readonly recorded: false }
+  | {
+      readonly recorded: true;
+      /** Minutes since the referral. */
+      readonly waited: number;
+      /** The tier's window and its "due soon" point, in minutes from the referral. */
+      readonly overdueAfter: number;
+      readonly dueSoonAfter: number;
+      readonly overdue: boolean;
+      readonly dueSoon: boolean;
+    };
+
+/** The fields a tier wait reads; a page with no tier recorded passes `urgency: undefined` (tier 3's window). */
+type TierWaitSource = Pick<Movement, "referredAt"> & { readonly urgency?: number | undefined };
+
+export function tierWaitFromReferral(movement: TierWaitSource, now: Instant): TierWait {
+  const waited = minutesSinceReferral(movement, now);
+  if (waited === undefined || !Number.isFinite(waited)) return { recorded: false };
+  const overdueAfter = tierOverdueAfterMinutes(movement.urgency);
+  const dueSoonAfter = tierDueSoonAfterMinutes(movement.urgency);
+  const overdue = isTierOverdue(movement.urgency, waited);
+  return { recorded: true, waited, overdueAfter, dueSoonAfter, overdue, dueSoon: !overdue && waited >= dueSoonAfter };
+}
+
+/** Past its tier's window counted from referral; never true without a recorded referral time. */
+export function isTierOverdueFromReferral(movement: TierWaitSource, now: Instant): boolean {
+  const wait = tierWaitFromReferral(movement, now);
+  return wait.recorded && wait.overdue;
+}
+
+/**
+ * OVERDUE WAITS (P002): an open journey whose person is still in an ED (`isWaitingInEd`) and whose
+ * referral has waited past its tier's window (`isTierOverdueFromReferral`, audit M5). Somebody
+ * already on the road is not a wait, and a journey with no referral time is not counted.
  */
 export function inEdTierOverdue(movement: Movement, now: Instant): boolean {
-  return (
-    isOpen(movement) && isWaitingInEd(movement) && isTierOverdue(movement.urgency, Math.max(0, now - movement.openedAt))
-  );
+  return isOpen(movement) && isWaitingInEd(movement) && isTierOverdueFromReferral(movement, now);
 }
 
 /**
