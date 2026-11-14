@@ -28,7 +28,7 @@ function renderWard(unitId: string) {
 describe("tonight's intake hours on the ward hero (feature item 13)", () => {
   it("shows a seeded window", () => {
     renderWard("rgh-adult-secure");
-    expect(screen.getByTestId("ward-intake-window-line").textContent).toBe("Tonight: admit 21:00 to 02:00");
+    expect(screen.getByTestId("ward-intake-window-line").textContent).toBe("Tonight: admit 9:00 pm to 2:00 am");
   });
 
   it("starts empty, and saves two typed times", () => {
@@ -43,7 +43,7 @@ describe("tonight's intake hours on the ward hero (feature item 13)", () => {
     fireEvent.change(from, { target: { value: "2200" } });
     fireEvent.change(to, { target: { value: "03:00" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
-    expect(screen.getByTestId("ward-intake-window-line").textContent).toBe("Tonight: admit 22:00 to 03:00");
+    expect(screen.getByTestId("ward-intake-window-line").textContent).toBe("Tonight: admit 10:00 pm to 3:00 am");
   });
 });
 

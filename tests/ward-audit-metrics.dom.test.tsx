@@ -158,7 +158,7 @@ describe("audit metrics rendered regressions", () => {
       />,
     );
     const timeline = within(screen.getByRole("list", { name: "Latest for this patient" }));
-    expect(timeline.getByText("23:00")).toBeInTheDocument();
+    expect(timeline.getByText("11:00 pm")).toBeInTheDocument();
     expect(timeline.getAllByText("Yday")).toHaveLength(1);
   });
 });

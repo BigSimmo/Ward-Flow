@@ -126,9 +126,9 @@ describe("D-187 (F-49): an Undo lasts the 5 minutes its message promises", () =>
     await act(async () => {
       fireEvent.click(screen.getByTestId("ward-patient-archive-confirm"));
     });
-    // D-192: the board clock reads 00:00 here, so the window ends at 00:05.
+    // D-192: the board clock reads 12:00 am here, so the window ends at 12:05 am.
     expect(screen.getByTestId("toast")).toHaveTextContent(
-      `Synthetic record's record archived · Undo until 00:0${UNDO_WINDOW_MINUTES}`,
+      `Synthetic record's record archived · Undo until 12:0${UNDO_WINDOW_MINUTES} am`,
     );
     await act(async () => {
       vi.advanceTimersByTime(WINDOW_MS - 1000);

@@ -6,7 +6,7 @@ import { BellRing } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 import { Button, Field, Segmented, StatusGlyph, TextInput, type WfTone } from "@/components/wf";
-import { MINUTES_PER_DAY, formatInstant, formatInstantWithDay, type Instant } from "../ward-clock";
+import { MINUTES_PER_DAY, formatClock24, formatInstantWithDay, type Instant } from "../ward-clock";
 import { wardChromeRole } from "../ward-chrome-role";
 import type { WardFlowRole } from "../ward-flow-events";
 import { canDispatch } from "../ward-role-permissions";
@@ -52,7 +52,7 @@ const TOLD_AGO_MINUTES = [15, 30, 60] as const;
 export function toldAgo(now: Instant, minutes: number): { time: string; day: ToldDay } {
   const toldAt = (now - minutes) as Instant;
   return {
-    time: formatInstant(toldAt),
+    time: formatClock24(toldAt),
     day: String(Math.floor(now / MINUTES_PER_DAY) - Math.floor(toldAt / MINUTES_PER_DAY)) as ToldDay,
   };
 }
@@ -146,7 +146,7 @@ export function SupportNotificationChecklist({
     setEditing(party);
     setOutcome("");
     setWho("");
-    setTime(formatInstant(now));
+    setTime(formatClock24(now));
     setDay("0");
     setReason("");
     setSaveNote(null);

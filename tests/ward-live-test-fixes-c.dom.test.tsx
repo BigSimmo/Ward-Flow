@@ -60,14 +60,14 @@ describe("overdue arrival follows a ward ETA only", () => {
 });
 
 describe("WF-47 saved-at toast", () => {
-  it("says what was saved and the HH:MM on the board's clock", () => {
+  it("says what was saved and the time on the board's clock", () => {
     const push = vi.fn();
     // 09:07 on the board, whatever the device clock says (two-sign-in test, 8 Nov 2026).
     savedAtToast({ push } as never, "Hold-up saved: Awaiting pharmacy", 9 * 60 + 7);
     expect(push).toHaveBeenCalledWith({
       tone: "success",
       title: "Hold-up saved: Awaiting pharmacy",
-      body: "Saved at 09:07",
+      body: "Saved at 9:07 am",
     });
   });
 });
@@ -80,7 +80,7 @@ describe("WF-18 draft saved points to the Drafts list", () => {
     noticeDraftKept({ push }, true, 7, new Date("2026-11-05T01:00:00Z"));
     expect(push).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: "Draft saved at 09:07",
+        title: "Draft saved at 9:07 am",
         nextStep: { label: "View drafts", href: "/ward-flow/settings#you" },
       }),
     );

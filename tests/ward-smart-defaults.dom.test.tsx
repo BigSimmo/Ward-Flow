@@ -25,7 +25,7 @@ import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useDeviceChoice } from "@/components/ward-management/shell/use-device-choice";
-import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { formatClock24, type Instant } from "@/components/ward-management/ward-clock";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -118,7 +118,7 @@ describe("adding a patient at an ED desk", () => {
 describe("told a little while ago", () => {
   it("fills the time and the day, across midnight too", () => {
     const now = NOW_ANCHOR as Instant;
-    expect(toldAgo(now, 15).time).toBe(formatInstant((now - 15) as Instant));
+    expect(toldAgo(now, 15).time).toBe(formatClock24((now - 15) as Instant));
     const justAfterMidnight = (Math.floor(now / 1440) * 1440 + 10) as Instant;
     expect(toldAgo(justAfterMidnight, 30)).toEqual({ time: "23:40", day: "1" });
     expect(toldAgo(justAfterMidnight, 5)).toEqual({ time: "00:05", day: "0" });

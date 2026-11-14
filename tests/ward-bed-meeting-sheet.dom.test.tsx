@@ -179,7 +179,7 @@ describe("the sheet on Capacity", () => {
     // D-218 (Josh, 14 Nov 2026): no legal-limit disclaimer on the sheet.
     expect(copy.textContent).not.toMatch(/legal limit|not checked/u);
     expect(within(copy).getByTestId("ward-print-attribution").textContent).toBe(
-      "Printed by Bed coordinator, Statewide, at 10:42 board time. Synthetic data.",
+      "Printed by Bed coordinator, Statewide, at 10:42 am board time. Synthetic data.",
     );
   });
 

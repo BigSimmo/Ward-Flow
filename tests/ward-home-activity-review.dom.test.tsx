@@ -116,7 +116,7 @@ describe("Home's Activity panel: explicit review", () => {
     await waitFor(() => expect(activityTrigger()).toHaveAttribute("aria-expanded", "false"));
     await openActivity();
     await waitFor(() => expect(activityTrigger()).toHaveAttribute("aria-expanded", "true"));
-    expect(panel()).toHaveTextContent("Since your review at 09:42");
+    expect(panel()).toHaveTextContent("Since your review at 9:42 am");
     expect(reviewButton()).toHaveAccessibleName("Mark these 3 reviewed");
   });
 
@@ -131,10 +131,10 @@ describe("Home's Activity panel: explicit review", () => {
     const text = writeText.mock.calls[0]![0];
     const lines = text.split("\n");
     expect(lines[0]).toBe("Synthetic prototype.");
-    // Item 11: the seed's absence without leave recorded at 10:07 is the third change.
-    expect(lines[1]).toBe("Changes since your review at 09:42: 3");
+    // Item 11: the seed's absence without leave recorded at 10:07 am is the third change.
+    expect(lines[1]).toBe("Changes since your review at 9:42 am: 3");
     expect(text).toContain("Absent without leave (1)");
-    expect(text).toMatch(/- 10:07 absent without leave from /u);
+    expect(text).toMatch(/- 10:07 am absent without leave from /u);
     expect(lines.length, "the copy lists the changes, not just a heading").toBeGreaterThan(3);
     expect(text).not.toMatch(/UM\d{6}/u);
     // Josh (31 Oct 2026): no names in the copy. Every synthetic person's surname stays out of it.
@@ -148,24 +148,26 @@ describe("Home's Activity panel: explicit review", () => {
     const stored = storeEarlierReview();
     renderHome();
     await openActivity();
-    expect(panel()).toHaveTextContent("Since your review at 09:42");
+    expect(panel()).toHaveTextContent("Since your review at 9:42 am");
     fireEvent.click(within(panel()).getByRole("button", { name: "Mark these 3 reviewed" }));
 
     const saved = parseLastLookSnapshot(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY));
     expect(saved?.at).toBe(NOW);
-    expect(within(panel()).getByRole("status")).toHaveTextContent("3 changes to synthetic records reviewed at 10:42");
+    expect(within(panel()).getByRole("status")).toHaveTextContent(
+      "3 changes to synthetic records reviewed at 10:42 am",
+    );
     expect(within(panel()).queryByRole("button", { name: /^Mark these/u })).toBeNull();
 
     fireEvent.click(within(panel()).getByRole("button", { name: "Undo" }));
     expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBe(stored);
-    expect(panel()).toHaveTextContent("Since your review at 09:42");
+    expect(panel()).toHaveTextContent("Since your review at 9:42 am");
     expect(within(panel()).getByRole("button", { name: "Mark these 3 reviewed" })).toBeInTheDocument();
   });
 
   it("Undo of a first review this shift clears it, so lines count from last night again (item 11)", async () => {
     renderHome();
     await openActivity();
-    expect(panel()).toHaveTextContent("Since last night at 23:00");
+    expect(panel()).toHaveTextContent("Since last night at 11:00 pm");
     const firstLabel = reviewButton().textContent;
     fireEvent.click(reviewButton());
     expect(parseLastLookSnapshot(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY))?.at).toBe(NOW);
@@ -173,7 +175,7 @@ describe("Home's Activity panel: explicit review", () => {
 
     fireEvent.click(within(panel()).getByRole("button", { name: "Undo" }));
     expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBeNull();
-    expect(panel()).toHaveTextContent("Since last night at 23:00");
+    expect(panel()).toHaveTextContent("Since last night at 11:00 pm");
     expect(reviewButton().textContent).toBe(firstLabel);
   });
 

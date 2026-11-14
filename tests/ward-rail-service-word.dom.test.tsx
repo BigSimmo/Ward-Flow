@@ -138,7 +138,7 @@ describe("board time in the top bar (A7)", () => {
     expect(clocks).toHaveLength(1);
     const clock = clocks[0]!;
     expect(clock).toHaveAttribute("data-testid", "ward-bar-demo-clock");
-    expect(clock).toHaveAccessibleName("Board time 10:42. Open demo controls");
+    expect(clock).toHaveAccessibleName("Board time 10:42 am. Open demo controls");
     expect(clock).toHaveTextContent("Board time");
     expect(clock).toHaveTextContent("10:42");
     // RC 2.6 (F-113): the board clock is the demo's scripted time, so it carries no real-time zone label.

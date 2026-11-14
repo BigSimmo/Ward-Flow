@@ -59,9 +59,9 @@ const intake: ReferralIntakeDetails = {
 describe("referral expected time", () => {
   it("adds (passed) only when the expected time is earlier than now", () => {
     const clearance = intake.medicalClearance;
-    expect(referralExpectedTime(clearance.expectedAt, clearance, DAY_ZERO, NOW, "AWST")).toBe("14:30 AWST (passed)");
-    expect(referralExpectedTime(clearance.expectedAt, clearance, DAY_ZERO, 14 * 60, "AWST")).toBe("14:30 AWST");
-    expect(referralExpectedTime(clearance.expectedAt, clearance, DAY_ZERO, 14 * 60 + 30, "AWST")).toBe("14:30 AWST");
+    expect(referralExpectedTime(clearance.expectedAt, clearance, DAY_ZERO, NOW, "AWST")).toBe("2:30 pm AWST (passed)");
+    expect(referralExpectedTime(clearance.expectedAt, clearance, DAY_ZERO, 14 * 60, "AWST")).toBe("2:30 pm AWST");
+    expect(referralExpectedTime(clearance.expectedAt, clearance, DAY_ZERO, 14 * 60 + 30, "AWST")).toBe("2:30 pm AWST");
     expect(referralExpectedTime(undefined, clearance, DAY_ZERO, NOW)).toBe("Time not recorded");
     // Without a board clock there is no now to compare with.
     expect(referralExpectedTime(clearance.expectedAt, clearance, DAY_ZERO, undefined)).not.toContain("passed");
@@ -70,13 +70,13 @@ describe("referral expected time", () => {
   it("follows the demonstration day for a seeded target", () => {
     const seeded = { syntheticTimelineBase: "2026-10-24T00:00:00+08:00" };
     const nextDay = perthMidnight(2026, 9, 25);
-    expect(referralExpectedTime("2026-10-24T14:30+08:00", seeded, nextDay, NOW, "AWST")).toBe("14:30 AWST (passed)");
-    expect(referralExpectedTime("2026-10-24T14:30+08:00", seeded, nextDay, 60, "AWST")).toBe("14:30 AWST");
+    expect(referralExpectedTime("2026-10-24T14:30+08:00", seeded, nextDay, NOW, "AWST")).toBe("2:30 pm AWST (passed)");
+    expect(referralExpectedTime("2026-10-24T14:30+08:00", seeded, nextDay, 60, "AWST")).toBe("2:30 pm AWST");
   });
 
   it("names the demo's own clock when no zone is passed (F-113)", () => {
     const clearance = intake.medicalClearance;
-    expect(referralExpectedTime(clearance.expectedAt, clearance, DAY_ZERO, NOW)).toBe("14:30 demo time (passed)");
+    expect(referralExpectedTime(clearance.expectedAt, clearance, DAY_ZERO, NOW)).toBe("2:30 pm demo time (passed)");
   });
 
   it("says passed on the referral intake summary", () => {
@@ -86,7 +86,7 @@ describe("referral expected time", () => {
       </WardFlowProvider>,
     );
     expect(screen.getByText("Medical clearance").parentElement).toHaveTextContent(
-      /^Medical clearancePending · expected 14:30 demo time \(passed\)$/,
+      /^Medical clearancePending · expected 2:30 pm demo time \(passed\)$/,
     );
   });
 
@@ -98,6 +98,6 @@ describe("referral expected time", () => {
         <PatientTab referral={referral} now={NOW} personName="Synthetic Person" readOnly />
       </WardFlowProvider>,
     );
-    expect(container).toHaveTextContent("Clearance expected 14:30 demo time (passed)");
+    expect(container).toHaveTextContent("Clearance expected 2:30 pm demo time (passed)");
   });
 });

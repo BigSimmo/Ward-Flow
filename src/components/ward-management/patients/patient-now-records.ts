@@ -6,7 +6,14 @@
  * as well as dynamic fallback structures for any patient or movement in the system.
  */
 
-import { dayOf, formatInstant, minuteOfDay, splitDuration } from "@/components/ward-management/ward-clock";
+import {
+  dayOf,
+  formatClock24,
+  formatInstant,
+  formatInstantWithDay,
+  minuteOfDay,
+  splitDuration,
+} from "@/components/ward-management/ward-clock";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { STANDARD_WARD_SITES, wardNetworkOf } from "@/components/ward-management/ward-sites";
 
@@ -585,8 +592,16 @@ export function dur(min: number): string {
 
 export function clock(min: number): string {
   // Demo instants run past 1440 (680:51 is day 28). The face of the clock wraps; callers that need
-  // the day use formatInstantWithDay or dayLabel beside it.
+  // the day use `clockOn`, formatInstantWithDay or dayLabel beside it.
   return formatInstant(min);
+}
+
+/**
+ * Coordinator item 8 (14 Nov 2026): a patient-page time on screen, am/pm, with its day said when it
+ * is not today ("9:15 pm yesterday"). Without `now` only the clock face can be said.
+ */
+export function clockOn(min: number, now: number | undefined): string {
+  return now === undefined ? formatInstant(min) : formatInstantWithDay(min, now);
 }
 
 /**
@@ -595,7 +610,8 @@ export function clock(min: number): string {
  */
 export function etaPresetText(now: number, offset: number): string {
   const target = now + offset;
-  return `${clock(minuteOfDay(target))}${dayOf(target) > dayOf(now) ? " tomorrow" : ""}`;
+  // The field reads the 24-hour face back (`minuteOfDayFromClockText`), so the preset writes it.
+  return `${formatClock24(minuteOfDay(target))}${dayOf(target) > dayOf(now) ? " tomorrow" : ""}`;
 }
 
 export function fillTemplate(

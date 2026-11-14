@@ -131,7 +131,7 @@ describe("bed meeting actions due on a record", () => {
 
     const card = screen.getByTestId("meeting-actions-due");
     expect(card).toHaveTextContent("Book transport");
-    expect(card).toHaveTextContent(/Due \d{2}:\d{2}/);
+    expect(card).toHaveTextContent(/Due \d{1,2}:\d{2} [ap]m/);
     fireEvent.click(screen.getByRole("button", { name: "Mark done: Book transport" }));
 
     expect(screen.getByTestId("refusals")).toHaveTextContent("0");

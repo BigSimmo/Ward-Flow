@@ -1,6 +1,7 @@
 import {
   clockZoneLabel,
-  formatInstantWithDay,
+  formatClock24,
+  formatClock24WithDay,
   formatSince,
   type ClockZoneLabel,
   type Instant,
@@ -15,7 +16,7 @@ import { stageCopy, transportLeg } from "@/components/ward-management/ward-deriv
 import {
   type PatientNowRecord,
   type DocumentRecord,
-  clock,
+  clockOn,
 } from "@/components/ward-management/patients/patient-now-records";
 import { NAME_NOT_RECORDED, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import type { Admission } from "@/components/ward-management/ward-admissions";
@@ -35,7 +36,8 @@ function legalDocumentStatus(movement: Movement, now: Instant): string {
   if (position.ended) return FORM_RECORDED_ENDED;
   if (position.typedEndAt === undefined) return "Active";
   // Stress test 14 Nov (F3): a typed end on another day names the day, not a bare clock face.
-  return `Runs to ${now > 0 ? formatInstantWithDay(position.typedEndAt, now) : clock(position.typedEndAt)}`;
+  // A legal form time keeps the 24-hour face it was entered with (D-93, D-218).
+  return `Runs to ${now > 0 ? formatClock24WithDay(position.typedEndAt, now) : formatClock24(position.typedEndAt)}`;
 }
 
 export interface ResolvedPatientNow {
@@ -508,7 +510,7 @@ export function resolvePatientNowRecord(
           who: originEdName,
           role:
             origin.kind === "ed" ? "Referring ED" : origin.kind === "admission" ? "Sending ward" : "Referring service",
-          note: `Movement opened at ${clock(movement.openedAt)}`,
+          note: `Movement opened at ${clockOn(movement.openedAt, now)}`,
           tone: null,
         },
         ...(acceptedUnit
@@ -532,7 +534,7 @@ export function resolvePatientNowRecord(
               ? [["CAD (dispatch) number", movement.transport.cadNumber] as [string, string]]
               : []),
             ...(movement.transport.estimatedAt
-              ? [["Quoted ETA", `${clock(movement.transport.estimatedAt)} ${zone}`] as [string, string]]
+              ? [["Quoted ETA", `${clockOn(movement.transport.estimatedAt, now)} ${zone}`] as [string, string]]
               : []),
           ]
         : [["Status", "No transport booking recorded"]],
@@ -541,7 +543,7 @@ export function resolvePatientNowRecord(
         : "Transport job is logged once receiving bed is confirmed.",
       transportBooked: movement.transport !== undefined,
       cadNumber: movement.transport?.cadNumber,
-      eta: movement.transport?.estimatedAt ? `${clock(movement.transport.estimatedAt)} ${zone}` : undefined,
+      eta: movement.transport?.estimatedAt ? `${clockOn(movement.transport.estimatedAt, now)} ${zone}` : undefined,
       transportProvider: movement.transport?.provider,
       transportLegalStatus: movement.transport?.transportLegalStatus,
       escortRequired: movement.transport?.escortRequired,
@@ -713,7 +715,7 @@ export function resolvePatientNowRecord(
                 : origin.kind === "admission"
                   ? "Sending ward"
                   : "Referring service",
-            note: `Movement opened at ${clock(activeMovement.openedAt)}`,
+            note: `Movement opened at ${clockOn(activeMovement.openedAt, now)}`,
             tone: null,
           },
           ...(acceptedUnit
@@ -737,7 +739,7 @@ export function resolvePatientNowRecord(
                 ? [["CAD (dispatch) number", activeMovement.transport.cadNumber] as [string, string]]
                 : []),
               ...(activeMovement.transport.estimatedAt
-                ? [["Quoted ETA", `${clock(activeMovement.transport.estimatedAt)} ${zone}`] as [string, string]]
+                ? [["Quoted ETA", `${clockOn(activeMovement.transport.estimatedAt, now)} ${zone}`] as [string, string]]
                 : []),
             ]
           : [["Status", "No transport booking recorded"]],
@@ -747,7 +749,7 @@ export function resolvePatientNowRecord(
         transportBooked: activeMovement.transport !== undefined,
         cadNumber: activeMovement.transport?.cadNumber,
         eta: activeMovement.transport?.estimatedAt
-          ? `${clock(activeMovement.transport.estimatedAt)} ${zone}`
+          ? `${clockOn(activeMovement.transport.estimatedAt, now)} ${zone}`
           : undefined,
         transportProvider: activeMovement.transport?.provider,
         transportLegalStatus: activeMovement.transport?.transportLegalStatus,

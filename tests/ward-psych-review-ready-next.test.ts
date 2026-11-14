@@ -114,7 +114,7 @@ describe("psychiatry review tracker", () => {
       next: ["ask"],
     });
     const asked = psychReviewStage({ ...base, psychReview: { requestedAt: 550 } }, 675, 300);
-    expect(asked.line).toBe("Review asked 09:10 · 2h\u00a005m");
+    expect(asked.line).toBe("Review asked 9:10 am · 2h\u00a005m");
     expect(asked.waitedMinutes).toBe(125);
     expect(asked.next).toEqual(["registrar", "consultant"]);
     const registrar = psychReviewStage({ ...base, psychReview: { requestedAt: 550, registrarSeenAt: 600 } }, 675, 300);

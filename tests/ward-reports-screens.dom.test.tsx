@@ -402,7 +402,7 @@ describe("read-only report screens", () => {
 
   it("takes a stamped downtime snapshot and keeps it in tab memory", () => {
     inProvider(<DowntimePackScreen />);
-    expect(screen.getByTestId("ward-downtime-generated").textContent).toMatch(/^Taken .* · next pack 11:00$/u);
+    expect(screen.getByTestId("ward-downtime-generated").textContent).toMatch(/^Taken .* · next pack 11:00 am$/u);
     expect(screen.getByTestId("ward-downtime-beds")).toBeTruthy();
     expect(lastDowntimePack()?.generatedAt).toBe(NOW_ANCHOR);
   });
@@ -717,7 +717,7 @@ describe("read-only report screens", () => {
     expect(readySum).toBe(pack.totals.ready);
     expect(screen.getByTestId("ward-downtime-total-ready").textContent).toBe(String(pack.totals.ready));
     // Page-top redesign (Josh, 9 Nov 2026): the frozen time is the page title.
-    expect(screen.getByTestId("ward-downtime-frozen").textContent).toMatch(/^Frozen at \d\d:\d\d$/u);
+    expect(screen.getByTestId("ward-downtime-frozen").textContent).toMatch(/^Frozen at \d{1,2}:\d{2} [ap]m$/u);
   });
 
   it("shows a delta twin on each hero figure after a new snapshot", () => {

@@ -9,7 +9,7 @@ import {
   type ArrivalTimingMovement,
 } from "@/components/ward-management/ward-arrival-timing";
 import { formatClockAmPm, formatClockAmPmWithDay } from "@/components/ward-management/ward-clock-am-pm";
-import { formatInstantWithDay, MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
+import { formatClock24WithDay, MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import type { Movement } from "@/components/ward-management/ward-model";
 
@@ -181,7 +181,7 @@ describe("formatClockAmPm", () => {
     expect(formatClockAmPm(instant)).toBe(text);
   });
 
-  it("says the day with the same words as formatInstantWithDay", () => {
+  it("says the day with the same words as the 24-hour formatClock24WithDay", () => {
     const now = 3 * MINUTES_PER_DAY + 600;
     for (const instant of [
       now,
@@ -191,7 +191,7 @@ describe("formatClockAmPm", () => {
       now + 2 * MINUTES_PER_DAY,
     ]) {
       const withDay = formatClockAmPmWithDay(instant, now);
-      const twentyFour = formatInstantWithDay(instant, now);
+      const twentyFour = formatClock24WithDay(instant, now);
       expect(withDay.slice(formatClockAmPm(instant).length)).toBe(twentyFour.slice(5));
     }
     expect(formatClockAmPmWithDay(now + MINUTES_PER_DAY, now)).toBe("10:00 am tomorrow");

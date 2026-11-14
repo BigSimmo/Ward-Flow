@@ -9,7 +9,7 @@
  *   the summary reads. Only known headings count, in any case; any other "Word:" stays as text.
  * - Reviewed time: DD/MM/YYYY HH:MM on the Perth clock, a real date, never in the future.
  */
-import { perthCalendarDay, perthClockTime, perthMidnight } from "../ward-clock";
+import { perthCalendarDay, perthClock24, perthMidnight } from "../ward-clock";
 import { GUIDES, MSE, MSE_VS, type GuideGroup } from "./triage-risk-data";
 
 const NOT_ASSESSED = "Not assessed";
@@ -323,7 +323,7 @@ export function checkReviewTime(value: string, now: number): ReviewTimeCheck {
 export function perthWallClockDate(moment: number): Date {
   const date = new Date(moment);
   const day = perthCalendarDay(date);
-  const [hour = 0, minute = 0] = perthClockTime(date).split(":").map(Number);
+  const [hour = 0, minute = 0] = perthClock24(date).split(":").map(Number);
   return new Date(day.year, day.monthIndex, day.day, hour, minute);
 }
 
@@ -331,5 +331,5 @@ export function perthWallClockDate(moment: number): Date {
 export function reviewTimeStamp(date: Date): string {
   const two = (n: number) => String(n).padStart(2, "0");
   const perth = perthCalendarDay(date);
-  return `${two(perth.day)}/${two(perth.monthIndex + 1)}/${perth.year} ${perthClockTime(date)}`;
+  return `${two(perth.day)}/${two(perth.monthIndex + 1)}/${perth.year} ${perthClock24(date)}`;
 }

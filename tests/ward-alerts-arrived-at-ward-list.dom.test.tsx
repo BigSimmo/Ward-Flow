@@ -106,7 +106,7 @@ describe("Arrived at ward from the real Alerts list (P069)", () => {
     // The toast and its Undo outlive the alert.
     expect(await screen.findByText(/ arrived at /)).toBeInTheDocument();
     // D-192 (shared design parts item 4): one clock time in the words, no "min left" countdown.
-    expect(screen.getByText(/^· Undo until \d{2}:\d{2}$/u)).toBeInTheDocument();
+    expect(screen.getByText(/^· Undo until \d{1,2}:\d{2} [ap]m$/u)).toBeInTheDocument();
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: /Undo/ }));
     });

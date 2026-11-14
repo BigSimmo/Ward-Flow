@@ -7,7 +7,12 @@
 // "Lists": the department's tabbed lists, Review, Medical Clearance, Expects, Forms and Referred.
 // Split out of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
 import type { KeyboardEvent } from "react";
-import { formatElapsed, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
+import {
+  formatClock24WithDay,
+  formatElapsed,
+  formatInstantWithDay,
+  splitDuration,
+} from "@/components/ward-management/ward-clock";
 import { OPERATIONAL_DEFAULT_LABEL } from "@/components/ward-management/ward-operational-defaults";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import {
@@ -439,13 +444,13 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
                         ? "warn"
                         : "quiet";
                 // The stamp keeps the typed clock time only; the line below adds the warning word.
-                const stamp = due === null || due === undefined ? "no deadline" : formatInstantWithDay(due, now);
+                const stamp = due === null || due === undefined ? "no deadline" : formatClock24WithDay(due, now);
                 const typedLine =
                   due === null || due === undefined
                     ? undefined
                     : due < now
-                      ? `ended ${formatInstantWithDay(due, now)}`
-                      : `ends ${formatInstantWithDay(due, now)}${standing.word ? ` · ${standing.word}` : ""}`;
+                      ? `ended ${formatClock24WithDay(due, now)}`
+                      : `ends ${formatClock24WithDay(due, now)}${standing.word ? ` · ${standing.word}` : ""}`;
                 const patientInfo = resolveSubjectPatient(m, {
                   patients: registryPatients,
                   referrals,

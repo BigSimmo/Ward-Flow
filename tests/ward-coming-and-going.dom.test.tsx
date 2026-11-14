@@ -94,7 +94,7 @@ describe("Coming and going (wave 4)", () => {
     expect(within(part).getByRole("heading", { name: /1 Needs a look\s*now/u })).toHaveTextContent(
       "1 held up · 0 past date",
     );
-    expect(within(part).getByRole("heading", { name: /0 Discharges\s*today/u })).toBeInTheDocument();
+    expect(within(part).getByRole("heading", { name: /0 Expected to leave\s*today/u })).toBeInTheDocument();
     expect(part).toHaveTextContent("None still due today. Bed 07 freed 07:42.");
     expect(screen.getByTestId("ward-tomorrow-line")).toHaveTextContent(
       "Tomorrow 1 short · range 1 short to 2 free · From ward dates",
@@ -133,12 +133,12 @@ describe("Coming and going (wave 4)", () => {
 
   it("keeps a just-pulled row with its inline Undo (the kit RowUndo)", () => {
     const run = vi.fn();
-    // 10:46 Perth (UTC+8); the board clock reads two minutes earlier.
+    // 10:46 am Perth (UTC+8); the board clock reads two minutes earlier.
     const until = new Date("2026-11-13T02:46:00Z");
     renderPart({ undoFor: (id) => (id === "m2" ? { until, now: until.getTime() - 120_000, run } : null) });
-    const undo = screen.getByRole("button", { name: "Undo pull · until 10:46 for Marrowvale, Gianna" });
+    const undo = screen.getByRole("button", { name: "Undo pull · until 10:46 am for Marrowvale, Gianna" });
     expect(undo).toHaveAttribute("data-wf-row-undo");
-    expect(undo).toHaveTextContent(/^Undo pull · until 10:46 for Marrowvale, Gianna$/u);
+    expect(undo).toHaveTextContent(/^Undo pull · until 10:46 am for Marrowvale, Gianna$/u);
     fireEvent.click(undo);
     expect(run).toHaveBeenCalled();
   });

@@ -55,7 +55,7 @@ describe("F-113: one clock-zone label", () => {
       expect(text).toContain("demo time");
       expect(text).not.toContain("AWST");
     }
-    expect(summaryText([], "All wards", "day shift", NOW_ANCHOR, NOW_ANCHOR, "AWST")).toContain("10:42 AWST.");
+    expect(summaryText([], "All wards", "day shift", NOW_ANCHOR, NOW_ANCHOR, "AWST")).toContain("10:42 am AWST.");
     expect(formatReferralIntakeTime("2026-11-13T12:42+08:00", {}, DAY_ZERO, undefined, "AWST")).toBe(
       "13 Nov 2026, 12:42 AWST",
     );
@@ -112,13 +112,13 @@ describe("F-33: the community sample times follow the board's clock", () => {
 
   it("reads as typed on the opening morning", () => {
     const due = demoEgressAt(egress("EGR-02"), NOW_ANCHOR, DAY_ZERO);
-    expect(due.dischargeDatePlan).toBe("Today 10:00");
-    expect(due.kpiStatusLabel).toBe("Due today 15:00");
+    expect(due.dischargeDatePlan).toBe("Today 10:00 am");
+    expect(due.kpiStatusLabel).toBe("Due today 3:00 pm");
     expect(due.kpiTone).toBe("warn");
     expect(due.status).toBe("today");
     expect(demoCaseloadAt(caseload("CL-01"), NOW_ANCHOR, DAY_ZERO)).toMatchObject({
-      lastContact: "Yesterday 14:00 (home)",
-      nextReview: "Tomorrow 10:00 (depot clinic)",
+      lastContact: "Yesterday 2:00 pm (home)",
+      nextReview: "Tomorrow 10:00 am (depot clinic)",
     });
   });
 
@@ -132,14 +132,14 @@ describe("F-33: the community sample times follow the board's clock", () => {
   it("moves with the board's day past midnight", () => {
     const pastMidnight = MINUTES_PER_DAY + 30;
     const due = demoEgressAt(egress("EGR-02"), pastMidnight, DAY_ZERO);
-    expect(due.dischargeDatePlan).toBe("Yesterday 10:00");
+    expect(due.dischargeDatePlan).toBe("Yesterday 10:00 am");
     expect(due.status).toBe("overdue");
     const planned = demoEgressAt(egress("EGR-04"), pastMidnight, DAY_ZERO);
-    expect(planned.dischargeDatePlan).toBe("Today 14:00");
+    expect(planned.dischargeDatePlan).toBe("Today 2:00 pm");
     expect(planned.kpiStatusLabel).toBe("Due tomorrow");
     const row = demoCaseloadAt(caseload("CL-01"), pastMidnight, DAY_ZERO);
-    expect(row.lastContact).toBe("Thu 12 Nov 14:00 (home)");
-    expect(row.nextReview).toBe("Today 10:00 (depot clinic)");
+    expect(row.lastContact).toBe("Thu 12 Nov 2:00 pm (home)");
+    expect(row.nextReview).toBe("Today 10:00 am (depot clinic)");
   });
 
   it("writes no fixed calendar day: every sample day is worked out from day 0", () => {

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { DischargeCareJourney } from "./discharge-care-journey";
 import Link from "next/link";
 import { releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
-import { formatInstant } from "@/components/ward-management/ward-clock";
+import { formatClock24 } from "@/components/ward-management/ward-clock";
 import { parseReleaseDayInstant } from "@/components/ward-management/ward/release-day";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
@@ -270,7 +270,7 @@ export function DischargeRecordDetail({
                     setShowUpdateDate(true);
                     setNewTimeDraft(
                       activeRecord.expectedDischargeAt !== null
-                        ? formatInstant(activeRecord.expectedDischargeAt)
+                        ? formatClock24(activeRecord.expectedDischargeAt)
                         : "14:00",
                     );
                   }}

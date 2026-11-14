@@ -21,7 +21,7 @@ import { ToastProvider } from "@/components/wf/toast-provider";
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
 import { OfficerScreen } from "@/components/ward-management/officer/officer-screen";
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
-import { clock } from "@/components/ward-management/patients/patient-now-records";
+import { formatClock24 } from "@/components/ward-management/ward-clock";
 import {
   buildPatientStatus,
   PatientStatusCard,
@@ -102,10 +102,10 @@ describe("Log booking (A4-7, A4-6, A4-2, A4-5)", () => {
 
     // A4-2: an ETA after the hold ends is warned at once, with the hold end.
     fireEvent.change(within(form).getByTestId("ward-patient-input-eta"), {
-      target: { value: clock(NOW_ANCHOR + 120) },
+      target: { value: formatClock24(NOW_ANCHOR + 120) },
     });
     expect(within(form).getByTestId("ward-patient-eta-after-hold")).toHaveTextContent(
-      /Arrives after the pull time limit ends at \d\d:\d\d\. Extend the pull or rebook\./,
+      /Arrives after the pull time limit ends at \d{1,2}:\d{2} [ap]m\. Extend the pull or rebook\./,
     );
 
     // A4-5: Save is the shared primary button, so it carries its own colours in the sheet.

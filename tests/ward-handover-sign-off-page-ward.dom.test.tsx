@@ -43,10 +43,10 @@ function renderAtDesk(access: WardAccess, search = "") {
       </WardAccessScope>
     </WardFlowProvider>,
   );
-  // 10:00, so the 15:00 handover is the one open for sign-off. 1 Nov 2026 redesign: the handover
+  // 10:00 am, so the 3:00 pm handover is the one open for sign-off. 1 Nov 2026 redesign: the handover
   // is chosen from one menu; 3 Nov 2026: the sign-off checklist opens from the hero's Sign off.
   fireEvent.click(screen.getByTestId("ward-handover-shift"));
-  fireEvent.click(screen.getByRole("menuitemradio", { name: /15:00/ }));
+  fireEvent.click(screen.getByRole("menuitemradio", { name: /3:00 pm/ }));
   fireEvent.click(screen.getByTestId("ward-handover-hero-sign-off"));
 }
 

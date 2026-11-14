@@ -106,8 +106,8 @@ describe("WardNotificationCenter DOM Component", () => {
     expect(rows[0]).toHaveTextContent("Please review pending discharges immediately");
     expect(rows[0]).toHaveTextContent("Urgent buzz");
     // Time formatted
-    expect(screen.getByText("09:00")).toBeInTheDocument();
-    expect(screen.getByText("09:30")).toBeInTheDocument();
+    expect(screen.getByText("9:00 am")).toBeInTheDocument();
+    expect(screen.getByText("9:30 am")).toBeInTheDocument();
 
     // Does NOT show buzz for Ward Beta
     expect(screen.queryByText("Bed review for Beta")).not.toBeInTheDocument();
@@ -262,7 +262,7 @@ describe("WardNotificationCenter DOM Component", () => {
     const overdue = screen.getAllByRole("listitem").filter((row) => row.textContent?.includes("Late arrival"));
     expect(overdue).toHaveLength(1);
     expect(overdue[0]).toHaveTextContent("Jane Doe");
-    expect(overdue[0]).toHaveTextContent("Expected 10:00.");
+    expect(overdue[0]).toHaveTextContent("Expected 10:00 am.");
     expect(overdue[0]).toHaveTextContent("More than 60 minutes late.");
 
     // Does not display alert for non-overdue or other ward

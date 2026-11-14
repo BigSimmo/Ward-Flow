@@ -49,14 +49,14 @@ describe("D4: the configured ED access target is said in whole hours, one way", 
 });
 
 describe("D9: the last alert line reads the Perth clock whatever the device zone", () => {
-  it("says 14:05 today for a Perth afternoon alert on a New York device", () => {
+  it("says 2:05 pm today for a Perth afternoon alert on a New York device", () => {
     vi.stubEnv("TZ", "America/New_York");
-    const now = new Date("2026-11-10T08:00:00Z"); // 16:00 Perth
-    expect(lastPushLine(new Date("2026-11-10T06:05:00Z"), now)).toBe("Last alert on this device: 14:05 today.");
-    // 06:05 Perth on Tue 3 Nov is still 2 Nov in New York.
-    expect(lastPushLine(new Date("2026-11-02T22:05:00Z"), now)).toBe("Last alert on this device: 06:05, 3 Nov.");
-    // 23:30 Perth on Mon 9 Nov is yesterday in Perth.
-    expect(lastPushLine(new Date("2026-11-09T15:30:00Z"), now)).toBe("Last alert on this device: 23:30 yesterday.");
+    const now = new Date("2026-11-10T08:00:00Z"); // 4:00 pm Perth
+    expect(lastPushLine(new Date("2026-11-10T06:05:00Z"), now)).toBe("Last alert on this device: 2:05 pm today.");
+    // 6:05 am Perth on Tue 3 Nov is still 2 Nov in New York.
+    expect(lastPushLine(new Date("2026-11-02T22:05:00Z"), now)).toBe("Last alert on this device: 6:05 am, 3 Nov.");
+    // 11:30 pm Perth on Mon 9 Nov is yesterday in Perth.
+    expect(lastPushLine(new Date("2026-11-09T15:30:00Z"), now)).toBe("Last alert on this device: 11:30 pm yesterday.");
   });
 });
 
@@ -75,17 +75,17 @@ describe("G6: an expected medical clearance time that has gone by says so", () =
 
   it("adds (passed) once the expected time is earlier than now", () => {
     expect(referralIntakeExpected("2026-11-13T09:00:00+08:00", target, dayZero, 10 * 60, "AWST")).toBe(
-      "09:00 AWST (passed)",
+      "9:00 am AWST (passed)",
     );
   });
 
   it("adds nothing while the expected time is still ahead", () => {
-    expect(referralIntakeExpected("2026-11-13T11:00:00+08:00", target, dayZero, 10 * 60, "AWST")).toBe("11:00 AWST");
+    expect(referralIntakeExpected("2026-11-13T11:00:00+08:00", target, dayZero, 10 * 60, "AWST")).toBe("11:00 am AWST");
   });
 
   it("names the demo's own clock when no zone is passed (F-113)", () => {
     expect(referralIntakeExpected("2026-11-13T09:00:00+08:00", target, dayZero, 10 * 60)).toBe(
-      "09:00 demo time (passed)",
+      "9:00 am demo time (passed)",
     );
   });
 

@@ -71,7 +71,7 @@ afterEach(() => {
 describe("D8: Draft saved reads the board clock", () => {
   it("stamps the board's 10:00, not the device's 11:00", () => {
     const push = vi.fn(() => "t");
-    expect(noticeDraftKept({ push }, true, BOARD_NOW, DAY_ZERO)).toBe("Draft saved at 10:00");
+    expect(noticeDraftKept({ push }, true, BOARD_NOW, DAY_ZERO)).toBe("Draft saved at 10:00 am");
   });
 });
 
@@ -79,7 +79,7 @@ describe("D8 and C5: Midland contacts are stamped and counted on the board's day
   it("records the contact at the board's moment and lists it as today's", () => {
     onBoard(<TeamHome go={vi.fn()} now="10:00" />);
     fireEvent.click(screen.getByText("Record contact").closest("button")!);
-    expect(screen.getByText("Contact recorded at 10:00")).toBeInTheDocument();
+    expect(screen.getByText("Contact recorded at 10:00 am")).toBeInTheDocument();
     const stored = JSON.parse(window.localStorage.getItem(MIDLAND_DECISIONS_KEY) ?? "{}") as Record<
       string,
       { at: number }

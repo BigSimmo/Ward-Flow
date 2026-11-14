@@ -58,7 +58,7 @@ describe("Handover page", () => {
     expect(screen.getByTestId("ward-handover-page")).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 1, name: /to hand over/ })).toBeInTheDocument();
     // 1 Nov 2026 redesign: the handover is chosen from one menu that names it.
-    expect(screen.getByTestId("ward-handover-shift")).toHaveTextContent(/^15:00/);
+    expect(screen.getByTestId("ward-handover-shift")).toHaveTextContent(/^3:00 pm/);
     // Page tops (9 Nov 2026): the top's figures replace the count strip.
     expect(screen.getByTestId("ward-handover-figure-act")).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /Patients/ })).toHaveAttribute("aria-selected", "true");
@@ -256,7 +256,7 @@ describe("Handover page", () => {
     await user.click(screen.getByTestId("ward-handover-hero-sign-off"));
     await user.click(screen.getByTestId("ward-handover-sign-off-button"));
     expect(screen.getByTestId("ward-handover-sign-off-visible-status")).toHaveTextContent(
-      "Signed off at 10:42 as bed coordinator",
+      "Signed off at 10:42 am as bed coordinator",
     );
     // 3 Nov 2026: the hero's Sign off reads the signed time.
     expect(screen.getByTestId("ward-handover-hero-sign-off")).toHaveTextContent("Signed 10:42");
@@ -295,13 +295,13 @@ describe("Handover page", () => {
     const user = userEvent.setup();
     renderHandover();
     await user.click(screen.getByTestId("ward-handover-shift"));
-    await user.click(screen.getByRole("menuitemradio", { name: /07:00/ }));
+    await user.click(screen.getByRole("menuitemradio", { name: /7:00 am/ }));
     expect(screen.getByRole("heading", { level: 1, name: /to hand over/ })).toBeInTheDocument();
-    expect(screen.getByTestId("ward-handover-shift")).toHaveTextContent(/^07:00/);
-    expect(screen.getByText(/The 07:00 handover has passed/)).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Go to 15:00 handover" }));
+    expect(screen.getByTestId("ward-handover-shift")).toHaveTextContent(/^7:00 am/);
+    expect(screen.getByText(/The 7:00 am handover has passed/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Go to 3:00 pm handover" }));
     expect(screen.getByRole("heading", { level: 1, name: /to hand over/ })).toBeInTheDocument();
-    expect(screen.getByTestId("ward-handover-shift")).toHaveTextContent(/^15:00/);
+    expect(screen.getByTestId("ward-handover-shift")).toHaveTextContent(/^3:00 pm/);
   });
 
   it("opens the print sheet builder from Print handover and comes back", async () => {

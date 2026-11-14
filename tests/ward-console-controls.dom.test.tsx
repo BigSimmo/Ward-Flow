@@ -347,7 +347,7 @@ describe("finding 1 — a closed movement must not render as live and actionable
     // unchanged clock face "10:22"; `formatInstantWithDay` must say "yesterday" as well, which is
     // the exact defect finding 3 describes for the legal-form deadline one field over.
     fireEvent.click(screen.getByTestId("test-advance-clock-far"));
-    expect(banner.textContent).toMatch(/10:22 yesterday/);
+    expect(banner.textContent).toMatch(/10:22 am yesterday/);
   });
 
   it("does not compute an eligibility verdict at all until somebody asks for one", () => {

@@ -22,7 +22,7 @@ import {
 } from "@/components/ward-management/ward-role-gate";
 import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
 import { PatientLastSeenCard, PatientLeaveCard, PatientLegalNowCard, PatientWhyCard } from "./patient-now-cards";
-import { type PatientNowRecord, clock } from "./patient-now-records";
+import { type PatientNowRecord, clockOn } from "./patient-now-records";
 import { PatientJourneyTimeline } from "./patient-journey-timeline";
 import { Button, buttonClass } from "@/components/wf";
 import { raiseReferralHref, unitHref } from "@/components/ward-management/shell/ward-facade";
@@ -331,7 +331,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
             <PatientLastSeenCard
               wardName={stayUnit?.name}
               voluntary={voluntaryNow}
-              since={clock(stayLeaveBed.absentWithoutLeave.since)}
+              since={clockOn(stayLeaveBed.absentWithoutLeave.since, now)}
               onRecordReturn={recordReturn}
             />
           ) : null}

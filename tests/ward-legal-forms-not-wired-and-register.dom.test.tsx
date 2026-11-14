@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
 import { ExtendSheet } from "@/components/ward-management/legal-forms/legal-forms-sheets";
-import { formatInstant } from "@/components/ward-management/ward-clock";
+import { formatClock24 } from "@/components/ward-management/ward-clock";
 import { legalFormGroupRows } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { perthMidnight } from "@/components/ward-management/ward-clock";
@@ -148,7 +148,7 @@ describe("Legal forms — extension shows the day it will record", () => {
   it("needs the date as well as the time, and never guesses the day (audit CS3-05)", () => {
     renderSheet();
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-expiry"), {
-      target: { value: formatInstant(dueAt - 30) },
+      target: { value: formatClock24(dueAt - 30) },
     });
     expect(screen.queryByTestId("ward-legal-forms-renew-resolved")).not.toBeInTheDocument();
     expect(screen.getByTestId("ward-legal-forms-renew-confirm")).toHaveAttribute(
@@ -159,7 +159,7 @@ describe("Legal forms — extension shows the day it will record", () => {
 
   it("names the resolved day before Confirm", () => {
     renderSheet();
-    const later = formatInstant(dueAt + 30);
+    const later = formatClock24(dueAt + 30);
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-date"), {
       target: { value: typedDateFor(NOW + 1440, dayZero) },
     });
@@ -171,7 +171,7 @@ describe("Legal forms — extension shows the day it will record", () => {
 
   it("says so when the new expiry is earlier than the one recorded (audit TC2-03)", () => {
     renderSheet();
-    const earlier = formatInstant(dueAt - 30);
+    const earlier = formatClock24(dueAt - 30);
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-date"), {
       target: { value: typedDateFor(NOW, dayZero) },
     });

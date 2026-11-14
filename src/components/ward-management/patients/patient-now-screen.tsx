@@ -150,7 +150,7 @@ import {
 import { usePathname } from "next/navigation";
 import { type ContactRow } from "./patient-now-cards";
 import { movementHasBedHold } from "@/components/ward-management/ward-movement-bed-hold";
-import { type PatientNowRecord, STAGES, clock, fillTemplate } from "./patient-now-records";
+import { type PatientNowRecord, STAGES, clock, fillTemplate, clockOn } from "./patient-now-records";
 import styles from "./patient-now.module.css";
 import { PatientArchivePanel } from "./patient-archive-panel";
 import { PatientGlance, patientStateTag } from "./patient-glance";
@@ -449,12 +449,12 @@ export function PatientNowScreen({
       // The missing person summary is the absence record only: when, where the bed is held, the steps.
       const steps = absenceStepsFor(voluntaryNow).map((step) => {
         const at = absence.steps.find((done) => done.step === step)?.at;
-        return `${ABSENCE_STEP_LABELS[step]}: ${at === undefined ? "not recorded" : `done ${clock(at)}`}`;
+        return `${ABSENCE_STEP_LABELS[step]}: ${at === undefined ? "not recorded" : `done ${clockOn(at, now)}`}`;
       });
       const text = [
         SYNTHETIC_COPY_LINE,
         `Ward Flow missing person summary — ${displayName}`,
-        `${voluntaryNow ? "Not back from leave" : "Absent without leave"}, recorded ${clock(absence.since)}`,
+        `${voluntaryNow ? "Not back from leave" : "Absent without leave"}, recorded ${clockOn(absence.since, now)}`,
         `Bed held on ${stayUnit?.name ?? "a ward not recorded"}`,
         ...steps,
       ].join("\n");
@@ -604,7 +604,7 @@ export function PatientNowScreen({
   const referralCharts = resolved.liveReferral?.intake?.charts ?? [];
   const documentCount = record.documents.length + uploadedForms.length + referralCharts.length;
   const expandedStage = isLiveBedflow && expandedStageIndex !== null ? STAGES[expandedStageIndex] : undefined;
-  const expandedStageDetail = expandedStage ? getStageBedflowDetail(expandedStage.id, liveMovement) : undefined;
+  const expandedStageDetail = expandedStage ? getStageBedflowDetail(expandedStage.id, liveMovement, now) : undefined;
   // Where they are right now, for the identity line under the name.
   const stayUnit = resolved.liveAdmission ? units.find((u) => u.id === resolved.liveAdmission?.unitId) : undefined;
   // Page tops (QA, 10 Nov 2026): the phone's one identity line names the ED by its short name ("ARM ED").
@@ -1009,7 +1009,8 @@ export function PatientNowScreen({
     const wardUnit = stayUnit ?? acceptingUnit;
     if (wardUnit) contacts.push({ name: wardUnit.name, role: "Ward, nurse in charge" });
     const police = stayLeaveBed?.absentWithoutLeave?.steps.find((done) => done.step === "police_notified")?.at;
-    if (mode === "awol" && police !== undefined) contacts.push({ name: "Police", role: `Notified ${clock(police)}` });
+    if (mode === "awol" && police !== undefined)
+      contacts.push({ name: "Police", role: `Notified ${clockOn(police, now)}` });
   }
   // Round 2 (1 Nov 2026): with a community team actively caring, the case manager is the first call
   // in the community and the team is named as caring, not as a catchment.

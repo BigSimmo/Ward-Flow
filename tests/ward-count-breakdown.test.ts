@@ -161,6 +161,6 @@ describe("count breakdown: small numbers and words", () => {
   });
 
   it("names the panel in plain words", () => {
-    expect(breakdownSentence(6, "open ED movements", 14 * 60 + 32)).toBe("6 open ED movements. Counted 14:32.");
+    expect(breakdownSentence(6, "open ED movements", 14 * 60 + 32)).toBe("6 open ED movements. Counted 2:32 pm.");
   });
 });

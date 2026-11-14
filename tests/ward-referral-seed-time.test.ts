@@ -34,9 +34,9 @@ describe("explicit seed intake time provenance", () => {
   });
 
   it("offers a compact clock while retaining another-day wording", () => {
-    expect(formatReferralIntakeTime(seededTime(742), target(), dayZero, 642)).toBe("12:22 demo time");
-    expect(formatReferralIntakeTime(seededTime(1440 + 65), target(), dayZero, 642)).toBe("01:05 tomorrow demo time");
-    expect(formatReferralIntakeTime(seededTime(-30), target(), dayZero, 642)).toBe("23:30 yesterday demo time");
+    expect(formatReferralIntakeTime(seededTime(742), target(), dayZero, 642)).toBe("12:22 pm demo time");
+    expect(formatReferralIntakeTime(seededTime(1440 + 65), target(), dayZero, 642)).toBe("1:05 am tomorrow demo time");
+    expect(formatReferralIntakeTime(seededTime(-30), target(), dayZero, 642)).toBe("11:30 pm yesterday demo time");
   });
 
   it("keeps unmarked user dates absolute and accepts minute precision from the drawer", () => {

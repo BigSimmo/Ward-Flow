@@ -34,7 +34,7 @@ import { useServiceScope } from "@/components/ward-management/shell/ward-service
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import { formatSheetMoment, dayOf, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import { formatSheetMoment, dayOf, splitDuration } from "@/components/ward-management/ward-clock";
 import { openEdJourneys } from "@/components/ward-management/ward-shared-figures";
 import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 import { readyBedsNow, totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";

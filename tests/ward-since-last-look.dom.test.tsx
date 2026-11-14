@@ -83,7 +83,7 @@ describe("the Command screen's changes since the last review (Activity panel)", 
     const { unmount } = renderCommand();
     await openActivity();
     expect(within(activityPanel()).getByRole("tab", { name: /Changes/u, selected: true })).toBeInTheDocument();
-    expect(activityPanel()).toHaveTextContent("Since last night at 23:00");
+    expect(activityPanel()).toHaveTextContent("Since last night at 11:00 pm");
     expect(within(activityPanel()).getByRole("button", { name: /^Mark these \d+ reviewed$/u })).toBeInTheDocument();
     expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBeNull();
     fireEvent(window, new Event("pagehide"));
@@ -167,7 +167,7 @@ describe("the Command screen's changes since the last review (Activity panel)", 
     await openActivity();
     const panel = within(activityPanel());
     expect(panel.getByRole("tab", { name: /Changes/u, selected: true })).toBeInTheDocument();
-    expect(activityPanel()).toHaveTextContent("Since your review at 09:42");
+    expect(activityPanel()).toHaveTextContent("Since your review at 9:42 am");
     expect(panel.getByRole("region", { name: /Referrals/u })).toHaveTextContent(/new referral from /u);
     const beds = panel.getByRole("region", { name: /Beds/u });
     const before = snapshot.readyByUnit[unitId]! - 1;
@@ -424,7 +424,7 @@ describe("scoped review persistence", () => {
   });
 
   it("names yesterday in both the header and review description when its window crosses midnight", () => {
-    // A look taken at 23:50 yesterday, before the fixture's movement was accepted, so the pill has
+    // A look taken at 11:50 pm yesterday, before the fixture's movement was accepted, so the pill has
     // one update to show (it shows nothing when nothing changed, simplification A4).
     const seeded = seedWardFlowState();
     const unitId = seeded.units[0]!.id;
@@ -443,9 +443,11 @@ describe("scoped review persistence", () => {
       </WardFlowProvider>,
     );
     const trigger = within(screen.getByTestId(`since-last-look-ward:${unitId}`)).getByRole("button");
-    expect(trigger).toHaveTextContent("since 23:50 yesterday");
+    expect(trigger).toHaveTextContent("since 11:50 pm yesterday");
     fireEvent.click(trigger);
-    expect(screen.getByRole("dialog")).toHaveAccessibleDescription("Updates since 23:50 yesterday · 15-minute window");
+    expect(screen.getByRole("dialog")).toHaveAccessibleDescription(
+      "Updates since 11:50 pm yesterday · 15-minute window",
+    );
   });
 
   it("returns focus to the header slot after reviewing the last unread update", async () => {
