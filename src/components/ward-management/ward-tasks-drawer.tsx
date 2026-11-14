@@ -24,7 +24,7 @@ import {
 import Link from "next/link";
 import { useEffect, useId, useRef, useState, type MouseEvent, type RefObject } from "react";
 import { useWardFormSave } from "./use-ward-form-save";
-import type { WardCommandDispatch } from "./ward-shared-client";
+import type { WardCommandDispatch, WardCommandOutcome } from "./ward-shared-client";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 import { acceptedPullReferralId, isAcceptedPullRow } from "@/components/ward-management/ward-alerts-figures";
 import { TasksQuickJumps } from "./ward-tasks-quick-jumps";
@@ -1027,12 +1027,24 @@ export function WardTasksDrawer({
                 now={now}
                 onSnooze={(until, reason) => {
                   const snooze = () => {
-                    dispatch({ type: "SNOOZE_INBOX_ITEM", role, now, inboxItemId: item.id, until, reason });
-                    // R-HOME-8: one line saying what the press did and that it is not cleared.
-                    toast?.push({
-                      tone: "success",
-                      title: `Snoozed until ${formatInstantWithDay(until, now)}. It is not cleared.`,
+                    const outcome = dispatch({
+                      type: "SNOOZE_INBOX_ITEM",
+                      role,
+                      now,
+                      inboxItemId: item.id,
+                      until,
+                      reason,
                     });
+                    // R-HOME-8: one line saying what the press did and that it is not cleared, once saved.
+                    const confirm = (result: void | WardCommandOutcome) => {
+                      if (result && result.status !== "accepted") return;
+                      toast?.push({
+                        tone: "success",
+                        title: `Snoozed until ${formatInstantWithDay(until, now)}. It is not cleared.`,
+                      });
+                    };
+                    if (outcome instanceof Promise) void outcome.then(confirm, () => undefined);
+                    else confirm(outcome);
                   };
                   if (escalating === item.id && !discardEscalation(snooze)) return;
                   snooze();
