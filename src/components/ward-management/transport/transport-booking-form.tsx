@@ -45,6 +45,7 @@ import {
   instantFromEstimatedTimeInputs,
   legalNowText,
   legalNowTransportStatus,
+  minutesFromTimeInput,
   transportAnswersBlockedReason,
   transportAnswersMissing,
   transportAnswerWarnings,
@@ -104,6 +105,7 @@ export type TransportBookingPart =
   | "legal"
   | "legal-reason"
   | "time"
+  | "time-problem"
   | "day"
   | "presets"
   | "hold"
@@ -128,6 +130,7 @@ const DEFAULT_PART_NAMES: Record<TransportBookingPart, string> = {
   legal: "transport-legal",
   "legal-reason": "transport-legal-reason",
   time: "transport-estimated-time",
+  "time-problem": "transport-estimated-time-problem",
   day: "transport-estimated-day",
   presets: "transport-eta-presets",
   hold: "transport-eta-hold",
@@ -346,6 +349,9 @@ export function TransportBookingForm({
   const holdRef = useHeightThatNeverShrinks<HTMLParagraphElement>();
   const set = (patch: Partial<TransportBookingAnswers>) => onAnswers((current) => ({ ...current, ...patch }));
   const cadProblem = answers.cadNumber.trim() ? cadNumberProblem(answers.cadNumber) : undefined;
+  // Untested-537 INV-A11-029: a typed time that is not a clock time (99:99) says so under the box.
+  const timeUnreadable =
+    answers.estimatedTime.trim() !== "" && minutesFromTimeInput(answers.estimatedTime) === undefined;
   const missing = transportAnswersMissing(answers, now);
   const missingNames = missing.map((answer) => ANSWER_PARTS[answer][0]);
   const warningNames = transportAnswerWarnings(answers);
@@ -463,7 +469,13 @@ export function TransportBookingForm({
 
       <div className={styles.timeRow}>
         <div className={styles.timeCol}>
-          <Field label="Estimated time" id={did("time")}>
+          <Field
+            label="Estimated time"
+            id={did("time")}
+            error={
+              timeUnreadable ? <span data-testid={tid("time-problem")}>Type a real time, like 14:30</span> : undefined
+            }
+          >
             <TextInput
               data-testid={tid("time")}
               className={styles.mono}

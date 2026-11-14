@@ -505,6 +505,8 @@ export function HandoverPage() {
     routeRole,
     onMessage: announceToWardShell,
   });
+  // D-179 Question 6: the sign-off records how many checks were still open (set below, with the checks).
+  const openChecksRef = useRef(0);
   const handleSignOff = useCallback(() => {
     // Records contain role and time only, so only the current sign-off window can be signed.
     if (!signOffGate.allowed || chooseWardFirst) return;
@@ -521,6 +523,7 @@ export function HandoverPage() {
       routeRole,
       signOffUnitId,
       accessIsWholeNetwork(access),
+      openChecksRef.current,
     );
     if (recorded === null) announceToWardShell("Sign-off is not recorded.");
   }, [runStep, now, routeRole, shiftAt, signOffGate.allowed, chooseWardFirst, signOffUnitId, access]);
@@ -656,6 +659,10 @@ export function HandoverPage() {
           setTab("beds");
         },
   });
+  const openCheckCount = signChecks.filter((check) => !check.done).length;
+  useEffect(() => {
+    openChecksRef.current = openCheckCount;
+  }, [openCheckCount]);
   const nextShift = shiftAt === handoverAt(defaultHandoverShift(now), now);
   const canSignOff = signOffGate.allowed && !passed && nextShift && !chooseWardFirst;
   const cannotSignReason =
