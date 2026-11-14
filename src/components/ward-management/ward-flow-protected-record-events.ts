@@ -4,7 +4,14 @@ import { withoutRecordNumbers } from "./ward-patient-resolver";
 import { validCareChange, careChangeRefusal, applyCareChange, emptyCareJourney } from "./ward-care-journey";
 import { PROTECTED_REFUSAL_REASONS, UNLINKED_CARE_REFUSAL } from "./ward-protected-refusal-reasons";
 import { ON_BEHALF_REASON_REFUSAL, isOnBehalfReason } from "./ward-on-behalf-reason";
-import { appendAudit, finiteInstant, governanceAuditEntry, reviewDecision, type AuditDecision } from "./ward-audit";
+import {
+  appendAudit,
+  finiteInstant,
+  governanceAuditEntry,
+  isHistoryLine,
+  reviewDecision,
+  type AuditDecision,
+} from "./ward-audit";
 import { undoWindowRefusal } from "./ward-undo";
 import { openRestrictivePracticeRefusal } from "./restrictive-practice/ward-restrictive-practice";
 import { openReturnMovementRefusal } from "./ward-flow-record-stay-events";
@@ -130,7 +137,8 @@ export function reduceProtectedRecordEvent(
     if (!safeCounter(event.expectedReviewCount) || !reviewDecision(event.decision)) return deny("invalid-payload");
     // v10 pass 2: the synthetic seeded governance entries (`ward-governance-seed.ts`) are reviewable too.
     const entry = governanceAuditEntry(state, event.eventId);
-    if (!entry || entry.generation !== state.worldGeneration || entry.category === "review")
+    // D-222: a History line (one per save) is a record of who did what, never on the Review list.
+    if (!entry || entry.generation !== state.worldGeneration || entry.category === "review" || isHistoryLine(entry))
       return deny("missing-or-inaccessible");
     const count = state.auditReviews.filter(
       (review) => review.eventId === entry.id && review.generation === state.worldGeneration,

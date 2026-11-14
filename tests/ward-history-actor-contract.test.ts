@@ -159,6 +159,22 @@ describe("History lines through the reducer (D-222 findings)", () => {
     expect(after.units.find((candidate) => candidate.id === unit.id)?.intakeWindow?.by).toBe("Bed coordinator");
   });
 
+  it("a History line cannot be put on the Review list", () => {
+    const after = wardFlowReducer(seed, intake("coordinator"));
+    const [line] = after.auditEvents.slice(seed.auditEvents.length);
+    const reviewed = wardFlowReducer(after, {
+      type: "REVIEW_AUDIT_EVENT",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      eventId: line!.id,
+      expectedGeneration: after.worldGeneration,
+      expectedReviewCount: 0,
+      decision: "reviewed",
+    } as WardFlowEvent);
+    expect(reviewed.auditReviews).toHaveLength(after.auditReviews.length);
+    expect(reviewed.auditEvents.at(-1)).toMatchObject({ action: "REVIEW_AUDIT_EVENT", outcome: "denied" });
+  });
+
   it("the ward's own save names the ward", () => {
     const after = wardFlowReducer(seed, intake("ward"));
     const [line] = after.auditEvents.slice(seed.auditEvents.length);
