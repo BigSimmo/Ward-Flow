@@ -108,7 +108,10 @@ describe("WFA-001: cancellation describes the retained bed after a stage correct
     expect(unit(next)).toEqual(unit(initial));
     expect(movement(next).stage).toBe("accepted_awaiting_bed");
     expect(movement(next).blocker).toBe(STAGE_TRANSITION_BLOCKERS.transportCancelled);
-    const notices = next.notices.slice(corrected.notices.length);
+    // D-221: the cancellation withdraws the unraised late pair the booking estimate stored, so the
+    // new notices are found by id rather than by position.
+    const earlier = new Set(corrected.notices.map((notice) => notice.id));
+    const notices = next.notices.filter((notice) => !earlier.has(notice.id));
     expect(notices).toHaveLength(2);
     for (const notice of notices) expect(notice.sentence).toContain("the bed is still pulled");
   });

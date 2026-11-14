@@ -26,10 +26,13 @@ import {
   type TransportWhereabouts,
 } from "@/components/ward-management/ward-change-reasons";
 
+import { OPERATIONAL_DEFAULT_LABEL } from "@/components/ward-management/ward-operational-defaults";
 import {
-  LATE_ARRIVAL_GRACE_MINUTES,
-  OPERATIONAL_DEFAULT_LABEL,
-} from "@/components/ward-management/ward-operational-defaults";
+  ARRIVAL_LATE_GRACE_MINUTES,
+  arrivalTiming,
+  arrivalTimingWords,
+} from "@/components/ward-management/ward-arrival-timing";
+import { formatClockAmPmWithDay } from "@/components/ward-management/ward-clock-am-pm";
 
 import { FormsPack, PACK_SLOTS, packCount, packRequired } from "./officer-forms-pack";
 import { OfficerOnly } from "./officer-crew-only";
@@ -53,7 +56,6 @@ import {
   expectedArrival,
   formRequiredLabel,
   officerLeg,
-  pastWardEta,
   transportLegalStatusLabel,
 } from "./officer-screen-helpers";
 import type { Dispatch, SetStateAction } from "react";
@@ -199,6 +201,9 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
   const legIndex = leg ? OFFICER_LEG_STEPS.indexOf(leg) : -1;
   const arrival = expectedArrival(movement);
   const eta = arrival?.at;
+  // D-221: the one arrival-timing rule and phrase, as every desk shows it.
+  const timing = arrivalTiming(movement, now);
+  const lateWords = timing.state === "late" ? arrivalTimingWords(timing, now) : null;
   const canDivert =
     !movement.closure &&
     transport.collectedAt !== undefined &&
@@ -333,9 +338,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
           })()
         : null}
 
-      {/* Lateness is measured against a ward ETA only, as in the job list and Arrivals card: the
-          time typed at booking is the provider's estimate, never an overdue arrival. */}
-      {eta !== undefined && transport.arrivedAt === undefined && !movement.closure && pastWardEta(movement, now) ? (
+      {lateWords ? (
         <div
           className={styles.overdue}
           role="alert"
@@ -344,8 +347,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
         >
           <StatusGlyph tone="warning" size={9} />
           <span>
-            <strong>Arrival overdue.</strong> More than {LATE_ARRIVAL_GRACE_MINUTES}m past the ward ETA (
-            {formatInstantWithDay(eta, now)} {zone}).
+            <strong>{lateWords.tag}.</strong> {lateWords.line} {zone}.
           </span>
         </div>
       ) : null}
@@ -545,7 +547,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
             <dd title={OPERATIONAL_DEFAULT_LABEL}>
               {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} {zone} ·{" "}
               {movement.arrivalDetails.mode} · late after{" "}
-              {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES, now)}
+              {formatClockAmPmWithDay(movement.arrivalDetails.estimatedArrivalAt + ARRIVAL_LATE_GRACE_MINUTES, now)}
             </dd>
           </div>
         ) : null}

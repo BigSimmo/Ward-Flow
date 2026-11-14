@@ -13,12 +13,9 @@ import { transportNeedState } from "@/components/ward-management/ward-derivation
 import { bedHold, pulledWithoutLimitLabel } from "@/components/ward-management/ward-bed-hold";
 import { isHeldUpDueByTomorrow } from "@/components/ward-management/ward-held-up";
 import { heldUntilExtendedLabel } from "@/components/ward-management/ward-bed-hold-extension";
-import {
-  deliveredAwaitingWard,
-  divertedAwaitingRelease,
-  movementStatusLabel,
-} from "@/components/ward-management/ward-stage-copy";
+import { divertedAwaitingRelease, movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
 import { originName } from "@/components/ward-management/ward-movement-origin";
+import { arrivalTiming, arrivalTimingWords } from "@/components/ward-management/ward-arrival-timing";
 import { leaveOpenWarning } from "@/components/ward-management/ward-leave-open-warning";
 import type { BedItem } from "./ward-bed-tone";
 import { pullBlockedReason } from "./ward-pull-blocked";
@@ -142,10 +139,13 @@ export function arrivalRows({
     const name = nameOf(movement);
     const awaitingBed = movement.stage === "accepted_awaiting_bed";
     const bed = awaitingBed ? undefined : pulledBedFor(movement, beds);
-    const eta = movement.arrivalDetails?.estimatedArrivalAt;
+    // D-221 (A2-7): one arrival-timing rule and phrase for every desk. Late is the expected time plus
+    // the signed hour, not the ETA minute; delivered and diverted journeys are never late.
+    const timing = arrivalTiming(movement, now);
+    const timingWords = arrivalTimingWords(timing, now);
     // Together-X1b-3: a diverted person is not coming, so not late and not to be confirmed arrived.
     const diverted = divertedAwaitingRelease(movement);
-    const late = eta !== undefined && eta < now && !deliveredAwaitingWard(movement) && !diverted;
+    const late = timing.state === "late";
     const hold = movement.stage === "pulled" ? bedHold(movement.pullExpiresAt, now, thresholds) : null;
     const blocked = awaitingBed ? pullBlockedReason(movement, unit, name) : undefined;
     const stageWords =
@@ -153,7 +153,7 @@ export function arrivalRows({
       (hold?.state === "lapsed"
         ? hold.label
         : late
-          ? "Late"
+          ? (timingWords?.tag ?? "Late arrival")
           : hold
             ? (heldUntilExtendedLabel(movement, now) ?? hold.label)
             : (pulledWithoutLimitLabel(movement) ?? movementStatusLabel(movement)));
@@ -168,7 +168,7 @@ export function arrivalRows({
       tag: arrivalLegalTag(movement),
       lines: transport.quiet ? [first] : [first, transport.text],
       quietLine: quiet || undefined,
-      when: eta === undefined ? undefined : `${late ? "Due" : "ETA"} ${formatInstantWithDay(eta, now)}`,
+      when: timingWords?.line,
       tone: hold?.state === "lapsed" ? "danger" : late || hold?.state === "at-risk" ? "warning" : "info",
       action: awaitingBed ? "pull" : desk === "ward" && !diverted ? "confirm-arrival" : null,
       blocked,

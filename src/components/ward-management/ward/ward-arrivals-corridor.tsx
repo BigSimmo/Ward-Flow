@@ -1,5 +1,7 @@
 "use client";
 
+import { arrivalTimingPhrase } from "@/components/ward-management/ward-arrival-timing";
+import { formatClockAmPmWithDay } from "@/components/ward-management/ward-clock-am-pm";
 import { Clock, ArrowRight } from "lucide-react";
 import React from "react";
 import { Button, Dialog } from "@/components/wf";
@@ -73,12 +75,6 @@ function tapNow(): number {
 function originPlaceLabel(movement: Movement): string {
   if (movement.originEdId === undefined) return communityOriginLabel(movement.originCommunity);
   return originName(movement) ?? "Emergency department";
-}
-
-function arrivalIsLate(movement: Movement, now: Instant): boolean {
-  const eta = movement.arrivalDetails?.estimatedArrivalAt;
-  if (eta === undefined) return false;
-  return minutesUntil(eta, now) < 0;
 }
 
 interface WardArrivalsCorridorProps {
@@ -233,6 +229,7 @@ export function WardArrivalsCorridor({
           {accepted.map((movement) => {
             const patientInfo = resolvePatientIdentity(movement);
             const eta = movement.arrivalDetails?.estimatedArrivalAt;
+            const timingPhrase = arrivalTimingPhrase(movement, now);
             const notice = restrictionNotice(movement, unit);
             const eligibilityIssue = eligibilityWarning(movement, unit, now);
             const readmission = wardCopyReadmission(movement);
@@ -356,13 +353,14 @@ export function WardArrivalsCorridor({
                       Stage: <strong>{movementStatusLabel(movement)}</strong>
                     </span>
                     <span className={styles.statusTag} data-type={canPull ? "acuity" : "mode"}>
-                      {eta !== undefined
-                        ? arrivalIsLate(movement, now)
-                          ? `Late · Expected ${formatInstantWithDay(eta, now)}`
-                          : `ETA: ${formatInstantWithDay(eta, now)}`
-                        : canPull
-                          ? "Waiting for the ward to pull"
-                          : "No arrival time yet"}
+                      {/* D-221: the one arrival-timing phrase every desk shows. */}
+                      {timingPhrase
+                        ? timingPhrase
+                        : eta !== undefined
+                          ? `ETA ${formatClockAmPmWithDay(eta, now)}`
+                          : canPull
+                            ? "Waiting for the ward to pull"
+                            : "No arrival time yet"}
                     </span>
                   </div>
                   <div className={styles.corridorTrack}>

@@ -68,7 +68,7 @@ export function renderArrivalsCard(ctx: OfficerArrivalsContext) {
             </div>
             <ul className={styles.arrivalsList}>
               {arrivals.map(({ movement, eta, booked }, index) => {
-                // Only a ward ETA can make a job late; a booking estimate says it is one.
+                // D-221: the one late rule (ward ETA, else the booking estimate, plus the signed grace).
                 const isLate = pastWardEta(movement, now);
                 return (
                   <li

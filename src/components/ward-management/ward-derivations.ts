@@ -61,10 +61,10 @@ import {
   EXPECT_FLAG_INVOLUNTARY_MINUTES,
   EXPECT_FLAG_VOLUNTARY_MINUTES,
   WAITLIST_INSTEAD_OF_DECLINE_REASONS,
-  isArrivalLate as isArrivalLateClock,
   leaveBedNeedsOpenWarning as leaveBedNeedsOpenWarningClock,
 } from "@/components/ward-management/ward-legal-clock";
 import { REFERRABLE_MOVEMENT_STAGES } from "@/components/ward-management/ward-flow-reducer";
+import { arrivalTimingIsLate, type ArrivalTimingMovement } from "@/components/ward-management/ward-arrival-timing";
 
 /** UI-only role concept; not part of the domain model. */
 export type WardRole = "flow" | "ed" | "ward";
@@ -1260,16 +1260,12 @@ export function searchPatients(
   return [...referralHalf, ...movementHalf];
 }
 
-export function isArrivalLate(
-  movement: Pick<Movement, "arrivalDetails" | "stage" | "arrivalLateNotifiedAt" | "closure">,
-  now: Instant,
-): boolean {
-  return isArrivalLateClock(
-    movement.arrivalDetails?.estimatedArrivalAt,
-    movement.stage,
-    now,
-    movement.closure !== undefined,
-  );
+/**
+ * D-221: late is the one arrival-timing rule (`ward-arrival-timing.ts`): the ward ETA, else the
+ * booking estimate, plus the signed grace; never once transport delivered, diverted or closed.
+ */
+export function isArrivalLate(movement: ArrivalTimingMovement, now: Instant): boolean {
+  return arrivalTimingIsLate(movement, now);
 }
 
 export function leaveBedNeedsOpenWarning(leaveBed: LeaveBed, now: Instant): boolean {

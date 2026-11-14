@@ -66,7 +66,9 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
         estimatedAt: NOW + 60,
       });
 
-      const beforeNotices = state.notices.length;
+      // D-221: a closure withdraws any unraised late pair a booking estimate stored, so the new
+      // notices are found by id rather than by position.
+      const beforeNotices = new Set(state.notices.map((notice) => notice.id));
       state = wardFlowReducer(state, {
         type: "WITHDRAW_REFERRAL",
         role: "ed",
@@ -81,7 +83,7 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
       expect(mv.closure?.outcome).toBe("did_not_proceed");
       expect(mv.transport?.cancelledAt).toBe(NOW + 20);
 
-      const addedNotices = state.notices.slice(beforeNotices);
+      const addedNotices = state.notices.filter((notice) => !beforeNotices.has(notice.id));
       // Both officer and ward must be notified
       const officerNotice = addedNotices.find((n) => n.kind === "transport_cancelled_officer");
       const wardNotice = addedNotices.find((n) => n.kind === "referral_revoked_ward");
@@ -108,7 +110,9 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
         unitIds,
       });
 
-      const beforeNotices = state.notices.length;
+      // D-221: a closure withdraws any unraised late pair a booking estimate stored, so the new
+      // notices are found by id rather than by position.
+      const beforeNotices = new Set(state.notices.map((notice) => notice.id));
       state = wardFlowReducer(state, {
         type: "WITHDRAW_REFERRAL",
         role: "ed",
@@ -129,7 +133,7 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
         ]),
       );
 
-      const addedNotices = state.notices.slice(beforeNotices);
+      const addedNotices = state.notices.filter((notice) => !beforeNotices.has(notice.id));
       expect(addedNotices).toHaveLength(2);
       expect(addedNotices.every((n) => n.kind === "ward_request_withdrawn")).toBe(true);
       expect(addedNotices.map((n) => n.to.placeId).sort()).toEqual(unitIds.sort());
@@ -148,7 +152,9 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
         unitIds,
       });
 
-      const beforeNotices = state.notices.length;
+      // D-221: a closure withdraws any unraised late pair a booking estimate stored, so the new
+      // notices are found by id rather than by position.
+      const beforeNotices = new Set(state.notices.map((notice) => notice.id));
       state = wardFlowReducer(state, {
         type: "WITHDRAW_REFERRAL",
         role: "coordinator",
@@ -162,7 +168,7 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
       expect(mv.closure?.reason).toBe("The coordinator withdrew the referral");
       expect(mv.referredUnitIds).toHaveLength(0);
 
-      const addedNotices = state.notices.slice(beforeNotices);
+      const addedNotices = state.notices.filter((notice) => !beforeNotices.has(notice.id));
       const wardNotices = addedNotices.filter((n) => n.kind === "ward_request_withdrawn");
       expect(wardNotices).toHaveLength(2);
       expect(wardNotices.map((n) => n.to.placeId).sort()).toEqual(unitIds.sort());
@@ -208,7 +214,9 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
         estimatedAt: NOW + 60,
       });
 
-      const beforeNotices = state.notices.length;
+      // D-221: a closure withdraws any unraised late pair a booking estimate stored, so the new
+      // notices are found by id rather than by position.
+      const beforeNotices = new Set(state.notices.map((notice) => notice.id));
       state = wardFlowReducer(state, {
         type: "WITHDRAW_REFERRAL",
         role: "coordinator",
@@ -222,7 +230,7 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
       expect(mv.closure?.reason).toBe("The coordinator revoked the accepted referral");
       expect(mv.transport?.cancelledAt).toBe(NOW + 20);
 
-      const addedNotices = state.notices.slice(beforeNotices);
+      const addedNotices = state.notices.filter((notice) => !beforeNotices.has(notice.id));
       const wardNotice = addedNotices.find((n) => n.kind === "referral_revoked_ward");
       expect(wardNotice).toBeDefined();
       expect(wardNotice?.to).toEqual({ role: "ward", placeId: unitId });

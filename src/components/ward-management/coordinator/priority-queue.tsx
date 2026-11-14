@@ -36,7 +36,8 @@ import {
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
-import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { arrivalTimingIsLate, arrivalTimingPhrase } from "@/components/ward-management/ward-arrival-timing";
+import { formatClockAmPmWithDay } from "@/components/ward-management/ward-clock-am-pm";
 import { PULL_NO_LIMIT_RECORDED, pullHoldText } from "@/components/ward-management/ward-bed-hold";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-service-scope-bar";
@@ -346,15 +347,18 @@ export function PriorityQueue({
             ) : null}
             {arrival ? (
               arrival.estimatedArrivalAt !== undefined ? (
-                now > arrival.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES ? (
+                // D-221: the one arrival-timing phrase (no "ETA in 0m" for the hour after the ETA).
+                arrivalTimingIsLate(movement, now) ? (
                   <span className={styles.queueMark} data-testid={`ward-queue-transit-overdue-${movement.id}`}>
                     <StatusGlyph tone="danger" size={9} />
-                    ETA passed {durMinutes(now - arrival.estimatedArrivalAt)} · {arrivalMode}
+                    {arrivalTimingPhrase(movement, now)} · {arrivalMode}
                   </span>
                 ) : (
                   <span className={styles.queueMark} data-testid={`ward-queue-transit-eta-${movement.id}`}>
                     <StatusGlyph tone="info" size={9} />
-                    ETA in {durMinutes(Math.max(0, arrival.estimatedArrivalAt - now))} · {arrivalMode}
+                    {arrivalTimingPhrase(movement, now) ??
+                      `ETA ${formatClockAmPmWithDay(arrival.estimatedArrivalAt, now)}`}{" "}
+                    · {arrivalMode}
                   </span>
                 )
               ) : (

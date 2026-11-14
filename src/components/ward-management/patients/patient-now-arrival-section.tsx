@@ -4,10 +4,8 @@
 // patient is in transit. Split out of `patient-now-screen.tsx`, which calls it during render.
 import { CircleAlert, Clock, FileText, FileUp } from "lucide-react";
 import { ARRIVAL_MODE_LABELS } from "@/components/ward-management/ward-model";
-import {
-  LATE_ARRIVAL_GRACE_MINUTES,
-  OPERATIONAL_DEFAULT_LABEL,
-} from "@/components/ward-management/ward-operational-defaults";
+import { OPERATIONAL_DEFAULT_LABEL } from "@/components/ward-management/ward-operational-defaults";
+import { arrivalTiming, arrivalTimingWords } from "@/components/ward-management/ward-arrival-timing";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import { formatInstantWithDay, type ClockZoneLabel } from "@/components/ward-management/ward-clock";
@@ -100,12 +98,9 @@ export function renderArrivalSection(ctx: PatientArrivalSectionContext) {
               >
                 <CircleAlert size={18} className={styles.overdueIcon} aria-hidden="true" />
                 <div>
-                  <strong>Arrival overdue:</strong> Patient is more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past
-                  estimated arrival time (
-                  {liveMovement?.arrivalDetails?.estimatedArrivalAt !== undefined
-                    ? `${formatInstantWithDay(liveMovement.arrivalDetails.estimatedArrivalAt, now)} ${zone}`
-                    : "not recorded"}
-                  ).
+                  {/* D-221: the one arrival-timing phrase. */}
+                  <strong>Late arrival.</strong>{" "}
+                  {liveMovement ? arrivalTimingWords(arrivalTiming(liveMovement, now), now)?.line : null} {zone}.
                 </div>
               </div>
             )}

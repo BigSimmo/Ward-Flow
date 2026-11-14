@@ -15,12 +15,9 @@ import { currentLegalPosition, legalFormNowWords } from "@/components/ward-manag
 import { typedClock } from "@/components/ward-management/ward-legal-time-as-typed";
 import { movementReadmissionFlag } from "@/components/ward-management/ward-readmission";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
-import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
-import {
-  arrivalEtaLabel,
-  arrivalModeLabel,
-  isArrivalLate,
-} from "@/components/ward-management/referrals/arrival-time-modal";
+import { arrivalTiming, arrivalTimingWords } from "@/components/ward-management/ward-arrival-timing";
+import { formatClockAmPmWithDay } from "@/components/ward-management/ward-clock-am-pm";
+import { arrivalEtaLabel, arrivalModeLabel } from "@/components/ward-management/referrals/arrival-time-modal";
 import { EdAdmissionChecklist } from "./ed-admission-checklist";
 import { referralBoardHref } from "./ed-bed-search-step";
 import { wardAskedWords } from "@/components/ward-management/referrals/referral-information-needs";
@@ -52,6 +49,7 @@ export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
     acceptedUnit,
   } = row;
   const { now, units, readmissionIndex } = ctx;
+  const arrivalWords = arrivalTimingWords(arrivalTiming(movement, now), now);
   const linkedReferral =
     movement.referralId === undefined
       ? undefined
@@ -115,28 +113,23 @@ export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
           {movement.arrivalDetails.trackingNumber ? ` · ${movement.arrivalDetails.trackingNumber}` : ""}
         </span>
       ) : null}
-      {isArrivalLate(movement, now) ? (
+      {/* D-221: the one arrival-timing rule and phrase (no "ETA in 0m" for the hour after the ETA). */}
+      {arrivalWords?.tag ? (
         <span className={styles.arrivalLate} role="status" data-testid={`ward-ed-arrival-late-${movement.id}`}>
-          Arrival late — more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past the estimated ward time. Not marked
-          arrived.
+          {arrivalWords.tag}. Not marked arrived.
         </span>
       ) : null}
       {movement.arrivalDetails ? (
         movement.arrivalDetails.estimatedArrivalAt !== undefined ? (
-          now > movement.arrivalDetails.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES ? (
-            <span className={styles.transitBadgeOverdue} data-testid={`ward-ed-transit-badge-${movement.id}`}>
-              <StatusGlyph tone="danger" size={10} /> Overdue ETA (+
-              {Math.floor((now - movement.arrivalDetails.estimatedArrivalAt) / 60)}h) ·{" "}
-              {movement.arrivalDetails.modeOfArrival ??
-                (movement.arrivalDetails.mode ? arrivalModeLabel(movement.arrivalDetails.mode) : "Transit")}
-            </span>
-          ) : (
-            <span className={styles.transitBadge} data-testid={`ward-ed-transit-badge-${movement.id}`}>
-              ⏱ ETA in {Math.max(0, movement.arrivalDetails.estimatedArrivalAt - now)}m ·{" "}
-              {movement.arrivalDetails.modeOfArrival ??
-                (movement.arrivalDetails.mode ? arrivalModeLabel(movement.arrivalDetails.mode) : "Transit")}
-            </span>
-          )
+          <span
+            className={arrivalWords?.tag ? styles.transitBadgeOverdue : styles.transitBadge}
+            data-testid={`ward-ed-transit-badge-${movement.id}`}
+          >
+            {arrivalWords?.tag ? <StatusGlyph tone="warning" size={10} /> : "⏱"}{" "}
+            {arrivalWords?.line ?? `ETA ${formatClockAmPmWithDay(movement.arrivalDetails.estimatedArrivalAt, now)}`} ·{" "}
+            {movement.arrivalDetails.modeOfArrival ??
+              (movement.arrivalDetails.mode ? arrivalModeLabel(movement.arrivalDetails.mode) : "Transit")}
+          </span>
         ) : (
           <span className={styles.transitBadge} data-testid={`ward-ed-transit-badge-${movement.id}`}>
             {/* D-187 (F-46): this pull's own recorded limit, or that none is recorded; never the default. */}⏱ Transit:{" "}

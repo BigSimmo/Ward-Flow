@@ -187,3 +187,22 @@ export function lateNoticesDue(movement: LateNoticeMovement, notices: readonly N
   if (arrivalTiming(movement, now).state !== "late") return false;
   return reconcileLateNotices({ before: undefined, after: movement, notices, now }).schedule.length > 0;
 }
+
+const raisedCache = new WeakMap<Notice[], { visible: number; raised: Notice[] }>();
+
+/**
+ * The notices raised by `now`, for every listing (D-221): a late notice stored ahead at the save
+ * stays out of sight until its first late minute. Returns `notices` itself while none is stored
+ * ahead, and the same filtered array while the raised set is unchanged, so readers do not wake on
+ * every clock tick. The raised set only grows or shrinks with `now`, so an equal count is the same set.
+ */
+export function raisedNotices(notices: Notice[], now: Instant): Notice[] {
+  let visible = 0;
+  for (const notice of notices) if (notice.raisedAt <= now) visible += 1;
+  if (visible === notices.length) return notices;
+  const cached = raisedCache.get(notices);
+  if (cached?.visible === visible) return cached.raised;
+  const raised = notices.filter((notice) => notice.raisedAt <= now);
+  raisedCache.set(notices, { visible, raised });
+  return raised;
+}

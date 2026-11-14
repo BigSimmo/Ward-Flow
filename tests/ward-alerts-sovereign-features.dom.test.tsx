@@ -155,10 +155,14 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
   // The feed used to render two typed-in items, one naming "Luke Davies" as WF-021's patient and
   // calling a transfer complete that the record does not hold (25 September 2026 audit, A7). It
   // now lists only the notices the reducer has raised, and says plainly when there are none.
-  it("shows notices from recorded notices only, and no Notices group while there are none", () => {
-    // Q181 (1 Nov 2026): unread notices are a group in Now; with none recorded there is no group.
+  it("shows notices from recorded notices only", () => {
+    // Q181 (1 Nov 2026): unread notices are a group in Now. D-221 (14 Nov 2026): the seed's late
+    // journey has its recorded late pair, so the group holds exactly those and nothing typed in.
     const { container } = renderScreen();
-    expect(screen.queryByRole("region", { name: "Notices" })).not.toBeInTheDocument();
+    const feed = screen.getByRole("region", { name: "Notices" });
+    const items = within(feed).getAllByRole("listitem");
+    expect(items.length).toBeGreaterThan(0);
+    for (const item of items) expect(item.textContent).toMatch(/have not arrived/u);
     expect(container.textContent).not.toMatch(/Catchment Override Logged|Custodial Transfer Completed|Luke Davies/);
   });
 
@@ -188,11 +192,15 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
         <PullReleaser />
       </WardFlowProvider>,
     );
+    // D-221: the seed's late pair is already in the feed; the release adds its own notice.
+    const before = within(screen.getByRole("region", { name: "Notices" })).getAllByRole("listitem").length;
     fireEvent.click(screen.getByRole("button", { name: "release the pull" }));
 
     const feed = screen.getByRole("region", { name: "Notices" });
     const items = within(feed).getAllByRole("listitem");
-    expect(items).toHaveLength(1);
-    expect(items[0]!.textContent).toMatch(/Unread/);
+    const added = items.filter((item) => !/have not arrived/u.test(item.textContent ?? ""));
+    expect(items).toHaveLength(before + 1);
+    expect(added).toHaveLength(1);
+    expect(added[0]!.textContent).toMatch(/Unread/);
   });
 });

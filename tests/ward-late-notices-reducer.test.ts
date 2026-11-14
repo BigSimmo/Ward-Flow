@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { arrivalTiming } from "@/components/ward-management/ward-arrival-timing";
 import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
+import { raisedNotices } from "@/components/ward-management/ward-late-notices";
 import type { Movement, Notice } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -139,6 +140,21 @@ describe("the backfill event and reading", () => {
     const onTime = read(eta + 61);
     expect(onTime.rejections).toEqual(saved.rejections);
     expect(onTime.notices.find((notice) => notice.id === ward.id)!.readAt).toBe(eta + 61);
+  });
+});
+
+describe("listing", () => {
+  it("lists a stored late notice from its first late minute, keeping the array while nothing changes", () => {
+    const { state, movement } = start();
+    const eta = NOW + 30;
+    const saved = setEta(state, movement.id, eta);
+    const pending = new Set(lateFor(saved, movement.id).map((notice) => notice.id));
+    const early = raisedNotices(saved.notices, eta + 60);
+    expect(early.some((notice) => pending.has(notice.id))).toBe(false);
+    expect(raisedNotices(saved.notices, eta + 59)).toBe(early);
+    const raised = raisedNotices(saved.notices, eta + 61);
+    expect(raised).toBe(saved.notices);
+    expect(raisedNotices(state.notices, NOW)).toBe(state.notices);
   });
 });
 

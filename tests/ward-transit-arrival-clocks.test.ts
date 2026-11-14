@@ -17,9 +17,12 @@ import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { activeWardNetwork, allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { formatClockAmPmWithDay } from "@/components/ward-management/ward-clock-am-pm";
 
 import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
 const NOW = NOW_ANCHOR;
+/** D-221: the arrival-timing phrase names clock times, not a countdown. */
+const at = (instant: number) => formatClockAmPmWithDay(instant, NOW);
 const seeded = seedWardFlowState();
 const baseMovement = seeded.movements[0];
 if (!baseMovement) {
@@ -155,7 +158,7 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
 
       const pill = screen.getByTestId(`ward-queue-transit-eta-${movementEta.id}`);
       expect(pill).toBeInTheDocument();
-      expect(pill).toHaveTextContent("ETA in 45m · St John Ambulance");
+      expect(pill).toHaveTextContent(`ETA ${at(NOW + 45)} · St John Ambulance`);
     });
 
     it("renders overdue warning pill when now > estimatedArrivalAt + 60", () => {
@@ -172,7 +175,7 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
 
       const pill = screen.getByTestId(`ward-queue-transit-overdue-${movementOverdue.id}`);
       expect(pill).toBeInTheDocument();
-      expect(pill).toHaveTextContent("ETA passed 2h 05m · RFDS");
+      expect(pill).toHaveTextContent(`Late arrival · ETA ${at(NOW - 125)} · late since ${at(NOW - 65)} · RFDS`);
     });
 
     it("renders transit hold pill when arrivalDetails has no estimatedArrivalAt", () => {
@@ -236,7 +239,7 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
       expect(screen.getByTestId("ward-shortlist-transit-accepting-ward")).toHaveTextContent(allUnits()[0]?.name ?? "");
       expect(screen.getByTestId("ward-shortlist-transit-mode")).toHaveTextContent("St John Ambulance");
       expect(screen.getByTestId("ward-shortlist-transit-tracking")).toHaveTextContent("SJA-7788");
-      expect(screen.getByTestId("ward-shortlist-transit-countdown")).toHaveTextContent("ETA in 30m");
+      expect(screen.getByTestId("ward-shortlist-transit-countdown")).toHaveTextContent(`ETA ${at(NOW + 30)}`);
     });
 
     it("renders overdue alert when now > ETA + 60m", () => {
@@ -260,8 +263,10 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
       expect(card).toBeInTheDocument();
       const overdueAlert = screen.getByTestId("ward-shortlist-transit-overdue");
       expect(overdueAlert).toBeInTheDocument();
-      expect(overdueAlert).toHaveTextContent(/Arrival overdue/i);
-      expect(screen.getByTestId("ward-shortlist-transit-countdown")).toHaveTextContent("Overdue (+2h)");
+      expect(overdueAlert).toHaveTextContent("Late arrival. Not marked arrived.");
+      expect(screen.getByTestId("ward-shortlist-transit-countdown")).toHaveTextContent(
+        `Late arrival · ETA ${at(NOW - 120)} · late since ${at(NOW - 60)}`,
+      );
     });
 
     it("renders transit card for pulled movement without arrival details", () => {
@@ -330,7 +335,7 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
 
       const badge = screen.getByTestId(`ward-ed-transit-badge-${movementEta.id}`);
       expect(badge).toBeInTheDocument();
-      expect(badge).toHaveTextContent("⏱ ETA in 45m · St John Ambulance");
+      expect(badge).toHaveTextContent(`⏱ ETA ${at(NOW + 45)} · St John Ambulance`);
     });
 
     it("renders overdue transit warning badge when overdue past 60m", () => {
@@ -338,7 +343,7 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
 
       const badge = screen.getByTestId(`ward-ed-transit-badge-${movementOverdue.id}`);
       expect(badge).toBeInTheDocument();
-      expect(badge).toHaveTextContent("Overdue ETA (+2h) · RFDS");
+      expect(badge).toHaveTextContent(`ETA ${at(NOW - 125)} · late since ${at(NOW - 65)} · RFDS`);
     });
   });
 });

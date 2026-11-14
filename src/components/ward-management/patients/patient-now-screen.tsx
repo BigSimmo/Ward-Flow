@@ -37,7 +37,7 @@ import type { UploadFormsModalProps } from "@/components/ward-management/referra
 import { acceptedWardReferralFor } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { SYNTHETIC_COPY_LINE } from "@/components/ward-management/ward-clipboard";
 import { activeCommunityTreatmentOrder, type Patient } from "@/components/ward-management/ward-patients";
-import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { arrivalTimingIsLate } from "@/components/ward-management/ward-arrival-timing";
 import { WardMovementNotFound } from "@/components/ward-management/ward-movement-not-found";
 import dynamic from "next/dynamic";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
@@ -424,11 +424,8 @@ export function PatientNowScreen({
   const acceptingWardName = acceptingUnit?.name ?? "Accepting ward";
 
   const hasArrivalPlan = Boolean(liveMovement?.arrivalDetails);
-  const isOverdue = Boolean(
-    liveMovement?.arrivalDetails &&
-    now > liveMovement.arrivalDetails.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES &&
-    liveMovement.stage !== "arrived",
-  );
+  // D-221: the one late rule (ward ETA, else the booking estimate, plus the signed grace).
+  const isOverdue = liveMovement !== undefined && arrivalTimingIsLate(liveMovement, now);
   const pullExpiresAt = liveMovement?.pullExpiresAt;
   const isHoldExpired = !hasArrivalPlan && pullExpiresAt !== undefined && isTimePassed(pullExpiresAt, now);
   const uploadedForms = liveMovement?.uploadedForms ?? [];

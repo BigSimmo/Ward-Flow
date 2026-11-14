@@ -107,3 +107,12 @@ export function arrivalTimingWords(timing: ArrivalTiming, now: Instant): Arrival
   }
   return { tag: "Late arrival", line: `${label} ${eta} · late since ${lateAt}`, tone: "warning" };
 }
+
+/**
+ * The phrase on one line, tag first: "Late arrival · ETA 11:05 am · late since 12:06 pm". `null`
+ * when there is nothing to say (no time, arrived, closed or diverted).
+ */
+export function arrivalTimingPhrase(movement: ArrivalTimingMovement, now: Instant): string | null {
+  const words = arrivalTimingWords(arrivalTiming(movement, now), now);
+  return words ? [words.tag, words.line].filter(Boolean).join(" · ") : null;
+}
