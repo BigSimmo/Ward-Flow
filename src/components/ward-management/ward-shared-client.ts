@@ -1246,7 +1246,14 @@ export class SharedWorkspaceClient {
         this.settle(command.commandId, "accepted", undefined, value.snapshot?.payload.state.undoRecords, value, partly);
         // Audit E-05: the board's message line names the ward that was not asked, as the local refusal note does.
         const note = partly ? `Sent to the suitable wards only. ${sentence(partly)}` : null;
-        this.publish({ status: "ready", error: conflict.joinNotes(refusal, note) });
+        // A later accepted save settles an earlier read-outcome ("A previous uncertain save was not
+        // applied"): the server has answered, so the line clears itself unless a receipt is still open.
+        const stale = this.view.recovery !== undefined && !this.view.recovering && !this.recoveryPending;
+        this.publish({
+          status: "ready",
+          error: conflict.joinNotes(refusal, note),
+          ...(stale ? { recovery: undefined, recoveryResults: undefined, boardCurrent: this.view.boardCurrent } : {}),
+        });
       }
     } catch {
       if (generation === this.viewGeneration) {

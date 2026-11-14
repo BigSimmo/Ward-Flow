@@ -132,7 +132,7 @@ export function WardComingAndGoing(props: ComingAndGoingProps) {
   // its first Confirm arrival (main-ward-*: Marrowvale's row), the coordinator's its first Pull the bed.
   // Only the ward desk's rows carry Confirm arrival, so the coordinator's panel is unchanged.
   const filledKey = (
-    arrivals.find((row) => row.action === "confirm-arrival" && !row.blocked) ??
+    arrivals.find((row) => row.action === "confirm-arrival" && !row.blocked && !row.arriveReason) ??
     arrivals.find((row) => row.action === "pull" && !row.blocked)
   )?.key;
 
@@ -170,6 +170,11 @@ export function WardComingAndGoing(props: ComingAndGoingProps) {
             </p>
           ))}
           {row.quietLine ? <p className={cx(styles.rowLine, styles.ink3)}>{row.quietLine}</p> : null}
+          {row.arriveReason ? (
+            <p className={cx(styles.rowLine, styles.ink3)} data-testid={`ward-coming-arrive-reason-${row.key}`}>
+              {row.arriveReason}
+            </p>
+          ) : null}
           {undo ? (
             <div className={styles.rowSub}>
               <RowUndo
@@ -204,6 +209,10 @@ export function WardComingAndGoing(props: ComingAndGoingProps) {
                 Confirm arrival <SrOnly>{row.name}</SrOnly>
               </Button>
             ) : null
+          ) : row.action === "confirm-arrival" && row.arriveReason ? (
+            <Button variant="sec" size="sm" onClick={openRow}>
+              Open <SrOnly>{row.name}</SrOnly>
+            </Button>
           ) : row.action === "confirm-arrival" ? (
             <Button
               variant={row.key === filledKey ? "pri" : "sec"}

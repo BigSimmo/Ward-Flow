@@ -824,7 +824,7 @@
 
 .historyList li {
   display: grid;
-  grid-template-columns: minmax(6rem, 0.8fr) minmax(5rem, 0.7fr) minmax(9rem, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.75rem;
   border: 1px solid var(--line);
@@ -837,7 +837,14 @@
 
 .historyList li strong {
   color: var(--ink);
-  font-family: var(--mono);
+}
+
+.historyList li > span:last-child {
+  grid-column: 1 / -1;
+}
+
+.historyTime {
+  justify-self: end;
 }
 
 .historyList time {
@@ -1101,7 +1108,6 @@
   }
 
   .historyList li {
-    grid-template-columns: minmax(0, 1fr);
     gap: 0.25rem;
   }
 
@@ -1623,7 +1629,7 @@
   }
 
   .historyList li {
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 2px var(--wf-s-2);
     padding: var(--wf-s-2) 0;
     border: 0;
@@ -1634,14 +1640,15 @@
     color: var(--wf-ink-2);
   }
 
-  .historyList li > span:nth-of-type(2) {
-    grid-column: 1 / -1;
-    grid-row: 2;
+  .historyList li > span:last-child {
     color: var(--wf-ink-3);
   }
 
-  .historyList li strong {
+  .historyTime {
     font-family: var(--wf-mono);
+  }
+
+  .historyList li strong {
     color: var(--wf-ink-1);
   }
 

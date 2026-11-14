@@ -9,6 +9,11 @@ import {
 import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import Link from "next/link";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { ArrivalIdentityDialog } from "@/components/ward-management/arrival-identity-dialog";
+import { patientIdentityLine } from "@/components/ward-management/ward-patient-resolver";
+import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
+import { useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { arrivalGaps } from "@/components/ward-management/ward-transport-checks";
 import React, { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import styles from "./ward-home-tab.module.css";
 import { pendingDepartureLogRows, type WardShiftLogRow } from "./ward-departure-log";
@@ -231,6 +236,7 @@ export function WardHomeTab({
   submitDecline,
   priorRejectionCountRef,
   rejections,
+  dispatch,
   setCheckToken,
   recentAnswers,
   resolvePatientIdentity,
@@ -1131,7 +1137,38 @@ export function WardHomeTab({
       onPullThenArrive(row.movementId);
       return;
     }
+    // R-MOVE-11: the identity check opens here, in place. A row that cannot record arrival, or one
+    // that needs the transport-gap check, opens its card instead.
+    const movement = movements.find((item) => item.id === row.movementId);
+    if (row.action === "confirm-arrival" && !row.arriveReason && movement && arrivalGaps(movement).length === 0) {
+      setArriveRowId(row.movementId);
+      return;
+    }
     onOpenArrival?.(row.movementId);
+  }
+  const [arriveRowId, setArriveRowId] = useState<string | null>(null);
+  const routeRole = useRouteRole();
+  const { run: runStep } = useUndoableStep({ dispatch, rejections, now, routeRole });
+  const arriveRowMovement = movements.find((item) => item.id === arriveRowId);
+  function recordRowArrival(movement: Movement) {
+    priorRejectionCountRef.current = rejections.length;
+    const who = resolvePatientIdentity(movement).displayName;
+    runStep(
+      { type: "PATIENT_ARRIVED", role: "ward", now, movementId: movement.id, actingUnitId: unit.id },
+      {
+        success: `Arrival recorded for ${who}.`,
+        who,
+        undo: (at) => ({
+          type: "UNDO_TRANSPORT_STEP",
+          role: "ward",
+          now: at,
+          movementId: movement.id,
+          actingUnitId: unit.id,
+        }),
+        refusalShownInline: true,
+      },
+    );
+    setCheckToken((token) => token + 1);
   }
 
   function renderFlowCard() {
@@ -1673,6 +1710,18 @@ export function WardHomeTab({
         );
       })()}
 
+      <ArrivalIdentityDialog
+        open={arriveRowMovement !== undefined}
+        who={arriveRowMovement ? resolvePatientIdentity(arriveRowMovement).displayName : "this patient"}
+        identity={arriveRowMovement ? patientIdentityLine(resolvePatientIdentity(arriveRowMovement)) : ""}
+        wardName={unit.name}
+        onClose={() => setArriveRowId(null)}
+        onConfirm={() => {
+          setArriveRowId(null);
+          if (arriveRowMovement) recordRowArrival(arriveRowMovement);
+        }}
+      />
+
       {(() => {
         // The referral the accept dialog was opened for, while it is still waiting here (CS-08).
         const acceptMovement = visibleIncoming.find((movement) => movement.id === acceptFor);
@@ -1742,14 +1791,12 @@ export function WardHomeTab({
             <ul>
               {recentAnswers.map((answer) => (
                 <li key={answer.key} data-testid={`ward-answer-history-${answer.key}`}>
-                  <strong>{resolvePatientIdentity({ movementId: answer.movementId }).umrn}</strong>
-                  <span>{answer.outcome}</span>
-                  <span>{answer.reason ? declineReasonText(answer.reason) : "Accepted by this ward"}</span>
-                  {answer.at === undefined ? (
-                    <span>Time not recorded</span>
-                  ) : (
-                    <time>{formatInstantWithDay(answer.at, now)}</time>
-                  )}
+                  <strong>{resolvePatientIdentity({ movementId: answer.movementId }).formalName}</strong>
+                  {answer.at === undefined ? <span>Not recorded</span> : <time>{formatInstantWithDay(answer.at, now)}</time>}
+                  <span>
+                    {resolvePatientIdentity({ movementId: answer.movementId }).umrn} · {answer.outcome}
+                    {answer.reason ? `, ${declineReasonText(answer.reason)}` : ""}
+                  </span>
                 </li>
               ))}
             </ul>
