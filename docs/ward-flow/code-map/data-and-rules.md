@@ -261,12 +261,7 @@ capacity figure anywhere in this group is real.
   `{status: "allowed"}` or `{status: "denied"}`, never a thrown error). Key exports:
   `dischargeIdentity`, `selectDischargeRecord`, `selectDischargeRecords`,
   `readOpenedDischargeRecord`, `uniqueRecord`, `validRecordActor`.
-- **`src/components/ward-management/ward-contention.ts`** (287 lines, 1 importer — its own test
-  only) — Reports, but does not resolve, when more than one live claim (referral, acceptance, or
-  parallel referral) is counting on the same unit's bed. Its own doc comment states this is
-  deliberately unwired: "No existing caller is wired up here" pending an owner decision on how
-  contention should be resolved (`docs/ward-flow/brief-contention-model-2026-09-04.md`, no longer in the tree; recover it from Git history). See
-  [Pitfalls](#pitfalls-in-this-area). Key export: `contention`.
+- **`ward-contention.ts`** — retired. Deleted on 1 Nov 2026 (commit `48e5b1b09`, owner approval Q96) with its test, because nothing wired it up. It reported, but did not resolve, two live claims on the same bed. Recover it from Git history if the contention decision is ever made.
 - **`src/components/ward-management/ward-pressure.ts`** (65 lines, 7 importers) — Ranks EDs by
   pressure: a passed legal deadline outranks a long wait, which outranks volume. `movements` is a
   required parameter — an earlier version defaulted it to the seed array, silently hiding a caller
@@ -283,11 +278,10 @@ capacity figure anywhere in this group is real.
 
 ## Selectors and derivations
 
-- **`src/components/ward-management/ward-derivations.ts`** (2,034 lines, 178 importers) — The
+- **`src/components/ward-management/ward-derivations.ts`** (1,396 lines, 178 importers) — The
   central shared-selector module for the three main Ward Flow view files (console, modes,
   network); has no React dependency and carries no `"use client"` directive. Every exported
   function, one phrase each:
-  - `stageSummaries` — counts movements per lifecycle stage.
   - `movementHealthService` — which health service a movement belongs to.
   - `elapsedLabel` — human "time in this stage" label for a movement.
   - `isOpen` — whether a movement is still active (not resolved or cancelled).
@@ -430,13 +424,7 @@ capacity figure anywhere in this group is real.
   its own tests and as the historical/placeholder table; do not treat it as live data, and do not
   delete it without checking `docs/agents/dead-code-deletion.md` and the owner (its removal is a
   protected-work question, not an obvious cleanup).
-- **`src/components/ward-management/ward-contention.ts`** (287 lines, 1 importer — its own test
-  only) — Built, tested, and explicitly **not wired into any screen or the reducer**, by design.
-  Its header states the function reports contention (two live claims resting on the same bed) but
-  never ranks, resolves or decides who wins one, because that decision has not been made by the
-  product owner (`docs/ward-flow/brief-contention-model-2026-09-04.md`, no longer in the tree; recover it from Git history). Read before either wiring
-  it up or deleting it — it is neither dead code nor a shipped feature, it is a deliberately
-  unreached primitive.
+- **`ward-contention.ts`** — retired (deleted 1 Nov 2026, commit `48e5b1b09`, owner approval Q96, with `tests/ward-contention.test.ts`). It was never wired into a screen or the reducer; the owner decision on contention was never made. Recover it from Git history if that decision is taken.
 
 ## Pitfalls in this area
 
@@ -465,9 +453,9 @@ capacity figure anywhere in this group is real.
    utility classes, so `eslint-rules/no-hardcoded-hex.mjs` (which only matches
    `bg-[#…]`/`text-[#…]`/`border-[#…]` literals) does not and cannot flag them. Do not assume the
    design-token guard covers every hex string in the codebase.
-7. **`ward-contention.ts` compiles, is tested, and does nothing at runtime.** A future editor who
-   finds it via search may assume it is either dead code to delete or a live feature to extend;
-   it is neither — it is an additive primitive awaiting an owner decision, per its own header.
+7. **`ward-contention.ts` is gone.** It was deleted on 1 Nov 2026 (commit `48e5b1b09`); no code
+   reports two live claims on one bed. A search that still finds the name in an old comment is
+   finding history, not a feature to extend.
 8. **`referralEligibility` and `eligibility` are two separate gate implementations that must be
    kept in sync by hand.** A 2026-09-02 fix found a `sex_designation` gate present on one path and
    missing on the other for months, with no failing test — `ward-eligibility.ts`.

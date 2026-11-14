@@ -214,7 +214,9 @@ required production build red until someone raised the limit by hand. Three part
   that measures no bigger than main always passes (performance audit WF-03, 11 November 2026).
   Inherited overage is a warning. It first reuses the
   measurements main's own push run saved for that commit (`main-measured.mjs`), so main is built a
-  second time only when none exist. That build runs only when the merged result is over.
+  second time only when none exist. That build runs only when the merged result is over. It starts from a clean build
+  cache: copying the merged build's cache made Next load a file from the wrong checkout and main never built
+  (audit Deep-DP5-6); if main still fails to build, the step prints a red "Ward budget main build failed" error.
 - **Report-only sizes.** The same step prints, and saves in `measured.json` under `report`, each budgeted
   route's stylesheet size, the preloaded script the budget does not count, the script every budgeted route
   shares, and four heavy routes with no budget (`REPORT_ROUTES`, triage first). Nothing there can fail a
