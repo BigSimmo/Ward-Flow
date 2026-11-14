@@ -469,6 +469,7 @@ test.describe("@mockup Ward design sweep: painted-background contrast (R-STYLE-8
     for (const theme of THEMES) {
       test(`${label} (${href}) text keeps 4.5:1 on its painted background in ${theme}`, async ({ page }) => {
         test.setTimeout(120_000);
+        // Known screen failure: the reason is its KNOWN_CONTRAST_FAILURES entry (owner: D-225 lanes).
         test.fixme(`${href}|${theme}` in KNOWN_CONTRAST_FAILURES, KNOWN_CONTRAST_FAILURES[`${href}|${theme}`]);
         await openSettled(page, href);
         await applyTheme(page, theme);

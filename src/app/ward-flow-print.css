@@ -689,7 +689,7 @@
     padding: 0 !important;
     font: inherit !important;
     font-weight: 600 !important;
-    color: #000 !important;
+    color: var(--wf-print-ink) !important;
     text-align: start !important;
     text-decoration: none !important;
   }
@@ -733,6 +733,6 @@
     font: 600 9pt / 1.2 var(--wf-font-mono, ui-monospace, monospace);
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: #000;
+    color: var(--wf-print-ink);
   }
 }
