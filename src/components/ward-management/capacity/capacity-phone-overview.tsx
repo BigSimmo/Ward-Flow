@@ -82,9 +82,8 @@ export function PhoneOverview({
                     type="button"
                     className={`${styles.wardCard} ${styles.wardTile}`}
                     aria-haspopup="dialog"
-                    // FA-4: a short spoken name; the figures and note line are its description.
-                    aria-label={`Open ${row.unit.name}`}
-                    aria-describedby={ward ? `${detailIdBase}-${row.unit.id}` : undefined}
+                    // The card is named by its own text (WCAG 2.5.3, label in name): a shorter "Open <ward>" name
+                    // failed the label-in-name check, because the figures are visible text inside the button.
                     data-testid={`capacity-check-ward-${row.unit.id}`}
                     data-stale={stale ? "" : undefined}
                     onClick={() => onWard(row.unit.id)}

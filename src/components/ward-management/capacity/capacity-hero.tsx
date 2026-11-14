@@ -279,7 +279,7 @@ export function CapacityHero({
           />
         }
         pill={
-          <CountsRegion phone={isPhone}>
+          <CountsRegion>
             <HeroPill
               tone={firstToConfirm || oldestStale ? "warning" : undefined}
               testId="capacity-hero-confirmed"
@@ -373,14 +373,12 @@ export function CapacityHero({
 }
 
 /**
- * Wider screens: the counts pill and its Ask are the "Bed counts confirmed" region, as the hero's
- * shift figure was. A phone leaves the region to the Overview's This shift card, so the name stays
- * unique on each screen size.
+ * The counts pill and its Ask are the "Bed counts confirmed" region on every screen size, as the
+ * hero's shift figure was. The Overview's This shift card that once held it on a phone is gone
+ * (wave 4), so the name stays unique and a phone keeps the region.
  */
-function CountsRegion({ phone, children }: { phone: boolean; children: ReactNode }) {
-  return phone ? (
-    <div className={styles.pillWrap}>{children}</div>
-  ) : (
+function CountsRegion({ children }: { children: ReactNode }) {
+  return (
     <section aria-label="Bed counts confirmed" className={styles.pillWrap}>
       {children}
     </section>

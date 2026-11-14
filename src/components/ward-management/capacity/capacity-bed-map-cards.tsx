@@ -375,9 +375,8 @@ function WardCard({
       type="button"
       className={`${styles.wardCard}${dimmed ? ` ${styles.dimmed}` : ""}`}
       aria-haspopup="dialog"
-      // FA-4: a short spoken name; the figures and note line are its description, not its name.
-      aria-label={`Open ${ward.unit.name}`}
-      aria-describedby={detailId}
+      // The card is named by its own text (WCAG 2.5.3, label in name): a shorter "Open <ward>" name
+      // failed the label-in-name check, because the figures are visible text inside the button.
       data-unit-id={ward.unit.id}
       data-testid={`capacity-map-ward-${ward.unit.id}`}
       data-selected={selected ? "" : undefined}
