@@ -212,7 +212,7 @@ describe("the bed meeting TV view", () => {
     const labels = Array.from(
       screen.getByRole("group", { name: "Figures" }).querySelectorAll("[data-wf-hero-figure]"),
     ).map((item) => item.querySelector("span")?.textContent);
-    expect(labels).toEqual(["waiting in ED", "beds ready", "beds freeing today", "open movements"]);
+    expect(labels).toEqual(["waiting in ED", "beds ready", "Discharges · today", "open movements"]);
     const longest = sheet.ed.longestWaits[0];
     if (!longest) throw new Error("expected someone waiting");
     expect(screen.getByTestId("bed-meeting-tv-longest")).toHaveTextContent(

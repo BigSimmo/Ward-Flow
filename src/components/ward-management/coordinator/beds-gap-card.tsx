@@ -32,7 +32,11 @@ function waysToFree(kind: KindForecast): { count: number; text: string }[] {
 
 /** "A locked adult bed" reads "Locked adult" in a row heading. */
 function shortNeed(need: string): string {
-  const words = need.replace(/^(a|an)\s+/i, "").replace(/\s+bed$/i, "");
+  // Home mock-up: the bed type reads "Older adult", as Capacity names it, not the hyphenated need.
+  const words = need
+    .replace(/^(a|an)\s+/i, "")
+    .replace(/\s+bed$/i, "")
+    .replace(/\bolder-adult\b/iu, "older adult");
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
@@ -79,7 +83,9 @@ export function BedsGapCard({ now, bedsReady, condensed }: { now: Instant; bedsR
         meta={
           folded
             ? `${gapRangeWord(totals.gap)} now · ${gapRangeWord(tomorrow.total.likely)} tomorrow`
-            : `${bedsReady} ready · whole network`
+            : // PR E swap: the kit's WindowWord / `window` prop. Wave 4 (D-191, notes item 4): the count label "Ready", as the hero and Capacity say it; no
+              // window word, since the page title already says "right now".
+              `${bedsReady} Ready · whole network`
         }
         icon={BedSingle}
         iconPlain
@@ -174,7 +180,7 @@ export function BedsGapCard({ now, bedsReady, condensed }: { now: Instant; bedsR
               })}
             </tbody>
           </table>
-          <p className={styles.fitFoot}>
+          <p className={styles.fitFoot} data-testid="home-beds-gap-foot">
             {/* Words (shared design parts item 11, 13 Nov 2026): no "likely" or "Forecast"; the figures
                 come from the wards' dates, so the link says so. */}
             <b>{gapRangeWord(totals.gap)}</b> across all four. Tomorrow <b>{gapRangeWord(tomorrow.total.likely)}</b>,

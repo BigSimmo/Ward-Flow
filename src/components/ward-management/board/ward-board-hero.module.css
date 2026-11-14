@@ -65,3 +65,8 @@ p.heroNote {
     --wf-folder-gap: 0px;
   }
 }
+
+/* A figure's window word (the kit's WindowWord, "Ready · now") in the hero's quiet ink. */
+.win[data-wf-window] {
+  color: var(--wf-hero-ink-3);
+}

@@ -212,51 +212,6 @@
   align-items: center;
   gap: var(--wf-s-1) var(--wf-s-2);
 }
-.navStep {
-  display: inline-flex;
-  align-items: center;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-ctl);
-  background: var(--wf-surface);
-}
-.navIcon {
-  display: inline-grid;
-  place-items: center;
-  width: 32px;
-  height: 30px;
-  border: 0;
-  background: none;
-  color: var(--wf-ink-2);
-  cursor: pointer;
-}
-.navIcon:first-child {
-  border-radius: var(--wf-r-ctl) 0 0 var(--wf-r-ctl);
-}
-.navIcon:last-child {
-  border-radius: 0 var(--wf-r-ctl) var(--wf-r-ctl) 0;
-}
-.navIcon:hover:not(:disabled) {
-  background: var(--wf-accent-tint);
-  color: var(--wf-accent-ink);
-}
-.navIcon:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-.navIcon:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: -2px;
-}
-.navCount {
-  padding: 0 var(--wf-s-1);
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-.navSpacer {
-  flex: 1 1 auto;
-}
 .nav a,
 .nav > button {
   gap: 6px;
@@ -333,36 +288,6 @@
 }
 
 /* Round 4b (Josh, 31 Oct 2026): the useful buttons anchored at the bottom, subtly. */
-.bottomBar {
-  flex-shrink: 0;
-  padding: 4px var(--panel-pad);
-  border-top: 1px solid var(--wf-line);
-  background: var(--wf-surface-2);
-}
-.bottomBar .nav a,
-.bottomBar .nav > button {
-  min-height: 28px;
-  color: var(--wf-ink-2);
-  font-weight: 500;
-}
-.bottomBar .navStep {
-  border-color: transparent;
-  background: transparent;
-}
-.bottomActions {
-  display: flex;
-  gap: var(--wf-s-2);
-  padding: var(--wf-s-1) 0;
-}
-.bottomActions > * {
-  flex: 1 1 0;
-}
-.bottomNote {
-  margin: 0;
-  padding: var(--wf-s-1) 0 0;
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-}
 /* The ED review's pinned Decline and Accept: desktop control height, not the phone's 48px. */
 .panel.panel [data-testid="ward-referral-match-not-a-bed-question"] > :last-child {
   margin-bottom: calc(var(--wf-s-4) * -1);

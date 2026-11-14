@@ -71,13 +71,16 @@ describe("Pull the bed in one step", () => {
     // The person the bed is for, surname first (D-83), as the form names them.
     const name = (form.getAttribute("aria-label") ?? "").replace(/^Pull the bed for /u, "");
     expect(name).toMatch(/^[^,]+, \S/u);
-    const status = screen.getByTestId("ward-pull-accepted-legal-status") as HTMLSelectElement;
+    const status = screen.getByTestId("ward-pull-accepted-legal-status");
     const legalForm = screen.getByTestId("ward-pull-accepted-legal-form") as HTMLSelectElement;
-    const observation = screen.getByTestId("ward-pull-accepted-observation") as HTMLSelectElement;
-    // Answer whatever the records left open. Recorded answers are kept as they are.
-    if (status.value === "") fireEvent.change(status, { target: { value: "Voluntary" } });
+    const observation = screen.getByTestId("ward-pull-accepted-observation");
+    // Answer whatever the records left open. Recorded answers are kept as they are (D-188: a fact
+    // the record does not hold has nothing chosen).
+    if (!within(status).queryByRole("radio", { checked: true }))
+      fireEvent.click(within(status).getByRole("radio", { name: "Voluntary" }));
     if (legalForm.value === "") fireEvent.change(legalForm, { target: { value: "none" } });
-    if (observation.value === "") fireEvent.change(observation, { target: { value: "general" } });
+    if (!within(observation).queryByRole("radio", { checked: true }))
+      fireEvent.click(within(observation).getByRole("radio", { name: "General" }));
     await act(async () => {
       fireEvent.click(screen.getByTestId("ward-pull-accepted-confirm"));
     });
@@ -97,11 +100,16 @@ describe("Pull the bed in one step", () => {
 
   it("does nothing until every answer is given, and says what is missing", async () => {
     const { referral } = renderWithAcceptedReferral();
-    fireEvent.change(screen.getByTestId("ward-pull-accepted-legal-status"), { target: { value: "Voluntary" } });
+    // The seed's referral records no observation level, so nothing is chosen (D-188).
+    expect(
+      within(screen.getByTestId("ward-pull-accepted-observation")).queryByRole("radio", { checked: true }),
+    ).toBeNull();
+    fireEvent.click(
+      within(screen.getByTestId("ward-pull-accepted-legal-status")).getByRole("radio", { name: "Voluntary" }),
+    );
     fireEvent.change(screen.getByTestId("ward-pull-accepted-legal-form"), { target: { value: "none" } });
-    fireEvent.change(screen.getByTestId("ward-pull-accepted-observation"), { target: { value: "" } });
     expect(screen.getByTestId("ward-pull-accepted-confirm")).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByText("Choose an observation level", { selector: "[id$='-why']" })).toBeInTheDocument();
+    expect(screen.getByText("Choose observation level", { selector: "[id$='-why']" })).toBeInTheDocument();
     await act(async () => {
       fireEvent.click(screen.getByTestId("ward-pull-accepted-confirm"));
     });
@@ -119,14 +127,16 @@ describe("Pull the bed: form and status that do not fit (finding 78)", () => {
     renderWithAcceptedReferral();
     const status = screen.getByTestId("ward-pull-accepted-legal-status");
     const legalForm = screen.getByTestId("ward-pull-accepted-legal-form");
-    fireEvent.change(screen.getByTestId("ward-pull-accepted-observation"), { target: { value: "general" } });
-    fireEvent.change(status, { target: { value: "Voluntary" } });
+    fireEvent.click(
+      within(screen.getByTestId("ward-pull-accepted-observation")).getByRole("radio", { name: "General" }),
+    );
+    fireEvent.click(within(status).getByRole("radio", { name: "Voluntary" }));
     fireEvent.change(legalForm, { target: { value: "1A" } });
     expect(screen.getByTestId("ward-pull-accepted-form-mismatch")).toHaveTextContent(
       "Check the legal form: Form 1A is chosen, but the legal status is Voluntary. You can still pull the bed.",
     );
     expect(screen.getByTestId("ward-pull-accepted-confirm")).not.toHaveAttribute("aria-disabled", "true");
-    fireEvent.change(status, { target: { value: "Involuntary inpatient" } });
+    fireEvent.click(within(status).getByRole("radio", { name: "Involuntary inpatient" }));
     fireEvent.change(legalForm, { target: { value: "none" } });
     expect(screen.getByTestId("ward-pull-accepted-form-mismatch")).toHaveTextContent(
       "no form is chosen, but the legal status is Involuntary inpatient.",

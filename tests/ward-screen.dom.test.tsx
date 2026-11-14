@@ -263,7 +263,7 @@ describe("ward screen live unit capacity", () => {
  * diverging or hard-coded one.
  */
 describe("ward screen bed capacity chip row uses the shared breakdown, not the raw potential count", () => {
-  it("never renders 'Potential', and renders Confirmed/Expected/Leave from capacityBreakdown()", () => {
+  it("never renders 'Potential', and renders leave, pulled and closed on the squares' note line", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardScreen unitId="rph-adult-secure" />
@@ -284,9 +284,10 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
     // Anti-vacuity: the old pin had non-zero figures (Confirmed 1, On leave 1); all-zero would let
     // a screen that renders nothing but zeros pass.
     expect(breakdown.confirmedToday + breakdown.expectedToday + breakdown.onLeave).toBeGreaterThan(0);
-    expect(chipRow).toHaveTextContent(`Confirmed ${breakdown.confirmedToday}`);
-    expect(chipRow).toHaveTextContent(`Expected ${breakdown.expectedToday}`);
-    expect(chipRow).toHaveTextContent(`On leave ${breakdown.onLeave}`);
+    // Wave 4 (D-191): the "Ward figures, right now" strip became the bed squares' note line, which
+    // says only what needs noting ("2 pulled · 1 closed · 1 on leave"). Confirmed and Expected moved
+    // to Coming and going (Discharges · today) and the Discharges tab.
+    expect(chipRow).toHaveTextContent(`${breakdown.onLeave} on leave`);
 
     // The four physical states, in the ruled vocabulary (`ward-bed-states.ts`): Ready · Pulled ·
     // Closed · Occupied. Pulls are their own box, out of Occupied (this ward has none since A16-13), and
@@ -296,11 +297,13 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
     // A16-13 (13 Nov 2026): this ward's two seeded pulls were held for nobody, so they are now
     // people who arrived this morning: 18 occupied and no Pulled chip.
     expect(screen.getByTestId("ward-hero-ready")).toHaveTextContent("1");
-    expect(screen.getByRole("group", { name: "Ward capacity" })).toHaveTextContent(/18\D*20\s*occupied/u);
-    expect(chipRow).not.toHaveTextContent("Ready");
+    // A16-13 (PR C): this ward's two seeded pulls are now people who arrived: 18 occupied, none pulled.
+    expect(screen.getByRole("group", { name: "Ward capacity" })).toHaveTextContent(/18\D*20\s*Occupied · now/u);
+    // The squares' head says the ready figure in words, the same figure as the hero.
+    expect(chipRow).toHaveTextContent("1 ready of 20 beds");
     expect(chipRow).not.toHaveTextContent("Occupied");
-    expect(chipRow).not.toHaveTextContent(/Pulled [1-9]/u);
-    expect(chipRow).toHaveTextContent("Closed 1");
+    expect(chipRow).not.toHaveTextContent(/[1-9] pulled/u);
+    expect(chipRow).toHaveTextContent("1 closed");
     expect(chipRow).not.toHaveTextContent("Held");
     expect(chipRow).not.toHaveTextContent("Blocked Not recorded");
   });
@@ -329,21 +332,19 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
     // already carries a non-zero blocked count here — read from `capacityBreakdown()` rather than
     // pinned to the old single-release fixture's 0.
     const breakdown = capacityBreakdown(unitById("rph-adult-secure")!, bedReleases, leaveBeds, NOW_ANCHOR);
-    expect(chipRow).toHaveTextContent(`Confirmed ${breakdown.confirmedToday}`);
     // D-191 item 5 (Josh, 13 Nov 2026): held up on the Ward page is due by tomorrow, the same count
-    // as `capacityBreakdown().blockedToday` beside it, and the label says the window.
+    // as `capacityBreakdown().blockedToday`.
     const heldUp = heldUpDueByTomorrow(
       bedReleases.filter((release) => release.unitId === "rph-adult-secure"),
       NOW_ANCHOR,
     ).length;
     expect(heldUp).toBe(breakdown.blockedToday);
-    expect(screen.getByTestId("ward-unit-blocked-releases")).toHaveTextContent(
-      `Releases held up, due by tomorrow ${heldUp}`,
-    );
-    // ...and no chip reads "Blocked" as a bed state beside it: the out-of-service box is gone and
-    // the empty bed the ward is not offering is the separately worded Closed chip.
+    // Wave 4 (D-191): held up is said in words on the squares' note line, never as a square.
+    expect(screen.getByTestId("ward-unit-beds-note")).toHaveTextContent(`${heldUp} held up`);
+    // ...and nothing reads "Blocked" as a bed state beside it: the out-of-service box is gone and
+    // the empty bed the ward is not offering is the separately worded "closed".
     expect(chipRow).not.toHaveTextContent(/\bBlocked\b/u);
-    expect(chipRow).toHaveTextContent("Closed");
+    expect(chipRow).toHaveTextContent("closed");
   });
 
   /**
@@ -358,7 +359,7 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
    * the unit's own chip figures before and after blocking it, rather than pinning a number, is
    * what proves this property without going stale the next time an admission changes.
    */
-  it("keeps Confirmed unchanged when the ward blocks its confirmed release, and raises Releases held up by one", () => {
+  it("raises held up by one on the squares' note when the ward blocks its confirmed release, which stays Confirmed", () => {
     const unit = unitById(CONFIRMED_RELEASE!.unitId)!;
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -371,15 +372,12 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
 
     fireEvent.click(screen.getByRole("button", { name: "block the confirmed release" }));
 
-    const chipRow = screen.getByTestId("ward-unit-beds");
-    expect(chipRow).toHaveTextContent(`Confirmed ${before.confirmedToday}`);
+    expect(before.confirmedToday).toBeGreaterThan(0);
     const heldBefore = heldUpDueByTomorrow(
       bedReleases.filter((release) => release.unitId === unit.id),
       NOW_ANCHOR,
     ).length;
-    expect(screen.getByTestId("ward-unit-blocked-releases")).toHaveTextContent(
-      `Releases held up, due by tomorrow ${heldBefore + 1}`,
-    );
+    expect(screen.getByTestId("ward-unit-beds-note")).toHaveTextContent(`${heldBefore + 1} held up`);
     const row = screen.getByTestId(`ward-barrier-${CONFIRMED_RELEASE!.id}`);
     expect(row).toHaveTextContent("Confirmed");
     expect(row).toHaveTextContent("Held up");
@@ -508,12 +506,13 @@ describe("ward screen bed release controls", () => {
 
     expect(screen.queryByTestId("ward-leave-bed-form")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-leave-bed-usable")).toBeNull();
-    expect(screen.getByTestId("ward-unit-beds")).toHaveTextContent("On leave 1");
+    expect(screen.getByTestId("ward-unit-beds")).toHaveTextContent("1 on leave");
 
     fireEvent.click(screen.getByRole("button", { name: "Ended" }));
 
     expect(screen.getByText("Nobody on leave.")).toBeInTheDocument();
-    expect(screen.getByTestId("ward-unit-beds")).toHaveTextContent("On leave 0");
+    // Wave 4: the note line leaves a zero out.
+    expect(screen.getByTestId("ward-unit-beds")).not.toHaveTextContent("on leave");
   });
 
   it("records a bed on leave when an admitted patient is chosen and increments the on-leave count", () => {
@@ -526,7 +525,7 @@ describe("ward screen bed release controls", () => {
     expect(screen.queryByTestId("ward-leave-bed-form")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-leave-bed-patient")).not.toBeInTheDocument();
     expect(screen.getAllByText(/Bed on leave/).length).toBeGreaterThan(0);
-    expect(screen.getByTestId("ward-unit-beds")).toHaveTextContent("On leave 1");
+    expect(screen.getByTestId("ward-unit-beds")).toHaveTextContent("1 on leave");
   });
 });
 

@@ -1,0 +1,33 @@
+/*
+ * Bed meeting sheet dialog, wave 4 additions (C8, notes item 8, D-191). Tokens only; nothing under
+ * 12 px. The sheet's grid and lists stay in capacity-page.module.css.
+ */
+
+/* The as-at line with the kit's SyntheticMark at its right. */
+.descRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+}
+
+/* Long ED names wrap rather than being cut. */
+.place {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+/* Held up · by tomorrow: ward, reason, due date. */
+.heldList.heldList li {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.reason {
+  color: var(--wf-ink-2);
+}
+
+/* A5-11: the focusable body shows its focus ring (the kit dialog body has none of its own). */
+:global([data-sheet-body]):focus-visible:has(.descRow) {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}

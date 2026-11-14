@@ -108,9 +108,10 @@ describe("Track B: Integration Readiness & Non-Degradation Guardrails", () => {
 
     // CRITICAL: the mismatch by bed type must NEVER be removed or broken by HUD rollout. Since the
     // Capacity redesign (31 Oct 2026) it is the Mismatch band, one tile per bed type; since the page
-    // tops (Josh, 9 Nov 2026) the band sits in the hero, "Short now, by bed type", one cell per type.
+    // tops (Josh, 9 Nov 2026) the band sits in the hero, one cell per type; wave 4 (D-191) titles it
+    // "By bed type · now"; the kit's WindowWord hides the dot from the spoken name ("By bed type now").
     const mismatch = within(screen.getByTestId("capacity-mismatch"));
-    const tiles = mismatch.getByRole("list", { name: "Short now, by bed type" }).querySelectorAll(":scope > li");
+    const tiles = mismatch.getByRole("list", { name: /^By bed type\s*now$/u }).querySelectorAll(":scope > li");
     const gapRows = bedKindGaps(wardMovements, allUnits(), NOW_ANCHOR, wardAdmissions);
     expect(Array.from(tiles, (tile) => tile.querySelector('[class*="cellLabel"]')?.textContent)).toEqual(
       gapRows.map((row) => shortNeed(row.need)),
@@ -224,8 +225,11 @@ describe("5. Live Target Screen Component Mounts", () => {
     expect(hud).toBeDefined();
     expect(mismatch).toBeDefined();
     // v6: the hero carries the Live chip with its pause control. Page tops (Josh, 9 Nov 2026): the
-    // counts are hero figures, the first the network's ready beds.
+    // counts are hero figures, the first the network's ready beds. Wave 4 (D-191): "Ready · now".
     expect(screen.getByRole("button", { name: /pause demo updates$/ })).toBeDefined();
-    expect(within(hud).getByTestId("capacity-hero-ready")).toHaveTextContent(/^\d+\s*\/ \d+\s*beds? ready$/u);
+    expect(within(hud).getByTestId("capacity-hero-ready")).toHaveTextContent(
+      // D-179 item 8: the beds still being made ready are said beside Ready.
+      /^\d+\s*\/ \d+\s*Ready · now(?:, \d+ being made ready)?$/u,
+    );
   });
 });

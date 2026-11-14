@@ -4,6 +4,7 @@ import { isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { edById, unitById } from "@/components/ward-management/ward-sites";
 import { clearToasts } from "./helpers/clear-toasts";
+import { openWardList } from "./helpers/ward-release-gate";
 
 import { openEdLists } from "./helpers/ward-ed-lists";
 import { homeFlowCard, showAllFlowRows, showEveryoneWaitingOn } from "./helpers/ward-home-page";
@@ -129,10 +130,8 @@ async function ensureToolsClosed(page: Page): Promise<void> {
  * arrivals view still exists and opens from that card's Admissions pane via "All arrivals".
  */
 async function openAllArrivals(page: Page) {
-  await page.locator("#tabBtn-attn").click();
-  await page.getByRole("radio", { name: /^Admissions/u }).click();
-  await page.getByRole("button", { name: "All arrivals", exact: true }).click();
-  await expect(page.locator("#tab-coming")).toHaveAttribute("data-active", "true");
+  // Wave 4 (D-191): All arrivals opens from the Coming and going card, with no Admissions switch.
+  await openWardList(page, "Admissions");
 }
 
 /**
@@ -186,8 +185,9 @@ test.describe("@mockup Ward screen", () => {
     // Its beds reconcile on screen.
     // Integration QA (3 Nov 2026): Ready and Occupied sit once, in the hero; the grid has the rest.
     const beds = wardScreen.getByTestId("ward-unit-beds");
-    await expect(beds).toContainText("Pulled");
-    await expect(beds).toContainText("Closed");
+    // Wave 4 (D-191): the squares' note counts in words, "1 pulled · 2 closed".
+    await expect(beds).toContainText(/\b\d+\spulled\b/u);
+    await expect(beds).toContainText(/\b\d+\sclosed\b/u);
 
     // A decline requires a reason from the fixed list, and "Belongs to another service" is offered
     // (the old out of catchment, D-78).
@@ -326,7 +326,8 @@ test.describe("@mockup Ward screen", () => {
       // v6 ward home: Awaiting your answer is its own card beside Every bed, always shown (no switch).
       await expect(wardScreen.getByRole("region", { name: "Awaiting your answer" })).toBeVisible();
       await expect(wardScreen.getByTestId("ward-unit-beds")).toBeVisible();
-      await expect(wardScreen.getByRole("region", { name: "Ward figures, right now" })).toBeVisible();
+      // Wave 4 (D-191): the ward's figures sit in the hero, the "This ward" region.
+      await expect(wardScreen.getByRole("region", { name: "This ward", exact: true })).toBeVisible();
       await decisionsTab.click();
       await expect(wardScreen.getByRole("region", { name: "Staffing" })).toBeVisible();
     };
@@ -1614,7 +1615,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
 
     const bedGrid = wardScreen.getByTestId("ward-unit-beds");
     await expect(wardScreen.getByTestId("ward-hero-ready")).toHaveText("1");
-    await expect(bedGrid).toContainText("Closed 1");
+    await expect(bedGrid).toContainText(/\b1\sclosed\b/u);
 
     // ⚠️ The testid below is the PULL one, not the older spelling. The merge with main took
     // main's copy of this line, and main predates this line's rename of that control -- so the
@@ -1643,7 +1644,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     // ... Currently confirmed 2" — the screen that raised the event never moved. ---
     // Ready sits once, in the hero (#1360); the strip keeps Pulled and Closed.
     await expect(wardScreen.getByTestId("ward-hero-ready").first()).toHaveText("0");
-    await expect(bedGrid).toContainText("Closed 2"); // the physically-empty pool is unchanged; it is now not offered rather than ready
+    await expect(bedGrid).toContainText(/\b2\sclosed\b/u); // the physically-empty pool is unchanged; it is now not offered rather than ready
     await expect(confirmDialog.getByText(/Currently confirmed 0 at/)).toBeVisible();
     await confirmDialog.getByRole("button", { name: "Close capacity confirmation" }).click();
     await expect(confirmDialog).toHaveCount(0);

@@ -32,6 +32,7 @@ import {
   TextInput,
   WardCapacityRow,
   WardCapacityRows,
+  WindowWord,
   buttonClass,
   cx,
   durMinutes,
@@ -39,9 +40,8 @@ import {
   useIsPhone,
   useOptionalToast,
 } from "@/components/wf";
-import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
+import { capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
 import { bedStates, networkNamedHolds } from "@/components/ward-management/ward-bed-states";
-import { releasesExpectedToFree } from "@/components/ward-management/ward-shared-figures";
 import {
   designationSummary,
   lockedBedsFree,
@@ -49,8 +49,7 @@ import {
   wardCategory,
 } from "@/components/ward-management/ward-bed-designation";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
-import { shiftEndInstant } from "@/components/ward-management/ward-board-time-features";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import type { Instant } from "@/components/ward-management/ward-clock";
 import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { wardBedsInUse } from "@/components/ward-management/ward-occupancy";
@@ -61,7 +60,13 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { SAMPLE_OBSERVATION_MIX_LABEL } from "@/components/ward-management/ward-sample-choices";
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
-import { BedStrip, BedStripLegend } from "@/components/ward-management/wards/bed-strip";
+import { BedSquares, BedSquaresKey, bedSquareCounts, bedSquaresNotes } from "@/components/ward-management/bed-squares";
+import {
+  bedKindGaps,
+  bedKindTotals,
+  bedsFreeingTodayTotal,
+} from "@/components/ward-management/capacity/capacity-derivations";
+import { heldUpReleases } from "@/components/ward-management/capacity/capacity-held-up";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -163,8 +168,12 @@ type WardRow = {
   states: ReturnType<typeof bedStates>;
   occupancy: number;
   ready: number;
-  /** Inside `ready`: released beds still being made ready. */
+  /** Beds being made ready, off Ready since D-179 item 8: the hollow squares' own figure (`bedStates`). */
   pendingPreparation: number;
+  /** Wave 4 bed squares (D-191): discharges still due today and not held up (`isFreeingToday`). */
+  dischargesToday: number;
+  /** Held-up discharges, as Capacity and Discharges count them (`heldUpReleases`). */
+  heldUp: number;
   out: number;
   incoming: number;
   confirmedAt: Instant;
@@ -266,7 +275,12 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
           // Occupied or Pulled: the one occupancy count (`ward-occupancy.ts`).
           occupancy: unit.beds > 0 ? wardBedsInUse(unit, admissions, bedReleases) / unit.beds : 0,
           ready: states.ready,
-          pendingPreparation: bedsPendingPreparation(unit.id, bedReleases),
+          pendingPreparation: states.beingMadeReady,
+          dischargesToday: bedsFreeingTodayTotal(bedReleases, now, new Set([unit.id])) ?? 0,
+          heldUp: heldUpReleases(
+            bedReleases.filter((release) => release.unitId === unit.id),
+            now,
+          ).total,
           out: breakdown.confirmedToday + breakdown.expectedToday,
           incoming,
           confirmedAt: unit.allocatable.confirmedAt,
@@ -293,15 +307,16 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
   const totalBeds = heroRows.reduce((sum, row) => sum + row.unit.beds, 0);
   const totalOccupied = heroRows.reduce((sum, row) => sum + Math.round(row.occupancy * row.unit.beds), 0);
   const readyNow = heroRows.reduce((sum, row) => sum + row.ready, 0);
-  const shiftEnd = shiftEndInstant(now);
-  // A16-05: the shared rule, so a discharge date already passed (overdue) is never added to Ready.
-  const freeingByShiftEnd = releasesExpectedToFree(
-    bedReleases,
-    now,
-    shiftEnd,
-    new Set(heroUnits.map((unit) => unit.id)),
-  ).length;
-  const pulled = heroRows.reduce((sum, row) => sum + row.states.pulled, 0);
+  // Wave 4 (D-191, notes item 11): the hero tells one afternoon story with Capacity's figures. "Ready
+  // by 15:00" went (it read beside "short"); Discharges · today is the meeting sheet's freeing today,
+  // still due later today and not held up (`isFreeingToday`), so the two never disagree.
+  const dischargesToday = bedsFreeingTodayTotal(bedReleases, now, new Set(heroUnits.map((unit) => unit.id))) ?? 0;
+  // "Short" is Capacity's figure from the same selector (`bedKindTotals` over `bedKindGaps`), relabelled
+  // only: PR C owns the rule (ruling 6, never net a spare youth bed).
+  const bedGap = useMemo(
+    () => bedKindTotals(bedKindGaps(movements, units, now, admissions, referrals, bedReleases)).gap,
+    [movements, units, now, admissions, referrals, bedReleases],
+  );
   const staleCount = heroRows.filter((row) => row.stale).length;
   // Page tops (Josh, 9 Nov 2026): the counts confirmed this shift, the same pill and words as Capacity.
   const confirmations = shiftConfirmations(heroUnits, now);
@@ -492,26 +507,33 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
             figures={
               <HeroFigures
                 label={deskSite ? `${deskSite.name} counts` : "Statewide counts"}
+                // Wave 4 (D-191, notes item 11): count labels are nouns, as on Capacity. The title says
+                // "right now", so "now" is left off (spec revision); "today" differs, so it stays.
                 items={[
                   {
                     id: "ready",
                     value: readyNow,
                     unit: `/ ${totalBeds}`,
-                    label: readyNow === 1 ? "bed ready" : "beds ready",
+                    label: "Ready",
                     testId: "ward-index-figure-ready",
                   },
                   {
-                    id: "ready-by",
-                    value: readyNow + freeingByShiftEnd,
-                    label: `ready by ${formatInstantWithDay(shiftEnd, now)}`,
-                    testId: "ward-index-figure-ready-by",
+                    id: "discharges",
+                    value: dischargesToday,
+                    label: (
+                      <>
+                        Discharges
+                        <WindowWord word="today" className={styles.figWindow} />
+                      </>
+                    ),
+                    testId: "ward-index-figure-discharges",
                   },
                   ...(isPhone
                     ? [
                         {
                           id: "in-use",
                           value: statewidePercent === null ? "Not recorded" : `${Math.round(statewidePercent)}%`,
-                          label: "in use",
+                          label: "In use",
                           href: "/ward-flow/capacity",
                           testId: "ward-index-figure-in-use",
                         },
@@ -527,12 +549,23 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                               onClick: () => setStatus(status === "has-ready" ? "all" : "has-ready"),
                               testId: "ward-index-figure-with-ready",
                             }
-                          : { id: "pulled", value: pulled, label: "pulled", testId: "ward-index-figure-pulled" },
+                          : {
+                              // Capacity's hero figure: spare only while the selector nets bed types.
+                              id: "short",
+                              value: Math.abs(bedGap),
+                              label: bedGap > 0 ? "Spare" : "Short",
+                              testId: "ward-index-figure-short",
+                            },
                         {
                           id: "full",
                           value: noReadyCount,
                           // Pressing it highlights those wards, as the Full filter does.
-                          label: noReadyCount === 1 ? "ward full, no bed ready" : "wards full, no bed ready",
+                          label: (
+                            <>
+                              {noReadyCount === 1 ? "Ward full" : "Wards full"}
+                              <SrOnly>, no bed ready</SrOnly>
+                            </>
+                          ),
                           pressed: status === "full",
                           onClick: () => setStatus(status === "full" ? "all" : "full"),
                           testId: "ward-index-figure-full",
@@ -706,8 +739,9 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
             <div className={styles.keyRow}>
               {isPhone ? null : (
                 <div className={styles.legendLine} aria-label="Reading a ward" role="note">
-                  <BedStripLegend />
-                  <span>One cell a bed.</span>
+                  {/* Wave 4 (D-191, ruling 7): the shared bed squares key, in strip order. */}
+                  <BedSquaresKey />
+                  <span>One square a bed.</span>
                 </div>
               )}
               <p className={styles.shownCount} data-testid="ward-index-count-note">
@@ -1020,11 +1054,8 @@ function WardCard({
         </span>
         <OccupancyPill row={row} />
       </div>
-      <BedStrip
-        counts={{ ...row.states, pendingPreparation: row.pendingPreparation }}
-        wardName={unit.name}
-        className={styles.strip}
-      />
+      {/* Wave 4 (D-191, ruling 7): the shared bed squares; the card's line above is their head. */}
+      <WardBedSquares row={row} className={styles.strip} />
       {/* Second pass (3 Nov 2026): the confirmation age shows on a card only when it is past the
           ward's limit, the one time anyone acts on it. A fresh age is in the side panel. */}
       {row.stale ? (
@@ -1060,6 +1091,63 @@ function WardCard({
         )}
       </div>
     </article>
+  );
+}
+
+/**
+ * Wave 4 (D-191, ruling 7): one ward's beds as the shared bed squares, for the card, the phone sheet
+ * and the table. The card's own line ("1 ready of 20") is the head, so the squares draw without one;
+ * the note line says pulled, held up and the rest in words (a pulled bed is no longer hatched: the
+ * hatch means "may move"). The squares are decorative; the card's line, the sheet's figures and the
+ * table's Ready column say the counts. Since D-179 item 8 (PR C) a bed being made ready is off
+ * Ready and drawn as its own hollow square.
+ */
+function WardBedSquares({ row, className, notes = true }: { row: WardRow; className?: string; notes?: boolean }) {
+  const { unit, states } = row;
+  const counts = bedSquareCounts({
+    beds: unit.beds,
+    ready: row.ready,
+    beingMadeReady: states.beingMadeReady,
+    dischargesToday: row.dischargesToday,
+    closed: states.closed,
+  });
+  const squares = (
+    <BedSquares
+      className={className}
+      head={false}
+      counts={counts}
+      notes={
+        notes
+          ? bedSquaresNotes({
+              dischargesToday: row.dischargesToday,
+              heldUp: row.heldUp,
+              pulled: states.pulled,
+              prep: row.pendingPreparation,
+              closed: states.closed,
+              onLeave: states.onLeave,
+            })
+          : undefined
+      }
+      testId={`ward-index-squares-${unit.id}`}
+    />
+  );
+  if (notes) return squares;
+  // Review FA-3: the table's squares have no note line and the strip is hidden from screen readers,
+  // so the cell says the squares in words, from the same counts the strip draws (no new counting).
+  const spoken = [
+    `${counts.ready} ready`,
+    counts.prep > 0 ? `${counts.prep} being made ready` : null,
+    counts.free > 0 ? `${counts.free} ${counts.free === 1 ? "discharge" : "discharges"} today` : null,
+    counts.closed > 0 ? `${counts.closed} closed` : null,
+    `${counts.use} in use${states.pulled > 0 ? `, ${states.pulled} of them pulled` : ""}`,
+  ]
+    .filter(Boolean)
+    .join(", ");
+  return (
+    <>
+      {squares}
+      <SrOnly>{`${unit.beds} beds: ${spoken}.`}</SrOnly>
+    </>
   );
 }
 
@@ -1244,11 +1332,7 @@ function WardPhoneSheet({
       className={styles.phoneSheet}
       data-testid="ward-index-phone-sheet"
     >
-      <BedStrip
-        counts={{ ...row.states, pendingPreparation: row.pendingPreparation }}
-        wardName={row.unit.name}
-        className={styles.strip}
-      />
+      <WardBedSquares row={row} className={styles.strip} />
       <dl className={styles.phoneSheetFigures}>
         <div>
           <dt>Occupied</dt>
@@ -1350,10 +1434,7 @@ function WardTable({
                 <SecurityLabel unit={row.unit} />
               </span>
               <span role="cell">
-                <BedStrip
-                  counts={{ ...row.states, pendingPreparation: row.pendingPreparation }}
-                  wardName={row.unit.name}
-                />
+                <WardBedSquares row={row} notes={false} />
               </span>
               <span role="cell">
                 <span className={styles.figure}>

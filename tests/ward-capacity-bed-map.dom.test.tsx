@@ -117,6 +117,24 @@ describe("Capacity bed map — the network's whole bed supply, one square per be
     }
   });
 
+  // Review P4-6: PR C's ready already leaves out a bed being made ready, so the map must not take it
+  // off again. A ward with such a bed: its ready squares, its head figure and the drawer agree.
+  it("keeps a ward's ready squares equal to its ready figure when a bed is being made ready", () => {
+    const ward = seededWards.find((entry) => entry.beingMadeReady > 0);
+    expect(ward, "no ward has a bed being made ready — this guard proves nothing").toBeDefined();
+    renderScreen();
+    const card = bedMapRegion().querySelector<HTMLButtonElement>(`button[data-unit-id="${ward!.unit.id}"]`)!;
+    expect(bedSquaresOf(card, "ready")).toHaveLength(ward!.ready);
+    expect(bedSquaresOf(card, "preparing")).toHaveLength(ward!.beingMadeReady);
+    expect(card.textContent ?? "").toMatch(
+      new RegExp(`(^|\\D)${ward!.ready}\\s*ready of ${ward!.unit.beds} beds`, "u"),
+    );
+    fireEvent.click(card);
+    const beds = within(screen.getByTestId("ward-capacity-ward-drawer")).getByRole("region", { name: "Beds now" });
+    expect(bedSquaresOf(beds, "ready")).toHaveLength(ward!.ready);
+    expect(bedSquaresOf(beds, "preparing")).toHaveLength(ward!.beingMadeReady);
+  });
+
   /**
    * A service with nothing in it is never headed over an empty group. Proved on a MINIMAL synthetic
    * network built for the purpose (WACHS removed). That such a service is also stated in words is
@@ -155,13 +173,11 @@ describe("Capacity bed map — the network's whole bed supply, one square per be
   it("names every kind of square in the bed map key, and no Held or Blocked square", () => {
     renderScreen();
     const legend = within(bedMapRegion()).getByLabelText("Bed map key");
-    expect(within(legend).getByText(/^Ready$/u)).toBeInTheDocument();
-    expect(within(legend).getByText(/^In use$/u)).toBeInTheDocument();
-    expect(within(legend).getByText(/^Closed$/u)).toBeInTheDocument();
-    // C4 (Josh, 4 Nov 2026): in-use beds by discharge state, with the release flag's own label.
-    expect(within(legend).getByText(/^Confirmed out$/u)).toBeInTheDocument();
-    expect(within(legend).getByText(/^Expected out$/u)).toBeInTheDocument();
-    expect(within(legend).getByText(new RegExp(`^${BED_RELEASE_BLOCKED_LABEL}$`, "u"))).toBeInTheDocument();
+    expect(legend.textContent).toBe("ReadyBeing made readyDischarge todayIn useClosed");
+    // Wave 4 (D-191, ruling 7): the 4 Nov discharge colours (C4) are gone. Held up is said in words
+    // on the note line, so the key names no held-up square.
+    expect(within(legend).queryByText(new RegExp(`^${BED_RELEASE_BLOCKED_LABEL}$`, "u"))).toBeNull();
+    expect(within(legend).queryByText(/Confirmed out|Expected out/u)).toBeNull();
     // "Held" alone means only a bed kept for a patient on leave, which is never a square of its own.
     expect(within(legend).queryByText(/\bHeld\b(?! up)|Blocked/u)).toBeNull();
   });
@@ -171,26 +187,34 @@ describe("Capacity bed map — the network's whole bed supply, one square per be
     for (const { ward, card } of cardsByWard()) {
       const strip = card.querySelector("i")?.parentElement;
       expect(strip, ward.unit.id).toHaveAttribute("aria-hidden", "true");
-      expect(card.textContent ?? "", ward.unit.id).toMatch(new RegExp(`${ward.ready}\\s*ready`, "u"));
-      expect(card, ward.unit.id).toHaveTextContent(`${ward.occupied} of ${ward.unit.beds} occupied`);
+      // Wave 4: "1 ready of 20 beds"; occupied and pulled are said on the note line and in the drawer.
+      // Since D-179 item 8 (PR C) a bed being made ready is off Ready: the head figure is the ready squares.
+      expect(card.textContent ?? "", ward.unit.id).toMatch(
+        new RegExp(`${ward.ready}\\s*ready of ${ward.unit.beds} ${ward.unit.beds === 1 ? "bed" : "beds"}`, "u"),
+      );
     }
   });
 
-  it.each(["Grid", "Rows"])("keeps occupied separate from pulled on the %s card and ward drawer", (layout) => {
-    const ward = seededWards.find((entry) => entry.pulled > 0)!;
-    expect(ward, "a pulled bed is needed to distinguish occupied from beds in use").toBeDefined();
-    renderScreen();
-    fireEvent.click(screen.getByRole("radio", { name: layout }));
-    const card = bedMapRegion().querySelector<HTMLButtonElement>(`button[data-unit-id="${ward.unit.id}"]`)!;
-    expect(card).toHaveTextContent(`${ward.occupied} of ${ward.unit.beds} occupied`);
-    expect(card).toHaveTextContent(`${ward.pulled} pulled`);
-    expect(bedSquaresOf(card, "used")).toHaveLength(ward.occupied + ward.pulled);
-    fireEvent.click(card);
-    const beds = within(screen.getByTestId("ward-capacity-ward-drawer")).getByRole("region", { name: "Beds now" });
-    expect(beds).toHaveTextContent(`${ward.occupied} occupied`);
-    expect(beds).toHaveTextContent(`${ward.pulled} pulled`);
-    expect(bedSquaresOf(beds, "used")).toHaveLength(ward.occupied + ward.pulled);
-  });
+  // Wave 4: the Grid and Rows switch is gone; the same map is on the Overview and the Wards tab.
+  it.each([/^Overview/u, /^Wards/u])(
+    "keeps occupied separate from pulled on the %s tab's card and ward drawer",
+    (tab) => {
+      const ward = seededWards.find((entry) => entry.pulled > 0)!;
+      expect(ward, "a pulled bed is needed to distinguish occupied from beds in use").toBeDefined();
+      renderScreen();
+      fireEvent.click(
+        within(screen.getByRole("radiogroup", { name: "Capacity view" })).getByRole("radio", { name: tab }),
+      );
+      const card = bedMapRegion().querySelector<HTMLButtonElement>(`button[data-unit-id="${ward.unit.id}"]`)!;
+      expect(card).toHaveTextContent(`${ward.pulled} pulled`);
+      expect(bedSquaresOf(card, "used")).toHaveLength(ward.occupied + ward.pulled);
+      fireEvent.click(card);
+      const beds = within(screen.getByTestId("ward-capacity-ward-drawer")).getByRole("region", { name: "Beds now" });
+      expect(beds).toHaveTextContent(`${ward.occupied} occupied`);
+      expect(beds).toHaveTextContent(`${ward.pulled} pulled`);
+      expect(bedSquaresOf(beds, "used")).toHaveLength(ward.occupied + ward.pulled);
+    },
+  );
 
   /**
    * Capacity issue 5 (Josh, 3 Nov 2026): the bed map shows a zero ready count as the digit 0, the

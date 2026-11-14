@@ -190,7 +190,7 @@ export const DESK_JOBS: readonly HowTo[] = [
     title: "See beds ready across the network",
     keywords: "occupancy beds ready free in use closed wards counts executive",
     answer:
-      "Open Capacity. It shows beds ready of the total, then Beds by ward: beds, ready, being made ready, in use and closed. Bed counts only, with no patient details, as at the time shown.",
+      "Open Capacity. It shows beds ready of the total, being made ready, in use and closed, then each health service, then Beds by ward grouped by service: ready, being made ready, in use, closed and beds, with a row of bed squares. Bed counts only, with no patient details, as at the time shown.",
     desks: ["executive"],
     go: "capacity",
     showMe: [
@@ -202,7 +202,7 @@ export const DESK_JOBS: readonly HowTo[] = [
       {
         target: { sel: '[data-testid="ward-capacity-executive"] table' },
         title: "Beds by ward",
-        body: "Beds, ready, being made ready, in use and closed, for each ward.",
+        body: "Ready, being made ready, in use, closed and beds for each ward, grouped by service, with the totals at the foot.",
       },
     ],
   },

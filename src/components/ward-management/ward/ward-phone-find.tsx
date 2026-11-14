@@ -53,6 +53,8 @@ export function WardPhoneFind({ value, onChange }: { value: string; onChange: (n
           variant="ghost"
           size="sm"
           icon={Search}
+          // Review EH-4: the kit's icon-only button, drawn 40 px with a 48 x 48 px tap cover on a phone.
+          iconOnly
           aria-label="Find a bed or person on this ward"
           onClick={() => setOpened(true)}
           data-testid="ward-find-open"

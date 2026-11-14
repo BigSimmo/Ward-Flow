@@ -1,15 +1,152 @@
-/* Pull the bed in one step (WS-03, 26 Oct 2026). */
+/* Pull the bed in one step (WS-03, 26 Oct 2026; wave 4 D-188 layout, 13 Nov 2026). Tokens only. */
 
 .form {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--wf-s-3);
+  gap: var(--wf-s-4);
 }
 
-.lead {
+.person {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.who {
   margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--wf-s-2);
+  row-gap: 4px;
+  font: 600 var(--wf-fs-15) / 20px var(--wf-font);
+}
+
+.name {
   color: var(--wf-ink-1);
-  font-size: var(--wf-fs-13);
+}
+
+.umrn {
+  font: 400 var(--wf-fs-12) / 16px var(--wf-mono);
+  color: var(--wf-ink-3);
+}
+
+/* Wave 4 (notes item 5): the tag wraps on a phone, never "…". */
+.tag {
+  align-self: center;
+  max-width: 100%;
+}
+
+.tag > span {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.ctx {
+  margin: 0;
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.group {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.group > h3 {
+  margin: 0 0 var(--wf-s-2);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
+.kv {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 6px var(--wf-s-3);
+  margin: 0;
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.kv dt {
+  color: var(--wf-ink-3);
+}
+
+.kv dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--wf-ink-1);
+}
+
+.kv dd.nr,
+.nr {
+  color: var(--wf-ink-3);
+}
+
+.mono {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+/* One fact: label and source on one line, then its choices. */
+.q {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: var(--wf-s-3) 0;
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+}
+
+.group > h3 + .q {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.qHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px var(--wf-s-2);
+  width: 100%;
+  padding: 0;
+}
+
+.qLabel {
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.src {
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.src[data-source="not-recorded"] {
+  color: var(--wf-ink-3);
+}
+
+.src[data-source="changed"] {
+  font-weight: 500;
+  color: var(--wf-ink-1);
+}
+
+.opts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 var(--wf-s-4);
+}
+
+.opt {
+  min-height: 32px;
 }
 
 .warning {
@@ -21,8 +158,15 @@
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--wf-s-2);
+  gap: var(--wf-s-2) var(--wf-s-3);
   align-items: center;
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+/* The lock line takes its own line under the buttons (PR E spec 6). */
+.actions > :last-child:not(button) {
+  flex-basis: 100%;
 }
 
 .status {
@@ -33,4 +177,27 @@
 
 .status:empty {
   display: none;
+}
+
+@media (max-width: 599px) {
+  .kv {
+    grid-template-columns: 84px minmax(0, 1fr);
+  }
+
+  .opts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .opt {
+    min-height: 40px;
+  }
+
+  .opt + .opt {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .actions > button {
+    min-height: 48px;
+    flex: 1 1 auto;
+  }
 }

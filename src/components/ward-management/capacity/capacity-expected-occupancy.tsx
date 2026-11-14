@@ -96,8 +96,9 @@ export function ExpectedOccupancyTable({
         </ShowMoreRow>
       ) : null}
       <p className={styles.note}>
-        Likely beds taken: beds taken now, less recorded discharges, plus booked admissions. People waiting without a
-        ward are not counted.{closedWardsNote(units)}
+        {/* D-198: no "Likely". The columns run past tomorrow, so "at each time". */}
+        Beds taken at each time: beds taken now, less recorded discharges, plus booked admissions · From ward dates.
+        People waiting without a ward are not counted.{closedWardsNote(units)}
       </p>
     </section>
   );

@@ -652,9 +652,11 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                 percent={occupancy.percent}
                 alertAt={ANSWER_ALERT_LINE}
                 scope={unit.name}
+                // Ruling 4 (D-191): the figure reads "In use", as Home and Capacity; at or over the alert
+                // line the amber dot stays, never the words "at risk".
                 status={
                   occupancy.percent !== null && Math.round(occupancy.percent) >= ANSWER_ALERT_LINE
-                    ? { tone: "warning", word: `At risk, over ${ANSWER_ALERT_LINE}%` }
+                    ? { tone: "warning", word: `In use, at or over ${ANSWER_ALERT_LINE}%` }
                     : { tone: "success", word: `In use, under ${ANSWER_ALERT_LINE}%` }
                 }
               />

@@ -151,12 +151,13 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     fireEvent.click(viewSwitch);
     expect(screen.getByTestId("ward-index-view-toggle")).toHaveTextContent("Card view");
 
-    // Statewide capacity counts on the hero. Page tops (Josh, 9 Nov 2026): the ready beds lead, then
-    // the beds ready by the shift's end, pulled beds and the wards full; the counts confirmed this
-    // shift are the pill under them (the old ring and checking foot went with the old top).
-    expect(screen.getByTestId("ward-index-figure-ready")).toHaveTextContent(/beds? ready$/u);
-    expect(screen.getByTestId("ward-index-figure-ready-by")).toHaveTextContent(/ready by \d\d:\d\d$/u);
-    expect(screen.getByTestId("ward-index-figure-pulled")).toHaveTextContent(/pulled$/u);
+    // Statewide capacity counts on the hero. Wave 4 (D-191, notes item 11): Ready, Discharges · today,
+    // Short and Wards full, as Capacity says them ("ready by" went); the counts confirmed this shift
+    // are the pill under them (the old ring and checking foot went with the old top).
+    expect(screen.getByTestId("ward-index-figure-ready")).toHaveTextContent(/Ready$/u);
+    expect(screen.getByTestId("ward-index-figure-discharges")).toHaveTextContent(/Discharges · today$/u);
+    expect(screen.getByTestId("ward-index-figure-short")).toHaveTextContent(/(Short|Spare)$/u);
+    expect(screen.queryByTestId("ward-index-figure-ready-by")).toBeNull();
     expect(screen.getByTestId("ward-index-confirmed")).toHaveTextContent(/\d+ of \d+/u);
   });
 
@@ -234,11 +235,14 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     fireEvent.click(within(hero).getByRole("button", { name: /occupied/i }));
     expect(within(showBeds).getByRole("radio", { checked: true })).toHaveTextContent(/Occupied/);
 
-    fireEvent.click(within(hero).getByRole("button", { name: /ready by/i }));
-    expect(within(showBeds).getByRole("radio", { checked: true })).toHaveTextContent(/Ready by shift end/);
+    // Wave 4 (D-191): the hero's third figure is Arrivals · today, so "Ready by shift end" left the hero
+    // and the group; the hero's Ready figure sets the listed Ready option.
+    fireEvent.click(within(hero).getByRole("button", { name: /^\d+ Ready/u }));
+    expect(within(showBeds).getByRole("radio", { checked: true })).toHaveTextContent(/^Ready/u);
 
+    fireEvent.click(within(hero).getByRole("button", { name: /occupied/i }));
     fireEvent.click(within(showBeds).getByRole("radio", { name: /^All/ }));
-    expect(within(showBeds).queryByRole("radio", { name: /Ready by shift end|Occupied/ })).toBeNull();
+    expect(within(showBeds).queryByRole("radio", { name: /Occupied/ })).toBeNull();
   });
 
   it("highlights Ready beds while keeping every bed available", () => {
@@ -347,13 +351,14 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
 
     const awaiting = screen.getByRole("region", { name: "Awaiting your answer" });
     expect(awaiting).not.toHaveAttribute("data-active");
-    fireEvent.click(screen.getByTestId("ward-shift-summary"));
+    // Wave 4 (D-191): the This shift card went with the bottom strip; the hero's "Open this shift" opens it.
+    fireEvent.click(screen.getByTestId("ward-hero-act-now"));
     expect(screen.getByRole("heading", { name: "Shift history" })).toBeInTheDocument();
     expect(screen.queryByRole("tab", { name: /Awaiting your answer/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("tab", { name: "Shift log" })).not.toBeInTheDocument();
   });
 
-  it("draws every bed as a tile that opens its dossier, with the ward figures as the card's foot", () => {
+  it("draws every bed as a tile that opens its dossier, with the bed squares in the card's head", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardScreen unitId={RPH_ADULT_SECURE} />
@@ -362,7 +367,7 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
 
     const everyBed = document.getElementById("bed-capacity")!;
     expect(within(everyBed).getByRole("heading", { name: "Every bed" })).toBeInTheDocument();
-    expect(within(everyBed).getByRole("region", { name: "Ward figures, right now" })).toBeInTheDocument();
+    expect(within(everyBed).getByTestId("ward-unit-beds")).toBeInTheDocument();
     const tiles = within(everyBed).getAllByRole("button", { name: /^Bed \d{2},/ });
     expect(tiles.length).toBeGreaterThan(0);
     fireEvent.click(tiles[0]);

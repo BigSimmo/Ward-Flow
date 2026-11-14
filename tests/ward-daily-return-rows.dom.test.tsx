@@ -134,12 +134,13 @@ describe("the removed census and pipeline are not on the ward page", () => {
 
     for (const unit of SEEDED_UNITS) {
       const view = renderUnit(unit.id);
+      // Wave 4 (D-191): the bed figures are the bed squares' ready figure, out of the ward's beds.
       const bedGrid = screen.getByTestId("ward-unit-beds");
-      const expected = bedGrid.querySelector("[data-state='expected'] strong")?.textContent ?? "";
-      const confirmed = bedGrid.querySelector("[data-state='confirmed'] strong")?.textContent ?? "";
-      expect(expected).toMatch(/^\d+$/);
-      expect(confirmed).toMatch(/^\d+$/);
-      if (Number(expected) + Number(confirmed) > 0) unitsWithANonZeroFigure += 1;
+      const ready = bedGrid.querySelector("b")?.textContent ?? "";
+      const beds = /ready of (\d+) beds?/u.exec(bedGrid.textContent ?? "")?.[1] ?? "";
+      expect(ready).toMatch(/^\d+$/);
+      expect(beds).toMatch(/^\d+$/);
+      if (Number(beds) > 0) unitsWithANonZeroFigure += 1;
       view.unmount();
     }
 

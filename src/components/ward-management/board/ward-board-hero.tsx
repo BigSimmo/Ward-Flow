@@ -25,6 +25,7 @@ import {
   HeroTop,
   LiveChip,
   SrOnly,
+  WindowWord,
   cx,
   folderTabClasses,
   heroChipClassName,
@@ -223,16 +224,34 @@ export function WardBoardHero(props: {
                   {
                     id: "ready",
                     value: available,
-                    label: "ready now",
+                    // Wave 4 (D-191, notes 10): count labels "Label · window", the window the kit's WindowWord.
+                    label: (
+                      <>
+                        Ready
+                        <WindowWord word="now" className={styles.win} />
+                      </>
+                    ),
                     testId: "ward-board-headline",
                   },
-                  { id: "occupied", value: states.occupied, label: "occupied" },
+                  {
+                    id: "occupied",
+                    value: states.occupied,
+                    label: (
+                      <>
+                        Occupied
+                        <WindowWord word="now" className={styles.win} />
+                      </>
+                    ),
+                  },
                   {
                     id: "pulled",
                     value: pulledIn,
                     label: (
+                      // "not arrived" was the pulled count itself (notes 10).
                       <>
-                        <SrOnly>Pulled, </SrOnly>not arrived
+                        Pulled
+                        <WindowWord word="now" className={styles.win} />
+                        <SrOnly>, not arrived</SrOnly>
                       </>
                     ),
                     testId: "ward-board-figure-pulled",

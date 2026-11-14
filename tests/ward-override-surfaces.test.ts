@@ -309,6 +309,11 @@ const ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON: Record<string, string> = {
   // RAISE_REFERRAL with pullBed, which the engine runs through the ordinary pull with no override.
   // A refused pull starts nothing and offers the journey alone, where patient-transit-operations.tsx's
   // Pull records an override reason. So it left this list rather than becoming compliant.
+  // Review P4-1 (PR #1659, 13 Nov 2026): its "pull again" path after an Undo dispatches PULL_PATIENT
+  // on the journey the Undo left open. That journey's first pull already passed the same gates (or
+  // carried a reason). A refused re-pull pulls nothing, shows the engine's reason with an "Open the
+  // movement" link, and patient-transit-operations.tsx's Pull there records an override reason.
+  "src/components/ward-management/referrals/pull-accepted-referral.tsx": "PULL_PATIENT",
 };
 
 const derivedMembers = deriveWardFlowEventMembers();
@@ -667,8 +672,9 @@ describe("ward override-surface guard", () => {
     // Top 25 item 8: the step down board's plain Refer (6).
     // 23 Oct 2026: Home's Offer went with the unreachable phone ward sheet (5).
     // WS-03 (26 Oct 2026) added the one-step Pull the bed (6); WT-08 took it off again (5).
-    expect(Object.keys(ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON).length).toBe(5);
-    expect(stillInViolation.size).toBe(5);
+    // Review P4-1 (PR #1659): the pull form's pull again after an Undo (6).
+    expect(Object.keys(ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON).length).toBe(6);
+    expect(stillInViolation.size).toBe(6);
   });
 
   // --- The compliance guard: every site the scan CAN see meets the rule. ---
@@ -797,6 +803,8 @@ describe("ward override-surface guard", () => {
       "src/components/ward-management/patients/patient-transit-operations.tsx::ACCEPT_IN_PRINCIPLE": 2,
       "src/components/ward-management/patients/patient-transit-operations.tsx::PULL_PATIENT": 2,
       "src/components/ward-management/patients/patient-transit-operations.tsx::REFER_TO_UNITS": 2,
+      // Review P4-1 (PR #1659): the pull form's pull again after an Undo (allowlisted above).
+      "src/components/ward-management/referrals/pull-accepted-referral.tsx::PULL_PATIENT": 1,
       // RB5 (item 16): raised from 1 to 2 the same day -- handleAccept (psychiatric_ward, carries
       // overrideReason) is joined by handleCommunityAccept (community_team, needs none, the
       // coordinator-facing equivalent of community-screen.tsx's own handleConfirmAccept above).

@@ -140,7 +140,8 @@ describe("ward decision demonstration boundaries", () => {
         />
       </WardFlowProvider>,
     );
-    expect(screen.getAllByText(/^Pull expired /u).length).toBeGreaterThan(0);
+    // Wave 4 (D-191): the arrival row reads "origin · stage · bed" on one line.
+    expect(screen.getAllByText(/(^|· )Pull expired /u).length).toBeGreaterThan(0);
     expect(screen.queryByText(/^Late$/u)).not.toBeInTheDocument();
   });
   it("shows stopped held beds in Act now without mixing closed movements into accepted", () => {
