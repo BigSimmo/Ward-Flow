@@ -444,15 +444,7 @@ test.describe("@mockup Phone hit boxes: popup and form-step controls (Q377)", ()
  */
 // Screens that fail today. Their fixes sit in screen files owned by other lanes, so each is a
 // test.fixme with the reason; remove the entry when the screen is fixed and the test turns green.
-const KNOWN_CONTRAST_FAILURES: Record<string, string> = {
-  // Lane B checked these on screen (14 Nov 2026): both read clearly. The scan misses the "New"
-  // pill painted by .primary::before, and composites the table's scroll-shadow gradient as grey.
-  "/ward-flow|glare": "Scan artefact: ward-bar 'New' sits on its blue ::before pill, which the scan does not see",
-  "/ward-flow/ed|glare": "Scan artefact: ward-bar 'New' sits on its blue ::before pill, which the scan does not see",
-  "/ward-flow/statistics|light": "Scan artefact: zero cells read as on grey from the table's scroll-shadow gradient",
-  "/ward-flow/statistics|dark": "Scan artefact: zero cells read as on grey from the table's scroll-shadow gradient",
-  "/ward-flow/statistics|glare": "Scan artefact: zero cells read as on grey from the table's scroll-shadow gradient",
-};
+const KNOWN_CONTRAST_FAILURES: Record<string, string> = {};
 
 const CONTRAST_ROUTES = [
   { label: "Home", href: "/ward-flow" },
