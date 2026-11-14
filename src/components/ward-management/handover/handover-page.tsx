@@ -105,7 +105,7 @@ import {
 } from "./handover-model";
 import { HandoverFlowPanel, HandoverSignOffPanel, HandoverSiteSignOffSlot } from "./handover-panels";
 import { handoverSignOffChecks, sheetSignOff } from "./handover-sign-off-checks";
-import { HandoverKeysHelp, ShowMoreRow, signOffWaitReason } from "./handover-sheet-parts";
+import { HandoverKeysHelp, ShowMoreRow, handoverMeetingMinutes, signOffWaitReason } from "./handover-sheet-parts";
 import * as desk from "./handover-desk";
 import { HandoverBeds } from "./handover-beds";
 import { LongStaySummary } from "./long-stay-summary";
@@ -282,9 +282,8 @@ export function HandoverPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
   const [present, setPresent] = useState(false);
-  // `ms` drives the chip's running timer; `at` is the board instant the length is measured from (C9).
-  const [meetingStarted, setMeetingStarted] = useState<{ ms: number; at: Instant } | null>(null);
-  const meetingStartedAt = meetingStarted?.ms ?? null;
+  // The board instant the meeting started: the chip and History both measure from it (C9, CC-6).
+  const [meetingStartedAt, setMeetingStartedAt] = useState<Instant | null>(null);
   const [meetings, setMeetings] = useState<{ at: Instant; minutes: number }[]>([]);
   const [preparedAt, setPreparedAt] = useState<Instant | null>(null);
   const [printOptions, setPrintOptions] = useState(DEFAULT_PRINT_OPTIONS);
@@ -532,15 +531,15 @@ export function HandoverPage() {
   // Time audit C9 (13 Nov 2026): the length is measured on the board clock, the clock History shows
   // it against, so a moved demo clock does not stamp a real-time length with a board time.
   const toggleMeeting = useCallback(() => {
-    if (meetingStarted === null) {
-      setMeetingStarted({ ms: Date.now(), at: now });
+    if (meetingStartedAt === null) {
+      setMeetingStartedAt(now);
       return;
     }
-    const minutes = Math.max(1, now - meetingStarted.at);
+    const minutes = handoverMeetingMinutes(meetingStartedAt, now);
     setMeetings((list) => [{ at: now, minutes }, ...list]);
-    setMeetingStarted(null);
+    setMeetingStartedAt(null);
     announceToWardShell(`Meeting took ${minutes} min. Added to History.`);
-  }, [meetingStarted, now]);
+  }, [meetingStartedAt, now]);
 
   /* copy */
   const shiftLine = `${shiftInfo.label.toLowerCase()}, ${formatInstantWithDay(shiftAt, now)}`;
@@ -1028,7 +1027,7 @@ export function HandoverPage() {
               {
                 id: "meeting",
                 label: "Start meeting",
-                node: <HandoverMeetingChip startedAt={meetingStartedAt} onClick={toggleMeeting} />,
+                node: <HandoverMeetingChip startedAt={meetingStartedAt} now={now} onClick={toggleMeeting} />,
               },
               {
                 // Feature 15: the Shift digest, beside Start meeting; `?digest=1` also opens it.
