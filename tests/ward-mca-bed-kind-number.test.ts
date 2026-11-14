@@ -19,7 +19,7 @@ import { wardBedRoster } from "@/components/ward-management/ward/ward-screen-der
 import { nextEvent, seededRandom } from "./helpers/ward-engine-fuzz";
 
 /**
- * H10 (mechanics audit, 14 Nov 2026), D-MCA (Josh, 14 Nov 2026), ruling 9: a stay's locked or open
+ * H10 (mechanics audit, 14 Nov 2026), D-210 (Josh, 14 Nov 2026), ruling 9: a stay's locked or open
  * bed kind and its bed number are one fact. Synthetic seeded worlds only.
  */
 

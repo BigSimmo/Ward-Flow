@@ -133,7 +133,7 @@ function obsFact(observation: Observation | undefined): ClinicalFact {
  * A legal form's line for the wall: the status, then the form and its end time as typed. "Ending soon"
  * is the signed due soon warning (`dueSoon`), never a window of its own (D-194).
  *
- * D-MCA (Josh, 14 Nov 2026), ruling 3 (audit M4): the same bands as Forms, Delays and ED, from
+ * D-210 (Josh, 14 Nov 2026), ruling 3 (audit M4): the same bands as Forms, Delays and ED, from
  * Settings (`currentLegalStanding`). Red, Act now, from the urgent warning (default 1 h) on, and
  * once the typed time has passed; amber, Ending soon, within the soon warning (default 3 h). At the
  * typed minute itself the line still reads "Ends", as every other screen does.
@@ -211,7 +211,7 @@ export function wardClinicalRows(input: WardClinicalInputs): WardClinicalRow[] {
       const bedNumber = admission.bedNumber ?? seats.get(admission.id) ?? 999;
       const pulled = admission.state === "pulled";
       const days = pulled ? null : daysInBed(admission, now);
-      // D-MCA (Josh, 14 Nov 2026), ruling 5 (audit M13a): the patient page's rule. The stay's own
+      // D-210 (Josh, 14 Nov 2026), ruling 5 (audit M13a): the patient page's rule. The stay's own
       // status wins, then the converted booking, then the patient record (`stayLegalStatus`), and
       // the wall carries the same "statuses differ" mark the patient page shows.
       const status = stayLegalStatus(admission, input);

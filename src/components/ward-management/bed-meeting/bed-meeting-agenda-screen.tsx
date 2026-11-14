@@ -230,7 +230,7 @@ function BedMeetingAgenda() {
             movements: movements.filter((movement) => movementInAgendaGroups(movement, groups, groupContext)),
             referrals: referrals.filter((referral) => referralInAgendaGroups(referral, groups)),
             peopleFilter: agendaGroupFilterWords(groups, units),
-            // D-MCA (Josh, 14 Nov 2026), audit M15: "short" stays whole, like the bed figures.
+            // D-210 (Josh, 14 Nov 2026), audit M15: "short" stays whole, like the bed figures.
             wholeLists: { movements, referrals },
           }
         : {}),

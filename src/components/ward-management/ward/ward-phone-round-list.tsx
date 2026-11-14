@@ -35,7 +35,7 @@ export type PhoneRoundRow = {
 
 /**
  * The note line's words: the arrival, the ready or closed word, or the row's own note. "Arrived
- * today" is by the Perth calendar day, as Day N is (audit L5, D-MCA (Josh, 14 Nov 2026), F-29):
+ * today" is by the Perth calendar day, as Day N is (audit L5, D-210 (Josh, 14 Nov 2026), F-29):
  * an arrival at 23:00 yesterday is not "today" at 10:00.
  */
 function roundNote(row: PhoneRoundRow): string {

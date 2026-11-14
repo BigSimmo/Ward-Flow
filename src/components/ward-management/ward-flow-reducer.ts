@@ -320,7 +320,7 @@ export type WardFlowState = WardAuditAndPilotState & {
   /** Which synthetic night is seeded — `ward-scenarios.ts`'s operational-numbers-only variants. */
   scenario: WardScenario;
   /**
-   * M12 (mechanics and clock audit, D-MCA (Josh, 14 Nov 2026)): whether the worked examples are on
+   * M12 (mechanics and clock audit, D-210 (Josh, 14 Nov 2026)): whether the worked examples are on
    * in this world. `SET_SCENARIO` sets it and `RESET_SCENARIO` keeps it. Held on the world rather
    * than read off the example records, which a scoped desk is not sent. A save made before this
    * field derives it once from its records on restore (`withInboxStreamADefaults`,
@@ -639,7 +639,7 @@ function seedAuthoredWorld(
   const demo = network ? seed : applyLoopChecksDemoOverlay(withExamples, NOW_ANCHOR);
   // Feature item 13's intake windows and the staff request belong to a clock face, so they are
   // added after any reseed shift (`withSeedClockFaceRecords`, time audit G1).
-  // H10, D-MCA (Josh, 14 Nov 2026): seeded stays carry no bed kind or number; each takes them once,
+  // H10, D-210 (Josh, 14 Nov 2026): seeded stays carry no bed kind or number; each takes them once,
   // from its seat and the ward's own free locked and open figures (`withDerivedStayBeds`).
   return withDerivedStayBeds(
     applyExampleListsOverlay(network ? demo : applyWaitlistDemoOverlay(demo, NOW_ANCHOR), NOW_ANCHOR),
@@ -727,7 +727,7 @@ export const HIGH_ACUITY_STAFFING_REFUSAL = "has no high-acuity nursing capacity
 
 /**
  * The gates a recorded reason may get past. Declared in `ward-eligibility.ts` since 14 Nov 2026
- * (D-MCA, the shared fit classifier reads it there) and re-exported here, the engine's home for it.
+ * (D-210, the shared fit classifier reads it there) and re-exported here, the engine's home for it.
  */
 export { SUITABILITY_GATES };
 
@@ -948,7 +948,7 @@ function referralAcceptanceRefusal(
   unit: Unit,
   now: Instant,
   /**
-   * H7 (D-MCA (Josh, 14 Nov 2026)): the engine state, so the bed check reads the shared Ready the
+   * H7 (D-210 (Josh, 14 Nov 2026)): the engine state, so the bed check reads the shared Ready the
    * Place tab and Capacity show, never a private figure. The referral's own held bed is left out.
    */
   state?: Pick<WardFlowState, "admissions" | "bedReleases" | "movements" | "referrals">,

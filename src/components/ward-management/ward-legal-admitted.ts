@@ -19,7 +19,7 @@ export function admittedOnAForm(movements: readonly Movement[], admissions: read
 
 /**
  * A PASSED TYPED EXPIRY FOR SOMEONE ALREADY ADMITTED ON A FORM (mechanics and clock audit M1;
- * D-MCA (Josh, 14 Nov 2026), ruling 2). The typed expiry still in force (`currentLegalDueAt`, so a
+ * D-210 (Josh, 14 Nov 2026), ruling 2). The typed expiry still in force (`currentLegalDueAt`, so a
  * form a person recorded as ended raises nothing) has gone by while the person is in the bed. The
  * ward desk's Act now, the coordinator's alerts and the Forms page's counts all read this one list.
  * Passed means the clock is after the typed minute, as for an open journey (`isClockBreached`).

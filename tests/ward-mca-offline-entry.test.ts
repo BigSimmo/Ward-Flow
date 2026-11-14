@@ -1,4 +1,4 @@
-// H1 (mechanics and clock audit, 14 Nov 2026; D-MCA (Josh, 14 Nov 2026), ruling 1): a save that
+// H1 (mechanics and clock audit, 14 Nov 2026; D-210 (Josh, 14 Nov 2026), ruling 1): a save that
 // waited is recorded at the board minute the person acted, within bounds, or refused; a save that
 // arrives at once, or from an older app with no acted time, is stamped by the server as before.
 import { describe, expect, it } from "vitest";

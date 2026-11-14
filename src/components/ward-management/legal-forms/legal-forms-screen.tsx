@@ -270,7 +270,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   const withoutForm = openMovements.filter((movement) => movement.legalForm === undefined).length;
   const breakdown = legalFormBreakdown(rows, now);
   const reminders = legalExpiryReminderSummary(movements, now, thresholds);
-  // Audit M1, D-MCA (Josh, 14 Nov 2026) ruling 2: a person admitted on a form whose typed expiry has
+  // Audit M1, D-210 (Josh, 14 Nov 2026) ruling 2: a person admitted on a form whose typed expiry has
   // passed counts as passed and act now here too, as the ward desk and the coordinator see it.
   const admittedPassed = admitted.filter((movement) => isLegalDeadlineBreached(movement, now));
   const passedOpen = withDeadline.filter((movement) => isLegalDeadlineBreached(movement, now)).length;

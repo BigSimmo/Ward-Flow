@@ -44,7 +44,7 @@ export function sinceBannerCounts(changes: ChangesSinceLastLook): SinceBannerPar
 /**
  * The line's short lead: "Since 15:02 yesterday". `day` is the part after the clock face
  * (" yesterday", ", 2 days ago"), which a very narrow line drops. Before a usable review the window
- * is the previous shift's start (audit L4, D-MCA (Josh, 14 Nov 2026), as the Activity panel counts),
+ * is the previous shift's start (audit L4, D-210 (Josh, 14 Nov 2026), as the Activity panel counts),
  * so the lead names that time rather than "This shift".
  */
 export function sinceBannerLeadParts(changes: ChangesSinceLastLook, sinceLabel: string): { lead: string; day: string } {

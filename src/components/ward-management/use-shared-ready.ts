@@ -7,7 +7,7 @@ import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flo
 import { sharedReadyLookup } from "@/components/ward-management/ward-shared-ready";
 
 /**
- * H7 (mechanics and clock audit; D-MCA (Josh, 14 Nov 2026)): the shared Ready for a fit list on
+ * H7 (mechanics and clock audit; D-210 (Josh, 14 Nov 2026)): the shared Ready for a fit list on
  * this desk, from the same records Capacity reads. `undefined` outside a provider (some screen
  * tests), where a fit check falls back to the ward's own two figures.
  */

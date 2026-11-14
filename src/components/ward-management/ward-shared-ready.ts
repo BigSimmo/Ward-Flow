@@ -8,7 +8,7 @@ import {
 import { pulledBedAvailability } from "@/components/ward-management/ward-ready-beds";
 
 /**
- * H7 (mechanics and clock audit, 14 Nov 2026; D-MCA (Josh, 14 Nov 2026)): THE ONE READY COUNT.
+ * H7 (mechanics and clock audit, 14 Nov 2026; D-210 (Josh, 14 Nov 2026)): THE ONE READY COUNT.
  *
  * Capacity, Home, the nav and the pull gate already shared one Ready: the ward's own figures, less
  * pulls made since the last count, named holds and beds still being made ready. The fit check

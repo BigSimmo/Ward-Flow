@@ -76,7 +76,7 @@ export function reduceReferralAskEvent(
     // Checked against the state now, since a bed or a gate can change after the list was opened.
     // H7: the shared Ready, the figure the list shows.
     const verdict = referralEligibility(referral, { ...template, unitId }, unit, event.now, ready);
-    // H8 (D-MCA (Josh, 14 Nov 2026)): a ward whose only failing check is an old bed count may still
+    // H8 (D-210 (Josh, 14 Nov 2026)): a ward whose only failing check is an old bed count may still
     // be asked; asking is how the count is checked. The shared classifier decides, as on the list.
     const fit = placementFit(verdict).kind;
     const why =

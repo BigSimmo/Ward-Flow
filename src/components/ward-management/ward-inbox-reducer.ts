@@ -105,7 +105,7 @@ export const INBOX_CATEGORIES = {
    *  (Josh, 19 Oct). Leaves when one is answered or withdrawn. Remainder is the patient id
    *  (`ward-duplicate-bed-requests.ts`). */
   duplicate_bed_request: { idPrefix: "duplicate-bed-request-", kind: "fact" },
-  /** M11 and owner question 8 (D-MCA (Josh, 14 Nov 2026)): a bed held for an accepted referral
+  /** M11 and owner question 8 (D-210 (Josh, 14 Nov 2026)): a bed held for an accepted referral
    *  while the person is pulled into, or occupies, a bed on another journey. Flagged with an offer to
    *  release it, never a block. Coordinator only, as it names where else the person is. Leaves when
    *  the bed is released or the stay ends. Remainder is the referral id (`ward-held-bed-elsewhere.ts`). */
@@ -118,7 +118,7 @@ export const INBOX_CATEGORIES = {
    *  until the owner or the chair marks it done (`COMPLETE_BED_MEETING_ACTION`). Amber, overdue
    *  included: shown, never escalated. Remainder names the action (`meetingActionInboxId`). */
   bed_meeting_action: { idPrefix: BED_MEETING_ACTION_INBOX_PREFIX, kind: "fact" },
-  /** Audit M2, D-MCA (Josh, 14 Nov 2026): a Pull now no asked ward answered by its answer time (the
+  /** Audit M2, D-210 (Josh, 14 Nov 2026): a Pull now no asked ward answered by its answer time (the
    *  signed 15 minute rule). Act now, from `overduePullNowInboxItems` (`ward-act-now-items.ts`).
    *  Leaves when a ward answers, the bed is pulled or the alert is stood down. Remainder is the
    *  movement id. */

@@ -93,7 +93,7 @@ describe("audit domain boundary regressions, 16 October 2026", () => {
     expect(causeOf(movement, [full], now, DEFAULT_DUE_SOON_THRESHOLDS)).toBe("no_eligible_bed");
   });
 
-  // Audit L2, D-MCA (Josh, 14 Nov 2026): a pull lapses once the clock is past its minute, the one
+  // Audit L2, D-210 (Josh, 14 Nov 2026): a pull lapses once the clock is past its minute, the one
   // clock rule (`isTimePassed`) that a legal breach uses too. At its minute it is still held.
   it("R10 expires a hold once past its minute, using the same boundary as bedHold", () => {
     const state = copy();

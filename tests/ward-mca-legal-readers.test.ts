@@ -26,7 +26,7 @@ import { transportOrderOnFile } from "@/components/ward-management/ward-transpor
 import { wardLiveFormAlerts } from "@/components/ward-management/ward/ward-screen-derivations";
 
 /**
- * Mechanics and clock audit (14 Nov 2026): H4, H5, H6, M1, M4 and M13 (a), with D-MCA (Josh,
+ * Mechanics and clock audit (14 Nov 2026): H4, H5, H6, M1, M4 and M13 (a), with D-210 (Josh,
  * 14 Nov 2026) rulings 2, 3 and 7. Every reader takes the one current legal position. Synthetic only.
  */
 

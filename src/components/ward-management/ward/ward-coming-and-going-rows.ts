@@ -127,7 +127,7 @@ export function arrivalRows({
   nameOf: (movement: Movement) => string;
   /** "ward" is the ward desk; any other desk sees Pull the bed only. */
   desk: string;
-  /** Audit L3, D-MCA (Josh, 14 Nov 2026): the Settings due-time warnings the pull hold reads. */
+  /** Audit L3, D-210 (Josh, 14 Nov 2026): the Settings due-time warnings the pull hold reads. */
   thresholds?: DueSoonThresholds;
 }): ComingRow[] {
   return accepted.map((movement): ComingRow => {

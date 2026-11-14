@@ -760,7 +760,7 @@ export function reduceReferralAnswerEvent(
     }
 
     case "RELEASE_REFERRAL_BED": {
-      // M11 (D-MCA (Josh, 14 Nov 2026)): the bed goes back; the acceptance stands.
+      // M11 (D-210 (Josh, 14 Nov 2026)): the bed goes back; the acceptance stands.
       const referral = findReferral(state, event.referralId);
       if (!referral) return reject(state, event, "No referral found to release a bed for");
       if (event.role === "ward" && event.actingUnitId !== event.unitId)
@@ -879,7 +879,7 @@ export function reduceReferralAnswerEvent(
             ...(event.clearanceUpdated !== undefined ? { clearanceUpdated: event.clearanceUpdated } : {}),
           }
         : undefined;
-      // M14(b) (D-MCA (Josh, 14 Nov 2026)): a community team's yes does not block a ward's answer.
+      // M14(b) (D-210 (Josh, 14 Nov 2026)): a community team's yes does not block a ward's answer.
       if (
         event.destinationKind !== "community_team" &&
         bedPlacementAccepted(referral) &&

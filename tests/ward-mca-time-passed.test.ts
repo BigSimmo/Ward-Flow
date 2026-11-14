@@ -1,4 +1,4 @@
-// Mechanics and clock audit (14 Nov 2026), L2 and L3, D-MCA (Josh, 14 Nov 2026): one "has this time
+// Mechanics and clock audit (14 Nov 2026), L2 and L3, D-210 (Josh, 14 Nov 2026): one "has this time
 // passed?" rule, and a pulled bed's running-out mark from the Settings warnings. Synthetic data only.
 import { describe, expect, it } from "vitest";
 

@@ -1,4 +1,4 @@
-// Mechanics and clock audit (14 Nov 2026), M5 and ruling 4, D-MCA (Josh, 14 Nov 2026): the tier
+// Mechanics and clock audit (14 Nov 2026), M5 and ruling 4, D-210 (Josh, 14 Nov 2026): the tier
 // windows count from the referral time, as the values register ("Tier N referral shown as overdue
 // after…") and the Referrals board do, never from arrival in ED; with no referral time the wait says
 // so instead of being marked overdue. No values change. Synthetic data only.

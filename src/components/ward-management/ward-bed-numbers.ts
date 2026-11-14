@@ -1,6 +1,6 @@
 // src/components/ward-management/ward-bed-numbers.ts
 //
-// H10 (mechanics audit, 14 Nov 2026; D-MCA (Josh, 14 Nov 2026)): a stay's bed KIND (locked or open)
+// H10 (mechanics audit, 14 Nov 2026; D-210 (Josh, 14 Nov 2026)): a stay's bed KIND (locked or open)
 // and its bed NUMBER are one fact. Before this a pull, an arrival or a transfer took one from the
 // locked or open count and stored the kind, but chose no number; the bed layout then seated the stay
 // wherever a bed was free, across kinds, and the tiles were labelled by number. Every writer that

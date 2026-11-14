@@ -126,7 +126,7 @@ function deriveTaskItems(source: TaskSource, now: Instant): InboxItem[] {
 const ADMITTED_LEGAL_OWNER = "Nurse in charge";
 
 /**
- * Audit M1 and D-MCA (Josh, 14 Nov 2026), ruling 2: a person already admitted on a form whose typed
+ * Audit M1 and D-210 (Josh, 14 Nov 2026), ruling 2: a person already admitted on a form whose typed
  * expiry still in force has passed raises the same act-now row as an open journey (`legal-` plus
  * the journey's id), so the coordinator's alerts count it. Needs the stays; without them, none.
  */
@@ -156,7 +156,7 @@ export function admittedLegalInboxItems(
 const PULL_NOW_OWNER = "Bed coordinator";
 
 /**
- * AN OVERDUE PULL NOW IS ACT NOW (audit M2, D-MCA (Josh, 14 Nov 2026)). A Pull now that no asked ward
+ * AN OVERDUE PULL NOW IS ACT NOW (audit M2, D-210 (Josh, 14 Nov 2026)). A Pull now that no asked ward
  * has answered by its answer time (the signed 15 minute rule, `PULL_NOW_ANSWER_MINUTES`) turned the
  * banner red but reached no count. It is now one red row on the shared task list, so Home's Act now
  * figure, the bell, the Tasks dock, the phone menu, the Alerts Act now list and the act-now
@@ -199,7 +199,7 @@ export function overduePullNowInboxItems(
 
 /**
  * The ward desk's own act-now line for each Pull now that asked this ward and that it has not
- * answered by the answer time (audit M2, D-MCA (Josh, 14 Nov 2026)), by the same rule as the rows above.
+ * answered by the answer time (audit M2, D-210 (Josh, 14 Nov 2026)), by the same rule as the rows above.
  */
 export function overduePullNowActNowForWard(
   source: Pick<TaskSource, "movements" | "broadcastAlerts">,
@@ -262,7 +262,7 @@ export function duplicateBedRequestInboxItems(
 }
 
 /**
- * M11 and owner question 8 (D-MCA (Josh, 14 Nov 2026)): one amber row per bed still held for an
+ * M11 and owner question 8 (D-210 (Josh, 14 Nov 2026)): one amber row per bed still held for an
  * accepted referral while the person is pulled into, or occupies, a bed on another journey
  * (`ward-held-bed-elsewhere.ts`). Flagged, never blocked. It opens the referral on the Referrals
  * board, which offers Release held bed. Coordinator only: it names where else the person is.

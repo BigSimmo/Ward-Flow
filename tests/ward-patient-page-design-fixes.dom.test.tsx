@@ -68,7 +68,7 @@ describe("patient page design fixes", () => {
 
   it("shows the overdue limit rather than the same wait twice", () => {
     // WF-005: Tier 2, opened 5h 30m before the anchor but referred at 07:02, 3h 40m before it.
-    // Audit M5, D-MCA (Josh, 14 Nov 2026): the 4h target counts from the referral, so it is not over.
+    // Audit M5, D-210 (Josh, 14 Nov 2026): the 4h target counts from the referral, so it is not over.
     renderAt("WF-005");
     const root = screen.getByTestId("ward-person-screen");
     expect(root).not.toHaveTextContent("over T2 target (4h)");

@@ -1,4 +1,4 @@
-// Mechanics and clock audit (14 Nov 2026), L7, D-MCA (Josh, 14 Nov 2026): the engine refuses a blank
+// Mechanics and clock audit (14 Nov 2026), L7, D-210 (Josh, 14 Nov 2026): the engine refuses a blank
 // or infinite typed time on arrival details, a bed release and a bed meeting action, and an expected
 // discharge before the stay began. The screens already guard these; this is the runtime guard.
 // Synthetic data only.

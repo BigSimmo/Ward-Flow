@@ -25,7 +25,7 @@ import shortlistStyles from "./shortlist-panel.module.css";
 
 // Module-level helpers of `shortlist-panel.tsx`, moved unchanged (H-0283).
 
-/** H7 (D-MCA (Josh, 14 Nov 2026)): the shortlist, with "bed ready" read from the shared Ready. */
+/** H7 (D-210 (Josh, 14 Nov 2026)): the shortlist, with "bed ready" read from the shared Ready. */
 export function useShortlistCandidates(movement: Movement | undefined, units: Unit[], now: Instant) {
   const ready = useSharedReadyLookup();
   return useMemo(

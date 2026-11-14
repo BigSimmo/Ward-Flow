@@ -1313,7 +1313,7 @@ interface CompatibleWardCandidate {
   failingGates: EligibilityGate[];
   isOutOfArea: boolean;
   /**
-   * H8 (D-MCA (Josh, 14 Nov 2026)): every check passes except that the ward's bed count is old. Still
+   * H8 (D-210 (Josh, 14 Nov 2026)): every check passes except that the ward's bed count is old. Still
    * listed, since asking is how the count is checked; the row says so ("Bed count N min old, check
    * with the ward"), so the list never claims every ward has been asked while such a ward is left.
    */
@@ -1379,7 +1379,7 @@ export function deriveNextWardsAfterRefusal(
   movement: Movement,
   units: readonly Unit[],
   now: Instant,
-  /** H7 (D-MCA (Josh, 14 Nov 2026)): the shared Ready (`sharedReadyLookup`). */
+  /** H7 (D-210 (Josh, 14 Nov 2026)): the shared Ready (`sharedReadyLookup`). */
   ready?: ReadyBedsLookup,
 ): NextWardsAfterRefusal | undefined {
   // A ward that waitlisted (no bed yet) still holds a live request, so it is not a refusal.

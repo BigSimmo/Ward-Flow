@@ -299,7 +299,7 @@ export function dueSoonThresholdsOf(
 }
 
 /**
- * THE ONE "HAS THIS TIME PASSED?" RULE (audit L2, D-MCA (Josh, 14 Nov 2026)). A time has passed once
+ * THE ONE "HAS THIS TIME PASSED?" RULE (audit L2, D-210 (Josh, 14 Nov 2026)). A time has passed once
  * the board clock is strictly after its minute: at the due minute itself it is still due, and from
  * the next minute it is passed. A legal breach, a pull's time limit, a Pull now answer time, a
  * decision target, a planned time, a closed bed's review and an observation review all read this,

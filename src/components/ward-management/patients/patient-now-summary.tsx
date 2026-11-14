@@ -264,7 +264,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
      identity line; Copy handover and Forms are the band's chips. Nothing here is new: every
      figure is one the page already showed. */
   const movementTop = isLiveBedflow && liveMovement ? liveMovement : undefined;
-  // Audit M5, D-MCA (Josh, 14 Nov 2026): the tier target counts from the referral, as the values
+  // Audit M5, D-210 (Josh, 14 Nov 2026): the tier target counts from the referral, as the values
   // register and the Referrals board do, never from arrival; no referral time is said, not guessed.
   const tierWait = movementTop ? tierWaitFromReferral({ ...movementTop, urgency: urgencyTier }, now) : undefined;
   const overTarget = tierWait?.recorded === true && tierWait.overdue;

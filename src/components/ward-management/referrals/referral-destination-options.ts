@@ -107,7 +107,7 @@ export type DestinationOptionInputs = {
   readonly units: readonly Unit[];
   readonly referrals: readonly Referral[];
   readonly now: Instant;
-  /** H7 (D-MCA (Josh, 14 Nov 2026)): the shared Ready, so "no ready bed" matches Capacity. */
+  /** H7 (D-210 (Josh, 14 Nov 2026)): the shared Ready, so "no ready bed" matches Capacity. */
   readonly ready?: ReadyBedsLookup;
 };
 

@@ -4,7 +4,7 @@ import { bedMeetingSheet } from "@/components/ward-management/capacity/bed-meeti
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 
-// Audit M15, D-MCA (Josh, 14 Nov 2026): the bed meeting sheet says its figures are for the whole
+// Audit M15, D-210 (Josh, 14 Nov 2026): the bed meeting sheet says its figures are for the whole
 // service. A group filter narrows the people lists only; the "short" figure stays whole.
 describe("bed meeting sheet short figure under a group filter", () => {
   const seed = seedWardFlowState();

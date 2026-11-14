@@ -1,4 +1,4 @@
-// Time audit T-9 and mechanics and clock audit (14 Nov 2026), D-MCA (Josh, 14 Nov 2026): the ward's
+// Time audit T-9 and mechanics and clock audit (14 Nov 2026), D-210 (Josh, 14 Nov 2026): the ward's
 // "Leave bed open" notice names the day of the expected return, which is often days away, instead of
 // a bare clock face that reads as today. Synthetic data only.
 import { describe, expect, it } from "vitest";

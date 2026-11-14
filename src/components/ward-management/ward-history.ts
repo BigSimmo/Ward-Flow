@@ -358,7 +358,7 @@ function extractEventReason(event: WardFlowEvent): string {
  */
 export function buildHistoryEntry(event: WardFlowEvent, now: Instant): WardHistoryEntry {
   const wording = eventHistoryWording(event.type, event.role) ?? event.type;
-  // H1 (D-MCA (Josh, 14 Nov 2026), ruling 1): a step that waited shows the time it was done and when it was sent.
+  // H1 (D-210 (Josh, 14 Nov 2026), ruling 1): a step that waited shows the time it was done and when it was sent.
   const sentAt = Reflect.get(event, "sentAt");
   const summary = Number.isSafeInteger(sentAt) ? `${wording} (${enteredOfflineNote(sentAt as number, now)})` : wording;
 

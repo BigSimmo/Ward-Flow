@@ -4,7 +4,7 @@ import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 
 /**
- * H1 (mechanics and clock audit, 14 Nov 2026; D-MCA (Josh, 14 Nov 2026), ruling 1): a save on the
+ * H1 (mechanics and clock audit, 14 Nov 2026; D-210 (Josh, 14 Nov 2026), ruling 1): a save on the
  * signed-in site carries the board minute the person pressed it at (`actedAt`, beside the command,
  * never inside it). The server applies a save that reaches it in the same minute or the next as it
  * always did, stamped with its own time. A save that waited (offline, or for Retry) keeps the time

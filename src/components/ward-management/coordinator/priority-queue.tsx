@@ -78,7 +78,7 @@ const MS_PER_MINUTE = 60_000;
  * overdue on one page and not on another. Every marker now reads the one rule,
  * `tierOverdueAfterMinutes` (`ward-shared-figures.ts`). A row is overdue past its target and "due
  * in" within the hour (or half the window, if shorter) before it. Signed for the prototype (D-56).
- * Audit M5, D-MCA (Josh, 14 Nov 2026): the windows count from the referral (`tierWaitFromReferral`).
+ * Audit M5, D-210 (Josh, 14 Nov 2026): the windows count from the referral (`tierWaitFromReferral`).
  */
 export function queueWaitThresholds(urgency: number): { dueSoon: number; overdue: number } {
   return { dueSoon: tierDueSoonAfterMinutes(urgency), overdue: tierOverdueAfterMinutes(urgency) };
@@ -217,7 +217,7 @@ export function PriorityQueue({
     const legalDueAt = currentLegalDueAt(movement);
     const legalBreached = legalDueAt !== undefined && isClockBreached(legalDueAt, now);
     const legalFactor = factors.find((factor) => factor.label === FORM_TIMING_FACTOR_LABEL);
-    // Audit M5, D-MCA (Josh, 14 Nov 2026): the wait and its tier marker count from the referral, as
+    // Audit M5, D-210 (Josh, 14 Nov 2026): the wait and its tier marker count from the referral, as
     // the Referrals board does, so the row never restarts at a later journey start. With no referral
     // time recorded the row shows its time in ED, labelled, and no tier marker.
     const tierWait = tierWaitFromReferral(movement, now);

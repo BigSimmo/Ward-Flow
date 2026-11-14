@@ -196,7 +196,7 @@ export function takeLastLookSnapshot(
 }
 
 /**
- * ONE WINDOW RULE FOR A STORED REVIEW (audit L4, D-MCA (Josh, 14 Nov 2026)). Home's "since" banner
+ * ONE WINDOW RULE FOR A STORED REVIEW (audit L4, D-210 (Josh, 14 Nov 2026)). Home's "since" banner
  * and the Activity panel read the same stored review, so they take it, or set it aside, by this one
  * test: the same account, scenario and world, taken in the shift `now` falls in. A review from an
  * earlier shift, another account or another world is not compared, and both then count from

@@ -241,7 +241,7 @@ export function reduceBedEvent(
       if (typeof event.expectedDischargeAt !== "number" || !Number.isFinite(event.expectedDischargeAt)) {
         return reject(state, event, `UPDATE_EXPECTED_DISCHARGE expectedDischargeAt must be a valid timestamp`);
       }
-      // Audit L7, D-MCA (Josh, 14 Nov 2026): a stay cannot be expected to end before it began (the
+      // Audit L7, D-210 (Josh, 14 Nov 2026): a stay cannot be expected to end before it began (the
       // arrival, or the pull for a person still on the way). The screens already guard this.
       const stayStart = admission.arrivedAt ?? admission.pulledAt;
       if (typeof stayStart === "number" && event.expectedDischargeAt < stayStart) {
@@ -426,7 +426,7 @@ export function reduceBedEvent(
           `admission ${flaggedAdmission.id} already has a live bed release (${flaggedLiveRelease.id})`,
         );
       }
-      // Audit L7, D-MCA (Josh, 14 Nov 2026): a blank or infinite typed time is refused, not stored.
+      // Audit L7, D-210 (Josh, 14 Nov 2026): a blank or infinite typed time is refused, not stored.
       if (typeof event.expectedAt !== "number" || !Number.isFinite(event.expectedAt)) {
         return reject(state, event, "FLAG_BED_RELEASE expectedAt must be a valid timestamp");
       }

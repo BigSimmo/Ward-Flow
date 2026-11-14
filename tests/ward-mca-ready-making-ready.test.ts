@@ -23,7 +23,7 @@ const cleaning: BedRelease = {
   ...(seed.bedReleases.find((release) => release.unitId === unit.id) ?? seed.bedReleases[0]!),
   id: "WR-MCA-CLEAN",
   unitId: unit.id,
-  admissionId: "AD-MCA-CLEAN",
+  admissionId: "AD-210-CLEAN",
   state: "discharged",
   preparing: true,
   blocker: null,

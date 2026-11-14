@@ -294,7 +294,7 @@ export function ReferralMatchView({
       </DecidedBy>
     );
   }
-  // H7 (D-MCA (Josh, 14 Nov 2026)): the fit checks read the shared Ready Capacity prints.
+  // H7 (D-210 (Josh, 14 Nov 2026)): the fit checks read the shared Ready Capacity prints.
   const candidates = referralCandidates(referral, ward.destination, units, now, ready);
   const accepting = candidates.filter(candidateAccepts);
   const hasCohort = networkHasCohort(referral, units);
@@ -382,7 +382,7 @@ export function ReferralMatchView({
     }
   };
   /*
-   * H8 and H9 (D-MCA (Josh, 14 Nov 2026)): the groups come from the one shared classifier. A ward
+   * H8 and H9 (D-210 (Josh, 14 Nov 2026)): the groups come from the one shared classifier. A ward
    * whose only failing check is an old bed count has its own group and stays askable; a full locked
    * side, or a bay-mix check that only lacks Ready beds, is "no bed now", never "needs review".
    */
@@ -916,7 +916,7 @@ export function ReferralMatchView({
         pick.verdict.gates.filter((gate) => !gate.pass).length === 1));
   /* D-77: a ward that does not fit is accepted only through Clinical override, behind the one button. */
   const pickNeedsOverride = pick !== undefined && !candidateAccepts(pick) && !pickGenderForm;
-  /* M14(a) (D-MCA (Josh, 14 Nov 2026)): Clinical override is offered only when every failing check is
+  /* M14(a) (D-210 (Josh, 14 Nov 2026)): Clinical override is offered only when every failing check is
      one a recorded reason can answer, the engine's own rule (`SUITABILITY_GATES`). */
   const pickOverrideRefused = pickNeedsOverride && !placementFit(pick.verdict).overridable;
   const overrideOpen = pickNeedsOverride && overrideUnitId === pick.unit.id;
@@ -1414,7 +1414,7 @@ export function ReferralMatchView({
 
 /** #794: a desk that does not answer this destination sees its controls greyed, with who does. */
 /**
- * H8 (D-MCA (Josh, 14 Nov 2026)): how the no-bed line names wards whose only failing check is an old
+ * H8 (D-210 (Josh, 14 Nov 2026)): how the no-bed line names wards whose only failing check is an old
  * bed count. "Not confirmed a bed count in N min" is true of each of them (N is the newest); "never
  * confirmed" only when none has a time at all.
  */

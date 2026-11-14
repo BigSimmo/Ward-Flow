@@ -68,7 +68,7 @@ export function useWardScreenFigures(
         overdueLeaveBeds,
         unit,
         dayZero,
-        // Audit M1, D-MCA (Josh, 14 Nov 2026) ruling 2: this ward's admitted people on a form.
+        // Audit M1, D-210 (Josh, 14 Nov 2026) ruling 2: this ward's admitted people on a form.
         admittedLegalPassed: admittedLegalExpiryPassed(movements, admissions, now).filter(
           (movement) => movement.acceptedUnitId === unit.id,
         ),

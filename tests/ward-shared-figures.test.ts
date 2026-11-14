@@ -222,7 +222,7 @@ describe("the shared figures agree on the seed (hero, chip, badge and list)", ()
       expect(queueWaitThresholds(tier).overdue, `tier ${tier}`).toBe(tierOverdueAfterMinutes(tier));
     }
     const open = state.movements.filter(isOpen);
-    // Audit M5, D-MCA (Josh, 14 Nov 2026): the window counts from the referral time.
+    // Audit M5, D-210 (Josh, 14 Nov 2026): the window counts from the referral time.
     const sinceReferral = (m: (typeof open)[number]) => (m.referredAt === undefined ? undefined : now - m.referredAt);
     const homeOverdue = open.filter((m) => {
       const waited = sinceReferral(m);
@@ -281,7 +281,7 @@ describe("one Tier 1 and Overdue count everywhere (P002), one owner for accepted
   it("Overdue waits count only people still in an ED, past their tier's window", () => {
     const overdue = open.filter((m) => inEdTierOverdue(m, now));
     expect(overdue.length, "the seed has overdue waits").toBeGreaterThan(0);
-    // Audit M5, D-MCA (Josh, 14 Nov 2026): the window counts from the referral time.
+    // Audit M5, D-210 (Josh, 14 Nov 2026): the window counts from the referral time.
     for (const m of overdue) expect(isWaitingInEd(m) && isTierOverdueFromReferral(m, now)).toBe(true);
     const pastWindowNotInEd = open.filter((m) => !isWaitingInEd(m) && isTierOverdueFromReferral(m, now));
     expect(pastWindowNotInEd.length, "the seed has people past the window who already left the ED").toBeGreaterThan(0);

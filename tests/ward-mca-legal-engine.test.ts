@@ -11,7 +11,7 @@ import { currentLegalDueAt, currentLegalPosition } from "@/components/ward-manag
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
- * Mechanics and clock audit M13 (b to e), D-MCA (Josh, 14 Nov 2026), ruling 6. The record engine
+ * Mechanics and clock audit M13 (b to e), D-210 (Josh, 14 Nov 2026), ruling 6. The record engine
  * refuses the legal records the audit found it accepting. Every input is synthetic.
  */
 

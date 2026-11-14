@@ -331,7 +331,7 @@ export function reducePlacementEvent(
       }
       const bedKindTaken: "locked" | "open" =
         reservedKind ?? (secureBedNeeded ? (noLockedBedFree ? "open" : "locked") : freeOpen > 0 ? "open" : "locked");
-      // H10, D-MCA (Josh, 14 Nov 2026): the pull takes a real bed of the kind it takes, recorded with
+      // H10, D-210 (Josh, 14 Nov 2026): the pull takes a real bed of the kind it takes, recorded with
       // the kind, so the tile, the free figures and every bed-number rule read one fact. No free
       // number of that kind leaves the kind recorded with no number, which the ward sees as a conflict.
       const bedNumberTaken =

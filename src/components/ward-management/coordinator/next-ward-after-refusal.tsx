@@ -32,7 +32,7 @@ export function NextWardAfterRefusal({
   chosenUnitIds: readonly string[];
   onChoose: (unitId: string) => void;
 }) {
-  // H7 (D-MCA (Josh, 14 Nov 2026)): the shared Ready, the figure Capacity prints.
+  // H7 (D-210 (Josh, 14 Nov 2026)): the shared Ready, the figure Capacity prints.
   const ready = useSharedReadyLookup();
   const next = deriveNextWardsAfterRefusal(movement, units, now, ready);
   if (!next) return null;

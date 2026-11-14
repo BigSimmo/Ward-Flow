@@ -42,7 +42,7 @@ export function stayLegalStatus(admission: Admission, source: StayLegalSource): 
 
 /**
  * WHETHER THE STAY AND THE PATIENT RECORD HOLD DIFFERENT LEGAL STATUSES (D-187 item 1, Q19; mechanics
- * and clock audit M13a, D-MCA (Josh, 14 Nov 2026), ruling 5). The patient page's rule: both are kept,
+ * and clock audit M13a, D-210 (Josh, 14 Nov 2026), ruling 5). The patient page's rule: both are kept,
  * the stay's status is the one shown, and one side recorded with the other not is a difference too.
  * The patient page and the TV wall read this, so the "statuses differ" mark appears on both or neither.
  */

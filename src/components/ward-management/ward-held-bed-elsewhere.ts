@@ -5,7 +5,7 @@ import type { Patient } from "./ward-patients";
 import { resolveSubjectPatient } from "./ward-patient-resolver";
 
 /**
- * M11 and owner question 8 (mechanics and clock audit, D-MCA (Josh, 14 Nov 2026)): a bed held for
+ * M11 and owner question 8 (mechanics and clock audit, D-210 (Josh, 14 Nov 2026)): a bed held for
  * an accepted referral is not tied to the person. A ward accepts a referral and holds a numbered
  * bed (`HOLD_REFERRAL_BED`, or an acceptance that names a bed); the person is then pulled into, or
  * arrives at, a ward on another journey, and the held bed stays held with nothing said. The ruling

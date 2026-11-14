@@ -146,7 +146,7 @@ export function patientFitLine(fit: ReferralFit): string {
 }
 
 /**
- * M14(c) (D-MCA (Josh, 14 Nov 2026)): a ward closed to admissions cannot accept, even in principle
+ * M14(c) (D-210 (Josh, 14 Nov 2026)): a ward closed to admissions cannot accept, even in principle
  * (`ACCEPT_IN_PRINCIPLE` refuses it), so its card says so rather than offering acceptance.
  */
 export const CLOSED_TO_ADMISSIONS_LINE = "Your ward is closed to admissions, so it cannot accept now.";

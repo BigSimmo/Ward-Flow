@@ -347,7 +347,7 @@ export function sampleProfile(
   const patient = info.patient;
   const years = patient ? patientAgeYears(patient, calendarDateOf(now, record.dayZero)) : Number.NaN;
   // Audit H4 (14 Nov 2026): the one current legal position. A form a person recorded as ended, and
-  // its old typed end, are never sent on as current (D-MCA (Josh, 14 Nov 2026), ruling 7).
+  // its old typed end, are never sent on as current (D-210 (Josh, 14 Nov 2026), ruling 7).
   const position = currentLegalPosition(movement);
   const dueAt = position.dueAt;
   const movementSexOrGender = patient?.sex ?? patient?.gender ?? movement.sex;

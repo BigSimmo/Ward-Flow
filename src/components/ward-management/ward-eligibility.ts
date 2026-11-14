@@ -58,7 +58,7 @@ export const ELIGIBILITY_GATES = [
   "cohort",
   "forensic",
   "legal_status",
-  // H9 (D-MCA (Josh, 14 Nov 2026)): "is a locked bed free now", split out of `security` on the
+  // H9 (D-210 (Josh, 14 Nov 2026)): "is a locked bed free now", split out of `security` on the
   // referral path so `security` asks only whether the ward is the right kind. A capacity check: a
   // full locked side reads "no bed now", never "not suitable". Referral path only; the movement path
   // leaves locked capacity to `PULL_PATIENT`, as before.
@@ -97,7 +97,7 @@ export function gateMark(gate: GateResult): GateMark {
 }
 
 /**
- * H7 (D-MCA (Josh, 14 Nov 2026)): the shared Ready count for a ward, the figure Capacity prints and
+ * H7 (D-210 (Josh, 14 Nov 2026)): the shared Ready count for a ward, the figure Capacity prints and
  * the pull gate refuses on (pulls since the last count, named holds and beds being made ready are
  * all off it). Built by the caller from `sharedReadyLookup` (`ward-shared-ready.ts`) and handed in
  * as a plain number per ward, so matching never reads the release model itself (spec D15). Left
@@ -768,7 +768,7 @@ export function referralEligibility(
   // `lockedBedsFree(unit)`, referral matching asks whether a suitable bed is free now, so it needs
   // both. Both paths share `bedKindGateDetail` so the coordinator sees the same locked-bed counts.
   //
-  // H9 (D-MCA (Josh, 14 Nov 2026)): that capacity half is now its own gate, `locked_bed_free`, and
+  // H9 (D-210 (Josh, 14 Nov 2026)): that capacity half is now its own gate, `locked_bed_free`, and
   // `security` asks only whether the ward is the right kind, as it does on the movement path. A
   // Secure referral whose locked beds are all taken reads "no locked bed now", never "not suitable".
   const securityMet = !ward.secureBedNeeded || unitHasLockedBeds(unit);
@@ -871,7 +871,7 @@ export function candidateReason(verdict: EligibilityVerdict) {
 }
 
 /**
- * H8 and H9 (mechanics and clock audit; D-MCA (Josh, 14 Nov 2026)): THE ONE FIT CLASSIFIER.
+ * H8 and H9 (mechanics and clock audit; D-210 (Josh, 14 Nov 2026)): THE ONE FIT CLASSIFIER.
  *
  * The Place tab, the coordinator shortlist and Home's fit, the next ward after a refusal, Ask more
  * wards and the patient page's Ask wards each sorted a ward from its verdict by their own rule, and

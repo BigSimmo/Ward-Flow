@@ -1,5 +1,5 @@
 /**
- * H7 (mechanics and clock audit, 14 Nov 2026; D-MCA (Josh, 14 Nov 2026)): the fit check's Ready is
+ * H7 (mechanics and clock audit, 14 Nov 2026; D-210 (Josh, 14 Nov 2026)): the fit check's Ready is
  * the shared Ready Capacity prints and the pull gate refuses on. Pulls since the count, named holds
  * and beds being made ready are off it on every fit list and in the engine's own acceptance check.
  * Built from the audit's reviewer script `zz-audit-figures-b.test.ts`. Synthetic data only.

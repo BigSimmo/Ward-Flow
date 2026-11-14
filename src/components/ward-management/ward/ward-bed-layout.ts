@@ -203,7 +203,7 @@ export function seatStays(
       const holder = taken[bed];
       if (holder !== undefined && holder.end <= span.start) taken[bed] = undefined;
     }
-    // D-MCA (Josh, 14 Nov 2026), H10: a stay with a recorded bed kind on a mixed ward is seated in
+    // D-210 (Josh, 14 Nov 2026), H10: a stay with a recorded bed kind on a mixed ward is seated in
     // that kind's beds only. When none is free it is left out (`bedKindSeatConflicts` names it as a
     // conflict) rather than put in the other kind's numbers, where its tile would read the wrong kind.
     let bed = 0;

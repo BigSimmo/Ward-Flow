@@ -900,7 +900,7 @@ export function breakGlassRefusal(world: SharedWorld, access: WardAccess, patien
 
 /**
  * `options.actedAt`: the board minute the person pressed the save at, sent beside the command (H1,
- * D-MCA (Josh, 14 Nov 2026), ruling 1; `ward-offline-entry.ts`). Absent (an older app), or within a
+ * D-210 (Josh, 14 Nov 2026), ruling 1; `ward-offline-entry.ts`). Absent (an older app), or within a
  * minute of the server's time, the command is stamped with the server's own time as before. A save
  * that waited keeps the time the person acted within bounds, or is refused.
  */

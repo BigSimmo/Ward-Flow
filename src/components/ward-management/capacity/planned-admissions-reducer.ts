@@ -584,7 +584,7 @@ export function reducePlannedAdmissionEvent(
           "This planned arrival needs a coordinator gender placement review. Use the referral journey to record the review before allocating a bed.",
         );
       const bedKind: "locked" | "open" = view.security === "Secure" ? "locked" : freeOpen > 0 ? "open" : "locked";
-      // H10, D-MCA (Josh, 14 Nov 2026): the arrival takes a real bed of the kind it takes.
+      // H10, D-210 (Josh, 14 Nov 2026): the arrival takes a real bed of the kind it takes.
       const bedNumber = chooseBedNumber(unit, state, bedKind);
       const sequence = state.admissionSequence + 1;
       const admission: Admission = {

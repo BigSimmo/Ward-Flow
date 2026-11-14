@@ -212,7 +212,7 @@ export function ReferralBoard({
   /** Opens on History rather than the queue (the redesign preview draws it this way). */
   historyOpenOnLoad?: boolean;
 } = {}) {
-  // H7 (D-MCA (Josh, 14 Nov 2026)): the shared Ready for the selected referral's fit count.
+  // H7 (D-210 (Josh, 14 Nov 2026)): the shared Ready for the selected referral's fit count.
   const readyLookup = useSharedReadyLookup();
   const zone = useClockZoneLabel();
   const [historyOpen, setHistoryOpen] = useState(historyOpenOnLoad);

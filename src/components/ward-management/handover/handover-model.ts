@@ -505,7 +505,7 @@ export function dueParts(
     (row.formDueAt === undefined || row.pullExpiresAt <= row.formDueAt)
   ) {
     // Audit A4-3: the one bed-hold rule. The Settings act-now warning or less left carries the amber
-    // at-risk dot (not Act now); audit L3, D-MCA (Josh, 14 Nov 2026).
+    // at-risk dot (not Act now); audit L3, D-210 (Josh, 14 Nov 2026).
     // A pull time that is not a real instant (NaN, Infinity) yields no hold; fall through to the form.
     const hold = bedHold(row.pullExpiresAt, now, thresholds);
     if (hold !== null) {

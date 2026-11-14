@@ -217,7 +217,7 @@ export function PatientDetailsTab({
   // they differ. One side recorded and the other not is a difference too.
   const sexDiffers = placement !== undefined && placement.sex !== patient?.sex;
   const genderDiffers = placement !== undefined && placement.gender !== patient?.gender;
-  // The one rule the TV wall reads too (D-MCA (Josh, 14 Nov 2026), ruling 5).
+  // The one rule the TV wall reads too (D-210 (Josh, 14 Nov 2026), ruling 5).
   const legalDiffers = legalStatusesDiffer(movement, patient);
   const mismatch = Boolean(
     placement &&

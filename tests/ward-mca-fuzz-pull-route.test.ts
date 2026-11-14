@@ -1,4 +1,4 @@
-// Mechanics and clock audit (14 Nov 2026), D-MCA (Josh, 14 Nov 2026): the engine fuzz generator sends
+// Mechanics and clock audit (14 Nov 2026), D-210 (Josh, 14 Nov 2026): the engine fuzz generator sends
 // the Referrals board's one-tap pull (RAISE_REFERRAL with referralId, acceptedUnitId and pullBed) and
 // ED-source referrals, so the random runs exercise the path the reviewer found untested, and the
 // engine accepts it. Synthetic data only.

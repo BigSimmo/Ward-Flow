@@ -63,7 +63,7 @@ type WardBedRosterInputs = {
   movements: Movement[];
   resolvePatientIdentity: (subject: PatientResolutionSubject) => ResolvedPatientInfo;
   now: number;
-  /** The Settings warnings, for a pulled bed's running-out mark (audit L3, D-MCA (Josh, 14 Nov 2026)). */
+  /** The Settings warnings, for a pulled bed's running-out mark (audit L3, D-210 (Josh, 14 Nov 2026)). */
   thresholds?: DueSoonThresholds;
   criteriaLedOn: boolean;
   patients: Patient[];
@@ -285,7 +285,7 @@ export function wardBedRoster({
       umrn: patientInfo?.umrn,
       daysInBed,
       stayDays,
-      // Audit L5, D-MCA (Josh, 14 Nov 2026): "Arrived today" by the Perth calendar day (Day 1).
+      // Audit L5, D-210 (Josh, 14 Nov 2026): "Arrived today" by the Perth calendar day (Day 1).
       arrivedToday: stayDays !== null && stayDayNumber(admission, now) === 1,
       stayBand: stayBandObj?.label,
       pastDate: isPastDate,
@@ -385,7 +385,7 @@ export function wardBedRoster({
   const seatedBeds = wardStaySeats(unit, admissions ?? []);
   // H-0978 / WS-15 (Josh 26 Oct 2026, "close the exact bed"): a bed closed by number is counted in
   // Closed by `bedStates`, and the layout puts its own number on a Closed tile.
-  // H10, D-MCA (Josh, 14 Nov 2026): on a mixed ward the Ready tiles sit in beds of the kinds the
+  // H10, D-210 (Josh, 14 Nov 2026): on a mixed ward the Ready tiles sit in beds of the kinds the
   // ward's free figures say are free (locked first), so a free tile never shows a kind the count lacks.
   const lockedReady = isMixed ? Math.min(lockedBedsFree(unit), freeSlots) : 0;
   let readySeen = 0;
@@ -502,7 +502,7 @@ export function wardLiveFormAlerts({
       }> = [];
       const patientName = resolvePatientIdentity(movement).formalName;
       const dueAt = currentLegalDueAt(movement);
-      // Audit M4 and D-MCA (Josh, 14 Nov 2026), ruling 3: the Settings bands every legal screen uses.
+      // Audit M4 and D-210 (Josh, 14 Nov 2026), ruling 3: the Settings bands every legal screen uses.
       // Red from the urgent warning on (and once passed), amber within the soon warning, and no row
       // for a typed time beyond it (it used to be amber for any future time, even days away).
       const standing = currentLegalStanding(movement, now, thresholds);
@@ -535,7 +535,7 @@ export function wardLiveFormAlerts({
       }
       return alerts;
     }),
-    // Audit M1 and D-MCA (Josh, 14 Nov 2026), ruling 2: a person already admitted to this ward on a
+    // Audit M1 and D-210 (Josh, 14 Nov 2026), ruling 2: a person already admitted to this ward on a
     // form whose typed expiry still in force has passed. Act now on the ward desk, as for a journey.
     ...admittedLegalPassed.map((movement) => {
       const dueAt = currentLegalDueAt(movement)!;
@@ -557,7 +557,7 @@ export function wardLiveFormAlerts({
       countdown: `Open ${splitDuration(Math.max(now - leaveBed.confirmedAt, 0))}`,
       text: leaveBed.absentWithoutLeave
         ? `A bed held for an absence without leave at ${unit.name} is still recorded. Absent since ${formatInstantWithDay(leaveBed.absentWithoutLeave.since, now)}.`
-        : // Time audit T-9 (D-MCA, Josh, 14 Nov 2026): a return from leave is often days away, so it names the day.
+        : // Time audit T-9 (D-210, Josh, 14 Nov 2026): a return from leave is often days away, so it names the day.
           `A bed on leave at ${unit.name} is still recorded. Expected return ${formatInstantWithDay(leaveBed.expectedReturn, now)}.`,
       actionLabel: "Open discharges",
       actionTarget: "discharges" as const,

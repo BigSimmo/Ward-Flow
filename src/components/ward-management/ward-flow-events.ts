@@ -1591,7 +1591,7 @@ export type WardFlowEvent =
     }
   | {
       /**
-       * M11 (D-MCA (Josh, 14 Nov 2026)): lets go of the numbered bed an accepted ward arm holds
+       * M11 (D-210 (Josh, 14 Nov 2026)): lets go of the numbered bed an accepted ward arm holds
        * (`HOLD_REFERRAL_BED`), so the bed is offered again. The acceptance stands. Offered when the
        * person is in a bed on another journey (`ward-held-bed-elsewhere.ts`).
        */

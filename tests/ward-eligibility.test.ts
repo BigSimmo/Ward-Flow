@@ -527,7 +527,7 @@ describe("security gate — a mixed ward's locked beds are reachable", () => {
     });
     const verdictNoFreeLocked = referralEligibility(subjectReferral, ward.destination, mixedWardNoFreeLocked, NOW);
     const referralSecurityGate = verdictNoFreeLocked.gates.find((g) => g.gate === "security");
-    // H9 (D-MCA (Josh, 14 Nov 2026)): `security` asks only the kind on both paths now; whether a
+    // H9 (D-210 (Josh, 14 Nov 2026)): `security` asks only the kind on both paths now; whether a
     // locked bed is free is the referral path's own capacity check, `locked_bed_free`.
     expect(referralSecurityGate?.pass).toBe(true);
     expect(referralSecurityGate?.detail).toContain("no locked bed is free");

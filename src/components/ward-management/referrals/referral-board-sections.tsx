@@ -172,7 +172,7 @@ export function QueuedSection({
   /** v10: a highlight dims the rows it does not match (`data-dim`); every row stays in place. */
   isDimmed?: (referral: Referral) => boolean;
 }) {
-  // H7 (D-MCA (Josh, 14 Nov 2026)): the Fit column reads the shared Ready, as the Place tab does.
+  // H7 (D-210 (Josh, 14 Nov 2026)): the Fit column reads the shared Ready, as the Place tab does.
   const readyLookup = useSharedReadyLookup();
   const queuedResolverState = useMemo(
     () => ({ patients, referrals: allReferrals, movements }),
@@ -923,7 +923,7 @@ function DecidedRowActions({
     !movement && !toPull && onPull && accepted && accepted.heldBedNumber === undefined && !accepted.withdrawnAt
       ? acceptedWardOf(referral, units)
       : undefined;
-  // M11 and owner question 8 (D-MCA (Josh, 14 Nov 2026)): the coordinator's Home flag opens here.
+  // M11 and owner question 8 (D-210 (Josh, 14 Nov 2026)): the coordinator's Home flag opens here.
   // A bed still held for this referral while the person is in a bed elsewhere is offered back.
   // Coordinator only, as the flag is: it says the person is in a bed somewhere else.
   const heldElsewhere =

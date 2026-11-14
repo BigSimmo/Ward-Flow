@@ -265,7 +265,7 @@ export function shortlistCandidates(
   movement: Movement,
   units: Unit[],
   now: Instant,
-  /** H7 (D-MCA (Josh, 14 Nov 2026)): the shared Ready (`sharedReadyLookup`). */
+  /** H7 (D-210 (Josh, 14 Nov 2026)): the shared Ready (`sharedReadyLookup`). */
   ready?: ReadyBedsLookup,
 ): ShortlistCandidate[] {
   /*
@@ -364,7 +364,7 @@ export function blockingGate(verdict: ReturnType<typeof eligibility>) {
  * `eligibleCandidatesAmong`, so the shortlist and the Home bedflow agree.
  */
 /**
- * H7 (D-MCA (Josh, 14 Nov 2026)): a fit LIST says "bed ready" only when the shared Ready (the figure
+ * H7 (D-210 (Josh, 14 Nov 2026)): a fit LIST says "bed ready" only when the shared Ready (the figure
  * Capacity prints, less pulls since the count, named holds and beds being made ready) has one. The
  * movement path's own `allocatable_bed` gate stays lenient for accept-in-principle in the engine;
  * this changes only what a list shows, as `closureAwareVerdict` does for a closed ward. Without a

@@ -230,7 +230,7 @@ export function HomePlacementDrawer({
 }
 
 /**
- * The wait against its tier target, drawn as the patient pop-up draws it. Audit M5, D-MCA (Josh,
+ * The wait against its tier target, drawn as the patient pop-up draws it. Audit M5, D-210 (Josh,
  * 14 Nov 2026): the target's tone and meter count from the referral (`tierWaitFromReferral`), as the
  * queue row does; the figure is still the time in ED, and no referral time is said, not guessed.
  */

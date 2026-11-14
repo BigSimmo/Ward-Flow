@@ -99,7 +99,7 @@ export function readyUnitCount(
   referral: Referral,
   units: Unit[],
   now: Instant,
-  /** H7 (D-MCA (Josh, 14 Nov 2026)): the shared Ready, as the Place tab reads it. */
+  /** H7 (D-210 (Josh, 14 Nov 2026)): the shared Ready, as the Place tab reads it. */
   readyLookup?: ReadyBedsLookup,
 ): number | undefined {
   const waiting = openArms(referral).flatMap((arm) =>

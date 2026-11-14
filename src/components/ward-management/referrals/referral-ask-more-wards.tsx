@@ -55,7 +55,7 @@ export function useAskMoreWards({
   rejections: Rejection[];
 }) {
   const configuration = useOptionalWardFlowSelect("configuration")?.configuration;
-  // H7 (D-MCA (Josh, 14 Nov 2026)): the shared Ready, as ASK_MORE_WARDS checks it.
+  // H7 (D-210 (Josh, 14 Nov 2026)): the shared Ready, as ASK_MORE_WARDS checks it.
   const ready = useSharedReadyLookup();
   const [open, setOpen] = useState(false);
   const [picked, setPicked] = useState<string[]>([]);

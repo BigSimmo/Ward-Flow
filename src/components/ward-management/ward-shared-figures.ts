@@ -257,7 +257,7 @@ export function tierDueSoonAfterMinutes(urgency: number | undefined): number {
 export const REFERRAL_TIME_NOT_RECORDED = "Referral time not recorded";
 
 /**
- * THE TIER WAIT, COUNTED FROM REFERRAL (audit M5, ruling 4, D-MCA (Josh, 14 Nov 2026)). The values
+ * THE TIER WAIT, COUNTED FROM REFERRAL (audit M5, ruling 4, D-210 (Josh, 14 Nov 2026)). The values
  * register words the tier windows as "Tier N referral shown as overdue after…", and the Referrals
  * board has always counted them from the referral, so every tier marker on a journey (Home's Overdue
  * waits, the queue rows and their "late" count, the placement drawer, the shortlist and the patient

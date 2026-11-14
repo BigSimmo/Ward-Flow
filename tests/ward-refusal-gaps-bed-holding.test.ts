@@ -465,7 +465,7 @@ describe("RECORD_ADMISSION_CARE (transfer.arrived) strips sending-ward bedNumber
       (a) => a.id.startsWith(`transfer-${candidate.id}-`) && a.unitId === receivingUnit.id,
     )!;
     expect(receivingAdmission).toBeDefined();
-    // H10 (D-MCA): the sending ward's bed is never carried over; the receiving stay takes the lowest
+    // H10 (D-210): the sending ward's bed is never carried over; the receiving stay takes the lowest
     // free bed of the kind it took on the receiving ward, recorded with that kind.
     const receivingBed = chooseBedNumber(receivingUnit, withSendingFields, receivingAdmission.bedKind!);
     expect(receivingAdmission.bedNumber).toBe(receivingBed);

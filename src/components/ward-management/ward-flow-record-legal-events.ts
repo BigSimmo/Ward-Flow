@@ -260,7 +260,7 @@ export function reduceRecordedLegalEvent(
       ) {
         return reject(state, event, "Choose each detail from the list.");
       }
-      // D-MCA (Josh, 14 Nov 2026), ruling 6 (audit M13c): a Form 3E is recorded one way, as a new form
+      // D-210 (Josh, 14 Nov 2026), ruling 6 (audit M13c): a Form 3E is recorded one way, as a new form
       // that supersedes the 3A. "Form 3E made" stays readable on old records, and an old record keeps
       // it when other details are saved, but it is no longer a new ending.
       if (event.endedBy === "form_3e" && form.endedBy !== "form_3e") {

@@ -363,7 +363,7 @@ describe("PR15 discharge and referral provenance", () => {
         rejections={[]}
       />,
     );
-    // D-77: the one decision list names the capacity gap on the ward's own row. H8 (D-MCA (Josh, 14
+    // D-77: the one decision list names the capacity gap on the ward's own row. H8 (D-210 (Josh, 14
     // Nov 2026)): an old count alone is its own state, no longer "no bed now".
     const row = screen.getByTestId(`ward-referral-match-phone-cand-${unresolvedCapacity.id}`);
     expect(row).toHaveAttribute("data-kind", "stale");

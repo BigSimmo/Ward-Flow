@@ -51,7 +51,7 @@ function admittedElsewhere(state: WardFlowState, heldUnitId: string): WardFlowSt
       ...state.admissions,
       {
         ...template,
-        id: "AD-MCA-SYNTHETIC",
+        id: "AD-210-SYNTHETIC",
         patientId: personOf(state),
         referralId: null,
         movementId: null,
@@ -74,7 +74,7 @@ describe("M11: a bed held for someone in a bed elsewhere", () => {
     const { state: held, unitId, bedNumber } = withHeldBed();
     const state = admittedElsewhere(held, unitId);
     expect(heldBedsElsewhere(state)).toEqual([
-      expect.objectContaining({ referralId: REFERRAL, unitId, bedNumber, admissionId: "AD-MCA-SYNTHETIC" }),
+      expect.objectContaining({ referralId: REFERRAL, unitId, bedNumber, admissionId: "AD-210-SYNTHETIC" }),
     ]);
     const rows = heldBedElsewhereInboxItems(state);
     expect(rows).toHaveLength(1);

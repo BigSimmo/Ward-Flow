@@ -296,7 +296,7 @@ describe("referral evidence is visible and honestly qualified", () => {
     render(
       <ReferralMatchView referral={referral} units={[stale]} now={NOW_ANCHOR} dispatch={() => {}} rejections={[]} />,
     );
-    // D-77, then H8 (D-MCA (Josh, 14 Nov 2026)): an old count alone is its own state, out of "Fits, no
+    // D-77, then H8 (D-210 (Josh, 14 Nov 2026)): an old count alone is its own state, out of "Fits, no
     // bed now", named on its own row by the count's age.
     expect(screen.queryByRole("radiogroup", { name: "Fits, no bed now" })).toBeNull();
     const unresolved = screen.getByRole("radiogroup", { name: "Fits, bed count old" });

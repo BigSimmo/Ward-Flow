@@ -1738,7 +1738,7 @@ describe("what a recorded reason may and may not buy past", () => {
       "gender_designation",
       "forensic",
       "security",
-      // H9 (D-MCA (Josh, 14 Nov 2026)): "is a locked bed free now", split out of `security` so that
+      // H9 (D-210 (Josh, 14 Nov 2026)): "is a locked bed free now", split out of `security` so that
       // `security` asks only whether the ward is the right kind. Overridable, as the joint check was.
       "locked_bed_free",
       "sex_mix",

@@ -13,7 +13,7 @@ export type PendingCommand = {
   /** Asked for while more commands are queued: an accepted reply then carries no snapshot. */
   reply?: "revision";
   /**
-   * H1 (D-MCA (Josh, 14 Nov 2026), ruling 1): the board minute the person pressed the save at,
+   * H1 (D-210 (Josh, 14 Nov 2026), ruling 1): the board minute the person pressed the save at,
    * beside the command so every retry sends the same body. The server stamps a save that arrives
    * within a minute with its own time, and keeps this time for one that waited (`ward-offline-entry.ts`).
    */

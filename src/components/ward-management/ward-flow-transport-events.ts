@@ -499,7 +499,7 @@ export function reduceTransportEvent(
         linkedAdmission?.bedKind === numberedBedKind(unit, heldBed)
           ? heldBed
           : undefined;
-      // H10, D-MCA (Josh, 14 Nov 2026): when the held bed is gone, the patient still arrives, in the
+      // H10, D-210 (Josh, 14 Nov 2026): when the held bed is gone, the patient still arrives, in the
       // lowest free bed of the kind their pull took, so the kind and the number stay one fact.
       const arrivalBedNumber =
         heldBedNumber ??
@@ -698,7 +698,7 @@ export function reduceTransportEvent(
           heldBedRefusal(withUnit, unit, reservedBed, movement.id, movement.referralId) === null
             ? reservedBed
             : undefined;
-        // H10, D-MCA (Josh, 14 Nov 2026): the stay takes a real bed of the kind it takes, the reserved
+        // H10, D-210 (Josh, 14 Nov 2026): the stay takes a real bed of the kind it takes, the reserved
         // bed when that is still free and of that kind, recorded with the kind as a pull's is.
         const unpulledBedNumber =
           reservedBedFree !== undefined && numberedBedKind(unit, reservedBedFree) === unpulledBedKind
@@ -1337,7 +1337,7 @@ export function reduceTransportEvent(
         );
       }
 
-      // Audit L7, D-MCA (Josh, 14 Nov 2026): a blank or infinite typed arrival time is refused, not stored.
+      // Audit L7, D-210 (Josh, 14 Nov 2026): a blank or infinite typed arrival time is refused, not stored.
       if (typeof event.estimatedArrivalAt !== "number" || !Number.isFinite(event.estimatedArrivalAt)) {
         return reject(state, event, "SET_ARRIVAL_DETAILS estimatedArrivalAt must be a valid timestamp");
       }

@@ -882,7 +882,7 @@ describe("engine safety under random event sequences", () => {
     Math.max(30_000, SEQUENCES * STEPS * 5),
   );
 
-  // Mechanics and clock audit (14 Nov 2026), D-MCA (Josh, 14 Nov 2026): the same rules hold with the
+  // Mechanics and clock audit (14 Nov 2026), D-210 (Josh, 14 Nov 2026): the same rules hold with the
   // Referrals board's one-tap pull and ED-source referrals mixed in. A separate run, so the coverage
   // run above keeps its random stream.
   it(

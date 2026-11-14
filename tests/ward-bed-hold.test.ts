@@ -25,7 +25,7 @@ describe("bedHold: the one rule", () => {
       label: "Pull expired 10m ago",
       nextStep: "Move or release",
     });
-    // Audit L2 and L3, D-MCA (Josh, 14 Nov 2026): lapsed once past its minute, and running out at the
+    // Audit L2 and L3, D-210 (Josh, 14 Nov 2026): lapsed once past its minute, and running out at the
     // Settings act-now warning inclusive, as `clockState` reads a legal form.
     expect(bedHold(NOW, NOW)?.state).toBe("at-risk");
     expect(bedHold(NOW - 1, NOW)?.state).toBe("lapsed");

@@ -222,7 +222,7 @@ export function PatientTransitOperations({
   const open = !movement.closure && movement.stage !== "arrived";
   const destination = units.find((u) => u.id === movement.acceptedUnitId);
   const heldBed = admissions.find((a) => a.id === movement.admissionId);
-  // H7 and H8 (D-MCA (Josh, 14 Nov 2026)): the shared Ready and the shared fit classifier, as on the
+  // H7 and H8 (D-210 (Josh, 14 Nov 2026)): the shared Ready and the shared fit classifier, as on the
   // coordinator's shortlist, so a ward with no Ready bed never reads "Fits, bed ready" here, a closed
   // ward never fits, and a ward whose only failing check is an old bed count can still be asked.
   const ready = useSharedReadyLookup();

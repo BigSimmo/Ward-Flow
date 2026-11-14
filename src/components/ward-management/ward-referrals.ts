@@ -163,7 +163,7 @@ export function referralWithdrawable(referral: Referral, movements?: readonly Mo
 }
 
 /**
- * M14(b) (mechanics and clock audit; D-MCA (Josh, 14 Nov 2026)): whether a ward or an emergency
+ * M14(b) (mechanics and clock audit; D-210 (Josh, 14 Nov 2026)): whether a ward or an emergency
  * department has said yes. A community team's yes never competes for the placement (RB5), so it
  * never makes a ward's own answer "already accepted elsewhere". `referralState` reads "accepted"
  * once a community team has said yes and nothing else is open, which is right for the referral's
@@ -712,7 +712,7 @@ export function referralCandidates(
   ward: WardReferralDestination,
   units: Unit[],
   now: Instant,
-  /** H7 (D-MCA (Josh, 14 Nov 2026)): the shared Ready, from `sharedReadyLookup`. */
+  /** H7 (D-210 (Josh, 14 Nov 2026)): the shared Ready, from `sharedReadyLookup`. */
   ready?: ReadyBedsLookup,
 ): { unit: Unit; verdict: EligibilityVerdict }[] {
   return units
@@ -1047,7 +1047,7 @@ export function noBedBreakdown(candidates: ReferralCandidate[], now?: Instant): 
   let capacityUnknown = 0;
   let notSuitable = 0;
   let staleSinceMinutes: number | undefined;
-  // H8 and H9 (D-MCA (Josh, 14 Nov 2026)): counted by the shared classifier, not by the first
+  // H8 and H9 (D-210 (Josh, 14 Nov 2026)): counted by the shared classifier, not by the first
   // failing check, so a full locked side or a bay-mix check that only lacks Ready beds counts as
   // "turns on a bed", and `matchReason` below names the same deciding check.
   for (const candidate of candidates) {

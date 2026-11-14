@@ -356,7 +356,7 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
       ],
       homeRegion: "Perth Metropolitan",
       suburb: { kind: "named", name: "Armadale" },
-      // Audit (14 Nov 2026), D-MCA (Josh, 14 Nov 2026): with the pull route on, ED-source referrals
+      // Audit (14 Nov 2026), D-210 (Josh, 14 Nov 2026): with the pull route on, ED-source referrals
       // too, so the one-tap pull raises a journey from an ED as well as from the community. Off, the
       // draw is not made, so the seeded runs other tests pin do not move.
       source: currentPullRoute ? pick(random, ["community", "ed_medical", "ambulance"] as const) : "community",
@@ -1067,7 +1067,7 @@ const recordFields = (state: WardFlowState, random: Random, stay: WardFlowState[
 
 /** An inbox row id: a category prefix and the record it names (sometimes a stale one). */
 function inboxIdFor(state: WardFlowState, random: Random): string {
-  // The overdue Pull now row (audit M2, D-MCA (Josh, 14 Nov 2026)) is drawn only with the pull route
+  // The overdue Pull now row (audit M2, D-210 (Josh, 14 Nov 2026)) is drawn only with the pull route
   // on, so adding its category does not move the seeded runs other tests pin.
   const categories = Object.values(INBOX_CATEGORIES).filter(
     (candidate) => currentPullRoute || candidate !== INBOX_CATEGORIES.pull_now_overdue,
@@ -2710,7 +2710,7 @@ function handoverWorkDraft(state: WardFlowState, pickKind: number): Draft {
 }
 
 /**
- * The one-tap pull route (mechanics and clock audit, 14 Nov 2026, D-MCA (Josh, 14 Nov 2026)): the
+ * The one-tap pull route (mechanics and clock audit, 14 Nov 2026, D-210 (Josh, 14 Nov 2026)): the
  * Referrals board's "Pull the bed" raises the journey from an accepted referral and pulls the bed in
  * one event (`RAISE_REFERRAL` with `referralId`, `acceptedUnitId` and `pullBed`). An ED-source
  * referral raises it from that ED. Sent only with `nextEvent`'s `pullRoute` option, so the coverage

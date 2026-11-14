@@ -1,5 +1,5 @@
 /**
- * M14 (mechanics and clock audit, 14 Nov 2026; D-MCA (Josh, 14 Nov 2026)):
+ * M14 (mechanics and clock audit, 14 Nov 2026; D-210 (Josh, 14 Nov 2026)):
  * (a) "Accept anyway, record why" is offered only when every failing check is one a recorded reason
  *     can answer, the engine's own rule;
  * (b) a community team's acceptance does not block a ward's accept or decline;

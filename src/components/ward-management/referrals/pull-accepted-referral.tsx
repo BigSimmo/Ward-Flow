@@ -187,7 +187,7 @@ export function PullAcceptedReferral({
   const who = patientOf(referral);
   const name = nameFor(who.formalName, who.umrn);
 
-  // D-MCA (Josh, 14 Nov 2026), ruling 7: an ended form or a passed typed expiry is never pre-filled.
+  // D-210 (Josh, 14 Nov 2026), ruling 7: an ended form or a passed typed expiry is never pre-filled.
   const [recorded] = useState(() => recordedPullDetails(referral, movements, now));
   const recordedForm = recorded.legalFormCode === undefined ? "" : (recorded.legalFormCode ?? NO_FORM);
   // D-188 (tightened 13 Nov): an observation level the ED board records as "not recorded"

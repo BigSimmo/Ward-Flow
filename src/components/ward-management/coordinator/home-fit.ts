@@ -13,7 +13,7 @@ import type { Movement } from "@/components/ward-management/ward-model";
  *
  * - `bed`: the eligibility rules pass and a bed is ready. Green fit tint.
  * - `no-bed`: everything fits except that the ward has no Ready bed now. Amber fit tint.
- * - `stale`: everything fits except that the ward's bed count is old (H8, D-MCA (Josh, 14 Nov
+ * - `stale`: everything fits except that the ward's bed count is old (H8, D-210 (Josh, 14 Nov
  *   2026)): "Bed count N min old, check with the ward". Still choosable, never "Does not fit".
  * - `review`: a judgement a coordinator may record a reason against (Override), or a ward that
  *   declined this patient before. Never counted as a fit (chapter: "A ward that declined the patient
@@ -38,7 +38,7 @@ export function fitKind(candidate: ShortlistCandidate, movement?: Movement): Fit
 }
 
 /**
- * H8 (D-MCA (Josh, 14 Nov 2026)): read from the one shared classifier (`placementFit`), the same one
+ * H8 (D-210 (Josh, 14 Nov 2026)): read from the one shared classifier (`placementFit`), the same one
  * the Place tab, the next-ward list and both Ask wards lists use. Before this, an old bed count read
  * "Review" here, or "Does not fit" when the count also showed no bed.
  */

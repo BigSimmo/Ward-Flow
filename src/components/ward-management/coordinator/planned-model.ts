@@ -76,7 +76,7 @@ export function plannedRows(input: PlannedInput): PlannedRow[] {
   const { movements, admissions, plannedAdmissions, units, configuration, now, until, endOfDay, nameOf } = input;
   const startOfDay = input.startOfDay ?? endOfDay - 24 * 60;
   // Targets: the rest of the shift only. Records: the rest of today, or the rest of the shift when
-  // it ends after midnight (audit M3, D-MCA (Josh, 14 Nov 2026)): from 23:00 a 01:00 planned move
+  // it ends after midnight (audit M3, D-210 (Josh, 14 Nov 2026)): from 23:00 a 01:00 planned move
   // on the night shift is listed, as the night shift's targets at that hour already were.
   // A time still to come is one that has not passed by the one clock rule (`isTimePassed`, audit
   // L2): at its own minute it is still listed.

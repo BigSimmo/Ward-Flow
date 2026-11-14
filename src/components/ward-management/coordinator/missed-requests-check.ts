@@ -82,7 +82,7 @@ export type OpenRequest =
  *   - a referral with a psychiatric ward or ED destination still awaiting an answer
  *     (`isAwaitingAnswer`: queued and not withdrawn), unless an open bed request was raised from it,
  *     in which case it is counted once, as that bed request, or
- *   - M11 (D-MCA (Josh, 14 Nov 2026)): a referral whose accepted ward arm still holds a numbered
+ *   - M11 (D-210 (Josh, 14 Nov 2026)): a referral whose accepted ward arm still holds a numbered
  *     bed with no open bed request raised from it (`referralArmHoldingBed`). The bed is spoken for,
  *     so a second request for the same person is a second bed.
  * The person is the recorded person the shared resolver finds. A request it cannot link is left

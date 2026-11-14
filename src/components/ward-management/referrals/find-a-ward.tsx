@@ -42,7 +42,7 @@ export type FindAWardRow = {
   /** Why a ward needs review, in the engine's words. Ignored for a fit. */
   reason?: string;
   /**
-   * PL6 / H7 (D-MCA (Josh, 14 Nov 2026)): the shared Ready the host read (`readyBedsFor`), printed
+   * PL6 / H7 (D-210 (Josh, 14 Nov 2026)): the shared Ready the host read (`readyBedsFor`), printed
    * as "N ready". Never the ward's raw allocatable figure, which ignores pulls, named holds and beds
    * being made ready.
    */

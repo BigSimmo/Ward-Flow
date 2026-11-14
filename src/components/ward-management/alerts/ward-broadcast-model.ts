@@ -356,7 +356,7 @@ export function pullNowStillWaiting(alert: BroadcastAlert, movement: Movement | 
 
 export function isPullNowOverdue(alert: BroadcastAlert, now: Instant): boolean {
   if (broadcastKind(alert) !== "pull_now" || !isAlertActive(alert, now) || alert.answerBy === undefined) return false;
-  // The one clock rule (audit L2, D-MCA (Josh, 14 Nov 2026)): overdue once strictly after its minute.
+  // The one clock rule (audit L2, D-210 (Josh, 14 Nov 2026)): overdue once strictly after its minute.
   if (!isTimePassed(alert.answerBy, now)) return false;
   const answered = latestReplies(alert);
   return !(alert.targetUnitIds ?? []).some((unitId) => answered.has(unitId));

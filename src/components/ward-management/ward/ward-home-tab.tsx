@@ -741,7 +741,7 @@ export function WardHomeTab({
         : undefined,
     })),
   ];
-  // Audit M2, D-MCA (Josh, 14 Nov 2026): an unanswered Pull now asking this ward is act now here.
+  // Audit M2, D-210 (Josh, 14 Nov 2026): an unanswered Pull now asking this ward is act now here.
   actNow.push(...overduePullNowActNowForWard({ movements, broadcastAlerts }, unit, now));
   if (incoming.length > 0) {
     actNow.push({
@@ -1161,7 +1161,7 @@ export function WardHomeTab({
                   {visibleIncoming.map((movement) => {
                     const blocked = answerBlockedReason ?? referralAnswerBlocked(movement, unit);
                     const notice = restrictionNotice(movement, unit);
-                    // M14(c) (D-MCA (Josh, 14 Nov 2026)): a ward closed to admissions reads as such.
+                    // M14(c) (D-210 (Josh, 14 Nov 2026)): a ward closed to admissions reads as such.
                     const fit = referralFit(
                       closureAwareVerdict(unit, eligibility(movement, unit, now)).gates,
                       unit,

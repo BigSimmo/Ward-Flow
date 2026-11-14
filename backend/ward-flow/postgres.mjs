@@ -1452,7 +1452,7 @@ export function createWorkspaceStore(
      */
     async command(actorId, commandId, expectedRevision, event, options = {}) {
       const { revisionOnly = false, view, seen = null } = options;
-      // H1 (D-MCA (Josh, 14 Nov 2026), ruling 1): the board minute the person acted at, when sent.
+      // H1 (D-210 (Josh, 14 Nov 2026), ruling 1): the board minute the person acted at, when sent.
       const actedAt = Number.isSafeInteger(options.actedAt) ? options.actedAt : undefined;
       // A community sender's team is authenticated by the selected membership, not by the
       // browser-supplied label. Bind it before applying the event so scope can safely recognise

@@ -248,7 +248,7 @@ export function LegalFormDetailsSection({
             placeholder="Still in force"
             value={endedBy}
             onChange={setEndedBy}
-            // D-MCA (Josh, 14 Nov 2026), ruling 6: a Form 3E is recorded as a new form, so "Form 3E
+            // D-210 (Josh, 14 Nov 2026), ruling 6: a Form 3E is recorded as a new form, so "Form 3E
             // made" is offered only where an old record already holds it.
             options={Object.entries(ENDING_LABEL)
               .filter(([value]) => value !== "form_3e" || form?.endedBy === "form_3e")

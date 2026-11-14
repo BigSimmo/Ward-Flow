@@ -55,7 +55,7 @@ export type RecordedPullDetails = {
   /** Where the legal form and observation came from: the person's open journey on the ED board. */
   fromEdBoard: boolean;
   /**
-   * D-MCA (Josh, 14 Nov 2026), ruling 7 (audit H5): the ED board's form had ended, so it is shown as
+   * D-210 (Josh, 14 Nov 2026), ruling 7 (audit H5): the ED board's form had ended, so it is shown as
    * information only and the form is left "Not recorded". `typedEndAt` is the typed expiry that has
    * gone by, when that is how it ended; absent when a person recorded the form as ended.
    */
@@ -109,7 +109,7 @@ export function recordedPullDetails(
       ...(referralForm ? { legalFormCode: referralForm.code } : {}),
       fromEdBoard: false,
     };
-  // D-MCA (Josh, 14 Nov 2026), ruling 7 (audit H5): read through the one current legal position. A
+  // D-210 (Josh, 14 Nov 2026), ruling 7 (audit H5): read through the one current legal position. A
   // form a person recorded as ended, or one whose typed expiry has gone by, is never copied onto the
   // new journey: it is shown as information and the form is left "Not recorded".
   const position = currentLegalPosition(edWait);

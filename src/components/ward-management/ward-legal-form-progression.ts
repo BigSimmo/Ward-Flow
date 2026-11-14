@@ -157,7 +157,7 @@ export function legalFormNowWords(movement: LegalPositionSource | undefined): st
 }
 
 /**
- * WHERE THE TYPED EXPIRY IN FORCE STANDS (mechanics and clock audit H4 and M4; D-MCA (Josh, 14 Nov
+ * WHERE THE TYPED EXPIRY IN FORCE STANDS (mechanics and clock audit H4 and M4; D-210 (Josh, 14 Nov
  * 2026), ruling 3). The one band rule every screen reads for a legal time: "passed" once the clock
  * is after the typed minute, "urgent" within the Settings urgent warning (default 1 h: act now,
  * red), "soon" within the Settings soon warning (default 3 h: ending soon, amber), "later" beyond

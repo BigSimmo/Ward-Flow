@@ -1,4 +1,4 @@
-// Mechanics and clock audit (14 Nov 2026), L5, D-MCA (Josh, 14 Nov 2026): the phone round list says
+// Mechanics and clock audit (14 Nov 2026), L5, D-210 (Josh, 14 Nov 2026): the phone round list says
 // "Arrived today" by the Perth calendar day, as Day N does (F-29), not in 24-hour blocks: an arrival
 // at 23:00 yesterday is not "today" at 10:00. Synthetic data only.
 import { render, screen } from "@testing-library/react";

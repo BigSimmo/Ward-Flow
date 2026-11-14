@@ -6,7 +6,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 // One bed-hold boundary: Movements reads a pull as lapsed once past its limit, exactly as `bedHold`
-// does (audit L2, D-MCA (Josh, 14 Nov 2026): the one clock rule, as a legal breach).
+// does (audit L2, D-210 (Josh, 14 Nov 2026): the one clock rule, as a legal breach).
 describe("Movements pull-hold boundary", () => {
   it("calls a pull expired once past the limit, the same as the bed-hold rule", () => {
     const state = seedWardFlowState();

@@ -22,7 +22,7 @@ import type { Movement } from "@/components/ward-management/ward-model";
  *   genuinely needs doing now (alarm fatigue).
  * - `held`: more time than that left. Plain.
  *
- * Audit L2 and L3, D-MCA (Josh, 14 Nov 2026): the warning was a fixed hour that ignored Settings and
+ * Audit L2 and L3, D-210 (Josh, 14 Nov 2026): the warning was a fixed hour that ignored Settings and
  * turned amber one minute later than the legal clocks, and the pull lapsed a minute earlier than a
  * legal form ends. Both now follow the one clock rule.
  */

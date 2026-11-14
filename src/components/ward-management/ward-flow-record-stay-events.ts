@@ -679,7 +679,7 @@ export function reduceRecordedStayEvent(
           flaggedUrgent: false,
           urgency: 2,
           cohort: currentUnit?.cohort ?? "Adult",
-          // D-MCA (Josh, 14 Nov 2026), ruling 9: the bed the person holds now decides, not whether the
+          // D-210 (Josh, 14 Nov 2026), ruling 9: the bed the person holds now decides, not whether the
           // ward has any locked beds. Only a stay whose bed kind cannot be known stays Secure.
           security:
             (currentUnit ? stayBedKind(currentUnit, admission) : admission.bedKind) === "open" ? "Open" : "Secure",

@@ -193,7 +193,7 @@ export function useSinceLastLook(
   }, [storageKey, userId, generation, scopeKey, account, explicit, preview]);
 
   // Before any usable look, count what the record says happened in the shift window, so "N new
-  // since 07:00" is true rather than a 0 (L1, site review, 12 Oct 2026). Audit L4, D-MCA (Josh,
+  // since 07:00" is true rather than a 0 (L1, site review, 12 Oct 2026). Audit L4, D-210 (Josh,
   // 14 Nov 2026): the same review test and window as the Activity panel (`changesForStoredLook`).
   const changes = useMemo(
     () =>

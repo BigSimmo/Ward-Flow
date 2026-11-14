@@ -377,7 +377,7 @@ export type NetworkWardRow = {
   arrivalCapacityConflicts?: number;
   reservationReleaseCapacityConflicts?: number;
   /**
-   * H10, D-MCA (Josh, 14 Nov 2026): stays recorded in one bed kind with no bed of that kind
+   * H10, D-210 (Josh, 14 Nov 2026): stays recorded in one bed kind with no bed of that kind
    * (`bedKindSeatConflicts`). The layout never seats them in the other kind's beds by itself.
    */
   bedKindConflicts?: number;

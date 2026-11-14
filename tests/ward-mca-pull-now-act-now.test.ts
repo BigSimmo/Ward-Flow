@@ -1,4 +1,4 @@
-// Mechanics and clock audit (14 Nov 2026), M2, D-MCA (Josh, 14 Nov 2026): an overdue Pull now (the
+// Mechanics and clock audit (14 Nov 2026), M2, D-210 (Josh, 14 Nov 2026): an overdue Pull now (the
 // signed 15 minute rule) is act now on the shared task list, so Home's Act now figure, the bell,
 // Tasks, the phone menu, the Alerts Act now list and the act-now notifications all count it, by the
 // same test the banner turns red on. Synthetic data only.

@@ -1,5 +1,5 @@
 /**
- * H8 and H9 (mechanics and clock audit, 14 Nov 2026; D-MCA (Josh, 14 Nov 2026)): one shared fit
+ * H8 and H9 (mechanics and clock audit, 14 Nov 2026; D-210 (Josh, 14 Nov 2026)): one shared fit
  * classifier. A ward whose only failing check is an old bed count is its own state ("Bed count N min
  * old, check with the ward"), stays askable and never reads "Does not fit" or "never confirmed". A
  * Secure referral to a ward whose locked beds are all taken reads "no locked bed now", not "not

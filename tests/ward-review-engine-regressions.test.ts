@@ -158,7 +158,7 @@ describe("review regressions: numbered bed accounting and accepted direct referr
     const admission = seed.admissions.find((candidate) => candidate.id === movement.admissionId)!;
     expect(admission.movementId).toBeNull();
     // This mixed-ward fixture records its original kind; the reciprocal link remains seed-shaped.
-    // H10 (D-MCA): seeded stays now hold their derived bed numbers, so the move goes to the ward's
+    // H10 (D-210): seeded stays now hold their derived bed numbers, so the move goes to the ward's
     // one free locked bed (`SEEDED_LOCKED_FREE`), and the stay is a locked stay with no number yet.
     admission.bedKind = "locked";
     delete admission.bedNumber;
@@ -259,7 +259,7 @@ describe("review regressions: numbered bed accounting and accepted direct referr
     };
     const collided = wardFlowReducer(collision, arrival);
     expect(collided.rejections).toEqual([]);
-    // H10 (D-MCA): the taken bed is not kept, and the patient arrives in the lowest free bed of the
+    // H10 (D-210): the taken bed is not kept, and the patient arrives in the lowest free bed of the
     // kind their pull took, never with no bed or a bed of the other kind.
     const collidedBed = collided.admissions.find((candidate) => candidate.id === admission.id)?.bedNumber;
     expect(collidedBed).not.toBe(SEEDED_LOCKED_FREE);
@@ -273,7 +273,7 @@ describe("review regressions: numbered bed accounting and accepted direct referr
     };
     const mismatched = wardFlowReducer(wrongDesignation, arrival);
     expect(mismatched.rejections).toEqual([]);
-    // H10 (D-MCA): an open held bed is not taken for a locked stay; it keeps its own locked bed.
+    // H10 (D-210): an open held bed is not taken for a locked stay; it keeps its own locked bed.
     expect(mismatched.admissions.find((candidate) => candidate.id === admission.id)?.bedNumber).toBe(
       SEEDED_LOCKED_FREE,
     );

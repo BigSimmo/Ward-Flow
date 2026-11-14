@@ -187,7 +187,7 @@ describe("since banner text", () => {
   });
 
   it("leads with the previous shift's start before any review, keeps every count for screen readers, and is empty with nothing new", () => {
-    // Audit L4, D-MCA (Josh, 14 Nov 2026): before a usable review the window is the previous shift's
+    // Audit L4, D-210 (Josh, 14 Nov 2026): before a usable review the window is the previous shift's
     // start, as the Activity panel counts, so the lead names it rather than "This shift".
     const shift = { ...base, basis: "shift" as const, newEscalationIds: ["WF-9"] };
     expect(sinceBannerLead(shift, "23:00 yesterday")).toBe("Since 23:00 yesterday");

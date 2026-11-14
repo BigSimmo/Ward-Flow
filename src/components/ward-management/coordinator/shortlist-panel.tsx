@@ -392,7 +392,7 @@ export function ShortlistPanel({
    * there. Hiding them was defensible while the engine refused a mismatched placement outright, and
    * became the defect the moment a judgement gate turned overridable with a recorded reason.
    */
-  // H7 (D-MCA (Josh, 14 Nov 2026)): "bed ready" reads the shared Ready Capacity prints.
+  // H7 (D-210 (Josh, 14 Nov 2026)): "bed ready" reads the shared Ready Capacity prints.
   const shortlist = useShortlistCandidates(movement, units, now);
   /** What a coordinator can act on: take it, or take it with a reason. Never collapsed, at any count. */
   const offerable = useMemo(() => shortlist.filter((c) => c.availability !== "unavailable"), [shortlist]);
@@ -654,7 +654,7 @@ export function ShortlistPanel({
   const patientIdentity = resolvePatientIdentity(movement);
   const patientWho = patientIdentity.displayName;
   const patientUmrn = patientIdentity.umrn;
-  // The tier wait, as the queue reads it: from the referral (audit M5, D-MCA (Josh, 14 Nov 2026)).
+  // The tier wait, as the queue reads it: from the referral (audit M5, D-210 (Josh, 14 Nov 2026)).
   const tierWait = tierWaitFromReferral(movement, now);
   const waitedMinutes = tierWait.recorded ? tierWait.waited : Math.max(0, now - movement.openedAt);
   const targetMinutes = queueWaitThresholds(movement.urgency).overdue;
@@ -1713,7 +1713,7 @@ export function ShortlistPanel({
                 {groups["no-bed"].map((candidate) => renderUnavailable(candidate, "no-bed"))}
               </FitGroup>
 
-              {/* H8 (D-MCA (Josh, 14 Nov 2026)): every check passes except an old bed count. Still
+              {/* H8 (D-210 (Josh, 14 Nov 2026)): every check passes except an old bed count. Still
               choosable: asking is how the count is checked, with the reason the engine asks for. */}
               <FitGroup kind="stale" title="Fits, bed count old">
                 {groups.stale.map((candidate) => renderCandidate(candidate, "stale"))}

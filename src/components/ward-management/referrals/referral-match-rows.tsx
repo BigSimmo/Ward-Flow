@@ -209,7 +209,7 @@ export function MatchRow({
           <p className={styles.matchReasonText} data-testid={`ward-referral-match-reason-${unit.id}`}>
             {matchReason(candidate, now)}
           </p>
-          {/* M14(a) (D-MCA (Josh, 14 Nov 2026)): "Accept anyway" only when every failing check is one a
+          {/* M14(a) (D-210 (Josh, 14 Nov 2026)): "Accept anyway" only when every failing check is one a
               recorded reason can answer (the engine's `SUITABILITY_GATES`); otherwise say so. */}
           {!placementFit(candidate.verdict).overridable ? (
             <p className={styles.matchReasonText} data-testid={`ward-referral-match-no-override-${unit.id}`}>

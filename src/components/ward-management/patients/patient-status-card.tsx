@@ -144,7 +144,7 @@ export interface PatientStatusContext {
   acceptedUnitName?: string;
   hasBedHold: boolean;
   now: number;
-  /** The Settings warnings, for the pull's running-out mark (audit L3, D-MCA (Josh, 14 Nov 2026)). */
+  /** The Settings warnings, for the pull's running-out mark (audit L3, D-210 (Josh, 14 Nov 2026)). */
   thresholds?: DueSoonThresholds;
   dayZero: Date;
   onOpenPlacement: () => void;

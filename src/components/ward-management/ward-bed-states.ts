@@ -60,7 +60,7 @@ export function bedStates(
   referrals: readonly ReservationReferral[],
 ): BedStateCounts {
   const capacity = unitCapacity(unit, bedReleases);
-  // H7 (D-MCA (Josh, 14 Nov 2026)): the Ready arithmetic lives in `readyPartition`, which the fit
+  // H7 (D-210 (Josh, 14 Nov 2026)): the Ready arithmetic lives in `readyPartition`, which the fit
   // checks and the engine read too, so the box and the fit check can never count Ready apart.
   const { ready, pulledFromEmpty, pulledFromAvailable, seededPulled, named, namedFromReady, beingMadeReady } =
     readyPartition(unit, admissions, bedReleases, referrals);
@@ -156,7 +156,7 @@ export const BED_STATE_DETAILS = {
 } as const;
 
 /**
- * H7 (D-MCA (Josh, 14 Nov 2026)): the shared Ready for the fit checks, re-exported beside
+ * H7 (D-210 (Josh, 14 Nov 2026)): the shared Ready for the fit checks, re-exported beside
  * `readyBedsNow` so a screen reaches both from one place.
  */
 export { sharedReadyLookup } from "@/components/ward-management/ward-shared-ready";

@@ -915,7 +915,7 @@ export function patientChronology(input: ChronologyInput): PatientChronology {
     }
     if (entry.accepted && seen.has(`${record}@${at}@${dedupeType(entry.type, entry.role)}`)) continue;
     const wording = eventHistoryWording(entry.type, entry.role, wardOfRecord(record)) ?? entry.type;
-    // H1 (D-MCA (Josh, 14 Nov 2026), ruling 1): a step that waited happened when the person acted
+    // H1 (D-210 (Josh, 14 Nov 2026), ruling 1): a step that waited happened when the person acted
     // and was written down when it reached the server.
     const sentAt = entry.accepted ? finite(entry.sentAt) : null;
     const action = !entry.accepted

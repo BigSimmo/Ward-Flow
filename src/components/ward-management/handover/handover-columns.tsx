@@ -27,7 +27,7 @@ export type ColumnContext = {
   readyBeds: (unitId: string) => number;
   /** The board's day 0, so a typed form time on another day prints its date (D1, D-93). */
   dayZero?: Date;
-  /** The Settings warnings, for a pull's running-out mark (audit L3, D-MCA (Josh, 14 Nov 2026)). */
+  /** The Settings warnings, for a pull's running-out mark (audit L3, D-210 (Josh, 14 Nov 2026)). */
   thresholds?: DueSoonThresholds;
 };
 

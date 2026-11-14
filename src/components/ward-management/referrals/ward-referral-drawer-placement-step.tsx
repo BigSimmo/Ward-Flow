@@ -57,7 +57,7 @@ export function wardRefusalWords(
   ward: WardReferralDestination,
   ageBand: Cohort,
   now: Instant,
-  /** H7 (D-MCA (Josh, 14 Nov 2026)): the shared Ready, the figure the Ready column prints. */
+  /** H7 (D-210 (Josh, 14 Nov 2026)): the shared Ready, the figure the Ready column prints. */
   ready?: ReadyBedsLookup,
 ): string | undefined {
   const probe: Referral = {

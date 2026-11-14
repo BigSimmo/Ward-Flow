@@ -584,7 +584,7 @@ describe("bed_pull_expired uses the same expiry boundary as the delay view", () 
       (item) => item.movementId === id,
     );
 
-  // Audit L2, D-MCA (Josh, 14 Nov 2026): the one clock rule. A hold runs out once the clock is past
+  // Audit L2, D-210 (Josh, 14 Nov 2026): the one clock rule. A hold runs out once the clock is past
   // its minute, the same minute a legal form's time passes; the delay view reads the same rule.
   it("raises the row the minute after the hold's end, as a legal breach is raised", () => {
     expect(rowFor("WF-T-BP-02", NOW - 1)?.id).toBe(`${INBOX_CATEGORIES.bed_pull_expired.idPrefix}WF-T-BP-02`);

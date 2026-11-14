@@ -28,7 +28,7 @@ export type EventLogEntry = {
   /** D-72: the seclusion or restraint episode an end names; the chronology finds its stay. */
   episodeId?: string;
   /**
-   * H1 (D-MCA (Josh, 14 Nov 2026), ruling 1): a step that waited (offline, or for Retry) and was
+   * H1 (D-210 (Josh, 14 Nov 2026), ruling 1): a step that waited (offline, or for Retry) and was
    * recorded at the time the person acted (`now`): the board minute it reached the server. History
    * says "entered offline, sent 10:45".
    */

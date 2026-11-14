@@ -18,7 +18,7 @@ const object = (v: unknown): v is Record<string, unknown> => typeof v === "objec
  */
 export function withInboxStreamADefaults<T extends WardFlowState>(state: T): T {
   const stored = state as T & Partial<Pick<WardFlowState, "inboxOwnership" | "inboxSnoozes" | "workedExamples">>;
-  // H10, D-MCA (Josh, 14 Nov 2026): a save from before bed kinds and numbers were one fact takes
+  // H10, D-210 (Josh, 14 Nov 2026): a save from before bed kinds and numbers were one fact takes
   // them once here (`withDerivedStayBeds`), the same derivation the seed uses.
   return withSeededReviewIds({
     ...upgradeLegacyDeclineReasons(withDerivedStayBeds(state)),

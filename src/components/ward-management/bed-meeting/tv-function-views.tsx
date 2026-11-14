@@ -168,7 +168,7 @@ export function WardLegalTvView({ rows, footer }: { rows: WardClinicalRow[]; foo
     {
       id: "now",
       title: "Act now",
-      // D-MCA (Josh, 14 Nov 2026), ruling 3: red from the Settings urgent warning on, as Forms and Delays.
+      // D-210 (Josh, 14 Nov 2026), ruling 3: red from the Settings urgent warning on, as Forms and Delays.
       hint: "Ended, ending within the urgent warning, or the next form to record",
       tone: "danger",
       cards: here.filter((row) => row.legal?.tone === "danger").map((row) => wardCard(row, row.legal)),

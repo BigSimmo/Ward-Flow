@@ -1,4 +1,4 @@
-// Mechanics and clock audit (14 Nov 2026), L4, D-MCA (Josh, 14 Nov 2026): Home's "since" banner and
+// Mechanics and clock audit (14 Nov 2026), L4, D-210 (Josh, 14 Nov 2026): Home's "since" banner and
 // the Activity panel read one stored review, so they take it or set it aside by one test
 // (`lookIsUsable`) and count from one window (`shiftLookWindowStart`). Synthetic data only.
 import { describe, expect, it } from "vitest";
