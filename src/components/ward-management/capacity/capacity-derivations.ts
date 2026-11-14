@@ -12,7 +12,7 @@
 import { dayOf } from "@/components/ward-management/ward-clock";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import {
-  bedsPendingPreparation,
+  bedsPendingPreparationToOffer,
   capacityBreakdown,
   releaseBand,
 } from "@/components/ward-management/ward-bed-availability";
@@ -541,7 +541,7 @@ function networkWardRow(unit: Unit, inputs: NetworkWardInputs): NetworkWardRow {
     onLeave: states.onLeave,
     surge: wardSurge(unit, cap),
     // Every bed still being made ready, from the one shared helper (D-179 item 8).
-    pendingPreparation: releases === undefined ? undefined : bedsPendingPreparation(unit.id, releases),
+    pendingPreparation: releases === undefined ? undefined : bedsPendingPreparationToOffer(unit, releases),
     confirmedAt: unit.allocatable.confirmedAt,
     // `releases ?? []` only because `unitCapacity` takes them for its `potential` field, which this
     // never reads; `occupied` is derived from `beds`, `empty` and `blocked` alone, so the answer is

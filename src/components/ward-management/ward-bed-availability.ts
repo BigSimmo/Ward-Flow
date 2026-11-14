@@ -163,6 +163,16 @@ export function bedsPendingPreparation(unitId: string, releases: BedRelease[]): 
 }
 
 /**
+ * L6 (mechanics audit, 14 Nov 2026): the "N still being made ready" said beside Ready. A ward closed
+ * to admissions counts as zero capacity, so Ready offers none of its beds (`boundedBedAvailability`)
+ * and `bedStates` puts none in "being made ready"; this figure leaves it out for the same reason, so
+ * a closed ward's bed being cleaned is never read as one about to be offered.
+ */
+export function bedsPendingPreparationToOffer(unit: Pick<Unit, "id" | "isClosed">, releases: BedRelease[]): number {
+  return unit.isClosed ? 0 : bedsPendingPreparation(unit.id, releases);
+}
+
+/**
  * Pre-match a bed while it is being made ready (Top 25 item 15).
  * A bed being made ready is counted apart from Ready (D-179 item 8), but a patient can still be
  * matched to its ward and pulled while it is cleaned (D-181 item 5). This says whether the ward a

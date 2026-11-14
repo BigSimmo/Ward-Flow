@@ -29,7 +29,7 @@ import { groupDischarges } from "@/components/ward-management/discharges/dischar
 import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
 import { isEdInitiatedWithdrawal } from "@/components/ward-management/ed/ed-screen-model";
 import { isConfirmationFresh } from "@/components/ward-management/capacity/capacity-gap-words";
-import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
+import { bedsPendingPreparationToOffer } from "@/components/ward-management/ward-bed-availability";
 import { type Admission, admissionsForUnit } from "@/components/ward-management/ward-admissions";
 import type { ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import { type DueSoonThresholds, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
@@ -281,7 +281,7 @@ export function wardTvSheet(
   return {
     unit,
     capacity: sheet.capacity,
-    pendingPreparation: bedsPendingPreparation(unit.id, bedReleases),
+    pendingPreparation: bedsPendingPreparationToOffer(unit, bedReleases),
     bedCount: bedCountAge([unit], now),
     incoming: { total: arriving.length, onTheWay },
     askedCount: asked.length,
@@ -374,7 +374,7 @@ export function edTvSheet(input: TvInputs & { edId: string; accessTargetMinutes:
     wards: withBeds.slice(0, TV_ROW_LIMIT),
     moreWards: Math.max(0, withBeds.length - TV_ROW_LIMIT),
     readyInService: rows.reduce((sum, row) => sum + row.ready, 0),
-    pendingPreparation: serviceUnits.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, bedReleases), 0),
+    pendingPreparation: serviceUnits.reduce((sum, unit) => sum + bedsPendingPreparationToOffer(unit, bedReleases), 0),
     bedCount: bedCountAge(serviceUnits, now),
   };
 }
@@ -530,7 +530,7 @@ export function meetingTvExtras(input: MeetingInputs): MeetingTvExtras {
     services: service === null ? tvHealthServices(units).map((each) => serviceRow(input, each)) : [],
     wards: service === null ? [] : serviceWardRows(input, scopedUnits),
     gaps: bedKindGaps(scopedMovements, scopedUnits, now, input.admissions, input.namedHolds ?? [], bedReleases),
-    pendingPreparation: scopedUnits.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, bedReleases), 0),
+    pendingPreparation: scopedUnits.reduce((sum, unit) => sum + bedsPendingPreparationToOffer(unit, bedReleases), 0),
     bedCount: bedCountAge(scopedUnits, now),
   };
 }
