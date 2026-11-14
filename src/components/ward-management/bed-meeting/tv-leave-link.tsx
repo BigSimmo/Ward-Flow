@@ -32,5 +32,5 @@ export function TvLeaveLink({ className }: { className: string }) {
  * The label names it as the demo data set it is.
  */
 export function TvFooterText({ scope, shift, scenario }: { scope: string; shift: string; scenario: string }): string {
-  return `${scope} · ${shift} · Demo data: ${scenario} · Synthetic data. Read only. Not approved for clinical use.`;
+  return `${scope} · ${shift} · Demo data: ${scenario} · Synthetic prototype. Read only. Not approved for clinical use.`;
 }

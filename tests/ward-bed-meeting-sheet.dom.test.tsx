@@ -174,7 +174,7 @@ describe("the sheet on Capacity", () => {
     expect(within(copy).getByTestId("bed-meeting-sheet-as-at").textContent).toMatch(
       /^As at Thu,? 31 Dec 2026, \d\d:\d\d demo time$/u,
     );
-    expect(copy.textContent).toMatch(/Synthetic data\. Not approved for clinical use/u);
+    expect(copy.textContent).toMatch(/Synthetic prototype\. Not approved for clinical use/u);
     expect(copy.textContent).toMatch(/your default/u);
     // D-218 (Josh, 14 Nov 2026): no legal-limit disclaimer on the sheet.
     expect(copy.textContent).not.toMatch(/legal limit|not checked/u);

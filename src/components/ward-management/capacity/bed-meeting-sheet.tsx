@@ -88,7 +88,7 @@ function BedMeetingSheetView({
           {stamp.time === null ? "As at — the moment shown is not recorded." : `As at ${stamp.time}`}
         </p>
       </div>
-      <p className={styles.disclosure}>Synthetic data. Not approved for clinical use.</p>
+      <p className={styles.disclosure}>Synthetic prototype. Not approved for clinical use.</p>
       {sheet.peopleFilter ? (
         <p className={styles.disclosure} data-testid="bed-meeting-sheet-people-filter">
           People lists show only {sheet.peopleFilter}. Bed and discharge figures are for the whole service.

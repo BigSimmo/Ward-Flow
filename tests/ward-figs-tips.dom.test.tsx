@@ -11,7 +11,7 @@ describe("R-FIGS-21 and R-FIGS-22", () => {
   });
   it("uses the shared notice, with no invented day count", () => {
     const text = TvFooterText({ scope: "Statewide", shift: "Day shift", scenario: "Quiet day" });
-    expect(text).toContain("Synthetic data. Read only.");
+    expect(text).toContain("Synthetic prototype. Read only.");
     expect(text).not.toMatch(/day \d+ of/u);
   });
 });

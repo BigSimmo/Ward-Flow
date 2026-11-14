@@ -150,6 +150,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     file: /^ward-offline-entry\.ts$/,
     name: /^OFFLINE_ENTRY_SLACK_MINUTES$/,
   },
+  {
+    id: "sign-in-ending-lead",
+    why: "R-STRUCT-43 and 51 (design lane B, 14 Nov 2026): how long before the sign-in or demo code ends the warning strip shows; a notice lead time, not a clinical limit.",
+    file: /^shell\/ward-sign-in-ending\.tsx$/,
+    name: /^SIGN_IN_ENDING_WARNING_MS$/,
+  },
   { id: "seed-data", why: "Seed files build made-up records; their times are data, not limits.", file: /-seed\.ts$/ },
   {
     id: "chart-and-day-part",
