@@ -77,6 +77,21 @@ describe("DR-06: Ward Flow's own address sends each desk to its own home", () =>
     expect(screen.queryByText("Coordinator home")).toBeNull();
   });
 
+  it.each<[string, WardAccess, string]>([
+    [
+      "ward",
+      { role: "ward", scope: { kind: "ward", unitIds: ["fsh-adult-secure"] } },
+      "/ward-flow/ward/fsh-adult-secure",
+    ],
+    ["ED", { role: "ed", scope: { kind: "ed", edId: "fsh-ed" } }, "/ward-flow/ed/fsh-ed"],
+  ])("an old /transport link sends the %s desk home from the officer's page (INV-ROUTE-061)", (_name, access, home) => {
+    asDesk(access);
+    nav.pathname = "/ward-flow/transport/officer";
+    renderGate();
+    expect(nav.replace).toHaveBeenCalledWith(home);
+    expect(screen.queryByText("Not part of your role")).toBeNull();
+  });
+
   it("still refuses another closed screen", () => {
     asDesk({ role: "executive", scope: { kind: "statewide" } });
     // Capacity opened to the executive as counts on 27 Oct 2026, so Movements stands in.

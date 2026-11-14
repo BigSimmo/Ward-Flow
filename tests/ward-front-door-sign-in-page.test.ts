@@ -1,7 +1,17 @@
 import { isValidElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import SignInPage from "../src/app/sign-in/page";
+import SignInPage, { metadata } from "../src/app/sign-in/page";
+import { metadata as wardSignInMetadata } from "../src/app/ward-flow-sign-in/page";
+import { BRAND_DESCRIPTION, BRAND_NAME } from "../src/lib/brand";
+
+// The root layout's metadata reads the request headers, and its font loader runs only in Next's
+// build; the test has neither. The sign-in page reads no headers.
+vi.mock("next/headers", () => ({
+  headers: async () => new Headers(),
+  cookies: async () => ({ get: () => undefined }),
+}));
+vi.mock("next/font/local", () => ({ default: () => ({ className: "font", variable: "font", style: {} }) }));
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -24,5 +34,18 @@ describe("the /sign-in page", () => {
     expect((page as { props: { mode: string; next: string } }).props).toMatchObject({ mode: "account" });
     const offsite = await SignInPage({ searchParams: Promise.resolve({ next: ["//elsewhere.test"] }) });
     expect((offsite as { props: { next: string } }).props.next).toBe("/ward-flow");
+  });
+
+  it("previews the product, not the sign-in step, when a link is shared (INV-A18-104)", async () => {
+    // The sign-in pages keep their own tab title and inherit the app's product preview.
+    for (const page of [metadata, wardSignInMetadata]) {
+      expect(page.title).toBe("Sign in — Ward Flow");
+      expect(page.openGraph).toBeUndefined();
+      expect(page.twitter).toBeUndefined();
+    }
+    const { generateMetadata } = await import("../src/app/layout");
+    const app = await generateMetadata();
+    expect(app.openGraph).toMatchObject({ title: BRAND_NAME, description: BRAND_DESCRIPTION });
+    expect(app.twitter).toMatchObject({ title: BRAND_NAME, description: BRAND_DESCRIPTION });
   });
 });

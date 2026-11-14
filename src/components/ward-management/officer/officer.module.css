@@ -1204,9 +1204,10 @@
     overflow-wrap: anywhere;
   }
 
+  /* R-MOVE-2: the main step is one full-width button; Open sits under it. */
   .nextCardActions {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    display: flex;
+    flex-direction: column-reverse;
     gap: var(--wf-s-2);
     margin-top: var(--wf-s-3);
   }

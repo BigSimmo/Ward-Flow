@@ -1761,13 +1761,13 @@
       },
       {
         "path": "src/components/ward-management/patients/add-patient.tsx",
-        "line": 90,
-        "sha256": "6a2fdbab2bc2d0b9eb671cb48c8e02fd7152a914c47f833ad9311fb3b9203537"
+        "line": 91,
+        "sha256": "f748a62970a5624b469a5bdf46108481ef233202d10202e18b83d2d7b9e6e3ef"
       },
       {
         "path": "src/components/ward-management/patients/patient-now-screen.tsx",
         "line": 1,
-        "sha256": "2cf02bf24c9ea8af16a3ea69216013467877daf2c491820777faec377a14df03"
+        "sha256": "1b11af4f60b9e919ffb15cb7ad1ce86d410f9bad2a17c8a4477d39bcdd320c49"
       },
       {
         "path": "src/components/ward-management/shell/ward-broadcast-banner-body.tsx",
@@ -1832,7 +1832,7 @@
       {
         "path": "src/components/ward-management/ward-flow-events.ts",
         "line": 1,
-        "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+        "sha256": "1e4337ae828d672fd591f108219bf094bdf436a88f8f77d5805116fd2c92196a"
       },
       {
         "path": "src/components/ward-management/ward-flow-placement-events.ts",
@@ -1857,17 +1857,17 @@
       {
         "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
         "line": 429,
-        "sha256": "8f6073378541ff9fda4ad1f51175974efe23a4ee013f1d8abd05eaacf47264f8"
+        "sha256": "10920be0e533b539301bea40bbd9de2093b519da8f9a63fd11b1d5216260f0db"
       },
       {
         "path": "src/components/ward-management/ward-flow-reducer.ts",
-        "line": 1195,
-        "sha256": "aad0dd053bd79e35e7761f53bbd4a8c7eeb93b13b89a7304dea271c5cdb3ebfd"
+        "line": 1197,
+        "sha256": "9556f623aa84cb945d713371eb8b574e2fbf4aa004311a690a6d246ea5d7888d"
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
         "line": 393,
-        "sha256": "634f13c6de11f65d9a0f523c2fb512d4c3376bd806ee8df1446158b26d22c3de"
+        "sha256": "89c8e0379a883e8d6982631347e203f5c5a65bb1d981761e7679ec5bcd765a3d"
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-send-events.ts",

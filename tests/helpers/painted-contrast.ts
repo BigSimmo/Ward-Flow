@@ -144,6 +144,42 @@ export async function scanPaintedContrast(page: Page, options: { includeText?: b
       if (style.clip === "rect(0px, 0px, 0px, 0px)" || (rect.width <= 1 && rect.height <= 1)) continue;
       seen.add(element);
 
+      // A background-image's gradient layers as colour stops, top first; covered when one is opaque.
+      const gradientLayers = (image: string, backgroundSize: string): { found: Rgba[][]; covered: boolean } => {
+        const found: Rgba[][] = [];
+        // Split the layer list at its top-level commas; the first layer paints on top.
+        const parts: string[] = [];
+        let depth = 0;
+        let start = 0;
+        for (let index = 0; index < image.length; index += 1) {
+          if (image[index] === "(") depth += 1;
+          else if (image[index] === ")") depth -= 1;
+          else if (image[index] === "," && depth === 0) {
+            parts.push(image.slice(start, index));
+            start = index + 1;
+          }
+        }
+        parts.push(image.slice(start));
+        // Scroll shadows and edge fades: a sized layer, or one that fades to transparent, paints
+        // only an edge band, not behind the text, so it is left out (Lane B, 14 Nov 2026).
+        const sizes = backgroundSize.split(",").map((size) => size.trim());
+        for (const [partIndex, part] of parts.entries()) {
+          const size = sizes[partIndex % sizes.length] ?? "auto";
+          if (!/^(auto|auto auto|cover|100% 100%|100%)$/.test(size)) continue;
+          const stops = (part.match(/rgba?\([^)]*\)|color\([^)]*\)|#[0-9a-f]{3,8}\b/gi) ?? [])
+            .map(parse)
+            .filter((stop): stop is Rgba => stop !== null);
+          if (!stops.length) continue;
+          if (stops.some((stop) => stop[3] <= 0.001)) continue;
+          // A gradient layer forks the result into one candidate per colour stop.
+          found.push(stops);
+          if (stops.every((stop) => stop[3] >= 0.999)) {
+            return { found, covered: true };
+          }
+        }
+        return { found, covered: false };
+      };
+
       // Walk up, collecting background layers until one is opaque; note anything undecidable.
       const layers: Rgba[][] = [];
       let opacity = 1;
@@ -159,31 +195,41 @@ export async function scanPaintedContrast(page: Page, options: { includeText?: b
             blocked = true;
             break;
           }
-          // Split the layer list at its top-level commas; the first layer paints on top.
-          const parts: string[] = [];
-          let depth = 0;
-          let start = 0;
-          for (let index = 0; index < image.length; index += 1) {
-            if (image[index] === "(") depth += 1;
-            else if (image[index] === ")") depth -= 1;
-            else if (image[index] === "," && depth === 0) {
-              parts.push(image.slice(start, index));
-              start = index + 1;
-            }
-          }
-          parts.push(image.slice(start));
-          for (const part of parts) {
-            const stops = (part.match(/rgba?\([^)]*\)|color\([^)]*\)|#[0-9a-f]{3,8}\b/gi) ?? [])
-              .map(parse)
-              .filter((stop): stop is Rgba => stop !== null);
-            if (!stops.length) continue;
-            // A gradient layer forks the result into one candidate per colour stop.
-            layers.push(stops);
-            if (stops.every((stop) => stop[3] >= 0.999)) {
-              covered = true;
-              break;
-            }
-          }
+          const gradient = gradientLayers(image, css.backgroundSize);
+          layers.push(...gradient.found);
+          covered = gradient.covered;
+        }
+        if (covered) break;
+        // A ::before or ::after that fills the element (a pill or button face painted behind the
+        // label at z-index -1) sits over the element's own background.
+        for (const pseudo of ["::before", "::after"] as const) {
+          const fill = getComputedStyle(cursor, pseudo);
+          if (fill.content === "none" || fill.content === "normal") continue;
+          const solid = parse(fill.backgroundColor);
+          // A button face painted with a gradient counts too (the bar's New button in Bright light).
+          const face =
+            solid && solid[3] > 0
+              ? { found: [[solid]], covered: solid[3] >= 0.999 }
+              : fill.backgroundImage && fill.backgroundImage !== "none" && !/url\(/.test(fill.backgroundImage)
+                ? gradientLayers(fill.backgroundImage, fill.backgroundSize)
+                : null;
+          if (!face || !face.found.length) continue;
+          const box = cursor.getBoundingClientRect();
+          const inset = (value: string) => (/px$/.test(value) ? Number.parseFloat(value) : Number.NaN);
+          // An inset face (inset: 5px 0) still fills when it spans the text drawn on it.
+          const behindText =
+            [fill.top, fill.left, fill.right, fill.bottom].every((value) => Number.isFinite(inset(value))) &&
+            box.top + inset(fill.top) <= rect.top + 1 &&
+            box.bottom - inset(fill.bottom) >= rect.bottom - 1 &&
+            box.left + inset(fill.left) <= rect.left + 1 &&
+            box.right - inset(fill.right) >= rect.right - 1;
+          const fills =
+            fill.position === "absolute" &&
+            (behindText ||
+              (Number.parseFloat(fill.width) >= box.width * 0.9 && Number.parseFloat(fill.height) >= box.height * 0.9));
+          if (!fills) continue;
+          layers.push(...face.found);
+          if (face.covered) covered = true;
         }
         if (covered) break;
         if (base[3] > 0) {

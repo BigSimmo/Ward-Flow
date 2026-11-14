@@ -104,13 +104,15 @@ export function recordHandoverSignOff(
   role: WardFlowRole = "coordinator",
   unitId?: string,
   wholeNetwork = false,
+  openChecks = 0,
 ): { role: WardFlowRole; at: Instant; unitId?: string; network?: true } | null {
   if (!canDispatch(role, "RECORD_HANDOVER_SIGN_OFF")) return null;
   // Q67 (Josh, 31 Oct 2026): a whole-network desk's sign-off that names no ward says so, so History
   // reads "Whole network". The caller passes `wholeNetwork` from the desk's access, never the role.
   const place = unitId !== undefined ? { unitId } : wholeNetwork ? { network: true as const } : {};
   try {
-    dispatch({ type: "RECORD_HANDOVER_SIGN_OFF", role, now, ...place });
+    // D-179 Question 6: History records the checks still open, as a count.
+    dispatch({ type: "RECORD_HANDOVER_SIGN_OFF", role, now, ...place, ...(openChecks > 0 ? { openChecks } : {}) });
   } catch {
     return null;
   }

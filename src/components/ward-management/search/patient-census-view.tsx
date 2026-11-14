@@ -482,9 +482,10 @@ export function CensusTable(props: CensusTableProps) {
       )}
       <div className={styles.foot}>
         <span>
+          {/* D-218 / FIGS-M1: a count line only while searching; the full list needs no total. */}
           {searching
             ? `${countPeople(rows)} found across ${groupsFound} ${groupsFound === 1 ? "group" : "groups"}`
-            : `${props.totalPeople} people. Every person the app holds, by where they are now`}
+            : null}
         </span>
         <span className={styles.spacer} />
         <span>Names are invented</span>

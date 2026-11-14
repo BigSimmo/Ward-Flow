@@ -23,6 +23,10 @@ vi.mock("next/link", () => ({
 }));
 
 import { AboutDemoScreen } from "@/components/ward-management/about/about-demo-screen";
+import {
+  SharedSessionContext,
+  type SharedSession,
+} from "@/components/ward-management/shell/ward-shared-session-context";
 import { WARD_NAV_INTENTIONALLY_UNLISTED } from "@/components/ward-management/ward-nav";
 import { screenForPath } from "@/components/ward-management/ward-role-access";
 
@@ -58,6 +62,27 @@ describe("About this demo (F-77)", () => {
     expect(sent.getByText("Nothing you do is saved on a server.")).toBeInTheDocument();
     expect(sent.getByText(/Never a name or anything you typed/)).toBeInTheDocument();
     expect(sent.getByText("Analytics, adverts, other sites")).toBeInTheDocument();
+  });
+
+  it("on the signed-in site, says changes are saved to the shared workspace and record openings are logged", () => {
+    render(
+      <SharedSessionContext.Provider value={{} as SharedSession}>
+        <AboutDemoScreen />
+      </SharedSessionContext.Provider>,
+    );
+    expect(screen.getByRole("heading", { level: 1, name: "About Ward Flow" })).toBeInTheDocument();
+    const page = screen.getByTestId("ward-about-demo");
+    expect(page).not.toHaveTextContent("Nothing you do is saved on a server.");
+    expect(page).not.toHaveTextContent("Your demo code");
+    expect(page).not.toHaveTextContent("Demo pass");
+    const sent = within(screen.getByTestId("about-sent-facts"));
+    expect(sent.getByText(/Saved to the shared workspace/)).toBeInTheDocument();
+    expect(sent.getByText("Opening a patient's record")).toBeInTheDocument();
+    const kept = within(screen.getByTestId("about-kept-facts"));
+    expect(
+      kept.getByText(/This tab only\. Ends when the tab closes, after 15 minutes without use/),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("about-leave-demo")).not.toBeInTheDocument();
   });
 
   it("offers Leave the demo only on a site with the demo code", () => {

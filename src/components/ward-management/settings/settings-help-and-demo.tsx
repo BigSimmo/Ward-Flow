@@ -23,7 +23,7 @@ import {
 
 import { digestHref } from "@/components/ward-management/shell/ward-facade";
 import { FeatureFlagsCard } from "@/components/ward-management/settings/feature-flags-card";
-import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
+import { requestToolsTool } from "@/components/ward-management/shell/ward-tools-open";
 import { useCanLeaveDemo, useLeaveDemo } from "@/components/ward-management/shell/leave-demo";
 import { Button, Card, CardHead, StateLine, buttonClass } from "@/components/wf";
 

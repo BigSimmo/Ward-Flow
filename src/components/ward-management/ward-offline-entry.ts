@@ -2,6 +2,7 @@ import { auditSubject, type AuditSubject } from "./ward-audit";
 import { formatInstantWithDay, type Instant } from "./ward-clock";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
+import { OFFLINE_ENTRY_MAX_MINUTES } from "./ward-operational-defaults";
 
 /**
  * H1 (mechanics and clock audit, 14 Nov 2026; D-210 (Josh, 14 Nov 2026), ruling 1): a save on the
@@ -79,6 +80,10 @@ export function offlineEntryTime(
   if (!Number.isSafeInteger(actedAt) || event.role === "demo") return { now: serverNow, offline: false };
   const acted = actedAt as number;
   if (serverNow - acted <= OFFLINE_ENTRY_SLACK_MINUTES) return { now: serverNow, offline: false };
+  if (serverNow - acted > OFFLINE_ENTRY_MAX_MINUTES)
+    return {
+      refusal: `This change was entered offline more than ${OFFLINE_ENTRY_MAX_MINUTES / 60} hours ago, at ${formatInstantWithDay(acted, serverNow)}. Review the record and enter it again`,
+    };
   const lastChange = subjectLastChange(state, event, serverNow);
   if (lastChange !== null && acted < lastChange)
     return {

@@ -19,8 +19,8 @@ import {
   returnFocusToOpener,
   type ChoiceItem,
   type FocusOpener,
+  InfoTip,
 } from "@/components/wf";
-import { InfoTip } from "@/components/wf/info-tip";
 import {
   edStatisticsHref,
   serviceStatisticsHref,
@@ -579,7 +579,7 @@ function MapPresentation({
             {
               value: String(statisticsCountText(network.edWaiting)),
               label: "ED journeys open",
-              // R-FIGS-15: who it counts, so it is not read against the rail's Waiting figure.
+              // R-FIGS-15: what it counts and who, so it is not read against the rail's Waiting figure.
               tip: "Every ED journey still open, including people placed and waiting to leave. Waiting counts only people still in the ED.",
             },
             {

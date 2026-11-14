@@ -179,7 +179,8 @@ const MORE_SCREENS: readonly Around[] = [
       },
       {
         acts: ["RECORD_TRANSPORT_CAD"],
-        target: id("ward-officer-hero-log-booking"),
+        // R-MOVE-2: the phone hero keeps only its figures, so a row's Log booking stands in there.
+        target: [id("ward-officer-hero-log-booking"), starts("ward-officer-log-booking-")],
         title: "Log booking",
         body: "Records a booking already made by phone, with the CAD number and the quoted ETA.",
       },

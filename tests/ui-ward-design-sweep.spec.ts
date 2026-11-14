@@ -444,15 +444,7 @@ test.describe("@mockup Phone hit boxes: popup and form-step controls (Q377)", ()
  */
 // Screens that fail today. Their fixes sit in screen files owned by other lanes, so each is a
 // test.fixme with the reason; remove the entry when the screen is fixed and the test turns green.
-const KNOWN_CONTRAST_FAILURES: Record<string, string> = {
-  // Lane B checked these on screen (14 Nov 2026): both read clearly. The scan misses the "New"
-  // pill painted by .primary::before, and composites the table's scroll-shadow gradient as grey.
-  "/ward-flow|glare": "Scan artefact: ward-bar 'New' sits on its blue ::before pill, which the scan does not see",
-  "/ward-flow/ed|glare": "Scan artefact: ward-bar 'New' sits on its blue ::before pill, which the scan does not see",
-  "/ward-flow/statistics|light": "Scan artefact: zero cells read as on grey from the table's scroll-shadow gradient",
-  "/ward-flow/statistics|dark": "Scan artefact: zero cells read as on grey from the table's scroll-shadow gradient",
-  "/ward-flow/statistics|glare": "Scan artefact: zero cells read as on grey from the table's scroll-shadow gradient",
-};
+const KNOWN_CONTRAST_FAILURES: Record<string, string> = {};
 
 const CONTRAST_ROUTES = [
   { label: "Home", href: "/ward-flow" },
@@ -463,10 +455,12 @@ const CONTRAST_ROUTES = [
 test.describe("@mockup Ward design sweep: painted-background contrast (R-STYLE-8)", () => {
   test.use({ colorScheme: "light", viewport: { width: 1280, height: 800 } });
 
+  // Owner of each fixme below: the screen lanes under D-225 (Home and Statistics: Lane B).
   for (const { label, href } of CONTRAST_ROUTES) {
     for (const theme of THEMES) {
       test(`${label} (${href}) text keeps 4.5:1 on its painted background in ${theme}`, async ({ page }) => {
         test.setTimeout(120_000);
+        // Known screen failure: the reason is its KNOWN_CONTRAST_FAILURES entry (owner: D-225 lanes).
         test.fixme(`${href}|${theme}` in KNOWN_CONTRAST_FAILURES, KNOWN_CONTRAST_FAILURES[`${href}|${theme}`]);
         await openSettled(page, href);
         await applyTheme(page, theme);
@@ -558,6 +552,7 @@ const H1_ROUTES = [
 test.describe("@mockup Ward design sweep: one short h1 per page (R-STYLE-9)", () => {
   test.use({ colorScheme: "light", viewport: { width: 1280, height: 800 } });
 
+  // Owner: the screen lanes under D-225 (Capacity: Lane C; Discharges and Handover: unassigned).
   // Failing today (screens belong to other lanes): /ward-flow/capacity h1 has 5 words,
   // /ward-flow/discharges 8 words, /ward-flow/handover 9 words. Remove the fixme once they are shortened.
   test.fixme("each main route has exactly one h1 of at most 4 words", async ({ page }) => {

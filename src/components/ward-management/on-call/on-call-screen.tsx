@@ -2,7 +2,6 @@
 
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { InfoTip } from "@/components/wf/info-tip";
 import { Fragment, type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   ChevronDown,
@@ -52,6 +51,7 @@ import {
   tableClasses,
   useIsPhone,
   useIsTabletPortrait,
+  InfoTip,
 } from "@/components/wf";
 import {
   CHECK_DUE_DAYS,
@@ -826,6 +826,8 @@ export function OnCallScreen() {
             <StatusGlyph tone="warning" size={9} />
             Synthetic records. Every number is a mock from an unassigned range.
           </p>
+          {/* INV-DISPLAY-060 (14 Nov 2026): the shared prototype footer, as on every other phone page. */}
+          <WardPrototypeFooter testId="ward-on-call-governance" />
         </main>
         {sheetEntry ? (
           <PhoneSheet entry={sheetEntry} actions={actions} notice={sheetNotice} onClose={() => setSheetId(null)} />
