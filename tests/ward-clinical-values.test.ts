@@ -286,6 +286,11 @@ const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> =
     why: "how far a shared save's recorded pull minute may sit from the screen's clock when the kept row's Undo looks for its pull (PR F, 14 Nov 2026); clock slack for matching, never a clinical limit",
   },
   {
+    file: "ward-offline-entry.ts",
+    name: "OFFLINE_ENTRY_SLACK_MINUTES",
+    why: "how many minutes a signed-in save may take to reach the server and still count as an ordinary save rather than one that waited (H1, D-210 ruling 1, 14 Nov 2026); clock slack for save timing, never a clinical limit",
+  },
+  {
     file: "staffing/staff-requests.ts",
     name: "STAFF_REQUEST_SHIFT_TOLERANCE_MINUTES",
     why: "how many minutes a staff request may lag behind the shift start it names before the save is refused as already started (D-145); clock slack for a form, never a clinical limit",
