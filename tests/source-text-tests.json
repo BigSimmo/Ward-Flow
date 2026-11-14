@@ -13,6 +13,7 @@
     "tests/doc-facts.test.ts",
     "tests/empty-catch-disposition.test.ts",
     "tests/figma-tokens.test.ts",
+    "tests/figure-dictionary-inline.test.ts",
     "tests/global-v2-activation.test.ts",
     "tests/guard-push.test.ts",
     "tests/installed-lock-parity.test.ts",

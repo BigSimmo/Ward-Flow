@@ -176,7 +176,7 @@ export type CulturalSupportRequest = (typeof CULTURAL_SUPPORT_REQUESTS)[number];
  * before clinical use. The figure and its status live in `ward-clinical-values.ts`.
  */
 export const FREQUENT_PRESENTER_ED_THRESHOLD = CLINICAL_VALUES.frequentPresenterEdPresentations.value;
-const FREQUENT_PRESENTER_WINDOW_MONTHS = 12;
+export const FREQUENT_PRESENTER_WINDOW_MONTHS = 12;
 
 const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 
