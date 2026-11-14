@@ -54,6 +54,9 @@ Gaps found (operational choices for Josh):
 `WARD_FLOW_UPTIME_TOKEN` (M54; recorded in `2026-11-04-tier-improvements.md`), then run the uptime
 workflow by hand once with "Send one test alert" ticked and confirm the email arrives.
 
+_Update, 14 November 2026: the backend's variable is now correctly named `WARD_FLOW_UPTIME_TOKEN`.
+The test alert run is not recorded here._
+
 ## M81: live matches the repo (offline part)
 
 `scripts/ward-flow/live-schema-diff.mjs --print-query` prints one read-only query returning names

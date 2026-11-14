@@ -95,8 +95,9 @@ describe("Q8: a hospital is not set up for involuntary admissions (demo)", () =>
   });
 
   it.each([
-    // D-189 items 6 and 8(a) replaced the hub pill (removed) and the drawer's Yes or No ("Not stated").
-    ["capacity/capacity-ward-drawer.tsx", '["Involuntary admissions", AUTHORISATION_NOT_STATED]'],
+    // D-189 items 6 and 8(a) replaced the hub pill (removed) and the drawer's Yes or No; D-209 item 9
+    // shows the register reading there.
+    ["capacity/capacity-ward-drawer.tsx", '["Involuntary admissions", authorisationValue(row.unit)]'],
     ["movements/movement-workspace-cockpit.tsx", "is not set up for involuntary admissions (demo), which"],
   ])("%s states the shared wording and no longer says not authorised", (path, wording) => {
     const text = source(path).replace(/\s+/g, " ");

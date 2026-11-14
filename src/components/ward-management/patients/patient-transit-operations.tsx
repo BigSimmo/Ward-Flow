@@ -47,7 +47,7 @@ import {
 import { MovementWorkspaceCockpit } from "../movements/movement-workspace-cockpit";
 import { useRoleGate, useRouteRole } from "../ward-role-gate";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
-import { ChipGroup, FilterChip, StatusGlyph, buttonClass, RowUndo } from "@/components/wf";
+import { ChipGroup, FilterChip, StateLine, StatusGlyph, buttonClass, RowUndo } from "@/components/wf";
 import { undoWindowEnds } from "../ward-undo-until";
 import { useUndoableStep } from "../use-undoable-step";
 import { BED_PULL_UNDONE, bedPullUndoEvent } from "../ward-bed-pull-undo";
@@ -74,6 +74,17 @@ import { ExtendHoldControl } from "@/components/ward-management/ward-extend-hold
 import { useDeskActingWard } from "@/components/ward-management/ward-desk-acting-ward";
 import { calendarDateOf, splitDuration } from "@/components/ward-management/ward-clock";
 import { PULL_NO_LIMIT_RECORDED } from "@/components/ward-management/ward-bed-hold";
+import { observationEditingToken } from "@/components/ward-management/ward-flow-observation-events";
+import {
+  INTERMITTENT_INTERVAL_MINUTES,
+  NO_INTERVAL_ERROR,
+  OBSERVATION_LEVELS,
+  PULL_NEEDS_OBSERVATION_LEVEL,
+  observationAt,
+  observationIsRecorded,
+  observationLevelName,
+  type ObservationLevel,
+} from "@/components/ward-management/ward-observation";
 
 /** All operational facts and eligibility are calculated from the current provider state. */
 /**
@@ -200,6 +211,15 @@ export function PatientTransitOperations({
   const [backTo, setBackTo] = useState<MovementStage | "">("");
   const [backReason, setBackReason] = useState<StepBackReason | "">("");
   const [confirmWithdraw, setConfirmWithdraw] = useState(false);
+  // D-188, tightened to every pull (Josh, 13 Nov 2026): with no observation level recorded, Pull the
+  // bed asks for one (nothing chosen), records it with RECORD_OBSERVATION_LEVEL, and pulls only once
+  // that is accepted. A refused record pulls nothing. The same choices and interval rule as the
+  // accepted referral placement form.
+  const levelAsked = !observationIsRecorded(movement.observation);
+  const [pullLevel, setPullLevel] = useState<ObservationLevel | "">("");
+  const [pullInterval, setPullInterval] = useState<number | null>(null);
+  const [pullLevelError, setPullLevelError] = useState<string | null>(null);
+  const levelSave = useWardFormSave(`${movement.id}:pull-level`);
   const nextActionRef = useRef<HTMLHeadingElement>(null);
   const workflowCheckpoint = [
     movement.stage,
@@ -330,7 +350,10 @@ export function PatientTransitOperations({
     .reverse()
     .find(
       (e) =>
-        e.attempted === "ACCEPT_IN_PRINCIPLE" || e.attempted === "PULL_PATIENT" || e.attempted === "REFER_TO_UNITS",
+        e.attempted === "ACCEPT_IN_PRINCIPLE" ||
+        // D-188: a pull refused for no observation level is answered by Pull the bed's own level ask.
+        (e.attempted === "PULL_PATIENT" && e.reason !== PULL_NEEDS_OBSERVATION_LEVEL) ||
+        e.attempted === "REFER_TO_UNITS",
     );
   function closeBooking() {
     setBooking(false);
@@ -641,39 +664,124 @@ export function PatientTransitOperations({
               because a hold is a bed kept while a patient is on leave. */}
           {open && movement.stage === "accepted_awaiting_bed" && destination && (
             <>
+              {levelAsked ? (
+                <>
+                  <p className={styles.deckHint} data-testid="ward-transit-pull-level-hint">
+                    No observation level is recorded. Choose one before the bed is pulled.
+                  </p>
+                  {/* Q36: kit chips, as the cancel reason below, rather than a browser drop-down. */}
+                  <div data-testid="ward-transit-pull-level" data-value={pullLevel}>
+                    <ChipGroup label="Observation level">
+                      {OBSERVATION_LEVELS.map((level) => (
+                        <FilterChip
+                          key={level}
+                          pressed={pullLevel === level}
+                          unavailable={levelSave.pending}
+                          onPressedChange={() => {
+                            if (levelSave.pending) return;
+                            setPullLevel(level);
+                            setPullLevelError(null);
+                          }}
+                        >
+                          {observationLevelName(level)}
+                        </FilterChip>
+                      ))}
+                    </ChipGroup>
+                  </div>
+                  {pullLevel === "intermittent" ? (
+                    <div data-testid="ward-transit-pull-interval" data-value={pullInterval ?? ""}>
+                      <ChipGroup label="Check every">
+                        {INTERMITTENT_INTERVAL_MINUTES.map((minutes) => (
+                          <FilterChip
+                            key={minutes}
+                            pressed={pullInterval === minutes}
+                            unavailable={levelSave.pending}
+                            onPressedChange={() => {
+                              if (levelSave.pending) return;
+                              setPullInterval(minutes);
+                              setPullLevelError(null);
+                            }}
+                          >
+                            {`Every ${minutes} minutes`}
+                          </FilterChip>
+                        ))}
+                      </ChipGroup>
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
               <button
                 type="button"
                 className={buttonClass({ variant: "pri" })}
                 data-placement-action
                 {...holdGate.buttonProps}
+                aria-disabled={levelSave.pending ? "true" : undefined}
                 onClick={() => {
-                  if (!holdGate.allowed) return;
-                  setOverrideUnitId(destination.id);
-                  noteAttempt();
-                  // Audit 24-7 (CT-06): the pull's own stage-change entry, so Undo releases only this
-                  // pull and is refused once it has been released or replaced.
-                  const expectedPull = { unitId: destination.id, stageIndex: movement.stageChanges.length };
-                  runStep(
-                    {
-                      type: "PULL_PATIENT",
-                      role: routeRole,
-                      now,
-                      movementId: movement.id,
-                      unitId: destination.id,
-                      ...(routeRole === "ward" ? { actingUnitId: destination.id } : {}),
-                    },
-                    {
-                      success: "Bed pulled",
-                      undo: (at) =>
-                        bedPullUndoEvent(routeRole, at, {
+                  if (!holdGate.allowed || levelSave.pending) return;
+                  // D-188: the pull itself, sent once any level asked for here has been recorded.
+                  const pullBed = () => {
+                    setOverrideUnitId(destination.id);
+                    noteAttempt();
+                    // Audit 24-7 (CT-06): the pull's own stage-change entry, so Undo releases only this
+                    // pull and is refused once it has been released or replaced.
+                    const expectedPull = { unitId: destination.id, stageIndex: movement.stageChanges.length };
+                    runStep(
+                      {
+                        type: "PULL_PATIENT",
+                        role: routeRole,
+                        now,
+                        movementId: movement.id,
+                        unitId: destination.id,
+                        ...(routeRole === "ward" ? { actingUnitId: destination.id } : {}),
+                      },
+                      {
+                        success: "Bed pulled",
+                        undo: (at) =>
+                          bedPullUndoEvent(routeRole, at, {
+                            movementId: movement.id,
+                            ...expectedPull,
+                            ...(routeRole === "ward" ? { actingUnitId: destination.id } : {}),
+                          }),
+                        undone: BED_PULL_UNDONE,
+                        // A9-02: the Undo stays offered for the whole Undo window, or until dismissed.
+                        undoToastMs: BED_PULL_UNDO_TOAST_MS,
+                      },
+                    );
+                  };
+                  if (!levelAsked) {
+                    pullBed();
+                    return;
+                  }
+                  if (pullLevel === "" || (pullLevel === "intermittent" && pullInterval === null)) {
+                    setPullLevelError(pullLevel === "" ? "Choose an observation level" : NO_INTERVAL_ERROR);
+                    return;
+                  }
+                  setPullLevelError(null);
+                  const observation =
+                    pullLevel === "intermittent"
+                      ? { ...observationAt(pullLevel), intervalMinutes: pullInterval }
+                      : observationAt(pullLevel);
+                  levelSave.submit(
+                    () =>
+                      wardRaise(
+                        dispatch,
+                        routeRole,
+                        now,
+                      )("RECORD_OBSERVATION_LEVEL", {
+                        target: {
+                          kind: "movement",
                           movementId: movement.id,
-                          ...expectedPull,
                           ...(routeRole === "ward" ? { actingUnitId: destination.id } : {}),
-                        }),
-                      undone: BED_PULL_UNDONE,
-                      // A9-02: the Undo stays offered for the whole Undo window, or until dismissed.
-                      undoToastMs: BED_PULL_UNDO_TOAST_MS,
-                    },
+                        },
+                        observation,
+                        expected: observationEditingToken(
+                          "movement",
+                          movement.id,
+                          movement.observation,
+                          movement.observationChanges?.length ?? 0,
+                        ),
+                      }),
+                    pullBed,
                   );
                 }}
               >
@@ -681,6 +789,14 @@ export function PatientTransitOperations({
                 Pull the bed
               </button>
               {holdGate.note}
+              {levelSave.error || pullLevelError ? (
+                <StateLine
+                  kind="error"
+                  compact
+                  data-testid="ward-transit-pull-level-failure"
+                  title={pullLevelError ?? `The bed is not pulled. ${levelSave.error}`}
+                />
+              ) : null}
             </>
           )}
           {/* F-106 (A14-04): once the person has arrived, or the journey is closed, the bed is no

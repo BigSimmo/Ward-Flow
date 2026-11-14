@@ -6,7 +6,11 @@ import {
   remainingSpeciallingCapacity,
   type Admission,
 } from "@/components/ward-management/ward-admissions";
-import { observationSummary } from "@/components/ward-management/ward-observation";
+import {
+  observationIsRecorded,
+  observationSummary,
+  PULL_NEEDS_OBSERVATION_LEVEL,
+} from "@/components/ward-management/ward-observation";
 import { lockedBedsFree, openBedsFree, numberedBedKind } from "@/components/ward-management/ward-bed-designation";
 import { OVERRIDE_REASONS, RELEASE_PULL_REASONS } from "@/components/ward-management/ward-change-reasons";
 import { heldUnitAuthorisationRefusal } from "@/components/ward-management/ward-held-legal-check";
@@ -100,6 +104,9 @@ export function reducePlacementEvent(
           `movement ${movement.id} was accepted at ${movement.acceptedUnitId ?? "no unit"}, not ${event.unitId}`,
         );
       }
+      // D-188, tightened to every pull (Josh, 13 Nov 2026): no bed is pulled, or restored to pulled,
+      // while the journey's observation level is "Not recorded". Record one first.
+      if (!observationIsRecorded(movement.observation)) return reject(state, event, PULL_NEEDS_OBSERVATION_LEVEL);
       // P1-3 (Ward Lead ruling): by `PULL_PATIENT` the movement is already accepted at this unit,
       // so either gender judgement failing means a correction landed after acceptance. See
       // `heldUnitGenderRefusal`.

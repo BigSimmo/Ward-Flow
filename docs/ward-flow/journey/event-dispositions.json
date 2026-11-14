@@ -358,7 +358,7 @@
         {
           "path": "src/components/ward-management/ward-observation.ts",
           "line": 65,
-          "sha256": "14095476bb6c1812ea7d450b2b75ffbc4369cd4323a546003c148a1db07c9b4a"
+          "sha256": "c657c1f7e09c916aaff569e5bd7fcbc98ec9a051fd1b63372b5bf971368cc9ba"
         }
       ],
       "tests": [
@@ -3880,8 +3880,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 462,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 469,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         },
         {
           "path": "src/components/ward-management/ward-bed-hold-extension.ts",

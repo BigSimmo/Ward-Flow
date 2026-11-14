@@ -286,7 +286,7 @@ export const CRAWL_JOBS: readonly HowTo[] = [
     title: "Change or cancel a planned admission",
     keywords: "planned admission booking change date move cancel elective booked",
     answer:
-      "On Capacity, open Planned moves and choose the booking. Press Change booking, edit it and Save. Or press Cancel booking, choose a reason and confirm; Undo shows straight after. A ward does the same from its own bookings.",
+      "On Capacity, open the Planned tab and choose the booking. Press Change booking, edit it and Save. Or press Cancel booking, choose a reason and confirm; Undo shows straight after. A ward does the same from its own bookings.",
     desks: ["coordinator", "bed_manager", "ward"],
     acts: ["CHANGE_PLANNED_ADMISSION", "CANCEL_PLANNED_ADMISSION"],
     go: ["capacity", "home"],

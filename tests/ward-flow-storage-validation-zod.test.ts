@@ -51,6 +51,18 @@ function richState(): Json {
         recordedBy: "Nurse in charge",
       }));
     });
+  // The demo intake windows moved off real ward names (live re-check, 14 Nov 2026). Put them back
+  // on the wards that carried them, exactly as built, so the swept paths and verdicts stay the same.
+  for (const [from, to] of [
+    ["rgh-adult-secure", "rph-adult-secure"],
+    ["sjgs-adult-open", "scgh-adult-open"],
+    ["ger-adult-open", "fre-adult-open"],
+  ]) {
+    const source = s.units.find((u: Row) => u.id === from);
+    const target = s.units.find((u: Row) => u.id === to);
+    target.intakeWindow = source.intakeWindow;
+    delete source.intakeWindow;
+  }
   const unit = s.units[0];
   // An arrival recorded against a full ward keeps its bounded count disagreement.
   const arrivedIndex = s.movements.findIndex((m: Row) => m.stage === "arrived" && m.closure?.outcome === "arrived");

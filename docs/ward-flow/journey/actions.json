@@ -948,8 +948,8 @@
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
-          "line": 344,
-          "sha256": "c5c48f678f92e2a7034f7d46a01a73a7b3b118c922c655ad65e679f9255a2e66"
+          "line": 367,
+          "sha256": "17827315048397a69b8bb48539d18eb2fbe3ed5f3c866bf89126b68331b31c21"
         },
         {
           "path": "src/components/ward-management/coordinator/shortlist-panel.tsx",
@@ -1054,8 +1054,8 @@
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
-          "line": 333,
-          "sha256": "c5c48f678f92e2a7034f7d46a01a73a7b3b118c922c655ad65e679f9255a2e66"
+          "line": 353,
+          "sha256": "17827315048397a69b8bb48539d18eb2fbe3ed5f3c866bf89126b68331b31c21"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
@@ -1377,8 +1377,8 @@
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
-          "line": 1178,
-          "sha256": "c5c48f678f92e2a7034f7d46a01a73a7b3b118c922c655ad65e679f9255a2e66"
+          "line": 1294,
+          "sha256": "17827315048397a69b8bb48539d18eb2fbe3ed5f3c866bf89126b68331b31c21"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
@@ -1725,7 +1725,7 @@
         "message": "cannot step back an arrived movement (invariant I-05: physical arrival is irreversible)",
         "source": {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 706
+          "line": 713
         }
       },
       {
@@ -1733,7 +1733,7 @@
         "message": "STEP_BACK_STAGE target must be strictly before the movement's current stage (movement ${movement.id} is at ${stageCopy[movement.stage].label}, target was ${stageCopy[event.to].label})",
         "source": {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 721
+          "line": 728
         }
       }
     ],
@@ -1751,8 +1751,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 758,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 765,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         },
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
@@ -1761,18 +1761,18 @@
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
-          "line": 1123,
-          "sha256": "c5c48f678f92e2a7034f7d46a01a73a7b3b118c922c655ad65e679f9255a2e66"
+          "line": 1239,
+          "sha256": "17827315048397a69b8bb48539d18eb2fbe3ed5f3c866bf89126b68331b31c21"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 765,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 772,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 780,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 787,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         }
       ]
     }
@@ -1785,7 +1785,7 @@
     "nodes": ["pulled", "dRepull", "dForced", "dGenderHard", "dNoLongerSuits"],
     "roles": ["ward", "coordinator"],
     "does": "The ward claims the bed it accepted, and an admission record is created marked held — not occupied. A patient is not arrived until the ward says they have arrived.",
-    "needs": "An open movement at accepted_awaiting_bed and the accepting ward, consistent reservation/identity, current capacity (the Ready figure counts live pulled admissions; a bed still being made ready may still be pulled, D-181 item 5), eligibility, bed-kind/gender/legal checks and no conflicting active placement. Other journeys' pending numbered bed reservations at the ward (a held bed number on another movement or referral arm) also come off Ready and off the free locked and open counts, so a pull cannot take a bed another record was promised.",
+    "needs": "An open movement at accepted_awaiting_bed and the accepting ward, a recorded observation level (D-188: never \"Not recorded\"), consistent reservation/identity, current capacity (the Ready figure counts live pulled admissions; a bed still being made ready may still be pulled, D-181 item 5), eligibility, bed-kind/gender/legal checks and no conflicting active placement. Other journeys' pending numbered bed reservations at the ward (a held bed number on another movement or referral arm) also come off Ready and off the free locked and open counts, so a pull cannot take a bed another record was promised.",
     "changes": "Reserves an allocatable bed, creates or consistently adopts the held admission and starts the configured hold timer. The bed is held rather than occupied. H10 (D-210, 14 Nov 2026): the pull also records a bed number of the kind it takes: the reserved bed when the pull names one, else the lowest free number of that kind that no other journey holds. With no free number of that kind the stay keeps its kind with no number, which the ward sees as a bed-kind conflict; it never takes a bed of the other kind.",
     "reasons": ["OVERRIDE_REASONS"],
     "override": true,
@@ -1795,7 +1795,15 @@
         "message": "movement ${movement.id} was accepted at ${movement.acceptedUnitId ?? \"no unit\"}, not ${event.unitId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 94
+          "line": 99
+        }
+      },
+      {
+        "when": "Guard: !observationIsRecorded(movement.observation)",
+        "message": "${PULL_NEEDS_OBSERVATION_LEVEL}",
+        "source": {
+          "path": "src/components/ward-management/ward-flow-placement-events.ts",
+          "line": 109
         }
       },
       {
@@ -1803,7 +1811,7 @@
         "message": "${restoreUnit.name} has not enough observation staff left; this patient needs ${observationSummary(movement.observation)} and the ward cannot staff it",
         "source": {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 156
+          "line": 163
         }
       },
       {
@@ -1811,7 +1819,7 @@
         "message": "${restoreUnit.name} ${HIGH_ACUITY_STAFFING_REFUSAL}. This placement ${OVERRIDE_REASON_REQUIRED} and the nurse unit manager consulted.",
         "source": {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 169
+          "line": 176
         }
       },
       {
@@ -1819,7 +1827,7 @@
         "message": "no Ready bed remains at ${unit.name} (allocatable ${unit.allocatable.value}, physically empty ${unit.empty.value})",
         "source": {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 212
+          "line": 219
         }
       },
       {
@@ -1827,7 +1835,7 @@
         "message": "${unit.name} has not enough observation staff left (${remainingSpeciallingCapacity(unit, state.admissions)} of ${unit.speciallingCapacity} free); this patient needs ${observationSummary(movement.observation)} and the ward cannot staff it",
         "source": {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 251
+          "line": 258
         }
       }
     ],
@@ -1845,8 +1853,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 81,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 85,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
@@ -1860,38 +1868,38 @@
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
-          "line": 343,
-          "sha256": "c5c48f678f92e2a7034f7d46a01a73a7b3b118c922c655ad65e679f9255a2e66"
+          "line": 366,
+          "sha256": "17827315048397a69b8bb48539d18eb2fbe3ed5f3c866bf89126b68331b31c21"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 100,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 104,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 162,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 169,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 175,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 182,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 225,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 232,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 243,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 250,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 264,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 271,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         }
       ]
     }
@@ -1913,7 +1921,7 @@
         "message": "cannot release a pull at the movement's current stage (${stageCopy[movement.stage].label})",
         "source": {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 491
+          "line": 498
         }
       },
       {
@@ -1921,7 +1929,7 @@
         "message": "RELEASE_PULL was raised acting as unit ${event.actingUnitId} but movement ${movement.id}'s bed is pulled at ${movement.acceptedUnitId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 500
+          "line": 507
         }
       },
       {
@@ -1929,7 +1937,7 @@
         "message": "RELEASE_PULL reason must be chosen from RELEASE_PULL_REASONS",
         "source": {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 509
+          "line": 516
         }
       },
       {
@@ -1937,7 +1945,7 @@
         "message": "movement ${movement.id}'s pulled bed matches no releasable reservation",
         "source": {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 532
+          "line": 539
         }
       }
     ],
@@ -1955,8 +1963,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 461,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 468,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         },
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
@@ -1970,23 +1978,23 @@
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
-          "line": 1060,
-          "sha256": "c5c48f678f92e2a7034f7d46a01a73a7b3b118c922c655ad65e679f9255a2e66"
+          "line": 1176,
+          "sha256": "17827315048397a69b8bb48539d18eb2fbe3ed5f3c866bf89126b68331b31c21"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 545,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 552,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 554,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 561,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 563,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 570,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         },
         {
           "path": "src/components/ward-management/referrals/pull-accepted-referral.tsx",
@@ -2013,7 +2021,7 @@
         "message": "movement ${movement.id} was not stopped by STOP_TRANSPORT and has no examination-revoked hold, so there is no pulled bed to release this way",
         "source": {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 581
+          "line": 588
         }
       },
       {
@@ -2021,7 +2029,7 @@
         "message": "movement ${movement.id} has no bed pulled — it may already have been released",
         "source": {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 591
+          "line": 598
         }
       },
       {
@@ -2029,7 +2037,7 @@
         "message": "RELEASE_HELD_BED was raised acting as unit ${event.actingUnitId} but movement ${movement.id}'s bed is pulled at ${movement.acceptedUnitId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 599
+          "line": 606
         }
       }
     ],
@@ -2047,8 +2055,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 626,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 633,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         },
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
@@ -2062,18 +2070,18 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 640,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 647,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 650,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 657,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 658,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 665,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         }
       ]
     }
@@ -2252,8 +2260,8 @@
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
-          "line": 772,
-          "sha256": "c5c48f678f92e2a7034f7d46a01a73a7b3b118c922c655ad65e679f9255a2e66"
+          "line": 888,
+          "sha256": "17827315048397a69b8bb48539d18eb2fbe3ed5f3c866bf89126b68331b31c21"
         },
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
@@ -2341,8 +2349,8 @@
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
-          "line": 180,
-          "sha256": "c5c48f678f92e2a7034f7d46a01a73a7b3b118c922c655ad65e679f9255a2e66"
+          "line": 191,
+          "sha256": "17827315048397a69b8bb48539d18eb2fbe3ed5f3c866bf89126b68331b31c21"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
@@ -2410,8 +2418,8 @@
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
-          "line": 837,
-          "sha256": "c5c48f678f92e2a7034f7d46a01a73a7b3b118c922c655ad65e679f9255a2e66"
+          "line": 953,
+          "sha256": "17827315048397a69b8bb48539d18eb2fbe3ed5f3c866bf89126b68331b31c21"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
@@ -2479,8 +2487,8 @@
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
-          "line": 857,
-          "sha256": "c5c48f678f92e2a7034f7d46a01a73a7b3b118c922c655ad65e679f9255a2e66"
+          "line": 973,
+          "sha256": "17827315048397a69b8bb48539d18eb2fbe3ed5f3c866bf89126b68331b31c21"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
@@ -2556,8 +2564,8 @@
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
-          "line": 878,
-          "sha256": "c5c48f678f92e2a7034f7d46a01a73a7b3b118c922c655ad65e679f9255a2e66"
+          "line": 994,
+          "sha256": "17827315048397a69b8bb48539d18eb2fbe3ed5f3c866bf89126b68331b31c21"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
@@ -2643,8 +2651,8 @@
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
-          "line": 934,
-          "sha256": "c5c48f678f92e2a7034f7d46a01a73a7b3b118c922c655ad65e679f9255a2e66"
+          "line": 1050,
+          "sha256": "17827315048397a69b8bb48539d18eb2fbe3ed5f3c866bf89126b68331b31c21"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
@@ -2664,7 +2672,7 @@
         {
           "path": "src/components/ward-management/ward-observation.ts",
           "line": 65,
-          "sha256": "14095476bb6c1812ea7d450b2b75ffbc4369cd4323a546003c148a1db07c9b4a"
+          "sha256": "c657c1f7e09c916aaff569e5bd7fcbc98ec9a051fd1b63372b5bf971368cc9ba"
         }
       ]
     }
@@ -2776,8 +2784,8 @@
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
-          "line": 1009,
-          "sha256": "c5c48f678f92e2a7034f7d46a01a73a7b3b118c922c655ad65e679f9255a2e66"
+          "line": 1125,
+          "sha256": "17827315048397a69b8bb48539d18eb2fbe3ed5f3c866bf89126b68331b31c21"
         }
       ]
     }
@@ -4342,7 +4350,7 @@
         {
           "path": "src/components/ward-management/capacity/capacity-ward-drawer.tsx",
           "line": 237,
-          "sha256": "55164bf5d93862708c5ac736443ac3a26a7de520b230f0024c96f860e922a9e8"
+          "sha256": "a047de2166225687888a24cd8e4551afd2bd845a200a73dffc1891672896c62d"
         },
         {
           "path": "src/components/ward-management/capacity/capacity-screen.tsx",
@@ -5021,8 +5029,8 @@
         },
         {
           "path": "src/components/ward-management/tools/ward-demo-panel.tsx",
-          "line": 301,
-          "sha256": "aa615b30aa38de64b2ddb3770896c4ff35d05cbac0c3b3aac2bdde7a95a78ebd"
+          "line": 305,
+          "sha256": "f8299cf414b15cc09acf6763a182c933d4a3b789b5a30ab97baca63bdfcbd8f1"
         },
         {
           "path": "src/components/ward-management/ward-flow-provider.tsx",
@@ -5078,8 +5086,8 @@
         },
         {
           "path": "src/components/ward-management/tools/ward-demo-panel.tsx",
-          "line": 244,
-          "sha256": "aa615b30aa38de64b2ddb3770896c4ff35d05cbac0c3b3aac2bdde7a95a78ebd"
+          "line": 248,
+          "sha256": "f8299cf414b15cc09acf6763a182c933d4a3b789b5a30ab97baca63bdfcbd8f1"
         }
       ]
     }
@@ -5107,7 +5115,7 @@
     ],
     "screen": {
       "screen": "demo-reset/ward-demo-reset.tsx; tools/ward-demo-panel.tsx",
-      "control": "Both pickers ask before replacing the synthetic world. The separate Demo reset waits for the command outcome, keeps choices unavailable while it is pending, and reports a current accepted replacement as complete. Failed, refused, cancelled or unknown completion is not reported as success, and obsolete or unmounted results do not announce into a replacement workspace. Tools, Demo also offers Show or Hide worked examples on the standard and scarce days: it reloads the current day with workedExamples set, after its own confirm. The one-tap Demo reset's confirm says the demo clock keeps running, and an accepted one-tap load also clears this browser's demo-day leftovers and the Tools reminders and call log, and on the local demo returns the tab to the coordinator's desk (F-65). The panel reads the world's own workedExamples flag (M12), so a scoped desk sees the true setting."
+      "control": "Both pickers ask before replacing the synthetic world. The separate Demo reset waits for the command outcome, keeps choices unavailable while it is pending, and reports a current accepted replacement as complete. Failed, refused, cancelled or unknown completion is not reported as success, and obsolete or unmounted results do not announce into a replacement workspace. Tools, Demo also offers Show or Hide worked examples on the standard and scarce days, on a whole-network desk or in single-browser mode only (a scoped desk cannot see the example records, and the switch changes the whole network's demo): it reloads the current day with workedExamples set, after its own confirm. The one-tap Demo reset's confirm says the demo clock keeps running, and an accepted one-tap load also clears this browser's demo-day leftovers and the Tools reminders and call log, and on the local demo returns the tab to the coordinator's desk (F-65). The panel reads the world's own workedExamples flag (M12), so it shows the true setting."
     },
     "review": {
       "reviewedOn": "2026-11-14",
@@ -5129,8 +5137,8 @@
         },
         {
           "path": "src/components/ward-management/tools/ward-demo-panel.tsx",
-          "line": 245,
-          "sha256": "aa615b30aa38de64b2ddb3770896c4ff35d05cbac0c3b3aac2bdde7a95a78ebd"
+          "line": 249,
+          "sha256": "f8299cf414b15cc09acf6763a182c933d4a3b789b5a30ab97baca63bdfcbd8f1"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
@@ -5436,7 +5444,7 @@
         "message": "movement ${movement.id} was not diverted, so there is no diverted bed to release this way",
         "source": {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 642
+          "line": 649
         }
       },
       {
@@ -5444,7 +5452,7 @@
         "message": "movement ${movement.id} has no bed pulled — it may already have been released",
         "source": {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 648
+          "line": 655
         }
       },
       {
@@ -5452,7 +5460,7 @@
         "message": "RELEASE_DIVERTED_BED was raised acting as unit ${event.actingUnitId} but movement ${movement.id}'s bed is pulled at ${movement.acceptedUnitId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 654
+          "line": 661
         }
       }
     ],
@@ -5470,8 +5478,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 694,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 701,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         },
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
@@ -5490,18 +5498,18 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 701,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 708,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 707,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 714,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 713,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 720,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         }
       ]
     }
@@ -6698,7 +6706,7 @@
         "message": "cannot release and reopen a closed movement (${movement.closure.reason})",
         "source": {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 765
+          "line": 772
         }
       },
       {
@@ -6706,7 +6714,7 @@
         "message": "cannot release and reopen at the movement's current stage (${stageCopy[movement.stage].label})",
         "source": {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 771
+          "line": 778
         }
       },
       {
@@ -6714,7 +6722,7 @@
         "message": "RELEASE_AND_REOPEN_SEARCH reason must be chosen from RELEASE_PULL_REASONS",
         "source": {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 782
+          "line": 789
         }
       },
       {
@@ -6722,7 +6730,7 @@
         "message": "RELEASE_AND_REOPEN_SEARCH was raised acting as unit ${event.actingUnitId} but movement ${movement.id}'s bed is at ${movement.acceptedUnitId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 788
+          "line": 795
         }
       }
     ],
@@ -6740,8 +6748,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 820,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 827,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         },
         {
           "path": "src/components/ward-management/movements/movement-workflow-actions.tsx",
@@ -6750,23 +6758,23 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 824,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 831,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 830,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 837,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 841,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 848,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
-          "line": 847,
-          "sha256": "3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf"
+          "line": 854,
+          "sha256": "7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737"
         }
       ]
     }

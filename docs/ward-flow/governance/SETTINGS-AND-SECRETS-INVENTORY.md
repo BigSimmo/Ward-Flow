@@ -11,7 +11,8 @@ that is not in a table below, so the list cannot fall behind the code.
 
 ## What a person still has to do
 
-1. **Fix the uptime token name (needs Josh).** The audit found the backend service holds the
+1. **Fix the uptime token name: done.** A check on 14 November 2026 found the backend's variable
+   correctly named `WARD_FLOW_UPTIME_TOKEN`. What follows is kept as the record. The audit found the backend service holds the
    uptime token under a misspelt name, so the backend reads no `WARD_FLOW_UPTIME_TOKEN`, refuses
    the monitor's header and the uptime job's database check never runs. In Railway, on the
    backend service, add the variable with the exact name `WARD_FLOW_UPTIME_TOKEN` and the same

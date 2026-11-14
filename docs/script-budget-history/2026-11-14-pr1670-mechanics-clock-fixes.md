@@ -24,3 +24,17 @@ What was tried first: the analyser showed no page-only code pulled into the shel
 new shell module is read by the reducer or by stored-state checks at load, so none can load later.
 Shrinking them would mean rewriting engine rules this PR has just fixed. Six internal helpers were
 made private, which changes nothing in the build.
+
+## After merging main with #1668 (14 Nov 2026)
+
+#1668 merged first and raised Home, Ward, Movement and Statistics by 0.3 to 0.5 KB on main. Re-measured
+on the merged tree (local `npm run build`, `scripts/check-script-budget.mjs`); the shared shell is
+500.5 KB. Each limit is the measurement plus 0.2 where that stays within the allowance over main's
+limit, else the allowance itself:
+
+- Home 597.7 to 602.9 (measured 602.7) and Ward 632.6 to 638.0 (637.8): within the 5.5 KB Josh
+  approved.
+- Referrals 599.3 to 601.4 (601.2), ED 549.9 to 554.9 (554.7), ED board 688.7 to 693.7 (693.6),
+  Bed meeting 599.7 to 604.2 (604.0), Statistics 645.9 to 650.8 (650.6).
+- Movement 627.8 to 632.8 (measured 632.8, a few hundredths over): the full 5 KB allowance. It
+  needs 0.1 KB more, which waits for Josh's yes.

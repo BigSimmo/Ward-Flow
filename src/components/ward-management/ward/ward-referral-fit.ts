@@ -44,7 +44,8 @@ export type ReferralFit = {
   /**
    * Josh, 13 Nov 2026 (go question 3): when the person's recorded status needs an
    * involuntary-capable bed, the "To check" group adds the ward's authorisation label,
-   * "Involuntary admissions: not stated". Undefined when the status does not need it.
+   * for example "Involuntary admissions: not stated" (D-209 item 9). Undefined when the status
+   * does not need it.
    */
   authorisationToCheck?: string;
 };

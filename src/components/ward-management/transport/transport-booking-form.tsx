@@ -38,6 +38,7 @@ import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/w
 import {
   TRANSPORT_EXCEPTION_GAP_LABELS,
   TRANSPORT_EXCEPTION_REASON_LABELS,
+  TRANSFER_PAUSED_TEXT,
   cadNumberSentence,
   fitToTravelGaps,
   holdEndsBeforeEta,
@@ -255,6 +256,8 @@ export function transportBookingSubmission(
     return undefined;
   const gaps = transportBookingGaps(record, transportLegalStatus);
   if (transportBookingReasonRequired(gaps) && legalReason === "") return undefined;
+  // D-211: not medically cleared is a hard stop, never a booking with or without a reason.
+  if (gaps.includes("fit_to_travel_not_cleared")) return undefined;
   return {
     provider,
     escortRequired,
@@ -349,6 +352,8 @@ export function TransportBookingForm({
   const clash = record !== undefined && transportStatusClashes(record, answers.transportLegalStatus);
   const gaps = transportBookingGaps(record, answers.transportLegalStatus);
   const reasonMissing = transportBookingReasonRequired(gaps) && legalReason === "";
+  // D-211: not medically cleared is a hard stop; the engine refuses the booking too.
+  const paused = gaps.includes("fit_to_travel_not_cleared");
   const estimatedAt = instantFromEstimatedTimeInputs(answers.estimatedTime, answers.estimatedDay, now);
   const holdEnd =
     record?.pullExpiresAt === undefined
@@ -356,6 +361,7 @@ export function TransportBookingForm({
       : holdEndsBeforeEta(record as Pick<Movement, "pullExpiresAt">, estimatedAt);
   const blocked =
     blockedReason ??
+    (paused ? TRANSFER_PAUSED_TEXT : undefined) ??
     transportAnswersBlockedReason(answers, now) ??
     (reasonMissing ? "Before booking, choose why the transport status differs from Legal now." : undefined);
   const submission = transportBookingSubmission(answers, legalReason, record, now);
@@ -591,13 +597,17 @@ export function TransportBookingForm({
                     : TRANSPORT_EXCEPTION_GAP_LABELS[gap],
                 )
                 .join(". ")}
-              {clash ? ". Record why." : ". Record why, or save without a reason."}
+              {paused
+                ? `. ${TRANSFER_PAUSED_TEXT}`
+                : clash
+                  ? ". Record why."
+                  : ". Record why, or save without a reason."}
             </span>
           }
         >
           <Select
             data-testid={tid("legal-reason")}
-            disabled={pending}
+            disabled={pending || paused}
             value={legalReason}
             onChange={(event) => {
               const next = event.target.value;

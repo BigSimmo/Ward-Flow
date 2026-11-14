@@ -29,9 +29,9 @@ describe.each(OFFSETS)("a seed reopened %i minutes from the anchor", (offset) =>
 
   it("keeps each seeded intake window at its own clock times and set this morning", () => {
     const expected: Record<string, [number, number]> = {
-      "rph-adult-secure": [21 * 60, 2 * 60],
-      "scgh-adult-open": [19 * 60, 23 * 60],
-      "fre-adult-open": [22 * 60, 5 * 60],
+      "rgh-adult-secure": [21 * 60, 2 * 60],
+      "sjgs-adult-open": [19 * 60, 23 * 60],
+      "ger-adult-open": [22 * 60, 5 * 60],
     };
     for (const [unitId, [from, to]] of Object.entries(expected)) {
       const unit = state.units.find((candidate) => candidate.id === unitId)!;

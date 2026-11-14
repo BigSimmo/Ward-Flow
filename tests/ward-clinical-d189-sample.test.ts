@@ -177,7 +177,8 @@ describe("D-189 item 2: the observation mix is labelled, and no level changes", 
 
   it("keeps the sample day's observation levels as they were before the stories", () => {
     const seed = seedWardFlowState();
-    expect(levels(seed.movements)).toEqual({ general: 51, within_sight: 9 });
+    // D-209 item 3 (Josh, 14 Nov 2026): Saoirse (WF-010) moves from General to Intermittent, every 30 minutes.
+    expect(levels(seed.movements)).toEqual({ general: 50, within_sight: 9, "intermittent:30": 1 });
     expect(levels(seed.admissions)).toEqual({ general: 311 });
     expect(Object.fromEntries(VARIANTS.map((variant) => [variant, levels(demoNetwork(variant).movements)]))).toEqual({
       demo: { general: 15, within_sight: 8 },

@@ -59,7 +59,7 @@ const noClearance: Adjust = (movements) =>
   movements.map((movement) => ({ ...movement, medicalClearance: undefined, referralId: undefined }));
 
 describe("ward answer view: recorded facts only (CS-02)", () => {
-  it.each(["sjgm-adult-open", "fsh-older-adult"])("shows no invented narrative or recommendation on %s", (unitId) => {
+  it.each(["gry-adult-secure", "fsh-older-adult"])("shows no invented narrative or recommendation on %s", (unitId) => {
     renderAnswer(unitId, noClearance);
     const text = document.body.textContent ?? "";
     for (const invented of [
@@ -100,7 +100,7 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
   };
 
   it("closes with a notice, and accepts nobody, when its request is answered or withdrawn elsewhere", () => {
-    const dispatch = renderAnswer("sjgm-adult-open");
+    const dispatch = renderAnswer("gry-adult-secure");
     const id = shownId();
     openDialog();
     act(() => setAdjust((movements) => movements.filter((movement) => movement.id !== id)));
@@ -110,7 +110,7 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
   });
 
   it("accepts the request it was opened for when another sorts ahead, and sends no bed number", () => {
-    const dispatch = renderAnswer("sjgm-adult-open");
+    const dispatch = renderAnswer("gry-adult-secure");
     const id = shownId();
     const dialog = openDialog();
     expect(dialog).toHaveTextContent("Accepting does not allocate a bed.");
@@ -130,7 +130,7 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
   });
 
   it("sends the extra-travel bed hold only when the ward chooses it (D-72)", () => {
-    const dispatch = renderAnswer("sjgm-adult-open");
+    const dispatch = renderAnswer("gry-adult-secure");
     const dialog = openDialog();
     expect(dialog).not.toHaveTextContent(/not wired|not saved|nurse unit manager endorsement/i);
     const hold = within(dialog).getByRole("group", { name: "Pull time limit" });
@@ -147,7 +147,7 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
   // Redesign (Josh, 31 Oct 2026): nothing pre-selected in any choice. The pull time limit starts
   // with neither choice chosen, and Confirm acceptance waits for one and says why.
   it("starts the pull time limit with neither choice chosen, and holds Confirm until one is", () => {
-    const dispatch = renderAnswer("sjgm-adult-open");
+    const dispatch = renderAnswer("gry-adult-secure");
     const dialog = openDialog();
     expect(dialog).toHaveTextContent("Accepting does not allocate a bed.");
     const hold = within(dialog).getByRole("group", { name: "Pull time limit" });
@@ -176,7 +176,7 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
   });
 
   it("offers the bed hold choice beside the desk's one-step Accept in principle", () => {
-    const dispatch = renderAnswer("sjgm-adult-open");
+    const dispatch = renderAnswer("gry-adult-secure");
     const id = shownId();
     const hold = screen.getByRole("combobox", { name: "Pull time limit" });
     // Nothing pre-selected (Josh, 31 Oct 2026): the choice starts empty and Accept says why it waits.
@@ -202,7 +202,7 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
   });
 
   it("does not carry the extra-travel choice to the next request when the chosen one leaves (CS-08)", () => {
-    const dispatch = renderAnswer("sjgm-adult-open");
+    const dispatch = renderAnswer("gry-adult-secure");
     const id = shownId();
     act(() =>
       setAdjust((movements) => {
@@ -250,7 +250,7 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
     const tree = () => (
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <RefusingHarness>
-          <WardAnswerView unitId="sjgm-adult-open" />
+          <WardAnswerView unitId="gry-adult-secure" />
         </RefusingHarness>
       </WardFlowProvider>
     );
@@ -280,8 +280,8 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
   });
 
   it("still steps with Previous and Next", () => {
-    renderAnswer("sjgm-adult-open", (movements) => {
-      const first = movements.find((movement) => movement.referredUnitIds.includes("sjgm-adult-open"))!;
+    renderAnswer("gry-adult-secure", (movements) => {
+      const first = movements.find((movement) => movement.referredUnitIds.includes("gry-adult-secure"))!;
       return [...movements, { ...first, id: "WF-AUDIT-NEXT", openedAt: first.openedAt + 60_000 }];
     });
     const first = shownId();

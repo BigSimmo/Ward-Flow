@@ -89,7 +89,35 @@ const REQUEST = (() => {
   throw new Error("the seed has no ward request");
 })();
 
-describe("D-189 item 8(a): every unit reads 'not stated'", () => {
+// D-209 item 9 (Josh, 14 Nov 2026): the Chief Psychiatrist's Register of Authorised Hospitals, 7 Sep
+// 2026, matched by hospital and service type. Typed here apart from the source file on purpose.
+const REGISTER_ON = new Set([
+  "rph-adult-secure",
+  "scgh-adult-open",
+  "fsh-adult-secure",
+  "arm-adult-open",
+  "sjgm-adult-open",
+  "rgh-adult-secure",
+  "fre-adult-open",
+  "fre-older-adult",
+  "bty-adult-secure",
+  "bty-older-adult",
+  "bty-youth",
+  "gry-adult-secure",
+  "alb-adult-open",
+  "bun-adult-open",
+  "brm-adult-secure",
+  "ger-adult-open",
+]);
+const REGISTER_OFF = new Set(["sjgs-adult-open", "sjgs-adult-secure"]);
+const expectedLabel = (id: string) =>
+  REGISTER_ON.has(id)
+    ? "Involuntary admissions: authorised (Chief Psychiatrist register, 7 Sep 2026)"
+    : REGISTER_OFF.has(id)
+      ? "Involuntary admissions: not on the authorised register (7 Sep 2026)"
+      : "Involuntary admissions: not stated";
+
+describe("D-189 item 8(a), D-209 item 9: every unit reads the register, and the switch never steers", () => {
   it("covers the real network, every demo network and the hard cases, including the flagged wards", () => {
     expect(UNITS.length).toBeGreaterThan(allUnits().length);
     // The sample data still carries wards flagged false, so this test is not vacuous.
@@ -99,8 +127,10 @@ describe("D-189 item 8(a): every unit reads 'not stated'", () => {
   });
 
   it.each(UNITS.map((unit) => [unit.id, unit] as const))("%s: label and switch agree", (_id, unit) => {
-    expect(unitAuthorisation(unit)).toBe("not_stated");
-    expect(authorisationLabel(unit)).toBe("Involuntary admissions: not stated");
+    expect(unitAuthorisation(unit)).toBe(
+      REGISTER_ON.has(unit.id) ? "on_register" : REGISTER_OFF.has(unit.id) ? "not_on_register" : "not_stated",
+    );
+    expect(authorisationLabel(unit)).toBe(expectedLabel(unit.id));
     expect(AUTHORISATION_NOT_STATED).toBe("Not stated");
     expect(authorisationBlocksPlacement(unit)).toBe(false);
   });
@@ -120,7 +150,7 @@ describe("D-189 items 8(a) and 9(a): no placement path refuses or warns because 
         pass: true,
         info: true,
         need: true,
-        detail: "Involuntary admissions: not stated",
+        detail: expectedLabel(unit.id),
       });
 
       // Held-bed refusals (handover, transport, collection, arrival, restore pull).

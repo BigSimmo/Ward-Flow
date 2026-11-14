@@ -152,7 +152,11 @@ function OperationalDemoPanel({ oneList = false, grow = false }: { oneList?: boo
   // M12: the world's own flag. A scoped desk is not sent every example record, so reading them
   // here showed the examples as off and Load offered to switch them on again.
   const examplesOn = workedExamples;
-  const examplesOffered = WORKED_EXAMPLE_SCENARIOS.includes(scenario);
+  // The switch changes the whole network's demo, so only a whole-network desk offers it (coordinator
+  // decision, 14 Nov 2026).
+  const authority = useWardShellAuthority();
+  const examplesOffered =
+    WORKED_EXAMPLE_SCENARIOS.includes(scenario) && (authority === null || authority.scope.kind === "statewide");
   const now = useWardFlowClock();
   const pause = useLivePause();
   const raise = useWardRaise("demo");

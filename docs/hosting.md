@@ -146,9 +146,8 @@ authorised rollout; no distributed per-person or end-to-end slow-upload protecti
 
 Both services wait for CI: the owner turned on Railway's **Wait for CI** for `ward-flow-backend`
 and `ward-flow-shared` on 19 October 2026, so a deploy (now a move of `live`) goes ahead only after its GitHub
-checks pass. Still pending, deferred by the owner on 19 October 2026: in Supabase, under
-Authentication, then Sign In / Providers, turn off **Allow new users to sign up**, so only invited
-accounts can register.
+checks pass. In Supabase, under Authentication, then Sign In / Providers, **Allow new users to sign
+up** is off since 14 November 2026 (D-173), so only invited accounts can register.
 
 Signed-in site settings: the same build and start commands as `ward-flow`, plus
 `NEXT_PUBLIC_WARD_SHARED_ENABLED=true`, `NEXT_PUBLIC_WARD_AUTH_PROVIDER=supabase`, the approved

@@ -23,10 +23,10 @@ export function namedNotRecordedMessage(reason: string, who: string): string {
 
 /**
  * The Ward page's header and footer labels, kept here so the page stays within its line limit.
- * D-189 items 6 and 8(a): no ward is shown as authorised or not until Q42 is signed. D-189: the
- * observation levels are a sample mix, and the footer says so.
+ * D-209 item 9: the ward's authorisation as the Chief Psychiatrist's register shows it. D-189: the
+ * observation levels are a sample mix, and the footer says so (D-209 item 5 keeps it).
  */
-export function wardLabels(unit: Pick<Unit, "authorised" | "name">): { authorisation: string; governanceNote: string } {
+export function wardLabels(unit: Pick<Unit, "id" | "name">): { authorisation: string; governanceNote: string } {
   return {
     authorisation: authorisationLabel(unit),
     governanceNote: `Scoped to ${unit.name} · Bed decisions remain human-confirmed · Not approved for clinical use · Observation levels: ${SAMPLE_OBSERVATION_MIX_LABEL.toLowerCase()}`,

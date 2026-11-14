@@ -97,9 +97,9 @@ const SCENARIOS = [
   },
   {
     screen: "ED movement placed in a named bed while the ward moves a stay into it",
-    first: { type: "ACCEPT_IN_PRINCIPLE", role: C, movementId: "WF-010", unitId: "sjgm-adult-open", bedNumber: 1 },
-    second: { type: "PLACE_IN_BED", role: C, admissionId: "AD-SJGA-01", bedNumber: 1 },
-    bed: "sjgm-adult-open bed 1",
+    first: { type: "ACCEPT_IN_PRINCIPLE", role: C, movementId: "WF-010", unitId: "gry-adult-secure", bedNumber: 1 },
+    second: { type: "PLACE_IN_BED", role: C, admissionId: "AD-GRYS-01", bedNumber: 1 },
+    bed: "gry-adult-secure bed 1",
   },
   {
     screen: "arrival confirmed by two desks at once",

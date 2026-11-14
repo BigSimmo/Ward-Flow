@@ -46,7 +46,7 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
       setForceDynamicLoading(true);
       render(
         <WardFlowProvider initialNow={NOW_ANCHOR}>
-          <WardScreen unitId="sjgm-adult-open" presentation="answer" />
+          <WardScreen unitId="gry-adult-secure" presentation="answer" />
         </WardFlowProvider>,
       );
 
@@ -60,7 +60,7 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
     });
 
     it("renders bed cells as native buttons with aria-label, enabled when vacant, disabled when occupied", () => {
-      const unit = unitById("sjgm-adult-open")!;
+      const unit = unitById("gry-adult-secure")!;
       render(
         <WardFlowProvider initialNow={NOW_ANCHOR}>
           <WardAnswerView unitId={unit.id} />

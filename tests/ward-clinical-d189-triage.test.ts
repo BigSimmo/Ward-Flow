@@ -98,10 +98,11 @@ describe("F-52 remainder: checks that trip a careful clinician (A9-22)", () => {
 });
 
 describe("F-80 (D-189 item 5): crisis numbers stay copy-only text, never a call link", () => {
-  it("marks every number Not checked until both who and when are filled in, and changes no number", () => {
+  it("marks every number checked by Josh on 14 Nov 2026 (D-209 item 8), and changes no number", () => {
     for (const service of SAFETY_PLAN_SERVICES) {
-      expect(serviceCheck(service), service.name).toBe("Not checked");
-      if (service.phone) expect(serviceText(service)).toBe(`${service.name} ${service.phone} (Not checked)`);
+      if (!service.phone) continue;
+      expect(serviceCheck(service), service.name).toBe("checked by Josh on 14 Nov 2026");
+      expect(serviceText(service)).toBe(`${service.name} ${service.phone} (checked by Josh on 14 Nov 2026)`);
     }
     expect(SAFETY_PLAN_SERVICES.map((service) => service.phone)).toEqual([
       "1300 555 788",

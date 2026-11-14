@@ -3,7 +3,7 @@
 The route is selective. Its action notes and the additional command models have source review evidence; source digests detect later edits. This does not establish runtime or clinical acceptance.
 
 ## 207 CURRENT ENGINE EVENTS
-Source-contract SHA256: d57735d4b5495fa2448328829854a7d33b6a098ba8a582b2aca1cce6f411b703
+Source-contract SHA256: 6d1a3c042d9faf223fdcc08357525768d8098c157bdc4edc5a0328ec2b6b831b
 - RECORD_ADMISSION_CARE — diagram-reviewed; event roles: ward, coordinator, community
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:20
@@ -103,7 +103,7 @@ Source-contract SHA256: d57735d4b5495fa2448328829854a7d33b6a098ba8a582b2aca1cce6
 - PULL_PATIENT — diagram-reviewed; event roles: ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:90
-  Event/dispatch reference: src/components/ward-management/ward-flow-placement-events.ts:81
+  Event/dispatch reference: src/components/ward-management/ward-flow-placement-events.ts:85
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:739
 - DECLINE — diagram-reviewed; event roles: ward, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
@@ -199,12 +199,12 @@ Source-contract SHA256: d57735d4b5495fa2448328829854a7d33b6a098ba8a582b2aca1cce6
 - RELEASE_PULL — diagram-reviewed; event roles: coordinator, ward
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:116
-  Event/dispatch reference: src/components/ward-management/ward-flow-placement-events.ts:489
+  Event/dispatch reference: src/components/ward-management/ward-flow-placement-events.ts:496
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1955
 - EXTEND_PULL — modelled; event roles: coordinator, ward
   Reviewed command model (feature 11, 9 Nov 2026): the ward or coordinator adds a fixed amount to a pulled bed's Pull time limit.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:118
-  Event/dispatch reference: src/components/ward-management/ward-flow-placement-events.ts:450
+  Event/dispatch reference: src/components/ward-management/ward-flow-placement-events.ts:457
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1954
   Subject: One open movement whose bed is pulled now
   Before: A pulled bed with its Pull time limit
@@ -216,7 +216,7 @@ Source-contract SHA256: d57735d4b5495fa2448328829854a7d33b6a098ba8a582b2aca1cce6
   guards: The new limit stays within PULL_HOLD_MAX_TOTAL_MINUTES (12 hours) of the pull; a lapsed limit is extended from now.
   effects: Moves Movement.pullExpiresAt later and appends { at, by, minutes } to Movement.pullExtensions; no bed count, stage or notice changes. PULL_PATIENT clears the list on a new pull.
   tests: tests/ward-extend-pull.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-placement-events.ts:462; SHA256 3c811a824c4672f4937ad71c776c13739891b3ab3df3d3bcafe5a76e790aecaf
+  Reviewed source: src/components/ward-management/ward-flow-placement-events.ts:469; SHA256 7b389c22856bcf118d385e6c54678dc91da3b456ed4a8c8042e0087996c5d737
   Reviewed source: src/components/ward-management/ward-bed-hold-extension.ts:48; SHA256 668e77dbccc3fcaa5409abea768e539bb949659a919c68a81b0bfb4578cd04dc
 - BOOK_TRANSPORT — diagram-reviewed; event roles: ed, ward, community, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
@@ -256,7 +256,7 @@ Source-contract SHA256: d57735d4b5495fa2448328829854a7d33b6a098ba8a582b2aca1cce6
 - RELEASE_HELD_BED — diagram-reviewed; event roles: coordinator, ward, ed
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:192
-  Event/dispatch reference: src/components/ward-management/ward-flow-placement-events.ts:615
+  Event/dispatch reference: src/components/ward-management/ward-flow-placement-events.ts:622
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1956
 - RECORD_DIVERSION — diagram-reviewed; event roles: officer, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
@@ -266,7 +266,7 @@ Source-contract SHA256: d57735d4b5495fa2448328829854a7d33b6a098ba8a582b2aca1cce6
 - RELEASE_DIVERTED_BED — diagram-reviewed; event roles: coordinator, ward, ed
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:196
-  Event/dispatch reference: src/components/ward-management/ward-flow-placement-events.ts:689
+  Event/dispatch reference: src/components/ward-management/ward-flow-placement-events.ts:696
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1957
 - REFER_TO_COMMUNITY_TEAM — diagram-reviewed; event roles: ed, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
@@ -550,7 +550,7 @@ Source-contract SHA256: d57735d4b5495fa2448328829854a7d33b6a098ba8a582b2aca1cce6
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:250; SHA256 f305e4436a9f754ff704a5fb04ede91c3bd1ea989ce540b23b1d02e5141e23d5
   Reviewed source: src/components/ward-management/ward-flow-observation-events.ts:33; SHA256 7e10fb51b2f76135bdfacbcd7643473e686dd0eb797e9e7906e427cdf26563cd
   Reviewed source: src/components/ward-management/ward-access-state.ts:713; SHA256 7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d
-  Reviewed source: src/components/ward-management/ward-observation.ts:65; SHA256 14095476bb6c1812ea7d450b2b75ffbc4369cd4323a546003c148a1db07c9b4a
+  Reviewed source: src/components/ward-management/ward-observation.ts:65; SHA256 c657c1f7e09c916aaff569e5bd7fcbc98ec9a051fd1b63372b5bf971368cc9ba
 - RECORD_MOVEMENT_BLOCKER — diagram-reviewed; event roles: ed, community, ward, coordinator, officer
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:288
@@ -1161,7 +1161,7 @@ Source-contract SHA256: d57735d4b5495fa2448328829854a7d33b6a098ba8a582b2aca1cce6
 - STEP_BACK_STAGE — diagram-reviewed; event roles: coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:501
-  Event/dispatch reference: src/components/ward-management/ward-flow-placement-events.ts:753
+  Event/dispatch reference: src/components/ward-management/ward-flow-placement-events.ts:760
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1958
 - WITHDRAW_ACCEPTANCE — diagram-reviewed; event roles: coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
@@ -1491,7 +1491,7 @@ Source-contract SHA256: d57735d4b5495fa2448328829854a7d33b6a098ba8a582b2aca1cce6
 - RELEASE_AND_REOPEN_SEARCH — diagram-reviewed; event roles: coordinator, ward
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:570
-  Event/dispatch reference: src/components/ward-management/ward-flow-placement-events.ts:815
+  Event/dispatch reference: src/components/ward-management/ward-flow-placement-events.ts:822
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1959
 - CLEAR_EXPECT_FLAG — diagram-reviewed; event roles: ward, coordinator, ed, community
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
