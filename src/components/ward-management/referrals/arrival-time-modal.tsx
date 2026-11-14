@@ -1,5 +1,6 @@
 "use client";
 
+import { arrivalTimingIsLate } from "@/components/ward-management/ward-arrival-timing";
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { CircleAlert, Clock, ShieldCheck, X } from "lucide-react";
 import {
@@ -29,14 +30,11 @@ import { TYPED_TEXT_NOT_KEPT } from "@/components/ward-management/ward-flow-demo
 import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 /**
- * Late when an arrival plan exists, now is more than the late-arrival grace period past that
- * time, and the person has not been marked arrived. Reads only fields already on the movement.
+ * Late by D-221's one rule (`ward-arrival-timing.ts`): the ward ETA, else the booking estimate, plus
+ * the signed grace; never once arrived, delivered, diverted or closed.
  */
 export function isArrivalLate(movement: Movement, now: number): boolean {
-  const estimatedArrivalAt = movement.arrivalDetails?.estimatedArrivalAt;
-  if (estimatedArrivalAt === undefined) return false;
-  if (movement.stage === "arrived") return false;
-  return now > estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES;
+  return arrivalTimingIsLate(movement, now);
 }
 
 export function arrivalModeLabel(mode: ArrivalMode | undefined): string {

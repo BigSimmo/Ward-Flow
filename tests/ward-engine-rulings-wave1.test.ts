@@ -178,8 +178,11 @@ describe("late arrival notices", () => {
     expect(after.rejections).toEqual([]);
     const updated = after.movements.find((candidate) => candidate.id === movementId)!;
     expect(updated.arrivalLateNotifiedAt).toBe(NOW);
-    expect(after.notices.filter((notice) => notice.kind === "arrival_late_referrer")).toHaveLength(1);
-    expect(after.notices.filter((notice) => notice.kind === "arrival_late_ward")).toHaveLength(1);
+    // D-221: the seed's own late journey already has its pair; count this journey's only.
+    const mine = (state: WardFlowState, kind: string) =>
+      state.notices.filter((notice) => notice.kind === kind && notice.about.movementId === movementId);
+    expect(mine(after, "arrival_late_referrer")).toHaveLength(1);
+    expect(mine(after, "arrival_late_ward")).toHaveLength(1);
 
     const again = wardFlowReducer(after, {
       type: "EVALUATE_ARRIVAL_LATENESS",
@@ -187,7 +190,8 @@ describe("late arrival notices", () => {
       now: NOW + 10,
       movementId,
     });
-    expect(again.notices.filter((notice) => notice.kind === "arrival_late_referrer")).toHaveLength(1);
+    expect(mine(again, "arrival_late_referrer")).toHaveLength(1);
+    expect(again.notices).toBe(after.notices);
   });
 });
 

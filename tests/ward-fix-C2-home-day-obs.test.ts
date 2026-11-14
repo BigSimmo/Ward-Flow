@@ -85,7 +85,8 @@ describe("2.2 Home keeps a planned step whose time has passed (Past planned time
     expect(NOW - estimate).toBeGreaterThanOrEqual(passedAfter);
     const inboxHas = (state: WardFlowState, now: Instant) =>
       buildActionInbox(state.movements, now, state.units).some(
-        (item) => item.movementId === "WF-015" && item.title.startsWith("Booking estimate passed"),
+        // D-221: the Past ETA row (P068), then the Late arrival row once the grace has passed.
+        (item) => item.id === "eta-passed-WF-015" || item.id === "arrival-late-WF-015",
       );
     const homeHas = (state: WardFlowState, now: Instant) =>
       rowsAt(state, now).some((row) => row.kind === "transport" && row.id.startsWith("transport:WF-015:"));

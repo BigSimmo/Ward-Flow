@@ -73,7 +73,7 @@ describe("arrivalTiming: minutes from the ward ETA", () => {
     expect(timing.state).toBe(state);
     expect(arrivalTimingIsLate(journey({ wardEta: ETA }), ETA + minutes)).toBe(state === "late");
     if (timing.state === "none" || timing.state === "diverted") throw new Error("expected a timed state");
-    expect(timing).toMatchObject({ eta: ETA, pastAt: ETA + 10, lateAt: ETA + 60, source: "ward" });
+    expect(timing).toMatchObject({ eta: ETA, pastAt: ETA + 10, lateAt: ETA + 60, lateFrom: ETA + 61, source: "ward" });
   });
 });
 

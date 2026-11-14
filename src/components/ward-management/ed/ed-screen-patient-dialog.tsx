@@ -9,7 +9,7 @@ import { formatInstantWithDay, splitDuration } from "@/components/ward-managemen
 import type { Movement } from "@/components/ward-management/ward-model";
 import { NAME_NOT_RECORDED } from "@/components/ward-management/ward-patient-resolver";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
-import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { arrivalTimingPhrase } from "@/components/ward-management/ward-arrival-timing";
 import {
   arrivalEtaLabel,
   arrivalModeLabel,
@@ -189,8 +189,7 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
                 role="status"
                 data-testid={`ward-ed-drawer-arrival-late-${selectedPatient.id}`}
               >
-                Arrival late — more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past the estimated ward time. Not marked
-                arrived.
+                {arrivalTimingPhrase(selectedPatient, now)}. Not marked arrived.
               </p>
             ) : null}
             {canSetArrivalPlan(selectedPatient) ? (

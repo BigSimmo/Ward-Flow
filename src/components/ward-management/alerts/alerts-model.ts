@@ -59,6 +59,9 @@ const KIND_PREFIXES: [AlertKind, string][] = [
   ["hold", INBOX_CATEGORIES.bed_pull_expired.idPrefix],
   ["transport", INBOX_CATEGORIES.transport_awaiting_departure.idPrefix],
   ["transport", INBOX_CATEGORIES.transport_booking_estimate_passed.idPrefix],
+  // D-221 (14 Nov 2026): a late arrival and a diversion open their own journey, as transport rows do.
+  ["transport", INBOX_CATEGORIES.arrival_late.idPrefix],
+  ["transport", INBOX_CATEGORIES.transport_diverted.idPrefix],
   ["planned", INBOX_CATEGORIES.planned_arrival_overdue.idPrefix],
   // L1 (site review, 12 Oct 2026): the arrival and discharge notification rows the Tasks badge
   // counts, so Alerts "Now" and the badge agree.
@@ -198,16 +201,18 @@ const ALERT_KIND_LABELS: Record<AlertKind, string> = {
 };
 
 /**
- * The condition's short name for one row. The passed booking estimate shares the "transport" kind
- * (and so its "Chase transport" action) but names its own condition: it also applies once the
- * transport has left, so "Transport not yet left" would be wrong (P068, Josh's wording).
+ * The condition's short name for one row. Past ETA, Late arrival and Transport diverted share the
+ * "transport" kind (and so its action, which opens the journey) but name their own condition: they
+ * also apply once the transport has left, so "Transport not yet left" would be wrong (P068, D-221).
  */
 export function alertKindLabel(id: string): string | undefined {
   const kind = alertKindOf(id);
   if (kind === undefined) return undefined;
-  return id.startsWith(INBOX_CATEGORIES.transport_booking_estimate_passed.idPrefix)
-    ? "Booking estimate passed"
-    : ALERT_KIND_LABELS[kind];
+  // D-221: the P068 row now reads the expected time (ward ETA, else booking) up to the late minute.
+  if (id.startsWith(INBOX_CATEGORIES.transport_booking_estimate_passed.idPrefix)) return "Past ETA";
+  if (id.startsWith(INBOX_CATEGORIES.arrival_late.idPrefix)) return "Late arrival";
+  if (id.startsWith(INBOX_CATEGORIES.transport_diverted.idPrefix)) return "Transport diverted";
+  return ALERT_KIND_LABELS[kind];
 }
 
 /** Remove the legacy movement reference from presentation, preserving the recorded detail. */
@@ -326,6 +331,9 @@ export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAct
     case "hold":
       return { kind: "release", label: "Release pulled bed" };
     case "transport":
+      // D-221: a diverted journey has nothing to chase; its pulled bed is released on the journey.
+      if (item.id.startsWith(INBOX_CATEGORIES.transport_diverted.idPrefix))
+        return { kind: "link", label: "Open journey", href: ownMovementHref };
       return { kind: "link", label: "Chase transport", href: ownMovementHref };
     case "planned":
       // Wards cannot open Capacity. Open the booking ward's own supported list without putting

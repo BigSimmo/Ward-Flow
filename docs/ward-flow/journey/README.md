@@ -362,3 +362,5 @@ Source digests were re-reviewed file by file. Each cited line was found again by
 - `governance-registers.tsx`: the Review list leaves out History lines (`isReviewableEvent`). The `REVIEW_AUDIT_EVENT` dispatch did not move.
 
 After `build/history` was merged into the phase 2 integration branch (14 Nov 2026), each cited line in the files both sides changed was found again by its text and only lines and digests were re-recorded. `deskCommand` now asks `stampedRole` (built on `recordedRole`) for every desk, so the server and the demo's routing point record the same role.
+
+After the late-arrival main line (without the held server sweep) was merged into the phase 2 integration branch (14 Nov 2026), the late side's command models were kept with this branch's notes added back. Each cited line was found again by its text, except five `ward-access-state.ts` citations (`RECORD_LEGAL_FORM_CODE`, `EXTEND_BROADCAST_ALERT`, `ADD_BROADCAST_ALERT_UNITS`, `RAISE_PULL_NOW`, `RECORD_SUPPORT_NOTIFICATION`), whose place checks moved to the shared place-rule table; they now cite its one call (`placeRefusal`), as this branch already did.

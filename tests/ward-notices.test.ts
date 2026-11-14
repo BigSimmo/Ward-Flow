@@ -54,9 +54,18 @@ const NOW = NOW_ANCHOR;
 // why `Addressee.role` imports `WardFlowRole` instead of retyping its members.
 const ALL_ROLES = Object.keys(WARD_FLOW_ROLE_LABELS) as WardFlowRole[];
 
+// D-221: late-arrival notices store themselves (the seed's late journey has its pair, and a booking
+// estimate schedules one at the save). This file is about decision notices, so the seed starts
+// without the seed's own pair, and the assertions below count decision notices beside any new one.
+const isLate = (notice: Notice) => notice.kind === "arrival_late_referrer" || notice.kind === "arrival_late_ward";
+
 function seeded(): WardFlowState {
-  return seedWardFlowState();
+  const seed = seedWardFlowState();
+  return { ...seed, notices: seed.notices.filter((notice) => !isLate(notice)) };
 }
+
+const lateNotices = (notices: readonly Notice[]) => notices.filter(isLate);
+const otherNotices = (notices: readonly Notice[]) => notices.filter((notice) => !isLate(notice));
 
 function noticesTo(state: WardFlowState, role: WardFlowRole, placeId?: string): Notice[] {
   return state.notices.filter((notice) => notice.to.role === role && notice.to.placeId === placeId);
@@ -311,7 +320,9 @@ describe("assertion 1 — each decision in §1.3's table raises the notice(s) it
 
   it("CANCEL_TRANSPORT notifies BOTH the officer and the receiving ward", () => {
     let state = transportBooked(pulled(acceptedInPrinciple(referred(seeded()))));
-    const before = state.notices.length;
+    // D-221: the booking estimate scheduled a late pair, unraised; cancelling the job withdraws it.
+    expect(lateNotices(state.notices)).toHaveLength(2);
+    const before = otherNotices(state.notices).length;
     state = wardFlowReducer(state, {
       type: "CANCEL_TRANSPORT",
       role: "coordinator",
@@ -320,8 +331,9 @@ describe("assertion 1 — each decision in §1.3's table raises the notice(s) it
       reason: "provider_unavailable",
     });
     expect(state.rejections).toEqual([]);
-    expect(state.notices).toHaveLength(before + 2);
-    const raised = state.notices.slice(before);
+    expect(lateNotices(state.notices)).toEqual([]);
+    expect(otherNotices(state.notices)).toHaveLength(before + 2);
+    const raised = otherNotices(state.notices).slice(before);
     const toOfficer = raised.find((notice) => notice.kind === "transport_cancelled_officer");
     const toWard = raised.find((notice) => notice.kind === "transport_cancelled_ward");
     expect(toOfficer?.to).toEqual({ role: "officer" });
@@ -520,7 +532,7 @@ describe("assertion 5 — buildActionInbox's output is byte-for-byte identical b
       movementId: MOVEMENT_ID,
       reason: "patient_no_longer_coming",
     });
-    expect(after.notices.length).toBeGreaterThan(state.notices.length); // not vacuous
+    expect(otherNotices(after.notices).length).toBeGreaterThan(otherNotices(state.notices).length); // not vacuous
     expect(after.units).not.toBe(state.units); // sanity: the release really did change units
     expect(buildActionInbox(after.movements, NOW, after.units)).toEqual(before);
   });
@@ -529,7 +541,7 @@ describe("assertion 5 — buildActionInbox's output is byte-for-byte identical b
     const state = referred(seeded());
     const before = buildActionInbox(state.movements, NOW, state.units);
     const after = declined(state);
-    expect(after.notices.length).toBeGreaterThan(state.notices.length); // not vacuous
+    expect(otherNotices(after.notices).length).toBeGreaterThan(otherNotices(state.notices).length); // not vacuous
     expect(after.units).toBe(state.units);
     expect(buildActionInbox(after.movements, NOW, after.units)).toEqual(before);
   });
@@ -538,7 +550,7 @@ describe("assertion 5 — buildActionInbox's output is byte-for-byte identical b
     const state = referred(seeded());
     const before = buildActionInbox(state.movements, NOW, state.units);
     const after = acceptedInPrinciple(state);
-    expect(after.notices.length).toBeGreaterThan(state.notices.length); // not vacuous
+    expect(otherNotices(after.notices).length).toBeGreaterThan(otherNotices(state.notices).length); // not vacuous
     expect(after.units).toBe(state.units);
     expect(buildActionInbox(after.movements, NOW, after.units)).toEqual(before);
   });
@@ -555,7 +567,7 @@ describe("assertion 5 — buildActionInbox's output is byte-for-byte identical b
       referralId: referral.id,
       unitId: "scgh-adult-open",
     });
-    expect(after.notices.length).toBeGreaterThan(state.notices.length); // not vacuous
+    expect(otherNotices(after.notices).length).toBeGreaterThan(otherNotices(state.notices).length); // not vacuous
     // The extended pin: `movements` and `units` — buildActionInbox's only two inputs — are the
     // SAME reference after a notice-raising event that has no reason to touch either.
     expect(after.movements).toBe(state.movements);
@@ -573,7 +585,7 @@ describe("assertion 5 — buildActionInbox's output is byte-for-byte identical b
       movementId: MOVEMENT_ID,
       reason: "provider_unavailable",
     });
-    expect(after.notices.length).toBeGreaterThan(state.notices.length); // not vacuous
+    expect(otherNotices(after.notices).length).toBeGreaterThan(otherNotices(state.notices).length); // not vacuous
     expect(after.units).toBe(state.units);
     expect(buildActionInbox(after.movements, NOW, after.units)).toEqual(before);
   });
@@ -620,7 +632,7 @@ describe("assertion 7 — reducer purity: the same (state, event) twice produces
     // The walk to a booked transport already raises one notice of its own (ACCEPT_IN_PRINCIPLE) —
     // `before` isolates the two CANCEL_TRANSPORT raises from that earlier one.
     const state = transportBooked(pulled(acceptedInPrinciple(referred(seeded()))));
-    const before = state.notices.length;
+    const before = otherNotices(state.notices).length;
     const event = {
       type: "CANCEL_TRANSPORT" as const,
       role: "coordinator" as const,
@@ -630,7 +642,7 @@ describe("assertion 7 — reducer purity: the same (state, event) twice produces
     };
     const first = wardFlowReducer(state, event);
     const second = wardFlowReducer(state, event);
-    expect(first.notices).toHaveLength(before + 2);
+    expect(otherNotices(first.notices)).toHaveLength(before + 2);
     expect(second.notices).toEqual(first.notices);
   });
 });

@@ -2,6 +2,7 @@
 // the counts, the Needs you items and the hero chips. Split out of `ed-screen.tsx` unchanged (fix
 // list 2.5 and 9.6, 15 Oct 2026). A plain function, not a hook: `EdScreen` calls it after its early
 // return, exactly where this code used to run.
+import { arrivalTiming, arrivalTimingPhrase } from "@/components/ward-management/ward-arrival-timing";
 import { currentLegalDueAt, currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
 import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
 import { isUnderAForm } from "@/components/ward-management/ed/ed-home-derivations";
@@ -19,7 +20,6 @@ import {
   ED_REFERRED_NOT_SEEN_MINUTES,
   ED_SEVERE_PRESSURE_WAIT_MINUTES,
   isLongWait,
-  LATE_ARRIVAL_GRACE_MINUTES,
   LONG_WAIT_MINUTES,
   LONG_WAIT_TEXT,
   OPERATIONAL_DEFAULT_LABEL,
@@ -462,16 +462,17 @@ export function deriveEdScreen({
         onAction: () => setSelectedPatientId(m.id),
       });
     }
-    if (isArrivalLate(m, now) && m.arrivalDetails?.estimatedArrivalAt !== undefined) {
-      const estimatedArrivalAt = m.arrivalDetails.estimatedArrivalAt;
+    // D-221: the one arrival-timing rule and phrase (ward ETA, else the booking estimate).
+    const arrival = arrivalTiming(m, now);
+    if (arrival.state === "late") {
       priorityFlags.push({
         tone: "danger",
-        kind: "Arrival late",
+        kind: "Late arrival",
         recordId: m.id,
         personName: flagPatientInfo.formalName,
         meta: `${m.cohort} · ${m.sex}`,
-        why: `Estimated ward time was ${arrivalEtaLabel(estimatedArrivalAt, now)}. More than ${LATE_ARRIVAL_GRACE_MINUTES} minutes have passed (${OPERATIONAL_DEFAULT_LABEL}) and they have not been marked arrived.`,
-        when: `late ${splitDuration(Math.max(now - (estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES), 0))}`,
+        why: `${arrivalTimingPhrase(m, now)}. Not marked arrived.`,
+        when: `late ${splitDuration(Math.max(now - arrival.lateAt, 0))}`,
         actionLabel: "Update arrival plan",
         onAction: () => setArrivalPlanOpenFor(m.id),
       });

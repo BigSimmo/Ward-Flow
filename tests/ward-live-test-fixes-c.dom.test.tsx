@@ -49,11 +49,14 @@ describe("WF-49 created-by on the patient record", () => {
   });
 });
 
-describe("overdue arrival follows a ward ETA only", () => {
-  it("never reports a booking estimate as overdue", () => {
+describe("overdue arrival follows the one arrival-timing rule", () => {
+  // D-221 item 1 (Josh, 14 Nov 2026) reverses the earlier ward-ETA-only rule: a booking estimate
+  // reads late on the same grace as a ward ETA.
+  it("reports a booking estimate as late, as it does a ward ETA", () => {
     const booked = { transport: { estimatedAt: 100 } } as unknown as Parameters<typeof pastWardEta>[0];
     expect(expectedArrival(booked)).toEqual({ at: 100, booked: true });
-    expect(pastWardEta(booked, 10_000)).toBe(false);
+    expect(pastWardEta(booked, 10_000)).toBe(true);
+    expect(pastWardEta(booked, 160)).toBe(false);
     const ward = { arrivalDetails: { estimatedArrivalAt: 100 } } as unknown as Parameters<typeof pastWardEta>[0];
     expect(pastWardEta(ward, 10_000)).toBe(true);
   });

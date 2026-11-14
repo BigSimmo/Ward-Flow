@@ -19,7 +19,8 @@ import type { Movement, Notice } from "@/components/ward-management/ward-model";
  */
 
 const ETA = 11 * 60 + 5; // 11:05 am
-const LATE_AT = ETA + 60; // 12:05 pm
+// The first minute the row reads "Late arrival" (12:06 pm): the notice is raised at this same minute.
+const LATE_AT = ETA + 61;
 const SAVED = ETA - 40;
 
 type Job = NonNullable<Movement["transport"]>;
@@ -168,8 +169,8 @@ describe("re-arming on a new ETA", () => {
     const newEta = now + 15;
     const second = save(first.notices, first.movement, journey({ wardEta: newEta }), now);
     expect(second.plan.cancel).toEqual([]);
-    expect(late(second.notices).map((notice) => notice.raisedAt)).toEqual([LATE_AT, LATE_AT, newEta + 60, newEta + 60]);
-    expect(second.movement.arrivalLateNotifiedAt).toBe(newEta + 60);
+    expect(late(second.notices).map((notice) => notice.raisedAt)).toEqual([LATE_AT, LATE_AT, newEta + 61, newEta + 61]);
+    expect(second.movement.arrivalLateNotifiedAt).toBe(newEta + 61);
     expect(new Set(second.notices.map((notice) => notice.id)).size).toBe(4);
   });
 
@@ -270,10 +271,10 @@ describe("clearing: arrival, transport arrived unconfirmed, diversion, closure",
 });
 
 describe("across midnight", () => {
-  it("an 11:45 pm ETA is raised at 12:45 am the next day, and its words say so", () => {
+  it("an 11:45 pm ETA is raised at 12:46 am the next day, and its words say so", () => {
     const eta = 23 * 60 + 45;
     const { notices } = save([], undefined, journey({ wardEta: eta }), eta - 30);
-    expect(late(notices).map((notice) => notice.raisedAt)).toEqual([MINUTES_PER_DAY + 45, MINUTES_PER_DAY + 45]);
+    expect(late(notices).map((notice) => notice.raisedAt)).toEqual([MINUTES_PER_DAY + 46, MINUTES_PER_DAY + 46]);
     expect(notices[0]!.sentence).toBe(
       "Arrival is more than 60 minutes past the estimate (11:45 pm yesterday) and they have not arrived.",
     );

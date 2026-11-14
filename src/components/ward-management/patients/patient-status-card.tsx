@@ -20,7 +20,8 @@ import { referralState } from "@/components/ward-management/ward-referrals";
 import { isOwnStay } from "./patient-now-adapter";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { bedHold, PULL_NO_LIMIT_RECORDED } from "@/components/ward-management/ward-bed-hold";
-import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { arrivalTiming, arrivalTimingWords } from "@/components/ward-management/ward-arrival-timing";
+import { formatClockAmPmWithDay } from "@/components/ward-management/ward-clock-am-pm";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { legalStatusTextIsInvoluntary } from "@/components/ward-management/ward-support-notifications";
 import { hasCurrentLegalMismatch, LEGAL_MISMATCH_WARNING } from "@/components/ward-management/ward-stay-legal";
@@ -630,7 +631,10 @@ function statusFor(
   if (mode === "transit" && movement) {
     const job = movement.transport && movement.transport.cancelledAt === undefined ? movement.transport : undefined;
     const etaAt = movement.arrivalDetails?.estimatedArrivalAt ?? job?.estimatedAt;
-    const late = etaAt !== undefined && now > etaAt + LATE_ARRIVAL_GRACE_MINUTES;
+    // D-221: the one arrival-timing rule and phrase (B2d-Q-2: am/pm with its day, never "24:59").
+    const timing = arrivalTiming(movement, now);
+    const timingWords = arrivalTimingWords(timing, now);
+    const late = timing.state === "late";
     return {
       tone: late ? "danger" : "info",
       verdict: ctx.acceptedUnitName ? `Moving to ${ctx.acceptedUnitName}` : "Moving",
@@ -682,13 +686,13 @@ function statusFor(
           value:
             etaAt === undefined
               ? "ETA not recorded"
-              : late
-                ? `Late, due ${clockOn(etaAt, now)}`
-                : `Due ${clockOn(etaAt, now)}`,
+              : (timingWords?.tag ?? `Due ${formatClockAmPmWithDay(etaAt, now)}`),
           sub:
             etaAt === undefined
               ? "Typed by the booker or the ward"
-              : `Flags late at ${formatInstantWithDay(etaAt + LATE_ARRIVAL_GRACE_MINUTES, now)}`,
+              : timing.state === "due"
+                ? `Late at ${formatClockAmPmWithDay(timing.lateAt, now)}`
+                : (timingWords?.line ?? `ETA ${formatClockAmPmWithDay(etaAt, now)}`),
           action: {
             kind: "button",
             label: etaAt === undefined ? "Set arrival time" : "Update arrival",

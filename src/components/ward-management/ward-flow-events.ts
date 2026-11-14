@@ -2276,11 +2276,19 @@ export type WardFlowEvent =
       paperExpiresAt?: Instant;
     }
   | {
-      /** Raise late-arrival notices when past estimated arrival by more than an hour. */
+      /**
+       * Bring a journey's stored late-arrival notices up to date now (D-221): a backfill for
+       * journeys saved before notices were scheduled at the save.
+       */
       type: "EVALUATE_ARRIVAL_LATENESS";
       role: WardFlowRole;
       now: Instant;
       movementId: string;
+      /**
+       * X1b-5 (D-221 item 7): set only by the server's five-minute sweep, never by a desk. History
+       * reads it as "Raised automatically" rather than naming a desk.
+       */
+      automatic?: true;
     }
   | {
       /** Release a held bed and reopen the search in one action. */

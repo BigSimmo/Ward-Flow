@@ -115,6 +115,7 @@ export type AuditActor = {
   /** The ward desk's own ward, or the ward a coordinator acted for. */
   actingUnitId: string | null;
   actingTeamId?: string;
+  /** `system`: raised automatically by the server, with no desk (D-221 item 7, X1b-5). */
   attribution: "declared-prototype-role" | "desk-session" | "system";
   /** desk-session: the desk's place. */
   scope?: WardAccessScope;
@@ -554,6 +555,9 @@ function typedAuditCategory(event: WardFlowEvent): AuditCategory | null {
 const FLOW_ROLES = Object.keys(WARD_FLOW_ROLE_LABELS) as WardFlowRole[];
 
 function auditActor(state: WardFlowState, event: WardFlowEvent): AuditActor {
+  // X1b-5 (D-221 item 7): the server's five-minute sweep raises due late notices with no desk.
+  if (event.type === "EVALUATE_ARRIVAL_LATENESS" && event.automatic === true)
+    return { role: null, actingUnitId: null, attribution: "system" };
   const desk = eventDesk(event);
   if (desk) return deskActor(state, event, desk);
   const role = enumValue(FLOW_ROLES, event.role);

@@ -10,12 +10,7 @@ import { useDeskActingWard } from "../ward-desk-acting-ward";
 import type { Movement } from "../ward-model";
 import { countryExtensionEligible } from "../ward-legal-forms";
 import { RELEASE_PULL_REASONS, changeReasonLabels, type ReleasePullReason } from "../ward-change-reasons";
-import {
-  CONTINUATION_FORM_CODES,
-  isArrivalLate,
-  isLegalClockFormCode,
-  leaveBedNeedsOpenWarning,
-} from "../ward-legal-clock";
+import { CONTINUATION_FORM_CODES, isLegalClockFormCode, leaveBedNeedsOpenWarning } from "../ward-legal-clock";
 import { perthDateTimeLocal } from "../ward-clock";
 import { legalFormTimeOrderProblem } from "../ward-legal-form-time-order";
 import { resolveSubjectPatient } from "../ward-patient-resolver";
@@ -43,7 +38,6 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
   const expectationGate = gate(
     movement.expectFlag && movement.expectFlag.clearedAt === undefined ? "CLEAR_EXPECT_FLAG" : "RAISE_EXPECT_FLAG",
   );
-  const lateGate = gate("EVALUATE_ARRIVAL_LATENESS");
   const leaveGate = gate("EVALUATE_LEAVE_BED_WARNINGS");
   const mismatchGate = gate("FLAG_LEGAL_MISMATCH");
   const buzzGate = gate("SEND_WARD_BUZZ");
@@ -75,16 +69,6 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
     setLocalError(null);
   };
   const open = !movement.closure;
-  const lateArrivalUnavailable =
-    !lateGate.allowed ||
-    !open ||
-    !!movement.arrivalLateNotifiedAt ||
-    !isArrivalLate(movement.arrivalDetails?.estimatedArrivalAt, movement.stage, now, !open);
-  const lateArrivalReason = !open
-    ? "This movement is closed."
-    : movement.arrivalLateNotifiedAt
-      ? "Late arrival has already been reviewed."
-      : "No overdue arrival plan to review right now.";
   const leaveWarningUnavailable =
     !leaveGate.allowed || !leaveBeds.some((b) => leaveBedNeedsOpenWarning(b.confirmedAt, b.openWarningAt, now));
   const leaveWarningReason = "No leave bed currently needs an open warning review.";
@@ -143,29 +127,8 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
           </button>
         )}
         {open && expectationGate.note}
-        <button
-          type="button"
-          aria-disabled={lateArrivalUnavailable ? "true" : undefined}
-          aria-describedby={lateArrivalUnavailable ? `workflow-late-arrival-reason-${movement.id}` : undefined}
-          title={lateArrivalUnavailable ? lateArrivalReason : undefined}
-          {...lateGate.buttonProps}
-          onClick={
-            lateArrivalUnavailable
-              ? ignoreUnavailableActivation
-              : () => {
-                  before();
-                  raise("EVALUATE_ARRIVAL_LATENESS", { movementId: movement.id });
-                }
-          }
-        >
-          Review late arrival
-        </button>
-        {lateGate.note}
-        {lateArrivalUnavailable ? (
-          <span id={`workflow-late-arrival-reason-${movement.id}`} className="sr-only">
-            {lateArrivalReason}
-          </span>
-        ) : null}
+        {/* D-221 item 8: no "Review late arrival" button. Late notices store themselves when the
+            time is saved; the event stays only for older records and the server's sweep. */}
         <button
           type="button"
           aria-disabled={leaveWarningUnavailable ? "true" : undefined}

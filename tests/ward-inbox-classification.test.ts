@@ -95,6 +95,24 @@ function movementsCoveringEveryCategory(): Movement[] {
       const base = wardMovements.find((movement) => movement.id === "WF-005")!;
       return { ...base, id: "WF-T10", transport: { ...base.transport!, estimatedAt: NOW - 13 } };
     })(),
+    // arrival_late (D-221): the same job more than the signed grace past its booking estimate.
+    (() => {
+      const base = wardMovements.find((movement) => movement.id === "WF-005")!;
+      return { ...base, id: "WF-T11", transport: { ...base.transport!, estimatedAt: NOW - 90 } };
+    })(),
+    // transport_diverted (D-221): a collected journey diverted elsewhere, its bed still pulled.
+    (() => {
+      const base = wardMovements.find((movement) => movement.id === "WF-005")!;
+      return {
+        ...base,
+        id: "WF-T12",
+        stage: "moving" as const,
+        transport: {
+          ...base.transport!,
+          diversion: { at: NOW - 5, by: "officer" as const, place: "Synthetic General ED", reason: "synthetic" },
+        },
+      };
+    })(),
     // Stream A, 9 Oct 2026: the three decision-target categories, each long past its default.
     movementFrom("WF-T04", {
       stage: "destination_review",
