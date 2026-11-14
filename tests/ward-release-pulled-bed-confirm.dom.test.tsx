@@ -311,7 +311,7 @@ describe("the ward corridor's bed releases follow the desk's own role", () => {
         <WardArrivalsCorridor
           unit={unit}
           accepted={ending === "diverted" ? [movement] : []}
-        heldAfterStop={ending === "stopped" ? [movement] : []}
+          heldAfterStop={ending === "stopped" ? [movement] : []}
           now={NOW}
           resolvePatientIdentity={identity}
           releaseOpenFor={undefined}
