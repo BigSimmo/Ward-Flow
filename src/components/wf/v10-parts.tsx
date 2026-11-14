@@ -285,7 +285,7 @@ export function WardCapacityRow({
     "data-testid": "wf-ward-capacity-row",
   };
   return onSelect ? (
-    <button type="button" {...shared} onClick={onSelect} aria-label={spoken} aria-pressed={selected}>
+    <button type="button" {...shared} data-print-show="" onClick={onSelect} aria-label={spoken} aria-pressed={selected}>
       {body}
     </button>
   ) : (
@@ -365,6 +365,7 @@ export function GroupHead({
       aria-controls={controls}
       onClick={onToggle}
       data-testid="wf-group-head"
+      data-print-show=""
     >
       {inner}
     </button>
