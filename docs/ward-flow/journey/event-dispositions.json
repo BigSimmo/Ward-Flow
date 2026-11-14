@@ -67,8 +67,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 425,
-          "sha256": "10920be0e533b539301bea40bbd9de2093b519da8f9a63fd11b1d5216260f0db"
+          "line": 426,
+          "sha256": "c5f7df03283d36a98eb941ca9bbb6b5742fb5b57908d4f0b57ed68da365dbdd8"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -102,7 +102,8 @@
       "scope": "Ward or coordinator; actingUnitId must equal the absence record’s unit. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.",
       "guards": [
         "An absence record must exist for the admission",
-        "Step must be listed, not already recorded, and not earlier than absence.since"
+        "Step must be listed, not already recorded, and not earlier than absence.since",
+        "Return order made is refused for a voluntary stay (movement, else converted booking, else patient record) that neither the stay nor the patient record shows as involuntary (A3-13; screens hide it via absenceStepsFor)"
       ],
       "effects": [
         "Appends {step,at} to absentWithoutLeave.steps; does not end absence, release a bed or contact anyone"
@@ -110,8 +111,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 477,
-          "sha256": "10920be0e533b539301bea40bbd9de2093b519da8f9a63fd11b1d5216260f0db"
+          "line": 478,
+          "sha256": "c5f7df03283d36a98eb941ca9bbb6b5742fb5b57908d4f0b57ed68da365dbdd8"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -240,8 +241,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 317,
-          "sha256": "10920be0e533b539301bea40bbd9de2093b519da8f9a63fd11b1d5216260f0db"
+          "line": 318,
+          "sha256": "c5f7df03283d36a98eb941ca9bbb6b5742fb5b57908d4f0b57ed68da365dbdd8"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -2547,8 +2548,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 732,
-          "sha256": "10920be0e533b539301bea40bbd9de2093b519da8f9a63fd11b1d5216260f0db"
+          "line": 756,
+          "sha256": "c5f7df03283d36a98eb941ca9bbb6b5742fb5b57908d4f0b57ed68da365dbdd8"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
@@ -4508,8 +4509,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 225,
-          "sha256": "10920be0e533b539301bea40bbd9de2093b519da8f9a63fd11b1d5216260f0db"
+          "line": 226,
+          "sha256": "c5f7df03283d36a98eb941ca9bbb6b5742fb5b57908d4f0b57ed68da365dbdd8"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
