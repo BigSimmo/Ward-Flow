@@ -678,10 +678,7 @@ export function EdIndex() {
           </PhoneSheet>
         ) : null}
 
-        <WardPrototypeFooter
-          testId="ed-index-governance"
-          note="Invented figures under real WA hospital names."
-        />
+        <WardPrototypeFooter testId="ed-index-governance" note="Invented figures under real WA hospital names." />
       </main>
     </div>
   );
