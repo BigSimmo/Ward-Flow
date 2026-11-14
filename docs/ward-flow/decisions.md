@@ -241,6 +241,8 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-216](#d-216-the-36-sign-off-recommendations-from-the-stress-test-pack-14-november-2026)                                                              | The 36 sign-off recommendations                                                        | Active                                           |
 | [D-217](#d-217-hand-check-answers-medical-trips-and-undo-after-referring-14-november-2026)                                                              | Hand check answers: medical trips and Undo                                             | Active                                           |
 | [D-218](#d-218-no-legal-disclaimer-wording-on-screens-14-november-2026)                                                                                 | No legal disclaimer wording on screens                                                 | Active                                           |
+| [D-224](#d-224-explanatory-tips-open-on-tap-14-november-2026)                                                                                           | Explanatory tips open on tap                                                           | Active                                           |
+| [D-225](#d-225-design-fix-phasing-14-november-2026)                                                                                                     | Design fix phasing                                                                     | Active                                           |
 
 ---
 
@@ -2696,4 +2698,19 @@ is inferred.
 - **Unchanged:** D-93 and D-70 behaviour. A legal time is still shown only as the time a person entered from the form, never as a countdown, and nothing works out a Mental Health Act period. Warnings that ask someone to act stay, with their words: the legal status mismatch warning, "Check authorisation", "Save Form N anyway", the real-identifier note, and the "within 1h", "within 3h" and "passed" band words beside their colours. "Not recorded" stays, because it is a state, not a disclaimer. The one synthetic data line in the footer stays (hard rule 1).
 - **Boundary:** wording only. No clinical value, threshold or saved field changes.
 
-The next free number is D-219.
+## D-224. Explanatory tips open on tap (14 November 2026)
+
+- **Date:** 14 November 2026, 10:44 PM AWST (14:44 UTC). **Decided by:** Josh, agreeing the design list and phasing in the Ward Flow project.
+- **Decision:** every explanatory tip is a small ⓘ that opens with a tap, a click or the keyboard, and closes with Escape, a tap outside or a second press. Hover-only tips are not used, because they do not work on phones or iPads. The kit part is `InfoTip` (`src/components/wf/info-tip.tsx`); a definition or scope that would otherwise be a sentence on screen goes in one (D-218).
+- **Boundary:** design only. No clinical value, threshold or saved field changes.
+
+## D-225. Design fix phasing (14 November 2026)
+
+- **Date:** 14 November 2026, 10:44 PM AWST (14:44 UTC). **Decided by:** Josh, agreeing the design list and phasing ("yes to all recommendations" at 15:02 UTC covered the plan's defaults).
+- **Decision:** the design fixes from the master stress test pack are built in four lanes (A kit, style and print; B Home, alerts, Statistics, TV and demo controls; C beds, legal, ED and ward desk; D movement, patient page and forms), safety and clarity items first, before the 22 November freeze. Speed work (a per-screen speed budget, the demo seed out of the first download, splitting the heaviest screens, first rows first), field types declared once, dropping one change safely and the wording style list come after the 27 November demo, once a speed target is signed. "Pressing a key line copies the number" is dropped. Plan: `master-stress-test/pack/design-build-plan.md`.
+- **Defaults taken from the plan:** "Record gender" sits beside "Not recorded"; the clock is named "Board time"; one review word, the one the list uses.
+- **Boundary:** design and wording only. No clinical value, threshold or saved field changes.
+
+Numbers D-219 to D-223 belong to the figures and timing thread: D-219 is reserved by open PR #1673. D-220 is reserved by open PR #1673. D-221 is reserved by open PR #1673. D-222 is reserved by open PR #1673. D-223 is reserved by open PR #1673.
+
+The next free number is D-226.
