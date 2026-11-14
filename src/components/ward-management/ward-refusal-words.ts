@@ -78,7 +78,11 @@ function gateRefusalText(reason: string): string | undefined {
     const minutes = /(\d+) min/u.exec(detail)?.[1];
     return refusalLine(
       minutes === undefined ? `${ward}'s bed count is out of date` : `Bed count ${ageWords(Number(minutes))} old`,
-      "Ask the ward to confirm its count, then try again",
+      // A placement can still go ahead with a recorded reason, so the line names that route too. A
+      // planned admission's booking has no reason field yet (X2-4), so it is not offered there.
+      /This placement needs a recorded override reason/u.test(reason)
+        ? "Add an override reason, or ask the ward to confirm its count"
+        : "Ask the ward to confirm its count, then try again",
     );
   }
   if (gate === "allocatable_bed") {

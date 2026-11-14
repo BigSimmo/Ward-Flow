@@ -12,10 +12,8 @@ describe("wardSafeRejectionReason", () => {
       "FSH Older Adult is not eligible for movement WF-009 — failed gate capacity_freshness: " +
       `Last confirmed 308 min ago, stale. This placement ${OVERRIDE_REASON_REQUIRED}.`;
     const text = wardSafeRejectionReason(reason);
-    expect(text).toBe(
-      "FSH Older Adult fails the capacity freshness check. Last confirmed 308 min ago, stale. " +
-        `This placement ${OVERRIDE_REASON_REQUIRED}.`,
-    );
+    // R-BEDS-14 (design lane C, 14 Nov 2026): one line, why then what next, keeping the override route.
+    expect(text).toBe("Bed count 5 h old. Add an override reason, or ask the ward to confirm its count.");
     expect(text).not.toMatch(/_|—|WF-009/u);
   });
 
@@ -24,9 +22,7 @@ describe("wardSafeRejectionReason", () => {
       wardSafeRejectionReason(
         "Ward A cannot accept referral R-1 — failed gate allocatable_bed: 0 allocatable. This is not something a recorded reason can override.",
       ),
-    ).toBe(
-      "Ward A fails the allocatable bed check. 0 allocatable. This is not something a recorded reason can override.",
-    );
+    ).toBe("Ward A has no bed free now. Ask the ward to confirm its count, or choose another ward.");
   });
 
   // CodeRabbit review on #584: the bed designation gate's detail ("female only") reached the ward.

@@ -1,5 +1,6 @@
 "use client";
 
+import { LEAVE_BED_OPEN_WARNING_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { useEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import Link from "next/link";
@@ -77,6 +78,9 @@ const LEAVE_ROWS = 8;
  * recorded and ended from the ward's own page, which an overdue or absent row opens (Open ward).
  * Print uses the browser's own print, as the other lists do. Synthetic records only.
  */
+/** The signed leave prompt's hours (AK-V-53), for the "Over 24 h" chip (R-BEDS-7). */
+const OPEN_WARNING_HOURS = LEAVE_BED_OPEN_WARNING_MINUTES / 60;
+
 export function LeaveScreen() {
   const zone = useClockZoneLabel();
   const { leaveBeds, units, admissions, bedReleases, movements, referrals, resolvePatientIdentity, dayZero } =
@@ -169,8 +173,12 @@ export function LeaveScreen() {
       </Hero>
       {/* On paper only: what the list holds and when, as the other printed lists say. */}
       <p className={styles.printScope} data-testid="ward-leave-print-scope">
-        {needsActionOnly ? "Overdue or absent only" : filter === "over_24h" ? "Over 24 h only" : "Everyone on leave"} ·
-        As at {formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone })} · Identifiers may be included
+        {needsActionOnly
+          ? "Overdue or absent only"
+          : filter === "over_24h"
+            ? `Over ${OPEN_WARNING_HOURS} h only`
+            : "Everyone on leave"}{" "}
+        · As at {formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone })} · Identifiers may be included
       </p>
       <Card aria-labelledby="ward-leave-list" className={styles.listCard}>
         <CardHead
@@ -192,7 +200,7 @@ export function LeaveScreen() {
                 onPressedChange={(pressed) => setFilter(pressed ? "over_24h" : "all")}
                 count={over24h.length}
               >
-                Over 24 h
+                Over {OPEN_WARNING_HOURS} h
               </FilterChip>
               <ListPrintButton iconOnly={isPhone} disabled={shown.length === 0} testId="ward-leave-print" />
             </>
@@ -204,7 +212,7 @@ export function LeaveScreen() {
               {needsActionOnly
                 ? "Nobody is overdue or absent."
                 : filter === "over_24h"
-                  ? "Nobody has been away over 24 h."
+                  ? `Nobody has been away over ${OPEN_WARNING_HOURS} h.`
                   : "Nobody is on leave."}
             </p>
           ) : (
