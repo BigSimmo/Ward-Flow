@@ -1,0 +1,75 @@
+/* D-224 tap-to-open ⓘ. Tokens only. The glyph is quiet; the press area meets 24 px on a desk and
+   40 px on a touch screen without moving the words around it. */
+.wrap {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.trigger {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  min-height: 24px;
+  margin: -4px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-14) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.trigger:hover,
+.trigger[aria-expanded="true"] {
+  color: var(--wf-ink-1);
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--wf-focus-ring, var(--focus));
+  outline-offset: 1px;
+}
+
+@media (pointer: coarse) {
+  .trigger {
+    min-width: 40px;
+    min-height: 40px;
+    margin: -12px -8px;
+  }
+}
+
+.tip {
+  pointer-events: auto;
+  width: max-content;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border-radius: var(--wf-r-sm);
+  font: 400 var(--wf-fs-13, var(--wf-fs-12)) / 1.4 var(--wf-font);
+  color: var(--wf-surface);
+  background: color-mix(in srgb, var(--wf-ink-1) 94%, transparent);
+  box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--wf-ink-1) 45%, transparent);
+  overflow-wrap: anywhere;
+}
+
+:global(html.dark) .tip,
+:global(.night) .tip {
+  color: var(--wf-ink-1);
+  background: color-mix(in srgb, var(--wf-track) 97%, transparent);
+  box-shadow:
+    0 0 0 1px var(--wf-line-2),
+    0 8px 20px -6px color-mix(in srgb, var(--wf-canvas) 60%, transparent);
+}
+
+@media (forced-colors: active) {
+  .tip {
+    border: 1px solid CanvasText;
+  }
+}
+
+@media print {
+  .trigger,
+  .tip {
+    display: none !important;
+  }
+}
