@@ -1832,7 +1832,7 @@
       {
         "path": "src/components/ward-management/ward-flow-events.ts",
         "line": 1,
-        "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+        "sha256": "1e4337ae828d672fd591f108219bf094bdf436a88f8f77d5805116fd2c92196a"
       },
       {
         "path": "src/components/ward-management/ward-flow-placement-events.ts",
@@ -1857,12 +1857,12 @@
       {
         "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
         "line": 429,
-        "sha256": "ed07eb7b5f859c05ca303483e967aacbd73cb2a9ff21f2bef5311db32cd51d0e"
+        "sha256": "a77aa058cd2483d19672de56e711180b22884b9f87e9e9e11412a1cb8fca3239"
       },
       {
         "path": "src/components/ward-management/ward-flow-reducer.ts",
-        "line": 1195,
-        "sha256": "aad0dd053bd79e35e7761f53bbd4a8c7eeb93b13b89a7304dea271c5cdb3ebfd"
+        "line": 1197,
+        "sha256": "9556f623aa84cb945d713371eb8b574e2fbf4aa004311a690a6d246ea5d7888d"
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",

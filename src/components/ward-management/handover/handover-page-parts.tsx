@@ -26,7 +26,7 @@ export function HandoverHistory({
   now,
   unitId,
 }: {
-  signOffs: readonly { at: Instant; by: WardFlowRole; unitId?: string; network?: true }[];
+  signOffs: readonly { at: Instant; by: WardFlowRole; unitId?: string; network?: true; openChecks?: number }[];
   meetings: { at: Instant; minutes: number }[];
   preparedAt: Instant | null;
   now: Instant;
@@ -53,6 +53,8 @@ export function HandoverHistory({
             <span>
               Handover signed off as {record.by === "coordinator" ? "bed coordinator" : record.by} ·{" "}
               {handoverSignOffPlace(record, units)}
+              {/* D-179 Question 6: the checks still open when signed. */}
+              {record.openChecks ? ` · ${record.openChecks} check${record.openChecks === 1 ? "" : "s"} open` : null}
             </span>
           </li>
         ))}

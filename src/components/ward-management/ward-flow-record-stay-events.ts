@@ -530,6 +530,11 @@ export function reduceRecordedStayEvent(
       // Q67: a sign-off is one ward's sheet or the whole network's, never both.
       if (event.network === true && event.unitId !== undefined)
         return reject(state, event, "a sign-off names one ward or the whole network, not both");
+      if (
+        event.openChecks !== undefined &&
+        (!Number.isInteger(event.openChecks) || event.openChecks < 0 || event.openChecks > 50)
+      )
+        return reject(state, event, "open checks must be a whole number");
       decision.outcome = "accepted";
       decision.reasonCode = "none";
       const recorded: HandoverSignOffRecord = {
@@ -537,6 +542,7 @@ export function reduceRecordedStayEvent(
         by: event.role,
         ...(event.unitId === undefined ? {} : { unitId: event.unitId }),
         ...(event.network === true ? { network: true } : {}),
+        ...(event.openChecks ? { openChecks: event.openChecks } : {}),
       };
       const existing = Array.isArray(state.handoverSignOffs) ? state.handoverSignOffs : [];
       return { ...state, handoverSignOffs: [...existing, recorded] };
