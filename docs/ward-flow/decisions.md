@@ -2566,7 +2566,7 @@ is inferred.
 
 ## D-210. Mechanics and clock audit fixes (14 November 2026)
 
-- **Date:** 14 November 2026, 9:53 AM AWST (01:53 UTC). D-208 is claimed by open PR #1663. **Decided by:** Josh, in the "Fix app mechanics and clock faults" thread: "Yes to all recommendations. Except ED will alert the ED team screens please and clinician roles. fix everything in 1 PR", answering the ten questions of the mechanics and clock audit (`audit-handover/mechanics-clock-audit-2026-11-14.md`).
+- **Date:** 14 November 2026, 9:53 AM AWST (01:53 UTC). D-208 is claimed by open PR #1663. D-209 is claimed by open PR #1668. **Decided by:** Josh, in the "Fix app mechanics and clock faults" thread: "Yes to all recommendations. Except ED will alert the ED team screens please and clinician roles. fix everything in 1 PR", answering the ten questions of the mechanics and clock audit (`audit-handover/mechanics-clock-audit-2026-11-14.md`).
 - **Decision:**
   1. **Offline saves** record the time the person acted. The engine accepts it only when it is not later than the server's time and not earlier than the record's last change; history shows "entered offline, sent HH:MM". Otherwise the save is refused and the person is asked to redo it.
   2. **A typed legal expiry that passes** for a person admitted on a form raises Act now on the ward desk, a coordinator alert and the Forms counts. For a person still in ED, the alert also reaches the ED team screens (ED desk) and the ED clinician role, as well as the coordinator.
