@@ -206,7 +206,7 @@ function movementVerdict(
           gates: [],
         };
   }
-  return { tone: "warn", short: "Needs a bed", title: "Placement request active across network wards.", gates: [] };
+  return { tone: "warn", short: "No ward yet", title: "Placement request active across network wards.", gates: [] };
 }
 
 /** Who the patient is collected from, by where the movement started. */

@@ -12,7 +12,7 @@ import { HEALTH_SERVICES, type HealthService } from "@/components/ward-managemen
 import { wardBedsInUse } from "@/components/ward-management/ward-occupancy";
 import { allEmergencyDepartments, siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 
-import { LONG_WAIT_HOURS, edJourneyWaitFigures as edWaitFigures } from "./statistics-ed-waits";
+import { LONG_WAIT_HOURS, edStatisticsFigures } from "./statistics-ed-waits";
 import { HeroTool } from "./statistics-hero-tools";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { STATISTICS_COMPARE_HREF, STATISTICS_EDS_HREF, statisticsSectionById } from "./statistics-sections";
@@ -164,7 +164,7 @@ function OperationalServicesIndex() {
     const sum = (pick: (row: (typeof rows)[number]) => number) => rows.reduce((total, row) => total + pick(row), 0);
     const waits = departments
       .filter((department) => siteCodes.has(department.siteCode))
-      .map((department) => edWaitFigures(movements, department.id, now));
+      .map((department) => edStatisticsFigures(movements, department.id, now));
     const beds = sum((row) => row.unit.beds);
     const occupied = sum((row) => row.states.occupied);
     const inUse = sum((row) => row.inUse);
@@ -287,7 +287,7 @@ function ServicesIndexView({
             <HeroStat value={totalBeds} label="Beds" />
             <HeroStat
               value={shown(totalWaiting)}
-              label={<ShortLabel short="Open movements" full="Open ED movements" />}
+              label={<ShortLabel short="Journeys open" full="ED journeys open" />}
             />
           </>
         ),
@@ -338,7 +338,7 @@ function ServicesIndexView({
                     {entry.departments === 0 ? <span className={phone.word}>No ED</span> : shown(entry.waiting)}
                   </span>
                 }
-                time={entry.departments === 0 ? undefined : "open ED movements"}
+                time={entry.departments === 0 ? undefined : "ED journeys open"}
                 href={entry.openable === false ? undefined : serviceStatisticsHref(entry.service)}
               />
             ))}
@@ -414,7 +414,7 @@ function ServicesIndexView({
                       now={<Now>{`${entry.wards} ${wardsWord(entry.wards)}`}</Now>}
                     >
                       <p className={redesign.outside}>No inpatient beds recorded</p>
-                      <Facts items={[{ value: ed, label: "open ED movements" }]} />
+                      <Facts items={[{ value: ed, label: "ED journeys open" }]} />
                       {pastLine}
                     </Tile>
                   );
@@ -549,13 +549,13 @@ function ServicesIndexView({
             <StatCard
               id="ed-waits"
               className={index.anchorTarget}
-              title="Open ED movements, by service"
+              title="ED journeys open, by service"
               meta={`${shown(totalWaiting)} open`}
               data-testid="ward-statistics-services-ed-waits"
             >
               <div className={redesign.bars}>
                 <BarList
-                  label="Open ED movements, by originating health service"
+                  label="ED journeys open, by originating health service"
                   track
                   rows={services.map((entry) => ({
                     id: entry.service,

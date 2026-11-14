@@ -97,7 +97,7 @@ function mapHrefs() {
     .querySelector<SVGGElement>(`[data-site="${siteCode}"]`);
   fireEvent.click(node!);
   const beds = hrefs(view());
-  fireEvent.click(screen.getByRole("radio", { name: /^Open ED movements/ }));
+  fireEvent.click(screen.getByRole("radio", { name: /^ED journeys open/ }));
   return [...beds, ...hrefs(view())];
 }
 

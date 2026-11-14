@@ -7,7 +7,7 @@ import { openBedsNow, bedsPendingPreparation } from "../ward-bed-availability";
 import { dischargeDateCoverage } from "./statistics-ward-discharge-dates";
 import { readyNotYetGone } from "./statistics-ward-ready";
 import { wardReferralTally } from "./statistics-ward-referrals";
-import { ED_WAIT_BANDS, edJourneyWaitBands, edJourneyWaitFigures, edWaitFigures } from "./statistics-ed-waits";
+import { ED_WAIT_BANDS, edStatisticsFigures, edWaitBands } from "./statistics-ed-waits";
 import { declinesByReason } from "./statistics-derivations";
 import { occupancyText } from "./statistics-occupancy";
 import { pilotMeasures, type DurationSummary } from "../reports/pilot-measures";
@@ -257,31 +257,31 @@ export function executiveEdSummary(
   input: ExecutivePrivateInput,
   release: ExecutiveCountRelease,
 ) {
-  const figures = edJourneyWaitFigures(input.movements, ed.id, input.now);
-  const physical = edWaitFigures(input.movements, ed.id, input.now);
+  // D-220 item 3: `onTheList` is ED journeys open (transit included); the bands, the long waits, the
+  // median and the longest wait count the people still waiting in ED.
+  const figures = edStatisticsFigures(input.movements, ed.id, input.now);
   const c = (suffix: string, value: number) => release.count(`ed:${ed.id}:${suffix}`, value);
   const total = c("waiting", figures.onTheList);
-  const bands = edJourneyWaitBands(input.movements, ed.id, input.now).map((band) => ({
+  const physicalWaiting = c("physicalWaiting", figures.waitingInEd);
+  release.subset(total, physicalWaiting);
+  const bands = edWaitBands(input.movements, ed.id, input.now).map((band) => ({
     label: band.label,
     count: c(`band:${band.label}`, band.count),
   }));
   release.partition(
-    total,
+    physicalWaiting,
     bands.map((band) => band.count),
   );
   const urgent = c("urgent", figures.urgent);
   const unplaced = c("unplaced", figures.unplaced);
   const over24h = c("over24h", figures.over24h);
   const over48h = c("over48h", figures.over48h);
-  const over8h = c(
-    "over8h",
-    figures.waitingMovements.filter((entry) => entry.waitMinutes >= ED_SEVERE_PRESSURE_WAIT_MINUTES).length,
-  );
+  const over8h = c("over8h", figures.over8h);
   release.subset(total, urgent);
   release.subset(total, unplaced);
-  release.subset(total, over24h);
+  release.subset(physicalWaiting, over24h);
   release.subset(over24h, over48h);
-  release.subset(total, over8h);
+  release.subset(physicalWaiting, over8h);
   release.subset(over8h, over24h);
   if (ED_WAIT_BANDS.some((band) => band.fromMinutes === ED_SEVERE_PRESSURE_WAIT_MINUTES))
     release.partition(
@@ -295,14 +295,7 @@ export function executiveEdSummary(
       over24h,
       bands.filter((_, index) => ED_WAIT_BANDS[index]!.fromMinutes >= LONG_WAIT_MINUTES).map((band) => band.count),
     );
-  const physicalWaiting = c("physicalWaiting", physical.onTheList);
-  release.subset(total, physicalWaiting);
-  const waits = figures.waitingMovements.map((entry) => entry.waitMinutes).sort((a, b) => a - b);
-  const medianWaitMinutes = !waits.length
-    ? null
-    : waits.length % 2
-      ? waits[Math.floor(waits.length / 2)]!
-      : (waits[waits.length / 2 - 1]! + waits[waits.length / 2]!) / 2;
+  const medianWaitMinutes = median(figures.waitingMovements.map((entry) => entry.waitMinutes));
   const declines = declinesByReason([...figures.allDepartmentMovements]);
   const declineTotal = c("declines", declines.totalCount);
   const byReason = declines.tallies.map((entry) => ({
@@ -348,7 +341,7 @@ export function executiveEdSummary(
     medianWaitMinutes,
     bands,
     physicalWaiting,
-    physicalLongestWaitMinutes: physical.longestWait?.waitMinutes ?? null,
+    physicalLongestWaitMinutes: figures.longestWait?.waitMinutes ?? null,
     stillInEd,
     inTransit,
     legalClockBreachedCount,
@@ -690,11 +683,11 @@ export function executiveServices(
     );
     const waiting = c(
       "waiting",
-      ownEds.reduce((sum, ed) => sum + edJourneyWaitFigures(input.movements, ed.id, input.now).onTheList, 0),
+      ownEds.reduce((sum, ed) => sum + edStatisticsFigures(input.movements, ed.id, input.now).onTheList, 0),
     );
     const over24h = c(
       "over24h",
-      ownEds.reduce((sum, ed) => sum + edJourneyWaitFigures(input.movements, ed.id, input.now).over24h, 0),
+      ownEds.reduce((sum, ed) => sum + edStatisticsFigures(input.movements, ed.id, input.now).over24h, 0),
     );
     release.partition(
       waiting,
@@ -921,10 +914,8 @@ export function executiveJourney(
     "planned:tomorrow",
     planned.filter((row) => dayOf(row.expectedDischargeAt!) === dayOf(input.now) + 1).length,
   );
-  const heldUp = c("planned:blocked", planned.filter((row) => row.blockReason !== null).length);
   release.subset(plannedTotal, plannedToday);
   release.subset(plannedTotal, plannedTomorrow);
-  release.subset(plannedTotal, heldUp);
   const left = input.admissions.filter((row) => row.leftAt !== null && dayOf(row.leftAt) === dayOf(input.now));
   const community = c(
     "left:community",
@@ -972,9 +963,9 @@ export function executiveJourney(
       tone: "info" as const,
       figure: countFigure(plannedTotal),
       breakdown: [
+        // D-220: no Held up row of its own; Held up is the by-tomorrow figure, on Capacity.
         breakdown("Today", plannedToday),
         breakdown("Tomorrow", plannedTomorrow),
-        breakdown("Held up, in the next 7 days", heldUp),
       ],
     },
     {

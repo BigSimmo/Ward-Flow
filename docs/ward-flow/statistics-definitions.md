@@ -1,6 +1,6 @@
 # Statistics definitions (draft)
 
-_Updated 2026-11-14 - Windows table added (figures, D-220); first draft 2026-11-10 for master audit list item M121; Documentation owns._
+_Updated 2026-11-14 - Windows table and D-220 figure names added (figures); first draft 2026-11-10 for master audit list item M121; Documentation owns._
 
 **Status: DRAFT for Josh.** One row per published figure: what it counts, what it divides by, what it
 shows when there are too few to count, and the one place it is worked out. Where the code has more
@@ -19,6 +19,18 @@ screens agree with each other; this page and that test prove the shared number i
 | Delayed bed-days          | Minutes from ready-since (or arrival, if later) to leaving, within the period | (a sum, shown in days)           | A stay with no ready-since date, or cleared, counts nothing. The whole delay goes under the reason recorded now              | `delayedBedDaysByReason` (`ward-delayed-discharge.ts`)                                                                                                                                                                                                                                    |
 | Readmitted within 28 days | Arrivals of a person discharged from a ward in the 28 days before             | (a count; one per arrival)       | 0 is a real count. A prompt to look, not a performance measure                                                               | `readmissionsArrivedIn` and `createReadmissionIndex` (`ward-readmission.ts`)                                                                                                                                                                                                              |
 | Frequent presenter        | ED presentations with a full date in the 12 months up to and including today  | (a count against the threshold)  | A month-only date ("Mar 2026") is not counted. Threshold from `ward-clinical-values.ts` (`frequentPresenterEdPresentations`) | `edPresentationsInWindow` and `frequentPresenterTag` (`ward-patient-care-plans.ts`)                                                                                                                                                                                                       |
+
+## Figure names and populations (D-220, 14 November 2026)
+
+| Figure                                                             | Counts                                                                                                      | One implementation                                                                                                               |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Need a bed                                                         | Open movements from any origin not yet holding a bed (no ward yet, or accepted with no bed pulled or named) | `needsABed` (`figures/bed-demand.ts`); Capacity, the forecast and the bed meeting sheet                                          |
+| No ward yet                                                        | Open movements no ward has accepted                                                                         | `noWardYet` (`figures/bed-demand.ts`); Home's first Flow stage, the TV's ED lane                                                 |
+| Waiting in ED                                                      | People still in an emergency department awaiting a bed                                                      | `waitingInEds` (`ward-shared-figures.ts`)                                                                                        |
+| ED journeys open                                                   | Every open ED movement, people in transit included                                                          | `openEdJourneys` (`ward-shared-figures.ts`); per ED, `edStatisticsFigures(...).onTheList`                                        |
+| Over 8 h, over 24 h in ED; the wait bands; median and longest wait | People waiting in ED, from each movement's start in the ED                                                  | `edStatisticsFigures` and `edWaitBands` (`statistics/statistics-ed-waits.ts`); the signed-in report through `executiveEdSummary` |
+| Held up                                                            | Bed releases with a blocker, due by tomorrow (D-191 item 5)                                                 | `heldUpDueByTomorrow` (`ward-held-up.ts`)                                                                                        |
+| Held up · any date                                                 | Current stays with a blocker, whatever the date                                                             | `blockedDischargesByReason` (`statistics/statistics-derivations.ts`)                                                             |
 
 ## Windows
 

@@ -22,7 +22,7 @@ import { OCCUPIED_CAPTION, ON_THE_WARD_NOUN } from "@/components/ward-management
 
 import { StatisticsEdSwarm, type EdSwarmRow } from "./statistics-ed-swarm";
 import { occupancyText } from "./statistics-occupancy";
-import { LONG_WAIT_HOURS, edJourneyWaitFigures as edWaitFigures } from "./statistics-ed-waits";
+import { LONG_WAIT_HOURS, edStatisticsFigures } from "./statistics-ed-waits";
 import { StatCard, useStatisticsLive } from "./statistics-hero";
 import { FlushRow, Follow } from "./statistics-layout";
 import styles from "./statistics-journey-view.module.css";
@@ -215,12 +215,8 @@ export function journeyStages({
       count: planned.length,
       breakdown: [
         { label: "Today", value: plannedOn(0) },
+        // D-220: no Held up row of its own; Held up is the by-tomorrow figure, on Capacity.
         { label: "Tomorrow", value: plannedOn(1) },
-        {
-          label: "Held up, in the next 7 days",
-          value: planned.filter((admission) => admission.blockReason !== null).length,
-          tone: warnIf(planned.filter((admission) => admission.blockReason !== null).length),
-        },
       ],
     },
     {
@@ -432,7 +428,7 @@ function OperationalJourneyView({
     () =>
       allEmergencyDepartments()
         .map((ed) => {
-          const figures = edWaitFigures(movements, ed.id, now);
+          const figures = edStatisticsFigures(movements, ed.id, now);
           return {
             id: ed.id,
             // The short ED name ("SCGH", "Midland"), so the name fits the field's label column.
@@ -681,8 +677,8 @@ function JourneyPresentation({
           <StatCard
             id="journey-waiting"
             icon={Clock}
-            title="Open ED movements"
-            meta={`${statisticsCountText(totalWaiting)} open movements from ${waitingSummary?.length ?? waitingRows.length} ${(waitingSummary?.length ?? waitingRows.length) === 1 ? "ED" : "EDs"}`}
+            title="Waiting in ED"
+            meta={`${statisticsCountText(totalWaiting)} ED journeys open from ${waitingSummary?.length ?? waitingRows.length} ${(waitingSummary?.length ?? waitingRows.length) === 1 ? "ED" : "EDs"}`}
             data-testid="ward-statistics-journey-waiting"
           >
             <CardBody>
@@ -706,13 +702,13 @@ function JourneyPresentation({
                   </ul>
                 </>
               ) : waitingRows.length === 0 ? (
-                <p className={styles.empty}>No open ED movements are recorded.</p>
+                <p className={styles.empty}>Nobody waiting in ED.</p>
               ) : (
                 <StatisticsEdSwarm
                   rows={waitingRows}
                   labelWidth={128}
                   testId="ward-statistics-journey-swarm"
-                  label="Each open ED movement, by originating department and time since opening"
+                  label="Each person waiting in ED, by originating department and time since opening"
                 />
               )}
               <SrOnly>

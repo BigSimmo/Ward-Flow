@@ -281,8 +281,9 @@ export function EdBedSearchTvView({
     },
     {
       id: "bed",
-      title: "Needs a bed",
-      hint: "Reviewed, no ward has said yes",
+      // D-220: the same population as Home's "No ward yet" tab; "Need a bed" is Capacity's figure.
+      title: "No ward yet",
+      hint: "Find a bed",
       tone: "warning",
       cards: step("bed").map((row) => edCard(row, row.band === "over" ? late(row) : row.referral)),
     },

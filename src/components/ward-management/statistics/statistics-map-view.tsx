@@ -49,12 +49,7 @@ import { allEmergencyDepartments, siteByCode } from "@/components/ward-managemen
 import { wardStatistics } from "@/components/ward-management/ward-statistics";
 
 import { blockedDischargesByReason } from "./statistics-derivations";
-import {
-  LONG_WAIT_HOURS,
-  VERY_LONG_WAIT_HOURS,
-  edJourneyWaitFigures as edWaitFigures,
-  type EdWaitingEntry,
-} from "./statistics-ed-waits";
+import { LONG_WAIT_HOURS, VERY_LONG_WAIT_HOURS, edStatisticsFigures, type EdWaitingEntry } from "./statistics-ed-waits";
 import { StatisticsEdSwarm } from "./statistics-ed-swarm";
 import { StatCard, useStatisticsLive } from "./statistics-hero";
 import { FlushRow, Follow } from "./statistics-layout";
@@ -76,6 +71,7 @@ import {
 import { useCanOpenHref } from "../shell/ward-access";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { WARD_TIME_ZONE } from "@/lib/ward-time-zone";
+import { HELD_UP_ANY_DATE_LABEL } from "@/components/ward-management/ward-held-up";
 
 export type MapLens = "beds" | "ed" | "dis" | "stay";
 
@@ -231,7 +227,7 @@ export function siteFigures({
     const beds = siteUnits.reduce((sum, unit) => sum + unit.beds, 0);
     const occupied = wards.reduce((sum, ward) => sum + ward.occupied, 0);
     const ed = eds.find((department) => department.siteCode === code);
-    const edFigures = ed ? edWaitFigures(movements, ed.id, now) : null;
+    const edFigures = ed ? edStatisticsFigures(movements, ed.id, now) : null;
     const stay = siteUnits.length > 0 ? pooledStay(admissions, unitIds, now) : { meanStay: null, longStays: 0 };
     return [
       {
@@ -342,7 +338,7 @@ const lensAria = (site: PresentedSiteFigures, lens: MapLens): string => {
       exactStatisticsCount(site.edOver24) !== 0
         ? `, ${statisticsCountText(site.edOver24)} past ${LONG_WAIT_HOURS} hours`
         : "";
-    return `${site.name} ED: ${statisticsCountText(site.edWaiting)} open ED movements${longest}${over}`;
+    return `${site.name} ED: ${statisticsCountText(site.edWaiting)} ED journeys open${longest}${over}`;
   }
   if (lens === "dis")
     return `${site.name}: ${statisticsCountText(site.dischargedToday)} discharged today, ${statisticsCountText(site.dueToday)} due today${exactStatisticsCount(site.blocked) !== 0 ? `, ${statisticsCountText(site.blocked)} blocked` : ""}`;
@@ -358,9 +354,9 @@ const LENSES: ReadonlyArray<{ id: MapLens; label: string; listTitle: string; key
   },
   {
     id: "ed",
-    label: "Open ED movements",
-    listTitle: "Open ED movements by ED",
-    key: `Ring: longest time since opening, to ${VERY_LONG_WAIT_HOURS}h. Centre: open ED movements. Triangle: over ${VERY_LONG_WAIT_HOURS}h.`,
+    label: "ED journeys open",
+    listTitle: "ED journeys open by ED",
+    key: `Ring: longest wait in ED, to ${VERY_LONG_WAIT_HOURS}h. Centre: ED journeys open. Triangle: over ${VERY_LONG_WAIT_HOURS}h.`,
   },
   {
     id: "dis",
@@ -554,7 +550,7 @@ function MapPresentation({
   const lensInfo = LENSES.find((item) => item.id === lens) ?? LENSES[0]!;
   const lensItems: ChoiceItem<MapLens>[] = [
     { id: "beds", label: "Beds", count: network.ready },
-    { id: "ed", label: "Open ED movements", count: statisticsCountText(network.edWaiting) },
+    { id: "ed", label: "ED journeys open", count: statisticsCountText(network.edWaiting) },
     {
       id: "dis",
       label: "Discharge",
@@ -579,7 +575,7 @@ function MapPresentation({
         ]
       : lens === "ed"
         ? [
-            { value: String(statisticsCountText(network.edWaiting)), label: "Open ED movements" },
+            { value: String(statisticsCountText(network.edWaiting)), label: "ED journeys open" },
             {
               // WF-17: keep longest beside an exact open-ED count only.
               value:
@@ -602,7 +598,8 @@ function MapPresentation({
               { value: String(statisticsCountText(network.dueToday)), label: "Due today" },
               {
                 value: String(statisticsCountText(network.blocked)),
-                label: "Held up",
+                // D-220: any date; "Held up" alone is the by-tomorrow figure.
+                label: HELD_UP_ANY_DATE_LABEL,
                 tone: (exactStatisticsCount(network.blocked) ?? 0) > 0 ? "warning" : undefined,
               },
             ]
@@ -776,7 +773,7 @@ function SiteCard({ site, lens, onClose }: { site: PresentedSiteFigures; lens: M
   const edLinked = site.ed !== undefined && site.ed.openable !== false && canOpen(edStatisticsHref(site.ed.id));
   const edContent = (
     <>
-      <span className={styles.siteName}>{statisticsCountText(site.edWaiting)} open ED movements</span>
+      <span className={styles.siteName}>{statisticsCountText(site.edWaiting)} ED journeys open</span>
       <span className={styles.siteFig}>
         {(exactStatisticsCount(site.edOver48) ?? 0) > 0 ? <StatusGlyph tone="danger" size={9} /> : null}
         {exactStatisticsCount(site.edWaiting) === null
@@ -873,7 +870,7 @@ function BelowMap({
         <StatCard
           id="map-below"
           icon={Clock}
-          title="Open ED movements, by ED"
+          title="Waiting in ED, by ED"
           aside={`${aggregate.emergencyDepartments.length} EDs`}
           data-testid="ward-statistics-map-below"
         >
@@ -910,7 +907,7 @@ function BelowMap({
       <StatCard
         id="map-below"
         icon={Clock}
-        title="Open ED movements, by ED"
+        title="Waiting in ED, by ED"
         aside={`${rows.length} EDs`}
         data-testid="ward-statistics-map-below"
       >

@@ -140,7 +140,8 @@ type PriorityQueueProps = {
 /** Home flow mock-up (Q340): the five stages, in the order a person moves through them. */
 export const FLOW_STAGES = [
   { id: "referral", label: "Referral", next: "Decide" },
-  { id: "bed", label: "Needs a bed", next: "Find a bed" },
+  // D-220 (Josh, 14 Nov 2026): no ward has accepted yet. "Need a bed" is Capacity's wider figure.
+  { id: "bed", label: "No ward yet", next: "Find a bed" },
   { id: "agreed", label: "Bed agreed", next: "Pull the bed" },
   { id: "ready", label: "Ready to move", next: "Book transport" },
   { id: "moving", label: "Moving", next: "Confirm arrival" },
