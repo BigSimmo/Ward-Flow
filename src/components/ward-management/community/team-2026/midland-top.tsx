@@ -34,7 +34,10 @@ import topTitle from "@/components/ward-management/shell/page-top-title.module.c
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import ward from "@/components/ward-management/ward/ward.module.css";
 import type { CommunityTeamSection } from "../community-screen-hero";
-import { DEMO_FIGURES as f } from "./midland-demo";
+import { perthClockTime } from "@/components/ward-management/ward-clock";
+import { CLIENTS, DEMO_FIGURES as f } from "./midland-demo";
+import { todaysMidlandContacts, useMidlandDecisions } from "./midland-decisions";
+import { useMidlandBoardMoment } from "./use-midland-board-moment";
 import { useMidlandDemo } from "./use-midland-demo";
 import top from "./midland-top.module.css";
 
@@ -109,6 +112,14 @@ export function MidlandTop({
   age,
 }: MidlandTopProps) {
   const { STAFF } = useMidlandDemo();
+  const decisions = useMidlandDecisions();
+  const lastContact = todaysMidlandContacts(decisions, useMidlandBoardMoment())[0];
+  // The newest contact recorded today, beside Record contact: its time.
+  const lastContactLine = lastContact ? `Last team contact ${perthClockTime(new Date(lastContact.at))}` : null;
+  const ctoOffCaseload = CLIENTS.filter(
+    (c) => (c.flags as readonly string[] | undefined)?.includes("cto") && c.w !== "c",
+  ).length;
+  const ctoLine = `${f.onCto} on a CTO${ctoOffCaseload > 0 ? ` · ${ctoOffCaseload} not on caseload` : ""}`;
   const duty = STAFF.find((member) => member.today === "duty");
   const counts: Partial<Record<CommunityTeamSection, number>> = {
     home: f.actNow,
@@ -125,6 +136,19 @@ export function MidlandTop({
       onClick: onRecordContact,
       testId: "community-top-record-contact",
     },
+    ...(lastContactLine
+      ? [
+          {
+            id: "last-contact",
+            label: lastContactLine,
+            node: (
+              <span className={top.lastContact} data-testid="community-top-last-contact">
+                {lastContactLine}
+              </span>
+            ),
+          },
+        ]
+      : []),
     ...(duty
       ? [
           {
@@ -297,7 +321,13 @@ export function MidlandTop({
                   subTone: "danger",
                   onClick: () => open("hospital"),
                 },
-                { id: "cto", label: "CTO reviews", value: f.ctoReviewsDue, onClick: () => open("caseload") },
+                {
+                  id: "cto",
+                  label: "CTO reviews",
+                  value: f.ctoReviewsDue,
+                  sub: ctoLine,
+                  onClick: () => open("caseload"),
+                },
               ]}
             />
           }

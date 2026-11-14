@@ -40,7 +40,7 @@ import {
 } from "@/components/wf";
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
-import { clearToMove, getStageBedflowDetail } from "./patient-now-screen-helpers";
+import { etaAndNext, getStageBedflowDetail } from "./patient-now-screen-helpers";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { CommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
 import { useState, type Dispatch, type JSX, type RefObject, type SetStateAction } from "react";
@@ -250,7 +250,9 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
               <span className={styles.v6StepMark} aria-hidden="true">
                 {stateAttr === "recorded" ? <Check size={11} strokeWidth={3} aria-hidden="true" /> : i + 1}
               </span>
-              <span className={styles.v6StepLabel}>{s.label}</span>
+              <span className={styles.v6StepLabel}>
+                {s.id === "arrived" && liveMovement?.transport?.diversion ? "Diverted" : s.label}
+              </span>
               <span className="sr-only">, {whenText}</span>
             </button>
           </li>
@@ -275,7 +277,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
     urgencyTier === undefined
       ? `over target (${targetHours}), ${TIER_NOT_RECORDED.toLowerCase()}`
       : `over T${urgencyTier} target (${targetHours})`;
-  const clear = movementTop ? clearToMove(mode, statusContext) : undefined;
+  const clear = movementTop ? etaAndNext(mode, statusContext) : undefined;
   const movementFigures =
     movementTop && clear ? (
       <span data-testid={isPhone ? "ward-patient-phone-figures" : undefined} className={styles.ptFigures}>
@@ -295,7 +297,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                   : "since opened",
               tone: overTarget ? "warning" : undefined,
             },
-            { id: "clear", value: clear.clear, unit: ` of ${clear.of}`, label: clear.label },
+            { id: "clear", value: clear.value, label: clear.label },
             ...(movementTimeLeft && !glance
               ? [
                   {

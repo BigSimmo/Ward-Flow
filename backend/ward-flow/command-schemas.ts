@@ -22,7 +22,7 @@ import { ON_BEHALF_REASON_IDS } from "../../src/components/ward-management/ward-
 const MAX_DEPTH = 8;
 const MAX_KEYS = 100;
 const MAX_ITEMS = 500;
-const MAX_TEXT = 4_000;
+export const MAX_TEXT = 4_000;
 /**
  * A referral chart's file content, which the reducer checks against the chart's byte size. This
  * bound only stops this check refusing a chart; the server's 1 MiB request limit (server.mjs) is

@@ -100,6 +100,9 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
   const bookGate = gate("BOOK_TRANSPORT");
   const cadGate = gate("RECORD_TRANSPORT_CAD");
   const cadToFollow = cadNumberToFollow(liveMovement?.transport);
+  // Desks-R3-10: a ward books only as the sending ward; for a person sent from ED the server
+  // always refuses it, so the ward is not offered the form.
+  const canBook = !(routeRole === "ward" && transportActingUnitId === undefined);
   return (mode === "held" || mode === "transit") && liveMovement ? (
     <section
       className={`${styles.sec} ${styles.transportSec}`}
@@ -130,7 +133,7 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
                 "Awaiting Transport Booking"
               )}
             </span>
-            {!showTransportForm && !isTransportBooked && (
+            {canBook && !showTransportForm && !isTransportBooked && (
               <button
                 type="button"
                 className={styles.transportActionBtn}
@@ -155,7 +158,7 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
         </p>
       )}
       {/* A34: the one transport booking form every screen uses. */}
-      {liveMovement && showTransportForm && (
+      {canBook && liveMovement && showTransportForm && (
         <div data-testid="ward-patient-transport-form" aria-busy={transportPending || undefined}>
           <TransportBookingForm
             answers={transportAnswers}

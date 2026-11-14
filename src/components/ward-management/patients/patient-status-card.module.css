@@ -538,7 +538,7 @@
   }
 
   .card[data-ph-placing] .meterGroup,
-  .card[data-ph-placing] .meta {
+  .card[data-ph-placing] .meta:not([data-hold]) {
     display: none;
   }
 

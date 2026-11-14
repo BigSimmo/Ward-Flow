@@ -62,6 +62,19 @@ export function extrasEntered(extras: PatientExtras): boolean {
 }
 
 /** Recorded sex (WT-05). "Not recorded" leaves the key absent; nothing starts chosen. */
+/** The longest text the server accepts in one field; equals `MAX_TEXT` in backend/ward-flow/command-schemas.ts. */
+export const PATIENT_TEXT_LIMIT = 4000;
+
+/** The first optional text field over the server limit, named for a refusal ("Street address is too long"). */
+export function overLimitFieldLabel(extras: PatientExtras): string | undefined {
+  for (const fold of FOLDS) {
+    for (const field of fold.fields) {
+      if (!("choice" in field) && (extras[field.key] ?? "").length > PATIENT_TEXT_LIMIT) return field.label;
+    }
+  }
+  return undefined;
+}
+
 export const SEX_UNCHOSEN = "" as const;
 export type SexChoice = RecordedSex | typeof SEX_UNCHOSEN;
 export const SEX_ITEMS: ChoiceItem<SexChoice>[] = RECORDED_SEXES.map((sex) => ({ id: sex, label: sex }));
@@ -239,6 +252,7 @@ function ExtraText({
     <Field label={spec.label} id={id} className={spec.wide ? styles.span2 : undefined} help={help}>
       <TextInput
         data-testid={id}
+        maxLength={PATIENT_TEXT_LIMIT}
         autoComplete="off"
         autoCorrect="off"
         autoCapitalize={spec.capitalize ?? "words"}
@@ -310,7 +324,7 @@ export function AddPatientMoreDetails({
   onExtra: (key: keyof PatientExtras) => (value: string) => void;
   indigenousStatus: IndigenousStatusChoice;
   onIndigenousStatus: (status: IndigenousStatusChoice) => void;
-  /** Sex and gender, drawn by the page that holds their state. */
+  /** Gender, drawn by the page that holds their state. */
   aboutPerson: ReactNode;
   aboutAdded: number;
   suburbHelp?: ReactNode;
@@ -325,12 +339,7 @@ export function AddPatientMoreDetails({
   });
   return (
     <div id={ADD_PATIENT_FOLDS_ID} className={styles.folds} data-testid="ward-add-patient-more-details">
-      <AddPatientFold
-        title="Sex and gender"
-        holds="Gender is used for bed matching"
-        added={aboutAdded}
-        {...foldProps("about")}
-      >
+      <AddPatientFold title="Gender" holds="Gender is used for bed matching" added={aboutAdded} {...foldProps("about")}>
         {aboutPerson}
       </AddPatientFold>
       {FOLDS.map((fold) => {

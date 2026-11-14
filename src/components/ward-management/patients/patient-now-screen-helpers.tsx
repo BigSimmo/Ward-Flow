@@ -70,23 +70,35 @@ export function formatTransportLegalStatus(status?: string): string {
 export type TabKey = "now" | "history" | "community" | "details" | "documents";
 
 /**
- * v10 phone movement hero: how many of the "Cannot move" cells are clear. Its own component, so the
- * status context (whose clearance handler remembers its trigger in a ref) is read as a prop rather
- * than during the screen's render.
+ * R-MOVE-8 (REG2-6): the header's one movement figure after the wait. The stage rail is the page's
+ * one progress count, so this says the ward ETA (when one exists) and the next step, never a count
+ * that changes meaning between "clear to move" and "steps done".
  */
-/**
- * How many of the status card's move conditions are clear ("0 of 3"), as the card counts them.
- * F-41 (A9-25): once the person is handover ready or moving ("transit"), the card's cells are the
- * journey's progress steps, not conditions to move, so the count is named "steps done".
- */
-export function clearToMove(
+export function etaAndNext(
   mode: PatientMode,
   context: PatientStatusContext,
-): { clear: number; of: number; label: string } {
-  const status = buildPatientStatus(mode, context);
-  return {
-    clear: status.cells.filter((cell) => cell.clear).length,
-    of: status.cells.length,
-    label: mode === "transit" ? "steps done" : "clear to move",
-  };
+): { value: string; label: string; next: string } {
+  const movement = context.movement;
+  const job = movement?.transport && movement.transport.cancelledAt === undefined ? movement.transport : undefined;
+  const etaAt = movement?.arrivalDetails?.estimatedArrivalAt ?? job?.estimatedAt;
+  let next: string;
+  if (job?.diversion !== undefined) {
+    next = "review the bed";
+  } else if (mode === "find") {
+    next = "bed agreed";
+  } else if (mode === "held") {
+    const gate = buildPatientStatus(mode, context).cells.find((cell) => !cell.clear);
+    next =
+      gate === undefined
+        ? "handover"
+        : gate.key === "bed"
+          ? "pull bed"
+          : gate.key === "clearance"
+            ? "clearance"
+            : "transport booked";
+  } else {
+    next = job?.collectedAt === undefined ? "collection" : "arrival";
+  }
+  if (job?.diversion !== undefined || etaAt === undefined) return { value: next, label: "next step", next };
+  return { value: clock(etaAt), label: `ward ETA · next: ${next}`, next };
 }
