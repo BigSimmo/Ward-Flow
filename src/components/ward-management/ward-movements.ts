@@ -511,7 +511,7 @@ const seededMovements: Movement[] = [
     // Every secure adult unit in the network has now either declined this referral or fails an
     // eligibility gate on its own (Broome has zero allocatable beds) — the search really is
     // exhausted, not just capped at three parallel referrals.
-    blocker: "No secure adult bed available across the network",
+    blocker: "No locked adult bed available across the network",
     withdrawnReferrals: [],
     unwinds: [],
     stageChanges: [],
