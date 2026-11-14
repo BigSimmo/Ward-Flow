@@ -601,7 +601,7 @@ const JOBS: readonly HowTo[] = [
     title: "Put the ward or bed meeting on a TV",
     keywords: "tv television screen display wall big screen meeting",
     answer:
-      "Use On TV on a ward's home, or Open on TV in Capacity's Bed meeting menu for the bed meeting. Open the link on the TV's browser; it is read only and shows names in full.",
+      "Use On TV on a ward's home, or Open on TV under the arrow beside Capacity's Bed meeting sheet for the bed meeting. Open the link on the TV's browser; it is read only and shows names in full.",
     desks: ["coordinator", "ward", "bed_manager"],
     // Capacity's Bed meeting menu (it holds Open on TV) for the desks that open Capacity; a ward's own page has its own.
     go: ["capacity", "home"],
@@ -610,7 +610,7 @@ const JOBS: readonly HowTo[] = [
       {
         target: { sel: '[data-testid="capacity-bed-meeting"], [data-testid="ward-open-tv"]' },
         title: "Open on TV",
-        body: "Open on TV, in Capacity's Bed meeting menu or on a ward's home, opens the large-type view for the meeting room or ward TV.",
+        body: "Open on TV, beside Capacity's Bed meeting sheet or on a ward's home, opens the large-type view for the meeting room or ward TV.",
       },
     ],
   },

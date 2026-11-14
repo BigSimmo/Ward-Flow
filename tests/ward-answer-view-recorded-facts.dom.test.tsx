@@ -76,6 +76,16 @@ describe("ward answer view: recorded facts only (CS-02)", () => {
     expect(assessment).toHaveTextContent(/\d+ of \d+ checks met; \d+ for information only\./);
   });
 
+  it.each(["sjgm-adult-open", "fsh-older-adult", "rph-adult-secure"])(
+    'words the occupancy ring "In use", never "At risk" (ruling 4, D-191) on %s',
+    (unitId) => {
+      renderAnswer(unitId, noClearance);
+      const ring = screen.getByRole("img", { name: /of beds occupied|occupancy not recorded/u });
+      expect(ring.getAttribute("aria-label")).not.toMatch(/at risk/iu);
+      expect(ring.getAttribute("aria-label")).toMatch(/In use|Not recorded/u);
+    },
+  );
+
   it("keeps the fixed narrative out of the source", () => {
     const source = readFileSync("src/components/ward-management/ward/ward-answer-view.tsx", "utf8");
     expect(source).not.toMatch(/psychomotor|Medically stabilised|Admit to \{|High-dependency observations/);

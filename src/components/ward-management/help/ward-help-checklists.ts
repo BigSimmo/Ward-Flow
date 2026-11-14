@@ -87,7 +87,7 @@ const GETTING_STARTED: readonly Checklist[] = [
   gettingStarted("getting-started-coordinator", "coordinator", [
     TAKE_THE_TOUR,
     {
-      text: "Open Home and learn Needs you: Act now, Referrals to decide and Waiting on others.",
+      text: "Open Home and learn Needs you: Act now and Referrals to decide.",
       go: "home",
     },
     {

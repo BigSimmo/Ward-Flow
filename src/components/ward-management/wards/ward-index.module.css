@@ -1145,6 +1145,12 @@
   color: var(--wf-hero-ink);
 }
 
+/* Wave 4 (D-191, notes item 11): a count label's window word (the kit's WindowWord, "· today") in
+   the hero's quiet ink. (A5-15's wrapping confirmed pill is the kit HeroPill's own two-line wrap.) */
+.figWindow[data-wf-window] {
+  color: var(--wf-hero-ink-3);
+}
+
 /* Filters and the view switch at the right end of the tab row. */
 .tabControl {
   display: inline-flex;

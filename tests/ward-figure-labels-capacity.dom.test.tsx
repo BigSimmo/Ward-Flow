@@ -51,21 +51,21 @@ describe("capacity labels say what each figure counts", () => {
     renderCapacity(false);
     const chips = within(screen.getByRole("group", { name: "Highlight wards" }));
     expect(
-      chips.getByRole("button", { name: `Any ready · ${wards(rows.filter((r) => r.ready > 0).length)}` }),
+      chips.getByRole("button", { name: `Any ready ${wards(rows.filter((r) => r.ready > 0).length)}` }),
     ).toBeInTheDocument();
     expect(
-      chips.getByRole("button", { name: `Locked ready · ${wards(rows.filter((r) => r.lockedReady > 0).length)}` }),
+      chips.getByRole("button", { name: `Locked ready ${wards(rows.filter((r) => r.lockedReady > 0).length)}` }),
     ).toBeInTheDocument();
     expect(
       chips.getByRole("button", {
-        name: `Open ready · ${wards(rows.filter((r) => r.ready - r.lockedReady > 0).length)}`,
+        name: `Open ready ${wards(rows.filter((r) => r.ready - r.lockedReady > 0).length)}`,
       }),
     ).toBeInTheDocument();
     // Every highlight chip names its noun, so none can be read as the hero's bed counts.
     const all = chips.getAllByRole("button");
     expect(all.length).toBeGreaterThan(2);
-    for (const chip of all) expect(chip.textContent).toMatch(/ · \d+ wards?$/u);
-    expect(within(screen.getByRole("list", { name: "Bed map key" })).getByText("In use")).toBeInTheDocument();
+    for (const chip of all) expect(chip.textContent).toMatch(/ \d+ wards?$/u);
+    expect(within(screen.getByRole("group", { name: "Bed map key" })).getByText("In use")).toBeInTheDocument();
   });
 
   it("Capacity phone hero says occupancy includes pulled beds", () => {
@@ -78,7 +78,7 @@ describe("capacity labels say what each figure counts", () => {
       rows.reduce((sum, row) => sum + row.pulled, 0),
       "no bed is pulled — this guard proved nothing",
     ).toBeGreaterThan(0);
-    expect(screen.getByTestId("capacity-hero-occupancy")).toHaveTextContent(/in use, including pulled beds$/u);
+    expect(screen.getByTestId("capacity-hero-occupancy")).toHaveTextContent(/In use · now, including pulled beds$/u);
   });
 
   it("Referrals band shows its total, cells that add up to it, and locked as a part", () => {

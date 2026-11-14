@@ -25,8 +25,10 @@ describe("Mismatch drawer figure", () => {
     expect(screen.getByText("7 covered by a ready bed")).toBeInTheDocument();
     expect(screen.getByText("1 more if today's discharge goes ahead")).toBeInTheDocument();
     expect(screen.getByText("5 with no bed yet")).toBeInTheDocument();
-    expect(figure).toHaveTextContent("Likely 6 short");
-    expect(figure).toHaveTextContent("Could be 7 short to 2 spare that fit");
+    // D-198: plain words, no "Likely".
+    expect(figure).toHaveTextContent("From ward dates: 6 short");
+    expect(figure).not.toHaveTextContent(/likely/iu);
+    expect(figure).toHaveTextContent("Range 7 short to 2 spare that fit");
     const dots = container.querySelectorAll('[aria-hidden="true"] > [data-kind]');
     expect(dots).toHaveLength(13);
   });

@@ -46,14 +46,18 @@ export function WindowWord({ word, of, className }: { word: CountWindow; of?: Re
       </span>
     );
   }
+  // The leading space sits outside the inline-flex box: inside it, a flex container drops it, so in
+  // running text the dot would touch the label ("Ready· now"). A flex parent drops it here too.
   return (
-    <span className={cx(styles.win, className)} data-wf-window={word}>
+    <>
       {" "}
-      <span className={styles.winSep} aria-hidden="true">
-        ·
-      </span>{" "}
-      <span>{word}</span>
-    </span>
+      <span className={cx(styles.win, className)} data-wf-window={word}>
+        <span className={styles.winSep} aria-hidden="true">
+          ·
+        </span>{" "}
+        <span>{word}</span>
+      </span>
+    </>
   );
 }
 

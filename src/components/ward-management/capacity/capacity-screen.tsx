@@ -33,15 +33,13 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import type { BedRelease } from "@/components/ward-management/ward-model";
 
 import { bedMeetingSheet } from "./bed-meeting-derivations";
-import { BedForecast } from "./capacity-bed-forecast";
 import { BedMapCards, BedMapHighlights, type Highlight } from "./capacity-bed-map-cards";
-import { ComingIn } from "./capacity-coming-in";
-import { ClosedBedsPastReview } from "./capacity-closed-beds-review";
+import { ForecastCard } from "./capacity-forecast-card";
+import { HeldUpCard } from "./capacity-held-up-rail";
 import { CapacityHero } from "./capacity-hero";
 import { useCapacityModel, type CapacityModel } from "./capacity-model";
 import { OtherSitesCounts } from "./capacity-other-sites";
 import { PhoneOverview } from "./capacity-phone-overview";
-import { CapacityIntakeWindowsCard } from "./capacity-intake-windows-card";
 import { PlannedCounts } from "./capacity-planned-counts";
 import { useSiteEdWaiting } from "./capacity-site-ed";
 import { heldUpReleases } from "./capacity-held-up";
@@ -75,15 +73,31 @@ const CapacityWardSidebar = dynamic(
     ssr: false,
   },
 );
+// Wave 4 put the forecast chart behind the Forecast card's Open, so it loads on first open too
+// (phone size limit, 13 Nov 2026).
+const BedForecast = dynamic(
+  withLoadRetry(() => import("./capacity-open-parts").then((m) => m.BedForecast)),
+  {
+    ssr: false,
+  },
+);
+// Wave 4 moved Planned moves to its own tab, which always starts closed, so its list and drawers
+// load when the tab is first chosen (phone size limit, 13 Nov 2026).
+const ComingIn = dynamic(
+  withLoadRetry(() => import("./capacity-coming-in").then((m) => m.ComingIn)),
+  {
+    ssr: false,
+  },
+);
 
 type Popup = { kind: "scenario" } | { kind: "sheet" } | { kind: "ward"; unitId: string } | { kind: "forecast" } | null;
 type PageTab = "overview" | "wards" | "planned";
 
 /**
- * Capacity (redesign approved by Josh, 31 Oct 2026). The page answers one question, "where is the
- * mismatch", never "where could this person go": the mismatch by bed type, the forecast at full
- * width, the bed map, then one row of what is coming in, the nearest ready beds and this shift's
- * checks. On a phone the same parts are three tabs. Every figure comes from the derivations in
+ * Capacity (redesign approved by Josh, 31 Oct 2026; wave 4, D-191). The page answers "where are the
+ * beds, where are the gaps, and what's blocking discharges", never "where could this person go":
+ * the gap by bed type in the hero, then the bed map with Held up and the Forecast in a rail. On a
+ * phone the Overview is three cards: Held up, Wards to check and the Forecast. Every figure comes from the derivations in
  * `capacity-model.ts`; nothing here ranks a ward for a patient.
  *
  * One component serves every desk that opens Capacity:
@@ -165,6 +179,11 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
     () => scopeToService(model, service, bedReleases),
     [model, service, bedReleases],
   );
+  // Held up · by tomorrow is ward-based, so it follows the chosen service (and a site's own wards).
+  const railReleases = useMemo(() => {
+    const ids = new Set(mapModel.networkRows.map((row) => row.unit.id));
+    return bedReleases.filter((release) => ids.has(release.unitId));
+  }, [mapModel, bedReleases]);
   // A figure that does not follow the chosen service says so, quietly.
   const networkWide = service !== null && !siteDesk;
   const sheet = useMemo(
@@ -254,6 +273,9 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
         onHighlight={setHighlight}
         // Desktop: the highlights sit at the right of the page tabs (page tops, 9 Nov 2026).
         highlightsInCard={isPhone}
+        findBed={!executive}
+        // Every service starts open on a tablet or desktop; a phone folds all but the first two.
+        foldLater={isPhone}
       />
       {siteDesk ? <OtherSitesCounts model={model} focusUnitId={focusUnitId} /> : null}
     </>
@@ -284,7 +306,6 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
           hideEmptyTypes={siteDesk}
           tvHref={tvOn && !executive ? bedMeetingTvHref({ service: tvServiceParam(service) }) : undefined}
           onSheet={() => setPopup({ kind: "sheet" })}
-          onForecast={() => setPopup({ kind: "forecast" })}
           onWard={openWard}
           onAskWard={askWard}
         />
@@ -324,39 +345,30 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
             model={mapModel}
             networkWide={networkWide}
             executive={executive}
+            heldUpReleases={railReleases}
+            onAllWards={() => chooseTab("wards")}
             onForecast={() => setPopup({ kind: "forecast" })}
             onWard={openWard}
             onAskWard={askWard}
           />
         ) : (
-          <>
-            {/* Capacity issue 2 (Josh, 3 Nov 2026): the bed map first, the forecast below it. Issue 7:
-                State bedflow is gone; it repeated the bed map. */}
-            {bedMap}
-            <BedForecast
-              model={model}
-              onTryScenario={() => setPopup({ kind: "scenario" })}
-              siteName={model.site?.name}
-              onWard={openWard}
-              onAskWard={askWard}
-              networkWide={networkWide}
-            />
-            {/* Capacity issue 6 (Josh, 3 Nov 2026): Planned moves, booked admissions and step downs in
-                one card, full width. Josh's fifth notes (8 Nov 2026): the row under it is gone; the
-                shift figures are in the hero and an unchanged count on its ward card. */}
-            {planned}
-            {/* Item 6 (10 Nov 2026): beds closed past their review time; hidden when there are none. */}
-            <ClosedBedsPastReview
-              units={mapModel.networkRows.map((row) => row.unit)}
-              now={mapModel.now}
-              executive={executive}
-            />
-            <CapacityIntakeWindowsCard
-              units={mapModel.networkRows.map((row) => row.unit)}
-              now={now}
-              onWard={openWard}
-            />
-          </>
+          // Wave 4 (D-191, ruling 8): a shorter Overview. The bed map, with Held up · by tomorrow and
+          // the Forecast card in a rail; the forecast chart and expected occupancy sit behind the
+          // Forecast card's Open, and the Planned card lives on its own tab. Closed beds past review
+          // and tonight's intake windows are said on each ward's note line.
+          <div className={styles.overview}>
+            <div className={styles.overviewMain}>{bedMap}</div>
+            <div className={styles.rail}>
+              {executive ? null : <HeldUpCard releases={railReleases} now={now} />}
+              <ForecastCard
+                model={model}
+                networkWide={networkWide}
+                onOpen={() => setPopup({ kind: "forecast" })}
+                onWard={openWard}
+                onAskWard={askWard}
+              />
+            </div>
+          </div>
         )}
         <WardPrototypeFooter
           testId="ward-capacity-governance"
@@ -404,8 +416,9 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
       <Drawer
         open={popup?.kind === "forecast"}
         onClose={() => setPopup(null)}
-        title="Bed forecast"
-        description={networkWide ? "Network-wide" : undefined}
+        // D-198: plain words, no "Bed forecast"; the Forecast card that opens it keeps its title.
+        title="Beds ahead"
+        description={networkWide ? "From ward dates · Network-wide" : "From ward dates"}
         mobileSize="viewport"
         testId="ward-capacity-forecast-sheet"
       >

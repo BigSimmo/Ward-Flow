@@ -1,0 +1,76 @@
+# 13 Nov 2026, Home, Ward and Capacity redesign (PR #1659, wave 4, D-191)
+
+Measured with a local `npm run build` and `scripts/check-script-budget.mjs`. Each new limit is the
+largest local measurement over three builds plus 0.2. Every rise is under the 5 KB allowance.
+
+Raised:
+
+- Coordinator `/ward-flow`: 585.2 to 589.9 (measured 589.5 to 589.7). Act now's Pull the bed rows
+  are new first-screen content: the Pull the bed step's hook and toast (3.3 KB raw), the kept pulled
+  row with its Undo (2.8), the shared command-completion helper (2.3), the phone row (1.8) and the
+  pull facts (1.4). The sheet itself already loads on first open. The kept row was not made lazy:
+  focus after a pull looks for it, so a late row would move focus somewhere else.
+- Ward `/ward-flow/ward/rph-adult-secure`: 618.2 to 622.3 (measured 621.6 to 622.1). Coming and
+  going (7.4 KB raw plus 3.9 of row logic), the bed squares (4.1) and the decline reasons as kit rows
+  (2.0) are new page content; the old Today tab and home section they replace gave back about 21 KB
+  raw.
+- Referrals `/ward-flow/referrals`: 589.9 to 590.1 (measured 589.4 to 589.9). No new code reaches
+  this page. Webpack regroups shared chunks between builds; one build of this PR copied the
+  `next/dynamic` runtime and ten icons (about 7 KB raw) into the Referrals chunk as well as the shared
+  one. The 0.2 is margin for that.
+- ED board `/ward-flow/ed/arm-ed`: 677.9 to 678.5 and Bed meeting `/ward-flow/bed-meeting`: 596.3 to
+  596.6 (measured up to 678.3 and 596.4). No new code; the new on-open chunks below add entries to
+  the webpack runtime's chunk map, and builds vary by about 0.3.
+
+Lowered:
+
+- Capacity `/ward-flow/capacity`: 662.4 to 617.9 (measured 617.4, before trims 665.8).
+
+What was trimmed first: wave 4 moved the forecast chart behind the Forecast card's Open and Planned
+moves onto their own tab, which always starts closed, so both now load on first open
+(`BedForecast` through `capacity-open-parts.ts`, `ComingIn` on its own). The "What would help
+tomorrow" helpers moved to `capacity-forecast-help.ts` so the Forecast card no longer pulls the chart
+in. The Ward page's pull step bed choice (`ward-pull-bed-choice-sheet.tsx`) loads when Confirm
+arrival opens it. Capacity dropped about 48 KB; Ward about 1.5 KB.
+
+## Trim after the review fixes (13 Nov 2026, evening)
+
+The review fixes put Home at 591.0 KB, over its limit. Unused class names were removed from Home's and the
+referral board's style modules (`coordinator/home.module.css`, `home-cards.module.css`, `referrals/referrals.module.css`,
+`referral-board.module.css`, `referral-panel.module.css`); each name was checked as read nowhere in `src`, and the
+two shortlist rules the overlay test guards were kept. Every class name a module exports ships in the page script,
+so this shrinks first loads without changing any screen. Measured on a local production build: Home 589.4,
+Referrals 588.0, Ward 621.5, Capacity 616.2, ED arm 676.9, Bed meeting 594.6, Statistics 636.0. No budget changes.
+A first attempt that lazy-loaded Home's pinned card moved shared code into Referrals and Statistics (+2 KB each)
+and was dropped.
+
+After merging PR C (#1660), provisional: routes this PR did not change (`/ward-flow/ed`, the movement page,
+Statistics) take PR C's limits. This PR's routes (Coordinator, Referrals, Ward, Capacity, `/ward-flow/ed/arm-ed`,
+Bed meeting) hold the higher of this PR's and PR C's limits until a fresh build is measured on the
+merged code; Capacity is expected to come back down from 662.4.
+
+Measured on a local production build of the merged code (this PR plus PR C, after the guard fixes that moved
+`bed-squares.tsx`, `origin-place.ts`, `pull-bed-facts.ts` and `pull-bed-step.tsx` to the ward-management root):
+Home 593.6, Referrals 594.3, ED 545.5, Ward 626.5, Movement 621.4, Capacity 614.6, ED arm 679.5, Bed meeting 593.1,
+Statistics 643.4. Three limits rise, each within 5 KB of main's (PR C's) limit, after the trim above: Home 589.1 to
+594.1 (PR C's ready and pull-desk wiring on top of this PR's Home), Ward 625.6 to 627.5, Statistics 640.6 to 644.5
+(shared code regrouped by the merge; Statistics itself is unchanged here, and D-202 allows it past 5 KB if a trim
+fails). Bed meeting returns to main's 596.3. Capacity keeps main's 662.4.
+
+## After merging PR E (#1658) and the Fixes PR (#1661), 14 Nov 2026
+
+Measured on hosted CI's production build of d8e27ae0a and on a local production build of 0ff65943c (the same
+figures, plus the two review fixes): Home 596.2, Referrals 596.9, ED 548.6, Ward 630.7, Movement 625.3,
+Capacity 617.4, ED arm 685.2, Bed meeting 597.3, Statistics 644.4. Four limits rise, each within 5 KB of main's
+limit (main with E and the Fixes PR): Home 591.5 to 596.5 (+5.0), Referrals 596.2 to 597.5 (+1.3), Ward 627.1 to
+631.5 (+4.4), Movement 625.2 to 626.0 (+0.8). The growth is E's kit parts that this PR's screens now use (the
+"PR E swap" stand-ins moved to kit parts, the kit RowUndo and toast Undo) on top of the trim above, which was
+already tried. Home has 0.3 KB spare, so the next Home change should trim first. Capacity returns to main's 661.9 (this PR no
+longer raises it); it measures 617.4 and can come down in a later PR.
+
+## 14 November 2026: main with the clinical PR (#1656) merged in
+
+Main's limits taken, then measured on the merged tree with `npm run build` and `node scripts/check-script-budget.mjs`:
+Home 597.0, ED 549.4, Ward 631.9, Movement 627.1 and Statistics 645.2 were over. Limits rise to 597.2, 549.9,
+632.2, 627.5 and 645.5, each within 5 KB of main's. The extra weight is the redesigned Home and Ward screens from
+this PR on top of main's own growth from #1656; Referrals, Capacity, ED arm and Bed meeting stay at main's limits.

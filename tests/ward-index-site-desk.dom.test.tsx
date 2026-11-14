@@ -98,8 +98,9 @@ describe("All wards: the site bed manager's desk", () => {
     expect(screen.queryByRole("heading", { level: 2, name: /^Other sites/u })).toBeNull();
     expect(screen.queryByRole("button", { name: /wards at other sites/u })).toBeNull();
     const chips = screen.getByRole("group", { name: "Statewide counts" });
-    expect(within(chips).getByText(/^beds? ready$/u)).toBeInTheDocument();
-    expect(within(chips).getByText("pulled")).toBeInTheDocument();
+    // Wave 4 (D-191, notes item 11): Ready, Discharges · today, Short and Wards full, as on Capacity.
+    expect(within(chips).getByText(/^Ready$/u)).toBeInTheDocument();
+    expect(within(chips).getByTestId("ward-index-figure-short")).toHaveTextContent(/(Short|Spare)$/u);
     expect(screen.getByTestId("ward-index-count-note")).toHaveTextContent(/^\d+ wards$/u);
   });
 });

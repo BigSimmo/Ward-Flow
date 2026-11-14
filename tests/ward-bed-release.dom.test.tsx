@@ -31,14 +31,12 @@ function wardBedFigure(state: string, label: string): number {
     expect(ready, `${label} is not an exact non-negative integer`).toMatch(/^\d+$/u);
     return Number(ready);
   }
-  const beds = screen.getByTestId("ward-unit-beds");
-  const chip = beds.querySelector<HTMLElement>(`[data-state="${state}"]`);
-  expect(chip, `no ${label} chip in this ward's bed grid`).not.toBeNull();
-  expect(within(chip!).getByText(label, { selector: "span" })).toBeInTheDocument();
-  const value = chip!.querySelector("strong");
-  expect(value, `${label} has no numeric value`).not.toBeNull();
-  expect(value!.textContent, `${label} is not an exact non-negative integer`).toMatch(/^\d+$/u);
-  return Number(value!.textContent);
+  // Wave 4 (D-191): the Confirmed and Expected chips went with the "Ward figures, right now" strip.
+  // Every open discharge, confirmed or expected, is counted once on Coming and going's
+  // "All discharges · N open" link, so a flagged release moves that figure.
+  expect(state, `${label}: the ward page shows open discharges as one figure`).toBe("open");
+  const link = screen.getByRole("button", { name: /^All discharges · \d+ open$/u });
+  return Number(/(\d+) open/u.exec(link.textContent ?? "")![1]);
 }
 
 /** One ward's card on the live Capacity bed map (the October 2026 redesign), folded group or not. */
@@ -71,7 +69,8 @@ function freeingCell(unitId: string): string | null {
  * read from its own element rather than from the card's whole `textContent`.
  */
 function readyFigure(unitId: string): string {
-  return (bedMapCard(unitId).querySelector('[class*="wardReadyN"]')?.textContent ?? "").trim();
+  // Wave 4: the shared bed squares' head figure (it carries `data-zero`).
+  return (bedMapCard(unitId).querySelector("b[data-zero]")?.textContent ?? "").trim();
 }
 
 /**
@@ -152,11 +151,11 @@ describe("ward bed release flag", () => {
         <WardScreen unitId="rph-adult-secure" />
       </WardFlowProvider>,
     );
-    const confirmedBefore = wardBedFigure("confirmed", "Confirmed");
-    const expectedBefore = wardBedFigure("expected", "Expected");
+    const openBefore = wardBedFigure("open", "Open discharges");
+    const readyBefore = wardBedFigure("available", "Ready");
     expect(screen.queryByTestId("ward-flag-bed-release-submit")).not.toBeInTheDocument();
-    expect(wardBedFigure("confirmed", "Confirmed")).toBe(confirmedBefore);
-    expect(wardBedFigure("expected", "Expected")).toBe(expectedBefore);
+    expect(wardBedFigure("open", "Open discharges")).toBe(openBefore);
+    expect(wardBedFigure("available", "Ready")).toBe(readyBefore);
   });
 
   it("does not offer a patient picker for flagging a bed", () => {
@@ -169,7 +168,7 @@ describe("ward bed release flag", () => {
     expect(screen.queryByLabelText("Expected free")).not.toBeInTheDocument();
   });
 
-  it("never lets a expected release soften the Ready figure, while Expected itself moves by one", () => {
+  it("never lets a expected release soften the Ready figure, while the open discharges figure moves by one", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardScreen unitId="rph-adult-secure" />
@@ -178,7 +177,7 @@ describe("ward bed release flag", () => {
     );
 
     const readyBefore = wardBedFigure("available", "Ready");
-    const expectedBefore = wardBedFigure("expected", "Expected");
+    const expectedBefore = wardBedFigure("open", "Open discharges");
     /*
      * ⚠️ Floored, not assumed. If this ward had no ready bed, subtracting from the figure could
      * not change it and the assertion below would pass on the very defect it exists for.
@@ -191,7 +190,9 @@ describe("ward bed release flag", () => {
      * The dispatch really landed — Expected rose by exactly one — so the Ready assertion below
      * proves real separation between the two figures rather than merely that the click did nothing.
      */
-    expect(wardBedFigure("expected", "Expected"), "the flag did not reach the reducer at all").toBe(expectedBefore + 1);
+    expect(wardBedFigure("open", "Open discharges"), "the flag did not reach the reducer at all").toBe(
+      expectedBefore + 1,
+    );
 
     expect(
       wardBedFigure("available", "Ready"),

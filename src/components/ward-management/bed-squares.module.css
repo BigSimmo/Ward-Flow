@@ -1,0 +1,157 @@
+/* Bed squares, shared pattern v1 (wave 4, ruling 7). Tokens only. One line of squares at any bed
+   count; hollow = not offered, filled = counted, hatch = "may move" (discharge today). */
+
+.bedSquares {
+  --sq-max: 10px;
+  --sq-gap: 2px;
+  --sq-h: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+/* Ward "Every bed" head: the page's signature strip. */
+.board {
+  --sq-max: 18px;
+  --sq-gap: 3px;
+  --sq-h: 12px;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wf-s-1);
+  margin: 0;
+  min-width: 0;
+}
+.n {
+  font: 650 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-success-ink);
+}
+.lg .n {
+  font-size: var(--wf-fs-20);
+  line-height: var(--wf-lh-20);
+}
+.n[data-zero="true"] {
+  color: var(--wf-ink-3);
+}
+.of {
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+.tag {
+  margin-inline-start: auto;
+  align-self: center;
+  flex: none;
+}
+.tagAfter {
+  margin-inline-start: var(--wf-s-1);
+}
+
+.strip {
+  display: grid;
+  grid-template-columns: repeat(var(--sq-n, 1), minmax(0, var(--sq-max, 10px)));
+  gap: var(--sq-gap, 2px);
+  max-width: 100%;
+}
+.strip i,
+.swatch {
+  display: block;
+  height: var(--sq-h, 8px);
+  border-radius: 2px;
+  background: var(--wf-data-1);
+}
+.swatch {
+  display: inline-block;
+  flex: none;
+  width: 10px;
+  height: 8px;
+}
+
+.strip [data-s="ready"],
+.swatch[data-s="ready"] {
+  background: var(--wf-data-ready);
+}
+.strip [data-s="prep"],
+.swatch[data-s="prep"] {
+  background: var(--wf-surface);
+  box-shadow: inset 0 0 0 1.5px var(--wf-data-ready);
+}
+.strip [data-s="free"],
+.swatch[data-s="free"] {
+  background: var(--wf-hatch), var(--wf-data-rest);
+}
+.strip [data-s="use"],
+.swatch[data-s="use"] {
+  background: var(--wf-data-1);
+}
+.strip [data-s="closed"],
+.swatch[data-s="closed"] {
+  background: var(--wf-data-closed);
+}
+
+.note {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+.warn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  color: var(--wf-warning-ink);
+}
+
+.key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-4);
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-2);
+}
+.keyItem {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  white-space: nowrap;
+}
+
+/* Phone: 10 px squares that fill the row. */
+@media (max-width: 46.4375rem) {
+  .bedSquares {
+    --sq-max: 1fr;
+    --sq-h: 10px;
+    --sq-gap: 2px;
+  }
+}
+
+@media (forced-colors: active) {
+  .strip [data-s="ready"],
+  .swatch[data-s="ready"] {
+    background: Highlight;
+  }
+  .strip [data-s="prep"],
+  .swatch[data-s="prep"] {
+    background: Canvas;
+    box-shadow: inset 0 0 0 1.5px Highlight;
+  }
+  .strip [data-s="free"],
+  .swatch[data-s="free"] {
+    background: repeating-linear-gradient(135deg, CanvasText 0 2px, Canvas 2px 4px);
+  }
+  .strip [data-s="use"],
+  .swatch[data-s="use"] {
+    background: CanvasText;
+  }
+  .strip [data-s="closed"],
+  .swatch[data-s="closed"] {
+    background: GrayText;
+  }
+}

@@ -20,8 +20,7 @@ export { Icon } from "./icon";
 export { SrOnly, Kbd, Count, CountBubble, CountCircle, Spinner, IconTile, WindowWord } from "./primitives";
 export { FormalName } from "./formal-name";
 export { Button, DisabledReason, buttonClass, type ButtonSize } from "./button";
-// Shared design parts (D-192): WhoDoesThis, RowUndo, SyntheticMark and FullScreenFrame are
-// imported from their own files until screens use them here (WindowWord is used by Ward home).
+// Shared design parts (D-192): the parts screens use are exported below (WindowWord is in primitives).
 export { Badge } from "./badge";
 export { Card, CardHead, CardBody, CardFoot } from "./card";
 export { Hero, HeroStat, type HeroNextStep } from "./hero";
@@ -164,3 +163,6 @@ export { FullScreenFrame, FullScreenMarkSlot } from "./full-screen-frame";
 // Shared design parts (D-192): who does an action that is never yours, and the in-row Undo.
 export { WhoDoesThis } from "./who-does-this";
 export { RowUndo } from "./row-undo";
+// The synthetic-data mark in a dialog header (the Bed meeting sheet). The loading row still imports
+// it by its own file, so first paint does not load the whole kit.
+export { SyntheticMark } from "./synthetic-mark";

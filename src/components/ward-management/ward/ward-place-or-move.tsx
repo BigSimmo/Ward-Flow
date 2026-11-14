@@ -1,6 +1,5 @@
 "use client";
 
-import { Hand } from "lucide-react";
 import { buttonClass } from "@/components/wf";
 import styles from "./ward-home-tab.module.css";
 
@@ -41,7 +40,7 @@ export function WardPlaceOrMove({
       data-testid="ward-open-bed-board"
       onClick={onOpen}
     >
-      <Hand strokeWidth={1.75} size={14} aria-hidden="true" />
+      {/* Mock-up (main-coord-1440): words only, so the Every bed head keeps one row at 1440. */}
       Place or move{" "}
       {waiting > 0 ? (
         <span className={styles.placeCount} aria-hidden="true">

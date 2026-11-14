@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { bedMapWards, groupBedMapWardsByService } from "@/components/ward-management/capacity/bed-map";
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
@@ -10,6 +10,7 @@ import {
 } from "@/components/ward-management/capacity/capacity-derivations";
 import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { WF_PHONE_QUERY } from "@/components/wf/use-is-phone";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites";
 import {
@@ -54,8 +55,25 @@ const mapGroups = groupBedMapWardsByService(
  */
 const EMPTY_SERVICE = "CAHS";
 const populatedGroups = mapGroups.filter((group) => group.wards.length > 0);
-/** The bed map opens the first two services on first view and folds the rest. */
-const OPEN_ON_FIRST_VIEW = new Set(mapGroups.slice(0, 2).map((group) => group.service));
+/**
+ * Wave 4 mock-ups (820, 1280 and 1440): a tablet or desktop opens every service on first view. A
+ * phone opens the first two services and folds the rest.
+ */
+const OPEN_ON_FIRST_VIEW = new Set(populatedGroups.map((group) => group.service));
+const OPEN_ON_PHONE = new Set(populatedGroups.slice(0, 2).map((group) => group.service));
+
+function asPhone() {
+  vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
+    matches: query === WF_PHONE_QUERY,
+    media: query,
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    dispatchEvent: vi.fn(() => true),
+  }));
+}
 
 function renderScreen() {
   return render(
@@ -81,13 +99,15 @@ function panelOf(service: string): HTMLElement {
 /** "3 ready · 1 closed · 85% in use", read back as numbers from the group's fold button. */
 function readHeading(service: string): { ready: number; closed: number; inUse: number } {
   const text = (bedMapGroupToggle(groupOf(service)).textContent ?? "").replace(/\s+/gu, " ");
-  const match = /(\d+) ready · (\d+) closed · (\d+)% in use/u.exec(text);
-  expect(match, `${service}'s heading rendered "${text}" — not "N ready · N closed · N% in use"`).not.toBeNull();
-  return { ready: Number(match![1]), closed: Number(match![2]), inUse: Number(match![3]) };
+  // Wave 4 (D-191): "4 ready · 86% in use · 5 closed", as the mock-up orders it.
+  const match = /(\d+) ready · (\d+)% in use · (\d+) closed/u.exec(text);
+  expect(match, `${service}'s heading rendered "${text}" — not "N ready · N% in use · N closed"`).not.toBeNull();
+  return { ready: Number(match![1]), inUse: Number(match![2]), closed: Number(match![3]) };
 }
 
 afterEach(() => {
   window.sessionStorage.clear();
+  vi.restoreAllMocks();
 });
 
 describe("Capacity's wards walk every health service, or the suite below is vacuous", () => {
@@ -138,7 +158,7 @@ describe("Capacity's wards walk every health service, or the suite below is vacu
 });
 
 describe("a service group's heading states its own totals, never the network's", () => {
-  it("renders a fold button per populated service, the first two open, naming its ward count", () => {
+  it("renders a fold button per populated service, every one open, naming its ward count", () => {
     renderScreen();
     // The empty service has no group and no fold button: a heading over nothing reads as a
     // category that exists and is fine. That it is stated in words instead is pinned in
@@ -159,6 +179,36 @@ describe("a service group's heading states its own totals, never the network's",
         `${group.wards.length} wards`,
       );
     }
+  });
+
+  it("on a phone opens the first two services and folds the rest", () => {
+    asPhone();
+    renderScreen();
+    // The phone's Overview has no map; the Wards tab draws it.
+    fireEvent.click(screen.getByRole("radio", { name: /^Wards/u }));
+    expect(populatedGroups.length, "need more than two services for a fold to show").toBeGreaterThan(2);
+    for (const group of populatedGroups) {
+      const open = OPEN_ON_PHONE.has(group.service);
+      expect(bedMapGroupToggle(groupOf(group.service)), `${group.service}'s fold button`).toHaveAttribute(
+        "aria-expanded",
+        String(open),
+      );
+      expect(panelOf(group.service).hidden, `${group.service}'s panel on a phone`).toBe(!open);
+    }
+  });
+
+  it("says a service with no ward after every service with wards", () => {
+    renderScreen();
+    const note = [...screen.getByRole("region", { name: "Bed map" }).querySelectorAll("p")].find(
+      (paragraph) => paragraph.textContent?.endsWith("has no inpatient unit reporting to this board.") ?? false,
+    );
+    expect(note, `no sentence for ${EMPTY_SERVICE} on the bed map`).toBeDefined();
+    for (const group of populatedGroups)
+      expect(
+        groupOf(group.service).compareDocumentPosition(note!) & Node.DOCUMENT_POSITION_FOLLOWING,
+        `the ${EMPTY_SERVICE} note sits above ${group.service}`,
+      ).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Every ward as a table" })).not.toBeInTheDocument();
   });
 
   /**

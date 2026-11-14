@@ -78,7 +78,7 @@ export function ScenarioDialog({
         </span>
         <span className={styles.mutedXs}>
           {scenarioIsEmpty(scenario)
-            ? "Likely, from what is on record now."
+            ? "From ward dates on record now."
             : `Instead of ${gapWords(result.before)}.${tightest ? ` ${BED_KIND_LABEL[tightest.id]} beds stay the tightest, ${gapWords(tightest.after)}.` : ""}`}
         </span>
       </div>

@@ -13,8 +13,8 @@
    line with room around each label; the bed board takes the rest. */
 .homeTop {
   display: grid;
-  /* WH5: Ward flow's three lists keep one line at 1440 with the side menu open. */
-  grid-template-columns: minmax(0, 5fr) minmax(23.5rem, 2fr);
+  /* Wave 4 (D-191): Every bed and Coming and going at 9:4, as the mock-up. */
+  grid-template-columns: minmax(0, 9fr) minmax(21.25rem, 4fr);
   gap: var(--wf-s-3);
   align-items: start;
   min-width: 0;
@@ -81,6 +81,19 @@
 
 .bedsHead h2 {
   white-space: nowrap;
+}
+
+/* Mock-up (main-coord-1440): "Updated 10:42" sits under the title, so the title, Place or move, the
+   filters and the board/list switch share one row at 1440. Narrower, the tools still drop below. */
+.bedsHead > div:first-child {
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.bedsHead > div:first-child > span {
+  flex: none;
 }
 
 /* The waiting count on Place or move, as the tab badges draw a count. */
@@ -229,6 +242,7 @@
   color: var(--wf-dim);
 }
 
+.bedTile[data-dim="true"] .bedTileFor,
 .bedTile[data-dim="true"] .bedTileGiven,
 .bedTile[data-dim="true"] .bedTileState,
 .bedTile[data-dim="true"] .bedTileNote {
@@ -275,11 +289,30 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--wf-s-2);
+  min-width: 0;
 }
 
-/* D-64: the criteria led discharge tag sits with the glyph on the right, the number keeps the left. */
+/* The number and the glyph never shrink; the tag between them gives way. */
+.bedTileTop > svg {
+  flex: none;
+}
+
+/* D-64: the criteria led discharge tag sits with the glyph on the right, the number keeps the left.
+   Mock-up check (820, bed 13): on a narrow tile the tag gives way and its words wrap inside it, so the
+   at-risk dot after it stays inside the tile's edge (wrap, never "…"). */
 .bedTileTag {
   margin-left: auto;
+  flex: 0 1 auto;
+  white-space: normal;
+}
+
+.bedTileTag span:last-child {
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.bedTileTop:has(.bedTileTag) {
+  gap: 4px;
 }
 
 /* The bed number is the tile's label, a step quieter than the person it holds. */
@@ -308,6 +341,23 @@
   line-height: var(--wf-lh-14);
   font-weight: 600;
   letter-spacing: -0.005em;
+}
+
+/* FM-11 (Ward notes item 9): a pulled bed says who it is for, a quiet "For" above the name. */
+.bedTileFor {
+  margin-top: 4px;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.bedTileFor + .bedTileName {
+  margin-top: 0;
+}
+
+/* A pulled bed's state ("Pulled · handover ready · 3h 20m left") wraps, as its name does, never past the edge. */
+.bedTile[data-status="incoming"] .bedTileState {
+  white-space: normal;
 }
 
 /* A bed with no one in it names its state ("Being made ready"), which may take two lines. */
@@ -723,9 +773,12 @@
 
 /* Josh, 22 Oct 2026: the patient's name opens the full referral. */
 .awaitingNameButton {
+  /* Wave 4 (notes 6, A9-18 c): name and View referral are one 40 px button with a 48 px tap cover. */
+  position: relative;
+  min-height: 40px;
   display: inline-flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
   gap: 0 var(--wf-s-2);
   padding: 0;
   border: 0;
@@ -744,6 +797,12 @@
 .fitLink:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
+}
+
+.awaitingNameButton::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
 }
 
 .awaitingNameHint {
@@ -2042,4 +2101,40 @@ label.todoMain:has(.todoTick:focus-visible) {
   height: 6px;
   border-radius: 999px;
   background: var(--wf-success);
+}
+
+/* Wave 4 (D-191, notes 1 and 2): the bed squares head on Every bed, the tile's square mark and the
+   squares key at the card foot. Tokens only. */
+.squaresHead {
+  padding: var(--wf-s-4) var(--wf-s-4) var(--wf-s-3);
+}
+
+.bedTileNum {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.bedTileSquare {
+  width: 8px;
+  height: 8px;
+  flex: none;
+}
+
+.squaresKey {
+  margin: 0;
+}
+
+.bedKey:has(.squaresKey) {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  row-gap: var(--wf-s-2);
+}
+
+.phoneSquares {
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg, 16px);
+  padding: var(--wf-s-3) var(--wf-s-4);
 }

@@ -882,7 +882,8 @@ describe("the statewide capacity table the ED page links to says which ready bed
    * links to the Capacity screen, which owns it. The ruling below travels with the table, so these
    * assertions read that screen and also pin the ED page's link to it. Since the Capacity redesign
    * (31 Oct 2026) the network table is gone and each ward is a card on the bed map, so they read
-   * the ward's card: its Ready figure and its note line.
+   * the ward's card: its Ready figure and its note line. Wave 4 (D-191, ruling 7): the card is the
+   * shared bed squares, so they read its head figure and note line by their test ids.
    */
   /*
    * 🔴 **OWNER RULING 2026-09-05, CARRIED TO THIS SCREEN 2026-09-06.** "Ready" counts beds the
@@ -918,7 +919,7 @@ describe("the statewide capacity table the ED page links to says which ready bed
     cleanup();
     renderCapacity();
     const card = bedMapCard(PREPARING_UNIT);
-    const note = card.querySelector<HTMLElement>('[class*="wardNote"]');
+    const note = card.querySelector<HTMLElement>(`[data-testid="capacity-map-squares-${PREPARING_UNIT}-note"]`);
     expect(note, "the ward's card shows no note line").not.toBeNull();
 
     expect(note).toHaveTextContent(/being made ready/u);
@@ -929,7 +930,9 @@ describe("the statewide capacity table the ED page links to says which ready bed
      * defect it forbids, which is exactly how the sibling guard on the ward screen came to go red
      * for the right behaviour.
      */
-    const figure = (card.querySelector('[class*="wardReadyN"]')?.textContent ?? "").trim();
+    const figure = (
+      card.querySelector(`[data-testid="capacity-map-squares-${PREPARING_UNIT}-ready"]`)?.textContent ?? ""
+    ).trim();
     const unit = allUnits().find((candidate) => candidate.id === PREPARING_UNIT)!;
     expect(figure, "Ready still counts a bed being made ready (D-179 item 8)").toBe(
       String(unitCapacity(unit, bedReleases).available - bedsPendingPreparation(unit.id, bedReleases)),

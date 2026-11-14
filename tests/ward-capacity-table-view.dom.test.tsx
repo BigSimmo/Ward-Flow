@@ -16,6 +16,9 @@ import { bedMapCards, bedMapRegion } from "./helpers/capacity-ward-table";
  * view used to promise, on Rows: every ward appears once, a highlight dims the other wards and
  * hides none, and pressing a ward opens that ward.
  *
+ * Wave 4 (D-191, ruling 8): the Grid and Rows switch is gone (the shared bed squares draw one
+ * layout). The same promises are pinned on the Wards tab, which holds every ward.
+ *
  * Expected figures come from `networkWardRows` over the seeded state the provider starts from.
  */
 const seeded = seedWardFlowState();
@@ -30,28 +33,29 @@ function renderScreen() {
 }
 
 function showRows() {
-  const layouts = within(bedMapRegion()).getByRole("radiogroup", { name: "Bed map layout" });
-  fireEvent.click(within(layouts).getByRole("radio", { name: "Rows" }));
-  return layouts;
+  const tabs = screen.getByRole("radiogroup", { name: "Capacity view" });
+  fireEvent.click(within(tabs).getByRole("radio", { name: /^Wards/u }));
+  return tabs;
 }
 
 afterEach(() => {
   window.sessionStorage.clear();
 });
 
-describe("Capacity bed map, Rows layout", () => {
-  it("switches to Rows from the layout control and keeps exactly one entry per ward", () => {
+describe("Capacity bed map, Wards tab", () => {
+  it("switches to the Wards tab and keeps exactly one entry per ward", () => {
     renderScreen();
     expect(bedMapCards()).toHaveLength(rows.length);
-    const layouts = showRows();
-    expect(within(layouts).getByRole("radio", { name: "Rows" })).toHaveAttribute("aria-checked", "true");
-    expect(within(layouts).getByRole("radio", { name: "Grid" })).toHaveAttribute("aria-checked", "false");
+    const tabs = showRows();
+    expect(within(tabs).getByRole("radio", { name: /^Wards/u })).toHaveAttribute("aria-checked", "true");
+    expect(within(tabs).getByRole("radio", { name: /^Overview/u })).toHaveAttribute("aria-checked", "false");
+    expect(within(bedMapRegion()).queryByRole("radiogroup", { name: "Bed map layout" })).toBeNull();
     const cards = bedMapCards();
     expect(cards).toHaveLength(rows.length);
-    for (const card of cards) expect(card.className).toMatch(/wardRow/u);
+    for (const card of cards) expect(card.className).toMatch(/wardCard/u);
   });
 
-  it("dims every ward outside a highlight in Rows, and keeps them all on screen", () => {
+  it("dims every ward outside a highlight on the Wards tab, and keeps them all on screen", () => {
     renderScreen();
     showRows();
     const withReady = rows.filter((row) => row.ready > 0).length;
@@ -60,7 +64,7 @@ describe("Capacity bed map, Rows layout", () => {
     fireEvent.click(
       // Page tops (Josh, 9 Nov 2026): on a desktop the highlights sit in the page's tab row.
       within(screen.getByRole("group", { name: "Highlight wards" })).getByRole("button", {
-        name: `Any ready · ${withReady} ${withReady === 1 ? "ward" : "wards"}`,
+        name: `Any ready ${withReady} ${withReady === 1 ? "ward" : "wards"}`,
       }),
     );
     const cards = bedMapCards();

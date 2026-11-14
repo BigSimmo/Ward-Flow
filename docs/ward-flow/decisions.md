@@ -225,7 +225,9 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-200](#d-200-shared-design-parts-and-the-home-ward-and-capacity-redesign-go-live-together-13-november-2026)                                           | E and F go live together after the 14 November release                                 | Active                                           |
 | [D-201](#d-201-overnight-merging-without-josh-13-november-2026)                                                                                         | Overnight merging without Josh                                                         | Active                                           |
 | [D-202](#d-202-joint-go-summary-recommendations-14-november-2026)                                                                                       | Joint go summary recommendations                                                       | Active                                           |
+| [D-203](#d-203-scoped-takeover-of-pr-e-and-pr-f-by-the-e-thread-14-november-2026)                                                                       | Scoped takeover of PR E and PR F by the E thread (undone the same day)                 | Undone                                           |
 | [D-204](#d-204-a-signed-triage-shows-the-desks-name-14-november-2026)                                                                                   | A signed triage shows the desk's name                                                  | Active                                           |
+| [D-205](#d-205-release-now-once-each-pr-merges-14-november-2026)                                                                                        | Release now, once each PR merges and its main CI passes                                | Active                                           |
 | [D-206](#d-206-codeql-storage-alerts-are-false-positives-for-the-demo-14-november-2026)                                                                 | CodeQL storage alerts are false positives for the demo                                 | Active                                           |
 | [D-207](#d-207-fit-to-travel-recorded-as-not-cleared-and-the-clinical-go-14-november-2026)                                                              | Fit to travel: not cleared, and the clinical go                                        | Active                                           |
 | [D-209](#d-209-nine-open-clinical-items-signed-avoiding-restriction-and-friction-14-november-2026)                                                      | Nine open clinical items signed, avoiding restriction and friction                     | Active                                           |
@@ -2528,12 +2530,25 @@ is inferred.
 - **Why:** the reviewer's and the plan thread's recommendations, accepted together so the joint E and F go (D-201) is not held on a sub-kilobyte size gap.
 - **Boundary:** the clinical questions in the same summary (observation level on every pull) are not covered; they are asked separately. No clinical value changes.
 
+## D-203. Scoped takeover of PR E and PR F by the E thread (14 November 2026)
+
+- **Date:** 14 November 2026, 7:01 AM AWST (13 November, 23:01 UTC). **Decided by:** Josh, on a decision card from the plan thread.
+- **Decision:** the E thread (Audit C) takes over PR F (#1659) as well as PR E (#1658) until both merge, because the F thread had reported a usage limit. It may arm auto-merge on both under D-201. No other PR, no force-push, no stacking.
+- **Why:** so the joint E and F go (D-200, D-201) did not wait days for the F thread.
+- **Undone:** at 23:16 UTC the same day, because the F thread resumed; F stays with its own thread. The E thread pushed nothing to F's branch and passed its F work over as patches.
+
 ## D-204. A signed triage shows the desk's name (14 November 2026)
 
 - **Date:** 14 November 2026, 7:05 AM AWST (13 November, 23:05 UTC). D-203 is claimed by open PR #1659. **Decided by:** Josh, "Yes to all recommendations above. Defer 2 and 3" in the Ward Flow project chat, answering the coordinator's post whose first item recommended that a signed triage show the desk's name instead of the nurse persona's name (go question 4 for the held clinical PR).
 - **Decision:** a signed triage, its summary, its iSoBAR "Identify" line, the patient card's "Signed … by" line and an unsigned triage's "Reviewer" name the desk by its own name ("Bed coordinator", "ED clinician", "Nurse in charge"), never the desk's sample persona. This changes how D-189 item 9(f) (A9-29) is shown; the signer is still read from the saved record's desk.
 - **Still open:** the words for fit to travel recorded as "Not cleared" (go question 2). The held clinical PR keeps its hold until Josh says "lift the hold".
 - **Boundary:** synthetic data only. No clinical value, threshold or rule changes. Built in the held clinical PR (#1656).
+
+## D-205. Release now once each PR merges (14 November 2026)
+
+- **Date:** 14 November 2026, 7:15 AM AWST (13 November, 23:15 UTC). **Decided by:** Josh, "Please launch everything live that is working now".
+- **Decision:** a release-now go (the "release now" of AGENTS.md hard rule 12) for each PR as it merges, once its merge commit's main CI passes. The plan thread runs the release; E and F still go live together (D-200).
+- **Boundary:** only work that has merged and passed main CI. No clinical value changes, no live data writes.
 
 ## D-206. CodeQL storage alerts are false positives for the demo (14 November 2026)
 
@@ -2551,7 +2566,7 @@ is inferred.
 
 ## D-209. Nine open clinical items signed, avoiding restriction and friction (14 November 2026)
 
-- **Date:** 14 November 2026, 9:38 AM AWST (01:38 UTC), and 9:48 AM AWST (01:48 UTC) for item 3(b). D-203 and D-205 are claimed by open PR #1659; D-208 is claimed by open PR #1663. **Decided by:** Josh, in the "Sign the nine open clinical items" thread: "Yes to all recommendations please. But avoiding restrictive and friction also. Dont do anything to interrupt the PR1659", then "Intermittent, every 30 min" on the decision card for Saoirse's observation level.
+- **Date:** 14 November 2026, 9:38 AM AWST (01:38 UTC), and 9:48 AM AWST (01:48 UTC) for item 3(b). D-208 is claimed by open PR #1663. **Decided by:** Josh, in the "Sign the nine open clinical items" thread: "Yes to all recommendations please. But avoiding restrictive and friction also. Dont do anything to interrupt the PR1659", then "Intermittent, every 30 min" on the decision card for Saoirse's observation level.
 - **Decision:** the nine items D-189 left open (sitting questions Q17, Q18, Q20, Q22, Q23, Q32, Q40, Q41 and Q42), plus Q28, are settled as follows. Where a choice was open, the least restrictive reading that adds no new block was taken.
   1. **Calder Ridgeholt and long ED waits (Q17).** Left as is for the demo; the script still avoids her row. Whether a tier 1 person may sit with no form time, review, ward asked or reason stays open for after the demo.
   2. **Keira Pellingworth (Q18).** Tier 1, a locked bed and General observation are signed as reading true together; her referral records no risk flags; a Form 1A (referral for examination, written in ED four hours before now) is on file before her Form 3B. Still open: the printed Form 3B is headed "Forms 3A and 3B", so whether a 3A also belongs is for the sitting.
@@ -2565,3 +2580,5 @@ is inferred.
   10. **Transport paperwork (Q28).** Deferred to the sitting after the demo; the "rule not signed" label stays. A Form 4B on its own does not clear the order check, as today.
 - **Why:** items 7, 8 and 9 match published WA sources read on 14 November 2026. The rest are Josh's clinical calls on synthetic stories. "Avoiding restrictive and friction" means no new block, no steering and the least restrictive observation level that fits.
 - **Boundary:** synthetic data only; a prototype, not validated clinical decision support. No real authorisation status is relied on for a placement.
+
+The next free number is D-210.

@@ -71,7 +71,7 @@ Ward Flow tab and open the demo in one new tab just before the audience arrives,
 new tab opened while another Ward Flow tab is open takes that tab's clock). A reload does not put a
 drifted clock back: open a new tab. Do not reload after midnight: the demo starts a fresh day and
 loses every click. Keira's planned move is an hour after the last Reset demo; after that she stays
-on Home under **Past planned time** instead of **Later today**.
+on Home under **Past planned time** instead of **Rest of your shift**.
 
 The left-hand menu is the coordinator's own short menu: **Home**, **Capacity**, **Movements**,
 **Waiting**, **All EDs** and **Referrals**, with **More** for every other page. **Handover** is a
@@ -124,11 +124,12 @@ recorded yet.
 
 **Screen:** **Capacity** in the left-hand menu.
 
-**Do:** point to the title "Beds ready and short" and the figures beneath it: "… beds ready", "…
-short for …" and "… in use". Point to the pill "… of … confirmed", which names the oldest
-unconfirmed count. Note the beds-ready number beside **Capacity** in the left-hand menu: you will
-come back to it in Act 3. Then point to the band **Short now, by bed type** (Locked adult, Open
-adult, Older adult, Youth).
+**Do:** point to the title "Beds ready and short" and the four figures beneath it: "Ready · now",
+"Need a bed · now", "Short · now" and "In use · now". Point to the pill "… of … counts confirmed ·
+since …", which names a ward still to confirm and the time it last did. Note the beds-ready number
+beside **Capacity** in the left-hand menu: you will come back to it in Act 3. Then point to the band
+**By bed type · now** (Locked adult, Open adult, Older adult, Youth), where each cell reads "…
+waiting · … fit".
 
 **Say:**
 
@@ -137,24 +138,25 @@ adult, Older adult, Youth).
 > names so the map is familiar.
 >
 > At the top: beds ready across the network, and how many people are waiting for them. Each ward's
-> number comes from that ward confirming its count. An old count is named here, with its age,
-> rather than passed off as current.
+> number comes from that ward confirming its count. A ward still to confirm is named here, with
+> the time it last confirmed, rather than passed off as current.
 >
 > Below that is where the pressure is: for each kind of bed, how many people are waiting against
 > how many beds of that kind are ready."
 
-**Do:** press **Bed meeting**, then **Print the meeting sheet**. Show the sheet ("Bed meeting sheet ·
-all services": Ready now, Waiting in ED, Beds freeing today, Pulled), point to **Print sheet** (do
-not press it in front of the audience), then press **Close**.
+**Do:** press **Bed meeting sheet**. Show the sheet ("Bed meeting sheet · all services": Ready · now,
+Short · now, Discharges · today, Waiting in ED · now, then the lists, including **Held up · by
+tomorrow**), point to **Print sheet** (do not press it in front of the audience), then press
+**Close**.
 
 **Say:**
 
 > "For the meeting itself, this builds a meeting sheet from the same figures, ready to print or put
 > on the screen. Nobody adds anything up by hand."
 
-**Optional:** press **Bed meeting**, then **Open on TV** to show the large-screen view, then return
-to Capacity with the browser's Back button. Do this only now, before Act 3. The TV's "beds freeing
-today" is the same figure as the sheet's.
+**Optional:** press **Bed meeting sheet**, then **Open on TV** at the foot of the sheet to show the
+large-screen view, then return to Capacity with the browser's Back button. Do this only now, before
+Act 3. The TV's discharges figure is the same as the sheet's.
 
 ---
 
@@ -194,7 +196,7 @@ board (the row just below Keira's):
 
 **Do:** in the left-hand menu press **Home**. Under **Later today**, scroll down to **Rest of your
 shift** and click **Pellingworth, Keira** ("Planned move, bed not pulled yet"); if she is not
-listed, press **Show … more** first. After her planned time she moves up to **Past planned time · not done yet**. Her page opens. If you cannot find her on Home, press **/**, type `Keira` or
+listed, press **Show … more** first. After her planned time she moves up to **Past planned time** ("not done yet"). Her page opens. If you cannot find her on Home, press **/**, type `Keira` or
 `UM100045` and press **Enter**. Or press **Reset demo** and start Act 2 again. Point to the strip at
 the top of her page (In ED, Bed agreed, Moving, On ward, Discharge, Community). Press **Placement
 steps**: step 3 of seven is lit. Then press **Hide placement steps**. Then point to the status
@@ -320,16 +322,19 @@ Press **Esc**, and point to "Arrived · transfer complete" on her page.
 > her page now belongs to the ward."
 
 **Do:** in the left-hand menu press **More**, then **All wards**, then **Open ward** on the
-**Dabakarn** card. Point to Keira in the bed grid, and to **Constant obs** in the ward's checks
-strip, which counts staff assigned to constant observation (none on this ward just now).
+**Dabakarn** card. Point to Keira in the bed grid, and to **Staff on constant obs** in the ward's
+**Checking · now** strip, which counts staff assigned to constant observation (none on this ward
+just now). Beside it, **Obs not recorded** counts people on the ward with no observation level
+recorded. It is a count only: no level is shown or suggested.
 
 **Say:**
 
 > "On Dabakarn's own page she is in a bed. Every screen we visited, the ED, the coordinator's and
 > the ward's, showed the same record as it changed.
 >
-> Observation levels are on the ward page too. Each patient has a level, from General to Two staff
-> constant. The levels are recorded by people. Nothing is scored or suggested from them."
+> Observation levels are on the ward page too, from General to Two staff constant. The levels are
+> recorded by people. Where none is recorded, the page counts it as not recorded rather than
+> guessing. Nothing is scored or suggested from them."
 
 ---
 
@@ -338,10 +343,10 @@ strip, which counts staff assigned to constant observation (none on this ward ju
 Pick two of these three if time is short. None of them needs typing.
 
 **A. The ward sees the full referral before it answers.** In the left-hand menu press **More**,
-then **All wards**, and press **Open ward** on **SJGM Adult Open**. Under
-**Awaiting your answer**, press **Loxbury, Saoirse** (synthetic). The full referral opens: reason,
-risk, legal, observation, medical clearance, physical health, medications, referrer, arrival and
-documents. Close it with **Esc**. Do not accept or decline.
+then **All wards**, and press **Open ward** on **Graylands Adult Secure**. In the **Coming and going**
+card, under **Referrals · now**, press **Loxbury, Saoirse** (synthetic). The full referral opens:
+reason, risk, legal, observation, medical clearance, physical health, medications, referrer, arrival
+and documents. Close it with **Esc**. Do not accept or decline.
 
 > "A ward can't make a safe decision on a referral it can't read. So before it answers, the ward
 > sees the whole referral, with the patient's name and record number. What it never sees is which
@@ -551,12 +556,12 @@ Things that happen without a wrong press:
 
 | Act | Where                                     | Press                                                                                                                                                             |
 | --- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Capacity                                  | Bed meeting, Print the meeting sheet, Close                                                                                                                       |
+| 1   | Capacity                                  | Bed meeting sheet, Close                                                                                                                                          |
 | 2   | All EDs, Enter (RPH ED)                   | Pellingworth, Keira; Esc; Home, Later today, Pellingworth, Keira; Placement steps                                                                                 |
 | 3   | Referrals, Coldharbour, Cyril (Place tab) | Scroll to the groups; choose a ward under Fits, bed ready (do not accept); Esc; browser Back; Pull the bed, Pull the bed; Esc                                     |
 | 4   | Keira's page                              | Record clearance; Log booking; Mark handover ready; X on both messages; Destination row; Provider accepted job, Vehicle en route, Mark moving · patient collected |
 | 5   | Destination and placement                 | Confirm arrival · receiving ward, Confirm arrival; Esc; More, All wards, Open ward (Dabakarn)                                                                     |
-| 6   | SJGM Adult Open; More, Legal forms; clock | Loxbury, Saoirse, Esc; Seclusion tab; Board time, Demo clock                                                                                                      |
+| 6   | Graylands Adult Secure; More, Legal forms; clock | Loxbury, Saoirse, Esc; Seclusion tab; Board time, Demo clock                                                                                                      |
 | -   | Home                                      | -                                                                                                                                                                 |
 
 Before every run, as the audience sits down: **Board time** clock, **Reset demo**, confirm. Avoid

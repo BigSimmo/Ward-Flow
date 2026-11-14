@@ -221,16 +221,17 @@ const AROUND: readonly Around[] = [
       {
         device: "desk",
         acts: ["CONVERT_PLANNED_ADMISSION"],
-        target: id("ward-capacity-planned-admissions"),
+        // Wave 4 (D-191): bookings sit on Capacity's Planned tab, so the step lights the tab chooser.
+        target: id("capacity-tabs"),
         title: "Planned admissions",
-        body: "Admissions booked ahead. Press Arrived when the person reaches the ward.",
+        body: "Admissions booked ahead, on the Planned tab. Press Arrived when the person reaches the ward.",
       },
       {
-        // Josh's fifth notes (8 Nov 2026): desktop shows drive times in the Mismatch drawer instead.
+        // Wave 4 (D-191): the phone's Overview shows Held up where Nearest ready beds was.
         device: "phone",
-        target: id("capacity-road-time"),
-        title: "Nearest ready beds",
-        body: "Ready beds by road distance from the place you choose. Distance only, not suitability.",
+        target: id("capacity-held-up-card"),
+        title: "Held up",
+        body: "Discharges due by tomorrow that are held up, with what is holding each one.",
       },
       {
         device: "desk",
@@ -242,7 +243,7 @@ const AROUND: readonly Around[] = [
         device: "desk",
         target: id("capacity-bed-meeting"),
         title: "Bed meeting and TV",
-        body: "Bed meeting opens a menu: Print the meeting sheet and Open the meeting agenda. Open on TV shows only when a TV is available, and puts the meeting on the room screen, read only.",
+        body: "Bed meeting sheet opens the sheet in one tap. The arrow beside it holds Open the meeting agenda, and Open on TV when a TV is available, which puts the meeting on the room screen, read only.",
       },
     ],
   },

@@ -164,10 +164,9 @@ function drawerFact(drawer: HTMLElement, label: string): string {
   return within(drawer).getByText(label, { selector: "dt" }).nextElementSibling?.textContent ?? "";
 }
 
-/** Opens Capacity's bed meeting sheet from the hero's Bed meeting menu. */
+/** Opens Capacity's bed meeting sheet from the hero's one action (wave 4, D-191: one tap). */
 function openMeetingSheet(): HTMLElement {
-  fireEvent.click(screen.getByRole("button", { name: "Bed meeting" }));
-  fireEvent.click(screen.getByRole("menuitem", { name: "Print the meeting sheet" }));
+  fireEvent.click(screen.getByRole("button", { name: "Bed meeting sheet" }));
   return screen.getByTestId("bed-meeting-sheet-print-copy");
 }
 
@@ -183,8 +182,10 @@ function excludedBeyondTodayCount(): number {
 /** The hero's held-up discharge count (it replaced the "This shift" card, 8 Nov 2026; a chip's
  *  count since the page tops, 9 Nov 2026). */
 function heldUpCount(): number {
-  const chip = screen.getByTestId("capacity-hero-held-up");
-  return Number(/(\d+)\s*$/u.exec(chip.querySelector("b > [aria-hidden]")?.textContent ?? "")?.[1]);
+  // Wave 4 (D-191): the hero chip went; the rail's "N Held up · by tomorrow" card holds the count.
+  // An overdue release is due by tomorrow, so it still counts here.
+  const card = screen.getByTestId("capacity-held-up-card");
+  return Number(card.querySelector("h2 b")?.textContent ?? "");
 }
 
 function ConfirmCapacityProbe({ unitId, now }: { unitId: string; now: number }) {
@@ -245,17 +246,22 @@ describe("ward capacity board", () => {
    * 🔴 **SPLIT 2026-09-05. The MHA half is re-pointed at the live screen; the sex-mix and
    * specialling halves stay parked, because nothing reachable shows either of them.**
    */
-  // D-189 items 6 and 8(a) (Josh, 13 Nov 2026): no ward is shown as authorised or not authorised
-  // until Q42 is signed. Both a flagged and an unflagged ward read "Not stated", never Yes or No.
-  it("reads every ward's involuntary admissions as not stated, whatever the sample flag says", () => {
+  // D-189 items 6 and 8(a) kept Yes or No off this row. D-209 item 9 (Josh, 14 Nov 2026): it now reads
+  // the Chief Psychiatrist register (7 Sep 2026), whatever the sample flag says.
+  it("reads each ward's involuntary admissions from the register, whatever the sample flag says", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <CapacityScreen />
       </WardFlowProvider>,
     );
 
-    expect(drawerFact(openWardDrawer("sjgs-adult-secure"), "Involuntary admissions")).toBe("Not stated");
-    expect(drawerFact(openWardDrawer("scgh-adult-open"), "Involuntary admissions")).toBe("Not stated");
+    expect(drawerFact(openWardDrawer("sjgs-adult-secure"), "Involuntary admissions")).toBe(
+      "Not on the authorised register (7 Sep 2026)",
+    );
+    expect(drawerFact(openWardDrawer("scgh-adult-open"), "Involuntary admissions")).toBe(
+      "Authorised (Chief Psychiatrist register, 7 Sep 2026)",
+    );
+    expect(drawerFact(openWardDrawer("scgh-older-adult"), "Involuntary admissions")).toBe("Not stated");
   });
 
   /*

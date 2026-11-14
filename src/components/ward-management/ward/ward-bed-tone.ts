@@ -4,6 +4,7 @@ import { deriveEddDriftBadge } from "@/components/ward-management/ward-discharge
 import { EDD_SLIP_FLAG_DAYS } from "@/components/ward-management/ward-operational-defaults";
 import type { CriteriaLedChip } from "@/components/ward-management/ward-discharge-criteria";
 import type { Observation } from "@/components/ward-management/ward-observation";
+import type { MovementStage } from "@/components/ward-management/ward-model";
 
 /*
  * The bed tile's data shape and its two small rules, kept apart from `ward-beds-matrix.tsx` so the
@@ -103,6 +104,11 @@ export interface BedItem {
    * is act now; `at-risk` (under an hour left) is the amber dot. Absent when no hold time is recorded.
    */
   bedHold?: BedHold | null;
+  /**
+   * FM-11: on a pulled bed, the stage of the journey the bed is pulled for (`pulled`,
+   * `handover_ready`, `moving`). Absent with no linked journey, and once the officer records Delivered.
+   */
+  pulledStage?: MovementStage;
   [key: string]: unknown;
 }
 

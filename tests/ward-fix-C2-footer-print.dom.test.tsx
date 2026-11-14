@@ -115,20 +115,22 @@ describe("3.5 the ward page's constant observation figure is labelled as staff",
       states: { ready: 0, occupied: 0 } as BedStateCounts,
       now: NOW_ANCHOR,
       isPhone: false,
-      pendingPreparation: 0,
-      readyByShiftEnd: 0,
+      arrivalsToday: 0,
+      openArrivals: () => undefined,
       actNowCount: 0,
       heldUpCount: 0,
       pastDateCount: 0,
       bedCountsStale: false,
       staffedSpecialling: 2,
+      obsNotRecorded: 0,
       bedFilter: "all",
       pickBedFilter: () => undefined,
       openShiftTodo: () => undefined,
     });
     render(<>{wardBand}</>);
     const band = screen.getByTestId("ward-hero-checking");
-    expect(band).toHaveTextContent("Constant obs staff");
+    // Wave 4 (D-191): the mock words the cell "Staff on constant obs".
+    expect(band).toHaveTextContent("Staff on constant obs");
     expect(band.textContent).not.toMatch(/Constant obs(?! staff)/);
     // The band speaks a cell's ariaLabel only when the cell is pressable, so read the label it is given.
     const cells = (wardBand.props as { cells: { id: string; ariaLabel?: string }[] }).cells;

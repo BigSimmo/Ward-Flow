@@ -154,10 +154,10 @@ describe("WardScreen & WardIndex audit remediation", () => {
     );
 
     // Page tops (Josh, 9 Nov 2026): the title is "Ward beds right now" and the ready count is the
-    // hero's first figure, "N / M beds ready", whose value and unit keep their space.
+    // hero's first figure, "N / M Ready" (wave 4 count label, D-191), whose value and unit keep their space.
     const h1 = screen.getByRole("heading", { level: 1 });
     expect(h1.textContent).toBe("All wards, Ward beds right now");
-    // HeroFigures speaks a space between the figure and its label ("26/ 304 beds ready").
-    expect(screen.getByTestId("ward-index-figure-ready").textContent).toMatch(/^\d+\/ \d+ beds? ready$/u);
+    // HeroFigures speaks a space between the figure and its label ("24/ 304 Ready").
+    expect(screen.getByTestId("ward-index-figure-ready").textContent).toMatch(/^\d+\/ \d+ Ready$/u);
   });
 });
