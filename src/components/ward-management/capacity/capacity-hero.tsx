@@ -14,10 +14,12 @@ import {
   heroChipClassName,
   Menu,
   SrOnly,
+  StatusGlyph,
   WindowWord,
   type HeroChipItem,
 } from "@/components/wf";
 import { formatWardOccupancy } from "@/components/ward-management/ward-occupancy";
+import { isBedAlert } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { PageLiveChip } from "@/components/ward-management/ward-page-live";
 import { CountBreakdown } from "@/components/ward-management/count-breakdown";
 import { wardReadyBreakdownRows } from "@/components/ward-management/count-breakdown-rows";
@@ -111,8 +113,11 @@ export function CapacityHero({
     : gapRows;
   const openRow = gapRows.find((row) => row.id === openKind) ?? null;
   const gap = gapTotals.gap;
+  // D-191 item 4: the 85% figure keeps its amber dot, the rail's own rule (`isBedAlert`, the whole percent shown).
+  const occupancyAlert = occupancy.percent !== null && isBedAlert(occupancy.percent);
   const occupancyLabel = (
     <span className={styles.figLabel}>
+      {occupancyAlert ? <StatusGlyph tone="warning" size={8} /> : null}
       In use
       <WindowWord word="now" className={styles.winWord} />
       {/* Occupancy counts pulled beds as in use (audit P100, D-81). */}

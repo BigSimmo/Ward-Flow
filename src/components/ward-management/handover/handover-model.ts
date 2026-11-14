@@ -43,6 +43,7 @@ import { bedStates, readyBedsNow, type ReservationReferral } from "@/components/
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 import { communityOriginLabel, sourceWardName } from "@/components/ward-management/ward-movement-origin";
 import { currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
+import { hasCurrentLegalMismatch, LEGAL_MISMATCH_WARNING } from "@/components/ward-management/ward-stay-legal";
 import type { SenderMovementPartialView } from "@/components/ward-management/ward-partial-view-contract";
 import { SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
 import { coordinatorOwnsAcceptedAwaitingBed } from "@/components/ward-management/ward-shared-figures";
@@ -594,6 +595,9 @@ export function nextStep(
   } else {
     text = row.escalated ? "Ask a ward, escalated to state desk" : "Ask a ward";
   }
+  // Master stress test D1a-E-2 (14 Nov 2026): a recorded legal mismatch leads the step, so "Pull the
+  // bed" is never read without it. Words only; the step itself is unchanged (D-16).
+  if (hasCurrentLegalMismatch(row.movement)) text = `${LEGAL_MISMATCH_WARNING} ${text}`;
   if (isTimePassed(row.formDueAt, now)) text = `Form ${row.formCode} time passed. ${text}`;
   return { text, tone };
 }

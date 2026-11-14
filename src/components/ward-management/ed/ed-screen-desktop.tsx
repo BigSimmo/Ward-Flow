@@ -57,6 +57,7 @@ export function renderEdBoardTableRow(
     minutesInDepartment,
     medicalClearance,
     formExpiryWarningText,
+    formExpiryTone,
     patientInfo,
     acceptedUnit,
     bedSearch,
@@ -110,6 +111,10 @@ export function renderEdBoardTableRow(
   // CS-11 (Audit 1, Josh 20 Oct 2026): past the expiry typed on the form shows in words with the
   // danger mark, never the same amber dot as "close". The typed time only: nothing is computed.
   const formExpiryPassed = legal.dueAt !== undefined && clockState(legal.dueAt, now, thresholds) === "breached";
+  // Master stress test RV1a-1 and LG-1 (14 Nov 2026): the one band rule (`currentLegalStanding`,
+  // D-210 ruling 3) colours the mark: red from the urgent warning on and once passed, amber within
+  // the soon warning, so the ED row agrees with Forms, Delays and the patient page.
+  const formActNow = formExpiryTone === "danger";
   // H11 (Josh, 3 Nov 2026): the full wording, word for word, behind the row's short expiry line.
   const formExpiryFullWords = legal.ended
     ? FORM_RECORDED_ENDED
@@ -226,7 +231,7 @@ export function renderEdBoardTableRow(
       data-testid={`ward-ed-patient-${movement.id}`}
       data-origin-ed={movement.originEdId}
       data-minutes-in-department={minutesInDepartment}
-      data-act-now={overTarget ? "true" : undefined}
+      data-act-now={overTarget || formActNow ? "true" : undefined}
       data-dim={isBoardRowDim(movement) ? "true" : undefined}
       data-selected={sheetOpen ? "true" : undefined}
     >
@@ -352,7 +357,7 @@ export function renderEdBoardTableRow(
       </td>
       {isTabletPortrait ? null : (
         <>
-          <td className={styles.a2Mono}>Not recorded</td>
+          <td className={`${styles.a2Mono} ${styles.a2Quiet}`}>Not recorded</td>
           <td className={handover.pickCell}>
             <PresentationCell
               movementId={movement.id}
@@ -388,7 +393,7 @@ export function renderEdBoardTableRow(
                   }
                 >
                   {formExpiryWarningText !== undefined ? (
-                    <StatusGlyph tone={formExpiryPassed ? "danger" : "warning"} size={8} />
+                    <StatusGlyph tone={formActNow ? "danger" : "warning"} size={8} />
                   ) : null}{" "}
                   {isClockBreached(legal.dueAt, now) ? "ended" : "ends"} {typedClock(legal.dueAt, now, dayZero)}, not
                   checked

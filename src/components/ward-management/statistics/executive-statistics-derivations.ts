@@ -974,7 +974,7 @@ export function executiveJourney(
       breakdown: [
         breakdown("Today", plannedToday),
         breakdown("Tomorrow", plannedTomorrow),
-        breakdown("Held up", heldUp),
+        breakdown("Held up, in the next 7 days", heldUp),
       ],
     },
     {

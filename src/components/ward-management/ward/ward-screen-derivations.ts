@@ -22,7 +22,7 @@ import {
 import { bedHold as bedHoldOf } from "@/components/ward-management/ward-bed-hold";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { calendarDateOf, dayOf, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
-import { deliveredAwaitingWard } from "@/components/ward-management/ward-stage-copy";
+import { deliveredAwaitingWard, divertedAwaitingRelease } from "@/components/ward-management/ward-stage-copy";
 import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
 import { admissionCriteriaEligibility, admissionLegalStatus } from "@/components/ward-management/ward-flow-reducer";
 import {
@@ -335,8 +335,12 @@ export function wardBedRoster({
           : undefined,
       // FM-11 (Ward notes item 9): a pulled bed names the stage of the journey it is held for, so its
       // tile reads "Pulled · moving". Delivered has its own words ("Arrived at ward"), so none here.
+      // Together-X1b-3: a diverted journey is not moving to this bed, so the tile reads "Pulled" only.
       pulledStage:
-        status === "incoming" && linkedMovement && !deliveredAwaitingWard(linkedMovement)
+        status === "incoming" &&
+        linkedMovement &&
+        !deliveredAwaitingWard(linkedMovement) &&
+        !divertedAwaitingRelease(linkedMovement)
           ? linkedMovement.stage
           : undefined,
     };

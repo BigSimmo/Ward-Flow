@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
-import { leaveStatus, leaveTrackerRows } from "@/components/ward-management/leave/leave-tracker";
+import {
+  leaveBedLabels,
+  leaveOpenWarning,
+  leaveStatus,
+  leaveTrackerRows,
+} from "@/components/ward-management/leave/leave-tracker";
 import type { LeaveBed } from "@/components/ward-management/ward-model";
+import { wardStaySeats } from "@/components/ward-management/ward/ward-bed-layout";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /** Feature 23: the Leave page's status. Recorded times only; no new threshold. Synthetic records. */
@@ -43,5 +49,36 @@ describe("leaveTrackerRows", () => {
     const scoped = leaveTrackerRows(state, NOW_ANCHOR, (unitId) => unitId === oneWard);
     expect(scoped.every((row) => row.unitId === oneWard)).toBe(true);
     expect(scoped.length).toBeGreaterThan(0);
+  });
+});
+
+describe("leaveOpenWarning (signed 24 hours)", () => {
+  it("is silent before 24 hours and says to consider opening the bed from then on", () => {
+    expect(leaveOpenWarning(leave({ confirmedAt: now - (24 * 60 - 1) }), now)).toBeUndefined();
+    expect(leaveOpenWarning(leave({ confirmedAt: now - 24 * 60 }), now)).toContain("Consider opening the bed");
+    expect(leaveOpenWarning(leave({ confirmedAt: now - 33 * 60 }), now)).toContain("Consider opening the bed");
+  });
+  it("reaches the Leave page rows", () => {
+    const state = seedWardFlowState();
+    const rows = leaveTrackerRows(
+      { ...state, leaveBeds: state.leaveBeds.map((bed) => ({ ...bed, confirmedAt: NOW_ANCHOR - 25 * 60 })) },
+      NOW_ANCHOR,
+      () => true,
+    );
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.every((row) => row.openWarning !== undefined)).toBe(true);
+  });
+});
+
+describe("leaveBedLabels", () => {
+  it("names the bed the ward board seats the stay in", () => {
+    const state = seedWardFlowState();
+    for (const row of leaveTrackerRows(state, NOW_ANCHOR, () => true)) {
+      const unit = state.units.find((entry) => entry.id === row.unitId)!;
+      const seat = wardStaySeats(unit, state.admissions).get(row.admission!.id);
+      const expected = row.admission!.bedNumber ?? seat;
+      if (expected !== undefined) expect(row.bedLabel).toBe(`Bed ${String(expected).padStart(2, "0")}`);
+    }
+    expect(leaveBedLabels).toBeTypeOf("function");
   });
 });

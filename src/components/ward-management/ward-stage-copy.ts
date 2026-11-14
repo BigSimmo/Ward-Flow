@@ -41,8 +41,21 @@ export function deliveredAwaitingWard(movement: Pick<Movement, "stage" | "transp
   return movement.stage === "moving" && movement.transport?.arrivedAt !== undefined && movement.closure === undefined;
 }
 
-/** The journey's status in words: the stage label, or the one delivered state. */
+/**
+ * Together-X1b-3 (master stress test, 14 Nov 2026): `RECORD_DIVERSION` leaves the journey at
+ * `moving`, open, with its bed still pulled until `RELEASE_DIVERTED_BED`. Every screen reads this
+ * one test, so none says Moving, "on the way" or offers Confirm arrival for a person who is not coming.
+ */
+export function divertedAwaitingRelease(movement: Pick<Movement, "stage" | "transport" | "closure">): boolean {
+  return movement.stage === "moving" && movement.transport?.diversion !== undefined && movement.closure === undefined;
+}
+
+/** The diverted journey's status, in the stored blocker's own terms (the bed waits to be released). */
+export const DIVERTED_STATUS_LABEL = "Diverted, pulled bed to be released";
+
+/** The journey's status in words: the stage label, the one delivered state, or the diverted state. */
 export function movementStatusLabel(movement: Pick<Movement, "stage" | "transport" | "closure">): string {
+  if (divertedAwaitingRelease(movement)) return DIVERTED_STATUS_LABEL;
   return deliveredAwaitingWard(movement)
     ? "Arrived at ward, awaiting ward confirmation"
     : stageCopy[movement.stage].label;

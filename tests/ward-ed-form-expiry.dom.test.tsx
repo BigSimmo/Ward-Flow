@@ -210,7 +210,8 @@ describe("the ED screen's form-expiry line reads only the typed expiry", () => {
 
     const warning = screen.getByTestId(`ward-ed-form-expiry-warning-${PAST_DUE_ID}`);
     expect(warning).toHaveTextContent("Warning: past the expiry written on the form. Check the form.");
-    expect(warning).toHaveAttribute("data-level", "warning");
+    // Master stress test LG-1 (14 Nov 2026): passed is red, as on Forms and Delays (D-210 ruling 3).
+    expect(warning).toHaveAttribute("data-level", "danger");
 
     // "Never disables a control": pastDue and clearDue are identical in every field any
     // blocked-reason function on this board reads (stage, transport, closure, acceptedUnitId,
@@ -226,11 +227,14 @@ describe("the ED screen's form-expiry line reads only the typed expiry", () => {
     }
   });
 
-  it("a dueAt inside the warning band but not yet passed shows the close warning, not the passed one", () => {
+  it("a dueAt inside the urgent warning but not yet passed shows Act now, not the passed warning", () => {
     render(<EdScreen edId="arm-ed" />);
+    // Master stress test RV1a-1 (14 Nov 2026): 30 minutes out is within the 1 h urgent warning, so
+    // the ED row is red Act now, as Forms, Delays and the patient page are (D-210 ruling 3).
     const warning = screen.getByTestId(`ward-ed-form-expiry-warning-${CLOSE_DUE_ID}`);
-    expect(warning).toHaveTextContent("Warning: the expiry written on the form is close.");
-    expect(warning).toHaveAttribute("data-level", "warning");
+    expect(warning).toHaveTextContent("Act now: the expiry written on the form is close.");
+    expect(warning).toHaveAttribute("data-level", "danger");
+    expect(screen.getByTestId(`ward-ed-patient-${CLOSE_DUE_ID}`)).toHaveAttribute("data-act-now", "true");
   });
 
   it("past the typed expiry says so in words on the board, and close does not (CS-11)", () => {

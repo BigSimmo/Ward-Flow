@@ -1285,6 +1285,9 @@ function ReadsAlikeMarker({ collision, onOpen }: { collision: CommunityNameColli
       <StatusGlyph tone="warning" size={9} />
       Reads like {others} {others === 1 ? "other" : "others"}
       <SrOnly> — check you have the right one</SrOnly>
+      <span className={styles.readsAlikePrint} aria-hidden="true">
+        , check you have the right one
+      </span>
     </button>
   );
 }

@@ -17,6 +17,7 @@ import { CalendarDays, ChevronDown, ChevronLeft, Clock, Copy, Search, SearchX, U
 
 import { ListExportButton } from "@/components/ward-management/ward-list-export-button";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
+import { usePrinting } from "@/components/ward-management/use-printing";
 import {
   Avatar,
   Button,
@@ -238,6 +239,8 @@ export function CensusTable(props: CensusTableProps) {
   const deferredNeedle = useDeferredValue(props.needle);
   const effectiveNeedle = props.needle === "" ? "" : deferredNeedle;
   const lifting = highlight !== null;
+  // INV-PRINT-005: the paper holds every row the screen can show, so print opens every group and every "Show all".
+  const printing = usePrinting();
   const groups = censusSections(rows);
   const groupsFound = groups.filter((entry) => entry.rows.length > 0).length;
   // Device audit 11 Oct 2026: 51 Waiting and 41 Bed found fully open made the page 4,630px; each
@@ -403,9 +406,9 @@ export function CensusTable(props: CensusTableProps) {
             {groups.map(({ key: sectionKey, group, label: sectionLabel, rows: groupRows }) => {
               if ((searching || props.narrowed) && groupRows.length === 0) return null;
               const litCount = lifting ? groupRows.filter(lifted).length : 0;
-              const open = searching || props.narrowed || openGroups[group.id] || litCount > 0;
+              const open = printing || searching || props.narrowed || openGroups[group.id] || litCount > 0;
               const cap =
-                searching || lifting
+                printing || searching || lifting
                   ? groupRows.length
                   : group.id === "ward"
                     ? props.showAllWard

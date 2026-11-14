@@ -31,6 +31,7 @@ import { type CallTarget } from "./patient-call-list";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { TransportExceptionReason } from "@/components/ward-management/ward-model";
 import { absenceStepsFor, ABSENCE_STEP_LABELS } from "@/components/ward-management/ward-model";
+import { divertedAwaitingRelease } from "@/components/ward-management/ward-stage-copy";
 import { heldUnitGenderRefusal } from "@/components/ward-management/ward-flow-reducer";
 import type { UploadFormsModalProps } from "@/components/ward-management/referrals/upload-forms-modal";
 import { acceptedWardReferralFor } from "@/components/ward-management/referrals/accepted-ward-referral";
@@ -611,7 +612,10 @@ export function PatientNowScreen({
         : originName
       : mode === "transit"
         ? // Handover ready is still in the ED, awaiting collection: only Moving is on the way.
-          `${liveMovement?.stage === "moving" ? "On the way to" : "Ready to go to"} ${acceptingUnit?.name ?? "the receiving ward"}`
+          // Together-X1b-3: a diverted journey is not on its way; its pulled bed waits to be released.
+          liveMovement && divertedAwaitingRelease(liveMovement)
+          ? `Diverted, bed pulled at ${acceptingUnit?.name ?? "the receiving ward"} to be released`
+          : `${liveMovement?.stage === "moving" ? "On the way to" : "Ready to go to"} ${acceptingUnit?.name ?? "the receiving ward"}`
         : mode === "leave"
           ? `On leave from ${stayUnit?.name ?? "the ward"}`
           : mode === "awol"

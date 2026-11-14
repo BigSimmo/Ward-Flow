@@ -27,6 +27,7 @@ import {
   REMINDER_MORNING_SHIFT_END_MINUTE,
   REMINDER_MORNING_SHIFT_START_MINUTE,
   SHIFT_PATTERN,
+  SILENT_WARD_ANOTHER_WARD_SUGGESTION,
   SILENT_WARD_FIRST_REMINDER_MINUTES,
   SILENT_WARD_SECOND_REMINDER_MINUTES,
 } from "@/components/ward-management/ward-operational-defaults";
@@ -576,13 +577,7 @@ const MORNING_SHIFT_START = REMINDER_MORNING_SHIFT_START_MINUTE;
 const MORNING_SHIFT_END = REMINDER_MORNING_SHIFT_END_MINUTE;
 const firstMark = `${TWO_HOURS / 60} hours`;
 const secondMark = `${FOUR_HOURS / 60} hours`;
-/**
- * Silent ward reminders (Top 25 item 7). From the second reminder on, the
- * line also suggests asking another ward. Owner ruling, 15 Oct 2026: reminders only, nothing is
- * reallocated automatically, so this is words on the row and never an action.
- */
-export const SILENT_WARD_ANOTHER_WARD_SUGGESTION =
-  "Consider asking another ward as well. Nothing is moved automatically.";
+export { SILENT_WARD_ANOTHER_WARD_SUGGESTION };
 
 /**
  * The named shift a referral sits in, and when that shift ends: the one shift pattern every screen

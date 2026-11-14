@@ -139,6 +139,14 @@ export const YOUTH_SERVICE_NOTE_UP_TO_YEARS = CLINICAL_VALUES.youthServiceNoteUp
  */
 export const SILENT_WARD_FIRST_REMINDER_MINUTES = CLINICAL_VALUES.silentWardFirstReminder.value;
 export const SILENT_WARD_SECOND_REMINDER_MINUTES = CLINICAL_VALUES.silentWardSecondReminder.value;
+
+/**
+ * Silent ward reminders (Top 25 item 7). From the second reminder on, the
+ * line also suggests asking another ward. Owner ruling, 15 Oct 2026: reminders only, nothing is
+ * reallocated automatically, so this is words on the row and never an action.
+ */
+export const SILENT_WARD_ANOTHER_WARD_SUGGESTION =
+  "Consider asking another ward as well. Nothing is moved automatically.";
 /**
  * The one shift pattern every screen uses (Josh, 26 Sept 2026, "All yes": one pattern, the side
  * rail's): 07:00 to 15:00, 15:00 to 23:00 and 23:00 to 07:00. The reminders count to the end of the

@@ -220,6 +220,9 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   // v10 pass 3: Accept dispatches at once and offers Undo on the layout's toast; this page's own
   // toast line carries the outcome where no toast region is mounted.
   const routeRole = useRouteRole();
+  // Desks-R2-1 (AK-A-03): the site bed manager confirms beds as itself; sent as the ward, the server
+  // refuses it ("not part of your role"), as the ward screen's own confirm already knows.
+  const raiseCapacity = useWardRaise(routeRole === "bed_manager" ? "bed_manager" : "ward");
   const { run: runStep } = useUndoableStep({
     dispatch,
     rejections,
@@ -492,7 +495,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
     event.preventDefault();
     const parsed = Number(capacityValue);
     if (!Number.isFinite(parsed) || parsed < 0) return;
-    raise("CONFIRM_CAPACITY", {
+    raiseCapacity("CONFIRM_CAPACITY", {
       unitId: currentUnit.id,
       actingUnitId: currentUnit.id,
       value: Math.floor(parsed),

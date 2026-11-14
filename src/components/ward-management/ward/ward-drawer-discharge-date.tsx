@@ -56,6 +56,8 @@ export function WardDrawerDischargeDate({
   const recordedDay = recordedAt === null ? undefined : dayOf(recordedAt) - dayOf(now);
   const startOnRecorded = recordedDay !== undefined && DISCHARGE_DAYS.includes(recordedDay);
   if (!open) {
+    // Demo-Actions-AC1-3: a desk that can never set the date is not offered it (F-54).
+    if (gate.never) return null;
     return (
       <span className={styles.actions}>
         <Button

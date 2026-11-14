@@ -283,7 +283,7 @@ export function WardArrivalsCorridor({
                 {/* Column 1: Patient Demographics & Legal Status */}
                 <div className={styles.patientMeta}>
                   <div className={styles.patientHeaderRow}>
-                    <span className={styles.patientName}>{patientInfo.displayName}</span>
+                    <span className={styles.patientName}>{patientInfo.formalName}</span>
                     {patientInfo.umrn ? <span className={styles.patientUmrn}>UMRN: {patientInfo.umrn}</span> : null}
                   </div>
                   <div className={styles.patientOrigin}>
@@ -682,7 +682,7 @@ export function WardArrivalsCorridor({
       </Dialog>
       <TransportExceptionDialog
         open={arriveCheckMovement !== undefined}
-        who={arriveCheckMovement ? resolvePatientIdentity(arriveCheckMovement).displayName : "this patient"}
+        who={arriveCheckMovement ? resolvePatientIdentity(arriveCheckMovement).formalName : "this patient"}
         identity={arriveCheckMovement ? patientIdentityLine(resolvePatientIdentity(arriveCheckMovement)) : undefined}
         action="Confirm arrival"
         gaps={arriveCheckMovement ? arrivalGaps(arriveCheckMovement) : []}
@@ -696,7 +696,7 @@ export function WardArrivalsCorridor({
       />
       <ArrivalIdentityDialog
         open={arriveConfirmMovement !== undefined}
-        who={arriveConfirmMovement ? resolvePatientIdentity(arriveConfirmMovement).displayName : "this patient"}
+        who={arriveConfirmMovement ? resolvePatientIdentity(arriveConfirmMovement).formalName : "this patient"}
         identity={arriveConfirmMovement ? patientIdentityLine(resolvePatientIdentity(arriveConfirmMovement)) : ""}
         wardName={unit.name}
         onClose={() => setArriveConfirmId(null)}

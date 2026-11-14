@@ -66,13 +66,12 @@ import {
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { ArrivalIdentityDialog } from "@/components/ward-management/arrival-identity-dialog";
-import { clock } from "./patient-now-records";
 import ph from "../referrals/referral-match-phone.module.css";
 import styles from "./patient-transit-operations.module.css";
 import { FindAWard, wardMatchesQuery } from "@/components/ward-management/referrals/find-a-ward";
 import { ExtendHoldControl } from "@/components/ward-management/ward-extend-hold";
 import { useDeskActingWard } from "@/components/ward-management/ward-desk-acting-ward";
-import { calendarDateOf, splitDuration } from "@/components/ward-management/ward-clock";
+import { calendarDateOf, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { PULL_NO_LIMIT_RECORDED } from "@/components/ward-management/ward-bed-hold";
 import { observationEditingToken } from "@/components/ward-management/ward-flow-observation-events";
 import {
@@ -811,7 +810,7 @@ export function PatientTransitOperations({
             <p className={styles.hold} role="status" data-testid="ward-patient-transit-pull-timer">
               {remaining <= 0
                 ? "Pull time limit passed. The bed stays pulled until released or given a new limit."
-                : `Bed pulled · ${splitDuration(remaining)} left · Pull time limit ${clock(movement.pullExpiresAt!)}${movement.pullExtensions?.length ? " · extended" : ""}`}
+                : `Bed pulled · ${splitDuration(remaining)} left · Pull time limit ${formatInstantWithDay(movement.pullExpiresAt!, now)}${movement.pullExtensions?.length ? " · extended" : ""}`}
             </p>
           )}
           {rowUndoPull ? (
@@ -1039,7 +1038,7 @@ export function PatientTransitOperations({
                 </button>
                 <ArrivalIdentityDialog
                   open={arriveConfirm}
-                  who={subjectPatient.displayName}
+                  who={subjectPatient.formalName}
                   identity={identity}
                   wardName={destination.name}
                   onClose={() => setArriveConfirm(false)}

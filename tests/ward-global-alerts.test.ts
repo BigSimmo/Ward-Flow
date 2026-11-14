@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   bannerEntriesForDesk,
+  directiveAcknowledgeDesk,
   directiveAcknowledgements,
   directiveDesks,
   replyBoard,
@@ -345,5 +346,45 @@ describe("Broadcasts to chosen units (alerts redesign, 1 Nov 2026)", () => {
     const unknown = send(["not-a-desk"]);
     expect(unknown.broadcastAlerts).toHaveLength(0);
     expect(lastRefusal(unknown)).toMatch(/targetUnitIds/);
+  });
+});
+
+describe("a ward acknowledges a directive from the Broadcasts tab (Together-X2-6)", () => {
+  it("names the desk's own ward until it has acknowledged, even with a Pull now live", () => {
+    const seeded = seedWardFlowState();
+    const directive = wardFlowReducer(seeded, {
+      type: "DISPATCH_BROADCAST_ALERT",
+      role: "coordinator",
+      now: NOW,
+      title: "Directive",
+      message: "Review discharges.",
+      severity: "warning",
+      category: "capacity_gridlock",
+      targetScope: "all",
+      targetScopeLabel: "All units",
+      durationMinutes: 120,
+      dispatchedByName: "Desk",
+    });
+    expect(directive.rejections).toHaveLength(0);
+    const alert = directive.broadcastAlerts.at(-1)!;
+    const unitId = directive.units[0].id;
+    const ward = { role: "ward", scope: { kind: "ward", unitIds: [unitId] } };
+    expect(directiveAcknowledgeDesk(alert, ward, directive.movements, NOW, directive.units)).toEqual({
+      role: "ward",
+      id: unitId,
+    });
+    // Not for a desk with no place of its own to acknowledge for, nor for a bed call.
+    const site = { role: "bed_manager", scope: { kind: "site" } };
+    expect(directiveAcknowledgeDesk(alert, site, directive.movements, NOW, directive.units)).toBeNull();
+    const acked = wardFlowReducer(directive, {
+      type: "ACKNOWLEDGE_BROADCAST_ALERT",
+      role: "ward",
+      now: NOW + 1,
+      alertId: alert.id,
+      unitId,
+    });
+    expect(acked.rejections).toHaveLength(0);
+    const after = acked.broadcastAlerts.find((candidate) => candidate.id === alert.id)!;
+    expect(directiveAcknowledgeDesk(after, ward, acked.movements, NOW + 1, acked.units)).toBeNull();
   });
 });
