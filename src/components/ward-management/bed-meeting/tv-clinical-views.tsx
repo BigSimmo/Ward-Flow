@@ -248,7 +248,8 @@ export function WardClinicalTvView({ rows, footer }: { rows: WardClinicalRow[]; 
           },
           { label: "on leave", value: count((row) => row.where === "leave") },
           { label: "absent without leave", value: count((row) => row.where === "awol"), tone: "danger" },
-          { label: "forms ending soon", value: count((row) => row.legal?.tone !== undefined), tone: "warning" },
+          // D-MCA (Josh, 14 Nov 2026), ruling 3: only the amber rows, Ending soon in the Settings soon warning.
+          { label: "forms ending soon", value: count((row) => row.legal?.tone === "warning"), tone: "warning" },
           { label: "coming in", value: count((row) => row.where === "incoming") },
           { label: "home today", value: count((row) => row.goingToday) },
         ]}

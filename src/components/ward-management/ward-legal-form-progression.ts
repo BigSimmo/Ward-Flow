@@ -1,4 +1,4 @@
-import type { Instant } from "@/components/ward-management/ward-clock";
+import { clockState, type DueSoonThresholds, type Instant } from "@/components/ward-management/ward-clock";
 import type { LegalForm, LegalFormEnding, Movement } from "@/components/ward-management/ward-model";
 
 /**
@@ -29,9 +29,13 @@ export type FormProgression = {
   when: "at arrival" | "at the examination";
 };
 
-/** What the legal position reads from a stay: its form and status, and the examination and arrival. */
-export type LegalPositionSource = Pick<Movement, "legalForm" | "legalStatus"> &
-  Partial<Pick<Movement, "examination" | "closure">>;
+/**
+ * What the legal position reads from a stay: its form and status, and the examination and arrival.
+ * Only the form is required, so a reader holding just a form (a caseload row, the ED expiry line)
+ * still takes the one position (audit H4, 14 Nov 2026).
+ */
+export type LegalPositionSource = Pick<Movement, "legalForm"> &
+  Partial<Pick<Movement, "legalStatus" | "examination" | "closure">>;
 
 /** D-170 item 1: the prompt, word for word, everywhere. No form number. */
 export const NEXT_FORM_TO_RECORD = "Next form to record";
@@ -150,4 +154,28 @@ export function legalFormNowWords(movement: LegalPositionSource | undefined): st
   const position = currentLegalPosition(movement);
   if (!position.formWords) return undefined;
   return position.ended ? `${position.formWords} ended` : position.formWords;
+}
+
+/**
+ * WHERE THE TYPED EXPIRY IN FORCE STANDS (mechanics and clock audit H4 and M4; D-MCA (Josh, 14 Nov
+ * 2026), ruling 3). The one band rule every screen reads for a legal time: "passed" once the clock
+ * is after the typed minute, "urgent" within the Settings urgent warning (default 1 h: act now,
+ * red), "soon" within the Settings soon warning (default 3 h: ending soon, amber), "later" beyond
+ * it, and "none" when no typed expiry is in force (none typed, or a person recorded the form
+ * ended). The thresholds are Josh's Settings warnings, never a legal limit; nothing is calculated.
+ */
+export type LegalStanding = "passed" | "urgent" | "soon" | "later" | "none";
+
+export function currentLegalStanding(
+  movement: Pick<Movement, "legalForm">,
+  now: Instant,
+  thresholds: DueSoonThresholds,
+): LegalStanding {
+  const dueAt = currentLegalDueAt(movement);
+  if (dueAt === undefined) return "none";
+  const state = clockState(dueAt, now, thresholds);
+  if (state === "breached") return "passed";
+  if (state === "critical") return "urgent";
+  if (state === "due") return "soon";
+  return "later";
 }

@@ -32,6 +32,7 @@ import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { allEmergencyDepartments } from "../ward-sites";
 import {
   acceptedPullDesk,
+  endedFormWords,
   LEGAL_STATUSES,
   recordedPullDetails,
   type AcceptedAwaitingPull,
@@ -57,7 +58,12 @@ const NO_FORM = "none";
 export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingPull; onDone: () => void }) {
   const { referral, unitId, unitName } = item;
   const baseId = useId();
-  const { movements, dispatch, rejections } = useWardFlowSelect("movements", "dispatch", "rejections");
+  const { movements, dispatch, rejections, dayZero } = useWardFlowSelect(
+    "movements",
+    "dispatch",
+    "rejections",
+    "dayZero",
+  );
   const now = useWardFlowClock();
   const gate = useRoleGate();
   const role = useRouteRole();
@@ -81,7 +87,8 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
   const who = patientOf(referral);
   const name = nameFor(who.formalName, who.umrn);
 
-  const [recorded] = useState(() => recordedPullDetails(referral, movements));
+  // D-MCA (Josh, 14 Nov 2026), ruling 7: an ended form or a passed typed expiry is never pre-filled.
+  const [recorded] = useState(() => recordedPullDetails(referral, movements, now));
   const [legalStatus, setLegalStatus] = useState<LegalStatus | "">(recorded.legalStatus ?? "");
   const [legalForm, setLegalForm] = useState(
     recorded.legalFormCode === undefined ? "" : (recorded.legalFormCode ?? NO_FORM),
@@ -242,7 +249,16 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
           {mismatch} You can still pull the bed.
         </p>
       ) : null}
-      <Field label="Legal form" hint={recorded.legalFormCode !== undefined ? source : undefined}>
+      <Field
+        label="Legal form"
+        hint={
+          recorded.endedForm
+            ? `${source}: ${endedFormWords(recorded.endedForm, now, dayZero)}`
+            : recorded.legalFormCode !== undefined
+              ? source
+              : undefined
+        }
+      >
         <Select
           value={legalForm}
           onChange={(event) => setLegalForm(event.target.value)}

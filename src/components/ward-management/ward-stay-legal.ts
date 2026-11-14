@@ -1,6 +1,7 @@
 import type { Admission, PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
+import { currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { classifyLegalStatus, legalStatusIsOnOrder } from "@/components/ward-management/ward-legal-status";
@@ -39,6 +40,27 @@ export function stayLegalStatus(admission: Admission, source: StayLegalSource): 
   return resolveSubjectPatient(admission, source).patient?.legalStatus;
 }
 
+/**
+ * WHETHER THE STAY AND THE PATIENT RECORD HOLD DIFFERENT LEGAL STATUSES (D-187 item 1, Q19; mechanics
+ * and clock audit M13a, D-MCA (Josh, 14 Nov 2026), ruling 5). The patient page's rule: both are kept,
+ * the stay's status is the one shown, and one side recorded with the other not is a difference too.
+ * The patient page and the TV wall read this, so the "statuses differ" mark appears on both or neither.
+ */
+export function legalStatusesDiffer(
+  movement: Pick<Movement, "legalStatus"> | undefined,
+  patient: Pick<Patient, "legalStatus"> | undefined,
+): boolean {
+  return movement !== undefined && patient !== undefined && movement.legalStatus !== patient.legalStatus;
+}
+
+/** The patient page's words for the mark. */
+export const LEGAL_STATUSES_DIFFER = "These two legal statuses differ. Check which is current.";
+
+/** Whether the stay's own journey and its patient record differ, read as the patient page reads them. */
+export function stayLegalStatusesDiffer(admission: Admission, source: StayLegalSource): boolean {
+  return legalStatusesDiffer(stayMovement(admission, source), resolveSubjectPatient(admission, source).patient);
+}
+
 /** On an order: a recorded status that is not voluntary (`legalStatusIsOnOrder`). Not recorded is not assumed either way. */
 export function isOnOrder(status: string | undefined): boolean {
   return legalStatusIsOnOrder(status);
@@ -56,7 +78,10 @@ export function stayLegalShort(admission: Admission, source: StayLegalSource): s
   const kind = classifyLegalStatus(status);
   if (status === undefined || kind === "not_recorded") return undefined;
   if (kind === "voluntary") return "Voluntary";
-  const code = stayMovement(admission, source)?.legalForm?.code;
+  // Audit H4 (14 Nov 2026): the one current legal position. A form a person recorded as ended is not
+  // named as the person's authority; the recorded status says where they stand.
+  const position = currentLegalPosition(stayMovement(admission, source));
+  const code = position.ended ? undefined : position.form?.code;
   // H-0842: the form reads with its register title, never the bare code.
   if (code) return legalFormName({ code });
   if (kind === "cto") return "CTO";

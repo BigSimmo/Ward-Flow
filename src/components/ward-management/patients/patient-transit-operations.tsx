@@ -19,6 +19,8 @@ import {
 import { shortlistVerdict, stageCopy } from "../ward-derivations";
 import { useSharedReadyLookup } from "../use-shared-ready";
 import { legalFormName } from "../ward-legal-forms";
+import { currentLegalPosition, FORM_RECORDED_ENDED } from "../ward-legal-form-progression";
+import { typedClock } from "../ward-legal-time-as-typed";
 import { CAD_TO_FOLLOW, cadNumberLine, cadNumberToFollow } from "../ward-cad-number";
 import {
   MOVEMENT_STAGES,
@@ -115,6 +117,7 @@ export function PatientTransitOperations({
   const identity = patientIdentityLine(subjectPatient);
   const patientName = subjectPatient.displayName;
   const now = useWardFlowClock();
+  const legalPosition = currentLegalPosition(movement);
   const baseId = useId();
   // Feature 11: each action asks the route's role; cross-role pairs are listed in `ward-role-permissions.ts`.
   const gate = useRoleGate();
@@ -1234,9 +1237,13 @@ export function PatientTransitOperations({
             <span>Legal authority</span>
             <strong>{movement.legalForm ? legalFormName(movement.legalForm) : "Not recorded"}</strong>
             <small>
-              {movement.legalForm?.dueAt === undefined
-                ? "No paper expiry recorded"
-                : `Paper expiry ${clock(movement.legalForm.dueAt)}`}
+              {/* Audit H4 (14 Nov 2026): the one current legal position, and the typed time with its
+                  day when it is on another day (D-93). */}
+              {legalPosition.ended
+                ? FORM_RECORDED_ENDED
+                : legalPosition.dueAt === undefined
+                  ? "No paper expiry recorded"
+                  : `Paper expiry ${typedClock(legalPosition.dueAt, now, dayZero)}`}
             </small>
           </div>
           <div>

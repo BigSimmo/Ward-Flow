@@ -95,7 +95,7 @@ export function publishedThresholds(
       figure: "A legal form's own due time, once it has passed. Each form carries its own deadline.",
       triggers: "The amber tint on a department's pressure card on Home, and the same card's overdue-form count.",
       livesIn:
-        "ward-pressure.ts, which counts movements whose currentLegalDueAt has passed (the legalForm.dueAt still in force; an ended form's expiry is history only); the tint is in coordinator.module.css.",
+        "ward-pressure.ts, which counts movements whose currentLegalDueAt has passed (the typed form expiry still in force; an ended form's expiry is history only); the tint is in coordinator.module.css.",
       setBy:
         "The product owner, 17 September 2026: the clinician types the expiry written on the legal form. A form with no typed expiry never reaches this row.",
       state: stateFor(breachedForms),

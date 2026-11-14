@@ -23,6 +23,7 @@ import {
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
+import { currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
 import { standingSuffix, typedTimeStanding } from "@/components/ward-management/legal-forms/legal-forms-view";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { useDueSoonThresholds, useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -277,7 +278,7 @@ export function MovementDrawer({
   const legalWhen =
     dueAt === undefined
       ? movement.legalForm
-        ? movement.legalForm.dueAt !== undefined
+        ? currentLegalPosition(movement).typedEndAt !== undefined
           ? "ended"
           : "no recorded expiry"
         : ""

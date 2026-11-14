@@ -40,6 +40,9 @@ import type { WardFlowState } from "@/components/ward-management/ward-flow-reduc
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
 import { partitionSnoozed } from "@/components/ward-management/ward-inbox-snooze";
 import { rememberLastCall } from "@/components/ward-management/ward-last-call";
+import { admittedLegalExpiryPassed } from "@/components/ward-management/ward-legal-admitted";
+import { currentLegalDueAt } from "@/components/ward-management/ward-legal-form-progression";
+import { formTimeAsTyped } from "@/components/ward-management/ward-legal-time-as-typed";
 
 /**
  * What the task list reads. The records (admissions, patients, referrals, notifications, planned
@@ -95,10 +98,41 @@ function deriveTaskItems(source: TaskSource, now: Instant): InboxItem[] {
       stuckHandoverMinutes: source.stuckHandoverMinutes,
       dayZero: source.dayZero,
     }),
+    ...admittedLegalInboxItems(source, now),
     ...decisionTargetInboxItems(open, now, source.configuration),
     ...duplicateBedRequestInboxItems(source),
     ...bedMeetingActionInboxItems(source, now),
   ];
+}
+
+/** The ward's own owner words, so `inboxOwnerRoles` places an admitted person's row on the ward too. */
+const ADMITTED_LEGAL_OWNER = "Nurse in charge";
+
+/**
+ * Audit M1 and D-MCA (Josh, 14 Nov 2026), ruling 2: a person already admitted on a form whose typed
+ * expiry still in force has passed raises the same act-now row as an open journey (`legal-` plus
+ * the journey's id), so the coordinator's alerts count it. Needs the stays; without them, none.
+ */
+export function admittedLegalInboxItems(
+  source: Pick<TaskSource, "movements" | "admissions" | "dayZero">,
+  now: Instant,
+): InboxItem[] {
+  if (!source.admissions) return [];
+  return admittedLegalExpiryPassed(source.movements, source.admissions, now).map((movement) => {
+    const dueAt = currentLegalDueAt(movement)!;
+    return {
+      id: `${INBOX_CATEGORIES.legal_timing_breached.idPrefix}${movement.id}`,
+      kind: INBOX_CATEGORIES.legal_timing_breached.kind,
+      tone: "danger",
+      icon: CircleAlert,
+      title: "Legal due time passed",
+      detail: `${movement.id} · admitted · ${formTimeAsTyped(movement.legalForm!, now, source.dayZero)}`,
+      owner: ADMITTED_LEGAL_OWNER,
+      movementId: movement.id,
+      dueAt,
+      since: dueAt,
+    };
+  });
 }
 
 /**

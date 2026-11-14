@@ -11,6 +11,7 @@ import { calendarDateOf, type Instant } from "@/components/ward-management/ward-
 import { MONTH_SHORT } from "@/components/ward-management/ward-month-names";
 import { bedStates, networkNamedHolds } from "@/components/ward-management/ward-bed-states";
 import { typedClock } from "@/components/ward-management/ward-legal-time-as-typed";
+import { currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
 import {
   RECORDED_SEXES,
   type AtsCategory,
@@ -345,7 +346,10 @@ export function sampleProfile(
   const info = resolveSubjectPatient(movement, record);
   const patient = info.patient;
   const years = patient ? patientAgeYears(patient, calendarDateOf(now, record.dayZero)) : Number.NaN;
-  const dueAt = movement.legalForm?.dueAt;
+  // Audit H4 (14 Nov 2026): the one current legal position. A form a person recorded as ended, and
+  // its old typed end, are never sent on as current (D-MCA (Josh, 14 Nov 2026), ruling 7).
+  const position = currentLegalPosition(movement);
+  const dueAt = position.dueAt;
   const movementSexOrGender = patient?.sex ?? patient?.gender ?? movement.sex;
   return {
     ...blank,
@@ -360,7 +364,7 @@ export function sampleProfile(
       (record.admissions && record.units ? sourceWardName(movement, record.admissions, record.units) : undefined) ??
       originName(movement) ??
       NOT_RECORDED,
-    legalStatus: movement.legalForm ? `Form ${movement.legalForm.code}` : movement.legalStatus,
+    legalStatus: position.formWords && !position.ended ? position.formWords : movement.legalStatus,
     recordedExpiry:
       dueAt === undefined ? "not recorded" : `${typedClock(dueAt, now, record.dayZero)}, clinician-entered`,
     security: movement.security,

@@ -8,6 +8,7 @@ import type { DueSoonThresholds } from "@/components/ward-management/ward-clock"
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import type { LeaveBed, Unit } from "@/components/ward-management/ward-model";
 import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
+import { admittedLegalExpiryPassed } from "@/components/ward-management/ward-legal-admitted";
 import { LEAVE_BED_OPEN_WARNING_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 
 import { wardBedRoster, wardLiveFormAlerts } from "./ward-screen-derivations";
@@ -59,9 +60,20 @@ export function useWardScreenFigures(
   const liveFormAlerts = useMemo(
     () =>
       unit &&
-      wardLiveFormAlerts({ resolvePatientIdentity, accepted, now, thresholds, overdueLeaveBeds, unit, dayZero })
-        .liveFormAlerts,
-    [resolvePatientIdentity, accepted, now, thresholds, overdueLeaveBeds, unit, dayZero],
+      wardLiveFormAlerts({
+        resolvePatientIdentity,
+        accepted,
+        now,
+        thresholds,
+        overdueLeaveBeds,
+        unit,
+        dayZero,
+        // Audit M1, D-MCA (Josh, 14 Nov 2026) ruling 2: this ward's admitted people on a form.
+        admittedLegalPassed: admittedLegalExpiryPassed(movements, admissions, now).filter(
+          (movement) => movement.acceptedUnitId === unit.id,
+        ),
+      }).liveFormAlerts,
+    [resolvePatientIdentity, accepted, now, thresholds, overdueLeaveBeds, unit, dayZero, movements, admissions],
   );
   const states = steady?.states;
   const roster = useMemo(

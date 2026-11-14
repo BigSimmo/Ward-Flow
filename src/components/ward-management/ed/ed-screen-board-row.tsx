@@ -6,6 +6,7 @@
 import { Fragment, type ReactNode } from "react";
 import { communityTeamOptionsForSuburb } from "@/components/ward-management/referrals/referral-destination-options";
 import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
+import { currentLegalDueAt, currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { communityPurposeOf } from "@/components/ward-management/ward-referrals";
 import { recordedEdDeparture } from "@/components/ward-management/ward-ed-presence";
@@ -117,7 +118,9 @@ function edBoardRowModel(movement: Movement, ctx: EdScreenContext) {
   // record to add an expiry to.") is then structurally unreachable from here,
   // the same reasoning `isForm1A`'s "Mark Form 1A received" button above follows.
   const legalFormExpiryOpen = legalFormExpiryOpenFor === movement.id;
-  const legalFormExpiryIsExtension = movement.legalForm?.dueAt !== undefined;
+  // Audit H4 (14 Nov 2026): the typed expiry still in force, read through the one legal position.
+  const legalFormDueAt = currentLegalDueAt(movement);
+  const legalFormExpiryIsExtension = legalFormDueAt !== undefined;
   const legalFormExpiryDraftInstant = legalFormExpiryOpen
     ? instantFromDateAndTimeInputs(legalFormExpiryDraft.date, legalFormExpiryDraft.time, dayZero)
     : undefined;
@@ -126,7 +129,7 @@ function edBoardRowModel(movement: Movement, ctx: EdScreenContext) {
   const legalFormExpirySaveBlockedReason =
     legalFormExpiryDraftInstant === undefined
       ? "Enter both date and time from the paper record."
-      : movement.legalForm?.dueAt !== undefined && legalFormExpiryDraftInstant <= movement.legalForm.dueAt
+      : legalFormDueAt !== undefined && legalFormExpiryDraftInstant <= legalFormDueAt
         ? "The extension must be later than the expiry already recorded."
         : undefined;
   const legalFormExpirySaveBlocked = legalFormExpirySaveBlockedReason !== undefined;
@@ -144,7 +147,7 @@ function edBoardRowModel(movement: Movement, ctx: EdScreenContext) {
   // includes "1A"/"form_1a"/"3D"/"form_3d" — both facts checked against the
   // real types, not assumed. Each `as any`/`as string` cast existed only to get
   // past the compiler correctly reporting those comparisons as impossible.
-  const isForm1A = movement.legalForm?.code === "1A";
+  const isForm1A = currentLegalPosition(movement).form?.code === "1A";
 
   // S-7 (audit 13 Oct 2026): after an inpatient order the bed search carries on.
   // "Record outcome" (discharge or community follow-up, which withdraws requests and

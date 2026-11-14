@@ -4,6 +4,7 @@ import type { WardFlowEvent } from "./ward-flow-events";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
 import type { WardFlowState } from "./ward-flow-reducer";
 import type { Movement, Notice } from "./ward-model";
+import { currentLegalDueAt } from "./ward-legal-form-progression";
 import { isOnOrder, stayLegalStatus } from "./ward-stay-legal";
 import { SNOOZE_MAX_MINUTES } from "./ward-operational-defaults";
 import { duplicateBedRequestSince } from "./ward-duplicate-bed-requests";
@@ -230,7 +231,7 @@ function lastPulledAt(movement: Movement): Instant | undefined {
  */
 export function inboxOccurrenceSince(movement: Movement, inboxItemId: string): Instant | undefined {
   const startsWith = (key: keyof typeof INBOX_CATEGORIES) => inboxItemId.startsWith(INBOX_CATEGORIES[key].idPrefix);
-  if (startsWith("legal_timing_breached")) return movement.legalForm?.dueAt;
+  if (startsWith("legal_timing_breached")) return currentLegalDueAt(movement);
   if (startsWith("bed_pull_expired")) return movement.pullExpiresAt;
   if (startsWith("transport_awaiting_departure")) return movement.transport?.acceptedAt;
   if (startsWith("transport_booking_estimate_passed")) return movement.transport?.estimatedAt;

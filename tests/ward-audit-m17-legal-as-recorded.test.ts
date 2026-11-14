@@ -21,6 +21,7 @@ import type { WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { LEGAL_STATUSES_DIFFER } from "@/components/ward-management/ward-stay-legal";
 
 /**
  * M17 (master audit list, 10 Nov 2026): legal status as recorded everywhere (D-93).
@@ -248,7 +249,9 @@ describe("M17: one form, edited, replaced and lapsed, reads the same on every ou
     expect(outputs.printStatus).toBe(name);
     expect(outputs.printExpiry).toBe(FORM_RECORDED_ENDED);
     expect(outputs.tv.startsWith(`${name}, `)).toBe(true);
-    expect(outputs.tv.endsWith(`. ${FORM_RECORDED_ENDED}`)).toBe(true);
+    // Audit M13 (a): the TV adds the patient page's statuses-differ mark when the journey and the
+    // patient record differ, after the form words.
+    expect(outputs.tv.replace(`. ${LEGAL_STATUSES_DIFFER}`, "").endsWith(`. ${FORM_RECORDED_ENDED}`)).toBe(true);
     expect(outputs.tv).not.toContain(typedTimeLine(movement.legalForm!.dueAt!, NOW + 3, DAY_ZERO));
     expect(outputs.downtime.form).toBe(name);
     expect(outputs.downtime.typedExpiryAt).toBeNull();

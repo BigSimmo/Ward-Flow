@@ -22,7 +22,18 @@ import { leavingDestinationLabel } from "@/components/ward-management/community/
 import { movementHasBedHold } from "@/components/ward-management/ward-movement-bed-hold";
 import { originName } from "@/components/ward-management/ward-movement-origin";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
+import { currentLegalPosition, FORM_RECORDED_ENDED } from "@/components/ward-management/ward-legal-form-progression";
 import { patientMode } from "./patient-mode";
+
+/**
+ * A presentation's form as a document row's status, from the shared legal position (audit H4): a
+ * form a person recorded as ended says so, never "Runs to" its old typed end.
+ */
+function legalDocumentStatus(movement: Movement): string {
+  const position = currentLegalPosition(movement);
+  if (position.ended) return FORM_RECORDED_ENDED;
+  return position.typedEndAt !== undefined ? `Runs to ${clock(position.typedEndAt)}` : "Active";
+}
 
 export interface ResolvedPatientNow {
   record: PatientNowRecord;
@@ -553,7 +564,7 @@ export function resolvePatientNowRecord(
                   from: "Current presentation",
                   by: "Author not recorded here",
                   when: "Active presentation",
-                  status: "Active",
+                  status: currentLegalPosition(movement).ended ? FORM_RECORDED_ENDED : "Active",
                 },
               ]
             : [],
@@ -580,7 +591,7 @@ export function resolvePatientNowRecord(
               from: "The presentation open now",
               by: "Author not recorded here",
               when: "Active presentation",
-              status: movement.legalForm.dueAt !== undefined ? `Runs to ${clock(movement.legalForm.dueAt)}` : "Active",
+              status: legalDocumentStatus(movement),
             },
           ]
         : [],
@@ -650,8 +661,7 @@ export function resolvePatientNowRecord(
         from: "The presentation open now",
         by: "Author not recorded here",
         when: "Active presentation",
-        status:
-          activeMovement.legalForm.dueAt !== undefined ? `Runs to ${clock(activeMovement.legalForm.dueAt)}` : "Active",
+        status: legalDocumentStatus(activeMovement),
       });
     }
 

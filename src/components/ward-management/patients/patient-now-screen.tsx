@@ -131,7 +131,11 @@ import {
   BLANK_TRANSPORT_BOOKING,
   type TransportBookingSubmission,
 } from "@/components/ward-management/transport/transport-booking-form";
-import { formProgression } from "@/components/ward-management/ward-legal-form-progression";
+import {
+  currentLegalDueAt,
+  formProgression,
+  legalFormNowWords,
+} from "@/components/ward-management/ward-legal-form-progression";
 import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
 import {
   requiredRoleForPermission,
@@ -576,7 +580,7 @@ export function PatientNowScreen({
   // `formname` is the register's own title for whatever code that movement actually carries
   // (`legalFormName`), never a hand-written "Form 4A".
   const templateContext = {
-    due: liveMovement?.legalForm?.dueAt ?? null,
+    due: (liveMovement ? currentLegalDueAt(liveMovement) : undefined) ?? null,
     formname: liveMovement?.legalForm ? legalFormName(liveMovement.legalForm) : "No legal form recorded",
     formcode: liveMovement?.legalForm?.code,
     escalated: now - 38,
@@ -650,11 +654,7 @@ export function PatientNowScreen({
   const stayLegalStatusNow = liveMovement?.legalStatus ?? livePatient?.legalStatus;
   const leaveLegal = {
     form: [
-      ctoInForce
-        ? `Form ${ctoInForce.form}`
-        : formMovement?.legalForm
-          ? `Form ${formMovement.legalForm.code}`
-          : "No form recorded",
+      ctoInForce ? `Form ${ctoInForce.form}` : (legalFormNowWords(formMovement) ?? "No form recorded"),
       stayLegalStatusNow ?? "legal status not recorded",
     ].join(" · "),
     onOrder: isOnOrder(stayLegalStatusNow),

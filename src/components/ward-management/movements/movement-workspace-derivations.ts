@@ -1,9 +1,10 @@
+import { type DueSoonThresholds, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import {
-  clockState,
-  type DueSoonThresholds,
-  formatInstantWithDay,
-  type Instant,
-} from "@/components/ward-management/ward-clock";
+  currentLegalDueAt,
+  currentLegalPosition,
+  currentLegalStanding,
+  FORM_RECORDED_ENDED,
+} from "@/components/ward-management/ward-legal-form-progression";
 import {
   destinationNoLongerLawful,
   orphanedTransport,
@@ -99,10 +100,14 @@ export function legalFormReadinessLine(legalForm: LegalForm, now: Instant, dayZe
   // A code this model holds no label for — Form 3D — is named by its code alone, never by a
   // guessed expansion and never by the word "undefined".
   const named = legalFormNameLabelFirst(legalForm);
-  if (legalForm.dueAt === undefined) return `${named} · no deadline recorded`;
+  // Audit H4 (14 Nov 2026): the one current legal position. A form a person recorded as ended keeps
+  // its typed end as history only, so this line never reads it as live.
+  const position = currentLegalPosition({ legalForm });
+  if (position.ended) return `${named} · ${FORM_RECORDED_ENDED.toLowerCase()}`;
+  if (position.dueAt === undefined) return `${named} · no deadline recorded`;
   // Legal times only as typed (31 Oct 2026): "ends 15:42 as typed", or "ended … as typed" once
   // passed, which still says the breach in words; never "1h 15m overdue".
-  return `${named} · ${typedTimePhrase(legalForm.dueAt, now, dayZero)}`;
+  return `${named} · ${typedTimePhrase(position.dueAt, now, dayZero)}`;
 }
 
 /**
@@ -363,26 +368,22 @@ export function attentionItems({
     items.push({ key: "sender-progress", who: "Overall progress", chip: progress, level: "routine", say: progress });
   }
 
-  const deadline = movement.legalForm?.dueAt;
-  if (movement.legalForm && deadline !== undefined) {
-    const state = clockState(deadline, now, thresholds);
-    if (state === "breached") {
-      items.push({
-        key: "deadline",
-        who: legalFormNameLabelFirst(movement.legalForm),
-        chip: "Overdue",
-        level: "urgent",
-        say: `The form ${typedTimePhrase(deadline, now, dayZero)}. Not recorded as dealt with.`,
-      });
-    } else if (state === "critical" || state === "due") {
-      items.push({
-        key: "deadline",
-        who: legalFormNameLabelFirst(movement.legalForm),
-        chip: "Due soon",
-        level: "stalled",
-        say: `The form ${typedTimePhrase(deadline, now, dayZero)}.`,
-      });
-    }
+  // Audit H4 (14 Nov 2026): the typed expiry still in force, in the Settings bands every legal screen
+  // uses (D-MCA (Josh, 14 Nov 2026), ruling 3). Never "Overdue": a legal time reads as typed, with
+  // the Forms page's own words. A form a person recorded as ended raises nothing here.
+  const deadline = currentLegalDueAt(movement);
+  const standing = currentLegalStanding(movement, now, thresholds);
+  if (movement.legalForm && deadline !== undefined && standing !== "later" && standing !== "none") {
+    items.push({
+      key: "deadline",
+      who: legalFormNameLabelFirst(movement.legalForm),
+      chip: standing === "passed" ? "Form expiry passed" : standing === "urgent" ? "Act now" : "Ending soon",
+      level: standing === "soon" ? "stalled" : "urgent",
+      say:
+        standing === "passed"
+          ? `The form ${typedTimePhrase(deadline, now, dayZero)}. Not recorded as dealt with.`
+          : `The form ${typedTimePhrase(deadline, now, dayZero)}.`,
+    });
   }
 
   if (movement.pullExpiresAt !== undefined && movement.pullExpiresAt <= now) {

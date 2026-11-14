@@ -4,9 +4,11 @@
 import type { PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import {
   currentLegalDueAt,
+  currentLegalStanding,
   FORM_RECORDED_ENDED,
   formProgressionPhrase,
   legalFormEnd,
+  legalFormNowWords,
   NEXT_FORM_TO_RECORD,
 } from "@/components/ward-management/ward-legal-form-progression";
 import { typedClock, typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
@@ -23,7 +25,6 @@ import {
   dayOf,
   formatInstant,
   formatInstantWithDay,
-  minutesUntil,
   splitDuration,
 } from "@/components/ward-management/ward-clock";
 import { deliveredAwaitingWard } from "@/components/ward-management/ward-stage-copy";
@@ -446,6 +447,11 @@ type WardLiveFormAlertsInputs = {
   unit: Unit;
   /** The board's day 0, so a typed legal time on another day prints its date (D1, D-93). */
   dayZero?: Date;
+  /**
+   * People admitted to this ward on a form whose typed expiry in force has passed
+   * (`admittedLegalExpiryPassed`, audit M1). Left out, none.
+   */
+  admittedLegalPassed?: readonly Movement[];
 };
 
 export function wardLiveFormAlerts({
@@ -456,6 +462,7 @@ export function wardLiveFormAlerts({
   overdueLeaveBeds,
   unit,
   dayZero,
+  admittedLegalPassed = [],
 }: WardLiveFormAlertsInputs) {
   const liveFormAlerts = [
     // Integration QA (3 Nov 2026): a referral waiting is one row, "Referrals waiting", raised by
@@ -473,12 +480,16 @@ export function wardLiveFormAlerts({
       }> = [];
       const patientName = resolvePatientIdentity(movement).formalName;
       const dueAt = currentLegalDueAt(movement);
-      if (dueAt !== undefined) {
-        const remaining = minutesUntil(dueAt, now);
+      // Audit M4 and D-MCA (Josh, 14 Nov 2026), ruling 3: the Settings bands every legal screen uses.
+      // Red from the urgent warning on (and once passed), amber within the soon warning, and no row
+      // for a typed time beyond it (it used to be amber for any future time, even days away).
+      const standing = currentLegalStanding(movement, now, thresholds);
+      const formWords = legalFormNowWords(movement);
+      if (dueAt !== undefined && standing !== "later" && standing !== "none") {
         alerts.push({
           key: `form-${movement.id}`,
-          tone: remaining <= thresholds.urgentMinutes ? "critical" : "warning",
-          title: movement.legalForm ? `Form ${movement.legalForm.code} recorded due time` : "Legal form due",
+          tone: standing === "soon" ? "warning" : "critical",
+          title: formWords ? `${formWords} recorded due time` : "Legal form due",
           // Legal times only as typed (31 Oct 2026): "Ends 15:42 as typed", never "1h 15m left".
           countdown: typedTimeLine(dueAt, now, dayZero),
           // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
@@ -501,6 +512,20 @@ export function wardLiveFormAlerts({
         });
       }
       return alerts;
+    }),
+    // Audit M1 and D-MCA (Josh, 14 Nov 2026), ruling 2: a person already admitted to this ward on a
+    // form whose typed expiry still in force has passed. Act now on the ward desk, as for a journey.
+    ...admittedLegalPassed.map((movement) => {
+      const dueAt = currentLegalDueAt(movement)!;
+      const formWords = legalFormNowWords(movement);
+      return {
+        key: `form-admitted-${movement.id}`,
+        tone: "critical" as const,
+        title: formWords ? `${formWords} recorded due time passed` : "Legal form due time passed",
+        countdown: typedTimeLine(dueAt, now, dayZero),
+        text: `${resolvePatientIdentity(movement).formalName}: recorded due ${typedClock(dueAt, now, dayZero)}. Record the next form or how this one ended.`,
+        movementId: movement.id,
+      };
     }),
     ...overdueLeaveBeds.map((leaveBed) => ({
       key: `leave-${leaveBed.id}`,

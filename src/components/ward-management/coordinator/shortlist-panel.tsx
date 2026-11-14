@@ -7,6 +7,7 @@ import {
   FORM_RECORDED_ENDED,
   formProgressionPhrase,
   legalFormEnd,
+  legalFormNowWords,
   NEXT_FORM_TO_RECORD,
 } from "../ward-legal-form-progression";
 
@@ -1394,10 +1395,7 @@ export function ShortlistPanel({
             <InlineFact label="Sex" value={movement.sex} />
             <InlineFact label="Age group" value={movement.cohort} />
             <InlineFact label="Security" value={securityWord(movement.security)} />
-            <InlineFact
-              label="Legal"
-              value={movement.legalForm ? `Form ${movement.legalForm.code}` : movement.legalStatus}
-            />
+            <InlineFact label="Legal" value={legalFormNowWords(movement) ?? movement.legalStatus} />
             {suburbLabel ? <InlineFact label="Suburb" value={suburbLabel} testId="ward-shortlist-suburb" /> : null}
           </dl>
           <p

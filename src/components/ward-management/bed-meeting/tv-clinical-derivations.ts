@@ -14,11 +14,19 @@ import {
 import { edBayAssignments, movementMedicalClearance } from "@/components/ward-management/ed/ed-screen-model";
 import {
   currentLegalDueAt,
+  currentLegalStanding,
   FORM_RECORDED_ENDED,
   formProgression,
   formRecordedEnded,
   NEXT_FORM_TO_RECORD,
 } from "@/components/ward-management/ward-legal-form-progression";
+import {
+  LEGAL_STATUSES_DIFFER,
+  legalStatusesDiffer,
+  stayLegalStatus,
+  stayLegalStatusesDiffer,
+} from "@/components/ward-management/ward-stay-legal";
+import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { HELD_UP_BY_TOMORROW_LABEL, isHeldUpDueByTomorrow } from "@/components/ward-management/ward-held-up";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
@@ -31,7 +39,6 @@ import {
   type DueSoonThresholds,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import { admissionLegalStatus } from "@/components/ward-management/ward-flow-reducer";
 import type { BedRelease, LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import {
   isConstantObservation,
@@ -125,6 +132,14 @@ function obsFact(observation: Observation | undefined): ClinicalFact {
 /**
  * A legal form's line for the wall: the status, then the form and its end time as typed. "Ending soon"
  * is the signed due soon warning (`dueSoon`), never a window of its own (D-194).
+ *
+ * D-MCA (Josh, 14 Nov 2026), ruling 3 (audit M4): the same bands as Forms, Delays and ED, from
+ * Settings (`currentLegalStanding`). Red, Act now, from the urgent warning (default 1 h) on, and
+ * once the typed time has passed; amber, Ending soon, within the soon warning (default 3 h). At the
+ * typed minute itself the line still reads "Ends", as every other screen does.
+ *
+ * Ruling 5 (audit M13a): when the stay and the patient record hold different statuses, the line
+ * carries the patient page's own "statuses differ" words (`differs`).
  */
 function legalFact(
   status: string | undefined,
@@ -132,6 +147,19 @@ function legalFact(
   now: Instant,
   dayZero: Date | undefined,
   thresholds: DueSoonThresholds = DEFAULT_DUE_SOON_THRESHOLDS,
+  differs = false,
+): ClinicalFact | null {
+  const fact = legalFactOnly(status, movement, now, dayZero, thresholds);
+  if (!fact || !differs) return fact;
+  return { ...fact, text: `${fact.text}. ${LEGAL_STATUSES_DIFFER}` };
+}
+
+function legalFactOnly(
+  status: string | undefined,
+  movement: Movement | undefined,
+  now: Instant,
+  dayZero: Date | undefined,
+  thresholds: DueSoonThresholds,
 ): ClinicalFact | null {
   const form = movement?.legalForm;
   if (!form) return status ? { text: status } : null;
@@ -147,10 +175,10 @@ function legalFact(
   if (formRecordedEnded(movement)) return { text: `${head}. ${FORM_RECORDED_ENDED}` };
   const dueAt = currentLegalDueAt(movement);
   if (dueAt === undefined) return { text: head };
-  const left = dueAt - now;
+  const standing = currentLegalStanding(movement, now, thresholds);
   return {
     text: `${head}. ${typedTimeLine(dueAt, now, dayZero)}`,
-    tone: left <= 0 ? "danger" : left <= thresholds.soonMinutes ? "warning" : undefined,
+    tone: standing === "passed" || standing === "urgent" ? "danger" : standing === "soon" ? "warning" : undefined,
   };
 }
 
@@ -183,15 +211,18 @@ export function wardClinicalRows(input: WardClinicalInputs): WardClinicalRow[] {
       const bedNumber = admission.bedNumber ?? seats.get(admission.id) ?? 999;
       const pulled = admission.state === "pulled";
       const days = pulled ? null : daysInBed(admission, now);
-      const status = admissionLegalStatus(
-        {
-          movements: input.movements as Movement[],
-          patients: input.patients as Patient[],
-          plannedAdmissions: input.plannedAdmissions as PlannedAdmission[] | undefined,
-        },
-        admission,
+      // D-MCA (Josh, 14 Nov 2026), ruling 5 (audit M13a): the patient page's rule. The stay's own
+      // status wins, then the converted booking, then the patient record (`stayLegalStatus`), and
+      // the wall carries the same "statuses differ" mark the patient page shows.
+      const status = stayLegalStatus(admission, input);
+      const legal = legalFact(
+        status,
+        movement,
+        now,
+        input.dayZero,
+        input.thresholds,
+        stayLegalStatusesDiffer(admission, input),
       );
-      const legal = legalFact(status ?? movement?.legalStatus, movement, now, input.dayZero, input.thresholds);
       const release = bedReleases.find(
         (record) => record.admissionId === admission.id && record.state !== "discharged",
       );
@@ -390,7 +421,14 @@ export function edClinicalRows(input: EdClinicalInputs): EdClinicalRow[] | undef
         waitMinutes,
         band,
         urgency: movement.urgency as 1 | 2 | 3,
-        legal: legalFact(movement.legalStatus, movement, now, input.dayZero, input.thresholds),
+        legal: legalFact(
+          movement.legalStatus,
+          movement,
+          now,
+          input.dayZero,
+          input.thresholds,
+          legalStatusesDiffer(movement, resolveSubjectPatient(movement, input).patient),
+        ),
         underForm: isUnderAForm(movement),
         reviewed: movement.examination !== undefined,
         noBedYet: accepted === undefined,

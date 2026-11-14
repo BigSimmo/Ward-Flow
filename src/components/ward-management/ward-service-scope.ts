@@ -40,6 +40,7 @@
  * has been breached. A future pass that also re-points `handover-page.tsx`'s own `movementIsUrgent`
  * at this one can delete the page's copy without changing behaviour anywhere.
  */
+import { currentLegalDueAt } from "@/components/ward-management/ward-legal-form-progression";
 import { dueSoonThresholdsOf, type Instant, isClockBreached } from "@/components/ward-management/ward-clock";
 import { SEVERE_CAUSES, delayGroups } from "@/components/ward-management/delays/delays-derivations";
 import { isOpen } from "@/components/ward-management/ward-derivations";
@@ -179,7 +180,8 @@ export function referralBelongsToService(referral: Referral, service: HealthServ
  */
 export function movementIsUrgent(movement: Movement, now: Instant): boolean {
   if (movement.flaggedUrgent) return true;
-  const dueAt = movement.legalForm?.dueAt;
+  // Audit H4 (14 Nov 2026): the typed expiry still in force, never an ended form's old time.
+  const dueAt = currentLegalDueAt(movement);
   return dueAt !== undefined && isClockBreached(dueAt, now);
 }
 

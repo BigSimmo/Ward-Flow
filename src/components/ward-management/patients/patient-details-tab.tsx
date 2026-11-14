@@ -18,6 +18,7 @@ import { genderReviewNeeded, SEX_DESIGNATIONS, type Movement, type RecordedSex }
 import { sexDesignationAccepts } from "../ward-eligibility";
 import { legalStatusTextIsInvoluntary } from "../ward-support-notifications";
 import { currentLegalPosition } from "../ward-legal-form-progression";
+import { LEGAL_STATUSES_DIFFER, legalStatusesDiffer } from "../ward-stay-legal";
 import { calendarDateOf } from "../ward-clock";
 import { isEdOriginJourney } from "../ward-ed-presence";
 import { monthIndexOfShort } from "@/components/ward-management/ward-month-names";
@@ -216,7 +217,8 @@ export function PatientDetailsTab({
   // they differ. One side recorded and the other not is a difference too.
   const sexDiffers = placement !== undefined && placement.sex !== patient?.sex;
   const genderDiffers = placement !== undefined && placement.gender !== patient?.gender;
-  const legalDiffers = movement !== undefined && patient !== undefined && movement.legalStatus !== patient.legalStatus;
+  // The one rule the TV wall reads too (D-MCA (Josh, 14 Nov 2026), ruling 5).
+  const legalDiffers = legalStatusesDiffer(movement, patient);
   const mismatch = Boolean(
     placement &&
     patient &&
@@ -492,7 +494,7 @@ export function PatientDetailsTab({
             {legalDiffers && active ? (
               <p className={styles.attention} role="status" data-testid="ward-person-legal-differs">
                 <StatusGlyph tone="warning" size={12} />
-                <span>These two legal statuses differ. Check which is current.</span>
+                <span>{LEGAL_STATUSES_DIFFER}</span>
               </p>
             ) : null}
             <FactGrid facts={legal} />

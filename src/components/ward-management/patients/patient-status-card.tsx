@@ -57,6 +57,7 @@ import { usePatientNameDisplay } from "../settings/discreet-names";
 import { canDispatch } from "../ward-role-permissions";
 import { unitInScope } from "../ward-role-access";
 import { wardPlaceLookup } from "../ward-access-places";
+import { legalFormNowWords } from "../ward-legal-form-progression";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { awaitingWardAnswer, isWaitlistReason, waitlistStands } from "../ward-waitlist";
 
@@ -358,8 +359,9 @@ export function dayLabel(instant: number, dayZero: Date): string {
 function legalValue(record: Movement | undefined, patient: Patient | undefined): string {
   // A movement that did not proceed is history; an arrival's form stays in force for the stay.
   const movement = record?.closure && record.closure.outcome !== "arrived" ? undefined : record;
-  if (movement?.legalForm)
-    return `${movement.legalStatus ?? patient?.legalStatus ?? "Legal status not recorded"}, Form ${movement.legalForm.code}`;
+  // Audit H4: an ended form is named as ended, never as the form in force.
+  const formWords = legalFormNowWords(movement);
+  if (formWords) return `${movement?.legalStatus ?? patient?.legalStatus ?? "Legal status not recorded"}, ${formWords}`;
   return movement?.legalStatus ?? patient?.legalStatus ?? "Not recorded";
 }
 

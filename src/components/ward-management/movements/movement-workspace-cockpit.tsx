@@ -103,6 +103,7 @@ import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-ma
 import { communityTeamById } from "@/components/ward-management/community/community-derivations";
 import { examinationOutcomeShort, legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
 import { typedClock } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import { currentLegalDueAt } from "@/components/ward-management/ward-legal-form-progression";
 import {
   attentionItems,
   legalFormReadinessLine,
@@ -239,7 +240,8 @@ export function MovementWorkspaceCockpit({
 
   const ranMinutes = Math.max((open ? now : (patient.closure?.at ?? now)) - patient.openedAt, 0);
 
-  const deadline = patient.legalForm?.dueAt;
+  // Audit H4 (14 Nov 2026): the typed expiry still in force, never an ended form's old time.
+  const deadline = currentLegalDueAt(patient);
   const deadlineBreached = open && deadline !== undefined && isClockBreached(deadline, now);
   const pullExpired = open && patient.pullExpiresAt !== undefined && patient.pullExpiresAt <= now;
 
@@ -276,10 +278,10 @@ export function MovementWorkspaceCockpit({
           },
         ]
       : []),
-    ...(patient.legalForm?.dueAt !== undefined && patient.legalForm.dueAt <= now
+    ...(patient.legalForm && deadline !== undefined && isClockBreached(deadline, now)
       ? [
           {
-            at: patient.legalForm.dueAt,
+            at: deadline,
             label: `The deadline on the ${legalFormNameLabelFirst(patient.legalForm)} passed`,
           },
         ]
