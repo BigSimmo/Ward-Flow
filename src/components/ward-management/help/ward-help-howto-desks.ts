@@ -370,7 +370,7 @@ export const DESK_JOBS: readonly HowTo[] = [
     title: "Book a planned admission",
     keywords: "planned admission booking elective scheduled book in arrival date",
     answer:
-      "On Capacity, under Planned moves, press Book. Choose an existing patient or enter initials, age group and sex, then the reason, ward, day, arrival time, expected stay and legal status. Press Book. Change or cancel it from its row.",
+      "On Capacity, open the Planned tab and press Book. Choose an existing patient or enter initials, age group and sex, then the reason, ward, day, arrival time, expected stay and legal status. Press Book. Change or cancel it from its row.",
     desks: ["bed_manager", "coordinator"],
     acts: ["BOOK_PLANNED_ADMISSION"],
     go: "capacity",
@@ -378,7 +378,7 @@ export const DESK_JOBS: readonly HowTo[] = [
       {
         target: { sel: '[data-testid="ward-planned-book"]' },
         title: "Book",
-        body: "Opens the booking form beside Planned moves.",
+        body: "Opens the booking form on the Planned tab.",
       },
     ],
   },

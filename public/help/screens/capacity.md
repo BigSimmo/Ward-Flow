@@ -20,7 +20,7 @@ Each ward's confirmed beds, what is ready, pulled or closed, and when it was las
 
 - See beds ready across the network. Open Capacity. It shows beds ready of the total, being made ready, in use and closed, then each health service, then Beds by ward grouped by service: ready, being made ready, in use, closed and beds, with a row of bed squares. Bed counts only, with no patient details, as at the time shown.
 - Close a bed or a ward to admissions. On Capacity, open the ward, then press Closures at the foot of its panel. Choose a bed nobody is in and a reason to close it, or close the whole ward to admissions with a reason. A closed bed or ward is not offered until someone reopens it there.
-- Book a planned admission. On Capacity, under Planned moves, press Book. Choose an existing patient or enter initials, age group and sex, then the reason, ward, day, arrival time, expected stay and legal status. Press Book. Change or cancel it from its row.
+- Book a planned admission. On Capacity, open the Planned tab and press Book. Choose an existing patient or enter initials, age group and sex, then the reason, ward, day, arrival time, expected stay and legal status. Press Book. Change or cancel it from its row.
 - Reopen a closed ward to admissions. On Capacity, open the ward and press Closures. Press Reopen to admissions and confirm. The ward is offered for new patients again straight away. Anything still pointed at it is listed so you can mark each one dealt with.
 - Ask a ward to confirm its bed numbers. On Capacity, open the ward and press Ask the ward. On Places, press Ask to confirm. The ward is asked to confirm its beds, and the status reads Asked with the time.
 

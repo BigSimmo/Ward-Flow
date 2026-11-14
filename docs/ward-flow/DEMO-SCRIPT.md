@@ -14,7 +14,8 @@ connection to any hospital system.
 _Updated 13 November 2026 from the pre-demo audit, which ran the script three times on a local
 production build and once on the public demo (Chromium, 1440 px wide), then again the same day from
 Audits 12 and 14, which added the recovery card near the end, and walked again on the PR C build at
-1366 x 768. Rehearse once before any audience.
+1366 x 768, and walked twice on the clinical PR #1656 build at 1366 x 768 (headless Chromium,
+scripted). Rehearse once before any audience.
 Previous rewrites: 10 November, 24 October and 20 October 2026 (PR #510). Documentation owns._
 
 ## Read this first
@@ -50,7 +51,9 @@ demo code out for up to 10 minutes, and a shared venue network counts as one add
    open tab on the TV view at once, keeps it there after a reload, and hides Reset demo until you
    unlock. If the menu vanishes, press **Unlock**, then **Unlock** in the "Unlock this TV" box.
    Time Act 2 and the Close as you go. In the audit run the Close ran past its 30 seconds and
-   Act 2 had the least room, so trim your own words there first.
+   Act 2 had the least room, so trim your own words there first. The first time you open Keira's
+   page and Dabakarn's page, a **Tip** card appears at the lower right. Press **Turn off tips**
+   during the rehearsal so none appear in the real run.
 4. As the audience sits down (not earlier), press the **Board time** clock in the header. **Tools**
    opens at **Scenario and clock**, with **Demo clock** and **Reset demo** at the top of the panel and
    **Scenario** below them. Check the scenario is **Standard day**, and pick it first if it is not:
@@ -197,7 +200,7 @@ board (the row just below Keira's):
 **Do:** in the left-hand menu press **Home**. Under **Later today**, scroll down to **Rest of your
 shift** and click **Pellingworth, Keira** ("Planned move, bed not pulled yet"); if she is not
 listed, press **Show … more** first. After her planned time she moves up to **Past planned time** ("not done yet"). Her page opens. If you cannot find her on Home, press **/**, type `Keira` or
-`UM100045` and press **Enter**. Or press **Reset demo** and start Act 2 again. Point to the strip at
+`UM100045`, press the **down arrow**, then **Enter** (or click her name in the list). Or press **Reset demo** and start Act 2 again. Point to the strip at
 the top of her page (In ED, Bed agreed, Moving, On ward, Discharge, Community). Press **Placement
 steps**: step 3 of seven is lit. Then press **Hide placement steps**. Then point to the status
 card, **Getting ready to move**, and its three rows: **Bed** ("Accepted, no bed pulled yet"), **Fit
@@ -270,10 +273,12 @@ outcome**.
 **Say:**
 
 > "The treating team records that she is medically cleared. The app records what they said. It does
-> not judge fitness to travel itself."
+> not judge fitness to travel itself. If no clearance were recorded, booking and handover would
+> still go ahead, but the screen would ask why every time, and you could still go on without a
+> reason."
 
-**Do:** on the **Transport** row press **Log booking**. The **Transport** panel opens. Under **Who
-is collecting** choose **Ambulance (St John)**. Type a synthetic number such as `CAD-DEMO-0001` in
+**Do:** on the **Transport** row press **Log booking**. The **Transport** panel opens. From the **Who
+is collecting** list choose **Ambulance (St John)**. Type a synthetic number such as `CAD-DEMO-0001` in
 **CAD transport number**, press **+30m** for the estimated time, press **No escort required**, then
 **Involuntary** for the transport question. Press
 **Save transport booking**, then **Esc**.
@@ -294,15 +299,16 @@ screen. If they cover the **Destination** row, press the **X** on each. Then pre
 row ("Dabakarn accepted · bed pulled"); scroll down a little first if it is not in view. The **Destination and placement** panel opens. Press, in order, **Provider
 accepted job**, **Vehicle en route** and **Mark moving · patient collected**.
 
-**Do:** a check appears ("Mark moving for … ?") listing what is not recorded yet, here the transport
-or transfer order. Under **Reason** choose **Paper copy sighted** and press **Mark moving, record
-reason**.
+**Do:** a check appears ("Mark moving for Pellingworth, Keira · UM100045?") listing what is not
+recorded yet, here "Transport or transfer order not uploaded · rule not signed". Under **Reason**
+choose **Paper copy sighted** and press **Mark moving, record reason**.
 
 **Say:**
 
 > "Here the app stops and asks. Something is not recorded yet. The person can still go ahead,
 > because the paper may be in hand, but they have to say why, and the reason is recorded with the
-> step.
+> step. You'll see 'rule not signed'. Which paperwork a move needs is a clinical and legal rule we
+> haven't signed off yet, so the app says so rather than presenting it as settled.
 >
 > Keira is now moving, and her page shows when she is due on the ward."
 
@@ -346,12 +352,16 @@ Pick two of these three if time is short. None of them needs typing.
 then **All wards**, and press **Open ward** on **Graylands Adult Secure**. In the **Coming and going**
 card, under **Referrals · now**, press **Loxbury, Saoirse** (synthetic). The full referral opens:
 reason, risk, legal, observation, medical clearance, physical health, medications, referrer, arrival
-and documents. Close it with **Esc**. Do not accept or decline.
+and documents. Point to **To check** under "Passes the 6 bed checks.": five rows for Saoirse, the
+last "Involuntary admissions: not stated". Close it with **Esc**. Do not accept or decline.
 
 > "A ward can't make a safe decision on a referral it can't read. So before it answers, the ward
 > sees the whole referral, with the patient's name and record number. What it never sees is which
-> other wards were asked. The card also lists the patient checks it ran against this ward, so the
-> ward can see why the referral fits."
+> other wards were asked. The card lists the checks it ran against this ward, and separately what
+> the ward still has to check for itself: recorded risk, escort need, observation level and medical
+> clearance. For someone whose status needs an involuntary-capable bed, like Saoirse, it also says
+> involuntary admissions are not stated for this ward. Those are shown as recorded. The app never
+> passes or fails a patient on them."
 
 **B. Seclusion and restraint, operational only.** In the left-hand menu press **More**, then
 **Legal forms**, then the **Seclusion** tab. Point to the note at the top, the **in use now**
@@ -400,8 +410,9 @@ Say these with confidence:
   otherwise the app says the time was not written. It never works out a Mental Health Act duration.
 - **Pulls never release themselves.** A pulled bed shows its pull time limit; when it runs out, a
   person decides.
-- **Steps happen in order.** Transport needs a pulled bed; handover ready needs transport; a missing
-  record asks for a recorded reason.
+- **Steps happen in order.** Transport needs a pulled bed; handover ready needs transport. A missing
+  record, including medical clearance at booking and at handover, asks for a reason every time. You
+  can go on without one. It never blocks.
 - **One decline list.** Wards and coordinators decline from the same list of reasons, with a few
   kept for wards only.
 - **Asking wards.** For an open community referral, the coordinator can ask more wards, usually up
@@ -435,6 +446,8 @@ Do not claim:
   mode with a backend exists but is not what you are showing;
 - risk or acuity scores, a "best match" ward, automatic placement or automatic release of a bed;
 - anything about a real ward's actual rules, staffing or figures;
+- which wards are authorised for involuntary admissions. Every ward reads "Involuntary admissions:
+  not stated", and that fact does not narrow any list;
 - that it "matches", "recommends" or is "intelligent". It shows options; people choose.
 
 ## Questions you may be asked
@@ -449,6 +462,13 @@ Do not claim:
 
 > "No. It never places a patient, scores risk, picks a ward or works out a legal time. Every step is
 > a person's click, and the steps that need an override need a recorded reason."
+
+**"Can that ward take involuntary patients?"**
+
+> "The app doesn't say. Which hospitals are authorised hasn't been confirmed, so every ward reads
+> 'not stated', and the app doesn't use it to narrow or refuse anything. A person checks. For a
+> person who needs that kind of bed, the referral card says 'Involuntary admissions: not stated' so
+> the ward checks."
 
 **"What happens to the data?"**
 
@@ -519,27 +539,26 @@ If someone wants it in writing, **Settings** has an **About this demo** page tha
 
 Keep this beside you. Each row is a press to avoid on the day, why, and what to do if it happens.
 
-| Don't press                                                                        | Why                                                                               | If it happens                                                                                |
-| ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Anything but **Esc** in Keira's ED panel, above all **Record no transport needed** | Act 4's **Log booking** disappears                                                | **Change** on her Transport row brings it back; otherwise **Reset demo**, restart from Act 2 |
-| **Mark absent** on Keira's page after arrival                                      | Dabakarn shows her absent without leave                                           | **Record return** on her page                                                                |
-| **See it as** in Tools, or any other desk                                          | The desk changes. The other desks are not ready to show                           | **Back to coordinator**, in the bar at the top, or **Reset demo**                            |
-| **Open patient** in the ED panel as a way to her page                              | It opens an ED side panel instead                                                 | Press **/**, type `Keira`, **Enter**                                                         |
-| The phone numbers on her page                                                      | They are dial links                                                               | Close the chooser. Use the copy button beside each                                           |
-| Browser zoom                                                                       | The left-hand menu loses its words                                                | Zoom back to 100% (**Ctrl+0**)                                                               |
-| **Esc** in **Record a form** or the ED board's **Log transport booking**           | Esc does nothing there                                                            | Press **Close**                                                                              |
-| The body of a ward card on **All wards**                                           | The side panel shows invented "Admits" lines                                      | **Esc**. Press **Open ward** only                                                            |
-| **Lock as TV**                                                                     | Every open tab goes to the TV view, and Reset demo is out of reach until unlocked | **Unlock**, then **Unlock**                                                                  |
-| **Print sheet** in front of the audience                                           | Two pages, and a longer document than the screen                                  | Close the print box                                                                          |
-| **Close this bed** on a ward                                                       | One press, no reason asked                                                        | **Reset demo**                                                                               |
-| A row in the slipped dates list on **Discharges**                                  | It asks why you are opening the ward's record, and logs the reason for Governance | **Esc**                                                                                      |
-| **Find a bed** in the header **Alerts** panel                                      | It opens another patient's Ask wards step                                         | Browser **Back**                                                                             |
-| A Midland team decision                                                            | It survives Reset demo                                                            | Leave it. A fresh browser profile starts clean                                               |
-| **Save to file**, **Load from file**, **Receive message** in Tools                 | A download, a file chooser, and a stray message                                   | **Esc**. Delete the download later                                                           |
-| **Ask for review**, and **Ask** (a ward to confirm its beds) on Capacity           | Each records in one click: Undo for five minutes, or none on **Ask**. Not Keira   | Leave it. Reset demo clears it                                                               |
-| **Pin**, and the ED tiles on Home                                                  | Both outlive Reset demo. Harmless                                                 | Press again to clear                                                                         |
-| Inside **Triage**                                                                  | Its see-by windows are unsigned                                                   | **Back**                                                                                     |
-| Reload to fix the clock                                                            | A reload does not put a drifted clock back                                        | Close every Ward Flow tab, open one new tab, then **Reset demo**                             |
+| Don't press                                                                        | Why                                                                                                                                      | If it happens                                                                                                                                                                                                                                                                                                                                 |
+| ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Anything but **Esc** in Keira's ED panel, above all **Record no transport needed** | Act 4's **Log booking** disappears                                                                                                       | **Change** on her Transport row brings it back; otherwise **Reset demo**, restart from Act 2                                                                                                                                                                                                                                                  |
+| **Log booking** before **Record clearance**                                        | The booking asks for a reason ('Fit to travel not recorded. Record why, or save without a reason.'), and so does **Mark handover ready** | Choose **Confirmed with the treating team** under **Reason**, or save without one. The booking is never held. **Mark handover ready** is then only in the **Destination** panel, as **Mark handover ready · sending team**. Its box offers **Continue without a reason**, or choose a reason and press **Mark handover ready, record reason** |
+| **Mark absent** on Keira's page after arrival                                      | Dabakarn shows her absent without leave                                                                                                  | **Record return** on her page                                                                                                                                                                                                                                                                                                                 |
+| **See it as** in Tools, or any other desk                                          | The desk changes. The other desks are not ready to show                                                                                  | **Back to coordinator**, in the bar at the top, or **Reset demo**                                                                                                                                                                                                                                                                             |
+| **Open patient** in the ED panel as a way to her page                              | It opens an ED side panel instead                                                                                                        | Press **/**, type `Keira`, press the **down arrow**, then **Enter** (or click her name in the list)                                                                                                                                                                                                                                           |
+| The phone numbers on her page                                                      | They are dial links                                                                                                                      | Close the chooser. Use the copy button beside each                                                                                                                                                                                                                                                                                            |
+| Browser zoom                                                                       | The left-hand menu loses its words                                                                                                       | Zoom back to 100% (**Ctrl+0**)                                                                                                                                                                                                                                                                                                                |
+| **Esc** in **Record a form** or the ED board's **Log transport booking**           | Esc does nothing there                                                                                                                   | Press **Close**                                                                                                                                                                                                                                                                                                                               |
+| The body of a ward card on **All wards**                                           | The side panel shows invented "Admits" lines                                                                                             | **Esc**. Press **Open ward** only                                                                                                                                                                                                                                                                                                             |
+| **Lock as TV**                                                                     | Every open tab goes to the TV view, and Reset demo is out of reach until unlocked                                                        | **Unlock**, then **Unlock**                                                                                                                                                                                                                                                                                                                   |
+| **Print sheet** in front of the audience                                           | Two pages, and a longer document than the screen                                                                                         | Close the print box                                                                                                                                                                                                                                                                                                                           |
+| **Close this bed** on a ward                                                       | One press, no reason asked                                                                                                               | **Reset demo**                                                                                                                                                                                                                                                                                                                                |
+| A row in the slipped dates list on **Discharges**                                  | It asks why you are opening the ward's record, and logs the reason for Governance                                                        | **Esc**                                                                                                                                                                                                                                                                                                                                       |
+| **Find a bed** in the header **Alerts** panel                                      | It opens another patient's Ask wards step                                                                                                | Browser **Back**                                                                                                                                                                                                                                                                                                                              |
+| **Save to file**, **Load from file**, **Receive message** in Tools                 | A download, a file chooser, and a stray message                                                                                          | **Esc**. Delete the download later                                                                                                                                                                                                                                                                                                            |
+| **Ask** (a ward to confirm its beds) on Capacity                                   | It records in one click, with no Undo. Not Keira                                                                                         | Leave it. Reset demo clears it                                                                                                                                                                                                                                                                                                                |
+| Inside **Triage**                                                                  | Its see-by windows are unsigned                                                                                                          | **Back**                                                                                                                                                                                                                                                                                                                                      |
+| Reload to fix the clock                                                            | A reload does not put a drifted clock back                                                                                               | Close every Ward Flow tab, open one new tab, then **Reset demo**                                                                                                                                                                                                                                                                              |
 
 Things that happen without a wrong press:
 
@@ -547,10 +566,17 @@ Things that happen without a wrong press:
 - You closed the "Bed pulled" message: until its "Undo until" time, press the **Destination** row,
   then **Undo pull**. After that time, press the **Destination** row, **Release bed pull**, choose
   **Pull made in error**, then **Release pull**.
-- Keira has left **Later today**: press **/**, type `Keira`, press **Enter**.
+- Keira has left **Later today**: press **/**, type `Keira`, press the **down arrow**, then
+  **Enter** (or click her name in the list).
 - The CAD number was forgotten in Act 4: carry on. The booking saves without it.
-- Already known and still true: Keira's form lines can disagree between the ED board and her page,
-  and her ED row can still show "Step 1, Ask wards" after Dabakarn has accepted.
+- Already known and still true:
+  - Keira's form lines can disagree between the ED board and her page, and her ED row can still
+    show "Step 1, Ask wards" after Dabakarn has accepted.
+  - Keira's **Details** tab warns "These two legal statuses differ. Check which is current." (This
+    ED stay: Involuntary inpatient; Patient record: Not recorded). The script does not open that
+    tab.
+  - Movements still shows waits past 24 hours in red with a triangle (hero band and stage chips).
+    The TV's "3 waiting past 24 hours" line keeps its triangle. Both are for Josh at the walk.
 
 ## Quick reference
 

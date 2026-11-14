@@ -356,6 +356,9 @@ the other drills are in [OPERATIONS-DRILLS.md](OPERATIONS-DRILLS.md).
 - Supabase plan, backup availability and live schema version: **not observed**.
 - Hosted browser sign-in, save, reload and conflict: **pending**.
 - Hosted restore and app rollback: **never run**.
-- Supabase "Allow new users to sign up" was still on when last recorded (19 October 2026).
+- Supabase "Allow new users to sign up": **off** since 14 November 2026 (D-173).
+- The repository secret `WARD_SUPABASE_PRUNE_DATABASE_URL` is still missing (checked 14 November 2026),
+  so the weekly receipt prune fails on purpose. Adding it waits until after the demo.
+- `NEXT_PUBLIC_MOCKUPS_ENABLED` has no effect on the live site (checked 14 November 2026).
 - The backend trusts all forwarded proxy addresses; recheck before relying on per-address
   sign-in limits ([hosting.md](../hosting.md#shared-backend-and-signed-in-site--16-october-2026)).

@@ -146,7 +146,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
       {
         question: "How do I change or cancel a planned admission?",
         answer:
-          "Open Planned moves and choose the booking. Change booking edits it; Cancel booking needs a reason and offers Undo.",
+          "On Capacity, open the Planned tab and choose the booking. Change booking edits it; Cancel booking needs a reason and offers Undo.",
       },
     ],
   },
