@@ -794,17 +794,17 @@ Source-contract SHA256: af68a8d964317167302fe31df5de6638d0d0584fb69852f97616ae66
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1909
   Subject: One exact numbered bed’s closure mark
   Before: Empty offerable bed is open, or numbered bed has active closed mark
-  After: closed=true appends a mark; closed=false stamps active mark reopenedAt
+  After: closed=true appends a mark, or writes a listed reason onto an active mark that has none; closed=false stamps active mark reopenedAt
   Scope: Ward, site bed manager or coordinator; actingUnitId must equal unitId. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.
   payload: unitId; actingUnitId; integer bedNumber within 1..unit.beds; closed boolean
   payload: Optional listed reason and optional review time (later than now, at most 48 hours) when closing; neither when reopening; role and now
-  guards: Closing rejects already-closed, occupied/replayed seat, pulled/held bed, or no Ready capacity
+  guards: Closing rejects already-closed (except a first listed reason, with no review time, on a mark without one), occupied/replayed seat, pulled/held bed, or no Ready capacity
   guards: Reopening requires an active mark and refuses any supplied reason
   effects: Records exact numbered mark and retains reopening history; does not rewrite allocatable confirmation
   effects: Derived Ready excludes active closed marks and recovers after reopen; existing stay seating retained
   tests: tests/ward-bed-closed-mark.test.ts
   tests: tests/ward-bed-closed-mark-kinds.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-bed-closure-events.ts:56; SHA256 a7fb4804deda7184f118bef984d2f6d7c61a4cd48f26da5976e6140cc6f26716
+  Reviewed source: src/components/ward-management/ward-flow-bed-closure-events.ts:56; SHA256 232ec22cd984adf7d658e047fe8ce4f79d3358c8d2e2b3bc110ded7157f1c067
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:337; SHA256 f305e4436a9f754ff704a5fb04ede91c3bd1ea989ce540b23b1d02e5141e23d5
   Reviewed source: src/components/ward-management/ward-flow-events.ts:850; SHA256 db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142
   Reviewed source: src/components/ward-management/ward-access-state.ts:702; SHA256 7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d

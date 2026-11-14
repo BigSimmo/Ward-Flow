@@ -908,14 +908,14 @@
     "model": {
       "subject": "One exact numbered bed’s closure mark",
       "before": "Empty offerable bed is open, or numbered bed has active closed mark",
-      "after": "closed=true appends a mark; closed=false stamps active mark reopenedAt",
+      "after": "closed=true appends a mark, or writes a listed reason onto an active mark that has none; closed=false stamps active mark reopenedAt",
       "payload": [
         "unitId; actingUnitId; integer bedNumber within 1..unit.beds; closed boolean",
         "Optional listed reason and optional review time (later than now, at most 48 hours) when closing; neither when reopening; role and now"
       ],
       "scope": "Ward, site bed manager or coordinator; actingUnitId must equal unitId. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.",
       "guards": [
-        "Closing rejects already-closed, occupied/replayed seat, pulled/held bed, or no Ready capacity",
+        "Closing rejects already-closed (except a first listed reason, with no review time, on a mark without one), occupied/replayed seat, pulled/held bed, or no Ready capacity",
         "Reopening requires an active mark and refuses any supplied reason"
       ],
       "effects": [
@@ -926,7 +926,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-closure-events.ts",
           "line": 56,
-          "sha256": "a7fb4804deda7184f118bef984d2f6d7c61a4cd48f26da5976e6140cc6f26716"
+          "sha256": "232ec22cd984adf7d658e047fe8ce4f79d3358c8d2e2b3bc110ded7157f1c067"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",

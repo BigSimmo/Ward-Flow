@@ -137,11 +137,11 @@ export function WardScreenBedDrawer({
     bedNumber: number,
     closed: boolean,
     reviewAfter = "",
-    // R-BEDS-4: a reason added from the drawer closes the bed again with it, keeping its review time.
-    again?: { reason: string; reviewAt?: number },
+    // R-BEDS-4: a reason added from the drawer to a bed already closed, written in place.
+    again?: { reason: string },
   ) => {
     // Item 6: "Review in" read to a time at the tap; "Not known" leaves it out.
-    const reviewAt = closed ? (again ? again.reviewAt : reviewAtFrom(reviewAfter, now)) : undefined;
+    const reviewAt = closed && !again ? reviewAtFrom(reviewAfter, now) : undefined;
     return runBedStep(
       {
         type: "SET_BED_CLOSED",
@@ -168,11 +168,13 @@ export function WardScreenBedDrawer({
           bedNumber,
           ...(bedClosureRole === "ward" ? { actingUnitId: unitId } : {}),
         }),
-        undone: closed
-          ? `Undone. ${bedLabel(bedNumber)} is open again.`
-          : `Undone. ${bedLabel(bedNumber)} is closed again.`,
+        undone: again
+          ? `Undone. ${bedLabel(bedNumber)} has no reason recorded.`
+          : closed
+            ? `Undone. ${bedLabel(bedNumber)} is open again.`
+            : `Undone. ${bedLabel(bedNumber)} is closed again.`,
         // D-148 (Josh, 11 Nov 2026): closing stays one tap; its toast offers an optional reason.
-        ...(closed
+        ...(closed && !again
           ? {
               choices: bedClosureReasonChoices({
                 role: bedClosureRole,
@@ -187,28 +189,10 @@ export function WardScreenBedDrawer({
       },
     );
   };
-  // R-BEDS-4: the drawer's "Add a reason" is the toast's own path: reopen, then close again with the reason.
-  const addBedClosureReason = (bedNumber: number, reasonId: string, reviewAt?: number) =>
-    runBedStep(
-      {
-        type: "SET_BED_CLOSED",
-        role: bedClosureRole,
-        now,
-        unitId: unit.id,
-        actingUnitId: unitId,
-        bedNumber,
-        closed: false,
-      },
-      {
-        success: `${bedLabel(bedNumber)} reopened to add a reason.`,
-        // A review time already past cannot be set again, so it is left out.
-        onAccepted: () =>
-          setBedClosed(bedNumber, true, "", {
-            reason: reasonId,
-            reviewAt: reviewAt !== undefined && reviewAt > now ? reviewAt : undefined,
-          }),
-      },
-    );
+  // R-BEDS-4: the drawer's "Add a reason" writes the reason onto the closed bed in one step; the bed is
+  // never reopened on the way, so leaving the page mid-save cannot leave it open (review: Codex).
+  const addBedClosureReason = (bedNumber: number, reasonId: string) =>
+    setBedClosed(bedNumber, true, "", { reason: reasonId });
   return selectedBed !== null
     ? (() => {
         const selectedBedItem = bedsList.find((b) => b.bedNumber === selectedBed);
@@ -360,7 +344,7 @@ export function WardScreenBedDrawer({
               reviewLine: closedMark ? bedReviewLine(closedMark, now) : null,
               onAddClosureReason:
                 bedClosureAllowed && selectedBedItem?.status === "closed" && closedByNumber && !closedMark?.reason
-                  ? (reasonId: string) => addBedClosureReason(selectedBed, reasonId, closedMark?.reviewAt)
+                  ? (reasonId: string) => addBedClosureReason(selectedBed, reasonId)
                   : undefined,
             }}
             bedDrawerRef={bedDrawerRef}

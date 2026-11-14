@@ -1172,7 +1172,7 @@ export function WardHomeTab({
           movementId: movement.id,
           actingUnitId: unit.id,
         }),
-        refusalShownInline: true,
+        // The row has no inline line for a refused arrival, so the refusal shows on the toast (review: Codex).
       },
     );
     setCheckToken((token) => token + 1);
