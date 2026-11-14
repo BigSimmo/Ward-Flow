@@ -19,10 +19,3 @@ export const HELD_UP_BY_TOMORROW_LABEL = `Held up · ${HELD_UP_WINDOW}`;
 
 /** Discharges' own group of every held-up release, whatever its date (D-191 item 5). */
 export const HELD_UP_ANY_DATE_LABEL = "Held up · any date";
-
-/**
- * The window word for a count of every open item at any date (F-105): Ward flow's Referrals,
- * Admissions and Discharges. The count is unchanged; the word says it is not a today figure. The
- * Capacity ward panel's Discharges tab says "any date" instead (D-191 item 5).
- */
-export const OPEN_WINDOW = "open";

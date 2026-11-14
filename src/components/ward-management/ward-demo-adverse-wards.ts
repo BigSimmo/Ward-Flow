@@ -27,6 +27,17 @@ export function mayCarryAdverseExample(unit: Pick<Unit, "name">): boolean {
 }
 
 /**
+ * True when the demo may seed an invented incident on this ward: only on the opt-in fictional
+ * network. Live re-check of PR C (Josh, 14 Nov 2026): "FSH Adult Secure" passes the generic-label
+ * rule above, but FSH is a real hospital, so an invented "Self-harm" there still reads as that
+ * hospital's record. Audit 15 (A15-27) asked for no invented incidents under real hospitals; the
+ * demo network's every ward sits at a real site, so it gets none. Room status is unaffected.
+ */
+export function mayCarryInventedIncident(unit: Pick<Unit, "name">): boolean {
+  return FICTIONAL_WARD_LABEL.test(unit.name.trim());
+}
+
+/**
  * The first ward, in seed order, that may carry an adverse example and also suits the record
  * (`fits`). A typed id is only a preference: it is used when that ward passes the rule, so moving a
  * real name onto a ward never brings an adverse example with it.
@@ -52,7 +63,7 @@ export function staffRequestExampleWard<T extends Pick<Unit, "id" | "name">>(uni
 /**
  * The wards that get an invented incident from the example lists (`addRestrictivePractice` in
  * `ward-demo-example-lists.ts`): every secure ward with no record yet but the first, when the rule
- * allows it. Shared so the loop-checks overlay can keep its closed ward off them.
+ * allows it (`mayCarryInventedIncident`). Shared so the loop-checks overlay can keep its closed ward off them.
  */
 export function incidentExampleWardIds(
   units: readonly Pick<Unit, "id" | "name" | "lockedBeds" | "restrictivePractice">[],
@@ -61,7 +72,7 @@ export function incidentExampleWardIds(
   return new Set(
     secure
       .slice(1)
-      .filter(mayCarryAdverseExample)
+      .filter(mayCarryInventedIncident)
       .map((unit) => unit.id),
   );
 }

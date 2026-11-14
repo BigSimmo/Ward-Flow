@@ -19,8 +19,11 @@ import { SinceLastLookSheetBody, sinceLastLookCount, useSinceLastLook } from "./
  * the changes, then marks them seen; anything that arrives while the sheet is open stays new.
  * Before any review this session it counts from the start of the shift, and says so.
  * Hidden when nothing is new. Loaded lazily (`home-since-banner-lazy.tsx`), so it stays off Home's first load.
+ *
+ * Wave 4 (D-191, notes item 7): `inline` draws it as one quiet line at the top of the Needs you
+ * card ("Since 07:00 · 2 escalations · … Review"), so Needs you is one card, not two.
  */
-export function HomeSinceBanner({ now }: { now: Instant }) {
+export function HomeSinceBanner({ now, inline = false }: { now: Instant; inline?: boolean }) {
   const { scenario, referrals, movements, units, bedReleases, admissions, worldGeneration } = useWardFlowSelect(
     "scenario",
     "referrals",
@@ -61,7 +64,11 @@ export function HomeSinceBanner({ now }: { now: Instant }) {
       data-testid="home-since-banner-slot"
     >
       {text ? (
-        <Card as="div" className={styles.banner} data-testid="home-since-banner">
+        <Card
+          as="div"
+          className={inline ? `${styles.banner} ${styles.bannerInline}` : styles.banner}
+          data-testid="home-since-banner"
+        >
           <StatusGlyph tone="info" size={10} className={styles.bannerGlyph} />
           {/* One line: the lead, then as many counts as the line's width holds (a container query
               hides the 2nd and 3rd on narrow lines) and "+N" for the rest. Screen readers get the
@@ -98,7 +105,7 @@ export function HomeSinceBanner({ now }: { now: Instant }) {
           <Button
             ref={trigger}
             className={styles.bannerAction}
-            variant="sec"
+            variant={inline ? "ghost" : "sec"}
             size="sm"
             aria-haspopup="dialog"
             aria-expanded={open}

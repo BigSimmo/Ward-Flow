@@ -75,14 +75,12 @@ function cardOf(unit: { id: string; name: string }): HTMLElement {
   return card;
 }
 
-/** A card's two counts: its ready figure and its occupied figure ("3 of 12 occupied"). */
+/** A card's count: its ready figure. */
 function cardFigures(card: HTMLElement): string[] {
-  const ready = card.querySelector("b")?.textContent ?? "";
-  const occupied = /^(\S+) of \d+ occupied$/u.exec(
-    Array.from(card.querySelectorAll("span")).find((span) => / of \d+ occupied$/u.test(span.textContent ?? ""))
-      ?.textContent ?? "",
-  )?.[1];
-  return [ready, occupied ?? ""];
+  // Wave 4 (D-191, ruling 7): the card is the shared bed squares; its one count is the head figure
+  // ("N ready of M beds"). In use is drawn as squares, not written, so the drawer carries it.
+  const ready = card.querySelector("b[data-zero]")?.textContent ?? "";
+  return [ready];
 }
 
 /** The drawer's three counts for its ward: ready, occupied, and freeing today. */

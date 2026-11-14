@@ -139,7 +139,7 @@ describe("the ward screen says pull, never hold, about an incoming patient", () 
 
   it("explains the 'Closed' bed figure by contrast with the PULL, not with itself", () => {
     renderWard("rph-adult-secure");
-    const disclosure = screen.getByText("What these bed figures mean", { selector: "summary" }).closest("details");
+    const disclosure = screen.getByText("What the squares mean", { selector: "summary" }).closest("details");
     expect(disclosure).not.toBeNull();
     expect(disclosure?.textContent?.replace(/\s+/gu, " ")).toContain(
       "Closed means empty but not offered; pulled means allocated to a patient who has not arrived yet",

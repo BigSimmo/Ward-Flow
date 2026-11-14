@@ -130,7 +130,8 @@ describe("the ward screen's word for min(allocatable, empty)", () => {
     // The empty bed the ward is not offering is "Closed" (2026-09-01 ruling 5), never "Held".
     const seed = seedWardFlowState();
     const closed = bedStates(unit, seed.admissions, seed.bedReleases, seed.leaveBeds, []).closed;
-    expect(breakdown).toHaveTextContent(`Closed ${closed}`);
+    // Wave 4 (D-191): the bed squares' note line words it "N closed".
+    expect(breakdown).toHaveTextContent(`${closed} closed`);
     expect(breakdown).not.toHaveTextContent("Held");
 
     // The hero must agree with it — same value, same word, one screen.

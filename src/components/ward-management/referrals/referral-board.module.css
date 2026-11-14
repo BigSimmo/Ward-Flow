@@ -525,10 +525,6 @@ button.runwayCardRow:focus-visible {
   box-shadow: var(--wf-e-sel);
 }
 
-.toolbarChip {
-  flex: 0 0 auto;
-}
-
 .search {
   flex: 0 1 16rem;
   min-width: 10rem;
@@ -1002,26 +998,10 @@ button.runwayCardRow:focus-visible {
   overflow: hidden;
 }
 
-.panelTop {
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  gap: var(--wf-s-2);
-  padding: var(--wf-s-3);
-  border-bottom: 1px solid var(--wf-line);
-}
-
 .panelHead {
   display: flex;
   align-items: center;
   gap: var(--wf-s-2);
-  min-width: 0;
-}
-
-.panelWho {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
   min-width: 0;
 }
 
@@ -1255,55 +1235,6 @@ button.runwayCardRow:focus-visible {
   flex-direction: column;
 }
 
-.pSection {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-2);
-  padding: var(--wf-s-3);
-  border-bottom: 1px solid var(--wf-line);
-}
-
-.pSectionHead {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--wf-s-2);
-  min-width: 0;
-}
-
-.pSectionHead h3 {
-  margin: 0;
-  color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.pSectionHead > span {
-  overflow: hidden;
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.pLead {
-  margin: 0;
-  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
-}
-
-.pMuted {
-  margin: 0;
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-}
-
-.pText {
-  margin: 0;
-  color: var(--wf-ink-2);
-}
-
 .clamp {
   display: -webkit-box;
   overflow: hidden;
@@ -1319,31 +1250,6 @@ button.runwayCardRow:focus-visible {
   color: var(--wf-accent-ink);
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   cursor: pointer;
-}
-
-.pCells {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--wf-s-2);
-  margin: 0;
-}
-
-.pCells > div {
-  min-width: 0;
-}
-
-.pCells dt {
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  white-space: nowrap;
-}
-
-.pCells dd {
-  margin: 0;
-  overflow: hidden;
-  font-weight: 600;
-  white-space: nowrap;
-  text-overflow: ellipsis;
 }
 
 .ready {
@@ -1404,12 +1310,6 @@ button.runwayCardRow:focus-visible {
   text-align: right;
 }
 
-.needGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--wf-s-1);
-}
-
 .need {
   display: flex;
   flex-direction: column;
@@ -1432,11 +1332,6 @@ button.runwayCardRow:focus-visible {
   text-overflow: ellipsis;
 }
 
-.needOn {
-  border-color: var(--wf-line-3);
-  background: var(--wf-surface-2);
-}
-
 .contact {
   display: flex;
   align-items: center;
@@ -1455,8 +1350,7 @@ button.runwayCardRow:focus-visible {
   white-space: nowrap;
 }
 
-.contact > .who > span,
-.contact + .pCells dd {
+.contact > .who > span {
   white-space: normal;
   overflow-wrap: anywhere;
 }
@@ -1748,14 +1642,6 @@ button.runwayCardRow:focus-visible {
   .phoneOnly {
     display: inline;
   }
-
-  .needGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .pCells {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media print {
@@ -1816,10 +1702,6 @@ button.runwayCardRow:focus-visible {
 /* v10 phone: Queue and History as a full width segmented control at 44px. Refused once lives in
    the phone chip row, so the toolbar chip is desktop only. */
 @media (max-width: 46.4375rem) {
-  .toolbarChip.toolbarChip {
-    display: none;
-  }
-
   /* Queue and History pin under the phone header in their own row (shared `pinnedSwitch`). The
      row carries Home's vertical padding; the negative top margin keeps the resting spacing. */
   .phoneViewRow {
@@ -2028,22 +1910,6 @@ button.runwayCardRow:focus-visible {
     border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
   }
 
-  .panelTop {
-    padding: 20px var(--wf-s-4) var(--wf-s-3);
-  }
-
-  .panelTop::before {
-    position: absolute;
-    top: 8px;
-    left: 50%;
-    width: 36px;
-    height: 4px;
-    border-radius: var(--wf-r-pill);
-    background: var(--wf-line-3);
-    content: "";
-    transform: translateX(-50%);
-  }
-
   .panelHead {
     flex-wrap: wrap;
     row-gap: var(--wf-s-1);
@@ -2051,10 +1917,6 @@ button.runwayCardRow:focus-visible {
 
   .panelHead > :first-child {
     display: none;
-  }
-
-  .panelWho {
-    flex-basis: calc(100% - 9rem);
   }
 
   /* Audit 11 Oct 2026: the tier sits beside the name, not on a line of its own. */

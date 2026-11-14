@@ -1,4 +1,8 @@
-import { groupDischarges } from "@/components/ward-management/discharges/discharge-board-model";
+import {
+  barrierCategory,
+  barrierLabel,
+  groupDischarges,
+} from "@/components/ward-management/discharges/discharge-board-model";
 import { delayGroups, type DelayCause } from "@/components/ward-management/delays/delays-derivations";
 import { edOpenSummaries, elapsedOpenMinutes } from "@/components/ward-management/ed/ed-home-derivations";
 import type { ReservationReferral } from "@/components/ward-management/ward-bed-states";
@@ -23,7 +27,14 @@ import {
   unitHealthService,
 } from "@/components/ward-management/ward-service-scope";
 
-import { bedsFreeingTodayTotal, networkServiceGroupTotals, networkWardRows } from "./capacity-derivations";
+import {
+  bedKindGaps,
+  bedKindTotals,
+  bedsFreeingTodayTotal,
+  networkServiceGroupTotals,
+  networkWardRows,
+  type BedKindId,
+} from "./capacity-derivations";
 
 /**
  * THE MORNING BED-MEETING SHEET — one printed page for the meeting where the day's flow is decided:
@@ -85,6 +96,28 @@ export type BedMeetingDischarges = {
    */
   todayRows: BedMeetingDischargeRow[];
   moreTodayRows: number;
+  /**
+   * Wave 4 (C8, D-191): the held-up releases due by tomorrow (overdue, today and tomorrow, the
+   * `heldUp` count's own span), by ward with Discharges' short reason words and the due time. No
+   * patient names: the list is printed.
+   */
+  heldUpRows: BedMeetingHeldUpRow[];
+  moreHeldUpRows: number;
+};
+
+type BedMeetingHeldUpRow = { id: string; ward: string; reason: string; dueAt: Instant };
+
+/**
+ * The hero's "short" figure (`bedKindGaps` and `bedKindTotals`, as Capacity's hero reads them), so
+ * the sheet says the same number. Network-wide, as Capacity's own band is.
+ */
+type BedMeetingShort = {
+  /** `bedsThatFit - waiting` over every bed type; negative is short. */
+  gap: number;
+  /** People still needing a bed ("Need a bed"). */
+  waiting: number;
+  /** The bed types with a bed to spare, in band order. */
+  spare: { id: BedKindId; need: string; count: number }[];
 };
 
 type BedMeetingEdRow = {
@@ -127,6 +160,7 @@ export type BedMeetingSheet = {
   /** The agenda's group filter in words, when the people lists are narrowed to it. */
   peopleFilter?: string;
   capacity: BedMeetingCapacity;
+  short: BedMeetingShort;
   discharges: BedMeetingDischarges;
   ed: BedMeetingEd;
   delays: BedMeetingDelays;
@@ -230,6 +264,15 @@ export function bedMeetingSheet(input: BedMeetingInput): BedMeetingSheet {
     })),
   ];
   const dischargeRows = orderedReleases.map(({ row }) => row);
+  // Held up first by due time (oldest first), then ward, so two prints never reshuffle.
+  const heldUpRows = [...groups.blocked]
+    .sort((a, b) => a.expectedAt - b.expectedAt || unitName(a.unitId).localeCompare(unitName(b.unitId)))
+    .map((release) => ({
+      id: release.id,
+      ward: unitName(release.unitId),
+      reason: barrierLabel(barrierCategory(release.blocker ?? "")),
+      dueAt: release.expectedAt,
+    }));
   const todayDischargeRows = orderedReleases.filter(({ release }) => dueToday(release)).map(({ row }) => row);
   const discharges: BedMeetingDischarges = {
     heldUp: groups.blocked.length,
@@ -249,6 +292,17 @@ export function bedMeetingSheet(input: BedMeetingInput): BedMeetingSheet {
     moreRows: Math.max(0, dischargeRows.length - BED_MEETING_ROW_LIMIT),
     todayRows: todayDischargeRows.slice(0, BED_MEETING_ROW_LIMIT),
     moreTodayRows: Math.max(0, todayDischargeRows.length - BED_MEETING_ROW_LIMIT),
+    heldUpRows: heldUpRows.slice(0, BED_MEETING_ROW_LIMIT),
+    moreHeldUpRows: Math.max(0, heldUpRows.length - BED_MEETING_ROW_LIMIT),
+  };
+
+  // Short — Capacity's hero selector, unchanged, over the whole network as Capacity's band reads it.
+  const kinds = bedKindGaps(movements, units, now, admissions, input.referrals ?? [], bedReleases);
+  const kindTotals = bedKindTotals(kinds);
+  const short: BedMeetingShort = {
+    gap: kindTotals.gap,
+    waiting: kindTotals.waiting,
+    spare: kinds.filter((kind) => kind.gap > 0).map((kind) => ({ id: kind.id, need: kind.need, count: kind.gap })),
   };
 
   // Emergency departments — the ED home's own per-department summaries, narrowed to the service.
@@ -345,6 +399,7 @@ export function bedMeetingSheet(input: BedMeetingInput): BedMeetingSheet {
     service,
     ...(input.peopleFilter ? { peopleFilter: input.peopleFilter } : {}),
     capacity,
+    short,
     discharges,
     ed,
     delays,

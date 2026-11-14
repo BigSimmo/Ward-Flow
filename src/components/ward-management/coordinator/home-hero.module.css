@@ -52,6 +52,19 @@
   white-space: nowrap;
 }
 
+/* Wave 4 (notes item 5, A5-16): a 40 px tap cover on a phone, drawn no bigger. */
+@media (max-width: 46.4375rem) {
+  .edPopulation {
+    position: relative;
+  }
+
+  .edPopulation::after {
+    content: "";
+    position: absolute;
+    inset: -12px -8px;
+  }
+}
+
 .edPopulation svg {
   color: var(--wf-hero-ink-3);
 }
@@ -292,5 +305,45 @@
 
   .edClearCell {
     padding-left: 20px;
+  }
+}
+
+/* Wave 4 (D-191, notes items 4 and 5): each part of the act box's second line takes a line of its
+   own and wraps, so "Checking: …" and the outage-pack link are never cut to "…" on a phone. */
+.actLine {
+  display: block;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* Ruling 4 (D-191): "In use" with the amber dot that replaced the words "at risk". */
+.figGlyphLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  /* An inline-flex box stops the link's underline reaching its words; take it from the link, so
+     "In use" reads as a link like the other two figures (home mock-up). */
+  text-decoration: inherit;
+  /* On the baseline, this box made its line 16.5px, so the hero ended on a half pixel and the folder
+     sheet's edges blended with the slate into grey lines through the stage pills and under the
+     tabs (check B5, 820 and 390). Top-aligned, the line stays 16px, as the other two figures. */
+  vertical-align: top;
+}
+
+/*
+ * Wave 4 (home-820 mock-up): when the hero is too narrow to hold "4 need a person now" beside the
+ * three figures (a tablet, about 820 px), the act box takes its own full-width row under them, so it
+ * stays two or three short lines instead of six. At 1280 and 1440 it stays beside, as drawn. Home's
+ * own style on the kit's HeroTop: it reads the hero's width (a named container, so no other query
+ * picks it up) and targets the act row by the kit's data attributes, not its class names.
+ */
+.heroTop {
+  container: home-hero-top / inline-size;
+}
+
+@container home-hero-top (max-width: 56rem) {
+  .heroTop > div:has(> [data-wf-hero-next]) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--wf-s-3);
   }
 }

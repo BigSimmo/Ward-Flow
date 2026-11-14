@@ -797,9 +797,10 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
     // The ward answer's own "Ward overview" back link went on 20 Oct 2026: the header Back
     // (`shell/ward-back.ts`) returns there, taking `unitHref` from the facade.
     expect([...(ward?.builtSites ?? [])].sort()).toEqual([
-      // Capacity redesign (31 Oct 2026): the ward drawer's Open ward link, the phone Overview's ward
-      // rows and This shift's Confirm link each build the ward href (the old side panel is gone).
-      "src/components/ward-management/capacity/capacity-phone-overview.tsx",
+      // Capacity redesign (31 Oct 2026): the ward drawer's Open ward link and This shift's Confirm
+      // link each build the ward href (the old side panel is gone). Wave 4 (D-191, ruling 8): the
+      // phone Overview's Nearest ready beds card went, so its ward rows no longer build one; its
+      // wards open the ward drawer, whose Open ward link reaches the page.
       "src/components/ward-management/capacity/capacity-shift-checks.tsx",
       "src/components/ward-management/capacity/capacity-ward-drawer.tsx",
       "src/components/ward-management/discharges/discharge-board.tsx",
@@ -1772,10 +1773,12 @@ describe("Ward index — every ward in the network has a way in", () => {
     // Page tops (Josh, 9 Nov 2026): the statewide eyebrow left the hero; its figures carry the scope.
     expect(markup).toContain("Statewide counts");
     expect(markup).toContain("Ward filters");
-    expect(markup).toContain("Occupied");
-    // Page tops (9 Nov 2026): "Ready now" is the "beds ready" figure, and the stale-counts chip is the
-    // rail's "Counts to check" list (with the confirmed pill in the hero).
-    expect(markup).toContain("beds ready");
+    // Wave 4 (D-191, ruling 7): the shared bed squares key names "In use" and "Being made ready".
+    expect(markup).toContain("Being made ready");
+    // Page tops (9 Nov 2026): "Ready now" is the hero's "Ready" figure (wave 4 count label, D-191), and
+    // the stale-counts chip is the rail's "Counts to check" list (with the confirmed pill in the hero).
+    expect(markup).toContain('data-testid="ward-index-figure-ready"');
+    expect(markup).toContain(">Ready<");
     expect(markup).toContain("Counts to check");
     // Owner ruling 2026-09-17: live capacity lives on each directory card; former footer Live-bed sentence removed.
 

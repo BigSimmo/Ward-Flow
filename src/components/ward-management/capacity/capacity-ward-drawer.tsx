@@ -23,7 +23,8 @@ import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { openBedReleases } from "@/components/ward-management/ward-bed-availability";
 import { countCellText, freeingCellText, type NetworkWardRow } from "./capacity-derivations";
 import local from "./capacity-page.module.css";
-import { BedCells, releaseParts } from "./capacity-bed-map-cards";
+import { BedSquaresStrip, bedSquareCounts } from "@/components/ward-management/bed-squares";
+import { wardExtras } from "./capacity-bed-map-cards";
 import { DayBars } from "./capacity-day-bars";
 import { wardDayBars } from "./capacity-bed-forecast";
 import type { HorizonDay, HorizonRow } from "@/components/ward-management/forecast/forecast-horizon";
@@ -128,9 +129,18 @@ export function CapacityWardSidebar({
   const sortedRecords =
     records.status === "allowed" ? [...records.value].sort((x, y) => recordOrder(x, now) - recordOrder(y, now)) : [];
   const fresh = isConfirmationFresh(row.unit, now);
-  const occupied = row.occupied + row.pulled;
-  // C4 (Josh, 4 Nov 2026): the in-use squares coloured by discharge state, said in words too.
-  const parts = releaseParts(bedReleases, row.unit.id);
+  // Wave 4 (D-191, ruling 7): the shared bed squares replace the 4 Nov discharge colours (C4). A
+  // discharge due later today and not held up is hatched; held up is said in words.
+  const extra = wardExtras([row.unit], bedReleases, now).get(row.unit.id);
+  // D-179 item 8 (PR C): `row.ready` no longer counts a bed being made ready; those are
+  // `row.beingMadeReady`, drawn hollow.
+  const squares = bedSquareCounts({
+    beds: row.unit.beds,
+    ready: row.ready,
+    beingMadeReady: row.beingMadeReady,
+    dischargesToday: extra?.dischargesToday ?? 0,
+    closed: row.closed,
+  });
   const wardBars = week ? wardDayBars(week.days, week.row) : null;
   const freeingWords =
     row.freeing === undefined
@@ -144,12 +154,11 @@ export function CapacityWardSidebar({
     row.pulled > 0 ? `${row.pulled} ${BED_STATE_LABELS.pulled.toLowerCase()}` : "",
     row.closed > 0 ? `${row.closed} ${BED_STATE_LABELS.closed.toLowerCase()}` : "",
     (row.pendingPreparation ?? 0) > 0 ? `${row.pendingPreparation} being made ready` : "",
+    extra?.dischargesToday
+      ? `${extra.dischargesToday} ${extra.dischargesToday === 1 ? "discharge" : "discharges"} today`
+      : "",
+    extra?.heldUp ? `${extra.heldUp} ${BED_RELEASE_BLOCKED_LABEL.toLowerCase()} · by tomorrow` : "",
   ].filter(Boolean);
-  const releaseNotes = [
-    { count: parts.confirmed, words: "confirmed out", swatch: local.cellConfirmed },
-    { count: parts.expected, words: "expected out", swatch: local.cellExpected },
-    { count: parts.heldUp, words: BED_RELEASE_BLOCKED_LABEL.toLowerCase(), swatch: local.cellHeldUp },
-  ].filter((note) => note.count > 0);
   // Polish (Josh, 31 Oct 2026): the panel leads with the ward's beds as one picture, then whether
   // the count is fresh with its one action, then the facts in two short groups. Closing the ward
   // is folded behind its own button. The Discharges tab lists records soonest first, surname
@@ -181,23 +190,7 @@ export function CapacityWardSidebar({
                 <span>ready of {row.unit.beds} beds</span>
                 <span className={`${local.tag} ${local.wdKind}`}>{bedKindsServed(row.unit)}</span>
               </p>
-              <BedCells
-                beds={row.unit.beds}
-                ready={row.ready}
-                preparing={row.beingMadeReady}
-                used={occupied}
-                parts={parts}
-              />
-              {releaseNotes.length > 0 ? (
-                <ul className={`${local.mutedXs} ${local.wdPartsKey}`} aria-label="Beds in use by discharge state">
-                  {releaseNotes.map((note) => (
-                    <li key={note.words} className={local.wdPartsItem}>
-                      <span aria-hidden="true" className={`${local.wdPartsSwatch} ${note.swatch ?? ""}`} />
-                      {note.count} {note.words}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
+              <BedSquaresStrip counts={squares} className={local.wdSquares} />
               <p className={local.mutedXs}>{bedNotes.join(" · ")}</p>
             </section>
 

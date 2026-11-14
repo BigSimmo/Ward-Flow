@@ -52,7 +52,7 @@ function wardCards(): HTMLElement[] {
 
 function highlightChip(label: string): HTMLElement {
   const group = within(screen.getByRole("group", { name: "Highlight wards" }));
-  return group.getByRole("button", { name: new RegExp(`^${label} · \\d+ wards?$`, "u") });
+  return group.getByRole("button", { name: new RegExp(`^${label} \\d+ wards?$`, "u") });
 }
 
 describe("capacity review corrections", () => {
@@ -96,7 +96,7 @@ describe("capacity review corrections", () => {
     expect(wardCards()).toHaveLength(scoped.length);
     expect(highlightChip("Any ready")).toHaveTextContent(wards(scoped.filter((row) => row.ready > 0).length));
     expect(highlightChip("Locked ready")).toHaveTextContent(wards(scoped.filter((row) => row.lockedReady > 0).length));
-    expect(highlightChip("Count not confirmed")).toHaveTextContent(
+    expect(highlightChip("Count old")).toHaveTextContent(
       wards(scoped.filter((row) => !isConfirmationFresh(row.unit, NOW_ANCHOR)).length),
     );
   });
@@ -111,7 +111,7 @@ describe("capacity review corrections", () => {
     expect(wardCards()).toHaveLength(0);
     const chips = within(screen.getByRole("group", { name: "Highlight wards" })).getAllByRole("button");
     expect(chips.length).toBeGreaterThan(0);
-    for (const chip of chips) expect(chip).toHaveTextContent(/ · 0 wards$/u);
+    for (const chip of chips) expect(chip).toHaveTextContent(/ 0 wards$/u);
   });
 
   /*

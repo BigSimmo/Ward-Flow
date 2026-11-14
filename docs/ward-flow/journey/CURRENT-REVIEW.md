@@ -140,6 +140,74 @@ SET_CONFIGURATION save is unchanged and moved down one line. The six whole-file 
 `actions.json` were refreshed. Evidence: `tests/ward-count-breakdown.dom.test.tsx` and `tests/ward-desk-qr.test.ts`,
 run locally.
 
+## 13 November 2026 — wave 4 Home, Ward and Capacity redesign (PR #1659, D-191)
+
+Five cited review sources changed, compared dispatch by dispatch with main `ea4cd8b57`. Twenty of the 22
+mapped dispatch sites are unchanged and only moved: `ward/ward-screen.tsx` (ACCEPT_REFERRAL, ACCEPT_IN_PRINCIPLE,
+DECLINE, RELEASE_PULL, RECORD_LEAVING, END_LEAVE_BED, CONFIRM_BED_RELEASE, CLEAR_BED_RELEASE_BLOCK,
+CONFIRM_CAPACITY, MARK_NOTICE_READ, CONFIRM_MORNING_ROLLUP), `alerts/alerts-screen.tsx` (RECORD_ESCALATION,
+RELEASE_PULL, ACKNOWLEDGE_INBOX_ITEM, DISPATCH_BROADCAST_ALERT, STAND_DOWN_BROADCAST_ALERT; the screen now keeps
+a just-pulled row with its Undo), and `capacity/capacity-screen.tsx` and `capacity/capacity-ward-drawer.tsx`
+(REQUEST_CAPACITY_REFRESH). Two changed:
+
+- `ward/ward-screen.tsx` PULL_PATIENT: same payload (`movementId`, `unitId`, `actingUnitId: unitId`) and guard;
+  the handler now passes an optional decision report to `runMovementCommand`, so the new pull-then-arrive step
+  can show its own outcome. No engine change.
+- `referrals/pull-accepted-referral.tsx` RAISE_REFERRAL (the Pull the bed form, D-191 and D-188): the ward desk
+  may now pull as well as the coordinator, which the engine already allowed (`EVENT_ROLE.RAISE_REFERRAL`
+  includes `ward`); a ward desk sends `actingUnitId` and may pull only its own ward's bed. The form fills from
+  the record and stays editable; observation is required; the payload fields are unchanged. Engine guards are
+  unchanged, so the RAISE_REFERRAL prose still holds.
+
+Whole-file digests and lines for these five files were refreshed in `actions.json` (the other two
+catalogues do not cite them). Evidence: `tests/ward-pull-bed-step.dom.test.tsx`, `tests/ward-coordinator-path-pull.dom.test.tsx`, `tests/ward-pull-observation-not-recorded.dom.test.tsx`, the Alerts screen tests
+and the capacity screen tests, run locally with `vitest related`.
+
+The same PR then let the ward desk pull the bed for its own ward from Alerts and the referral board (D-197
+item 7). `alerts/alerts-screen.tsx` now lists the ward desk's own accepted, not-pulled referrals as well as the
+coordinator's; its five mapped dispatch sites (RECORD_ESCALATION, RELEASE_PULL, ACKNOWLEDGE_INBOX_ITEM,
+DISPATCH_BROADCAST_ALERT, STAND_DOWN_BROADCAST_ALERT) are unchanged and moved down three lines, and their digests
+were refreshed. The pull itself is the same RAISE_REFERRAL form, sending `actingUnitId` for the ward desk.
+Evidence: `tests/ward-desk-pull-own-ward.dom.test.tsx`, run locally.
+
+Mock-up review fixes in the same PR changed two more cited files without touching a dispatch.
+`referrals/pull-accepted-referral.tsx` (RAISE_REFERRAL): the From line names the place in words, each fact group is
+read once, and the unavailable reason reads "Only the bed coordinator or a ward desk can pull this bed"; the payload
+and guards are unchanged. `capacity/capacity-screen.tsx` (REQUEST_CAPACITY_REFRESH): passes the bed map its phone
+fold rule; the refresh dispatch is unchanged. `ward/ward-answer-view.tsx` (ACCEPT_IN_PRINCIPLE, DECLINE, PULL_PATIENT, CONFIRM_CAPACITY): only the occupancy ring word changes to "In use, at or over 85%" (D-191 item 4); its dispatches are unchanged. All three digests were refreshed.
+
+Review P4-1 (same PR): after Undo pull, the journey stays open at "accepted, awaiting a bed", so the accepted
+referral is listed again with that journey's id. `referrals/pull-accepted-referral.tsx` then sends PULL_PATIENT on that
+journey (`movementId`, `unitId`, and `actingUnitId` for the ward desk) instead of RAISE_REFERRAL, with the facts it
+recorded when it started shown read-only. A journey that records no observation level is refused there ("Choose an observation level on the movement first", review G-1). The RAISE_REFERRAL payload and its guards are unchanged; the RAISE_REFERRAL
+digest was refreshed. Evidence: `tests/ward-pull-bed-step.dom.test.tsx` (Undo, row back, pull again), run locally.
+
+Review P4-2 (D-188 tightened, same PR): the All arrivals tab's Pull the bed in `ward/ward-screen.tsx` now goes through
+the Ward step's `pullAndKeep`, which asks for an observation level when the journey records none and then sends the
+existing RECORD_OBSERVATION_LEVEL before PULL_PATIENT. No dispatch in `ward/ward-screen.tsx` changed; its digests were
+refreshed. Evidence: `tests/ward-pull-then-arrive.dom.test.tsx`, run locally.
+
+Merge of main (PR C, #1660) into the same PR, 13 November 2026: `ward/ward-screen.tsx`, `ward/ward-answer-view.tsx`,
+`alerts/alerts-screen.tsx`, `referrals/pull-accepted-referral.tsx` and `capacity/capacity-ward-drawer.tsx` were each
+changed on both sides. Each dispatch site in the merged files was compared with both parents and matches one of them
+unchanged: this PR's pull-again (PULL_PATIENT on the reopened journey) and pull-then-arrive paths, and PR C's toast
+Undo (`bedPullUndoEvent`, RELEASE_PULL), wait-list answer (A9-05) and pull-desk rule (`actingUnitId` from
+`acceptedPullDesk`). No payload or guard changed in the merge; the 24 affected digests and their lines were refreshed.
+After the merge, the import-map guard pass moved `pull-bed-facts.ts`, `pull-bed-step.tsx`, `origin-place.ts` and
+`bed-squares.tsx` to the ward-management root. That changed only imports in `referrals/pull-accepted-referral.tsx` and
+`capacity/capacity-ward-drawer.tsx` (and the bed-squares input name `beingMadeReady`), and removed one unused hero
+prop in `ward/ward-screen.tsx`. No dispatch changed; those 15 digests were refreshed again.
+Re-check note 3 (same PR): after Undo of a pull again, `referrals/pull-accepted-referral.tsx` says "The movement stays
+open without the bed." instead of "has started"; only the toast words change, so its 2 digests were refreshed.
+After PR E (#1658) merged, `ward/ward-screen.tsx` passes the board clock to the bed-pulled toast so it can say
+"Undo until HH:MM" (D-192, FM-13); the RELEASE_PULL it undoes with and every other dispatch in the file are
+unchanged. Its 12 digests were refreshed.
+Then `ward/ward-screen.tsx` keeps the bed-pulled toast's id so a row's Undo pull can close it (review note 1), and
+moves part of its Home section into `ward/ward-screen-home-section.tsx` to stay within its line limit. No dispatch
+changed; its 12 digests were refreshed again.
+Then main with the clinical PR (#1656) was merged in on 14 November 2026. Both sides' handler changes are kept
+unchanged; the merge adds no behaviour, and the `ward/ward-screen.tsx` digests and lines were refreshed.
+
 ## 13 November 2026 — clinical sign-off sitting wording (PR #1656, D-186)
 
 Five cited review sources changed in the held clinical PR, compared line by line with main `92630b1e`.

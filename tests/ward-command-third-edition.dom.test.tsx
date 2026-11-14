@@ -93,12 +93,13 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     // Sticky header redesign (Josh, 9 Nov 2026): one plain hero title; the counts are its figures,
     // and the ED strip sits inside the hero under its own level-3 "Waiting in ED" heading.
     expect(atRest[0]).toBe("Bed flow right now");
-    expect(screen.getByTestId("home-figure-ed")).toHaveTextContent(/^\d+ open ED movements$/u);
-    expect(screen.getByTestId("home-figure-beds")).toHaveTextContent(/^\d+ beds? ready$/u);
+    // Wave 4 (D-191): count label nouns, as Capacity says them; no window word under "right now".
+    expect(screen.getByTestId("home-figure-ed")).toHaveTextContent(/^\d+ Open movements$/u);
+    expect(screen.getByTestId("home-figure-beds")).toHaveTextContent(/^\d+ Ready$/u);
     // Open ED journeys retain accountability through transit; the queue can also contain ward/community origins.
     // Home and Activity (Josh, 31 Oct 2026): "in transit" as the phone says it, and the demo
     // coverage disclosure lives in the app bar and the footer, so the hero keeps only its facts.
-    expect(screen.getByTestId("ward-home-ed-population")).toHaveTextContent(/^\d+ in ED · \d+ in transit$/u);
+    expect(screen.getByTestId("ward-home-ed-population")).toHaveTextContent(/^\d+ Waiting · \d+ In transit$/u);
     const edPressure = screen.getByTestId("ward-home-ed-pressure");
     expect(within(edPressure).getByRole("heading", { level: 3, name: "Waiting in ED" })).toBeInTheDocument();
     const heroTitle = screen.getByRole("heading", { level: 2, name: "Bed flow right now" });

@@ -88,19 +88,25 @@ describe("F-57: Home pull", () => {
     pull.focus();
     fireEvent.click(pull);
     await screen.findByTestId(`ward-pull-accepted-${first!.referral.id}`);
-    const status = screen.getByTestId("ward-pull-accepted-legal-status") as HTMLSelectElement;
+    // Wave 4 (PR F, D-188): legal status and observation level are kit choice rows; nothing is chosen
+    // unless the record holds it.
+    const status = screen.getByTestId("ward-pull-accepted-legal-status");
     const legalForm = screen.getByTestId("ward-pull-accepted-legal-form") as HTMLSelectElement;
-    const observation = screen.getByTestId("ward-pull-accepted-observation") as HTMLSelectElement;
-    if (status.value === "") fireEvent.change(status, { target: { value: "Voluntary" } });
+    const observation = screen.getByTestId("ward-pull-accepted-observation");
+    if (!within(status).queryByRole("radio", { checked: true }))
+      fireEvent.click(within(status).getByRole("radio", { name: "Voluntary" }));
     if (legalForm.value === "") fireEvent.change(legalForm, { target: { value: "none" } });
-    if (observation.value === "") fireEvent.change(observation, { target: { value: "general" } });
+    if (!within(observation).queryByRole("radio", { checked: true }))
+      fireEvent.click(within(observation).getByRole("radio", { name: "General" }));
     await act(async () => {
       fireEvent.click(screen.getByTestId("ward-pull-accepted-confirm"));
     });
     await nextFrames();
     expect(screen.queryByTestId("home-pull-accepted-sheet")).toBeNull();
-    expect(row.isConnected, "the pulled row has left Act now").toBe(false);
+    // Wave 4 (D-191 item 3, PR F): the pulled row stays with its "Undo pull" until the window ends,
+    // and focus moves past it to the next row, never back to the page.
     expect(focusIsOnPage()).toBe(false);
+    if (row.isConnected) expect(row.contains(document.activeElement)).toBe(false);
     const actNow = document.getElementById(ACT_NOW_TARGET_ID)!;
     expect(actNow.contains(document.activeElement)).toBe(true);
   });

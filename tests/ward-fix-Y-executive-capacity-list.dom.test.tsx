@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", async (importOriginal) => ({
@@ -54,7 +54,8 @@ describe("F-51: executive Capacity follows the kit's list rule", () => {
     const wards = show();
     expect(wards, "the seed network has more than nine wards").toBeGreaterThan(9);
     const table = screen.getByRole("table", { name: /Beds by ward/u });
-    const bodyRows = () => within(table).getAllByRole("rowgroup")[1]!.querySelectorAll("tr").length;
+    // Wave 4 (C7, PR F): the rows are grouped by service, one body per service; count ward rows.
+    const bodyRows = () => table.querySelectorAll('tbody th[scope="row"]').length;
     expect(bodyRows()).toBe(8);
     expect(screen.getByTestId("ward-capacity-executive-total")).toHaveTextContent(`All ${wards} wards`);
     const more = screen.getByRole("button", { name: `Show ${wards - 8} more` });

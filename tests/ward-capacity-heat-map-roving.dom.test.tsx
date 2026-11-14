@@ -18,7 +18,9 @@ describe("By ward heat map keyboard", () => {
         <CapacityScreen />
       </WardFlowProvider>,
     );
-    const forecast = within(screen.getByRole("region", { name: "Bed forecast" }));
+    // Wave 4 (D-191, ruling 8): the full forecast opens from the Forecast card.
+    fireEvent.click(screen.getByTestId("capacity-forecast-open"));
+    const forecast = within(screen.getByRole("region", { name: "Beds ahead" }));
     fireEvent.click(forecast.getByRole("radio", { name: "By ward" }));
 
     const table = forecast.getByRole("table", { name: /by ward and day/u });

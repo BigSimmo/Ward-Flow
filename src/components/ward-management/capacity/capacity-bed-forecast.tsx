@@ -8,7 +8,6 @@ import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { useForecastChange } from "@/components/ward-management/forecast/use-forecast-model";
 import { BEDS_FORECAST_LIMITS } from "./beds-forecast";
-import type { ForecastLever } from "@/components/ward-management/forecast/forecast-levers";
 import type { HorizonDay } from "@/components/ward-management/forecast/forecast-horizon";
 
 import { DayBars, type DayBar } from "./capacity-day-bars";
@@ -16,11 +15,9 @@ import { ExpectedOccupancyTable } from "./capacity-expected-occupancy-lazy";
 import { HowWorkedOut, Legend } from "./capacity-how-worked-out";
 import { gapWords } from "./capacity-range-line";
 import { ShowMoreRow } from "@/components/wf";
-import { tallyBarriers } from "./capacity-held-up";
-import { isConfirmationFresh } from "./capacity-gap-words";
+import { helpItems, plural, tagText, tagTone } from "./capacity-forecast-help";
 import { LeverPopup, type HelpItem } from "./capacity-lever-popup";
 import type { CapacityModel } from "./capacity-model";
-import type { NetworkWardRow } from "./capacity-derivations";
 import styles from "./capacity-page.module.css";
 
 const WARD_ROWS = 8;
@@ -87,7 +84,8 @@ export function BedForecast({
   const actions = (
     <div className={styles.headActions}>
       <Segmented
-        label="Forecast view"
+        // D-198: the switch's name drops "Forecast view"; it picks how the days are split.
+        label={siteName ? "Site or by ward" : "Network or by ward"}
         items={[
           { id: "network" as const, label: siteName ? "Site" : "Network" },
           { id: "ward" as const, label: "By ward" },
@@ -104,9 +102,9 @@ export function BedForecast({
   return (
     <Card
       aria-labelledby={stacked ? undefined : "capacity-forecast-title"}
-      aria-label={stacked ? "Bed forecast" : undefined}
-      // Home's "Bed forecast" link (HOME_FORECAST_HREF) lands here.
-      id={stacked ? undefined : "capacity-forecast"}
+      aria-label={stacked ? "Beds ahead" : undefined}
+      // Wave 4 (D-191): Home's "Forecast" link (HOME_FORECAST_HREF) lands on the Forecast card, which
+      // owns the "capacity-forecast" id; this panel sits behind that card's Open.
       className={stacked ? styles.fcStacked : undefined}
     >
       {/* Polish (Josh, 31 Oct 2026): the title alone, no grey line; the sources sentence moved into
@@ -116,7 +114,7 @@ export function BedForecast({
       ) : (
         <CardHead
           id="capacity-forecast-title"
-          title="Bed forecast"
+          title="Beds ahead"
           meta={networkWide ? "Network-wide" : undefined}
           action={actions}
         />
@@ -133,10 +131,11 @@ export function BedForecast({
         {tomorrow ? (
           <Kpi
             label="Tomorrow"
-            srLabel={`, likely by ${formatInstantWithDay(tomorrow.until, now)}`}
+            srLabel={`, by ${formatInstantWithDay(tomorrow.until, now)}`}
             value={gapWords(tomorrow.likely)}
             tone={tomorrow.likely}
-            sub={`Could be ${gapWords(tomorrow.low)} to ${gapWords(tomorrow.high)}`}
+            // D-198: plain words, no "likely" or "could be".
+            sub={`From ward dates: ${gapWords(tomorrow.low)} to ${gapWords(tomorrow.high)}`}
           />
         ) : null}
         {twoDays ? (
@@ -145,7 +144,7 @@ export function BedForecast({
             value={gapWords(twoDays.likely)}
             tone={twoDays.likely}
             soft
-            sub={`Likely; could be ${gapWords(twoDays.low)} to ${gapWords(twoDays.high)}`}
+            sub={`From ward dates: ${gapWords(twoDays.low)} to ${gapWords(twoDays.high)}`}
           />
         ) : null}
         {/* Feature 21 (Josh, 9 Nov 2026): the third day, 72 hours out, read as softly as the second. Polish
@@ -156,7 +155,7 @@ export function BedForecast({
             value={gapWords(threeDays.likely)}
             tone={threeDays.likely}
             soft
-            sub={`Likely; could be ${gapWords(threeDays.low)} to ${gapWords(threeDays.high)}`}
+            sub={`From ward dates: ${gapWords(threeDays.low)} to ${gapWords(threeDays.high)}`}
           />
         ) : null}
         <Kpi
@@ -325,77 +324,6 @@ function daySub(day: HorizonDay): string {
   if (day.offset === 1) return "Tomorrow";
   if (day.holiday) return "Public holiday";
   return day.weekend ? "Weekend" : "May move";
-}
-
-function plural(count: number, one: string, many: string): string {
-  return `${count} ${count === 1 ? one : many}`;
-}
-
-/**
- * The rows of "What would help tomorrow": the forecast's levers, then two of the page's own
- * (Capacity issue 3, Josh, 3 Nov 2026): ward counts past their threshold, and beds being made
- * ready. Each opens its pop-up.
- */
-function helpItems(levers: readonly ForecastLever[], rows: readonly NetworkWardRow[], now: number): HelpItem[] {
-  const items: HelpItem[] = levers.map((lever) =>
-    lever.kind === "clear_held_up"
-      ? {
-          kind: lever.kind,
-          // A16-25: due by tomorrow (overdue included), unlike the hero's held-up count on any date.
-          title: `Chase ${plural(lever.beds, "held-up discharge", "held-up discharges")} due by tomorrow`,
-          uplift: lever.likelyUplift,
-          detail: tallyBarriers(lever.reasons)
-            .map((entry) => `${entry.label} ${entry.count}`)
-            .join(", "),
-        }
-      : lever.kind === "confirm_dates"
-        ? {
-            kind: lever.kind,
-            title: `Confirm ${plural(lever.beds, "discharge", "discharges")} on ${plural(lever.wards.length, "ward", "wards")}`,
-            uplift: lever.likelyUplift,
-            detail: lever.wards.join(", "),
-          }
-        : {
-            kind: lever.kind,
-            // A16-19: what it counts, so it does not read against Discharges' "dates overdue", which
-            // also holds the held-up ones and closed wards' dates.
-            title: `Review ${plural(lever.beds, "overdue discharge", "overdue discharges")} not held up`,
-            uplift: 0,
-            detail: "Open wards only. Dates passed: they widen the range only",
-          },
-  );
-  const stale = rows.filter((row) => !isConfirmationFresh(row.unit, now));
-  if (stale.length > 0) {
-    items.push({
-      kind: "stale_counts",
-      title: `Refresh ${plural(stale.length, "ward count", "ward counts")}`,
-      rows: [...stale].sort((x, y) => x.confirmedAt - y.confirmedAt),
-    });
-  }
-  const preparing = rows.filter((row) => (row.pendingPreparation ?? 0) > 0);
-  if (preparing.length > 0) {
-    const beds = preparing.reduce((sum, row) => sum + (row.pendingPreparation ?? 0), 0);
-    items.push({
-      kind: "being_made_ready",
-      title: `Finish ${plural(beds, "bed", "beds")} being made ready`,
-      rows: preparing,
-    });
-  }
-  return items;
-}
-
-function tagText(item: HelpItem): string {
-  if (item.kind === "stale_counts") return "check";
-  // A bed being made ready is not Ready now (D-179 item 8), but tomorrow's range already counts it
-  // (`beingMadeReady` in `bedsForecast`), so finishing it is a task, not an uplift to that figure.
-  if (item.kind === "being_made_ready") return "task";
-  return item.uplift > 0 ? `up to +${item.uplift}` : "range only";
-}
-
-function tagTone(item: HelpItem): boolean {
-  if (item.kind === "stale_counts") return false;
-  if (item.kind === "being_made_ready") return false;
-  return item.uplift > 0;
 }
 
 /**

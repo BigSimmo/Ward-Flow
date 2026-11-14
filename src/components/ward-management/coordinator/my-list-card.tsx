@@ -5,8 +5,8 @@
 
 import { useState, type MouseEvent, type ReactNode } from "react";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
-import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import dynamic from "next/dynamic";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
 
@@ -45,8 +45,7 @@ import {
 import { AcceptedPullRows, useAcceptedPull } from "./accepted-pull-rows";
 import { HomeRow, PhoneRow } from "./home-rows";
 import styles from "./home-list.module.css";
-
-const WAIT_ROWS_SHOWN = 3;
+import { originPlace, shortPlace } from "@/components/ward-management/origin-place";
 
 const CallSheet = dynamic(
   withLoadRetry(() => import("./call-sheet").then((m) => m.CallSheet)),
@@ -62,11 +61,6 @@ function followUpMarker(referral: Referral, now: Instant): string | undefined {
     items.some((item) => promiseOverdue(item.status, now)) ? "Promise overdue" : undefined,
   ].filter((part): part is string => part !== undefined);
   return parts.length > 0 ? parts.join(" · ") : undefined;
-}
-
-/** Row text only: "Emergency Department" reads as "ED", as Placement's own header already does. */
-function shortPlace(place: string): string {
-  return place.replace(/\bEmergency Department\b/g, "ED");
 }
 
 /**
@@ -111,14 +105,23 @@ function AlertAction({ entry, handlers }: { entry: QueueEntry; handlers: QueueHa
   );
 }
 
-function DeskAlertRow({ entry, now, handlers }: { entry: QueueEntry; now: Instant; handlers: QueueHandlers }) {
-  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
-  const { subject } = entry;
-  const where = subject.to ? `${subject.to}, from ${shortPlace(subject.from)}` : shortPlace(subject.from);
-  const owner = isYours(entry) ? undefined : `With ${ownerShort(entry.owner)}`;
-  const state = entry.seen ? `Acknowledged ${formatInstantWithDay(entry.seen.at, now)}` : undefined;
-  const extra = [owner, state].filter(Boolean).join(" · ") || undefined;
-  // A passed legal form shows its typed time, never an age since it (legal times only as typed).
+/**
+ * Wave 4 (home mock-up): an alert row's place line, "Bentley Adult Secure · from St John of God
+ * Midland ED", the same on the desk and the phone.
+ */
+function alertWhere({ subject }: QueueEntry): string {
+  return subject.to ? `${subject.to} · from ${shortPlace(subject.from)}` : shortPlace(subject.from);
+}
+
+/**
+ * The time beside an alert row: the age ("10m"), then only what the words add ("overdue", "since
+ * 10:37", "Time not recorded"). A passed legal form shows its typed time, never an age since it.
+ */
+function alertAge(
+  entry: QueueEntry,
+  now: Instant,
+  dayZero: Date | undefined,
+): { age: string | undefined; ageNote: string } {
   const legalEnded = legalTypedEnd(entry.item);
   const ageFrom = shownAgeFrom(entry.item, entry.raised);
   const age = ageFrom === undefined ? undefined : minutesText(Math.max(0, now - ageFrom));
@@ -134,6 +137,17 @@ function DeskAlertRow({ entry, now, handlers }: { entry: QueueEntry; now: Instan
             ? overdue.slice(age!.length + 1)
             : overdue
           : `since ${formatInstantWithDay(entry.raised, now)}`;
+  return { age, ageNote };
+}
+
+function DeskAlertRow({ entry, now, handlers }: { entry: QueueEntry; now: Instant; handlers: QueueHandlers }) {
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
+  const { subject } = entry;
+  const where = alertWhere(entry);
+  const owner = isYours(entry) ? undefined : `With ${ownerShort(entry.owner)}`;
+  const state = entry.seen ? `Acknowledged ${formatInstantWithDay(entry.seen.at, now)}` : undefined;
+  const extra = [owner, state].filter(Boolean).join(" · ") || undefined;
+  const { age, ageNote } = alertAge(entry, now, dayZero);
   return (
     <HomeRow
       data={{ "data-alert-id": entry.item.id, "data-movement-id": entry.item.movementId || undefined }}
@@ -168,6 +182,10 @@ function referralTo(referral: Referral, units: readonly Unit[]): string {
 function PhoneAlertRow({ entry, now, handlers }: { entry: QueueEntry; now: Instant; handlers: QueueHandlers }) {
   const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   const { subject } = entry;
+  const legalEnded = legalTypedEnd(entry.item);
+  // FS-8 (home-390 mock): the age keeps its words ("10m overdue", "5m since 10:37", "Time not
+  // recorded"), as on the desk. A passed legal form's typed time still takes a line of its own.
+  const { age, ageNote } = legalEnded === undefined ? alertAge(entry, now, dayZero) : { age: undefined, ageNote: "" };
   return (
     <PhoneRow
       data={{ "data-alert-id": entry.item.id, "data-movement-id": entry.item.movementId || undefined }}
@@ -179,17 +197,13 @@ function PhoneAlertRow({ entry, now, handlers }: { entry: QueueEntry; now: Insta
       onOpen={() => handlers.onSelect(entry)}
       name={subject.displayName}
       umrn={subject.umrn}
-      line={subject.to ? `${shortPlace(subject.from)} to ${subject.to}` : shortPlace(subject.from)}
-      // A passed legal form's typed time takes a line of its own; the age column stays empty for it.
-      age={
-        legalTypedEnd(entry.item) !== undefined || entry.raised === undefined
-          ? undefined
-          : minutesText(Math.max(0, now - entry.raised))
-      }
-      note={
-        legalTypedEnd(entry.item) !== undefined ? typedTimeLine(legalTypedEnd(entry.item)!, now, dayZero) : undefined
-      }
+      line={alertWhere(entry)}
+      age={age}
+      ageNote={ageNote || undefined}
+      note={legalEnded !== undefined ? typedTimeLine(legalEnded, now, dayZero) : undefined}
       owner={isYours(entry) ? undefined : ownerShort(entry.owner)}
+      // FS-8: the row's own step (Release pulled bed, Find a bed), the same as the desk row's.
+      action={<AlertAction entry={entry} handlers={handlers} />}
     />
   );
 }
@@ -197,7 +211,7 @@ function PhoneAlertRow({ entry, now, handlers }: { entry: QueueEntry; now: Insta
 export function MyListCard({
   act,
   toPull = [],
-  wait,
+  since,
   referrals,
   units,
   now,
@@ -208,13 +222,16 @@ export function MyListCard({
   decideHref,
   focus = "all",
   onShowAll,
-  hideWait = false,
   referralCap,
 }: {
   act: QueueEntry[];
   /** WS-02: referrals a ward has accepted with no bed pulled yet. They sit in Act now. */
   toPull?: readonly AcceptedAwaitingPull[];
-  wait: QueueEntry[];
+  /**
+   * Wave 4 (D-191, notes item 7): the "Since 07:00 · … Review" line, folded into the top of this
+   * card so Needs you is one card, not two.
+   */
+  since?: ReactNode;
   referrals: Referral[];
   units: readonly Unit[];
   now: Instant;
@@ -234,8 +251,6 @@ export function MyListCard({
   /** Hero counts narrow the list to one group; "all" shows every group. */
   focus?: "all" | "act" | "decide";
   onShowAll?: () => void;
-  /** Home flow mock-up (Q340): waiting alerts are marks on Flow rows, so the group is left out. */
-  hideWait?: boolean;
   /** Home flow mock-up: show this many referral rows, then Show all (8 rows then Show more). */
   referralCap?: number;
 }) {
@@ -256,14 +271,15 @@ export function MyListCard({
         }
       : {};
   const shownReferrals = referralCap === undefined || allReferrals ? referrals : referrals.slice(0, referralCap);
-  const [allWaiting, setAllWaiting] = useState(false);
   const [callSheetOpen, setCallSheetOpen] = useState(false);
   const pull = useAcceptedPull();
   const patientOf = usePatientOf();
   const nameFor = usePatientNameDisplay();
-  const shownWait = allWaiting ? wait : wait.slice(0, WAIT_ROWS_SHOWN);
   const actCount = act.length + toPull.length;
-  const total = actCount + referrals.length + wait.length;
+  // Ruling 2 (D-191): Needs you is Act now and Referrals to decide only. "Waiting on others" is gone:
+  // a late planned arrival is in Later today's Past planned time, discharge notices stay in Alerts,
+  // and a waiting alert on a person is a mark on their Flow row (Q340).
+  const total = actCount + referrals.length;
 
   const alertRows = (list: QueueEntry[]) =>
     phone ? (
@@ -287,7 +303,7 @@ export function MyListCard({
         const who = patientOf(referral);
         const name = nameFor(who.formalName, who.umrn);
         const title = `Tier ${referral.urgency} · ${referralTo(referral, units)}`;
-        const from = withSendingTeam(`from ${referral.originSiteCode ?? ORIGIN_NOT_RECORDED}`, referral);
+        const from = withSendingTeam(`from ${originPlace(referral)}`, referral);
         const profile = referral.homeRegion ? `${referral.ageBand}, ${referral.homeRegion}` : referral.ageBand;
         const age = minutesText(Math.max(0, now - referral.raisedAt));
         const marker = followUpMarker(referral, now);
@@ -307,16 +323,22 @@ export function MyListCard({
             key={referral.id}
             {...shared}
             line={[from, profile, marker].filter(Boolean).join(" · ")}
+            inlineTitle
             age={age}
+            ageNote="waiting"
             owner={undefined}
+            endAction
             action={
+              // Wave 4 (notes item 5): on a phone Decide is a quiet end link with a 40 px cover, so the
+              // row's text keeps the width.
               <Link
                 href={decideHref(referral.id)}
-                className={buttonClass({ size: "sm" })}
+                className={styles.decideQuiet}
                 aria-label={`Decide referral for ${name}`}
                 {...decideHere(referral.id)}
               >
                 Decide
+                <ChevronRight aria-hidden="true" size={14} />
               </Link>
             }
           />
@@ -324,8 +346,10 @@ export function MyListCard({
           <HomeRow
             key={referral.id}
             {...shared}
-            where={from}
-            extra={marker ? `${profile} · ${marker}` : profile}
+            // Wave 4 (notes item 6, A16-23): one plain line, "Tier 3 · Any suitable ward · from Royal
+            // Perth ED · Adult, Perth Metropolitan", in place of three stacked lines.
+            inlineTitle
+            where={[from, profile, marker].filter(Boolean).join(" · ")}
             age={age}
             ageNote="waiting"
             action={
@@ -347,8 +371,10 @@ export function MyListCard({
   const actGroup = (
     // WS-18: the target of the shell's "Skip to Act now" link (shell/ward-skip-to-act-now.tsx).
     <section className={alertStyles.group} aria-label="Act now" id={ACT_NOW_TARGET_ID} tabIndex={-1}>
-      <GroupHead tone="danger" label="Act now" count={actCount} aside="needs a person now" />
-      {toPull.length > 0 ? (
+      {/* Home mock-up (390 to 1440): Act now has no right-hand note; the hero says "need a person now". */}
+      <GroupHead tone="danger" label="Act now" count={actCount} />
+      {/* Wave 4 H5 (ruling item 3): a bed just pulled keeps its row, with Undo, until its window ends. */}
+      {toPull.length > 0 || pull.kept.length > 0 ? (
         <AcceptedPullRows
           toPull={toPull}
           now={now}
@@ -356,11 +382,13 @@ export function MyListCard({
           testId="home-accepted-to-pull"
           pulling={pull.pulling}
           setPulling={pull.setPulling}
+          kept={pull.kept}
+          onUndo={pull.undo}
         />
       ) : null}
       {act.length > 0 ? (
         alertRows(act)
-      ) : toPull.length > 0 ? null : (
+      ) : toPull.length > 0 || pull.kept.length > 0 ? null : (
         <CalmEmpty>None firing now. The checks run are named in the header.</CalmEmpty>
       )}
     </section>
@@ -381,28 +409,6 @@ export function MyListCard({
       ) : null}
     </section>
   );
-  const waitGroup = (
-    <section className={alertStyles.group} aria-label="Waiting on others">
-      <GroupHead tone="warning" label="Waiting on others" count={wait.length} aside="you may need to chase" />
-      {wait.length > 0 ? (
-        alertRows(shownWait)
-      ) : (
-        <CalmEmpty>Nothing is waiting on a transport leg or an arrival.</CalmEmpty>
-      )}
-      {wait.length > WAIT_ROWS_SHOWN ? (
-        <button
-          type="button"
-          className={styles.showMore}
-          aria-expanded={allWaiting}
-          data-testid="home-list-show-more"
-          onClick={() => setAllWaiting((open) => !open)}
-        >
-          {allWaiting ? "Show fewer" : `Show ${wait.length - WAIT_ROWS_SHOWN} more`}
-        </button>
-      ) : null}
-    </section>
-  );
-
   const body = (
     <div className={styles.needsBody}>
       {focus === "all" ? null : (
@@ -418,21 +424,17 @@ export function MyListCard({
       )}
       {focus === "decide" ? null : actGroup}
       {focus === "act" ? null : decideGroup}
-      {focus === "all" && !hideWait ? waitGroup : null}
     </div>
   );
 
   return (
-    <Card
-      className={styles.needsCard}
-      data-testid="home-my-list"
-      aria-label={hideWait ? `Needs you, ${total - wait.length} items` : `My list, ${total} items`}
-    >
+    <Card className={styles.needsCard} data-testid="home-my-list" aria-label={`Needs you, ${total} items`}>
+      {since}
       {body}
       {pull.sheet}
       <div className={styles.needsFoot}>
-        <StatusGlyph tone="neutral" />
-        <span>Oldest first within each group. Snoozed items return by themselves.</span>
+        {/* Home mock-up: one quiet line; each group's head already says "oldest first". */}
+        <span>Snoozed items come back by themselves.</span>
         {/* Design audit A26 (5 Nov 2026): the kit small button, so it keeps the 40px phone size. */}
         <Button
           variant="ghost"

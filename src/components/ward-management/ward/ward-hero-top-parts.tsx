@@ -1,25 +1,38 @@
-import { HeroAct, HeroBand, HeroFigures, SrOnly, durMinutes } from "@/components/wf";
+import { HeroAct, HeroBand, HeroFigures, SrOnly, WindowWord, durMinutes } from "@/components/wf";
 import type { Unit } from "@/components/ward-management/ward-model";
 import type { BedStateCounts } from "@/components/ward-management/ward-bed-states";
-import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
-import { shiftEndInstant } from "@/components/ward-management/ward-board-time-features";
+import { formatInstant } from "@/components/ward-management/ward-clock";
 import { BED_RELEASE_BLOCKED_FIGURE_LABEL } from "@/components/ward-management/ward-derivations";
 import { SAMPLE_OBSERVATION_MIX_LABEL } from "@/components/ward-management/ward-sample-choices";
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
 import { WardPackPrintedLine } from "./ward-pack-printed-line";
+import styles from "./ward-hero-top-parts.module.css";
+
+/** Count label "Label · window" (shared parts spec 2): the kit's window word, in the hero's quiet ink. */
+function windowed(label: string, window: Parameters<typeof WindowWord>[0]["word"]) {
+  return (
+    <>
+      {label}
+      <WindowWord word={window} className={styles.win} />
+    </>
+  );
+}
 
 export type WardHeroTopInput = {
   unit: Unit;
   states: BedStateCounts;
   now: number;
   isPhone: boolean;
-  pendingPreparation: number;
-  readyByShiftEnd: number;
+  /** Wave 4 (ruling 9): accepted people coming to this ward, the Arrivals · today figure. */
+  arrivalsToday: number;
+  openArrivals: () => void;
   actNowCount: number;
   heldUpCount: number;
   pastDateCount: number;
   bedCountsStale: boolean;
   staffedSpecialling: number;
+  /** Ruling 10: stays with no observation level recorded (`obsNotRecordedCount`, ward-screen-derivations). */
+  obsNotRecorded: number;
   /** The bed board's filter, so a figure that sets it says it is pressed. */
   bedFilter: WardBedFilter;
   pickBedFilter: (next: WardBedFilter) => void;
@@ -35,18 +48,21 @@ export function wardHeroTopParts({
   states,
   now,
   isPhone,
-  pendingPreparation,
-  readyByShiftEnd,
+  arrivalsToday,
+  openArrivals,
   actNowCount,
   heldUpCount,
   pastDateCount,
   bedCountsStale,
   staffedSpecialling,
+  obsNotRecorded,
   bedFilter,
   pickBedFilter,
   openShiftTodo,
 }: WardHeroTopInput) {
-  const shiftEndLabel = formatInstantWithDay(shiftEndInstant(now), now);
+  // D-179 item 8: the beds still being made ready, said beside Ready (`bedStates` fills it from
+  // `bedsPendingPreparation`), as the Ward answer and the shortlist say it.
+  const pendingPreparation = states.beingMadeReady;
   const wardFigures = (
     <HeroFigures
       label="Ward capacity"
@@ -57,7 +73,7 @@ export function wardHeroTopParts({
           value: <span data-testid="ward-hero-ready">{states.ready}</span>,
           label: (
             <>
-              ready now
+              {windowed("Ready", "now")}
               {pendingPreparation > 0 ? (
                 <span data-testid="ward-hero-being-made-ready">{`, ${pendingPreparation} being made ready`}</span>
               ) : null}
@@ -77,16 +93,17 @@ export function wardHeroTopParts({
               {unit.beds}
             </>
           ),
-          label: "occupied",
+          label: windowed("Occupied", "now"),
           onClick: () => pickBedFilter("occupied"),
           pressed: bedFilter === "occupied",
         },
         {
-          id: "shift-end",
-          value: states.ready + readyByShiftEnd,
-          label: `ready by ${shiftEndLabel}`,
-          onClick: () => pickBedFilter("shift-end"),
-          pressed: bedFilter === "shift-end",
+          // Ruling 9 (D-191): replaces "ready by 15:00", which counted releases past their date.
+          id: "arrivals",
+          value: arrivalsToday,
+          label: windowed("Arrivals", "today"),
+          onClick: openArrivals,
+          testId: "ward-hero-arrivals",
         },
       ]}
     />
@@ -102,7 +119,7 @@ export function wardHeroTopParts({
   const staleCount = bedCountsStale ? 1 : 0;
   const wardBand = (
     <HeroBand
-      title="Checking"
+      title={windowed("Checking", "now")}
       testId="ward-hero-checking"
       aside={
         <>
@@ -123,8 +140,11 @@ export function wardHeroTopParts({
       cells={[
         {
           id: "held",
+          // Ruling 5: held up counts "by tomorrow"; the count is the page's selector (PR C moves it).
+          // Mock-up: the number straight after the label, the window after it ("Held up 1 · by tomorrow").
           label: "Held up",
           value: heldUpCount,
+          sub: <span className={styles.winAfter}>· by tomorrow</span>,
           tone: heldUpCount > 0 ? "danger" : undefined,
           ariaLabel: `${BED_RELEASE_BLOCKED_FIGURE_LABEL}: ${heldUpCount}`,
         },
@@ -139,11 +159,18 @@ export function wardHeroTopParts({
         {
           id: "obs",
           // Root-cause fix 3.5: this counts staff, not patients (one person on two-staff constant is 2).
-          label: "Constant obs staff",
+          label: "Staff on constant obs",
           value: staffedSpecialling,
           // D-189 item 2: the sample day's observation levels are a sample mix until Josh sets one.
           note: <span data-testid="ward-hero-obs-sample">{SAMPLE_OBSERVATION_MIX_LABEL}</span>,
           ariaLabel: `Staff on constant observation: ${staffedSpecialling}`,
+        },
+        {
+          // Ruling 10 (D-191): quiet, beside the staff count, so 0 staff is not read as "nobody needs obs".
+          id: "obs-not-recorded",
+          label: "Obs not recorded",
+          value: obsNotRecorded,
+          ariaLabel: `Stays with no observation level recorded, including pulled beds: ${obsNotRecorded}`,
         },
       ]}
     />

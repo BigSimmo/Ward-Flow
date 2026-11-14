@@ -1,0 +1,106 @@
+/* Wave 4 (D-191, ruling 11, review F-2): the Ward page's pull step before an arrival. Tokens only. */
+
+.form {
+  display: grid;
+  gap: var(--wf-s-3);
+}
+
+.fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.legend {
+  float: left;
+  width: 100%;
+  padding: 0;
+  margin: 0 0 var(--wf-s-2);
+  font-size: var(--wf-fs-13);
+  font-weight: 650;
+  color: var(--wf-ink-1);
+}
+
+.choices {
+  clear: both;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.choice {
+  min-height: 36px;
+  border-bottom: 1px solid var(--wf-line);
+  padding: 0 var(--wf-s-1);
+  box-sizing: border-box;
+}
+
+.why {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+/* D-188: where the observation level came from ("Not recorded"), as the Home pull form says it. */
+.source {
+  margin-left: var(--wf-s-2);
+  font-weight: 400;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.interval {
+  clear: both;
+  margin-top: var(--wf-s-2);
+}
+
+.none,
+.note {
+  clear: both;
+  margin: var(--wf-s-2) 0 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.foot {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wf-s-3);
+  flex-wrap: wrap;
+}
+
+.notYet {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.notYet button {
+  border-style: dashed;
+  color: var(--wf-ink-3);
+  background: var(--wf-surface-2);
+}
+
+.lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+@media (max-width: 743px) {
+  .choice {
+    min-height: 40px;
+    position: relative;
+  }
+
+  .choice::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+
+  .foot button {
+    min-height: 48px;
+  }
+}

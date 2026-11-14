@@ -1,152 +1,137 @@
 "use client";
 
+import { useId } from "react";
 import { ChevronRight } from "lucide-react";
 
-import { Button, Card, CardHead, StatusGlyph, durMinutes } from "@/components/wf";
+import { Card, CardHead, WindowWord } from "@/components/wf";
+import { BedSquares, bedSquaresTag } from "@/components/ward-management/bed-squares";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
-import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
+import { closedBedsPastReview } from "@/components/ward-management/ward-bed-closure-review";
+import type { BedRelease } from "@/components/ward-management/ward-model";
 
 import { isConfirmationFresh } from "./capacity-gap-words";
-import type { CapacityModel } from "./capacity-model";
-import { gapWords } from "./capacity-range-line";
+import { wardExtras, wardNotes, wardSquareCounts } from "./capacity-bed-map-cards";
+import { ForecastCard } from "./capacity-forecast-card";
+import { HeldUpCard } from "./capacity-held-up-rail";
 import { ReadyByRoadTime } from "./capacity-road-time";
-import { ShiftChecks } from "./capacity-shift-checks";
-import { ClosedBedsPastReview } from "./capacity-closed-beds-review";
-import { CapacityIntakeWindowsCard } from "./capacity-intake-windows-card";
+import type { CapacityModel } from "./capacity-model";
 import styles from "./capacity-page.module.css";
 
 /**
- * The phone's first tab: the forecast in three figures, then wards to check. The forecast starts at
- * tomorrow (Josh, 30 Oct 2026). Page tops (Josh, 9 Nov 2026): the mismatch rows are the hero's band
- * now, each cell opening the same pop-up, so this tab no longer repeats them.
+ * The phone's Overview (wave 4, notes item 6, D-191): three cards. Held up · by tomorrow first, then
+ * Wards to check · now (no ready bed, a stale count, or a closed bed past review) in the bed-squares
+ * phone form, then the Forecast. This shift, Closed beds, Intake windows and Nearest ready beds left
+ * the phone Overview: a closed bed past review and tonight's intake hours are on each ward's note
+ * line, and the Wards tab holds every ward.
  */
 export function PhoneOverview({
   model,
   executive,
+  heldUpReleases,
   onForecast,
   onWard,
   onAskWard,
+  onAllWards,
   networkWide = false,
 }: {
   model: CapacityModel;
-  /** The executive desk opens no ward page, so Ready beds by road time lists without links. */
+  /** The executive desk sees bed counts only: no held-up names. */
   executive: boolean;
+  /** The bed releases the held-up card reads, already narrowed to the wards shown. */
+  heldUpReleases: readonly BedRelease[];
   onForecast: () => void;
   onWard: (unitId: string) => void;
-  /** The coordinator's "Ask" on This shift; absent for a desk that may not ask a ward. */
   onAskWard?: (unitId: string) => void;
-  /** A service is chosen: the mismatch and forecast still count the whole network, and say so. */
+  /** Shows every ward (the Wards tab). */
+  onAllWards?: () => void;
+  /** A service is chosen: the forecast still counts the whole network, and says so. */
   networkWide?: boolean;
 }) {
-  const { forecast, week, wardsToCheck, networkRows, roadTimeFromEdId, now } = model;
-  const canOpen = useCanOpenHref();
-  const [tomorrow, ...laterDays] = forecast.horizons;
-  const weekOut = week.total.out.reduce((sum, value) => sum + value, 0);
+  const { wardsToCheck, networkRows, mapGroups, now } = model;
+  const wardOf = new Map(mapGroups.flatMap((group) => group.wards).map((ward) => [ward.unit.id, ward]));
+  const rowOf = new Map(networkRows.map((row) => [row.unit.id, row]));
+  const units = networkRows.map((row) => row.unit);
+  const pastReview = new Set(closedBedsPastReview(units, now).map(({ unit }) => unit.id));
+  const checkIds = new Set([...wardsToCheck.map((row) => row.unit.id), ...pastReview]);
+  const toCheck = networkRows.filter((row) => checkIds.has(row.unit.id));
+  const extras = wardExtras(units, model.bedReleases ?? [], now);
+  const detailIdBase = useId();
   return (
-    <>
-      <Card aria-labelledby="phone-forecast">
+    <div className={styles.phoneOverview}>
+      {executive ? null : <HeldUpCard releases={heldUpReleases} now={now} />}
+      <Card aria-labelledby="phone-check" data-testid="capacity-wards-to-check">
         <CardHead
-          id="phone-forecast"
-          title="Bed forecast"
-          meta={networkWide ? "Network-wide" : undefined}
-          action={
-            <Button size="sm" variant="ghost" iconEnd={ChevronRight} onClick={onForecast} aria-haspopup="dialog">
-              Open
-            </Button>
+          id="phone-check"
+          title={
+            <span className={styles.countTitle}>
+              <b className={styles.countN}>{toCheck.length}</b> Wards to check
+              <WindowWord word="now" />
+            </span>
           }
         />
-        <ul className={styles.phoneRows}>
-          {tomorrow ? (
-            <li className={styles.phoneRow}>
-              <div>
-                <b className={styles.small}>Tomorrow</b>
-                <span className={styles.mutedXs}>
-                  Range {gapWords(tomorrow.low)} to {gapWords(tomorrow.high)}
-                </span>
-              </div>
-              <span className={`${styles.small} ${tomorrow.likely < 0 ? styles.warnInk : styles.okInk}`}>
-                {gapWords(tomorrow.likely)}
-              </span>
-            </li>
-          ) : null}
-          {/* Feature 21 polish (9 Nov 2026): 48 and 72 hours read like Tomorrow (likely figure on the
-              right, range under the label), muted with the hatched swatch because their dates may move. */}
-          {laterDays.slice(0, 2).map((day, index) => (
-            <li key={day.hours} className={styles.phoneRow}>
-              <div>
-                <b className={`${styles.small} ${styles.fcKpiSoftLabel}`}>
-                  <span className={`${styles.fcSoftSwatch} ${styles.swHatch}`} aria-hidden="true" />
-                  In {index + 2} days
-                </b>
-                <span className={styles.mutedXs}>
-                  Range {gapWords(day.low)} to {gapWords(day.high)} · may move
-                </span>
-              </div>
-              <span className={`${styles.small} ${styles.muted}`}>Likely {gapWords(day.likely)}</span>
-            </li>
-          ))}
-          <li className={styles.phoneRow}>
-            <div>
-              <b className={styles.small}>Next 7 days</b>
-              <span className={styles.mutedXs}>Beds going out</span>
-            </div>
-            <span className={styles.small}>{weekOut}</span>
-          </li>
-        </ul>
-      </Card>
-      <Card aria-labelledby="phone-check">
-        <CardHead id="phone-check" title="Wards to check" meta={String(wardsToCheck.length)} />
-        {wardsToCheck.length === 0 ? (
-          <p className={styles.sideBody}>Every open ward has a ready bed and a fresh count.</p>
+        {toCheck.length === 0 ? (
+          <p className={styles.railEmpty}>Every open ward has a ready bed and a fresh count.</p>
         ) : (
-          <ul className={styles.phoneRows}>
-            {wardsToCheck.slice(0, 5).map((row) => (
-              <li key={row.unit.id} className={styles.phoneRow}>
-                <div>
-                  <b className={styles.small}>
-                    <SpelledCodes text={row.unit.name} />
-                  </b>
-                  <span className={styles.mutedXs}>
-                    {row.ready === 0 ? "No ready bed" : `${row.ready} ready`}
-                    {row.pendingPreparation ? `, ${row.pendingPreparation} being made ready` : ""} · count{" "}
-                    {durMinutes(Math.max(0, now - row.confirmedAt))} old
-                  </span>
-                </div>
-                <span className={`${styles.small} ${styles.warnInk}`}>
-                  <StatusGlyph tone="warning" size={9} /> {isConfirmationFresh(row.unit, now) ? "No bed" : "Stale"}
-                </span>
-              </li>
-            ))}
+          <ul className={styles.railRows}>
+            {toCheck.slice(0, 8).map((row) => {
+              const ward = wardOf.get(row.unit.id);
+              const stale = !isConfirmationFresh(row.unit, now);
+              return (
+                <li key={row.unit.id}>
+                  <button
+                    type="button"
+                    className={`${styles.wardCard} ${styles.wardTile}`}
+                    aria-haspopup="dialog"
+                    // The card is named by its own text (WCAG 2.5.3, label in name): a shorter "Open <ward>" name
+                    // failed the label-in-name check, because the figures are visible text inside the button.
+                    data-testid={`capacity-check-ward-${row.unit.id}`}
+                    data-stale={stale ? "" : undefined}
+                    onClick={() => onWard(row.unit.id)}
+                  >
+                    <span className={styles.wardName}>
+                      <SpelledCodes text={row.unit.name} />
+                    </span>
+                    {ward ? (
+                      <span id={`${detailIdBase}-${row.unit.id}`} className={styles.cardDetail}>
+                        <BedSquares
+                          counts={wardSquareCounts(ward, extras.get(ward.unit.id)?.dischargesToday ?? 0)}
+                          tag={bedSquaresTag(ward.unit)}
+                          notes={wardNotes(ward, rowOf.get(ward.unit.id), now, extras.get(ward.unit.id), false)}
+                        />
+                      </span>
+                    ) : null}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
+        {onAllWards ? (
+          <button type="button" className={styles.railFoot} onClick={onAllWards}>
+            All {networkRows.length} wards · bed map
+            <ChevronRight size={14} strokeWidth={1.75} aria-hidden="true" />
+          </button>
+        ) : null}
       </Card>
-      <ShiftChecks model={model} onAskWard={onAskWard} siteName={model.site?.name} />
-      {/* Item 6 (10 Nov 2026): beds closed past their review time; hidden when there are none. */}
-      <ClosedBedsPastReview units={networkRows.map((row) => row.unit)} now={now} executive={executive} />
-      <CapacityIntakeWindowsCard units={networkRows.map((row) => row.unit)} now={now} onWard={onWard} />
+      <ForecastCard
+        model={model}
+        networkWide={networkWide}
+        onOpen={onForecast}
+        onWard={onWard}
+        onAskWard={onAskWard}
+        testId="capacity-phone-forecast"
+      />
       {model.site ? (
-        // Site bed manager: every site's ready beds by road time, opened in the ward drawer or the
-        // Other sites counts, because another site's ward page is not this desk's to open.
+        // Site bed manager (D-80): the one way this desk reaches another site's ready bed on a
+        // phone, by road time; another site's ward page is not its to open, so a choice shows that
+        // site's counts. The coordinator's phone keeps the three cards above.
         <ReadyByRoadTime
           rows={[...networkRows, ...model.otherSiteRows]}
-          defaultEdId={roadTimeFromEdId}
+          defaultEdId={model.roadTimeFromEdId}
           selectedUnitId={undefined}
           onSelectUnit={onWard}
         />
-      ) : (
-        <ReadyByRoadTime
-          rows={networkRows}
-          defaultEdId={roadTimeFromEdId}
-          selectedUnitId={undefined}
-          onSelectUnit={() => {}}
-          // Only a ward this desk may open (access audit, 31 Oct 2026); the executive opens none.
-          wardHref={
-            executive
-              ? undefined
-              : (unitId) => (canOpen(`/ward-flow/ward/${unitId}`) ? `/ward-flow/ward/${unitId}` : undefined)
-          }
-        />
-      )}
-    </>
+      ) : null}
+    </div>
   );
 }

@@ -47,14 +47,6 @@
   font-variant-numeric: tabular-nums slashed-zero;
 }
 
-.eyebrow {
-  color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
 .cardNote {
   margin: 0;
   padding: var(--wf-s-2) var(--wf-s-4);
@@ -86,10 +78,6 @@
   font-size: var(--wf-fs-13);
   white-space: nowrap;
   text-overflow: ellipsis;
-}
-
-.footMeta .eyebrow {
-  margin-right: var(--wf-s-1);
 }
 
 .footMeta svg {
@@ -342,25 +330,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .rightPanel {
-    display: flex;
-    flex-direction: column;
-    gap: var(--wf-s-2);
-    min-width: 0;
-    min-height: 0;
-  }
-
-  .rightPanel > :not(.rightSwitch) {
-    flex: 1 1 auto;
-    min-height: 0;
-  }
-
-  .rightPanel > .flowCard,
-  .rightPanel > .side {
-    display: flex;
-    flex-direction: column;
-  }
-
   .grid > * {
     min-height: 0;
   }
@@ -370,16 +339,9 @@
   }
 
   .grid .side > :only-child,
-  .grid .flowCol > *,
-  .queueCard,
-  .flowCard {
+  .queueCard {
     flex: 1 1 auto;
     min-height: 0;
-  }
-
-  .flowCol {
-    display: flex;
-    flex-direction: column;
   }
 
   .queueList {
@@ -388,27 +350,12 @@
     max-height: none;
   }
 
-  .flowBody {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
-
   .shortlistColumn {
     flex: 1 1 auto;
     min-height: 0;
   }
 
   /* Placement scrolls inside its own column; its action bar holds to the foot of the column. */
-  .shortlistRegion.shortlistRegion > [data-testid^="ward-shortlist-"],
-  .shortlistRegion.shortlistRegion > [data-testid^="ward-referral-placement"] {
-    flex: 1 1 auto;
-    min-height: 0;
-    padding-bottom: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
 
   /* Desktop: one page scroll (Home placement redesign, Josh 19 Oct 2026). The columns grow to fit
      their content instead of scrolling inside a window-tall box; the queue shows its top 10 behind
@@ -420,24 +367,13 @@
     height: auto;
   }
 
-  .grid[data-layout="desktop"] .queueList,
-  .grid[data-layout="desktop"] .flowBody {
+  .grid[data-layout="desktop"] .queueList {
     max-height: none;
     overflow: visible;
   }
 
-  .grid[data-layout="desktop"] > .placementCol {
-    position: sticky;
-    top: var(--ward-sticky-top, 4.5rem);
-    align-self: start;
-    min-height: 0;
-  }
-
   /* The most the pinned panel may be: the shell's rail budget, which leaves room for the top bar
      and the page's prototype footer, so the panel's heading never slides under the top bar. */
-  .grid[data-layout="desktop"] > .placementCol .shortlistRegion {
-    max-height: var(--ward-rail-height, calc(100dvh - 6rem));
-  }
 }
 
 .side {
@@ -552,10 +488,6 @@
   font-size: var(--wf-fs-12);
 }
 
-.noShrink {
-  flex: 0 0 auto;
-}
-
 .queueMain {
   display: flex;
   flex-direction: column;
@@ -660,145 +592,13 @@
 
 /* ---------- State bedflow ---------- */
 
-.flowCard {
-  min-width: 0;
-}
-
 /* The legend, today's count and Open Capacity share the foot; in a narrow column they wrap. */
-.flowCard .cardFoot {
-  flex-wrap: wrap;
-  row-gap: var(--wf-s-1);
-}
-
-.flowHead {
-  gap: var(--wf-s-2);
-  padding-inline: var(--wf-s-3);
-}
-
-.flowLegend {
-  flex-wrap: nowrap;
-  gap: var(--wf-s-1) var(--wf-s-2);
-  font-size: var(--wf-fs-12);
-  white-space: nowrap;
-}
-
-.flowLegend > li {
-  gap: var(--wf-s-1);
-}
-
-.flowBody {
-  display: flex;
-  flex-direction: column;
-}
 
 .group {
   border-bottom: 1px solid var(--wf-line);
 }
 
-.groupHead {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--wf-s-2);
-  width: 100%;
-  min-height: var(--wf-h-md);
-  margin: 0;
-  padding: var(--wf-s-2) var(--wf-s-4);
-  border: 0;
-  background: var(--wf-surface-2);
-  color: var(--wf-ink-2);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.groupHead:hover {
-  background: var(--wf-hover);
-}
-
 /* Keep both the service and its ward count readable when the bedflow column narrows. */
-.groupName {
-  flex: 1 1 9rem;
-  min-width: 0;
-  color: var(--wf-ink-1);
-  font-weight: 600;
-  font-size: var(--wf-fs-12);
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  overflow-wrap: anywhere;
-}
-
-.groupCount {
-  flex: none;
-  color: var(--wf-ink-3);
-  white-space: nowrap;
-}
-
-.groupFigures {
-  flex: none;
-  margin-left: auto;
-  color: var(--wf-ink-2);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.unitList {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.unitList[hidden] {
-  display: none;
-}
-
-.unitRow {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  min-height: var(--wf-h-lg);
-  padding-right: var(--wf-s-3);
-  border-top: 1px solid var(--wf-line);
-}
-
-.unitRowSelected {
-  background: var(--wf-selected);
-  /* No side edges (Josh, 31 Oct 2026): selected is the selected tint with a neutral border. */
-  box-shadow: inset 0 0 0 1px var(--wf-line-2);
-}
-
-.unitNameLine {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  min-width: 0;
-}
-
-.unitNameLine > .unitNameText {
-  min-width: 0;
-}
-
-.unitMain {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(3rem, 6rem) 3.5rem;
-  align-items: center;
-  gap: var(--wf-s-3);
-  flex: 1 1 auto;
-  min-width: 0;
-  min-height: var(--wf-h-lg);
-  padding: var(--wf-s-1) 0 var(--wf-s-1) var(--wf-s-4);
-  border: 0;
-  background: transparent;
-  color: var(--wf-ink-1);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.unitMain:hover {
-  background: var(--wf-hover);
-}
 
 .unitName {
   display: flex;
@@ -806,276 +606,12 @@
   min-width: 0;
 }
 
-.unitNameText {
-  overflow: hidden;
-  font-weight: 500;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.unitSub {
-  overflow: hidden;
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.unitPending {
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-}
-
-.unitBar {
-  min-width: 0;
-}
-
-.unitReady {
-  display: flex;
-  flex-direction: column-reverse;
-  align-items: flex-end;
-  line-height: var(--wf-lh-12);
-}
-
-.unitReadyValue {
-  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
-}
-
-.unitReadyWord {
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  text-transform: lowercase;
-}
-
-.unitAction {
-  display: flex;
-  flex: 0 0 5.5rem;
-  justify-content: flex-end;
-}
-
-.unitExpected {
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-  white-space: nowrap;
-}
-
 /* ---------- registers ---------- */
-
-.registersCard {
-  min-width: 0;
-}
-
-.registersToggle {
-  display: none;
-}
-
-.registersToggleCounts {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: var(--wf-s-2);
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-}
-
-.registersToggleCounts > span {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-1);
-}
-
-.registersPanel {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.registersTabs {
-  gap: var(--wf-s-3);
-  padding: 0 var(--wf-s-3);
-  border-bottom: 1px solid var(--wf-line);
-}
 
 /* H6 (Josh, 3 Nov 2026): the desktop strip's own title, one line on what it holds, and a Close
    button. Only the band (tablet and desktop) draws it; a phone keeps its "Today's answers" bar. */
-.registersHead {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--wf-s-3);
-  padding: var(--wf-s-3) var(--wf-s-3) var(--wf-s-2) var(--wf-s-4);
-}
-
-.registersHeadText {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.registersHeading {
-  margin: 0;
-  color: var(--wf-ink-1);
-  font-size: var(--wf-fs-15, 0.9375rem);
-  font-weight: 600;
-}
-
-.registersAbout {
-  margin: 0;
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-}
-
-.registersClose {
-  display: inline-grid;
-  flex: none;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-ctl);
-  background: var(--wf-surface);
-  color: var(--wf-ink-2);
-  cursor: pointer;
-}
-
-.registersClose:hover {
-  background: var(--wf-hover);
-  color: var(--wf-ink-1);
-}
-
-.registersClose:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
-}
-
-.registersCard[data-placement="band"] .registersTabs {
-  padding-left: var(--wf-s-4);
-}
-
-.registersTabs :global([role="tab"]):focus-visible {
-  outline-offset: -2px;
-  border-radius: var(--wf-r-sm);
-}
-
-.registerPanel {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.registerPanel[hidden] {
-  display: none;
-}
-
-.registerList {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.registerList > li[hidden] {
-  display: none;
-}
-
-.registerRow {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-3);
-  width: 100%;
-  min-height: var(--wf-row);
-  padding: var(--wf-s-2) var(--wf-s-4);
-  border: 0;
-  border-bottom: 1px solid var(--wf-line);
-  background: transparent;
-  color: var(--wf-ink-1);
-  font: inherit;
-  text-align: left;
-  box-sizing: border-box;
-}
-
-button.registerRow {
-  cursor: pointer;
-}
-
-button.registerRow:hover {
-  background: var(--wf-hover);
-}
-
-.registerMain {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.registerTitle {
-  font-weight: 600;
-}
-
-.registerSub,
-.registerNote {
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-}
-
-.registerNote {
-  color: var(--wf-ink-2);
-}
-
-.registerLead {
-  margin: 0;
-  padding: var(--wf-s-2) var(--wf-s-4) 0;
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-}
 
 /* ---------- since you looked ---------- */
-
-.sinceCard {
-  min-width: 0;
-}
-
-.sinceQuiet {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  margin: 0;
-  padding: var(--wf-s-3) var(--wf-s-4);
-  color: var(--wf-ink-2);
-}
-
-.sinceStats {
-  padding: var(--wf-s-3) var(--wf-s-4);
-  border-bottom: 1px solid var(--wf-line);
-}
-
-.sinceLines {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-2);
-  margin: 0;
-  padding: var(--wf-s-3) var(--wf-s-4);
-  list-style: none;
-}
-
-.sinceLine {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  min-width: 0;
-  color: var(--wf-ink-1);
-}
-
-.sinceLine > span {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
 
 /* ---------- shortlist over the right column ---------- */
 
@@ -1088,53 +624,7 @@ button.registerRow:hover {
   min-width: 0;
 }
 
-.shortlistRegion {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  min-height: 0;
-  max-height: 100%;
-  /* Clip, not auto: a scroll container here would trap Placement's action bar, which holds to
-     the bottom of the window while the ward list scrolls with the page. */
-  overflow: clip;
-  padding: var(--wf-s-3) var(--wf-s-4);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-lg);
-  background: var(--wf-surface);
-  box-shadow: var(--wf-e2);
-  box-sizing: border-box;
-}
-
-.sheetHandle {
-  display: none;
-}
-
-.shortlistHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wf-s-2);
-  padding-bottom: var(--wf-s-2);
-  border-bottom: 1px solid var(--wf-line);
-}
-
-.shortlistHeader h2 {
-  margin: 0;
-  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
-}
-
 /* Placement's Tier 1 pill stays neutral (v9); the queue's tier tile carries the tier. */
-.shortlistHeader ~ * header [data-tier="1"] {
-  border-color: var(--wf-line-3);
-  background: transparent;
-  color: var(--wf-ink-1);
-}
-
-.shortlistPreviewLabel {
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  white-space: nowrap;
-}
 
 /* ---------- footer marker ---------- */
 
@@ -1163,9 +653,6 @@ button.registerRow:hover {
      The doubled class outranks the shared Card's own `display: flex`: CSS-module chunk order is
      not guaranteed, and once another module loaded wf/card.module.css later, the equal-specificity
      Card rule won and the hidden cards came back (and overflowed a 320px phone by 57px). */
-  .flowCard.flowCard {
-    display: none;
-  }
 
   /* Direction A (Josh, 10 Oct 2026): the ED strip becomes one row of 44px chips that scrolls
      sideways above the queue: code, waiting count and the longest wait with its glyph. */
@@ -1256,30 +743,6 @@ button.registerRow:hover {
     min-height: 0;
   }
 
-  .registersToggle {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: var(--wf-s-2);
-    width: 100%;
-    min-height: var(--wf-h-lg);
-    padding: var(--wf-s-2) var(--wf-s-4);
-    border: 0;
-    background: transparent;
-    color: var(--wf-ink-1);
-    font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-    text-align: left;
-  }
-
-  .registersToggle svg {
-    width: 16px;
-    height: 16px;
-  }
-
-  .registersPanel[data-open="false"] {
-    display: none;
-  }
-
   /* Phone (8 Oct 2026): the queue flows with the page, so there is one scroller, the window. */
   .queueList {
     max-height: none;
@@ -1293,7 +756,6 @@ button.registerRow:hover {
 
 @media (prefers-reduced-motion: reduce) {
   .queueRow,
-  .unitMain,
   .edButton {
     transition: none;
   }
@@ -1301,117 +763,18 @@ button.registerRow:hover {
 
 /* ---------- since you looked: activity timeline ---------- */
 
-.sinceTimeline {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
-  border-top: 1px solid var(--wf-line);
-  list-style: none;
-}
-
-.sinceEvent {
-  display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr);
-  align-items: baseline;
-  gap: var(--wf-s-2);
-  padding-block: var(--wf-s-1);
-  color: var(--wf-ink-1);
-  font-size: var(--wf-fs-13);
-  line-height: var(--wf-lh-13);
-}
-
-.sinceTime {
-  color: var(--wf-ink-3);
-  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
-  white-space: nowrap;
-}
-
-.sinceText {
-  min-width: 0;
-}
-
 /* ---------- desktop column order (8 Oct 2026) ---------- */
 
 /* The hero's second row: the three counts that open the strip under it. Desktop only; the phone
    keeps its registers and "Since you looked" under the queue. */
 /* Hero title figures: mono tabular, like every count. */
-.heroNum {
-  font-family: var(--wf-mono);
-  font-variant-numeric: tabular-nums;
-}
 
 /* Phone hero foot: New since on the left, Live and Pause on the right, one line. */
-.phoneHeroActs {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wf-s-2);
-  width: 100%;
-  min-width: 0;
-}
 
 /* Phone only (rendered under 48rem): the v10 "N since you looked at HH:MM" pill and round pause. */
-.phoneSince {
-  flex: 1 1 auto;
-  min-width: 0;
-  min-height: 44px;
-  height: 44px;
-  justify-content: center;
-  padding: 0 14px;
-  border-radius: var(--wf-r-ctl);
-  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.phoneSince > span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 
 /* Phone review F-31: a quiet text link, not a full-width filled pill that read as the page's main
  * button. The transparent box keeps its 44px tap height. */
-.phoneSince.phoneSince {
-  flex: 0 1 auto;
-  justify-content: flex-start;
-  padding: 0 2px;
-  border-color: transparent;
-  background: transparent;
-  box-shadow: none;
-  color: var(--wf-hero-ink);
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--wf-hero-ink) 45%, transparent);
-  text-underline-offset: 3px;
-}
-
-.phoneSince.phoneSince:hover {
-  background: transparent;
-  text-decoration-color: currentColor;
-}
-
-.phoneSinceMono {
-  font-family: var(--wf-mono);
-  font-variant-numeric: tabular-nums;
-}
-
-.heroToggles {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-3);
-  min-width: 0;
-}
-
-@media (max-width: 46.4375rem) {
-  .heroToggles {
-    display: none;
-  }
-}
-
-.registersBand,
-.flowCol {
-  min-width: 0;
-}
 
 /* ED tiles: one row that stretches to fill the card on wide screens and scrolls sideways, never
    wraps, when the screen is too narrow for every department (both tablets). The scrollbar exposes
@@ -1454,122 +817,6 @@ button.registerRow:hover {
   }
 }
 
-@media (min-width: 62.5625rem) {
-  /* Bedflow rows in a third of the width: the bar shortens so ward names fit. */
-  .grid:not([data-layout="tablet-landscape"]) .unitMain {
-    grid-template-columns: minmax(0, 1fr) 2.75rem 2.5rem;
-    gap: var(--wf-s-2);
-  }
-
-  /* The strip under the hero, opened from Exceptions, Declines or New events. Rows run two across
-     as separate tiles with room for a two-line detail. Every row shows, so the tab's count is what
-     is on screen (Ruling 3), and the strip grows with the page rather than scrolling inside a box
-     (D-95, 3 Nov 2026). */
-  .registersCard[data-placement="band"] .registersPanel {
-    position: relative;
-  }
-
-  .registersCard[data-placement="band"] .registersTabs {
-    min-height: 2.75rem;
-    padding-left: var(--wf-s-4);
-    padding-right: 6rem;
-  }
-
-  /* Declines, Overrides and Refused sit inside the same gutter as the Exceptions tiles, so their
-     empty lines and tables no longer touch the strip's edge. */
-  .registersCard[data-placement="band"] .registerPanel {
-    padding: var(--wf-s-3) var(--wf-s-4);
-  }
-
-  .registersCard[data-placement="band"] .registerPanel:first-of-type {
-    padding: 0;
-  }
-
-  .registersCard[data-placement="band"] .registerPanel > .registerList {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--wf-s-2);
-    padding: var(--wf-s-3);
-    box-sizing: border-box;
-  }
-
-  .registersCard[data-placement="band"] .registerList > li {
-    display: flex;
-    min-width: 0;
-  }
-
-  .registersCard[data-placement="band"] .registerRow {
-    align-items: flex-start;
-    min-height: 3.5rem;
-    padding: var(--wf-s-2) var(--wf-s-3);
-    border: 1px solid var(--wf-line-2);
-    border-radius: var(--wf-r-md);
-    background: var(--wf-surface);
-    transition:
-      border-color 0.15s ease,
-      background-color 0.15s ease;
-  }
-
-  .registersCard[data-placement="band"] button.registerRow:hover {
-    border-color: var(--wf-line-3);
-    background: var(--wf-hover);
-  }
-
-  .registersCard[data-placement="band"] .registerMain {
-    gap: 2px;
-  }
-
-  .registersCard[data-placement="band"] .registerTitle {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-
-  .registersCard[data-placement="band"] .registerSub {
-    display: -webkit-box;
-    overflow: hidden;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-  }
-
-  .registersCard[data-placement="band"] .cardFoot {
-    position: absolute;
-    top: 0;
-    right: 0;
-    height: 2.75rem;
-    border: 0;
-    background: transparent;
-  }
-
-  .registersCard[data-placement="band"] .footMeta {
-    display: none;
-  }
-
-  /* New events opened from the hero: the counts and lines on the left, the timeline beside them. */
-  .sinceCard[data-placement="band"] {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    align-items: start;
-  }
-
-  .sinceCard[data-placement="band"] > :first-child {
-    grid-column: 1 / -1;
-  }
-
-  .sinceCard[data-placement="band"] .sinceTimeline {
-    grid-column: 2;
-    grid-row: 2 / span 3;
-    max-height: 13rem;
-    overflow-y: auto;
-    border-top: 0;
-    border-left: 1px solid var(--wf-line);
-  }
-
-  .sinceCard[data-placement="band"] .cardFoot {
-    grid-column: 1;
-  }
-}
-
 /* Print: release the fixed-height columns so every row prints. */
 @media print {
   .grid {
@@ -1577,10 +824,7 @@ button.registerRow:hover {
     grid-template-rows: none;
   }
 
-  .queueList,
-  .flowBody,
-  .shortlistRegion.shortlistRegion > [data-testid^="ward-shortlist-"],
-  .shortlistRegion.shortlistRegion > [data-testid^="ward-referral-placement"] {
+  .queueList {
     max-height: none;
     overflow: visible;
   }
@@ -1589,19 +833,8 @@ button.registerRow:hover {
 /* ---------- tablets (v10 Home, Tablet) ---------- */
 
 /* Tablet landscape: the switch over the right panel. */
-.rightSwitch {
-  align-self: flex-start;
-}
 
 /* Tablet portrait: Priority queue or State bedflow, full width. */
-.portraitSwitch {
-  width: 100%;
-}
-
-.portraitSwitch > * {
-  flex: 1 1 0;
-  justify-content: center;
-}
 
 /* Tablet portrait: choosing a patient opens Placement as a side sheet over a scrim, with its action
    bar pinned to the foot. Esc, the scrim and Close all shut it. */
@@ -1622,22 +855,6 @@ button.registerRow:hover {
     z-index: var(--z-overlay);
     width: min(28rem, 92vw);
   }
-
-  .grid[data-layout="tablet-portrait"] .shortlistRegion {
-    height: 100%;
-    max-height: 100dvh;
-    border-radius: var(--wf-r-xl) 0 0 var(--wf-r-xl);
-    box-shadow: var(--wf-e3, var(--wf-e2));
-  }
-
-  .grid[data-layout="tablet-portrait"] .shortlistRegion > [data-testid^="ward-shortlist-"],
-  .grid[data-layout="tablet-portrait"] .shortlistRegion > [data-testid^="ward-referral-placement"] {
-    flex: 1 1 auto;
-    min-height: 0;
-    padding-bottom: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
 }
 
 /* Touch targets on both tablets: rows about 52px, controls 44px. */
@@ -1645,171 +862,11 @@ button.registerRow:hover {
   .grid[data-layout^="tablet"] .queueRow {
     min-height: 3.25rem;
   }
-
-  .grid[data-layout^="tablet"] .unitMain {
-    min-height: var(--wf-touch);
-  }
 }
 
 /* ---------- phone sheets and the Beds ready card (direction A) ---------- */
 
-.phoneBedsCard {
-  min-width: 0;
-}
-
-.phoneWardList {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.phoneWardRow {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  column-gap: var(--wf-s-3);
-  width: 100%;
-  min-height: var(--wf-touch);
-  padding: var(--wf-s-2) var(--wf-s-4);
-  border: 0;
-  border-bottom: 1px solid var(--wf-line);
-  background: transparent;
-  color: var(--wf-ink-1);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.phoneWardRow:hover {
-  background: var(--wf-hover);
-}
-
-.phoneWardName {
-  overflow: hidden;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.phoneWardSub {
-  grid-row: 2;
-  overflow: hidden;
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.phoneWardReady {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-  white-space: nowrap;
-}
-
-.phoneWardReady .mono {
-  color: var(--wf-ink-1);
-  font-size: var(--wf-fs-14);
-  font-weight: 600;
-}
-
-.sheetBody {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-3);
-}
-
-.sheetFacts {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--wf-s-2);
-  margin: 0;
-}
-
-.sheetFacts > div {
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-sm);
-}
-
-.sheetFacts dt {
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-}
-
-.sheetFacts dd {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-1);
-  margin: 0;
-  font-weight: 600;
-}
-
-.sheetSection {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  margin: 0;
-  color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.sheetPicks {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-1);
-}
-
-.sheetPick {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  column-gap: var(--wf-s-2);
-  min-height: 48px;
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-md);
-  background: transparent;
-  color: var(--wf-ink-1);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
 /* A fit with a bed is a fit place: the one tinted fill. */
-.sheetPick[data-fit="bed"] {
-  border-color: var(--wf-fit-edge);
-  background: var(--wf-fit-tint);
-}
-
-.sheetPick[aria-checked="true"] {
-  border-color: var(--wf-pri-1);
-  box-shadow: inset 0 0 0 1px var(--wf-pri-1);
-}
-
-.sheetPickName {
-  overflow: hidden;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sheetPickSub {
-  grid-row: 2;
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-}
-
-.sheetPickFit {
-  display: inline-flex;
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  align-items: center;
-  gap: var(--wf-s-1);
-  font-size: var(--wf-fs-12);
-}
 
 /* ---------- phone, v10 Home direction A (11 Oct 2026) ----------
    Matches the Home mockup's phone: 16px sides, ED chips with a service dot, the ED/Referrals switch
@@ -2013,81 +1070,11 @@ button.registerRow:hover {
   white-space: nowrap;
 }
 
-.sinceSheetFoot {
-  width: 100%;
-  min-height: 48px;
-}
-
 /* Phone patient sheet, second pass (v10 Home phone "Patient open"): the sheet runs nearly to the
  * top on the canvas surface with a 22px top radius, its content on the 16px gutter, and Close is a
  * round X at the top right beside the patient's name. Phone only. */
-@media (max-width: 46.4375rem) {
-  .shortlistRegion.shortlistRegion {
-    padding: 0 16px;
-    border-radius: 22px 22px 0 0;
-    background: var(--wf-surface-2);
-  }
-
-  .shortlistHeader.shortlistHeader {
-    position: absolute;
-    top: 18px;
-    right: 6px;
-    z-index: 2;
-    padding: 0;
-    border: 0;
-  }
-
-  .shortlistHeader.shortlistHeader h2 {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-
-  .shortlistHeader.shortlistHeader > button {
-    position: relative;
-    width: 44px;
-    min-width: 44px;
-    height: 44px;
-    padding: 0;
-    border: 0;
-    border-radius: var(--wf-r-ctl);
-    background: transparent;
-    font-size: 0;
-  }
-
-  .shortlistHeader.shortlistHeader > button::before {
-    content: "";
-    position: absolute;
-    inset: 14px;
-    background: var(--wf-ink-1);
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 3.5l9 9M12.5 3.5l-9 9' stroke='black' stroke-width='1.6' stroke-linecap='round' fill='none'/%3E%3C/svg%3E")
-      center / 16px 16px no-repeat;
-    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 3.5l9 9M12.5 3.5l-9 9' stroke='black' stroke-width='1.6' stroke-linecap='round' fill='none'/%3E%3C/svg%3E")
-      center / 16px 16px no-repeat;
-  }
-
-  .shortlistHeader.shortlistHeader > button:hover {
-    background: var(--wf-hover);
-  }
-}
 
 /* Home phone "Since you looked" sheet foot (v10): Copy as handover text, Mark as seen beside it. */
-.sinceSheetFootRow {
-  display: flex;
-  gap: var(--wf-s-2);
-  width: 100%;
-}
-
-.sinceSheetFootRow > .sinceSheetFoot {
-  width: auto;
-}
-
-.sinceSheetFootRow > .sinceSheetFoot:last-child {
-  flex: 1 1 auto;
-}
 
 /* DA-25: on a touch tablet, "Open in Delays" and Clear gain the same invisible 16px above and
  * below as on the phone, a 48px tap area in the same layout. */
@@ -2102,15 +1089,6 @@ button.registerRow:hover {
 }
 
 /* P109: the phone Checking summary sits in the hero foot, which does not wrap; let it wrap so both counts show. */
-.checkingPhone {
-  min-width: 0;
-  max-width: 100%;
-  white-space: normal;
-}
-
-.checkingPhone > summary {
-  overflow-wrap: anywhere;
-}
 
 /*
  * Home and Activity design (approved by Josh, 31 Oct 2026). These rules come last in the file so
@@ -2118,7 +1096,6 @@ button.registerRow:hover {
  */
 
 /* Glyphs sit centred on their text line, 6px from it. */
-.screen .groupHead,
 .screen .edLine,
 .screen .queueWait {
   align-items: center;
@@ -2209,39 +1186,8 @@ button.registerRow:hover {
   }
 
   /* Phone hero: the changes line is a pill that reads as a button. */
-  .screen .changesChip.changesChip {
-    position: relative;
-    flex: 0 1 auto;
-    justify-content: center;
-    height: 40px;
-    min-height: 40px;
-    padding: 0 16px;
-    border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 28%, transparent);
-    border-radius: var(--wf-r-ctl);
-    background: color-mix(in srgb, var(--wf-hero-ink) 10%, transparent);
-    text-decoration: none;
-  }
-  .screen .changesChip.changesChip::after {
-    content: "";
-    position: absolute;
-    inset: -4px 0;
-  }
 }
 
 /* The hero's changes chip: its count in the figures' typeface. */
-.changesChip b {
-  font-family: var(--wf-mono);
-}
 
 /* Appraisal 4 (Josh, 3 Nov 2026): the occupancy figure is a quiet link to Capacity, which owns the gauge. */
-.heroOccupancyLink {
-  color: inherit;
-  font-variant-numeric: tabular-nums;
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
-  text-underline-offset: 0.2em;
-}
-
-.heroOccupancyLink:hover {
-  text-decoration-color: currentColor;
-}

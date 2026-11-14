@@ -187,6 +187,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     name: /^ACCEPT_SECOND_TAP_GUARD_MS$/,
   },
   {
+    id: "pull-recorded-time-slack",
+    why: "How far a shared save's recorded pull minute may sit from the screen's clock when the kept row's Undo looks for its pull (PR F, 14 Nov 2026); a matching tolerance, never shown, not a limit.",
+    file: /^pull-bed-facts\.ts$/,
+    name: /^PULL_RECORDED_TIME_SLACK_MINUTES$/,
+  },
+  {
     id: "home-cards-wait",
     why: "How long Home holds its columns for its two early cards before showing anyway (item 13, 11 Nov 2026), so the page does not shift; a loading pause, never shown, not a limit.",
     file: /^coordinator\/home-cards-settled\.ts$/,

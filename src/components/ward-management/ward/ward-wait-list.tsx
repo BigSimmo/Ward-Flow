@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { Button, Count, StatusGlyph } from "@/components/wf";
+import { Button, StatusGlyph, WindowWord, cx } from "@/components/wf";
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { legalFormNowWords } from "@/components/ward-management/ward-legal-form-progression";
@@ -43,7 +43,14 @@ function legalAsRecorded(movement: Movement): string {
  * The ward's Wait list card and its "Ready for next patient" mark. Marking ready tells the
  * coordinator, as a fact on Home; the coordinator still chooses and pulls by hand.
  */
-export function WardWaitList({ unit }: { unit: Unit }) {
+export function WardWaitList({
+  unit,
+  embedded = false,
+}: {
+  unit: Unit;
+  /** Inside the Referrals tab's "This ward's answers" card: no card of its own. */
+  embedded?: boolean;
+}) {
   const { movements, referrals, patients, dispatch, rejections } = useWardFlowSelect(
     "movements",
     "referrals",
@@ -77,12 +84,18 @@ export function WardWaitList({ unit }: { unit: Unit }) {
   };
   const ready = unit.isClosed ? undefined : unit.readyForNextAt;
   return (
-    <section className={styles.card} aria-labelledby="ward-wait-list-heading" data-testid="ward-wait-list">
+    <section
+      className={cx(styles.card, embedded && styles.embedded)}
+      aria-labelledby="ward-wait-list-heading"
+      data-testid="ward-wait-list"
+    >
       <div className={styles.head}>
-        <h2 className={styles.caps} id="ward-wait-list-heading">
-          Wait list <Count n={list.length} />
-        </h2>
-        <span className={styles.note}>Oldest referral first</span>
+        {/* Wave 4 (D-191, notes 3): "N Wait list · now", as the mock-up heads the group. */}
+        <h3 className={styles.groupHead} id="ward-wait-list-heading">
+          <b className={styles.n}>{list.length}</b> Wait list
+          <WindowWord word="now" />
+        </h3>
+        {list.length > 0 ? <span className={styles.note}>Oldest referral first</span> : null}
         <span className={styles.readyMark} data-testid="ward-ready-for-next">
           {ready !== undefined ? (
             <>
