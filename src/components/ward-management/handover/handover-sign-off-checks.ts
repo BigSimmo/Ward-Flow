@@ -1,4 +1,4 @@
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant, isTimePassed } from "@/components/ward-management/ward-clock";
 import { groupOf, handoverSignedBefore, wardIsStale, type HandoverRow, type HandoverWard } from "./handover-model";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import type { SignOffCheck } from "./handover-panels";
@@ -40,9 +40,7 @@ export function handoverSignOffChecks({
   const actOwned = actOwnedRows.every((row) => row.owner !== "No owner recorded");
   // A flagged urgent row left off Alerts' act-now list (snoozed there) can still be past its time.
   const actPassed = actOwnedRows.filter(
-    (row) =>
-      (row.pullExpiresAt !== undefined && row.pullExpiresAt <= now) ||
-      (row.formDueAt !== undefined && row.formDueAt <= now),
+    (row) => isTimePassed(row.pullExpiresAt, now) || isTimePassed(row.formDueAt, now),
   ).length;
   return [
     {

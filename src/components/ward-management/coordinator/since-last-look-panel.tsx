@@ -5,7 +5,6 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useSyncExternalSto
 
 import { StatusGlyph, type WfTone } from "@/components/wf";
 import type { Instant } from "@/components/ward-management/ward-clock";
-import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import { plural } from "@/components/ward-management/ward-plural";
 
 import styles from "./home.module.css";
@@ -15,10 +14,9 @@ import {
   wardLeaveSaveTicket,
 } from "@/components/ward-management/ward-browser-data";
 import {
-  changesSinceInstant,
+  changesForStoredLook,
   scopedChangesSinceLastLook,
   scopeLastLookWorld,
-  changesSinceLastLook,
   LAST_LOOK_STORAGE_KEY,
   parseLastLookSnapshot,
   takeLastLookSnapshot,
@@ -194,14 +192,14 @@ export function useSinceLastLook(
     };
   }, [storageKey, userId, generation, scopeKey, account, explicit, preview]);
 
-  // Before any look this session, count what the record says happened since the shift started, so
-  // "N new since 07:00" is true rather than a 0 (L1, site review, 12 Oct 2026).
+  // Before any usable look, count what the record says happened in the shift window, so "N new
+  // since 07:00" is true rather than a 0 (L1, site review, 12 Oct 2026). Audit L4, D-210 (Josh,
+  // 14 Nov 2026): the same review test and window as the Activity panel (`changesForStoredLook`).
   const changes = useMemo(
     () =>
       scopeKey
         ? scopedChangesSinceLastLook(previous, current, windowMinutes)
-        : (changesSinceLastLook(previous, current, world) ??
-          changesSinceInstant(world, currentShiftStartInstant(now), now)),
+        : changesForStoredLook(previous, current, world, now),
     [previous, current, world, now, scopeKey, windowMinutes],
   );
   const markSeen = useCallback(() => {
@@ -327,7 +325,7 @@ export function SinceLastLookSheetBody({
             title: !changes
               ? "New events count from your next look"
               : changes.basis === "shift"
-                ? "Nothing new since the shift started"
+                ? "Nothing new since the previous shift started"
                 : "Nothing new since you last looked",
             detail: !changes || changes.basis === "shift" ? "This is your first look this session" : undefined,
           },

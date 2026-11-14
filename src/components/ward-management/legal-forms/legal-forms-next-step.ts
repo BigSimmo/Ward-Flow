@@ -1,7 +1,12 @@
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
 
-import { formProgression, formProgressionPhrase, NEXT_FORM_TO_RECORD } from "./legal-form-progression";
+import {
+  currentLegalPosition,
+  formProgression,
+  formProgressionPhrase,
+  NEXT_FORM_TO_RECORD,
+} from "./legal-form-progression";
 import { currentLegalDueAt, isLegalDeadlineBreached } from "./legal-forms-derivations";
 import { hasGap, isOwnedLegalFormCode, type RecordGap } from "./legal-forms-view";
 import { typedTimePhrase } from "./legal-time-as-typed";
@@ -25,11 +30,10 @@ export type NextStep = {
 };
 
 export function nextStep(movement: Movement, now: Instant, dayZero?: Date): NextStep {
-  const code = movement.legalForm?.code;
-  const form = code ? `Form ${code}` : "The form";
+  const position = currentLegalPosition(movement);
+  const form = position.formWords ?? "The form";
   // Gap list item 5: a form a person recorded as ended asks for nothing more on this page.
-  const endedBy = movement.legalForm?.endedBy;
-  if (endedBy) {
+  if (position.ended) {
     return {
       action: "none",
       title: "Form ended, as recorded",
@@ -53,7 +57,7 @@ export function nextStep(movement: Movement, now: Instant, dayZero?: Date): Next
       detail: `${form} ${typedTimePhrase(dueAt, now, dayZero)}.`,
     };
   }
-  if (isOwnedLegalFormCode(code) && hasGap(movement, "written")) {
+  if (isOwnedLegalFormCode(position.form?.code) && hasGap(movement, "written")) {
     return {
       action: "written",
       title: "Add the time written",

@@ -139,8 +139,19 @@ export function HandoverSignOffChip({
   );
 }
 
-/** The top's meeting chip. The running timer ("Stop 00:05") ticks in its own leaf, so the page does not re-render. */
-export function HandoverMeetingChip({ startedAt, onClick }: { startedAt: number | null; onClick: () => void }) {
+/**
+ * The top's meeting chip. While running it reads the board-clock length History will record ("Stop
+ * 3 min", CC-6), so it moves with the board clock and never runs a real-seconds timer of its own.
+ */
+export function HandoverMeetingChip({
+  startedAt,
+  now,
+  onClick,
+}: {
+  startedAt: Instant | null;
+  now: Instant;
+  onClick: () => void;
+}) {
   return (
     <button
       type="button"
@@ -150,7 +161,7 @@ export function HandoverMeetingChip({ startedAt, onClick }: { startedAt: number 
       data-testid="ward-handover-meeting"
     >
       <Users size={16} strokeWidth={1.75} aria-hidden="true" />
-      {startedAt !== null ? <HandoverMeetingTimer startedAt={startedAt} /> : "Start meeting"}
+      {startedAt !== null ? <HandoverMeetingTimer startedAt={startedAt} now={now} /> : "Start meeting"}
     </button>
   );
 }

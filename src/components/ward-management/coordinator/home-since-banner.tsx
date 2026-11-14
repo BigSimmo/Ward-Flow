@@ -124,7 +124,7 @@ export function HomeSinceBanner({ now, inline = false }: { now: Instant; inline?
       <Sheet
         open={open}
         onClose={() => setReview(null)}
-        title={review?.basis === "shift" ? "Since the shift started" : "Since you were last here"}
+        title={review?.basis === "shift" ? "Since the previous shift started" : "Since you were last here"}
         description={`Changes since ${formatInstantWithDay(review?.since ?? changes.since, now)}${preview ? "" : " · now marked seen"}`}
         bodyTabIndex={0}
         bodyLabel="Changes since your last review"

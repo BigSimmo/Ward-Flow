@@ -4,6 +4,7 @@
 import { stayLegalStatusIsInvoluntary } from "./ward-discharge-records";
 import { openRestrictivePracticeRefusal } from "./restrictive-practice/ward-restrictive-practice";
 import { isLeavingDestination } from "./ward-admissions";
+import { stayBedKind } from "./ward-bed-numbers";
 import { leftWardRefusal } from "./ward-left-ward";
 import { type AuditDecision, finiteInstant } from "./ward-audit";
 import { recordedCommunityTransition } from "./ward-care-journey";
@@ -678,8 +679,10 @@ export function reduceRecordedStayEvent(
           flaggedUrgent: false,
           urgency: 2,
           cohort: currentUnit?.cohort ?? "Adult",
+          // D-210 (Josh, 14 Nov 2026), ruling 9: the bed the person holds now decides, not whether the
+          // ward has any locked beds. Only a stay whose bed kind cannot be known stays Secure.
           security:
-            admission.bedKind === "locked" || (currentUnit ? currentUnit.lockedBeds > 0 : false) ? "Secure" : "Open",
+            (currentUnit ? stayBedKind(currentUnit, admission) : admission.bedKind) === "open" ? "Open" : "Secure",
           sex: admission.sex,
           gender: admission.gender,
           tentativeDiagnosis: admission.tentativeDiagnosis ?? undefined,

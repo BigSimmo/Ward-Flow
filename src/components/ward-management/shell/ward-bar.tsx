@@ -277,6 +277,7 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
     inboxAcknowledgements,
     inboxCompletions,
     plannedAdmissions,
+    broadcastAlerts,
     inboxOwnership,
     inboxSnoozes,
     configuration,
@@ -293,6 +294,7 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
     "inboxAcknowledgements",
     "inboxCompletions",
     "plannedAdmissions",
+    "broadcastAlerts",
     "inboxOwnership",
     "inboxSnoozes",
     "configuration",
@@ -434,6 +436,7 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
     referrals,
     supportNotifications,
     plannedAdmissions,
+    broadcastAlerts,
     leaveBeds,
   });
   /*

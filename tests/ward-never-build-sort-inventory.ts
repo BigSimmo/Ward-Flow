@@ -366,11 +366,11 @@ export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
   {
     file: "referrals/find-a-ward.tsx",
     match: "byName",
-    occurrences: 2,
+    occurrences: 3,
     list: "wards",
-    key: "fit group (fits / to review), then ward name",
+    key: "fit group (fits / fits with an old bed count / to review), then ward name",
     order: "fixed order",
-    reason: "Find a ward: the two fit groups each A to Z.",
+    reason: "Find a ward: the three fit groups each A to Z (PL6, D-210).",
   },
   {
     file: "referrals/referral-ask-more-wards.tsx",

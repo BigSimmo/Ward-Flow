@@ -6,6 +6,7 @@ import {
   perthDayLabel,
 } from "@/components/ward-management/ward-clock";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
+import { currentLegalPosition, FORM_RECORDED_ENDED } from "@/components/ward-management/ward-legal-form-progression";
 import type { LegalForm } from "@/components/ward-management/ward-model";
 
 /**
@@ -75,8 +76,12 @@ export function typedTimePhrase(dueAt: Instant, now: Instant, dayZero: Date | un
  * none was typed. The full form name, never a shortened code on its own.
  */
 export function formTimeAsTyped(legalForm: LegalForm, now: Instant, dayZero: Date | undefined): string {
-  if (legalForm.dueAt === undefined) return `${legalFormName(legalForm)} · no expiry recorded from the form`;
-  return `${legalFormName(legalForm)} · ${typedTimePhrase(legalForm.dueAt, now, dayZero)}`;
+  // Audit H4 (14 Nov 2026): the one current legal position, so an ended form's old typed end is
+  // never read as live.
+  const position = currentLegalPosition({ legalForm });
+  if (position.ended) return `${legalFormName(legalForm)} · ${FORM_RECORDED_ENDED.toLowerCase()}`;
+  if (position.dueAt === undefined) return `${legalFormName(legalForm)} · no expiry recorded from the form`;
+  return `${legalFormName(legalForm)} · ${typedTimePhrase(position.dueAt, now, dayZero)}`;
 }
 
 /**

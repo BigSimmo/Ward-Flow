@@ -6,6 +6,8 @@ import type { WardFlowState } from "./ward-flow-reducer";
 import { upgradeLegacyDeclineReasons } from "./ward-decline-legacy";
 import { diversionReturnsResolve } from "./community/diversion-return-review";
 import { upgradeLegacyObservationRows } from "./ward-observation-legacy";
+import { withDerivedStayBeds } from "./ward-bed-numbers";
+import { workedExamplesShown } from "@/components/ward-management/ward-rulings-demo";
 import {
   SUPPORT_NOTIFICATION_OCCASIONS,
   SUPPORT_NOTIFICATION_OUTCOMES,
@@ -30,6 +32,9 @@ export function isValidSharedWardFlowState(value: unknown): value is WardFlowSta
   // Live audit, 8 Nov 2026: a stored bed release saved without `blocker` or `blockedBy` read as held
   // up with no reason and crashed Discharges. A missing one means none recorded, read in place.
   readMissingReleaseBlockersAsNone(state);
+  // M12: a shared workspace saved before the worked-examples flag derives it once from its whole
+  // records, here on the server's full copy; the next save writes it and every desk is sent it.
+  if (state.workedExamples === undefined) state.workedExamples = workedExamplesShown(state);
   // D-152: a shared copy's returns to ED each name a referral that copy holds.
   if (!diversionReturnsResolve(state)) return false;
   const admissionIds = new Set<string>();
@@ -147,12 +152,17 @@ export function isValidSharedWardFlowState(value: unknown): value is WardFlowSta
       dischargeCriteria: { ...record, items: record.items.filter((item) => !isPatientSpecificItem(item)) },
     });
   }
-  return isValidStoredWardFlowState({
+  const valid = isValidStoredWardFlowState({
     ...state,
     admissions,
     repatriations: [],
     ...(state.supportNotifications === undefined ? {} : { supportNotifications: [] }),
   });
+  // H10, D-210 (Josh, 14 Nov 2026): a workspace saved before bed kinds and numbers were one fact
+  // reads each current stay's kind and number once, in place, as the seed derives them. Only once
+  // the shape is known good, and it adds nothing the schema does not already accept.
+  if (valid) state.admissions = withDerivedStayBeds(state).admissions;
+  return valid;
 }
 
 /** `upgradeLegacyObservationRows`, applied to the given parsed state's own arrays. */

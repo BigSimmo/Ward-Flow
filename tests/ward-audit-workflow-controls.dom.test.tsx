@@ -296,10 +296,13 @@ describe("referral evidence is visible and honestly qualified", () => {
     render(
       <ReferralMatchView referral={referral} units={[stale]} now={NOW_ANCHOR} dispatch={() => {}} rejections={[]} />,
     );
-    // D-77: the stale ward sits in the one list's "Fits, no bed now" group, named on its own row.
-    const unresolved = screen.getByRole("radiogroup", { name: "Fits, no bed now" });
+    // D-77, then H8 (D-210 (Josh, 14 Nov 2026)): an old count alone is its own state, out of "Fits, no
+    // bed now", named on its own row by the count's age.
+    expect(screen.queryByRole("radiogroup", { name: "Fits, no bed now" })).toBeNull();
+    const unresolved = screen.getByRole("radiogroup", { name: "Fits, bed count old" });
     expect(within(unresolved).getAllByRole("radio")).toHaveLength(1);
     expect(unresolved).toHaveTextContent("Count not current");
+    expect(unresolved).toHaveTextContent(/Bed count \d+ h old, check with the ward/u);
     expect(document.body).not.toHaveTextContent("blocked, no bed");
   });
 });

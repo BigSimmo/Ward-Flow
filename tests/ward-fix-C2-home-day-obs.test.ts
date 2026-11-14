@@ -97,7 +97,9 @@ describe("2.2 Home keeps a planned step whose time has passed (Past planned time
       const now = estimate + minutesLate;
       expect(homeHas(seed, now), `${minutesLate} minutes late`).toBe(true);
       expect(inboxHas(seed, now), `${minutesLate} minutes late`).toBe(false);
-      expect(rowsAt(seed, now).find((row) => row.id.startsWith("transport:WF-015:"))?.past).toBe(minutesLate >= 0);
+      // Audit L2, D-210 (Josh, 14 Nov 2026): one has-time-passed rule (`isTimePassed`, now > due). At
+      // the estimate's own minute the row is still upcoming; from the next minute it is past.
+      expect(rowsAt(seed, now).find((row) => row.id.startsWith("transport:WF-015:"))?.past).toBe(minutesLate > 0);
     }
     // From the minute the inbox item appears, Home hands over to it: never on neither list.
     expect(inboxHas(seed, estimate + passedAfter)).toBe(true);

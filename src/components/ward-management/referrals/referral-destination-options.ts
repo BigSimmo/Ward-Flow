@@ -8,7 +8,7 @@ import {
   type CatchmentAnswer,
 } from "@/components/ward-management/ward-catchment";
 import { minutesUntil, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
-import { referralEligibility } from "@/components/ward-management/ward-eligibility";
+import { referralEligibility, type ReadyBedsLookup } from "@/components/ward-management/ward-eligibility";
 import {
   HOME_REGIONS,
   REFERRAL_DESTINATION_KINDS,
@@ -107,6 +107,8 @@ export type DestinationOptionInputs = {
   readonly units: readonly Unit[];
   readonly referrals: readonly Referral[];
   readonly now: Instant;
+  /** H7 (D-210 (Josh, 14 Nov 2026)): the shared Ready, so "no ready bed" matches Capacity. */
+  readonly ready?: ReadyBedsLookup;
 };
 
 /** Said in full rather than left blank: a blank catchment reads as "none", which is a claim. */
@@ -302,7 +304,7 @@ function wardFigures(inputs: DestinationOptionInputs, ward: WardReferralDestinat
     // demonstration that the eligibility answer cannot depend on what somebody typed.
     history: "",
   };
-  const verdicts = inputs.units.map((unit) => referralEligibility(probe, ward, unit, inputs.now));
+  const verdicts = inputs.units.map((unit) => referralEligibility(probe, ward, unit, inputs.now, inputs.ready));
   const accepting = verdicts.filter((verdict) => verdict.eligible).length;
   const noBed = verdicts.filter(
     (verdict) => verdict.gates.find((gate) => gate.gate === "allocatable_bed")?.pass === false,

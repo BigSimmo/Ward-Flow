@@ -150,20 +150,25 @@ describe("review regressions: numbered bed accounting and accepted direct referr
     expect(undone.admissions).toEqual(reservedAgain.admissions);
     expect(undone.units).toEqual(reservedAgain.units);
   });
+  /** BTY Adult Secure's one free locked bed in the seed, once seeded stays hold their beds (H10). */
+  const SEEDED_LOCKED_FREE = 4;
   function seededNumberedPull() {
     const seed = seedWardFlowState();
     const movement = seed.movements.find((candidate) => candidate.id === "WF-004")!;
     const admission = seed.admissions.find((candidate) => candidate.id === movement.admissionId)!;
     expect(admission.movementId).toBeNull();
     // This mixed-ward fixture records its original kind; the reciprocal link remains seed-shaped.
+    // H10 (D-210): seeded stays now hold their derived bed numbers, so the move goes to the ward's
+    // one free locked bed (`SEEDED_LOCKED_FREE`), and the stay is a locked stay with no number yet.
     admission.bedKind = "locked";
+    delete admission.bedNumber;
     const moved = wardFlowReducer(seed, {
       type: "PLACE_IN_BED",
       role: "ward",
       actingUnitId: admission.unitId,
       now,
       admissionId: admission.id,
-      bedNumber: 1,
+      bedNumber: SEEDED_LOCKED_FREE,
     });
     expect(moved.rejections).toEqual([]);
     return { seed, moved, movement, admission };
@@ -195,7 +200,9 @@ describe("review regressions: numbered bed accounting and accepted direct referr
     expect(
       liveMovementForAdmission(admission, [...seed.movements, { ...movement, id: "WF-AMBIGUOUS" }]),
     ).toBeUndefined();
-    expect(moved.movements.find((candidate) => candidate.id === movement.id)).toMatchObject({ heldBedNumber: 1 });
+    expect(moved.movements.find((candidate) => candidate.id === movement.id)).toMatchObject({
+      heldBedNumber: SEEDED_LOCKED_FREE,
+    });
     const undone = wardFlowReducer(moved, {
       type: "UNDO_PLACE_IN_BED",
       role: "ward",
@@ -216,7 +223,7 @@ describe("review regressions: numbered bed accounting and accepted direct referr
     expect(arrived.rejections).toEqual([]);
     expect(arrived.admissions.find((candidate) => candidate.id === admission.id)).toMatchObject({
       state: "occupied",
-      bedNumber: 1,
+      bedNumber: SEEDED_LOCKED_FREE,
       bedKind: "locked",
     });
   });
@@ -239,20 +246,25 @@ describe("review regressions: numbered bed accounting and accepted direct referr
     const arrived = wardFlowReducer(delivered, arrival);
     expect(arrived.rejections).toEqual([]);
     expect(arrived.admissions.find((candidate) => candidate.id === admission.id)).toMatchObject({
-      bedNumber: 1,
+      bedNumber: SEEDED_LOCKED_FREE,
       bedKind: "locked",
     });
     const collision = {
       ...delivered,
       admissions: delivered.admissions.map((candidate) =>
         candidate.unitId === admission.unitId && candidate.id !== admission.id && candidate.state === "occupied"
-          ? { ...candidate, bedNumber: 1 }
+          ? { ...candidate, bedNumber: SEEDED_LOCKED_FREE }
           : candidate,
       ),
     };
     const collided = wardFlowReducer(collision, arrival);
     expect(collided.rejections).toEqual([]);
-    expect(collided.admissions.find((candidate) => candidate.id === admission.id)?.bedNumber).toBeUndefined();
+    // H10 (D-210): the taken bed is not kept, and the patient arrives in the lowest free bed of the
+    // kind their pull took, never with no bed or a bed of the other kind.
+    const collidedBed = collided.admissions.find((candidate) => candidate.id === admission.id)?.bedNumber;
+    expect(collidedBed).not.toBe(SEEDED_LOCKED_FREE);
+    expect(collidedBed).toBeDefined();
+    expect(collidedBed! <= collided.units.find((unit) => unit.id === admission.unitId)!.lockedBeds).toBe(true);
     const wrongDesignation = {
       ...delivered,
       movements: delivered.movements.map((candidate) =>
@@ -261,7 +273,10 @@ describe("review regressions: numbered bed accounting and accepted direct referr
     };
     const mismatched = wardFlowReducer(wrongDesignation, arrival);
     expect(mismatched.rejections).toEqual([]);
-    expect(mismatched.admissions.find((candidate) => candidate.id === admission.id)?.bedNumber).toBeUndefined();
+    // H10 (D-210): an open held bed is not taken for a locked stay; it keeps its own locked bed.
+    expect(mismatched.admissions.find((candidate) => candidate.id === admission.id)?.bedNumber).toBe(
+      SEEDED_LOCKED_FREE,
+    );
   });
   it("consumes an any-ward accepted arm reservation when its movement has no separate number", () => {
     const accepted = accept(received(), 2);

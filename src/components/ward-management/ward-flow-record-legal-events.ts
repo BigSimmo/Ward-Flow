@@ -5,7 +5,13 @@ import type { AuditDecision } from "./ward-audit";
 import type { WardFlowState } from "./ward-flow-reducer";
 import type { RecordedFactEvent, RecordedFactEventHelpers } from "./ward-flow-record-events";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-events";
-import { form3CRefusedAfter3D, isLegalClockFormCode } from "@/components/ward-management/ward-legal-clock";
+import {
+  form3CRefusedAfter3D,
+  isContinuationFormCode,
+  isLegalClockFormCode,
+  movementRefuses3C,
+} from "@/components/ward-management/ward-legal-clock";
+import { currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
 import { countryExtensionEligible } from "@/components/ward-management/ward-legal-forms";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-events";
@@ -72,7 +78,17 @@ export function reduceRecordedLegalEvent(
       if (!Number.isFinite(event.dueAt)) {
         return reject(state, event, "Enter the expiry written on the form.");
       }
-      const currentDueAt = movement.legalForm.dueAt;
+      // Audit M13e (14 Nov 2026): a form a person recorded as ended takes no new expiry or
+      // extension; its typed end stays as history (gap list item 5). A correction of the paper
+      // facts is still allowed.
+      if (event.correction === undefined && currentLegalPosition(movement).ended) {
+        return reject(state, event, "This form is recorded as ended, so no expiry or extension can be added to it.");
+      }
+      // Audit M13b, D-189 item 9(g): the same order check as a written form. The typed expiry must
+      // come after the time the form was written.
+      const expiryOrderProblem = legalFormTimeOrderProblem(movement.formedAt, event.dueAt, event.now);
+      if (expiryOrderProblem) return reject(state, event, `${expiryOrderProblem}.`);
+      const currentDueAt = currentLegalPosition(movement).typedEndAt;
       // Legacy calculated clocks are not paper authority. The six authored fixture values and
       // current entered values are; absence of an old actor-history record does not discard them.
       const legacyCalculatedExpiry =
@@ -244,6 +260,12 @@ export function reduceRecordedLegalEvent(
       ) {
         return reject(state, event, "Choose each detail from the list.");
       }
+      // D-210 (Josh, 14 Nov 2026), ruling 6 (audit M13c): a Form 3E is recorded one way, as a new form
+      // that supersedes the 3A. "Form 3E made" stays readable on old records, and an old record keeps
+      // it when other details are saved, but it is no longer a new ending.
+      if (event.endedBy === "form_3e" && form.endedBy !== "form_3e") {
+        return reject(state, event, "Record a Form 3E as a new form. It replaces the Form 3A on the record.");
+      }
       if (event.consent != null && form.code !== "6B") {
         return reject(state, event, "Chief Psychiatrist consent is recorded only for a Form 6B.");
       }
@@ -344,6 +366,12 @@ export function reduceRecordedLegalEvent(
         return reject(state, event, "A written form expiry cannot shorten an existing recorded expiry.");
       }
       const dueAt = paperExpiresAt ?? (sameFormTimeEdit ? currentPaperExpiry : undefined);
+      // Audit M13b, D-189 item 9(g): editing the written time of the same form is checked against the
+      // expiry it keeps, so a written time can never be moved after the typed expiry.
+      if (sameFormTimeEdit) {
+        const keptOrderProblem = legalFormTimeOrderProblem(writtenAt, dueAt, event.now);
+        if (keptOrderProblem) return reject(state, event, `${keptOrderProblem}.`);
+      }
       const updated: Movement = {
         ...movementWithoutWrittenTime,
         ...(writtenAt === undefined ? {} : { formedAt: writtenAt }),
@@ -435,6 +463,27 @@ export function reduceRecordedLegalEvent(
       if (continuationOrderProblem) return reject(state, event, `${continuationOrderProblem}.`);
       if (!isLegalClockFormCode(event.formCode)) {
         return reject(state, event, "That form is not a recognised legal form in this prototype");
+      }
+      // Audit M13d (14 Nov 2026): the picker and the engine read one list (`CONTINUATION_FORM_CODES`).
+      // Ruling 6: a Form 3E is recorded as a new form on the Forms page, not as a continuation.
+      if (!isContinuationFormCode(event.formCode)) {
+        return reject(
+          state,
+          event,
+          `Form ${event.formCode} is not recorded as a continuation. Record it as a new form.`,
+        );
+      }
+      // Ruling 6: the same 3C after 3D refusal as a written form.
+      if (event.formCode === "3C" && movementRefuses3C(movement)) {
+        return reject(state, event, `Form 3C is refused when the person arrived on a Form 3D`);
+      }
+      // A Form 5B continues a current Form 5A; it cannot continue one a person recorded as ended.
+      if (event.formCode === "5B" && movement.legalForm?.code === "5A" && currentLegalPosition(movement).ended) {
+        return reject(
+          state,
+          event,
+          "This Form 5A is recorded as ended, so a Form 5B cannot continue it. If the end was recorded in error, correct it first.",
+        );
       }
       // D-187 item 6 / D-186 item 5: a continuation with no form on file is accepted. The screen warns
       // (`followOnFormWarning` in `ward-legal-order-rules.ts`); the engine never refuses for it.

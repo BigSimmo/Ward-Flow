@@ -10,7 +10,8 @@ import {
   type Movement,
 } from "@/components/ward-management/ward-model";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { useRoleGate } from "@/components/ward-management/ward-role-gate";
+import { useRoleGate, type RoleGate } from "@/components/ward-management/ward-role-gate";
+import { useDeskActingWard } from "@/components/ward-management/ward-desk-acting-ward";
 import { formatInstantWithDay, minuteOfDay, minuteOfDayFromClockText } from "@/components/ward-management/ward-clock";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
 import {
@@ -20,7 +21,7 @@ import {
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { settledWardCommand } from "../ward-command-completion";
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
-import { requestConfirm, TimePresets } from "@/components/wf";
+import { DisabledReason, requestConfirm, TimePresets } from "@/components/wf";
 import styles from "./arrival-time-modal.module.css";
 import { useDirtyStateGuard } from "../use-dirty-state-guard";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
@@ -75,6 +76,10 @@ export interface ArrivalTimeModalProps {
   role?: "coordinator" | "ed" | "ward" | "community";
 }
 
+/** M9: a ward desk is not offered the arrival plan of a bed at another ward. */
+const ARRIVAL_PLAN_NOT_YOURS =
+  "Only the ward that accepted this person, or the bed coordinator, records the arrival plan.";
+
 export function ArrivalTimeModal(props: ArrivalTimeModalProps) {
   return props.isOpen ? <ArrivalTimeModalContent key={props.movement.id} {...props} /> : null;
 }
@@ -86,7 +91,18 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
   const zone = useClockZoneLabel();
   const baseId = useId();
   // Feature 11: the route's role must be one that may set arrival details (`ward-role-permissions.ts`).
-  const saveGate = useRoleGate()("SET_ARRIVAL_DETAILS");
+  const roleGate = useRoleGate()("SET_ARRIVAL_DETAILS");
+  // M9: a ward desk records the arrival plan only for a bed at one of its own wards, acting as it.
+  const { acting, bedElsewhere } = useDeskActingWard(role, movement.acceptedUnitId);
+  const saveGate: RoleGate =
+    roleGate.allowed && bedElsewhere
+      ? {
+          allowed: false,
+          reason: ARRIVAL_PLAN_NOT_YOURS,
+          buttonProps: { disabled: true, "aria-describedby": `${baseId}-not-yours` },
+          note: <DisabledReason id={`${baseId}-not-yours`}>{ARRIVAL_PLAN_NOT_YOURS}</DisabledReason>,
+        }
+      : roleGate;
   const pullHoldMinutes = configuration.pullHoldMinutes;
   const pullHoldLabel = pullHoldMinutes % 60 === 0 ? `${pullHoldMinutes / 60}-hour` : `${pullHoldMinutes}-minute`;
 
@@ -186,7 +202,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
           role,
           now,
           movementId: movement.id,
-          ...(role === "ward" && movement.acceptedUnitId ? { actingUnitId: movement.acceptedUnitId } : {}),
+          ...acting,
           arrivalMode,
           trackingNumber: trackingNumber.trim() || undefined,
           estimatedArrivalAt: etaMinutes,

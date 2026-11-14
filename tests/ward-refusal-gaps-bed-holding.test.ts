@@ -28,6 +28,8 @@ import {
   type WardFlowState,
 } from "@/components/ward-management/ward-flow-reducer";
 import { eligibility } from "@/components/ward-management/ward-eligibility";
+import { chooseBedNumber } from "@/components/ward-management/ward-bed-numbers";
+import { numberedBedKind } from "@/components/ward-management/ward-bed-designation";
 import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
 import { OVERRIDE_REASONS, RELEASE_PULL_REASONS } from "@/components/ward-management/ward-change-reasons";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -463,8 +465,12 @@ describe("RECORD_ADMISSION_CARE (transfer.arrived) strips sending-ward bedNumber
       (a) => a.id.startsWith(`transfer-${candidate.id}-`) && a.unitId === receivingUnit.id,
     )!;
     expect(receivingAdmission).toBeDefined();
-    expect("bedNumber" in receivingAdmission).toBe(false);
-    expect(receivingAdmission.bedNumber).toBeUndefined();
+    // H10 (D-210): the sending ward's bed is never carried over; the receiving stay takes the lowest
+    // free bed of the kind it took on the receiving ward, recorded with that kind.
+    const receivingBed = chooseBedNumber(receivingUnit, withSendingFields, receivingAdmission.bedKind!);
+    expect(receivingAdmission.bedNumber).toBe(receivingBed);
+    if (receivingBed !== undefined)
+      expect(numberedBedKind(receivingUnit, receivingBed)).toBe(receivingAdmission.bedKind);
     expect(receivingAdmission.dischargeBarrier).toBeNull();
     expect(receivingAdmission.dischargeCriteria).toBeNull();
     expect(receivingAdmission.stepDownCandidate).toBe(false);

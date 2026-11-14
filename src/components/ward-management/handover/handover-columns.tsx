@@ -4,7 +4,7 @@
  */
 import type { ReactNode } from "react";
 import { durMinutes, SrOnly, StatusGlyph, type WfTone } from "@/components/wf";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type DueSoonThresholds, type Instant } from "@/components/ward-management/ward-clock";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import {
   dueParts,
@@ -27,6 +27,8 @@ export type ColumnContext = {
   readyBeds: (unitId: string) => number;
   /** The board's day 0, so a typed form time on another day prints its date (D1, D-93). */
   dayZero?: Date;
+  /** The Settings warnings, for a pull's running-out mark (audit L3, D-210 (Josh, 14 Nov 2026)). */
+  thresholds?: DueSoonThresholds;
 };
 
 export type HandoverColumnId = "pt" | "st" | "wait" | "route" | "lo" | "legal" | "obs" | "due" | "next" | "dec" | "tr";
@@ -177,7 +179,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
     width: 92,
     mono: true,
     cell: (row, ctx) => {
-      const due = dueParts(row, ctx.now, ctx.dayZero);
+      const due = dueParts(row, ctx.now, ctx.dayZero, ctx.thresholds);
       return due ? (
         <span className={styles.two}>
           <b className={`${styles.mono} ${styles.nowrap}`}>

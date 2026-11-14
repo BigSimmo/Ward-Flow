@@ -9,8 +9,8 @@ import type { Patient } from "@/components/ward-management/ward-patients";
  * Success measure 2 (`product-brief.md`) counts "the same patient with two active bed requests at
  * once". What counts as an open request, and whose it is, comes from `openRequestsByPerson`, the one
  * matcher the daily "nobody missed" check also uses, so this row and that check always agree: an
- * open bed request, or a ward or ED referral still awaiting an answer, counted once when a bed
- * request was raised from it.
+ * open bed request, a ward or ED referral still awaiting an answer, or an accepted referral still
+ * holding a numbered bed (M11), counted once when a bed request was raised from it.
  *
  * 🔴 COORDINATOR ONLY (Josh, 19 Oct 2026). A ward must not learn where else a person has been
  * referred (FD-23, archived D-14), so these rows reach the bed coordinator's task list and nothing on a

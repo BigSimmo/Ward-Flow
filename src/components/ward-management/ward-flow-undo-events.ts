@@ -94,6 +94,26 @@ export function reduceUndoEvent(
     replaceAdmission,
     replaceReferral,
   } = helpers;
+  /**
+   * Why bed `bedNumber` is held for someone other than the restored stay `admission`, or null. A
+   * stay's own journey holds its bed too (PLACE_IN_BED records `heldBedNumber`), and a seeded stay
+   * names that journey only through Movement.admissionId, so the journey is found both ways.
+   */
+  const restoredStayHoldRefusal = (
+    restored: WardFlowState,
+    unit: NonNullable<ReturnType<typeof findUnit>>,
+    admission: Admission,
+    bedNumber: number,
+  ): string | null => {
+    const ownMovement = liveMovementForAdmission(admission, restored.movements);
+    return heldBedRefusal(
+      restored,
+      unit,
+      bedNumber,
+      admission.movementId ?? ownMovement?.id,
+      admission.referralId ?? ownMovement?.referralId,
+    );
+  };
   switch (event.type) {
     case "UNDO_REFERRAL_DECISION": {
       const referral = findReferral(state, event.referralId);
@@ -364,13 +384,7 @@ export function reduceUndoEvent(
         if (unit && admission.bedNumber !== undefined) {
           const conflict =
             bedNumberRefusal(undone, unit, admission.bedNumber, admission.id) ??
-            heldBedRefusal(
-              undone,
-              unit,
-              admission.bedNumber,
-              admission.movementId ?? undefined,
-              admission.referralId ?? undefined,
-            );
+            restoredStayHoldRefusal(undone, unit, admission, admission.bedNumber);
           if (conflict) return reject(state, event, `${conflict}, so this step cannot be undone`);
         }
       }
@@ -392,7 +406,7 @@ export function reduceUndoEvent(
         if (!unit) return reject(state, event, "The original ward is unavailable, so the step cannot be undone");
         const bedRefusal =
           bedNumberRefusal(undone, unit, admission.bedNumber, admission.id) ??
-          heldBedRefusal(undone, unit, admission.bedNumber);
+          restoredStayHoldRefusal(undone, unit, admission, admission.bedNumber);
         if (bedRefusal) return reject(state, event, `${bedRefusal}, so the step cannot be undone`);
       }
       decision.outcome = "accepted";

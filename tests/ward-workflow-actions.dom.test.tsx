@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import { useState } from "react";
 import { describe, it, expect } from "vitest";
 import { MovementWorkflowActions } from "@/components/ward-management/movements/movement-workflow-actions";
@@ -82,21 +82,20 @@ describe("previously unexposed workflow commands", () => {
 });
 
 describe("checked paper continuation paths", () => {
-  it.each(["3B", "4A", "4C"])("explains unsupported Form %s before submitting a continuation", (formCode) => {
+  // Audit M13d, D-210 (Josh, 14 Nov 2026): the picker offers only the engine's own continuation
+  // codes, so a form the prototype cannot record (3B, 4A, 4C, and 3E as a continuation) is never offered.
+  it.each(["3B", "4A", "4C", "3E"])("does not offer Form %s as a continuation", (formCode) => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <Workspace />
       </WardFlowProvider>,
     );
-    fireEvent.change(screen.getByRole("combobox", { name: "Continuation form" }), {
-      target: { value: formCode },
-    });
-    typeDate(screen.getByLabelText("Form written date and time"), "2026-10-07T10:00");
-    const action = screen.getByRole("button", { name: "Record legal form continuation" });
-    expect(action).toHaveAttribute("aria-disabled", "true");
-    expect(action).toHaveAccessibleDescription(`Form ${formCode} continuation is not recorded in this prototype.`);
-    fireEvent.click(action);
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    const picker = screen.getByRole("combobox", { name: "Continuation form" });
+    const offered = within(picker)
+      .getAllByRole("option")
+      .map((option) => option.getAttribute("value"));
+    expect(offered.length).toBeGreaterThan(1);
+    expect(offered).not.toContain(formCode);
   });
 
   it.each(["3A", "3C", "4A", "5A"])("refuses a country extension on Form %s without changing paper facts", (code) => {

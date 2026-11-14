@@ -20,6 +20,7 @@
  * Synthetic prototype. Not legal advice and not validated clinical decision support.
  */
 import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning";
+import { currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
 import type { Movement, MovementUploadedForm, TransportLegalStatus } from "@/components/ward-management/ward-model";
 
 /** Whether a job needs the transport paperwork, read from Legal now first, then the booking. */
@@ -119,7 +120,9 @@ function uploadedTransportOrder(movement: Pick<Movement, "uploadedForms">): Move
 
 /** Whether an accepted order is on file: the recorded form, or an uploaded form (D-189 item 9(d)). */
 export function transportOrderOnFile(movement: Pick<Movement, "legalForm" | "uploadedForms">): boolean {
-  const recorded = movement.legalForm?.code;
+  // Audit H4: a form a person recorded as ended is history, so it is not the order on file.
+  const position = currentLegalPosition(movement);
+  const recorded = position.ended ? undefined : position.form?.code;
   if (recorded !== undefined && TRANSPORT_PAPERWORK.acceptedOrderCodes.includes(recorded)) return true;
   return uploadedTransportOrder(movement) !== undefined;
 }

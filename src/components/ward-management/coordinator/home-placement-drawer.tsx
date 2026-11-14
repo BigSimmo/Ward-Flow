@@ -33,7 +33,11 @@ import { buttonClass, DrawerFacts, DrawerFootRow, PanelDrawer, StatusGlyph } fro
 
 import { ChosenAlertCard } from "./chosen-alert-card";
 import p from "./home-placement-drawer.module.css";
-import { queueWaitThresholds } from "./priority-queue";
+import {
+  REFERRAL_TIME_NOT_RECORDED,
+  tierOverdueAfterMinutes,
+  tierWaitFromReferral,
+} from "@/components/ward-management/ward-shared-figures";
 import { ReferralPlacementPanel, ShortlistPanel } from "./shortlist-panel-lazy";
 
 const STEPS: { stage: Movement["stage"]; label: string }[] = [
@@ -225,11 +229,17 @@ export function HomePlacementDrawer({
   );
 }
 
-/** The wait against its tier target, drawn as the patient pop-up draws it. */
+/**
+ * The wait against its tier target, drawn as the patient pop-up draws it. Audit M5, D-210 (Josh,
+ * 14 Nov 2026): the target's tone and meter count from the referral (`tierWaitFromReferral`), as the
+ * queue row does; the figure is still the time in ED, and no referral time is said, not guessed.
+ */
 function WaitStatus({ movement, now }: { movement: Movement; now: Instant }) {
   const waited = Math.max(0, now - movement.openedAt);
-  const { dueSoon, overdue } = queueWaitThresholds(movement.urgency);
-  const tone = waited >= overdue ? "danger" : waited >= dueSoon ? "warning" : undefined;
+  const overdue = tierOverdueAfterMinutes(movement.urgency);
+  const tierWait = tierWaitFromReferral(movement, now);
+  const tone = !tierWait.recorded ? undefined : tierWait.overdue ? "danger" : tierWait.dueSoon ? "warning" : undefined;
+  const sinceReferral = tierWait.recorded ? tierWait.waited : 0;
   return (
     <div className={d.status}>
       <p className={d.statusLine}>
@@ -242,10 +252,14 @@ function WaitStatus({ movement, now }: { movement: Movement; now: Instant }) {
         </span>
       </p>
       <span className={d.meter} data-tone={tone} aria-hidden="true">
-        <i style={{ width: `${Math.min(100, (waited / overdue) * 100).toFixed(0)}%` }} />
+        <i style={{ width: `${Math.min(100, (sinceReferral / overdue) * 100).toFixed(0)}%` }} />
       </span>
       <span className={d.ticks}>
-        <span>Opened {formatInstantWithDay(movement.openedAt, now)}</span>
+        <span>
+          {movement.referredAt === undefined
+            ? REFERRAL_TIME_NOT_RECORDED
+            : `Referred ${formatInstantWithDay(movement.referredAt, now)}`}
+        </span>
         <span>
           T{movement.urgency} target {splitDuration(overdue)}
         </span>

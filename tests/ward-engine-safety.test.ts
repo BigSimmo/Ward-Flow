@@ -497,7 +497,7 @@ function describeFailure(seed: number, scenario: WardScenario, events: WardFlowE
 }
 
 /** One seeded sequence. Returns a readable failure, or null, and how many events were refused. */
-function runSeed(seed: number, steps = STEPS) {
+function runSeed(seed: number, steps = STEPS, options: { readonly pullRoute?: boolean } = {}) {
   const scenario = WARD_SCENARIOS[seed % WARD_SCENARIOS.length];
   const random = seededRandom(seed);
   let state = seedWardFlowState(scenario);
@@ -505,7 +505,7 @@ function runSeed(seed: number, steps = STEPS) {
   let refused = 0;
   let locked = false;
   for (let step = 0; step < steps; step += 1) {
-    const event = nextEvent(state, random, step, seed, steps);
+    const event = nextEvent(state, random, step, seed, steps, options);
     events.push(event);
     fuzzProfile.count(`attempted.${event.type}`);
     recordingRandomRun = true;
@@ -527,6 +527,31 @@ function runSeed(seed: number, steps = STEPS) {
 }
 
 describe("sequences the random run found", () => {
+  // One-tap pull route, seed 1: a ward desk places a seeded pulled stay (joined to its journey only
+  // by Movement.admissionId) in a bed, then releases the pull. The bed number the placement held for
+  // that journey read as somebody else's hold, so the release could not be undone.
+  it("undoes releasing a pull whose seeded stay was placed in a bed", () => {
+    const placeThenRelease: WardFlowEvent[] = [
+      {
+        now: 872,
+        type: "PLACE_IN_BED",
+        admissionId: "AD-SJGA-07",
+        actingUnitId: "sjgm-adult-open",
+        bedNumber: 13,
+        role: "coordinator",
+      },
+      {
+        now: 922,
+        type: "RELEASE_PULL",
+        movementId: "WF-016",
+        actingUnitId: "sjgm-adult-open",
+        reason: "bed_needed_for_another_patient",
+        role: "ward",
+      },
+    ] as WardFlowEvent[];
+    expect(replay("scarce", placeThenRelease)).toBeNull();
+  });
+
   it("drops a Bed board placement's undo when releasing the pull removes that stay", () => {
     // Refer, accept, pull, place in a bed, release the pull: the pulled stay is removed, but its
     // bed-placement undo record used to stay behind, so the saved day was refused on reload.
@@ -877,6 +902,19 @@ describe("engine safety under random event sequences", () => {
           undoneTypes: [...UNDONE_STEP_TYPES].sort(),
           replayExcludedFromCounts: true,
         });
+      }
+    },
+    Math.max(30_000, SEQUENCES * STEPS * 5),
+  );
+
+  // Mechanics and clock audit (14 Nov 2026), D-210 (Josh, 14 Nov 2026): the same rules hold with the
+  // Referrals board's one-tap pull and ED-source referrals mixed in. A separate run, so the coverage
+  // run above keeps its random stream.
+  it(
+    `keeps beds whole across ${SEQUENCES} seeded sequences with the one-tap pull route`,
+    () => {
+      for (let seed = FIRST_SEED; seed < FIRST_SEED + SEQUENCES; seed += 1) {
+        expect(runSeed(seed, STEPS, { pullRoute: true }).failure, `seed ${seed}`).toBeNull();
       }
     },
     Math.max(30_000, SEQUENCES * STEPS * 5),

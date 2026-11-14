@@ -38,7 +38,8 @@ import {
   type Unit,
   type WardReferralDestination,
 } from "@/components/ward-management/ward-model";
-import { mixSexOf, referralEligibility } from "@/components/ward-management/ward-eligibility";
+import { mixSexOf, referralEligibility, type ReadyBedsLookup } from "@/components/ward-management/ward-eligibility";
+import { useSharedReadyLookup } from "@/components/ward-management/use-shared-ready";
 import { isConfirmationFresh } from "@/components/ward-management/capacity/capacity-gap-words";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
@@ -56,6 +57,8 @@ export function wardRefusalWords(
   ward: WardReferralDestination,
   ageBand: Cohort,
   now: Instant,
+  /** H7 (D-210 (Josh, 14 Nov 2026)): the shared Ready, the figure the Ready column prints. */
+  ready?: ReadyBedsLookup,
 ): string | undefined {
   const probe: Referral = {
     id: "drawer-ward-probe",
@@ -70,7 +73,7 @@ export function wardRefusalWords(
     transportNeeded: false,
     history: "",
   };
-  const gates = referralEligibility(probe, ward, unit, now).gates;
+  const gates = referralEligibility(probe, ward, unit, now, ready).gates;
   const failed = gates.find((gate) => !gate.pass);
   const designation = unit.sexDesignation === "Female only" ? "Female-only ward" : "Male-only ward";
   switch (failed?.gate) {
@@ -84,7 +87,10 @@ export function wardRefusalWords(
         : `${designation}; gender not recorded as female or male`;
     case "forensic":
       return "Forensic ward, not offered";
+    // H9: `security` asks only whether the ward has locked beds; whether one is free is its own check.
     case "security":
+      return "No locked beds";
+    case "locked_bed_free":
       return "No locked bed free";
     // #835: the bay-mix gate also fails with no bed ready, which the ready count already says, and
     // with no female or male answer recorded, when "no same-sex patients" is not the reason.
@@ -171,6 +177,7 @@ const COMMUNITY_TEAMS_SHOWN = 6;
 
 /** Step 4, Wards, Teams or EDs: the places to refer to, the summary and the arrival plan. */
 export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
+  const ready = useSharedReadyLookup();
   const zone = useClockZoneLabel();
   const {
     movements,
@@ -309,7 +316,7 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
                 const cohort = effectiveCohort || undefined;
                 const refusal =
                   model && needs && cohort
-                    ? wardRefusalWords(model, { ...needs, unitId: model.id }, cohort, now)
+                    ? wardRefusalWords(model, { ...needs, unitId: model.id }, cohort, now, ready)
                     : undefined;
                 const inCatchment =
                   catchmentConfirmed && catchmentService ? unit.healthService === catchmentService : null;

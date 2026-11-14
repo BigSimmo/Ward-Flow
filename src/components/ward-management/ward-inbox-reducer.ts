@@ -4,9 +4,11 @@ import type { WardFlowEvent } from "./ward-flow-events";
 import { roleOfRecordedLabel, WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
 import type { WardFlowState } from "./ward-flow-reducer";
 import type { Movement, Notice } from "./ward-model";
+import { currentLegalDueAt } from "./ward-legal-form-progression";
 import { isOnOrder, stayLegalStatus } from "./ward-stay-legal";
 import { SNOOZE_MAX_MINUTES } from "./ward-operational-defaults";
 import { duplicateBedRequestSince } from "./ward-duplicate-bed-requests";
+import { heldBedElsewhereOf } from "./ward-held-bed-elsewhere";
 import {
   BED_MEETING_ACTION_INBOX_PREFIX,
   meetingActionOfInboxId,
@@ -103,6 +105,11 @@ export const INBOX_CATEGORIES = {
    *  (Josh, 19 Oct). Leaves when one is answered or withdrawn. Remainder is the patient id
    *  (`ward-duplicate-bed-requests.ts`). */
   duplicate_bed_request: { idPrefix: "duplicate-bed-request-", kind: "fact" },
+  /** M11 and owner question 8 (D-210 (Josh, 14 Nov 2026)): a bed held for an accepted referral
+   *  while the person is pulled into, or occupies, a bed on another journey. Flagged with an offer to
+   *  release it, never a block. Coordinator only, as it names where else the person is. Leaves when
+   *  the bed is released or the stay ends. Remainder is the referral id (`ward-held-bed-elsewhere.ts`). */
+  bed_held_elsewhere: { idPrefix: "bed-held-elsewhere-", kind: "fact" },
   /** Overall review (20 Oct 2026): the coordinator's daily "nobody missed" check, ticked off with
    *  "Checked, all accounted for" (`COMPLETE_INBOX_ITEM`), which records the role and the time. A
    *  commitment, never a row on any list. Remainder is `day-` and the demo day (`dailyCheckId`). */
@@ -111,6 +118,11 @@ export const INBOX_CATEGORIES = {
    *  until the owner or the chair marks it done (`COMPLETE_BED_MEETING_ACTION`). Amber, overdue
    *  included: shown, never escalated. Remainder names the action (`meetingActionInboxId`). */
   bed_meeting_action: { idPrefix: BED_MEETING_ACTION_INBOX_PREFIX, kind: "fact" },
+  /** Audit M2, D-210 (Josh, 14 Nov 2026): a Pull now no asked ward answered by its answer time (the
+   *  signed 15 minute rule). Act now, from `overduePullNowInboxItems` (`ward-act-now-items.ts`).
+   *  Leaves when a ward answers, the bed is pulled or the alert is stood down. Remainder is the
+   *  movement id. */
+  pull_now_overdue: { idPrefix: "pull-now-overdue-", kind: "fact" },
 } as const satisfies Record<string, { readonly idPrefix: string; readonly kind: InboxItemKind }>;
 
 /**
@@ -140,6 +152,8 @@ const INBOX_REVIEW_CATEGORIES: readonly (keyof typeof INBOX_CATEGORIES)[] = [
   "planned_arrival_overdue",
   // Audit F-19: a duplicate bed request is something to check, not act on now.
   "duplicate_bed_request",
+  // M11: a bed held for someone in a bed elsewhere is to check and release, not an emergency.
+  "bed_held_elsewhere",
   // Overall review (20 Oct 2026): a bed meeting action is a task; overdue is shown, not escalated.
   "bed_meeting_action",
 ];
@@ -172,6 +186,11 @@ export function inboxRowExists(state: WardFlowState, inboxItemId: string): boole
   const duplicatePrefix = INBOX_CATEGORIES.duplicate_bed_request.idPrefix;
   if (inboxItemId.startsWith(duplicatePrefix)) {
     return duplicateBedRequestSince(state, inboxItemId.slice(duplicatePrefix.length)) !== undefined;
+  }
+  // M11: a held-bed row names a referral, and exists while its bed is held for someone in a bed elsewhere.
+  const heldElsewherePrefix = INBOX_CATEGORIES.bed_held_elsewhere.idPrefix;
+  if (inboxItemId.startsWith(heldElsewherePrefix)) {
+    return heldBedElsewhereOf(state, inboxItemId.slice(heldElsewherePrefix.length)) !== undefined;
   }
   // Overall review (20 Oct 2026): a bed meeting action row exists while that action is still open.
   if (inboxItemId.startsWith(INBOX_CATEGORIES.bed_meeting_action.idPrefix)) {
@@ -230,7 +249,7 @@ function lastPulledAt(movement: Movement): Instant | undefined {
  */
 export function inboxOccurrenceSince(movement: Movement, inboxItemId: string): Instant | undefined {
   const startsWith = (key: keyof typeof INBOX_CATEGORIES) => inboxItemId.startsWith(INBOX_CATEGORIES[key].idPrefix);
-  if (startsWith("legal_timing_breached")) return movement.legalForm?.dueAt;
+  if (startsWith("legal_timing_breached")) return currentLegalDueAt(movement);
   if (startsWith("bed_pull_expired")) return movement.pullExpiresAt;
   if (startsWith("transport_awaiting_departure")) return movement.transport?.acceptedAt;
   if (startsWith("transport_booking_estimate_passed")) return movement.transport?.estimatedAt;
@@ -262,9 +281,23 @@ function inboxRowSince(state: WardFlowState, inboxItemId: string): Instant | und
   if (inboxItemId.startsWith(duplicatePrefix)) {
     return duplicateBedRequestSince(state, inboxItemId.slice(duplicatePrefix.length));
   }
+  // M11: a held-bed row's occurrence starts when the hold and the stay elsewhere were both true.
+  const heldElsewherePrefix = INBOX_CATEGORIES.bed_held_elsewhere.idPrefix;
+  if (inboxItemId.startsWith(heldElsewherePrefix)) {
+    return heldBedElsewhereOf(state, inboxItemId.slice(heldElsewherePrefix.length))?.since;
+  }
   // A bed meeting action row's occurrence starts when the meeting recorded that action.
   if (inboxItemId.startsWith(INBOX_CATEGORIES.bed_meeting_action.idPrefix)) {
     return openMeetingActionOfRow(state, inboxItemId)?.recordedAt;
+  }
+  // Audit M2: an overdue Pull now row's occurrence starts at its latest Pull now's answer time, so a
+  // fresh Pull now for the same person starts a new one and an earlier snooze no longer applies.
+  const pullNowPrefix = INBOX_CATEGORIES.pull_now_overdue.idPrefix;
+  if (inboxItemId.startsWith(pullNowPrefix)) {
+    const movementId = inboxItemId.slice(pullNowPrefix.length);
+    return (state.broadcastAlerts ?? [])
+      .filter((alert) => alert.kind === "pull_now" && alert.movementId === movementId)
+      .at(-1)?.answerBy;
   }
   const movementId = inboxRowMovementId(state.movements, inboxItemId);
   const movement = state.movements.find((candidate) => candidate.id === movementId);
@@ -323,6 +356,7 @@ export function reduceInboxEvent(
       const namesRecord =
         inboxCategory === INBOX_CATEGORIES.absent_without_leave ||
         inboxCategory === INBOX_CATEGORIES.duplicate_bed_request ||
+        inboxCategory === INBOX_CATEGORIES.bed_held_elsewhere ||
         inboxCategory === INBOX_CATEGORIES.bed_meeting_action
           ? inboxRowExists(state, inboxItemId)
           : inboxCategory === INBOX_CATEGORIES.support_notification_discharge

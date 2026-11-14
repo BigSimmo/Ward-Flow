@@ -41,6 +41,18 @@ export type FindAWardRow = {
   fit: boolean;
   /** Why a ward needs review, in the engine's words. Ignored for a fit. */
   reason?: string;
+  /**
+   * PL6 / H7 (D-210 (Josh, 14 Nov 2026)): the shared Ready the host read (`readyBedsFor`), printed
+   * as "N ready". Never the ward's raw allocatable figure, which ignores pulls, named holds and beds
+   * being made ready.
+   */
+  ready: number;
+  /**
+   * H8: set when every check passes except that the ward's bed count is old, with the words to show
+   * ("Bed count 75 min old, check with the ward"). Such a ward can still be asked, so it can be
+   * ticked, and it is listed on its own under "Fits, bed count old".
+   */
+  stale?: string;
 };
 
 export type FindAWardProps = {
@@ -90,12 +102,13 @@ export function FindAWard({
   const [showAllReview, setShowAllReview] = useState(false);
   const searching = query.trim().length > 0;
   const shown = rows.filter((row) => wardMatchesQuery(query, row.unit));
-  const fits = shown.filter((row) => row.fit).sort(byName);
+  const fits = shown.filter((row) => row.fit && row.stale === undefined).sort(byName);
+  const staleRows = shown.filter((row) => row.fit && row.stale !== undefined).sort(byName);
   const review = shown.filter((row) => !row.fit).sort(byName);
   const reviewShown = showAllReview || searching ? review : review.slice(0, REVIEW_FIRST_ROWS);
   const askedCount = asked?.count ?? 0;
 
-  const row = ({ unit, fit, reason }: FindAWardRow) => {
+  const row = ({ unit, fit, reason, ready, stale }: FindAWardRow) => {
     const checked = chosen.includes(unit.id);
     const site = siteByCode(unit.siteCode)?.name;
     const tickable = fit && !disabled && (checked || (canTick?.(unit.id) ?? true));
@@ -103,7 +116,7 @@ export function FindAWard({
       <label
         key={unit.id}
         className={cx(ph.cand, styles.row)}
-        data-kind={fit ? "yes" : "review"}
+        data-kind={fit ? (stale === undefined ? "yes" : "stale") : "review"}
         data-testid={`${testIdPrefix}-${unit.id}`}
       >
         <input
@@ -118,12 +131,12 @@ export function FindAWard({
         <span className={ph.who}>
           <span className={cx(ph.nm, styles.wrap)}>{unit.name}</span>
           <span className={cx(ph.sub, styles.wrap)} id={`${baseId}-sub-${unit.id}`}>
-            {[site, fit ? `${unit.allocatable.value} ready` : reason].filter(Boolean).join(" · ")}
+            {[site, fit ? (stale ?? `${ready} ready`) : reason].filter(Boolean).join(" · ")}
           </span>
         </span>
         <span className={ph.lab}>
-          <StatusGlyph tone={fit ? "success" : "neutral"} size={9} />
-          {fit ? "Fits" : "Review"}
+          <StatusGlyph tone={fit ? (stale === undefined ? "success" : "warning") : "neutral"} size={9} />
+          {fit ? (stale === undefined ? "Fits" : "Count not current") : "Review"}
         </span>
       </label>
     );
@@ -140,7 +153,7 @@ export function FindAWard({
         onValueChange={onQueryChange}
         count={{ shown: shown.length, total: rows.length, noun: rows.length === 1 ? "ward" : "wards" }}
       />
-      {askedCount + fits.length + review.length === 0 ? (
+      {askedCount + fits.length + staleRows.length + review.length === 0 ? (
         <p className={styles.empty}>No ward matches that search.</p>
       ) : null}
       {asked && askedCount > 0 ? (
@@ -162,6 +175,16 @@ export function FindAWard({
               as both hosts' lists had it, so a screen reader and the tests find it the same way. */}
           <div className={styles.rows} role="group" aria-label="Fits, bed ready">
             {fits.map(row)}
+          </div>
+        </section>
+      ) : null}
+      {staleRows.length > 0 ? (
+        <section className={styles.group} aria-labelledby={`${baseId}-stale`}>
+          <p className={ph.ch} id={`${baseId}-stale`}>
+            Fits, bed count old <span className={ph.k}>{staleRows.length}</span>
+          </p>
+          <div className={styles.rows} role="group" aria-label="Fits, bed count old">
+            {staleRows.map(row)}
           </div>
         </section>
       ) : null}

@@ -1,7 +1,7 @@
 import { placeDisplayName } from "@/components/ward-management/ward-place-names";
 import type { WardConfiguration } from "@/components/ward-management/ward-configuration";
 import { bedIsOccupied, type Admission, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
-import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import { isTimePassed, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { targetHoursText } from "@/components/ward-management/ward-target-hours";
 import { decisionTargetReading } from "@/components/ward-management/ward-decision-targets";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
@@ -54,7 +54,10 @@ type PlannedInput = {
   now: Instant;
   /** The end of the coordinator's shift. */
   until: Instant;
-  /** The end of today: records (not targets) up to here follow the shift's rows. */
+  /**
+   * The end of today: records (not targets) up to here follow the shift's rows. A night shift that
+   * runs past midnight lists its records to the shift end, as its targets are (audit M3).
+   */
   endOfDay: Instant;
   /** The start of today: an expected discharge that passed earlier today stays under Past planned time. */
   startOfDay?: Instant;
@@ -72,11 +75,16 @@ const STEP_WORDS: Record<string, string> = {
 export function plannedRows(input: PlannedInput): PlannedRow[] {
   const { movements, admissions, plannedAdmissions, units, configuration, now, until, endOfDay, nameOf } = input;
   const startOfDay = input.startOfDay ?? endOfDay - 24 * 60;
-  // Targets: the rest of the shift only. Records: the rest of today.
-  const within = (at: Instant | null | undefined): at is Instant =>
-    at !== undefined && at !== null && at > now && at <= until;
-  const today = (at: Instant | null | undefined): at is Instant =>
-    at !== undefined && at !== null && at > now && at < endOfDay;
+  // Targets: the rest of the shift only. Records: the rest of today, or the rest of the shift when
+  // it ends after midnight (audit M3, D-210 (Josh, 14 Nov 2026)): from 23:00 a 01:00 planned move
+  // on the night shift is listed, as the night shift's targets at that hour already were.
+  // A time still to come is one that has not passed by the one clock rule (`isTimePassed`, audit
+  // L2): at its own minute it is still listed.
+  const recordsEnd = Math.max(endOfDay, until + 1);
+  const upcoming = (at: Instant | null | undefined): at is Instant =>
+    typeof at === "number" && Number.isFinite(at) && !isTimePassed(at, now);
+  const within = (at: Instant | null | undefined): at is Instant => upcoming(at) && at <= until;
+  const today = (at: Instant | null | undefined): at is Instant => upcoming(at) && at < recordsEnd;
   const unitName = new Map(units.map((unit) => [unit.id, unit.name]));
   const edName = new Map(allEmergencyDepartments().map((ed) => [ed.id, ed.name]));
   const origin = (movement: Movement) =>
@@ -90,7 +98,8 @@ export function plannedRows(input: PlannedInput): PlannedRow[] {
     ...(info.patient ? { recordId: info.patient.id } : {}),
   });
   // Past planned time: the time has passed. Each kind below says how long its row stays.
-  const passed = (at: Instant | null | undefined): at is Instant => at !== undefined && at !== null && at <= now;
+  // The one clock rule (audit L2): passed once the clock is strictly after the minute.
+  const passed = (at: Instant | null | undefined): at is Instant => isTimePassed(at, now);
   const rows: Omit<PlannedRow, "later" | "past">[] = [];
 
   for (const movement of movements) {
@@ -193,7 +202,7 @@ export function plannedRows(input: PlannedInput): PlannedRow[] {
   }
 
   return rows
-    .map((row) => ({ ...row, later: row.at > until, past: row.at <= now }))
+    .map((row) => ({ ...row, later: row.at > until, past: isTimePassed(row.at, now) }))
     .sort((a, b) => a.at - b.at || a.id.localeCompare(b.id));
 }
 
@@ -212,12 +221,20 @@ export type TomorrowOutlook = {
 };
 
 export function tomorrowOutlook(
-  input: Pick<PlannedInput, "admissions" | "plannedAdmissions" | "units" | "nameOf"> & { endOfDay: Instant },
+  input: Pick<PlannedInput, "admissions" | "plannedAdmissions" | "units" | "nameOf"> & {
+    endOfDay: Instant;
+    /**
+     * The end of the shift, when Later today lists records past midnight (audit M3): a record up to
+     * here is already listed above, so tomorrow does not list it twice.
+     */
+    shiftEnd?: Instant;
+  },
 ): TomorrowOutlook {
-  const { admissions, plannedAdmissions, units, nameOf, endOfDay } = input;
+  const { admissions, plannedAdmissions, units, nameOf, endOfDay, shiftEnd } = input;
   const dayEnd = endOfDay + 24 * 60;
+  const listedAbove = (at: Instant) => shiftEnd !== undefined && at <= shiftEnd;
   const tomorrow = (at: Instant | null | undefined): at is Instant =>
-    at !== undefined && at !== null && at >= endOfDay && at < dayEnd;
+    at !== undefined && at !== null && at >= endOfDay && at < dayEnd && !listedAbove(at);
   const unitName = new Map(units.map((unit) => [unit.id, unit.name]));
   const ward = (unitId: string) => unitName.get(unitId) ?? placeDisplayName(unitId);
   const who = (info: ResolvedPatientInfo) => ({

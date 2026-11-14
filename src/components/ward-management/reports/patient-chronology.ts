@@ -17,7 +17,7 @@ import {
   type ClockZoneLabel,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import type { EventLogEntry } from "@/components/ward-management/ward-event-log";
+import { enteredOfflineNote, type EventLogEntry } from "@/components/ward-management/ward-event-log";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import {
   eventHistoryWording,
@@ -915,11 +915,19 @@ export function patientChronology(input: ChronologyInput): PatientChronology {
     }
     if (entry.accepted && seen.has(`${record}@${at}@${dedupeType(entry.type, entry.role)}`)) continue;
     const wording = eventHistoryWording(entry.type, entry.role, wardOfRecord(record)) ?? entry.type;
-    const action = entry.accepted ? wording : `${wording} (refused)`;
+    // H1 (D-210 (Josh, 14 Nov 2026), ruling 1): a step that waited happened when the person acted
+    // and was written down when it reached the server.
+    const sentAt = entry.accepted ? finite(entry.sentAt) : null;
+    const action = !entry.accepted
+      ? `${wording} (refused)`
+      : sentAt !== null && at !== null
+        ? `${wording} (${enteredOfflineNote(sentAt, at)})`
+        : wording;
     drafts.push({
       draft: {
         record,
-        recordedAt: at,
+        ...(sentAt !== null && at !== null ? { occurredAt: at } : {}),
+        recordedAt: sentAt !== null && at !== null ? sentAt : at,
         who: whoLabel(entry.role),
         action,
       },

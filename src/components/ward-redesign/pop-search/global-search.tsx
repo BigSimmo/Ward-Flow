@@ -321,8 +321,19 @@ export function GlobalSearch({
             limitPerGroup: FULL_RESULTS_PER_GROUP,
             plannedAdmissions,
             admissions: wardFlow?.admissions,
+            bedReleases: wardFlow?.bedReleases,
           }),
-    [trimmed, patients, movements, units, referrals, now, plannedAdmissions, wardFlow?.admissions],
+    [
+      trimmed,
+      patients,
+      movements,
+      units,
+      referrals,
+      now,
+      plannedAdmissions,
+      wardFlow?.admissions,
+      wardFlow?.bedReleases,
+    ],
   );
 
   const refusal = trimmed.length === 0 ? undefined : refusalFor(trimmed);

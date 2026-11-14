@@ -11,7 +11,13 @@ import { elapsedLabel, isOpen } from "@/components/ward-management/ward-derivati
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { LegalForm, Movement } from "@/components/ward-management/ward-model";
 import type { WardRecordTone } from "@/components/ward-management/ward-record-row";
-import { currentLegalDueAt, formProgressionPhrase, legalFormEnd, NEXT_FORM_TO_RECORD } from "./legal-form-progression";
+import {
+  currentLegalDueAt,
+  currentLegalPosition,
+  formProgressionPhrase,
+  legalFormEnd,
+  NEXT_FORM_TO_RECORD,
+} from "./legal-form-progression";
 export { currentLegalDueAt } from "./legal-form-progression";
 import { typedClock, typedTimePhrase } from "./legal-time-as-typed";
 
@@ -107,7 +113,12 @@ export function legalFormGroupOf(movement: Movement): LegalFormGroup {
  * recorded.
  */
 export function legalFormGroupRows(movements: Movement[], now: Instant, group: LegalFormGroup): Movement[] {
-  const rows = legalFormPopulation(movements).filter((movement) => legalFormGroupOf(movement) === group);
+  // Audit H6 (14 Nov 2026): these rows are the Forms page's "Forms in force". A form a person recorded
+  // as ended is not in force, so it is neither counted there nor listed under "Time not written". The
+  // downtime pack still prints it as ended (`legalFormOrdered`).
+  const rows = legalFormPopulation(movements).filter(
+    (movement) => !currentLegalPosition(movement).ended && legalFormGroupOf(movement) === group,
+  );
   if (group === "with-deadline") {
     return rows.sort((a, b) => minutesUntil(currentLegalDueAt(a)!, now) - minutesUntil(currentLegalDueAt(b)!, now));
   }
@@ -187,14 +198,15 @@ export function legalDeadlineText(movement: Movement, now: Instant, dayZero?: Da
   }
   // A form a person recorded as ended keeps its typed expiry as history only (Josh, 11 Nov 2026):
   // never "Form expiry ends 15:42 as typed" under "Ended", which reads as a live expiry.
+  const position = currentLegalPosition(movement);
   if (end?.kind === "recorded") {
-    return legalForm.dueAt === undefined
+    return position.typedEndAt === undefined
       ? "Form ended"
-      : `Form ended; expiry as typed was ${typedClock(legalForm.dueAt, now, dayZero)}`;
+      : `Form ended; expiry as typed was ${typedClock(position.typedEndAt, now, dayZero)}`;
   }
-  if (legalForm.dueAt !== undefined) {
+  if (position.dueAt !== undefined) {
     // Legal times only as typed (31 Oct 2026): "Form expiry ends 15:42 as typed", never a count.
-    return `Form expiry ${typedTimePhrase(legalForm.dueAt, now, dayZero)}`;
+    return `Form expiry ${typedTimePhrase(position.dueAt, now, dayZero)}`;
   }
   /*
    * 🔴 ONE WORDING FOR AN ABSENT DEADLINE, NOT TWO — Ward Lead's ruling, 2026-09-12.
@@ -227,13 +239,16 @@ export function legalFormBreakdown(rows: Movement[], now: Instant): LegalFormBre
   const order: string[] = [];
   const byCode = new Map<string, LegalFormBreakdownRow>();
   for (const movement of rows) {
-    const legalForm = movement.legalForm;
-    if (!legalForm) continue;
-    let entry = byCode.get(legalForm.code);
+    // Audit H6 (14 Nov 2026): forms in force only, read through the one current legal position.
+    const position = currentLegalPosition(movement);
+    const form = position.form;
+    if (!form || position.ended) continue;
+    const code = form.code;
+    let entry = byCode.get(code);
     if (!entry) {
-      entry = { code: legalForm.code, name: legalFormName(legalForm), openCount: 0, breachedCount: 0 };
-      byCode.set(legalForm.code, entry);
-      order.push(legalForm.code);
+      entry = { code, name: legalFormName(form), openCount: 0, breachedCount: 0 };
+      byCode.set(code, entry);
+      order.push(code);
     }
     entry.openCount += 1;
     if (isLegalDeadlineBreached(movement, now)) entry.breachedCount += 1;
@@ -280,7 +295,7 @@ export function legalFormRowClassification(
       reasonLevel: "warning",
     };
   }
-  if (legalForm.dueAt === undefined && legalFormHasClockConcept(legalForm)) {
+  if (currentLegalPosition(movement).typedEndAt === undefined && legalFormHasClockConcept(legalForm)) {
     /*
      * 🔴 THE CHIP SAYS WHAT THE RECORD HOLDS AND NOTHING ABOUT THE TYPE — Ward Lead's ruling,
      * 2026-09-12, correcting wording he had approved.

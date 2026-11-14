@@ -27,7 +27,12 @@ import {
   type Referral,
   type TurnaroundPriority,
 } from "@/components/ward-management/ward-model";
-import { FORM_TIMING_FACTOR_LABEL, urgencyTierLabel, waitFactors } from "@/components/ward-management/ward-priority";
+import {
+  FORM_TIMING_FACTOR_LABEL,
+  queueWaitStartedAt,
+  urgencyTierLabel,
+  waitFactors,
+} from "@/components/ward-management/ward-priority";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
@@ -42,8 +47,12 @@ import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feat
 import {
   inEdTierOverdue,
   isTierOneOpen,
+  isTierOverdueFromReferral,
+  REFERRAL_TIME_NOT_RECORDED,
+  tierDueSoonAfterMinutes,
   tierOverdueAfterMinutes,
   tierOverdueRuleText,
+  tierWaitFromReferral,
 } from "@/components/ward-management/ward-shared-figures";
 import { allClinicalValuesSigned } from "@/components/ward-management/ward-clinical-values";
 
@@ -74,10 +83,10 @@ const MS_PER_MINUTE = 60_000;
  * overdue on one page and not on another. Every marker now reads the one rule,
  * `tierOverdueAfterMinutes` (`ward-shared-figures.ts`). A row is overdue past its target and "due
  * in" within the hour (or half the window, if shorter) before it. Signed for the prototype (D-56).
+ * Audit M5, D-210 (Josh, 14 Nov 2026): the windows count from the referral (`tierWaitFromReferral`).
  */
 export function queueWaitThresholds(urgency: number): { dueSoon: number; overdue: number } {
-  const overdue = tierOverdueAfterMinutes(urgency);
-  return { dueSoon: overdue - Math.min(60, overdue / 2), overdue };
+  return { dueSoon: tierDueSoonAfterMinutes(urgency), overdue: tierOverdueAfterMinutes(urgency) };
 }
 
 /** Shown wherever the tier targets drive a figure. The status is read from
@@ -213,11 +222,15 @@ export function PriorityQueue({
     const legalDueAt = currentLegalDueAt(movement);
     const legalBreached = legalDueAt !== undefined && isClockBreached(legalDueAt, now);
     const legalFactor = factors.find((factor) => factor.label === FORM_TIMING_FACTOR_LABEL);
-    const waitedMinutes = Math.max(0, now - movement.openedAt);
-    const thresholds = queueWaitThresholds(movement.urgency);
-    const level = waitedMinutes >= thresholds.overdue ? "over" : waitedMinutes >= thresholds.dueSoon ? "soon" : null;
+    // Audit M5, D-210 (Josh, 14 Nov 2026): the wait and its tier marker count from the referral, as
+    // the Referrals board does, so the row never restarts at a later journey start. With no referral
+    // time recorded the row shows its time in ED, labelled, and no tier marker.
+    const tierWait = tierWaitFromReferral(movement, now);
+    // One wait start for the figure and the order (`queueOrder` sorts on `queueWaitStartedAt` too).
+    const waitedMinutes = Math.max(0, now - queueWaitStartedAt(movement));
+    const level = !tierWait.recorded ? null : tierWait.overdue ? "over" : tierWait.dueSoon ? "soon" : null;
     // Keep the duration neutral; the overdue label and glyph carry the status.
-    const toTarget = thresholds.overdue - waitedMinutes;
+    const toTarget = tierWait.recorded ? tierWait.overdueAfter - tierWait.waited : Number.POSITIVE_INFINITY;
     // Whole minutes (device audit, 11 Oct 2026: "8m 00s" is false precision).
     const word =
       level === "over"
@@ -373,13 +386,18 @@ export function PriorityQueue({
         </span>
         <span className={styles.queueWait}>
           <Timer
-            at={movement.openedAt * MS_PER_MINUTE}
+            at={(tierWait.recorded ? now - tierWait.waited : movement.openedAt) * MS_PER_MINUTE}
             now={now * MS_PER_MINUTE}
             wholeMinutes
             direction="waiting"
             hideDirection
             className={styles.queueTimer}
           />
+          {tierWait.recorded ? null : (
+            <span className={styles.queueWord} data-testid={`ward-queue-no-referral-time-${movement.id}`}>
+              in ED · {REFERRAL_TIME_NOT_RECORDED}
+            </span>
+          )}
           {/* One line (Home and Activity design, 31 Oct 2026): the wait, then the status glyph;
                       the status word is spoken. */}
           {level ? (
@@ -437,9 +455,7 @@ export function PriorityQueue({
               aside={(() => {
                 const late = isReferral
                   ? 0
-                  : (all as Movement[]).filter(
-                      (movement) => now - movement.openedAt >= queueWaitThresholds(movement.urgency).overdue,
-                    ).length;
+                  : (all as Movement[]).filter((movement) => isTierOverdueFromReferral(movement, now)).length;
                 return late > 0 ? (
                   <span className={flowStyles.late}>
                     <StatusGlyph tone="danger" size={9} />

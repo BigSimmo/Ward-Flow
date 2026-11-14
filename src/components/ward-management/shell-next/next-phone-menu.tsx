@@ -791,6 +791,7 @@ export function NextPhoneMenu({
     referrals,
     supportNotifications,
     plannedAdmissions,
+    broadcastAlerts,
     now: flowNow,
   } = useWardFlowSelect(
     "movements",
@@ -803,6 +804,7 @@ export function NextPhoneMenu({
     "referrals",
     "supportNotifications",
     "plannedAdmissions",
+    "broadcastAlerts",
     "now",
   );
   // `useWardFlowSelect` returns a new object each render, so the memo lists the fields it reads, not
@@ -824,6 +826,7 @@ export function NextPhoneMenu({
                 referrals,
                 supportNotifications,
                 plannedAdmissions,
+                broadcastAlerts,
                 // The bar's shape exactly, so this reuses the bar's task list instead of building its own
                 // on every page load (F-11). The wording setting changes no act-now row.
                 stuckHandoverMinutes: configuration.transportBookedTargetMinutes,
@@ -845,6 +848,7 @@ export function NextPhoneMenu({
       referrals,
       supportNotifications,
       plannedAdmissions,
+      broadcastAlerts,
       flowNow,
     ],
   );

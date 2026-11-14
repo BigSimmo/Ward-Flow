@@ -93,16 +93,19 @@ describe("audit domain boundary regressions, 16 October 2026", () => {
     expect(causeOf(movement, [full], now, DEFAULT_DUE_SOON_THRESHOLDS)).toBe("no_eligible_bed");
   });
 
-  it("R10 expires a hold at equality, using the same boundary as bedHold", () => {
+  // Audit L2, D-210 (Josh, 14 Nov 2026): a pull lapses once the clock is past its minute, the one
+  // clock rule (`isTimePassed`) that a legal breach uses too. At its minute it is still held.
+  it("R10 expires a hold once past its minute, using the same boundary as bedHold", () => {
     const state = copy();
     const movement = state.movements.find((row) => row.stage === "pulled")!;
     delete movement.legalForm;
     delete movement.examination;
     movement.blocker = "";
-    movement.pullExpiresAt = now;
-    expect(bedHoldLapsed(now, now)).toBe(true);
+    movement.pullExpiresAt = now - 1;
+    expect(bedHoldLapsed(now - 1, now)).toBe(true);
+    expect(bedHoldLapsed(now, now)).toBe(false);
     expect(causeOf(movement, state.units, now, DEFAULT_DUE_SOON_THRESHOLDS)).toBe("bed_pull_expired");
-    movement.pullExpiresAt = now + 1;
+    movement.pullExpiresAt = now;
     expect(causeOf(movement, state.units, now, DEFAULT_DUE_SOON_THRESHOLDS)).toBe("awaiting_bed_ready");
   });
 

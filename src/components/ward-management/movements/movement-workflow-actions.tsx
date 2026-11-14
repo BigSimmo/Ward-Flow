@@ -6,10 +6,16 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
 import { useRoleGate, useRouteRole } from "../ward-role-gate";
+import { useDeskActingWard } from "../ward-desk-acting-ward";
 import type { Movement } from "../ward-model";
-import { CONTINUATION_LEGAL_FORMS, countryExtensionEligible } from "../ward-legal-forms";
+import { countryExtensionEligible } from "../ward-legal-forms";
 import { RELEASE_PULL_REASONS, changeReasonLabels, type ReleasePullReason } from "../ward-change-reasons";
-import { isArrivalLate, isLegalClockFormCode, leaveBedNeedsOpenWarning } from "../ward-legal-clock";
+import {
+  CONTINUATION_FORM_CODES,
+  isArrivalLate,
+  isLegalClockFormCode,
+  leaveBedNeedsOpenWarning,
+} from "../ward-legal-clock";
 import { perthDateTimeLocal } from "../ward-clock";
 import { legalFormTimeOrderProblem } from "../ward-legal-form-time-order";
 import { resolveSubjectPatient } from "../ward-patient-resolver";
@@ -32,6 +38,8 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
   const routeRole = useRouteRole();
   const raise = useWardRaise(routeRole);
   const gate = useRoleGate();
+  // M9: a ward desk acts as its own ward, and is not offered the bed steps when the bed is elsewhere.
+  const { acting, bedElsewhere } = useDeskActingWard(routeRole, movement.acceptedUnitId);
   const expectationGate = gate(
     movement.expectFlag && movement.expectFlag.clearedAt === undefined ? "CLEAR_EXPECT_FLAG" : "RAISE_EXPECT_FLAG",
   );
@@ -94,10 +102,13 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
       : "Choose a release and reopen reason first.";
   const continuationWarnings = form ? legalRecordWarnings(movement, { continuationFormCode: form }) : [];
   const unsupportedContinuation = !!form && !isLegalClockFormCode(form);
-  const continuationUnavailable = !continuationGate.allowed || !form || !written || unsupportedContinuation;
-  const continuationReason = unsupportedContinuation
-    ? `Form ${form} continuation is not recorded in this prototype.`
-    : "Choose a continuation form and enter the written date and time first.";
+  const continuationUnavailable =
+    !continuationGate.allowed || bedElsewhere || !form || !written || unsupportedContinuation;
+  const continuationReason = bedElsewhere
+    ? "Only the ward that accepted this person can record a continuation."
+    : unsupportedContinuation
+      ? `Form ${form} continuation is not recorded in this prototype.`
+      : "Choose a continuation form and enter the written date and time first.";
   const countryExtensionUnavailable = !extensionGate.allowed || !countryExtensionEligible(movement) || !expiry;
   const countryExtensionReason = !countryExtensionEligible(movement)
     ? "A country extension requires a current Form 1A with a country paper setting."
@@ -225,7 +236,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
         )}
         {unit && buzzGate.note}
       </div>
-      {open && ["pulled", "accepted_awaiting_bed"].includes(movement.stage) && (
+      {open && !bedElsewhere && ["pulled", "accepted_awaiting_bed"].includes(movement.stage) && (
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -233,7 +244,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
             before();
             raise("RELEASE_AND_REOPEN_SEARCH", {
               movementId: movement.id,
-              actingUnitId: movement.acceptedUnitId ?? "",
+              actingUnitId: acting.actingUnitId ?? movement.acceptedUnitId ?? "",
               reason,
             });
           }}
@@ -289,9 +300,10 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
             Continuation form
             <select value={form} onChange={(e) => setForm(e.target.value)}>
               <option value="">Choose form</option>
-              {CONTINUATION_LEGAL_FORMS.map((f) => (
-                <option key={f.code} value={f.code}>
-                  {f.code}
+              {/* Audit M13d (14 Nov 2026): the engine's own list, so nothing offered is refused. */}
+              {CONTINUATION_FORM_CODES.map((code) => (
+                <option key={code} value={code}>
+                  {code}
                 </option>
               ))}
             </select>
@@ -333,9 +345,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
                     before();
                     raise("RECORD_LEGAL_FORM_CONTINUATION", {
                       movementId: movement.id,
-                      ...(routeRole === "ward" && movement.acceptedUnitId
-                        ? { actingUnitId: movement.acceptedUnitId }
-                        : {}),
+                      ...acting,
                       formCode: form,
                       startedAt: started,
                       ...(expiry ? { paperExpiresAt: due } : {}),

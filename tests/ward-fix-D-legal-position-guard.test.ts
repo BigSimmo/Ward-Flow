@@ -66,7 +66,77 @@ const ROUTED_SCREENS = [
   "patients/patient-details-tab.tsx",
   "handover/handover-model.ts",
   "bed-meeting/tv-clinical-derivations.ts",
+  // Audit H4 (14 Nov 2026): the readers the mechanics and clock audit found reading the stored form.
+  "movements/movement-workspace-derivations.ts",
+  "movements/movement-cockpit-readiness.ts",
+  "movements/movement-workspace-cockpit.tsx",
+  "movements/movement-drawer.tsx",
+  "community/community-screen-helpers.ts",
+  "referrals/ward-referral-drawer-model.ts",
+  "referrals/accepted-ward-referral.ts",
+  "patients/patient-transit-operations.tsx",
+  "patients/patient-status-card.tsx",
+  "ward-legal-time-as-typed.ts",
+  "ed/ed-screen-board-row.tsx",
+  "ed/ed-screen-row-forms.tsx",
+  "ed/ed-screen-model.ts",
+  "legal-forms/legal-forms-sheets.tsx",
+  "legal-forms/legal-forms-next-step.ts",
+  "ward-service-scope.ts",
+  "ward/ward-screen-derivations.ts",
+  "ward-act-now-items.ts",
+  "ward-inbox-reducer.ts",
+  "ward-stay-legal.ts",
+  "ward-transport-paperwork.ts",
+  "officer/officer-forms-pack.tsx",
 ] as const;
+
+/**
+ * Audit H4 (14 Nov 2026): the whole `src` tree is scanned. A file may read the stored form directly
+ * only for a reason named here. Anything else reads it through the shared position, so an ended form
+ * or a passed typed expiry cannot be shown as current by a screen nobody listed.
+ */
+const SRC_DIR = "src";
+const ENGINE = "the record engine: it writes, checks or audits the stored form itself";
+const EDITOR = "the Forms page editor: it shows and edits the stored record, ended forms included";
+const NAMING = "names the form's code only, as history or beside the shared position, never its end or expiry";
+const DIRECT_READ_ALLOWED: Record<string, string> = {
+  "components/ward-management/ward-legal-form-progression.ts": "the shared position itself",
+  "components/ward-management/ward-legal-form-ended.ts": "the shared ended words",
+  "components/ward-management/ward-legal-clock.ts": ENGINE,
+  "components/ward-management/ward-legal-order-rules.ts": ENGINE,
+  "components/ward-management/ward-flow-record-legal-events.ts": ENGINE,
+  "components/ward-management/ward-flow-record-events.ts": ENGINE,
+  "components/ward-management/ward-flow-protected-record-events.ts": ENGINE,
+  "components/ward-management/ward-audit.ts": "the audit trail records the value before a change",
+  "components/ward-management/ward-sample-legal-status.ts": "synthetic seed data",
+  "components/ward-management/legal-forms/legal-form-ledger.ts": ENGINE,
+  "components/ward-management/legal-forms/legal-forms-panel.tsx": EDITOR,
+  "components/ward-management/legal-forms/legal-forms-add-time.tsx": EDITOR,
+  "components/ward-management/legal-forms/legal-form-card.tsx": EDITOR,
+  "components/ward-management/legal-forms/legal-form-rows.tsx": EDITOR,
+  "components/ward-management/legal-forms/legal-forms-screen.tsx": EDITOR,
+  "components/ward-management/legal-forms/legal-forms-phone-checklist.tsx": EDITOR,
+  "components/ward-management/legal-forms/legal-forms-view.ts": EDITOR,
+  "components/ward-management/patients/patient-documents-tab.tsx":
+    "the documents list keeps each form's typed end as history",
+  "components/ward-management/patients/patient-history-tab.tsx": NAMING,
+  "components/ward-management/patients/patient-journey-timeline.tsx": NAMING,
+  "components/ward-management/patients/patient-now-ward-recent.ts": NAMING,
+  "components/ward-management/patients/patient-now-adapter.ts": NAMING,
+  "components/ward-management/patients/patient-now-screen.tsx": NAMING,
+  "components/ward-management/patients/patient-now-cards.tsx": NAMING,
+  "components/ward-management/coordinator/shortlist-panel.tsx": NAMING,
+  "components/ward-management/governance-site-gaps.tsx": NAMING,
+  "components/ward-management/ward-admission-checklist.ts": NAMING,
+  "components/ward-management/ward-priority.ts": NAMING,
+  "components/ward-management/delays/delays-board-rows.tsx": NAMING,
+  "components/ward-management/delays/delays-board-graphs.tsx": NAMING,
+  "components/ward-management/delays/delays-board-model.ts": NAMING,
+  "components/ward-management/delays/waiting-next-crossings.tsx": NAMING,
+};
+/** Mock-up copies reached only from the /mockups preview route, never from a live screen. */
+const MOCKUP_DIR = "components/ward-redesign/";
 
 /** Reading the stored form's code, typed end or recorded end straight off the record. */
 const DIRECT_READ = /legalForm\??\.(?:code|dueAt|endedBy)\b/u;
@@ -106,6 +176,32 @@ describe("one current legal position: source", () => {
         .map(({ line, code }) => `${file}:${line}: ${code.trim()}`),
     );
     expect(offenders, "read it through currentLegalPosition (ward-legal-form-progression.ts)").toEqual([]);
+  });
+
+  it("no file in src reads the stored form directly outside the named allow-list (audit H4)", () => {
+    const files = walk(SRC_DIR).map((file) => file.slice(SRC_DIR.length + 1));
+    expect(files.length).toBeGreaterThan(400);
+    const offenders = files
+      .filter((file) => !(file in DIRECT_READ_ALLOWED) && !file.startsWith(MOCKUP_DIR))
+      .flatMap((file) =>
+        codeLines(readFileSync(join(SRC_DIR, file), "utf8"))
+          .filter(({ code }) => DIRECT_READ.test(code))
+          .map(({ line, code }) => `${file}:${line}: ${code.trim()}`),
+      );
+    expect(offenders, "read it through currentLegalPosition, or name the reason in DIRECT_READ_ALLOWED").toEqual([]);
+    const stale = Object.keys(DIRECT_READ_ALLOWED).filter((file) => !existsSync(join(SRC_DIR, file)));
+    expect(stale, "an allowed file moved: update the allow-list in the same change").toEqual([]);
+  });
+
+  it("keeps the mock-up copies off live screens, so their direct reads never reach a desk (audit H4)", () => {
+    const importsMockup = /from\s+["'][^"']*ward-redesign\//u;
+    const offenders = walk(SRC_DIR)
+      .map((file) => file.slice(SRC_DIR.length + 1))
+      .filter((file) => !file.startsWith(MOCKUP_DIR) && !file.startsWith("app/mockups/"))
+      .filter((file) =>
+        codeLines(readFileSync(join(SRC_DIR, file), "utf8")).some(({ code }) => importsMockup.test(code)),
+      );
+    expect(offenders).toEqual([]);
   });
 
   it("no screen names a form number as the next form to record (item 2)", () => {

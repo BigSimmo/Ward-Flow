@@ -258,6 +258,8 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
   broadcastSequence: keep("broadcastSequence"),
   plannedAdmissionSequence: keep("plannedAdmissionSequence"),
   scenario: keep("scenario"),
+  // M12: a world setting, no person. Every desk reads it for the Tools panel and Reset demo.
+  workedExamples: keep("workedExamples"),
   configuration: keep("configuration"),
   // D-72: a ward's seclusion and restraint record goes to the desks that open the Seclusion view and
   // hold the ward, which still see an episode whose patient has left so they can record its end.
@@ -706,6 +708,8 @@ function inboxRecordReference(rowId: string): CommandRecordReference | null {
       return { collection: "plannedAdmissions", id };
     case "duplicate_bed_request":
       return { collection: "patients", id };
+    case "bed_held_elsewhere":
+      return { collection: "referrals", id };
     default:
       return { collection: "movements", id };
   }

@@ -1,4 +1,5 @@
 import { reducerSlices } from "./ward-flow-reducer-slice-registry";
+import { withDerivedStayBeds } from "./ward-bed-numbers";
 import {
   findMovement,
   findUnit,
@@ -92,8 +93,10 @@ import {
   candidateReason,
   eligibility,
   referralEligibility,
+  SUITABILITY_GATES,
   type EligibilityGate,
 } from "@/components/ward-management/ward-eligibility";
+import { sharedReadyLookup } from "@/components/ward-management/ward-shared-ready";
 import {
   authorisationReasonRecordedSinceLegalChange,
   heldUnitAuthorisationGap,
@@ -148,7 +151,7 @@ import {
   referrals,
   wardMovements,
 } from "@/components/ward-management/ward-movements";
-import { applyRulingsDemoOverlay, workedExamplesShown } from "@/components/ward-management/ward-rulings-demo";
+import { applyRulingsDemoOverlay } from "@/components/ward-management/ward-rulings-demo";
 
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import {
@@ -316,6 +319,14 @@ export type WardFlowState = WardAuditAndPilotState & {
   leaveBedSequence: number;
   /** Which synthetic night is seeded — `ward-scenarios.ts`'s operational-numbers-only variants. */
   scenario: WardScenario;
+  /**
+   * M12 (mechanics and clock audit, D-210 (Josh, 14 Nov 2026)): whether the worked examples are on
+   * in this world. `SET_SCENARIO` sets it and `RESET_SCENARIO` keeps it. Held on the world rather
+   * than read off the example records, which a scoped desk is not sent. A save made before this
+   * field derives it once from its records on restore (`withInboxStreamADefaults`,
+   * `isValidSharedWardFlowState`).
+   */
+  workedExamples: boolean;
   /**
    * Beds expected to free up. `FLAG_BED_RELEASE` appends here, so a ward's flag moves
    * `unitCapacity()`'s `potential` figure. Seeded from `ward-movements.ts`'s `bedReleases`.
@@ -593,6 +604,8 @@ function seedAuthoredWorld(
     referralSequence: 0,
     leaveBedSequence: 0,
     scenario,
+    // The network scenarios carry none of the standard night's worked examples.
+    workedExamples: workedExamples && !network,
     bedReleases: structuredClone(network?.bedReleases ?? bedReleases),
     leaveBeds: structuredClone(network?.leaveBeds ?? leaveBeds),
     refreshRequests: [],
@@ -626,7 +639,11 @@ function seedAuthoredWorld(
   const demo = network ? seed : applyLoopChecksDemoOverlay(withExamples, NOW_ANCHOR);
   // Feature item 13's intake windows and the staff request belong to a clock face, so they are
   // added after any reseed shift (`withSeedClockFaceRecords`, time audit G1).
-  return applyExampleListsOverlay(network ? demo : applyWaitlistDemoOverlay(demo, NOW_ANCHOR), NOW_ANCHOR);
+  // H10, D-210 (Josh, 14 Nov 2026): seeded stays carry no bed kind or number; each takes them once,
+  // from its seat and the ward's own free locked and open figures (`withDerivedStayBeds`).
+  return withDerivedStayBeds(
+    applyExampleListsOverlay(network ? demo : applyWaitlistDemoOverlay(demo, NOW_ANCHOR), NOW_ANCHOR),
+  );
 }
 
 /**
@@ -641,7 +658,8 @@ function seedAuthoredWorld(
 export function seedWardFlowStateAt(
   offsetMinutes: number,
   scenario: WardScenario = "standard",
-  options: { workedExamples?: boolean } = {},
+  // `dayZero`: the board's day 0, when the caller holds one, so sample days fall on the seed's own day (CC-5).
+  options: { workedExamples?: boolean; dayZero?: Date } = {},
 ): WardFlowState {
   // Time audit G1: calendar-day fields move by whole Perth days and clock-face records (tonight's
   // intake windows, the shift's staff request) are built from the board's own now.
@@ -651,7 +669,7 @@ export function seedWardFlowStateAt(
     NOW_ANCHOR,
     now,
   );
-  return withSeedClockFaceRecords(moved, now);
+  return withSeedClockFaceRecords(moved, now, options.dayZero);
 }
 
 /**
@@ -708,28 +726,10 @@ export const OVERRIDE_REASON_REQUIRED = "needs a recorded override reason";
 export const HIGH_ACUITY_STAFFING_REFUSAL = "has no high-acuity nursing capacity left";
 
 /**
- * The gates a recorded reason may get past. Imported by `tests/ward-referral-reducer.test.ts`
- * (asserts it is disjoint from the world-fact gates) and by `ward-derivations.ts`'s
- * `shortlistCandidates`, so the screen and engine share one list.
- *
- * T10 (owner answer, item 8): "There is no override path on the gender gate." The `satisfies`
- * clause below makes adding `"gender_designation"` a compile error, while the exported type stays
- * the full gate union so `.includes(gate.gate)` call sites still compile.
+ * The gates a recorded reason may get past. Declared in `ward-eligibility.ts` since 14 Nov 2026
+ * (D-210, the shared fit classifier reads it there) and re-exported here, the engine's home for it.
  */
-export const SUITABILITY_GATES: readonly EligibilityGate[] = [
-  "age",
-  "authorisation",
-  "cohort",
-  "forensic",
-  "legal_status",
-  "security",
-  "sex_mix",
-  // Added by owner ruling: the only gate moved out of the world-fact group. A stale bed count is
-  // information, and "I have confirmed the current bed state with the ward directly" is a named
-  // person taking responsibility. It buys past a stale count, never past `allocatable_bed`. See
-  // docs/history/archive/dated-notes/owner-rulings-2026-09-02-staleness-and-legal-status.md.
-  "capacity_freshness",
-] as const satisfies readonly Exclude<EligibilityGate, "gender_designation">[];
+export { SUITABILITY_GATES };
 
 /** Record only gates actually answered by this pull, against the same pre-pull resources. */
 function pullOverrides(
@@ -947,8 +947,14 @@ function referralAcceptanceRefusal(
   destination: WardReferralDestination,
   unit: Unit,
   now: Instant,
+  /**
+   * H7 (D-210 (Josh, 14 Nov 2026)): the engine state, so the bed check reads the shared Ready the
+   * Place tab and Capacity show, never a private figure. The referral's own held bed is left out.
+   */
+  state?: Pick<WardFlowState, "admissions" | "bedReleases" | "movements" | "referrals">,
 ): { refusal: string; overrideApplied?: undefined } | { refusal: null; overrideApplied: boolean } {
-  const verdict = referralEligibility(referral, destination, unit, now);
+  const ready = state ? sharedReadyLookup(state, { referralId: referral.id }) : undefined;
+  const verdict = referralEligibility(referral, destination, unit, now, ready);
   // `overrideApplied: false` on a clean verdict even with a reason, so no false override record is
   // written.
   if (verdict.eligible) return { refusal: null, overrideApplied: false };
@@ -1750,8 +1756,9 @@ export function reduceClinicalEvent(
       return seedWardFlowStateAt(
         event.now - state.clockOffsetMinutes - NOW_ANCHOR,
         WARD_SCENARIOS.includes(state.scenario) ? state.scenario : "standard",
-        // A16-14: a reset keeps the worked examples if the presenter had switched them on.
-        { workedExamples: workedExamplesShown(state) },
+        // A16-14: a reset keeps the worked examples if the presenter had switched them on. M12: the
+        // world's own flag, not the records this copy holds, which a scoped desk only partly has.
+        { workedExamples: state.workedExamples === true },
       );
 
     case "SET_SCENARIO": {
@@ -1859,6 +1866,7 @@ export function reduceClinicalEvent(
     case "RECEIVE_REFERRAL":
     case "ACCEPT_REFERRAL":
     case "HOLD_REFERRAL_BED":
+    case "RELEASE_REFERRAL_BED":
     case "DECLINE_REFERRAL":
     case "WITHDRAW_ACCEPTANCE":
       return reducerSlices().reduceReferralAnswerEvent(state, event, decision, REFERRAL_ANSWER_EVENT_HELPERS);

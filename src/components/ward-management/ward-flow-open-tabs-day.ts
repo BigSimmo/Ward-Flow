@@ -1,5 +1,6 @@
 import { useEffect, type RefObject } from "react";
 import { WARD_FLOW_DEMO_STORAGE_KEY } from "./ward-flow-demo-storage";
+import { demoSaveIsCurrent } from "./ward-flow-demo-save-marker";
 import { broadcastDispatchEvent, getOrCreateBroadcastInstanceId } from "./ward-flow-provider-helpers";
 import { markOtherTabChangedDay } from "./shell/ward-other-tab-day";
 
@@ -42,6 +43,10 @@ export function useOpenTabsDay(
       try {
         // An idle-deferred device save may still be waiting: write it first so the new tab gets today's day.
         flushSave?.();
+        // Mechanics and clock audit L8: a save that is not this tab's latest day (a later change
+        // could not be saved, `keepLastSafeDemoSave`) is not offered, so a new tab is never told it
+        // was brought up to date from an older day. It keeps its seed day instead.
+        if (!demoSaveIsCurrent()) return;
         const raw = window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY);
         if (raw) broadcastDispatchEvent("SYNC_SAVED_STATE", instanceId, raw);
       } catch {
@@ -51,6 +56,31 @@ export function useOpenTabsDay(
     if (freshSeedRef.current) broadcastDispatchEvent("REQUEST_SAVED_STATE", instanceId);
     return () => channel.close();
   }, [enabled, freshSeedRef, instanceIdRef, ownsDayRef, flushSave]);
+}
+
+/**
+ * Mechanics and clock audit L8: whether this tab's saved day is one it only followed from another
+ * tab (adopted, never worked on). Kept beside the save, in this tab's session storage, so a
+ * following tab still follows after its own reload instead of claiming the day as its own. A save
+ * with no mark (from before this change) reads as owned, as before.
+ */
+const DAY_FOLLOWED_KEY = "ward-flow:demo-day-followed";
+
+export function markDayFollowed(followed: boolean): void {
+  try {
+    if (followed) window.sessionStorage.setItem(DAY_FOLLOWED_KEY, "1");
+    else window.sessionStorage.removeItem(DAY_FOLLOWED_KEY);
+  } catch {
+    // Storage unavailable: the save itself fails too, and the next reload starts from the seed.
+  }
+}
+
+export function dayIsFollowed(): boolean {
+  try {
+    return window.sessionStorage.getItem(DAY_FOLLOWED_KEY) === "1";
+  } catch {
+    return false;
+  }
 }
 
 /** True when a peer's saved day is not this tab's own saved day (both stored without refusals). */

@@ -32,6 +32,7 @@ import {
 } from "@/components/ward-management/ward-operational-defaults";
 import { extendedPullExpiry, pullExtensionChoices } from "@/components/ward-management/ward-bed-hold-extension";
 import { movementBedReservation, pendingNumberedReservations } from "./ward-movement-bed-hold";
+import { chooseBedNumber } from "./ward-bed-numbers";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import type { PlacementEventHelpers, WardFlowState } from "./ward-flow-reducer";
 
@@ -337,6 +338,12 @@ export function reducePlacementEvent(
       }
       const bedKindTaken: "locked" | "open" =
         reservedKind ?? (secureBedNeeded ? (noLockedBedFree ? "open" : "locked") : freeOpen > 0 ? "open" : "locked");
+      // H10, D-210 (Josh, 14 Nov 2026): the pull takes a real bed of the kind it takes, recorded with
+      // the kind, so the tile, the free figures and every bed-number rule read one fact. No free
+      // number of that kind leaves the kind recorded with no number, which the ward sees as a conflict.
+      const bedNumberTaken =
+        reservedBed ??
+        chooseBedNumber(unit, state, bedKindTaken, { movementId: movement.id, referralId: movement.referralId });
 
       /**
        * The eligibility gate goes last, after every existing refusal (Ward Lead ruling): a
@@ -398,7 +405,7 @@ export function reducePlacementEvent(
         // Item 11: the bed kind actually taken, shared with the refusal check and the decrement.
         // See `Admission.bedKind`.
         bedKind: bedKindTaken,
-        ...(reservedBed === undefined ? {} : { bedNumber: reservedBed }),
+        ...(bedNumberTaken === undefined ? {} : { bedNumber: bedNumberTaken }),
         state: "pulled",
         pulledAt: event.now,
         arrivedAt: null,

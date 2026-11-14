@@ -12,7 +12,8 @@ import {
   type OverrideReason,
 } from "@/components/ward-management/ward-change-reasons";
 import { candidateAccepts, matchReason, type ReferralCandidate } from "@/components/ward-management/ward-referrals";
-import { checkedGates, gateMark } from "@/components/ward-management/ward-eligibility";
+import { checkedGates, gateMark, placementFit } from "@/components/ward-management/ward-eligibility";
+import type { Instant } from "@/components/ward-management/ward-clock";
 import styles from "./referrals.module.css";
 import { GATE_LABELS, OVERRIDE_REASON_UNCHOSEN } from "./referral-match-model";
 
@@ -23,8 +24,11 @@ export function MatchRow({
   bandText,
   onAccept,
   needsGenderPlacement,
+  now,
 }: {
   candidate: ReferralCandidate;
+  /** The board clock, so an old bed count is named by its age (H8). */
+  now?: Instant;
   bandText: string;
   onAccept: (
     unitId: string,
@@ -203,53 +207,61 @@ export function MatchRow({
       ) : (
         <div className={styles.matchDeclineSection}>
           <p className={styles.matchReasonText} data-testid={`ward-referral-match-reason-${unit.id}`}>
-            {matchReason(candidate)}
+            {matchReason(candidate, now)}
           </p>
-          <div className={styles.matchOverrideRow} data-testid={`ward-referral-match-override-${unit.id}`}>
-            <label className={styles.matchOverrideLabel} htmlFor={`ward-referral-match-override-reason-${unit.id}`}>
-              Accept anyway — record why
-            </label>
-            <div className={styles.matchOverrideControls}>
-              <select
-                id={`ward-referral-match-override-reason-${unit.id}`}
-                className={styles.matchOverrideSelect}
-                data-testid={`ward-referral-match-override-reason-${unit.id}`}
-                value={overrideReason ?? ""}
-                onChange={(event) => {
-                  const chosen = event.target.value;
-                  setOverrideReason(
-                    OVERRIDE_REASONS.includes(chosen as OverrideReason) ? (chosen as OverrideReason) : undefined,
-                  );
-                }}
-              >
-                <option value="">Choose a reason…</option>
-                {OVERRIDE_REASONS.map((reason) => (
-                  <option key={reason} value={reason}>
-                    {reason}
-                  </option>
-                ))}
-              </select>
-              <Button
-                variant="pri"
-                size="md"
-                data-placement-action
-                type="button"
-                data-testid={`ward-referral-match-override-accept-${unit.id}`}
-                disabledReason={overrideReason === undefined ? OVERRIDE_REASON_UNCHOSEN : undefined}
-                reasonDisplay="tooltip"
-                onClick={
-                  overrideReason === undefined ? ignoreUnavailableActivation : () => onAccept(unit.id, overrideReason)
-                }
-              >
-                Accept anyway at {unit.name}
-              </Button>
+          {/* M14(a) (D-210 (Josh, 14 Nov 2026)): "Accept anyway" only when every failing check is one a
+              recorded reason can answer (the engine's `SUITABILITY_GATES`); otherwise say so. */}
+          {!placementFit(candidate.verdict).overridable ? (
+            <p className={styles.matchReasonText} data-testid={`ward-referral-match-no-override-${unit.id}`}>
+              No recorded reason can override this.
+            </p>
+          ) : (
+            <div className={styles.matchOverrideRow} data-testid={`ward-referral-match-override-${unit.id}`}>
+              <label className={styles.matchOverrideLabel} htmlFor={`ward-referral-match-override-reason-${unit.id}`}>
+                Accept anyway — record why
+              </label>
+              <div className={styles.matchOverrideControls}>
+                <select
+                  id={`ward-referral-match-override-reason-${unit.id}`}
+                  className={styles.matchOverrideSelect}
+                  data-testid={`ward-referral-match-override-reason-${unit.id}`}
+                  value={overrideReason ?? ""}
+                  onChange={(event) => {
+                    const chosen = event.target.value;
+                    setOverrideReason(
+                      OVERRIDE_REASONS.includes(chosen as OverrideReason) ? (chosen as OverrideReason) : undefined,
+                    );
+                  }}
+                >
+                  <option value="">Choose a reason…</option>
+                  {OVERRIDE_REASONS.map((reason) => (
+                    <option key={reason} value={reason}>
+                      {reason}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  variant="pri"
+                  size="md"
+                  data-placement-action
+                  type="button"
+                  data-testid={`ward-referral-match-override-accept-${unit.id}`}
+                  disabledReason={overrideReason === undefined ? OVERRIDE_REASON_UNCHOSEN : undefined}
+                  reasonDisplay="tooltip"
+                  onClick={
+                    overrideReason === undefined ? ignoreUnavailableActivation : () => onAccept(unit.id, overrideReason)
+                  }
+                >
+                  Accept anyway at {unit.name}
+                </Button>
+              </div>
+              {overrideReason === undefined ? (
+                <span id={`ward-referral-match-override-blocked-${unit.id}`} className="sr-only">
+                  {OVERRIDE_REASON_UNCHOSEN}
+                </span>
+              ) : null}
             </div>
-            {overrideReason === undefined ? (
-              <span id={`ward-referral-match-override-blocked-${unit.id}`} className="sr-only">
-                {OVERRIDE_REASON_UNCHOSEN}
-              </span>
-            ) : null}
-          </div>
+          )}
         </div>
       )}
     </li>

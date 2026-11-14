@@ -639,6 +639,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     ACCEPT_REFERRAL: false,
     // Holds an already accepted ward arm; it records no refusal or second acceptance.
     HOLD_REFERRAL_BED: false,
+    // M11: lets go of an accepted arm's held bed; the acceptance stands, nothing is refused.
+    RELEASE_REFERRAL_BED: false,
     RECORD_LOCAL_BED_SOUGHT: false,
     // The referral front door's own refusal, with a reason from `REFERRAL_DECLINE_REASONS`.
     DECLINE_REFERRAL: true,

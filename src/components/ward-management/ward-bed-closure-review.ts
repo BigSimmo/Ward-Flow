@@ -1,4 +1,4 @@
-import { formatInstantWithDay, type Instant } from "./ward-clock";
+import { formatInstantWithDay, type Instant, isTimePassed } from "./ward-clock";
 import { byServiceThenName } from "./ward-derivations-shortlist";
 import type { Unit } from "./ward-model";
 import { activeClosedBeds } from "./ward-ready-beds";
@@ -10,9 +10,12 @@ import { activeClosedBeds } from "./ward-ready-beds";
  */
 export type ClosedBedMark = NonNullable<Unit["closedBeds"]>[number];
 
-/** The review time has come on a bed still closed. A prompt for a person, never a reopening. */
+/**
+ * The review time has passed on a bed still closed (`isTimePassed`, the one clock rule, audit L2). A
+ * prompt for a person, never a reopening.
+ */
 export function bedReviewDue(mark: ClosedBedMark, now: Instant): boolean {
-  return mark.reopenedAt === undefined && mark.reviewAt !== undefined && now >= mark.reviewAt;
+  return mark.reopenedAt === undefined && isTimePassed(mark.reviewAt, now);
 }
 
 /** "Review 14:00" or "Review overdue" on a closed bed; `null` when no review time was chosen. */

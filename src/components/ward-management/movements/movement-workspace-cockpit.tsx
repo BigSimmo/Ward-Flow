@@ -58,6 +58,7 @@ import {
   formatRemaining,
   type Instant,
   isClockBreached,
+  isTimePassed,
   minutesUntil,
   splitDuration,
 } from "@/components/ward-management/ward-clock";
@@ -103,6 +104,7 @@ import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-ma
 import { communityTeamById } from "@/components/ward-management/community/community-derivations";
 import { examinationOutcomeShort, legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
 import { typedClock } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import { currentLegalDueAt } from "@/components/ward-management/ward-legal-form-progression";
 import {
   attentionItems,
   legalFormReadinessLine,
@@ -117,6 +119,8 @@ import {
 } from "@/components/ward-management/movements/movement-workspace-derivations";
 
 import styles from "./movement-workspace-cockpit.module.css";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { deskActingWard } from "@/components/ward-management/ward-desk-acting-ward";
 import { escalationHistory, escalationNextLabel, escalationSentence } from "./escalation-history";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 
@@ -152,6 +156,7 @@ export function MovementWorkspaceCockpit({
   const routeRole = useRouteRole();
   const raise = useWardRaise(role === "ward" ? "ward" : routeRole);
   const gate = useRoleGate();
+  const deskAccess = useEffectiveWardAccess();
   const sender = useSenderPresentation();
   const baseId = useId();
   const lock = (type: WardFlowEventType): RoleGate => gate(type);
@@ -239,9 +244,10 @@ export function MovementWorkspaceCockpit({
 
   const ranMinutes = Math.max((open ? now : (patient.closure?.at ?? now)) - patient.openedAt, 0);
 
-  const deadline = patient.legalForm?.dueAt;
+  // Audit H4 (14 Nov 2026): the typed expiry still in force, never an ended form's old time.
+  const deadline = currentLegalDueAt(patient);
   const deadlineBreached = open && deadline !== undefined && isClockBreached(deadline, now);
-  const pullExpired = open && patient.pullExpiresAt !== undefined && patient.pullExpiresAt <= now;
+  const pullExpired = open && isTimePassed(patient.pullExpiresAt, now);
 
   const { flagged, withheldFlags } = urgentFigureFlags({
     deadlineBreached,
@@ -268,7 +274,7 @@ export function MovementWorkspaceCockpit({
 
   const timeline: Array<{ at: Instant; label: string }> = [
     { at: patient.openedAt, label: "Movement opened" },
-    ...(patient.pullExpiresAt !== undefined && patient.pullExpiresAt <= now
+    ...(patient.pullExpiresAt !== undefined && isTimePassed(patient.pullExpiresAt, now)
       ? [
           {
             at: patient.pullExpiresAt,
@@ -276,10 +282,10 @@ export function MovementWorkspaceCockpit({
           },
         ]
       : []),
-    ...(patient.legalForm?.dueAt !== undefined && patient.legalForm.dueAt <= now
+    ...(patient.legalForm && deadline !== undefined && isClockBreached(deadline, now)
       ? [
           {
-            at: patient.legalForm.dueAt,
+            at: deadline,
             label: `The deadline on the ${legalFormNameLabelFirst(patient.legalForm)} passed`,
           },
         ]
@@ -724,7 +730,7 @@ export function MovementWorkspaceCockpit({
                 label="Pull time limit"
                 value={formatRemaining(minutesUntil(patient.pullExpiresAt, now))}
                 flagged={flagged.has("pull")}
-                sub={`${patient.pullExpiresAt <= now ? "Ran out" : "Runs out"} ${formatInstantWithDay(patient.pullExpiresAt, now)}`}
+                sub={`${isTimePassed(patient.pullExpiresAt, now) ? "Ran out" : "Runs out"} ${formatInstantWithDay(patient.pullExpiresAt, now)}`}
               />
             ) : null}
           </WardFigureStrip>
@@ -1127,8 +1133,12 @@ export function MovementWorkspaceCockpit({
    */
   function renderActions(movement: Movement) {
     // A ward acts for the ward holding the bed, and cancels transport as the sending ward that booked
-    // it, the same claim the patient page makes (`patient-transit-operations.tsx`).
-    const holdingWard = role === "ward" && movement.acceptedUnitId ? { actingUnitId: movement.acceptedUnitId } : {};
+    // it, the same claim the patient page makes (`patient-transit-operations.tsx`). M9: it acts for
+    // the holding ward only when that ward is one of the desk's own, and otherwise is not offered
+    // the bed's release.
+    const holdingUnitId = role === "ward" ? deskActingWard(deskAccess, movement.acceptedUnitId) : null;
+    const holdingWard = holdingUnitId ? { actingUnitId: holdingUnitId } : {};
+    const bedElsewhere = role === "ward" && holdingUnitId === null;
     const sendingUnitId =
       (movement.referralId
         ? referrals.find((referral) => referral.id === movement.referralId)?.originUnitId
@@ -1583,7 +1593,7 @@ export function MovementWorkspaceCockpit({
             ) : null}
 
             {/* 6. RELEASE HELD BED (AFTER STOP TRANSPORT) */}
-            {isStoppedTransportAwaitingRelease(movement) ? (
+            {isStoppedTransportAwaitingRelease(movement) && !bedElsewhere ? (
               <section className={styles.actionSection} data-testid="ward-patient-release-held-bed">
                 <h3 className={styles.actionSectionTitle}>Release the pulled bed</h3>
                 <p className={styles.actionSay}>
@@ -1704,7 +1714,7 @@ export function MovementWorkspaceCockpit({
             ) : null}
 
             {/* 8. RELEASE DIVERTED BED */}
-            {movement.transport?.diversion !== undefined && movement.admissionId !== undefined ? (
+            {movement.transport?.diversion !== undefined && movement.admissionId !== undefined && !bedElsewhere ? (
               <section className={styles.actionSection} data-testid="ward-patient-release-diverted-bed">
                 <h3 className={styles.actionSectionTitle}>Release the pulled bed</h3>
                 <p className={styles.actionSay}>

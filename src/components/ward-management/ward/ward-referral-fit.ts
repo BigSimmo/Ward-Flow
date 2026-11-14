@@ -14,7 +14,7 @@ import { observationSummary } from "@/components/ward-management/ward-observatio
  * showed both failing under "Does not meet every placement requirement", which read as if the
  * patient did not fit when every patient check had passed.
  */
-const WARD_GATES: ReadonlySet<EligibilityGate> = new Set(["capacity_freshness", "allocatable_bed"]);
+const WARD_GATES: ReadonlySet<EligibilityGate> = new Set(["capacity_freshness", "allocatable_bed", "locked_bed_free"]);
 
 /**
  * Plain names for the patient checks, in the order a ward reads them. Authorisation is information
@@ -74,7 +74,11 @@ export function referralFit(gates: readonly GateResult[], unit: Unit, now: Insta
       text:
         gate.gate === "capacity_freshness"
           ? `Bed count last confirmed ${ageWords(now - unit.allocatable.confirmedAt)} ago.`
-          : "No free bed now. You can still accept in principle.",
+          : unit.isClosed
+            ? CLOSED_TO_ADMISSIONS_LINE
+            : gate.gate === "locked_bed_free"
+              ? "No locked bed free now."
+              : "No free bed now. You can still accept in principle.",
     })),
     ...(authorisation ? { authorisationToCheck: authorisation.detail } : {}),
   };
@@ -142,8 +146,16 @@ export function patientFitLine(fit: ReferralFit): string {
   return `Does not fit this ward. ${fit.patientIssues.join(" ")}`;
 }
 
+/**
+ * M14(c) (D-210 (Josh, 14 Nov 2026)): a ward closed to admissions cannot accept, even in principle
+ * (`ACCEPT_IN_PRINCIPLE` refuses it), so its card says so rather than offering acceptance.
+ */
+export const CLOSED_TO_ADMISSIONS_LINE =
+  "Your ward is closed to admissions, so it cannot accept now. Open it to admissions first.";
+
 /** The one-line ward sentence for a card, or `undefined` when the ward has nothing to fix. */
 export function wardStateLine(fit: ReferralFit, now: Instant, unit: Unit): string | undefined {
+  if (unit.isClosed) return CLOSED_TO_ADMISSIONS_LINE;
   const stale = fit.wardIssues.some((issue) => issue.gate === "capacity_freshness");
   const noBed = fit.wardIssues.some((issue) => issue.gate === "allocatable_bed");
   if (stale && noBed)

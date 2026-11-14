@@ -20,6 +20,11 @@ import { withSendingTeam } from "@/components/ward-management/referrals/referral
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { dayOf, type Instant } from "@/components/ward-management/ward-clock";
 import { typedClock } from "@/components/ward-management/ward-legal-time-as-typed";
+import {
+  currentLegalDueAt,
+  currentLegalPosition,
+  FORM_RECORDED_ENDED,
+} from "@/components/ward-management/ward-legal-form-progression";
 import type {
   CommunityScopedAddressing,
   CommunityScopedReferral,
@@ -319,14 +324,15 @@ function communityAddressingFor(
 }
 
 export function caseloadStatutoryFormCode(row: CaseloadRow): string | undefined {
-  return row.legalForm?.code;
+  return currentLegalPosition(row).form?.code;
 }
-/** Only a person-recorded expiry belongs in the current record. */
-function caseloadRecordedExpiryAt(row: CaseloadRow): Instant | undefined {
-  return row.legalForm?.dueAt;
-}
+/**
+ * Only a person-recorded expiry still in force belongs in the current record (audit H4, 14 Nov
+ * 2026): a form a person recorded as ended says so, and never shows its old typed end as current.
+ */
 export function caseloadRecordedExpiryLabel(row: CaseloadRow, now: Instant, dayZero: Date | undefined): string {
-  const expiresAt = caseloadRecordedExpiryAt(row);
+  if (currentLegalPosition(row).ended) return FORM_RECORDED_ENDED;
+  const expiresAt = currentLegalDueAt(row);
   return expiresAt !== undefined ? typedClock(expiresAt, now, dayZero) : "No expiry recorded";
 }
 export function caseloadRowsForTeam(

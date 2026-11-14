@@ -10,7 +10,7 @@
  */
 
 import { siteByCode } from "../ward-sites";
-import { sampleDayText, sampleMonthText, sampleYear } from "../ward-sample-days";
+import { sampleDayText, sampleMonthText, sampleYear, todaysSampleDay } from "../ward-sample-days";
 import { COMMUNITY_CLINICIANS, staffInitialName, staffListName } from "../ward-staff-names-seed";
 import { COMMUNITY_EPISODE_TEAMS } from "./community-episode-teams";
 
@@ -111,7 +111,23 @@ export interface RecordExtras {
 
 const PEEL_ED = "Peel Health Campus ED";
 
-const PATIENT_RECORD_EXTRAS: Record<string, RecordExtras> = {
+/** `ward-sample-days.ts`'s writers, bound to one board day. */
+type SampleDayWriters = {
+  sampleDayText: (days: number) => string;
+  sampleMonthText: (days: number) => string;
+  sampleYear: (days: number) => number;
+};
+
+/**
+ * The extras, with every sample day written from `boardDay`'s writers. Built per board day, never once
+ * when the module loads (mechanics and clock audit CC-5, 14 Nov 2026): a server running past midnight
+ * drew the day it started on, so its pages and the browser's disagreed.
+ */
+const patientRecordExtrasOn = ({
+  sampleDayText,
+  sampleMonthText,
+  sampleYear,
+}: SampleDayWriters): Record<string, RecordExtras> => ({
   // Carer told (9 Nov 2026): a recorded carer, so the discharge row shows whether they were told.
   "PT-010": {
     alerts: [],
@@ -825,10 +841,29 @@ const PATIENT_RECORD_EXTRAS: Record<string, RecordExtras> = {
       },
     ],
   },
-};
+});
 
-export function recordExtrasFor(patientId: string | undefined): RecordExtras | undefined {
-  return patientId ? PATIENT_RECORD_EXTRAS[patientId] : undefined;
+/** The extras for the last board day asked for: one day at a time, so the record stays the same object. */
+let extrasForDay: { day: number; extras: Record<string, RecordExtras> } | undefined;
+
+function extrasOn(boardDay: Date): Record<string, RecordExtras> {
+  const day = boardDay.getTime();
+  if (extrasForDay?.day === day) return extrasForDay.extras;
+  const extras = patientRecordExtrasOn({
+    sampleDayText: (days) => sampleDayText(days, boardDay),
+    sampleMonthText: (days) => sampleMonthText(days, boardDay),
+    sampleYear: (days) => sampleYear(days, boardDay),
+  });
+  extrasForDay = { day, extras };
+  return extras;
+}
+
+/** A sample patient's extras, with sample days counted from `boardDay` (today's Perth day by default). */
+export function recordExtrasFor(
+  patientId: string | undefined,
+  boardDay: Date = todaysSampleDay(),
+): RecordExtras | undefined {
+  return patientId ? extrasOn(boardDay)[patientId] : undefined;
 }
 
 /**

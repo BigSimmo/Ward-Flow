@@ -15,8 +15,9 @@
  *   through. Where the reducer throws on the bare event before its role gate, the cell falls back to
  *   `EVENT_ROLE` itself and is listed as such.
  * - backend: `deskCommand` then the explicit-role clause of `validSharedCommand`, then
- *   `commandRefusal` for the desk's membership. Only the role refusal counts here: a place or
- *   record refusal needs a real record and is the scope audit's business, not this one's.
+ *   `commandRefusal` for the desk's membership. The role refusal counts here, and so does a place
+ *   refusal that holds whatever record is named (`FIXED_PLACE_REFUSALS`, L11): a refusal that
+ *   depends on a real record is the scope audit's business, not this one's.
  * - database: the SQL migrations and runtime role scripts, read as text. Every table is row level
  *   secured to the runtime role alone, so no app role reaches a row except through the backend; the
  *   database defers every cell to the backend and the test fails if that ever stops being true.
@@ -35,7 +36,13 @@ import type { WardFlowRole } from "../../src/components/ward-management/ward-flo
 import { seedWardFlowState, wardFlowReducer } from "../../src/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR, allEmergencyDepartments } from "../../src/components/ward-management/ward-sites";
 import { dispatchPermission } from "../../src/components/ward-management/ward-role-permissions";
-import { accessIsWholeNetwork, type WardAccess } from "../../src/components/ward-management/ward-role-access";
+import {
+  accessIsWholeNetwork,
+  unitInScope,
+  type WardAccess,
+} from "../../src/components/ward-management/ward-role-access";
+import { wardPlaceLookup } from "../../src/components/ward-management/ward-access-places";
+import { mayRecordOutage } from "../../src/components/ward-management/ward-outage-catch-up";
 import { chromeRoleForAccess } from "../../src/components/ward-management/shell/ward-access-store";
 import { commandRefusal, deskCommand, demoOnlyCommand, seedWorld } from "../../backend/ward-flow/engine";
 import {
@@ -58,6 +65,40 @@ const RUNTIME_ROLE = "wardflow_backend";
 /** Database roles a grant may name. Neither is a browser role; the pruner runs one function. */
 const ALLOWED_GRANTEES = new Set([RUNTIME_ROLE, "wardflow_pruner"]);
 const NOT_YOURS = "This change is not part of your role.";
+
+/**
+ * L11 (mechanics and clock audit, 14 Nov 2026): the backend's refusals that hold for a desk whatever
+ * record it names, because the desk's place can never take the action (`commandRefusal` and
+ * `commandScopeRefusal`). They count as "deny", like the role refusal above, so a service
+ * coordinator's five fixed refusals are pinned and a new screen cannot offer one unnoticed. A
+ * refusal only for the bare command (a site or ward sign-off that names no site or ward) is asked
+ * again naming the desk's own place, and counts only if it still stands.
+ */
+const FIXED_PLACE_REFUSALS: ReadonlySet<string> = new Set([
+  "Only the statewide coordinator may change global settings.",
+  "Only the statewide coordinator records an outage.",
+  "Only an admin switches a feature off at a site.",
+  "Only the site bed manager signs off its own site's handover.",
+  "Only the statewide coordinator signs off the whole network.",
+]);
+
+/**
+ * The screen's own place gates for those actions, beside the role gate `dispatchPermission` answers.
+ * Each is the pure check the screen calls, or the condition it renders on, so the screen and backend
+ * columns are both asked rather than one restating the other.
+ */
+const SCREEN_PLACE_GATES: Partial<Record<EventType, (access: WardAccess) => boolean>> = {
+  // Settings' rule editor is read-only below the whole network (`useConfigurationGate`).
+  SET_CONFIGURATION: (access) => accessIsWholeNetwork(access),
+  // Record an outage (`downtime-pack-screen.tsx`) needs `mayRecordOutage`.
+  RECORD_OUTAGE_WINDOW: mayRecordOutage,
+  // Settings' Features at this site card needs `mayChangeSiteFeatures` (D-142).
+  SET_SITE_FEATURE_SWITCH: mayChangeSiteFeatures,
+  // The site sign-off card renders for a site bed manager at its own site (`HandoverSiteSignOffSlot`);
+  // a whole-network desk is not limited by place.
+  RECORD_SITE_HANDOVER_SIGN_OFF: (access) =>
+    accessIsWholeNetwork(access) || (access.role === "bed_manager" && access.scope.kind === "site"),
+};
 
 /**
  * Known disagreements between layers. Each is a security finding to fix in its own change, never
@@ -125,6 +166,8 @@ function screenVerdict(desk: Desk, type: EventType): Verdict {
     return mayChangeSiteFeatures(desk.access) && dispatchPermission(SITE_FEATURE_SWITCH_ROLE, type).allowed
       ? "allow"
       : "deny";
+  const placeGate = SCREEN_PLACE_GATES[type];
+  if (placeGate && !placeGate(desk.access)) return "deny";
   return dispatchPermission(shellRole(desk.access), type).allowed ? "allow" : "deny";
 }
 
@@ -163,8 +206,48 @@ function deskCommandRole(access: WardAccess, type: EventType): WardFlowRole {
 }
 
 const backendWorld = seedWorld(AT);
+const backendPlaces = wardPlaceLookup(backendWorld.state.units);
 
-function backendVerdict(desk: Desk, type: EventType): Verdict {
+/** The desk's own place, as a command naming it would: its site, and one ward inside its scope. */
+function ownPlace(access: WardAccess): Record<string, unknown> {
+  const unit = backendWorld.state.units.find((candidate) => unitInScope(access.scope, candidate.id, backendPlaces));
+  return {
+    ...(unit ? { unitId: unit.id } : {}),
+    ...(access.scope.kind === "site" ? { siteCode: access.scope.siteCode } : {}),
+  };
+}
+
+/** The backend's refusal, or `null`. A throw comes from the place check reading a record the bare
+ *  command does not name, after the role check, so it is no refusal of the role or the place. */
+function backendRefusal(access: WardAccess, command: Record<string, unknown>): string | null {
+  try {
+    return commandRefusal(backendWorld, access, command, AT);
+  } catch {
+    return null;
+  }
+}
+
+const fixedRefusal = (refusal: string | null) =>
+  refusal !== null && (refusal === NOT_YOURS || FIXED_PLACE_REFUSALS.has(refusal));
+
+/** The backend's answer, and whether a refusal was for the desk's place alone (its role is allowed). */
+function backendAnswer(desk: Desk, type: EventType): { verdict: Verdict; placeOnly: boolean } {
+  const verdict = backendRoleOrPlaceVerdict(desk, type);
+  return { verdict, placeOnly: verdict === "deny" && placeRefused(desk, type) };
+}
+
+function placeRefused(desk: Desk, type: EventType): boolean {
+  if (!desk.access) return false;
+  const command = deskCommand(desk.access, { type, role: sentRole(desk.access, type), now: NOW_ANCHOR }) as Record<
+    string,
+    unknown
+  >;
+  if (!(EVENT_ROLE[type] as readonly unknown[]).includes(command.role)) return false;
+  const refusal = backendRefusal(desk.access, command);
+  return refusal !== null && FIXED_PLACE_REFUSALS.has(refusal);
+}
+
+function backendRoleOrPlaceVerdict(desk: Desk, type: EventType): Verdict {
   // shared-http.mjs answers 403 "No Ward Flow role" before the command route (pinned by the test).
   if (!desk.access) return "deny";
   const command = deskCommand(desk.access, { type, role: sentRole(desk.access, type), now: NOW_ANCHOR }) as Record<
@@ -173,13 +256,11 @@ function backendVerdict(desk: Desk, type: EventType): Verdict {
   >;
   // validSharedCommand: "an explicit role allowed for it (never a default)".
   if (!(EVENT_ROLE[type] as readonly unknown[]).includes(command.role)) return "deny";
-  try {
-    return commandRefusal(backendWorld, desk.access, command, AT) === NOT_YOURS ? "deny" : "allow";
-  } catch {
-    // The role check runs first; a throw comes from the place check reading a record the bare
-    // command does not name, so the role itself was accepted.
-    return "allow";
-  }
+  const refusal = backendRefusal(desk.access, command);
+  if (refusal === NOT_YOURS) return "deny";
+  if (!fixedRefusal(refusal)) return "allow";
+  // L11: a fixed place refusal counts only if it still stands with the desk's own place named.
+  return fixedRefusal(backendRefusal(desk.access, { ...command, ...ownPlace(desk.access) })) ? "deny" : "allow";
 }
 
 export type DatabaseFacts = {
@@ -269,10 +350,13 @@ export function collectPermissionMatrix(): Matrix {
     cells[action] = {};
     for (const desk of deskList) {
       const engine = engineVerdict(desk, action);
+      const backend = backendAnswer(desk, action);
       cells[action][desk.id] = {
         screen: screenVerdict(desk, action),
-        engine: engine.verdict,
-        backend: backendVerdict(desk, action),
+        // L11: the reducer holds no desk or place, so it answers the role alone. Where the backend
+        // refuses only the desk's place, the engine decides nothing for that cell.
+        engine: backend.placeOnly && engine.verdict === "allow" ? "defer" : engine.verdict,
+        backend: backend.verdict,
         database: databaseVerdict,
         engineProbed: engine.probed,
       };
@@ -330,9 +414,9 @@ function renderRaw(matrix: Matrix): string {
     "",
     "| Layer | Source of truth | How it is asked |",
     "| --- | --- | --- |",
-    "| Screen | `dispatchPermission` (`ward-role-permissions.ts`) for the shell role (`chromeRoleForAccess`); demo controls from the server's `demoControls` flag; the access admin's site switch from `mayChangeSiteFeatures` (D-142); no role shows the ask-for-access gate | Called per cell |",
+    "| Screen | `dispatchPermission` (`ward-role-permissions.ts`) for the shell role (`chromeRoleForAccess`); demo controls from the server's `demoControls` flag; the access admin's site switch from `mayChangeSiteFeatures` (D-142); the place gates on settings, outages, site switches and the site sign-off (`SCREEN_PLACE_GATES`, L11); no role shows the ask-for-access gate | Called per cell |",
     "| Engine | `EVENT_ROLE` (`ward-flow-event-roles.ts`) as enforced by `wardFlowReducer` | Reducer run on the synthetic seed with a bare event |",
-    "| Backend | `deskCommand`, the role clause of `validSharedCommand` and `commandRefusal` (`backend/ward-flow/engine.ts`); no role is refused 403 in `shared-http.mjs` | Called per cell |",
+    "| Backend | `deskCommand`, the role clause of `validSharedCommand` and `commandRefusal` (`backend/ward-flow/engine.ts`): the role refusal, and a place refusal that holds whatever record is named (`FIXED_PLACE_REFUSALS`, L11); no role is refused 403 in `shared-http.mjs` | Called per cell |",
     "| Database | Row level security policies and grants in `backend/ward-flow/migrations/` and `infra/` | SQL read as text |",
     "",
     `**${matrix.actions.length} actions x ${matrix.desks.length} desks = ${matrix.actions.length * matrix.desks.length} cells.**`,

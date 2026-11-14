@@ -53,7 +53,7 @@ import { useCanOpenHref, useDeskInScope } from "../shell/ward-access";
 import { referralBoardHref } from "../ed/ed-bed-search-step";
 import { askingForShort, waitWords } from "../referrals/referral-board-parts";
 import { WardPrototypeFooter } from "../shell/ward-prototype-footer";
-import { formatInstantWithDay, type Instant } from "../ward-clock";
+import { formatInstantWithDay, type Instant, isTimePassed } from "../ward-clock";
 import { useDueSoonThresholds, useWardFlowSelect } from "../ward-flow-provider";
 import { useWardFormSave, type WardFormSave } from "../use-ward-form-save";
 import { WARD_FLOW_ROLE_LABELS } from "../ward-flow-roles";
@@ -230,6 +230,8 @@ function BedMeetingAgenda() {
             movements: movements.filter((movement) => movementInAgendaGroups(movement, groups, groupContext)),
             referrals: referrals.filter((referral) => referralInAgendaGroups(referral, groups)),
             peopleFilter: agendaGroupFilterWords(groups, units),
+            // D-210 (Josh, 14 Nov 2026), audit M15: "short" stays whole, like the bed figures.
+            wholeLists: { movements, referrals },
           }
         : {}),
     });
@@ -1106,7 +1108,7 @@ function urgentMeta(sectionId: string, items: readonly AgendaItem[], now: Instan
 function urgencyOf(sectionId: string, item: AgendaItem, now: Instant): { tag: string | null } | null {
   const record = item.record;
   if (!("stage" in record)) return null;
-  if (sectionId === "holds" && record.pullExpiresAt !== undefined && record.pullExpiresAt <= now) return { tag: null };
+  if (sectionId === "holds" && isTimePassed(record.pullExpiresAt, now)) return { tag: null };
   if (sectionId === "ed-waits" && now - record.openedAt >= LONG_WAIT_MINUTES)
     return { tag: LONG_WAIT_TEXT.charAt(0).toUpperCase() + LONG_WAIT_TEXT.slice(1) };
   return null;

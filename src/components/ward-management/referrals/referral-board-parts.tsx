@@ -1,6 +1,6 @@
 "use client";
 
-import { wardAddressing } from "@/components/ward-management/ward-eligibility";
+import { placementFit, wardAddressing, type ReadyBedsLookup } from "@/components/ward-management/ward-eligibility";
 import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
@@ -95,14 +95,20 @@ export function needWords(referral: Referral): string[] {
  * still asked for. Ask more wards (D-76) can leave several named wards waiting, so a ward counts
  * when any waiting request to it accepts, each ward once.
  */
-export function readyUnitCount(referral: Referral, units: Unit[], now: Instant): number | undefined {
+export function readyUnitCount(
+  referral: Referral,
+  units: Unit[],
+  now: Instant,
+  /** H7 (D-210 (Josh, 14 Nov 2026)): the shared Ready, as the Place tab reads it. */
+  readyLookup?: ReadyBedsLookup,
+): number | undefined {
   const waiting = openArms(referral).flatMap((arm) =>
     arm.destination.kind === "psychiatric_ward" ? [arm.destination] : [],
   );
   if (waiting.length === 0) return undefined;
   const ready = new Set(
     waiting.flatMap((ward) =>
-      referralCandidates(referral, ward, units, now)
+      referralCandidates(referral, ward, units, now, readyLookup)
         .filter(candidateAccepts)
         .map((candidate) => candidate.unit.id),
     ),
@@ -115,20 +121,25 @@ export function readyUnitCount(referral: Referral, units: Unit[], now: Instant):
  * wards that would accept but for `capacity_freshness` alone (their bed count was last confirmed
  * too long ago), each ward once. The fit figure itself stays strict; this only explains a gap.
  */
-export function staleOnlyUnitCount(referral: Referral, units: Unit[], now: Instant): number {
+export function staleOnlyUnitCount(
+  referral: Referral,
+  units: Unit[],
+  now: Instant,
+  readyLookup?: ReadyBedsLookup,
+): number {
   const waiting = openArms(referral).flatMap((arm) =>
     arm.destination.kind === "psychiatric_ward" ? [arm.destination] : [],
   );
   const ready = new Set<string>();
   const stale = new Set<string>();
   for (const ward of waiting) {
-    for (const candidate of referralCandidates(referral, ward, units, now)) {
+    for (const candidate of referralCandidates(referral, ward, units, now, readyLookup)) {
       if (candidateAccepts(candidate)) {
         ready.add(candidate.unit.id);
         continue;
       }
-      const failing = candidate.verdict.gates.filter((gate) => !gate.pass);
-      if (failing.length > 0 && failing.every((gate) => gate.gate === "capacity_freshness")) {
+      // H8: the shared classifier's own "old bed count only" state.
+      if (placementFit(candidate.verdict).kind === "stale_count") {
         stale.add(candidate.unit.id);
       }
     }

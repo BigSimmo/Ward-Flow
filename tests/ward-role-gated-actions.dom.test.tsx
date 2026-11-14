@@ -202,7 +202,10 @@ function RejectionCount() {
 }
 
 function renderModal() {
-  const movement = seedWardFlowState().movements[0];
+  // M9: a ward records the arrival plan only for a bed at a ward it holds, so the movement has one.
+  const movement = seedWardFlowState().movements.find(
+    (candidate) => candidate.stage === "pulled" && candidate.acceptedUnitId !== undefined && !candidate.closure,
+  )!;
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <ArrivalTimeModal isOpen onClose={vi.fn()} movement={movement} role="ward" />

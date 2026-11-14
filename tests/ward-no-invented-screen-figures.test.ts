@@ -144,6 +144,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     file: /^staffing\/staff-requests\.ts$/,
     name: /^STAFF_REQUEST_SHIFT_TOLERANCE_MINUTES$/,
   },
+  {
+    id: "offline-save-clock-slack",
+    why: "H1 (D-210, 14 Nov 2026): how many minutes a signed-in save may take to reach the server and still count as an ordinary save, not one entered offline; clock slack, never shown, not a limit.",
+    file: /^ward-offline-entry\.ts$/,
+    name: /^OFFLINE_ENTRY_SLACK_MINUTES$/,
+  },
   { id: "seed-data", why: "Seed files build made-up records; their times are data, not limits.", file: /-seed\.ts$/ },
   {
     id: "chart-and-day-part",

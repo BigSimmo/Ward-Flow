@@ -251,6 +251,7 @@ export function CapacityWardSidebar({
 
             {(row.reservationReleaseCapacityConflicts ?? 0) > 0 ||
             (row.arrivalCapacityConflicts ?? 0) > 0 ||
+            (row.bedKindConflicts ?? 0) > 0 ||
             row.bedRecordsMidUpdate ? (
               <ul className={local.wdNotices}>
                 {(row.reservationReleaseCapacityConflicts ?? 0) > 0 ? (
@@ -264,6 +265,13 @@ export function CapacityWardSidebar({
                   <li>
                     <StatusGlyph tone="warning" size={9} />
                     {row.arrivalCapacityConflicts} arrival(s) awaiting capacity reconciliation.
+                  </li>
+                ) : null}
+                {(row.bedKindConflicts ?? 0) > 0 ? (
+                  <li>
+                    <StatusGlyph tone="warning" size={9} />
+                    {row.bedKindConflicts} patient(s) recorded in a locked or open bed with no bed of that type free.
+                    Check the bed numbers with the ward.
                   </li>
                 ) : null}
                 {row.bedRecordsMidUpdate ? (

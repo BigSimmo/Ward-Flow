@@ -1,25 +1,21 @@
 "use client";
 
 import { Button } from "@/components/wf";
-import { admittedStayForArrival, type Admission } from "@/components/ward-management/ward-admissions";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
-import { formProgression, formProgressionPhrase, NEXT_FORM_TO_RECORD } from "./legal-form-progression";
+import {
+  formProgression,
+  formProgressionPhrase,
+  legalFormNowWords,
+  NEXT_FORM_TO_RECORD,
+} from "./legal-form-progression";
 import styles from "./legal-forms.module.css";
+
+// The list lives at the ward root so the ward desk and the coordinator's alerts read it too.
+export { admittedOnAForm } from "@/components/ward-management/ward-legal-admitted";
 
 export const WARD_RECORDS_ADMITTED =
   "The ward records the next form for a person admitted to its bed, under Admitted on a form.";
-
-/**
- * Journeys whose person arrived on a form and is still in the bed (walk-through WT-03, Josh's yes
- * 26 Oct 2026). Arrival closes the journey, so these are not open movements, but the person stays
- * on a legal form and the ward records the next one from the paper.
- */
-export function admittedOnAForm(movements: readonly Movement[], admissions: readonly Admission[]): Movement[] {
-  return movements
-    .filter((movement) => movement.legalForm !== undefined && admittedStayForArrival(movement, admissions))
-    .sort((a, b) => (a.closure?.at ?? a.openedAt) - (b.closure?.at ?? b.openedAt));
-}
 
 /**
  * Everyone on a form on the list (D-157): the open-movement table rows, then the same
@@ -34,7 +30,9 @@ export function legalFormsListPopulation<M extends { id: string }>(rows: readonl
 export function admittedFormLine(movement: Movement): string {
   const progression = formProgression(movement);
   if (progression) return `${NEXT_FORM_TO_RECORD} (${formProgressionPhrase(progression)})`;
-  return `Form ${movement.legalForm?.code ?? ""} recorded`;
+  // Audit H4 (14 Nov 2026): "Form 3B ended" once a person recorded its end, never "recorded" as live.
+  const words = legalFormNowWords(movement);
+  return words?.endsWith(" ended") ? words : `${words ?? "Form"} recorded`;
 }
 
 export function LegalFormsAdmitted({

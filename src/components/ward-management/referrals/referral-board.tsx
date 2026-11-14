@@ -1,5 +1,6 @@
 "use client";
 
+import { useSharedReadyLookup } from "@/components/ward-management/use-shared-ready";
 import { PatientPeekLink } from "@/components/ward-management/patients/patient-peek-link";
 import { useLocationSearch } from "@/components/ward-management/ward-url-state";
 import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
@@ -211,6 +212,8 @@ export function ReferralBoard({
   /** Opens on History rather than the queue (the redesign preview draws it this way). */
   historyOpenOnLoad?: boolean;
 } = {}) {
+  // H7 (D-210 (Josh, 14 Nov 2026)): the shared Ready for the selected referral's fit count.
+  const readyLookup = useSharedReadyLookup();
   const zone = useClockZoneLabel();
   const [historyOpen, setHistoryOpen] = useState(historyOpenOnLoad);
   // D-80: the site bed manager reads its site's referral lines and answers none of them.
@@ -438,7 +441,7 @@ export function ReferralBoard({
   const selectedPatientInfo = resolveSubjectPatient(selectedReferral, resolverState);
   const selectedReadyUnits =
     selectedReferral && sender.referralFor(selectedReferral) === undefined
-      ? readyUnitCount(selectedReferral, units, now)
+      ? readyUnitCount(selectedReferral, units, now, readyLookup)
       : undefined;
   const readmissionIndex = useMemo(
     () => createReadmissionIndex({ admissions, patients, referrals, movements, units }),

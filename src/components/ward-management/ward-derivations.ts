@@ -21,22 +21,25 @@ import {
   type Admission,
   type PlannedAdmission,
 } from "@/components/ward-management/ward-admissions";
-import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import { bedHoldLapsed } from "@/components/ward-management/ward-bed-hold";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import {
   formatElapsed,
   formatInstantWithDay,
   formatRemaining,
-  splitDuration,
   type Instant,
   isClockBreached,
+  isTimePassed,
   minutesUntil,
+  splitDuration,
 } from "@/components/ward-management/ward-clock";
 import {
   eligibility,
+  placementFit,
+  readyBedsFor,
   requiresAuthorisedDestination,
   type EligibilityGate,
+  type ReadyBedsLookup,
 } from "@/components/ward-management/ward-eligibility";
 import {
   PARALLEL_REFERRAL_CAP,
@@ -68,7 +71,7 @@ export type WardRole = "flow" | "ed" | "ward";
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { supportNotificationInboxItems } from "@/components/ward-management/ward-support-notifications";
-import { INFORMATIONAL_GATES, eligibleCandidatesAmong } from "./ward-derivations-shortlist";
+import { INFORMATIONAL_GATES, eligibleCandidatesAmong, shortlistVerdict } from "./ward-derivations-shortlist";
 import { type TransportLeg, transportLeg } from "./ward-derivations-transport";
 export {
   orphanedTransport,
@@ -83,6 +86,8 @@ export type { TransportLeg, BedRetentionBasis } from "./ward-derivations-transpo
 export {
   restrictionNotice,
   eligibilityWarning,
+  closureAwareVerdict,
+  shortlistVerdict,
   INFORMATIONAL_GATES,
   needsNoRecordedReason,
   shortlistCandidates,
@@ -1016,7 +1021,7 @@ export function handoverSnapshot(movements: Movement[], units: Unit[], now: Inst
       return {
         movement,
         unit: destinationUnit(movement, units),
-        expired: !isCollected && pullExpiresAt <= now,
+        expired: !isCollected && isTimePassed(pullExpiresAt, now),
       };
     });
 
@@ -1303,9 +1308,16 @@ export function deriveAfternoonDischarges(admissions: readonly Admission[], now:
 
 interface CompatibleWardCandidate {
   unit: Unit;
+  /** H7: the shared Ready, the figure Capacity prints. */
   availableNow: number;
   failingGates: EligibilityGate[];
   isOutOfArea: boolean;
+  /**
+   * H8 (D-210 (Josh, 14 Nov 2026)): every check passes except that the ward's bed count is old. Still
+   * listed, since asking is how the count is checked; the row says so ("Bed count N min old, check
+   * with the ward"), so the list never claims every ward has been asked while such a ward is left.
+   */
+  bedCountStale: boolean;
 }
 
 /**
@@ -1320,25 +1332,33 @@ function eligibleWardsInFixedOrder(
   movement: Movement,
   units: readonly Unit[],
   now: Instant,
+  ready?: ReadyBedsLookup,
 ): CompatibleWardCandidate[] {
   const originService = movementHealthService(movement);
   const serviceOf = (unit: Unit) => siteByCode(unit.siteCode)?.service ?? "";
   return units
     .filter((u) => !movement.referredUnitIds.includes(u.id))
-    .map((unit) => {
-      const check = eligibility(movement, unit, now);
+    .flatMap((unit): CompatibleWardCandidate[] => {
+      // M14(c) and H7: closed to admissions reads as no bed, and the bed check reads the shared
+      // Ready, as on the coordinator's shortlist.
+      const check = shortlistVerdict(unit, eligibility(movement, unit, now, ready), ready);
       // A previous decline is informational: the ward may be referred again without an override.
       const failingGates = (check.gates ?? [])
         .filter((g) => !g.pass && !INFORMATIONAL_GATES.includes(g.gate))
         .map((g) => g.gate);
-      return {
-        unit,
-        availableNow: boundedBedAvailability(unit).available,
-        failingGates,
-        isOutOfArea: Boolean(originService && siteByCode(unit.siteCode)?.service !== originService),
-      };
+      const kind = placementFit(check, INFORMATIONAL_GATES).kind;
+      // H8: the shared classifier, as every fit list: a fit, or a fit whose bed count is old.
+      if (unit.isClosed || (kind !== "fits" && kind !== "stale_count")) return [];
+      return [
+        {
+          unit,
+          availableNow: readyBedsFor(unit, ready),
+          failingGates,
+          isOutOfArea: Boolean(originService && siteByCode(unit.siteCode)?.service !== originService),
+          bedCountStale: kind === "stale_count",
+        },
+      ];
     })
-    .filter((entry) => entry.failingGates.length === 0)
     .sort((a, b) => serviceOf(a.unit).localeCompare(serviceOf(b.unit)) || a.unit.name.localeCompare(b.unit.name));
 }
 
@@ -1359,6 +1379,8 @@ export function deriveNextWardsAfterRefusal(
   movement: Movement,
   units: readonly Unit[],
   now: Instant,
+  /** H7 (D-210 (Josh, 14 Nov 2026)): the shared Ready (`sharedReadyLookup`). */
+  ready?: ReadyBedsLookup,
 ): NextWardsAfterRefusal | undefined {
   // A ward that waitlisted (no bed yet) still holds a live request, so it is not a refusal.
   const refusals = movement.declines.filter(
@@ -1370,5 +1392,5 @@ export function deriveNextWardsAfterRefusal(
   const latestDecline = refusals.reduce((latest, decline) => (decline.at >= latest.at ? decline : latest));
   const asked = new Set([...movement.declines.map((decline) => decline.unitId), ...movement.referredUnitIds]);
   const notAsked = units.filter((unit) => !asked.has(unit.id));
-  return { latestDecline, candidates: eligibleWardsInFixedOrder(movement, notAsked, now) };
+  return { latestDecline, candidates: eligibleWardsInFixedOrder(movement, notAsked, now, ready) };
 }

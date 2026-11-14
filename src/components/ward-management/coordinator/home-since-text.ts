@@ -42,11 +42,12 @@ export function sinceBannerCounts(changes: ChangesSinceLastLook): SinceBannerPar
 }
 
 /**
- * The line's short lead: "This shift" before any review, else "Since 15:02 yesterday". `day` is the
- * part after the clock face (" yesterday", ", 2 days ago"), which a very narrow line drops.
+ * The line's short lead: "Since 15:02 yesterday". `day` is the part after the clock face
+ * (" yesterday", ", 2 days ago"), which a very narrow line drops. Before a usable review the window
+ * is the previous shift's start (audit L4, D-210 (Josh, 14 Nov 2026), as the Activity panel counts),
+ * so the lead names that time rather than "This shift".
  */
 export function sinceBannerLeadParts(changes: ChangesSinceLastLook, sinceLabel: string): { lead: string; day: string } {
-  if (changes.basis === "shift") return { lead: "This shift", day: "" };
   const split = sinceLabel.search(/[ ,]/);
   return split < 0
     ? { lead: `Since ${sinceLabel}`, day: "" }
@@ -67,6 +68,6 @@ export function sinceBannerLead(changes: ChangesSinceLastLook, sinceLabel: strin
 export function sinceBannerText(changes: ChangesSinceLastLook, sinceLabel: string): string | undefined {
   const parts = sinceBannerCounts(changes).map((entry) => entry.spoken);
   if (parts.length === 0) return undefined;
-  const lead = changes.basis === "shift" ? `Since the shift started at ${sinceLabel}` : `Since ${sinceLabel}`;
+  const lead = changes.basis === "shift" ? `Since the previous shift started at ${sinceLabel}` : `Since ${sinceLabel}`;
   return `${lead}: ${parts.join(", ")}`;
 }

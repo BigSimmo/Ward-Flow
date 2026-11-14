@@ -49,18 +49,29 @@ function useMenuSearch(query: string, entries: RailEntry[], findHelp: ReturnType
   const accessNav = useAccessNavFilter();
   // Search audit, 8 Nov 2026: the same role-led place order as the header search.
   const deskRole = useEffectiveWardAccess().role;
-  const { movements, patients, units, referrals, plannedAdmissions, admissions, leaveBeds, dayZero, configuration } =
-    useWardFlowSelect(
-      "movements",
-      "patients",
-      "units",
-      "referrals",
-      "plannedAdmissions",
-      "admissions",
-      "leaveBeds",
-      "dayZero",
-      "configuration",
-    );
+  const {
+    movements,
+    patients,
+    units,
+    referrals,
+    plannedAdmissions,
+    admissions,
+    bedReleases,
+    leaveBeds,
+    dayZero,
+    configuration,
+  } = useWardFlowSelect(
+    "movements",
+    "patients",
+    "units",
+    "referrals",
+    "plannedAdmissions",
+    "admissions",
+    "bedReleases",
+    "leaveBeds",
+    "dayZero",
+    "configuration",
+  );
   const now = useWardFlowClock();
   const debouncedQuery = useDebouncedValue(query, 120);
   const trimmed = query.trim();
@@ -79,6 +90,7 @@ function useMenuSearch(query: string, entries: RailEntry[], findHelp: ReturnType
       limitPerGroup: MENU_RESULTS_FULL,
       plannedAdmissions,
       admissions,
+      bedReleases,
       dayZero,
     });
     // Preserve engine keyword matches, then use the same destinations as the role menu.
@@ -157,6 +169,7 @@ function useMenuSearch(query: string, entries: RailEntry[], findHelp: ReturnType
     referrals,
     plannedAdmissions,
     admissions,
+    bedReleases,
     leaveBeds,
     dayZero,
     configuration,

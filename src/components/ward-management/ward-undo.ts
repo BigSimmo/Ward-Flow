@@ -1,4 +1,4 @@
-import type { Instant } from "@/components/ward-management/ward-clock";
+import { isTimePassed, type Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import type { Referral } from "@/components/ward-management/ward-model";
 
@@ -494,7 +494,8 @@ export function bedPlacementUndoFor(
 /** Rule 1. `now` before the decision is refused too: the clock never runs backwards. */
 export function undoWindowRefusal(at: Instant, now: Instant): string | null {
   if (!Number.isFinite(now) || now < at) return "Undo is only possible after the decision it reverses";
-  return now - at > UNDO_WINDOW_MINUTES
+  // The one clock rule (audit L2): the window closes once the clock is past its last minute.
+  return isTimePassed(at + UNDO_WINDOW_MINUTES, now)
     ? `Undo is only possible within ${UNDO_WINDOW_MINUTES} minutes of the decision`
     : null;
 }

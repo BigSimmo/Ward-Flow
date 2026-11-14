@@ -4,9 +4,11 @@
 import { bedIsOccupied, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import {
   currentLegalDueAt,
+  currentLegalStanding,
   FORM_RECORDED_ENDED,
   formProgressionPhrase,
   legalFormEnd,
+  legalFormNowWords,
   NEXT_FORM_TO_RECORD,
 } from "@/components/ward-management/ward-legal-form-progression";
 import { typedClock, typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
@@ -15,17 +17,11 @@ import {
   daysInBed as admissionStayDays,
   isPastExpectedDischarge,
   stayBand,
+  stayDayNumber,
 } from "@/components/ward-management/ward-admissions";
 import { bedHold as bedHoldOf } from "@/components/ward-management/ward-bed-hold";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
-import {
-  calendarDateOf,
-  dayOf,
-  formatInstant,
-  formatInstantWithDay,
-  minutesUntil,
-  splitDuration,
-} from "@/components/ward-management/ward-clock";
+import { calendarDateOf, dayOf, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { deliveredAwaitingWard } from "@/components/ward-management/ward-stage-copy";
 import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
 import { admissionCriteriaEligibility, admissionLegalStatus } from "@/components/ward-management/ward-flow-reducer";
@@ -37,6 +33,7 @@ import { patientAgeYears } from "@/components/ward-management/ward-patients";
 import { WARD_LOCKED_BED_SPLITS } from "@/components/ward-management/ward-sites";
 import { layoutBedNumbers, wardStaySeats } from "./ward-bed-layout";
 import { activeClosedBeds } from "@/components/ward-management/ward-ready-beds";
+import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
 import { bedReviewLine } from "../ward-bed-closure-review";
 import { arrivalIsLate } from "./ward-screen-helpers";
 import type { Admission } from "@/components/ward-management/ward-admissions";
@@ -61,6 +58,8 @@ type WardBedRosterInputs = {
   movements: Movement[];
   resolvePatientIdentity: (subject: PatientResolutionSubject) => ResolvedPatientInfo;
   now: number;
+  /** The Settings warnings, for a pulled bed's running-out mark (audit L3, D-210 (Josh, 14 Nov 2026)). */
+  thresholds?: DueSoonThresholds;
   criteriaLedOn: boolean;
   patients: Patient[];
   /** The arrived booking still names an older converted stay's legal status (review: CodeRabbit). */
@@ -84,6 +83,7 @@ export function wardBedRoster({
   movements,
   resolvePatientIdentity,
   now,
+  thresholds,
   criteriaLedOn,
   patients,
   plannedAdmissions,
@@ -134,9 +134,7 @@ export function wardBedRoster({
   const freeSlots = states.ready + states.beingMadeReady;
   const rawBeds = Array.from({ length: unit.beds }, (_, i) => {
     const bedNumber = i + 1;
-    const designation: "Locked" | "Open" | undefined = isMixed ? (i < lockedBeds ? "Locked" : "Open") : undefined;
-    const podId = isMixed ? (i < lockedBeds ? "locked" : "open") : "all";
-    const podLabel = isMixed ? `${unit.name} ${designation} Beds` : unit.name;
+    // H10: the Locked/Open tag and pod are set below, once the tile's bed number is known.
     const isHdu = false;
 
     // v10 "counts agree": the tiles follow the ruled four bed states (`bedStates`), the same
@@ -274,9 +272,6 @@ export function wardBedRoster({
     return {
       bedNumber,
       bedLabel: `Bed ${String(bedNumber).padStart(2, "0")}`,
-      podId,
-      podLabel,
-      designation,
       isHdu,
       status,
       statusText,
@@ -285,6 +280,8 @@ export function wardBedRoster({
       umrn: patientInfo?.umrn,
       daysInBed,
       stayDays,
+      // Audit L5, D-210 (Josh, 14 Nov 2026): "Arrived today" by the Perth calendar day (Day 1).
+      arrivedToday: stayDays !== null && stayDayNumber(admission, now) === 1,
       stayBand: stayBandObj?.label,
       pastDate: isPastDate,
       awayAtEdHours: awayHours,
@@ -330,7 +327,7 @@ export function wardBedRoster({
       // WT-07: Delivered stops the pull clock; the bed then awaits the ward's arrival check.
       bedHold:
         status === "incoming" && !(linkedMovement && deliveredAwaitingWard(linkedMovement))
-          ? bedHoldOf(linkedMovement?.pullExpiresAt, now)
+          ? bedHoldOf(linkedMovement?.pullExpiresAt, now, thresholds)
           : undefined,
       deliveredAt:
         status === "incoming" && linkedMovement && deliveredAwaitingWard(linkedMovement)
@@ -383,16 +380,31 @@ export function wardBedRoster({
   const seatedBeds = wardStaySeats(unit, admissions ?? []);
   // H-0978 / WS-15 (Josh 26 Oct 2026, "close the exact bed"): a bed closed by number is counted in
   // Closed by `bedStates`, and the layout puts its own number on a Closed tile.
+  // H10, D-210 (Josh, 14 Nov 2026): on a mixed ward the Ready tiles sit in beds of the kinds the
+  // ward's free figures say are free (locked first), so a free tile never shows a kind the count lacks.
+  const lockedReady = isMixed ? Math.min(lockedBedsFree(unit), freeSlots) : 0;
+  let readySeen = 0;
   const bedNumbers = layoutBedNumbers(
     rawBeds.map((bed) => ({
       stayAdmissionId: bed.stayAdmissionId,
       free: bed.status === "ready",
       closed: bed.status === "closed",
+      ...(isMixed && bed.status === "ready"
+        ? { kind: readySeen++ < lockedReady ? ("locked" as const) : ("open" as const) }
+        : {}),
     })),
     (admissionId) => recordedBeds.get(admissionId),
     heldBeds.map((held) => held.bed),
     (admissionId) => seatedBeds.get(admissionId),
     activeClosedBeds(unit).map((mark) => mark.bedNumber),
+    isMixed ? lockedBeds : 0,
+  );
+  // H10 (and D-208 B4): a stay's tile reads the bed kind its stay recorded, which is its bed
+  // number's kind whenever the records agree; every other tile reads its number's kind.
+  const stayKinds = new Map(
+    (admissions ?? []).flatMap((admission) =>
+      admission.unitId === unit.id && admission.bedKind !== undefined ? [[admission.id, admission.bedKind]] : [],
+    ) as [string, "locked" | "open"][],
   );
   // A4-24: place each "Being made ready" marker on the bed its stay vacated when that bed is now a
   // ready tile, then any remaining markers on the lowest-numbered ready beds, oldest release first.
@@ -419,17 +431,17 @@ export function wardBedRoster({
       const bedNumber = bedNumbers[index];
       const closedMark = bed.status === "closed" ? closedMarks.get(bedNumber) : undefined;
       const preparingReleaseId = bed.status === "ready" ? preparingByBed.get(bedNumber) : undefined;
-      const designation: "Locked" | "Open" | undefined = isMixed
-        ? bedNumber <= lockedBeds
-          ? "Locked"
-          : "Open"
-        : undefined;
+      const kind =
+        (bed.status !== "ready" && bed.stayAdmissionId !== undefined
+          ? stayKinds.get(bed.stayAdmissionId)
+          : undefined) ?? (bedNumber <= lockedBeds ? "locked" : "open");
+      const designation: "Locked" | "Open" | undefined = isMixed ? (kind === "locked" ? "Locked" : "Open") : undefined;
       return {
         ...bed,
         bedNumber,
         bedLabel: `Bed ${String(bedNumber).padStart(2, "0")}`,
         designation,
-        podId: isMixed ? (bedNumber <= lockedBeds ? "locked" : "open") : "all",
+        podId: isMixed ? kind : "all",
         podLabel: isMixed ? `${unit.name} ${designation} Beds` : unit.name,
         heldFor: bed.status === "ready" ? heldBeds.find((held) => held.bed === bedNumber)?.name : undefined,
         preparing: preparingReleaseId !== undefined,
@@ -452,6 +464,11 @@ type WardLiveFormAlertsInputs = {
   unit: Unit;
   /** The board's day 0, so a typed legal time on another day prints its date (D1, D-93). */
   dayZero?: Date;
+  /**
+   * People admitted to this ward on a form whose typed expiry in force has passed
+   * (`admittedLegalExpiryPassed`, audit M1). Left out, none.
+   */
+  admittedLegalPassed?: readonly Movement[];
 };
 
 export function wardLiveFormAlerts({
@@ -462,6 +479,7 @@ export function wardLiveFormAlerts({
   overdueLeaveBeds,
   unit,
   dayZero,
+  admittedLegalPassed = [],
 }: WardLiveFormAlertsInputs) {
   const liveFormAlerts = [
     // Integration QA (3 Nov 2026): a referral waiting is one row, "Referrals waiting", raised by
@@ -479,12 +497,16 @@ export function wardLiveFormAlerts({
       }> = [];
       const patientName = resolvePatientIdentity(movement).formalName;
       const dueAt = currentLegalDueAt(movement);
-      if (dueAt !== undefined) {
-        const remaining = minutesUntil(dueAt, now);
+      // Audit M4 and D-210 (Josh, 14 Nov 2026), ruling 3: the Settings bands every legal screen uses.
+      // Red from the urgent warning on (and once passed), amber within the soon warning, and no row
+      // for a typed time beyond it (it used to be amber for any future time, even days away).
+      const standing = currentLegalStanding(movement, now, thresholds);
+      const formWords = legalFormNowWords(movement);
+      if (dueAt !== undefined && standing !== "later" && standing !== "none") {
         alerts.push({
           key: `form-${movement.id}`,
-          tone: remaining <= thresholds.urgentMinutes ? "critical" : "warning",
-          title: movement.legalForm ? `Form ${movement.legalForm.code} recorded due time` : "Legal form due",
+          tone: standing === "soon" ? "warning" : "critical",
+          title: formWords ? `${formWords} recorded due time` : "Legal form due",
           // Legal times only as typed (31 Oct 2026): "Ends 15:42 as typed", never "1h 15m left".
           countdown: typedTimeLine(dueAt, now, dayZero),
           // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
@@ -508,6 +530,20 @@ export function wardLiveFormAlerts({
       }
       return alerts;
     }),
+    // Audit M1 and D-210 (Josh, 14 Nov 2026), ruling 2: a person already admitted to this ward on a
+    // form whose typed expiry still in force has passed. Act now on the ward desk, as for a journey.
+    ...admittedLegalPassed.map((movement) => {
+      const dueAt = currentLegalDueAt(movement)!;
+      const formWords = legalFormNowWords(movement);
+      return {
+        key: `form-admitted-${movement.id}`,
+        tone: "critical" as const,
+        title: formWords ? `${formWords} recorded due time passed` : "Legal form due time passed",
+        countdown: typedTimeLine(dueAt, now, dayZero),
+        text: `${resolvePatientIdentity(movement).formalName}: recorded due ${typedClock(dueAt, now, dayZero)}. Record the next form or how this one ended.`,
+        movementId: movement.id,
+      };
+    }),
     ...overdueLeaveBeds.map((leaveBed) => ({
       key: `leave-${leaveBed.id}`,
       tone: "info" as const,
@@ -516,7 +552,8 @@ export function wardLiveFormAlerts({
       countdown: `Open ${splitDuration(Math.max(now - leaveBed.confirmedAt, 0))}`,
       text: leaveBed.absentWithoutLeave
         ? `A bed held for an absence without leave at ${unit.name} is still recorded. Absent since ${formatInstantWithDay(leaveBed.absentWithoutLeave.since, now)}.`
-        : `A bed on leave at ${unit.name} is still recorded. Expected return ${formatInstant(leaveBed.expectedReturn)}.`,
+        : // Time audit T-9 (D-210, Josh, 14 Nov 2026): a return from leave is often days away, so it names the day.
+          `A bed on leave at ${unit.name} is still recorded. Expected return ${formatInstantWithDay(leaveBed.expectedReturn, now)}.`,
       actionLabel: "Open discharges",
       actionTarget: "discharges" as const,
     })),

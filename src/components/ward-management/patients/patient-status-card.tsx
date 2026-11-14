@@ -29,6 +29,7 @@ import {
   formatSince,
   perthDayLabel,
   perthIsoDay,
+  type DueSoonThresholds,
 } from "@/components/ward-management/ward-clock";
 import { clock, dur } from "./patient-now-records";
 import { cadNumberLine } from "@/components/ward-management/ward-cad-number";
@@ -57,6 +58,7 @@ import { usePatientNameDisplay } from "../settings/discreet-names";
 import { canDispatch } from "../ward-role-permissions";
 import { unitInScope } from "../ward-role-access";
 import { wardPlaceLookup } from "../ward-access-places";
+import { legalFormNowWords } from "../ward-legal-form-progression";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { awaitingWardAnswer, isWaitlistReason, waitlistStands } from "../ward-waitlist";
 
@@ -142,6 +144,8 @@ export interface PatientStatusContext {
   acceptedUnitName?: string;
   hasBedHold: boolean;
   now: number;
+  /** The Settings warnings, for the pull's running-out mark (audit L3, D-210 (Josh, 14 Nov 2026)). */
+  thresholds?: DueSoonThresholds;
   dayZero: Date;
   onOpenPlacement: () => void;
   onClearance: (event: MouseEvent<HTMLButtonElement>) => void;
@@ -358,8 +362,9 @@ export function dayLabel(instant: number, dayZero: Date): string {
 function legalValue(record: Movement | undefined, patient: Patient | undefined): string {
   // A movement that did not proceed is history; an arrival's form stays in force for the stay.
   const movement = record?.closure && record.closure.outcome !== "arrived" ? undefined : record;
-  if (movement?.legalForm)
-    return `${movement.legalStatus ?? patient?.legalStatus ?? "Legal status not recorded"}, Form ${movement.legalForm.code}`;
+  // Audit H4: an ended form is named as ended, never as the form in force.
+  const formWords = legalFormNowWords(movement);
+  if (formWords) return `${movement?.legalStatus ?? patient?.legalStatus ?? "Legal status not recorded"}, ${formWords}`;
   return movement?.legalStatus ?? patient?.legalStatus ?? "Not recorded";
 }
 
@@ -539,7 +544,7 @@ function statusFor(
   if (mode === "held" && movement) {
     // Audit A4-1: the one bed-hold rule (`ward-bed-hold.ts`). A lapsed hold is act now with
     // "Move or release" as the primary; under an hour left is the amber at-risk dot.
-    const hold = ctx.hasBedHold ? bedHold(movement.pullExpiresAt, now) : null;
+    const hold = ctx.hasBedHold ? bedHold(movement.pullExpiresAt, now, ctx.thresholds) : null;
     const lapsed = hold?.state === "lapsed";
     const bed: StatusCell = {
       key: "bed",

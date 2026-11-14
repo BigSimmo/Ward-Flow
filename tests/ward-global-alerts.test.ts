@@ -75,8 +75,10 @@ describe("Pull now (global alerts, 10 Oct 2026)", () => {
 
   it("returns to the coordinator as act now when nobody answers in time, and not once a ward has", () => {
     const raised = raise(seedWardFlowState(), "WF-003");
-    const later = (NOW + PULL_NOW_ANSWER_MINUTES) as Instant;
+    // Audit L2: overdue once the clock is past the answer minute, the one clock rule.
+    const later = (NOW + PULL_NOW_ANSWER_MINUTES + 1) as Instant;
     expect(isPullNowOverdue(raised.broadcastAlerts[0], NOW)).toBe(false);
+    expect(isPullNowOverdue(raised.broadcastAlerts[0], (NOW + PULL_NOW_ANSWER_MINUTES) as Instant)).toBe(false);
     expect(isPullNowOverdue(raised.broadcastAlerts[0], later)).toBe(true);
     const coordinator = { role: "coordinator", id: COORDINATOR_DESK_ACKNOWLEDGER_ID };
     expect(bannerEntriesForDesk(raised.broadcastAlerts, raised.movements, coordinator, later)[0].tone).toBe("act_now");

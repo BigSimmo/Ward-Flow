@@ -9,6 +9,7 @@
 import { closedToAdmissionsRefusal } from "./ward-closure";
 import { bedsPendingPreparation } from "../ward-bed-availability";
 import { lockedBedsFree, openBedsFree } from "../ward-bed-designation";
+import { chooseBedNumber } from "../ward-bed-numbers";
 import {
   numberedReservationBeds,
   pendingNumberedReservations,
@@ -583,6 +584,8 @@ export function reducePlannedAdmissionEvent(
           "This planned arrival needs a coordinator gender placement review. Use the referral journey to record the review before allocating a bed.",
         );
       const bedKind: "locked" | "open" = view.security === "Secure" ? "locked" : freeOpen > 0 ? "open" : "locked";
+      // H10, D-210 (Josh, 14 Nov 2026): the arrival takes a real bed of the kind it takes.
+      const bedNumber = chooseBedNumber(unit, state, bedKind);
       const sequence = state.admissionSequence + 1;
       const admission: Admission = {
         id: `AD-ARR-${String(sequence).padStart(2, "0")}`,
@@ -601,6 +604,7 @@ export function reducePlannedAdmissionEvent(
         homeRegion: null,
         tentativeDiagnosis: null,
         bedKind,
+        ...(bedNumber === undefined ? {} : { bedNumber }),
         state: "occupied",
         pulledAt: event.now,
         arrivedAt: event.now,

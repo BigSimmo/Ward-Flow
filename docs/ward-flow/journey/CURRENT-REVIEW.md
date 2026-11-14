@@ -280,6 +280,48 @@ unchanged; the merge adds no behaviour. Citations in `ward/ward-screen.tsx` and 
 were moved to the same statements in the merged files. The Mark handover ready citation now points at the one
 `HANDOVER_READY` dispatch in `readyHandover` (line 167), which carries the fit to travel reason (D-187 item 10).
 
+## 14 November 2026 — mechanics and clock audit (D-210)
+
+The audit fixes changed 46 cited sources (every one compared with main `79dc1f3cf`, hunk by hunk). Prose was
+corrected where behaviour changed:
+
+- **Bed numbers (H10).** PULL_PATIENT, PATIENT_ARRIVED (pulled and unpulled), a coordinator transfer recorded as
+  arrived (RECORD_ADMISSION_CARE) and CONVERT_PLANNED_ADMISSION now record a free bed number of the kind they take
+  (`chooseBedNumber`, `ward-bed-numbers.ts`), or the kind with no number when none is free. Seeded stays take theirs
+  once (SET_SCENARIO, RESET_SCENARIO). RECORD_REPATRIATION's return journey is Secure unless the stay's own bed is
+  open (ruling 9).
+- **Typed times (L7).** SET_ARRIVAL_DETAILS, FLAG_BED_RELEASE and RECORD_BED_MEETING_ACTION refuse a blank or
+  infinite time; UPDATE_EXPECTED_DISCHARGE refuses a date before the stay began.
+- **Legal forms (M13, ruling 6).** RECORD_LEGAL_FORM_EXPIRY (and so RECORD_COUNTRY_EXTENSION) refuses an ended form
+  unless a correction and runs the written-time order check; RECORD_LEGAL_FORM_WRITTEN runs it on a same-form time
+  edit; RECORD_LEGAL_FORM_DETAILS refuses a new "Form 3E made" ending; RECORD_LEGAL_FORM_CONTINUATION takes only
+  continuation codes and refuses 3C after 3D and 5B on an ended 5A.
+- **Fit and Ready (H7, H8, H9, M14).** ACCEPT_REFERRAL, HOLD_REFERRAL_BED and ASK_MORE_WARDS read the shared Ready;
+  the referral path's `security` gate splits into `security` and the overridable `locked_bed_free`, also allowed by
+  FLAG_REFERRAL_TURNAROUND_PRIORITY; a ward whose only failing check is an old count stays askable; only a ward's or
+  ED's yes is "accepted elsewhere" for ACCEPT_REFERRAL and DECLINE_REFERRAL. The gate table in `machines.json` gains
+  the Locked bed free row and no longer calls Security a two-question gate.
+- **Screens.** M9 ward desks act as their own ward (RELEASE_PULL, RELEASE_HELD_BED, RELEASE_DIVERTED_BED,
+  RELEASE_AND_REOPEN_SEARCH, SET_ARRIVAL_DETAILS, RECORD_LEGAL_FORM_CONTINUATION); REFER_TO_UNITS and the match list
+  use the one fit classifier; RAISE_REFERRAL's pull never pre-fills an ended form (ruling 7); ADVANCE_CLOCK notes the
+  shared board clock (L1); RAISE_PULL_NOW and ACKNOWLEDGE_INBOX_ITEM note the overdue Pull now and held-bed-elsewhere
+  rows (M2, M11).
+
+The worker's own notes for WITHDRAW_ACCEPTANCE (H3), RELEASE_REFERRAL_BED (M11) and SET_SCENARIO/RESET_SCENARIO (M12)
+were checked against source and kept. Every other stale citation is a whole-file digest of a shared file where the
+event's handler, role, payload and screen dispatch are unchanged (for example `ward-flow-event-roles.ts` only adds
+RELEASE_REFERRAL_BED, and `ward-undo.ts` only routes the Undo window through `isTimePassed`, the same comparison).
+Cited lines in the changed sources, including refusal citations, were mapped line by line from main so each points at
+the same code; RELEASE_REFERRAL_BED's citations were set by hand. Not reviewed here: the offline-save time rule (H1)
+lives in `backend/ward-flow/`, which the journey cites nowhere.
+
+Two cited sources changed again during this review, uncommitted, and were compared once they had been quiet for three
+minutes. `ward-flow-transport-events.ts`: an unpulled arrival at a full or closed ward (a capacity conflict) takes its
+own security kind where a bed of that kind is free by number, else the other kind's free bed (PATIENT_ARRIVED notes
+updated). `ward-flow-undo-events.ts`: the shared step Undo's bed recheck counts a bed held by the restored stay's own
+journey, found through its movement as well as its own ids, as its own (the twelve step-Undo models' guards updated).
+A later edit to either file needs the same comparison again.
+
 **Clinical items signed (D-209, 14 November 2026).** `capacity/capacity-ward-drawer.tsx` now shows the ward's
 register reading on its "Involuntary admissions" row (D-209 item 9). The `REQUEST_CAPACITY_REFRESH` dispatch it
 cites (line 237) is unchanged, so only its digest was refreshed; the action note stands.

@@ -8,9 +8,19 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { ArrowRight, BedSingle, Check, Hospital, Info, ShieldCheck, Ambulance } from "lucide-react";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { wardRaise } from "../ward-flow-raise";
-import { candidateReason, eligibility, gateMark } from "../ward-eligibility";
-import { stageCopy } from "../ward-derivations";
+import {
+  candidateReason,
+  eligibility,
+  gateMark,
+  placementFit,
+  readyBedsFor,
+  staleCountWords,
+} from "../ward-eligibility";
+import { shortlistVerdict, stageCopy } from "../ward-derivations";
+import { useSharedReadyLookup } from "../use-shared-ready";
 import { legalFormName } from "../ward-legal-forms";
+import { currentLegalPosition, FORM_RECORDED_ENDED } from "../ward-legal-form-progression";
+import { typedClock } from "../ward-legal-time-as-typed";
 import { CAD_TO_FOLLOW, cadNumberLine, cadNumberToFollow } from "../ward-cad-number";
 import {
   MOVEMENT_STAGES,
@@ -61,6 +71,7 @@ import ph from "../referrals/referral-match-phone.module.css";
 import styles from "./patient-transit-operations.module.css";
 import { FindAWard, wardMatchesQuery } from "@/components/ward-management/referrals/find-a-ward";
 import { ExtendHoldControl } from "@/components/ward-management/ward-extend-hold";
+import { useDeskActingWard } from "@/components/ward-management/ward-desk-acting-ward";
 import { calendarDateOf, splitDuration } from "@/components/ward-management/ward-clock";
 import { PULL_NO_LIMIT_RECORDED } from "@/components/ward-management/ward-bed-hold";
 import { observationEditingToken } from "@/components/ward-management/ward-flow-observation-events";
@@ -118,14 +129,16 @@ export function PatientTransitOperations({
   const identity = patientIdentityLine(subjectPatient);
   const patientName = subjectPatient.displayName;
   const now = useWardFlowClock();
+  const legalPosition = currentLegalPosition(movement);
   const baseId = useId();
   // Feature 11: each action asks the route's role; cross-role pairs are listed in `ward-role-permissions.ts`.
   const gate = useRoleGate();
   // B2 (site review, 12 Oct 2026): every step is raised as the route's own role, so the history
   // names who acted rather than a borrowed ward, ED or officer.
   const routeRole = useRouteRole();
-  // A ward acts for the ward the patient is accepted at; the other roles name no unit.
-  const wardActing = routeRole === "ward" ? { actingUnitId: movement.acceptedUnitId } : {};
+  // A ward acts for the ward the patient is accepted at; the other roles name no unit. M9: only when
+  // that ward is one of the desk's own; otherwise the desk is not offered Release pull.
+  const { acting: wardActing, bedElsewhere } = useDeskActingWard(routeRole, movement.acceptedUnitId);
   // For BOOK_TRANSPORT, a ward acts for the sending ward (referral origin or source admission unit).
   const wardSendingActing =
     routeRole === "ward"
@@ -229,9 +242,13 @@ export function PatientTransitOperations({
   const open = !movement.closure && movement.stage !== "arrived";
   const destination = units.find((u) => u.id === movement.acceptedUnitId);
   const heldBed = admissions.find((a) => a.id === movement.admissionId);
+  // H7 and H8 (D-210 (Josh, 14 Nov 2026)): the shared Ready and the shared fit classifier, as on the
+  // coordinator's shortlist, so a ward with no Ready bed never reads "Fits, bed ready" here, a closed
+  // ward never fits, and a ward whose only failing check is an old bed count can still be asked.
+  const ready = useSharedReadyLookup();
   const candidates = units
     .filter((u) => u.cohort === movement.cohort)
-    .map((unit) => ({ unit, verdict: eligibility(movement, unit, now) }));
+    .map((unit) => ({ unit, verdict: shortlistVerdict(unit, eligibility(movement, unit, now, ready), ready) }));
   const eligibleCount = candidates.filter((c) => c.verdict.eligible).length;
   // D-77 (Josh, 21 Oct 2026): one Ask wards list. Wards already asked come first, then the wards that
   // fit, then the rest to review, three at a time. D-91: the list is the one Find a ward list, A to Z,
@@ -241,7 +258,16 @@ export function PatientTransitOperations({
     .sort((a, b) => a.unit.name.localeCompare(b.unit.name));
   const notAskedRows = candidates
     .filter((c) => !movement.referredUnitIds.includes(c.unit.id))
-    .map(({ unit, verdict }) => ({ unit, fit: verdict.eligible, reason: candidateReason(verdict) }));
+    .map(({ unit, verdict }) => {
+      const kind = placementFit(verdict).kind;
+      return {
+        unit,
+        fit: kind === "fits" || kind === "stale_count",
+        ready: readyBedsFor(unit, ready),
+        ...(kind === "stale_count" ? { stale: staleCountWords(unit, now) } : {}),
+        reason: candidateReason(verdict),
+      };
+    });
   // F-108 (A14-14): asking wards and withdrawing the bed search are the coordinator's
   // (`EVENT_ROLE.REFER_TO_UNITS`). Both are raised as the coordinator below, so a desk that may never
   // ask (a ward desk) is not offered them at all: no Ask button and no Withdraw referral.
@@ -1107,7 +1133,7 @@ export function PatientTransitOperations({
                 </button>
               </details>
             )}
-            {movement.stage === "pulled" && (
+            {movement.stage === "pulled" && !bedElsewhere && (
               <details>
                 <summary>Release bed pull</summary>
                 <label>
@@ -1329,9 +1355,13 @@ export function PatientTransitOperations({
             <span>Legal authority</span>
             <strong>{movement.legalForm ? legalFormName(movement.legalForm) : "Not recorded"}</strong>
             <small>
-              {movement.legalForm?.dueAt === undefined
-                ? "No paper expiry recorded"
-                : `Paper expiry ${clock(movement.legalForm.dueAt)}`}
+              {/* Audit H4 (14 Nov 2026): the one current legal position, and the typed time with its
+                  day when it is on another day (D-93). */}
+              {legalPosition.ended
+                ? FORM_RECORDED_ENDED
+                : legalPosition.dueAt === undefined
+                  ? "No paper expiry recorded"
+                  : `Paper expiry ${typedClock(legalPosition.dueAt, now, dayZero)}`}
             </small>
           </div>
           <div>

@@ -43,6 +43,7 @@ import {
   DECLINE_REASON_LABELS,
   groupCandidatesByTravelBand,
   aFreeBedCouldChangeThis,
+  matchReason,
   networkHasCohort,
   noBedBreakdown,
   referralCandidates,
@@ -90,7 +91,14 @@ import {
   turnaroundEligibilityAllows,
   unitTurnaroundSource,
 } from "@/components/ward-management/ward-turnaround-priority";
-import { eligibility } from "@/components/ward-management/ward-eligibility";
+import {
+  bedCountAgeWords,
+  eligibility,
+  placementFit,
+  readyBedsFor,
+  staleCountWords,
+} from "@/components/ward-management/ward-eligibility";
+import { useSharedReadyLookup } from "@/components/ward-management/use-shared-ready";
 import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import { outcomeLabel } from "./referral-board-model";
 import { destinationWords, outcomeDetail } from "./referral-ward-names";
@@ -183,6 +191,8 @@ export function ReferralMatchView({
     "referrals",
     "plannedAdmissions",
   );
+  // H7: the shared Ready, the figure Capacity prints and the pull gate refuses on.
+  const ready = useSharedReadyLookup();
   const cldEnabled = useWardFeatureFlag("top25-criteria-led-discharge");
   const [turnaroundRejectionStart, setTurnaroundRejectionStart] = useState<number | null>(null);
   /* D-77: the ward whose Clinical override form is open. A new pick closes it. */
@@ -284,11 +294,12 @@ export function ReferralMatchView({
       </DecidedBy>
     );
   }
-  const candidates = referralCandidates(referral, ward.destination, units, now);
+  // H7 (D-210 (Josh, 14 Nov 2026)): the fit checks read the shared Ready Capacity prints.
+  const candidates = referralCandidates(referral, ward.destination, units, now, ready);
   const accepting = candidates.filter(candidateAccepts);
   const hasCohort = networkHasCohort(referral, units);
   /* Why nobody can take this patient, as three counts. `undefined` whenever somebody can. */
-  const noBed = noBedBreakdown(candidates);
+  const noBed = noBedBreakdown(candidates, now);
   /*
    * Phase 8, Task 4. The grouping is asked for ONCE and everything on this screen below reads that
    * one answer — the group headings, their two counts, each row's own band, and the
@@ -370,22 +381,17 @@ export function ReferralMatchView({
       raise("FLAG_REFERRAL_TURNAROUND_PRIORITY", { referralId: referral.id, unitId, source });
     }
   };
-  const tier2Candidates = candidates.filter(
-    (c) =>
-      !candidateAccepts(c) &&
-      c.verdict.gates.every(
-        (g) =>
-          g.pass ||
-          g.gate === "allocatable_bed" ||
-          g.gate === "capacity_freshness" ||
-          // A clearing locked bed permits staging only. Immediate placement still fails the original verdict.
-          (g.gate === "security" &&
-            unitHasLockedBeds(c.unit) &&
-            turnaroundState &&
-            unitTurnaroundSource(turnaroundState, c.unit.id, now, cldEnabled) !== null),
-      ),
+  /*
+   * H8 and H9 (D-210 (Josh, 14 Nov 2026)): the groups come from the one shared classifier. A ward
+   * whose only failing check is an old bed count has its own group and stays askable; a full locked
+   * side, or a bay-mix check that only lacks Ready beds, is "no bed now", never "needs review".
+   */
+  const fitKindOf = (c: ReferralCandidate) => placementFit(c.verdict).kind;
+  const tier2Candidates = candidates.filter((c) => !candidateAccepts(c) && fitKindOf(c) === "no_bed");
+  const staleCandidates = candidates.filter((c) => !candidateAccepts(c) && fitKindOf(c) === "stale_count");
+  const tier3Candidates = candidates.filter(
+    (c) => !candidateAccepts(c) && !tier2Candidates.includes(c) && !staleCandidates.includes(c),
   );
-  const tier3Candidates = candidates.filter((c) => !candidateAccepts(c) && !tier2Candidates.includes(c));
 
   /**
    * T12 (item 9, owner answer 9, 17 September 2026), the front door's own half of the same check
@@ -910,30 +916,35 @@ export function ReferralMatchView({
         pick.verdict.gates.filter((gate) => !gate.pass).length === 1));
   /* D-77: a ward that does not fit is accepted only through Clinical override, behind the one button. */
   const pickNeedsOverride = pick !== undefined && !candidateAccepts(pick) && !pickGenderForm;
+  /* M14(a) (D-210 (Josh, 14 Nov 2026)): Clinical override is offered only when every failing check is
+     one a recorded reason can answer, the engine's own rule (`SUITABILITY_GATES`). */
+  const pickOverrideRefused = pickNeedsOverride && !placementFit(pick.verdict).overridable;
   const overrideOpen = pickNeedsOverride && overrideUnitId === pick.unit.id;
-  const pickTurnaround = pick && tier2Candidates.includes(pick) ? turnaroundForUnit(pick.unit.id) : undefined;
+  // A ward with an old count is offered turnaround as before H8 split it out of "no bed now".
+  const pickTurnaround =
+    pick && (tier2Candidates.includes(pick) || staleCandidates.includes(pick))
+      ? turnaroundForUnit(pick.unit.id)
+      : undefined;
   const FIT_CAP = 3;
   const fitsShown = phoneAllFits ? tier1Candidates : tier1Candidates.slice(0, FIT_CAP);
   const fitsHidden = tier1Candidates.length - fitsShown.length;
 
-  const candRow = (c: ReferralCandidate, kind: "yes" | "nobed" | "review") => {
-    const failed = c.verdict.gates.find((gate) => !gate.pass);
-    // Capacity-pending candidates can lack any bed, a locked bed, or a current count: name the constraint.
-    const noBedGate = c.verdict.gates.some((gate) => gate.gate === "allocatable_bed" && !gate.pass);
-    const noLockedBed = c.verdict.gates.some((gate) => gate.gate === "security" && !gate.pass);
+  const candRow = (c: ReferralCandidate, kind: "yes" | "nobed" | "stale" | "review") => {
+    // The shared classifier's deciding check names the constraint (H8, H9).
+    const decided = placementFit(c.verdict).gate;
     const label =
       kind === "yes"
         ? "Fits"
         : kind === "nobed"
-          ? noBedGate
-            ? "No bed now"
-            : noLockedBed
-              ? "No locked bed free now"
-              : "Count not current"
-          : failed
-            ? GATE_LABELS[failed.gate]
-            : "Review";
-    const tone = kind === "yes" ? "success" : kind === "nobed" ? "warning" : "neutral";
+          ? decided?.gate === "locked_bed_free"
+            ? "No locked bed free now"
+            : "No bed now"
+          : kind === "stale"
+            ? "Count not current"
+            : decided
+              ? GATE_LABELS[decided.gate]
+              : "Review";
+    const tone = kind === "yes" ? "success" : kind === "nobed" || kind === "stale" ? "warning" : "neutral";
     const checked = pick?.unit.id === c.unit.id;
     return (
       <button
@@ -950,7 +961,8 @@ export function ReferralMatchView({
         <span className={ph.who}>
           <span className={ph.nm}>{c.unit.name}</span>
           <span className={ph.sub}>
-            {bandOf.get(c.unit.id) ?? NOT_RECORDED_LABEL} · {c.unit.allocatable.value} ready
+            {bandOf.get(c.unit.id) ?? NOT_RECORDED_LABEL} ·{" "}
+            {kind === "stale" ? staleCountWords(c.unit, now) : `${readyBedsFor(c.unit, ready)} ready`}
           </span>
         </span>
         <span className={ph.lab}>
@@ -961,7 +973,7 @@ export function ReferralMatchView({
     );
   };
 
-  const group = (title: string, list: ReferralCandidate[], kind: "yes" | "nobed" | "review") =>
+  const group = (title: string, list: ReferralCandidate[], kind: "yes" | "nobed" | "stale" | "review") =>
     list.length > 0 ? (
       <>
         <p className={ph.ch}>
@@ -1172,7 +1184,7 @@ export function ReferralMatchView({
                 : !aFreeBedCouldChangeThis(noBed)
                   ? `No unit in this network can take this patient. All ${noBed.total} are ruled out for clinical, legal or cohort reasons, not for want of a bed.`
                   : noBed.notSuitable === 0
-                    ? `No unit accepts this referral right now. ${noBed.noBedFree > 0 ? `${noBed.noBedFree} of ${noBed.total} have no free bed` : `${noBed.total} of ${noBed.total} have never confirmed a bed count`}${noBed.noBedFree > 0 && noBed.capacityUnknown > 0 ? ` and ${noBed.capacityUnknown} have never confirmed a count` : ""}, so this may change.`
+                    ? `No unit accepts this referral right now. ${noBed.noBedFree > 0 ? `${noBed.noBedFree} of ${noBed.total} have no free bed` : `${noBed.total} of ${noBed.total} ${staleCountClause(noBed.staleSinceMinutes)}`}${noBed.noBedFree > 0 && noBed.capacityUnknown > 0 ? ` and ${noBed.capacityUnknown} ${staleCountClause(noBed.staleSinceMinutes)}` : ""}, so this may change.`
                     : `No unit accepts this referral right now. ${noBed.notSuitable} of ${noBed.total} are ruled out for reasons a free bed alone will not change. The remaining ${noBed.total - noBed.notSuitable} turn on a bed.`}
             </p>
           ) : null}
@@ -1215,6 +1227,7 @@ export function ReferralMatchView({
             </div>
             {group("Fits, bed ready", tier1Candidates, "yes")}
             {group("Fits, no bed now", tier2Candidates, "nobed")}
+            {group("Fits, bed count old", staleCandidates, "stale")}
             {group("Needs review", tier3Candidates, "review")}
             <AskMoreWardsCard ask={askMore} />
             {pick && pickTurnaround ? (
@@ -1242,6 +1255,7 @@ export function ReferralMatchView({
                   bandText={bandOf.get(pick.unit.id) ?? NOT_RECORDED_LABEL}
                   onAccept={handleAccept}
                   needsGenderPlacement={needsGenderPlacement(pick.unit.id)}
+                  now={now}
                 />
               </ul>
             ) : null}
@@ -1347,12 +1361,18 @@ export function ReferralMatchView({
                   variant={pickNeedsOverride ? "sec" : "pri"}
                   size="md"
                   data-placement-action
-                  disabledReason={pick === undefined ? acceptUnavailable : undefined}
+                  disabledReason={
+                    pick === undefined
+                      ? acceptUnavailable
+                      : pickOverrideRefused
+                        ? `${matchReason(pick, now)}. No recorded reason can override this.`
+                        : undefined
+                  }
                   reasonDisplay="tooltip"
                   type="button"
                   data-testid="ward-referral-match-phone-accept"
                   onClick={
-                    pick === undefined
+                    pick === undefined || pickOverrideRefused
                       ? ignoreUnavailableActivation
                       : pickPlain
                         ? () => handleAccept(pick.unit.id)
@@ -1364,11 +1384,13 @@ export function ReferralMatchView({
                       ? candidates.length === 0
                         ? "Accept"
                         : "Choose a ward first"
-                      : pickNeedsOverride
-                        ? `Clinical override for ${pick.unit.name}`
-                        : pickGenderForm
-                          ? `Check placement at ${pick.unit.name}`
-                          : `Accept at ${pick.unit.name}`}
+                      : pickOverrideRefused
+                        ? `Cannot accept at ${pick.unit.name}`
+                        : pickNeedsOverride
+                          ? `Clinical override for ${pick.unit.name}`
+                          : pickGenderForm
+                            ? `Check placement at ${pick.unit.name}`
+                            : `Accept at ${pick.unit.name}`}
                   </span>
                 </Button>
               </>
@@ -1391,6 +1413,17 @@ export function ReferralMatchView({
 }
 
 /** #794: a desk that does not answer this destination sees its controls greyed, with who does. */
+/**
+ * H8 (D-210 (Josh, 14 Nov 2026)): how the no-bed line names wards whose only failing check is an old
+ * bed count. "Not confirmed a bed count in N min" is true of each of them (N is the newest); "never
+ * confirmed" only when none has a time at all.
+ */
+function staleCountClause(staleSinceMinutes: number | undefined): string {
+  return staleSinceMinutes === undefined
+    ? "have never confirmed a bed count"
+    : `have not confirmed a bed count in ${bedCountAgeWords(staleSinceMinutes)}`;
+}
+
 function DecidedBy({
   allowed,
   who,

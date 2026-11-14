@@ -20,6 +20,7 @@ import {
 } from "@/components/ward-management/ward-change-reasons";
 import type { LegalStatus } from "@/components/ward-management/ward-model";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
+import { currentLegalDueAt, legalFormNowWords } from "@/components/ward-management/ward-legal-form-progression";
 import { EXAMINATION_OUTCOME_LABEL } from "@/components/ward-management/ward-legal-forms";
 import type { EdBoardRowModel } from "./ed-screen-board-row";
 import type { EdScreenContext } from "./ed-screen-context";
@@ -194,7 +195,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           description={
             <>
               <strong>{patientInfo.formalName}</strong> · {patientInfo.umrn}
-              {movement.legalForm ? ` · Form ${movement.legalForm.code}` : null}
+              {legalFormNowWords(movement) ? ` · ${legalFormNowWords(movement)}` : null}
               {` · ${edShortName(department)}`}
             </>
           }
@@ -393,7 +394,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           data-testid={`ward-change-legal-status-${movement.id}`}
         >
           <p className={styles.cardMeta} data-testid={`ward-change-legal-status-now-${movement.id}`}>
-            Now: {movement.legalStatus ?? (movement.legalForm ? `Form ${movement.legalForm.code}` : "Not recorded")}
+            Now: {movement.legalStatus ?? legalFormNowWords(movement) ?? "Not recorded"}
           </p>
           <EdPickerField
             label={`Legal status for ${patientInfo.displayName}`}
@@ -465,7 +466,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
         <form
           ref={focusFirstField}
           className={styles.declineForm}
-          onSubmit={(event) => submitLegalFormExpiry(event, movement.id, movement.legalForm?.dueAt)}
+          onSubmit={(event) => submitLegalFormExpiry(event, movement.id, currentLegalDueAt(movement))}
           data-testid={`ward-ed-legal-form-expiry-${movement.id}`}
         >
           <fieldset className={styles.declineFieldset} disabled={legalFormExpiryFieldsDisabled}>
@@ -628,7 +629,7 @@ function EdCommunityReferralForm({ row, ctx }: { row: EdBoardRowModel; ctx: EdSc
       <p className={styles.cardMeta}>Community team referral. No bed is requested.</p>
       <p className={styles.cardMeta} data-testid={`ward-ed-cmht-legal-status-${movement.id}`}>
         Legal status: {/* Never defaults to Voluntary (owner rule, 19 Oct 2026): nothing recorded says so. */}
-        {movement.legalStatus ?? (movement.legalForm ? `Form ${movement.legalForm.code}` : "Not recorded")}
+        {movement.legalStatus ?? legalFormNowWords(movement) ?? "Not recorded"}
       </p>
       {recordedSuburb ? (
         <p className={styles.cardMeta} data-testid={`ward-ed-cmht-catchment-note-${movement.id}`}>

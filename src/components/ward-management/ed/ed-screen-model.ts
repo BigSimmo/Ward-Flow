@@ -15,6 +15,7 @@ import {
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { examinationOutcomeShort, legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { FORM_RECORDED_ENDED } from "@/components/ward-management/ward-legal-form-ended";
+import { currentLegalDueAt, currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import {
@@ -597,11 +598,12 @@ export function outstandingItem(movement: Movement): OutstandingItem {
 export function formExpiryLine(legalForm: LegalForm, now: Instant, dayZero?: Date): string {
   // 1.1 (K1) and A1: a form a person recorded as ended says so on every ED surface, as the Forms
   // page, downtime pack and handover do; its old typed end is history, never shown as live.
-  if (legalForm.endedBy !== undefined) return `${FORM_RECORDED_ENDED}.`;
-  if (legalForm.dueAt === undefined) return "No expiry recorded from the form.";
+  const position = currentLegalPosition({ legalForm });
+  if (position.ended) return `${FORM_RECORDED_ENDED}.`;
+  if (position.dueAt === undefined) return "No expiry recorded from the form.";
   // Legal times only as typed (Josh, 31 Oct 2026): "Ends Mon 09:00 as typed" or "Ended … as typed",
   // never "(3h 20m left)" or "(passed 1h 05m ago)".
-  return typedTimeLine(legalForm.dueAt, now, dayZero);
+  return typedTimeLine(position.dueAt, now, dayZero);
 }
 
 /**
@@ -617,8 +619,9 @@ export function formExpiryWarning(
   thresholds: DueSoonThresholds,
 ): string | undefined {
   // A form a person recorded as ended raises no expiry warning (1.1): its typed end is history.
-  if (legalForm.endedBy !== undefined || legalForm.dueAt === undefined) return undefined;
-  const state = clockState(legalForm.dueAt, now, thresholds);
+  const dueAt = currentLegalDueAt({ legalForm });
+  if (dueAt === undefined) return undefined;
+  const state = clockState(dueAt, now, thresholds);
   if (state === "breached") return "Warning: past the expiry written on the form. Check the form.";
   if (state === "critical" || state === "due") return "Warning: the expiry written on the form is close.";
   return undefined;

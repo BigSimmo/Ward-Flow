@@ -512,7 +512,12 @@ function WardPreview({
   // The ready count Search lists, with the same pulls and named holds (D-115 item 3). Outside the
   // provider nothing is held, as before.
   const flow = useOptionalWardFlow();
-  const ready = unitReadyBedCount(unit, flow?.admissions ?? [], flow ? [...flow.movements, ...flow.referrals] : []);
+  const ready = unitReadyBedCount(
+    unit,
+    flow?.admissions ?? [],
+    flow ? [...flow.movements, ...flow.referrals] : [],
+    flow?.bedReleases ?? [],
+  );
   const incoming = movements.filter((movement) => isOpen(movement) && movement.acceptedUnitId === unit.id);
   const referred = movements.filter(
     (movement) => isOpen(movement) && !movement.acceptedUnitId && movement.referredUnitIds.includes(unit.id),

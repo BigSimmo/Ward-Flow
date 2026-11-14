@@ -145,7 +145,7 @@ describe("consolidated capacity and scope joins", () => {
     const admissions = [
       { ...seed.admissions[0]!, state: "pulled" as const, unitId: unit.id, movementId: "WF-live-pull" as const },
     ];
-    expect(unitReadyBedCount(unit, admissions, [])).toBe(1);
+    expect(unitReadyBedCount(unit, admissions, [], [])).toBe(1);
     const results = searchWardFlow({ query: "ready beds", units: [unit], movements: [], patients: [], admissions });
     expect(results.wards[0]?.readyBeds).toBe(1);
   });

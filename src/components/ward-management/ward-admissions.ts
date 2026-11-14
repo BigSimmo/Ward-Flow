@@ -9,7 +9,7 @@ import {
   type OverrideReason,
 } from "@/components/ward-management/ward-change-reasons";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "@/components/ward-management/ward-flow-roles";
-import { dayOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
+import { dayOf, type Instant, isTimePassed, MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import {
   observationStaff,
@@ -621,14 +621,20 @@ export type Admission = {
    * kind it was. A required `| null` field (this record's usual convention) would force every seed
    * admission to be rewritten with an invented kind — the exact thing rule 1 at the top of this file
    * exists to forbid.
+   *
+   * H10, D-210 (Josh, 14 Nov 2026): the kind and the bed number are now one fact. Every writer that
+   * gives a bed (pull, arrival, transfer, planned arrival) records a number of the kind it takes
+   * (`chooseBedNumber`), and a seeded or older stay derives its kind once from its seat and the
+   * ward's own free locked and open figures (`withDerivedStayBeds`), never from the person.
    */
   bedKind?: "locked" | "open";
   /**
    * WHICH OF THE UNIT'S BEDS THIS STAY IS IN, numbered 1 to `Unit.beds` — v10 pass 2 (Josh, 10 Oct
    * 2026: the ward Bed board's pick up and place). A fact about the WARD'S ACT, in the same category
-   * as `bedKind` above: where the ward put the person, never anything about the person. Written only
-   * by `PLACE_IN_BED` (and reversed by `UNDO_PLACE_IN_BED`). OPTIONAL, and absent is ordinary: no
-   * seeded admission records a bed number, and a screen lays unnumbered stays out by position.
+   * as `bedKind` above: where the ward put the person, never anything about the person. Written by
+   * `PLACE_IN_BED` (and reversed by `UNDO_PLACE_IN_BED`) and, since H10 (D-210), by every event that
+   * gives a bed, with the kind. OPTIONAL: a stay whose kind had no free number holds none (a named
+   * conflict, `bedKindSeatConflicts`), and a screen lays unnumbered stays out by their seat.
    */
   bedNumber?: number;
   state: AdmissionState;
@@ -1312,5 +1318,5 @@ export type PlannedAdmissionAuthorisationOverride = {
 
 /** Booked, and its expected arrival has passed without the arrival being recorded. */
 export function plannedAdmissionIsOverdue(planned: PlannedAdmission, now: Instant): boolean {
-  return planned.state === "booked" && Number.isFinite(now) && planned.expectedArrivalAt < now;
+  return planned.state === "booked" && isTimePassed(planned.expectedArrivalAt, now);
 }

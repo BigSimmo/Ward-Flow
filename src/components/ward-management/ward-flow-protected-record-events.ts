@@ -25,6 +25,7 @@ import {
 } from "./ward-discharge-records";
 import { isLeavingDestination, isFollowUpState } from "./ward-admissions";
 import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-bed-designation";
+import { chooseBedNumber } from "./ward-bed-numbers";
 import { eligibility, adjustSexMix, mixSexOf } from "@/components/ward-management/ward-eligibility";
 import { EVENT_ROLE, WARD_FLOW_ROLE_LABELS, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import type { MovementId, Movement } from "@/components/ward-management/ward-model";
@@ -353,6 +354,8 @@ export function reduceProtectedRecordEvent(
       const bedKind =
         stayLegalStatus === "Voluntary" && openBedsFree(receiving) > 0 ? ("open" as const) : ("locked" as const);
       if (bedKind === "locked" && lockedBedsFree(receiving) <= 0) return deny("transition");
+      // H10, D-210 (Josh, 14 Nov 2026): the receiving stay takes a real bed of the kind it takes.
+      const receivingBed = chooseBedNumber(receiving, state, bedKind);
       const id = `transfer-${admission.id}-${revision + 1}`;
       const movementId: MovementId = `WF-${id}`;
       if (state.admissions.some((a) => a.id === id) || state.movements.some((m) => m.id === movementId))
@@ -397,6 +400,7 @@ export function reduceProtectedRecordEvent(
             movementId,
             state: "occupied",
             bedKind,
+            ...(receivingBed === undefined ? {} : { bedNumber: receivingBed }),
             pulledAt: event.now,
             arrivedAt: event.now,
             leftAt: null,

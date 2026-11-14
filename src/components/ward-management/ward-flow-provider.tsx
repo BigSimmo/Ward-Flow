@@ -8,7 +8,13 @@ import { WardDemoNotSavedContext } from "@/components/ward-management/shell/ward
 import { WardRecoveryNoticeContext } from "@/components/ward-management/shell/ward-recovery-notice";
 import { ToastDeviceSaveContext } from "@/components/wf";
 import { clearReferralDraftMemory, clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
-import { seedSafeSenderId, useOpenTabsDay, worldsCertainlyDiffer } from "./ward-flow-open-tabs-day";
+import {
+  dayIsFollowed,
+  markDayFollowed,
+  seedSafeSenderId,
+  useOpenTabsDay,
+  worldsCertainlyDiffer,
+} from "./ward-flow-open-tabs-day";
 import { clearLegacySessionDrafts, setDraftScenarioScope } from "./ward-session-drafts";
 import { wardReferralInboxEntries, type WardReferralInboxEntry } from "./referrals/referral-inbox";
 import type { Admission, LeavingDestination } from "./ward-admissions";
@@ -59,7 +65,7 @@ import {
 } from "./ward-audit";
 import { forgetDowntimePack } from "./reports/downtime-pack";
 
-import { sharedBoardNow } from "@/components/ward-management/ward-shared-clock";
+import { anchoredBoardNow, deviceClockMs, sharedBoardNow } from "@/components/ward-management/ward-shared-clock";
 import {
   absoluteWallClockMinutes,
   demoDayZero,
@@ -137,7 +143,7 @@ import {
   ADOPT_SESSION,
   fixtureWorlds,
   syncWorldGlobals,
-  trackWardFlowTypedTextDispatch,
+  replayEarlyEvents,
   type WardFlowContainer,
   wardFlowContainerReducer,
 } from "./ward-flow-provider-container";
@@ -246,6 +252,8 @@ type WardFlowContextValue = closingLoop.ClosingLoopContext & {
    *  (`ward-demo-controls.tsx`'s scenario switch) can mark the active one without guessing it
    *  from `units` itself. */
   scenario: WardScenario;
+  /** M12: whether the worked examples are on in this world (`WardFlowState.workedExamples`). */
+  workedExamples: boolean;
   /** Task 5 of the audit-wiring plan, 2026-09-16: the coordinator-tunable figures (ED access
    *  target, parallel referral cap, pull hold), live from reducer state — see
    *  `WardFlowState.configuration`'s own doc comment. Read-only here; `SET_CONFIGURATION` is the
@@ -330,6 +338,7 @@ const WARD_FLOW_KEY_SET = {
   now: true,
   dayZero: true,
   scenario: true,
+  workedExamples: true,
   configuration: true,
   broadcastAlerts: true,
   plannedAdmissions: true,
@@ -717,7 +726,7 @@ function WardFlowWorld({
           eventLog: [],
         };
       }
-      const world = seedWardFlowStateAt(offset);
+      const world = seedWardFlowStateAt(offset, "standard", { dayZero: firstDayZero });
       syncWorldGlobals(world);
       return {
         world,
@@ -852,9 +861,16 @@ function WardFlowWorld({
     if (elapsed > elapsedHighWater) setElapsedHighWater(elapsed);
   }, [elapsed, elapsedHighWater]);
 
+  // L1 (mechanics and clock audit, 14 Nov 2026): the shared board counts from the server's own time
+  // in its last answer and never shows a minute earlier than it already showed (`anchorSharedBoard`).
+  // Read beside `elapsed`, so the compiled render reads the device clock each time, as it does there.
+  const deviceMs = initialNow !== undefined || mountedAtAbsolute === null ? null : deviceClockMs();
+  const boardClock = shared.enabled ? shared.boardClock : undefined;
   const now =
     shared.enabled && shared.snapshot
-      ? sharedBoardNow(shared.snapshot.now, shared.receivedAt)
+      ? boardClock && deviceMs !== null
+        ? anchoredBoardNow(boardClock, deviceMs)
+        : sharedBoardNow(shared.snapshot.now, shared.receivedAt)
       : NOW_ANCHOR + anchorOffsetMinutes + container.restoredElapsed + elapsed + state.clockOffsetMinutes;
 
   const nowRef = useRef(now);
@@ -904,7 +920,12 @@ function WardFlowWorld({
     });
   }, [shared.enabled, shared.snapshot, anchorOffsetMinutes]);
 
-  useWardMinuteTick(initialNow === undefined && mountedAtAbsolute !== null, setTick);
+  // L1: in shared mode the tick lands when the server's minute turns, not this device's.
+  useWardMinuteTick(
+    initialNow === undefined && mountedAtAbsolute !== null,
+    setTick,
+    boardClock ? boardClock.at - boardClock.ms : 0,
+  );
 
   useEffect(() => {
     if (inTraining || typeof window === "undefined" || typeof window.BroadcastChannel === "undefined") return;
@@ -1058,7 +1079,9 @@ function WardFlowWorld({
     const { saved, recoveryNotice, quietRecoveryNotice } = demoRead;
     if (saved) {
       freshSeedRef.current = false; // a restored day is not the untouched seed (DA-01)
-      ownsLocalDayRef.current = true;
+      // Mechanics and clock audit L8: a tab that only followed another tab's day still follows
+      // after its own reload; only a day this tab worked on is its own.
+      ownsLocalDayRef.current = !dayIsFollowed();
     }
     // Never move the allocator backwards: a record opened before adoption already used its number.
     if (saved)
@@ -1069,6 +1092,8 @@ function WardFlowWorld({
     // eslint-disable-next-line react-hooks/set-state-in-effect -- display the outcome of the external storage read
     if (recoveryNotice === STORAGE_UNAVAILABLE) setStorageUnavailable(true);
     const touched = touchedBeforeAdoption.current;
+    // M10: the device's minute now, read here because the updater below must stay pure.
+    const adoptedAtAbsolute = absoluteWallClockMinutes();
     dispatchContainer({
       type: "ADOPT_SAVED_SESSION",
       [ADOPT_SESSION]: (current) => {
@@ -1097,8 +1122,17 @@ function WardFlowWorld({
                 ? `${recoveryNotice ?? quietRecoveryNotice} ${OPEN_ITEMS_CLOSED_NOTICE}`
                 : recoveryNotice,
           };
-          for (const event of current.preAdoptionEvents ?? [])
-            restored = trackWardFlowTypedTextDispatch(restored, event);
+          // M10: each at the restored board's minute: the board `now` once this day is adopted
+          // (`NOW_ANCHOR + restoredElapsed + elapsed + clockOffsetMinutes`, elapsed never below 0, C1).
+          restored = replayEarlyEvents(
+            restored,
+            current.preAdoptionEvents ?? [],
+            (world) =>
+              NOW_ANCHOR +
+              restoredElapsed +
+              Math.max(0, adoptedAtAbsolute - mountedAtAbsolute) +
+              world.clockOffsetMinutes,
+          );
           return { ...restored, sessionAdopted: true, preAdoptionEvents: undefined };
         }
         // The rejected or unreadable save leaves the first-render seed in place, with its notice.
@@ -1160,6 +1194,8 @@ function WardFlowWorld({
       else {
         lastDeviceSaveRef.current = saveInputs;
         savesOnDeviceRef.current = commandsRef.current.world === state;
+        // L8: the save says whether this tab only follows the day, for its next reload.
+        markDayFollowed(!ownsLocalDayRef.current);
       }
     });
   }, [
@@ -1185,7 +1221,8 @@ function WardFlowWorld({
     dispatch({ type: "RESET_SCENARIO", role: "demo", now: nowRef.current });
   }, [dispatch, ownDevice, deviceSave]);
 
-  const saveScenarioFile = useCallback(() => buildScenarioFileLater(state, nowRef.current), [state]);
+  // The file records the board's day 0, so a later load moves its typed days onto that day (CC-4).
+  const saveScenarioFile = useCallback(() => buildScenarioFileLater(state, nowRef.current, dayZero), [state, dayZero]);
 
   const importSequence = useRef(0);
   const loadScenarioFile = useCallback(
@@ -1205,6 +1242,7 @@ function WardFlowWorld({
         importSequence,
         commandsRef,
         () => isCurrent() && request === localReplacementSequence.current,
+        dayZero,
       );
       if (!read.ok) return read;
       if (!read.isCurrent())
@@ -1236,7 +1274,7 @@ function WardFlowWorld({
       });
       return { ok: true };
     },
-    [initialNow, mountedAtAbsolute, anchorOffsetMinutes, shared.enabled, inTraining],
+    [initialNow, mountedAtAbsolute, anchorOffsetMinutes, shared.enabled, inTraining, dayZero],
   );
 
   const reportSnapshotReady = !shared.enabled || container.world === shared.snapshot?.payload.state;
@@ -1371,6 +1409,7 @@ function WardFlowWorld({
       now,
       dayZero,
       scenario: shown.scenario,
+      workedExamples: shown.workedExamples === true,
       configuration: shown.configuration,
       broadcastAlerts: shown.broadcastAlerts ?? EMPTY_ARRAY,
       plannedAdmissions: shown.plannedAdmissions ?? EMPTY_ARRAY,

@@ -11,6 +11,8 @@ import { absenceInboxItems } from "../src/components/ward-management/ward-absenc
 import {
   bedMeetingActionInboxItems,
   duplicateBedRequestInboxItems,
+  overduePullNowInboxItems,
+  heldBedElsewhereInboxItems,
 } from "../src/components/ward-management/ward-act-now-items";
 import { buildActionInbox, type InboxItem } from "../src/components/ward-management/ward-derivations";
 import {
@@ -35,6 +37,10 @@ const ABSENCE_CATEGORIES = 1;
 const DUPLICATE_CATEGORIES = 1;
 /** Overall review (20 Oct 2026): `bedMeetingActionInboxItems` emits one category. */
 const MEETING_ACTION_CATEGORIES = 1;
+/** Audit M2 (14 Nov 2026): `overduePullNowInboxItems` (`ward-act-now-items.ts`) emits one category. */
+const PULL_NOW_CATEGORIES = 1;
+/** M11 (14 Nov 2026): `heldBedElsewhereInboxItems` (`ward-act-now-items.ts`) emits one category. */
+const HELD_ELSEWHERE_CATEGORIES = 1;
 /**
  * Overall review (20 Oct 2026): the daily check is a commitment the coordinator ticks off once a
  * day (`dailyCheckId`). It names a day, not a row, so no list ever emits it.
@@ -146,7 +152,53 @@ function allInboxRows(movements: Movement[]): InboxItem[] {
       patients: seedWardFlowState().patients,
     }),
     ...bedMeetingActionInboxItems(meetingActionRecords(), NOW),
+    // Audit M2 (14 Nov 2026): a Pull now nobody answered by its answer time.
+    ...overduePullNowInboxItems(overduePullNowRecords(), NOW),
+    // M11: a bed held for an accepted referral while the person is in a bed elsewhere.
+    ...heldBedElsewhereInboxItems(heldBedElsewhereRecords()),
   ];
+}
+
+/** A Pull now raised 20 minutes ago on a seed journey, with no asked ward answering (audit M2). */
+function overduePullNowRecords() {
+  const raised = wardFlowReducer(seedWardFlowState(), {
+    type: "RAISE_PULL_NOW",
+    role: "coordinator",
+    now: NOW - 20,
+    movementId: "WF-003",
+  });
+  return { movements: raised.movements, units: raised.units, broadcastAlerts: raised.broadcastAlerts };
+}
+
+/** A seed referral's accepted ward arm holding bed 1, and its person in a bed at another ward. */
+function heldBedElsewhereRecords() {
+  const seed = seedWardFlowState();
+  const referral = seed.referrals.find(
+    (candidate) =>
+      candidate.patientId !== undefined &&
+      candidate.destinations.some(
+        (arm) => arm.destination.kind === "psychiatric_ward" && arm.state === "accepted" && arm.acceptedUnitId,
+      ),
+  )!;
+  const heldAt = referral.destinations.find((arm) => arm.state === "accepted")!.acceptedUnitId!;
+  const stay = seed.admissions.find((admission) => admission.state === "occupied" && admission.unitId !== heldAt)!;
+  return {
+    ...seed,
+    referrals: seed.referrals.map((candidate) =>
+      candidate === referral
+        ? {
+            ...candidate,
+            destinations: candidate.destinations.map((arm) =>
+              arm.state === "accepted" ? { ...arm, heldBedNumber: 1 } : arm,
+            ),
+          }
+        : candidate,
+    ),
+    admissions: [
+      ...seed.admissions,
+      { ...stay, id: "AD-held-elsewhere", patientId: referral.patientId!, referralId: null, movementId: null },
+    ],
+  };
 }
 
 /** One open action agreed at the bed meeting, on a seed bed request. */
@@ -337,7 +389,9 @@ describe("every action-inbox category is classified as a fact or a commitment", 
         targetCategories.length -
         ABSENCE_CATEGORIES -
         DUPLICATE_CATEGORIES -
-        MEETING_ACTION_CATEGORIES,
+        MEETING_ACTION_CATEGORIES -
+        PULL_NOW_CATEGORIES -
+        HELD_ELSEWHERE_CATEGORIES,
     );
   });
 
@@ -530,12 +584,14 @@ describe("bed_pull_expired uses the same expiry boundary as the delay view", () 
       (item) => item.movementId === id,
     );
 
-  it("raises the row exactly when the hold runs out, not a minute later", () => {
-    expect(rowFor("WF-T-BP-01", NOW)?.id).toBe(`${INBOX_CATEGORIES.bed_pull_expired.idPrefix}WF-T-BP-01`);
+  // Audit L2, D-210 (Josh, 14 Nov 2026): the one clock rule. A hold runs out once the clock is past
+  // its minute, the same minute a legal form's time passes; the delay view reads the same rule.
+  it("raises the row the minute after the hold's end, as a legal breach is raised", () => {
     expect(rowFor("WF-T-BP-02", NOW - 1)?.id).toBe(`${INBOX_CATEGORIES.bed_pull_expired.idPrefix}WF-T-BP-02`);
   });
 
-  it("control: a hold with time left raises no expiry row", () => {
+  it("control: a hold with time left, or at its own end minute, raises no expiry row", () => {
+    expect(rowFor("WF-T-BP-01", NOW)).toBeUndefined();
     expect(rowFor("WF-T-BP-03", NOW + 1)).toBeUndefined();
   });
 });

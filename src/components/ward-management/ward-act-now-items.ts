@@ -12,7 +12,7 @@
  * act now is the red subset of the same active list, so the figures cannot drift apart again.
  * `tests/ward-shared-figures.test.ts` pins that they agree on the seed.
  */
-import { CircleAlert, ClipboardList } from "lucide-react";
+import { BellRing, CircleAlert, ClipboardList } from "lucide-react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import {
@@ -28,8 +28,16 @@ import type { WardChromeRole } from "@/components/ward-management/ward-chrome-ro
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import { absenceInboxItems } from "@/components/ward-management/ward-absence-tasks";
+import { isAlertLive } from "@/components/ward-management/alerts/global-alert-view";
+import {
+  alertAsksDesk,
+  broadcastKind,
+  deskHasAnswered,
+  isPullNowOverdue,
+} from "@/components/ward-management/alerts/ward-broadcast-model";
 import { decisionTargetInboxItems } from "@/components/ward-management/ward-decision-targets";
 import { duplicateBedRequests } from "@/components/ward-management/ward-duplicate-bed-requests";
+import { heldBedsElsewhere } from "@/components/ward-management/ward-held-bed-elsewhere";
 import {
   buildActionInbox,
   isOpen,
@@ -40,6 +48,9 @@ import type { WardFlowState } from "@/components/ward-management/ward-flow-reduc
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
 import { partitionSnoozed } from "@/components/ward-management/ward-inbox-snooze";
 import { rememberLastCall } from "@/components/ward-management/ward-last-call";
+import { admittedLegalExpiryPassed } from "@/components/ward-management/ward-legal-admitted";
+import { currentLegalDueAt } from "@/components/ward-management/ward-legal-form-progression";
+import { formTimeAsTyped } from "@/components/ward-management/ward-legal-time-as-typed";
 
 /**
  * What the task list reads. The records (admissions, patients, referrals, notifications, planned
@@ -50,6 +61,12 @@ export type TaskSource = Pick<WardFlowState, "movements" | "units" | "configurat
   Omit<ActionInboxRecords, "movements"> & {
     /** Audit A3-1: leave beds, for the act-now row when a person on an order is absent. */
     leaveBeds?: readonly WardFlowState["leaveBeds"][number][];
+    /**
+     * Audit M2: the broadcast alerts this desk is sent, for the act-now row when a Pull now goes
+     * unanswered past its answer time. A desk's own copy names only its own wards and answers
+     * (`scopeBroadcastAlerts`), so a ward desk's row is about its own unanswered ask.
+     */
+    broadcastAlerts?: readonly WardFlowState["broadcastAlerts"][number][];
   };
 
 /**
@@ -73,6 +90,7 @@ export const taskItems = rememberLastCall(
     source.supportNotifications,
     source.plannedAdmissions,
     source.leaveBeds,
+    source.broadcastAlerts,
     source.stuckHandoverMinutes,
     source.dayZero,
     now,
@@ -95,10 +113,108 @@ function deriveTaskItems(source: TaskSource, now: Instant): InboxItem[] {
       stuckHandoverMinutes: source.stuckHandoverMinutes,
       dayZero: source.dayZero,
     }),
+    ...admittedLegalInboxItems(source, now),
     ...decisionTargetInboxItems(open, now, source.configuration),
+    ...overduePullNowInboxItems(source, now),
     ...duplicateBedRequestInboxItems(source),
+    ...heldBedElsewhereInboxItems(source),
     ...bedMeetingActionInboxItems(source, now),
   ];
+}
+
+/** The ward's own owner words, so `inboxOwnerRoles` places an admitted person's row on the ward too. */
+const ADMITTED_LEGAL_OWNER = "Nurse in charge";
+
+/**
+ * Audit M1 and D-210 (Josh, 14 Nov 2026), ruling 2: a person already admitted on a form whose typed
+ * expiry still in force has passed raises the same act-now row as an open journey (`legal-` plus
+ * the journey's id), so the coordinator's alerts count it. Needs the stays; without them, none.
+ */
+export function admittedLegalInboxItems(
+  source: Pick<TaskSource, "movements" | "admissions" | "dayZero">,
+  now: Instant,
+): InboxItem[] {
+  if (!source.admissions) return [];
+  return admittedLegalExpiryPassed(source.movements, source.admissions, now).map((movement) => {
+    const dueAt = currentLegalDueAt(movement)!;
+    return {
+      id: `${INBOX_CATEGORIES.legal_timing_breached.idPrefix}${movement.id}`,
+      kind: INBOX_CATEGORIES.legal_timing_breached.kind,
+      tone: "danger",
+      icon: CircleAlert,
+      title: "Legal due time passed",
+      detail: `${movement.id} · admitted · ${formTimeAsTyped(movement.legalForm!, now, source.dayZero)}`,
+      owner: ADMITTED_LEGAL_OWNER,
+      movementId: movement.id,
+      dueAt,
+      since: dueAt,
+    };
+  });
+}
+
+/** The bed coordinator's words for an overdue Pull now: `inboxOwnerRoles` places them on the coordinator. */
+const PULL_NOW_OWNER = "Bed coordinator";
+
+/**
+ * AN OVERDUE PULL NOW IS ACT NOW (audit M2, D-210 (Josh, 14 Nov 2026)). A Pull now that no asked ward
+ * has answered by its answer time (the signed 15 minute rule, `PULL_NOW_ANSWER_MINUTES`) turned the
+ * banner red but reached no count. It is now one red row on the shared task list, so Home's Act now
+ * figure, the bell, the Tasks dock, the phone menu, the Alerts Act now list and the act-now
+ * notifications all count it from here. The test is the banner's own (`isAlertLive` and
+ * `isPullNowOverdue`), so the banner and the counts cannot disagree. On a ward desk the alert is the
+ * ward's own copy, so the row stands for that ward's unanswered ask. One row per person.
+ */
+export function overduePullNowInboxItems(
+  source: Pick<TaskSource, "movements" | "units" | "broadcastAlerts">,
+  now: Instant,
+): InboxItem[] {
+  const rows = new Map<string, InboxItem>();
+  for (const alert of source.broadcastAlerts ?? []) {
+    const answerBy = alert.answerBy;
+    if (broadcastKind(alert) !== "pull_now" || alert.movementId === undefined || answerBy === undefined) continue;
+    if (!isAlertLive(alert, source.movements, now) || !isPullNowOverdue(alert, now)) continue;
+    const asked = (alert.targetUnitIds ?? []).map(
+      (unitId) => source.units.find((unit) => unit.id === unitId)?.name ?? unitId,
+    );
+    const by = formatInstantWithDay(answerBy, now);
+    const missed =
+      asked.length === 1
+        ? `${asked[0]} did not answer by ${by}.`
+        : `None of the ${asked.length} wards answered by ${by}.`;
+    rows.set(alert.movementId, {
+      id: `${INBOX_CATEGORIES.pull_now_overdue.idPrefix}${alert.movementId}`,
+      kind: INBOX_CATEGORIES.pull_now_overdue.kind,
+      tone: "danger",
+      icon: BellRing,
+      title: "Pull now not answered",
+      detail: `${missed} Chase the ward.`,
+      owner: PULL_NOW_OWNER,
+      movementId: alert.movementId,
+      dueAt: answerBy,
+      since: answerBy,
+    });
+  }
+  return [...rows.values()];
+}
+
+/**
+ * The ward desk's own act-now line for each Pull now that asked this ward and that it has not
+ * answered by the answer time (audit M2, D-210 (Josh, 14 Nov 2026)), by the same rule as the rows above.
+ */
+export function overduePullNowActNowForWard(
+  source: Pick<TaskSource, "movements" | "broadcastAlerts">,
+  unit: TaskSource["units"][number],
+  now: Instant,
+): { key: string; title: string; detail: string; tone: "danger" }[] {
+  const asksThisWard = (source.broadcastAlerts ?? []).filter(
+    (alert) => alertAsksDesk(alert, { role: "ward", id: unit.id }) && !deskHasAnswered(alert, unit.id),
+  );
+  return overduePullNowInboxItems({ ...source, units: [unit], broadcastAlerts: asksThisWard }, now).map((row) => ({
+    key: row.id,
+    title: row.title,
+    detail: `The coordinator asked for an answer by ${formatInstantWithDay(row.dueAt ?? now, now)}`,
+    tone: "danger",
+  }));
 }
 
 /**
@@ -143,6 +259,37 @@ export function duplicateBedRequestInboxItems(
       since,
     };
   });
+}
+
+/**
+ * M11 and owner question 8 (D-210 (Josh, 14 Nov 2026)): one amber row per bed still held for an
+ * accepted referral while the person is pulled into, or occupies, a bed on another journey
+ * (`ward-held-bed-elsewhere.ts`). Flagged, never blocked. It opens the referral on the Referrals
+ * board, which offers Release held bed. Coordinator only: it names where else the person is.
+ */
+export function heldBedElsewhereInboxItems(
+  source: Pick<TaskSource, "movements" | "units" | "referrals" | "patients" | "admissions">,
+): InboxItem[] {
+  const records = {
+    movements: source.movements,
+    referrals: source.referrals ?? [],
+    patients: source.patients ?? [],
+    admissions: source.admissions ?? [],
+  };
+  const wardName = (unitId: string) => source.units.find((unit) => unit.id === unitId)?.name ?? "another ward";
+  return heldBedsElsewhere(records).map((held) => ({
+    id: `${INBOX_CATEGORIES.bed_held_elsewhere.idPrefix}${held.referralId}`,
+    kind: INBOX_CATEGORIES.bed_held_elsewhere.kind,
+    tone: "warning",
+    icon: CircleAlert,
+    title: "Bed still held for someone in a bed elsewhere",
+    detail: `Bed ${held.bedNumber} at ${wardName(held.unitId)} is held for referral ${held.referralId}, and the person is now in a bed at ${wardName(held.stayUnitId)}. Release it if it is no longer needed.`,
+    owner: DUPLICATE_OWNER,
+    movementId: "",
+    personId: held.personId,
+    href: referralBoardHref(held.referralId),
+    since: held.since,
+  }));
 }
 
 /** The owner words for each bed meeting owner, read back to roles by `inboxOwnerRoles`. */
@@ -257,7 +404,12 @@ export function inboxItemsForRole(
 ): InboxItem[] {
   if (role === "coordinator") return [...items];
   // Audit F-19: duplicate bed request rows name other referrals, so they stay with the coordinator.
+  // M11: so does a held bed for someone in a bed elsewhere, which names where else they are.
   if (role === "bed_manager")
-    return items.filter((item) => !item.id.startsWith(INBOX_CATEGORIES.duplicate_bed_request.idPrefix));
+    return items.filter(
+      (item) =>
+        !item.id.startsWith(INBOX_CATEGORIES.duplicate_bed_request.idPrefix) &&
+        !item.id.startsWith(INBOX_CATEGORIES.bed_held_elsewhere.idPrefix),
+    );
   return items.filter((item) => inboxOwnerRoles(item.owner, wardNames).includes(role));
 }

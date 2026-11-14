@@ -1,7 +1,8 @@
 import { closedToAdmissionsRefusal } from "./capacity/ward-closure";
 import type { AuditDecision } from "./ward-audit";
 import type { Instant } from "./ward-clock";
-import { candidateReason, referralEligibility } from "./ward-eligibility";
+import { candidateReason, placementFit, referralEligibility } from "./ward-eligibility";
+import { sharedReadyLookup } from "./ward-shared-ready";
 import type { findReferral, findUnit, reject, replaceReferral, WardFlowState } from "./ward-flow-reducer";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "./ward-flow-roles";
 import type { ReferralAddressing, ReferralDestination } from "./ward-model";
@@ -65,6 +66,7 @@ export function reduceReferralAskEvent(
   if (!template || wardArms.some((addressing) => addressing.destination.unitId === undefined)) {
     return refuse("no named ward request to copy the bed questions from");
   }
+  const ready = sharedReadyLookup(state);
   for (const unitId of unitIds) {
     const unit = findUnit(state, unitId);
     if (!unit) return refuse(`no ward ${unitId}`);
@@ -72,10 +74,16 @@ export function reduceReferralAskEvent(
       return refuse(`${unit.name} has already been asked`);
     }
     // Checked against the state now, since a bed or a gate can change after the list was opened.
-    const verdict = referralEligibility(referral, { ...template, unitId }, unit, event.now);
+    // H7: the shared Ready, the figure the list shows.
+    const verdict = referralEligibility(referral, { ...template, unitId }, unit, event.now, ready);
+    // H8 (D-210 (Josh, 14 Nov 2026)): a ward whose only failing check is an old bed count may still
+    // be asked; asking is how the count is checked. The shared classifier decides, as on the list.
+    const fit = placementFit(verdict).kind;
     const why =
       closedToAdmissionsRefusal(unit) ??
-      (verdict.eligible ? null : `${unit.name} does not fit this referral now: ${candidateReason(verdict)}`);
+      (fit === "fits" || fit === "stale_count"
+        ? null
+        : `${unit.name} does not fit this referral now: ${candidateReason(verdict)}`);
     if (why) return refuse(why);
   }
   const cap = state.configuration.parallelReferralCap;

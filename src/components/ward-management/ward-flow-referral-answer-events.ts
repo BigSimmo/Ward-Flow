@@ -46,9 +46,9 @@ import {
   type ReferralHistoryField,
 } from "@/components/ward-management/ward-model";
 import {
+  bedPlacementAccepted,
   COMMUNITY_DECLINE_REASON_LABELS,
   DECLINE_REASON_LABELS,
-  referralState,
   referralSuburbIsAnswered,
   wardTransferNeedsCoordinator,
 } from "@/components/ward-management/ward-referrals";
@@ -70,6 +70,7 @@ export type ReferralAnswerEvent = Extract<
       | "RECEIVE_REFERRAL"
       | "ACCEPT_REFERRAL"
       | "HOLD_REFERRAL_BED"
+      | "RELEASE_REFERRAL_BED"
       | "DECLINE_REFERRAL"
       | "WITHDRAW_ACCEPTANCE";
   }
@@ -745,6 +746,7 @@ export function reduceReferralAnswerEvent(
         arm.destination,
         unit,
         event.now,
+        state,
       );
       if (suitability.refusal) return reject(state, event, suitability.refusal);
       decision.outcome = "accepted";
@@ -754,6 +756,32 @@ export function reduceReferralAnswerEvent(
         destinations: referral.destinations.map((candidate) =>
           candidate === arm ? { ...arm, heldBedNumber: event.bedNumber } : candidate,
         ),
+      });
+    }
+
+    case "RELEASE_REFERRAL_BED": {
+      // M11 (D-210 (Josh, 14 Nov 2026)): the bed goes back; the acceptance stands.
+      const referral = findReferral(state, event.referralId);
+      if (!referral) return reject(state, event, "No referral found to release a bed for");
+      if (event.role === "ward" && event.actingUnitId !== event.unitId)
+        return reject(state, event, "A ward may only release its own beds");
+      if (state.movements.some((movement) => movement.referralId === referral.id && movement.closure === undefined))
+        return reject(state, event, "This referral has a bed journey; release the bed on that journey");
+      const arm = referral.destinations.find(
+        (candidate) =>
+          candidate.destination.kind === "psychiatric_ward" &&
+          candidate.state === "accepted" &&
+          candidate.heldBedNumber !== undefined &&
+          (candidate.acceptedUnitId ?? candidate.destination.unitId) === event.unitId,
+      );
+      if (!arm) return reject(state, event, "No bed is held at this ward for this referral");
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
+      const { heldBedNumber: _released, ...released } = arm;
+      void _released;
+      return replaceReferral(state, referral.id, {
+        ...referral,
+        destinations: referral.destinations.map((candidate) => (candidate === arm ? released : candidate)),
       });
     }
 
@@ -851,9 +879,10 @@ export function reduceReferralAnswerEvent(
             ...(event.clearanceUpdated !== undefined ? { clearanceUpdated: event.clearanceUpdated } : {}),
           }
         : undefined;
+      // M14(b) (D-210 (Josh, 14 Nov 2026)): a community team's yes does not block a ward's answer.
       if (
         event.destinationKind !== "community_team" &&
-        referralState(referral) === "accepted" &&
+        bedPlacementAccepted(referral) &&
         !(hasClinicalReassessment && addressing.state === "accepted")
       ) {
         return reject(state, event, `referral ${referral.id} has already been accepted elsewhere`);
@@ -1031,6 +1060,7 @@ export function reduceReferralAnswerEvent(
           addressing.destination,
           unit,
           event.now,
+          state,
         );
         if (acceptRefusal.refusal) return reject(state, event, acceptRefusal.refusal);
         decision.overrideFactRecorded = acceptRefusal.overrideApplied;
@@ -1206,7 +1236,8 @@ export function reduceReferralAnswerEvent(
       if (actingRefusal) return reject(state, event, actingRefusal);
       // RB5 (item 16): the same community exemption as `ACCEPT_REFERRAL`'s own guard, above -- a
       // community team may still decline its own arm after a ward or ED has accepted.
-      if (event.destinationKind !== "community_team" && referralState(referral) === "accepted") {
+      // M14(b): only a ward's or an emergency department's yes is "accepted elsewhere".
+      if (event.destinationKind !== "community_team" && bedPlacementAccepted(referral)) {
         return reject(state, event, `referral ${referral.id} has already been accepted elsewhere`);
       }
       if (addressing.state !== "queued") {
@@ -1371,7 +1402,11 @@ export function reduceReferralAnswerEvent(
       if (holdsBed && bedReleased === state) {
         return reject(state, event, `movement ${movement.id}'s pulled bed matches no releasable reservation`);
       }
-      const released = withoutReferralBedHold(bedReleased, movement);
+      const released = withReferralAcceptanceReopened(
+        withoutReferralBedHold(bedReleased, movement),
+        movement,
+        event.now,
+      );
       const withdrawnStage = steppedBackHoldingBed ? movement.stage : "destination_review";
       const updatedMovement: Movement = {
         ...movement,
@@ -1470,4 +1505,54 @@ export function reduceReferralAnswerEvent(
       return appendNotices(next, notices);
     }
   }
+}
+
+/**
+ * H3 (mechanics and clock audit, 14 Nov 2026): withdrawing a ward's acceptance also takes back the
+ * referral's answer at that ward, in the same step, so the referral, the referral sheet and the ED
+ * row stop saying "Accepted at <ward>" while the journey is back in destination review. Without it
+ * another ward accepting the journey left the referral naming the old ward, and every ward answering
+ * the referral itself was refused as "already accepted elsewhere".
+ *
+ * The answer goes back to waiting (`queued`), never to `cancelled`: a cancellation only ever sits
+ * beside another destination's acceptance (FD-22, `outcomeDetail`), and nothing has accepted now.
+ * It is stamped with the withdrawal: `referredAt` is the withdrawal time, so the ask is open again
+ * from then, and every field of the old answer (ward, time, role, reason, bed) goes with it. The
+ * movement's `acceptance_withdrawn` unwind keeps who withdrew it, when and why. While the journey
+ * is open a ward still answers on the journey, as `ACCEPT_REFERRAL` refuses a referral with an open
+ * movement; once the journey closes the referral itself can be answered again.
+ */
+function withReferralAcceptanceReopened(state: WardFlowState, movement: Movement, now: Instant): WardFlowState {
+  const unitId = movement.acceptedUnitId;
+  if (movement.referralId === undefined || unitId === undefined) return state;
+  const referral = state.referrals.find((candidate) => candidate.id === movement.referralId);
+  if (!referral) return state;
+  let changed = false;
+  const destinations = referral.destinations.map((arm): ReferralAddressing => {
+    if (
+      arm.state !== "accepted" ||
+      arm.destination.kind !== "psychiatric_ward" ||
+      (arm.acceptedUnitId ?? arm.destination.unitId) !== unitId
+    )
+      return arm;
+    changed = true;
+    const {
+      acceptedUnitId: _ward,
+      decidedAt: _decidedAt,
+      decidedBy: _decidedBy,
+      acceptOverrideReason: _reason,
+      heldBedNumber: _bed,
+      declineReason: _decline,
+      openedAt: _openedAt,
+      waitlistedAt: _waitlistedAt,
+      ...rest
+    } = arm;
+    void [_ward, _decidedAt, _decidedBy, _reason, _bed, _decline, _openedAt, _waitlistedAt];
+    return { ...rest, state: "queued", referredAt: now };
+  });
+  if (!changed) return state;
+  return {
+    ...state,
+    referrals: state.referrals.map((candidate) => (candidate === referral ? { ...referral, destinations } : candidate)),
+  };
 }

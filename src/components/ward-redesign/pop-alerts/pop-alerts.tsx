@@ -40,6 +40,7 @@ export function PopAlerts({ page }: { page: ReactNode }) {
     configuration,
     supportNotifications,
     leaveBeds,
+    broadcastAlerts,
   } = useWardFlowSelect(
     "movements",
     "patients",
@@ -55,6 +56,7 @@ export function PopAlerts({ page }: { page: ReactNode }) {
     "configuration",
     "supportNotifications",
     "leaveBeds",
+    "broadcastAlerts",
   );
   const { shellRole } = useWardNavCounts();
   const accessNav = useAccessNavFilter();
@@ -73,6 +75,8 @@ export function PopAlerts({ page }: { page: ReactNode }) {
     supportNotifications,
     plannedAdmissions,
     leaveBeds,
+    // Audit M2, D-210 (Josh, 14 Nov 2026): an overdue Pull now is on the one task list too.
+    broadcastAlerts,
   });
 
   const [open, setOpen] = useState(true);

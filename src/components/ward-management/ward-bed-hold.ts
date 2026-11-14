@@ -1,4 +1,10 @@
-import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  DEFAULT_DUE_SOON_THRESHOLDS,
+  isTimePassed,
+  splitDuration,
+  type DueSoonThresholds,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import type { Movement } from "@/components/ward-management/ward-model";
 
@@ -9,12 +15,18 @@ import type { Movement } from "@/components/ward-management/ward-model";
  * "expired 10m ago" on another. They all read this instead.
  *
  * Read from the stored `Movement.pullExpiresAt` only, never an invented hold length:
- * - `lapsed`: the hold time has passed. Act now: the coral overdue marker, and the ward's Act now.
- * - `at-risk`: under `BED_HOLD_AT_RISK_MINUTES` left. The round amber dot only, never Act now, so
- *   Act now keeps to what genuinely needs doing now (alarm fatigue).
+ * - `lapsed`: the hold time has passed (`isTimePassed`: strictly after its minute, as a legal breach
+ *   is). Act now: the coral overdue marker, and the ward's Act now.
+ * - `at-risk`: the Settings "act now" warning or less left (`thresholds.urgentMinutes`, inclusive, as
+ *   `clockState` reads it). The round amber dot only, never Act now, so Act now keeps to what
+ *   genuinely needs doing now (alarm fatigue).
  * - `held`: more time than that left. Plain.
+ *
+ * Audit L2 and L3, D-210 (Josh, 14 Nov 2026): the warning was a fixed hour that ignored Settings and
+ * turned amber one minute later than the legal clocks, and the pull lapsed a minute earlier than a
+ * legal form ends. Both now follow the one clock rule.
  */
-/** Josh's one-hour warning default, the same one the legal clocks use. */
+/** Josh's one-hour warning default, the same one the legal clocks use (Settings can change it). */
 export const BED_HOLD_AT_RISK_MINUTES = DUE_SOON_URGENT_MINUTES;
 
 type BedHoldState = "held" | "at-risk" | "lapsed";
@@ -32,10 +44,19 @@ export type BedHold = {
   nextStep: string;
 };
 
-export function bedHold(pullExpiresAt: Instant | undefined, now: Instant): BedHold | null {
+/**
+ * `thresholds` are the Settings warnings (`useDueSoonThresholds()`). Every screen that shows the
+ * running-out mark (the `at-risk` state) passes them; a caller that reads only the label or the
+ * lapsed state may leave them out, because neither depends on a warning.
+ */
+export function bedHold(
+  pullExpiresAt: Instant | undefined,
+  now: Instant,
+  thresholds: DueSoonThresholds = DEFAULT_DUE_SOON_THRESHOLDS,
+): BedHold | null {
   if (pullExpiresAt === undefined || !Number.isFinite(pullExpiresAt)) return null;
   const left = pullExpiresAt - now;
-  if (left <= 0) {
+  if (isTimePassed(pullExpiresAt, now)) {
     const over = splitDuration(Math.max(0, -left));
     return {
       state: "lapsed",
@@ -46,9 +67,10 @@ export function bedHold(pullExpiresAt: Instant | undefined, now: Instant): BedHo
       nextStep: "Move or release",
     };
   }
+  // At its end minute exactly, "0m left": still held, the same minute a legal form still "Ends".
   const remaining = splitDuration(left);
   return {
-    state: left < BED_HOLD_AT_RISK_MINUTES ? "at-risk" : "held",
+    state: left <= thresholds.urgentMinutes ? "at-risk" : "held",
     expiresAt: pullExpiresAt,
     minutes: left,
     label: `Pull ${remaining} left`,
@@ -73,7 +95,7 @@ export function pulledWithoutLimitLabel(movement: Pick<Movement, "stage" | "pull
 
 /** True when the hold has lapsed: the one bed-hold condition that belongs in Act now. */
 export function bedHoldLapsed(pullExpiresAt: Instant | undefined, now: Instant): boolean {
-  return bedHold(pullExpiresAt, now)?.state === "lapsed";
+  return isTimePassed(pullExpiresAt, now);
 }
 
 /**

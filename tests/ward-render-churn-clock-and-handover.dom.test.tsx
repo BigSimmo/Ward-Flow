@@ -26,7 +26,9 @@ afterEach(() => {
 });
 
 describe("Task 6: Background render-churn elimination & HandoverPage timer isolation", () => {
-  it("isolates the 1000ms meeting timer into a leaf component so HandoverPage does not re-render every second", () => {
+  // CC-6 (mechanics and clock audit, 14 Nov 2026): the chip reads the board clock History records,
+  // so it runs no real-seconds timer at all; the page still does not re-render every second.
+  it("runs no real-seconds meeting timer, so HandoverPage does not re-render every second", () => {
     vi.useFakeTimers();
     const handoverShiftSpy = vi.spyOn(handoverModel, "handoverShift");
 
@@ -39,14 +41,15 @@ describe("Task 6: Background render-churn elimination & HandoverPage timer isola
     const startBtn = screen.getByRole("button", { name: /start meeting/i });
     fireEvent.click(startBtn);
 
-    expect(screen.getByRole("button", { name: /stop 00:00/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /stop 1 min/i })).toBeTruthy();
     const callsAfterStart = handoverShiftSpy.mock.calls.length;
 
     act(() => {
       vi.advanceTimersByTime(5000);
     });
 
-    expect(screen.getByRole("button", { name: /stop 00:05/i })).toBeTruthy();
+    // The pinned board clock has not moved, so neither has the length History would record.
+    expect(screen.getByRole("button", { name: /stop 1 min/i })).toBeTruthy();
     expect(handoverShiftSpy.mock.calls.length).toBe(callsAfterStart);
     handoverShiftSpy.mockRestore();
   });

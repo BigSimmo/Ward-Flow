@@ -124,8 +124,10 @@ describe("D-115 item 3: a named bed is not ready on the Tools sheet, rail or Sea
 
   it("Search's ward ready count leaves the named beds out", () => {
     for (const unit of named) {
-      expect(unitReadyBedCount(unit, state.admissions, holds), unit.id).toBe(
-        readyBedsNow(unit, state.admissions, [], holds),
+      // M7 (mechanics audit, 14 Nov 2026): the same call Capacity makes, bed releases included, so
+      // a bed still being made ready is not Ready here either.
+      expect(unitReadyBedCount(unit, state.admissions, holds, state.bedReleases), unit.id).toBe(
+        readyBedsNow(unit, state.admissions, state.bedReleases, holds),
       );
     }
   });

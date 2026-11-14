@@ -1,6 +1,8 @@
 import type { Admission } from "../ward-admissions";
-import type { Instant } from "../ward-clock";
+import { isClockBreached, type Instant } from "../ward-clock";
 import { isWaitingInEd } from "../ward-ed-presence";
+import { currentLegalPosition, FORM_RECORDED_ENDED } from "../ward-legal-form-progression";
+import { typedTimePhrase } from "../ward-legal-time-as-typed";
 import type { LegalStatus, Movement, Referral, Unit } from "../ward-model";
 import type { Observation } from "../ward-observation";
 import { acceptedAddressing } from "../ward-referrals";
@@ -52,7 +54,23 @@ export type RecordedPullDetails = {
   observation?: Observation;
   /** Where the legal form and observation came from: the person's open journey on the ED board. */
   fromEdBoard: boolean;
+  /**
+   * D-210 (Josh, 14 Nov 2026), ruling 7 (audit H5): the ED board's form had ended, so it is shown as
+   * information only and the form is left "Not recorded". `typedEndAt` is the typed expiry that has
+   * gone by, when that is how it ended; absent when a person recorded the form as ended.
+   */
+  endedForm?: { code: string; typedEndAt?: Instant };
 };
+
+/** "Form 3B ended 10:32 as typed", or "Form 3B ended, recorded as ended": information, never a pre-fill. */
+export function endedFormWords(
+  ended: NonNullable<RecordedPullDetails["endedForm"]>,
+  now: Instant,
+  dayZero: Date | undefined,
+): string {
+  if (ended.typedEndAt === undefined) return `Form ${ended.code} ended (${FORM_RECORDED_ENDED.toLowerCase()})`;
+  return `Form ${ended.code} ${typedTimePhrase(ended.typedEndAt, now, dayZero)}`;
+}
 
 /**
  * WS-03 (workflow speed audit, 26 Oct 2026): the legal details already recorded for this person,
@@ -61,7 +79,12 @@ export type RecordedPullDetails = {
  * recorded legal status is used when there is no such wait. Nothing is derived: a form is never
  * worked out from a status, and an observation level is never inferred.
  */
-export function recordedPullDetails(referral: Referral, movements: readonly Movement[]): RecordedPullDetails {
+export function recordedPullDetails(
+  referral: Referral,
+  movements: readonly Movement[],
+  /** The board clock, so a typed expiry that has gone by is never copied forward (ruling 7). */
+  now?: Instant,
+): RecordedPullDetails {
   const ed = allEmergencyDepartments().find((place) => place.siteCode === referral.originSiteCode);
   const edWait =
     referral.patientId === undefined || !startsAcceptedJourneyAtEd(referral.source) || !ed
@@ -86,10 +109,26 @@ export function recordedPullDetails(referral: Referral, movements: readonly Move
       ...(referralForm ? { legalFormCode: referralForm.code } : {}),
       fromEdBoard: false,
     };
+  // D-210 (Josh, 14 Nov 2026), ruling 7 (audit H5): read through the one current legal position. A
+  // form a person recorded as ended, or one whose typed expiry has gone by, is never copied onto the
+  // new journey: it is shown as information and the form is left "Not recorded".
+  const position = currentLegalPosition(edWait);
+  const passedAt =
+    now !== undefined && position.dueAt !== undefined && isClockBreached(position.dueAt, now)
+      ? position.dueAt
+      : undefined;
+  if (position.form && (position.ended || passedAt !== undefined)) {
+    return {
+      legalStatus: edWait.legalStatus,
+      endedForm: { code: position.form.code, ...(passedAt === undefined ? {} : { typedEndAt: passedAt }) },
+      observation: edWait.observation,
+      fromEdBoard: true,
+    };
+  }
   return {
     legalStatus: edWait.legalStatus,
-    legalFormCode: edWait.legalForm?.code ?? null,
-    ...(edWait.legalForm?.dueAt === undefined ? {} : { legalFormDueAt: edWait.legalForm.dueAt }),
+    legalFormCode: position.form?.code ?? null,
+    ...(position.dueAt === undefined ? {} : { legalFormDueAt: position.dueAt }),
     observation: edWait.observation,
     fromEdBoard: true,
   };

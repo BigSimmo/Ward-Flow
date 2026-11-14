@@ -115,6 +115,7 @@ import {
   type RecordGap,
 } from "./legal-forms-view";
 import { TYPED_TIME_KEY } from "./legal-time-as-typed";
+import { currentLegalPosition } from "./legal-form-progression";
 import { LegalLimitsNotChecked } from "../legal-limits-not-checked";
 import { PhoneChecklist } from "./legal-forms-phone-checklist";
 import type { LegalFormDetailsSave } from "./legal-form-details";
@@ -264,12 +265,20 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   // D-157: Print, Export and their disabled state use the same people as the on-screen list,
   // including "Admitted on a form" (same `admitted` set the admitted group shows).
   const listPopulation = legalFormsListPopulation(rows, admitted);
-  const withoutForm = openMovements.length - rows.length;
+  // Audit H6 (14 Nov 2026): the rows are forms in force, so a form a person recorded as ended is
+  // neither a row nor "no form recorded".
+  const withoutForm = openMovements.filter((movement) => movement.legalForm === undefined).length;
   const breakdown = legalFormBreakdown(rows, now);
   const reminders = legalExpiryReminderSummary(movements, now, thresholds);
-  const passed = withDeadline.filter((movement) => isLegalDeadlineBreached(movement, now)).length;
-  const upcoming = withDeadline.length - passed;
-  const actNow = withDeadline.filter((movement) => isActNow(clockStanding(movement, now, thresholds))).length;
+  // Audit M1, D-210 (Josh, 14 Nov 2026) ruling 2: a person admitted on a form whose typed expiry has
+  // passed counts as passed and act now here too, as the ward desk and the coordinator see it.
+  const admittedPassed = admitted.filter((movement) => isLegalDeadlineBreached(movement, now));
+  const passedOpen = withDeadline.filter((movement) => isLegalDeadlineBreached(movement, now)).length;
+  const passed = passedOpen + admittedPassed.length;
+  const upcoming = withDeadline.length - passedOpen;
+  const actNow =
+    withDeadline.filter((movement) => isActNow(clockStanding(movement, now, thresholds))).length +
+    admittedPassed.length;
 
   const nameOf = (movement: Movement) => patientOf(movement).formalName;
   const umrnOf = (movement: Movement) => patientOf(movement).umrn;
@@ -294,7 +303,12 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   };
   const toggleHighlight = (next: Highlight) => setHighlight((current) => (sameHighlight(current, next) ? null : next));
 
-  const selected = rows.find((movement) => movement.id === selectedId) ?? null;
+  // Audit H6: a form recorded as ended leaves the rows, but its panel stays open (and reachable by
+  // its link) so the person can still read or correct how it ended.
+  const selected =
+    rows.find((movement) => movement.id === selectedId) ??
+    openMovements.find((movement) => movement.id === selectedId && currentLegalPosition(movement).ended) ??
+    null;
   const lastWrittenRefusal = selected
     ? rejections.findLast(
         (entry) => entry.movementId === selected.id && entry.attempted === "RECORD_LEGAL_FORM_WRITTEN",

@@ -27,10 +27,11 @@ import { WardAuthError } from "./ward-supabase-auth";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 import type { RecordViewSurface } from "./shell/ward-shared-session-context";
-import { eventLogEntryFor } from "./ward-event-log";
+import { enteredOfflineLog, eventLogEntryFor } from "./ward-event-log";
 import { bindReferralDraftAccessContext, clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
 import type { BoundWardPartialView, WardPartialView } from "./ward-partial-view-contract";
 import { boardNotRefreshed, saveProblem } from "./ward-save-failure";
+import { anchorSharedBoard, anchoredBoardNow } from "./ward-shared-clock";
 import {
   foldArchiveReply,
   withArchivedRecords,
@@ -494,6 +495,7 @@ export class SharedWorkspaceClient {
         accessUntil: undefined,
         recovery: undefined,
         recoveryResults: undefined,
+        boardClock: undefined,
         ...update,
       };
       this.archive = null;
@@ -554,7 +556,8 @@ export class SharedWorkspaceClient {
     }
     this.options.changed(this.view);
   }
-  private adopt(snapshot: SharedSnapshot) {
+  /** `serverTime`: the server's own time in the same answer, when it sent one (L1, `anchorSharedBoard`). */
+  private adopt(snapshot: SharedSnapshot, serverTime?: number) {
     const unchanged = checkSharedSnapshot(snapshot, this.rawPayload, isValidSharedState);
     if (Number.isFinite(snapshot.accessUntil)) {
       if (!Number.isFinite(this.view.accessUntil) || snapshot.accessUntil! < this.view.accessUntil!)
@@ -583,7 +586,9 @@ export class SharedWorkspaceClient {
           accessContext: snapshot.accessContext ?? null,
         }) ?? undefined;
       this.liveSibling = partialView;
+      const receivedAt = Date.now();
       this.publish({
+        boardClock: anchorSharedBoard(this.view.boardClock, snapshot, receivedAt, serverTime),
         snapshot: {
           ...snapshot,
           payload,
@@ -593,7 +598,7 @@ export class SharedWorkspaceClient {
             snapshot.accessContext,
           ),
         },
-        receivedAt: Date.now(),
+        receivedAt,
       });
       this.noteOpenSheets();
       const archived = snapshot.archived;
@@ -680,7 +685,11 @@ export class SharedWorkspaceClient {
         throw new Error(`Shared access changes are unavailable. ${saveProblem("notReady")}`);
       if (path === "/v1/workspace/commands" && body && "commandId" in body) {
         if (Number.isFinite(this.view.accessUntil) && this.view.accessUntil! <= Date.now())
-          throw new Error(`Access verification expired. ${saveProblem("notReady")}`);
+          throw new Error(`Access expired. ${saveProblem("notReady")}`);
+        // H2 (mechanics and clock audit, 14 Nov 2026): while the browser says it is offline the save
+        // is not sent, so its reload record stays "queued" (certainly not sent), never "sent".
+        if (typeof navigator !== "undefined" && navigator.onLine === false)
+          throw new TypeError("Offline: the save was not sent");
         if (!this.recoveryWrite(body.commandId as string))
           throw new Error("Safe reload recovery could not be recorded.");
         this.sentCommandId = body.commandId as string;
@@ -910,9 +919,21 @@ export class SharedWorkspaceClient {
       if (value?.notModified === true) {
         if (!current || "kind" in current || value.revision !== current.revision || !Number.isFinite(value.now))
           throw new Error("Incompatible workspace data");
-        if (this.view.snapshot === current) this.publish(notModifiedUpdate(current, value.now, Date.now()));
+        if (this.view.snapshot === current) {
+          const receivedAt = Date.now();
+          const update = notModifiedUpdate(current, value.now, receivedAt);
+          this.publish({
+            ...update,
+            boardClock: anchorSharedBoard(
+              this.view.boardClock,
+              update.snapshot ?? current,
+              receivedAt,
+              value.serverTime,
+            ),
+          });
+        }
       } else {
-        this.adopt(value.snapshot);
+        this.adopt(value.snapshot, value.serverTime);
         this.fullReadAt = Date.now();
       }
       // Gate nested dispatches from changed() before exposing a recovered board as ready.
@@ -1018,12 +1039,15 @@ export class SharedWorkspaceClient {
         });
       }),
     );
+    const anchor = this.view.boardClock;
     this.queue.push({
       event,
       commandId,
       confirmed: confirmed || event.type === "RESET_SCENARIO" || event.type === "SET_SCENARIO",
       worldEpoch: this.worldEpoch,
       sheets: this.openSheetsNoted(),
+      // H1: the board minute the person pressed this at, as the board showed it.
+      ...(anchor ? { actedAt: anchoredBoardNow(anchor, Date.now()) } : {}),
     });
     // Made while offline: pinned now, before a resend can adopt a newer board.
     this.recoveryWrite(commandId, "queued");
@@ -1061,6 +1085,7 @@ export class SharedWorkspaceClient {
             ...(basis && Object.keys(basis.records).length ? { seen: basis.records } : {}),
             event: withoutChartContent(queued.event),
             ...(this.queue.length && !queued.confirmed ? { reply: "revision" as const } : {}),
+            ...(queued.actedAt !== undefined ? { actedAt: queued.actedAt } : {}),
           };
         }
         this.publish({ status: "saving", error: refusal });
@@ -1150,6 +1175,7 @@ export class SharedWorkspaceClient {
         const previousLog = this.view.eventLog ?? [];
         const logged = {
           ...eventLogEntryFor(command.event, response.ok),
+          ...enteredOfflineLog(response.ok ? value?.enteredOffline : undefined),
           sequence: (previousLog.at(-1)?.sequence ?? -1) + 1,
         };
         this.publish({

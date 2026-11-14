@@ -41,10 +41,13 @@ describe("wardDischargesDueToday (Codex review on #1383)", () => {
     expect(wardDischargesDueToday(releases, NOW_ANCHOR).map((r) => r.id)).toEqual(["today-expected"]);
   });
 
-  it("counts a release dated earlier today that is still open, and never one already discharged", () => {
+  it("leaves out a release whose time passed earlier today, and one already discharged (M6)", () => {
+    // M6 (mechanics audit, 14 Nov 2026): one "discharges today" rule with Capacity and the forecast.
+    // A time that has passed is overdue from that minute, not still "today" until midnight.
     const morning = release("this-morning", { expectedAt: NOW_ANCHOR - 120 });
     const gone = release("discharged", { state: "discharged", expectedAt: NOW_ANCHOR - 60 });
-    expect(wardDischargesDueToday([morning, gone], NOW_ANCHOR).map((r) => r.id)).toEqual(["this-morning"]);
+    const later = release("later-today", { expectedAt: NOW_ANCHOR + 120 });
+    expect(wardDischargesDueToday([morning, gone, later], NOW_ANCHOR).map((r) => r.id)).toEqual(["later-today"]);
   });
 
   it("takes the confirmed count from the same list, so a later confirmed discharge cannot hide one to confirm", () => {

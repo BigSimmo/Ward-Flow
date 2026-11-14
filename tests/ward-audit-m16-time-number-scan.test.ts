@@ -320,6 +320,12 @@ const ALLOWED: readonly Allowed[] = [
   },
   { file: "ward-clock.ts", expr: "8 * 60", n: 1, why: "the WA time zone offset (UTC+8, no daylight saving)" },
   {
+    file: "ward-eligibility.ts",
+    expr: "minutes < 120",
+    n: 1,
+    why: "wording: the bed count's age reads in minutes under two hours, then whole hours (H8, D-210)",
+  },
+  {
     file: "ward-flow-scenario-file.ts",
     expr: "8 * 60",
     n: 1,
@@ -375,6 +381,12 @@ const ALLOWED: readonly Allowed[] = [
     expr: "12 * 60",
     n: 1,
     why: "phone alert id lifetime (ROLE_ALERT_WINDOW_MINUTES, on the not-clinical list)",
+  },
+  {
+    file: "ward-shared-clock.ts",
+    expr: "fromServer < 120_000",
+    n: 1,
+    why: "software: milliseconds past the server's board minute; 2 minutes or more is not trusted and the last phase is kept (L1, D-210)",
   },
   {
     file: "ward-shared-access.tsx",

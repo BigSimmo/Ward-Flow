@@ -1,7 +1,12 @@
 // tests/ward-priority.test.ts
 import { describe, expect, it } from "vitest";
 
-import { FORM_TIMING_FACTOR_LABEL, queueOrder, waitFactors } from "../src/components/ward-management/ward-priority";
+import {
+  FORM_TIMING_FACTOR_LABEL,
+  queueOrder,
+  queueWaitStartedAt,
+  waitFactors,
+} from "../src/components/ward-management/ward-priority";
 import { wardMovements } from "../src/components/ward-management/ward-movements";
 import { isOpen } from "../src/components/ward-management/ward-derivations";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
@@ -242,11 +247,38 @@ describe("queue order", () => {
     for (let index = 1; index < ordered.length; index += 1) {
       const earlier = ordered[index - 1];
       const later = ordered[index];
-      expect(earlier.openedAt).toBeLessThanOrEqual(later.openedAt);
-      if (earlier.openedAt === later.openedAt) expect(earlier.id < later.id).toBe(true);
+      expect(queueWaitStartedAt(earlier)).toBeLessThanOrEqual(queueWaitStartedAt(later));
+      if (queueWaitStartedAt(earlier) === queueWaitStartedAt(later)) expect(earlier.id < later.id).toBe(true);
     }
     const tiers = new Set(ordered.map((movement) => movement.urgency));
     expect(tiers.size, "tiers must interleave for the wait order to mean anything").toBeGreaterThan(1);
+  });
+
+  /**
+   * Audit M5, D-210 (Josh, 14 Nov 2026): the row's wait counts from the referral, so the order does
+   * too. A journey opened earlier but referred later waits less, and sits below; with no referral
+   * time recorded the row's wait (and its place) falls back to the time it opened.
+   */
+  it("orders by the referral time the row shows, falling back to the time opened", () => {
+    const base = movementById("WF-001");
+    const openedFirstReferredLater: Movement = {
+      ...base,
+      id: "WF-REF-A",
+      openedAt: NOW_ANCHOR - 900,
+      referredAt: NOW_ANCHOR - 100,
+    };
+    const openedLaterReferredFirst: Movement = {
+      ...base,
+      id: "WF-REF-B",
+      openedAt: NOW_ANCHOR - 500,
+      referredAt: NOW_ANCHOR - 400,
+    };
+    const noReferralTime: Movement = { ...base, id: "WF-REF-C", openedAt: NOW_ANCHOR - 300, referredAt: undefined };
+    expect(
+      queueOrder([openedFirstReferredLater, noReferralTime, openedLaterReferredFirst], NOW_ANCHOR).map(
+        (movement) => movement.id,
+      ),
+    ).toEqual(["WF-REF-B", "WF-REF-C", "WF-REF-A"]);
   });
 
   it("breaks a tie on wait by id, never by tier", () => {
@@ -279,8 +311,8 @@ describe("queue order", () => {
     const ordered = queueOrder(wardMovements, NOW_ANCHOR);
     for (let index = 1; index < ordered.length; index += 1) {
       if (ordered[index].urgency !== ordered[index - 1].urgency) continue;
-      const earlierWait = NOW_ANCHOR - ordered[index - 1].openedAt;
-      const laterWait = NOW_ANCHOR - ordered[index].openedAt;
+      const earlierWait = NOW_ANCHOR - queueWaitStartedAt(ordered[index - 1]);
+      const laterWait = NOW_ANCHOR - queueWaitStartedAt(ordered[index]);
       expect(earlierWait).toBeGreaterThanOrEqual(laterWait);
     }
   });
@@ -428,8 +460,8 @@ describe("the urgent flag is a highlight, not an order", () => {
 
   it("leads the real fixture with the longest wait, not with a flagged movement", () => {
     const ordered = queueOrder(wardMovements, NOW_ANCHOR);
-    const longest = Math.min(...wardMovements.filter(isOpen).map((movement) => movement.openedAt));
-    expect(ordered[0].openedAt).toBe(longest);
+    const longest = Math.min(...wardMovements.filter(isOpen).map(queueWaitStartedAt));
+    expect(queueWaitStartedAt(ordered[0])).toBe(longest);
     expect(
       wardMovements.some((movement) => isOpen(movement) && movement.flaggedUrgent),
       "the fixture must hold a flagged movement for this to mean anything",

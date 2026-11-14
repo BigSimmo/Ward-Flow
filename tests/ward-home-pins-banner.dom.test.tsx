@@ -186,11 +186,13 @@ describe("since banner text", () => {
     ]);
   });
 
-  it("leads with This shift before any review, keeps every count for screen readers, and is empty with nothing new", () => {
+  it("leads with the previous shift's start before any review, keeps every count for screen readers, and is empty with nothing new", () => {
+    // Audit L4, D-210 (Josh, 14 Nov 2026): before a usable review the window is the previous shift's
+    // start, as the Activity panel counts, so the lead names it rather than "This shift".
     const shift = { ...base, basis: "shift" as const, newEscalationIds: ["WF-9"] };
-    expect(sinceBannerLead(shift, "07:00")).toBe("This shift");
-    expect(sinceBannerText(shift, "07:00")).toBe(
-      "Since the shift started at 07:00: 1 new escalation, 2 new delays, 4 new referrals, 3 beds freed",
+    expect(sinceBannerLead(shift, "23:00 yesterday")).toBe("Since 23:00 yesterday");
+    expect(sinceBannerText(shift, "23:00 yesterday")).toBe(
+      "Since the previous shift started at 23:00 yesterday: 1 new escalation, 2 new delays, 4 new referrals, 3 beds freed",
     );
     const nothing = { ...base, newReferralIds: [], bedsFreed: [], newDelays: [] };
     expect(sinceBannerCounts(nothing)).toEqual([]);

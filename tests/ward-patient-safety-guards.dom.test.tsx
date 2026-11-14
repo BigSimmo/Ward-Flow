@@ -27,7 +27,10 @@ import { AddPatientForm } from "@/components/ward-management/patients/add-patien
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WARD_ADMISSIONS_ANCHOR } from "@/components/ward-management/ward-admissions-seed";
 
-const NOW_ANCHOR = 1_700_000_000_000;
+// The board's anchor minute. This read 1_700_000_000_000 (an epoch-millisecond figure) until 14 Nov
+// 2026: an instant counts minutes from the board's day 0, so that put the board three million years
+// out, past the last day a JavaScript date can hold, and seeding's sample-day move (CC-5) threw on it.
+const NOW_ANCHOR = WARD_ADMISSIONS_ANCHOR;
 
 describe("WardBoard Patient Safety Confirmations", () => {
   it("with requireConfirmation=true, clicking 'They have left' opens confirmation modal and requires explicit confirm before dispatching", async () => {

@@ -89,7 +89,9 @@ describe("bedsForecast", () => {
     { from: NOW + 3 * MINUTES_PER_DAY, to: NOW + 60, day: 1, twoDays: 1, overdue: 0 },
     { from: NOW - 2 * MINUTES_PER_DAY, to: NOW + 60, day: 1, twoDays: 1, overdue: 0 },
     { from: NOW + 60, to: NOW - 2 * MINUTES_PER_DAY, day: 0, twoDays: 0, overdue: 1 },
-    { from: NOW + 3 * MINUTES_PER_DAY, to: 0, day: 1, twoDays: 1, overdue: 0 },
+    // M6 (mechanics audit, 14 Nov 2026): a plan dated earlier today (00:00) has passed, so it is
+    // overdue now, not "likely" until midnight.
+    { from: NOW + 3 * MINUTES_PER_DAY, to: 0, day: 0, twoDays: 0, overdue: 1 },
   ])("uses a rescheduled date for windows and overdue groups ($from to $to)", ({ from, to, day, twoDays, overdue }) => {
     const flagged = release({ admissionId: "AD-MOVED", expectedAt: from });
     const stay = admission({

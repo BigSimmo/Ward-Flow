@@ -202,8 +202,18 @@ export function isFlaggedUrgent(movement: Pick<Movement, "flaggedUrgent">): bool
 }
 
 /**
- * The Home queue's one order: longest wait first (earliest `openedAt`), then the id so equal waits
- * never fall back on sort stability.
+ * When a queue row's wait started: the referral time (`Movement.referredAt`), or the time the journey
+ * opened in ED when no referral time is recorded. Audit M5, D-210 (Josh, 14 Nov 2026): the queue
+ * row's "waiting" figure counts from here (`priority-queue.tsx`), so `queueOrder` reads the same
+ * start and a row never sits above one that has waited longer by the figure it shows.
+ */
+export function queueWaitStartedAt(movement: Pick<Movement, "referredAt" | "openedAt">): Instant {
+  return movement.referredAt ?? movement.openedAt;
+}
+
+/**
+ * The Home queue's one order: longest wait first (earliest `queueWaitStartedAt`, the referral time
+ * or, with none recorded, `openedAt`), then the id so equal waits never fall back on sort stability.
  *
  * Audit 1, Josh 20 Oct (CS-04, NB-6a), superseding D-32 of 12 Oct: re-sorting the waiting queue is
  * on the never-build list. The flag, an act-now task and the tier used to lift rows above longer
@@ -212,5 +222,7 @@ export function isFlaggedUrgent(movement: Pick<Movement, "flaggedUrgent">): bool
  */
 export function queueOrder(movements: Movement[], now: Instant): Movement[] {
   void now; // Kept so existing callers compile; the order reads no clock.
-  return movements.filter(isOpen).sort((a, b) => a.openedAt - b.openedAt || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  return movements
+    .filter(isOpen)
+    .sort((a, b) => queueWaitStartedAt(a) - queueWaitStartedAt(b) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 }

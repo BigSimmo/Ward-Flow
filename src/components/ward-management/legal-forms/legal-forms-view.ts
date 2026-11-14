@@ -258,7 +258,7 @@ export function handoverLines(
       const left = minutesUntil(dueAt, now);
       return left <= windowMinutes;
     })
-    .sort((a, b) => (a.legalForm?.dueAt ?? 0) - (b.legalForm?.dueAt ?? 0))
+    .sort((a, b) => (currentLegalDueAt(a) ?? 0) - (currentLegalDueAt(b) ?? 0))
     .map((movement) => {
       const dueAt = currentLegalDueAt(movement)!;
       return `${dueAt < now ? "Passed · " : ""}${typedTimeLine(dueAt, now, dayZero)} Form ${movement.legalForm!.code}, ${nameOf(movement)}`;

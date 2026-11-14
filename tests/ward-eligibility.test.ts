@@ -527,8 +527,13 @@ describe("security gate — a mixed ward's locked beds are reachable", () => {
     });
     const verdictNoFreeLocked = referralEligibility(subjectReferral, ward.destination, mixedWardNoFreeLocked, NOW);
     const referralSecurityGate = verdictNoFreeLocked.gates.find((g) => g.gate === "security");
-    expect(referralSecurityGate?.pass).toBe(false);
+    // H9 (D-210 (Josh, 14 Nov 2026)): `security` asks only the kind on both paths now; whether a
+    // locked bed is free is the referral path's own capacity check, `locked_bed_free`.
+    expect(referralSecurityGate?.pass).toBe(true);
     expect(referralSecurityGate?.detail).toContain("no locked bed is free");
+    const lockedFreeGate = verdictNoFreeLocked.gates.find((g) => g.gate === "locked_bed_free");
+    expect(lockedFreeGate?.pass).toBe(false);
+    expect(lockedFreeGate?.detail).toContain("no locked bed is free now");
 
     // Contrast with movement `eligibility()`, which checks ward capability (`unitHasLockedBeds`) for
     // in-principle waitlist acceptance while `PULL_PATIENT` enforces `lockedBedsFree(unit) > 0`:

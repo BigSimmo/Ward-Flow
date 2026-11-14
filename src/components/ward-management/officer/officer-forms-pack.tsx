@@ -22,6 +22,7 @@ import {
 } from "@/components/ward-management/ward-transport-checks";
 import { TRANSPORT_PAPERWORK_STATUS_WORDS } from "@/components/ward-management/ward-transport-paperwork";
 
+import { currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
 import { OfficerOnly } from "./officer-crew-only";
 import styles from "./officer.module.css";
 
@@ -98,7 +99,9 @@ function bookedLegalCode(movement: Movement): string | undefined {
  * recorded form when it is a 1A, 1B or 3D. The officer still confirms it by choosing the file.
  */
 function recordedLegalCode(movement: Movement): string | undefined {
-  const code = movement.legalForm?.code;
+  // Audit H4: a form recorded as ended does not open the slot.
+  const position = currentLegalPosition(movement);
+  const code = position.ended ? undefined : position.form?.code;
   return code === "1A" || code === "1B" || code === "3D" ? code : undefined;
 }
 

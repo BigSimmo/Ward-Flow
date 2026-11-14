@@ -98,6 +98,18 @@ const worldBytes = jsonbTextByteLength;
  * permanent audit row keeps how many there were and their SHA-256 instead of the whole list; the
  * entries themselves are in the saved workspace and can be regenerated from the scenario.
  */
+/**
+ * H2: the receipt a reload's recovery check records for a save that never reached the server.
+ * Not a hash, so no command can ever match it; a late arrival gets `NOT_APPLIED_RESULT` back.
+ */
+export const NOT_APPLIED_FINGERPRINT = "not-applied-after-receipt-check";
+const NOT_APPLIED_RESULT = {
+  outcome: "denied",
+  commandRevision: 0,
+  code: "not-applied",
+  error:
+    "This save was checked after the page reloaded and had not arrived, so it was not applied. Review the board before entering it again.",
+};
 export function storedAuditChanges(changes) {
   if (!changes || changes.reset !== true || !Array.isArray(changes.domainAudit)) return changes;
   return {
@@ -1392,11 +1404,29 @@ export function createWorkspaceStore(
     /** Receipt lookup reveals only the authenticated actor's outcome, never stored request text.
      * @param {string} actorId @param {string} commandId @param {any} [view]
      */
-    async receipt(actorId, commandId, view = null) {
-      const { rows } = await pool.query(
-        "SELECT status, result FROM ward_flow.commands WHERE workspace_id=$1 AND actor_id=$2 AND command_id=$3",
-        [workspaceId, actorId, commandId],
-      );
+    async receipt(actorId, commandId, view = null, { settle = false } = {}) {
+      const select =
+        "SELECT status, result FROM ward_flow.commands WHERE workspace_id=$1 AND actor_id=$2 AND command_id=$3";
+      let { rows } = await pool.query(select, [workspaceId, actorId, commandId]);
+      if (!rows.length && settle) {
+        // H2 (mechanics and clock audit, 14 Nov 2026; revisits #1435): a reload's recovery check
+        // asks once more under the workspace lock that every save takes, and records a save it
+        // still cannot find as not applied. A late arrival of that save is then refused with this
+        // answer (`NOT_APPLIED_FINGERPRINT` in `command`), so "not applied" stays true, and saving
+        // is no longer held for the rest of the sign-in on a save that never left the device.
+        rows = await transaction(async (client) => {
+          const { rowCount } = await client.query(
+            "SELECT 1 FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype' FOR UPDATE",
+            [workspaceId],
+          );
+          if (!rowCount) return [];
+          await client.query(
+            "INSERT INTO ward_flow.commands(workspace_id, actor_id, command_id, fingerprint, status, result) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT DO NOTHING",
+            [workspaceId, actorId, commandId, NOT_APPLIED_FINGERPRINT, 422, NOT_APPLIED_RESULT],
+          );
+          return (await client.query(select, [workspaceId, actorId, commandId])).rows;
+        });
+      }
       return ownCommandReceipt(
         rows[0],
         view?.access?.role === "executive" ? null : accessContext(clock(), view).accessContext,
@@ -1418,10 +1448,12 @@ export function createWorkspaceStore(
      * reply carries only its part of the workspace. `options.seen` maps record tokens to the later
      * revision the sender has seen each at (CS-19 follow-up, `conflicts` in records.mjs); an
      * accepted reply names the records it checked as `covered`.
-     * @param {{ revisionOnly?: boolean, seen?: Record<string, number> | null, view?: { status?: string, choices?: readonly unknown[], actorId?: string, version?: number, membershipId?: string | null, accessUntil?: number, access?: { role: string, scope: Record<string, unknown> }, ownAccess?: { role: string, scope: Record<string, unknown> } | null, grants?: readonly { patientId: string, until: Date }[], recentGrant?: boolean } | null }} [options]
+     * @param {{ revisionOnly?: boolean, actedAt?: number, seen?: Record<string, number> | null, view?: { status?: string, choices?: readonly unknown[], actorId?: string, version?: number, membershipId?: string | null, accessUntil?: number, access?: { role: string, scope: Record<string, unknown> }, ownAccess?: { role: string, scope: Record<string, unknown> } | null, grants?: readonly { patientId: string, until: Date }[], recentGrant?: boolean } | null }} [options]
      */
     async command(actorId, commandId, expectedRevision, event, options = {}) {
       const { revisionOnly = false, view, seen = null } = options;
+      // H1 (D-210 (Josh, 14 Nov 2026), ruling 1): the board minute the person acted at, when sent.
+      const actedAt = Number.isSafeInteger(options.actedAt) ? options.actedAt : undefined;
       // A community sender's team is authenticated by the selected membership, not by the
       // browser-supplied label. Bind it before applying the event so scope can safely recognise
       // the sender as the owner of the referral later.
@@ -1455,7 +1487,16 @@ export function createWorkspaceStore(
       const demoRefused = !demoEvents && engine.demoOnlyCommand(event);
       const fingerprintOf = (value) =>
         createHash("sha256")
-          .update(JSON.stringify(canonical({ expectedRevision, event: value, ...(seen ? { seen } : {}) })))
+          .update(
+            JSON.stringify(
+              canonical({
+                expectedRevision,
+                event: value,
+                ...(seen ? { seen } : {}),
+                ...(actedAt !== undefined ? { actedAt } : {}),
+              }),
+            ),
+          )
           .digest("hex");
       const fingerprint = fingerprintOf(event);
       // Audit F-01: a receipt written before file content was dropped was fingerprinted with it, so
@@ -1481,6 +1522,20 @@ export function createWorkspaceStore(
           "SELECT fingerprint, status, result FROM ward_flow.commands WHERE workspace_id=$1 AND actor_id=$2 AND command_id=$3",
           [workspaceId, actorId, commandId],
         );
+        if (previous.rowCount && previous.rows[0].fingerprint === NOT_APPLIED_FINGERPRINT) {
+          // H2: a receipt check after a reload found nothing and recorded this save as not applied,
+          // so a late arrival is refused with that answer, never applied after the person was told.
+          row.archived = await archivedCount(client, row.payload, row.revision);
+          // This answer names nothing but the refusal (`NOT_APPLIED_RESULT`), so any desk may read it.
+          return {
+            status: previous.rows[0].status,
+            body: {
+              ...previous.rows[0].result,
+              replayed: true,
+              snapshot: await snapshot(row, at, view, undefined, client),
+            },
+          };
+        }
         if (previous.rowCount) {
           row.archived = await archivedCount(client, row.payload, row.revision);
           const receipt = previous.rows[0];
@@ -1600,7 +1655,7 @@ export function createWorkspaceStore(
         ) {
           // From migration 10 a command sent against an older revision still applies to the
           // latest workspace, unless someone else has since changed a record it changes or names.
-          const applied = engine.applyCommand(row.payload, event, at);
+          const applied = engine.applyCommand(row.payload, event, at, { actedAt });
           const after = applied.outcome === "accepted" ? applied.world : row.payload;
           const clash =
             priorRevision === expectedRevision

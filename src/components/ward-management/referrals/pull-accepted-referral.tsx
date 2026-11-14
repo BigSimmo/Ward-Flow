@@ -39,6 +39,7 @@ import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { allEmergencyDepartments } from "../ward-sites";
 import {
   acceptedPullDesk,
+  endedFormWords,
   LEGAL_STATUSES,
   recordedPullDetails,
   type AcceptedAwaitingPull,
@@ -154,7 +155,12 @@ export function PullAcceptedReferral({
 }) {
   const { referral, unitId, unitName } = item;
   const baseId = useId();
-  const { movements, dispatch, rejections } = useWardFlowSelect("movements", "dispatch", "rejections");
+  const { movements, dispatch, rejections, dayZero } = useWardFlowSelect(
+    "movements",
+    "dispatch",
+    "rejections",
+    "dayZero",
+  );
   const now = useWardFlowClock();
   const gate = useRoleGate();
   const routeRole = useRouteRole();
@@ -181,7 +187,8 @@ export function PullAcceptedReferral({
   const who = patientOf(referral);
   const name = nameFor(who.formalName, who.umrn);
 
-  const [recorded] = useState(() => recordedPullDetails(referral, movements));
+  // D-210 (Josh, 14 Nov 2026), ruling 7: an ended form or a passed typed expiry is never pre-filled.
+  const [recorded] = useState(() => recordedPullDetails(referral, movements, now));
   const recordedForm = recorded.legalFormCode === undefined ? "" : (recorded.legalFormCode ?? NO_FORM);
   // D-188 (tightened 13 Nov): an observation level the ED board records as "not recorded"
   // is not a level. It opens with nothing chosen, and the bed cannot be pulled until one is chosen.
@@ -514,6 +521,11 @@ export function PullAcceptedReferral({
                 ))}
               </Select>
             </Field>
+            {recorded.endedForm ? (
+              <p className={styles.ctx} data-testid="ward-pull-accepted-ended-form">
+                {endedFormWords(recorded.endedForm, now, dayZero)}
+              </p>
+            ) : null}
           </div>
           {formMismatch ? (
             <p role="alert" className={styles.warning} data-testid="ward-pull-accepted-form-mismatch">

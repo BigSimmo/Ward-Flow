@@ -11,6 +11,8 @@
  * 1a. A tile whose stay has a fixed seat (`seatStays`, audit A1-1) sits in that bed when nothing
  *    recorded sits there, so a stay never moves when another bed changes state.
  * 2. Every other tile keeps its baseline bed when nothing recorded or seated sits there.
+ * 1b. A tile with a bed kind (`kind`, a Ready tile on a mixed ward, H10) takes the lowest free bed
+ *    of that kind (beds 1 to `lockedBeds` are locked) when one is left.
  * 3. A tile pushed out of its baseline takes the lowest bed left over, in the order it came.
  * 4. A bed held for an accepted referral (`heldBedNumber`) keeps a free tile: if the layout put a
  *    taken tile there, it swaps with a free tile that is not itself on a held bed.
@@ -24,6 +26,11 @@ export type BedLayoutItem = {
   free: boolean;
   /** H-0978: a Closed tile, the only kind a bed closed by number (`Unit.closedBeds`) may carry. */
   closed?: boolean;
+  /**
+   * H10: a Ready tile of this bed kind on a mixed ward takes the lowest free bed of that kind before
+   * any tile takes its baseline, so the Ready tiles read the ward's free locked and open figures.
+   */
+  kind?: "locked" | "open";
 };
 
 export function layoutBedNumbers(
@@ -32,6 +39,7 @@ export function layoutBedNumbers(
   heldBedNumbers: readonly number[] = [],
   seatOf: (admissionId: string) => number | undefined = () => undefined,
   closedBedNumbers: readonly number[] = [],
+  lockedBeds = 0,
 ): number[] {
   const beds = items.length;
   const holder: number[] = new Array<number>(beds + 1).fill(-1);
@@ -63,6 +71,15 @@ export function layoutBedNumbers(
     holder[bed] = index;
     bedOf[index] = bed;
   }
+  items.forEach((item, index) => {
+    if (bedOf[index] !== 0 || item.kind === undefined) return;
+    for (let bed = 1; bed <= beds; bed += 1) {
+      if (holder[bed] !== -1 || (bed <= lockedBeds ? "locked" : "open") !== item.kind) continue;
+      holder[bed] = index;
+      bedOf[index] = bed;
+      return;
+    }
+  });
   items.forEach((_, index) => {
     const baseline = index + 1;
     if (bedOf[index] === 0 && holder[baseline] === -1) {
@@ -131,9 +148,9 @@ export function seatReplayOrder(left: { start: number; id: string }, right: { st
  * left (`leftAt`). A stay's bed therefore depends only on what happened before it took the bed:
  * a later departure, absence, pull or arrival never moves it, and the same records always give
  * the same beds (it survives a reload). A stay that took a locked bed (`bedKind`) on a mixed ward
- * is seated in the locked beds (1 to `lockedBeds`) first, an open one in the open beds first.
- * Waitlisted stays hold no bed. A stay that finds no free bed is left out, and the layout gives it
- * the lowest bed left over. A current stay is never seated in a bed another overlapping stay has
+ * is seated in the locked beds (1 to `lockedBeds`) only, an open one in the open beds only (H10).
+ * Waitlisted stays hold no bed. A stay that finds no free bed of its kind is left out, and the
+ * layout gives it the lowest bed left over. A current stay is never seated in a bed another overlapping stay has
  * recorded (`bedNumber`): otherwise the layout pins the recorded stay there, moves the other to a
  * leftover bed, and the other jumps back to its seat when the recorded one leaves. The recorded
  * stay itself keeps its replay seat, so a Bed board move reflows nobody else's seat.
@@ -186,10 +203,13 @@ export function seatStays(
       const holder = taken[bed];
       if (holder !== undefined && holder.end <= span.start) taken[bed] = undefined;
     }
+    // D-210 (Josh, 14 Nov 2026), H10: a stay with a recorded bed kind on a mixed ward is seated in
+    // that kind's beds only. When none is free it is left out (`bedKindSeatConflicts` names it as a
+    // conflict) rather than put in the other kind's numbers, where its tile would read the wrong kind.
     let bed = 0;
     if (mixed && span.kind === "locked") bed = firstFree(1, lockedBeds, span);
     else if (mixed && span.kind === "open") bed = firstFree(lockedBeds + 1, beds, span);
-    if (bed === 0) bed = firstFree(1, beds, span);
+    else bed = firstFree(1, beds, span);
     if (bed === 0) continue;
     taken[bed] = span;
     if (span.end === Number.POSITIVE_INFINITY) seats.set(span.id, bed);

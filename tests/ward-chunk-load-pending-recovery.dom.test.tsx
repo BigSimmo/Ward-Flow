@@ -22,11 +22,12 @@ const snapshot = (revision: number): SharedSnapshot => ({
 });
 
 let reload: ReturnType<typeof vi.fn>;
+let onLine: { mockReturnValue: (value: boolean) => unknown };
 
 beforeEach(() => {
   reload = vi.fn();
   vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, reload } as Location);
-  vi.spyOn(window.navigator, "onLine", "get").mockReturnValue(false);
+  onLine = vi.spyOn(window.navigator, "onLine", "get").mockReturnValue(false);
   vi.spyOn(console, "error").mockImplementation(() => {});
   window.sessionStorage.clear();
 });
@@ -68,6 +69,9 @@ describe.each([
       },
     });
     try {
+      // H2 (mechanics and clock audit, D-210, 14 Nov 2026): a browser that says it is offline never
+      // sends a save, so the command goes out while online and the connection drops while it is in flight.
+      onLine.mockReturnValue(true);
       await client.refresh();
       const completion = client.dispatchConfirmed({
         type: "REQUEST_CAPACITY_REFRESH",
@@ -77,6 +81,7 @@ describe.each([
       });
       await waitFor(() => expect(finishCommand).toBeDefined());
       expect(window.sessionStorage.getItem(WARD_COMMAND_RECOVERY_KEY)).not.toBeNull();
+      onLine.mockReturnValue(false);
       renderHook(() => useReloadWhenOnline(true));
 
       reconnect();

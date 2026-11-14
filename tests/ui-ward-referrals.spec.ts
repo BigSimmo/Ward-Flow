@@ -902,12 +902,14 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
       `0 of ${REVIEWED_UNITS} units accept this referral right now.`,
     );
     await showEveryWard();
-    // The ward's reason shows once it is picked and Clinical override is opened (D-77).
+    // M14(a) (D-210, Josh 14 Nov 2026): Clinical override is offered only for checks a recorded
+    // reason can answer, and a gender designation is not one of them (`SUITABILITY_GATES`). So the
+    // one button refuses this ward by name, stays focusable (aria-disabled, not disabled) and
+    // carries the reason as its accessible description, rather than opening an override form.
     await page.getByTestId(`ward-referral-match-phone-cand-${FEMALE_ONLY_UNIT_ID}`).click();
-    await expect(page.getByTestId("ward-referral-match-phone-accept")).toHaveText(
-      `Clinical override for ${FEMALE_ONLY_UNIT_NAME}`,
-    );
-    await page.getByTestId("ward-referral-match-phone-accept").click();
+    const refusedAccept = page.getByTestId("ward-referral-match-phone-accept");
+    await expect(refusedAccept).toHaveText(`Cannot accept at ${FEMALE_ONLY_UNIT_NAME}`);
+    await expect(refusedAccept).toHaveAttribute("aria-disabled", "true");
     // D7 (a forensic bed is never offered) is not shown here: the sample network has no forensic
     // ward since owner ruling 1A. See the note on the unit constants above for where it is proven.
     // D3 rule 3: a designated bed constrains who may occupy it. This is the one dimension whose
@@ -917,8 +919,9 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     // Wording changed 17 September 2026 (Opus review round 2, P2, privacy): the coordinator's own
     // console still names the sex designation and the unit, but no longer says "this referral's
     // sex" — see `genderDesignationResult` in `ward-eligibility.ts`.
-    await expect(page.getByTestId(`ward-referral-match-reason-${FEMALE_ONLY_UNIT_ID}`)).toHaveText(
-      `${FEMALE_ONLY_UNIT_NAME} is female only and does not suit this patient`,
+    // The reason is `matchReason`'s gate detail plus the refusal sentence (`referral-match.tsx`).
+    await expect(refusedAccept).toHaveAccessibleDescription(
+      `${FEMALE_ONLY_UNIT_NAME} is female only and does not suit this patient. No recorded reason can override this.`,
     );
     // A unit that does not accept offers no accept control at all — the refusal is not merely
     // described, it is enforced in the UI.

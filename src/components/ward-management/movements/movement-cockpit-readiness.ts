@@ -1,10 +1,6 @@
-import {
-  clockState,
-  type DueSoonThresholds,
-  formatInstantWithDay,
-  type Instant,
-} from "@/components/ward-management/ward-clock";
+import { type DueSoonThresholds, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { transportNeedState, transportStatusLabel } from "@/components/ward-management/ward-derivations";
+import { currentLegalPosition, currentLegalStanding } from "@/components/ward-management/ward-legal-form-progression";
 import type { LegalForm, Movement } from "@/components/ward-management/ward-model";
 
 /*
@@ -18,12 +14,13 @@ export function formReadinessState(
   thresholds: DueSoonThresholds,
 ): string {
   if (!legalForm) return "Not ready — no legal form recorded.";
-  if (legalForm.dueAt === undefined) return "Recorded. No deadline.";
-  const state = clockState(legalForm.dueAt, now, thresholds);
-  if (state === "breached") return "Recorded. Deadline passed.";
-  if (state === "critical" || state === "due") {
-    return "Recorded. Deadline close.";
-  }
+  // Audit H4 (14 Nov 2026): the one current legal position. A form a person recorded as ended is
+  // never read as live, and its old typed end never as a passed deadline.
+  if (currentLegalPosition({ legalForm }).ended) return "Recorded as ended.";
+  const standing = currentLegalStanding({ legalForm }, now, thresholds);
+  if (standing === "none") return "Recorded. No deadline.";
+  if (standing === "passed") return "Recorded. Deadline passed.";
+  if (standing === "urgent" || standing === "soon") return "Recorded. Deadline close.";
   return "Recorded. Deadline ahead.";
 }
 

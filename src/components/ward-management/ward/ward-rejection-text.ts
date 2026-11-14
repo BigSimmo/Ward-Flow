@@ -13,6 +13,7 @@ export const WARD_GATE_LABELS: Record<EligibilityGate, string> = {
   cohort: "Cohort",
   forensic: "Forensic bed",
   legal_status: "Legal status",
+  locked_bed_free: "Locked bed free",
   prior_decline: "Prior decline",
   security: "Security",
   gender_designation: "Bed designation",

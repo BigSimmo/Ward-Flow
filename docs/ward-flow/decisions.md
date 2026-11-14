@@ -232,6 +232,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-207](#d-207-fit-to-travel-recorded-as-not-cleared-and-the-clinical-go-14-november-2026)                                                              | Fit to travel: not cleared, and the clinical go                                        | Partly replaced by D-211                         |
 | [D-208](#d-208-appraised-findings-fix-three-real-display-bugs-14-november-2026)                                                                         | Appraised findings: fix three real display bugs                                        | Active                                           |
 | [D-209](#d-209-nine-open-clinical-items-signed-avoiding-restriction-and-friction-14-november-2026)                                                      | Nine open clinical items signed, avoiding restriction and friction                     | Active                                           |
+| [D-210](#d-210-mechanics-and-clock-audit-fixes-14-november-2026)                                                                                        | Mechanics and clock audit fixes, one PR                                                | Active                                           |
 | [D-211](#d-211-not-medically-cleared-pauses-onward-transfer-14-november-2026)                                                                           | Not medically cleared pauses onward transfer                                           | Active                                           |
 | [D-212](#d-212-the-master-stress-test-replaces-audits-6-11-and-18-14-november-2026)                                                                     | The master stress test replaces Audits 6, 11 and 18                                    | Active                                           |
 
@@ -2597,9 +2598,28 @@ is inferred.
 - **Why:** items 7, 8 and 9 match published WA sources read on 14 November 2026. The rest are Josh's clinical calls on synthetic stories. "Avoiding restrictive and friction" means no new block, no steering and the least restrictive observation level that fits.
 - **Boundary:** synthetic data only; a prototype, not validated clinical decision support. No real authorisation status is relied on for a placement.
 
+## D-210. Mechanics and clock audit fixes (14 November 2026)
+
+- **Date:** 14 November 2026, 9:53 AM AWST (01:53 UTC). **Decided by:** Josh, in the "Fix app mechanics and clock faults" thread: "Yes to all recommendations. Except ED will alert the ED team screens please and clinician roles. fix everything in 1 PR", answering the ten questions of the mechanics and clock audit (`audit-handover/mechanics-clock-audit-2026-11-14.md`).
+- **Decision:**
+  1. **Offline saves** record the time the person acted. The engine accepts it only when it is not later than the server's time and not earlier than the record's last change; history shows "entered offline, sent HH:MM". Otherwise the save is refused and the person is asked to redo it.
+  2. **A typed legal expiry that passes** for a person admitted on a form raises Act now on the ward desk, a coordinator alert and the Forms counts. For a person still in ED, the alert also reaches the ED team screens (ED desk) and the ED clinician role, as well as the coordinator.
+  3. **TV legal board** matches Forms, Delays and ED: red "Act now" within the Settings urgent warning, amber "Ending soon" within the Settings soon warning. The TV "forms ending soon" figure counts amber rows only.
+  4. **Tier overdue waits** count from the referral time. With no referral time, the screen says "Referral time not recorded" and never shows the person as overdue. No clinical value changes.
+  5. **Stay and patient legal status:** the TV uses the patient page's rule and the same "statuses differ" mark.
+  6. **Form 3E** is recorded one way only, as a new form that supersedes the 3A. A 3C after a 3D is refused.
+  7. **Pull form for an ended form** shows "Form 3B ended HH:MM" as information and leaves the form "Not recorded". An ended form or a passed expiry is never copied forward.
+  8. **A bed held for someone admitted elsewhere** is flagged on the coordinator's Home with an offer to release the bed. The admission is not blocked.
+  9. **Repatriation security** follows the stay's locked or open bed type, not the ward.
+  10. **One PR** for every finding of the audit (H1 to H10, M1 to M15 and the Lows), each with a guard test, fixed at the shared rule rather than per screen.
+- **Why:** the audit found five root mechanisms behind about 45 faults: the same fact worked out separately on each screen; steps stamped when delivered, not when done; linked records not changed together; capacity mixed into suitability checks; and a setting inferred from the records a desk can see.
+- **Boundary:** synthetic data only. No clinical value or threshold changes. Josh chose to merge before the 22 November freeze (14 November, 04:50 UTC).
+- **Phone size (decision card, 04:33 UTC):** Josh allowed Home and Ward's phone script limits to rise 5.4 and 5.5 KB, past the 5 KB a PR may take alone, because the growth is the engine fixes every screen loads (`docs/script-budget-history/2026-11-14-pr1670-mechanics-clock-fixes.md`).
+- **Movement phone size (decision card, 05:31 UTC):** after #1668 merged first, Josh allowed Movement's phone script limit to rise 5.1 KB over main's (627.8 to 632.9), 0.1 KB past the allowance, as the same shared-engine growth.
+
 ## D-211. Not medically cleared pauses onward transfer (14 November 2026)
 
-- **Date:** 14 November 2026, 12:16 PM AWST (04:16 UTC). D-210 is claimed by open PR #1670. **Decided by:** Josh, "continue with all recommendations" on the plan thread's recommendations for the fit to travel check, then, in the Ward Flow project chat, "yes go ahead with this" on option 1: keep the rule that a not-cleared journey cannot go on, and fix the screen text that offered a way round it.
+- **Date:** 14 November 2026, 12:16 PM AWST (04:16 UTC). **Decided by:** Josh, "continue with all recommendations" on the plan thread's recommendations for the fit to travel check, then, in the Ward Flow project chat, "yes go ahead with this" on option 1: keep the rule that a not-cleared journey cannot go on, and fix the screen text that offered a way round it.
 - **Decision:** when medical clearance is recorded as "Not medically cleared", onward transfer stops until the patient is cleared again. The engine's refusal of booking, Mark handover ready, transport accepted, en route, collected and arrived stays. The screens now match it: the booking form and the handover, collection and arrival checks no longer offer "save without a reason" or "Continue without a reason", and say "Onward transfer is paused until re-clearance." instead. "Fit to travel not recorded" (nothing recorded) is unchanged: a reason is still asked for and never required (D-187 item 10, D-189 item 9(e)).
 - **Why:** D-207 said a not-cleared journey asks for a reason and never blocks, but the engine already refused the step, so the screens offered a way on that could not work. A recorded "not cleared" is a clinical stop, not a missing fact.
 - **Replaces:** the "never block" wording of D-207 for "not cleared" only. D-207's words "Fit to travel: not cleared" stay.

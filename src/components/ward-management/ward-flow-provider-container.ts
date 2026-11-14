@@ -130,6 +130,30 @@ export function wardFlowContainerReducer(
  * leaves `worldGeneration`, and so both, unchanged.
  */
 const MAX_CLIENT_EVENT_LOG_ENTRIES = 1000;
+
+/**
+ * M10 (mechanics and clock audit, 14 Nov 2026): replays the actions taken before the saved day was
+ * adopted onto `restored`, each at the restored board's minute (`boardNowOf` its world), not the
+ * seed clock's minute it was dispatched with. A Reset or scenario change is re-stamped the same
+ * way, so it builds its new day around the time on screen. Each early outcome keeps the event its
+ * caller is waiting on.
+ */
+export function replayEarlyEvents(
+  restored: WardFlowContainer,
+  events: readonly WardFlowEvent[],
+  boardNowOf: (world: WardFlowState) => number,
+): WardFlowContainer {
+  let next = restored;
+  for (const event of events) {
+    const restamped = "now" in event ? ({ ...event, now: boardNowOf(next.world) } as WardFlowEvent) : event;
+    next = trackWardFlowTypedTextDispatch(next, restamped);
+    const outcomes = next.earlyOutcomes ?? [];
+    const last = outcomes.at(-1);
+    if (last && last.event === restamped && restamped !== event)
+      next = { ...next, earlyOutcomes: [...outcomes.slice(0, -1), { event, outcome: last.outcome }] };
+  }
+  return next;
+}
 /**
  * Every scenario's seed: its prose ships in the bundle, so the typed-text copy keeps it. A16-14 made
  * the worked examples opt-in, so each scenario is listed with them as well, first: that world holds
@@ -142,7 +166,7 @@ export const fixtureWorlds = (offsetMinutes = 0) =>
     seedWardFlowStateAt(offsetMinutes, scenario),
   ]);
 
-export function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: WardFlowEvent): WardFlowContainer {
+function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: WardFlowEvent): WardFlowContainer {
   const nextWorld = wardFlowReducer(container.world, event);
   const outcome = localCommandOutcome(container.world, nextWorld);
   const accepted = outcome.status === "accepted";

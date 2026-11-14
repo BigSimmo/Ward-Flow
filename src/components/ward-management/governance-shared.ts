@@ -77,6 +77,7 @@ export const actionLabels: Record<AuditEvent["action"], string> = {
   ACCEPT_IN_PRINCIPLE: "Accept in principle",
   ACCEPT_REFERRAL: "Accept referral",
   HOLD_REFERRAL_BED: "Hold referral bed",
+  RELEASE_REFERRAL_BED: "Release referral bed",
   DECLINE: "Decline referral",
   DECLINE_REFERRAL: "Decline referral",
   PATIENT_ARRIVED: "Record arrival",

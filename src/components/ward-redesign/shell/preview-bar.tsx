@@ -273,6 +273,7 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
     inboxSnoozes,
     configuration,
     supportNotifications,
+    broadcastAlerts,
   } = useWardFlowSelect(
     "movements",
     "patients",
@@ -292,6 +293,7 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
     "inboxSnoozes",
     "configuration",
     "supportNotifications",
+    "broadcastAlerts",
   );
   // Live ticking clock for waits, freshness lines, notice scoping, and recorded actions — not the
   // stale `now` on the main context value, which only updates when something else dispatches.
@@ -427,6 +429,8 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
     supportNotifications,
     plannedAdmissions,
     leaveBeds,
+    // Audit M2, D-210 (Josh, 14 Nov 2026): an overdue Pull now is on the one task list too.
+    broadcastAlerts,
   });
   /*
    * Josh (13 Oct 2026, iPhone): the phone New referral sheet starts under the bar, so the bar stays

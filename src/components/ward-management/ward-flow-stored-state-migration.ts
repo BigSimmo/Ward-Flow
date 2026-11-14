@@ -4,6 +4,8 @@ import type { WardFlowState } from "./ward-flow-reducer";
 import { withSeededReviewIds } from "./ward-governance-seed";
 import { upgradeLegacyDeclineReasons } from "./ward-decline-legacy";
 import { upgradeLegacyObservationRows } from "./ward-observation-legacy";
+import { withDerivedStayBeds } from "./ward-bed-numbers";
+import { workedExamplesShown } from "@/components/ward-management/ward-rulings-demo";
 
 const object = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
@@ -11,14 +13,18 @@ const object = (v: unknown): v is Record<string, unknown> => typeof v === "objec
  * A validated stored state with the stream A inbox records filled in when the save predates them,
  * reviews of seeded governance entries moved to ids that name their subject, and decline reasons
  * saved before the one decline list read as merged ones (D-78, `ward-decline-legacy.ts`).
- * Call after `isValidStoredWardFlowState` on every restore path.
+ * Call after `isValidStoredWardFlowState` on every restore path. A save made before the world's
+ * worked-examples flag (M12) has it derived once from its records, as Reset demo used to each time.
  */
 export function withInboxStreamADefaults<T extends WardFlowState>(state: T): T {
-  const stored = state as T & Partial<Pick<WardFlowState, "inboxOwnership" | "inboxSnoozes">>;
+  const stored = state as T & Partial<Pick<WardFlowState, "inboxOwnership" | "inboxSnoozes" | "workedExamples">>;
+  // H10, D-210 (Josh, 14 Nov 2026): a save from before bed kinds and numbers were one fact takes
+  // them once here (`withDerivedStayBeds`), the same derivation the seed uses.
   return withSeededReviewIds({
-    ...upgradeLegacyDeclineReasons(state),
+    ...upgradeLegacyDeclineReasons(withDerivedStayBeds(state)),
     inboxOwnership: stored.inboxOwnership ?? {},
     inboxSnoozes: stored.inboxSnoozes ?? {},
+    workedExamples: stored.workedExamples ?? workedExamplesShown(state),
   });
 }
 

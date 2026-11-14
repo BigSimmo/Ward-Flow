@@ -12,13 +12,14 @@
 import { dayOf } from "@/components/ward-management/ward-clock";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import {
-  bedsPendingPreparation,
+  bedsPendingPreparationToOffer,
   capacityBreakdown,
   releaseBand,
 } from "@/components/ward-management/ward-bed-availability";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedIsOccupied, remainingSpeciallingCapacity } from "@/components/ward-management/ward-admissions";
 import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-bed-designation";
+import { bedKindSeatConflicts } from "@/components/ward-management/ward-bed-numbers";
 import { bedStates, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import {
   numberedReservationBeds,
@@ -376,6 +377,11 @@ export type NetworkWardRow = {
   arrivalCapacityConflicts?: number;
   reservationReleaseCapacityConflicts?: number;
   /**
+   * H10, D-210 (Josh, 14 Nov 2026): stays recorded in one bed kind with no bed of that kind
+   * (`bedKindSeatConflicts`). The layout never seats them in the other kind's beds by itself.
+   */
+  bedKindConflicts?: number;
+  /**
    * How many one-to-one specialling slots this ward could still staff, and how many it is authored
    * to staff at all. **Owner ruling 2026-09-06: specialling headroom goes on the network view**,
    * because `ward-flow-reducer.ts` REFUSES a pull when `remainingSpeciallingCapacity(...) <= 0`, and
@@ -535,13 +541,14 @@ function networkWardRow(unit: Unit, inputs: NetworkWardInputs): NetworkWardRow {
     onLeave: states.onLeave,
     surge: wardSurge(unit, cap),
     // Every bed still being made ready, from the one shared helper (D-179 item 8).
-    pendingPreparation: releases === undefined ? undefined : bedsPendingPreparation(unit.id, releases),
+    pendingPreparation: releases === undefined ? undefined : bedsPendingPreparationToOffer(unit, releases),
     confirmedAt: unit.allocatable.confirmedAt,
     // `releases ?? []` only because `unitCapacity` takes them for its `potential` field, which this
     // never reads; `occupied` is derived from `beds`, `empty` and `blocked` alone, so the answer is
     // the same whether or not a caller supplied releases.
     arrivalCapacityConflicts: unit.arrivalCapacityConflicts?.length ?? 0,
     reservationReleaseCapacityConflicts: unit.reservationReleaseCapacityConflicts?.length ?? 0,
+    bedKindConflicts: admissions === undefined ? 0 : bedKindSeatConflicts(unit, admissions).length,
     bedRecordsMidUpdate:
       Object.values(unit.sexMix).reduce((sum, count) => sum + count, 0) !==
       unitCapacity(unit, [...(releases ?? [])]).occupied - occupantsInNeitherSexBucket(unit.id, admissions),

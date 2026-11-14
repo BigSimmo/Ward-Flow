@@ -13,12 +13,13 @@
 // A pure function with no React, so the morning bed-meeting sheet can print the same figures.
 import { bedStates, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import { bedIsOccupied, type Admission, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
-import { dayOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
+import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, Movement, MovementStage, Unit } from "@/components/ward-management/ward-model";
 import { bedsForecastSources, type BedsForecastSources } from "./beds-forecast-sources";
 import { patientsHoldingANamedBed, plannedAdmissionsStillNeedingABed } from "./planned-admissions-reducer";
 import { forecastReleaseAt } from "../forecast/forecast-release-date";
+import { isExpectedToFree } from "../ward-releases-expected-to-free";
 
 /**
  * Tomorrow, the day after and the third day, as rolling windows from now (24, 48 and 72 hours). Written
@@ -151,7 +152,12 @@ export function bedsForecast(
     const hours = (days * MINUTES_PER_DAY) / 60;
     const due = pending.filter((release) => expectedAt(release) <= until);
     const clear = due.filter((release) => release.blocker === null);
-    const onTime = clear.filter((release) => dayOf(expectedAt(release)) >= dayOf(now));
+    // M6 (mechanics audit, 14 Nov 2026): the one rule (`isExpectedToFree`) Capacity and the ward page
+    // read. A release whose time has passed is overdue from that minute, not from midnight, so
+    // "likely" no longer falls by one at 00:00 with nothing happening.
+    const onTime = clear.filter((release) =>
+      isExpectedToFree({ ...release, expectedAt: expectedAt(release) }, now, Number.POSITIVE_INFINITY),
+    );
     const confirmed = onTime.filter((release) => release.state === "confirmed").length;
     const expected = onTime.filter((release) => release.state === "expected").length;
     const heldUp = due.length - clear.length;

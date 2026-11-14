@@ -3,7 +3,14 @@
 import { useRef, useState } from "react";
 import { Button } from "@/components/wf";
 import type { Instant } from "@/components/ward-management/ward-clock";
-import { candidateReason, referralEligibility } from "@/components/ward-management/ward-eligibility";
+import {
+  candidateReason,
+  placementFit,
+  readyBedsFor,
+  referralEligibility,
+  staleCountWords,
+} from "@/components/ward-management/ward-eligibility";
+import { useSharedReadyLookup } from "@/components/ward-management/use-shared-ready";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
@@ -48,6 +55,8 @@ export function useAskMoreWards({
   rejections: Rejection[];
 }) {
   const configuration = useOptionalWardFlowSelect("configuration")?.configuration;
+  // H7 (D-210 (Josh, 14 Nov 2026)): the shared Ready, as ASK_MORE_WARDS checks it.
+  const ready = useSharedReadyLookup();
   const [open, setOpen] = useState(false);
   const [picked, setPicked] = useState<string[]>([]);
   const [query, setQuery] = useState("");
@@ -96,10 +105,19 @@ export function useAskMoreWards({
           .filter((unit) => !askedIds.has(unit.id))
           .sort((a, b) => a.name.localeCompare(b.name))
           .map((unit) => {
-            const verdict = referralEligibility(referral, { ...template, unitId: unit.id }, unit, now);
+            const verdict = referralEligibility(referral, { ...template, unitId: unit.id }, unit, now, ready);
+            // H8: the shared classifier. A ward whose only failing check is an old bed count can
+            // still be asked (ASK_MORE_WARDS agrees); it is listed with its age, never as a misfit.
+            const kind = placementFit(verdict).kind;
             // The engine refuses a ward closed to admissions, so it is never offered as a fit.
-            const fit = verdict.eligible && !unit.isClosed;
-            return { unit, fit, reason: unit.isClosed ? "Closed to admissions" : candidateReason(verdict) };
+            const fit = (kind === "fits" || kind === "stale_count") && !unit.isClosed;
+            return {
+              unit,
+              fit,
+              ready: readyBedsFor(unit, ready),
+              ...(fit && kind === "stale_count" ? { stale: staleCountWords(unit, now) } : {}),
+              reason: unit.isClosed ? "Closed to admissions" : candidateReason(verdict),
+            };
           })
       : [];
   // Ticks come from every fitting ward, so a ward the search hides still counts and is still asked.

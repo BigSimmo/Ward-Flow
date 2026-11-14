@@ -4,6 +4,7 @@ import type { Movement, Referral } from "@/components/ward-management/ward-model
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { isAwaitingAnswer } from "@/components/ward-management/ward-referrals";
+import { referralArmHoldingBed } from "@/components/ward-management/ward-held-bed-elsewhere";
 
 /**
  * THE DAILY "NOBODY MISSED" CHECK — the coordinator's morning list for the pilot's second measure
@@ -80,7 +81,10 @@ export type OpenRequest =
  *   - an open bed request (no closure, stage `placement_requested` to `handover_ready`), or
  *   - a referral with a psychiatric ward or ED destination still awaiting an answer
  *     (`isAwaitingAnswer`: queued and not withdrawn), unless an open bed request was raised from it,
- *     in which case it is counted once, as that bed request.
+ *     in which case it is counted once, as that bed request, or
+ *   - M11 (D-210 (Josh, 14 Nov 2026)): a referral whose accepted ward arm still holds a numbered
+ *     bed with no open bed request raised from it (`referralArmHoldingBed`). The bed is spoken for,
+ *     so a second request for the same person is a second bed.
  * The person is the recorded person the shared resolver finds. A request it cannot link is left
  * out: never matched by name, date of birth or record number. Each list is oldest first.
  */
@@ -100,12 +104,13 @@ export function openRequestsByPerson(records: {
       .filter(
         (referral) =>
           !raisedFromOpen.has(referral.id) &&
-          referral.destinations.some(
+          (referral.destinations.some(
             (addressing) =>
               (addressing.destination.kind === "psychiatric_ward" ||
                 addressing.destination.kind === "emergency_department") &&
               isAwaitingAnswer(addressing),
-          ),
+          ) ||
+            referralArmHoldingBed(referral, records.movements) !== undefined),
       )
       .map((referral) => ({
         subject: referral,

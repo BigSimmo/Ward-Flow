@@ -71,7 +71,8 @@ import {
 } from "@/components/ward-management/ward-turnaround-priority";
 import { dailyCheckId } from "@/components/ward-management/coordinator/daily-check";
 import { WARD_SCENARIOS } from "@/components/ward-management/ward-scenarios";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-awaiting-pull";
 import {
   BED_MEETING_ACTION_DUE_HOURS,
   BED_MEETING_ACTION_KIND_IDS,
@@ -355,7 +356,10 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
       ],
       homeRegion: "Perth Metropolitan",
       suburb: { kind: "named", name: "Armadale" },
-      source: "community",
+      // Audit (14 Nov 2026), D-210 (Josh, 14 Nov 2026): with the pull route on, ED-source referrals
+      // too, so the one-tap pull raises a journey from an ED as well as from the community. Off, the
+      // draw is not made, so the seeded runs other tests pin do not move.
+      source: currentPullRoute ? pick(random, ["community", "ed_medical", "ambulance"] as const) : "community",
       urgency: int(random, 1, 3),
       originSiteCode: pick(random, ["SCGH", "RPH", "FSH"]),
       transportNeeded: chance(random, 0.5),
@@ -402,6 +406,28 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
         unitId,
         actingUnitId: unitId,
         bedNumber: bedOn(state, random, unitId),
+      };
+    },
+  ],
+  [
+    1,
+    // M11: lets go of a bed an accepted ward arm holds.
+    (state, random) => {
+      const held = state.referrals.flatMap((referral) =>
+        referral.destinations.flatMap((arm) => {
+          if (arm.destination.kind !== "psychiatric_ward" || arm.heldBedNumber === undefined) return [];
+          return [{ referral, unitId: arm.acceptedUnitId ?? arm.destination.unitId }];
+        }),
+      );
+      const target = chance(random, 0.85) ? pick(random, held) : undefined;
+      const referral = target?.referral ?? referralFor(state, random);
+      const unitId = target?.unitId ?? (referral ? addressedUnit(state, random, referral) : undefined) ?? MISSING_ID;
+      return {
+        type: "RELEASE_REFERRAL_BED",
+        role: answeringRole(random),
+        referralId: referral?.id ?? MISSING_ID,
+        unitId,
+        actingUnitId: unitId,
       };
     },
   ],
@@ -1041,7 +1067,12 @@ const recordFields = (state: WardFlowState, random: Random, stay: WardFlowState[
 
 /** An inbox row id: a category prefix and the record it names (sometimes a stale one). */
 function inboxIdFor(state: WardFlowState, random: Random): string {
-  const category = pick(random, Object.values(INBOX_CATEGORIES))!;
+  // The overdue Pull now row (audit M2, D-210 (Josh, 14 Nov 2026)) is drawn only with the pull route
+  // on, so adding its category does not move the seeded runs other tests pin.
+  const categories = Object.values(INBOX_CATEGORIES).filter(
+    (candidate) => currentPullRoute || candidate !== INBOX_CATEGORIES.pull_now_overdue,
+  );
+  const category = pick(random, categories)!;
   const prefix = category.idPrefix;
   const subject =
     prefix === INBOX_CATEGORIES.support_notification_discharge.idPrefix ||
@@ -1051,7 +1082,9 @@ function inboxIdFor(state: WardFlowState, random: Random): string {
         ? id(pick(random, state.plannedAdmissions))
         : prefix === INBOX_CATEGORIES.duplicate_bed_request.idPrefix
           ? (pick(random, state.patients)?.id ?? MISSING_ID)
-          : id(pick(random, state.movements));
+          : prefix === INBOX_CATEGORIES.bed_held_elsewhere.idPrefix
+            ? id(pick(random, state.referrals))
+            : id(pick(random, state.movements));
   return `${prefix}${chance(random, 0.95) ? subject : MISSING_ID}`;
 }
 const inboxEvent =
@@ -2676,6 +2709,55 @@ function handoverWorkDraft(state: WardFlowState, pickKind: number): Draft {
   };
 }
 
+/**
+ * The one-tap pull route (mechanics and clock audit, 14 Nov 2026, D-210 (Josh, 14 Nov 2026)): the
+ * Referrals board's "Pull the bed" raises the journey from an accepted referral and pulls the bed in
+ * one event (`RAISE_REFERRAL` with `referralId`, `acceptedUnitId` and `pullBed`). An ED-source
+ * referral raises it from that ED. Sent only with `nextEvent`'s `pullRoute` option, so the coverage
+ * runs other tests pin keep their exact random streams.
+ */
+const pullRouteDraft: Builder = (state, random) => {
+  const chosen = pick(random, acceptedReferralsAwaitingPull(state.referrals, state.units, state.movements));
+  if (!chosen) return null;
+  const referral = chosen.referral;
+  const arm = referral.destinations.find(
+    (candidate) => candidate.state === "accepted" && candidate.destination.kind === "psychiatric_ward",
+  );
+  const destination = (arm?.destination ?? {}) as {
+    sex?: string;
+    gender?: string;
+    secureBedNeeded?: boolean;
+    highAcuityNursingNeeded?: boolean;
+  };
+  const fromEd = referral.source === "ed_medical" || referral.source === "ambulance";
+  const ed = fromEd
+    ? allEmergencyDepartments().find((candidate) => candidate.siteCode === referral.originSiteCode)
+    : undefined;
+  return {
+    type: "RAISE_REFERRAL",
+    role: "coordinator",
+    ...(ed ? { edId: ed.id } : {}),
+    referralId: referral.id,
+    acceptedUnitId: chosen.unitId,
+    pullBed: true,
+    draft: {
+      cohort: referral.ageBand,
+      security: destination.secureBedNeeded ? "Secure" : "Open",
+      sex: destination.sex,
+      gender: destination.gender,
+      highAcuity: destination.highAcuityNursingNeeded === true,
+      observation: observationAt("general"),
+      legalStatus: "Voluntary",
+      legalFormCode: null,
+      urgency: referral.urgency,
+      ...(referral.atsCategory !== undefined ? { atsCategory: referral.atsCategory } : {}),
+    },
+  };
+};
+
+/** Whether the run being built sends the one-tap pull route and ED-source referrals. */
+let currentPullRoute = false;
+
 const ALL_BUILDERS = [...BUILDERS, ...MORE_BUILDERS];
 
 const TOTAL_WEIGHT = ALL_BUILDERS.reduce((sum, [weight]) => sum + weight, 0);
@@ -2720,8 +2802,10 @@ export function nextEvent(
   step: number,
   seed?: number,
   steps = 100,
+  options: { readonly pullRoute?: boolean } = {},
 ): WardFlowEvent {
   currentNow = nowFor(state, step);
+  currentPullRoute = options.pullRoute === true;
   const sweep =
     seed !== undefined && step % SWEEP_EVERY === SWEEP_EVERY - 1
       ? ALL_BUILDERS[(seed * Math.floor(steps / SWEEP_EVERY) + Math.floor(step / SWEEP_EVERY)) % ALL_BUILDERS.length][1]
@@ -2793,6 +2877,14 @@ export function nextEvent(
   if (seed !== undefined && step === 0 && seed % 25 === 0) {
     FUZZED_EVENT_TYPES.add("RESET_SCENARIO");
     return { type: "RESET_SCENARIO", role: "demo", now: currentNow } as WardFlowEvent;
+  }
+  // The one-tap pull route, a quarter of the time while an accepted referral waits for its bed.
+  if (currentPullRoute && !sweep && chance(random, 0.25)) {
+    const draft = pullRouteDraft(state, random);
+    if (draft) {
+      FUZZED_EVENT_TYPES.add(draft.type);
+      return { now: currentNow, ...draft } as unknown as WardFlowEvent;
+    }
   }
   for (let attempt = 0; ; attempt += 1) {
     const draft = (attempt === 0 && sweep ? sweep : chooseBuilder(random))(state, random);

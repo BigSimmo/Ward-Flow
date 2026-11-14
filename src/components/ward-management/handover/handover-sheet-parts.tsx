@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import type { Instant } from "@/components/ward-management/ward-clock";
 import { Checkbox, ShowMoreRow as OneShowMoreRow } from "@/components/wf";
 
 import styles from "./handover-sheet-parts.module.css";
@@ -48,18 +48,18 @@ const KEYS: [string, string][] = [
   ["Esc", "Close or go back"],
 ];
 
-function mmss(ms: number): string {
-  const seconds = Math.max(0, Math.floor(ms / 1000));
-  return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+/**
+ * A handover meeting's length on the board clock, in the whole minutes History records (time audit
+ * C9; mechanics and clock audit CC-6, 14 Nov 2026). The chip and History read this one rule, so a
+ * moved demo clock never shows one length on the chip and another in History. At least 1 minute.
+ */
+export function handoverMeetingMinutes(startedAt: Instant, now: Instant): number {
+  return Math.max(1, now - startedAt);
 }
 
-export function HandoverMeetingTimer({ startedAt }: { startedAt: number }) {
-  const [tick, setTick] = useState(() => Date.now());
-  useEffect(() => {
-    const id = window.setInterval(() => setTick(Date.now()), 1000);
-    return () => window.clearInterval(id);
-  }, [startedAt]);
-  return <span className={refined.meeting}>Stop {mmss(tick - startedAt)}</span>;
+/** The running meeting's label: the length History would record if it stopped now. */
+export function HandoverMeetingTimer({ startedAt, now }: { startedAt: Instant; now: Instant }) {
+  return <span className={refined.meeting}>Stop {handoverMeetingMinutes(startedAt, now)} min</span>;
 }
 
 /** The keyboard shortcuts popover: the single-key setting and the keys. `signOff` lists S. */

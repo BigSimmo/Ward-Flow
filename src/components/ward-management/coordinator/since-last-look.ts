@@ -8,6 +8,8 @@ import {
 } from "@/components/ward-management/ward-model";
 import type { BedRelease, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { readyBedsNow } from "../ward-bed-states";
+import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
+import { shiftLookWindowStart } from "@/components/ward-management/shift-first-look";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 
 /**
@@ -191,6 +193,39 @@ export function takeLastLookSnapshot(
           dischargeMovesByAdmission: countsById(liveAdmissions(world), (a) => a.dischargeDateMoves),
         }),
   };
+}
+
+/**
+ * ONE WINDOW RULE FOR A STORED REVIEW (audit L4, D-210 (Josh, 14 Nov 2026)). Home's "since" banner
+ * and the Activity panel read the same stored review, so they take it, or set it aside, by this one
+ * test: the same account, scenario and world, taken in the shift `now` falls in. A review from an
+ * earlier shift, another account or another world is not compared, and both then count from
+ * `shiftLookWindowStart` (the previous shift's start on the first look of a shift, item 11).
+ */
+export function lookIsUsable(
+  basis: LastLookSnapshot | undefined,
+  current: Pick<LastLookSnapshot, "userId" | "scenario" | "worldGeneration">,
+  now: Instant,
+): basis is LastLookSnapshot {
+  return (
+    basis !== undefined &&
+    basis.at >= currentShiftStartInstant(now) &&
+    basis.at <= now &&
+    basis.userId === current.userId &&
+    basis.scenario === current.scenario &&
+    basis.worldGeneration === current.worldGeneration
+  );
+}
+
+/** The changes Home's banner and the Activity panel show for one stored review (`lookIsUsable`). */
+export function changesForStoredLook(
+  previous: LastLookSnapshot | undefined,
+  current: LastLookSnapshot,
+  world: Pick<LastLookWorld, "referrals" | "movements" | "units" | "admissions">,
+  now: Instant,
+): ChangesSinceLastLook {
+  const compared = lookIsUsable(previous, current, now) ? changesSinceLastLook(previous, current, world) : undefined;
+  return compared ?? changesSinceInstant(world, shiftLookWindowStart(undefined, now), now);
 }
 
 /**
