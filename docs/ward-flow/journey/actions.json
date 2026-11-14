@@ -1235,7 +1235,7 @@
     "roles": ["coordinator"],
     "does": "Withdraws an acceptance before handover, including a pulled bed or a movement stepped back while retaining its held admission. A matching bed is released in the same act.",
     "needs": "An open movement at accepted_awaiting_bed, pulled, or an earlier stepped-back stage with a held admission, plus a listed correction reason. Cancel a live booking first; collection refuses withdrawal.",
-    "changes": "Clears the accepting ward and time and any released hold fields (including the referral arm's numbered bed hold), appends withdrawal/release history and notices. Ordinarily returns to destination_review; an earlier stepped-back stage stays as found. It does not re-refer the ward. For an agreed return identified by sourceAdmissionId, the bed-release notice goes to that source stay's sending ward rather than its ED alias.",
+    "changes": "Clears the accepting ward and time and any released hold fields (including the referral arm's numbered bed hold), appends withdrawal/release history and notices. Ordinarily returns to destination_review; an earlier stepped-back stage stays as found. It does not re-refer the ward. For an agreed return identified by sourceAdmissionId, the bed-release notice goes to that source stay's sending ward rather than its ED alias. H3 (14 Nov 2026): the referral's answer at the withdrawn ward also goes back to waiting (queued, stamped with the withdrawal time, its accepted fields cleared), so the referral, its sheet and the ED row agree and another ward can accept.",
     "reasons": ["STEP_BACK_REASONS"],
     "refuses": [
       {
@@ -5025,7 +5025,7 @@
     "lane": "record",
     "nodes": [],
     "roles": ["demo"],
-    "does": "Restores the currently loaded recognised scenario, falling back to standard for a damaged scenario value. It keeps the legal-form worked examples when they were on (A16-14).",
+    "does": "Restores the currently loaded recognised scenario, falling back to standard for a damaged scenario value. It keeps the legal-form worked examples when they were on (A16-14), read from the world's own workedExamples flag (M12), not from the example records a scoped desk may not hold.",
     "needs": "Nothing.",
     "changes": "Re-seeds all board state at the current time less the simulation offset, rather than always selecting the standard scenario: hours added with ADVANCE_CLOCK come off, but the clock is not set back to the scenario's start and keeps running (F-34). Calendar-day seed fields move by whole Perth days and clock-face records (intake windows, the shift's staff request) are built from that time (time audit G1). A genuine accepted reseed advances worldGeneration exactly once; wrong-role/rejected reseeds do not. A non-safe or exhausted generation refuses replacement by retaining the old state, so generation is never wrapped or reused. Reset also invalidates older asynchronous local scenario-file import requests. A newer import, reset, changed world generation or retired provider lifetime prevents an older read from replacing the current day. Imported local state is not reported durable before its device copy is written.",
     "reasons": [],
@@ -5069,7 +5069,7 @@
     "roles": ["demo"],
     "does": "Switches to a different pre-built simulated night, resetting every patient, ward and record.",
     "needs": "A recognised scenario. Optional workedExamples: only true adds the legal-form worked examples (off by default, A16-14); only the standard and scarce days carry them, and any other value loads without them.",
-    "changes": "Replaces the whole state with a fresh seed at the current time less any Tools clock offset: hours added with ADVANCE_CLOCK come off, but the clock is not set back to the scenario's start and keeps running (F-34). Calendar-day seed fields move by whole Perth days, and tonight's intake windows and the shift's staff request are built from that time (time audit G1). A genuine accepted reseed advances worldGeneration exactly once; wrong-role/rejected reseeds do not. A non-safe or exhausted generation refuses replacement by retaining the old state, so generation is never wrapped or reused.",
+    "changes": "Replaces the whole state with a fresh seed at the current time less any Tools clock offset: hours added with ADVANCE_CLOCK come off, but the clock is not set back to the scenario's start and keeps running (F-34). Calendar-day seed fields move by whole Perth days, and tonight's intake windows and the shift's staff request are built from that time (time audit G1). A genuine accepted reseed advances worldGeneration exactly once; wrong-role/rejected reseeds do not. A non-safe or exhausted generation refuses replacement by retaining the old state, so generation is never wrapped or reused. Sets the world's workedExamples flag (M12), which Reset demo keeps, the access projection sends to every desk, and a save from before the flag derives once from its records.",
     "reasons": ["WARD_SCENARIOS"],
     "refuses": [
       {

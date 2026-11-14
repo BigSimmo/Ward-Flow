@@ -1590,6 +1590,20 @@ export type WardFlowEvent =
       bedNumber: number;
     }
   | {
+      /**
+       * M11 (D-MCA (Josh, 14 Nov 2026)): lets go of the numbered bed an accepted ward arm holds
+       * (`HOLD_REFERRAL_BED`), so the bed is offered again. The acceptance stands. Offered when the
+       * person is in a bed on another journey (`ward-held-bed-elsewhere.ts`).
+       */
+      type: "RELEASE_REFERRAL_BED";
+      role: WardFlowRole;
+      now: Instant;
+      referralId: string;
+      unitId: string;
+      /** A ward releases only its own bed; the coordinator names no ward. */
+      actingUnitId?: string;
+    }
+  | {
       type: "ACCEPT_REFERRAL";
       role: WardFlowRole;
       now: Instant;

@@ -410,6 +410,28 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
     },
   ],
   [
+    1,
+    // M11: lets go of a bed an accepted ward arm holds.
+    (state, random) => {
+      const held = state.referrals.flatMap((referral) =>
+        referral.destinations.flatMap((arm) => {
+          if (arm.destination.kind !== "psychiatric_ward" || arm.heldBedNumber === undefined) return [];
+          return [{ referral, unitId: arm.acceptedUnitId ?? arm.destination.unitId }];
+        }),
+      );
+      const target = chance(random, 0.85) ? pick(random, held) : undefined;
+      const referral = target?.referral ?? referralFor(state, random);
+      const unitId = target?.unitId ?? (referral ? addressedUnit(state, random, referral) : undefined) ?? MISSING_ID;
+      return {
+        type: "RELEASE_REFERRAL_BED",
+        role: answeringRole(random),
+        referralId: referral?.id ?? MISSING_ID,
+        unitId,
+        actingUnitId: unitId,
+      };
+    },
+  ],
+  [
     2,
     (state, random) => {
       const referral = referralFor(state, random);
@@ -1060,7 +1082,9 @@ function inboxIdFor(state: WardFlowState, random: Random): string {
         ? id(pick(random, state.plannedAdmissions))
         : prefix === INBOX_CATEGORIES.duplicate_bed_request.idPrefix
           ? (pick(random, state.patients)?.id ?? MISSING_ID)
-          : id(pick(random, state.movements));
+          : prefix === INBOX_CATEGORIES.bed_held_elsewhere.idPrefix
+            ? id(pick(random, state.referrals))
+            : id(pick(random, state.movements));
   return `${prefix}${chance(random, 0.95) ? subject : MISSING_ID}`;
 }
 const inboxEvent =

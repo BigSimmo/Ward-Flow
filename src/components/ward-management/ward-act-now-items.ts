@@ -37,6 +37,7 @@ import {
 } from "@/components/ward-management/alerts/ward-broadcast-model";
 import { decisionTargetInboxItems } from "@/components/ward-management/ward-decision-targets";
 import { duplicateBedRequests } from "@/components/ward-management/ward-duplicate-bed-requests";
+import { heldBedsElsewhere } from "@/components/ward-management/ward-held-bed-elsewhere";
 import {
   buildActionInbox,
   isOpen,
@@ -116,6 +117,7 @@ function deriveTaskItems(source: TaskSource, now: Instant): InboxItem[] {
     ...decisionTargetInboxItems(open, now, source.configuration),
     ...overduePullNowInboxItems(source, now),
     ...duplicateBedRequestInboxItems(source),
+    ...heldBedElsewhereInboxItems(source),
     ...bedMeetingActionInboxItems(source, now),
   ];
 }
@@ -259,6 +261,37 @@ export function duplicateBedRequestInboxItems(
   });
 }
 
+/**
+ * M11 and owner question 8 (D-MCA (Josh, 14 Nov 2026)): one amber row per bed still held for an
+ * accepted referral while the person is pulled into, or occupies, a bed on another journey
+ * (`ward-held-bed-elsewhere.ts`). Flagged, never blocked. It opens the referral on the Referrals
+ * board, which offers Release held bed. Coordinator only: it names where else the person is.
+ */
+export function heldBedElsewhereInboxItems(
+  source: Pick<TaskSource, "movements" | "units" | "referrals" | "patients" | "admissions">,
+): InboxItem[] {
+  const records = {
+    movements: source.movements,
+    referrals: source.referrals ?? [],
+    patients: source.patients ?? [],
+    admissions: source.admissions ?? [],
+  };
+  const wardName = (unitId: string) => source.units.find((unit) => unit.id === unitId)?.name ?? "another ward";
+  return heldBedsElsewhere(records).map((held) => ({
+    id: `${INBOX_CATEGORIES.bed_held_elsewhere.idPrefix}${held.referralId}`,
+    kind: INBOX_CATEGORIES.bed_held_elsewhere.kind,
+    tone: "warning",
+    icon: CircleAlert,
+    title: "Bed still held for someone in a bed elsewhere",
+    detail: `Bed ${held.bedNumber} at ${wardName(held.unitId)} is held for referral ${held.referralId}, and the person is now in a bed at ${wardName(held.stayUnitId)}. Release it if it is no longer needed.`,
+    owner: DUPLICATE_OWNER,
+    movementId: "",
+    personId: held.personId,
+    href: referralBoardHref(held.referralId),
+    since: held.since,
+  }));
+}
+
 /** The owner words for each bed meeting owner, read back to roles by `inboxOwnerRoles`. */
 const MEETING_OWNER_WORDS = {
   coordinator: "Bed coordinator",
@@ -371,7 +404,12 @@ export function inboxItemsForRole(
 ): InboxItem[] {
   if (role === "coordinator") return [...items];
   // Audit F-19: duplicate bed request rows name other referrals, so they stay with the coordinator.
+  // M11: so does a held bed for someone in a bed elsewhere, which names where else they are.
   if (role === "bed_manager")
-    return items.filter((item) => !item.id.startsWith(INBOX_CATEGORIES.duplicate_bed_request.idPrefix));
+    return items.filter(
+      (item) =>
+        !item.id.startsWith(INBOX_CATEGORIES.duplicate_bed_request.idPrefix) &&
+        !item.id.startsWith(INBOX_CATEGORIES.bed_held_elsewhere.idPrefix),
+    );
   return items.filter((item) => inboxOwnerRoles(item.owner, wardNames).includes(role));
 }

@@ -75,7 +75,7 @@ describe("Ward Flow Read-Only Plain History", () => {
       // RECORD_CREW_TIMES. D-141 (11 Nov 2026) adds RECORD_ARRIVAL_MODE. Item 4 (11 Nov 2026) adds
       // RECORD_CHIEF_PSYCHIATRIST_NOTIFIED. Item 18 (10 Nov 2026) adds MARK_TRANSPORT_COLLECTED.
       // Feature item 13 (10 Nov 2026) adds SET_INTAKE_WINDOW.
-      expect(allEventTypes.length).toBe(206);
+      expect(allEventTypes.length).toBe(207);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];

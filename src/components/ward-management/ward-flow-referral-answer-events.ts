@@ -70,6 +70,7 @@ export type ReferralAnswerEvent = Extract<
       | "RECEIVE_REFERRAL"
       | "ACCEPT_REFERRAL"
       | "HOLD_REFERRAL_BED"
+      | "RELEASE_REFERRAL_BED"
       | "DECLINE_REFERRAL"
       | "WITHDRAW_ACCEPTANCE";
   }
@@ -755,6 +756,32 @@ export function reduceReferralAnswerEvent(
         destinations: referral.destinations.map((candidate) =>
           candidate === arm ? { ...arm, heldBedNumber: event.bedNumber } : candidate,
         ),
+      });
+    }
+
+    case "RELEASE_REFERRAL_BED": {
+      // M11 (D-MCA (Josh, 14 Nov 2026)): the bed goes back; the acceptance stands.
+      const referral = findReferral(state, event.referralId);
+      if (!referral) return reject(state, event, "No referral found to release a bed for");
+      if (event.role === "ward" && event.actingUnitId !== event.unitId)
+        return reject(state, event, "A ward may only release its own beds");
+      if (state.movements.some((movement) => movement.referralId === referral.id && movement.closure === undefined))
+        return reject(state, event, "This referral has a bed journey; release the bed on that journey");
+      const arm = referral.destinations.find(
+        (candidate) =>
+          candidate.destination.kind === "psychiatric_ward" &&
+          candidate.state === "accepted" &&
+          candidate.heldBedNumber !== undefined &&
+          (candidate.acceptedUnitId ?? candidate.destination.unitId) === event.unitId,
+      );
+      if (!arm) return reject(state, event, "No bed is held at this ward for this referral");
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
+      const { heldBedNumber: _released, ...released } = arm;
+      void _released;
+      return replaceReferral(state, referral.id, {
+        ...referral,
+        destinations: referral.destinations.map((candidate) => (candidate === arm ? released : candidate)),
       });
     }
 

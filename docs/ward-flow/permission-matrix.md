@@ -18,7 +18,7 @@ and the reducer still limit each desk to records in its own place.
 | Backend  | `deskCommand`, the role clause of `validSharedCommand` and `commandRefusal` (`backend/ward-flow/engine.ts`): the role refusal, and a place refusal that holds whatever record is named (`FIXED_PLACE_REFUSALS`, L11); no role is refused 403 in `shared-http.mjs`                                                                                                    | Called per cell                                     |
 | Database | Row level security policies and grants in `backend/ward-flow/migrations/` and `infra/`                                                                                                                                                                                                                                                                               | SQL read as text                                    |
 
-**206 actions x 10 desks = 2060 cells.**
+**207 actions x 10 desks = 2070 cells.**
 
 ## Matrix
 
@@ -173,6 +173,7 @@ and the reducer still limit each desk to records in its own place.
 | `RELEASE_HELD_BED`                          |            Y            |             Y             |         -         |     Y     |        -         |      Y       |       -        |     -     |      -       |    -    |
 | `RELEASE_INBOX_ITEM_OWNERSHIP`              |            Y            |             Y             |         -         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `RELEASE_PULL`                              |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
+| `RELEASE_REFERRAL_BED`                      |            Y            |             Y             |         -         |     Y     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `REOPEN_INBOX_ITEM`                         |            Y            |             Y             |         -         |     -     |        -         |      -       |       -        |     -     |      -       |    -    |
 | `REOPEN_WARD_TO_ADMISSIONS`                 |            Y            |             Y             |         -         |     Y     |        Y         |      -       |       -        |     -     |      -       |    -    |
 | `REPLY_BROADCAST_ALERT`                     |            Y            |             Y             |         -         |     Y     |        Y         |      -       |       -        |     -     |      -       |    -    |

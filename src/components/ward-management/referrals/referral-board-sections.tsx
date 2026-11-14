@@ -54,6 +54,7 @@ import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles"
 import { referralDecisionUndoFor, undoRoleRefusal, undoWindowRefusal } from "@/components/ward-management/ward-undo";
 import { movementHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import { wardRaise } from "@/components/ward-management/ward-flow-raise";
+import { heldBedElsewhereOf } from "@/components/ward-management/ward-held-bed-elsewhere";
 import { acceptedReferralsAwaitingPull, acceptedWardOf, type AcceptedAwaitingPull } from "./accepted-awaiting-pull";
 import { getReferralPriority, referralPriorityLabel } from "./referral-priority";
 import { referralWaitLine } from "./referral-wait";
@@ -903,6 +904,7 @@ function DecidedRowActions({
   }, [now]);
   // Optional: a board drawn outside the provider (a test or the redesign preview) offers no Undo.
   const flow = useOptionalWardFlowSelect("undoRecords", "dispatch");
+  const people = useOptionalWardFlowSelect("admissions", "patients", "referrals");
   const undoRecords = flow?.undoRecords;
   const record = undoRole ? referralDecisionUndoFor(undoRecords, referral.id) : undefined;
   const canUndo =
@@ -921,9 +923,41 @@ function DecidedRowActions({
     !movement && !toPull && onPull && accepted && accepted.heldBedNumber === undefined && !accepted.withdrawnAt
       ? acceptedWardOf(referral, units)
       : undefined;
-  if (!canUndo && !movement && !toPull && !wardToHold) return null;
+  // M11 and owner question 8 (D-MCA (Josh, 14 Nov 2026)): the coordinator's Home flag opens here.
+  // A bed still held for this referral while the person is in a bed elsewhere is offered back.
+  // Coordinator only, as the flag is: it says the person is in a bed somewhere else.
+  const heldElsewhere =
+    undoRole === "coordinator" && flow && people
+      ? heldBedElsewhereOf({ ...people, movements }, referral.id)
+      : undefined;
+  if (!canUndo && !movement && !toPull && !wardToHold && !heldElsewhere) return null;
   return (
     <span className={a.decidedActions} data-testid={`ward-referral-board-decided-actions-${referral.id}${suffix}`}>
+      {heldElsewhere ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={BedSingle}
+          data-testid={`ward-referral-board-release-held-bed-${referral.id}${suffix}`}
+          onClick={() => {
+            void requestConfirm({
+              title: `Release bed ${heldElsewhere.bedNumber}?`,
+              message:
+                "The person is now in a bed elsewhere. The bed held for this referral is offered again; the acceptance stands.",
+              confirmLabel: "Release held bed",
+            }).then((confirmed) => {
+              if (!confirmed || !flow) return;
+              wardRaise(
+                flow.dispatch,
+                "coordinator",
+                nowRef.current,
+              )("RELEASE_REFERRAL_BED", { referralId: referral.id, unitId: heldElsewhere.unitId });
+            });
+          }}
+        >
+          Release held bed
+        </Button>
+      ) : null}
       {canUndo ? (
         <Button
           variant="ghost"

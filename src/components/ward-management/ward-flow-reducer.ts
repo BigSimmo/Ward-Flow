@@ -1866,6 +1866,7 @@ export function reduceClinicalEvent(
     case "RECEIVE_REFERRAL":
     case "ACCEPT_REFERRAL":
     case "HOLD_REFERRAL_BED":
+    case "RELEASE_REFERRAL_BED":
     case "DECLINE_REFERRAL":
     case "WITHDRAW_ACCEPTANCE":
       return reducerSlices().reduceReferralAnswerEvent(state, event, decision, REFERRAL_ANSWER_EVENT_HELPERS);

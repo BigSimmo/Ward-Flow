@@ -708,6 +708,8 @@ function inboxRecordReference(rowId: string): CommandRecordReference | null {
       return { collection: "plannedAdmissions", id };
     case "duplicate_bed_request":
       return { collection: "patients", id };
+    case "bed_held_elsewhere":
+      return { collection: "referrals", id };
     default:
       return { collection: "movements", id };
   }

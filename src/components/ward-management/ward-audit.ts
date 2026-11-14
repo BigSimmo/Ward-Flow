@@ -300,7 +300,7 @@ export type AuditEvent = AuditBase &
     | {
         // v10 pass 2: the ward Bed board's pick up and place, and its Undo. Bed numbers only.
         category: "bed-placement";
-        action: "PLACE_IN_BED" | "UNDO_PLACE_IN_BED" | "HOLD_REFERRAL_BED";
+        action: "PLACE_IN_BED" | "UNDO_PLACE_IN_BED" | "HOLD_REFERRAL_BED" | "RELEASE_REFERRAL_BED";
         details: { fromBed: number | null; toBed: number | null; openBedReason?: OverrideReason };
       }
     | {
@@ -441,6 +441,7 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
     case "PLACE_IN_BED":
     case "UNDO_PLACE_IN_BED":
     case "HOLD_REFERRAL_BED":
+    case "RELEASE_REFERRAL_BED":
       return "bed-placement";
     case "SET_CONFIGURATION":
       return "configuration";
@@ -771,7 +772,8 @@ export function captureAuditEvent(
       };
       break;
     }
-    case "HOLD_REFERRAL_BED": {
+    case "HOLD_REFERRAL_BED":
+    case "RELEASE_REFERRAL_BED": {
       const held = (state: WardFlowState) =>
         uniqueRecord(state.referrals, event.referralId)?.destinations.find(
           (arm) =>
@@ -785,7 +787,12 @@ export function captureAuditEvent(
         action: event.type,
         details: {
           fromBed: held(before),
-          toBed: decision.outcome === "accepted" ? held(after) : finiteInstant(event.bedNumber),
+          toBed:
+            decision.outcome === "accepted"
+              ? held(after)
+              : event.type === "HOLD_REFERRAL_BED"
+                ? finiteInstant(event.bedNumber)
+                : null,
         },
       };
       break;

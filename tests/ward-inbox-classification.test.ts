@@ -12,6 +12,7 @@ import {
   bedMeetingActionInboxItems,
   duplicateBedRequestInboxItems,
   overduePullNowInboxItems,
+  heldBedElsewhereInboxItems,
 } from "../src/components/ward-management/ward-act-now-items";
 import { buildActionInbox, type InboxItem } from "../src/components/ward-management/ward-derivations";
 import {
@@ -38,6 +39,8 @@ const DUPLICATE_CATEGORIES = 1;
 const MEETING_ACTION_CATEGORIES = 1;
 /** Audit M2 (14 Nov 2026): `overduePullNowInboxItems` (`ward-act-now-items.ts`) emits one category. */
 const PULL_NOW_CATEGORIES = 1;
+/** M11 (14 Nov 2026): `heldBedElsewhereInboxItems` (`ward-act-now-items.ts`) emits one category. */
+const HELD_ELSEWHERE_CATEGORIES = 1;
 /**
  * Overall review (20 Oct 2026): the daily check is a commitment the coordinator ticks off once a
  * day (`dailyCheckId`). It names a day, not a row, so no list ever emits it.
@@ -151,6 +154,8 @@ function allInboxRows(movements: Movement[]): InboxItem[] {
     ...bedMeetingActionInboxItems(meetingActionRecords(), NOW),
     // Audit M2 (14 Nov 2026): a Pull now nobody answered by its answer time.
     ...overduePullNowInboxItems(overduePullNowRecords(), NOW),
+    // M11: a bed held for an accepted referral while the person is in a bed elsewhere.
+    ...heldBedElsewhereInboxItems(heldBedElsewhereRecords()),
   ];
 }
 
@@ -163,6 +168,37 @@ function overduePullNowRecords() {
     movementId: "WF-003",
   });
   return { movements: raised.movements, units: raised.units, broadcastAlerts: raised.broadcastAlerts };
+}
+
+/** A seed referral's accepted ward arm holding bed 1, and its person in a bed at another ward. */
+function heldBedElsewhereRecords() {
+  const seed = seedWardFlowState();
+  const referral = seed.referrals.find(
+    (candidate) =>
+      candidate.patientId !== undefined &&
+      candidate.destinations.some(
+        (arm) => arm.destination.kind === "psychiatric_ward" && arm.state === "accepted" && arm.acceptedUnitId,
+      ),
+  )!;
+  const heldAt = referral.destinations.find((arm) => arm.state === "accepted")!.acceptedUnitId!;
+  const stay = seed.admissions.find((admission) => admission.state === "occupied" && admission.unitId !== heldAt)!;
+  return {
+    ...seed,
+    referrals: seed.referrals.map((candidate) =>
+      candidate === referral
+        ? {
+            ...candidate,
+            destinations: candidate.destinations.map((arm) =>
+              arm.state === "accepted" ? { ...arm, heldBedNumber: 1 } : arm,
+            ),
+          }
+        : candidate,
+    ),
+    admissions: [
+      ...seed.admissions,
+      { ...stay, id: "AD-held-elsewhere", patientId: referral.patientId!, referralId: null, movementId: null },
+    ],
+  };
 }
 
 /** One open action agreed at the bed meeting, on a seed bed request. */
@@ -355,6 +391,7 @@ describe("every action-inbox category is classified as a fact or a commitment", 
         DUPLICATE_CATEGORIES -
         MEETING_ACTION_CATEGORIES -
         PULL_NOW_CATEGORIES,
+      HELD_ELSEWHERE_CATEGORIES,
     );
   });
 

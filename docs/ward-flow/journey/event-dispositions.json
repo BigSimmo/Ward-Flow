@@ -1540,6 +1540,51 @@
     }
   },
   {
+    "event": "RELEASE_REFERRAL_BED",
+    "status": "modelled",
+    "reason": "Source-reviewed command model: the accepted arm lets go of its numbered bed; the acceptance stands.",
+    "source": "src/components/ward-management/ward-flow-referral-answer-events.ts",
+    "model": {
+      "subject": "An accepted ward arm's numbered bed hold",
+      "before": "Current accepted ward arm for the unit holding a numbered bed, with no open bed journey raised from the referral",
+      "after": "Same arm, still accepted, without heldBedNumber, so the bed is offered again",
+      "payload": ["referralId; unitId; optional actingUnitId; role and now"],
+      "scope": "Ward for its own beds or coordinator; shared place/record boundary also applies. Offered on the Referrals board to the coordinator when the person is pulled into, or occupies, a bed on another journey (M11, owner question 8: flag and offer, never block).",
+      "guards": [
+        "Known referral; a ward acts only as the unit named",
+        "No open movement raised from the referral (release that journey's bed instead)",
+        "An accepted psychiatric ward arm at the unit holds a numbered bed"
+      ],
+      "effects": [
+        "Removes arm.heldBedNumber; keeps the acceptance, its author and time, and the referral state",
+        "Mints no movement or admission; the coordinator's bed_held_elsewhere Home row leaves once the bed is released"
+      ],
+      "sources": [
+        {
+          "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
+          "line": 761,
+          "sha256": "08a12f08e4fb94c31f8495469903afdf0d9b7c1eb45df2f77900148932ab4fc2"
+        },
+        {
+          "path": "src/components/ward-management/ward-flow-event-roles.ts",
+          "line": 438,
+          "sha256": "f305e4436a9f754ff704a5fb04ede91c3bd1ea989ce540b23b1d02e5141e23d5"
+        },
+        {
+          "path": "src/components/ward-management/ward-flow-events.ts",
+          "line": 1598,
+          "sha256": "231690b7559deeb21a636e9365ad02767e0cd800962ddb763e9d9436512c00c6"
+        },
+        {
+          "path": "src/components/ward-management/ward-flow-reducer.ts",
+          "line": 1873,
+          "sha256": "51d2a3d850f7d052719cdbdd8b5f51e075f108c7d1d9fdffdf9c7f77f419bab3"
+        }
+      ],
+      "tests": ["tests/ward-mca-held-bed-elsewhere.test.ts"]
+    }
+  },
+  {
     "event": "TAKE_INBOX_ITEM_OWNERSHIP",
     "status": "modelled",
     "reason": "Source-reviewed command model: Ownership history appended; current owner is acting role’s label.",
