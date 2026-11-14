@@ -40,8 +40,9 @@ import { useExecutiveStatistics } from "../statistics/executive-statistics-conte
  *
  * Shared design parts item 8 (13 Nov 2026): the clock row (+15 min, +1 hour and Pause) and Reset
  * demo come first, then Scenario, then See it as, as wrapping 32px choices, so the panel fits a
- * 1366 x 768 or 1280 x 600 laptop without scrolling to Reset. Pause is the page's own pause, the one
- * a tap on its Live chip runs (`useLivePause`); it shows only on a page that can pause.
+ * 1366 x 768 or 1280 x 600 laptop without scrolling to Reset. Pause holds Board time on this
+ * device's demo (D-229) and also runs the page's own pause, the one a tap on its Live chip runs
+ * (`useLivePause`). On the shared board it is the page's pause alone, shown only where one exists.
  */
 /** The world change waiting on its confirm: Reset demo, or a scenario card. */
 type DemoConfirm = { kind: "reset" } | { kind: "load"; scenario: WardScenario; workedExamples?: boolean };
@@ -139,6 +140,7 @@ function OperationalDemoPanel({ oneList = false, grow = false }: { oneList?: boo
     shared,
     captureCommandLifetime,
     workedExamples,
+    boardClockPause,
   } = useWardFlowSelect(
     "scenario",
     "saveScenarioFile",
@@ -148,6 +150,7 @@ function OperationalDemoPanel({ oneList = false, grow = false }: { oneList?: boo
     "shared",
     "captureCommandLifetime",
     "workedExamples",
+    "boardClockPause",
   );
   // M12: the world's own flag. A scoped desk is not sent every example record, so reading them
   // here showed the examples as off and Load offered to switch them on again.
@@ -158,7 +161,19 @@ function OperationalDemoPanel({ oneList = false, grow = false }: { oneList?: boo
   const examplesOffered =
     WORKED_EXAMPLE_SCENARIOS.includes(scenario) && (authority === null || authority.scope.kind === "statewide");
   const now = useWardFlowClock();
-  const pause = useLivePause();
+  const livePause = useLivePause();
+  // D-229 (stress test D1a-S-1, Josh 14 Nov 2026): Pause holds Board time on this device's demo, and
+  // still freezes the page's lists as a tap on its Live chip does. The shared board keeps the page's
+  // pause alone: its clock is the server's.
+  const pause = boardClockPause
+    ? {
+        paused: boardClockPause.paused,
+        toggle: () => {
+          if (livePause && livePause.paused === boardClockPause.paused) livePause.toggle();
+          boardClockPause.toggle();
+        },
+      }
+    : livePause;
   const raise = useWardRaise("demo");
   const demoOn = useDemoControlsAvailable();
   const offId = useId();
@@ -316,7 +331,7 @@ function OperationalDemoPanel({ oneList = false, grow = false }: { oneList?: boo
                 </button>
               </>
             )}
-            {/* The page's own pause, as a tap on its Live chip; it changes no demo data. */}
+            {/* Holds Board time and the page's lists (D-229); it changes no demo data. */}
             {pause ? (
               <button type="button" className={demo.small} data-testid="ward-tools-demo-pause" onClick={pause.toggle}>
                 {pause.paused ? (

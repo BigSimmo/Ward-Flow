@@ -40,7 +40,8 @@ describe("rulingsDemoOverlay", () => {
 
     expect(overlay.admissions.some((row) => row.id === "AD-RD04" && row.state === "waitlisted")).toBe(true);
     expect(byId["WF-RD05"]?.waitlistedUnitIds).toEqual(["fsh-adult-secure"]);
-    expect(byId["WF-RD05"]?.declines).toEqual([]);
+    expect(byId["WF-RD05"]?.referredUnitIds).toEqual(["fsh-adult-secure"]);
+    expect(byId["WF-RD05"]?.referralAnswerHistory?.map((row) => row.answer)).toEqual(["waitlisted"]);
 
     const wardToWard = overlay.referrals.find((row) => row.id === "RF-RD06");
     expect(wardToWard?.source).toBe("psychiatric_ward");
