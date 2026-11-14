@@ -24,6 +24,7 @@ import {
 } from "@/components/wf";
 import { formatInstantWithDay, minuteOfDayFromClockText, type Instant } from "@/components/ward-management/ward-clock";
 import { movementRefuses3C } from "@/components/ward-management/ward-legal-clock";
+import { currentLegalPosition, legalFormNowWords } from "@/components/ward-management/ward-legal-form-progression";
 import { legalFormName, RECORDABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { SupportNotificationChecklist } from "@/components/ward-management/movements/support-notification-checklist";
@@ -583,12 +584,16 @@ function ExtendSheetContent({
       : null;
   const parsedDueAt = target && datedDueAt !== null && datedDueAt > now ? datedDueAt : null;
   // Audit TC2-03: an extension earlier than the expiry already recorded is shown, not refused.
-  const currentDueAt = target?.legalForm?.dueAt;
+  // Audit H4 and M13e (14 Nov 2026): the expiry in force, through the one current legal position; a
+  // form a person recorded as ended takes no extension, as the engine refuses.
+  const targetPosition = currentLegalPosition(target ?? undefined);
+  const currentDueAt = targetPosition.dueAt;
   const onceOnly = target ? onceOnlyExtensionWarning(target) : undefined;
   const shortens = parsedDueAt !== null && currentDueAt !== undefined && parsedDueAt < currentDueAt;
   const extendBlockReason =
     (saving ? "Saving extension…" : undefined) ??
     extendUnavailable ??
+    (targetPosition.ended ? "This form is recorded as ended, so no extension can be added to it." : undefined) ??
     (datedDueAt !== null && datedDueAt <= now
       ? "The new expiry written on the form is already past. Check the date and time."
       : undefined) ??
@@ -650,11 +655,11 @@ function ExtendSheetContent({
     >
       {target ? (
         <div className={styles.extendBody}>
-          {target.legalForm?.dueAt !== undefined ? (
+          {currentDueAt !== undefined ? (
             <div className={styles.dueLine}>
               <Badge tone={STANDING_TONE[standing]}>{standingWord(standing, thresholds)}</Badge>
               {/* Legal times only as typed (31 Oct 2026): the typed time in words, never a countdown. */}
-              <span className={styles.mono}>{typedTimeLine(target.legalForm.dueAt, now, dayZero)}</span>
+              <span className={styles.mono}>{typedTimeLine(currentDueAt, now, dayZero)}</span>
               <span className={styles.meta}>{target.legalForm ? legalFormName(target.legalForm) : ""}</span>
             </div>
           ) : null}
@@ -803,5 +808,5 @@ export function TellSheet({
 
 /** The label a movement carries in pickers: name, UMRN and its form. */
 export function movementPickerLabel(name: string, umrn: string, movement: Movement): string {
-  return `${name} (${umrn}), ${movement.legalForm ? `Form ${movement.legalForm.code}` : "Voluntary"}`;
+  return `${name} (${umrn}), ${legalFormNowWords(movement) ?? "Voluntary"}`;
 }

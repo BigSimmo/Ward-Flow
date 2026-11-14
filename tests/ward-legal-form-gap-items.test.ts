@@ -135,7 +135,7 @@ describe("items 3 to 7, details from the paper", () => {
 
   it("asks for nothing more once a person records the form as ended", () => {
     const { state, id } = onForm();
-    const { next } = run(state, details(id, { endedBy: "form_3e" }));
+    const { next } = run(state, details(id, { endedBy: "revoked" }));
     expect(nextStep(movementOf(next, id), now)).toMatchObject({ action: "none", title: "Form ended, as recorded" });
   });
 });

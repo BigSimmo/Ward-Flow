@@ -7,9 +7,14 @@ import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
 import { useRoleGate, useRouteRole } from "../ward-role-gate";
 import type { Movement } from "../ward-model";
-import { CONTINUATION_LEGAL_FORMS, countryExtensionEligible } from "../ward-legal-forms";
+import { countryExtensionEligible } from "../ward-legal-forms";
 import { RELEASE_PULL_REASONS, changeReasonLabels, type ReleasePullReason } from "../ward-change-reasons";
-import { isArrivalLate, isLegalClockFormCode, leaveBedNeedsOpenWarning } from "../ward-legal-clock";
+import {
+  CONTINUATION_FORM_CODES,
+  isArrivalLate,
+  isLegalClockFormCode,
+  leaveBedNeedsOpenWarning,
+} from "../ward-legal-clock";
 import { perthDateTimeLocal } from "../ward-clock";
 import { legalFormTimeOrderProblem } from "../ward-legal-form-time-order";
 import { resolveSubjectPatient } from "../ward-patient-resolver";
@@ -289,9 +294,10 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
             Continuation form
             <select value={form} onChange={(e) => setForm(e.target.value)}>
               <option value="">Choose form</option>
-              {CONTINUATION_LEGAL_FORMS.map((f) => (
-                <option key={f.code} value={f.code}>
-                  {f.code}
+              {/* Audit M13d (14 Nov 2026): the engine's own list, so nothing offered is refused. */}
+              {CONTINUATION_FORM_CODES.map((code) => (
+                <option key={code} value={code}>
+                  {code}
                 </option>
               ))}
             </select>

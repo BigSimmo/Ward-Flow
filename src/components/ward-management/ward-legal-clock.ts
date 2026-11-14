@@ -83,6 +83,21 @@ export function isLegalClockFormCode(code: string): code is LegalClockFormCode {
   return (LEGAL_CLOCK_FORM_CODES as readonly string[]).includes(code);
 }
 
+/**
+ * THE FORMS A PAPER CONTINUATION RECORDS (mechanics and clock audit M13d, 14 Nov 2026). One list,
+ * read by the continuation picker and by the engine, so the picker never offers a form the engine
+ * refuses (it used to offer 3B, 4A and 4C). Every code the engine records, except Form 3E: by
+ * D-MCA (Josh, 14 Nov 2026), ruling 6, a 3E is recorded one way only, as a new form on the Forms
+ * page that supersedes the 3A.
+ */
+export const CONTINUATION_FORM_CODES: readonly LegalClockFormCode[] = LEGAL_CLOCK_FORM_CODES.filter(
+  (code) => code !== "3E",
+);
+
+export function isContinuationFormCode(code: string): boolean {
+  return (CONTINUATION_FORM_CODES as readonly string[]).includes(code);
+}
+
 /** Form 3C is refused when the person arrived on a Form 3D. */
 export function form3CRefusedAfter3D(previousCode?: string): boolean {
   return previousCode === "3D";

@@ -601,7 +601,9 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
           Correct receipt
         </button>
       ) : null}
-      {movement.legalForm ? (
+      {/* Audit M13e (14 Nov 2026): a form a person recorded as ended takes no expiry or extension,
+          as the engine refuses, so neither is offered there. */}
+      {movement.legalForm && !currentLegalPosition(movement).ended ? (
         <button
           type="button"
           data-testid={`ward-ed-legal-form-expiry-toggle-${movement.id}`}
