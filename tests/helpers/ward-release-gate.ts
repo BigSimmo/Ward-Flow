@@ -440,6 +440,9 @@ export async function openWardFlow(page: Page, pane: "Referrals" | "Admissions" 
   const home = page.locator("#tabBtn-attn");
   if ((await home.getAttribute("aria-selected")) !== "true") await home.click();
   const card = page.getByTestId("ward-coming-and-going");
+  // A list already open (All arrivals or All discharges) covers the card: go back to Ward home.
+  const back = page.getByRole("button", { name: "Back to Ward home" });
+  if (!(await card.isVisible()) && (await back.isVisible())) await back.click();
   await expect(card).toBeVisible();
   const heading = {
     Referrals: "ward-coming-referrals",

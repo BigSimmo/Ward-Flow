@@ -101,6 +101,12 @@
 
 button.rowName {
   cursor: pointer;
+  /* The 40px tap-target rule (design sweep): the name line is 18px, so the button reaches 40px
+     tall and the negative margins keep the row's own height as drawn in the mock-up. */
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 40px;
+  margin-block: -11px;
 }
 
 .rowTag {

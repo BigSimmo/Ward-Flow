@@ -219,18 +219,9 @@ const AROUND: readonly Around[] = [
         body: "People waiting against beds that fit, for each kind of bed. Short means more people than beds.",
       },
       {
-        device: "desk",
-        acts: ["CONVERT_PLANNED_ADMISSION"],
-        target: id("ward-capacity-planned-admissions"),
-        title: "Planned admissions",
-        body: "Admissions booked ahead. Press Arrived when the person reaches the ward.",
-      },
-      {
-        // Josh's fifth notes (8 Nov 2026): desktop shows drive times in the Mismatch drawer instead.
-        device: "phone",
-        target: id("capacity-road-time"),
-        title: "Nearest ready beds",
-        body: "Ready beds by road distance from the place you choose. Distance only, not suitability.",
+        target: id("capacity-held-up-card"),
+        title: "Held up",
+        body: "Discharges due by tomorrow that are held up, with what is holding each one.",
       },
       {
         device: "desk",

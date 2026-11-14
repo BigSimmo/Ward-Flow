@@ -189,7 +189,7 @@ describe("stronger tours (Help and tour extension, 5 Nov 2026)", () => {
     expect(ids("executive")).toEqual(expect.arrayContaining(["menu", "service", "hero", "tabs", "export", "trends"]));
     expect(ids("admin")).toEqual(expect.arrayContaining(["review", "record-review", "give-role", "requests"]));
     expect(ids("officer")).toEqual(expect.arrayContaining(["booking", "history", "copy"]));
-    expect(ids("bed_manager")).toContain("planned");
+    expect(ids("bed_manager")).toContain("held-up");
   });
 
   it("offers at least one Try it on every desk and device", () => {

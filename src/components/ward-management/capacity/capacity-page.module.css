@@ -2914,6 +2914,9 @@ button.helpLink {
 }
 .splitChip .splitCaret {
   padding-inline: var(--wf-s-2);
+  /* The 40px tap-target rule (design sweep): the caret alone is 32px wide on a phone. */
+  min-inline-size: 40px;
+  justify-content: center;
   border-start-start-radius: var(--wf-r-xs);
   border-end-start-radius: var(--wf-r-xs);
 }

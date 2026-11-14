@@ -613,11 +613,11 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         ),
         step(
           "Your daily work",
-          "planned",
-          { sel: '[data-testid="capacity-planned-moves"]' },
-          "Planned moves",
-          "Booked admissions and step downs, in four lanes: Today, Tomorrow, Later and Step down. Each row opens the person's move.",
-          "Choose Today to narrow the list, then choose it again to see them all.",
+          "held-up",
+          { sel: '[data-testid="capacity-held-up-card"]' },
+          "Held up",
+          "Discharges due by tomorrow that are held up, each with its ward, what is holding it and when it was due.",
+          "Choose a row to open that person's record.",
         ),
         step(
           "Finding your way",
