@@ -9,8 +9,9 @@ Raised:
 - Referrals 599.3 to 601.1 (measured 600.9), ED 549.9 to 554.6 (554.4), ED board 688.7 to 693.3
   (693.1), Bed meeting 599.7 to 603.9 (603.7), Statistics 645.5 to 650.5 (650.3).
 - Movement 627.5 to 632.5 (measured 632.4 to 632.5): the full 5 KB allowance, with no margin.
-- Coordinator `/ward-flow` 597.2 to 602.2 (measured 602.4) and Ward 632.2 to 637.2 (637.4 to
-  637.5): the full 5 KB allowance. Each still needs about 0.5 more, which waits for Josh's yes.
+- Coordinator `/ward-flow` 597.2 to 602.6 (measured 602.4) and Ward 632.2 to 637.7 (637.4 to
+  637.5): past the 5 KB allowance, with Josh's yes on a decision card (14 Nov 2026, 04:33 UTC,
+  recorded in D-210).
 
 Why: almost all of the growth is in the shared shell every screen loads (500.2 KB), because the
 fixes live in the board's engine, which runs in the browser. New engine modules in the shell, by the

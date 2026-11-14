@@ -2592,5 +2592,6 @@ is inferred.
   10. **One PR** for every finding of the audit (H1 to H10, M1 to M15 and the Lows), each with a guard test, fixed at the shared rule rather than per screen.
 - **Why:** the audit found five root mechanisms behind about 45 faults: the same fact worked out separately on each screen; steps stamped when delivered, not when done; linked records not changed together; capacity mixed into suitability checks; and a setting inferred from the records a desk can see.
 - **Boundary:** synthetic data only. No clinical value or threshold changes. Merge timing (before the 22 November freeze or after the demo) is Josh's call; recommendation 10 was after the demo.
+- **Phone size (decision card, 04:33 UTC):** Josh allowed Home and Ward's phone script limits to rise 5.4 and 5.5 KB, past the 5 KB a PR may take alone, because the growth is the engine fixes every screen loads (`docs/script-budget-history/2026-11-14-pr1670-mechanics-clock-fixes.md`).
 
 The next free number is D-211.
