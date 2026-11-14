@@ -390,8 +390,8 @@ describe("every action-inbox category is classified as a fact or a commitment", 
         ABSENCE_CATEGORIES -
         DUPLICATE_CATEGORIES -
         MEETING_ACTION_CATEGORIES -
-        PULL_NOW_CATEGORIES,
-      HELD_ELSEWHERE_CATEGORIES,
+        PULL_NOW_CATEGORIES -
+        HELD_ELSEWHERE_CATEGORIES,
     );
   });
 
