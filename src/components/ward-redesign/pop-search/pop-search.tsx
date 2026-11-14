@@ -48,6 +48,7 @@ export function PopSearch({ page }: { page: ReactNode }) {
     configuration,
     supportNotifications,
     leaveBeds,
+    broadcastAlerts,
   } = useWardFlowSelect(
     "movements",
     "patients",
@@ -59,6 +60,7 @@ export function PopSearch({ page }: { page: ReactNode }) {
     "configuration",
     "supportNotifications",
     "leaveBeds",
+    "broadcastAlerts",
   );
   const { shellRole } = useWardNavCounts();
   const { findHelp, onHelpResult } = useHeaderHelp();
@@ -77,6 +79,8 @@ export function PopSearch({ page }: { page: ReactNode }) {
     supportNotifications,
     plannedAdmissions,
     leaveBeds,
+    // Audit M2, D-MCA (Josh, 14 Nov 2026): an overdue Pull now is on the one task list too.
+    broadcastAlerts,
   });
 
   // The same permissions and lifetime the header's search wrapper gives it (`ward-global-search-lazy`).

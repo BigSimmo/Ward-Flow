@@ -12,7 +12,7 @@
  * act now is the red subset of the same active list, so the figures cannot drift apart again.
  * `tests/ward-shared-figures.test.ts` pins that they agree on the seed.
  */
-import { CircleAlert, ClipboardList } from "lucide-react";
+import { BellRing, CircleAlert, ClipboardList } from "lucide-react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import {
@@ -28,6 +28,13 @@ import type { WardChromeRole } from "@/components/ward-management/ward-chrome-ro
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import { absenceInboxItems } from "@/components/ward-management/ward-absence-tasks";
+import { isAlertLive } from "@/components/ward-management/alerts/global-alert-view";
+import {
+  alertAsksDesk,
+  broadcastKind,
+  deskHasAnswered,
+  isPullNowOverdue,
+} from "@/components/ward-management/alerts/ward-broadcast-model";
 import { decisionTargetInboxItems } from "@/components/ward-management/ward-decision-targets";
 import { duplicateBedRequests } from "@/components/ward-management/ward-duplicate-bed-requests";
 import {
@@ -53,6 +60,12 @@ export type TaskSource = Pick<WardFlowState, "movements" | "units" | "configurat
   Omit<ActionInboxRecords, "movements"> & {
     /** Audit A3-1: leave beds, for the act-now row when a person on an order is absent. */
     leaveBeds?: readonly WardFlowState["leaveBeds"][number][];
+    /**
+     * Audit M2: the broadcast alerts this desk is sent, for the act-now row when a Pull now goes
+     * unanswered past its answer time. A desk's own copy names only its own wards and answers
+     * (`scopeBroadcastAlerts`), so a ward desk's row is about its own unanswered ask.
+     */
+    broadcastAlerts?: readonly WardFlowState["broadcastAlerts"][number][];
   };
 
 /**
@@ -76,6 +89,7 @@ export const taskItems = rememberLastCall(
     source.supportNotifications,
     source.plannedAdmissions,
     source.leaveBeds,
+    source.broadcastAlerts,
     source.stuckHandoverMinutes,
     source.dayZero,
     now,
@@ -100,6 +114,7 @@ function deriveTaskItems(source: TaskSource, now: Instant): InboxItem[] {
     }),
     ...admittedLegalInboxItems(source, now),
     ...decisionTargetInboxItems(open, now, source.configuration),
+    ...overduePullNowInboxItems(source, now),
     ...duplicateBedRequestInboxItems(source),
     ...bedMeetingActionInboxItems(source, now),
   ];
@@ -133,6 +148,71 @@ export function admittedLegalInboxItems(
       since: dueAt,
     };
   });
+}
+
+/** The bed coordinator's words for an overdue Pull now: `inboxOwnerRoles` places them on the coordinator. */
+const PULL_NOW_OWNER = "Bed coordinator";
+
+/**
+ * AN OVERDUE PULL NOW IS ACT NOW (audit M2, D-MCA (Josh, 14 Nov 2026)). A Pull now that no asked ward
+ * has answered by its answer time (the signed 15 minute rule, `PULL_NOW_ANSWER_MINUTES`) turned the
+ * banner red but reached no count. It is now one red row on the shared task list, so Home's Act now
+ * figure, the bell, the Tasks dock, the phone menu, the Alerts Act now list and the act-now
+ * notifications all count it from here. The test is the banner's own (`isAlertLive` and
+ * `isPullNowOverdue`), so the banner and the counts cannot disagree. On a ward desk the alert is the
+ * ward's own copy, so the row stands for that ward's unanswered ask. One row per person.
+ */
+export function overduePullNowInboxItems(
+  source: Pick<TaskSource, "movements" | "units" | "broadcastAlerts">,
+  now: Instant,
+): InboxItem[] {
+  const rows = new Map<string, InboxItem>();
+  for (const alert of source.broadcastAlerts ?? []) {
+    const answerBy = alert.answerBy;
+    if (broadcastKind(alert) !== "pull_now" || alert.movementId === undefined || answerBy === undefined) continue;
+    if (!isAlertLive(alert, source.movements, now) || !isPullNowOverdue(alert, now)) continue;
+    const asked = (alert.targetUnitIds ?? []).map(
+      (unitId) => source.units.find((unit) => unit.id === unitId)?.name ?? unitId,
+    );
+    const by = formatInstantWithDay(answerBy, now);
+    const missed =
+      asked.length === 1
+        ? `${asked[0]} did not answer by ${by}.`
+        : `None of the ${asked.length} wards answered by ${by}.`;
+    rows.set(alert.movementId, {
+      id: `${INBOX_CATEGORIES.pull_now_overdue.idPrefix}${alert.movementId}`,
+      kind: INBOX_CATEGORIES.pull_now_overdue.kind,
+      tone: "danger",
+      icon: BellRing,
+      title: "Pull now not answered",
+      detail: `${missed} Chase the ward.`,
+      owner: PULL_NOW_OWNER,
+      movementId: alert.movementId,
+      dueAt: answerBy,
+      since: answerBy,
+    });
+  }
+  return [...rows.values()];
+}
+
+/**
+ * The ward desk's own act-now line for each Pull now that asked this ward and that it has not
+ * answered by the answer time (audit M2, D-MCA (Josh, 14 Nov 2026)), by the same rule as the rows above.
+ */
+export function overduePullNowActNowForWard(
+  source: Pick<TaskSource, "movements" | "broadcastAlerts">,
+  unit: TaskSource["units"][number],
+  now: Instant,
+): { key: string; title: string; detail: string; tone: "danger" }[] {
+  const asksThisWard = (source.broadcastAlerts ?? []).filter(
+    (alert) => alertAsksDesk(alert, { role: "ward", id: unit.id }) && !deskHasAnswered(alert, unit.id),
+  );
+  return overduePullNowInboxItems({ ...source, units: [unit], broadcastAlerts: asksThisWard }, now).map((row) => ({
+    key: row.id,
+    title: row.title,
+    detail: `The coordinator asked for an answer by ${formatInstantWithDay(row.dueAt ?? now, now)}`,
+    tone: "danger",
+  }));
 }
 
 /**

@@ -112,6 +112,11 @@ export const INBOX_CATEGORIES = {
    *  until the owner or the chair marks it done (`COMPLETE_BED_MEETING_ACTION`). Amber, overdue
    *  included: shown, never escalated. Remainder names the action (`meetingActionInboxId`). */
   bed_meeting_action: { idPrefix: BED_MEETING_ACTION_INBOX_PREFIX, kind: "fact" },
+  /** Audit M2, D-MCA (Josh, 14 Nov 2026): a Pull now no asked ward answered by its answer time (the
+   *  signed 15 minute rule). Act now, from `overduePullNowInboxItems` (`ward-act-now-items.ts`).
+   *  Leaves when a ward answers, the bed is pulled or the alert is stood down. Remainder is the
+   *  movement id. */
+  pull_now_overdue: { idPrefix: "pull-now-overdue-", kind: "fact" },
 } as const satisfies Record<string, { readonly idPrefix: string; readonly kind: InboxItemKind }>;
 
 /**
@@ -266,6 +271,15 @@ function inboxRowSince(state: WardFlowState, inboxItemId: string): Instant | und
   // A bed meeting action row's occurrence starts when the meeting recorded that action.
   if (inboxItemId.startsWith(INBOX_CATEGORIES.bed_meeting_action.idPrefix)) {
     return openMeetingActionOfRow(state, inboxItemId)?.recordedAt;
+  }
+  // Audit M2: an overdue Pull now row's occurrence starts at its latest Pull now's answer time, so a
+  // fresh Pull now for the same person starts a new one and an earlier snooze no longer applies.
+  const pullNowPrefix = INBOX_CATEGORIES.pull_now_overdue.idPrefix;
+  if (inboxItemId.startsWith(pullNowPrefix)) {
+    const movementId = inboxItemId.slice(pullNowPrefix.length);
+    return (state.broadcastAlerts ?? [])
+      .filter((alert) => alert.kind === "pull_now" && alert.movementId === movementId)
+      .at(-1)?.answerBy;
   }
   const movementId = inboxRowMovementId(state.movements, inboxItemId);
   const movement = state.movements.find((candidate) => candidate.id === movementId);

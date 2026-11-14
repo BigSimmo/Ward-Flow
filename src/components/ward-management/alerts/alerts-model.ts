@@ -40,7 +40,8 @@ export type AlertKind =
   | "notify"
   | "target"
   | "running"
-  | "duplicate";
+  | "duplicate"
+  | "pullnow";
 
 /** The queue's three groups: act now (red), waiting (amber, counted) and running targets (listed, never counted). */
 export type { AlertGroup };
@@ -72,6 +73,8 @@ const KIND_PREFIXES: [AlertKind, string][] = [
   ["target", INBOX_CATEGORIES.target_transport_booked.idPrefix],
   // Audit F-19: one person with more than one active bed request. Its remainder is a patient id.
   ["duplicate", INBOX_CATEGORIES.duplicate_bed_request.idPrefix],
+  // Audit M2 (14 Nov 2026): a Pull now no asked ward answered in time. Its remainder is a movement id.
+  ["pullnow", INBOX_CATEGORIES.pull_now_overdue.idPrefix],
 ];
 
 export function alertKindOf(id: string): AlertKind | undefined {
@@ -191,6 +194,7 @@ const ALERT_KIND_LABELS: Record<AlertKind, string> = {
   target: "Decision target overdue",
   running: "Decision target running",
   duplicate: "More than one active bed request",
+  pullnow: "Pull now not answered",
 };
 
 /**
@@ -336,6 +340,9 @@ export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAct
       };
     case "duplicate":
       return { kind: "link", label: "Open oldest request", href: item.href ?? "/ward-flow/referrals" };
+    case "pullnow":
+      // Audit M2: the journey, where the Pull now and its answers are, to chase the ward.
+      return { kind: "link", label: "Chase the ward", href: ownMovementHref };
     case "notify":
       // A discharge row opens its stay on the discharges board, as the Tasks drawer does.
       return item.admissionId !== undefined

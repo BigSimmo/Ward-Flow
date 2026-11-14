@@ -56,6 +56,7 @@ export function WardActNowNotifier() {
     referrals,
     supportNotifications,
     plannedAdmissions,
+    broadcastAlerts,
     staffRequests,
   } = useWardFlowSelect(
     "movements",
@@ -70,6 +71,7 @@ export function WardActNowNotifier() {
     "referrals",
     "supportNotifications",
     "plannedAdmissions",
+    "broadcastAlerts",
     "staffRequests",
   );
   const now = useWardFlowClock();
@@ -95,6 +97,7 @@ export function WardActNowNotifier() {
         referrals,
         supportNotifications,
         plannedAdmissions,
+        broadcastAlerts,
         stuckHandoverMinutes: configuration.transportBookedTargetMinutes,
       },
       now,
@@ -111,6 +114,7 @@ export function WardActNowNotifier() {
     referrals,
     supportNotifications,
     plannedAdmissions,
+    broadcastAlerts,
     now,
   ]);
   const actNow = useMemo(() => active.filter((item) => item.tone === "danger"), [active]);

@@ -6,7 +6,7 @@ import {
   openBedReleases,
   stalePreparingReleases,
 } from "@/components/ward-management/ward-bed-availability";
-import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import Link from "next/link";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import React, { useEffect, useMemo, useRef, useState, useTransition } from "react";
@@ -19,6 +19,7 @@ import { EXTRA_TRAVEL_HOLD_MINUTES } from "@/components/ward-management/ward-mod
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { withdrawalReasonLabels } from "@/components/ward-management/ward-change-reasons";
 import { formatInstantWithDay, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { overduePullNowActNowForWard } from "@/components/ward-management/ward-act-now-items";
 import { currentShiftStartInstant, releasesDueByShiftEnd } from "@/components/ward-management/ward-board-time-features";
 import { pullHoldText } from "@/components/ward-management/ward-bed-hold";
 import type { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
@@ -286,7 +287,18 @@ export function WardHomeTab({
     admissions = [],
     configuration,
     dayZero,
-  } = useWardFlowSelect("bedReleases", "leaveBeds", "admissions", "configuration", "dayZero");
+    broadcastAlerts,
+    movements,
+  } = useWardFlowSelect(
+    "bedReleases",
+    "leaveBeds",
+    "admissions",
+    "configuration",
+    "dayZero",
+    "broadcastAlerts",
+    "movements",
+  );
+  const thresholds = useDueSoonThresholds();
   const outlook = useWardTomorrowOutlook(unit, accepted, now); // WH3: tomorrow for this ward alone
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
   const [localChecks, setLocalChecks] = useState<Record<string, Instant | null>>({
@@ -420,7 +432,7 @@ export function WardHomeTab({
       title: leaveBed.absentWithoutLeave ? "Absent without leave" : "Approved leave",
       detail: leaveBed.absentWithoutLeave
         ? `Since ${formatInstantWithDay(leaveBed.absentWithoutLeave.since, now)}`
-        : `Expected back ${formatInstant(leaveBed.expectedReturn)}`,
+        : `Expected back ${formatInstantWithDay(leaveBed.expectedReturn, now)}`,
       status: "Leave",
     });
   }
@@ -679,6 +691,7 @@ export function WardHomeTab({
     now,
     nameOf,
     desk: deskRole,
+    thresholds,
   });
   const comingLeave = comingLeaveRows(unitLeaveBeds, bedsList ?? [], now);
   // Review FS-9: the time column says the date ("14 Nov"), as Capacity's held-up rail does.
@@ -728,6 +741,8 @@ export function WardHomeTab({
         : undefined,
     })),
   ];
+  // Audit M2, D-MCA (Josh, 14 Nov 2026): an unanswered Pull now asking this ward is act now here.
+  actNow.push(...overduePullNowActNowForWard({ movements, broadcastAlerts }, unit, now));
   if (incoming.length > 0) {
     actNow.push({
       key: "referrals",

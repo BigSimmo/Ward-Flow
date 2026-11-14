@@ -2,6 +2,7 @@ import type { WfTone } from "@/components/wf";
 import type { BedRelease, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
 import {
   dayOf,
+  type DueSoonThresholds,
   formatInstant,
   formatInstantWithDay,
   perthDateLabel,
@@ -117,6 +118,7 @@ export function arrivalRows({
   now,
   nameOf,
   desk,
+  thresholds,
 }: {
   accepted: readonly Movement[];
   beds: readonly BedItem[];
@@ -125,6 +127,8 @@ export function arrivalRows({
   nameOf: (movement: Movement) => string;
   /** "ward" is the ward desk; any other desk sees Pull the bed only. */
   desk: string;
+  /** Audit L3, D-MCA (Josh, 14 Nov 2026): the Settings due-time warnings the pull hold reads. */
+  thresholds?: DueSoonThresholds;
 }): ComingRow[] {
   return accepted.map((movement): ComingRow => {
     const name = nameOf(movement);
@@ -132,7 +136,7 @@ export function arrivalRows({
     const bed = awaitingBed ? undefined : pulledBedFor(movement, beds);
     const eta = movement.arrivalDetails?.estimatedArrivalAt;
     const late = eta !== undefined && eta < now && !deliveredAwaitingWard(movement);
-    const hold = movement.stage === "pulled" ? bedHold(movement.pullExpiresAt, now) : null;
+    const hold = movement.stage === "pulled" ? bedHold(movement.pullExpiresAt, now, thresholds) : null;
     const blocked = awaitingBed ? pullBlockedReason(movement, unit, name) : undefined;
     const stageWords =
       blocked ??

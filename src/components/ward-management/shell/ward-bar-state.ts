@@ -52,6 +52,7 @@ type WardBarData = ReturnType<
     | "notices"
     | "dispatch"
     | "plannedAdmissions"
+    | "broadcastAlerts"
     | "inboxSnoozes"
     | "configuration"
     | "supportNotifications"
@@ -71,6 +72,7 @@ export function useWardBarTasks({
   referrals,
   supportNotifications,
   plannedAdmissions,
+  broadcastAlerts,
   leaveBeds,
 }: Pick<
   WardBarData,
@@ -83,6 +85,7 @@ export function useWardBarTasks({
   | "referrals"
   | "supportNotifications"
   | "plannedAdmissions"
+  | "broadcastAlerts"
   | "leaveBeds"
 > & { shellRole: WardChromeRole; now: Instant }) {
   const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
@@ -114,6 +117,7 @@ export function useWardBarTasks({
         referrals,
         supportNotifications,
         plannedAdmissions,
+        broadcastAlerts,
         leaveBeds,
         stuckHandoverMinutes: configuration.transportBookedTargetMinutes,
         dayZero,
@@ -128,6 +132,7 @@ export function useWardBarTasks({
     units,
     shellRole,
     plannedAdmissions,
+    broadcastAlerts,
     admissions,
     patients,
     referrals,
