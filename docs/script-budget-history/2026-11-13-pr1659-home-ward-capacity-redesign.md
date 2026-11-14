@@ -56,3 +56,14 @@ Statistics 643.4. Three limits rise, each within 5 KB of main's (PR C's) limit, 
 594.1 (PR C's ready and pull-desk wiring on top of this PR's Home), Ward 625.6 to 627.5, Statistics 640.6 to 644.5
 (shared code regrouped by the merge; Statistics itself is unchanged here, and D-202 allows it past 5 KB if a trim
 fails). Bed meeting returns to main's 596.3. Capacity keeps main's 662.4.
+
+## After merging PR E (#1658) and the Fixes PR (#1661), 14 Nov 2026
+
+Measured on hosted CI's production build of d8e27ae0a and on a local production build of 0ff65943c (the same
+figures, plus the two review fixes): Home 596.2, Referrals 596.9, ED 548.6, Ward 630.7, Movement 625.3,
+Capacity 617.4, ED arm 685.2, Bed meeting 597.3, Statistics 644.4. Four limits rise, each within 5 KB of main's
+limit (main with E and the Fixes PR): Home 591.5 to 596.5 (+5.0), Referrals 596.2 to 597.5 (+1.3), Ward 627.1 to
+631.5 (+4.4), Movement 625.2 to 626.0 (+0.8). The growth is E's kit parts that this PR's screens now use (the
+"PR E swap" stand-ins moved to kit parts, the kit RowUndo and toast Undo) on top of the trim above, which was
+already tried. Home has 0.3 KB spare, so the next Home change should trim first. Capacity returns to main's 661.9 (this PR no
+longer raises it); it measures 617.4 and can come down in a later PR.
