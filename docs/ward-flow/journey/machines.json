@@ -1772,12 +1772,12 @@
       {
         "path": "src/components/ward-management/shell/ward-broadcast-banner-body.tsx",
         "line": 1,
-        "sha256": "a96ae00d184b52341105eb90f8a0438f5f5561f787c2522f97e0e7ea62e87178"
+        "sha256": "4972f8e592f5bab1544ce0998af5d730600ac0c6f2c0d91f698e998c594a26b8"
       },
       {
         "path": "src/components/ward-management/shell/ward-broadcast-banner.tsx",
         "line": 1,
-        "sha256": "6d155c1c79a2cbe910ea77e83a46047d4f22cdae22a8241072e2c068d705012f"
+        "sha256": "9be39c2c4221222cddc05b2a825809a4cf53400bc7a3c5569b47727425c42c62"
       },
       {
         "path": "src/components/ward-management/shell/ward-facade.ts",

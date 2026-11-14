@@ -25,7 +25,11 @@ import { isBedCountStale } from "@/components/ward-management/ward-clinical-valu
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { activeActNowItems, activeTaskItems } from "@/components/ward-management/ward-act-now-items";
 import { alertsNowFigures } from "@/components/ward-management/ward-alerts-figures";
-import { formatInstant } from "@/components/ward-management/ward-clock";
+import { formatInstant, splitDuration } from "@/components/ward-management/ward-clock";
+import { originPlace } from "@/components/ward-management/origin-place";
+import { OVERDUE_AFTER_MINUTES_BY_TIER } from "@/components/ward-management/ward-operational-defaults";
+import { targetHoursText } from "@/components/ward-management/ward-target-hours";
+import { getReferralPriority } from "@/components/ward-management/referrals/referral-priority";
 import { type InboxItem, isOpen } from "@/components/ward-management/ward-derivations";
 import {
   useDueSoonThresholds,
@@ -763,6 +767,22 @@ export function CoordinatorScreen() {
             }
           : { answer: `Nothing needs you now${nextScope}` };
   // Wave 4 (D-191): "3 alerts, 1 accepted with no bed pulled" on its own line under the head.
+  // R-HOME-4: one line naming the oldest overdue referral to decide, its tier and wait, opening it.
+  const oldestOverdue = referralQueue
+    .filter((referral) => getReferralPriority(referral, now) === "overdue")
+    .sort((a, b) => a.raisedAt - b.raisedAt)[0];
+  const overdueReferralLine = oldestOverdue ? (
+    <button
+      type="button"
+      className={heroStyles.actLine}
+      data-testid="hero-overdue-referral"
+      onClick={() => selectReferral(oldestOverdue.id)}
+    >
+      {`1 overdue: Tier ${oldestOverdue.urgency} from ${originPlace(oldestOverdue)}, ${splitDuration(
+        Math.max(0, now - oldestOverdue.raisedAt),
+      )}, target ${targetHoursText(OVERDUE_AFTER_MINUTES_BY_TIER[oldestOverdue.urgency])}`}
+    </button>
+  ) : null;
   const actDetail = nextActCount > 0 ? homeActNowParts(nextActCount, toPull.length, nextScope).detail : undefined;
   // Josh, 4 Nov 2026 (2i question 5): the Checking line sits under the step whenever a bed count is
   // stale or a ward is not reporting (every size since the sticky header redesign, 9 Nov 2026).
@@ -910,13 +930,14 @@ export function CoordinatorScreen() {
                   title={heroNext.answer}
                   titleTestId="hero-next-answer"
                   sub={
-                    actDetail || checkingLine ? (
+                    actDetail || checkingLine || overdueReferralLine ? (
                       <>
                         {actDetail ? (
                           <span className={heroStyles.actLine} data-testid="hero-next-detail">
                             {actDetail}
                           </span>
                         ) : null}
+                        {overdueReferralLine}
                         {checkingLine ? <span className={heroStyles.actLine}>{checkingLine}</span> : null}
                       </>
                     ) : undefined

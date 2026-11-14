@@ -164,13 +164,14 @@
   display: none;
 }
 
-/* Only the count shows; " waiting" stays in the spoken name. It comes last in the markup (reading
-   order) and is placed top right, beside the code. */
+/* R-HOME-6: the count carries its unit, "8 waiting", the word at 12px. It comes last in the markup
+   (reading order) and is placed top right, beside the code. */
 .edWaiting {
   grid-row: 1;
   grid-column: 2;
-  font-size: 0;
-  line-height: 0;
+  font: 500 var(--wf-fs-12) / 20px var(--wf-font);
+  color: var(--wf-hero-ink-3);
+  white-space: nowrap;
 }
 
 .edWaitingValue {

@@ -2,6 +2,7 @@
 
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
+import { InfoTip } from "@/components/wf/info-tip";
 import { Fragment, type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   ChevronDown,
@@ -207,6 +208,17 @@ export function OnCallScreen() {
   const [highlight, setHighlight] = useState<Highlight | null>(null);
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState("nmhs-bfc");
+  // R-HOME-24: a press that selects a card below the fold brings it into view.
+  const [bringCardIntoView, setBringCardIntoView] = useState(0);
+  const cardPanelRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (bringCardIntoView === 0) return;
+    const panel = cardPanelRef.current;
+    if (!panel || typeof panel.scrollIntoView !== "function") return;
+    const box = panel.getBoundingClientRect();
+    if (box.top >= 0 && box.bottom <= window.innerHeight) return;
+    panel.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [bringCardIntoView]);
   const [coverAt, setCoverAt] = useState("now");
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
   const [favourites, setFavourites] = useState<string[]>([]);
@@ -312,6 +324,7 @@ export function OnCallScreen() {
     });
     if (isPhone) setSheetId(id);
     else if (isTabletPortrait) setSlideId(id);
+    else setBringCardIntoView((count) => count + 1);
   }
 
   const actions: ContactActions = {
@@ -504,17 +517,23 @@ export function OnCallScreen() {
         variant="inline"
         testId="ward-on-call-key-lines"
         aside={
-          bandLines.length > 3 ? (
-            <button
-              type="button"
-              className={styles.allLines}
-              aria-expanded={allLines}
-              onClick={() => setAllLines((open) => !open)}
-            >
-              {allLines ? "Fewer lines" : `All ${bandLines.length} lines`}
-              <Icon icon={allLines ? ChevronDown : ChevronRight} size={14} />
-            </button>
-          ) : undefined
+          <>
+            {/* R-HOME-23: what a press does, in a tip. */}
+            <InfoTip about="key lines" placement="bottom">
+              Press a line to open its card, where you can call or copy the number.
+            </InfoTip>
+            {bandLines.length > 3 ? (
+              <button
+                type="button"
+                className={styles.allLines}
+                aria-expanded={allLines}
+                onClick={() => setAllLines((open) => !open)}
+              >
+                {allLines ? "Fewer lines" : `All ${bandLines.length} lines`}
+                <Icon icon={allLines ? ChevronDown : ChevronRight} size={14} />
+              </button>
+            ) : null}
+          </>
         }
         cells={bandShown.map((entry) => {
           const number = numberAt(entry, minute);
@@ -894,6 +913,7 @@ export function OnCallScreen() {
 
           {isTabletPortrait && !(queryHits.length || query.trim()) ? null : (
             <Card
+              ref={cardPanelRef}
               className={styles.panel}
               aria-labelledby={panelHeadingId}
               data-testid="ward-on-call-role-panel"

@@ -719,9 +719,19 @@ button.strip:disabled {
 
 /* ---------- Person panel and rail (round 7, Josh 31 Oct 2026) ---------- */
 /* About 15% wider than before beside the list on a laptop (rounds 7 and 8), so names, places and ward lists wrap less. */
-@media (min-width: 64.0625rem) {
+@media (min-width: 90rem) {
   .split.split {
     grid-template-columns: minmax(0, 2.3fr) minmax(20rem, 1fr);
+  }
+}
+/* R-HOME-15: from 1025 to 1439 wide, Today's follow-up sits under the list so the table keeps its full
+   width and its last column and notes are not cut. */
+@media (min-width: 64.0625rem) and (max-width: 89.9375rem) {
+  .split.split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .split.split.split > [data-anchor][data-anchor] {
+    position: static;
   }
 }
 /* Nurse in charge with the person panel closed: nothing beside the list, so it takes the full width. */

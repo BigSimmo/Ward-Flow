@@ -134,6 +134,7 @@ function ContextBroadcastBanner({ currentUnitId }: { currentUnitId?: string }) {
       key={top.alert.id}
       entry={top}
       more={more}
+      others={entries.slice(1)}
       desk={desk}
       now={now}
       units={units}

@@ -3078,3 +3078,21 @@ button.legalChip {
     min-height: var(--wf-touch);
   }
 }
+
+/* R-HOME-17: on a phone-width window with a mouse (not only a touch screen) the Waiting buttons are
+   drawn 40px tall; the coarse-pointer block above already gives touch screens the 48px area. */
+@media (max-width: 46.4375rem) {
+  .seg button,
+  .chip,
+  .lnk,
+  .moreBtn,
+  .gin,
+  .x,
+  .btn {
+    min-height: 40px;
+  }
+
+  .x {
+    min-width: 40px;
+  }
+}

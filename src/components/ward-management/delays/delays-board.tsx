@@ -29,6 +29,8 @@ import { patientAgeText } from "@/components/ward-management/ward-patients";
 import { type Movement, type Unit } from "@/components/ward-management/ward-model";
 import { bandIncludes, originCode, tightHours, WAIT_BANDS, windowText, type WaitBandId } from "./wait-bands";
 import { FormalName, ShowMoreRow } from "@/components/wf";
+import { InfoTip } from "@/components/wf/info-tip";
+import { useKeepPlaceOnResize } from "./use-keep-place-on-resize";
 import { ListExportButton } from "@/components/ward-management/ward-list-export-button";
 import { readDelaysFlat, transitNote, useDelaysFlatStore, useSideScroll, writeDelaysFlat } from "./delays-board-stores";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
@@ -270,6 +272,7 @@ export function DelaysBoard({
   const isTabletPortrait = useIsTabletPortrait();
   /* iPad portrait (820px, device audit 11 Oct 2026): list rows and the registers as a slide-over. */
   const portrait = isTabletPortrait && !isPhone;
+  useKeepPlaceOnResize(`${isPhone}/${portrait}`, '[data-testid^="delays-select-"]');
   // Note 8, issue 5: the shorter of the list and the follow-up column holds in view as the page scrolls.
   const splitRef = useRef<HTMLDivElement>(null);
   useShorterColumnAnchor(splitRef, !isPhone && !portrait);
@@ -1278,6 +1281,14 @@ export function DelaysBoard({
                   className={styles.meta}
                   data-testid="delays-shown-count"
                 >{`${shown.length} of ${rows.length}`}</span>
+                {/* R-HOME-15: what the total is made of, in a tip, not a line of words. */}
+                <InfoTip about="the waiting total" placement="bottom">
+                  {`${split.listed} on the list: ${split.waiting} in ED, ${split.notWaiting.in_transit} in transit${
+                    split.listed - split.waiting - split.notWaiting.in_transit > 0
+                      ? `, ${split.listed - split.waiting - split.notWaiting.in_transit} other`
+                      : ""
+                  }.`}
+                </InfoTip>
                 <span className={`${styles.meta} ${polish.orderNote}`} data-testid="delays-order-note">
                   {waitingOrderLine(flat)}
                 </span>
