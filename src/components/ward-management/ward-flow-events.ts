@@ -2562,6 +2562,12 @@ export type WardFlowEvent =
       /** The booking's own ward, so bed history finds the event; refused if it is not the booking's. */
       unitId: string;
       actingUnitId?: string;
+      /**
+       * D-223 (Josh, 14 Nov 2026), Together-X2-4: the person is on the ward while its bed count is
+       * old. A reason from `OVERRIDE_REASONS` answers the bed-count check only
+       * (`PLANNED_ARRIVAL_OVERRIDABLE_GATES`); every other gate and bed fact still refuses.
+       */
+      overrideReason?: OverrideReason;
     }
   | {
       /**

@@ -66,6 +66,7 @@ import { CapacityPanel } from "./capacity-panel";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { dispatchPermission } from "@/components/ward-management/ward-role-permissions";
 import { plannedAdmissionAgenda } from "./planned-admissions";
+import { plannedArrivalNeedsBedCountReason } from "./planned-admissions-reducer";
 import {
   applyDraftPatch,
   authorisationReasonNeeded,
@@ -211,6 +212,9 @@ export function PlannedAdmissionsPanel({
   // Finding 185 (27 Oct 2026): Arrived checks who is in front of the ward first, as a movement's
   // arrival does (WT-11). Cancel leaves the booking as it was.
   const [arrivalCheck, setArrivalCheck] = useState<PlannedAdmission | null>(null);
+  // D-223 (Josh, 14 Nov 2026), Together-X2-4: the person is on the ward while its bed count is old,
+  // so the arrival may take a reason from the override list, for the bed-count check only.
+  const [arrivalReason, setArrivalReason] = useState<OverrideReason | "">("");
   const save = useWardFormSave(`planned-admission:${JSON.stringify(form)}`);
   // Tier 1 item 6 (Josh, 4 Nov 2026): a booking cancelled by mistake comes back from its toast.
   const { offer: offerUndo } = useUndoableStep({ dispatch, rejections, now, routeRole: role });
@@ -460,7 +464,7 @@ export function PlannedAdmissionsPanel({
     );
   }
 
-  function recordArrival(planned: PlannedAdmission) {
+  function recordArrival(planned: PlannedAdmission, overrideReason?: OverrideReason) {
     save.submit(
       () =>
         dispatch({
@@ -470,10 +474,17 @@ export function PlannedAdmissionsPanel({
           now,
           plannedAdmissionId: planned.id,
           unitId: planned.unitId,
+          ...(overrideReason ? { overrideReason } : {}),
         }),
       () => setRefusal(null),
     );
   }
+
+  const arrivalUnit = arrivalCheck ? units.find((unit) => unit.id === arrivalCheck.unitId) : undefined;
+  const arrivalNeedsReason =
+    arrivalCheck !== null &&
+    arrivalUnit !== undefined &&
+    plannedArrivalNeedsBedCountReason(arrivalCheck, arrivalUnit, now);
 
   // Audit 24-1 CS2-19: the chosen ward is not authorised for the chosen legal status, so the booking
   // needs an override reason chosen from the list a pull past the same gate uses. A booking already
@@ -1045,14 +1056,43 @@ export function PlannedAdmissionsPanel({
         }
         identity={arrivalCheck ? identityText(arrivalCheck) : ""}
         wardName={arrivalCheck ? unitName(arrivalCheck.unitId) : ""}
-        onClose={() => setArrivalCheck(null)}
+        onClose={() => {
+          setArrivalCheck(null);
+          setArrivalReason("");
+        }}
         onConfirm={() => {
           const planned = arrivalCheck;
+          if (arrivalNeedsReason && arrivalReason === "") return;
           setArrivalCheck(null);
-          if (planned) recordArrival(planned);
+          setArrivalReason("");
+          if (planned) recordArrival(planned, arrivalNeedsReason && arrivalReason !== "" ? arrivalReason : undefined);
         }}
+        confirmDisabledReason={arrivalNeedsReason && arrivalReason === "" ? "Choose a reason first" : undefined}
         testId="ward-planned-arrival-identity"
-      />
+      >
+        {arrivalNeedsReason ? (
+          <Field
+            label="Reason (bed count is old)"
+            hint="Recording the arrival takes a bed before the ward confirms its beds."
+          >
+            <Select
+              value={arrivalReason}
+              onChange={(event) => {
+                const chosen = event.target.value;
+                setArrivalReason(OVERRIDE_REASONS.includes(chosen as OverrideReason) ? (chosen as OverrideReason) : "");
+              }}
+              data-testid="ward-planned-arrival-reason"
+            >
+              <option value="">Choose reason</option>
+              {OVERRIDE_REASONS.map((reason) => (
+                <option key={reason} value={reason}>
+                  {reason}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        ) : null}
+      </ArrivalIdentityDialog>
     </CapacityPanel>
   );
 }

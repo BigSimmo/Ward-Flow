@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Dialog } from "@/components/wf";
 import { useOptionalWardFlowSelect, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { calendarDateOf } from "@/components/ward-management/ward-clock";
@@ -29,6 +30,8 @@ export function ArrivalIdentityDialog({
   onConfirm,
   onClose,
   testId = "ward-arrival-identity",
+  confirmDisabledReason,
+  children,
 }: {
   open: boolean;
   /** The linked person, when there is one; otherwise the check reads `identity`. */
@@ -41,6 +44,10 @@ export function ArrivalIdentityDialog({
   onConfirm: () => void;
   onClose: () => void;
   testId?: string;
+  /** Why Confirm arrival cannot be pressed yet, drawn under it; left out, it can. */
+  confirmDisabledReason?: string;
+  /** A field the arrival needs before it is recorded (D-223: a reason for an old bed count). */
+  children?: ReactNode;
 }) {
   const now = useWardFlowClock(0);
   const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
@@ -54,7 +61,11 @@ export function ArrivalIdentityDialog({
       title={`Confirm arrival at ${wardName}`}
       description="Check the wristband matches before you record the arrival."
       secondary={[{ label: "Cancel", onAction: onClose }]}
-      primary={{ label: "Confirm arrival", onAction: onConfirm }}
+      primary={{
+        label: "Confirm arrival",
+        onAction: onConfirm,
+        ...(confirmDisabledReason ? { disabledReason: confirmDisabledReason } : {}),
+      }}
       data-testid={testId}
     >
       <dl className={styles.facts} data-testid={`${testId}-check`}>
@@ -85,6 +96,7 @@ export function ArrivalIdentityDialog({
           </>
         ) : null}
       </dl>
+      {children}
     </Dialog>
   );
 }

@@ -32,7 +32,13 @@ import { OVERRIDE_REASONS } from "../ward-change-reasons";
 import { finiteInstant, type AuditDecision } from "../ward-audit";
 import { emptyCareJourney } from "../ward-care-journey";
 import { dayOf, MINUTES_PER_DAY, perthCalendarDay, perthMidnight, type Instant } from "../ward-clock";
-import { adjustSexMix, eligibility, mixSexOf } from "../ward-eligibility";
+import {
+  adjustSexMix,
+  eligibility,
+  mixSexOf,
+  PLANNED_ARRIVAL_OVERRIDABLE_GATES,
+  type EligibilityGate,
+} from "../ward-eligibility";
 import type { WardFlowEvent } from "../ward-flow-events";
 import type { WardFlowState } from "../ward-flow-reducer";
 import { WARD_FLOW_ROLE_LABELS } from "../ward-flow-roles";
@@ -63,8 +69,11 @@ export type PlacementRefusalFn = (
   movement: Movement,
   unit: Unit,
   now: Instant,
-  /** Audit 24-1 CS2-19: gates the booking's own recorded reason answers (authorisation only). */
-  waived?: readonly "authorisation"[],
+  /**
+   * Gates a recorded reason answers: the booking's own authorisation reason (Audit 24-1 CS2-19), and
+   * the bed-count check when the arrival names a reason (D-223, `PLANNED_ARRIVAL_OVERRIDABLE_GATES`).
+   */
+  waived?: readonly EligibilityGate[],
 ) => string | null;
 
 /**
@@ -135,6 +144,16 @@ function plannedAdmissionMovementView(planned: PlannedAdmission, unit: Unit): Mo
 function failedAuthorisationGate(booking: PlannedAdmission, unit: Unit, now: Instant) {
   return eligibility(plannedAdmissionMovementView(booking, unit), unit, now).gates.find(
     (candidate) => candidate.gate === "authorisation" && !candidate.pass,
+  );
+}
+
+/**
+ * D-223: whether this booking's arrival on `unit` is held up only by an old bed count, so the screen
+ * offers the override reason list (`PLANNED_ARRIVAL_OVERRIDABLE_GATES`). Pure.
+ */
+export function plannedArrivalNeedsBedCountReason(booking: PlannedAdmission, unit: Unit, now: Instant): boolean {
+  return eligibility(plannedAdmissionMovementView(booking, unit), unit, now).gates.some(
+    (gate) => !gate.pass && (PLANNED_ARRIVAL_OVERRIDABLE_GATES as readonly EligibilityGate[]).includes(gate.gate),
   );
 }
 
@@ -573,7 +592,15 @@ export function reducePlannedAdmissionEvent(
       // refused at arrival on that gate, as a pull with a recorded reason is not. Only the
       // authorisation gate: every other gate is still asked, and a reason recorded for another
       // ward, or none at all, buys nothing.
-      const waived = planned.authorisationOverride?.unitId === unit.id ? (["authorisation"] as const) : [];
+      // D-223 (Josh, 14 Nov 2026), Together-X2-4: the person is on the ward, so an arrival recorded
+      // while the bed count is old may name a reason from the override list. It answers the bed-count
+      // check alone; the gender check (above any waiver) and every other gate still refuse.
+      if (event.overrideReason !== undefined && !OVERRIDE_REASONS.includes(event.overrideReason))
+        return reject(state, event, `${event.type} overrideReason must be chosen from OVERRIDE_REASONS`);
+      const waived: EligibilityGate[] = [
+        ...(planned.authorisationOverride?.unitId === unit.id ? (["authorisation"] as const) : []),
+        ...(event.overrideReason !== undefined ? PLANNED_ARRIVAL_OVERRIDABLE_GATES : []),
+      ];
       const ineligible = placementRefusal(view, unit, event.now, waived);
       if (ineligible)
         return reject(state, event, ineligible.replace(`for movement ${view.id}`, "for this planned admission"));
