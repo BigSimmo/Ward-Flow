@@ -37,7 +37,7 @@ import {
 import { MovementWorkspaceCockpit } from "../movements/movement-workspace-cockpit";
 import { useRoleGate, useRouteRole } from "../ward-role-gate";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
-import { ChipGroup, FilterChip, StatusGlyph, buttonClass, RowUndo } from "@/components/wf";
+import { ChipGroup, FilterChip, StateLine, StatusGlyph, buttonClass, RowUndo } from "@/components/wf";
 import { undoWindowEnds } from "../ward-undo-until";
 import { useUndoableStep } from "../use-undoable-step";
 import { BED_PULL_UNDONE, bedPullUndoEvent } from "../ward-bed-pull-undo";
@@ -764,9 +764,12 @@ export function PatientTransitOperations({
               </button>
               {holdGate.note}
               {levelSave.error || pullLevelError ? (
-                <p className={styles.deckHint} role="alert" data-testid="ward-transit-pull-level-failure">
-                  {pullLevelError ?? `The bed is not pulled. ${levelSave.error}`}
-                </p>
+                <StateLine
+                  kind="error"
+                  compact
+                  data-testid="ward-transit-pull-level-failure"
+                  title={pullLevelError ?? `The bed is not pulled. ${levelSave.error}`}
+                />
               ) : null}
             </>
           )}
