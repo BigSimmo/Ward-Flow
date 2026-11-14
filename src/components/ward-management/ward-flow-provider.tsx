@@ -96,6 +96,7 @@ import type { Patient } from "@/components/ward-management/ward-patients";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import type { BroadcastAlert } from "./alerts/ward-broadcast-model";
 import { useSliceGatedDispatch } from "./ward-flow-slice-dispatch";
+import { useDeskStampedDispatch } from "./ward-desk-stamp-dispatch";
 import {
   seedWardFlowStateAt,
   wardFlowReducer,
@@ -811,7 +812,7 @@ function WardFlowWorld({
   );
   // THE ROUTING POINT. Training always dispatches locally, even if a shared connection is enabled.
   const dispatch = useSliceGatedDispatch(
-    dispatchLocal,
+    useDeskStampedDispatch(dispatchLocal), // D-222: every local change names the session desk
     sharedEnabled && !inTraining ? dispatchShared : null,
     commandsRef,
     captureCommandLifetime,
