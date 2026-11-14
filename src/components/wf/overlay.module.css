@@ -344,6 +344,11 @@
    (ui/tooltip.module.css): ink on light, track in dark with the line-2 ring. Desktop and tablet
    keep the glass card above. Every toast keeps its X (GEN1, 3 Nov 2026). */
 @media (max-width: 46.4375rem) {
+  /* INV-A11-024/025 (14 Nov 2026): menu items meet the 40px phone target ("Open on TV" was 36px). */
+  .item {
+    min-height: 40px;
+  }
+
   /* F-15: above the dock's top (--wf-dock-clear, which counts the home indicator), not a fixed
      92px that the dock overlapped on Face ID iPhones. Pages without the dock use the same sum. The gap
      is 12px unless the shell sets --wf-toast-dock-gap (the new frame sets 24px, from the mock-ups). */
@@ -371,9 +376,11 @@
     );
   }
 
-  /* A sheet or dialog is open: sit higher so its footer buttons stay clear. */
+  /* A sheet or dialog is open: phone dialogs rise from the bottom, so the toast moves to the top and
+     never covers the dialog's buttons (INV-A11-024: Undo sat over "Cancel transport" at 390 wide). */
   :global(html:has([role="dialog"][aria-modal="true"])) .toastRegion {
-    bottom: calc(var(--wf-toast-rest) + 44px);
+    top: max(var(--wf-s-2), env(safe-area-inset-top));
+    bottom: auto;
   }
 
   .toast {
