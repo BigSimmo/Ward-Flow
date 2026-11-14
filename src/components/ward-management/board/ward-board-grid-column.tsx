@@ -101,10 +101,14 @@ export function WardBoardGridColumn({
     recorded: "Bed order",
   };
   // Wave 4 (D-191, notes 10, A5-09): on a phone the bed squares head the sheet, from the same tiles.
-  const kinds = { ready: 0, use: 0, closed: 0, pulled: 0 };
+  // A bed being made ready is an empty tile with `preparing`; it is drawn hollow, never as Ready,
+  // matching the hero and the Ready filter.
+  const kinds = { ready: 0, prep: 0, use: 0, closed: 0, pulled: 0 };
   for (const tile of tiles) {
-    if (tile.kind === "empty") kinds.ready += 1;
-    else if (tile.kind === "closed" || tile.kind === "blocked") kinds.closed += 1;
+    if (tile.kind === "empty") {
+      if (tile.preparing) kinds.prep += 1;
+      else kinds.ready += 1;
+    } else if (tile.kind === "closed" || tile.kind === "blocked") kinds.closed += 1;
     else kinds.use += 1;
     if (tile.kind === "waiting") kinds.pulled += 1;
   }
@@ -122,7 +126,7 @@ export function WardBoardGridColumn({
       {isPhone ? (
         <>
           <BedSquares
-            counts={{ ready: kinds.ready, prep: 0, free: 0, use: kinds.use, closed: kinds.closed }}
+            counts={{ ready: kinds.ready, prep: kinds.prep, free: 0, use: kinds.use, closed: kinds.closed }}
             tag={bedSquaresTag(unit)}
             notes={bedSquaresNotes({ pulled: kinds.pulled, closed: kinds.closed })}
             figure="lg"
