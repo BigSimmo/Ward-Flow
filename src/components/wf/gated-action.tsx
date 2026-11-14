@@ -31,7 +31,7 @@ export type GatedButtonProps = GatedButtonOwn &
   Omit<ButtonProps, "onClick" | "disabledReason" | "children" | "iconOnly"> & { readonly permit: Permit };
 
 /** A `useRoleGate()` answer as a `Permit`: allowed, never (hidden) or not now (with its reason). */
-export function permitFromRoleGate(gate: RoleGate): Permit {
+export function permitFromRoleGate(gate: Pick<RoleGate, "allowed" | "reason" | "never">): Permit {
   if (gate.allowed) return { kind: "allow" };
   const reason = gate.reason ?? "";
   return gate.never ? { kind: "never", refusal: reason } : { kind: "not-now", refusal: reason, reason };
