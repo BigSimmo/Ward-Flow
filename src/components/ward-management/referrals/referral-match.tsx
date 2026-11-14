@@ -55,6 +55,7 @@ import {
   referralDestinationKindLabel,
   referralSuburbLabel,
 } from "@/components/ward-management/ward-referrals";
+import { refusalReasonText } from "@/components/ward-management/ward-refusal-words";
 import { getReferralPriority, referralPriorityLabel, PriorityGlyph } from "./referral-priority";
 import { referralWaitLine } from "./referral-wait";
 import styles from "./referrals.module.css";
@@ -64,7 +65,7 @@ import notes from "./referral-match-notes.module.css";
 import rs from "./referral-match.module.css";
 import tabs from "./referral-tabs.module.css";
 import { Check, Info, X } from "lucide-react";
-import { Button, RadioGroup, Select, ShowMoreRow, StatusGlyph } from "@/components/wf";
+import { Button, RadioGroup, Select, StatusGlyph } from "@/components/wf";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import {
   GATE_LABELS,
@@ -231,8 +232,6 @@ export function ReferralMatchView({
     setPhonePick,
     phoneDeclining,
     setPhoneDeclining,
-    phoneAllFits,
-    setPhoneAllFits,
     setReviewUnitId,
     wardArms,
     ward,
@@ -725,7 +724,7 @@ export function ReferralMatchView({
         {lastRejection ? (
           <p className={styles.rejection} data-testid="ward-referral-match-rejection" role="alert">
             {REJECTED_DECISION_LABELS[lastRejection.attempted as (typeof MATCH_VIEW_DECISION_EVENTS)[number]]} not
-            recorded: {lastRejection.reason}
+            recorded: {refusalReasonText(lastRejection.reason)}
           </p>
         ) : null}
         <FoldedHistory referral={referral} now={now} dispatch={dispatch} />
@@ -929,9 +928,8 @@ export function ReferralMatchView({
     pick && (tier2Candidates.includes(pick) || staleCandidates.includes(pick))
       ? turnaroundForUnit(pick.unit.id)
       : undefined;
-  const FIT_CAP = 3;
-  const fitsShown = phoneAllFits ? tier1Candidates : tier1Candidates.slice(0, FIT_CAP);
-  const fitsHidden = tier1Candidates.length - fitsShown.length;
+  // R-BEDS-9 (AK-P-10): every fitting ward, never a shortlist, in the network's fixed order.
+  const fitsShown = tier1Candidates;
 
   const candRow = (c: ReferralCandidate, kind: "yes" | "nobed" | "stale" | "review") => {
     // The shared classifier's deciding check names the constraint (H8, H9).
@@ -965,7 +963,8 @@ export function ReferralMatchView({
         <span className={ph.who}>
           <span className={ph.nm}>{c.unit.name}</span>
           <span className={ph.sub}>
-            {bandOf.get(c.unit.id) ?? NOT_RECORDED_LABEL} ·{" "}
+            {/* "Travel time not recorded" is said once above the list, so a row names a band only when it has one. */}
+            {bandOf.get(c.unit.id) ? `${bandOf.get(c.unit.id)} · ` : ""}
             {kind === "stale"
               ? staleCountWords(c.unit, now)
               : placementFit(c.verdict).kind === "not_suitable"
@@ -990,11 +989,6 @@ export function ReferralMatchView({
         <RadioGroup className={ph.cands} aria-label={title}>
           {(kind === "yes" ? fitsShown : list).map((c) => candRow(c, kind))}
         </RadioGroup>
-        {kind === "yes" && fitsHidden > 0 ? (
-          <ShowMoreRow onClick={() => setPhoneAllFits(true)} expanded={false}>
-            Show {fitsHidden} more with a bed ready
-          </ShowMoreRow>
-        ) : null}
       </>
     ) : null;
 
@@ -1131,13 +1125,13 @@ export function ReferralMatchView({
       {lastRejection ? (
         <p className={styles.rejection} data-testid="ward-referral-match-rejection" role="alert">
           {REJECTED_DECISION_LABELS[lastRejection.attempted as (typeof MATCH_VIEW_DECISION_EVENTS)[number]]} not
-          recorded: {lastRejection.reason}
+          recorded: {refusalReasonText(lastRejection.reason)}
         </p>
       ) : null}
 
       {turnaroundRejection ? (
         <p role="alert" className={styles.unitNoticeMuted} data-testid="ward-turnaround-rejection">
-          Turnaround preference not recorded: {turnaroundRejection.reason}
+          Turnaround preference not recorded: {refusalReasonText(turnaroundRejection.reason)}
         </p>
       ) : null}
       {phoneDeclining ? (
@@ -1233,6 +1227,11 @@ export function ReferralMatchView({
                 </Button>
               )}
             </div>
+            {phone !== undefined && everyCandidateUnrecorded ? (
+              <p className={ph.matchHint}>
+                <strong>{NOT_RECORDED_LABEL}.</strong>
+              </p>
+            ) : null}
             {group("Fits, bed ready", tier1Candidates, "yes")}
             {group("Fits, no bed now", tier2Candidates, "nobed")}
             {group("Fits, bed count old", staleCandidates, "stale")}

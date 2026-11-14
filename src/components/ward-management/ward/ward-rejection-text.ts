@@ -1,4 +1,5 @@
 import { GENDER_NO_LONGER_SUITS_REFUSAL } from "@/components/ward-management/ward-change-reasons";
+import { refusalReasonText } from "@/components/ward-management/ward-refusal-words";
 import {
   GENDER_DESIGNATION_PRIVACY_SENTENCE,
   type EligibilityGate,
@@ -40,8 +41,6 @@ export function wardSafeRejectionReason(reason: string): string {
     const next = /(?:^|\. )(This (?:placement|is not) .+)$/su.exec(match[3])?.[1];
     return next ? `${GENDER_DESIGNATION_PRIVACY_SENTENCE} ${next}` : GENDER_DESIGNATION_PRIVACY_SENTENCE;
   }
-  const text = match
-    ? `${match[1]} fails the ${(WARD_GATE_LABELS[match[2] as EligibilityGate] ?? match[2].replace(/_/g, " ")).toLowerCase()} check. ${match[3]}`
-    : reason;
-  return text.replace(/ — /g, ", ");
+  // R-BEDS-14: one line saying why and what next, never a gate name or raw minutes.
+  return match ? refusalReasonText(reason) : reason.replace(/ — /g, ", ");
 }

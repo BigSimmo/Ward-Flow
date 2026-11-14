@@ -55,9 +55,47 @@ const SPECIFIC_REFUSALS: ReadonlyArray<readonly [RegExp, string]> = [
   ],
 ];
 
+/** The engine's front-door refusal: "<ward> ... — failed gate <key>: <detail>. <what a reason can do>". */
+const GATE_REFUSAL =
+  /^(.+?) (?:is not eligible for [^—]*|does not accept referral \S+|cannot accept referral \S+) — failed gate ([a-z_]+): (.*)$/su;
+
+/** "25678 min" read as "18 days", "130 min" as "2 h", so no raw minutes reach a desk. */
+function ageWords(minutes: number): string {
+  if (minutes >= 2880) return `${Math.floor(minutes / 1440)} days`;
+  if (minutes >= 120) return `${Math.floor(minutes / 60)} h`;
+  return `${minutes} min`;
+}
+
+/**
+ * R-BEDS-14: a gate refusal ("failed gate capacity_freshness: Last confirmed 25678 min ago") as one
+ * line saying why and what to do next. No gate name or raw minutes reach the screen.
+ */
+function gateRefusalText(reason: string): string | undefined {
+  const match = GATE_REFUSAL.exec(reason);
+  if (!match) return undefined;
+  const [, ward, gate, detail] = match;
+  if (gate === "capacity_freshness") {
+    const minutes = /(\d+) min/u.exec(detail)?.[1];
+    return refusalLine(
+      minutes === undefined ? `${ward}'s bed count is out of date` : `Bed count ${ageWords(Number(minutes))} old`,
+      "Ask the ward to confirm its count, then try again",
+    );
+  }
+  if (gate === "allocatable_bed") {
+    return refusalLine(`${ward} has no bed free now`, "Ask the ward to confirm its count, or choose another ward");
+  }
+  if (/not something a recorded reason can override/u.test(reason)) {
+    return refusalLine(`${ward} cannot take this patient`, "Choose another ward");
+  }
+  if (/needs a recorded override reason/u.test(reason)) {
+    return refusalLine(`${ward} needs a recorded reason for this placement`, "Add a reason, or choose another ward");
+  }
+  return refusalLine(`${ward} does not fit this patient`, "Choose another ward");
+}
+
 /** The specific line for a known engine reason, or undefined when there is none. */
 export function specificRefusalText(reason: string): string | undefined {
-  return SPECIFIC_REFUSALS.find(([pattern]) => pattern.test(reason))?.[1];
+  return SPECIFIC_REFUSALS.find(([pattern]) => pattern.test(reason))?.[1] ?? gateRefusalText(reason);
 }
 
 function capitalised(text: string): string {

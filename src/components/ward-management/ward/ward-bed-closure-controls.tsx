@@ -7,6 +7,7 @@ import styles from "./ward-bed-dossier-drawer.module.css";
 import { activeClosedBeds } from "@/components/ward-management/ward-ready-beds";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { wardClosureReasonLabel } from "../ward-bed-closure-reason";
+import { WARD_CLOSURE_REASONS } from "../capacity/ward-closure";
 
 /**
  * H-0978 / WS-15 (workflow speed audit, Josh 26 Oct 2026, "Close the exact bed"): an empty bed's
@@ -29,11 +30,14 @@ export type BedClosureActions = {
   onReopenBed?: () => void;
   /** On a bed closed by number: "Review 14:00" or "Review overdue", when a review time was chosen. */
   reviewLine?: string | null;
+  /** Set only on a bed closed with no reason, for a desk that may record one (R-BEDS-4). */
+  onAddClosureReason?: (reasonId: string) => void;
 };
 
 export function BedClosureControls({
   onCloseBed,
   onReopenBed,
+  onAddClosureReason,
   reviewLine,
   size,
   children,
@@ -47,6 +51,15 @@ export function BedClosureControls({
   if (!onCloseBed && !onReopenBed) return <>{children}</>;
   return (
     <>
+      {onAddClosureReason ? (
+        <ClosureChoice
+          label="Add a reason"
+          testId="ward-drawer-add-closure-reason"
+          value=""
+          items={WARD_CLOSURE_REASONS.map((entry) => ({ id: entry.id, label: entry.label }))}
+          onChange={(id) => id && onAddClosureReason(id)}
+        />
+      ) : null}
       {onCloseBed ? (
         <ClosureChoice
           label="Review in"

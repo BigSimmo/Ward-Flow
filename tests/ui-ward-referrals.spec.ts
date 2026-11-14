@@ -1071,7 +1071,9 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     if (await more.count()) await more.click();
     const accepting = panel.locator('[data-testid^="ward-referral-match-phone-cand-"][data-kind="yes"]');
     await expect(accepting.first(), "no ward accepts this referral, so there is no acceptance to make").toBeVisible();
-    for (const row of await accepting.all()) await expect(row).toContainText(NOT_RECORDED_LABEL);
+    // R-BEDS-9: said once above the list, not on each row.
+    await expect(panel).toContainText(NOT_RECORDED_LABEL);
+    for (const row of await accepting.all()) await expect(row).not.toContainText(NOT_RECORDED_LABEL);
     for (const label of Object.values(TRAVEL_BAND_LABELS)) await expect(panel).not.toContainText(label);
 
     await accepting.first().click();

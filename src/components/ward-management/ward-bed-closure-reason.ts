@@ -5,6 +5,9 @@ import type { UndoStepChoices } from "./use-undoable-step";
 /** Re-exported for the bed's History, so the ward screen reads closure words through one file. */
 export { wardClosureReasonLabel };
 
+/** "Bed 07": the bed's number as the drawer writes it, so a toast and the drawer agree (R-BEDS-4). */
+export const bedLabel = (bedNumber: number) => `Bed ${String(bedNumber).padStart(2, "0")}`;
+
 type BedClose = Extract<WardFlowEvent, { type: "SET_BED_CLOSED" }>;
 
 /**
@@ -19,7 +22,7 @@ export function bedClosureReasonChoices(close: Omit<BedClose, "type" | "now" | "
     label: "Add a reason",
     items: WARD_CLOSURE_REASONS.map((entry) => ({ id: entry.id, label: entry.label })),
     redo: (id, now) => ({ ...close, type: "SET_BED_CLOSED", now, closed: true, reason: id as WardClosureReason }),
-    success: (id) => `Bed ${close.bedNumber} closed: ${label(id)}. It is not offered until it is reopened.`,
-    notRedone: `Bed ${close.bedNumber} is open again. Close it again to add a reason.`,
+    success: (id) => `${bedLabel(close.bedNumber)} closed: ${label(id)}. It is not offered until it is reopened.`,
+    notRedone: `${bedLabel(close.bedNumber)} is open again. Close it again to add a reason.`,
   };
 }
