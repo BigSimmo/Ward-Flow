@@ -1296,7 +1296,7 @@ export function PatientSearchPage() {
               <option value="all">All legal statuses ({unifiedCaseload.length})</option>
               {LEGAL_FILTER_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
-                  {opt.label} ({unifiedCaseload.filter((p) => p.legalStatus === opt.value).length})
+                  {opt.label} ({results.filter((r) => matchesLegal(r, opt.value)).length})
                 </option>
               ))}
             </select>

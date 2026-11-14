@@ -253,6 +253,12 @@ describe("Handover page", () => {
   it("records the sign-off with role and time and lists it in History", async () => {
     const user = userEvent.setup();
     renderHandover();
+    // D-179 Question 6 (untested-537 INV-SEQUENCE-005): History records the checks still open.
+    const counted = /Sign off (\d+)\/(\d+)/.exec(
+      screen.getByTestId("ward-handover-hero-sign-off").getAttribute("aria-label") ?? "",
+    );
+    const open = Number(counted?.[2]) - Number(counted?.[1]);
+    expect(open).toBeGreaterThan(0);
     await user.click(screen.getByTestId("ward-handover-hero-sign-off"));
     await user.click(screen.getByTestId("ward-handover-sign-off-button"));
     expect(screen.getByTestId("ward-handover-sign-off-visible-status")).toHaveTextContent(
@@ -265,6 +271,7 @@ describe("Handover page", () => {
     expect(screen.getByTestId("ward-handover-sign-off-undo")).toHaveTextContent("Undo sign-off");
     await user.click(screen.getByRole("tab", { name: /History/ }));
     expect(screen.getByTestId("ward-handover-history")).toHaveTextContent("Handover signed off as bed coordinator");
+    expect(screen.getByTestId("ward-handover-history")).toHaveTextContent(`${open} check${open === 1 ? "" : "s"} open`);
   });
 
   it("offers no Handing to choice, because the engine records role and time only (D-72)", () => {

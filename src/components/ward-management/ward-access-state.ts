@@ -343,8 +343,12 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
   },
   // Coordinator records, narrowed to the coordinator's own service.
   rejections: () => [],
+  // A capacity review buzz is sent to the ward, so the ward's own desk and its bed manager keep it
+  // too (untested-537 INV-ALERT-029: the ward's Notices never showed the buzz it was sent).
   refreshRequests: (context) =>
-    context.coordinator ? context.state.refreshRequests.filter((request) => context.unitIn(request.unitId)) : [],
+    context.coordinator || context.access.role === "ward" || context.access.role === "bed_manager"
+      ? context.state.refreshRequests.filter((request) => context.unitIn(request.unitId))
+      : [],
   // Closing-the-loop (package E): directory checks name a mock directory entry and a desk, never a
   // person, so every desk keeps them.
   directoryChecks: (context) => context.state.directoryChecks ?? [],

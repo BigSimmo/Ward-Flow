@@ -129,29 +129,34 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
         {open && expectationGate.note}
         {/* D-221 item 8: no "Review late arrival" button. Late notices store themselves when the
             time is saved; the event stays only for older records and the server's sweep. */}
-        <button
-          type="button"
-          aria-disabled={leaveWarningUnavailable ? "true" : undefined}
-          aria-describedby={leaveWarningUnavailable ? `workflow-leave-warning-reason-${movement.id}` : undefined}
-          title={leaveWarningUnavailable ? leaveWarningReason : undefined}
-          {...leaveGate.buttonProps}
-          onClick={
-            leaveWarningUnavailable
-              ? ignoreUnavailableActivation
-              : () => {
-                  before();
-                  raise("EVALUATE_LEAVE_BED_WARNINGS");
-                }
-          }
-        >
-          Review leave bed warnings
-        </button>
-        {leaveGate.note}
-        {leaveWarningUnavailable ? (
-          <span id={`workflow-leave-warning-reason-${movement.id}`} className="sr-only">
-            {leaveWarningReason}
-          </span>
-        ) : null}
+        {/* Untested-537 INV-ACTION-041 (D-192 item 5): a desk that can never send this is not shown it. */}
+        {leaveGate.never ? null : (
+          <>
+            <button
+              type="button"
+              aria-disabled={leaveWarningUnavailable ? "true" : undefined}
+              aria-describedby={leaveWarningUnavailable ? `workflow-leave-warning-reason-${movement.id}` : undefined}
+              title={leaveWarningUnavailable ? leaveWarningReason : undefined}
+              {...leaveGate.buttonProps}
+              onClick={
+                leaveWarningUnavailable
+                  ? ignoreUnavailableActivation
+                  : () => {
+                      before();
+                      raise("EVALUATE_LEAVE_BED_WARNINGS");
+                    }
+              }
+            >
+              Review leave bed warnings
+            </button>
+            {leaveGate.note}
+            {leaveWarningUnavailable ? (
+              <span id={`workflow-leave-warning-reason-${movement.id}`} className="sr-only">
+                {leaveWarningReason}
+              </span>
+            ) : null}
+          </>
+        )}
         <button
           type="button"
           aria-disabled={mismatchUnavailable ? "true" : undefined}
@@ -180,7 +185,8 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
             {mismatchReason}
           </span>
         ) : null}
-        {unit && (
+        {/* Untested-537 INV-ACTION-161 (D-192 item 5): hidden from a desk that can never send it. */}
+        {unit && !buzzGate.never && (
           <button
             type="button"
             {...buzzGate.buttonProps}
@@ -197,7 +203,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
             Request ward capacity review
           </button>
         )}
-        {unit && buzzGate.note}
+        {unit && !buzzGate.never && buzzGate.note}
       </div>
       {open && !bedElsewhere && ["pulled", "accepted_awaiting_bed"].includes(movement.stage) && (
         <form
