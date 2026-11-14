@@ -30,6 +30,13 @@ import {
   type TransportProvider,
   type Unit,
 } from "@/components/ward-management/ward-model";
+import {
+  arrivalGaps,
+  fitToTravelGaps,
+  type FitToTravelClearance,
+} from "@/components/ward-management/ward-arrival-gaps";
+
+export { arrivalGaps, fitToTravelGaps, type FitToTravelClearance };
 
 /** The paperwork rule's reads, kept importable from here (`ward-transport-paperwork.ts`). */
 export { legalNowTransportStatus, packRequirement };
@@ -185,13 +192,6 @@ export function collectionGaps(
  * clearance recorded the screen asks for a reason every time; neither step is blocked, and the
  * engine accepts the press without one (D-189 item 9(e)).
  */
-export type FitToTravelClearance = Pick<NonNullable<Movement["medicalClearance"]>, "cleared"> | undefined;
-
-export function fitToTravelGaps(clearance: FitToTravelClearance): TransportExceptionGap[] {
-  if (clearance === undefined) return ["fit_to_travel_missing"];
-  // D-205: assessed and not cleared says so, not that the fact is missing.
-  return clearance.cleared === true ? [] : ["fit_to_travel_not_cleared"];
-}
 
 /**
  * The checks open at Mark handover ready: fit to travel, for a journey with a live transport job.
@@ -204,15 +204,6 @@ export function handoverReadyGaps(
 ): TransportExceptionGap[] {
   if (movement.transport === undefined || movement.transport.cancelledAt !== undefined) return [];
   return fitToTravelGaps(clearance);
-}
-
-/**
- * Audit r1 item 4: a journey with no transport leg (nobody collected the patient) is never asked
- * fit to travel at Collected, so arrival asks instead. A warning with a recorded reason, never a block.
- */
-export function arrivalGaps(movement: Pick<Movement, "transport" | "medicalClearance">): TransportExceptionGap[] {
-  if (movement.transport?.collectedAt !== undefined) return [];
-  return fitToTravelGaps(movement.medicalClearance);
 }
 
 /**

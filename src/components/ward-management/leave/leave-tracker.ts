@@ -23,7 +23,7 @@ export function leaveDueToday(leave: LeaveBed, now: Instant): boolean {
 }
 
 /** Said in place of a bed number when the stay has neither a recorded number nor a board seat. */
-export const BED_NOT_RECORDED = "Bed not recorded";
+const BED_NOT_RECORDED = "Bed not recorded";
 
 /**
  * The bed a leave record holds: the number the ward board shows for that stay. That is the stay's

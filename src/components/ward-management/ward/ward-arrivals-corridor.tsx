@@ -50,7 +50,7 @@ import { pullBlockedReason } from "./ward-pull-blocked";
 import { ExtendHoldControl } from "@/components/ward-management/ward-extend-hold";
 import { PULL_NO_LIMIT_RECORDED } from "@/components/ward-management/ward-bed-hold";
 import { observationSummary } from "@/components/ward-management/ward-observation";
-import { communityOriginLabel, originName } from "@/components/ward-management/ward-movement-origin";
+import { originPlaceLabel } from "@/components/ward-management/ward-movement-origin";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 import { wardCopyReadmission } from "@/components/ward-management/ward-readmission-copy";
 import { ArrivalIdentityDialog } from "@/components/ward-management/arrival-identity-dialog";
@@ -68,11 +68,6 @@ function msSinceTap(tap: { at: number }): number {
 
 function tapNow(): number {
   return Date.now();
-}
-
-export function originPlaceLabel(movement: Movement): string {
-  if (movement.originEdId === undefined) return communityOriginLabel(movement.originCommunity);
-  return originName(movement) ?? "Emergency department";
 }
 
 function arrivalIsLate(movement: Movement, now: Instant): boolean {

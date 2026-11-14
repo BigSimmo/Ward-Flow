@@ -9,13 +9,12 @@ import {
 import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import Link from "next/link";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { originPlaceLabel } from "./ward-arrivals-corridor";
-import { ArrivalIdentityDialog } from "@/components/ward-management/arrival-identity-dialog";
+import { originPlaceLabel } from "@/components/ward-management/ward-movement-origin";
 import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import { patientIdentityLine } from "@/components/ward-management/ward-patient-resolver";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
-import { arrivalGaps } from "@/components/ward-management/ward-transport-checks";
+import { arrivalGaps } from "@/components/ward-management/ward-arrival-gaps";
 import React, { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import styles from "./ward-home-tab.module.css";
 import { pendingDepartureLogRows, type WardShiftLogRow } from "./ward-departure-log";
@@ -104,6 +103,16 @@ export {
   type WardFlowTab,
   type WardShiftView,
 } from "./ward-home-tab-model";
+import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
+
+// The arrival identity check loads on first use, so it adds nothing to the ward page's first load.
+const ArrivalIdentityDialog = dynamic(
+  withLoadRetry(() =>
+    import("@/components/ward-management/arrival-identity-dialog").then((m) => m.ArrivalIdentityDialog),
+  ),
+  { ssr: false },
+);
 
 interface WardHomeTabProps {
   unit: Unit;
@@ -1750,18 +1759,20 @@ export function WardHomeTab({
         ) : null}
       </Dialog>
 
-      <ArrivalIdentityDialog
-        open={arriveRowMovement !== undefined}
-        person={arriveRowMovement ? resolvePatientIdentity(arriveRowMovement).patient : undefined}
-        identity={arriveRowMovement ? patientIdentityLine(resolvePatientIdentity(arriveRowMovement)) : ""}
-        wardName={unit.name}
-        comingFrom={arriveRowMovement ? originPlaceLabel(arriveRowMovement) : undefined}
-        onClose={() => setArriveRowId(null)}
-        onConfirm={() => {
-          setArriveRowId(null);
-          if (arriveRowMovement) recordRowArrival(arriveRowMovement);
-        }}
-      />
+      {arriveRowMovement ? (
+        <ArrivalIdentityDialog
+          open
+          person={arriveRowMovement ? resolvePatientIdentity(arriveRowMovement).patient : undefined}
+          identity={arriveRowMovement ? patientIdentityLine(resolvePatientIdentity(arriveRowMovement)) : ""}
+          wardName={unit.name}
+          comingFrom={arriveRowMovement ? originPlaceLabel(arriveRowMovement) : undefined}
+          onClose={() => setArriveRowId(null)}
+          onConfirm={() => {
+            setArriveRowId(null);
+            recordRowArrival(arriveRowMovement);
+          }}
+        />
+      ) : null}
 
       {(() => {
         // The referral the accept dialog was opened for, while it is still waiting here (CS-08).
