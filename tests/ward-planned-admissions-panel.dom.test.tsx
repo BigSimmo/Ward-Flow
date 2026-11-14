@@ -209,7 +209,7 @@ describe("planned admissions panel", () => {
 
     fireEvent.click(within(screen.getByTestId("ward-planned-PA-SEED-03")).getByRole("button", { name: "Arrived" }));
     // Finding 185: the arrival identity check comes first, as on a movement. Cancel changes nothing.
-    expect(screen.getByTestId("ward-planned-arrival-identity-check")).toHaveTextContent(/^Check: /u);
+    expect(screen.getByTestId("ward-planned-arrival-identity-check")).toHaveTextContent(/^Name.+UMRN.+Date of birth/u);
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cancel" }));
     expect(screen.getByTestId("ward-planned-PA-SEED-03")).toBeInTheDocument();
     fireEvent.click(within(screen.getByTestId("ward-planned-PA-SEED-03")).getByRole("button", { name: "Arrived" }));

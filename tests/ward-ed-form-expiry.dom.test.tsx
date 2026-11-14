@@ -206,7 +206,7 @@ describe("the ED screen's form-expiry line reads only the typed expiry", () => {
 
     const line = screen.getByTestId(`ward-ed-form-expiry-${PAST_DUE_ID}`);
     // D-93 (31 Oct 2026): the typed time only, never "(passed 1h 05m ago)".
-    expect(line.textContent ?? "").toMatch(/^Ended .+ as typed$/);
+    expect(line.textContent ?? "").toMatch(/^Ended .+$/);
 
     const warning = screen.getByTestId(`ward-ed-form-expiry-warning-${PAST_DUE_ID}`);
     expect(warning).toHaveTextContent("Warning: past the expiry written on the form. Check the form.");
@@ -245,9 +245,10 @@ describe("the ED screen's form-expiry line reads only the typed expiry", () => {
     // checked" still in view; the full wording, word for word, is the Form button's description
     // and heads the menu it opens.
     const passed = screen.getByTestId(`ward-ed-form-passed-${PAST_DUE_ID}`);
-    expect(passed).toHaveTextContent(/^ended \d{2}:\d{2}( yesterday)?, not checked$/u);
+    // D-218 (Josh, 14 Nov 2026): no "not checked" or "as typed" hedge on the row or its description.
+    expect(passed).toHaveTextContent(/^ended \d{2}:\d{2}( yesterday)?$/u);
     expect(passed).not.toHaveTextContent(/ago|left|overdue|\dh|\dm/u);
-    const full = /^ended \d{2}:\d{2}( yesterday)? as typed \(limits not legally checked\)$/u;
+    const full = /^ended \d{2}:\d{2}( yesterday)?$/u;
     expect(passed.getAttribute("title")).toMatch(full);
     const pick = screen.getByTestId(`ward-ed-form-pick-${PAST_DUE_ID}`);
     expect(pick).toHaveAccessibleDescription(full);
@@ -260,11 +261,11 @@ describe("the ED screen's form-expiry line reads only the typed expiry", () => {
     expect(formCell.querySelector("svg circle")).toBeNull();
     expect(screen.queryByTestId(`ward-ed-form-passed-${CLOSE_DUE_ID}`)).toBeNull();
     expect(screen.queryByTestId(`ward-ed-form-passed-${CLEAR_DUE_ID}`)).toBeNull();
-    // A time not yet reached reads "ends …, not checked" under the form, with the full words behind it.
+    // A time not yet reached reads "ends …" under the form, with the full words behind it (D-218).
     const ends = screen.getByTestId(`ward-ed-form-ends-${CLEAR_DUE_ID}`);
-    expect(ends).toHaveTextContent(/^ends \d{2}:\d{2}( tomorrow)?, not checked$/u);
+    expect(ends).toHaveTextContent(/^ends \d{2}:\d{2}( tomorrow)?$/u);
     expect(screen.getByTestId(`ward-ed-form-pick-${CLEAR_DUE_ID}`)).toHaveAccessibleDescription(
-      /^ends \d{2}:\d{2}( tomorrow)? as typed \(limits not legally checked\)$/u,
+      /^ends \d{2}:\d{2}( tomorrow)?$/u,
     );
   });
 
@@ -303,7 +304,7 @@ describe("the ED screen's form-expiry line reads only the typed expiry", () => {
   it("a dueAt well clear of the warning band shows no warning at all", () => {
     render(<EdScreen edId="arm-ed" />);
     expect(screen.getByTestId(`ward-ed-form-expiry-${CLEAR_DUE_ID}`).textContent ?? "").toMatch(
-      /^Ends .+ as typed$/, // D-93: never "(3h 20m left)"
+      /^Ends .+$/, // D-93: never "(3h 20m left)"
     );
     expect(screen.queryByTestId(`ward-ed-form-expiry-warning-${CLEAR_DUE_ID}`)).not.toBeInTheDocument();
   });

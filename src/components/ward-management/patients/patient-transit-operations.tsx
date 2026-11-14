@@ -66,6 +66,7 @@ import {
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { ArrivalIdentityDialog } from "@/components/ward-management/arrival-identity-dialog";
+import { originName, sourceWardName } from "@/components/ward-management/ward-movement-origin";
 import ph from "../referrals/referral-match-phone.module.css";
 import styles from "./patient-transit-operations.module.css";
 import { FindAWard, wardMatchesQuery } from "@/components/ward-management/referrals/find-a-ward";
@@ -264,6 +265,7 @@ export function PatientTransitOperations({
         fit: kind === "fits" || kind === "stale_count",
         ready: readyBedsFor(unit, ready),
         ...(kind === "stale_count" ? { stale: staleCountWords(unit, now) } : {}),
+        ...(kind === "not_suitable" ? { unsuitable: true } : {}),
         reason: candidateReason(verdict),
       };
     });
@@ -1038,9 +1040,10 @@ export function PatientTransitOperations({
                 </button>
                 <ArrivalIdentityDialog
                   open={arriveConfirm}
-                  who={subjectPatient.formalName}
+                  person={subjectPatient.patient}
                   identity={identity}
                   wardName={destination.name}
+                  comingFrom={sourceWardName(movement, admissions, units) ?? originName(movement)}
                   onClose={() => setArriveConfirm(false)}
                   onConfirm={() => {
                     setArriveConfirm(false);

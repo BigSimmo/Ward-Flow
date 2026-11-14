@@ -28,6 +28,7 @@ import { HEALTH_SERVICES, type HealthService } from "../../src/components/ward-m
 import { uploadedFileTypeOf } from "../../src/components/ward-management/ward-uploaded-file";
 import { CLINICAL_VALUES } from "../../src/components/ward-management/ward-clinical-values";
 import { demoDayZero } from "../../src/components/ward-management/ward-clock";
+import { INSTANT_FIELDS, shiftInstants } from "../../src/components/ward-management/ward-reanchor";
 import {
   BREAK_GLASS_REASONS,
   COVER_REASONS,
@@ -409,7 +410,9 @@ export function seedWorld(at: Date): SharedWorld {
     // (`ward-reanchor.ts`), so a new world's clock and its seeded times agree from the start. Its
     // sample days fall on the world's own day, not the day the server started (CC-5).
     state: serialise(seedWardFlowStateAt(minutesSince(dayZero, at) - NOW_ANCHOR, "standard", { dayZero })),
-    // New worlds share the local demo's Perth calendar. Existing stored origins remain authoritative.
+    // New worlds share the local demo's Perth calendar. A stored world keeps its own day zero; one
+    // made before this (a UTC midnight) reads 8 hours behind until `proposals/019-perth-day-zero.sql`
+    // rebases it (held for Josh's approval; Desks-R5-1).
     dayZero: dayZero.toISOString(),
     startedAt: at.toISOString(),
   };
@@ -436,6 +439,57 @@ export function worldNow(
 ): number {
   return minutesSince(world.dayZero, at) + world.state.clockOffsetMinutes;
 }
+
+/**
+ * Minutes from the Perth midnight on or before `dayZero` to `dayZero` (0 to 1439), or `null` when it
+ * is not a date. Every board, referral, letter and legal clock reads an instant's clock face as its
+ * minutes past day zero (`minuteOfDay`), so a day zero this far past a Perth midnight puts all of them
+ * this far behind Perth time, while History, which prints the real moment, is right. 0 for every
+ * world `seedWorld` makes; 480 for a stored world whose day zero is a UTC midnight (Desks-R5-1 and
+ * Together-X1a-2, master stress test, 14 Nov 2026).
+ */
+export function dayZeroDriftMinutes(dayZero: string): number | null {
+  const at = Date.parse(dayZero);
+  if (!Number.isFinite(at)) return null;
+  return (at - demoDayZero(new Date(at)).getTime()) / 60_000;
+}
+
+/**
+ * The same world counted from another day zero. Every real moment stays where it was: day zero moves
+ * back by N minutes and every instant moves forward by N (`shiftInstants`, the guard-tested list the
+ * public demo's re-anchor uses, including its seeded intake target times, which are also read from
+ * day zero), so durations, due times, ordering and History's printed times are unchanged and only
+ * the clock face changes. Rebasing onto the old day zero undoes it exactly. Pure.
+ *
+ * This is the reference for `proposals/019-perth-day-zero.sql`, the held one-off data fix for a
+ * stored world; `day-zero-rebase.test.mjs` checks the SQL against it on the real seed.
+ */
+export function rebaseWorldDayZero(world: SharedWorld, dayZero: Date): { world: SharedWorld; shiftMinutes: number } {
+  const from = Date.parse(world.dayZero);
+  const gap = from - dayZero.getTime();
+  if (!Number.isFinite(gap) || gap % 60_000 !== 0) throw new Error("day-zero-not-whole-minutes");
+  const shiftMinutes = gap / 60_000;
+  return {
+    world: { ...world, dayZero: dayZero.toISOString(), state: shiftInstants(world.state, shiftMinutes) },
+    shiftMinutes,
+  };
+}
+
+/** `rebaseWorldDayZero` onto the Perth midnight on or before the world's own day zero (D-150). */
+export function rebaseOntoPerthMidnight(world: SharedWorld): { world: SharedWorld; shiftMinutes: number } {
+  return rebaseWorldDayZero(world, demoDayZero(new Date(world.dayZero)));
+}
+
+/** An archived record's body moved by the same shift, read exactly as it sat in the live world. */
+export function rebaseArchivedBody(collection: string, body: unknown, shiftMinutes: number): unknown {
+  return (shiftInstants({ [collection]: [body] }, shiftMinutes) as Record<string, unknown[]>)[collection]![0];
+}
+
+/** The instant field names; the SQL rebase must list exactly these (`day-zero-rebase.test.mjs`). */
+export { INSTANT_FIELDS };
+
+/** The app's one time zone setting (`src/lib/ward-time-zone.ts`); `config.mjs` keeps a checked copy. */
+export { WARD_TIME_ZONE } from "../../src/lib/ward-time-zone";
 
 export function validWorld(value: unknown): value is SharedWorld {
   if (!value || typeof value !== "object") return false;

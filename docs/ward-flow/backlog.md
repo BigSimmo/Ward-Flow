@@ -48,6 +48,23 @@ Agreed by Josh or required by a decision, with no build or check yet.
 - Tier operations acceptance: downtime wording, licence exceptions, alert contacts, NVDA, VoiceOver and physical devices. ([tier operations](plans/2026-11-04-tier-operations.md#owner-acceptance-checklist))
 - iPhone and iPad Safari on a real device. ([known issues](pilot/known-issues.md))
 - Unknown counts after a partial load (audit M6): when partial data loads can really happen, show "unknown" instead of "0 beds ready" for the missing wards. Not built now (D-125 item 4). ([decisions.md](decisions.md#d-125-top-10-audit-follow-ups-approved-10-november-2026))
+- **Master stress test, after the demo (D-215, D-216, 14 November 2026).** Full list: `master-stress-test/run/not-fixed-tonight.md` in the project files; the 133 no-sign-off recommendations are in `master-stress-test/pack/recs/`. Built after the demo:
+  - One figure dictionary as the only source of each figure (R-FIGS-9), including the three "needing a bed" figures (REG2-5); split average stay into completed stays and stay so far (R-FIGS-16, RV2-15); "Left today" and "Expected to leave today" labels everywhere (rest of R-FIGS-12). ([decisions.md](decisions.md#d-216-the-36-sign-off-recommendations-from-the-stress-test-pack-14-november-2026))
+  - One permission source for screen and server (R-STRUCT-1).
+  - Every save writes one History line naming the desk that acted (R-STRUCT-5; rest of LG-6, A2-4, R5-3). ([decisions.md](decisions.md#d-215-stress-test-answers-for-after-the-demo-14-november-2026))
+  - One definition of a late arrival, on every desk, with the bell and Act now (R-HOME-9, R-MOVE-6, R-MOVE-7).
+  - Statistics windows and their starts in Perth time, in the definitions; am/pm on screen with the 24-hour clock in printed legal times.
+  - Form 3E: decide whether it ends the order; until then warn only.
+  - Patient pages' other `clock()` lines that can show a time without its day; the Board time label in letters and prints (`ClockZoneLabel`); the remaining "Synthetic prototype" badge and markers (R-STYLE-20).
+  - The 7-day discharge-plan prompt in the shared inbox (bell, Act now, Alerts), not only ward Home.
+  - Planned-admission arrival with an old bed count: an override reason (third refusal of R-STRUCT-4). The Midland sample page's Decline and its 5-minute Undo.
+  - Undo after the community "Ask more wards" card (a new undo event), and on the override and gender-reason refer routes.
+  - Site bed manager and nurse in charge rails: a network bed line (RV2-16; reconcile D-197 item 10 with the 30 October rail rule).
+  - Short-lived glitches: the start-of-day flash after a reload (A2-1), the header after Mark handover ready (REG2-6), Add a reason when closing a bed (AC1-4), an overfull demo day dropped with no reason (RV2-18).
+  - One bed count marker ("Checked 10:22 · 1h 15m old", `ward-bed-count-marker.ts`) placed on the ward card, hero pill, Count old chip, Find a ward and the planned-admission drawer, with an Ask control (R-BEDS-1, R-BEDS-3); a seclusion room "Check" tag after a signed time (R-STRUCT-37); the "Discharges today" naming split (R-FIGS-12); remaining "past 24 hours" sentences to "over 24 hours".
+  - Wording rulings (D-218, Josh 14 Nov 2026), to follow when each item is built. Remove, do not build: R-BEDS-11, R-LEGAL-9, R-LEGAL-14, R-FIGS-2 (count line), R-FIGS-10, R-FIGS-14, R-MOVE-9, R-STRUCT-41, R-STRUCT-50, R-STRUCT-14. No who-does-it line (D-192 hides the button): R-BEDS-2, R-LEGAL-15, R-STRUCT-2. A one-word label or tooltip only: R-BEDS-5, R-FIGS-3, R-FIGS-11, R-FIGS-15, R-FIGS-18, R-HOME-15, R-HOME-23, R-STRUCT-30 (short empty states, such as "No patients waiting"), R-STRUCT-48 (show once, then dismiss). Keep one short line: R-BEDS-14, R-MOVE-4, R-MOVE-14, R-STYLE-17 (a refusal says why and what to do next), R-HOME-8 (a brief confirmation after Acknowledge or Snooze), R-STRUCT-46 and R-STRUCT-47 (a plain warning before Pause or Reset). Reasons: `master-stress-test/pack/design-backlog.md` and `pack/recs/` in the project files.
+  - Clinical sitting: gender recording on the ED board (RV2-19), "Involuntary bed requested" before status is set (LG-9), single-sex "Review" marks (RV2-10).
+  - Worked-example seed data (RD-05 waitlist, D1a-E-1, Lead-VM-1); size, type and icon polish (FIT-2, V1-2, V1-3); test gaps DP5-1, DP5-2, DP5-6; nightly browser checks and the screenshot baseline (Lead-P1-1).
 
 ## Building (with PR)
 

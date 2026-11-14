@@ -14,7 +14,12 @@ import { announceToWardShell } from "@/components/ward-management/shell/ward-liv
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  calendarDateOf,
+  formatInstantWithDay,
+  wardZonedLocalIso,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 import { referralAgeBand } from "./referral-age-band";
 import { cleanReferralContact, cleanReferralFields, cleanReferralText } from "./referral-text-clean";
@@ -952,7 +957,7 @@ export function useWardReferralDrawerState({
         ...(isMedicalCleared
           ? {}
           : {
-              ...(documentation.expectedAt ? { expectedAt: `${documentation.expectedAt}+08:00` } : {}),
+              ...(documentation.expectedAt ? { expectedAt: wardZonedLocalIso(documentation.expectedAt) } : {}),
               ...(documentation.contactName.trim() ? { contactName: documentation.contactName } : {}),
               ...(documentation.contactPhone.trim() ? { contactPhone: documentation.contactPhone } : {}),
             }),
@@ -963,7 +968,11 @@ export function useWardReferralDrawerState({
       referrer: contact,
       ...(destType === "ward"
         ? {
-            arrival: { transport, reference: transitNote, estimatedAt: arrivalEta ? `${arrivalEta}+08:00` : undefined },
+            arrival: {
+              transport,
+              reference: transitNote,
+              estimatedAt: arrivalEta ? wardZonedLocalIso(arrivalEta) : undefined,
+            },
             ...(Object.keys(clearanceChecks).length ? { clearanceChecklist: clearanceChecks } : {}),
           }
         : {}),

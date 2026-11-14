@@ -35,7 +35,7 @@ type QuestionDefinition = SearchQuestion & { phrases: RegExp };
 const QUESTIONS: readonly QuestionDefinition[] = [
   {
     id: "long",
-    heading: "Waiting past 24 hours",
+    heading: "Waiting over 24 hours",
     phrases:
       /^(?:(?:waiting|waits?)\s+)?(?:over|past|more than|longer than|>)\s*(?:24|twenty four)\s*(?:h|hrs?|hours?)?$|^(?:(?:waiting|waits?)\s+)?(?:24|twenty four)\s*\+?\s*(?:h|hrs?|hours?)\+?(?:\s+waits?)?$|^(?:(?:over|past)\s*24|over24|24\s*\+|long waits?|long waiters?|waiting (?:over|more than) a day)$/,
     test: (row) => row.longWait,

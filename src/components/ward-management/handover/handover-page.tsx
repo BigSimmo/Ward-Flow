@@ -1356,8 +1356,6 @@ export function HandoverPage() {
       ) : null}
       {ownWard ? <desk.WardDeskEmptyGroups groups={groups} /> : null}
       <div className={styles.tableFoot}>
-        <StatusGlyph tone="neutral" size={8} />
-        <span>Form times are as typed, not legally checked</span>
         <span className={styles.spacer} />
         <span>J and K step through patients</span>
       </div>
@@ -1470,7 +1468,6 @@ export function HandoverPage() {
               };
             }),
           }))}
-          footer={<span>Form times are as typed, not legally checked</span>}
         />
       </TabPanel>
     );

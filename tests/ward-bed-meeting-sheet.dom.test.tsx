@@ -175,7 +175,9 @@ describe("the sheet on Capacity", () => {
       /^As at Thu,? 31 Dec 2026, \d\d:\d\d demo time$/u,
     );
     expect(copy.textContent).toMatch(/Synthetic prototype/u);
-    expect(copy.textContent).toMatch(/your default, not a legal limit/u);
+    expect(copy.textContent).toMatch(/your default/u);
+    // D-218 (Josh, 14 Nov 2026): no legal-limit disclaimer on the sheet.
+    expect(copy.textContent).not.toMatch(/legal limit|not checked/u);
     expect(within(copy).getByTestId("ward-print-attribution").textContent).toBe(
       "Printed by Bed coordinator, Statewide, at 10:42 board time. Synthetic data.",
     );

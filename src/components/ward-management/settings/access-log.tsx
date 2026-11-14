@@ -14,8 +14,8 @@
 import { useContext, useMemo, useState } from "react";
 import { History } from "lucide-react";
 
-import { Card, CardBody, CardHead, Field, TextInput } from "@/components/wf";
-import { ACCESS_ROLE_LABELS } from "@/components/ward-management/ward-role-access";
+import { Card, CardBody, CardHead, Field, FilterChip, TextInput } from "@/components/wf";
+import { ACCESS_ROLE_LABELS, BREAK_GLASS_REASONS } from "@/components/ward-management/ward-role-access";
 import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { useUnscopedWardFlow } from "@/components/ward-management/shell/ward-access";
@@ -40,6 +40,22 @@ const SENT_WHOLE: Record<string, string> = {
   list: "Whole list sent to this desk",
   tv: "TV board sent to this desk",
 };
+
+/**
+ * R-FIGS-13 (Josh, 14 Nov 2026): why a record was opened. A routine opening is inside the desk's own
+ * scope; a break glass opening names the reason picked from the list (the typed words for "Other"
+ * are never sent or kept).
+ */
+export function openingReason(opening: Pick<RecordOpening, "breakGlassReason">): string {
+  const reason = opening.breakGlassReason;
+  if (reason === undefined) return "Reason not sent by the server";
+  if (reason === null) return "Within desk scope";
+  const label = BREAK_GLASS_REASONS.find((option) => option.id === reason)?.label;
+  if (!label) return "Break glass, no reason recorded";
+  return reason === "other" ? "Break glass: Other (words not kept)" : `Break glass: ${label}`;
+}
+
+const isBreakGlass = (opening: RecordOpening) => typeof opening.breakGlassReason === "string";
 
 function plural(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? "" : "s"}`;
@@ -86,6 +102,8 @@ function demoOpenings(now: Instant): RecordOpening[] {
     id: `demo-opening-${index}`,
     recordId: ids[index % ids.length],
     at: now - minutesAgo,
+    // R-FIGS-13: one made-up opening through break glass, so the Reason line and filter show.
+    breakGlassReason: index === 1 ? "bed-search" : null,
   }));
 }
 
@@ -97,13 +115,16 @@ export function AccessLog() {
   const openings = shared ? shared.openings : demo;
   const label = shared ? shared.label : demoStaffLabel;
   const [filter, setFilter] = useState("");
+  const [breakGlassOnly, setBreakGlassOnly] = useState(false);
   const wanted = filter.trim().toLowerCase();
-  const shown = wanted
-    ? openings.filter(
-        (opening) =>
-          opening.recordId.toLowerCase().includes(wanted) || label(opening.actorId).toLowerCase().includes(wanted),
-      )
-    : openings;
+  const breakGlassCount = openings.filter(isBreakGlass).length;
+  const shown = openings.filter(
+    (opening) =>
+      (!breakGlassOnly || isBreakGlass(opening)) &&
+      (!wanted ||
+        opening.recordId.toLowerCase().includes(wanted) ||
+        label(opening.actorId).toLowerCase().includes(wanted)),
+  );
 
   return (
     <Card data-testid="ward-access-log">
@@ -124,6 +145,11 @@ export function AccessLog() {
               spellCheck={false}
             />
           </Field>
+          <div>
+            <FilterChip pressed={breakGlassOnly} onPressedChange={setBreakGlassOnly} count={breakGlassCount}>
+              Break glass
+            </FilterChip>
+          </div>
         </div>
         {shared?.problem ? (
           <p className={styles.empty} role="alert">
@@ -135,7 +161,9 @@ export function AccessLog() {
             Reading from the server.
           </p>
         ) : shown.length === 0 && !shared?.problem ? (
-          <p className={styles.empty}>{wanted ? "No opening matches." : "No record openings to show."}</p>
+          <p className={styles.empty}>
+            {wanted || breakGlassOnly ? "No opening matches." : "No record openings to show."}
+          </p>
         ) : (
           <ul className={styles.list}>
             {shown.map((opening) => (
@@ -147,6 +175,9 @@ export function AccessLog() {
                   <span className={styles.meta}>
                     {label(opening.actorId)}
                     {opening.access ? `, ${deskText(opening.access, units)}` : ""}. {agoText(opening.at, now)}.
+                  </span>
+                  <span className={styles.meta} data-testid="ward-access-log-reason">
+                    Reason: {openingReason(opening)}
                   </span>
                 </span>
               </li>

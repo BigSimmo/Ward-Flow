@@ -9,6 +9,7 @@ import { useWardFlowSelect } from "./ward-flow-provider";
 import { READMISSION_WINDOW_DAYS, type ReadmissionFlag as ReadmissionFlagValue } from "./ward-readmission";
 
 import styles from "./ward-readmission-flag.module.css";
+import { WARD_TIME_ZONE } from "@/lib/ward-time-zone";
 
 const LABEL = `${READMISSION_WINDOW_DAYS}d readmission`;
 
@@ -20,7 +21,7 @@ function readmissionDetailText(flag: ShownFlag, dayZero: Date): string {
   const date = new Date(dayZero.getTime() + flag.dischargedAt * 60_000).toLocaleDateString("en-AU", {
     day: "numeric",
     month: "short",
-    timeZone: "Australia/Perth",
+    timeZone: WARD_TIME_ZONE,
   });
   const gap = flag.daysBefore === 0 ? "same day" : `${flag.daysBefore}d before`;
   return `Discharged ${date} from ${flag.unitName ?? "a psychiatric ward"} · ${gap}`;

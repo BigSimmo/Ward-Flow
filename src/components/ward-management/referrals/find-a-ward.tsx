@@ -9,7 +9,7 @@
  *
  * - One page search field (`parts/search-field.tsx`): ward or hospital, with a count line.
  * - Listed A to Z, never ranked (D-71): wards already asked first (when the host has them), then
- *   "Fits, bed ready", then "Needs review". No ward is suggested or pre-ticked.
+ *   "Fits, bed ready", then "Needs a recorded reason" and "Not suitable" (R-BEDS-10). No ward is suggested or pre-ticked.
  * - Each row: a checkbox, the ward name and its hospital in full (they wrap, never "…"), then the
  *   ready beds for a fit or the reason for a review. Only a fitting ward can be ticked.
  * - Needs review opens on its first three, then the one Show more (`parts/show-more-row.tsx`). A
@@ -53,6 +53,12 @@ export type FindAWardRow = {
    * ticked, and it is listed on its own under "Fits, bed count old".
    */
   stale?: string;
+  /**
+   * R-BEDS-10 (Josh, 14 Nov 2026): set when no recorded reason can place the person here (the shared
+   * classifier's `not_suitable`, or a ward closed to admissions). Listed under "Not suitable", never
+   * under "Needs a recorded reason". Display grouping only; who can be ticked is unchanged.
+   */
+  unsuitable?: boolean;
 };
 
 export type FindAWardProps = {
@@ -104,11 +110,12 @@ export function FindAWard({
   const shown = rows.filter((row) => wardMatchesQuery(query, row.unit));
   const fits = shown.filter((row) => row.fit && row.stale === undefined).sort(byName);
   const staleRows = shown.filter((row) => row.fit && row.stale !== undefined).sort(byName);
-  const review = shown.filter((row) => !row.fit).sort(byName);
+  const review = shown.filter((row) => !row.fit && !row.unsuitable).sort(byName);
+  const notSuitable = shown.filter((row) => !row.fit && row.unsuitable).sort(byName);
   const reviewShown = showAllReview || searching ? review : review.slice(0, REVIEW_FIRST_ROWS);
   const askedCount = asked?.count ?? 0;
 
-  const row = ({ unit, fit, reason, ready, stale }: FindAWardRow) => {
+  const row = ({ unit, fit, reason, ready, stale, unsuitable }: FindAWardRow) => {
     const checked = chosen.includes(unit.id);
     const site = siteByCode(unit.siteCode)?.name;
     const tickable = fit && !disabled && (checked || (canTick?.(unit.id) ?? true));
@@ -116,7 +123,7 @@ export function FindAWard({
       <label
         key={unit.id}
         className={cx(ph.cand, styles.row)}
-        data-kind={fit ? (stale === undefined ? "yes" : "stale") : "review"}
+        data-kind={fit ? (stale === undefined ? "yes" : "stale") : unsuitable ? "unsuitable" : "review"}
         data-testid={`${testIdPrefix}-${unit.id}`}
       >
         <input
@@ -136,7 +143,7 @@ export function FindAWard({
         </span>
         <span className={ph.lab}>
           <StatusGlyph tone={fit ? (stale === undefined ? "success" : "warning") : "neutral"} size={9} />
-          {fit ? (stale === undefined ? "Fits" : "Count not current") : "Review"}
+          {fit ? (stale === undefined ? "Fits" : "Count not current") : unsuitable ? "Not suitable" : "Needs a reason"}
         </span>
       </label>
     );
@@ -153,7 +160,7 @@ export function FindAWard({
         onValueChange={onQueryChange}
         count={{ shown: shown.length, total: rows.length, noun: rows.length === 1 ? "ward" : "wards" }}
       />
-      {askedCount + fits.length + staleRows.length + review.length === 0 ? (
+      {askedCount + fits.length + staleRows.length + review.length + notSuitable.length === 0 ? (
         <p className={styles.empty}>No ward matches that search.</p>
       ) : null}
       {asked && askedCount > 0 ? (
@@ -191,9 +198,9 @@ export function FindAWard({
       {review.length > 0 ? (
         <section className={styles.group} aria-labelledby={`${baseId}-review`}>
           <p className={ph.ch} id={`${baseId}-review`}>
-            Needs review <span className={ph.k}>{review.length}</span>
+            Needs a recorded reason <span className={ph.k}>{review.length}</span>
           </p>
-          <div className={styles.rows} role="group" aria-label="Needs review" id={`${baseId}-review-rows`}>
+          <div className={styles.rows} role="group" aria-label="Needs a recorded reason" id={`${baseId}-review-rows`}>
             {reviewShown.map(row)}
           </div>
           {!searching && review.length > REVIEW_FIRST_ROWS ? (
@@ -205,6 +212,16 @@ export function FindAWard({
               {showAllReview ? "Show fewer" : `Show ${review.length - REVIEW_FIRST_ROWS} more to review`}
             </ShowMoreRow>
           ) : null}
+        </section>
+      ) : null}
+      {notSuitable.length > 0 ? (
+        <section className={styles.group} aria-labelledby={`${baseId}-unsuitable`}>
+          <p className={ph.ch} id={`${baseId}-unsuitable`}>
+            Not suitable <span className={ph.k}>{notSuitable.length}</span>
+          </p>
+          <div className={styles.rows} role="group" aria-label="Not suitable">
+            {notSuitable.map(row)}
+          </div>
         </section>
       ) : null}
       <p className={styles.note}>

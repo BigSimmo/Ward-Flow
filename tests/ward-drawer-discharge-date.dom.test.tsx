@@ -125,9 +125,7 @@ describe("the ward sets the discharge date from the bed drawer (WT-16)", () => {
     fireEvent.click(screen.getAllByTestId("ward-drawer-discharge-date-open")[0]);
     const form = screen.getByTestId("ward-drawer-discharge-date");
     fireEvent.change(within(form).getByLabelText("Expected discharge time"), { target: { value: "00:05" } });
-    expect(within(form).getByTestId("ward-drawer-discharge-date-hint")).toHaveTextContent(
-      "That time has passed. It saves as typed.",
-    );
+    expect(within(form).getByTestId("ward-drawer-discharge-date-hint")).toHaveTextContent("That time has passed.");
     const save = within(form).getByRole("button", { name: "Save date" });
     expect(save).not.toHaveAttribute("aria-disabled");
     fireEvent.click(save);

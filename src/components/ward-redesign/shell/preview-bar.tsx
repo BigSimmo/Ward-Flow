@@ -1182,7 +1182,7 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
           ) : (
             <p className={styles.activityFreshness} data-tone={activityTone}>
               <span>
-                Synthetic state · demo time {formatInstant(now)}
+                Synthetic state · Board time {formatInstant(now)}
                 {lastActivityAt === undefined
                   ? " · no recorded event"
                   : ` · last event ${formatInstantWithDay(lastActivityAt, now)}`}

@@ -953,13 +953,6 @@
   padding-top: var(--wf-s-2);
 }
 
-.legalTag {
-  margin-left: auto;
-  font-weight: 400;
-  letter-spacing: 0;
-  text-transform: none;
-}
-
 .todoList {
   margin: 0;
   padding: 0;

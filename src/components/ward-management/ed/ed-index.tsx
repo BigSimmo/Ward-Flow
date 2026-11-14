@@ -274,9 +274,9 @@ export function EdIndex() {
     {
       id: "past",
       value: total((row) => row.pastTarget),
-      label: `Past ${waitLine(accessTarget)}`,
+      label: `Over ${waitLine(accessTarget)}`,
       tone: "danger",
-      word: `past ${waitLine(accessTarget)}`,
+      word: `over ${waitLine(accessTarget)}`,
     },
     {
       id: "severe",
@@ -680,7 +680,7 @@ export function EdIndex() {
 
         <WardPrototypeFooter
           testId="ed-index-governance"
-          note="Synthetic prototype. Invented figures under real WA hospital names."
+          note="Invented figures under real WA hospital names."
         />
       </main>
     </div>

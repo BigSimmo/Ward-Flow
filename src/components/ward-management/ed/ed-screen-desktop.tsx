@@ -119,7 +119,7 @@ export function renderEdBoardTableRow(
   const formExpiryFullWords = legal.ended
     ? FORM_RECORDED_ENDED
     : legal.dueAt !== undefined
-      ? `${typedTimePhrase(legal.dueAt, now, dayZero)} (limits not legally checked)`
+      ? typedTimePhrase(legal.dueAt, now, dayZero)
       : undefined;
   const clearedWords =
     medicalClearance === undefined ? "Pending" : medicalClearance.cleared ? "Cleared" : "Not cleared";
@@ -380,9 +380,8 @@ export function renderEdBoardTableRow(
               record={ctx.recordEdStep}
               expiryWords={formExpiryFullWords}
             >
-              {/* H11 (Josh, 3 Nov 2026): the short line on the row, the time exactly as typed and
-                  "not checked" still in view; the full wording is the button's description and
-                  heads its menu. */}
+              {/* H11 (Josh, 3 Nov 2026): the short line on the row, the time exactly as typed; the full
+                  wording is the button's description and heads its menu ("not checked" went in D-218). */}
               {legal.dueAt !== undefined ? (
                 <span
                   className={handover.formNote}
@@ -395,8 +394,7 @@ export function renderEdBoardTableRow(
                   {formExpiryWarningText !== undefined ? (
                     <StatusGlyph tone={formActNow ? "danger" : "warning"} size={8} />
                   ) : null}{" "}
-                  {isClockBreached(legal.dueAt, now) ? "ended" : "ends"} {typedClock(legal.dueAt, now, dayZero)}, not
-                  checked
+                  {isClockBreached(legal.dueAt, now) ? "ended" : "ends"} {typedClock(legal.dueAt, now, dayZero)}
                 </span>
               ) : null}
             </FormCell>

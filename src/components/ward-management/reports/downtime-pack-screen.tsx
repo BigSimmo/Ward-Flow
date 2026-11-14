@@ -89,6 +89,9 @@ const KEEP_A_COPY =
 const TAKING_MS = 450;
 
 type Section = "beds" | "ed" | "moves" | "forms";
+
+/** R-FIGS-8 (Josh, 14 Nov 2026): the bed section of a pack for a desk that sees no ward. */
+export const BEDS_NOT_IN_VIEW = "Beds are not in this desk's view. Ask the bed coordinator.";
 /** Each table is the tab panel its tab controls (`Tabs` idPrefix "downtime"). */
 const SECTION_IDS: Record<Section, string> = {
   beds: "downtime-panel-beds",
@@ -325,8 +328,12 @@ export function DowntimePackScreen() {
   const groups = serviceGroups(pack.wards);
 
   const totals = packTotals(pack);
+  // R-FIGS-8 (Josh, 14 Nov 2026): a desk that sees no ward (an ED desk) prints no bed figures, since
+  // a printed 0 reads as "no beds anywhere". The bed section is one line instead, and has no tab.
+  const noBeds = pack.wards.length === 0;
+  const shownSection: Section = noBeds && section === "beds" ? "ed" : section;
   // A tab shows its table; the others stay in the print copy only.
-  const onScreen = (target: Section) => (isPhone || section === target ? undefined : tabsStyles.printOnlyPanel);
+  const onScreen = (target: Section) => (isPhone || shownSection === target ? undefined : tabsStyles.printOnlyPanel);
 
   // Page-top redesign (Josh, 9 Nov 2026): New snapshot is the top's one chip, gated as before.
   const snapshotChip = (
@@ -397,12 +404,13 @@ export function DowntimePackScreen() {
     : `Frozen at ${frozenAt}`;
   const day = reportDay(pack.generatedAt, dayZero);
   const twins = before && !taking && twinFor === pack;
-  const tabItems: Array<{ id: Section; label: string; short: string; count: number }> = [
+  const allTabItems: Array<{ id: Section; label: string; short: string; count: number }> = [
     { id: "beds", label: "Beds by ward", short: "Beds", count: totals.ready },
     { id: "ed", label: "ED queue", short: "ED", count: totals.ed },
     { id: "moves", label: "Pending movements", short: "Moves", count: totals.moves },
     { id: "forms", label: "Legal forms", short: "Forms", count: totals.forms },
   ];
+  const tabItems = allTabItems.filter((item) => !(noBeds && item.id === "beds"));
   const twinKey: Record<Section, keyof PackTotals> = { beds: "ready", ed: "ed", moves: "moves", forms: "forms" };
   // Batch 4 items 24 and 25 (Josh approved the drawing 11 Nov 2026, D-142): this desk's last print of
   // this pack's wards under Print; for the coordinator, Record an outage and the old packs band.
@@ -454,16 +462,24 @@ export function DowntimePackScreen() {
         figures={
           <HeroFigures
             label="Pack totals"
-            items={[
-              { id: "ready", value: totals.ready, label: "beds ready" },
-              {
-                id: "occupied",
-                value: pack.totals.occupied,
-                unit: <>&thinsp;/&thinsp;{pack.totals.beds}</>,
-                label: "occupied",
-              },
-              { id: "making-ready", value: pack.totals.pendingPreparation, label: "being made ready" },
-            ]}
+            items={
+              noBeds
+                ? [
+                    { id: "ed", value: totals.ed, label: "in the ED queue" },
+                    { id: "moves", value: totals.moves, label: "pending movements" },
+                    { id: "forms", value: totals.forms, label: "legal forms" },
+                  ]
+                : [
+                    { id: "ready", value: totals.ready, label: "beds ready" },
+                    {
+                      id: "occupied",
+                      value: pack.totals.occupied,
+                      unit: <>&thinsp;/&thinsp;{pack.totals.beds}</>,
+                      label: "occupied",
+                    },
+                    { id: "making-ready", value: pack.totals.pendingPreparation, label: "being made ready" },
+                  ]
+            }
           />
         }
         act={
@@ -533,128 +549,145 @@ export function DowntimePackScreen() {
   // every table in full, never only the section a phone had open (remaining-pages audit 13 Oct 2026).
   const packTables = (
     <>
-      <Card
-        aria-labelledby="downtime-beds-title"
-        id={SECTION_IDS.beds}
-        className={cx(styles.packCard, onScreen("beds"))}
-        role={isPhone ? undefined : "tabpanel"}
-      >
-        <CardHead
-          id="downtime-beds-title"
-          icon={BedSingle}
-          title="Beds by ward"
-          aside={
-            <span className={cx(styles.headMeta, styles.printOnlyInline)}>
-              <b className={tabsStyles.readyGreen}>{pack.totals.ready}</b> ready
-              {pack.totals.pendingPreparation > 0 ? (
-                <>
-                  {" "}
-                  · <b>{pack.totals.pendingPreparation}</b> being made ready
-                </>
-              ) : null}{" "}
-              · <b>{pack.totals.occupied}</b> occupied of <b>{pack.totals.beds}</b>
-            </span>
-          }
-        />
-        <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Beds by ward table">
-          <table
-            className={`${tableClasses.table} ${styles.table} ${styles.packTable}`}
-            data-testid="ward-downtime-beds"
-          >
-            <caption className={styles.srOnly}>Beds by ward at {at(pack.generatedAt)}, synthetic</caption>
-            <thead>
-              <tr>
-                <th scope="col">Ward</th>
-                <th scope="col" className={styles.num}>
-                  Beds
-                </th>
-                <th scope="col" className={styles.num} title={BED_STATE_DETAILS.ready}>
-                  {BED_STATE_LABELS.ready}
-                </th>
-                <th scope="col" className={styles.num} title={BED_STATE_DETAILS.beingMadeReady}>
-                  {BED_STATE_LABELS.beingMadeReady}
-                </th>
-                <th scope="col" className={styles.num} title={BED_STATE_DETAILS.occupied}>
-                  {BED_STATE_LABELS.occupied}
-                </th>
-                <th scope="col" className={styles.num} title={BED_STATE_DETAILS.onLeave}>
-                  {BED_STATE_LABELS.onLeave}
-                </th>
-                <th scope="col" className={styles.num} title={BED_STATE_DETAILS.pulled}>
-                  {BED_STATE_LABELS.pulled}
-                </th>
-                <th scope="col" className={styles.num} title={BED_STATE_DETAILS.closed}>
-                  {BED_STATE_LABELS.closed}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {groups.map((group) => (
-                <Fragment key={group.service}>
-                  <tr className={cx(styles.subtotal, tabsStyles.groupHead)} data-testid="ward-downtime-subtotal">
-                    <th scope="rowgroup">
-                      {group.service}
-                      <span className={styles.subtotalCount}>
-                        {group.wards.length} {group.wards.length === 1 ? "ward" : "wards"}
-                      </span>
-                    </th>
-                    <td className={styles.num}>{group.total.beds}</td>
-                    <td className={styles.num}>
-                      {group.total.ready > 0 ? <span className={tabsStyles.readyChip}>{group.total.ready}</span> : 0}
-                    </td>
-                    <td className={styles.num}>{group.total.pending}</td>
-                    <td className={styles.num}>{group.total.occupied}</td>
-                    <td className={styles.num}>{group.total.onLeave}</td>
-                    <td className={styles.num}>{group.total.pulled}</td>
-                    <td className={styles.num}>{group.total.closed}</td>
-                  </tr>
-                  {group.wards.map((ward) => (
-                    <tr key={ward.unitId}>
-                      <th scope="row">{ward.name}</th>
-                      <td className={styles.num}>{ward.beds}</td>
+      {noBeds ? (
+        <Card
+          aria-labelledby="downtime-beds-title"
+          id={SECTION_IDS.beds}
+          className={cx(styles.packCard, onScreen("beds"))}
+        >
+          <CardHead id="downtime-beds-title" icon={BedSingle} title="Beds by ward" />
+          <p className={styles.cardNote} data-testid="ward-downtime-no-beds">
+            {BEDS_NOT_IN_VIEW}
+          </p>
+        </Card>
+      ) : (
+        <Card
+          aria-labelledby="downtime-beds-title"
+          id={SECTION_IDS.beds}
+          className={cx(styles.packCard, onScreen("beds"))}
+          role={isPhone ? undefined : "tabpanel"}
+        >
+          <CardHead
+            id="downtime-beds-title"
+            icon={BedSingle}
+            title="Beds by ward"
+            aside={
+              <span className={cx(styles.headMeta, styles.printOnlyInline)}>
+                <b className={tabsStyles.readyGreen}>{pack.totals.ready}</b> ready
+                {pack.totals.pendingPreparation > 0 ? (
+                  <>
+                    {" "}
+                    · <b>{pack.totals.pendingPreparation}</b> being made ready
+                  </>
+                ) : null}{" "}
+                · <b>{pack.totals.occupied}</b> occupied of <b>{pack.totals.beds}</b>
+              </span>
+            }
+          />
+          <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Beds by ward table">
+            <table
+              className={`${tableClasses.table} ${styles.table} ${styles.packTable}`}
+              data-testid="ward-downtime-beds"
+            >
+              <caption className={styles.srOnly}>Beds by ward at {at(pack.generatedAt)}, synthetic</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Ward</th>
+                  <th scope="col" className={styles.num}>
+                    Beds
+                  </th>
+                  <th scope="col" className={styles.num} title={BED_STATE_DETAILS.ready}>
+                    {BED_STATE_LABELS.ready}
+                  </th>
+                  <th scope="col" className={styles.num} title={BED_STATE_DETAILS.beingMadeReady}>
+                    {BED_STATE_LABELS.beingMadeReady}
+                  </th>
+                  <th scope="col" className={styles.num} title={BED_STATE_DETAILS.occupied}>
+                    {BED_STATE_LABELS.occupied}
+                  </th>
+                  <th scope="col" className={styles.num} title={BED_STATE_DETAILS.onLeave}>
+                    {BED_STATE_LABELS.onLeave}
+                  </th>
+                  <th scope="col" className={styles.num} title={BED_STATE_DETAILS.pulled}>
+                    {BED_STATE_LABELS.pulled}
+                  </th>
+                  <th scope="col" className={styles.num} title={BED_STATE_DETAILS.closed}>
+                    {BED_STATE_LABELS.closed}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {groups.map((group) => (
+                  <Fragment key={group.service}>
+                    <tr className={cx(styles.subtotal, tabsStyles.groupHead)} data-testid="ward-downtime-subtotal">
+                      <th scope="rowgroup">
+                        {group.service}
+                        <span className={styles.subtotalCount}>
+                          {group.wards.length} {group.wards.length === 1 ? "ward" : "wards"}
+                        </span>
+                      </th>
+                      <td className={styles.num}>{group.total.beds}</td>
                       <td className={styles.num}>
-                        {ward.counts.ready > 0 ? <span className={tabsStyles.readyChip}>{ward.counts.ready}</span> : 0}
+                        {group.total.ready > 0 ? <span className={tabsStyles.readyChip}>{group.total.ready}</span> : 0}
                       </td>
-                      <td className={styles.num}>{ward.pendingPreparation}</td>
-                      <td className={styles.num}>{ward.counts.occupied}</td>
-                      <td className={styles.num}>{ward.counts.onLeave}</td>
-                      <td className={styles.num}>{ward.counts.pulled}</td>
-                      <td className={styles.num}>{ward.counts.closed}</td>
+                      <td className={styles.num}>{group.total.pending}</td>
+                      <td className={styles.num}>{group.total.occupied}</td>
+                      <td className={styles.num}>{group.total.onLeave}</td>
+                      <td className={styles.num}>{group.total.pulled}</td>
+                      <td className={styles.num}>{group.total.closed}</td>
                     </tr>
-                  ))}
-                </Fragment>
+                    {group.wards.map((ward) => (
+                      <tr key={ward.unitId}>
+                        <th scope="row">{ward.name}</th>
+                        <td className={styles.num}>{ward.beds}</td>
+                        <td className={styles.num}>
+                          {ward.counts.ready > 0 ? (
+                            <span className={tabsStyles.readyChip}>{ward.counts.ready}</span>
+                          ) : (
+                            0
+                          )}
+                        </td>
+                        <td className={styles.num}>{ward.pendingPreparation}</td>
+                        <td className={styles.num}>{ward.counts.occupied}</td>
+                        <td className={styles.num}>{ward.counts.onLeave}</td>
+                        <td className={styles.num}>{ward.counts.pulled}</td>
+                        <td className={styles.num}>{ward.counts.closed}</td>
+                      </tr>
+                    ))}
+                  </Fragment>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className={styles.total}>
+                  <th scope="row">Wards in this snapshot</th>
+                  <td className={styles.num}>{pack.totals.beds}</td>
+                  <td className={styles.num} data-testid="ward-downtime-total-ready">
+                    {pack.totals.ready > 0 ? <span className={tabsStyles.readyChip}>{pack.totals.ready}</span> : 0}
+                  </td>
+                  <td className={styles.num}>{pack.totals.pendingPreparation}</td>
+                  <td className={styles.num}>{pack.totals.occupied}</td>
+                  <td className={styles.num}>{pack.totals.onLeave}</td>
+                  <td className={styles.num}>{pack.totals.pulled}</td>
+                  <td className={styles.num}>{pack.totals.closed}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <p className={styles.cardNote}>
+            Ready leaves out beds being made ready. Occupied includes beds held for leave.
+          </p>
+          {missing.length > 0 ? (
+            <ul className={styles.cardNote} data-testid="ward-downtime-awol">
+              {missing.map(({ ward, line }) => (
+                <li key={line.admissionId}>
+                  <StatusGlyph tone="danger" size={9} /> Absent without leave, {ward}: {line.person}, since{" "}
+                  {at(line.since)}
+                </li>
               ))}
-            </tbody>
-            <tfoot>
-              <tr className={styles.total}>
-                <th scope="row">Wards in this snapshot</th>
-                <td className={styles.num}>{pack.totals.beds}</td>
-                <td className={styles.num} data-testid="ward-downtime-total-ready">
-                  {pack.totals.ready > 0 ? <span className={tabsStyles.readyChip}>{pack.totals.ready}</span> : 0}
-                </td>
-                <td className={styles.num}>{pack.totals.pendingPreparation}</td>
-                <td className={styles.num}>{pack.totals.occupied}</td>
-                <td className={styles.num}>{pack.totals.onLeave}</td>
-                <td className={styles.num}>{pack.totals.pulled}</td>
-                <td className={styles.num}>{pack.totals.closed}</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-        <p className={styles.cardNote}>
-          Ready leaves out beds being made ready. Occupied includes beds held for leave.
-        </p>
-        {missing.length > 0 ? (
-          <ul className={styles.cardNote} data-testid="ward-downtime-awol">
-            {missing.map(({ ward, line }) => (
-              <li key={line.admissionId}>
-                <StatusGlyph tone="danger" size={9} /> Absent without leave, {ward}: {line.person}, since{" "}
-                {at(line.since)}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-      </Card>
+            </ul>
+          ) : null}
+        </Card>
+      )}
 
       <Card
         aria-labelledby="downtime-ed-title"
@@ -787,7 +820,6 @@ export function DowntimePackScreen() {
           id="downtime-legal-title"
           icon={FileText}
           title="Legal forms"
-          meta="Recorded times only, not legally checked"
           aside={
             <span className={cx(styles.headMeta, styles.printOnlyInline)}>
               <b>{pack.legalForms.length}</b> forms
@@ -838,12 +870,12 @@ export function DowntimePackScreen() {
         <main id="main-content" className={styles.main}>
           <div className={styles.phoneScreenOnly} data-print-hide>
             {pageTop}
-            <FolderTabs label="Downtime pack tables" value={section} testId="ward-downtime-tabs">
+            <FolderTabs label="Downtime pack tables" value={shownSection} testId="ward-downtime-tabs">
               <Segmented<Section>
                 className={folderTabClasses.switch}
                 size="md"
                 label="Downtime pack section"
-                value={section}
+                value={shownSection}
                 onChange={setSection}
                 items={tabItems.map((item) => ({ id: item.id, label: item.short, count: item.count }))}
               />
@@ -852,7 +884,7 @@ export function DowntimePackScreen() {
             <p className={styles.phoneNote} data-testid="ward-downtime-keep-copy">
               {KEEP_A_COPY}
             </p>
-            {section === "beds" ? (
+            {shownSection === "beds" ? (
               groups.map((group) => (
                 <section key={group.service} className={styles.phoneGroup} aria-label={group.service}>
                   <GroupHead
@@ -906,7 +938,7 @@ export function DowntimePackScreen() {
                   </ul>
                 </section>
               ))
-            ) : section === "ed" ? (
+            ) : shownSection === "ed" ? (
               <PhoneSection empty="Nobody waiting" count={pack.edQueue.length}>
                 {pack.edQueue.map((line) => (
                   <PhoneListRow
@@ -932,8 +964,8 @@ export function DowntimePackScreen() {
                 ))}
               </PhoneSection>
             ) : null}
-            {section === "ed" && edPopulation ? <p className={styles.phoneNote}>{edPopulation}</p> : null}
-            {section === "beds" || section === "ed" ? null : section === "moves" ? (
+            {shownSection === "ed" && edPopulation ? <p className={styles.phoneNote}>{edPopulation}</p> : null}
+            {shownSection === "beds" || shownSection === "ed" ? null : shownSection === "moves" ? (
               <PhoneSection empty="No moves pending" count={pack.pendingMoves.length}>
                 {pack.pendingMoves.map((line) => (
                   <PhoneListRow
@@ -1019,11 +1051,11 @@ export function DowntimePackScreen() {
       <main id="main-content" className={styles.main}>
         {pageTop}
         {/* One table on screen at a time, chosen here; Print or save PDF still holds all four. */}
-        <FolderTabs label="Downtime pack tables" value={section} testId="ward-downtime-tabs">
+        <FolderTabs label="Downtime pack tables" value={shownSection} testId="ward-downtime-tabs">
           <Tabs<Section>
             label="Downtime pack section"
             idPrefix="downtime"
-            value={section}
+            value={shownSection}
             onChange={setSection}
             className={folderTabClasses.switch}
             items={tabItems.map((item) => ({ id: item.id, label: item.label, count: item.count }))}

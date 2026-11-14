@@ -68,7 +68,7 @@ export type DelayGroup = { cause: DelayCause; title: string; note: string; movem
  * legal judgement, and legal times show only as typed (D-93; Josh, 31 Oct 2026, renamed from "Form
  * overdue"). Every screen reads this one string. "Decision overdue" is not a legal time and stays.
  */
-export const FORM_TIME_PASSED_TITLE = "Form time passed, as typed";
+export const FORM_TIME_PASSED_TITLE = "Form time passed";
 
 const ORDER: { cause: DelayCause; title: string; note: string }[] = [
   {
@@ -78,7 +78,7 @@ const ORDER: { cause: DelayCause; title: string; note: string }[] = [
   },
   {
     cause: "legal_expiring",
-    title: "Form due time (as written) running out",
+    title: "Form due time running out",
     note: "",
   },
   { cause: "no_eligible_bed", title: "No suitable bed", note: "" },
@@ -527,7 +527,7 @@ export function waitingSplit(movements: Movement[], now: Instant): WardBarSegmen
     // Josh to rule, not this bucket — it only describes recorded waits, so it carries no
     // danger/warning colour of its own.
     {
-      label: `Past ${LONG_WAIT_MINUTES / 60} hours`,
+      label: `Over ${LONG_WAIT_MINUTES / 60}h`,
       value: open.filter((movement) => waited(movement) >= LONG_WAIT_MINUTES).length,
       tone: "rest",
     },

@@ -74,7 +74,7 @@ export function WardPrototypeFooter({ testId, note, extra, style, className }: W
             kept for screen readers. Hidden above phone. */}
         {phoneTail(clock)}
         <span className={styles.footerNote} data-ward-type-floor="banner">
-          {note ?? `${clock} · synthetic demonstration figures · Not approved for clinical use`}
+          {note ?? `${clock} · Not approved for clinical use`}
         </span>
       </div>
       <div className={styles.rightGroup}>

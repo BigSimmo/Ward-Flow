@@ -129,7 +129,7 @@ export function WardDrawerDischargeDate({
           : unchanged
             ? "Change the day or time to save"
             : past
-              ? `${formatInstantWithDay(parsed, now)}. That time has passed. It saves as typed.`
+              ? `${formatInstantWithDay(parsed, now)}. That time has passed.`
               : formatInstantWithDay(parsed, now)}
       </p>
       {save.error ? <p role="alert">{save.error}</p> : null}

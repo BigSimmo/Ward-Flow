@@ -76,7 +76,7 @@ describe("a world person on the banner", () => {
     expect(person.dob).toBe("03/02/1985");
     expect(person.nowAt).toBe("Peel Health Campus ED");
     expect(person.legal).toBe("Form 1A");
-    expect(legalLine(person)).toBe("Form 1A, on record. Not legally checked.");
+    expect(legalLine(person)).toBe("Form 1A, on record.");
     expect(person.last).toBeNull();
     expect(person.recordHref).toBe("/ward-flow/people/code900");
   });
@@ -194,7 +194,7 @@ describe("the document", () => {
   it("starts with the key line, keeps PSOLIS order and ends with the signature", () => {
     const model = summaryModel(exampleTriage(), { at: "07/11/2026 10:42", by: "Dr S. Orlenby" });
     expect(model.keyLine).toBe(
-      "Urgency not chosen · Outcome not set · Community treatment order (as chosen), Form 5A 28/01/2027 23:59 (as typed) · Reviewed 06/11/2026 09:42 Phone · Dr S. Orlenby",
+      "Urgency not chosen · Outcome not set · Community treatment order, Form 5A 28/01/2027 23:59 · Reviewed 06/11/2026 09:42 Phone · Dr S. Orlenby",
     );
     expect(model.parts.map((p) => p.title)).toEqual([
       "Review details",

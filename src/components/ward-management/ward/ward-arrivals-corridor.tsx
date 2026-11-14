@@ -696,9 +696,10 @@ export function WardArrivalsCorridor({
       />
       <ArrivalIdentityDialog
         open={arriveConfirmMovement !== undefined}
-        who={arriveConfirmMovement ? resolvePatientIdentity(arriveConfirmMovement).formalName : "this patient"}
+        person={arriveConfirmMovement ? resolvePatientIdentity(arriveConfirmMovement).patient : undefined}
         identity={arriveConfirmMovement ? patientIdentityLine(resolvePatientIdentity(arriveConfirmMovement)) : ""}
         wardName={unit.name}
+        comingFrom={arriveConfirmMovement ? originPlaceLabel(arriveConfirmMovement) : undefined}
         onClose={() => setArriveConfirmId(null)}
         onConfirm={() => {
           setArriveConfirmId(null);

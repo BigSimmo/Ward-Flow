@@ -94,6 +94,7 @@ import {
 import {
   bedCountAgeWords,
   eligibility,
+  candidateReason,
   placementFit,
   readyBedsFor,
   staleCountWords,
@@ -392,6 +393,9 @@ export function ReferralMatchView({
   const tier3Candidates = candidates.filter(
     (c) => !candidateAccepts(c) && !tier2Candidates.includes(c) && !staleCandidates.includes(c),
   );
+  // R-BEDS-10 (Josh, 14 Nov 2026): the engine's own split. Display only; nobody becomes placeable.
+  const unsuitableCandidates = tier3Candidates.filter((c) => fitKindOf(c) === "not_suitable");
+  const reasonCandidates = tier3Candidates.filter((c) => fitKindOf(c) !== "not_suitable");
 
   /**
    * T12 (item 9, owner answer 9, 17 September 2026), the front door's own half of the same check
@@ -962,7 +966,11 @@ export function ReferralMatchView({
           <span className={ph.nm}>{c.unit.name}</span>
           <span className={ph.sub}>
             {bandOf.get(c.unit.id) ?? NOT_RECORDED_LABEL} ·{" "}
-            {kind === "stale" ? staleCountWords(c.unit, now) : `${readyBedsFor(c.unit, ready)} ready`}
+            {kind === "stale"
+              ? staleCountWords(c.unit, now)
+              : placementFit(c.verdict).kind === "not_suitable"
+                ? candidateReason(c.verdict)
+                : `${readyBedsFor(c.unit, ready)} ready`}
           </span>
         </span>
         <span className={ph.lab}>
@@ -1228,7 +1236,8 @@ export function ReferralMatchView({
             {group("Fits, bed ready", tier1Candidates, "yes")}
             {group("Fits, no bed now", tier2Candidates, "nobed")}
             {group("Fits, bed count old", staleCandidates, "stale")}
-            {group("Needs review", tier3Candidates, "review")}
+            {group("Needs a recorded reason", reasonCandidates, "review")}
+            {group("Not suitable", unsuitableCandidates, "review")}
             <AskMoreWardsCard ask={askMore} />
             {pick && pickTurnaround ? (
               <div className={styles.unitActionStatusWrap}>

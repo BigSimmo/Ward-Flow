@@ -609,7 +609,7 @@ export function CommunityIndex({
                   }}
                   shortcut={!isPhone}
                 />
-                <p className={styles.topNote}>From referral catchment documents · not verified</p>
+                <p className={styles.topNote}>From referral catchment documents</p>
               </div>
             }
             figures={
@@ -974,7 +974,7 @@ export function CommunityIndex({
         </details>
         <WardPrototypeFooter
           testId="community-index-governance"
-          note="Synthetic prototype. Names come from referral vocabulary, not a roster of WA services."
+          note="Names come from referral vocabulary, not a roster of WA services."
         />
 
         <Drawer
@@ -1028,7 +1028,7 @@ export function CommunityIndex({
                   <dd>Not recorded</dd>
                 </div>
               </dl>
-              <p className={styles.muted}>Derived from WA catchment documents. Not verified with the services.</p>
+              <p className={styles.muted}>Derived from WA catchment documents.</p>
             </section>
             <section className={guideStyles.guideSection} aria-labelledby="community-guide-similar">
               <h3 id="community-guide-similar" className={guideStyles.guideHead}>

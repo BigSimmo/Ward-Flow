@@ -4,8 +4,7 @@ import { SeclusionRoute } from "@/components/ward-management/restrictive-practic
 
 export const metadata: Metadata = {
   title: "Seclusion and restraint — Ward Flow",
-  description:
-    "Synthetic prototype, operational view only: seclusion and restraint in use now, seclusion room status and ward incidents. No legal register.",
+  description: "Synthetic prototype: seclusion and restraint in use now, seclusion room status and ward incidents.",
 };
 
 export default function WardSeclusionPage() {

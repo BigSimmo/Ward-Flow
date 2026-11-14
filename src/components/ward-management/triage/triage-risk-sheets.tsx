@@ -68,7 +68,7 @@ const previousOf = (person: TriagePerson): readonly PreviousTriage[] =>
   person.previous ?? (person.last ? [person.last] : []);
 
 /** Who the triage is for, in record words: legal status on record, never checked (D-186, Q11). */
-const legalWords = (person: TriagePerson) => (person.legal ? legalLine(person) : "Not recorded. Not legally checked.");
+const legalWords = (person: TriagePerson) => (person.legal ? legalLine(person) : "Not recorded.");
 
 /** Where a summary or "Before you sign" item goes: its section, and the field when there is one. */
 export type Jump = (section: SectionId, target?: Target) => void;
@@ -498,13 +498,7 @@ function AlertsPane({ person }: { person: TriagePerson }) {
     <>
       <FlagGroup title="Alerts" items={alerts} tone="warning" empty="No alerts recorded" />
       <FlagGroup title="Allergies" items={allergies} tone="danger" empty="Not recorded" />
-      <FlagGroup
-        title="Legal status"
-        items={person.legal ? [person.legal] : []}
-        tone="info"
-        tag="Not legally checked"
-        empty="Not recorded. Not legally checked."
-      />
+      <FlagGroup title="Legal status" items={person.legal ? [person.legal] : []} tone="info" empty="Not recorded" />
       <RecordLink person={person} note="These come from the patient record. Correct them there." />
     </>
   );
@@ -565,13 +559,7 @@ function PreviousPane({ person }: { person: TriagePerson }) {
               {item.urgencyText}
             </Badge>
             <span className={styles.prevFacts}>
-              {[
-                item.outcome,
-                // D-186 (Q11): a status picked from buttons reads "as chosen"; the row's date already says when.
-                `${item.legal} (as chosen)`,
-                `Review by ${item.review}`,
-                `Signed by ${item.by ?? "–"}`,
-              ].join(" · ")}
+              {[item.outcome, item.legal, `Review by ${item.review}`, `Signed by ${item.by ?? "–"}`].join(" · ")}
             </span>
           </li>
         ))}

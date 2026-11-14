@@ -66,7 +66,7 @@ describe("Community heading — a live count of community teams", () => {
     const figure = screen.getByTestId("community-figure-teams");
     expect(figure.querySelector("b")?.textContent).toBe(String(COMMUNITY_TEAM_PAGES.length));
     expect(within(figure).getByText("community teams")).toBeInTheDocument();
-    expect(screen.getByText("From referral catchment documents · not verified")).toBeInTheDocument();
+    expect(screen.getByText("From referral catchment documents")).toBeInTheDocument();
   });
 
   it("follows the list, not a fixed number", () => {

@@ -18,6 +18,7 @@ import type { EdScreenContext } from "./ed-screen-context";
 import { movementMedicalClearance } from "./ed-screen-model";
 import type { renderEdRowControls } from "./ed-screen-row-facts";
 import styles from "./ed.module.css";
+import { psychReviewStatusWords } from "./ed-psych-review";
 
 /**
  * Holds a row's open form back for one commit after the person's sheet opens. Log transport booking
@@ -204,7 +205,7 @@ export function renderEdPersonSheet(
         )}
         <div>
           <dt>Psychiatric review</dt>
-          <dd>{movement.examination ? "Recorded" : "Not recorded"}</dd>
+          <dd>{psychReviewStatusWords(movement)}</dd>
         </div>
         <div>
           <dt>Medically cleared</dt>

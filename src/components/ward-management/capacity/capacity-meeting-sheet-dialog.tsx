@@ -17,7 +17,7 @@ import {
 } from "@/components/ward-management/ward-clock";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
-import type { BedMeetingSheet } from "./bed-meeting-derivations";
+import { bedMeetingSheetScope, type BedMeetingSheet } from "./bed-meeting-derivations";
 import { BedMeetingSheetPrintCopy } from "./bed-meeting-sheet";
 
 import { Kicker } from "./capacity-how-worked-out";
@@ -103,14 +103,14 @@ export function BedMeetingSheetDialog({
       label: "Waiting in ED",
       window: "now" as const,
       value: ed.waiting,
-      sub: `${ed.overLongWait} waiting past 24 hours · ${ed.detained} detained`,
+      sub: `${ed.overLongWait} waiting over 24 hours · ${ed.detained} detained`,
     },
   ];
   return (
     <Dialog
       open={open}
       onClose={onClose}
-      title={`Bed meeting sheet · ${sheet.service ?? "all services"}`}
+      title={`Bed meeting sheet · ${bedMeetingSheetScope(sheet)}`}
       description={
         // The kit's SyntheticMark in the dialog header (shared spec 7).
         <span className={sheetStyles.descRow}>

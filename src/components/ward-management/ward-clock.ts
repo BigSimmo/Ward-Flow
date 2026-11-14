@@ -1,4 +1,5 @@
 import { DUE_SOON_MINUTES, DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { WARD_TIME_ZONE, zoneOffsetMs } from "@/lib/ward-time-zone";
 /**
  * Minutes elapsed since midnight on the synthetic operating day.
  *
@@ -28,10 +29,39 @@ export type ClockState = "breached" | "critical" | "due" | "clear";
  * time across two of its readings has to know this to unwrap the rollover. */
 export const MINUTES_PER_DAY = 24 * 60;
 
-/** Perth is UTC+8 all year: Western Australia observes no daylight saving. */
-const PERTH_UTC_OFFSET_MINUTES = 8 * 60;
-export const PERTH_UTC_OFFSET_MS = PERTH_UTC_OFFSET_MINUTES * 60_000;
-const MS_PER_DAY = MINUTES_PER_DAY * 60_000;
+/**
+ * How far the app's time zone (`WARD_TIME_ZONE`, Perth by default) is ahead of UTC at a real moment, in
+ * milliseconds: 8 hours for AWST. Read from the zone's own rules rather than typed as a fixed figure,
+ * so changing the one setting moves every clock, and a zone with daylight saving is right on each date
+ * (Josh, 14 Nov 2026).
+ */
+export function wardZoneOffsetMs(at: number): number {
+  return zoneOffsetMs(WARD_TIME_ZONE, at);
+}
+
+/** "+08:00": the app zone's offset from UTC at a real moment, written as an ISO date-time ends. */
+export function wardZoneOffsetText(at: number): string {
+  const minutes = Math.round(wardZoneOffsetMs(at) / 60_000);
+  const size = Math.abs(minutes);
+  return `${minutes < 0 ? "-" : "+"}${String(Math.floor(size / 60)).padStart(2, "0")}:${String(size % 60).padStart(2, "0")}`;
+}
+
+/**
+ * A typed `datetime-local` value ("2026-10-12T14:30") with the app zone's offset on that date added, so
+ * it names one real moment ("2026-10-12T14:30+08:00" in Perth). A value that is not a real wall time
+ * takes today's offset, as the fixed "+08:00" it replaces did.
+ */
+export function wardZonedLocalIso(value: string): string {
+  return `${value}${wardZoneOffsetText(perthDateTimeLocal(value)?.getTime() ?? Date.now())}`;
+}
+
+/** The real moment a wall time in the app's zone names (`minutes` past that day's midnight there). */
+function zoneWallTime(year: number, monthIndex: number, day: number, minutes: number): Date {
+  const asUtc = Date.UTC(year, monthIndex, day, 0, minutes);
+  // Twice: the first guess can sit across a daylight-saving change from the answer.
+  const guess = asUtc - wardZoneOffsetMs(asUtc);
+  return new Date(asUtc - wardZoneOffsetMs(guess));
+}
 
 /** The Perth (AWST) clock face now, 0-1439, whatever the device's time zone. */
 export function wallClockNow(): Instant {
@@ -80,11 +110,12 @@ export function elapsedMinutesSinceMount(mountedAt: Instant, current: Instant): 
  * Perth that rolled its day over at 08:00 because the epoch is UTC would be wrong in the one way
  * nobody would think to check. Perth rather than the device's zone too (F-22, 19 Oct 2026): every
  * printed date and day 0 (`demoDayZero`) are already Perth, so a clock read in a Sydney or UTC
- * browser put the board's "now" hours away from the dates beside it. Western Australia observes no
- * daylight saving, so a fixed UTC+8 is exact.
+ * browser put the board's "now" hours away from the dates beside it. The zone is the one setting
+ * `WARD_TIME_ZONE`, its offset read from the zone's own rules (`wardZoneOffsetMs`).
  */
 export function absoluteWallClockMinutes(): number {
-  return Math.floor((Date.now() + PERTH_UTC_OFFSET_MS) / 60_000);
+  const now = Date.now();
+  return Math.floor((now + wardZoneOffsetMs(now)) / 60_000);
 }
 
 /**
@@ -99,19 +130,21 @@ export function absoluteWallClockMinutes(): number {
  * printed the wrong day outside Perth (a 01:00 Monday event read as Sunday under a Sydney clock).
  */
 export function demoDayZero(openedAt: Date): Date {
-  const perthMs = openedAt.getTime() + PERTH_UTC_OFFSET_MS;
-  const perthMidnight = perthMs - (((perthMs % MS_PER_DAY) + MS_PER_DAY) % MS_PER_DAY);
-  return new Date(perthMidnight - PERTH_UTC_OFFSET_MS);
+  const { year, monthIndex, day } = perthCalendarDay(openedAt);
+  return perthMidnight(year, monthIndex, day);
 }
 
-/** Perth midnight at the start of a Perth calendar day (`monthIndex` 0-11), as a real moment. */
+/**
+ * Perth midnight at the start of a Perth calendar day (`monthIndex` 0-11), as a real moment. "Perth"
+ * in these names means the app's zone, `WARD_TIME_ZONE`, which is Perth unless that setting changes.
+ */
 export function perthMidnight(year: number, monthIndex: number, day: number): Date {
-  return new Date(Date.UTC(year, monthIndex, day) - PERTH_UTC_OFFSET_MS);
+  return zoneWallTime(year, monthIndex, day, 0);
 }
 
 /** The Perth calendar day (and weekday, 0 Sunday) a real moment falls on, whatever the browser's zone. */
 export function perthCalendarDay(date: Date): { year: number; monthIndex: number; day: number; weekday: number } {
-  const shifted = new Date(date.getTime() + PERTH_UTC_OFFSET_MS);
+  const shifted = new Date(date.getTime() + wardZoneOffsetMs(date.getTime()));
   return {
     year: shifted.getUTCFullYear(),
     monthIndex: shifted.getUTCMonth(),
@@ -138,7 +171,7 @@ export function perthDateTimeLocal(value: string): Date | undefined {
   const midnight = perthMidnight(year, month - 1, day);
   const read = perthCalendarDay(midnight);
   if (read.year !== year || read.monthIndex !== month - 1 || read.day !== day) return undefined;
-  return new Date(midnight.getTime() + (hours * 60 + minutes) * 60_000);
+  return zoneWallTime(year, month - 1, day, hours * 60 + minutes);
 }
 
 /** The real calendar moment an instant refers to, given the day 0 the session opened on. */
@@ -152,7 +185,7 @@ export function calendarDateOf(instant: Instant, dayZero: Date): Date {
  * Any comma later in the text, such as the one before a time, is kept.
  */
 export function perthDateText(moment: Date, options: Intl.DateTimeFormatOptions): string {
-  const parts = new Intl.DateTimeFormat("en-AU", { ...options, timeZone: "Australia/Perth" }).formatToParts(moment);
+  const parts = new Intl.DateTimeFormat("en-AU", { ...options, timeZone: WARD_TIME_ZONE }).formatToParts(moment);
   return parts
     .map((part, index) => (part.type === "literal" && parts[index - 1]?.type === "weekday" ? " " : part.value))
     .join("");
@@ -168,7 +201,7 @@ export function perthDateLabel(instant: Instant, dayZero: Date, options: Intl.Da
  * time something was recorded at, so it reads on the same clock as the board (CL-2, 5 Nov 2026).
  */
 export function perthClockTime(moment: Date): string {
-  return formatInstant(Math.floor((moment.getTime() + PERTH_UTC_OFFSET_MS) / 60_000));
+  return formatInstant(Math.floor((moment.getTime() + wardZoneOffsetMs(moment.getTime())) / 60_000));
 }
 
 /** "Thu 10:42": a recorded moment's Perth weekday and clock face, for a list of recent answers. */
@@ -190,9 +223,9 @@ export function perthDayLabel(instant: Instant, dayZero: Date): string {
     day: "numeric",
     month: "short",
     year: "numeric",
-    timeZone: "Australia/Perth",
+    timeZone: WARD_TIME_ZONE,
   });
-  perthYear ??= new Intl.DateTimeFormat("en-AU", { year: "numeric", timeZone: "Australia/Perth" });
+  perthYear ??= new Intl.DateTimeFormat("en-AU", { year: "numeric", timeZone: WARD_TIME_ZONE });
   const { weekday, day, month, year } = Object.fromEntries(
     perthDayParts.formatToParts(calendarDateOf(instant, dayZero)).map((part) => [part.type, part.value]),
   );

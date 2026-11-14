@@ -27,8 +27,8 @@ const ctx = { umrnOf: () => "UM000001", edName: () => "Synthetic ED", wardName: 
 describe("legal end as typed (D-93)", () => {
   const dueAt = currentLegalDueAt(typed)!;
   it("gives the typed time with its date, never a count", () => {
-    expect(legalEndAsTyped(typed, dueAt - 75, dayZero)).toBe(`Ends ${formatSheetMoment(dueAt, dayZero)} as typed`);
-    expect(legalEndAsTyped(typed, dueAt + 75, dayZero)).toBe(`Ended ${formatSheetMoment(dueAt, dayZero)} as typed`);
+    expect(legalEndAsTyped(typed, dueAt - 75, dayZero)).toBe(`Ends ${formatSheetMoment(dueAt, dayZero)}`);
+    expect(legalEndAsTyped(typed, dueAt + 75, dayZero)).toBe(`Ended ${formatSheetMoment(dueAt, dayZero)}`);
   });
   it("says when nothing was typed or the form was recorded as ended", () => {
     const blank = { ...typed, legalForm: { ...typed.legalForm!, dueAt: undefined } } as Movement;
@@ -53,7 +53,7 @@ describe("Legal forms and Movements exports (D-102)", () => {
     expect(lines[0]).toEqual([...MOVEMENTS_EXPORT_HEADER]);
     expect(lines[1]?.[0]).toBe(typed.id);
     expect(lines[1]?.[10]).toBe("Open");
-    expect(String(lines[1]?.[9])).toMatch(/ as typed$/u);
+    expect(String(lines[1]?.[9])).not.toMatch(/as typed/u);
     expect(JSON.stringify(lines)).not.toMatch(/Synthia|Testperson/u);
   });
 });

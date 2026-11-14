@@ -26,7 +26,7 @@ export const SHEET_KINDS: ReadonlySet<string> = new Set(["person", "movement", "
 
 /** The common questions offered before anything is typed, as label and the phrase it asks. */
 const TRY_ASKING: readonly (readonly [string, string])[] = [
-  ["Waiting past 24 hours", "waiting past 24 hours"],
+  ["Waiting over 24 hours", "waiting over 24 hours"],
   ["No bed yet", "no bed yet"],
   ["On a form", "on a form"],
   ["Transport not booked", "transport not booked"],

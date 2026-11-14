@@ -33,6 +33,7 @@ import { formExpiryLine } from "./ed-screen-model";
 import { hasCurrentLegalMismatch, LEGAL_MISMATCH_WARNING } from "../ward-stay-legal";
 import { edStageLabel } from "./ed-referral-status";
 import styles from "./ed.module.css";
+import { psychReviewStatusWords } from "./ed-psych-review";
 
 /** The facts a board row carries, each a fragment the table row, phone row and person sheet place. */
 export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
@@ -390,9 +391,7 @@ export function renderEdRowControls(row: EdBoardRowModel, ctx: EdScreenContext, 
   );
   const reviewControl = (
     <>
-      <span data-testid={`ward-ed-review-status-${movement.id}`}>
-        {movement.examination ? "Examination recorded" : "Awaiting review"}
-      </span>
+      <span data-testid={`ward-ed-review-status-${movement.id}`}>{psychReviewStatusWords(movement)}</span>
       {boardTable ? null : reviewFacts}
     </>
   );

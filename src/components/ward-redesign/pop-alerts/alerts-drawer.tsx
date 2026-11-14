@@ -230,8 +230,7 @@ function rowTiming(
     // Mock-up (Josh, 30 Oct 2026): the typed form time, as Waiting shows it; no running figure.
     return {
       value: `Due ${formatInstantWithDay(movement.legalForm.dueAt, now)}`,
-      word: "as typed",
-      state: "Not legally checked",
+      state: "",
       tone: "danger",
       stateTone: "danger",
     };

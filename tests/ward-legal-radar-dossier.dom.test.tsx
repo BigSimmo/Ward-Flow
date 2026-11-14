@@ -50,7 +50,7 @@ describe("paper legal form time left, one rule", () => {
   it("shows the typed expiry and the warning word on the patient's forms register (as typed, D-93)", () => {
     renderTab(NOW + 120);
     const line = screen.getByTestId("dossier-paper-expiry-time-left");
-    expect(line.textContent).toMatch(/Ends .+ as typed/u);
+    expect(line.textContent).toMatch(/Ends .+/u);
     expect(line.textContent).not.toMatch(/\bleft\b/u);
     expect(line.textContent).toContain(`Within ${SOON / 60}h`);
   });
@@ -70,6 +70,6 @@ describe("paper legal form time left, one rule", () => {
         onRecordDocument={() => undefined}
       />,
     );
-    expect(screen.getByTestId("dossier-paper-expiry-time-left").textContent).toMatch(/Ends .+ as typed/u);
+    expect(screen.getByTestId("dossier-paper-expiry-time-left").textContent).toMatch(/Ends .+/u);
   });
 });

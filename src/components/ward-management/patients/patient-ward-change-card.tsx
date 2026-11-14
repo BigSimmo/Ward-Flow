@@ -346,7 +346,7 @@ export function PatientWardChangeCard({
               : future
                 ? formatInstantWithDay(parsed, now)
                 : form === "discharge"
-                  ? `${formatInstantWithDay(parsed, now)}. That time has passed. It saves as typed.`
+                  ? `${formatInstantWithDay(parsed, now)}. That time has passed.`
                   : "That time has already passed"}
           </p>
         </>

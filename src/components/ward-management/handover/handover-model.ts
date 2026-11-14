@@ -541,7 +541,7 @@ export function dueLong(row: HandoverRow, now: Instant, dayZero?: Date): string 
     parts.push(
       isTimePassed(row.formDueAt, now)
         ? `Form ${row.formCode} time passed`
-        : `Form ${row.formCode} due ${typedClock(row.formDueAt, now, dayZero)} as typed`,
+        : `Form ${row.formCode} due ${typedClock(row.formDueAt, now, dayZero)}`,
     );
   }
   return parts.length ? parts.join(". ") : null;
@@ -671,7 +671,7 @@ export function isbarLines(
     row.formCode && row.formEnded
       ? `, Form ${row.formCode} ended`
       : row.formCode && row.formDueAt !== undefined
-        ? `, Form ${row.formCode} due ${typedClock(row.formDueAt, now, dayZero)} as typed`
+        ? `, Form ${row.formCode} due ${typedClock(row.formDueAt, now, dayZero)}`
         : row.formCode
           ? `, Form ${row.formCode}, no due time typed`
           : "";
@@ -831,7 +831,7 @@ export function toHandoverWard(
     ready: readyBedsNow(unit, admissions, bedReleases, holds),
     pendingPreparation: bedsPendingPreparation(unit.id, bedReleases),
     confirmedAt: unit.empty.confirmedAt,
-    staleAfter: unit.empty.staleAfterMinutes,
+    staleAfter: CLINICAL_VALUES.bedCountFresh.value,
     // Audit 24-4 NA2-03: the Pulled box Capacity and Home print, never closed beds.
     held: bedStates(unit, admissions, bedReleases, [], holds).pulled,
     longStays: here.filter((admission) => (daysInBed(admission, now) ?? 0) >= CLINICAL_VALUES.longStayPrompt.value)

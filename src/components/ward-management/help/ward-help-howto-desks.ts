@@ -487,7 +487,7 @@ export const DESK_JOBS: readonly HowTo[] = [
     title: "Record a community treatment order",
     keywords: "cto community treatment order form 5a record ended order",
     answer:
-      "Open the patient, then the Community tab. In the CTO card press Record CTO. When the order ends, press Record ended there. Ward Flow never works out the order's dates.",
+      "Open the patient, then the Community tab. In the CTO card press Record CTO. When the order ends, press Record ended there.",
     desks: ["community"],
     acts: ["RECORD_COMMUNITY_TREATMENT_ORDER", "END_COMMUNITY_TREATMENT_ORDER"],
     needs: "search",

@@ -152,7 +152,7 @@ export function journeyStages({
       tone: "neutral",
       count: waiting.length,
       breakdown: [
-        { label: `Past ${LONG_WAIT_HOURS}h`, value: pastADay(waiting), tone: warnIf(pastADay(waiting)) },
+        { label: `Over ${LONG_WAIT_HOURS}h`, value: pastADay(waiting), tone: warnIf(pastADay(waiting)) },
         { label: "Urgent", value: urgent(waiting) },
         { label: "EDs", value: new Set(waiting.filter(isEdOriginJourney).map((movement) => movement.originEdId)).size },
       ],
@@ -164,7 +164,7 @@ export function journeyStages({
       tone: "neutral",
       count: referred.length,
       breakdown: [
-        { label: `Past ${LONG_WAIT_HOURS}h`, value: pastADay(referred), tone: warnIf(pastADay(referred)) },
+        { label: `Over ${LONG_WAIT_HOURS}h`, value: pastADay(referred), tone: warnIf(pastADay(referred)) },
         { label: "Urgent", value: urgent(referred) },
         { label: "Declined", value: referred.filter((movement) => movement.declines.length > 0).length },
       ],
@@ -176,7 +176,7 @@ export function journeyStages({
       tone: "success",
       count: accepted.length,
       breakdown: [
-        { label: `Past ${LONG_WAIT_HOURS}h`, value: pastADay(accepted), tone: warnIf(pastADay(accepted)) },
+        { label: `Over ${LONG_WAIT_HOURS}h`, value: pastADay(accepted), tone: warnIf(pastADay(accepted)) },
         { label: "Urgent", value: urgent(accepted) },
         { label: "Wards", value: new Set(accepted.map((movement) => movement.acceptedUnitId)).size },
       ],

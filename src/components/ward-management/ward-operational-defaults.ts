@@ -25,7 +25,7 @@ import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-valu
 const MINUTES_PER_HOUR = 60;
 
 /** The words every screen shows beside one of these figures. */
-export const OPERATIONAL_DEFAULT_LABEL = "your default, not a legal limit";
+export const OPERATIONAL_DEFAULT_LABEL = "your default";
 
 export interface OperationalDefault {
   /** What the rule does, in the words the settings screen lists it under. */
@@ -104,7 +104,7 @@ export const ED_SEVERE_PRESSURE_WAIT_MINUTES = CLINICAL_VALUES.edSeverePressure.
  */
 export const LONG_WAIT_MINUTES = CLINICAL_VALUES.longWait.value;
 /** The words screens use for it, built from the value: "past 24 hours". */
-export const LONG_WAIT_TEXT = `past ${LONG_WAIT_MINUTES / MINUTES_PER_HOUR} hours`;
+export const LONG_WAIT_TEXT = `over ${LONG_WAIT_MINUTES / MINUTES_PER_HOUR} hours`;
 /**
  * Whether a wait counts as long: at or past `LONG_WAIT_MINUTES`, so exactly 24 hours counts. One
  * boundary for every screen (Josh, 11 Nov 2026): the ED screen used "past" (>) while Alerts, the

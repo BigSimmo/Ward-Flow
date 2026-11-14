@@ -58,11 +58,23 @@ export function legalStatusesDiffer(
 export const LEGAL_STATUSES_DIFFER = "These two legal statuses differ. Check which is current.";
 
 /**
- * The words beside a recorded legal mismatch (`movement.legalMismatch`, FLAG_LEGAL_MISMATCH) on the
- * ED board, the patient page and Handover. A warning only, never a block (D-16: recorded, never
- * overridden). Wording awaits Josh's confirmation (master stress test, 14 Nov 2026, D1a-E-2).
+ * The sentence beside a recorded legal mismatch (`movement.legalMismatch`, FLAG_LEGAL_MISMATCH) at
+ * the step that moves the person: the ED board, the patient page and Handover. A warning only, never
+ * a block (D-16: recorded, never overridden). Wording approved by Josh, 14 Nov 2026 (R-LEGAL-4).
  */
 export const LEGAL_MISMATCH_WARNING = "Legal status does not match this ward. Check before moving.";
+
+/**
+ * R-LEGAL-4 (Josh, 14 Nov 2026): the short chip for the same flag on lists (Search, Movements, the
+ * Capacity ward drawer), with the sentence as its title. One pattern: chip on lists, sentence at
+ * the moving step. Amber, display only.
+ */
+export const LEGAL_MISMATCH_CHIP = "Legal mismatch";
+
+/** The open journeys accepted for one ward whose recorded legal mismatch still stands (R-LEGAL-4). */
+export function currentLegalMismatchesFor(movements: readonly Movement[], unitId: string): Movement[] {
+  return movements.filter((movement) => movement.acceptedUnitId === unitId && hasCurrentLegalMismatch(movement));
+}
 
 /**
  * Whether a recorded legal mismatch still describes this journey: it names the ward that accepted

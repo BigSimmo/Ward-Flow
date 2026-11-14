@@ -22,6 +22,8 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { setDeskRole } from "@/components/ward-management/ward-role-gate";
 import { NOW_ANCHOR, unitById } from "@/components/ward-management/ward-sites";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { awaitingWardAnswer } from "@/components/ward-management/ward-waitlist";
 
 const UNIT = unitById("rph-adult-secure")!;
 
@@ -54,5 +56,38 @@ describe("the site bed manager confirms beds from the answer page as itself (AK-
     fireEvent.click(within(capacityPanel).getByTestId("ward-capacity-submit"));
     expect(screen.getByTestId("rejections").textContent).toBe("");
     expect(screen.getByTestId("confirmed-by").textContent).toBe("bed_manager");
+  });
+});
+
+describe("the site bed manager is not shown referral answers it may not give (Josh, 14 Nov 2026)", () => {
+  const state = seedWardFlowState();
+  const asked = state.movements.find(
+    (movement) =>
+      movement.stage === "destination_review" && state.units.some((unit) => awaitingWardAnswer(movement, unit.id)),
+  );
+  if (!asked) throw new Error("the seed has no referral awaiting a ward answer");
+  const askedUnit = state.units.find((unit) => awaitingWardAnswer(asked, unit.id))!;
+
+  function renderAnswer() {
+    return render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardScreen unitId={askedUnit.id} presentation="answer" />
+      </WardFlowProvider>,
+    );
+  }
+
+  it("offers the nurse in charge Decline and Accept in principle", () => {
+    setDeskRole("ward");
+    const { container } = renderAnswer();
+    expect(container.querySelector('[data-testid^="ward-decline-toggle-"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid^="ward-accept-"][data-placement-action]')).not.toBeNull();
+  });
+
+  it("hides Decline and Accept for the site bed manager, with no who-does-it line (D-218)", () => {
+    setDeskRole("bed_manager");
+    const { container } = renderAnswer();
+    expect(container.querySelector('[data-testid^="ward-decline-toggle-"]')).toBeNull();
+    expect(container.querySelector('[data-testid^="ward-accept-"][data-placement-action]')).toBeNull();
+    expect(container.querySelector('[data-testid^="ward-answer-who-decides-"]')).toBeNull();
   });
 });

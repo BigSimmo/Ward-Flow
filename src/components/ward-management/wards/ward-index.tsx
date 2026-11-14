@@ -57,7 +57,7 @@ import { remainingSpeciallingCapacity } from "@/components/ward-management/ward-
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService, Unit } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
-import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import { CLINICAL_VALUES, isBedCountStale } from "@/components/ward-management/ward-clinical-values";
 import { SAMPLE_OBSERVATION_MIX_LABEL } from "@/components/ward-management/ward-sample-choices";
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
 import { BedSquares, BedSquaresKey, bedSquareCounts, bedSquaresNotes } from "@/components/ward-management/bed-squares";
@@ -290,7 +290,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
           out: breakdown.confirmedToday + breakdown.expectedToday,
           incoming,
           confirmedAt: unit.allocatable.confirmedAt,
-          stale: now - unit.allocatable.confirmedAt > unit.allocatable.staleAfterMinutes,
+          stale: isBedCountStale(unit.allocatable.confirmedAt, now),
           specialling: Math.max(0, unit.speciallingCapacity - remainingSpeciallingCapacity(unit, admissions)),
         };
       }),
@@ -968,7 +968,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
 
         <WardPrototypeFooter
           testId="ward-index-governance"
-          note="Synthetic prototype. Invented figures under real WA hospital names. Lists update once a minute."
+          note="Invented figures under real WA hospital names. Lists update once a minute."
         />
       </main>
     </div>

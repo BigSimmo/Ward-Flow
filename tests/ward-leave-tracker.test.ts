@@ -58,6 +58,20 @@ describe("leaveOpenWarning (signed 24 hours)", () => {
     expect(leaveOpenWarning(leave({ confirmedAt: now - 24 * 60 }), now)).toContain("Consider opening the bed");
     expect(leaveOpenWarning(leave({ confirmedAt: now - 33 * 60 }), now)).toContain("Consider opening the bed");
   });
+  it("flags a medical trip expected to last over 24 hours for review, never at exactly 24 hours (D-106)", () => {
+    const trip = (hours: number, kind: LeaveBed["kind"] = "medical_trip") =>
+      leave({ kind, confirmedAt: now - 10, expectedReturn: now - 10 + hours * 60 });
+    expect(leaveOpenWarning(trip(24.5), now)).toContain("Review the held bed");
+    expect(leaveOpenWarning(trip(24), now)).toBeUndefined();
+    expect(leaveOpenWarning(trip(6), now)).toBeUndefined();
+    expect(leaveOpenWarning(trip(48, "off_ward"), now)).toBeUndefined();
+    const rows = leaveTrackerRows(
+      { ...seedWardFlowState(), leaveBeds: [{ ...trip(30), unitId: seedWardFlowState().units[0]!.id }] },
+      now,
+      () => true,
+    );
+    expect(rows[0]?.openWarning).toContain("Review the held bed");
+  });
   it("reaches the Leave page rows", () => {
     const state = seedWardFlowState();
     const rows = leaveTrackerRows(

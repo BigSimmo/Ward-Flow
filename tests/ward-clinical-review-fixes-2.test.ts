@@ -132,6 +132,19 @@ describe("R7: the shortlist card names the authorisation check", () => {
     expect(text).toContain("Check authorisation");
     expect(text).not.toMatch(/Fits [^·]*authorisation/u);
   });
+
+  it("R-LEGAL-8: names the register's answer, the same one the ward page gives", () => {
+    const gate = (authorisation: "on_register" | "not_on_register" | "not_stated") =>
+      fitLineText(
+        fitLine([
+          { gate: "security", pass: true, detail: "" },
+          { gate: "legal_status", pass: true, info: true, need: true, detail: "", authorisation },
+        ]),
+      );
+    expect(gate("on_register")).toBe("Fits security · Check authorisation (hospital on register)");
+    expect(gate("not_on_register")).toBe("Fits security · Check authorisation (not on register)");
+    expect(gate("not_stated")).toBe("Fits security · Check authorisation (not stated)");
+  });
 });
 
 describe("R9: the Triage banner reads the patient page's legal status for everyone (D-186 item 10)", () => {

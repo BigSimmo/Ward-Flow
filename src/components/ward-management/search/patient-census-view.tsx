@@ -1,5 +1,6 @@
 "use client";
 
+import { LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import Link from "next/link";
 import { waitingHref } from "@/components/ward-management/delays/waiting-href";
 import {
@@ -667,8 +668,8 @@ export function ShiftSummary(props: ShiftSummaryProps) {
     {
       id: "long",
       glyph: "risk",
-      title: "Past 24 hours",
-      sub: "Your default, not a legal limit",
+      title: `Over ${LONG_WAIT_MINUTES / 60}h`,
+      sub: "Your default",
       value: props.highlightCounts.long,
       chip: "long",
     },
