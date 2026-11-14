@@ -53,6 +53,9 @@ import {
 import { isValidSharedWardFlowState } from "../../src/components/ward-management/ward-shared-state-validation";
 import { checkSyntheticPayload } from "../../src/lib/synthetic-data-guard";
 import { boundAudit, PERSISTED_AUDIT_EVENTS } from "../../src/components/ward-management/ward-audit";
+import { deskFor } from "../../src/components/ward-management/ward-desk";
+import { stampDesk, stampedRole } from "../../src/components/ward-management/ward-desk-stamp";
+import { withoutDeskStamp } from "../../src/components/ward-management/ward-desk-stamp-shape";
 import {
   SITE_FEATURE_SWITCH_ROLE,
   siteFeatureSwitchRefusal,
@@ -664,9 +667,12 @@ export function archivePartialViewForWorld(
  * statewide one (access audit, 31 Oct 2026): a service coordinator also skips the role check, so
  * without this its change was recorded as the ward's or ED's. The demonstration controls keep `demo`
  * (refused below for anyone but the statewide coordinator), and marking a notice read keeps its role,
- * which names the notice's addressee (`reduceInboxEvent`).
+ * which names the notice's addressee (`reduceInboxEvent`). D-222: the role comes from `stampedRole`,
+ * which the demo's routing point asks too, and a desk stamp the browser sent is dropped; the server
+ * stamps its own in `applyCommand`.
  */
 export function deskCommand(access: WardAccess, supplied: unknown): unknown {
+  supplied = withoutDeskStamp(supplied);
   // Q67 (Josh, 31 Oct 2026): a whole-network desk's handover sign-off that names no ward is recorded
   // as the whole network's, from the desk's membership, so History reads "Whole network". Sign-offs
   // saved before this carry no mark and keep "Ward not recorded"; nothing is guessed for them.
@@ -683,8 +689,10 @@ export function deskCommand(access: WardAccess, supplied: unknown): unknown {
     if (access.role === "admin") return { ...fields, role: SITE_FEATURE_SWITCH_ROLE, byAccessAdmin: true };
   }
   if (access.role !== "coordinator" || typeof fields?.role !== "string") return fields;
-  if (fields.role === "demo" || fields.role === access.role || fields.type === "MARK_NOTICE_READ") return fields;
-  return { ...fields, role: access.role };
+  if (fields.role === "demo" || typeof fields.type !== "string" || !Object.hasOwn(EVENT_ROLE, fields.type))
+    return fields;
+  const role = stampedRole(deskFor(access), fields as WardFlowEvent);
+  return role === fields.role ? fields : { ...fields, role };
 }
 
 /**
@@ -943,8 +951,14 @@ export function breakGlassRefusal(world: SharedWorld, access: WardAccess, patien
  * minute of the server's time, the command is stamped with the server's own time as before. A save
  * that waited keeps the time the person acted within bounds, or is refused.
  */
-export function applyCommand(world: SharedWorld, supplied: unknown, at: Date, options: { actedAt?: unknown } = {}) {
-  supplied = storableCommand(supplied);
+export function applyCommand(
+  world: SharedWorld,
+  supplied: unknown,
+  at: Date,
+  options: { actedAt?: unknown; access?: WardAccess | null; account?: string | null } = {},
+) {
+  // D-222: only the server names the desk. A stamp the browser sent never reaches the reducer.
+  supplied = withoutDeskStamp(storableCommand(supplied));
   if (!validWorld(world) || !validCommand(supplied)) throw new Error("invalid-command");
   const fields = supplied as Record<string, unknown>;
   if (typeof fields.type !== "string" || !Object.hasOwn(EVENT_ROLE, fields.type)) throw new Error("invalid-command");
@@ -964,7 +978,10 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date, op
   );
   if ("refusal" in entered)
     return { world, outcome: "denied" as const, changes: {}, reason: refusalReason(entered.refusal) };
-  const event = { ...fields, type, role, now: entered.now } as WardFlowEvent;
+  // D-222: the membership names the desk on the History line (and the account, once memberships
+  // hold a display name). After the fingerprint, so a retried save still matches its receipt.
+  const sent = { ...fields, type, role, now: entered.now } as WardFlowEvent;
+  const event = options.access ? stampDesk(sent, deskFor(options.access), options.account) : sent;
   // H1: an accepted save that waited says so in its reply, receipt and audit row.
   const enteredOffline = entered.offline ? { actedAt: entered.now, sentAt: entered.sentAt } : null;
   let rawNext: WardFlowState;

@@ -159,7 +159,11 @@ test("a record the sender saw through its own later save is checked from that sa
   };
   save(urgency("WF-002", 1), 2);
   const covered = save(urgency("WF-001", 2), 3);
-  assert.deepEqual(covered, [recordToken(partKey("movements", "WF-001"))]);
+  // D-222: the save's own History line is a new record the sender has seen too.
+  assert.deepEqual(covered, [
+    recordToken(partKey("movements", "WF-001")),
+    recordToken(partKey("auditEvents", world.state.auditEvents.at(-1).id)),
+  ]);
   const seen = Object.fromEntries(covered.map((token) => [token, 3]));
   const check = (event, options) => {
     const applied = engine.applyCommand(world, event, at);
@@ -191,13 +195,21 @@ test("a save names as covered only the records the sender's own view shows (CS-1
   const core = planSave([], before, 1).core;
   const event = urgency("WF-001", 2);
   const after = engine.applyCommand(before, event, at).world;
+  // A desk that does not see the journey sees neither it nor its History line (D-222).
   const without = (world) => ({
     ...world,
-    state: { ...world.state, movements: world.state.movements.filter((row) => row.id !== "WF-001") },
+    state: {
+      ...world.state,
+      movements: world.state.movements.filter((row) => row.id !== "WF-001"),
+      auditEvents: world.state.auditEvents.filter((row) => row.subject?.movementId !== "WF-001"),
+    },
   });
-  const token = recordToken(partKey("movements", "WF-001"));
-  assert.deepEqual(coveredRecords({ core, before, after, event }), [token], "a whole-network desk");
-  assert.deepEqual(coveredRecords({ core, before, after, event, visible: [before, after] }), [token], "in view");
+  const token = [
+    recordToken(partKey("movements", "WF-001")),
+    recordToken(partKey("auditEvents", after.state.auditEvents.at(-1).id)),
+  ];
+  assert.deepEqual(coveredRecords({ core, before, after, event }), token, "a whole-network desk");
+  assert.deepEqual(coveredRecords({ core, before, after, event, visible: [before, after] }), token, "in view");
   assert.deepEqual(
     coveredRecords({ core, before, after, event, visible: [without(before), without(after)] }),
     [],

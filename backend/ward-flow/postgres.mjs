@@ -1655,7 +1655,13 @@ export function createWorkspaceStore(
         ) {
           // From migration 10 a command sent against an older revision still applies to the
           // latest workspace, unless someone else has since changed a record it changes or names.
-          const applied = engine.applyCommand(row.payload, event, at, { actedAt });
+          // D-222: the membership names the desk on the History line; `displayName` arrives with the
+          // membership display-name migration and is absent until then.
+          const applied = engine.applyCommand(row.payload, event, at, {
+            actedAt,
+            access: view?.access ?? null,
+            account: /** @type {{ displayName?: string | null } | null} */ (view)?.displayName ?? null,
+          });
           const after = applied.outcome === "accepted" ? applied.world : row.payload;
           const clash =
             priorRevision === expectedRevision
