@@ -1802,7 +1802,7 @@
       {
         "path": "src/components/ward-management/ward-derivations.ts",
         "line": 1,
-        "sha256": "ad5f13f83c4a41b1bb70e8bb457502c196a28be8aee79f5a76c8849d0d1b9092"
+        "sha256": "c8dc1f907e877c513a187b3e631b0525ca616d5091ed01fee4a4ccb97dd80442"
       },
       {
         "path": "src/components/ward-management/ward-duplicate-bed-requests.ts",
@@ -1891,8 +1891,8 @@
       },
       {
         "path": "src/components/ward-management/ward-inbox-reducer.ts",
-        "line": 60,
-        "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
+        "line": 61,
+        "sha256": "453d828a15a6abaf7011401ce164f621571da1549461d0e5afe2a42cb2ff1113"
       },
       {
         "path": "src/components/ward-management/ward-model-leave.ts",

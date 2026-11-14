@@ -4756,8 +4756,8 @@
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 323,
-          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
+          "line": 339,
+          "sha256": "453d828a15a6abaf7011401ce164f621571da1549461d0e5afe2a42cb2ff1113"
         },
         {
           "path": "src/components/ward-management/shell/ward-bar-state.ts",
@@ -4776,13 +4776,13 @@
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 330,
-          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
+          "line": 346,
+          "sha256": "453d828a15a6abaf7011401ce164f621571da1549461d0e5afe2a42cb2ff1113"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 334,
-          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
+          "line": 350,
+          "sha256": "453d828a15a6abaf7011401ce164f621571da1549461d0e5afe2a42cb2ff1113"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
@@ -4835,8 +4835,8 @@
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 345,
-          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
+          "line": 361,
+          "sha256": "453d828a15a6abaf7011401ce164f621571da1549461d0e5afe2a42cb2ff1113"
         },
         {
           "path": "src/components/ward-management/ward-tasks-drawer.tsx",
@@ -4850,13 +4850,13 @@
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 349,
-          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
+          "line": 365,
+          "sha256": "453d828a15a6abaf7011401ce164f621571da1549461d0e5afe2a42cb2ff1113"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 371,
-          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
+          "line": 387,
+          "sha256": "453d828a15a6abaf7011401ce164f621571da1549461d0e5afe2a42cb2ff1113"
         }
       ]
     }
@@ -4912,8 +4912,8 @@
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 384,
-          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
+          "line": 400,
+          "sha256": "453d828a15a6abaf7011401ce164f621571da1549461d0e5afe2a42cb2ff1113"
         },
         {
           "path": "src/components/ward-management/ward-tasks-drawer.tsx",
@@ -4927,18 +4927,18 @@
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 387,
-          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
+          "line": 403,
+          "sha256": "453d828a15a6abaf7011401ce164f621571da1549461d0e5afe2a42cb2ff1113"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 404,
-          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
+          "line": 420,
+          "sha256": "453d828a15a6abaf7011401ce164f621571da1549461d0e5afe2a42cb2ff1113"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 408,
-          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
+          "line": 424,
+          "sha256": "453d828a15a6abaf7011401ce164f621571da1549461d0e5afe2a42cb2ff1113"
         }
       ]
     }
@@ -4986,8 +4986,8 @@
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 419,
-          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
+          "line": 435,
+          "sha256": "453d828a15a6abaf7011401ce164f621571da1549461d0e5afe2a42cb2ff1113"
         },
         {
           "path": "src/components/ward-management/ward-tasks-drawer.tsx",
@@ -4996,13 +4996,13 @@
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 422,
-          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
+          "line": 438,
+          "sha256": "453d828a15a6abaf7011401ce164f621571da1549461d0e5afe2a42cb2ff1113"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 426,
-          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
+          "line": 442,
+          "sha256": "453d828a15a6abaf7011401ce164f621571da1549461d0e5afe2a42cb2ff1113"
         }
       ]
     }

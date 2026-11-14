@@ -7,6 +7,7 @@ import type { Movement, Notice } from "./ward-model";
 import { currentLegalDueAt } from "./ward-legal-form-progression";
 import { isOnOrder, stayLegalStatus } from "./ward-stay-legal";
 import { SNOOZE_MAX_MINUTES } from "./ward-operational-defaults";
+import { ARRIVAL_LATE_GRACE_MINUTES, expectedArrival } from "./ward-arrival-timing";
 import { duplicateBedRequestSince } from "./ward-duplicate-bed-requests";
 import { heldBedElsewhereOf } from "./ward-held-bed-elsewhere";
 import {
@@ -70,8 +71,17 @@ export const INBOX_CATEGORIES = {
   destinations_declined: { idPrefix: "declines-", kind: "fact" },
   /** Transport accepted and not yet departed. */
   transport_awaiting_departure: { idPrefix: "transport-", kind: "fact" },
-  /** P068 (Josh, 27 Oct 2026, 10:02 PM AWST): a booked job 10 minutes or more past its booking estimate. */
+  /** P068 (Josh, 27 Oct 2026, 10:02 PM AWST), bounded by D-221 (14 Nov 2026): a journey 10 minutes
+   *  or more past its expected time (ward ETA, else booking estimate) and not yet late. Review. */
   transport_booking_estimate_passed: { idPrefix: "eta-passed-", kind: "fact" },
+  /** D-221 (Josh, 14 Nov 2026): a journey more than the signed grace past its expected time and not
+   *  arrived. Act now, for the coordinator, the accepting ward and the referrer. Leaves on arrival,
+   *  diversion or closure. Remainder is the movement id. */
+  arrival_late: { idPrefix: "arrival-late-", kind: "fact" },
+  /** D-221 (Josh, 14 Nov 2026): a collected journey diverted elsewhere with its bed still pulled. Act
+   *  now, for the coordinator and the accepting ward. Leaves on RELEASE_DIVERTED_BED (which closes
+   *  the journey). Remainder is the movement id. */
+  transport_diverted: { idPrefix: "diverted-", kind: "fact" },
   /** A planned admission whose expected arrival has passed without the arrival being recorded.
    *  Its row's remainder is a planned-admission id, not a movement id (stream D). */
   planned_arrival_overdue: { idPrefix: "planned-arrival-", kind: "fact" },
@@ -252,7 +262,13 @@ export function inboxOccurrenceSince(movement: Movement, inboxItemId: string): I
   if (startsWith("legal_timing_breached")) return currentLegalDueAt(movement);
   if (startsWith("bed_pull_expired")) return movement.pullExpiresAt;
   if (startsWith("transport_awaiting_departure")) return movement.transport?.acceptedAt;
-  if (startsWith("transport_booking_estimate_passed")) return movement.transport?.estimatedAt;
+  // D-221: the Past ETA and Late arrival rows start from the expected time (ward ETA, else booking).
+  if (startsWith("transport_booking_estimate_passed")) return expectedArrival(movement)?.at;
+  if (startsWith("arrival_late")) {
+    const expected = expectedArrival(movement);
+    return expected === undefined ? undefined : expected.at + ARRIVAL_LATE_GRACE_MINUTES;
+  }
+  if (startsWith("transport_diverted")) return movement.transport?.diversion?.at;
   if (startsWith("target_referral_decision") || startsWith("target_pending_referral_decision")) {
     return movement.referralDecisionOpenedAt ?? movement.referredAt;
   }

@@ -1600,8 +1600,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 437,
-          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
+          "line": 453,
+          "sha256": "453d828a15a6abaf7011401ce164f621571da1549461d0e5afe2a42cb2ff1113"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1646,8 +1646,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 457,
-          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
+          "line": 473,
+          "sha256": "453d828a15a6abaf7011401ce164f621571da1549461d0e5afe2a42cb2ff1113"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1699,8 +1699,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 470,
-          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
+          "line": 466,
+          "sha256": "453d828a15a6abaf7011401ce164f621571da1549461d0e5afe2a42cb2ff1113"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1747,8 +1747,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 504,
-          "sha256": "d4891995be7d30a7872ce06c91577b3e155e251354d1e6121574eed8bc902087"
+          "line": 520,
+          "sha256": "453d828a15a6abaf7011401ce164f621571da1549461d0e5afe2a42cb2ff1113"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",

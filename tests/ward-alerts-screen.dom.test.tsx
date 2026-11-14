@@ -215,6 +215,9 @@ describe("the Alerts screen reports on every condition it watches, firing or not
       countInCategory("no_eligible_bed") +
       // P068: a booked job past its booking estimate (WF-015 since feature 25's Delayed demo, 9 Nov 2026).
       countInCategory("transport_booking_estimate_passed") +
+      // D-221: a late arrival (WF-015 on the seed) and a diverted journey are act now rows.
+      countInCategory("arrival_late") +
+      countInCategory("transport_diverted") +
       // Planned admissions past their expected arrival (stream D) also draw a row.
       buildActionInbox([], NOW, allUnits(), { plannedAdmissions: wardPlannedAdmissions }).length +
       // L1 (site review, 12 Oct 2026): the arrival and discharge notification rows the Tasks badge
