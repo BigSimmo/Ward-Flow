@@ -22,7 +22,8 @@ import { COMMUNITY_TEAMS } from "@/components/ward-management/ward-teams";
 /**
  * R-STRUCT-1, D-223 (Josh, 14 Nov 2026): the AK-A table (`tests/fixtures/permission-ak-a.ts`) is
  * the signed access rule. `permit()` and the shared server must both give AK-A's answer for every
- * cell, except the listed disagreements, which both must give the app's current answer for.
+ * cell. The seven cells where AK-A and the app once disagreed were corrected to the app's answer
+ * (Josh, 14 Nov 2026, 14:58Z, D-223).
  */
 const AT = new Date("2026-11-14T02:00:00Z");
 const world = seedWorld(AT);
@@ -101,6 +102,10 @@ describe("permit() against the signed AK-A table (D-223)", () => {
       }
     });
   }
+
+  it("has no open disagreement: Josh kept the app's answer for all seven on 14 Nov (D-223)", () => {
+    expect(AK_A_DISAGREEMENTS).toEqual([]);
+  });
 
   it("lists each disagreement once, against a cell the table tests, with the app really differing", () => {
     const keys = AK_A_DISAGREEMENTS.map((entry) => `${entry.row} ${entry.type}`);
