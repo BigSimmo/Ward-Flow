@@ -70,7 +70,7 @@ function tapNow(): number {
   return Date.now();
 }
 
-function originPlaceLabel(movement: Movement): string {
+export function originPlaceLabel(movement: Movement): string {
   if (movement.originEdId === undefined) return communityOriginLabel(movement.originCommunity);
   return originName(movement) ?? "Emergency department";
 }
@@ -449,7 +449,7 @@ export function WardArrivalsCorridor({
 
                   {canArrive ? (
                     <div>
-<Button
+                      <Button
                         variant="pri"
                         size="md"
                         type="button"

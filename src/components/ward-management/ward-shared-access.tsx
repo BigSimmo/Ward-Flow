@@ -728,7 +728,11 @@ function WardSharedWorkspaceContent({
       <WardSessionEndingNotice endsAt={connection.sessionEndsAt ?? null} />
       <WardSharedSaveStatus
         connection={connection}
-        deskLabel={access && !accessIsWholeNetwork(access) ? sharedDeskLabel(access, connection.snapshot?.payload.state.units) : "Coordinator"}
+        deskLabel={
+          access && !accessIsWholeNetwork(access)
+            ? sharedDeskLabel(access, connection.snapshot?.payload.state.units)
+            : "Coordinator"
+        }
       />
       {/* Always mounted, so focus has somewhere to land when Dismiss removes the outcome it sat beside. */}
       <div ref={recoveryOutcomeRef} tabIndex={-1} data-testid="ward-shared-recovery-outcome">

@@ -9,6 +9,7 @@ import {
 import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import Link from "next/link";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { originPlaceLabel } from "./ward-arrivals-corridor";
 import { ArrivalIdentityDialog } from "@/components/ward-management/arrival-identity-dialog";
 import { patientIdentityLine } from "@/components/ward-management/ward-patient-resolver";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
@@ -1712,9 +1713,10 @@ export function WardHomeTab({
 
       <ArrivalIdentityDialog
         open={arriveRowMovement !== undefined}
-        who={arriveRowMovement ? resolvePatientIdentity(arriveRowMovement).displayName : "this patient"}
+        person={arriveRowMovement ? resolvePatientIdentity(arriveRowMovement).patient : undefined}
         identity={arriveRowMovement ? patientIdentityLine(resolvePatientIdentity(arriveRowMovement)) : ""}
         wardName={unit.name}
+        comingFrom={arriveRowMovement ? originPlaceLabel(arriveRowMovement) : undefined}
         onClose={() => setArriveRowId(null)}
         onConfirm={() => {
           setArriveRowId(null);
@@ -1792,7 +1794,11 @@ export function WardHomeTab({
               {recentAnswers.map((answer) => (
                 <li key={answer.key} data-testid={`ward-answer-history-${answer.key}`}>
                   <strong>{resolvePatientIdentity({ movementId: answer.movementId }).formalName}</strong>
-                  {answer.at === undefined ? <span>Not recorded</span> : <time>{formatInstantWithDay(answer.at, now)}</time>}
+                  {answer.at === undefined ? (
+                    <span>Not recorded</span>
+                  ) : (
+                    <time>{formatInstantWithDay(answer.at, now)}</time>
+                  )}
                   <span>
                     {resolvePatientIdentity({ movementId: answer.movementId }).umrn} · {answer.outcome}
                     {answer.reason ? `, ${declineReasonText(answer.reason)}` : ""}

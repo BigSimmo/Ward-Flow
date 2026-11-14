@@ -174,7 +174,11 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   const [capacityDraft, setCapacityDraft] = useState<{ unitId: string; revision: number; value: string }>();
   const capacityRevision = unit?.allocatable.revision ?? 0;
   const completeCommand = useWardCommandCompletion();
-  const [capacitySave, setCapacitySave] = useState<{ unitId: string; state: "saving" | "saved" | "failed"; at?: Instant }>();
+  const [capacitySave, setCapacitySave] = useState<{
+    unitId: string;
+    state: "saving" | "saved" | "failed";
+    at?: Instant;
+  }>();
   const capacityValue =
     capacityDraft?.unitId === unitId && capacityDraft.revision === capacityRevision
       ? capacityDraft.value
@@ -1554,7 +1558,6 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                         data-testid="ward-capacity-submit"
                         // R-BEDS-16: the panel's one filled button, named for what it does.
                         className={styles.btnPrimary}
-                        disabled={capacitySave?.state === "saving"}
                       >
                         Confirm {Number(capacityValue) || 0} free
                       </button>

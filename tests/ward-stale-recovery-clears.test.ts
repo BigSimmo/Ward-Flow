@@ -57,7 +57,12 @@ it("clears 'A previous uncertain save was not applied' once a later save is acce
   try {
     await client.refresh();
     expect(view?.recovery).toMatch(/not applied/i);
-    await client.dispatch({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now: 642, unitId: state.units[0]!.id });
+    await client.dispatch({
+      type: "REQUEST_CAPACITY_REFRESH",
+      role: "coordinator",
+      now: 642,
+      unitId: state.units[0]!.id,
+    });
     expect(view?.status).toBe("ready");
     expect(view?.recovery).toBeUndefined();
   } finally {
