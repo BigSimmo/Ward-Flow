@@ -216,12 +216,15 @@ to travel** and **Transport** ("Needs the bed pulled").
 
 **Screen:** **Referrals** in the left-hand menu.
 
-**Do:** in the **Queue** list, open **Coldharbour, Cyril**. His referral opens on the **Place** tab.
+**Do:** in the **Queue** list, open **Coldharbour, Cyril**, the last row (not the rows above him,
+such as Vallowen, Orla, whose referral names one ward). His referral opens on the **Place** tab.
 Scroll down inside the panel and point to the three groups: **Fits, bed ready**, **Fits, no bed
 now** and **Needs review**. Each ward reads "Travel time not recorded": the prototype holds no
-travel times, so do not quote any. Choose one ward to show that **Accept at …** only appears after a
-person chooses (until then the button reads "Choose a ward first"). Do not press Accept. Press
-**Esc** to close.
+travel times, so do not quote any. Choose a ward under **Fits, bed ready** to show that **Accept at
+…** only appears after a person chooses (until then the button reads "Choose a ward first"); a ward
+in the other two groups shows **Clinical override for …** instead. Do not press Accept. Press
+**Esc** to close. Ward counts go out of date within the hour, so press **Reset demo** less than an
+hour before this act, or the first group can be empty.
 
 **Say:**
 
@@ -550,7 +553,7 @@ Things that happen without a wrong press:
 | --- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1   | Capacity                                  | Bed meeting, Print the meeting sheet, Close                                                                                                                       |
 | 2   | All EDs, Enter (RPH ED)                   | Pellingworth, Keira; Esc; Home, Later today, Pellingworth, Keira; Placement steps                                                                                 |
-| 3   | Referrals, Coldharbour, Cyril (Place tab) | Scroll to the groups; choose a ward (do not accept); Esc; browser Back; Pull the bed, Pull the bed; Esc                                                           |
+| 3   | Referrals, Coldharbour, Cyril (Place tab) | Scroll to the groups; choose a ward under Fits, bed ready (do not accept); Esc; browser Back; Pull the bed, Pull the bed; Esc                                     |
 | 4   | Keira's page                              | Record clearance; Log booking; Mark handover ready; X on both messages; Destination row; Provider accepted job, Vehicle en route, Mark moving · patient collected |
 | 5   | Destination and placement                 | Confirm arrival · receiving ward, Confirm arrival; Esc; More, All wards, Open ward (Dabakarn)                                                                     |
 | 6   | SJGM Adult Open; More, Legal forms; clock | Loxbury, Saoirse, Esc; Seclusion tab; Board time, Demo clock                                                                                                      |

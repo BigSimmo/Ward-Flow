@@ -8,7 +8,7 @@
  *   wards of the same age group, so the inbox, History and "Decisions by hour" have rows;
  * - every ward gets two finished stays (two days ago and about ten days ago), so Discharges
  *   History and earlier weeks of the Weekly report have records;
- * - every secure ward but the first gets a seclusion room status and incidents in the last day;
+ * - every secure ward but the first gets a seclusion room status, and on the fictional network incidents in the last day;
  *
  * Invented, deterministic and relative to the seed's own anchor. Names are synthetic (surname
  * first on screen). A live shared build swaps this module for the no-op in
@@ -25,7 +25,7 @@ import { GENERAL_OBSERVATION } from "./ward-observation";
 import { createPatientResolver } from "./ward-patient-resolver";
 import type { Patient, PatientId } from "./ward-patients";
 import { completeSyntheticReferralIntake } from "./ward-referral-intake-seed";
-import { mayCarryAdverseExample, staffRequestExampleWard } from "./ward-demo-adverse-wards";
+import { mayCarryInventedIncident, staffRequestExampleWard } from "./ward-demo-adverse-wards";
 import { wardReferralInboxEntries } from "./referrals/referral-inbox";
 import { currentShiftStartInstant } from "./ward-board-time-features";
 import type { StaffRequestRecord } from "./staffing/staff-requests";
@@ -245,7 +245,8 @@ function addInboxReferrals(state: Draft, people: People, anchor: Instant) {
  *
  * A15-27 (Josh, 13 Nov 2026): the room status stays on every one of those wards (script step 6B
  * reads the Seclusion rooms list), but an invented incident is adverse, so a ward carrying a real
- * ward's own name gets none (`mayCarryAdverseExample`, `ward-demo-adverse-wards.ts`).
+ * ward's own name gets none. The live re-check (Josh, 14 Nov 2026) extends that to every ward at a real
+ * hospital, so only the fictional network gets incidents (`mayCarryInventedIncident`).
  */
 function addRestrictivePractice(state: Draft, anchor: Instant) {
   let secure = -1;
@@ -253,7 +254,7 @@ function addRestrictivePractice(state: Draft, anchor: Instant) {
     if (unit.lockedBeds === 0 || unit.restrictivePractice) return unit;
     const index = secure++;
     if (index < 0) return unit;
-    const count = mayCarryAdverseExample(unit) ? 1 + (index % 2) : 0;
+    const count = mayCarryInventedIncident(unit) ? 1 + (index % 2) : 0;
     const incidents: WardIncident[] = Array.from({ length: count }, (_, n) => ({
       id: `RI-EX-${unit.id}-${n + 1}`,
       category: INCIDENTS[(index + n * 2) % INCIDENTS.length]!,
