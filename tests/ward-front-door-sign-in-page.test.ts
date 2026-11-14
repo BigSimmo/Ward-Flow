@@ -1,7 +1,9 @@
 import { isValidElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import SignInPage from "../src/app/sign-in/page";
+import SignInPage, { metadata } from "../src/app/sign-in/page";
+import { metadata as wardSignInMetadata } from "../src/app/ward-flow-sign-in/page";
+import { BRAND_DESCRIPTION, BRAND_NAME } from "../src/lib/brand";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -24,5 +26,13 @@ describe("the /sign-in page", () => {
     expect((page as { props: { mode: string; next: string } }).props).toMatchObject({ mode: "account" });
     const offsite = await SignInPage({ searchParams: Promise.resolve({ next: ["//elsewhere.test"] }) });
     expect((offsite as { props: { next: string } }).props.next).toBe("/ward-flow");
+  });
+
+  it("previews the product, not the sign-in step, when a link is shared (INV-A18-104)", () => {
+    for (const page of [metadata, wardSignInMetadata]) {
+      expect(page.title).toBe("Sign in — Ward Flow");
+      expect(page.openGraph).toMatchObject({ title: BRAND_NAME, description: BRAND_DESCRIPTION });
+      expect(page.twitter).toMatchObject({ title: BRAND_NAME, description: BRAND_DESCRIPTION });
+    }
   });
 });

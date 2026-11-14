@@ -571,7 +571,8 @@
   text-decoration: none;
 }
 
-.rowLink:hover {
+/* INV-CM: a ward this desk cannot open keeps the look but is plain text, so only a link underlines. */
+a.rowLink:hover {
   text-decoration: underline;
 }
 
