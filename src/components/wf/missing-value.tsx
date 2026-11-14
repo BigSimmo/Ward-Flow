@@ -58,8 +58,8 @@ const recordUnknownReason = createBoundedDiagnosticRecorder({
 
 /** Enum resilience per SPEC §7: an unrecognised reason renders `Unknown` and never throws. */
 function missingValuePhrase(reason: MissingValueReason): string {
-  const phrase = Object.hasOwn(PHRASES, reason) ? PHRASES[reason] : undefined;
-  if (typeof phrase === "string") return phrase;
+  const phrase = typeof reason === "string" && Object.hasOwn(PHRASES, reason) ? PHRASES[reason] : undefined;
+  if (typeof phrase === "string" && phrase !== "undefined") return phrase;
   const key = String(reason);
   recordUnknownReason(
     key,
@@ -75,7 +75,13 @@ export function MissingValue({ reason, density = "inline", className }: MissingV
       data-reason={reason}
       // --text-muted, never --decoration-soft: this is text carrying meaning, and
       // the decoration tier is asserted below the contrast threshold (Gate 1).
-      className={cn("text-[color:var(--text-muted)]", density === "cell" ? "text-xs" : "text-sm", className)}
+      // Cell density is grey (--wf-ink-3) and wraps: no nowrap, no ellipsis (R-STYLE-2).
+      className={cn(
+        density === "cell"
+          ? "text-xs text-[color:var(--wf-ink-3)] whitespace-normal break-words"
+          : "text-sm text-[color:var(--text-muted)]",
+        className,
+      )}
     >
       {missingValuePhrase(reason)}
     </span>

@@ -207,13 +207,13 @@
   --focus: var(--accent);
 
   /* The seven --t-* steps, and nothing in between (rule 4). Never below --t-0 in HTML. */
-  --t-0: 0.75rem; /* 12px — the floor */
-  --t-1: 0.8125rem; /* 13px */
-  --t-2: 0.84375rem; /* 13.5px */
-  --t-3: 0.875rem; /* 14px */
-  --t-4: 1rem; /* 16px */
-  --t-5: 1.25rem; /* 20px */
-  --t-6: 1.625rem; /* 26px */
+  --t-0: var(--wf-fs-12); /* 12px — the floor */
+  --t-1: var(--wf-fs-13); /* 13px */
+  --t-2: var(--wf-fs-14); /* was 13.5px; R-STYLE-1 moves it to the 14px step */
+  --t-3: var(--wf-fs-14); /* 14px */
+  --t-4: var(--wf-fs-16); /* 16px */
+  --t-5: var(--wf-fs-20); /* 20px */
+  --t-6: var(--wf-fs-28); /* was 26px; R-STYLE-1 moves it to the 28px step */
 
   --display: var(--font-geist-sans), "Segoe UI", system-ui, sans-serif;
   --body: var(--font-geist-sans), "Segoe UI", system-ui, sans-serif;

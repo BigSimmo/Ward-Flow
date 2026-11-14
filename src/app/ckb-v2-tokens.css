@@ -88,13 +88,13 @@
    *
    * Do not reintroduce per-step `-lh` / `-tr` orphans for xs–xl. Wiring those
    * would be type-scale adoption, not a companion-token restore. */
-  --text-xs: 0.75rem;
-  --text-sm: 0.8125rem;
-  --text-body: 0.9375rem;
-  --text-md: 1.0625rem;
-  --text-lg: 1.25rem;
-  --text-xl: 1.5rem;
-  --text-hero: clamp(1.75rem, 1.2rem + 2vw, 2.25rem);
+  --text-xs: var(--wf-fs-12);
+  --text-sm: var(--wf-fs-13);
+  --text-body: var(--wf-fs-15);
+  --text-md: var(--wf-fs-16);
+  --text-lg: var(--wf-fs-20);
+  --text-xl: var(--wf-fs-20);
+  --text-hero: var(--wf-fs-28);
   --text-hero--line-height: 1.12;
   --text-hero-tr: -0.022em;
 

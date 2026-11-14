@@ -39,7 +39,29 @@ export function SinceYouLookedFold({
 }) {
   const isPhone = useIsPhone();
   const [open, setOpen] = useState(false);
-  if (!isPhone || summary === null) return <>{children}</>;
+  if (summary === null) return <>{children}</>;
+  // R-STRUCT-36: the sheet sits in the same place in the tree on every layout, so turning a tablet
+  // or narrowing a window while it is open keeps it open (it is not unmounted with the row).
+  const sheet = (
+    <PhoneSheet
+      open={open}
+      onClose={() => setOpen(false)}
+      title={title}
+      description={sheetDescription}
+      primary={onCopy ? { label: "Copy as handover text", onAction: onCopy } : undefined}
+      data-testid="wf-since-sheet"
+    >
+      {sheetBody ?? children}
+    </PhoneSheet>
+  );
+  if (!isPhone) {
+    return (
+      <>
+        {children}
+        {open ? sheet : null}
+      </>
+    );
+  }
   return (
     <section id={id} className={className} aria-label={label}>
       <button
@@ -56,16 +78,7 @@ export function SinceYouLookedFold({
         </span>
         <ChevronDown className={styles.sinceRowChevron} size={16} aria-hidden="true" />
       </button>
-      <PhoneSheet
-        open={open}
-        onClose={() => setOpen(false)}
-        title={title}
-        description={sheetDescription}
-        primary={onCopy ? { label: "Copy as handover text", onAction: onCopy } : undefined}
-        data-testid="wf-since-sheet"
-      >
-        {sheetBody ?? children}
-      </PhoneSheet>
+      {sheet}
     </section>
   );
 }

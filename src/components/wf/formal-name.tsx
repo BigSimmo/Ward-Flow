@@ -13,7 +13,7 @@ export function FormalName({ name, className }: { name: string; className?: stri
   const cut = name.indexOf(", ");
   if (cut <= 0 || name.slice(cut + 2) === "") return <>{name}</>;
   return (
-    <span className={cx(styles.name, className)} data-formal-name="">
+    <span className={cx(styles.name, "wf-typed", className)} data-formal-name="">
       {name}
     </span>
   );
