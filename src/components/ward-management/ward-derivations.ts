@@ -27,10 +27,11 @@ import {
   formatElapsed,
   formatInstantWithDay,
   formatRemaining,
-  splitDuration,
   type Instant,
   isClockBreached,
+  isTimePassed,
   minutesUntil,
+  splitDuration,
 } from "@/components/ward-management/ward-clock";
 import {
   eligibility,
@@ -1020,7 +1021,7 @@ export function handoverSnapshot(movements: Movement[], units: Unit[], now: Inst
       return {
         movement,
         unit: destinationUnit(movement, units),
-        expired: !isCollected && pullExpiresAt <= now,
+        expired: !isCollected && isTimePassed(pullExpiresAt, now),
       };
     });
 

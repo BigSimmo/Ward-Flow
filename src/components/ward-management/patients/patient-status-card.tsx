@@ -29,6 +29,7 @@ import {
   formatSince,
   perthDayLabel,
   perthIsoDay,
+  type DueSoonThresholds,
 } from "@/components/ward-management/ward-clock";
 import { clock, dur } from "./patient-now-records";
 import { cadNumberLine } from "@/components/ward-management/ward-cad-number";
@@ -143,6 +144,8 @@ export interface PatientStatusContext {
   acceptedUnitName?: string;
   hasBedHold: boolean;
   now: number;
+  /** The Settings warnings, for the pull's running-out mark (audit L3, D-MCA (Josh, 14 Nov 2026)). */
+  thresholds?: DueSoonThresholds;
   dayZero: Date;
   onOpenPlacement: () => void;
   onClearance: (event: MouseEvent<HTMLButtonElement>) => void;
@@ -541,7 +544,7 @@ function statusFor(
   if (mode === "held" && movement) {
     // Audit A4-1: the one bed-hold rule (`ward-bed-hold.ts`). A lapsed hold is act now with
     // "Move or release" as the primary; under an hour left is the amber at-risk dot.
-    const hold = ctx.hasBedHold ? bedHold(movement.pullExpiresAt, now) : null;
+    const hold = ctx.hasBedHold ? bedHold(movement.pullExpiresAt, now, ctx.thresholds) : null;
     const lapsed = hold?.state === "lapsed";
     const bed: StatusCell = {
       key: "bed",

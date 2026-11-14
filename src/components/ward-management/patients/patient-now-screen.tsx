@@ -123,6 +123,7 @@ import {
   calendarDateOf,
   formatInstantWithDay,
   formatSince,
+  isTimePassed,
   perthClockTime,
   perthIsoDay,
 } from "@/components/ward-management/ward-clock";
@@ -424,7 +425,7 @@ export function PatientNowScreen({
     liveMovement.stage !== "arrived",
   );
   const pullExpiresAt = liveMovement?.pullExpiresAt;
-  const isHoldExpired = !hasArrivalPlan && pullExpiresAt !== undefined && now >= pullExpiresAt;
+  const isHoldExpired = !hasArrivalPlan && pullExpiresAt !== undefined && isTimePassed(pullExpiresAt, now);
   const uploadedForms = liveMovement?.uploadedForms ?? [];
 
   const targetMovement = liveMovement;
@@ -825,6 +826,7 @@ export function PatientNowScreen({
   const plannedBooking = bookedPlannedAdmissionFor(livePatient?.id, plannedAdmissions);
   const waitingForTriage = referralWaitingForTriage(livePatient?.id, referrals, triages);
   const statusContext: PatientStatusContext = {
+    thresholds,
     awolHoldReview,
     movement: liveMovement,
     admission: resolved.liveAdmission,

@@ -9,7 +9,7 @@ import {
   type OverrideReason,
 } from "@/components/ward-management/ward-change-reasons";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "@/components/ward-management/ward-flow-roles";
-import { dayOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
+import { dayOf, type Instant, isTimePassed, MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import {
   observationStaff,
@@ -1318,5 +1318,5 @@ export type PlannedAdmissionAuthorisationOverride = {
 
 /** Booked, and its expected arrival has passed without the arrival being recorded. */
 export function plannedAdmissionIsOverdue(planned: PlannedAdmission, now: Instant): boolean {
-  return planned.state === "booked" && Number.isFinite(now) && planned.expectedArrivalAt < now;
+  return planned.state === "booked" && isTimePassed(planned.expectedArrivalAt, now);
 }

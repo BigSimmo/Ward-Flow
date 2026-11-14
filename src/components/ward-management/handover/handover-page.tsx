@@ -29,7 +29,11 @@ import { accessIsWholeNetwork, unitInScope } from "@/components/ward-management/
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { useWardPartialDisplay, useWardPartialDisplayHost } from "@/components/ward-management/ward-partial-view";
-import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useWardFlowClock,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
 import {
   Button,
   Card,
@@ -366,7 +370,11 @@ export function HandoverPage() {
     },
     [wardOf],
   );
-  const ctx: ColumnContext = useMemo(() => ({ now, cutoff, readyBeds, dayZero }), [now, cutoff, readyBeds, dayZero]);
+  const thresholds = useDueSoonThresholds();
+  const ctx: ColumnContext = useMemo(
+    () => ({ now, cutoff, readyBeds, dayZero, thresholds }),
+    [now, cutoff, readyBeds, dayZero, thresholds],
+  );
 
   /* highlight, never hide */
   const anyHighlight = pill !== null || chips.size > 0;

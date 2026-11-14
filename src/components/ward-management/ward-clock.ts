@@ -299,18 +299,28 @@ export function dueSoonThresholdsOf(
 }
 
 /**
+ * THE ONE "HAS THIS TIME PASSED?" RULE (audit L2, D-MCA (Josh, 14 Nov 2026)). A time has passed once
+ * the board clock is strictly after its minute: at the due minute itself it is still due, and from
+ * the next minute it is passed. A legal breach, a pull's time limit, a Pull now answer time, a
+ * decision target, a planned time, a closed bed's review and an observation review all read this,
+ * so no two screens disagree about the same minute. A time that is not a real number never passes.
+ */
+export function isTimePassed(due: Instant | null | undefined, now: Instant): boolean {
+  return typeof due === "number" && Number.isFinite(due) && Number.isFinite(now) && now > due;
+}
+
+/**
  * `clockState(due, now, thresholds) === "breached"` without the warnings, which never decide a breach:
  * past the recorded due time, and a due time that is a real number.
  */
 export function isClockBreached(due: Instant, now: Instant): boolean {
-  const remaining = minutesUntil(due, now);
-  return Number.isFinite(remaining) && remaining < 0;
+  return isTimePassed(due, now);
 }
 
 export function clockState(due: Instant, now: Instant, thresholds: DueSoonThresholds): ClockState {
   const remaining = minutesUntil(due, now);
   if (!Number.isFinite(remaining)) return "due";
-  if (remaining < 0) return "breached";
+  if (isTimePassed(due, now)) return "breached";
   // The 1-hour and 3-hour warnings are Josh's defaults, not legal limits (26 Sept 2026 card).
   // Inclusive at each threshold (audit A3-4, 13 Oct 2026): exactly 60m left is act now on every
   // page, matching the Delays board's `dueTone`/`isDueSoon`, so Forms and Delays never disagree.

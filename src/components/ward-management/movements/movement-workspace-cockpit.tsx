@@ -58,6 +58,7 @@ import {
   formatRemaining,
   type Instant,
   isClockBreached,
+  isTimePassed,
   minutesUntil,
   splitDuration,
 } from "@/components/ward-management/ward-clock";
@@ -243,7 +244,7 @@ export function MovementWorkspaceCockpit({
   // Audit H4 (14 Nov 2026): the typed expiry still in force, never an ended form's old time.
   const deadline = currentLegalDueAt(patient);
   const deadlineBreached = open && deadline !== undefined && isClockBreached(deadline, now);
-  const pullExpired = open && patient.pullExpiresAt !== undefined && patient.pullExpiresAt <= now;
+  const pullExpired = open && isTimePassed(patient.pullExpiresAt, now);
 
   const { flagged, withheldFlags } = urgentFigureFlags({
     deadlineBreached,
@@ -270,7 +271,7 @@ export function MovementWorkspaceCockpit({
 
   const timeline: Array<{ at: Instant; label: string }> = [
     { at: patient.openedAt, label: "Movement opened" },
-    ...(patient.pullExpiresAt !== undefined && patient.pullExpiresAt <= now
+    ...(patient.pullExpiresAt !== undefined && isTimePassed(patient.pullExpiresAt, now)
       ? [
           {
             at: patient.pullExpiresAt,
@@ -726,7 +727,7 @@ export function MovementWorkspaceCockpit({
                 label="Pull time limit"
                 value={formatRemaining(minutesUntil(patient.pullExpiresAt, now))}
                 flagged={flagged.has("pull")}
-                sub={`${patient.pullExpiresAt <= now ? "Ran out" : "Runs out"} ${formatInstantWithDay(patient.pullExpiresAt, now)}`}
+                sub={`${isTimePassed(patient.pullExpiresAt, now) ? "Ran out" : "Runs out"} ${formatInstantWithDay(patient.pullExpiresAt, now)}`}
               />
             ) : null}
           </WardFigureStrip>

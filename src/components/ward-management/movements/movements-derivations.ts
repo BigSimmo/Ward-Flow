@@ -15,6 +15,7 @@ import {
   type DueSoonThresholds,
   formatInstantWithDay,
   type Instant,
+  isTimePassed,
 } from "@/components/ward-management/ward-clock";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -532,7 +533,7 @@ const BED_PULL_EXPIRED_TITLE = "Pull expired, bed still pulled";
 
 function horizonEventType(movement: Movement, now: Instant): MovementHorizonEventType {
   if (movement.stage === "moving") return "transit";
-  if (movement.stage === "pulled" && movement.pullExpiresAt !== undefined && movement.pullExpiresAt <= now) {
+  if (movement.stage === "pulled" && isTimePassed(movement.pullExpiresAt, now)) {
     return "delay";
   }
   return "admit";

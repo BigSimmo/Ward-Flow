@@ -1,4 +1,9 @@
-import { type DueSoonThresholds, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  type DueSoonThresholds,
+  formatInstantWithDay,
+  type Instant,
+  isTimePassed,
+} from "@/components/ward-management/ward-clock";
 import {
   currentLegalDueAt,
   currentLegalPosition,
@@ -386,7 +391,7 @@ export function attentionItems({
     });
   }
 
-  if (movement.pullExpiresAt !== undefined && movement.pullExpiresAt <= now) {
+  if (movement.pullExpiresAt !== undefined && isTimePassed(movement.pullExpiresAt, now)) {
     items.push({
       key: "pull",
       who: destination ? `Bed pulled at ${destination.name}` : "Bed pulled for this patient",

@@ -19,7 +19,7 @@ import {
   cx,
 } from "@/components/wf";
 import type { Instant } from "@/components/ward-management/ward-clock";
-import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, isTimePassed } from "@/components/ward-management/ward-clock";
 import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -766,7 +766,8 @@ export function ReturnPlanActions({
 
 /**
  * Out of area "Flag early" (Josh, 3 Nov 2026): a secondary action in the pinned foot. Once flagged it
- * says when, with Undo while the engine still allows it (`UNDO_WINDOW_MINUTES`).
+ * says when, with Undo while the engine still allows it (`UNDO_WINDOW_MINUTES`): the engine accepts an
+ * undo at exactly five minutes, so the button stays until the window has passed (audit L2).
  */
 function FlagEarly({
   flag,
@@ -788,7 +789,7 @@ function FlagEarly({
           <Icon icon={Flag} size={16} />
           Flagged early {formatInstantWithDay(flag.at, now)}
         </span>
-        {onUndo && now - flag.at < UNDO_WINDOW_MINUTES ? (
+        {onUndo && !isTimePassed(flag.at + UNDO_WINDOW_MINUTES, now) ? (
           <Button variant="ghost" data-testid="ward-out-of-area-flag-early-undo" onClick={onUndo}>
             Undo
           </Button>

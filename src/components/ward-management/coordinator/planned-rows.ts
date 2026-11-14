@@ -45,8 +45,11 @@ export function useTomorrowOutlook(now: Instant): TomorrowOutlook {
   const { admissions, plannedAdmissions, units } = useWardFlowSelect("admissions", "plannedAdmissions", "units");
   const nameOf = usePatientOf();
   const endOfDay = (dayOf(now) + 1) * MINUTES_PER_DAY;
+  // Audit M3: a night shift's Later today runs past midnight, so tomorrow starts after its end.
+  const shiftEnd = shiftEndInstant(now);
   return useMemo(
-    () => tomorrowOutlook({ admissions, plannedAdmissions: plannedAdmissions ?? [], units, nameOf, endOfDay }),
-    [admissions, plannedAdmissions, units, nameOf, endOfDay],
+    () =>
+      tomorrowOutlook({ admissions, plannedAdmissions: plannedAdmissions ?? [], units, nameOf, endOfDay, shiftEnd }),
+    [admissions, plannedAdmissions, units, nameOf, endOfDay, shiftEnd],
   );
 }

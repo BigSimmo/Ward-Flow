@@ -25,9 +25,13 @@ describe("bedHold: the one rule", () => {
       label: "Pull expired 10m ago",
       nextStep: "Move or release",
     });
-    expect(bedHold(NOW, NOW)?.state).toBe("lapsed");
+    // Audit L2 and L3, D-MCA (Josh, 14 Nov 2026): lapsed once past its minute, and running out at the
+    // Settings act-now warning inclusive, as `clockState` reads a legal form.
+    expect(bedHold(NOW, NOW)?.state).toBe("at-risk");
+    expect(bedHold(NOW - 1, NOW)?.state).toBe("lapsed");
     expect(bedHold(NOW + 27, NOW)).toMatchObject({ state: "at-risk", label: "Pull 27m left", short: "27m left" });
-    expect(bedHold(NOW + BED_HOLD_AT_RISK_MINUTES, NOW)?.state).toBe("held");
+    expect(bedHold(NOW + BED_HOLD_AT_RISK_MINUTES, NOW)?.state).toBe("at-risk");
+    expect(bedHold(NOW + BED_HOLD_AT_RISK_MINUTES + 1, NOW)?.state).toBe("held");
     expect(bedHold(NOW + 130, NOW)).toMatchObject({ state: "held", label: "Pull 2h 10m left" });
   });
 });

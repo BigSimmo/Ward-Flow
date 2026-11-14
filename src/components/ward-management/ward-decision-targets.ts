@@ -1,6 +1,6 @@
 import { Timer } from "lucide-react";
 
-import { splitDuration, type Instant } from "./ward-clock";
+import { type Instant, isTimePassed, splitDuration } from "./ward-clock";
 import type { WardConfiguration } from "./ward-configuration";
 import type { InboxItem } from "./ward-derivations";
 import { transportNeedState } from "./ward-derivations";
@@ -138,7 +138,7 @@ export function decisionTargetReading(
   const targetMinutes = configuration[definition.configKey];
   const dueAt = pending.startedAt + targetMinutes;
   const minutesLeft = dueAt - now;
-  const overdue = minutesLeft < 0;
+  const overdue = isTimePassed(dueAt, now);
   return {
     step: pending.step,
     label: definition.label,

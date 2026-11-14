@@ -1,4 +1,4 @@
-import type { Instant } from "@/components/ward-management/ward-clock";
+import { isTimePassed, type Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import type { Movement, ReferralDeclineReason } from "@/components/ward-management/ward-model";
 
@@ -356,7 +356,8 @@ export function pullNowStillWaiting(alert: BroadcastAlert, movement: Movement | 
 
 export function isPullNowOverdue(alert: BroadcastAlert, now: Instant): boolean {
   if (broadcastKind(alert) !== "pull_now" || !isAlertActive(alert, now) || alert.answerBy === undefined) return false;
-  if (now < alert.answerBy) return false;
+  // The one clock rule (audit L2, D-MCA (Josh, 14 Nov 2026)): overdue once strictly after its minute.
+  if (!isTimePassed(alert.answerBy, now)) return false;
   const answered = latestReplies(alert);
   return !(alert.targetUnitIds ?? []).some((unitId) => answered.has(unitId));
 }

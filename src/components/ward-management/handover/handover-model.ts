@@ -13,11 +13,13 @@ import { deliveredAwaitingWard, movementStatusLabel, stageCopy } from "@/compone
 import { bedHold, bedHoldLapsed, PULL_NO_LIMIT_RECORDED } from "@/components/ward-management/ward-bed-hold";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import {
+  type DueSoonThresholds,
   formatInstantWithDay,
   type ClockZoneLabel,
-  MINUTES_PER_DAY,
-  minuteOfDay,
   type Instant,
+  isTimePassed,
+  minuteOfDay,
+  MINUTES_PER_DAY,
 } from "@/components/ward-management/ward-clock";
 import { typedClock } from "@/components/ward-management/ward-legal-time-as-typed";
 import { isStoppedTransportAwaitingRelease, transportLeg } from "@/components/ward-management/ward-derivations";
@@ -383,7 +385,7 @@ export function pullHasLapsed(row: HandoverRow, now: Instant): boolean {
 
 export function isActNow(row: HandoverRow, now: Instant): boolean {
   if (row.actNow !== undefined) return row.actNow;
-  return pullHasLapsed(row, now) || (row.formDueAt !== undefined && row.formDueAt <= now);
+  return pullHasLapsed(row, now) || isTimePassed(row.formDueAt, now);
 }
 
 /** Flagged urgent by a person and not already act now: the sheet's own line beneath Act now. */
@@ -494,6 +496,7 @@ export function dueParts(
   row: HandoverRow,
   now: Instant,
   dayZero?: Date,
+  thresholds?: DueSoonThresholds,
 ): { when: string; what: string; atRisk?: boolean } | null {
   const collected = isCollected(row);
   if (
@@ -501,9 +504,10 @@ export function dueParts(
     row.pullExpiresAt !== undefined &&
     (row.formDueAt === undefined || row.pullExpiresAt <= row.formDueAt)
   ) {
-    // Audit A4-3: the one bed-hold rule. Under an hour left carries the amber at-risk dot (not Act now).
+    // Audit A4-3: the one bed-hold rule. The Settings act-now warning or less left carries the amber
+    // at-risk dot (not Act now); audit L3, D-MCA (Josh, 14 Nov 2026).
     // A pull time that is not a real instant (NaN, Infinity) yields no hold; fall through to the form.
-    const hold = bedHold(row.pullExpiresAt, now);
+    const hold = bedHold(row.pullExpiresAt, now, thresholds);
     if (hold !== null) {
       if (hold.state === "lapsed") {
         return { when: durMinutes(hold.minutes), what: "Pull expired" };
@@ -534,7 +538,7 @@ export function dueLong(row: HandoverRow, now: Instant, dayZero?: Date): string 
   }
   if (row.formDueAt !== undefined) {
     parts.push(
-      row.formDueAt <= now
+      isTimePassed(row.formDueAt, now)
         ? `Form ${row.formCode} time passed`
         : `Form ${row.formCode} due ${typedClock(row.formDueAt, now, dayZero)} as typed`,
     );
@@ -590,7 +594,7 @@ export function nextStep(
   } else {
     text = row.escalated ? "Ask a ward, escalated to state desk" : "Ask a ward";
   }
-  if (row.formDueAt !== undefined && row.formDueAt <= now) text = `Form ${row.formCode} time passed. ${text}`;
+  if (isTimePassed(row.formDueAt, now)) text = `Form ${row.formCode} time passed. ${text}`;
   return { text, tone };
 }
 
@@ -623,7 +627,7 @@ export function situationState(row: HandoverRow, now: Instant): string {
   if (row.stage === "pulled") {
     // D-187 (F-46): a pull with no limit recorded says so.
     if (row.pullExpiresAt === undefined) return `Bed pulled at ${to} · ${PULL_NO_LIMIT_RECORDED}`;
-    return row.pullExpiresAt <= now
+    return isTimePassed(row.pullExpiresAt, now)
       ? `Bed pull at ${to} expired ${durMinutes(now - row.pullExpiresAt)} ago`
       : `Bed pulled at ${to} until ${formatInstantWithDay(row.pullExpiresAt, now)}`;
   }
