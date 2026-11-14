@@ -211,8 +211,8 @@ describe("every time box reads a typed clock time by the same rule", () => {
 
   it("reads up to three digits on the patient page as minutes from now", () => {
     expect(instantFromEtaText("45", now)).toBe(now + 45);
-    expect(instantFromEtaText("~45m", now)).toBe(now + 45);
-    expect(instantFromEtaText("+120 min", now)).toBe(now + 120);
+    expect(instantFromEtaText("~45 min", now)).toBe(now + 45);
+    expect(instantFromEtaText("+120m", now)).toBe(now + 120);
   });
 
   it("reads four digits on the patient page as a clock time, not 930 minutes", () => {

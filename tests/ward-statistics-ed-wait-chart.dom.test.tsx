@@ -16,7 +16,7 @@ import { assertStatisticsPresentation } from "./helpers/statistics-presentation"
 // so every assertion below reads ONE testid's own `.textContent` and never the page as a whole.
 //
 // ⚠️ **`splitDuration` NEVER SPELLS OUT "minutes", AND SWITCHES TO DAYS AT 24 HOURS.** A wait of
-// 1500 minutes (25 hours) renders "1d 1h", not "25h 00m" — this file computes its expected strings
+// 1500 minutes (25 hours) renders "1 d 1 h", not "25 h 00 min" — this file computes its expected strings
 // the same way `splitDuration` itself would (days once `totalMinutes >= 1440`, hours+minutes
 // below that), so a regression that prints raw minutes (the exact defect this estate has already
 // shipped and fixed once, on a sibling screen) fails a real assertion rather than a guess.
@@ -87,9 +87,9 @@ function renderEd(movements: Movement[]) {
 describe("the elapsed-wait chart and its named longest waits", () => {
   // 30 minutes: under 24h, no threshold breached.
   const under = movement({ id: "WF-under", originEdId: DEPARTMENT.id, openedAt: NOW_ANCHOR - 30 });
-  // 1500 minutes = 25h: past 24h, not past 48h. splitDuration(1500) === "1d 1h".
+  // 1500 minutes = 25h: past 24h, not past 48h. splitDuration(1500) === "1 d 1 h".
   const past24 = movement({ id: "WF-past24", originEdId: DEPARTMENT.id, openedAt: NOW_ANCHOR - 1500 });
-  // 3000 minutes = 50h: past both. splitDuration(3000) === "2d 2h", and this is the longest wait.
+  // 3000 minutes = 50h: past both. splitDuration(3000) === "2 d 2 h", and this is the longest wait.
   const past48 = movement({ id: "WF-past48", originEdId: DEPARTMENT.id, openedAt: NOW_ANCHOR - 3000 });
   // A different department entirely, waiting far longer than everyone above — must never be
   // attributed to DEPARTMENT's figures.
@@ -116,7 +116,7 @@ describe("the elapsed-wait chart and its named longest waits", () => {
     expect(longest).toMatch(/tier [123] · /u);
     expect(longest).not.toMatch(/WF-/u);
     expect(longest).not.toContain("Name not recorded");
-    expect(longest).toContain("2d 2h");
+    expect(longest).toContain("2 d 2 h");
     // The regression this whole file exists to stop: a wait this long printed as a bare number of
     // minutes on a sibling screen while every other screen printed hours and minutes.
     expect(longest).not.toMatch(/\bminutes\b/i);
@@ -151,9 +151,9 @@ describe("the elapsed-wait chart and its named longest waits", () => {
     expect(rowPast24.getAttribute("data-level")).toBe("stalled");
     expect(rowPast48.getAttribute("data-level")).toBe("urgent");
 
-    expect(rowUnder.textContent).toContain("30m");
-    expect(rowPast24.textContent).toContain("1d 1h");
-    expect(rowPast48.textContent).toContain("2d 2h");
+    expect(rowUnder.textContent).toContain("30 min");
+    expect(rowPast24.textContent).toContain("1 d 1 h");
+    expect(rowPast48.textContent).toContain("2 d 2 h");
     // AD- numbers only on Statistics (Owner, 13 Oct 2026) and never a WF- id (D-39): no name, no UMRN.
     // UX audit 21 Oct 2026: the row names the recorded urgency tier, not "Not yet admitted" on every row.
     expect(rowPast48.textContent).toMatch(/Tier [123] · /u);

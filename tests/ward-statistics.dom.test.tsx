@@ -297,14 +297,14 @@ describe("pull to arrival — a real figure, computed from the record", () => {
       bedReleases: [],
     });
 
-    expect(screen.getByTestId("ward-statistics-arrival-average").textContent).toBe("4h 00m");
+    expect(screen.getByTestId("ward-statistics-arrival-average").textContent).toBe("4 h 00 min");
     expect(screen.getByTestId("ward-statistics-arrival-measured-count").textContent).toBe("2");
 
     // Asserted per END, not as two substrings anywhere in the sentence. An adversarial check
     // swapped shortest and longest and the old `toContain` pair passed both ways — and the seeded
     // world has no spread, so the swap would not have shown in the app either.
-    expect(screen.getByTestId("ward-statistics-arrival-shortest").textContent).toBe("2h 00m");
-    expect(screen.getByTestId("ward-statistics-arrival-longest").textContent).toBe("6h 00m");
+    expect(screen.getByTestId("ward-statistics-arrival-shortest").textContent).toBe("2 h 00 min");
+    expect(screen.getByTestId("ward-statistics-arrival-longest").textContent).toBe("6 h 00 min");
   });
 
   /**
@@ -333,7 +333,7 @@ describe("pull to arrival — a real figure, computed from the record", () => {
     });
 
     // The average is the single completed gap and nothing else...
-    expect(screen.getByTestId("ward-statistics-arrival-average").textContent).toBe("2h 00m");
+    expect(screen.getByTestId("ward-statistics-arrival-average").textContent).toBe("2 h 00 min");
     // ...and the two people still travelling are named on the page rather than silently excluded.
     expect(screen.getByTestId("ward-statistics-arrival-awaiting-count").textContent).toBe("2");
   });
@@ -368,8 +368,8 @@ describe("a constant gap is identified without an inferred cause, and only while
     });
 
     // The figure still renders in full — this is not an empty state, and the ends now differ...
-    expect(screen.getByTestId("ward-statistics-arrival-shortest").textContent).toBe("2h 00m");
-    expect(screen.getByTestId("ward-statistics-arrival-longest").textContent).toBe("6h 00m");
+    expect(screen.getByTestId("ward-statistics-arrival-shortest").textContent).toBe("2 h 00 min");
+    expect(screen.getByTestId("ward-statistics-arrival-longest").textContent).toBe("6 h 00 min");
     // ...so the constant-gap explanation must be gone from the page entirely, not merely reworded.
     expect(screen.queryByTestId("ward-statistics-arrival-constant-gap")).toBeNull();
   });
@@ -403,10 +403,10 @@ describe("a constant gap is identified without an inferred cause, and only while
     });
 
     // The figure renders, the population is one, and the ends do coincide...
-    expect(screen.getByTestId("ward-statistics-arrival-average").textContent).toBe("2h 00m");
+    expect(screen.getByTestId("ward-statistics-arrival-average").textContent).toBe("2 h 00 min");
     expect(screen.getByTestId("ward-statistics-arrival-measured-count").textContent).toBe("1");
-    expect(screen.getByTestId("ward-statistics-arrival-shortest").textContent).toBe("2h 00m");
-    expect(screen.getByTestId("ward-statistics-arrival-longest").textContent).toBe("2h 00m");
+    expect(screen.getByTestId("ward-statistics-arrival-shortest").textContent).toBe("2 h 00 min");
+    expect(screen.getByTestId("ward-statistics-arrival-longest").textContent).toBe("2 h 00 min");
     // ...and the paragraph must still stay away, because coincidence of one value with itself is
     // not the constancy it describes.
     expect(screen.queryByTestId("ward-statistics-arrival-constant-gap")).toBeNull();

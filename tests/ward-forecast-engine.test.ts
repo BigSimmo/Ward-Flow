@@ -298,10 +298,10 @@ describe("brief and alerts", () => {
   });
 
   // H-0361: a target that is not a whole number of hours is stated as Settings gives it.
-  it("states a 4h 30m access target as it is set, never rounded to whole hours", () => {
+  it("states a 4 h 30 min access target as it is set, never rounded to whole hours", () => {
     const halfHour = edAccessRisk(wardMovements, units, bedReleases, wardAdmissions, now, 4 * 60 + 30, []);
     const ed = forecastBrief(tomorrow, levers, halfHour, (id) => `ED ${id}`).find((line) => line.label === "ED waits")!;
-    expect(ed.text).toContain("4h 30m access target");
+    expect(ed.text).toContain("4 h 30 min access target");
     expect(ed.text).not.toMatch(/\b[45] hours\b/);
     const whole = forecastBrief(tomorrow, levers, risk, (id) => `ED ${id}`).find((line) => line.label === "ED waits")!;
     expect(whole.text).toContain("24 hour access target");

@@ -83,7 +83,7 @@ describe("Movements row legal line, as typed", () => {
     const line = renderRow(withForm({ code: "3B", kind: "detention", dueAt: NOW_ANCHOR - 30 }));
     expect(line.textContent).toMatch(/^ended \S+ · passed/u);
     expect(line.firstElementChild).toHaveAttribute("data-wf-glyph", "danger");
-    expect(line.textContent).not.toContain("30m");
+    expect(line.textContent).not.toContain("30 min");
   });
 
   it("shows no glyph for a far typed time, and says when no expiry is recorded", () => {

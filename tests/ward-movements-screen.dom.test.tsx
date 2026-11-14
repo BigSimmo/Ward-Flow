@@ -496,7 +496,7 @@ describe("the Movements screen", () => {
  * 🔴 **A CLOSED MOVEMENT MUST NOT READ AS A PERSON STILL WAITING. Found live on this screen after
  * the fold, 2026-09-05, with every gate green.**
  *
- * `WF-008` rendered under "Accepted, awaiting bed" showing "2h 30m in journey" and climbing, while
+ * `WF-008` rendered under "Accepted, awaiting bed" showing "2 h 30 min in journey" and climbing, while
  * its record carried `closure.outcome: "did_not_proceed"` twenty minutes earlier with the reason
  * *"Patient self-discharged from ED before transport was arranged"*. **Nothing on the page said
  * so** — the rendered DOM contained no "closed", no "did not proceed", no "self-discharged". The
@@ -579,8 +579,8 @@ describe("the movements board never shows a closed movement as a person still wa
           `a check that cannot fail.`,
       ).not.toBe(runningMinutes);
 
-      const shown = /(?:(\d+)h)?\s*(?:(\d+)m)/u.exec(row.textContent ?? "");
-      expect(shown, `no duration of the form "2h 10m" found on ${movement.id}'s row`).not.toBeNull();
+      const shown = /(?:(\d+) h)?\s*(?:(\d+) min)/u.exec(row.textContent ?? "");
+      expect(shown, `no duration of the form "2 h 10 min" found on ${movement.id}'s row`).not.toBeNull();
       const shownMinutes = Number(shown![1] ?? 0) * 60 + Number(shown![2]);
 
       expect(

@@ -77,7 +77,7 @@ describe("waits past 24 hours read neutral (T5)", () => {
     for (const row of long) {
       expect(row.querySelector("svg")).toBeNull();
       // The time still says it in words: past 24 hours it reads in days.
-      expect(row).toHaveTextContent(/\d+d/u);
+      expect(row).toHaveTextContent(/\d+ d/u);
     }
   });
 

@@ -789,7 +789,7 @@ describe("the hub's two lists", () => {
         .map((movement) => `${splitDuration(Math.max(NOW_ANCHOR - movement.acceptedAt!, 0))} since accepted`),
     );
     expect(
-      text.replace(/(\d+\s*[hmd]\s*)+since accepted/gu, ""),
+      text.replace(/(\d+\s*(?:min|[hd])\s*)+since accepted/gu, ""),
       "the outbox renders an elapsed figure from an instant it does not hold",
     ).not.toMatch(/\b\d+\s*[hmd]\b/);
     expect(text, 'the outbox renders a "time since" figure').not.toMatch(/\bago\b/i);
@@ -822,7 +822,7 @@ describe("the hub's two lists", () => {
        * its worst member. Tolerance is bought by listing more FULL spellings, never by listing a
        * fragment of one.
        */
-      const sinceAccepted = /((?:\d+\s*[hmd]\s*)+since accepted)/u.exec(row.textContent ?? "")?.[1]?.trim();
+      const sinceAccepted = /((?:\d+\s*(?:min|[hd])\s*)+since accepted)/u.exec(row.textContent ?? "")?.[1]?.trim();
       if (sinceAccepted !== undefined) {
         expect(acceptedFigures, `outbox row ${index + 1}'s figure is not counted from a recorded acceptedAt`).toContain(
           sinceAccepted,
@@ -1524,22 +1524,22 @@ describe("the words the hub puts on the two clocks", () => {
     const stopped = edReferralClockLines({ sinceReferral: 180, sinceReferralRunning: false, inDepartment: 120 });
 
     expect(running.referral.term).toBe("Since referral");
-    expect(running.referral.value).toBe("20m waiting");
+    expect(running.referral.value).toBe("20 min waiting");
     expect(stopped.referral.term).toBe("Referral to triage");
     // ⚠️ Named assertion first — after the exact `.toBe` it could never fire in either
     // direction, so the sentence about a finished span still reading as a live wait was
     // unreachable.
     expect(stopped.referral.value, "a span that ended reads as a wait still being served").not.toContain("waiting");
-    expect(stopped.referral.value).toBe("3h 00m, stopped at triage");
+    expect(stopped.referral.value).toBe("3 h 00 min, stopped at triage");
   });
 
   it("labels the department clock as running from triage, and never as an arrival", () => {
     const lines = edReferralClockLines({ sinceReferral: 20, sinceReferralRunning: true, inDepartment: 185 });
 
     expect(lines.department.term).toBe("In department");
-    // `splitDuration`, never hours hand-rolled from minutes — the defect that kept `25h 30m` alive
+    // `splitDuration`, never hours hand-rolled from minutes — the defect that kept `25 h 30 min` alive
     // on eleven surfaces was two screens each doing that conversion themselves.
-    expect(lines.department.value).toBe("3h 05m since triage");
+    expect(lines.department.value).toBe("3 h 05 min since triage");
     for (const line of [lines.department, lines.referral]) {
       expect(`${line.term} ${line.value}`.toLowerCase(), "a clock line says arrived").not.toContain("arriv");
     }
@@ -1614,8 +1614,8 @@ describe("the words the hub puts on the two clocks", () => {
    *
    * `RF-009` was triaged 210 minutes BEFORE anyone referred it to psychiatry: somebody had been in
    * the department three and a half hours before mental health was called. **That gap is the entire
-   * argument for showing two clocks rather than one** — a referral-only clock would print "35m" and
-   * make this look like a fresh request, and a triage-only clock would print "4h 05m" and make
+   * argument for showing two clocks rather than one** — a referral-only clock would print "35 min" and
+   * make this look like a fresh request, and a triage-only clock would print "4 h 05 min" and make
    * mental health look slow for four hours it could not act on. Neither number alone is the truth,
    * and the truth is the distance between them.
    *
@@ -1677,13 +1677,13 @@ describe("the words the hub puts on the two clocks", () => {
     // was seeded. `splitDuration(245)` — never hours hand-rolled from minutes.
     const department = within(screen.getByTestId(`ward-ed-inbox-department-clock-${REFERRAL_ON_THE_HUB}`));
     expect(department.getByRole("term").textContent).toBe("In department");
-    expect(department.getByRole("definition").textContent).toBe("4h 05m since triage");
+    expect(department.getByRole("definition").textContent).toBe("4 h 05 min since triage");
 
     // ⚠️ The referral clock: running, and worded as a wait somebody is still serving — because it
     // is. Triage came BEFORE the referral here, so there is nothing left to stop this clock.
     const referral = within(screen.getByTestId(`ward-ed-inbox-referral-clock-${REFERRAL_ON_THE_HUB}`));
     expect(referral.getByRole("term").textContent).toBe("Since referral");
-    expect(referral.getByRole("definition").textContent).toBe("35m waiting");
+    expect(referral.getByRole("definition").textContent).toBe("35 min waiting");
 
     // ⚠️ And the department clock is never worded as an arrival. A patient arrives, waits, and is
     // triaged some time later; on a night like this one that gap is not small. `triagedAt` is the

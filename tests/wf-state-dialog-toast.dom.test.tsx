@@ -17,7 +17,7 @@ import {
 describe("StateLine", () => {
   it.each<[StateKind, string, "status" | "alert"]>([
     ["empty", "Nobody waiting", "status"],
-    ["stale", "Updated 12m ago", "status"],
+    ["stale", "Updated 12 min ago", "status"],
     ["error", "Transport did not load", "alert"],
     ["clear", "All clear", "status"],
   ])("renders %s as one line with role %s", (kind, title, role) => {

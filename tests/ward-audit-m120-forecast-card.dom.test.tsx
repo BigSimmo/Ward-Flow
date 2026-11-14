@@ -74,7 +74,7 @@ describe("M120: the ED May pass card names nobody and states its method", () => 
     const card = screen.getByTestId("forecast-ed-risk");
     expect(card).toHaveTextContent("May pass 24 hours in ED");
     expect(card).toHaveTextContent("Open adult");
-    expect(card).toHaveTextContent("in 1h 30m");
+    expect(card).toHaveTextContent("in 1 h 30 min");
     expect(card).not.toHaveTextContent("SYNTHETIC");
     expect(card).not.toHaveTextContent("S0000001");
     expect(card).not.toHaveTextContent("Find a bed");

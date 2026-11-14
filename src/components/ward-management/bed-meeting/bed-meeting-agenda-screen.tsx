@@ -1239,7 +1239,7 @@ function ActionForm({
           onChange={(next) => {
             if (!save.pending) setDueHours(next);
           }}
-          items={BED_MEETING_ACTION_DUE_HOURS.map((hours) => ({ id: String(hours), label: `${hours}h` }))}
+          items={BED_MEETING_ACTION_DUE_HOURS.map((hours) => ({ id: String(hours), label: `${hours} h` }))}
         />
       </div>
       <Button

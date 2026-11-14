@@ -149,7 +149,7 @@ describe("board time in the top bar (A7)", () => {
 
 describe("rail handover countdown", () => {
   it("shows the handover countdown from the pinned board time, and no clock of its own", () => {
-    // NOW_ANCHOR is 10:42. Day shift ends 15:00 → remaining 4h 18m.
+    // NOW_ANCHOR is 10:42. Day shift ends 15:00 → remaining 4 h 18 min.
     setRailOpenPreference(true);
     renderRail(NOW_ANCHOR);
 
@@ -158,12 +158,12 @@ describe("rail handover countdown", () => {
     expect(screen.queryByText("Live Time")).not.toBeInTheDocument();
 
     const countdown = screen.getByRole("link", { name: /Handover countdown:/i });
-    expect(countdown).toHaveAccessibleName(/4h 18m/);
-    expect(countdown).toHaveTextContent("4h 18m");
-    expect(countdown.textContent).not.toContain("3h 38m");
+    expect(countdown).toHaveAccessibleName(/4 h 18 min/);
+    expect(countdown).toHaveTextContent("4 h 18 min");
+    expect(countdown.textContent).not.toContain("3 h 38 min");
   });
 
-  it('shows "Handover Due" during the shift changeover window and never the literal "3h 38m"', () => {
+  it('shows "Handover Due" during the shift changeover window and never the literal "3 h 38 min"', () => {
     // 14:55 on the demonstration day (within 15m of 15:00 shift end) — not the computer's wall clock.
     setRailOpenPreference(true);
     renderRail(14 * 60 + 55);
@@ -172,8 +172,8 @@ describe("rail handover countdown", () => {
     expect(countdown).toHaveAccessibleName(/Handover Due/);
     // v6 rail (7 October 2026): the visible chip reads "due now"; the accessible name keeps "Handover Due".
     expect(countdown).toHaveTextContent("due now");
-    expect(countdown.textContent).not.toContain("3h 38m");
-    expect(document.body.textContent).not.toContain("3h 38m");
+    expect(countdown.textContent).not.toContain("3 h 38 min");
+    expect(document.body.textContent).not.toContain("3 h 38 min");
   });
 });
 

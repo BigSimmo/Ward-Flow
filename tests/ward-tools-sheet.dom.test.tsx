@@ -227,7 +227,7 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     fireEvent.click(screen.getByTestId("ward-tools-toggle-demo"));
     const panel = screen.getByTestId("ward-tools-demo-panel");
     expect(within(panel).getByRole("group", { name: "Demo scenario" })).toBeTruthy();
-    expect(within(panel).getByRole("button", { name: "+15 min" })).toBeTruthy();
+    expect(within(panel).getByRole("button", { name: "+15m" })).toBeTruthy();
     expect(within(panel).getByRole("button", { name: "Reset demo" })).toBeTruthy();
     // The one tap Demo reset (#298) lives in the same panel, behind its own flag.
     expect(within(panel).getByTestId("ward-demo-reset-winter-surge")).toBeTruthy();

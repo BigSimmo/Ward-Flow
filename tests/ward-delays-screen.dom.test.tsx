@@ -476,8 +476,8 @@ describe("the Delays screen", () => {
   /**
    * ⚠️ **THE SCREEN MUST NOT SAY "waiting waiting", AND NOTHING ELSE HERE WOULD CATCH IT.** Every
    * other assertion on this screen checks a duration is PRESENT. `elapsedLabel` already ends in the
-   * word, so composing it with a following word or a sub-label produced "7h 00m waiting waiting."
-   * and a clock reading "7h 00m waiting" above a label reading "in ED". Both shipped green.
+   * word, so composing it with a following word or a sub-label produced "7 h 00 min waiting waiting."
+   * and a clock reading "7 h 00 min waiting" above a label reading "in ED". Both shipped green.
    */
   it("never doubles the word a duration already carries", () => {
     const { container } = renderScreen();
@@ -638,7 +638,7 @@ describe("the Delays screen", () => {
 
   /**
    * 🔴 AUDIT RESTORE 6. The escalation board showed WHEN an escalation happened both ways —
-   * relative ("2h ago") and absolute (`formatInstantWithDay`) — and the merge kept only the
+   * relative ("2 h ago") and absolute (`formatInstantWithDay`) — and the merge kept only the
    * relative half, which loses the moment it actually happened.
    */
   it("restores the absolute escalation time alongside the relative age", () => {

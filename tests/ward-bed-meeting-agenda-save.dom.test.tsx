@@ -41,14 +41,14 @@ function chooseActionOwnerAndDue() {
   const form = screen.getByTestId("bed-meeting-action-form");
   fireEvent.click(within(form).getByRole("button", { name: "Book transport" }));
   fireEvent.click(within(form).getByRole("button", { name: "ED clinician" }));
-  fireEvent.click(within(form).getByRole("radio", { name: "4h" }));
+  fireEvent.click(within(form).getByRole("radio", { name: "4 h" }));
 }
 
 function expectChoicesKept() {
   const form = screen.getByTestId("bed-meeting-action-form");
   expect(within(form).getByRole("button", { name: "Book transport" })).toHaveAttribute("aria-pressed", "true");
   expect(within(form).getByRole("button", { name: "ED clinician" })).toHaveAttribute("aria-pressed", "true");
-  expect(within(form).getByRole("radio", { name: "4h" })).toHaveAttribute("aria-checked", "true");
+  expect(within(form).getByRole("radio", { name: "4 h" })).toHaveAttribute("aria-checked", "true");
 }
 
 afterEach(() => {

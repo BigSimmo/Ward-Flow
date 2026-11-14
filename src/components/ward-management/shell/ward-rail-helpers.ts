@@ -112,7 +112,7 @@ export function computeShiftProgress(nowInput?: number | Date): ShiftProgress {
   } else {
     const remainingHours = Math.floor(remainingTotal / 60);
     const remainingRemMins = remainingTotal % 60;
-    countdownStr = remainingHours > 0 ? `${remainingHours}h ${remainingRemMins}m` : `${remainingRemMins}m`;
+    countdownStr = remainingHours > 0 ? `${remainingHours} h ${remainingRemMins} min` : `${remainingRemMins} min`;
   }
 
   return {

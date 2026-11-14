@@ -65,7 +65,7 @@ function report(
     clock = 150,
   }: { paused?: boolean; togglePause?: (() => void) | null; clock?: number } = {},
 ) {
-  return render(
+  const rendered = render(
     <ExecutiveStatisticsProvider
       binding={binding}
       snapshot={data ? { binding, receivedAt: 100, expiresAt: 200, data } : null}
@@ -75,6 +75,9 @@ function report(
       <WeeklyReportScreen />
     </ExecutiveStatisticsProvider>,
   );
+  // R-FIGS-17: Weekly opens on this week so far; these checks read the last full week.
+  if (data && screen.queryByTestId("ward-weekly-week")) chooseWeek(0);
+  return rendered;
 }
 
 afterEach(() => {
@@ -112,27 +115,29 @@ describe("Weekly executive aggregate adoption", () => {
     (phone) => {
       installMatchMediaStub(phone);
       const data = structuredClone(base);
-      const selected = data.weeks.find((entry) => entry.week.offset === 0)!;
-      selected.report.edWaits.count = { kind: "small" };
-      selected.report.edWaits.longestMinutes = 240;
-      selected.report.declines.placement = { kind: "withheld" };
-      selected.report.declines.byReason = [{ reason: "Other / unknown reason", count: { kind: "withheld" } }];
-      selected.pilot.requestToArrival = {
-        median: 120,
-        p90: 240,
-        sampleSize: { kind: "exact", value: 8 },
-        population: { kind: "withheld" },
-      };
-      selected.pilot.requests.noWardAsked = { kind: "small" };
-      selected.pilot.requests.duplicates = { kind: "withheld" };
-      selected.pilot.holds.ranOut = { kind: "withheld" };
-      selected.pilot.transport.lateCollections = { kind: "small" };
-      selected.pilot.completeness = { complete: { kind: "small" }, arrivals: { kind: "exact", value: 8 } };
-      selected.pilot.bedFigures = { wards: 22, confirmedToday: 18, onTime: 16, deadlineMinutes: 570 };
+      // The phone has no week picker, so the opening week (this week so far) and the last full week read alike.
+      for (const selected of data.weeks.filter((entry) => entry.week.offset <= 0)) {
+        selected.report.edWaits.count = { kind: "small" };
+        selected.report.edWaits.longestMinutes = 240;
+        selected.report.declines.placement = { kind: "withheld" };
+        selected.report.declines.byReason = [{ reason: "Other / unknown reason", count: { kind: "withheld" } }];
+        selected.pilot.requestToArrival = {
+          median: 120,
+          p90: 240,
+          sampleSize: { kind: "exact", value: 8 },
+          population: { kind: "withheld" },
+        };
+        selected.pilot.requests.noWardAsked = { kind: "small" };
+        selected.pilot.requests.duplicates = { kind: "withheld" };
+        selected.pilot.holds.ranOut = { kind: "withheld" };
+        selected.pilot.transport.lateCollections = { kind: "small" };
+        selected.pilot.completeness = { complete: { kind: "small" }, arrivals: { kind: "exact", value: 8 } };
+        selected.pilot.bedFigures = { wards: 22, confirmedToday: 18, onTime: 16, deadlineMinutes: 570 };
+      }
       const print = vi.spyOn(window, "print").mockImplementation(() => {});
       report(data);
       expect(screen.getByTestId("ward-weekly-ed-count")).toHaveTextContent("fewer than 5");
-      expect(screen.getByTestId("ward-pilot-arrival-typical")).toHaveTextContent("2h");
+      expect(screen.getByTestId("ward-pilot-arrival-typical")).toHaveTextContent("2 h");
       expect(screen.getByText(/typical time from 8 arrivals; total held back \(small numbers\)/)).toBeInTheDocument();
       expect(screen.getByTestId("ward-pilot-bed-figures-on-time")).toHaveTextContent("16");
       expect(screen.getByText("of 22 wards")).toBeInTheDocument();

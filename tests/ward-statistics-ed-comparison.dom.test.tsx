@@ -245,7 +245,7 @@ describe("comparison across departments", () => {
     const detail = screen.getByTestId("ward-stat-ed-wait-table");
     expect(within(detail).getByRole("columnheader", { name: /^Time since opening$/u })).toBeInTheDocument();
     const travelling = within(detail).getByTestId("ward-stat-ed-wait-row-WF-column-transit");
-    expect(within(travelling).getAllByRole("cell").at(-1)).toHaveTextContent(/^2h 00m$/u);
+    expect(within(travelling).getAllByRole("cell").at(-1)).toHaveTextContent(/^2 h 00 min$/u);
   });
 
   it("has departments to compare at all", () => {

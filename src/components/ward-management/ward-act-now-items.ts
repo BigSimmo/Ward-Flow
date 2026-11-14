@@ -14,7 +14,7 @@
  */
 import { BellRing, CircleAlert, ClipboardList } from "lucide-react";
 
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import {
   BED_MEETING_AGENDA_HREF,
   bedMeetingActionLabel,
@@ -45,6 +45,16 @@ import {
   type InboxItem,
 } from "@/components/ward-management/ward-derivations";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { WARD_LEAVE_HREF } from "@/components/ward-management/ward-nav";
+import {
+  leaveBedReminderAt,
+  leaveBedReminderDue,
+  silentWardReminderWait,
+} from "@/components/ward-management/ward-timed-reminders";
+import {
+  SILENT_WARD_ANOTHER_WARD_SUGGESTION,
+  SILENT_WARD_SECOND_REMINDER_MINUTES,
+} from "@/components/ward-management/ward-operational-defaults";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
 import { partitionSnoozed } from "@/components/ward-management/ward-inbox-snooze";
 import { rememberLastCall } from "@/components/ward-management/ward-last-call";
@@ -119,6 +129,8 @@ function deriveTaskItems(source: TaskSource, now: Instant): InboxItem[] {
     ...duplicateBedRequestInboxItems(source),
     ...heldBedElsewhereInboxItems(source),
     ...bedMeetingActionInboxItems(source, now),
+    ...silentWardReminderInboxItems(source, now),
+    ...leaveBedReminderInboxItems(source, now),
   ];
 }
 
@@ -290,6 +302,63 @@ export function heldBedElsewhereInboxItems(
     href: referralBoardHref(held.referralId),
     since: held.since,
   }));
+}
+
+/**
+ * R-HOME-10: the 4 hour no-reply reminder as one amber row per referral (the longest-silent place),
+ * so it reaches the bell, Home and Alerts as well as the Waiting board. The wording is the board's
+ * (`noReplyLine`). Words only: nothing is moved or reallocated. It opens the referral on its board.
+ */
+export function silentWardReminderInboxItems(
+  source: Pick<TaskSource, "units" | "referrals" | "configuration">,
+  now: Instant,
+): InboxItem[] {
+  const rows: InboxItem[] = [];
+  for (const referral of source.referrals ?? []) {
+    const wait = silentWardReminderWait(referral, now, source.configuration, source.units);
+    if (!wait) continue;
+    rows.push({
+      id: `${INBOX_CATEGORIES.silent_ward_reminder.idPrefix}${referral.id}`,
+      kind: INBOX_CATEGORIES.silent_ward_reminder.kind,
+      tone: "warning",
+      icon: BellRing,
+      title: `No reply from ${wait.place} for ${splitDuration(wait.waitedMinutes)}`,
+      detail: `Asked ${formatInstantWithDay(wait.askedAt, now)}. ${SILENT_WARD_ANOTHER_WARD_SUGGESTION} Clears when they reply.`,
+      owner: DUPLICATE_OWNER,
+      movementId: "",
+      href: referralBoardHref(referral.id),
+      dueAt: wait.askedAt + SILENT_WARD_SECOND_REMINDER_MINUTES,
+      since: wait.askedAt + SILENT_WARD_SECOND_REMINDER_MINUTES,
+    });
+  }
+  return rows;
+}
+
+/**
+ * R-HOME-10: the 24 hour leave bed prompt as one amber row per held leave bed at or past the signed
+ * time, so it reaches the bell, Home and Alerts. A person still opens the bed; nothing opens itself.
+ * It opens the Leave board. Absence without leave has its own red row and is left out here.
+ */
+export function leaveBedReminderInboxItems(source: Pick<TaskSource, "units" | "leaveBeds">, now: Instant): InboxItem[] {
+  return (source.leaveBeds ?? [])
+    .filter((leaveBed) => leaveBedReminderDue(leaveBed, now))
+    .map((leaveBed) => {
+      const ward = source.units.find((unit) => unit.id === leaveBed.unitId)?.name ?? "the ward";
+      const at = leaveBedReminderAt(leaveBed);
+      return {
+        id: `${INBOX_CATEGORIES.leave_bed_reminder.idPrefix}${leaveBed.id}`,
+        kind: INBOX_CATEGORIES.leave_bed_reminder.kind,
+        tone: "warning" as const,
+        icon: ClipboardList,
+        title: `Leave bed away ${splitDuration(now - leaveBed.confirmedAt)}`,
+        detail: `${ward} bed held since ${formatInstantWithDay(leaveBed.confirmedAt, now)}. Open it if the person is not coming back soon. Clears when the bed is opened.`,
+        owner: "Nurse in charge",
+        movementId: "",
+        href: WARD_LEAVE_HREF,
+        dueAt: at,
+        since: at,
+      };
+    });
 }
 
 /** The owner words for each bed meeting owner, read back to roles by `inboxOwnerRoles`. */

@@ -22,7 +22,7 @@ describe("D4: the configured ED access target is said in whole hours, one way", 
     expect(targetHoursText(24 * 60)).toBe("24 hours");
     expect(targetHoursText(4 * 60)).toBe("4 hours");
     expect(targetHoursText(60)).toBe("1 hour");
-    expect(targetHoursText(4 * 60 + 30)).toBe("4h 30m");
+    expect(targetHoursText(4 * 60 + 30)).toBe("4 h 30 min");
   });
 
   it("names a 24-hour access target as 24 hours on Later today, never 1d", () => {

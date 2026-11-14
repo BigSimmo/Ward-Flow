@@ -50,7 +50,7 @@ describe("absent without leave tracker on the patient status card", () => {
   });
 
   it("says how long the person has been away, and warns about the held bed only past the set time", () => {
-    expect(absentFor(90).meta).toBe(`Since ${absentFor(90).meta.slice(6, 11)}, away 1h 30m, owner nurse in charge`);
+    expect(absentFor(90).meta).toBe(`Since ${absentFor(90).meta.slice(6, 11)}, away 1 h 30 min, owner nurse in charge`);
     expect(absentFor(HOLD - 1).meta).not.toContain("review the hold");
     const late = absentFor(HOLD + 10).meta;
     expect(late).toContain(`Bed on Ward A held over ${HOLD / 60}h, review the hold`);

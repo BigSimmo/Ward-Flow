@@ -118,7 +118,7 @@ describe("D-187 item 2: a Form 1A before the examination reads Referred for psyc
 });
 
 describe("D-189 item 1: Calder, Keira, Saoirse and Cyril stay as they run today", () => {
-  it("keeps Calder (WF-312): tier 1, 13 h 24 m in ED, referred on a 1A, no review, no blocker", () => {
+  it("keeps Calder (WF-312): tier 1, 13 h 24 min in ED, referred on a 1A, no review, no blocker", () => {
     const calder = movementById("WF-312")!;
     expect([calder.urgency, NOW_ANCHOR - calder.openedAt, calder.legalStatus, calder.legalForm?.code]).toEqual([
       1,

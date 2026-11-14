@@ -92,7 +92,7 @@ describe("wait factors", () => {
       (factor) => factor.label === FORM_TIMING_FACTOR_LABEL,
     );
     expect(breachFactor, "a past-due form must produce a Form due time factor").toBeDefined();
-    // D-93 (31 Oct 2026): the typed time in words, never "passed its deadline 30m ago".
+    // D-93 (31 Oct 2026): the typed time in words, never "passed its deadline 30 min ago".
     expect(breachFactor?.detail).toBe("Form 4A ended 10:12");
 
     // A +400 deadline is "clear" under `clockState` (>= 180 min remaining), so it gives no reason.
@@ -111,7 +111,7 @@ describe("wait factors", () => {
     const approachingFactor = waitFactors(approaching, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).find(
       (factor) => factor.label === FORM_TIMING_FACTOR_LABEL,
     );
-    expect(approachingFactor?.detail).toBe("Form 4A ends 12:12"); // D-93: never "due in 1h 30m"
+    expect(approachingFactor?.detail).toBe("Form 4A ends 12:12"); // D-93: never "due in 1 h 30 min"
   });
 
   it("gives no Form due time reason for a legal form with no dueAt", () => {

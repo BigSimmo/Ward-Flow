@@ -293,8 +293,8 @@ describe("the referral queue on Start a triage", () => {
       { from: "GP", count: 2 },
       { from: "Ambulance", count: 1 },
     ]);
-    expect(triageQueueGlance(QUEUE)).toBe("3 awaiting · oldest waiting 5h 00m · 1 asked B or sooner");
-    expect(triageQueueGlance([row("PT-4", "GP", 45, null)])).toBe("1 awaiting · oldest waiting 45m");
+    expect(triageQueueGlance(QUEUE)).toBe("3 awaiting · oldest waiting 5 h 00 min · 1 asked B or sooner");
+    expect(triageQueueGlance([row("PT-4", "GP", 45, null)])).toBe("1 awaiting · oldest waiting 45 min");
     expect(triageQueueGlance([])).toBe("Nothing awaiting triage");
   });
 

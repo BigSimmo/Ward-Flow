@@ -114,11 +114,11 @@ describe("psychiatry review tracker", () => {
       next: ["ask"],
     });
     const asked = psychReviewStage({ ...base, psychReview: { requestedAt: 550 } }, 675, 300);
-    expect(asked.line).toBe("Review asked 09:10 · 2h\u00a005m");
+    expect(asked.line).toBe("Review asked 09:10 · 2\u00a0h\u00a005\u00a0min");
     expect(asked.waitedMinutes).toBe(125);
     expect(asked.next).toEqual(["registrar", "consultant"]);
     const registrar = psychReviewStage({ ...base, psychReview: { requestedAt: 550, registrarSeenAt: 600 } }, 675, 300);
-    expect(registrar.line).toBe("Consultant pending · 2h\u00a005m");
+    expect(registrar.line).toBe("Consultant pending · 2\u00a0h\u00a005\u00a0min");
     expect(registrar.next).toEqual(["consultant"]);
   });
 });
@@ -204,10 +204,10 @@ describe("referral response timer", () => {
     };
     const inside = movementOfferNoReplyWaits(movement, 540, configuration, units);
     expect(inside).toHaveLength(1);
-    expect(noReplyTimeLabel(inside[0]!)).toBe("1h 20m left");
+    expect(noReplyTimeLabel(inside[0]!)).toBe("1 h 20 min left");
     const past = movementOfferNoReplyWaits(movement, 660, configuration, units);
     expect(past[0]!.pastLimit).toBe(true);
-    expect(noReplyTimeLabel(past[0]!)).toBe("Overdue 40m");
+    expect(noReplyTimeLabel(past[0]!)).toBe("Overdue 40 min");
     // A ward that declined is answered: no timer.
     const declined = { ...movement, declines: [{ unitId: "bty-adult-secure", at: 600 }] };
     expect(movementOfferNoReplyWaits(declined, 660, configuration, units)).toEqual([]);

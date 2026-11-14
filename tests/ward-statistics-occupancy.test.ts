@@ -15,7 +15,7 @@ describe("statistics occupancy", () => {
   });
 
   it("writes waits of a day or more as days and hours", () => {
-    expect(hoursText(13)).toBe("13h");
-    expect(hoursText(169)).toBe("7d 1h");
+    expect(hoursText(13)).toBe("13 h");
+    expect(hoursText(169)).toBe("7 d 1 h");
   });
 });

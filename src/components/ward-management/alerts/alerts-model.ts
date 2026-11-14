@@ -369,7 +369,7 @@ export function minutesText(minutes: number): string {
 
 /** The whole overdue duration the engine wrote into a row's detail, such as `1d 3h overdue`. */
 export function extractOverdue(detail: string): string | null {
-  const match = detail.match(/(\d+\s*d(?:\s*\d+\s*h)?\s*overdue|\d+\s*[hm]\s*(?:\d+\s*m)?\s*overdue)/i);
+  const match = detail.match(/(\d+\s*d(?:\s*\d+\s*h)?\s*overdue|\d+\s*(?:h|min|m)(?:\s*\d+\s*(?:min|m))?\s*overdue)/i);
   return match ? match[1] : null;
 }
 

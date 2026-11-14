@@ -24,6 +24,7 @@ import { useServiceScope } from "@/components/ward-management/shell/ward-service
 import { isBedCountStale } from "@/components/ward-management/ward-clinical-values";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { activeActNowItems, activeTaskItems } from "@/components/ward-management/ward-act-now-items";
+import { needsYouCount } from "@/components/ward-management/figures/decision-counts";
 import { alertsNowFigures } from "@/components/ward-management/ward-alerts-figures";
 import { formatInstant, splitDuration } from "@/components/ward-management/ward-clock";
 import { originPlace } from "@/components/ward-management/origin-place";
@@ -732,12 +733,16 @@ export function CoordinatorScreen() {
   const nextKind: "act" | "decide" | "overdue" | null =
     nextActCount > 0 ? "act" : referralQueue.length > 0 ? "decide" : chips.overdueInQueue > 0 ? "overdue" : null;
   const nextScope = service === null ? "" : ` in ${service}`;
+  // R-HOME-1 (mock-up HOME-M1): one answer with its parts, "12 need you: 6 act now, 6 to decide". Act now is
+  // the one shared figure the bell and Alerts use (`alertsNowFigures`); to decide is the referral queue.
+  const needsYou = needsYouCount(nextActCount, referralQueue.length);
+  const needsYouParts =
+    nextActCount > 0 && referralQueue.length > 0 ? `: ${nextActCount} act now, ${referralQueue.length} to decide` : "";
+  const needsYouAnswer = `${needsYou} ${needsYou === 1 ? "needs" : "need"} you${nextScope}${needsYouParts}`;
   const heroNext: HeroNextStep =
     nextActCount > 0
       ? {
-          // A9-04: names the accepted referrals with no bed pulled, which Handover's Act now leaves out.
-          // Wave 4 (D-191, notes item 4): the head here, the parts on their own line under it.
-          answer: homeActNowParts(nextActCount, toPull.length, nextScope).head,
+          answer: needsYouAnswer,
           action: {
             label: actPressed ? "Show all" : "Show act now",
             pressed: actPressed,
@@ -747,7 +752,7 @@ export function CoordinatorScreen() {
         }
       : referralQueue.length > 0
         ? {
-            answer: `${referralQueue.length} ${referralQueue.length === 1 ? "referral" : "referrals"} to decide${nextScope}`,
+            answer: needsYouAnswer,
             action: {
               label: decidePressed ? "Show all" : "Show to decide",
               pressed: decidePressed,
@@ -771,19 +776,27 @@ export function CoordinatorScreen() {
   const oldestOverdue = referralQueue
     .filter((referral) => getReferralPriority(referral, now) === "overdue")
     .sort((a, b) => a.raisedAt - b.raisedAt)[0];
-  const overdueReferralLine = oldestOverdue ? (
-    <button
-      type="button"
-      className={heroStyles.actLine}
-      data-testid="hero-overdue-referral"
-      onClick={() => selectReferral(oldestOverdue.id)}
-    >
-      {`1 overdue: Tier ${oldestOverdue.urgency} from ${originPlace(oldestOverdue)}, ${splitDuration(
-        Math.max(0, now - oldestOverdue.raisedAt),
-      )}, target ${targetHoursText(OVERDUE_AFTER_MINUTES_BY_TIER[oldestOverdue.urgency])}`}
-    </button>
-  ) : null;
-  const actDetail = nextActCount > 0 ? homeActNowParts(nextActCount, toPull.length, nextScope).detail : undefined;
+  const overdueCount = referralQueue.filter((referral) => getReferralPriority(referral, now) === "overdue").length;
+  // R-HOME-1: one line for the referrals to decide; it names the oldest overdue one and opens it (R-HOME-4).
+  const decideLine =
+    referralQueue.length === 0 ? null : oldestOverdue ? (
+      <button
+        type="button"
+        className={heroStyles.actLine}
+        data-testid="hero-overdue-referral"
+        onClick={() => selectReferral(oldestOverdue.id)}
+      >
+        {`${referralQueue.length} to decide, ${overdueCount} overdue: Tier ${oldestOverdue.urgency} from ${originPlace(
+          oldestOverdue,
+        )}, ${splitDuration(Math.max(0, now - oldestOverdue.raisedAt))}, target ${targetHoursText(
+          OVERDUE_AFTER_MINUTES_BY_TIER[oldestOverdue.urgency],
+        )}`}
+      </button>
+    ) : (
+      <span className={heroStyles.actLine} data-testid="hero-decide-line">{`${referralQueue.length} to decide`}</span>
+    );
+  const actParts = nextActCount > 0 ? homeActNowParts(nextActCount, toPull.length, nextScope).detail : undefined;
+  const actDetail = nextActCount > 0 ? `${nextActCount} act now${actParts ? `: ${actParts}` : ""}` : undefined;
   // Josh, 4 Nov 2026 (2i question 5): the Checking line sits under the step whenever a bed count is
   // stale or a ward is not reporting (every size since the sticky header redesign, 9 Nov 2026).
   // Batch 4 item 24 (Josh approved the drawing 11 Nov 2026, D-142): a pointer to the wards whose
@@ -930,14 +943,14 @@ export function CoordinatorScreen() {
                   title={heroNext.answer}
                   titleTestId="hero-next-answer"
                   sub={
-                    actDetail || checkingLine || overdueReferralLine ? (
+                    actDetail || checkingLine || decideLine ? (
                       <>
                         {actDetail ? (
                           <span className={heroStyles.actLine} data-testid="hero-next-detail">
                             {actDetail}
                           </span>
                         ) : null}
-                        {overdueReferralLine}
+                        {decideLine}
                         {checkingLine ? <span className={heroStyles.actLine}>{checkingLine}</span> : null}
                       </>
                     ) : undefined

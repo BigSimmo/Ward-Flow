@@ -258,21 +258,7 @@
   font-family: var(--wf-mono);
 }
 
-/* The bar's own width (not the screen's) decides: "Board time" goes first, then "AWST", so the
- * page name and the search keep their room. The button's name keeps every word. */
-@container ward-bar (max-width: 84rem) {
-  .demoClockLabel {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-    border: 0;
-  }
-}
+/* R-HOME-2: "Board time" stays in words at every width; the dot alone never names the clock. */
 
 @container ward-bar (max-width: 72rem) {
   .demoClockTz {

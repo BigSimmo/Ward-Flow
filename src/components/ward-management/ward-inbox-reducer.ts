@@ -6,9 +6,10 @@ import type { WardFlowState } from "./ward-flow-reducer";
 import type { Movement, Notice } from "./ward-model";
 import { currentLegalDueAt } from "./ward-legal-form-progression";
 import { isOnOrder, stayLegalStatus } from "./ward-stay-legal";
-import { SNOOZE_MAX_MINUTES } from "./ward-operational-defaults";
+import { SILENT_WARD_SECOND_REMINDER_MINUTES, SNOOZE_MAX_MINUTES } from "./ward-operational-defaults";
 import { duplicateBedRequestSince } from "./ward-duplicate-bed-requests";
 import { heldBedElsewhereOf } from "./ward-held-bed-elsewhere";
+import { leaveBedReminderAt, silentWardAskedAt } from "./ward-timed-reminders";
 import {
   BED_MEETING_ACTION_INBOX_PREFIX,
   meetingActionOfInboxId,
@@ -123,6 +124,12 @@ export const INBOX_CATEGORIES = {
    *  Leaves when a ward answers, the bed is pulled or the alert is stood down. Remainder is the
    *  movement id. */
   pull_now_overdue: { idPrefix: "pull-now-overdue-", kind: "fact" },
+  /** R-HOME-10: the 4 hour no-reply reminder, from `silentWardReminderInboxItems`. Amber. Remainder is
+   *  the referral id. Leaves when the silent place answers or the referral is withdrawn. */
+  silent_ward_reminder: { idPrefix: "silent-ward-reminder-", kind: "fact" },
+  /** R-HOME-10: the 24 hour leave bed prompt, from `leaveBedReminderInboxItems`. Amber. Remainder is
+   *  the leave bed id. Leaves when the bed is opened (the leave ends). */
+  leave_bed_reminder: { idPrefix: "leave-bed-reminder-", kind: "fact" },
 } as const satisfies Record<string, { readonly idPrefix: string; readonly kind: InboxItemKind }>;
 
 /**
@@ -156,6 +163,9 @@ const INBOX_REVIEW_CATEGORIES: readonly (keyof typeof INBOX_CATEGORIES)[] = [
   "bed_held_elsewhere",
   // Overall review (20 Oct 2026): a bed meeting action is a task; overdue is shown, not escalated.
   "bed_meeting_action",
+  // R-HOME-10: timed reminders are to chase or consider, not act-now rows; the signed times are unchanged.
+  "silent_ward_reminder",
+  "leave_bed_reminder",
 ];
 
 /** Whether a row is act-now (red), read from its id alone so the reducer can enforce the snooze cap. */
@@ -196,9 +206,29 @@ export function inboxRowExists(state: WardFlowState, inboxItemId: string): boole
   if (inboxItemId.startsWith(INBOX_CATEGORIES.bed_meeting_action.idPrefix)) {
     return openMeetingActionOfRow(state, inboxItemId) !== undefined;
   }
+  // R-HOME-10: a timed reminder row exists while its record is still past the signed time.
+  if (inboxItemId.startsWith(INBOX_CATEGORIES.silent_ward_reminder.idPrefix)) {
+    return silentReminderAskedAt(state, inboxItemId) !== undefined;
+  }
+  if (inboxItemId.startsWith(INBOX_CATEGORIES.leave_bed_reminder.idPrefix)) {
+    return leaveBedOfReminderRow(state, inboxItemId) !== undefined;
+  }
   // Stream D: a planned arrival row names its booking, not a movement.
   if (plannedRowBooking(state, inboxItemId) !== undefined) return true;
   return inboxRowMovementId(state.movements, inboxItemId) !== undefined;
+}
+
+/** When the silent place a reminder row id names was asked, while the reply is still owed. */
+function silentReminderAskedAt(state: WardFlowState, inboxItemId: string): Instant | undefined {
+  const referralId = inboxItemId.slice(INBOX_CATEGORIES.silent_ward_reminder.idPrefix.length);
+  const referral = (state.referrals ?? []).find((candidate) => candidate.id === referralId);
+  return referral ? silentWardAskedAt(referral, state.configuration, state.units) : undefined;
+}
+
+/** The leave bed a reminder row id names, while it is held and not an absence. */
+function leaveBedOfReminderRow(state: WardFlowState, inboxItemId: string) {
+  const leaveBedId = inboxItemId.slice(INBOX_CATEGORIES.leave_bed_reminder.idPrefix.length);
+  return state.leaveBeds.find((bed) => bed.id === leaveBedId && bed.absentWithoutLeave === undefined);
 }
 
 /** The open bed meeting action a row id names, when its record exists and the action is not done. */
@@ -286,6 +316,15 @@ function inboxRowSince(state: WardFlowState, inboxItemId: string): Instant | und
   if (inboxItemId.startsWith(heldElsewherePrefix)) {
     return heldBedElsewhereOf(state, inboxItemId.slice(heldElsewherePrefix.length))?.since;
   }
+  // R-HOME-10: a reminder's occurrence starts when it reached its signed time.
+  if (inboxItemId.startsWith(INBOX_CATEGORIES.silent_ward_reminder.idPrefix)) {
+    const askedAt = silentReminderAskedAt(state, inboxItemId);
+    return askedAt === undefined ? undefined : askedAt + SILENT_WARD_SECOND_REMINDER_MINUTES;
+  }
+  if (inboxItemId.startsWith(INBOX_CATEGORIES.leave_bed_reminder.idPrefix)) {
+    const leaveBed = leaveBedOfReminderRow(state, inboxItemId);
+    return leaveBed ? leaveBedReminderAt(leaveBed) : undefined;
+  }
   // A bed meeting action row's occurrence starts when the meeting recorded that action.
   if (inboxItemId.startsWith(INBOX_CATEGORIES.bed_meeting_action.idPrefix)) {
     return openMeetingActionOfRow(state, inboxItemId)?.recordedAt;
@@ -357,7 +396,9 @@ export function reduceInboxEvent(
         inboxCategory === INBOX_CATEGORIES.absent_without_leave ||
         inboxCategory === INBOX_CATEGORIES.duplicate_bed_request ||
         inboxCategory === INBOX_CATEGORIES.bed_held_elsewhere ||
-        inboxCategory === INBOX_CATEGORIES.bed_meeting_action
+        inboxCategory === INBOX_CATEGORIES.bed_meeting_action ||
+        inboxCategory === INBOX_CATEGORIES.silent_ward_reminder ||
+        inboxCategory === INBOX_CATEGORIES.leave_bed_reminder
           ? inboxRowExists(state, inboxItemId)
           : inboxCategory === INBOX_CATEGORIES.support_notification_discharge
             ? state.admissions.some((admission) => admission.id === inboxMovementId)

@@ -237,7 +237,7 @@ describe("PhoneListRow", () => {
         leading={<StatusGlyph tone="danger" />}
         name="Bed 4, Ward 6"
         meta="Ready since 09:10"
-        value="2h 10m"
+        value="2 h 10 min"
         time="10:42"
         onSelect={onSelect}
         action={{ label: "Accept", onAction }}
@@ -250,7 +250,7 @@ describe("PhoneListRow", () => {
     // Valid HTML: no button inside a button. The action is a sibling of the row target.
     expect(target.contains(action)).toBe(false);
     expect(action.closest("button")).toBe(action);
-    expect(target).toHaveAccessibleName("Bed 4, Ward 6 Ready since 09:10 2h 10m 10:42");
+    expect(target).toHaveAccessibleName("Bed 4, Ward 6 Ready since 09:10 2 h 10 min 10:42");
     expect(row).toHaveAttribute("data-act-now", "true");
 
     fireEvent.click(action);
@@ -267,7 +267,7 @@ describe("PhoneListRow", () => {
         <PhoneListRow
           as="li"
           name="Asha Patel"
-          meta="ED, waiting 3h 20m"
+          meta="ED, waiting 3 h 20 min"
           href="/people/p-1"
           aria-label="Open Asha Patel"
           action={{ label: "Call", icon: Phone, iconOnly: true, onAction: () => {} }}

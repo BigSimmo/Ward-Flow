@@ -43,7 +43,7 @@ describe("referral stuck: no reply within the Settings limit", () => {
 
     const [past] = referralNoReplyWaits(sent, NOW_ANCHOR + 30, limit, state.units);
     expect(past!.pastLimit).toBe(true);
-    expect(noReplyLine([past!])).toBe(`Stuck: no reply from ${ward.name} for 2h 10m (limit 2h 00m)`);
+    expect(noReplyLine([past!])).toBe(`Stuck: no reply from ${ward.name} for 2 h 10 min (limit 2 h 00 min)`);
   });
 
   it("adds the signed 4-hour ask-another-ward suggestion from 4 hours", () => {
@@ -63,7 +63,7 @@ describe("referral stuck: no reply within the Settings limit", () => {
       ],
     } as unknown as Referral;
     expect(noReplyLine(referralNoReplyWaits(two, NOW_ANCHOR, limit, state.units))).toContain(
-      `Stuck: no reply from ${ward.name} and ${ward.name} for longest 5h 00m (limit 2h 00m)`,
+      `Stuck: no reply from ${ward.name} and ${ward.name} for longest 5 h 00 min (limit 2 h 00 min)`,
     );
   });
 

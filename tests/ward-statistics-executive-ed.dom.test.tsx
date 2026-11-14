@@ -143,7 +143,7 @@ describe("one ED on the executive desk, counts only", () => {
     expect(text(`ward-stat-ed-comparison-waiting-${OTHER.id}`)).toBe("fewer than 5");
     expect(text(`ward-stat-ed-comparison-over24h-${OTHER.id}`)).toBe("fewer than 5");
     // A duration, not a count of people, so it stays.
-    expect(text(`ward-stat-ed-comparison-longest-${OTHER.id}`)).toBe("1d 1h");
+    expect(text(`ward-stat-ed-comparison-longest-${OTHER.id}`)).toBe("1 d 1 h");
 
     expect(text("ward-statistics-ed-band-count-under-4-hours")).toBe("fewer than 5");
     // The bands add up to the Waiting total, so the band beside the hidden one is hidden too.
