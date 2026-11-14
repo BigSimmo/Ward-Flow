@@ -38,10 +38,12 @@ function Dispatch() {
 }
 
 function renderBanner(access?: Parameters<typeof setWardAccess>[0]) {
+  // D-222: a change names the desk that sent it, so the coordinator's desk sends the broadcast and
+  // the desk under test then looks at it.
   if (access) {
     act(() => {
       setWardFeatureFlagOnDevice("role-access", true);
-      setWardAccess(access);
+      setWardAccess({ role: "coordinator", scope: { kind: "statewide" } });
     });
   }
   render(
@@ -52,6 +54,7 @@ function renderBanner(access?: Parameters<typeof setWardAccess>[0]) {
       </WardAccessScope>
     </WardFlowProvider>,
   );
+  if (access) act(() => setWardAccess(access));
 }
 
 afterEach(() => {

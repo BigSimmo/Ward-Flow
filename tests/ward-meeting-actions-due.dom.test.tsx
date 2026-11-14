@@ -98,16 +98,23 @@ function RecordWithUndo({ subject }: { subject: BedMeetingSubject }) {
   );
 }
 
+let desk: WardAccess | undefined;
 function asDesk(access: WardAccess) {
+  desk = access;
   act(() => {
     setWardFeatureFlagOnDevice("role-access", true);
     setWardAccess(access);
   });
 }
 
+/** The coordinator records the action at the meeting (D-222: a change names the desk that sent it). */
 function recordAction() {
+  const viewing = desk;
+  if (viewing && viewing.role !== "coordinator")
+    act(() => setWardAccess({ role: "coordinator", scope: { kind: "statewide" } }));
   fireEvent.click(screen.getByTestId("record"));
   expect(screen.getByTestId("refusals")).toHaveTextContent("0");
+  if (viewing && viewing.role !== "coordinator") act(() => setWardAccess(viewing));
 }
 
 afterEach(() => {

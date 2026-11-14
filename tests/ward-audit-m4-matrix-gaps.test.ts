@@ -6,6 +6,7 @@ import {
   wardTasksAreActionableForRole,
   type WardChromeRole,
 } from "../src/components/ward-management/ward-chrome-role";
+import { COORDINATOR_STEP_ROLES } from "../src/components/ward-management/ward-desk-stamp";
 import { EVENT_ROLE, type WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
 import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
 import type { Notice } from "../src/components/ward-management/ward-model";
@@ -141,7 +142,11 @@ describe("M4 gap 3: a coordinator acting from another desk's route", () => {
       for (const type of EVENT_TYPES)
         for (const routeRole of CHROME_ROLES.filter((role) => role !== "coordinator")) {
           const stamped = deskCommand(access, { type, role: routeRole }) as { role: string };
-          const expected = type === "MARK_NOTICE_READ" ? routeRole : "coordinator";
+          // D-222: a few changes use the typed role to choose the step (`COORDINATOR_STEP_ROLES`).
+          const keeps =
+            type === "MARK_NOTICE_READ" ||
+            COORDINATOR_STEP_ROLES.some((entry) => entry.type === type && entry.role === routeRole);
+          const expected = keeps ? routeRole : "coordinator";
           expect(stamped.role, `${access.scope.kind} ${routeRole} ${type}`).toBe(expected);
         }
   });

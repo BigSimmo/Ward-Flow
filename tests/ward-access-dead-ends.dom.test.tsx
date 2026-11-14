@@ -275,19 +275,24 @@ describe("3. the broadcast banner speaks for the desk's own role", () => {
     return null;
   }
 
-  function renderBanner() {
-    route.pathname = "/ward-flow/alerts";
+  /** D-222: a change names the desk that sent it, so the coordinator's desk raises the Pull now and
+   *  the desk under test then reads the banner. */
+  function renderBanner(access: WardAccess, pathname = "/ward-flow/alerts") {
+    setWardFeatureFlagOnDevice("role-access", true);
+    setWardAccess(coordinator);
+    route.pathname = pathname;
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <RaisePullNow />
         <WardBroadcastBanner />
       </WardFlowProvider>,
     );
+    act(() => setWardAccess(access));
+    expect(readWardAccessSnapshot().access).toEqual(access);
   }
 
   it("keeps the coordinator's view of a Pull now on a page with no place, as before", () => {
-    useDesk(coordinator);
-    renderBanner();
+    renderBanner(coordinator);
     const banner = screen.getByTestId("ward-broadcast-banner");
     expect(banner).toHaveTextContent("Pull now");
     expect(within(banner).queryByRole("group", { name: "Your answer" })).toBeNull();
@@ -295,34 +300,24 @@ describe("3. the broadcast banner speaks for the desk's own role", () => {
   });
 
   it("gives an officer, who is never asked, no coordinator's Pull now", () => {
-    useDesk(officer);
-    renderBanner();
+    renderBanner(officer);
     expect(screen.queryByTestId("ward-broadcast-banner")).toBeNull();
   });
 
   it("gives a bed manager away from a ward page no coordinator's Pull now", () => {
-    useDesk({ role: "bed_manager", scope: { kind: "site", siteCode: "RPH" } });
-    renderBanner();
+    renderBanner({ role: "bed_manager", scope: { kind: "site", siteCode: "RPH" } });
     expect(screen.queryByTestId("ward-broadcast-banner")).toBeNull();
   });
 
   it("still asks a bed manager on its own site's ward page for that ward (D-80)", () => {
-    useDesk({ role: "bed_manager", scope: { kind: "site", siteCode: "RPH" } });
-    route.pathname = "/ward-flow/ward/rph-adult-secure";
-    render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <RaisePullNow />
-        <WardBroadcastBanner />
-      </WardFlowProvider>,
-    );
+    renderBanner({ role: "bed_manager", scope: { kind: "site", siteCode: "RPH" } }, "/ward-flow/ward/rph-adult-secure");
     const banner = screen.getByTestId("ward-broadcast-banner");
     expect(banner).toHaveAttribute("data-tone", "act_now");
     expect(within(banner).getByRole("group", { name: "Your answer" })).toBeInTheDocument();
   });
 
   it("asks the ward desk the Pull now names, in its own name, on the same page", () => {
-    useDesk({ role: "ward", scope: { kind: "ward", unitIds: ["rph-adult-secure"] } });
-    renderBanner();
+    renderBanner({ role: "ward", scope: { kind: "ward", unitIds: ["rph-adult-secure"] } });
     const banner = screen.getByTestId("ward-broadcast-banner");
     expect(banner).toHaveAttribute("data-tone", "act_now");
     expect(within(banner).getByRole("group", { name: "Your answer" })).toBeInTheDocument();

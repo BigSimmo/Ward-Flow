@@ -16,6 +16,7 @@
  */
 import type { Desk } from "@/components/ward-management/ward-desk";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { recordedRole } from "@/components/ward-management/ward-permit";
 import { stampableAccountName, type DeskStamp } from "@/components/ward-management/ward-desk-stamp-shape";
@@ -52,6 +53,9 @@ function keepsTypedRole(desk: Desk, event: WardFlowEvent): boolean {
  * routing point both ask this, so the two record the same role.
  */
 export function stampedRole(desk: Desk, event: WardFlowEvent): WardFlowRole {
+  // A demonstration control sent as `demo` stays so; sent under any other role it is recorded under
+  // the desk's own, so the stamp never turns another role into `demo` and the reducer refuses it.
+  if (EVENT_ROLE[event.type]?.includes("demo")) return event.role === "demo" ? "demo" : desk.role;
   return keepsTypedRole(desk, event) ? event.role : recordedRole(desk, event.type);
 }
 

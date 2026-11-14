@@ -102,9 +102,12 @@ describe("Site bed manager's site sign-off on Handover", () => {
   it("shows a ward's own sign-off, and Open handover opens that ward's sheet", async () => {
     renderAtDesk(rphManager);
     await screen.findByTestId("ward-handover-site-sign-off");
+    // D-222: a change names the desk that sent it, so the ward's own desk signs, then the site looks.
+    act(() => setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: [rph[0]!.id] } }));
     act(() => {
       flow.dispatch({ type: "RECORD_HANDOVER_SIGN_OFF", role: "ward", now: 600, unitId: rph[0]!.id });
     });
+    act(() => setWardAccess(rphManager));
     const wards = within(screen.getByTestId("ward-handover-site-wards")).getAllByRole("listitem");
     expect(wards[0]).toHaveTextContent(/Signed .* by Nurse in charge/);
     // WCAG 2.5.3 label in name (accessibility check, 8 Nov 2026): each button's name starts with the
