@@ -422,7 +422,7 @@ Source-contract SHA256: d57735d4b5495fa2448328829854a7d33b6a098ba8a582b2aca1cce6
   effects: No automatic expiry, placement, legal-status change or bed move
   effects: The step can be taken back by UNDO_PATIENT_RECORD within the Undo window, filed against the patient record.
   tests: tests/ward-absence-and-cto.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-record-legal-events.ts:171; SHA256 e80a7938fd041f55b00aec6df3e9356405905ff7aa29a3577ad9684f4ee9f8bf
+  Reviewed source: src/components/ward-management/ward-flow-record-legal-events.ts:171; SHA256 56b09d557c3b2e5ba69569b81b773ae58eddce0c108ad0f7e09b7ed56ad728e2
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:223; SHA256 f305e4436a9f754ff704a5fb04ede91c3bd1ea989ce540b23b1d02e5141e23d5
   Reviewed source: src/components/ward-management/ward-flow-events.ts:1416; SHA256 db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142
   Reviewed source: src/components/ward-management/ward-access-state.ts:713; SHA256 7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d
@@ -1428,7 +1428,7 @@ Source-contract SHA256: d57735d4b5495fa2448328829854a7d33b6a098ba8a582b2aca1cce6
   effects: Does not calculate legal expiry or default the written time. Undo is part of UNDO_LEGAL_FORM_RECORD.
   effects: A new form code also clears the typed receipt mark and any paper details typed for the old form.
   tests: tests/ward-ed-handover-events.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-record-legal-events.ts:296; SHA256 e80a7938fd041f55b00aec6df3e9356405905ff7aa29a3577ad9684f4ee9f8bf
+  Reviewed source: src/components/ward-management/ward-flow-record-legal-events.ts:296; SHA256 56b09d557c3b2e5ba69569b81b773ae58eddce0c108ad0f7e09b7ed56ad728e2
   Reviewed source: src/components/ward-management/ward-flow-events.ts:2202; SHA256 db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142
   Reviewed source: src/components/ward-management/ward-undo.ts:74; SHA256 700bbe8f0c0070652f7519c92d73d94f8df66113f63b1cce52fda3c33a066e6b
   Reviewed source: src/components/ward-management/ward-access-state.ts:886; SHA256 7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d
@@ -1448,7 +1448,7 @@ Source-contract SHA256: d57735d4b5495fa2448328829854a7d33b6a098ba8a582b2aca1cce6
   effects: Filters choices into canonical list order, deduplicating them; empty choice removes edPresentations.
   effects: Does not change movement stage, diagnosis, legal status or capacity. Included in ED-step Undo.
   tests: tests/ward-ed-handover-events.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-record-legal-events.ts:221; SHA256 e80a7938fd041f55b00aec6df3e9356405905ff7aa29a3577ad9684f4ee9f8bf
+  Reviewed source: src/components/ward-management/ward-flow-record-legal-events.ts:221; SHA256 56b09d557c3b2e5ba69569b81b773ae58eddce0c108ad0f7e09b7ed56ad728e2
   Reviewed source: src/components/ward-management/ward-flow-events.ts:2228; SHA256 db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142
   Reviewed source: src/components/ward-management/ward-undo.ts:92; SHA256 700bbe8f0c0070652f7519c92d73d94f8df66113f63b1cce52fda3c33a066e6b
   Reviewed source: src/components/ward-management/ward-access-state.ts:713; SHA256 7bbe8ba8fbfc947e52506fc9a869fa7172dc6e1f46c5fea9af8c2f886116eb8d
@@ -1470,7 +1470,7 @@ Source-contract SHA256: d57735d4b5495fa2448328829854a7d33b6a098ba8a582b2aca1cce6
   effects: Replaces the form's details with the merged values; other form fields are unchanged.
   tests: tests/ward-legal-form-gap-items.test.ts
   Reviewed source: src/components/ward-management/ward-flow-record-events.ts:102; SHA256 b3fd3e78db18a788c744f19e887662510e3f08a97b277ae3f3336287cc29e297
-  Reviewed source: src/components/ward-management/ward-flow-record-legal-events.ts:238; SHA256 e80a7938fd041f55b00aec6df3e9356405905ff7aa29a3577ad9684f4ee9f8bf
+  Reviewed source: src/components/ward-management/ward-flow-record-legal-events.ts:238; SHA256 56b09d557c3b2e5ba69569b81b773ae58eddce0c108ad0f7e09b7ed56ad728e2
 - RECORD_COUNTRY_EXTENSION — diagram-reviewed; event roles: ed, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:567

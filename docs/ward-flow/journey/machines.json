@@ -1852,7 +1852,7 @@
       {
         "path": "src/components/ward-management/ward-flow-record-legal-events.ts",
         "line": 58,
-        "sha256": "e80a7938fd041f55b00aec6df3e9356405905ff7aa29a3577ad9684f4ee9f8bf"
+        "sha256": "56b09d557c3b2e5ba69569b81b773ae58eddce0c108ad0f7e09b7ed56ad728e2"
       },
       {
         "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
