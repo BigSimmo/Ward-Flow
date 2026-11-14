@@ -199,6 +199,12 @@ export type BedMeetingInput = {
    * when the caller has already narrowed `movements` and `referrals` to it. Bed figures stay whole.
    */
   peopleFilter?: string;
+  /**
+   * D-MCA (Josh, 14 Nov 2026), audit M15: the whole journey and referral lists, unfiltered, when
+   * the caller narrowed `movements`/`referrals` to a group filter. The "short" figure counts every
+   * person waiting from these, as Capacity's hero does. Defaults to `movements` and `referrals`.
+   */
+  wholeLists?: { movements: Movement[]; referrals: readonly Referral[] };
 };
 
 /** Longest first, then by id so two prints of the same picture never reshuffle. */
@@ -297,7 +303,15 @@ export function bedMeetingSheet(input: BedMeetingInput): BedMeetingSheet {
   };
 
   // Short — Capacity's hero selector, unchanged, over the whole network as Capacity's band reads it.
-  const kinds = bedKindGaps(movements, units, now, admissions, input.referrals ?? [], bedReleases);
+  // M15: a group filter narrows the people lists, never this figure.
+  const kinds = bedKindGaps(
+    input.wholeLists?.movements ?? movements,
+    units,
+    now,
+    admissions,
+    input.wholeLists?.referrals ?? input.referrals ?? [],
+    bedReleases,
+  );
   const kindTotals = bedKindTotals(kinds);
   const short: BedMeetingShort = {
     gap: kindTotals.gap,
