@@ -12,6 +12,12 @@ import type { WardFlowState } from "./ward-flow-reducer";
  * the record's last change; otherwise it is refused and the person is asked to enter it again.
  */
 const OFFLINE_ENTRY_SLACK_MINUTES = 1;
+/**
+ * A waiting save older than this is refused (untested-537 lane L1, INV-M1670-032): records with no
+ * stamped last change (handover sign-off, configuration, outage window) otherwise took any earlier
+ * time, even 0 or a negative minute. Twelve hours covers a lost signal across a whole shift.
+ */
+const OFFLINE_ENTRY_MAX_MINUTES = 12 * 60;
 
 const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
 
@@ -79,6 +85,10 @@ export function offlineEntryTime(
   if (!Number.isSafeInteger(actedAt) || event.role === "demo") return { now: serverNow, offline: false };
   const acted = actedAt as number;
   if (serverNow - acted <= OFFLINE_ENTRY_SLACK_MINUTES) return { now: serverNow, offline: false };
+  if (serverNow - acted > OFFLINE_ENTRY_MAX_MINUTES)
+    return {
+      refusal: `This change was entered offline more than 12 hours ago, at ${formatInstantWithDay(acted, serverNow)}. Review the record and enter it again`,
+    };
   const lastChange = subjectLastChange(state, event, serverNow);
   if (lastChange !== null && acted < lastChange)
     return {
