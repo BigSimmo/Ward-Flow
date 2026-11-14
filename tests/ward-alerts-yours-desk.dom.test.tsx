@@ -45,8 +45,15 @@ function renderAs(role: "coordinator" | "ward") {
       <AlertsScreen />
     </WardFlowProvider>,
   );
-  const row = first.container.querySelector<HTMLElement>("li[data-alert-id]")!;
-  expect(row).not.toBeNull();
+  // The coordinator's own row: on the coordinator desk it names no owner, on another desk it names
+  // the Bed coordinator alone. D-221's Late arrival row, owned by the coordinator, the accepting ward
+  // and the sending team together, sorts first and is not the coordinator's alone.
+  const row = [...first.container.querySelectorAll<HTMLElement>("li[data-alert-id]")].find((candidate) =>
+    role === "ward"
+      ? /With Bed coordinator(?!,)/u.test(candidate.textContent ?? "")
+      : !/With /u.test(candidate.textContent ?? ""),
+  )!;
+  expect(row).toBeDefined();
   const id = row.dataset.alertId!;
   first.unmount();
   render(

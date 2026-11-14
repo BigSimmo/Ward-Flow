@@ -96,6 +96,9 @@ describe("the alerts screen scopes buildActionInbox to open movements only", () 
    * accepted-with-no-bed-pulled rows, so the figures are 11 and 10.
    * D-210 ruling 2 (14 Nov 2026): the admitted stay's own row takes the journey's place on arrival,
    * so the figure stays 11 after WF-014 closes.
+   * D-221 (14 Nov 2026): the seed's WF-015, 75 minutes past its booking estimate, is a late arrival,
+   * an act-now row for the bed coordinator (it was the review-level P068 row), so the figures are 12
+   * and 12. It is a different journey, so WF-014's own row still gives way on arrival.
    */
   it("counts and shows the alert while the movement is still open", () => {
     renderScreen();
@@ -106,9 +109,10 @@ describe("the alerts screen scopes buildActionInbox to open movements only", () 
 
     expect(
       actNowFigure(),
-      // Q111 (1 Nov 2026), A9-13: the figure includes the fixture's three accepted referrals with no bed pulled.
-      "WF-014's breach plus the fixture's other act-now items must read 11 while it is still open",
-    ).toBe(11);
+      // Q111 (1 Nov 2026), A9-13: the figure includes the fixture's three accepted referrals with no bed
+      // pulled; D-221: and WF-015's late arrival.
+      "WF-014's breach plus the fixture's other act-now items must read 12 while it is still open",
+    ).toBe(12);
   });
 
   it("drops the journey's alert once it closes, leaving only the admitted stay's own row (D-210 ruling 2)", () => {
@@ -130,6 +134,6 @@ describe("the alerts screen scopes buildActionInbox to open movements only", () 
     expect(
       actNowFigure(),
       "the Act now figure changed on arrival: the closed journey's row must give way to the stay's one row, not sit beside it",
-    ).toBe(11);
+    ).toBe(12);
   });
 });

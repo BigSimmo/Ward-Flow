@@ -34,7 +34,7 @@
 import { useEffect, useLayoutEffect, useRef, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { Button, Field, Select, StatusGlyph, TextInput } from "@/components/wf";
 import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
-import { dayOf, formatInstant, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
+import { dayOf, formatInstantWithDay, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import {
   TRANSPORT_EXCEPTION_GAP_LABELS,
   TRANSPORT_EXCEPTION_REASON_LABELS,
@@ -539,7 +539,7 @@ export function TransportBookingForm({
           {holdEnd !== undefined ? (
             <>
               <StatusGlyph tone="warning" size={9} />
-              Arrives after the pull time limit ends at {formatInstant(holdEnd)}. Extend the pull or rebook.
+              Arrives after the pull time limit ends at {formatInstantWithDay(holdEnd, now)}. Extend the pull or rebook.
             </>
           ) : (
             "\u00a0"
