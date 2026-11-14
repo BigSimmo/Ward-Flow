@@ -61,6 +61,10 @@ const baseMetadata: Metadata = {
   applicationName: BRAND_NAME,
   title: BRAND_NAME,
   description: BRAND_DESCRIPTION,
+  // INV-A18-104 (14 Nov 2026): a shared link previews the product. Every signed-out address lands on
+  // Sign in, whose tab title would otherwise be the preview; pages inherit this unless they set their own.
+  openGraph: { title: BRAND_NAME, description: BRAND_DESCRIPTION },
+  twitter: { title: BRAND_NAME, description: BRAND_DESCRIPTION },
   robots: PRIVATE_APP_ROBOTS_METADATA,
   // D-189 item 5: the crisis numbers are copy-only ("Not checked"), so iOS Safari must not turn
   // them into call links.

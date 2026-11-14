@@ -27,6 +27,7 @@ import {
 import { edStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { useCanOpenHref, useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { formatInstant } from "@/components/ward-management/ward-clock";
+import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
@@ -665,6 +666,9 @@ function StatisticsSummaryPhoneView({
             </Link>
           )}
         </nav>
+        {/* INV-DISPLAY-060 (14 Nov 2026): the phone page kept no synthetic-data line; the shared footer
+            gives it the one every other page carries. */}
+        <WardPrototypeFooter testId="ward-statistics-footer" />
       </main>
       <PhoneSheet
         open={currentSheet !== null}

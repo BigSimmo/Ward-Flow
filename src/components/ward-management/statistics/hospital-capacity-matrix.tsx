@@ -15,6 +15,7 @@ import {
 } from "@/components/ward-management/ward-bed-states";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
 
@@ -85,6 +86,8 @@ export function HospitalCapacityMatrix({
   service?: string | null;
 }) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  // INV-CM (14 Nov 2026): a link shows only when this desk may open it, never "Not part of your role".
+  const canOpen = useCanOpenHref();
   const [sortCol, setSortCol] = useState<SortColumn>("rate");
   const [sortDir, setSortDir] = useState<SortDirection>("desc");
 
@@ -240,9 +243,15 @@ export function HospitalCapacityMatrix({
               sortedRows.map((r) => (
                 <tr key={r.id} {...rowDim(highlighting && !isMatch(r))}>
                   <th scope="row" className={styles.wardCell}>
-                    <Link href={wardStatisticsHref(r.id)} className={styles.rowLink} title={r.name}>
-                      {r.name}
-                    </Link>
+                    {canOpen(wardStatisticsHref(r.id)) ? (
+                      <Link href={wardStatisticsHref(r.id)} className={styles.rowLink} title={r.name}>
+                        {r.name}
+                      </Link>
+                    ) : (
+                      <span className={styles.rowLink} title={r.name}>
+                        {r.name}
+                      </span>
+                    )}
                     <span className={styles.sub}>
                       <span title={r.siteName}>{r.siteCode}</span> · {r.occupied}{" "}
                       {BED_STATE_LABELS.occupied.toLowerCase()}
