@@ -79,7 +79,7 @@ export function CardBody({
   ...rest
 }: ComponentPropsWithRef<"div"> & { /** No padding, for tables and lists. */ flush?: boolean }) {
   return (
-    <div className={cx(styles.body, flush && styles.flush, className)} {...rest}>
+    <div className={cx(styles.body, "wf-typed", flush && styles.flush, className)} {...rest}>
       <PanelBoundary>{children}</PanelBoundary>
     </div>
   );
