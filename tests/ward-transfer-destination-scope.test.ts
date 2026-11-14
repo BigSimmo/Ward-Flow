@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   applyCommand,
   commandRefusal,
+  deskCommand,
   seedWorld,
   validCommand,
   validWorld,
@@ -106,8 +107,13 @@ describe("transfer destination authority", () => {
   ];
 
   it.each(otherDesks)("does not lend coordinator transfer authority to $role", (access) => {
-    const world = seedWorld(at);
-    expect(commandRefusal(world, access, transfer(world, "scgh-adult-open", "accepted"), at)).toBeTruthy();
+    // D-222/D-223: the server records the membership's role, never the "coordinator" the screen
+    // typed, so the save is refused by the role check or by the reducer's D-30 rule.
+    const world = withLinkedPlacement(seedWorld(at));
+    const sent = deskCommand(access, transfer(world, "scgh-adult-open", "accepted")) as Record<string, unknown>;
+    if (commandRefusal(world, access, sent, at) !== null) return;
+    expect(sent.role).toBe(access.role);
+    expect(applyCommand(world, sent, at).outcome).toBe("denied");
   });
 
   it("refuses a foreign service coordinator changing the sending admission", () => {
