@@ -230,6 +230,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-205](#d-205-release-now-once-each-pr-merges-14-november-2026)                                                                                        | Release now, once each PR merges and its main CI passes                                | Active                                           |
 | [D-206](#d-206-codeql-storage-alerts-are-false-positives-for-the-demo-14-november-2026)                                                                 | CodeQL storage alerts are false positives for the demo                                 | Active                                           |
 | [D-207](#d-207-fit-to-travel-recorded-as-not-cleared-and-the-clinical-go-14-november-2026)                                                              | Fit to travel: not cleared, and the clinical go                                        | Active                                           |
+| [D-210](#d-210-mechanics-and-clock-audit-fixes-14-november-2026)                                                                                        | Mechanics and clock audit fixes, one PR                                                | Active                                           |
 
 ---
 
@@ -2563,4 +2564,21 @@ is inferred.
 - **Clinical go:** Josh lifted the hold on the clinical PR (#1656). It may merge once its required checks pass. Review questions 2, 4 and 9 and the items labelled "not signed", "to verify" or "not stated" stay open for the clinical sitting.
 - **Boundary:** synthetic data only. No clinical value or threshold changes. Built in #1656.
 
-The next free number is D-208.
+## D-210. Mechanics and clock audit fixes (14 November 2026)
+
+- **Date:** 14 November 2026, 9:53 AM AWST (01:53 UTC). D-208 is claimed by open PR #1663. **Decided by:** Josh, in the "Fix app mechanics and clock faults" thread: "Yes to all recommendations. Except ED will alert the ED team screens please and clinician roles. fix everything in 1 PR", answering the ten questions of the mechanics and clock audit (`audit-handover/mechanics-clock-audit-2026-11-14.md`).
+- **Decision:**
+  1. **Offline saves** record the time the person acted. The engine accepts it only when it is not later than the server's time and not earlier than the record's last change; history shows "entered offline, sent HH:MM". Otherwise the save is refused and the person is asked to redo it.
+  2. **A typed legal expiry that passes** for a person admitted on a form raises Act now on the ward desk, a coordinator alert and the Forms counts. For a person still in ED, the alert also reaches the ED team screens (ED desk) and the ED clinician role, as well as the coordinator.
+  3. **TV legal board** matches Forms, Delays and ED: red "Act now" within the Settings urgent warning, amber "Ending soon" within the Settings soon warning. The TV "forms ending soon" figure counts amber rows only.
+  4. **Tier overdue waits** count from the referral time. With no referral time, the screen says "Referral time not recorded" and never shows the person as overdue. No clinical value changes.
+  5. **Stay and patient legal status:** the TV uses the patient page's rule and the same "statuses differ" mark.
+  6. **Form 3E** is recorded one way only, as a new form that supersedes the 3A. A 3C after a 3D is refused.
+  7. **Pull form for an ended form** shows "Form 3B ended HH:MM" as information and leaves the form "Not recorded". An ended form or a passed expiry is never copied forward.
+  8. **A bed held for someone admitted elsewhere** is flagged on the coordinator's Home with an offer to release the bed. The admission is not blocked.
+  9. **Repatriation security** follows the stay's locked or open bed type, not the ward.
+  10. **One PR** for every finding of the audit (H1 to H10, M1 to M15 and the Lows), each with a guard test, fixed at the shared rule rather than per screen.
+- **Why:** the audit found five root mechanisms behind about 45 faults: the same fact worked out separately on each screen; steps stamped when delivered, not when done; linked records not changed together; capacity mixed into suitability checks; and a setting inferred from the records a desk can see.
+- **Boundary:** synthetic data only. No clinical value or threshold changes. Merge timing (before the 22 November freeze or after the demo) is Josh's call; recommendation 10 was after the demo.
+
+The next free number is D-211.
