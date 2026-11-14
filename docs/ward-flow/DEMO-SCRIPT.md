@@ -580,15 +580,15 @@ Things that happen without a wrong press:
 
 ## Quick reference
 
-| Act | Where                                     | Press                                                                                                                                                             |
-| --- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Capacity                                  | Bed meeting sheet, Close                                                                                                                                          |
-| 2   | All EDs, Enter (RPH ED)                   | Pellingworth, Keira; Esc; Home, Later today, Pellingworth, Keira; Placement steps                                                                                 |
-| 3   | Referrals, Coldharbour, Cyril (Place tab) | Scroll to the groups; choose a ward under Fits, bed ready (do not accept); Esc; browser Back; Pull the bed, Pull the bed; Esc                                     |
-| 4   | Keira's page                              | Record clearance; Log booking; Mark handover ready; X on both messages; Destination row; Provider accepted job, Vehicle en route, Mark moving · patient collected |
-| 5   | Destination and placement                 | Confirm arrival · receiving ward, Confirm arrival; Esc; More, All wards, Open ward (Dabakarn)                                                                     |
+| Act | Where                                            | Press                                                                                                                                                             |
+| --- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Capacity                                         | Bed meeting sheet, Close                                                                                                                                          |
+| 2   | All EDs, Enter (RPH ED)                          | Pellingworth, Keira; Esc; Home, Later today, Pellingworth, Keira; Placement steps                                                                                 |
+| 3   | Referrals, Coldharbour, Cyril (Place tab)        | Scroll to the groups; choose a ward under Fits, bed ready (do not accept); Esc; browser Back; Pull the bed, Pull the bed; Esc                                     |
+| 4   | Keira's page                                     | Record clearance; Log booking; Mark handover ready; X on both messages; Destination row; Provider accepted job, Vehicle en route, Mark moving · patient collected |
+| 5   | Destination and placement                        | Confirm arrival · receiving ward, Confirm arrival; Esc; More, All wards, Open ward (Dabakarn)                                                                     |
 | 6   | Graylands Adult Secure; More, Legal forms; clock | Loxbury, Saoirse, Esc; Seclusion tab; Board time, Demo clock                                                                                                      |
-| -   | Home                                      | -                                                                                                                                                                 |
+| -   | Home                                             | -                                                                                                                                                                 |
 
 Before every run, as the audience sits down: **Board time** clock, **Reset demo**, confirm. Avoid
 reloads and typed addresses; if "Part of this page did not load" appears, press **Reload page**.
