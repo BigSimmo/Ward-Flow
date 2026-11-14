@@ -1,10 +1,11 @@
 import { dayOf, type Instant } from "@/components/ward-management/ward-clock";
-import { bedStates, networkNamedHolds, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import { wardStaySeats } from "@/components/ward-management/ward/ward-bed-layout";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { BedRelease, LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 
 import { leaveOpenWarning } from "@/components/ward-management/ward-leave-open-warning";
+
+import { LEAVE_BED_OPEN_WARNING_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 
 export { leaveOpenWarning };
 
@@ -21,30 +22,28 @@ export function leaveDueToday(leave: LeaveBed, now: Instant): boolean {
   return !leave.absentWithoutLeave && dayOf(leave.expectedReturn) <= dayOf(now);
 }
 
+/** Said in place of a bed number when the stay has neither a recorded number nor a board seat. */
+export const BED_NOT_RECORDED = "Bed not recorded";
+
 /**
  * The bed a leave record holds: the number the ward board shows for that stay. That is the stay's
- * recorded bed number, else its fixed seat (`wardStaySeats`, the same seat the board's layout uses),
- * and only for a stay with neither the board's own order (ready beds first, then each leave record).
+ * recorded bed number, else its fixed seat (`wardStaySeats`, the same seat the board's layout uses).
+ * A stay with neither reads "Bed not recorded", never a number worked out from list order (R-BEDS-6).
  */
 export function leaveBedLabels(
   unit: Unit,
   unitLeave: readonly LeaveBed[],
   admissions: readonly Admission[],
-  bedReleases: BedRelease[],
-  leaveBeds: readonly LeaveBed[],
-  /** The named holds (`networkNamedHolds`), so Ready here is the board's and Capacity's (3.4). */
-  namedHolds: readonly ReservationReferral[],
 ): Map<string, string> {
-  const ready = bedStates(unit, admissions, bedReleases, leaveBeds, namedHolds).ready;
   const labels = new Map<string, string>();
   const seats = wardStaySeats(
     unit,
     admissions.filter((admission) => admission.unitId === unit.id),
   );
-  unitLeave.forEach((leave, index) => {
+  unitLeave.forEach((leave) => {
     const recorded = admissions.find((admission) => admission.id === leave.admissionId)?.bedNumber;
-    const number = recorded ?? seats.get(leave.admissionId) ?? ready + index + 1;
-    labels.set(leave.id, `Bed ${String(number).padStart(2, "0")}`);
+    const number = recorded ?? seats.get(leave.admissionId);
+    labels.set(leave.id, number === undefined ? BED_NOT_RECORDED : `Bed ${String(number).padStart(2, "0")}`);
   });
   return labels;
 }
@@ -84,6 +83,8 @@ export type LeaveTrackerRow = {
   status: LeaveStatus;
   /** The 24-hour "consider opening the bed" words, once that long on leave. */
   openWarning: string | undefined;
+  /** Away at least the signed 24 hours (R-BEDS-7): the "Over 24 h" chip and the Open ward link. */
+  over24h: boolean;
 };
 
 /** Everyone on leave on the given wards: the most pressing first, then by expected return. */
@@ -105,14 +106,7 @@ export function leaveTrackerRows(
     if (!includeUnit(unit.id)) continue;
     const unitLeave = input.leaveBeds.filter((leave) => leave.unitId === unit.id);
     if (unitLeave.length === 0) continue;
-    const labels = leaveBedLabels(
-      unit,
-      unitLeave,
-      input.admissions,
-      input.bedReleases,
-      input.leaveBeds,
-      networkNamedHolds(input.movements, input.referrals),
-    );
+    const labels = leaveBedLabels(unit, unitLeave, input.admissions);
     for (const leave of unitLeave) {
       rows.push({
         id: leave.id,
@@ -125,6 +119,7 @@ export function leaveTrackerRows(
         expectedReturn: leave.expectedReturn,
         status: leaveStatus(leave, now),
         openWarning: leaveOpenWarning(leave, now),
+        over24h: now - leave.confirmedAt >= LEAVE_BED_OPEN_WARNING_MINUTES,
       });
     }
   }
