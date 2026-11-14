@@ -21,12 +21,7 @@ import {
 } from "@/components/ward-management/ward-admissions";
 import { bedHold as bedHoldOf } from "@/components/ward-management/ward-bed-hold";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
-import {
-  calendarDateOf,
-  dayOf,
-  formatInstantWithDay,
-  splitDuration,
-} from "@/components/ward-management/ward-clock";
+import { calendarDateOf, dayOf, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { deliveredAwaitingWard } from "@/components/ward-management/ward-stage-copy";
 import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
 import { admissionCriteriaEligibility, admissionLegalStatus } from "@/components/ward-management/ward-flow-reducer";
