@@ -124,9 +124,10 @@ export function CapacityHero({
       {occupancyAlert ? <StatusGlyph tone="warning" size={8} /> : null}
       In use
       <WindowWord word="now" className={styles.winWord} />
-      {/* Occupancy counts pulled beds as in use (audit P100, D-81). */}
-      {model.pulled > 0 ? <SrOnly>, including pulled beds</SrOnly> : null}
       {occupancy.percent === null ? null : <OccupancyBands percent={occupancy.percent} />}
+      {/* Occupancy counts pulled beds as in use (audit P100, D-81). Last, so the link's name keeps its
+          visible words in one run (axe label-content-name-mismatch). */}
+      {model.pulled > 0 ? <SrOnly>, including pulled beds</SrOnly> : null}
     </span>
   );
 
