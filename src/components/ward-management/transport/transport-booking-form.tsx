@@ -247,7 +247,7 @@ export function estimatedTimeProblem(typed: string): string | undefined {
   const text = typed.trim();
   if (text === "" || minutesFromTimeInput(text) !== undefined) return undefined;
   if (/^(?:24:?00)$/u.test(text)) return `${text} is not a clock time. Type 00:00 and choose Tomorrow.`;
-  return `${text} is not a clock time. Enter HH:MM, for example 14:40 or 1440.`;
+  return `${text} is not a clock time. Type it like 14:40 or 1440.`;
 }
 
 export function transportBookingSubmission(
