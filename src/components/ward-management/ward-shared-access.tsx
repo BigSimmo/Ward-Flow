@@ -52,6 +52,7 @@ import { WardPartialViewProvider } from "./ward-partial-view";
 import { RECOVERY_OUTCOME_WORDS } from "./ward-command-recovery-words";
 import { isTvPath } from "./bed-meeting/tv-lock-guard";
 import type { SenderReadSource } from "./ward-sender-read-collection";
+import { WARD_TIME_ZONE } from "@/lib/ward-time-zone";
 
 /** How long the first connection may wait before Reconnect is offered: one shared request's limit. */
 const CONNECTING_STALL_MS = 15_000;
@@ -819,7 +820,7 @@ export function WardSessionEndingNotice({ endsAt }: { endsAt: number | null }) {
     hour: "2-digit",
     minute: "2-digit",
     hourCycle: "h23",
-    timeZone: "Australia/Perth",
+    timeZone: WARD_TIME_ZONE,
   });
   const notice = (
     <p

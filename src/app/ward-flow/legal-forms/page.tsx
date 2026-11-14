@@ -5,8 +5,7 @@ import { recordIdFromAddress } from "@/components/ward-management/shell/ward-rec
 
 export const metadata: Metadata = {
   title: "Legal forms — Ward Flow",
-  description:
-    "Synthetic prototype: recorded mental health form times for open movements, copied from the paper form. No legal time limits are calculated.",
+  description: "Synthetic prototype: recorded mental health form times for open movements.",
 };
 
 /**

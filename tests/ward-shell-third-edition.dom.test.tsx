@@ -687,7 +687,7 @@ describe("Activity distinguishes demo provenance from published figure checks", 
     await user.click(screen.getByTestId("ward-bar-activity-trigger"));
     const dialog = await screen.findByRole("dialog", { name: /Activity/ });
 
-    expect(within(dialog).getByText(/Synthetic state · demo time/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/Synthetic state · Board time/)).toBeInTheDocument();
     expect(within(dialog).queryByTestId("ward-bar-figure-checks")).not.toBeInTheDocument();
     expect(dialog.textContent ?? "").not.toMatch(/reconcil/i);
   });

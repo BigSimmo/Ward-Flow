@@ -24,6 +24,7 @@ import {
 } from "@/components/wf";
 import { formatInstantWithDay, minuteOfDayFromClockText, type Instant } from "@/components/ward-management/ward-clock";
 import { movementRefuses3C } from "@/components/ward-management/ward-legal-clock";
+import { afterEndedOrderWarning } from "@/components/ward-management/ward-legal-order-rules";
 import { currentLegalPosition, legalFormNowWords } from "@/components/ward-management/ward-legal-form-progression";
 import { legalFormName, RECORDABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -139,7 +140,7 @@ export function RequirementsSheet({
           )}
           <h4 className={styles.sectionHead}>Due time</h4>
           <p className={styles.note} data-testid="ward-legal-requirements-due">
-            Only the due time recorded from the form is shown. Ward Flow does not work out when a form ends.
+            Only the due time recorded from the form is shown.
           </p>
         </section>
       </div>
@@ -263,6 +264,8 @@ export function RecordFormSheet({
   const baseId = useId();
   const parsedWrittenAt = parseWrittenInstant(timeOnForm, now, dayZero ? dateOnForm : "", dayZero);
   const selectedMovement = openMovements.find((movement) => movement.id === draft.movement);
+  // R-LEGAL-11 (Josh, 14 Nov 2026): a form after a recorded Form 3E warns here, never blocks (AK-L-14).
+  const afterEndedOrder = afterEndedOrderWarning(selectedMovement, draft.form || undefined);
   // Keep the unsent synthetic draft on dismissal; explicit Clear or an accepted save removes it.
   const dismiss = onClose;
   const saveBlockReason =
@@ -403,7 +406,7 @@ export function RecordFormSheet({
               }
             }}
           >
-            Save form
+            {afterEndedOrder ? `Save Form ${draft.form} anyway` : "Save form"}
           </Button>
         </div>
       }
@@ -461,6 +464,11 @@ export function RecordFormSheet({
             ))}
           </Select>
         </Field>
+        {afterEndedOrder ? (
+          <p className={styles.note} role="status" data-testid="ward-legal-forms-after-3e">
+            {afterEndedOrder}
+          </p>
+        ) : null}
         {draft.form === "1A" ? (
           <Field label="Region" id={`${typeId}-region`}>
             <Select
@@ -609,7 +617,7 @@ function ExtendSheetContent({
       open={target !== null}
       onClose={dismiss}
       title="Extend recorded form"
-      description="Extension is recorded, not legally checked"
+      description="Record the extension from the form"
       portal={false}
       testId="ward-legal-extend"
       footer={

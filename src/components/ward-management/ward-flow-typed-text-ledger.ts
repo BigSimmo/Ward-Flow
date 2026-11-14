@@ -67,16 +67,30 @@ const NOT_TYPED_KEYS: { readonly [T in TypedTextEventType]: readonly string[] } 
     "firstContact",
   ],
   RECORD_MOVEMENT_BLOCKER: ["movementId"],
-  REFER_TO_COMMUNITY_TEAM: ["movementId"],
+  // `team` is checked against `communityTeamOptions()` and `purpose` against
+  // `COMMUNITY_REFERRAL_PURPOSES` (Lead-REC-C-3, 14 Nov 2026): treating them as typed refused every save.
+  REFER_TO_COMMUNITY_TEAM: ["movementId", "team", "purpose"],
   RECORD_ESCALATION: ["movementId", "triedUnitIds"],
   ADD_REFERRAL_CORRECTION: ["referralId", "actingPlaceId"],
   BOOK_TRANSPORT: ["movementId", "provider", "actingUnitId", "actingPlaceId", "transportLegalStatus", "gaps", "reason"],
-  RECORD_REPATRIATION: ["admissionId", "mode", "provider", "transportLegalStatus"],
+  // `homeHospital` must name a real site (`scenarioHasSite`), so it is chosen, not typed.
+  RECORD_REPATRIATION: ["admissionId", "homeHospital", "mode", "provider", "transportLegalStatus"],
   RECORD_TRANSPORT_CAD: ["movementId", "actingUnitId"],
   SET_ARRIVAL_DETAILS: ["actingUnitId", "movementId", "arrivalMode"],
   UPLOAD_PATIENT_FORM: ["movementId", "fileType"],
   DISPATCH_BROADCAST_ALERT: ["severity", "category", "targetScope", "kind", "targetUnitIds"],
-  BOOK_PLANNED_ADMISSION: ["patientId", "sex", "gender", "reason", "unitId", "legalStatus", "ageBand"],
+  // `overrideReason` is checked against `OVERRIDE_REASONS`; `actingUnitId` is the ward's own id.
+  BOOK_PLANNED_ADMISSION: [
+    "patientId",
+    "sex",
+    "gender",
+    "reason",
+    "unitId",
+    "legalStatus",
+    "ageBand",
+    "overrideReason",
+    "actingUnitId",
+  ],
   RECORD_SUPPORT_NOTIFICATION: ["occasion", "movementId", "admissionId", "party", "outcome"],
   // `plan.type`, `plan.helps` and `plan.attachment.fileType` are checked against fixed lists.
   RECORD_CARE_PLAN: ["patientId", "type", "helps", "fileType"],

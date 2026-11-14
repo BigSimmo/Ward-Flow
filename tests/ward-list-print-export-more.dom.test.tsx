@@ -151,7 +151,7 @@ describe("Legal forms Print and Export", () => {
     const rows = lines.slice(header + 1);
     expect(rows.length).toBeGreaterThan(0);
     const ends = rows.map((line) => line.split('","')[6] ?? "");
-    expect(ends.some((cell) => / as typed$/u.test(cell))).toBe(true);
+    expect(ends.some((cell) => /^End(s|ed) /u.test(cell))).toBe(true);
     for (const cell of ends) expect(cell).not.toMatch(COUNT);
     expectNoNames(csv);
   });

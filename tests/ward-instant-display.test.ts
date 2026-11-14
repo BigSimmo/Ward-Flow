@@ -86,6 +86,10 @@ const MAY_ASSERT_TODAY = new Map([
   ["unit.allocatable.confirmedAt", "STILL TO SWEEP - a capacity confirmed yesterday would read as this morning"],
   ["detail.allocatable.confirmedAt", "STILL TO SWEEP - same field, network detail panel"],
   ["release.expectedAt", "STILL TO SWEEP - an expected release can fall tomorrow"],
+  [
+    "min",
+    'STILL TO SWEEP - patient pages\' clock() (patient-now-records.ts). It printed hours since day zero ("681:04", stress test F3, 14 Nov 2026); it now wraps the face. The cross-day lines the test saw (Accepted, Pull time limit, Cleared, Flags late, Runs to, Since) use formatInstantWithDay; the other callers still to move.',
+  ],
   ["latestRefreshRequest.at", "STILL TO SWEEP - a refresh asked for yesterday reads as this morning"],
   ["legalForm.dueAt", "STILL TO SWEEP - needs `now` threaded into legalFormReadinessLine"],
   ["referral.localBedSought.at", "referral surface, owned by another session"],

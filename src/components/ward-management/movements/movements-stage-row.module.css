@@ -1,6 +1,5 @@
 /* The Movements row's typed legal line (Josh, 31 Oct 2026). The line wraps in full rather than ending
-   in "…", so neither the typed time nor the "(limits not legally checked)" tag is cut at the cell
-   edge. The doubled class outranks the shared `.sub` truncation in movement-flow.module.css; the
+   in "…", so the typed time is never cut at the cell edge. The doubled class outranks the shared `.sub` truncation in movement-flow.module.css; the
    narrow and phone layouts there keep their own rules. The glyph keeps a small gap from the form name. */
 .legalLine.legalLine {
   white-space: normal;
@@ -10,27 +9,4 @@
 .legalGlyph {
   margin-right: 4px;
   vertical-align: 1px;
-}
-
-.legalTag > span {
-  white-space: normal;
-}
-
-/* Note 7 item 11 (9 Nov 2026): where the worklist shows its column heads (screen, not phone, worklist
-   wider than 53rem), the Legal head says "Not legally checked" once, so each row's tag is kept for
-   screen readers only. Phone, narrow, print and any row outside the worklist keep the visible tag. */
-@media screen and (min-width: 46.5rem) {
-  @container wf-worklist (min-width: 53.0625rem) {
-    .legalTag {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      margin: -1px;
-      padding: 0;
-      overflow: hidden;
-      clip: rect(0 0 0 0);
-      white-space: nowrap;
-      border: 0;
-    }
-  }
 }

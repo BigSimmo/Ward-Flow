@@ -353,15 +353,17 @@ then **All wards**, and press **Open ward** on **Graylands Adult Secure**. In th
 card, under **Referrals · now**, press **Loxbury, Saoirse** (synthetic). The full referral opens:
 reason, risk, legal, observation, medical clearance, physical health, medications, referrer, arrival
 and documents. Point to **To check** under "Passes the 6 bed checks.": five rows for Saoirse, the
-last "Involuntary admissions: not stated". Close it with **Esc**. Do not accept or decline.
+last "Involuntary admissions: authorised for the hospital (Chief Psychiatrist register, 7 Sep 2026),
+ward not checked". Close it with **Esc**. Do not accept or decline.
 
 > "A ward can't make a safe decision on a referral it can't read. So before it answers, the ward
 > sees the whole referral, with the patient's name and record number. What it never sees is which
 > other wards were asked. The card lists the checks it ran against this ward, and separately what
 > the ward still has to check for itself: recorded risk, escort need, observation level and medical
 > clearance. For someone whose status needs an involuntary-capable bed, like Saoirse, it also says
-> involuntary admissions are not stated for this ward. Those are shown as recorded. The app never
-> passes or fails a patient on them."
+> the hospital is authorised for involuntary admissions on the Chief Psychiatrist register of
+> 7 September 2026. The register names the hospital, not this ward, so the ward is not checked.
+> Those are shown as recorded. The app never passes or fails a patient on them."
 
 **B. Seclusion and restraint, operational only.** In the left-hand menu press **More**, then
 **Legal forms**, then the **Seclusion** tab. Point to the note at the top, the **in use now**
@@ -446,8 +448,9 @@ Do not claim:
   mode with a backend exists but is not what you are showing;
 - risk or acuity scores, a "best match" ward, automatic placement or automatic release of a bed;
 - anything about a real ward's actual rules, staffing or figures;
-- which wards are authorised for involuntary admissions. Every ward reads "Involuntary admissions:
-  not stated", and that fact does not narrow any list;
+- that a ward is authorised for involuntary admissions. The line quotes the Chief Psychiatrist
+  register (7 Sep 2026), which names hospitals, not wards; some wards read "not stated". It does not
+  narrow any list;
 - that it "matches", "recommends" or is "intelligent". It shows options; people choose.
 
 ## Questions you may be asked
@@ -465,10 +468,10 @@ Do not claim:
 
 **"Can that ward take involuntary patients?"**
 
-> "The app doesn't say. Which hospitals are authorised hasn't been confirmed, so every ward reads
-> 'not stated', and the app doesn't use it to narrow or refuse anything. A person checks. For a
-> person who needs that kind of bed, the referral card says 'Involuntary admissions: not stated' so
-> the ward checks."
+> "It shows what the Chief Psychiatrist register of 7 September 2026 says about the hospital. The
+> register names hospitals, not wards, so the line says the ward is not checked, and some wards read
+> 'not stated'. The app doesn't use it to narrow or refuse anything. A person checks. For a person
+> who needs that kind of bed, the referral card shows that line so the ward checks."
 
 **"What happens to the data?"**
 
@@ -493,8 +496,8 @@ If someone wants it in writing, **Settings** has an **About this demo** page tha
 
 **"What about country sites?"**
 
-> "Country wards are on the same statewide map. A country legal extension is recorded as typed from
-> the paper; nothing is calculated. RFDS can be recorded as the carrier. Nothing specific to air
+> "Country wards are on the same statewide map. A country legal extension is recorded from the
+> paper form. RFDS can be recorded as the carrier. Nothing specific to air
 > transport is built."
 
 **"What about the triage and risk form?"**

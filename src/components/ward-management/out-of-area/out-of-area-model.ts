@@ -25,6 +25,7 @@ import {
   instantFromEstimatedTimeInputs,
   minutesFromTimeInput,
 } from "@/components/ward-management/ward-transport-checks";
+import { isBedCountStale } from "@/components/ward-management/ward-clinical-values";
 
 /**
  * Out of area option A (9 Oct 2026): the small, pure reads the page shows beside the ledger.
@@ -272,7 +273,7 @@ function bedOption(unit: Unit, band: TravelBand, now: Instant): BedOption {
     // allocatable beds than it has physically empty once arrivals land.
     beds: boundedBedAvailability(unit).available,
     ageMinutes,
-    stale: ageMinutes > unit.allocatable.staleAfterMinutes,
+    stale: isBedCountStale(unit.allocatable.confirmedAt, now),
   };
 }
 

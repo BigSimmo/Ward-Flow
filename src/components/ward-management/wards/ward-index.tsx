@@ -57,7 +57,7 @@ import { remainingSpeciallingCapacity } from "@/components/ward-management/ward-
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService, Unit } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
-import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import { CLINICAL_VALUES, isBedCountStale } from "@/components/ward-management/ward-clinical-values";
 import { SAMPLE_OBSERVATION_MIX_LABEL } from "@/components/ward-management/ward-sample-choices";
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
 import { BedSquares, BedSquaresKey, bedSquareCounts, bedSquaresNotes } from "@/components/ward-management/bed-squares";
@@ -156,6 +156,12 @@ function SecurityLabel({ unit }: { unit: Unit }) {
 
 /** Near full: the signed occupancy surge band (95%), as a fraction. */
 const NEAR_FULL = CLINICAL_VALUES.occupancySurge.value / 100;
+
+/** D-122: the band tests the whole percent the card shows, so 18 of 19 (94.7%, shown 95%) is near full too. */
+export function isNearFull(occupancy: number): boolean {
+  // A whole percent rounds half up, so the shown figure reaches the band from half a point below it.
+  return occupancy >= NEAR_FULL - 0.005;
+}
 /* The one alert line (device audit, 11 Oct 2026): the rail's Bed alerts threshold, as on Home and
    Capacity. It was 90% here, so All wards drew a "90% line" against everyone else's 85%. */
 const SERVICE_LINE = BED_ALERT_THRESHOLD_PERCENT / 100;
@@ -284,7 +290,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
           out: breakdown.confirmedToday + breakdown.expectedToday,
           incoming,
           confirmedAt: unit.allocatable.confirmedAt,
-          stale: now - unit.allocatable.confirmedAt > unit.allocatable.staleAfterMinutes,
+          stale: isBedCountStale(unit.allocatable.confirmedAt, now),
           specialling: Math.max(0, unit.speciallingCapacity - remainingSpeciallingCapacity(unit, admissions)),
         };
       }),
@@ -962,7 +968,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
 
         <WardPrototypeFooter
           testId="ward-index-governance"
-          note="Synthetic prototype. Invented figures under real WA hospital names. Lists update once a minute."
+          note="Invented figures under real WA hospital names. Lists update once a minute."
         />
       </main>
     </div>
@@ -981,7 +987,7 @@ function slug(service: HealthService): string {
 /** The card's occupancy as a soft pill, amber from the surge band (95%). */
 function OccupancyPill({ row }: { row: WardRow }) {
   const pct = Math.round(row.occupancy * 100);
-  const nearFull = row.occupancy >= NEAR_FULL;
+  const nearFull = isNearFull(row.occupancy);
   return (
     <span className={styles.sharePill} data-tone={nearFull ? "warning" : undefined}>
       {nearFull ? <StatusGlyph tone="warning" size={8} /> : null}
@@ -1238,7 +1244,7 @@ function WardPhoneList({
             <ul className={styles.phoneRows}>
               {group.rows.map((row) => {
                 const pct = Math.round(row.occupancy * 100);
-                const nearFull = row.occupancy >= NEAR_FULL;
+                const nearFull = isNearFull(row.occupancy);
                 return (
                   <li key={row.unit.id}>
                     <button
@@ -1438,7 +1444,7 @@ function WardTable({
               </span>
               <span role="cell">
                 <span className={styles.figure}>
-                  {row.occupancy >= NEAR_FULL ? <StatusGlyph tone="warning" size={8} /> : null}
+                  {isNearFull(row.occupancy) ? <StatusGlyph tone="warning" size={8} /> : null}
                   <b className={styles.num}>{Math.round(row.occupancy * 100)}%</b>
                 </span>
               </span>

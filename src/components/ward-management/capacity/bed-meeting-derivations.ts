@@ -157,6 +157,12 @@ type BedMeetingWaitingPerson = { id: string; name: string; department?: string; 
 
 export type BedMeetingSheet = {
   service: HealthService | null;
+  /**
+   * R-FIGS-19 (Josh, 14 Nov 2026): the place the sheet counts, named in its title with its beds
+   * ("Royal Perth, 34 beds"): a site desk's own site, as its Capacity and TV count it. Absent, the
+   * sheet counts the chosen service, or all services.
+   */
+  scopeName?: string;
   /** The agenda's group filter in words, when the people lists are narrowed to it. */
   peopleFilter?: string;
   capacity: BedMeetingCapacity;
@@ -184,6 +190,8 @@ export type BedMeetingInput = {
   thresholds: DueSoonThresholds;
   /** The service scope chosen on Capacity; `null` is all services. */
   service: HealthService | null;
+  /** R-FIGS-19: a site desk's site name, when `units` are already that site's wards only. */
+  scopeName?: string;
   /** Resolves a movement to the patient's display name — the screen's own resolver. */
   nameOf: (movement: Movement) => string;
   /** Waiting referrals and the "Referral decision" time limit; both or neither. */
@@ -210,6 +218,15 @@ export type BedMeetingInput = {
 /** Longest first, then by id so two prints of the same picture never reshuffle. */
 function byWaitThenId<T extends { waitMinutes: number; id: string }>(a: T, b: T): number {
   return b.waitMinutes - a.waitMinutes || a.id.localeCompare(b.id);
+}
+
+/**
+ * R-FIGS-19 (Josh, 14 Nov 2026): the sheet's scope as its title names it, with the beds it counts
+ * ("Royal Perth, 34 beds"), so the room can check the sheet against the screen beside it.
+ */
+export function bedMeetingSheetScope(sheet: Pick<BedMeetingSheet, "service" | "scopeName" | "capacity">): string {
+  const place = sheet.scopeName ?? sheet.service ?? "All services";
+  return `${place}, ${sheet.capacity.beds} ${sheet.capacity.beds === 1 ? "bed" : "beds"}`;
 }
 
 export function bedMeetingSheet(input: BedMeetingInput): BedMeetingSheet {
@@ -411,6 +428,7 @@ export function bedMeetingSheet(input: BedMeetingInput): BedMeetingSheet {
 
   return {
     service,
+    ...(input.scopeName ? { scopeName: input.scopeName } : {}),
     ...(input.peopleFilter ? { peopleFilter: input.peopleFilter } : {}),
     capacity,
     short,

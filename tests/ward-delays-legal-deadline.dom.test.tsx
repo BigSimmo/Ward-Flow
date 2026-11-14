@@ -3,8 +3,7 @@ import { fireEvent, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
-import { TYPED_TIME_KEY } from "@/components/ward-management/delays/waiting-typed-time";
-import { standingSuffix, typedTimeStanding } from "@/components/ward-management/legal-forms/legal-forms-view";
+import { typedTimeStanding } from "@/components/ward-management/legal-forms/legal-forms-view";
 import { clockState, DEFAULT_DUE_SOON_THRESHOLDS, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { isOpen } from "@/components/ward-management/ward-derivations";
@@ -153,19 +152,18 @@ describe("the delays screen states the legal deadline it is already reacting to"
         `${movement.id}: the panel does not state its form and typed time`,
       ).toBeDefined();
       const standing = typedTimeStanding(movement, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
-      expect(
-        within(clock).getByText(`As typed on the form${standingSuffix(standing)}`, { exact: false }),
-        `${movement.id}: the typed time does not say it is as typed`,
-      ).toBeDefined();
+      if (standing.word) {
+        expect(within(clock).getByText(standing.word), `${movement.id}: the warning word is missing`).toBeDefined();
+      }
       expect(clock.textContent ?? "", `${movement.id}: a countdown came back`).not.toMatch(COUNTDOWN_WORDS);
-      expect(
-        within(clock).getByTestId("legal-limits-not-checked").textContent,
-        `${movement.id}: the typed time no longer says the limits are not legally checked`,
-      ).toBe("(limits not legally checked)");
+      // D-218 (Josh, 14 Nov 2026): no "As typed on the form" or "(limits not legally checked)" tag.
+      expect(clock.textContent ?? "", `${movement.id}: a legal caveat came back`).not.toMatch(
+        /as typed|legally checked/iu,
+      );
     }
     expect(screen.queryByText(/\bdue in\b|\boverdue\b|\d+m left/iu), "a countdown reached the page").toBeNull();
-    // The page's one key line says the colours compare the typed time with the clock, not the law.
-    expect(screen.getByText(TYPED_TIME_KEY), "the typed-time key no longer says Not legally checked.").toBeDefined();
+    // D-218 (Josh, 14 Nov 2026): no "as typed" or "Not legally checked" caveat line on the page.
+    expect(screen.queryByText(/as typed|legally checked/iu), "a legal caveat came back").toBeNull();
   });
 
   it("says a passed typed time ended as typed, rather than counting down from a negative", () => {
@@ -187,7 +185,7 @@ describe("the delays screen states the legal deadline it is already reacting to"
     expect(
       within(clock).getByText(`${legalFormName(wf006!.legalForm!)} ended ${formatInstantWithDay(dueAt!, now)}`),
     ).toBeDefined();
-    expect(within(clock).getByText("As typed on the form · passed", { exact: false })).toBeDefined();
+    expect(within(clock).getByText("passed")).toBeDefined();
     expect(clock.textContent ?? "", "a passed typed time is counting down past zero").not.toMatch(COUNTDOWN_WORDS);
     expect(screen.queryByText(/due in -\d+ ?m/u), "a passed deadline is counting down past zero").toBeNull();
   });

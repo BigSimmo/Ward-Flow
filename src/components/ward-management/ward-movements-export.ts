@@ -30,7 +30,7 @@ export const MOVEMENTS_EXPORT_HEADER = [
   "Urgency tier",
   "Legal status",
   "Form",
-  "Form ends, as typed",
+  "Form ends",
   "Outcome",
   "Closed",
 ] as const;

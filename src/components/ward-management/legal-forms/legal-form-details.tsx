@@ -129,7 +129,7 @@ export function LegalFormDetailsSection({
     { label: "Copy to the person", value: form.copyGiven ? COPY_LABEL[form.copyGiven] : NOT_RECORDED },
     {
       label: "Review by",
-      value: form.reviewBy === undefined ? NOT_RECORDED : `${shownDay(form.reviewBy, dayZero)}, as typed`,
+      value: form.reviewBy === undefined ? NOT_RECORDED : shownDay(form.reviewBy, dayZero),
     },
     ...(is6B
       ? [{ label: "Chief Psychiatrist consent", value: form.consent ? CONSENT_LABEL[form.consent] : NOT_RECORDED }]
@@ -261,7 +261,6 @@ export function LegalFormDetailsSection({
             </p>
           ) : null}
           <div className={styles.writtenFoot}>
-            <p className={styles.note}>Recorded as typed. Not legally checked.</p>
             <Button
               variant="sec"
               size="sm"

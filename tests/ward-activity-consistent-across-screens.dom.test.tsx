@@ -99,7 +99,7 @@ describe("the Activity panel is consistently wired across all screens", () => {
     expect(escalations.textContent).toMatch(/Escalations\s*[1-9]/u);
 
     // The live tally, with its synthetic provenance, opens under whichever tab shows.
-    expect(within(sheet).getByText(/Synthetic state · demo time/u)).toBeInTheDocument();
+    expect(within(sheet).getByText(/Synthetic state · Board time/u)).toBeInTheDocument();
     await user.click(within(sheet).getByText("Live tally"));
     expect(within(sheet).getByText("Open movements")).toBeInTheDocument();
     expect(within(sheet).getByText("Beds ready")).toBeInTheDocument();

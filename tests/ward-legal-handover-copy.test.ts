@@ -69,7 +69,7 @@ describe("legal form handover copy: passed and upcoming recorded times", () => {
     expect(lines[1]).toContain("10:43");
     for (const line of lines) {
       expect(line).toContain("Form 4A");
-      expect(line).toContain("as typed");
+      expect(line).not.toContain("as typed"); // D-218
       expect(line).not.toMatch(/\boverdue\b|\bleft\b|\bago\b|\bdue in\b|\b\d+\s*[hm]\b/i);
     }
   });

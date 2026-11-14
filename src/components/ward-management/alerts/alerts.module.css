@@ -1983,3 +1983,14 @@ button.check[aria-pressed="true"] {
   font: 600 var(--wf-fs-15) / 20px var(--wf-mono);
   color: var(--wf-hero-ink);
 }
+
+/* INV-PRINT-025: the open button holds the alert's title; print keeps the title as text. */
+@media print {
+  .rowOpen {
+    display: block !important;
+  }
+
+  .rowOpen::after {
+    content: none;
+  }
+}

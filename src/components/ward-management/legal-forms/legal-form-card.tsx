@@ -81,7 +81,7 @@ export function LegalFormSummary({
             <>
               <span className={p.clockBig}>{typedClock(dueAt, now, dayZero)}</span>
               <span className={p.clockWord}>
-                {isClockBreached(dueAt, now) ? "Ended" : "Ends"}, as typed from the form
+                {isClockBreached(dueAt, now) ? "Ended" : "Ends"}
                 {standingSuffix(typedStanding)}
               </span>
             </>
@@ -150,7 +150,6 @@ export function LegalFormSummary({
           <span>{onceOnly}</span>
         </p>
       ) : null}
-      <p className={p.caveat}>Times are as typed. Not legally checked.</p>
     </div>
   );
 }

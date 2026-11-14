@@ -1,3 +1,4 @@
+import { authorisationShort } from "@/components/ward-management/ward-authorisation";
 import { gateMark, type EligibilityGate, type GateResult } from "@/components/ward-management/ward-eligibility";
 
 /**
@@ -10,15 +11,22 @@ const FIT_GROUPS: readonly { label: string; gates: readonly EligibilityGate[] }[
   { label: "Sex", gates: ["gender_designation", "sex_mix"] },
   { label: "Security", gates: ["security", "forensic"] },
   // Review R7 (D-189 items 8(a), 9(a)): authorisation is its own group, never folded into a met
-  // security gate. While every ward reads "not stated" its gate is information only, so a person
-  // whose recorded status needs an involuntary-capable bed reads "Check authorisation". On the
-  // referral path the same gate is named `legal_status`.
+  // security gate. The gate is information only (D-209 item 9: no steering), so a person whose
+  // recorded status needs an involuntary-capable bed reads "Check authorisation" with the register's
+  // answer for the ward, the same answer the ward page gives (R-LEGAL-8). On the referral path the
+  // same gate is named `legal_status`.
   { label: "Authorisation", gates: ["legal_status", "authorisation"] },
   { label: "Age", gates: ["age", "cohort"] },
   { label: "Special care", gates: ["specialling", "acuity"] },
 ];
 
-export type FitLine = { met: string[]; notMet: string[]; toConfirm: string[] };
+export type FitLine = {
+  met: string[];
+  notMet: string[];
+  toConfirm: string[];
+  /** The register's short answer when Authorisation is to check ("hospital on register"). */
+  authorisation?: string;
+};
 
 export function fitLine(gates: readonly GateResult[]): FitLine {
   const line: FitLine = { met: [], notMet: [], toConfirm: [] };
@@ -28,7 +36,12 @@ export function fitLine(gates: readonly GateResult[]): FitLine {
     if (marks.includes("not_met")) line.notMet.push(group.label);
     else if (marks.includes("met")) line.met.push(group.label);
     // Information-only groups (special care, authorisation) ask for a check only when the patient has that need.
-    else if (gates.some((gate) => group.gates.includes(gate.gate) && gate.need)) line.toConfirm.push(group.label);
+    else {
+      const needed = gates.find((gate) => group.gates.includes(gate.gate) && gate.need);
+      if (!needed) continue;
+      line.toConfirm.push(group.label);
+      if (needed.authorisation) line.authorisation = authorisationShort(needed.authorisation);
+    }
   }
   return line;
 }
@@ -38,7 +51,12 @@ export function fitLineText(line: FitLine): string | undefined {
   const parts: string[] = [];
   if (line.met.length > 0) parts.push(`Fits ${listWords(line.met)}`);
   if (line.notMet.length > 0) parts.push(`Not met: ${listWords(line.notMet)}`);
-  if (line.toConfirm.length > 0) parts.push(`Check ${listWords(line.toConfirm)}`);
+  if (line.toConfirm.length > 0) {
+    const words = line.toConfirm.map((label) =>
+      label === "Authorisation" && line.authorisation ? `${label} (${line.authorisation})` : label,
+    );
+    parts.push(`Check ${listWords(words)}`);
+  }
   return parts.length > 0 ? parts.join(" · ") : undefined;
 }
 

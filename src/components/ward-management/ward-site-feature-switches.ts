@@ -44,7 +44,7 @@ export type SiteSwitchableFeature = (typeof SITE_SWITCHABLE_FEATURES)[number];
  */
 export const SITE_PROTECTED_FEATURES = {
   "safety-notices": "Safety notices always show",
-  "legal-times": "Legal times always show as typed",
+  "legal-times": "Legal times never show as a countdown",
   "ruling-guards": "Owner ruling guards always apply",
   "role-access": "Role access is a safeguard",
   "awol-bed-hold-review": "The absent without leave bed hold review is a safety notice",

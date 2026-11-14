@@ -18,6 +18,14 @@ const VIEW_LIST_LIMIT = 200;
 /** How far back the coordinator's record views reach (D-80 item 14). */
 const REVIEW_DAYS = 7;
 /** Minutes from `now` to a stored time, as the screens place server times on the demo clock. */
+/**
+ * R-FIGS-13 (Josh, 14 Nov 2026): why a record was opened, for the Access log's Reason column. An
+ * opening made while the same account held a break glass grant on that person names the grant's
+ * picked reason (a list id, never typed words); any other opening reads null, inside the desk's
+ * own scope. Read from the break glass table both migrations already keep: no new column.
+ */
+const BREAK_GLASS_REASON =
+  "(SELECT b.reason FROM ward_flow.break_glass b WHERE b.workspace_id = r.workspace_id AND b.data_mode = r.data_mode AND b.actor_id = r.actor_id AND b.patient_id = r.patient_id AND r.viewed_at >= b.opened_at AND r.viewed_at <= b.until ORDER BY b.id DESC LIMIT 1) AS break_glass_reason";
 const minutesBefore = (time, now) => Math.round((new Date(time).getTime() - now.getTime()) / 60_000);
 /** Most record openings one account may log in a minute, so no desk can flood the log. */
 const VIEW_RATE_LIMIT = 60;
@@ -221,7 +229,7 @@ export function recordViewsStore({
         const patient = patientId ? ` AND patient_id=$${params.push(patientId)}` : "";
         const place = inPlace ? ` AND patient_id = ANY($${params.push(inPlace)})` : "";
         const { rows } = await pool.query(
-          `SELECT id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at FROM ward_flow.record_access WHERE workspace_id=$1 AND data_mode='prototype' AND viewed_at > $2${patient}${place} ORDER BY id DESC LIMIT ${VIEW_LIST_LIMIT}`,
+          `SELECT id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at, ${BREAK_GLASS_REASON} FROM ward_flow.record_access r WHERE workspace_id=$1 AND data_mode='prototype' AND viewed_at > $2${patient}${place} ORDER BY id DESC LIMIT ${VIEW_LIST_LIMIT}`,
           params,
         );
         return rows.map((row) => ({ ...row, minutes: minutesBefore(row.viewed_at, at) }));
@@ -249,7 +257,7 @@ export function recordViewsStore({
         where += ` AND jsonb_build_array(actor_role, actor_scope) = ANY($${params.length}::jsonb[])`;
       }
       const { rows } = await pool.query(
-        `SELECT id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at FROM ward_flow.record_access WHERE ${where} ORDER BY id DESC LIMIT ${VIEW_LIST_LIMIT}`,
+        `SELECT id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at, ${BREAK_GLASS_REASON} FROM ward_flow.record_access r WHERE ${where} ORDER BY id DESC LIMIT ${VIEW_LIST_LIMIT}`,
         params,
       );
       return rows.map((row) => ({ ...row, minutes: minutesFrom(row.viewed_at, at) }));

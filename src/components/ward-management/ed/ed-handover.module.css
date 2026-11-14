@@ -720,3 +720,11 @@
   flex: 1 1 auto;
   min-width: 0;
 }
+
+/* INV-PRINT-003: the Lists names are buttons on screen; paper keeps the name as text. */
+@media print {
+  .listName {
+    display: inline !important;
+    cursor: auto;
+  }
+}

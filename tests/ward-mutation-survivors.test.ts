@@ -28,14 +28,15 @@ function unitWith(allocatable: Partial<Unit["allocatable"]>): Unit {
 
 const gate = (unit: Unit, name: string) => eligibility(openMovement, unit, NOW).gates.find((g) => g.gate === name)!;
 
-describe("E2: a bed count confirmed exactly its stale limit ago is still fresh", () => {
+// Owner ruling 14 Nov 2026 supersedes the ward's own stored limit: the one signed time applies (60).
+describe("E2: a bed count confirmed exactly the signed limit ago is still fresh", () => {
   it("passes the freshness check on the boundary and fails one minute past it", () => {
-    const limit = 120;
-    expect(gate(unitWith({ confirmedAt: NOW - limit, staleAfterMinutes: limit }), "capacity_freshness")).toMatchObject({
+    const limit = 60;
+    expect(gate(unitWith({ confirmedAt: NOW - limit, staleAfterMinutes: 120 }), "capacity_freshness")).toMatchObject({
       pass: true,
       detail: `Confirmed ${limit} min ago`,
     });
-    expect(gate(unitWith({ confirmedAt: NOW - limit - 1, staleAfterMinutes: limit }), "capacity_freshness").pass).toBe(
+    expect(gate(unitWith({ confirmedAt: NOW - limit - 1, staleAfterMinutes: 120 }), "capacity_freshness").pass).toBe(
       false,
     );
   });

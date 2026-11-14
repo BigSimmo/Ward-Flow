@@ -7,7 +7,6 @@
 import { alertDetail, legalTypedEnd, minutesText } from "@/components/ward-management/alerts/alerts-model";
 import { ownerShort, type QueueEntry } from "@/components/ward-management/alerts/alerts-queue";
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { StatusGlyph } from "@/components/wf";
@@ -35,13 +34,6 @@ export function ChosenAlertCard({ entry, now }: { entry: QueueEntry; now: Instan
             detail, how long ago and the owner share one line. */}
         <p className={p.alertDetail}>
           {alertDetail(entry.item)}
-          {/* A passed legal form's detail is its typed time; the tag says no legal limit was checked. */}
-          {legalEnded !== undefined ? (
-            <>
-              {" "}
-              <LegalLimitsNotChecked variant="tag" />
-            </>
-          ) : null}
           <span className={p.alertMeta}>{[age, owner].filter(Boolean).map((part) => ` · ${part}`)}</span>
         </p>
       </div>

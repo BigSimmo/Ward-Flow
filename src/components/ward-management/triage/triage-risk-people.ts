@@ -119,7 +119,7 @@ export function triagePersonFromWorld(input: WorldPersonInput): TriagePerson {
     team: NOT_RECORDED,
     legal,
     // D-186 (Q11): the record's status reads "On record"; the form's own choice reads "Chosen today".
-    legalTag: "On record · Not legally checked.",
+    legalTag: "On record",
     alert: alerts[0] ?? null,
     alertCount: alerts.length,
     alerts,
@@ -145,7 +145,7 @@ export function searchTriagePeople(people: readonly TriagePerson[], query: strin
 
 /** Legal status in record words for a row: on record, never checked, or not recorded. */
 export function legalLine(person: TriagePerson): string {
-  return person.legal ? `${person.legal}, on record. Not legally checked.` : "Legal status not recorded.";
+  return person.legal ? `${person.legal}, on record.` : "Legal status not recorded.";
 }
 
 /** The records `wardStayFacts` reads: the live workspace collections, as the patient page is handed them. */

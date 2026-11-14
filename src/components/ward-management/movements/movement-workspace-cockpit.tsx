@@ -722,7 +722,7 @@ export function MovementWorkspaceCockpit({
                 label={`Deadline on the ${legalFormNameLabelFirst(patient.legalForm)}`}
                 value={typedClock(deadline, now, dayZero)}
                 flagged={flagged.has("deadline")}
-                sub={`${isClockBreached(deadline, now) ? "Ended" : "Ends"} as typed · not legally checked`}
+                sub={isClockBreached(deadline, now) ? "Ended" : "Ends"}
               />
             ) : null}
             {patient.pullExpiresAt !== undefined ? (

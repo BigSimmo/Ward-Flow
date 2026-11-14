@@ -2,6 +2,10 @@ import { splitDuration, type Instant } from "@/components/ward-management/ward-c
 import type { WardConfiguration } from "@/components/ward-management/ward-configuration";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { isAwaitingAnswer, referralDestinationLabel } from "@/components/ward-management/ward-referrals";
+import {
+  SILENT_WARD_ANOTHER_WARD_SUGGESTION,
+  SILENT_WARD_SECOND_REMINDER_MINUTES,
+} from "@/components/ward-management/ward-operational-defaults";
 import { waitlistStands } from "@/components/ward-management/ward-waitlist";
 
 /**
@@ -119,7 +123,11 @@ export function noReplyLine(waits: readonly NoReplyWait[]): string | undefined {
   const named = places.length === 1 ? places[0]! : `${places.slice(0, -1).join(", ")} and ${places.at(-1)!}`;
   // With more than one place named, the time is the longest of their waits, and says so.
   const waited = `${places.length === 1 ? "" : "longest "}${splitDuration(longest.waitedMinutes)}`;
-  return `Stuck: no reply from ${named} for ${waited} (limit ${splitDuration(longest.limitMinutes)})`;
+  const line = `Stuck: no reply from ${named} for ${waited} (limit ${splitDuration(longest.limitMinutes)})`;
+  // The second reminder (4 hours), as on the Waiting board: words only, nothing moves.
+  return longest.waitedMinutes >= SILENT_WARD_SECOND_REMINDER_MINUTES
+    ? `${line}. ${SILENT_WARD_ANOTHER_WARD_SUGGESTION}`
+    : line;
 }
 
 export type NoReplyByPlace = {

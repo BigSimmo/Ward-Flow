@@ -10,6 +10,7 @@ import { shiftEndInstant } from "@/components/ward-management/ward-board-time-fe
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useWardSharedSave } from "../shell/ward-shared-save-context";
 import { StatusGlyph, cx, type WfTone } from "@/components/wf";
+import { leaveOpenWarning } from "@/components/ward-management/ward-leave-open-warning";
 import { bedGlyphTone, eddMovedBadge, type BedItem } from "./ward-bed-tone";
 import { observationRatio, observationSummary } from "@/components/ward-management/ward-observation";
 import { plural } from "@/components/ward-management/ward-plural";
@@ -345,6 +346,8 @@ export function WardBedsMatrix({
   const bedReleasesList = useOptionalWardFlowSelect("bedReleases")?.bedReleases ?? [];
   // The board clock, so the handover named is the current shift's end (Audit 24-6 TC-02).
   const boardNow = useOptionalWardFlowSelect("now")?.now ?? now;
+  const leaveBedsSelected = useOptionalWardFlowSelect("leaveBeds")?.leaveBeds;
+  const leaveBedsList = useMemo(() => leaveBedsSelected ?? [], [leaveBedsSelected]);
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleasesList);
   // D-151: the beds a save waiting on this page will change, shown on their tiles.
   const waitingList = useWardSharedSave()?.waitingBeds;
@@ -472,7 +475,16 @@ export function WardBedsMatrix({
           tag: atEd && bed.awayAtEdHours! >= 4 ? "Left earlier" : "Just left",
           desc: atEd
             ? "Patient at ED. Bed still held for them."
-            : `${bed.patientAlias ?? "Patient"} away from ${unit.name}. Bed still held for them.`,
+            : [
+                `${bed.patientAlias ?? "Patient"} away from ${unit.name}. Bed still held for them.`,
+                // The signed 24-hour rule, the same words as the Leave page.
+                (() => {
+                  const leave = leaveBedsList.find((entry) => entry.admissionId === bed.admissionId);
+                  return leave && boardNow !== undefined ? leaveOpenWarning(leave, boardNow) : undefined;
+                })(),
+              ]
+                .filter(Boolean)
+                .join(" "),
           actions: [{ label: "Mark them back", primary: false }],
           borderTone: tone,
         });
@@ -520,7 +532,7 @@ export function WardBedsMatrix({
     }
 
     return items;
-  }, [bedsList, unit.name]);
+  }, [bedsList, unit.name, leaveBedsList, boardNow]);
 
   // The count tiles (WH6): what a coordinator asks first, each count the beds its press shows.
   const countTiles = useMemo(() => {

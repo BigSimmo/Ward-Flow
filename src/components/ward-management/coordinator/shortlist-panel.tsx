@@ -98,7 +98,7 @@ import {
 } from "@/components/ward-management/ward-flow-provider";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
-import { releaseUndoStep, withdrawUndoStep } from "./shortlist-release-undo";
+import { referToUnitsUndoStep, releaseUndoStep, withdrawUndoStep } from "./shortlist-release-undo";
 import { sendStepsInOrder } from "@/components/ward-management/coordinator/send-steps-in-order";
 import { useWardFormSave } from "../use-ward-form-save";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
@@ -115,7 +115,6 @@ import styles from "./coordinator.module.css";
 import drawer from "@/components/ward-management/movements/movement-drawer.module.css";
 import shortlistStyles from "./shortlist-panel.module.css";
 import { WardDetailIntakeNotes } from "./shortlist-ward-intake-notes";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { FIT_LABEL, fitGroups, fitReasonWords, type FitKind } from "./home-fit";
 import { NextWardAfterRefusal } from "./next-ward-after-refusal";
 import { HomeReferralDecision, HomeReferralNote } from "./home-referral-decision";
@@ -848,7 +847,10 @@ export function ShortlistPanel({
       return;
     }
     if (!canRefer) return;
-    dispatch({ type: "REFER_TO_UNITS", role: "coordinator", now, movementId, unitIds: [...referTargets] });
+    runStep(
+      { type: "REFER_TO_UNITS", role: "coordinator", now, movementId, unitIds: [...referTargets] },
+      referToUnitsUndoStep(movementId, patientIdentity.formalName),
+    );
     overrideSave.forget();
     setOverrideOpen(false);
   }
@@ -1412,7 +1414,6 @@ export function ShortlistPanel({
         {movement.legalForm ? (
           <p className={shortlistStyles.legalLine} data-urgent={legalBreached ? "true" : undefined}>
             {`${legalFormLine(movement, now, dayZero)} · ${movement.legalStatus}`}
-            {legalDueAt !== undefined ? <LegalLimitsNotChecked variant="tag" /> : null}
           </p>
         ) : null}
 
@@ -1646,7 +1647,7 @@ export function ShortlistPanel({
               />
             ) : null}
             <Fact
-              label="Expected arrival (as recorded)"
+              label="Expected arrival"
               value={
                 movement.arrivalDetails?.estimatedArrivalAt !== undefined
                   ? now > movement.arrivalDetails.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES
