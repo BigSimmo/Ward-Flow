@@ -17,7 +17,7 @@ import { numberedReservationBeds, type ReservationReferral } from "./ward-moveme
 import { activeClosedBeds } from "./ward-ready-beds";
 import { wardStaySeats } from "./ward/ward-bed-layout";
 
-export type BedKind = "locked" | "open";
+type BedKind = "locked" | "open";
 
 const isCurrent = (admission: { state: string }) => admission.state === "pulled" || admission.state === "occupied";
 
@@ -53,7 +53,7 @@ export function stayBedKind(
 }
 
 /** Each bed number a current stay sits in on this ward (its recorded bed, else its fixed seat). */
-export function bedNumbersInUse(unit: Unit, admissions: readonly Admission[]): Map<number, string> {
+function bedNumbersInUse(unit: Unit, admissions: readonly Admission[]): Map<number, string> {
   const seats = wardStaySeats(unit, admissions);
   const used = new Map<number, string>();
   for (const admission of admissions) {
@@ -74,7 +74,7 @@ export function bedNumbersInUse(unit: Unit, admissions: readonly Admission[]): M
  * The bed numbers of `kind` nobody sits in, that are not closed by number and not in `held`, lowest
  * first. `exceptAdmissionId` is the stay being given a bed, so its own current bed counts as free.
  */
-export function freeBedNumbers(
+function freeBedNumbers(
   unit: Unit,
   admissions: readonly Admission[],
   kind: BedKind,
@@ -94,7 +94,7 @@ export function freeBedNumbers(
 }
 
 /** The numbers held for somebody on their way (a named reservation), leaving out `except`'s own. */
-export function heldBedNumbers(
+function heldBedNumbers(
   unit: Unit,
   state: {
     admissions: readonly Admission[];
@@ -123,7 +123,7 @@ export function chooseBedNumber(
 }
 
 /** The empty numbers of each kind (nobody in them, not closed by number), held beds included. */
-export function emptyBedNumbersByKind(unit: Unit, admissions: readonly Admission[]): Record<BedKind, number> {
+function emptyBedNumbersByKind(unit: Unit, admissions: readonly Admission[]): Record<BedKind, number> {
   return {
     locked: freeBedNumbers(unit, admissions, "locked").length,
     open: freeBedNumbers(unit, admissions, "open").length,
