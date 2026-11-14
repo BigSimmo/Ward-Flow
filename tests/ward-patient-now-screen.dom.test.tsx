@@ -335,7 +335,9 @@ describe("the patient-now screen", () => {
     fireEvent.click(within(root).getByRole("tab", { name: /^History/u }));
     fireEvent.click(within(root).getByRole("tab", { name: /^Documents/u }));
 
-    expect(within(root).getAllByText(new RegExp(expectedFormName.replace(/[()]/g, "\\$&"))).length).toBeGreaterThan(0);
+    expect(
+      within(root).getAllByText(new RegExp(expectedFormName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))).length,
+    ).toBeGreaterThan(0);
     expect(within(root).getAllByText(new RegExp(expectedDue)).length).toBeGreaterThan(0);
     expect(within(root).queryByText(/Form 4A/)).not.toBeInTheDocument();
     // D5: no legal time on this screen is computed from `now`.

@@ -100,7 +100,7 @@ function scan(): Entry[] {
     .toSorted((a, b) => Number(a.nextStep) - Number(b.nextStep) || a.message.localeCompare(b.message));
 }
 
-const cell = (text: string) => text.replaceAll("|", "\\|");
+const cell = (text: string) => text.replaceAll("\\", "\\\\").replaceAll("|", "\\|");
 
 function render(entries: Entry[]): string {
   const without = entries.filter((entry) => !entry.nextStep).length;
