@@ -1736,6 +1736,27 @@ html[data-motion="reduced"] *::after {
     display: none !important;
   }
 
+  /* Opt-in for a button that is really a title, a name or a group heading (R-FIGS-1, D-218): it
+     prints as plain text, never as a control. Ward Flow's kit parts carry it; a screen file that
+     cannot be marked is listed by test id in ward-flow-print.css instead. */
+  button[data-print-show],
+  [data-print-show] {
+    display: revert !important;
+    position: static !important;
+    border: 0 !important;
+    background: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    font: inherit !important;
+    color: #000 !important;
+    text-align: start !important;
+    text-decoration: none !important;
+  }
+
+  [data-print-show] svg {
+    display: none !important;
+  }
+
   main,
   section,
   article,
