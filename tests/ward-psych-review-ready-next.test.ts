@@ -251,13 +251,13 @@ describe("referral response timer", () => {
 });
 
 describe("the row sheet says a review is awaited only once one is asked for (R-STRUCT-28, Desks-R4-3)", () => {
-  it("reads Not asked yet, then Awaiting review, then Examination recorded", () => {
+  it("reads the list's words: Review not asked for, then Review asked, then Examination recorded (R-LEGAL-16)", () => {
     const movement = openMovement(seedWardFlowState());
     const unasked = { ...movement, psychReview: undefined, examination: undefined };
-    expect(psychReviewStatusWords(unasked)).toBe("Not asked yet");
+    expect(psychReviewStatusWords(unasked)).toBe("Review not asked for");
     expect(psychReviewStage(unasked, NOW_ANCHOR, 30).line).toBe("Review not asked for");
     const asked = { ...unasked, psychReview: { requestedAt: NOW_ANCHOR - 30 } } as Movement;
-    expect(psychReviewStatusWords(asked)).toBe("Awaiting review");
+    expect(psychReviewStatusWords(asked)).toBe("Review asked");
     expect(
       psychReviewStatusWords({ ...asked, examination: movement.examination ?? ({} as Movement["examination"]) }),
     ).toBe("Examination recorded");
