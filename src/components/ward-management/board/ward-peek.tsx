@@ -36,9 +36,10 @@ export function WardPeekButton({
   const unit = units.find((candidate) => candidate.id === unitId);
   if (!unit || !canOpen(href)) return null;
   // Same rule as Search's ready count, without pulling Search's code into every board. The named
-  // holds are open journeys and accepted referrals, as Home and the rail count them (D-115 item 3).
+  // holds are open journeys and accepted referrals, as Home and the rail count them (D-115 item 3),
+  // and a bed still being made ready is not Ready (M7, mechanics audit 14 Nov 2026).
   const ready =
-    unit.allocatable && unit.empty ? readyBedsNow(unit, admissions, [], [...movements, ...referrals]) : null;
+    unit.allocatable && unit.empty ? readyBedsNow(unit, admissions, bedReleases, [...movements, ...referrals]) : null;
   const inUse = wardBedsInUse(unit, admissions, bedReleases);
   const site = siteByCode(unit.siteCode)?.name;
   return (

@@ -35,7 +35,14 @@ import {
 import { SELECTABLE_LEGAL_FORMS, legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { readyBedsNow, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import type { EmergencyDepartment, LegalForm, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
+import type {
+  BedRelease,
+  EmergencyDepartment,
+  LegalForm,
+  Movement,
+  Referral,
+  Unit,
+} from "@/components/ward-management/ward-model";
 import { createPatientResolver, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import {
   findPatients,
@@ -212,9 +219,15 @@ export function unitReadyBedCount(
   admissions: readonly Admission[],
   /** The named holds: open journeys and accepted referrals (D-115 item 3). */
   referrals: readonly ReservationReferral[],
+  /**
+   * The bed releases, so a bed still being made ready is not counted as Ready (M7, mechanics audit
+   * 14 Nov 2026; D-179 item 8). Capacity, Home and the nav pass them; leaving them out here made the
+   * ward peek and Search one higher whenever a bed was being made ready.
+   */
+  bedReleases: readonly BedRelease[],
 ): number | null {
   if (unit.allocatable && unit.empty) {
-    return readyBedsNow(unit, admissions, [], referrals);
+    return readyBedsNow(unit, admissions, bedReleases, referrals);
   }
   return null;
 }
@@ -253,6 +266,7 @@ function searchWards(
   nearly = false,
   admissions: readonly Admission[] = [],
   referrals: readonly ReservationReferral[] = [],
+  bedReleases: readonly BedRelease[] = [],
 ): WardSearchResult[] {
   const needle = query.trim().toLowerCase();
   if (!needle) return [];
@@ -264,7 +278,7 @@ function searchWards(
 
   const wardFields = (unit: Unit) => [unit.name, unit.siteCode, unit.id, siteByCode(unit.siteCode)?.name ?? ""];
   const exact = candidateUnits.filter((unit) => {
-    if (readyOnly) return (unitReadyBedCount(unit, admissions, referrals) ?? 0) > 0;
+    if (readyOnly) return (unitReadyBedCount(unit, admissions, referrals, bedReleases) ?? 0) > 0;
     if (isWardKeyword) return true;
     return matchesSearchWords(query, wardFields(unit), ["ward", "wards"]);
   });
@@ -274,7 +288,7 @@ function searchWards(
   return matched.map((unit) => {
     const site = siteByCode(unit.siteCode);
     const siteName = site?.name ?? unit.siteCode;
-    const readyBeds = unitReadyBedCount(unit, admissions, referrals);
+    const readyBeds = unitReadyBedCount(unit, admissions, referrals, bedReleases);
     return {
       unit,
       readyBeds,
@@ -782,6 +796,8 @@ export type SmartSearchInput = {
   plannedAdmissions?: readonly import("@/components/ward-management/ward-admissions").PlannedAdmission[];
   /** Ward admissions, so an accepted referral already admitted is not offered as still waiting. */
   admissions?: readonly Admission[];
+  /** Bed releases, so a ward's ready count leaves out beds still being made ready (M7). */
+  bedReleases?: readonly BedRelease[];
   precomputedTasks?: readonly InboxItem[];
   /** The board's day 0, so a task's typed legal time on another day prints its date (D1, D-93). */
   dayZero?: Date;
@@ -967,7 +983,14 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
   const beds = allBeds.slice(0, limit);
   const wards = rankGroup(
     "wards",
-    searchWards(typed, input.units, nearly, input.admissions, [...(input.referrals ?? []), ...input.movements]),
+    searchWards(
+      typed,
+      input.units,
+      nearly,
+      input.admissions,
+      [...(input.referrals ?? []), ...input.movements],
+      input.bedReleases,
+    ),
     typed,
     (ward) => [ward.unit.name, ward.unit.siteCode, ward.unit.id, ward.siteName],
   );
