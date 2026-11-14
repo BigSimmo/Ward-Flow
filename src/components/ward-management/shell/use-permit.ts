@@ -7,7 +7,7 @@
  * shared server asks the same function, so the screen and the server give one answer in one set of
  * words. `GatedAction` (`src/components/wf/gated-action.tsx`) draws the answer.
  *
- * `permitRecordsOf` builds the records from the fields the place rules read. Outside a provider only
+ * The records come from the fields the place rules read. Outside a provider only
  * the role phase runs.
  */
 import { useMemo } from "react";
@@ -18,18 +18,18 @@ import { permit, type Change, type Permit, type PermitRecords } from "@/componen
 import { useDesk } from "@/components/ward-management/shell/use-desk";
 
 /** The state fields the place rules and record checks read. */
-export type PermitStateFields = Pick<
+type PermitStateFields = Pick<
   WardFlowState,
   "units" | "movements" | "referrals" | "admissions" | "broadcastAlerts" | "undoRecords"
 >;
 
 /** The records `permit()` reads, from the fields a provider holds. */
-export function permitRecordsOf(fields: PermitStateFields): PermitRecords {
+function permitRecordsOf(fields: PermitStateFields): PermitRecords {
   return { state: fields as WardFlowState, places: wardPlaceLookup(fields.units) };
 }
 
 /** The records this desk holds, or undefined outside a provider. */
-export function usePermitRecords(): PermitRecords | undefined {
+function usePermitRecords(): PermitRecords | undefined {
   const fields = useOptionalWardFlowSelect(
     "units",
     "movements",

@@ -25,6 +25,7 @@ import { useBedMeetingRecord } from "@/components/ward-management/bed-meeting/us
 import { ToastProvider } from "@/components/wf";
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
 import {
+  readWardAccessSnapshot,
   resetWardAccessStoreForTests,
   setWardAccess,
   startAccessPreview,
@@ -105,8 +106,12 @@ function asDesk(access: WardAccess) {
   });
 }
 
+/** The coordinator records at the meeting; the desk under test is restored after (D-223's local net). */
 function recordAction() {
+  const desk = readWardAccessSnapshot().access;
+  act(() => setWardAccess({ role: "coordinator", scope: { kind: "statewide" } }));
   fireEvent.click(screen.getByTestId("record"));
+  act(() => setWardAccess(desk));
   expect(screen.getByTestId("refusals")).toHaveTextContent("0");
 }
 

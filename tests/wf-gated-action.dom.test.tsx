@@ -65,12 +65,12 @@ describe("GatedButton draws each permit() answer", () => {
   });
 
   it("reads a useRoleGate() answer the same way", () => {
-    const note = null;
-    expect(permitFromRoleGate({ allowed: true, buttonProps: {}, note })).toEqual({ kind: "allow" });
-    expect(
-      permitFromRoleGate({ allowed: false, never: true, reason: "Coordinator only", buttonProps: {}, note }),
-    ).toEqual({ kind: "never", refusal: "Coordinator only" });
-    expect(permitFromRoleGate({ allowed: false, reason: "Coordinator only", buttonProps: {}, note })).toEqual({
+    expect(permitFromRoleGate({ allowed: true })).toEqual({ kind: "allow" });
+    expect(permitFromRoleGate({ allowed: false, never: true, reason: "Coordinator only" })).toEqual({
+      kind: "never",
+      refusal: "Coordinator only",
+    });
+    expect(permitFromRoleGate({ allowed: false, reason: "Coordinator only" })).toEqual({
       kind: "not-now",
       refusal: "Coordinator only",
       reason: "Coordinator only",
