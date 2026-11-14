@@ -21,7 +21,7 @@ import { raiseReferralHref } from "@/components/ward-management/shell/ward-facad
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
-import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import { isBedCountStale } from "@/components/ward-management/ward-clinical-values";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { activeActNowItems, activeTaskItems } from "@/components/ward-management/ward-act-now-items";
 import { alertsNowFigures } from "@/components/ward-management/ward-alerts-figures";
@@ -142,7 +142,6 @@ const DELAYS_HREF = "/ward-flow/waiting";
 const IN_PLACE_KINDS = new Set(["hold", "declines", "nobed", "unsuitable"]);
 
 /** A bed count older than this is named in the hero's Checking foot (v10 Home chapter). */
-const BED_COUNT_FRESH_MINUTES = CLINICAL_VALUES.bedCountFresh.value;
 
 /** Focus target when a selection goes away: the selected queue row, else the active queue choice. */
 const QUEUE_FOCUS_SELECTOR = 'button[aria-pressed="true"], [role="radio"][aria-checked="true"]';
@@ -679,12 +678,8 @@ export function CoordinatorScreen() {
   // Checking foot: what this page watched, as counts. Never "All clear". Review finding 14 (12 Nov
   // 2026): with a service chosen, it counts that service's wards only, as the rest of Home does.
   const checkedUnits = service === null ? units : units.filter((unit) => unitHealthService(unit) === service);
-  const staleBedCounts = checkedUnits.filter(
-    (unit) => now - unit.allocatable.confirmedAt > BED_COUNT_FRESH_MINUTES,
-  ).length;
-  const wardsNotReporting = checkedUnits.filter(
-    (unit) => now - unit.allocatable.confirmedAt > unit.allocatable.staleAfterMinutes,
-  ).length;
+  const staleBedCounts = checkedUnits.filter((unit) => isBedCountStale(unit.allocatable.confirmedAt, now)).length;
+  const wardsNotReporting = checkedUnits.filter((unit) => isBedCountStale(unit.allocatable.confirmedAt, now)).length;
 
   // Not deferred: the placement panel's Offer and Refer act on this movement, so it must always be the one
   // the queue selection and `data-subject-movement` name. A deferred copy could act for the previous patient.

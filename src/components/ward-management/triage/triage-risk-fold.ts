@@ -70,8 +70,8 @@ export function foldLine(state: TriageState, section: SectionId): string[] {
   }
   if (section === "dec") {
     const form = hasLegalForm(state) ? state.text.legalForm.trim() : "";
-    // D-186 (Q11): a status picked from buttons reads "as chosen"; the form and date stay "as typed".
-    const legal = state.legal ? `${LEGAL_NAME[state.legal]} (as chosen)${form ? `, ${form} (as typed)` : ""}` : "";
+    // D-218 (Josh, 14 Nov 2026): no "(as chosen)" or "(as typed)" after the status and form.
+    const legal = state.legal ? `${LEGAL_NAME[state.legal]}${form ? `, ${form}` : ""}` : "";
     return [
       state.urgency ? `Urgency ${state.urgency}, ${TIER_LONG[state.urgency].toLowerCase()}` : "",
       state.outcome ?? "",

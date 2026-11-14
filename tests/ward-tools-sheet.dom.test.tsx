@@ -472,7 +472,7 @@ describe("Form times on the Perth clock", () => {
     expect(screen.getByRole("menuitemradio", { name: /^Form 4A/u })).toBeTruthy();
     fireEvent.click(screen.getByRole("menuitemradio", { name: /^Form 1A/u }));
     expect(result).toHaveTextContent("09:15");
-    expect(result).toHaveTextContent("as typed");
+    expect(result).not.toHaveTextContent("as typed");
   });
 
   it("shows nothing for a cleared time rather than reading it as midnight", () => {

@@ -14,10 +14,7 @@ import { useRoleGate, type RoleGate } from "@/components/ward-management/ward-ro
 import { useDeskActingWard } from "@/components/ward-management/ward-desk-acting-ward";
 import { formatInstantWithDay, minuteOfDay, minuteOfDayFromClockText } from "@/components/ward-management/ward-clock";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
-import {
-  LATE_ARRIVAL_GRACE_MINUTES,
-  OPERATIONAL_DEFAULT_LABEL,
-} from "@/components/ward-management/ward-operational-defaults";
+import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { settledWardCommand } from "../ward-command-completion";
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
@@ -268,10 +265,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
             <legend className="sr-only">Arrival plan</legend>
             <div className={styles.note}>
               <ShieldCheck size={18} className={styles.noteIcon} aria-hidden="true" />
-              <span>
-                Saving keeps the existing {pullHoldLabel} pull time limit. Over {LATE_ARRIVAL_GRACE_MINUTES} minutes
-                late ({OPERATIONAL_DEFAULT_LABEL}), a late notice goes to the referrer and accepting ward.
-              </span>
+              <span>Saving keeps the existing {pullHoldLabel} pull time limit.</span>
             </div>
 
             {late && movement.arrivalDetails ? (

@@ -315,7 +315,7 @@ function LiveTally({ activity, now, links }: { activity: Activity; now: Instant;
     <details className={styles.tally} onToggle={(event) => setOpen(event.currentTarget.open)}>
       <summary>
         <span>Live tally</span>
-        <span className={styles.muted}>Synthetic state · demo time {formatInstant(now)}</span>
+        <span className={styles.muted}>Synthetic state · Board time {formatInstant(now)}</span>
       </summary>
       {open ? <TallyBody activity={activity} links={links} /> : null}
     </details>

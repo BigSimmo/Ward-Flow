@@ -1,6 +1,6 @@
 import { bedHold, PULL_NO_LIMIT_RECORDED, type BedHold } from "@/components/ward-management/ward-bed-hold";
 import type { Instant } from "@/components/ward-management/ward-clock";
-import { stageCopy } from "@/components/ward-management/ward-stage-copy";
+import { divertedAwaitingRelease, stageCopy } from "@/components/ward-management/ward-stage-copy";
 import type { Movement, MovementStage } from "@/components/ward-management/ward-model";
 import type { EdBoardRowModel } from "./ed-screen-board-row";
 import type { EdScreenContext } from "./ed-screen-context";
@@ -94,8 +94,11 @@ export function edReferralStatus(
   const heldDetail =
     // D-187 (F-46): a pull with no limit recorded says so, not the configured default.
     stage === "pulled" ? (hold ? hold.short : PULL_NO_LIMIT_RECORDED) : done > 3 ? "Bed pulled" : "No bed yet";
-  const transportDetail =
-    stage === "moving"
+  // Together-X1b-3: a diverted journey is not on the way; its pulled bed waits to be released.
+  const diverted = divertedAwaitingRelease(movement);
+  const transportDetail = diverted
+    ? "Diverted"
+    : stage === "moving"
       ? "On the way"
       : stage === "handover_ready"
         ? "Handover ready"
@@ -136,9 +139,11 @@ export function edReferralStatus(
         ? "bed pulled"
         : stage === "handover_ready"
           ? "handover ready"
-          : stage === "moving"
-            ? "on the way"
-            : "arrived";
+          : diverted
+            ? "diverted, pulled bed to be released"
+            : stage === "moving"
+              ? "on the way"
+              : "arrived";
   const heldTail =
     stage !== "pulled"
       ? ""
@@ -150,7 +155,7 @@ export function edReferralStatus(
   return {
     title: ward ?? edStageLabel(stage),
     line: `Accepted, ${accepted}${heldTail}`,
-    tone: hold?.state === "lapsed" ? "danger" : done >= 3 ? "good" : "quiet",
+    tone: hold?.state === "lapsed" ? "danger" : diverted ? "warn" : done >= 3 ? "good" : "quiet",
     hold,
     // The ward's full name, never a first word ("Mental accepted"); a lapsed hold says so here too.
     phone: `${ward ? `${ward} accepted` : "Accepted"}, ${accepted}${hold?.state === "lapsed" ? `, ${hold.short.toLowerCase()}` : ""}`,

@@ -12,6 +12,7 @@ import { DrawerFootRow, Icon, PanelDrawer, StatusGlyph, StatusPill, buttonClass 
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { transportLeg } from "@/components/ward-management/ward-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
+import { UMRN_NOT_SHOWN } from "@/components/ward-management/ward-patient-resolver";
 
 import { renderDetail, renderPhoneNextStep, type OfficerJobDetailContext } from "./officer-job-detail";
 import { PACK_SLOTS } from "./officer-forms-pack";
@@ -55,12 +56,14 @@ type OfficerJobPanelProps = {
   job: Movement & { transport: NonNullable<Movement["transport"]> };
   name: string;
   umrn: string | undefined;
+  /** R-MOVE-5: the date of birth, the officer's second identifier beside the name. */
+  dob?: string;
   context: OfficerJobDetailContext;
   tools: ReactNode;
   onClose: () => void;
 };
 
-export function OfficerJobPanel({ job, name, umrn, context, tools, onClose }: OfficerJobPanelProps) {
+export function OfficerJobPanel({ job, name, umrn, dob, context, tools, onClose }: OfficerJobPanelProps) {
   const transport = job.transport;
   const leg = officerLeg(transport) ?? "Requested";
   const detail = renderDetail(job, context);
@@ -68,13 +71,17 @@ export function OfficerJobPanel({ job, name, umrn, context, tools, onClose }: Of
   const { tabs, panel } = detail;
   // Drawer review (6 Nov 2026): the job opens in the kit drawer at every width, as Home and
   // Capacity do, so the jobs list keeps the page's one scroll and the panel never scrolls inside it.
-  // One short subtitle (UMRN and escort); the legal status leads the Details list.
+  // One short subtitle (date of birth, UMRN and escort); the legal status leads the Details list.
+  // R-MOVE-5 (Josh, 14 Nov 2026): this desk is not shown the UMRN, and says so.
   const subtitle = [
+    dob ? <span key="dob">DOB {dob}</span> : null,
     umrn ? (
       <span key="umrn" className={styles.mono}>
         {umrn}
       </span>
-    ) : null,
+    ) : (
+      <span key="umrn">{UMRN_NOT_SHOWN}</span>
+    ),
     transport.escortRequired ? <span key="escort">Escort</span> : null,
   ]
     .filter(Boolean)

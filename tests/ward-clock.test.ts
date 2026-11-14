@@ -284,7 +284,8 @@ it("does not initialise date-label formatters on routes that only import the clo
     const zero = clock.perthMidnight(2026, 9, 29);
     expect(clock.perthDayLabel(0, zero)).toBe("Thu 29 Oct");
     expect(clock.perthDayLabel(1440, zero)).toBe("Fri 30 Oct");
-    expect(formatter).toHaveBeenCalledTimes(2);
+    // One zone-offset reader (`zoneOffsetMs`, the app's one time zone setting) plus the two labels.
+    expect(formatter).toHaveBeenCalledTimes(3);
   } finally {
     formatter.mockRestore();
   }
@@ -303,7 +304,8 @@ it("keeps Perth labels correct through leap day and mixed session years without 
       expect(clock.perthDayLabel(-1440, nextYear)).toBe("31 Dec 2028");
       expect(clock.perthDayLabel(1440, nextYear)).toBe("Tue 2 Jan");
     }
-    expect(formatter).toHaveBeenCalledTimes(2);
+    // One zone-offset reader (`zoneOffsetMs`, the app's one time zone setting) plus the two labels.
+    expect(formatter).toHaveBeenCalledTimes(3);
   } finally {
     formatter.mockRestore();
   }
@@ -316,7 +318,8 @@ it("recovers if the year formatter's first construction fails", async () => {
   let constructions = 0;
   const formatter = vi.spyOn(Intl, "DateTimeFormat").mockImplementation(function (locales, options) {
     constructions += 1;
-    if (constructions === 2) throw new Error("synthetic formatter startup failure");
+    // The first construction is the zone-offset reader (`zoneOffsetMs`); the third is the year formatter.
+    if (constructions === 3) throw new Error("synthetic formatter startup failure");
     return new OriginalFormatter(locales, options);
   });
   try {
@@ -324,7 +327,7 @@ it("recovers if the year formatter's first construction fails", async () => {
     expect(() => clock.perthDayLabel(0, zero)).toThrow("synthetic formatter startup failure");
     expect(clock.perthDayLabel(0, zero)).toBe("Thu 31 Dec");
     expect(clock.perthDayLabel(1440, zero)).toBe("1 Jan 2027");
-    expect(formatter).toHaveBeenCalledTimes(3);
+    expect(formatter).toHaveBeenCalledTimes(4);
   } finally {
     formatter.mockRestore();
   }
@@ -339,7 +342,8 @@ it("does not poison the cached formatters after an invalid instant", async () =>
     expect(() => clock.perthDayLabel(Number.NaN, zero)).toThrow(RangeError);
     expect(clock.perthDayLabel(0, zero)).toBe("Thu 31 Dec");
     expect(clock.perthDayLabel(1440, zero)).toBe("1 Jan 2027");
-    expect(formatter).toHaveBeenCalledTimes(2);
+    // One zone-offset reader (`zoneOffsetMs`, the app's one time zone setting) plus the two labels.
+    expect(formatter).toHaveBeenCalledTimes(3);
   } finally {
     formatter.mockRestore();
   }

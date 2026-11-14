@@ -49,7 +49,7 @@ export function EdPreview({
               id: "past",
               tone: "danger",
               icon: Hourglass,
-              label: `Past ${waitLine(accessTarget)}`,
+              label: `Over ${waitLine(accessTarget)}`,
               value: row.pastTarget,
             },
             { id: "no-bed", tone: "warning", icon: BedSingle, label: "No bed yet", value: row.noBed },

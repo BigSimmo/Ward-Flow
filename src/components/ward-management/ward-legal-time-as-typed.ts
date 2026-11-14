@@ -61,18 +61,21 @@ export function typedClockParts(
   return { clock, day: `on ${days < 0 ? "an earlier" : "a later"} day`, dayFirst: false };
 }
 
-/** "Ends 15:42 as typed", or "Ended 15:42 as typed" once the typed time has gone by. */
+/**
+ * "Ends 15:42", or "Ended 15:42" once the typed time has gone by. No "as typed" or legal hedge in
+ * the words (D-218, Josh 14 Nov 2026); the time is still never turned into a countdown (D-93).
+ */
 export function typedTimeLine(dueAt: Instant, now: Instant, dayZero: Date | undefined): string {
-  return `${isClockBreached(dueAt, now) ? "Ended" : "Ends"} ${typedClock(dueAt, now, dayZero)} as typed`;
+  return `${isClockBreached(dueAt, now) ? "Ended" : "Ends"} ${typedClock(dueAt, now, dayZero)}`;
 }
 
-/** The same words for the middle of a sentence: "ends 15:42 as typed" or "ended 15:42 as typed". */
+/** The same words for the middle of a sentence: "ends 15:42" or "ended 15:42". */
 export function typedTimePhrase(dueAt: Instant, now: Instant, dayZero: Date | undefined): string {
-  return `${isClockBreached(dueAt, now) ? "ended" : "ends"} ${typedClock(dueAt, now, dayZero)} as typed`;
+  return `${isClockBreached(dueAt, now) ? "ended" : "ends"} ${typedClock(dueAt, now, dayZero)}`;
 }
 
 /**
- * "Form 4C (Transfer order) · ends 15:42 as typed", or "· no expiry recorded from the form" when
+ * "Form 4C (Transfer order) · ends 15:42", or "· no expiry recorded from the form" when
  * none was typed. The full form name, never a shortened code on its own.
  */
 export function formTimeAsTyped(legalForm: LegalForm, now: Instant, dayZero: Date | undefined): string {
@@ -83,9 +86,3 @@ export function formTimeAsTyped(legalForm: LegalForm, now: Instant, dayZero: Dat
   if (position.dueAt === undefined) return `${legalFormName(legalForm)} · no expiry recorded from the form`;
   return `${legalFormName(legalForm)} · ${typedTimePhrase(position.dueAt, now, dayZero)}`;
 }
-
-/**
- * The one key line a page carries near a list of typed legal times, word for word wherever it shows
- * (Josh, 30 Oct 2026): the colour compares the typed time with the clock and is not a legal check.
- */
-export const TYPED_TIME_KEY = "Colours compare the time as typed with the clock. Not legally checked.";

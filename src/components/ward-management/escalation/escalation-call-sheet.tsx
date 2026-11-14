@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Copy } from "lucide-react";
 import { useMemo, useState, type RefObject } from "react";
 
-import { Badge, Button, Sheet, StateLine, StatusGlyph } from "@/components/wf";
+import { Button, Sheet, StateLine, StatusGlyph } from "@/components/wf";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -118,9 +118,6 @@ export function EscalationCallSheet({
               )}
               <span className={styles.checked} data-testid="ward-escalation-checked">
                 Synthetic · {who.checked} · Kept up to date by {WARD_FLOW_ROLE_LABELS[who.entry.ownerRole]}
-                <Badge size="sm" variant="plain">
-                  Not verified
-                </Badge>
               </span>
               {who.notChecked ? <span className={styles.note}>{who.notChecked}</span> : null}
             </div>

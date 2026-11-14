@@ -86,7 +86,7 @@ describe("ward changes from the Patient page", () => {
     renderPatient();
     fireEvent.click(within(changeCard()).getByRole("button", { name: "Discharge date" }));
     fireEvent.change(within(changeCard()).getByLabelText("Expected discharge time"), { target: { value: "00:05" } });
-    expect(within(changeCard()).getByText(/That time has passed\. It saves as typed\./)).toBeVisible();
+    expect(within(changeCard()).getByText(/That time has passed\./)).toBeVisible();
     const save = within(changeCard()).getByRole("button", { name: "Save date" });
     expect(save).toBeEnabled();
     fireEvent.click(save);

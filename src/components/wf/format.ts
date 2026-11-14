@@ -1,3 +1,5 @@
+import { WARD_TIME_ZONE, zoneOffsetMs } from "@/lib/ward-time-zone";
+
 /**
  * v6 time formats (design-system-v6.md section 5). A colon only ever means clock time. Durations
  * carry units and go beside a direction word: waiting, in, left, overdue or ago.
@@ -39,14 +41,13 @@ export function durMinutes(minutes: number): string {
   return dur(minutes * MINUTE);
 }
 
-/** Perth is UTC+8 all year (Western Australia observes no daylight saving), as in ward-clock.ts. */
-const PERTH_UTC_OFFSET = 8 * HOUR;
-
 /**
  * 24 hour Perth (AWST) clock time, `HH:MM`, whatever the device's time zone. Every other Ward Flow
  * clock face and date is Perth, so a device-zone reading here would disagree with them (F-22).
  */
 export function clk(at: Date | number): string {
-  const perth = new Date((typeof at === "number" ? at : at.getTime()) + PERTH_UTC_OFFSET);
+  const ms = typeof at === "number" ? at : at.getTime();
+  // The app's one time zone setting (`WARD_TIME_ZONE`, Perth by default), as in ward-clock.ts.
+  const perth = new Date(ms + zoneOffsetMs(WARD_TIME_ZONE, ms));
   return `${pad(perth.getUTCHours())}:${pad(perth.getUTCMinutes())}`;
 }

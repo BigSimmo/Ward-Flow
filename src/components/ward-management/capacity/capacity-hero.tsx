@@ -14,10 +14,16 @@ import {
   heroChipClassName,
   Menu,
   SrOnly,
+  StatusGlyph,
   WindowWord,
   type HeroChipItem,
 } from "@/components/wf";
 import { formatWardOccupancy } from "@/components/ward-management/ward-occupancy";
+import { isBedAlert, occupancyTone } from "@/components/ward-management/shell/ward-service-bed-alerts";
+import {
+  OCCUPANCY_ALERT_PERCENT,
+  OCCUPANCY_CRITICAL_PERCENT,
+} from "@/components/ward-management/ward-operational-defaults";
 import { PageLiveChip } from "@/components/ward-management/ward-page-live";
 import { CountBreakdown } from "@/components/ward-management/count-breakdown";
 import { wardReadyBreakdownRows } from "@/components/ward-management/count-breakdown-rows";
@@ -111,12 +117,16 @@ export function CapacityHero({
     : gapRows;
   const openRow = gapRows.find((row) => row.id === openKind) ?? null;
   const gap = gapTotals.gap;
+  // D-191 item 4: the 85% figure keeps its amber dot, the rail's own rule (`isBedAlert`, the whole percent shown).
+  const occupancyAlert = occupancy.percent !== null && isBedAlert(occupancy.percent);
   const occupancyLabel = (
     <span className={styles.figLabel}>
+      {occupancyAlert ? <StatusGlyph tone="warning" size={8} /> : null}
       In use
       <WindowWord word="now" className={styles.winWord} />
       {/* Occupancy counts pulled beds as in use (audit P100, D-81). */}
       {model.pulled > 0 ? <SrOnly>, including pulled beds</SrOnly> : null}
+      {occupancy.percent === null ? null : <OccupancyBands percent={occupancy.percent} />}
     </span>
   );
 
@@ -382,5 +392,40 @@ function CountsRegion({ children }: { children: ReactNode }) {
     <section aria-label="Bed counts confirmed" className={styles.pillWrap}>
       {children}
     </section>
+  );
+}
+
+/**
+ * R-STRUCT-42 (Josh, 14 Nov 2026, "draw them on Capacity"): the signed occupancy colour bands
+ * (`occupancyAmber` 90%, `occupancyCritical` 98%, D-22) drawn under In use, so the two settings show
+ * somewhere. Each band tests the whole percent shown (`occupancyTone`, D-122), as the figure reads.
+ */
+function OccupancyBands({ percent }: { percent: number }) {
+  const { code } = occupancyTone(percent);
+  const shown = Math.min(100, Math.max(0, Math.round(percent)));
+  const words =
+    code === "red"
+      ? `In the ${OCCUPANCY_CRITICAL_PERCENT}% band`
+      : code === "yellow"
+        ? `In the ${OCCUPANCY_ALERT_PERCENT}% band`
+        : `Under the ${OCCUPANCY_ALERT_PERCENT}% band`;
+  return (
+    <span className={styles.occBands} data-testid="capacity-occupancy-bands" data-band={code}>
+      <span className={styles.occBandsTrack} aria-hidden="true">
+        <span
+          className={styles.occBandAmber}
+          style={{
+            left: `${OCCUPANCY_ALERT_PERCENT}%`,
+            width: `${OCCUPANCY_CRITICAL_PERCENT - OCCUPANCY_ALERT_PERCENT}%`,
+          }}
+        />
+        <span
+          className={styles.occBandRed}
+          style={{ left: `${OCCUPANCY_CRITICAL_PERCENT}%`, width: `${100 - OCCUPANCY_CRITICAL_PERCENT}%` }}
+        />
+        <span className={styles.occBandMark} style={{ left: `${shown}%` }} />
+      </span>
+      <span className={styles.occBandsWords}>{words}</span>
+    </span>
   );
 }

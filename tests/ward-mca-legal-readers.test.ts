@@ -102,7 +102,7 @@ describe("H5, ruling 7: the pull never copies an ended form or a passed expiry f
     expect(details.legalFormCode).toBeUndefined();
     expect(details.legalFormDueAt).toBeUndefined();
     expect(details.endedForm).toEqual({ code: "3B", typedEndAt: now - 5 });
-    expect(endedFormWords(details.endedForm!, now, DAY_ZERO)).toMatch(/^Form 3B ended .*as typed/u);
+    expect(endedFormWords(details.endedForm!, now, DAY_ZERO)).toMatch(/^Form 3B ended \S/u);
   });
 
   it("shows a form recorded as ended as information only", () => {

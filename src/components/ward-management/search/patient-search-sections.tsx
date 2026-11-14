@@ -20,6 +20,7 @@ import styles from "./search.module.css";
 import { isCommunityReferral } from "./community-referral";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { ACCESS_RECORD_EMPTY, SHOW_FACETS, getPatientPresence, type ShowFacetKey } from "./patient-search-model";
+import { LegalMismatchBadge } from "@/components/ward-management/legal-mismatch-badge";
 
 export function PeopleSection({
   people,
@@ -349,7 +350,11 @@ function ResultRow({
       </td>
       <td className={styles.cellStage}>{summary.stageLabel}</td>
       <td className={styles.cellDept}>{summary.departmentText}</td>
-      <td className={styles.cellDest}>{summary.destinationCell}</td>
+      <td className={styles.cellDest}>
+        {summary.destinationCell}{" "}
+        {/* R-LEGAL-4 (Josh, 14 Nov 2026): a recorded legal mismatch as a chip on the list. */}
+        <LegalMismatchBadge movement={movement} />
+      </td>
       <td className={styles.cellWait}>{summary.elapsedText}</td>
       <td className={styles.actionsCell}>
         {onPreview ? (

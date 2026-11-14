@@ -132,7 +132,7 @@ export function renderEdBoardPhoneRow(
   ctx: EdScreenContext,
   { personSheet, phoneBay }: { personSheet: ReactNode; phoneBay: string },
 ): ReactNode {
-  const { movement, minutesInDepartment, medicalClearance, patientInfo, nextAction } = row;
+  const { movement, minutesInDepartment, medicalClearance, patientInfo, nextAction, formExpiryTone } = row;
   const { accessTarget, isBoardRowDim, isPhone, setPhoneSheetReason, setPhoneSheetFor } = ctx;
   // At or over, never strictly over: the one ED long-wait rule (ward-pressure.ts, ops-16, 13 Oct
   // 2026) is red "once the longest wait reaches the ED access target".
@@ -152,7 +152,9 @@ export function renderEdBoardPhoneRow(
           isBoardRowDim(movement) ? `${styles.phoneBoardRow} ${styles.phoneBoardRowDim}` : styles.phoneBoardRow
         }
         data-testid={`ward-ed-patient-${movement.id}`}
-        actNow={phoneOverTarget}
+        // Master stress test RV1a-1: a typed form expiry within the urgent warning, or passed, is act
+        // now too, as on Forms and Delays (D-210 ruling 3).
+        actNow={phoneOverTarget || formExpiryTone === "danger"}
         leading={
           <span
             className={styles.phoneTier}

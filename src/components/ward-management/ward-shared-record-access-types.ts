@@ -8,6 +8,12 @@ export type SharedRecordView = {
   patient_id: string;
   surface: string;
   minutes?: number | null;
+  /**
+   * R-FIGS-13 (Josh, 14 Nov 2026): the picked break glass reason (a list id) when this account held a
+   * grant on the person as it opened the record, null for an opening inside the desk's own scope.
+   * Absent from a server that predates the Reason column.
+   */
+  break_glass_reason?: string | null;
 };
 /**
  * D-80 item 14: a break glass opening, as the server lists it for a

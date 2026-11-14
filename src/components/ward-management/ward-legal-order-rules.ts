@@ -19,6 +19,7 @@
  * Synthetic prototype. Labels only, not legal advice.
  */
 import { legalFormStatusWarning } from "@/components/ward-management/ward-legal-form-fit";
+import { ORDER_ENDING_FORM_CODE } from "@/components/ward-management/ward-legal-form-progression";
 import type { Movement } from "@/components/ward-management/ward-model";
 
 export const FOLLOW_ON_WITH_NO_EARLIER_FORM = "A follow-on form is recorded with no earlier form on file";
@@ -40,15 +41,33 @@ export function followOnFormWarning(
 }
 
 /**
- * Every legal order warning for a movement, in a fixed order: the pairing warning, then the
- * follow-on warning. With `pending`, the form about to be recorded is read as the movement's form.
+ * R-LEGAL-11 (Josh, 14 Nov 2026; AK-L-14, warn and never block): a form about to be recorded while
+ * the form on file is a Form 3E, which ended the order before it. Warns in plain words as soon as
+ * the form type is chosen; the save still goes ahead. Record a form and the continuation action
+ * both read this. Recording a second Form 3E says nothing here.
+ */
+export function afterEndedOrderWarning(
+  movement: Pick<Movement, "legalForm"> | undefined,
+  nextFormCode: string | undefined,
+): string | null {
+  if (!nextFormCode || nextFormCode === ORDER_ENDING_FORM_CODE) return null;
+  if (movement?.legalForm?.code !== ORDER_ENDING_FORM_CODE) return null;
+  return `Form 3E is already recorded for this person. Check the paper. If Form ${nextFormCode} is right, save it.`;
+}
+
+/**
+ * Every legal order warning for a movement, in a fixed order: the pairing warning, the follow-on
+ * warning, then the after-Form-3E warning. With `pending`, the form about to be recorded is read as
+ * the movement's form.
  */
 export function legalRecordWarnings(
   movement: Pick<Movement, "legalStatus" | "legalForm">,
   pending?: PendingContinuation,
 ): string[] {
   const formCode = pending?.continuationFormCode || movement.legalForm?.code || null;
-  return [legalFormStatusWarning(movement.legalStatus, formCode), followOnFormWarning(movement, pending)].filter(
-    (warning): warning is string => warning !== null,
-  );
+  return [
+    legalFormStatusWarning(movement.legalStatus, formCode),
+    followOnFormWarning(movement, pending),
+    afterEndedOrderWarning(movement, pending?.continuationFormCode),
+  ].filter((warning): warning is string => warning !== null);
 }

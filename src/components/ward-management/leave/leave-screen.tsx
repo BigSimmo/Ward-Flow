@@ -252,6 +252,11 @@ export function LeaveScreen() {
                             <StatusGlyph tone={STATUS_TONE[row.status]} size={9} />
                             {LEAVE_STATUS_LABEL[row.status]}
                           </span>
+                          {row.openWarning ? (
+                            <span className={styles.sub} data-testid={`ward-leave-open-warning-${row.id}`}>
+                              {row.openWarning}
+                            </span>
+                          ) : null}
                         </td>
                       </tr>
                     );

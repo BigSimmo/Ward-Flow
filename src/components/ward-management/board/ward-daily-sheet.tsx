@@ -561,7 +561,7 @@ export function WardDailySheet({
           emptyText="Nobody on this ward is past the ward's own expected date."
           people={groups.overdue}
           tone="warning"
-          note="The expected date is the ward's own plan, with no legal weight."
+          note="The expected date is the ward's own plan."
         />
 
         <SheetGroup

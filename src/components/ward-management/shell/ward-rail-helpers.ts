@@ -7,6 +7,7 @@
 import { communityTeamById } from "@/components/ward-management/community/community-derivations";
 import { currentDeskId } from "@/components/ward-management/settings/workstation-desks";
 import { shiftAtMinute } from "@/components/ward-management/ward-board-time-features";
+import { wardZoneOffsetMs } from "@/components/ward-management/ward-clock";
 import { CHROME_ROLE_LABELS, wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { HANDOVER_DUE_PROMPT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { edById } from "@/components/ward-management/ward-sites";
@@ -82,10 +83,9 @@ export function computeShiftProgress(nowInput?: number | Date): ShiftProgress {
     currentMinute = ((nowInput % 1440) + 1440) % 1440;
   } else {
     const d = nowInput instanceof Date ? nowInput : new Date();
-    // AWST is UTC+8
-    const awstHours = (d.getUTCHours() + 8) % 24;
-    const awstMins = d.getUTCMinutes();
-    currentMinute = awstHours * 60 + awstMins;
+    // The app's zone (`WARD_TIME_ZONE`, Perth by default), whatever the device's.
+    const local = new Date(d.getTime() + wardZoneOffsetMs(d.getTime()));
+    currentMinute = local.getUTCHours() * 60 + local.getUTCMinutes();
   }
 
   // The shift pattern itself (07:00/15:00/23:00) is a labelled default, not a legal roster rule —

@@ -1,7 +1,12 @@
 import { dayOf, type Instant } from "@/components/ward-management/ward-clock";
 import { bedStates, networkNamedHolds, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
+import { wardStaySeats } from "@/components/ward-management/ward/ward-bed-layout";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { BedRelease, LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
+
+import { leaveOpenWarning } from "@/components/ward-management/ward-leave-open-warning";
+
+export { leaveOpenWarning };
 
 /**
  * Leave, shared by the Tools sheet's "Leave due" and the Leave page (feature 23, Josh 9 Nov 2026).
@@ -17,8 +22,9 @@ export function leaveDueToday(leave: LeaveBed, now: Instant): boolean {
 }
 
 /**
- * The bed a leave record holds. The ward's recorded bed number when it has one; otherwise the bed
- * board's own order (ready beds first, then each leave record), so the label matches the board.
+ * The bed a leave record holds: the number the ward board shows for that stay. That is the stay's
+ * recorded bed number, else its fixed seat (`wardStaySeats`, the same seat the board's layout uses),
+ * and only for a stay with neither the board's own order (ready beds first, then each leave record).
  */
 export function leaveBedLabels(
   unit: Unit,
@@ -31,9 +37,13 @@ export function leaveBedLabels(
 ): Map<string, string> {
   const ready = bedStates(unit, admissions, bedReleases, leaveBeds, namedHolds).ready;
   const labels = new Map<string, string>();
+  const seats = wardStaySeats(
+    unit,
+    admissions.filter((admission) => admission.unitId === unit.id),
+  );
   unitLeave.forEach((leave, index) => {
     const recorded = admissions.find((admission) => admission.id === leave.admissionId)?.bedNumber;
-    const number = recorded ?? ready + index + 1;
+    const number = recorded ?? seats.get(leave.admissionId) ?? ready + index + 1;
     labels.set(leave.id, `Bed ${String(number).padStart(2, "0")}`);
   });
   return labels;
@@ -72,6 +82,8 @@ export type LeaveTrackerRow = {
   leftAt: Instant;
   expectedReturn: Instant;
   status: LeaveStatus;
+  /** The 24-hour "consider opening the bed" words, once that long on leave. */
+  openWarning: string | undefined;
 };
 
 /** Everyone on leave on the given wards: the most pressing first, then by expected return. */
@@ -112,6 +124,7 @@ export function leaveTrackerRows(
         leftAt: leave.confirmedAt,
         expectedReturn: leave.expectedReturn,
         status: leaveStatus(leave, now),
+        openWarning: leaveOpenWarning(leave, now),
       });
     }
   }

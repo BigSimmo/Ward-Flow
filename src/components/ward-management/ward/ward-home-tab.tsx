@@ -10,7 +10,6 @@ import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-manag
 import Link from "next/link";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import React, { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import styles from "./ward-home-tab.module.css";
 import { pendingDepartureLogRows, type WardShiftLogRow } from "./ward-departure-log";
 import { wardSafeRejectionReason } from "./ward-rejection-text";
@@ -453,13 +452,17 @@ export function WardHomeTab({
   const freeingByShiftEnd = new Set(
     releasesDueByShiftEnd(bedReleases, unit.id, now).map((release) => release.admissionId),
   );
+  // REG2-8, R-FIGS-12 (Josh, 14 Nov 2026): the "Discharges today" filter lights the beds the
+  // Discharges today card, Capacity and the TV count (`wardDischargesDueToday`, planned for today),
+  // never a past date or a confirmed discharge on a later day.
+  const leavingToday = new Set(wardDischargesDueToday(pendingBedReleases, now).map((release) => release.admissionId));
   const bedRows = (bedsList ?? []).map((bed) => {
     // A bed still being made ready is not free to offer, matching the Bed Board.
     const preparing = bed.status === "ready" && bed.preparing === true;
     const free = bed.status === "ready" && !preparing;
     const readyByShiftEnd =
       bed.status === "ready" || (bed.admissionId !== undefined && freeingByShiftEnd.has(bed.admissionId));
-    const leaving = !free && (bed.dischargeConfirmed === true || (bed.expectedDays != null && bed.expectedDays <= 0));
+    const leaving = !free && bed.admissionId !== undefined && leavingToday.has(bed.admissionId);
     const awayAtEd = bed.awayAtEdHours != null;
     // WT-07: the officer recorded Delivered, so the pull clock has stopped and the ward confirms.
     const delivered = bed.status === "incoming" && typeof bed.deliveredAt === "number";
@@ -1360,12 +1363,6 @@ export function WardHomeTab({
           <span>
             <b>{checksDone}</b> of {shiftChecks.length} checks done
           </span>
-          {/* Audit 11 Oct 2026: one footnote for the form times, not a tag crowding Act now. */}
-          {liveFormAlerts.length > 0 ? (
-            <span className={styles.legalTag}>
-              Form times <LegalLimitsNotChecked variant="tag" />
-            </span>
-          ) : null}
         </div>
       </div>
     );
@@ -1629,7 +1626,7 @@ export function WardHomeTab({
           open={phonePanel === "shift"}
           onClose={() => onPhonePanelChange?.(null)}
           title="This shift"
-          description={`${phoneShiftLabel ?? "This shift"} · legal limits not checked here`}
+          description={phoneShiftLabel ?? "This shift"}
           height="tall"
           className={styles.phoneSheetBody}
           data-testid="ward-phone-shift-sheet"
@@ -1642,7 +1639,7 @@ export function WardHomeTab({
             open={shiftSheetOpen}
             onClose={() => setShiftSheetOpen(false)}
             title="This shift"
-            description={`${shiftSummary} · legal limits not checked here`}
+            description={shiftSummary}
             closeLabel="Close This shift"
             testId="ward-shift-sheet"
             bodyClassName={styles.shiftSheetBody}

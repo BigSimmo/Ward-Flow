@@ -63,7 +63,7 @@ export function SeclusionTop({
           <HeroAct
             tone="danger"
             title={`${live.length} recorded as in use`}
-            sub="Listed below, longest running first, times as typed"
+            sub="Listed below, longest running first"
             action={start}
             testId="seclusion-act"
           />

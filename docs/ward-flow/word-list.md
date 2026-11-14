@@ -60,85 +60,85 @@ sub-labels under those four, in order: **Referred**, **Review**, **Accepted**, *
 
 ## Records and forms
 
-| Say                     | Means                                                                                                                                                                                       |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Legal form**          | The legal form a person recorded for a movement, with its due time as recorded.                                                                                                             |
-| **Tentative diagnosis** | A broad ICD-10-AM Chapter V block from a fixed list. Never a confirmed diagnosis.                                                                                                           |
-| **UMRN**                | Unit medical record number. Ward Flow uses invented ones only.                                                                                                                              |
-| **CAD number**          | The St John WA booking number for an ambulance transfer.                                                                                                                                    |
-| **Form 1A**             | Referral for examination by a psychiatrist. Titles follow the Chief Psychiatrist register. Any time shown is as typed from the paper form.                                                  |
-| **Form 3A**             | Detention order. Titles follow the Chief Psychiatrist register. Any time shown is as typed from the paper form.                                                                             |
-| **Form 3B**             | Continuation of detention. Titles follow the Chief Psychiatrist register. Any time shown is as typed from the paper form.                                                                   |
-| **Form 3D**             | Order authorising reception and detention in an authorised hospital for further examination. Titles follow the Chief Psychiatrist register. Any time shown is as typed from the paper form. |
-| **Form 4A**             | Transport order. Titles follow the Chief Psychiatrist register. Any time shown is as typed from the paper form.                                                                             |
-| **Form 4C**             | Transfer order. Titles follow the Chief Psychiatrist register. Any time shown is as typed from the paper form.                                                                              |
-| **Form 5A**             | Community Treatment Order. Titles follow the Chief Psychiatrist register. Any time shown is as typed from the paper form.                                                                   |
-| **Form 5B**             | Continuation of Community Treatment Order. Titles follow the Chief Psychiatrist register. Any time shown is as typed from the paper form.                                                   |
-| **Form 6A**             | Inpatient treatment order in authorised hospital. Titles follow the Chief Psychiatrist register. Any time shown is as typed from the paper form.                                            |
-| Absent without leave    | Written in full on screen.                                                                                                                                                                  |
-| Specialling             | One-to-one or two-staff constant nursing.                                                                                                                                                   |
+| Say                     | Means                                                                                                                                       |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Legal form**          | The legal form a person recorded for a movement, with its due time as recorded.                                                             |
+| **Tentative diagnosis** | A broad ICD-10-AM Chapter V block from a fixed list. Never a confirmed diagnosis.                                                           |
+| **UMRN**                | Unit medical record number. Ward Flow uses invented ones only.                                                                              |
+| **CAD number**          | The St John WA booking number for an ambulance transfer.                                                                                    |
+| **Form 1A**             | Referral for examination by a psychiatrist. Titles follow the Chief Psychiatrist register.                                                  |
+| **Form 3A**             | Detention order. Titles follow the Chief Psychiatrist register.                                                                             |
+| **Form 3B**             | Continuation of detention. Titles follow the Chief Psychiatrist register.                                                                   |
+| **Form 3D**             | Order authorising reception and detention in an authorised hospital for further examination. Titles follow the Chief Psychiatrist register. |
+| **Form 4A**             | Transport order. Titles follow the Chief Psychiatrist register.                                                                             |
+| **Form 4C**             | Transfer order. Titles follow the Chief Psychiatrist register.                                                                              |
+| **Form 5A**             | Community Treatment Order. Titles follow the Chief Psychiatrist register.                                                                   |
+| **Form 5B**             | Continuation of Community Treatment Order. Titles follow the Chief Psychiatrist register.                                                   |
+| **Form 6A**             | Inpatient treatment order in authorised hospital. Titles follow the Chief Psychiatrist register.                                            |
+| Absent without leave    | Written in full on screen.                                                                                                                  |
+| Specialling             | One-to-one or two-staff constant nursing.                                                                                                   |
 
 ## People, services and short forms
 
-| Say               | Means                                                                                                          |
-| ----------------- | -------------------------------------------------------------------------------------------------------------- |
-| **ECT**           | Electroconvulsive therapy.                                                                                     |
-| **NIC**           | Nurse in charge.                                                                                               |
-| **NUM**           | Nurse unit manager.                                                                                            |
-| **CAHS**          | Child and Adolescent Health Service.                                                                           |
-| **EMHS**          | East Metropolitan Health Service.                                                                              |
-| **NMHS**          | North Metropolitan Health Service.                                                                             |
-| **SMHS**          | South Metropolitan Health Service.                                                                             |
-| **WACHS**         | WA Country Health Service.                                                                                     |
-| **ED**            | Emergency department, after first use.                                                                         |
-| **AWOL**          | Absent without leave. On screen, written in full where there is room.                                          |
-| **CTO**           | Community treatment order.                                                                                     |
-| **EDD**           | Expected date of discharge.                                                                                    |
-| **ETA**           | Estimated time of arrival, as quoted by the transport provider or the ward.                                    |
-| **MDT**           | Multidisciplinary team.                                                                                        |
-| **MHA**           | The Mental Health Act, the WA law the legal forms are named from. Never "MHA 2014".                            |
-| **ATS**           | Australasian Triage Scale category, as recorded at ED triage.                                                  |
-| **RAMP**          | Risk Assessment and Management Plan, the WA mental health form.                                                |
-| **PSP**           | Personal support person: a carer, close family member, nominated person or guardian.                           |
-| **MHAS**          | Mental Health Advocacy Service.                                                                                |
-| **GP**            | General practitioner.                                                                                          |
-| **BPSD**          | Behavioural and psychological symptoms of dementia.                                                            |
-| **AWST**          | Australian Western Standard Time, Perth time. Signed-in times are AWST; the demo's board clock says demo time. |
-| **CAMHS**         | Child and Adolescent Mental Health Service.                                                                    |
-| **HDU**           | High dependency unit: a ward area for patients who need closer care.                                           |
-| **KPI**           | Key performance indicator, such as the national seven-day follow-up measure.                                   |
-| **MHERL**         | Mental Health Emergency Response Line, the WA crisis phone line.                                               |
-| **PIR**           | Post-incident review. The PIR chronology lists one patient's events in time order.                             |
-| **QR code**       | A square barcode a phone camera can read to open a link, such as a desk's Ward Flow link.                      |
-| **ATSI**          | Aboriginal and Torres Strait Islander.                                                                         |
-| **CMHT**          | Community mental health team.                                                                                  |
-| **CNS**           | Clinical nurse specialist.                                                                                     |
-| **DOB**           | Date of birth.                                                                                                 |
-| **ECG**           | Electrocardiogram, a recording of the heart's rhythm.                                                          |
-| **EMR**           | Electronic medical record.                                                                                     |
-| **FDV**           | Family and domestic violence. The FDV951 is WA Health's screening form.                                        |
-| **HMDC**          | Hospital Morbidity Data Collection, WA Health's record of hospital stays.                                      |
-| **ISBAR**         | Identify, Situation, Background, Assessment, Recommendation: the order of a handover.                          |
-| **MBBS**          | Bachelor of Medicine, Bachelor of Surgery, a medical degree.                                                   |
-| **MHN**           | Mental health nurse.                                                                                           |
-| **NICE**          | National Institute for Health and Care Excellence, the UK guideline body.                                      |
-| **PAS**           | Patient administration system, the hospital's admissions and bed record.                                       |
-| **PSOLIS**        | Psychiatric Services Online Information System, WA's mental health record.                                     |
-| **RN**            | Registered nurse.                                                                                              |
-| **SMHMR**         | The form-number prefix for WA's statewide standardised mental health documents.                                |
-| **SW**            | Social worker.                                                                                                 |
-| **AHD**           | Advance health directive.                                                                                      |
-| **BD**            | Twice a day, on a medicine line.                                                                               |
-| **CK**            | Creatine kinase, a blood test.                                                                                 |
-| **CR**            | Controlled release, on a medicine line.                                                                        |
-| **IM**            | Intramuscular, given as an injection into a muscle.                                                            |
-| **MRO**           | Multi-resistant organism.                                                                                      |
-| **MSE**           | Mental state examination.                                                                                      |
-| **OT**            | Occupational therapist.                                                                                        |
-| **RACF**          | Residential aged care facility.                                                                                |
-| **RAT**           | Rapid antigen test.                                                                                            |
-| **SAT**           | State Administrative Tribunal, WA's tribunal for guardianship and administration.                              |
-| Sign in, sign out | Never log in or log out.                                                                                       |
+| Say               | Means                                                                                                                         |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| **ECT**           | Electroconvulsive therapy.                                                                                                    |
+| **NIC**           | Nurse in charge.                                                                                                              |
+| **NUM**           | Nurse unit manager.                                                                                                           |
+| **CAHS**          | Child and Adolescent Health Service.                                                                                          |
+| **EMHS**          | East Metropolitan Health Service.                                                                                             |
+| **NMHS**          | North Metropolitan Health Service.                                                                                            |
+| **SMHS**          | South Metropolitan Health Service.                                                                                            |
+| **WACHS**         | WA Country Health Service.                                                                                                    |
+| **ED**            | Emergency department, after first use.                                                                                        |
+| **AWOL**          | Absent without leave. On screen, written in full where there is room.                                                         |
+| **CTO**           | Community treatment order.                                                                                                    |
+| **EDD**           | Expected date of discharge.                                                                                                   |
+| **ETA**           | Estimated time of arrival, as quoted by the transport provider or the ward.                                                   |
+| **MDT**           | Multidisciplinary team.                                                                                                       |
+| **MHA**           | The Mental Health Act, the WA law the legal forms are named from. Never "MHA 2014".                                           |
+| **ATS**           | Australasian Triage Scale category, as recorded at ED triage.                                                                 |
+| **RAMP**          | Risk Assessment and Management Plan, the WA mental health form.                                                               |
+| **PSP**           | Personal support person: a carer, close family member, nominated person or guardian.                                          |
+| **MHAS**          | Mental Health Advocacy Service.                                                                                               |
+| **GP**            | General practitioner.                                                                                                         |
+| **BPSD**          | Behavioural and psychological symptoms of dementia.                                                                           |
+| **AWST**          | Australian Western Standard Time, Perth time. Signed-in times are AWST; the demo's clock is Board time, with no zone claimed. |
+| **CAMHS**         | Child and Adolescent Mental Health Service.                                                                                   |
+| **HDU**           | High dependency unit: a ward area for patients who need closer care.                                                          |
+| **KPI**           | Key performance indicator, such as the national seven-day follow-up measure.                                                  |
+| **MHERL**         | Mental Health Emergency Response Line, the WA crisis phone line.                                                              |
+| **PIR**           | Post-incident review. The PIR chronology lists one patient's events in time order.                                            |
+| **QR code**       | A square barcode a phone camera can read to open a link, such as a desk's Ward Flow link.                                     |
+| **ATSI**          | Aboriginal and Torres Strait Islander.                                                                                        |
+| **CMHT**          | Community mental health team.                                                                                                 |
+| **CNS**           | Clinical nurse specialist.                                                                                                    |
+| **DOB**           | Date of birth.                                                                                                                |
+| **ECG**           | Electrocardiogram, a recording of the heart's rhythm.                                                                         |
+| **EMR**           | Electronic medical record.                                                                                                    |
+| **FDV**           | Family and domestic violence. The FDV951 is WA Health's screening form.                                                       |
+| **HMDC**          | Hospital Morbidity Data Collection, WA Health's record of hospital stays.                                                     |
+| **ISBAR**         | Identify, Situation, Background, Assessment, Recommendation: the order of a handover.                                         |
+| **MBBS**          | Bachelor of Medicine, Bachelor of Surgery, a medical degree.                                                                  |
+| **MHN**           | Mental health nurse.                                                                                                          |
+| **NICE**          | National Institute for Health and Care Excellence, the UK guideline body.                                                     |
+| **PAS**           | Patient administration system, the hospital's admissions and bed record.                                                      |
+| **PSOLIS**        | Psychiatric Services Online Information System, WA's mental health record.                                                    |
+| **RN**            | Registered nurse.                                                                                                             |
+| **SMHMR**         | The form-number prefix for WA's statewide standardised mental health documents.                                               |
+| **SW**            | Social worker.                                                                                                                |
+| **AHD**           | Advance health directive.                                                                                                     |
+| **BD**            | Twice a day, on a medicine line.                                                                                              |
+| **CK**            | Creatine kinase, a blood test.                                                                                                |
+| **CR**            | Controlled release, on a medicine line.                                                                                       |
+| **IM**            | Intramuscular, given as an injection into a muscle.                                                                           |
+| **MRO**           | Multi-resistant organism.                                                                                                     |
+| **MSE**           | Mental state examination.                                                                                                     |
+| **OT**            | Occupational therapist.                                                                                                       |
+| **RACF**          | Residential aged care facility.                                                                                               |
+| **RAT**           | Rapid antigen test.                                                                                                           |
+| **SAT**           | State Administrative Tribunal, WA's tribunal for guardianship and administration.                                             |
+| Sign in, sign out | Never log in or log out.                                                                                                      |
 
 **Bed coordinator** is the coordinator's name on every screen (Josh, 26 October 2026, A19). Do not say
 "flow coordinator" or "bed manager" for this role. "Bed flow coordinator" stays only as an on-call title.
@@ -173,7 +173,7 @@ Added 26 October 2026 with the Help glossary, so the two stay in step.
 | **Shift brief**          | A ward's sheet for the shift: who came in, is going, is stuck or is overdue.                         |
 | **Notices**              | A ward's own messages under the bell: buzzes, urgent tasks and notices.                              |
 | **Activity**             | The header drawer of recent changes and notices.                                                     |
-| **Board time**           | The clock every screen works from: "demo time" in the demo, Perth time (AWST) when signed in.        |
+| **Board time**           | The clock every screen works from: Perth time (AWST) when signed in; the demo labels it Board time.  |
 | **Demo**                 | The Demo panel: scenario, clock and reset for the invented data. The live pill reads "Demo 10:42".   |
 | **Synthetic**            | Invented. Every patient, bed figure and record in Ward Flow is made up.                              |
 

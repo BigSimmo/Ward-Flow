@@ -118,10 +118,10 @@ describe("D-187 item 18 (Q43): the Triage wording sheet's Contradicts rows", () 
       recordAddress: "code900",
       openReferral: null,
     });
-    expect(person.legalTag).toBe("On record · Not legally checked.");
+    expect(person.legalTag).toBe("On record");
     const state = exampleTriage();
-    expect(foldLine(state, "dec").join(" · ")).toContain("Community treatment order (as chosen)");
-    expect(summaryModel(state).keyLine).toContain("Community treatment order (as chosen)");
+    expect(foldLine(state, "dec").join(" · ")).toContain("Community treatment order");
+    expect(summaryModel(state).keyLine).toContain("Community treatment order");
   });
 });
 

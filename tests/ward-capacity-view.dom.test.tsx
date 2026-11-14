@@ -259,7 +259,7 @@ describe("ward capacity board", () => {
       "Not on the authorised register (7 Sep 2026)",
     );
     expect(drawerFact(openWardDrawer("scgh-adult-open"), "Involuntary admissions")).toBe(
-      "Authorised (Chief Psychiatrist register, 7 Sep 2026)",
+      "Authorised for the hospital (Chief Psychiatrist register, 7 Sep 2026), ward not checked",
     );
     expect(drawerFact(openWardDrawer("scgh-older-adult"), "Involuntary admissions")).toBe("Not stated");
   });

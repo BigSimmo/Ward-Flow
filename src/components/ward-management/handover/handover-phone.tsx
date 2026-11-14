@@ -89,6 +89,8 @@ export type HandoverPhoneProps = {
   onCloseDrawer: () => void;
   flowPanel: ReactNode | null;
   signOffPanel: ReactNode;
+  /** Lead-REC-E-1: false for a desk that can never sign this handover off (the site bed manager). */
+  signOffOffered?: boolean;
   journeyUnavailable?: boolean;
   /** Act-now patients the scope leaves out, so narrowing never hides them from the handover. */
   outsideAct: HandoverRow[];
@@ -437,6 +439,7 @@ export function HandoverPhone({
   onCloseDrawer,
   flowPanel,
   signOffPanel,
+  signOffOffered = true,
   journeyUnavailable,
   outsideAct,
   selected,
@@ -732,7 +735,7 @@ export function HandoverPhone({
         >
           {copied ? "Copied" : "Copy summary"}
         </Button>
-        {edDesk ? null : (
+        {edDesk || !signOffOffered ? null : (
           <Button
             variant="pri"
             icon={Check}
@@ -794,7 +797,7 @@ export function HandoverPhone({
           onCopy={() => onCopyIsbar(selected)}
           patientHref={patientHrefOf(selected)}
         />
-      ) : edDesk ? null : (
+      ) : edDesk || !signOffOffered ? null : (
         <Drawer
           open={drawerOpen && !flowPanel}
           onClose={onCloseDrawer}

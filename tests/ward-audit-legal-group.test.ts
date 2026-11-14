@@ -56,7 +56,7 @@ describe("one time-left rule for legal forms (A3-3, A3-4)", () => {
   it("gives the Patient page the same typed expiry the Forms page shows (as typed, D-93)", () => {
     const due = movement({ legalForm: { code: "4A", kind: "transport", dueAt: NOW + 60 } });
     const left = formTimeLeft(due, NOW, DEFAULT_DUE_SOON_THRESHOLDS)!;
-    expect(left).toMatchObject({ code: "Form 4A", text: "Ends 11:42 as typed", at: "11:42", actNow: true });
+    expect(left).toMatchObject({ code: "Form 4A", text: "Ends 11:42", at: "11:42", actNow: true });
     expect(
       formTimeLeft(movement({ legalForm: { code: "3B", kind: "detention" } }), NOW, DEFAULT_DUE_SOON_THRESHOLDS),
     ).toBeUndefined();
@@ -66,7 +66,7 @@ describe("one time-left rule for legal forms (A3-3, A3-4)", () => {
         NOW,
         DEFAULT_DUE_SOON_THRESHOLDS,
       )?.text,
-    ).toBe("Ended 10:05 as typed"); // D-93: never "37m past"
+    ).toBe("Ended 10:05"); // D-93: never "37m past"
   });
 });
 

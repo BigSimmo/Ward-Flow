@@ -60,9 +60,9 @@ export function onceOnlyExtensionWarning(movement: Movement): string | undefined
   return `Form ${code} already has an extension recorded. Form ${extension} is already recorded. Check the paper.`;
 }
 
-/** "Once, as typed" when the current form has an extension recorded, else undefined. */
+/** "Once" when the current form has an extension recorded, else undefined. */
 export function extendedWord(movement: Movement): string | undefined {
   const count = extensionsOfCurrentForm(movement);
   if (count === 0) return undefined;
-  return count === 1 ? "Once, as typed" : `${count} times, as typed`;
+  return count === 1 ? "Once" : `${count} times`;
 }

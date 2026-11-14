@@ -75,6 +75,7 @@ import {
 } from "./statistics-small-numbers";
 import { useCanOpenHref } from "../shell/ward-access";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import { WARD_TIME_ZONE } from "@/lib/ward-time-zone";
 
 export type MapLens = "beds" | "ed" | "dis" | "stay";
 
@@ -592,7 +593,7 @@ function MapPresentation({
             },
             {
               value: String(statisticsCountText(network.edOver24)),
-              label: `Past ${LONG_WAIT_HOURS}h`,
+              label: `Over ${LONG_WAIT_HOURS}h`,
             },
           ]
         : lens === "dis"
@@ -931,9 +932,7 @@ function BelowMap({
         return {
           id: `day-${offset}`,
           label:
-            offset === 0
-              ? "Today"
-              : date.toLocaleDateString("en-AU", { weekday: "short", timeZone: "Australia/Perth" }),
+            offset === 0 ? "Today" : date.toLocaleDateString("en-AU", { weekday: "short", timeZone: WARD_TIME_ZONE }),
           ...withheldBar(exactStatisticsCount(count) ?? 0, shown),
         };
       });
@@ -972,7 +971,7 @@ function BelowMap({
       return {
         id: `day-${offset}`,
         label:
-          offset === 0 ? "Today" : date.toLocaleDateString("en-AU", { weekday: "short", timeZone: "Australia/Perth" }),
+          offset === 0 ? "Today" : date.toLocaleDateString("en-AU", { weekday: "short", timeZone: WARD_TIME_ZONE }),
         value: current.filter(
           (admission) =>
             admission.expectedDischargeAt !== null &&

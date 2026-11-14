@@ -1,6 +1,7 @@
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Referral } from "@/components/ward-management/ward-model";
+import { isPastLimit } from "@/components/ward-management/ward-timed-rule";
 import { isAwaitingAnswer } from "@/components/ward-management/ward-referrals";
 
 /**
@@ -26,7 +27,7 @@ export function referralNotOpenedUnitIds(referral: Referral, now: Instant): stri
     if (!isAwaitingAnswer(arm) || arm.openedAt !== undefined || arm.waitlistedAt !== undefined) continue;
     const sentAt = arm.referredAt ?? referral.raisedAt;
     if (!Number.isFinite(sentAt)) continue;
-    if (now - sentAt >= NOT_OPENED_TAG_MINUTES) unitIds.push(arm.destination.unitId);
+    if (isPastLimit(now - sentAt, NOT_OPENED_TAG_MINUTES)) unitIds.push(arm.destination.unitId);
   }
   return unitIds;
 }

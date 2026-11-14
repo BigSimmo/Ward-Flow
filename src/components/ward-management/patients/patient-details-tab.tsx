@@ -18,7 +18,12 @@ import { genderReviewNeeded, SEX_DESIGNATIONS, type Movement, type RecordedSex }
 import { sexDesignationAccepts } from "../ward-eligibility";
 import { legalStatusTextIsInvoluntary } from "../ward-support-notifications";
 import { currentLegalPosition } from "../ward-legal-form-progression";
-import { LEGAL_STATUSES_DIFFER, legalStatusesDiffer } from "../ward-stay-legal";
+import {
+  hasCurrentLegalMismatch,
+  LEGAL_MISMATCH_WARNING,
+  LEGAL_STATUSES_DIFFER,
+  legalStatusesDiffer,
+} from "../ward-stay-legal";
 import { calendarDateOf } from "../ward-clock";
 import { isEdOriginJourney } from "../ward-ed-presence";
 import { monthIndexOfShort } from "@/components/ward-management/ward-month-names";
@@ -491,6 +496,13 @@ export function PatientDetailsTab({
           <Section title={placement ? "Legal and placement" : "Legal"}>
             {/* D-187 item 1 (Q19): a warning, never a block (D-186 item 5). Only while the stay is
                 current: once it has ended, the record is expected to move on from it. */}
+            {/* Master stress test D1a-E-2 (14 Nov 2026): a recorded legal mismatch, a warning only (D-16). */}
+            {placement && hasCurrentLegalMismatch(placement) ? (
+              <p className={styles.attention} role="status" data-testid="ward-person-legal-mismatch">
+                <StatusGlyph tone="warning" size={12} />
+                <span>{LEGAL_MISMATCH_WARNING}</span>
+              </p>
+            ) : null}
             {legalDiffers && active ? (
               <p className={styles.attention} role="status" data-testid="ward-person-legal-differs">
                 <StatusGlyph tone="warning" size={12} />

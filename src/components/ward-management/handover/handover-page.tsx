@@ -477,6 +477,9 @@ export function HandoverPage() {
   const routeRole = useRouteRole();
   const gate = useRoleGate();
   const signOffGate = gate("RECORD_HANDOVER_SIGN_OFF");
+  // Lead-REC-E-1: like the ED desk, a desk that can never sign this handover off (the site bed
+  // manager, which signs its site's handover off instead) is not offered the chip, panel or S key.
+  const noWardSignOff = edDesk || signOffGate.never === true;
   // Decision 41 (Josh, 31 Oct 2026): a sign-off names its sheet's ward: a one-ward desk's own ward,
   // or the scope's ward when the desk holds it (a link never signs another ward's sheet). A wider
   // sheet's sign-off names none.
@@ -608,7 +611,7 @@ export function HandoverPage() {
       if (key === "p") {
         event.preventDefault();
         setSheetOpen(true);
-      } else if (key === "s" && !edDesk) {
+      } else if (key === "s" && !noWardSignOff) {
         event.preventDefault();
         showSignOffRef.current();
       } else if (key === "m") {
@@ -634,7 +637,7 @@ export function HandoverPage() {
     toggleMeeting,
     tab,
     step,
-    edDesk,
+    noWardSignOff,
   ]);
 
   /* sign-off checks */
@@ -663,7 +666,7 @@ export function HandoverPage() {
   // ROLE BRANCH (ed): an ED desk never signs a handover off (RECORD_HANDOVER_SIGN_OFF is coordinator
   // or ward only), so the checklist, rail, bar, hero button and S shortcut are left out (Josh, 30 Oct
   // 2026). One quiet line in the hero foot says who signs off, or when it was signed.
-  const signOffPanel = edDesk ? null : (
+  const signOffPanel = noWardSignOff ? null : (
     <div ref={signOffRef}>
       <HandoverSignOffPanel
         title={`Sign off ${formatInstantWithDay(shiftAt, now)} handover`}
@@ -926,6 +929,7 @@ export function HandoverPage() {
           onCloseDrawer={() => setDrawerOpen(false)}
           flowPanel={flowPanel}
           signOffPanel={departedPanel ?? signOffPanel}
+          signOffOffered={!noWardSignOff}
           journeyUnavailable={!!departedPanel}
           outsideAct={scope.kind !== "network" ? outsideAct : []}
           selected={selected}
@@ -1046,7 +1050,7 @@ export function HandoverPage() {
                 testId: "ward-handover-digest-open",
                 onClick: () => setDigestOpen(true),
               },
-              ...(edDesk
+              ...(noWardSignOff
                 ? []
                 : [
                     {
@@ -1153,7 +1157,7 @@ export function HandoverPage() {
               <HandoverKeysHelp
                 enabled={singleKeyShortcutsEnabled}
                 onEnabledChange={setSingleKeyShortcutsEnabled}
-                signOff={!edDesk}
+                signOff={!noWardSignOff}
               />
             )}
           </Popover>
@@ -1352,8 +1356,6 @@ export function HandoverPage() {
       ) : null}
       {ownWard ? <desk.WardDeskEmptyGroups groups={groups} /> : null}
       <div className={styles.tableFoot}>
-        <StatusGlyph tone="neutral" size={8} />
-        <span>Form times are as typed, not legally checked</span>
         <span className={styles.spacer} />
         <span>J and K step through patients</span>
       </div>
@@ -1466,7 +1468,6 @@ export function HandoverPage() {
               };
             }),
           }))}
-          footer={<span>Form times are as typed, not legally checked</span>}
         />
       </TabPanel>
     );

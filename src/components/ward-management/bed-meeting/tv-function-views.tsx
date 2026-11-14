@@ -176,7 +176,7 @@ export function WardLegalTvView({ rows, footer }: { rows: WardClinicalRow[]; foo
     {
       id: "soon",
       title: "Ending soon",
-      hint: "End time as typed on the form",
+      hint: "End time on the form",
       tone: "warning",
       cards: here.filter((row) => row.legal?.tone === "warning").map((row) => wardCard(row, row.legal)),
     },
@@ -268,7 +268,7 @@ export function EdBedSearchTvView({
   footer: ReactNode;
 }) {
   const late = (row: EdClinicalRow): ClinicalFact => ({
-    text: row.band === "over" ? `Past ${Math.round(accessTargetMinutes / 60)} hours` : row.next.text,
+    text: row.band === "over" ? `Over ${Math.round(accessTargetMinutes / 60)} hours` : row.next.text,
     tone: row.band === "over" ? "danger" : row.next.tone,
   });
   const step = (id: EdClinicalRow["step"]) => rows.filter((row) => row.step === id);
@@ -307,7 +307,7 @@ export function EdBedSearchTvView({
         items={[
           { label: "waiting", value: rows.length },
           {
-            label: `past ${Math.round(accessTargetMinutes / 60)} hours`,
+            label: `over ${Math.round(accessTargetMinutes / 60)} hours`,
             value: rows.filter((row) => row.band === "over").length,
             tone: "danger",
           },

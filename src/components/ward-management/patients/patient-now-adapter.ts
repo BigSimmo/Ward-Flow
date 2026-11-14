@@ -1,5 +1,6 @@
 import {
   clockZoneLabel,
+  formatInstantWithDay,
   formatSince,
   type ClockZoneLabel,
   type Instant,
@@ -29,10 +30,12 @@ import { patientMode } from "./patient-mode";
  * A presentation's form as a document row's status, from the shared legal position (audit H4): a
  * form a person recorded as ended says so, never "Runs to" its old typed end.
  */
-function legalDocumentStatus(movement: Movement): string {
+function legalDocumentStatus(movement: Movement, now: Instant): string {
   const position = currentLegalPosition(movement);
   if (position.ended) return FORM_RECORDED_ENDED;
-  return position.typedEndAt !== undefined ? `Runs to ${clock(position.typedEndAt)}` : "Active";
+  if (position.typedEndAt === undefined) return "Active";
+  // Stress test 14 Nov (F3): a typed end on another day names the day, not a bare clock face.
+  return `Runs to ${now > 0 ? formatInstantWithDay(position.typedEndAt, now) : clock(position.typedEndAt)}`;
 }
 
 export interface ResolvedPatientNow {
@@ -591,7 +594,7 @@ export function resolvePatientNowRecord(
               from: "The presentation open now",
               by: "Author not recorded here",
               when: "Active presentation",
-              status: legalDocumentStatus(movement),
+              status: legalDocumentStatus(movement, now),
             },
           ]
         : [],
@@ -661,7 +664,7 @@ export function resolvePatientNowRecord(
         from: "The presentation open now",
         by: "Author not recorded here",
         when: "Active presentation",
-        status: legalDocumentStatus(activeMovement),
+        status: legalDocumentStatus(activeMovement, now),
       });
     }
 
