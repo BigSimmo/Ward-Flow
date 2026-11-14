@@ -541,9 +541,10 @@ describe("R-STYLE-5 toast place and clamp (lane A)", () => {
       expect(css).toContain('.toast[data-clamp][data-expanded="true"]');
     });
 
-    it("moves left of an open right drawer, not to bottom left", () => {
-      expect(css).toMatch(/right: calc\(min\(32rem, 100vw\) \+ var\(--wf-s-6\)\)/);
-      expect(css).not.toMatch(/left: var\(--wf-s-6\);\s*align-items: flex-start/);
+    it("stacks bottom left while a modal drawer is open, clear of its close button and footer", () => {
+      // Ward bar drawers run wider than 32rem, so "left of the drawer" means the far left.
+      expect(css).toMatch(/left: var\(--wf-s-6\);\s*align-items: flex-start/);
+      expect(css).not.toMatch(/right: calc\(min\(32rem, 100vw\) \+ var\(--wf-s-6\)\)/);
     });
   });
 });
