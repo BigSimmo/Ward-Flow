@@ -5,7 +5,7 @@ import type { EmergencyDepartment, Site, Unit } from "@/components/ward-manageme
  * are expected to use the same anchor so referral timers and capacity freshness line up.
  *
  * D-229 (14 Nov 2026): a count older than the signed bed count time refuses a pull (D-214), so each
- * ward's count is confirmed within 15 minutes of the start. The demo's one pull then still works
+ * ward's count is confirmed 6 to 15 minutes before the start. The demo's one pull then still works
  * when the presenter waits for the room after Reset. Only Graylands Older Adult is left stale, on
  * purpose (`tests/ward-seed-bed-counts-fresh.test.ts`).
  */
@@ -235,7 +235,7 @@ export const STANDARD_WARD_SITES: Site[] = [
         authorised: true,
         beds: 24,
         empty: { value: 5, source: "feed", confirmedAt: NOW_ANCHOR - 2, staleAfterMinutes: 15 },
-        allocatable: { value: 2, source: "ward", confirmedAt: NOW_ANCHOR - 5, staleAfterMinutes: 60 },
+        allocatable: { value: 2, source: "ward", confirmedAt: NOW_ANCHOR - 6, staleAfterMinutes: 60 },
         allocatableLocked: 0,
         held: 3,
         blocked: 0,
@@ -289,7 +289,7 @@ export const STANDARD_WARD_SITES: Site[] = [
         authorised: true,
         beds: 18,
         empty: { value: 4, source: "feed", confirmedAt: NOW_ANCHOR - 3, staleAfterMinutes: 15 },
-        allocatable: { value: 3, source: "ward", confirmedAt: NOW_ANCHOR - 4, staleAfterMinutes: 60 },
+        allocatable: { value: 3, source: "ward", confirmedAt: NOW_ANCHOR - 6, staleAfterMinutes: 60 },
         allocatableLocked: 2,
         held: 2,
         // Owner ruling 2026-09-25: out-of-service beds are not recorded, and an empty bed the feed
@@ -527,7 +527,7 @@ export const STANDARD_WARD_SITES: Site[] = [
         authorised: true,
         beds: 22,
         empty: { value: 4, source: "feed", confirmedAt: NOW_ANCHOR - 3, staleAfterMinutes: 15 },
-        allocatable: { value: 3, source: "ward", confirmedAt: NOW_ANCHOR - 4, staleAfterMinutes: 60 },
+        allocatable: { value: 3, source: "ward", confirmedAt: NOW_ANCHOR - 6, staleAfterMinutes: 60 },
         allocatableLocked: 0,
         held: 2,
         blocked: 0,
@@ -576,7 +576,7 @@ export const STANDARD_WARD_SITES: Site[] = [
         authorised: true,
         beds: 17,
         empty: { value: 3, source: "feed", confirmedAt: NOW_ANCHOR - 4, staleAfterMinutes: 15 },
-        allocatable: { value: 2, source: "ward", confirmedAt: NOW_ANCHOR - 5, staleAfterMinutes: 60 },
+        allocatable: { value: 2, source: "ward", confirmedAt: NOW_ANCHOR - 6, staleAfterMinutes: 60 },
         allocatableLocked: 1,
         held: 1,
         // Owner ruling 2026-09-25: out-of-service beds are not recorded, and an empty bed the feed
