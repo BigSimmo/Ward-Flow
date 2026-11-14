@@ -4,17 +4,12 @@ import { redirect } from "next/navigation";
 import { FrontDoorPage } from "@/components/ward-management/front-door/front-door-page";
 import { WARD_BED_MEETING_TV_HREF } from "@/components/ward-management/ward-nav";
 import { frontDoorRequired, safeNextPath } from "@/lib/front-door-pass";
-import { BRAND_DESCRIPTION, BRAND_NAME } from "@/lib/brand";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Sign in — Ward Flow",
   description: "Sign in to Ward Flow, a prototype with synthetic data.",
-  // INV-A18-104 (14 Nov 2026): every signed-out address lands here, so a shared link previews the
-  // product, not the sign-in step. The tab keeps "Sign in".
-  openGraph: { title: BRAND_NAME, description: BRAND_DESCRIPTION },
-  twitter: { title: BRAND_NAME, description: BRAND_DESCRIPTION },
 };
 
 /**
