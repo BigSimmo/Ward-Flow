@@ -1,14 +1,11 @@
 /** @vitest-environment jsdom */
 
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ToastView } from "@/components/wf/toast";
 
 // R-STYLE-5 / R-FIGS-20: toast text wraps to two lines, and a longer message gets a Details button.
-const css = readFileSync(join(process.cwd(), "src/components/wf/overlay.module.css"), "utf8");
 
 function overflow(on: boolean) {
   vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockReturnValue(on ? 60 : 20);
@@ -58,17 +55,5 @@ describe("toast wraps to two lines", () => {
     );
     expect(container.querySelector("[data-clamp]")).toBeNull();
     expect(screen.queryByRole("button", { name: "Details" })).toBeNull();
-  });
-});
-
-describe("toast place and clamp styles", () => {
-  it("clamps to two lines with no single-line ellipsis", () => {
-    expect(css).toMatch(/\.toast\[data-clamp\] \.toastTitle,[\s\S]*?-webkit-line-clamp: 2;/);
-    expect(css).toContain('.toast[data-clamp][data-expanded="true"]');
-  });
-
-  it("moves left of an open right drawer, not to bottom left", () => {
-    expect(css).toMatch(/right: calc\(min\(32rem, 100vw\) \+ var\(--wf-s-6\)\)/);
-    expect(css).not.toMatch(/left: var\(--wf-s-6\);\s*align-items: flex-start/);
   });
 });

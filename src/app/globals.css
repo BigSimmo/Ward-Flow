@@ -239,13 +239,13 @@
        (lg 18 · xl 20 · 2xl 24 come from Tailwind's default scale)
        lg-minus    17px  one notch under lg — display titles a shade under 18
        2xl-minus   22px  one notch under 2xl — wide-screen nowrap headings */
-  --text-3xs: var(--wf-fs-12);
-  --text-2xs: var(--wf-fs-12);
-  --text-sm-minus: var(--wf-fs-13);
-  --text-base-minus: var(--wf-fs-15);
-  --text-lg-minus: var(--wf-fs-16);
-  --text-2xl-minus: var(--wf-fs-20);
-  --text-3xl-minus: var(--wf-fs-28);
+  --text-3xs: 0.75rem;
+  --text-2xs: 0.75rem;
+  --text-sm-minus: 0.8125rem;
+  --text-base-minus: 0.9375rem;
+  --text-lg-minus: 1rem;
+  --text-2xl-minus: 1.25rem;
+  --text-3xl-minus: 1.75rem;
 
   /* Fluid display heading for the hero / mode-home titles (hybrid-fluid type:
      the large display heading scales continuously; body / UI text stays on the
@@ -253,7 +253,7 @@
      baseline (23.2px at ≤~393px) is unchanged, then it ramps to the 2.15rem cap
      by ~1033px — no breakpoint jumps. Generates the `text-hero` utility.
      clamp() font sizes are not flagged by scripts/check-type-scale.mjs. */
-  --text-hero: var(--wf-fs-28);
+  --text-hero: 1.75rem;
   /* Companion line-height marks --text-hero as a font-SIZE token (Tailwind v4
      `--text-<name>--line-height` convention) so downstream tooling never
      misreads the clamp() value as a font-family list. Call sites that set an

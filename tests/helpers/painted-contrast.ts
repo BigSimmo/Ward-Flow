@@ -172,11 +172,17 @@ export async function scanPaintedContrast(page: Page, options: { includeText?: b
             }
           }
           parts.push(image.slice(start));
-          for (const part of parts) {
+          // Scroll shadows and edge fades: a sized layer, or one that fades to transparent, paints
+          // only an edge band, not behind the text, so it is left out (Lane B, 14 Nov 2026).
+          const sizes = css.backgroundSize.split(",").map((size) => size.trim());
+          for (const [partIndex, part] of parts.entries()) {
+            const size = sizes[partIndex % sizes.length] ?? "auto";
+            if (!/^(auto|auto auto|cover|100% 100%|100%)$/.test(size)) continue;
             const stops = (part.match(/rgba?\([^)]*\)|color\([^)]*\)|#[0-9a-f]{3,8}\b/gi) ?? [])
               .map(parse)
               .filter((stop): stop is Rgba => stop !== null);
             if (!stops.length) continue;
+            if (stops.some((stop) => stop[3] <= 0.001)) continue;
             // A gradient layer forks the result into one candidate per colour stop.
             layers.push(stops);
             if (stops.every((stop) => stop[3] >= 0.999)) {
@@ -184,6 +190,23 @@ export async function scanPaintedContrast(page: Page, options: { includeText?: b
               break;
             }
           }
+        }
+        if (covered) break;
+        // A ::before or ::after that fills the element (a pill or button face painted behind the
+        // label at z-index -1) sits over the element's own background.
+        for (const pseudo of ["::before", "::after"] as const) {
+          const fill = getComputedStyle(cursor, pseudo);
+          if (fill.content === "none" || fill.content === "normal") continue;
+          const paint = parse(fill.backgroundColor);
+          if (!paint || paint[3] <= 0) continue;
+          const box = cursor.getBoundingClientRect();
+          const fills =
+            fill.position === "absolute" &&
+            ((fill.top === "0px" && fill.left === "0px" && fill.right === "0px" && fill.bottom === "0px") ||
+              (Number.parseFloat(fill.width) >= box.width * 0.9 && Number.parseFloat(fill.height) >= box.height * 0.9));
+          if (!fills) continue;
+          layers.push([paint]);
+          if (paint[3] >= 0.999) covered = true;
         }
         if (covered) break;
         if (base[3] > 0) {
