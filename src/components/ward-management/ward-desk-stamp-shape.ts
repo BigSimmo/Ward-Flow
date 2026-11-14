@@ -35,7 +35,8 @@ export function stampableAccountName(value: unknown): string | null {
 /** A change without any desk stamp, for the server before it stamps its own. */
 export function withoutDeskStamp(supplied: unknown): unknown {
   if (supplied === null || typeof supplied !== "object" || !Object.hasOwn(supplied, "desk")) return supplied;
-  const { desk: _forged, ...rest } = supplied as Record<string, unknown>;
+  const rest: Record<string, unknown> = { ...supplied };
+  delete rest.desk;
   return rest;
 }
 

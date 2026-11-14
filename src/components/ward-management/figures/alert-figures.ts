@@ -15,7 +15,7 @@ import { teamReferralsToAnswer } from "@/components/ward-management/community/te
 import { needsYouCount, referralsAwaitingDecision } from "@/components/ward-management/figures/decision-counts";
 import { defineFigure } from "@/components/ward-management/figures/figure-row";
 import { alertsNowFigures } from "@/components/ward-management/ward-alerts-figures";
-import { arrivalTiming } from "@/components/ward-management/ward-arrival-timing";
+import { ARRIVAL_LATE_GRACE_MINUTES, arrivalTiming } from "@/components/ward-management/ward-arrival-timing";
 
 export const ACT_NOW_FIGURE = defineFigure({
   id: "act-now",
@@ -73,7 +73,7 @@ export const OPEN_ALERTS_FIGURE = defineFigure({
 export const LATE_FIGURE = defineFigure({
   id: "late",
   name: "Late arrival",
-  rule: "An open journey not yet arrived, more than the signed 1 hour past its expected arrival time.",
+  rule: `An open journey not yet arrived, more than the signed ${ARRIVAL_LATE_GRACE_MINUTES} minutes past its expected arrival time.`,
   window: "now",
   windowId: "now",
   population: "Open journeys with an expected arrival time",
