@@ -179,10 +179,8 @@
     backdrop-filter: none;
   }
 
-  /* R-STYLE-5 / R-FIGS-20 (Josh): the toast stays bottom right of the work area. Beside an open right
-     drawer it sits left of the drawer (32rem, the widest the kit draws, plus the 24px gutter), so it
-     never covers the drawer's footer actions and never reaches the left rail or account button. A
-     left-side sheet and a centred dialog keep the default place. */
+  /* Tablet widths have no room beside a 32rem drawer (Codex review, 14 Nov 2026): the toast moves to
+     the top right instead, clear of the drawer's footer actions and of the rail. */
   :global(
       html:has(
         :is([role="dialog"], [role="alertdialog"])[aria-modal="true"]:is(
@@ -192,8 +190,29 @@
       )
     )
     .toastRegion {
-    right: calc(min(32rem, 100vw) + var(--wf-s-6));
-    --wf-toast-max: max(240px, min(560px, calc(100vw - 32rem - 3 * var(--wf-s-6))));
+    top: var(--wf-s-6);
+    bottom: auto;
+  }
+
+  /* R-STYLE-5 / R-FIGS-20 (Josh): the toast stays bottom right of the work area. Beside an open right
+     drawer it sits left of the drawer (32rem, the widest the kit draws, plus the 24px gutter), so it
+     never covers the drawer's footer actions and never reaches the left rail or account button. A
+     left-side sheet and a centred dialog keep the default place. */
+  @media (min-width: 64rem) {
+    :global(
+        html:has(
+          :is([role="dialog"], [role="alertdialog"])[aria-modal="true"]:is(
+              [data-sheet-placement="right"],
+              [data-sheet-placement="responsive-right"]
+            )
+        )
+      )
+      .toastRegion {
+      top: auto;
+      bottom: calc(var(--wf-s-6) + var(--wf-toast-rest));
+      right: calc(min(32rem, 100vw) + var(--wf-s-6));
+      --wf-toast-max: max(240px, min(560px, calc(100vw - 32rem - 3 * var(--wf-s-6))));
+    }
   }
 
   /* Two lines, then a Details button (ToastView). The whole text can open out to every word. */
