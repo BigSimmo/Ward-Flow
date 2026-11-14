@@ -79,6 +79,7 @@ import {
 } from "./add-patient-sections";
 
 import styles from "./add-patient.module.css";
+import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import {
@@ -1312,6 +1313,8 @@ export function AddPatientForm() {
             </p>
           </div>
         </Sheet>
+        {/* Untested-537 INV-DISPLAY-014: the one page with no synthetic-data footer. */}
+        <WardPrototypeFooter testId="ward-add-patient-governance" />
       </main>
     </div>
   );

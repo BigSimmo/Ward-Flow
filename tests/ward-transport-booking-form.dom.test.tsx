@@ -208,6 +208,21 @@ describe("the one transport booking form", () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
+  // Untested-537 INV-A11-029: an impossible typed time says so under the box, like the form dates.
+  it("says under the box when the typed estimated time is not a real time", () => {
+    const onSubmit = vi.fn();
+    render(<Harness record={INVOLUNTARY} onSubmit={onSubmit} />);
+    answerTheCall();
+    expect(screen.queryByTestId(id("time-problem"))).toBeNull();
+    fireEvent.change(screen.getByTestId(id("time")), { target: { value: "99:99" } });
+    expect(screen.getByTestId(id("time-problem"))).toHaveTextContent(
+      "99:99 is not a clock time. Enter HH:MM, for example 14:40 or 1440.",
+    );
+    expect(screen.getByTestId(id("time"))).toHaveAttribute("aria-invalid", "true");
+    fireEvent.click(screen.getByTestId(id("confirm")));
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
   it("does not submit on Enter from inside a field", () => {
     const onSubmit = vi.fn();
     render(<Harness record={INVOLUNTARY} onSubmit={onSubmit} />);

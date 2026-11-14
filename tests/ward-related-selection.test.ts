@@ -72,3 +72,27 @@ describe("declared source-reading dependency selection", () => {
     expect(() => selectRelatedTests({ root, changed: ["../elsewhere.ts"] })).toThrow(/inside the checkout/);
   });
 });
+
+describe("pinning tests are always selected with the file they pin (Deep-DP5-3)", () => {
+  it("selects the permission table's pin even when nothing imports it from the changed file", () => {
+    const root = mkdtempSync(path.join(tmpdir(), "ward-related-pin-"));
+    const write = (file: string, source: string) => {
+      mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+      writeFileSync(path.join(root, file), source);
+    };
+    write("src/components/ward-management/ward-flow-event-roles.ts", "export const ROLES = 1;");
+    write("tests/ward-event-permissions.test.ts", "export {};");
+    const result = selectRelatedTests({
+      root,
+      changed: ["src/components/ward-management/ward-flow-event-roles.ts"],
+    });
+    expect(result.selected).toContain("tests/ward-event-permissions.test.ts");
+  });
+
+  it("selects nothing extra for an unrelated file", () => {
+    const root = mkdtempSync(path.join(tmpdir(), "ward-related-pin-"));
+    mkdirSync(path.join(root, "src"), { recursive: true });
+    writeFileSync(path.join(root, "src/other.ts"), "export const other = 1;");
+    expect(selectRelatedTests({ root, changed: ["src/other.ts"] }).selected).toEqual([]);
+  });
+});

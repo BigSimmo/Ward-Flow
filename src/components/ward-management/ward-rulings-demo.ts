@@ -251,7 +251,13 @@ export function rulingsDemoOverlay(now: Instant): RulingsDemoOverlay {
     legalStatus: "Involuntary inpatient",
     stage: "destination_review",
     owner: "Bed coordinator",
+    // D-229 (stress test D1a-E-1): written as the reducer's own waitlist answer writes it, so every
+    // screen that reads the live referral, its answer or its decline shows the wait list. Before,
+    // the seed set the waitlist mark alone, and no screen showed it.
+    referredUnitIds: [UNIT_FSH_ADULT_SECURE],
     waitlistedUnitIds: [UNIT_FSH_ADULT_SECURE],
+    declines: [{ unitId: UNIT_FSH_ADULT_SECURE, at: now - 60, reason: "no_suitable_bed" }],
+    referralAnswerHistory: [{ unitId: UNIT_FSH_ADULT_SECURE, at: now - 60, answer: "waitlisted" }],
     blocker: "Waitlisted — no matching gendered bed yet",
   });
 

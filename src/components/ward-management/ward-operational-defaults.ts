@@ -222,6 +222,13 @@ export const FORECAST_WORSE_ALERT_RANGE_BEDS = { min: 1, max: 10, step: 1 } as c
 export const RED_ROW_SNOOZE_CAP_MINUTES = CLINICAL_VALUES.redRowSnoozeCap.value;
 /** Sanity bound on any snooze: a row never disappears for more than a day. */
 export const SNOOZE_MAX_MINUTES = 24 * MINUTES_PER_HOUR;
+/**
+ * A save that waited offline longer than this is refused and the person is asked to enter it again
+ * (untested-537 lane L1, INV-M1670-032): records with no stamped last change (handover sign-off,
+ * configuration, outage window) otherwise took any earlier time, even 0 or a negative minute. Twelve
+ * hours covers a lost signal across a whole shift. A software safety bound, not a clinical limit.
+ */
+export const OFFLINE_ENTRY_MAX_MINUTES = 12 * MINUTES_PER_HOUR;
 
 /**
  * Carer, PSP and MHAS notifications (9 Oct 2026): an involuntary admission, transfer or discharge

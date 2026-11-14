@@ -59,7 +59,7 @@ not a new visual walkthrough. The current legal-time boundary is
 
 <!-- docs-script-refs:historical-start -->
 
-The rail on the left (`shell-18` in `src/components/ward-management/ward-rail-entries.ts`) has four groups:
+The rail on the left (`shell-18` in `src/components/ward-management/shell/ward-rail-entries.ts`) has four groups:
 
 - **Now:** `Coordinator`, `Capacity`, `Waiting`.
 - **Where:** `EDs`, `Wards`, `Community`, `Out of Area`.
