@@ -33,6 +33,7 @@ import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { isAwaitingAnswer } from "@/components/ward-management/ward-referrals";
 import type { AcceptedAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { ACT_NOW_TARGET_ID } from "@/components/ward-management/shell/ward-skip-to-act-now";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { Button, buttonClass, Card, Sheet, StatusGlyph } from "@/components/wf";
 // Closing-the-loop package A (24 Oct 2026): chase count and overdue promise on a referral row, and
 // the coordinated call sheet. The sheet's code loads only when it is opened.
@@ -85,6 +86,7 @@ function CalmEmpty({ children }: { children: ReactNode }) {
 }
 
 function AlertAction({ entry, handlers }: { entry: QueueEntry; handlers: QueueHandlers }) {
+  const canOpen = useCanOpenHref();
   const label = `${entry.snooze ? "Return now" : entry.action.label} for ${entry.subject.displayName}`;
   if (entry.snooze)
     return (
@@ -98,9 +100,23 @@ function AlertAction({ entry, handlers }: { entry: QueueEntry; handlers: QueueHa
         {entry.action.label}
       </Button>
     );
+  // INV-CM (14 Nov 2026): a desk that cannot open the action's page (Legal forms for the site bed
+  // manager) opens the patient instead, and is offered nothing rather than "Not part of your role".
+  if (canOpen(entry.action.href))
+    return (
+      <Link className={buttonClass({ size: "sm" })} href={entry.action.href} aria-label={label}>
+        {entry.action.label}
+      </Link>
+    );
+  const patientHref = entry.subject.patientHref;
+  if (patientHref === undefined || !canOpen(patientHref)) return null;
   return (
-    <Link className={buttonClass({ size: "sm" })} href={entry.action.href} aria-label={label}>
-      {entry.action.label}
+    <Link
+      className={buttonClass({ size: "sm" })}
+      href={patientHref}
+      aria-label={`Open patient for ${entry.subject.displayName}`}
+    >
+      Open patient
     </Link>
   );
 }

@@ -7,11 +7,19 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
 import type { Unit } from "@/components/ward-management/ward-model";
 
-const desk: { access: WardAccess } = { access: { role: "coordinator", scope: { kind: "statewide" } } };
+const desk: { access: WardAccess; canOpen: (href: string) => boolean } = {
+  access: { role: "coordinator", scope: { kind: "statewide" } },
+  canOpen: () => true,
+};
 
 vi.mock("@/components/ward-management/shell/ward-access-store", async (original) => ({
   ...(await original<typeof import("@/components/ward-management/shell/ward-access-store")>()),
   useEffectiveWardAccess: () => desk.access,
+}));
+
+vi.mock("@/components/ward-management/shell/ward-access", async (original) => ({
+  ...(await original<typeof import("@/components/ward-management/shell/ward-access")>()),
+  useCanOpenHref: () => desk.canOpen,
 }));
 
 const { WardBoardTools } = await import("@/components/ward-management/board/ward-board-hero");
@@ -36,6 +44,7 @@ function renderTools() {
 afterEach(() => {
   cleanup();
   desk.access = { role: "coordinator", scope: { kind: "statewide" } };
+  desk.canOpen = () => true;
 });
 
 describe("Stays and discharges hero tools", () => {
@@ -56,6 +65,16 @@ describe("Stays and discharges hero tools", () => {
 
   it("lists only a ward desk's own wards when it holds more than one", () => {
     desk.access = { role: "ward", scope: { kind: "ward", unitIds: ["synthetic-ward-a", "synthetic-ward-c"] } };
+    renderTools();
+    fireEvent.click(screen.getByRole("button", { name: "Change ward, 2 wards" }));
+    const panel = screen.getByRole("dialog", { name: "Switch ward" });
+    expect(within(panel).queryByText(/Synthetic Ward B/)).toBeNull();
+    expect(within(panel).getByText(/Synthetic Ward C/)).toBeInTheDocument();
+  });
+
+  it("lists only boards the desk may open, never one ending at Not part of your role (INV-CM)", () => {
+    desk.access = { role: "bed_manager", scope: { kind: "site", siteCode: "RPH" } };
+    desk.canOpen = (href) => !href.endsWith("/synthetic-ward-b");
     renderTools();
     fireEvent.click(screen.getByRole("button", { name: "Change ward, 2 wards" }));
     const panel = screen.getByRole("dialog", { name: "Switch ward" });

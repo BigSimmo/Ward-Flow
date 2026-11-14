@@ -826,6 +826,8 @@ export function OnCallScreen() {
             <StatusGlyph tone="warning" size={9} />
             Synthetic records. Every number is a mock from an unassigned range.
           </p>
+          {/* INV-DISPLAY-060 (14 Nov 2026): the shared prototype footer, as on every other phone page. */}
+          <WardPrototypeFooter testId="ward-on-call-governance" />
         </main>
         {sheetEntry ? (
           <PhoneSheet entry={sheetEntry} actions={actions} notice={sheetNotice} onClose={() => setSheetId(null)} />

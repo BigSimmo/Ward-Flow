@@ -36,6 +36,7 @@ import type { Dispatch, KeyboardEvent, ReactElement, RefObject, SetStateAction }
 import type { CapacityRefreshRequest, Movement, Notice, Unit } from "@/components/ward-management/ward-model";
 import type { BedStateCounts } from "@/components/ward-management/ward-bed-states";
 import type { RoleGate } from "@/components/ward-management/ward-role-gate";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import type { WardScreenBed } from "./ward-screen-derivations";
 
 /** The ward card and top action bar, drawn from the ward screen's own state. */
@@ -176,6 +177,14 @@ export function WardScreenTopBar({
   // staff request's tag sits under the band.
   const staffContact = useWardStaffContact({ unit, now, isPhone });
   const [switchOpen, setSwitchOpen] = useState(false);
+  // INV-CM (14 Nov 2026): the full referral form shows only for a desk that may open a new
+  // referral; the site bed manager's opened "Not part of your role".
+  const canOpen = useCanOpenHref();
+  const referralFormHref =
+    (raisedReferral && raisedReferral.bed === selectedBed ? raisedReferral.href : null) ??
+    fullWardReferralHref(
+      selectedBed !== null ? bedsList.find((b) => b.bedNumber === selectedBed)?.patientInfo?.patient?.id : undefined,
+    );
   // The confirm dialog returns focus to its opener, and to the Confirm numbers chip when the opener
   // is gone. The chip is drawn by the shared hero parts, so it is found by its test id.
   useEffect(() => {
@@ -238,22 +247,17 @@ export function WardScreenTopBar({
                 On TV
               </Link>
             ) : null}
-            <Link
-              className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolWide}`}
-              href={
-                (raisedReferral && raisedReferral.bed === selectedBed ? raisedReferral.href : null) ??
-                fullWardReferralHref(
-                  selectedBed !== null
-                    ? bedsList.find((b) => b.bedNumber === selectedBed)?.patientInfo?.patient?.id
-                    : undefined,
-                )
-              }
-              data-testid="ward-open-full-referral-form-link"
-              aria-label="Open the full referral form"
-            >
-              {/* Usability audit 24 Oct 2026: the longer label was cut off at 1280 px. */}
-              Referral form
-            </Link>
+            {canOpen(referralFormHref) ? (
+              <Link
+                className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolWide}`}
+                href={referralFormHref}
+                data-testid="ward-open-full-referral-form-link"
+                aria-label="Open the full referral form"
+              >
+                {/* Usability audit 24 Oct 2026: the longer label was cut off at 1280 px. */}
+                Referral form
+              </Link>
+            ) : null}
             {/* Approved 31 Oct 2026: Notices, Shift brief and Handover sit in the More menu. */}
             {wardMoreMenu(cx(buttonClass({ variant: "ghost", size: "sm" }), folderTabClasses.more), true)}
           </div>

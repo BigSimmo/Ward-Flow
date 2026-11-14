@@ -239,7 +239,15 @@ describe("actions limited by the route's role (feature 11)", () => {
 
 // The gate's `disabled` must survive the button's own pending state: a later `disabled={saving}`
 // once replaced it, re-enabling Save for roles that may not act whenever nothing was saving.
-function TransportForm({ save }: { save: () => void }) {
+function TransportForm({
+  save,
+  routeRole = "officer",
+  actingUnitId,
+}: {
+  save: () => void;
+  routeRole?: PatientTransportSectionContext["routeRole"];
+  actingUnitId?: string;
+}) {
   const gate = useRoleGate();
   const noop = () => undefined;
   const liveMovement = seedWardFlowState().movements[0];
@@ -254,8 +262,8 @@ function TransportForm({ save }: { save: () => void }) {
     displayProvider: "Not recorded",
     displayName: "Synthetic patient",
     gate,
-    routeRole: "officer",
-    transportActingUnitId: undefined,
+    routeRole,
+    transportActingUnitId: actingUnitId,
     isTransportBooked: false,
     liveMovement,
     mode: "held",
@@ -280,6 +288,29 @@ function TransportForm({ save }: { save: () => void }) {
   } satisfies PatientTransportSectionContext;
   return <>{renderTransportSection(ctx)}</>;
 }
+
+describe("transport booking on the ward desk (Desks-R3-10)", () => {
+  it("does not offer the booking form to a ward that is not the sending ward", () => {
+    navigation.pathname = "/mockups/ward-flow/ward/rph-adult-secure";
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <TransportForm save={vi.fn()} routeRole="ward" />
+      </WardFlowProvider>,
+    );
+    expect(screen.queryByTestId("ward-patient-transport-form")).toBeNull();
+    expect(screen.queryByTestId("ward-patient-book-transport-btn")).toBeNull();
+  });
+
+  it("offers it to the sending ward", () => {
+    navigation.pathname = "/mockups/ward-flow/ward/rph-adult-secure";
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <TransportForm save={vi.fn()} routeRole="ward" actingUnitId="rph-adult-secure" />
+      </WardFlowProvider>,
+    );
+    expect(screen.getByTestId("ward-patient-transport-form")).toBeInTheDocument();
+  });
+});
 
 describe("gated Save buttons stay disabled while nothing is saving", () => {
   it("keeps Save transport booking disabled, with its reason, for a role that may not book", () => {

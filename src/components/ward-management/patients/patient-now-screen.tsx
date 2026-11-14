@@ -148,13 +148,14 @@ import {
   useRouteRole,
 } from "@/components/ward-management/ward-role-gate";
 import { usePathname } from "next/navigation";
+import { useOptionalRouter } from "../ward/ward-screen-helpers";
 import { type ContactRow } from "./patient-now-cards";
 import { movementHasBedHold } from "@/components/ward-management/ward-movement-bed-hold";
 import { type PatientNowRecord, STAGES, clock, fillTemplate } from "./patient-now-records";
 import styles from "./patient-now.module.css";
 import { PatientArchivePanel } from "./patient-archive-panel";
 import { PatientGlance, patientStateTag } from "./patient-glance";
-import { bookedPlannedAdmissionFor, openReferralFor, openReferralSentTo } from "./patient-open-work";
+import { bookedPlannedAdmissionFor, openReferralFor, openReferralSentTo, waitlistedStayFor } from "./patient-open-work";
 import { referralSafetyFacts } from "./patient-referral-safety";
 import { patientCareJourney } from "./patient-care-journey";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -247,6 +248,7 @@ export function PatientNowScreen({
   const canOpenHref = useCanOpenHref();
   const openable = (href: string | undefined) => (href !== undefined && canOpenHref(href) ? href : undefined);
   const pathname = usePathname() ?? "";
+  const router = useOptionalRouter();
   // Audit A3-10 (13 Oct 2026): Mark absent offers the standard toast with Undo, as other moves do.
   const { run: runStep } = useUndoableStep({ dispatch, rejections, now, routeRole });
 
@@ -402,10 +404,15 @@ export function PatientNowScreen({
   const voluntaryNow =
     /^voluntary\b/i.test((liveMovement?.legalStatus ?? livePatient?.legalStatus ?? "").trim()) &&
     !legalStatusTextIsInvoluntary(livePatient?.legalStatus);
+  // Lead-VM-1: a wait-list stay with no movement reads as waiting for a bed, not "Not active".
+  const waitlistStay = mode === "idle" ? waitlistedStayFor(livePatient?.id, admissions) : undefined;
+  const waitlistUnit = waitlistStay ? units.find((u) => u.id === waitlistStay.unitId) : undefined;
   const modeMeta =
     mode === "awol" && voluntaryNow
       ? { ...PATIENT_MODES.awol, label: "Not back from leave", pill: "Not back from leave" }
-      : PATIENT_MODES[mode];
+      : waitlistUnit
+        ? { ...PATIENT_MODES.idle, label: "Waiting for a bed", pill: "Waiting for a bed", tone: "info" as const }
+        : PATIENT_MODES[mode];
   const isLiveBedflow = modeMeta.placing;
   // A movement's forms are the authority in force only while it is open or its stay is current.
   const stayCurrent = mode === "ward" || mode === "leave" || mode === "awol" || mode === "ed";
@@ -843,6 +850,13 @@ export function PatientNowScreen({
     acceptedUnitName: acceptingUnit?.name ?? stayUnit?.name,
     // Decision 2 (site review, 12 Oct 2026): the Bed value opens the ward, the Transport value the
     // movement's own page with its transport job (not linked when that is this page already).
+    onReviewBed: (() => {
+      const unit = acceptingUnit ?? stayUnit;
+      const bed = resolved.liveAdmission?.bedNumber;
+      if (unit === undefined) return undefined;
+      const href = `/ward-flow/ward/${encodeURIComponent(unit.id)}${bed !== undefined ? `?bed=${bed}` : ""}`;
+      return openable(href) === undefined ? undefined : () => router?.push(href);
+    })(),
     bedHref: openable(
       (acceptingUnit ?? stayUnit) !== undefined
         ? `/ward-flow/ward/${encodeURIComponent((acceptingUnit ?? stayUnit)!.id)}`
@@ -853,7 +867,13 @@ export function PatientNowScreen({
           unitName: acceptedWardFor.unitName,
           boardHref: openable(`/ward-flow/ward/${encodeURIComponent(acceptedWardFor.unitId)}?tab=board`),
         }
-      : undefined,
+      : waitlistUnit
+        ? {
+            unitName: waitlistUnit.name,
+            boardHref: openable(`/ward-flow/ward/${encodeURIComponent(waitlistUnit.id)}?tab=board`),
+            waiting: true,
+          }
+        : undefined,
     openReferral: openReferral
       ? {
           sentTo: openReferralSentTo(openReferral),
@@ -1137,7 +1157,7 @@ export function PatientNowScreen({
     movement: liveMovement,
     communityActive: Boolean(ctoInForce || activeCommunityEpisode),
     openWork:
-      acceptedWardFor || plannedBooking || (openReferral && !openReferral.communityOnly)
+      acceptedWardFor || waitlistUnit || plannedBooking || (openReferral && !openReferral.communityOnly)
         ? "bed"
         : openReferral
           ? "community"

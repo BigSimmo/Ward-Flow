@@ -1,4 +1,4 @@
-import type { PlannedAdmission } from "../ward-admissions";
+import type { Admission, PlannedAdmission } from "../ward-admissions";
 import type { Instant } from "../ward-clock";
 import type { Referral } from "../ward-model";
 import { isAwaitingAnswer, referralState } from "../ward-referrals";
@@ -67,4 +67,20 @@ export function openReferralSentTo(open: Pick<OpenReferral, "wards" | "places">)
   if (open.wards > 0 && open.wards === open.places)
     return `Sent to ${open.wards} ${open.wards === 1 ? "ward" : "wards"}`;
   return `Sent to ${open.places} ${open.places === 1 ? "place" : "places"}`;
+}
+
+/**
+ * Lead-VM-1: a ward wait-list stay with no movement (state "waitlisted", person set, no movement)
+ * is waiting for a bed at that ward, as Search and the ward board already say. It is not an open
+ * movement and not an occupied stay, so patient mode reads "idle" for it; the page uses this to say
+ * so instead of "Not active".
+ */
+export function waitlistedStayFor(
+  patientId: string | undefined,
+  admissions: readonly Admission[],
+): Admission | undefined {
+  if (patientId === undefined) return undefined;
+  return admissions.find(
+    (stay) => stay.state === "waitlisted" && stay.movementId == null && isOwnStay(stay, patientId),
+  );
 }

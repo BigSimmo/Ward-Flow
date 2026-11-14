@@ -101,6 +101,9 @@ export type OfficerJobDetailContext = {
   zone: ClockZoneLabel;
 };
 
+/** R-MOVE-3: said in place of the main control once a diversion is recorded. */
+export const DIVERTED_END_LINE = "Nothing more for you on this job. The coordinator or ward releases the bed.";
+
 /** v10 phone: the job sheet's four stage buttons, pinned to its foot; the next one is primary and
  * an unavailable one is greyed with its reason (build guide: "the four stage buttons pinned"). */
 export function renderPhoneNextStep(movement: Movement, ctx: OfficerJobDetailContext) {
@@ -110,6 +113,16 @@ export function renderPhoneNextStep(movement: Movement, ctx: OfficerJobDetailCon
   const leg = officerLeg(transport);
   const index = leg ? OFFICER_LEG_STEPS.indexOf(leg) : -1;
   if (index < 0) return null;
+  // R-MOVE-3: after a diversion the officer has nothing more to do on the job.
+  if (transport.diversion) {
+    return (
+      <div className={styles.phStageRow}>
+        <p className={styles.nextNote} data-testid={`ward-officer-diverted-end-${movement.id}`}>
+          {DIVERTED_END_LINE}
+        </p>
+      </div>
+    );
+  }
   const patientName = resolvedPatientName(movement);
   const steps = [
     {
@@ -288,8 +301,9 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
 
       <ol className={styles.progress} aria-label={`Progress, ${Math.max(0, legIndex)} of 4 done`}>
         {stepLabels.map((label, index) => {
-          const done = legIndex >= index + 1;
-          const current = index === legIndex;
+          const diverted = transport.diversion !== undefined && index === 3;
+          const done = !diverted && legIndex >= index + 1;
+          const current = !diverted && index === legIndex;
           const at = stepTimes[index];
           return (
             <li key={label} className={styles.progressStep} data-state={done ? "done" : current ? "now" : undefined}>
