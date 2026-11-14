@@ -59,3 +59,7 @@ e28ff6baad4713590f736e5da5fec9413f50d726:tests/front-door-pass.test.ts:generic-a
 # tests/ward-audit-m50-session-lifetime.test.ts signs a pass with a made-up synthetic secret that
 # only exists in that test (10 Nov 2026, #1598). The line now carries inline gitleaks:allow.
 72443dd92387964e3a7d6ba3fcc3e569448d0ceb:tests/ward-audit-m50-session-lifetime.test.ts:generic-api-key:75
+
+# tests/ward-mca-leave-notice-day.test.ts looks up a synthetic leave alert id ("leave-LB-SYNTH-1")
+# that gitleaks reads as a generic key by entropy (14 Nov 2026, #1670). The line now carries inline gitleaks:allow.
+e442d5d530002d1b9c5b3dc61951af5bd8582683:tests/ward-mca-leave-notice-day.test.ts:generic-api-key:37

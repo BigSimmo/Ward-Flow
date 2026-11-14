@@ -34,7 +34,7 @@ const noticeText = (expectedReturn: number) =>
     thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
     overdueLeaveBeds: [leaveBed(expectedReturn)],
     unit,
-  }).liveFormAlerts.find((alert) => alert.key === "leave-LB-SYNTH-1")!.text;
+  }).liveFormAlerts.find((alert) => alert.key === "leave-LB-SYNTH-1")!.text; // gitleaks:allow
 
 describe("the leave bed notice names the day of the expected return", () => {
   it("says the day for a return two days away, never a bare clock face", () => {
