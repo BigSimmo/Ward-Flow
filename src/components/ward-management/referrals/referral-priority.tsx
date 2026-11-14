@@ -1,10 +1,6 @@
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Referral } from "@/components/ward-management/ward-model";
-import {
-  OVERDUE_AFTER_ANY_TIER_MINUTES,
-  OVERDUE_AFTER_MINUTES_BY_TIER,
-} from "@/components/ward-management/ward-operational-defaults";
-import { referralClocks } from "@/components/ward-management/ward-referrals";
+import { isReferralOverdue } from "@/components/ward-management/ward-referrals";
 import { StatusGlyph, type WfTone } from "@/components/wf";
 import styles from "./referrals.module.css";
 
@@ -16,14 +12,8 @@ import styles from "./referrals.module.css";
 export type ReferralPriority = "overdue" | "urgent" | "routine";
 
 export function getReferralPriority(referral: Referral, now: Instant): ReferralPriority {
-  const clocks = referralClocks(referral, now);
-  // Josh's own defaults, not legal limits (D-22, D-24): the same figures the intake form and the
-  // settings screen quote, read from one place so they cannot drift apart.
-  const isOverdue =
-    clocks.sinceReferralRunning &&
-    (clocks.sinceReferral >= OVERDUE_AFTER_MINUTES_BY_TIER[referral.urgency] ||
-      clocks.sinceReferral >= OVERDUE_AFTER_ANY_TIER_MINUTES);
-
+  // Josh's own defaults, not legal limits (D-22, D-24), shared with Home through ward-referrals.
+  const isOverdue = isReferralOverdue(referral, now);
   if (isOverdue) return "overdue";
   if (referral.urgency === 1 || referral.urgency === 2) return "urgent";
   return "routine";

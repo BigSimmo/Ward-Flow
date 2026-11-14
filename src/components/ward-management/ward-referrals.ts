@@ -21,7 +21,11 @@ import {
   SUBURB_UNKNOWN_REASONS,
   suburbUnknownLabels,
 } from "@/components/ward-management/ward-model";
-import { EXPECT_RECONSIDER_AFTER_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import {
+  EXPECT_RECONSIDER_AFTER_MINUTES,
+  OVERDUE_AFTER_ANY_TIER_MINUTES,
+  OVERDUE_AFTER_MINUTES_BY_TIER,
+} from "@/components/ward-management/ward-operational-defaults";
 import { PLACE_NOT_RECORDED, placeDisplayName } from "@/components/ward-management/ward-place-names";
 import type { CommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
 import type {
@@ -959,6 +963,22 @@ export function referralClocks(referral: Pick<Referral, "raisedAt" | "triagedAt"
     sinceReferralRunning: !triagedAfterReferral,
     inDepartment: triagedAt === undefined ? undefined : Math.max(0, minutesUntil(now, triagedAt)),
   };
+}
+
+/**
+ * Overdue once the running referral clock passes its tier's target or the any-tier ceiling. Josh's
+ * own defaults, not legal limits (D-22, D-24). Lives here so Home and the referral list share it.
+ */
+export function isReferralOverdue(
+  referral: Pick<Referral, "raisedAt" | "triagedAt" | "urgency">,
+  now: Instant,
+): boolean {
+  const clocks = referralClocks(referral, now);
+  return (
+    clocks.sinceReferralRunning &&
+    (clocks.sinceReferral >= OVERDUE_AFTER_MINUTES_BY_TIER[referral.urgency] ||
+      clocks.sinceReferral >= OVERDUE_AFTER_ANY_TIER_MINUTES)
+  );
 }
 
 /**

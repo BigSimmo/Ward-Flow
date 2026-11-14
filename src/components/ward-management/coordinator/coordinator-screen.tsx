@@ -29,7 +29,6 @@ import { formatInstant, splitDuration } from "@/components/ward-management/ward-
 import { originPlace } from "@/components/ward-management/origin-place";
 import { OVERDUE_AFTER_MINUTES_BY_TIER } from "@/components/ward-management/ward-operational-defaults";
 import { targetHoursText } from "@/components/ward-management/ward-target-hours";
-import { getReferralPriority } from "@/components/ward-management/referrals/referral-priority";
 import { type InboxItem, isOpen } from "@/components/ward-management/ward-derivations";
 import {
   useDueSoonThresholds,
@@ -48,7 +47,7 @@ import { patientHref } from "@/components/ward-management/shell/ward-patient-hre
 import { movementBreakdownRows, wardReadyBreakdownRows } from "@/components/ward-management/count-breakdown-rows";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { queueOrder } from "@/components/ward-management/ward-priority";
-import { referralQueueOrder } from "@/components/ward-management/ward-referrals";
+import { isReferralOverdue, referralQueueOrder } from "@/components/ward-management/ward-referrals";
 import {
   movementBelongsToService,
   noRecordedServiceMovementCount,
@@ -769,7 +768,7 @@ export function CoordinatorScreen() {
   // Wave 4 (D-191): "3 alerts, 1 accepted with no bed pulled" on its own line under the head.
   // R-HOME-4: one line naming the oldest overdue referral to decide, its tier and wait, opening it.
   const oldestOverdue = referralQueue
-    .filter((referral) => getReferralPriority(referral, now) === "overdue")
+    .filter((referral) => isReferralOverdue(referral, now))
     .sort((a, b) => a.raisedAt - b.raisedAt)[0];
   const overdueReferralLine = oldestOverdue ? (
     <button
