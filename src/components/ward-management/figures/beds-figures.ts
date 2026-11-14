@@ -5,7 +5,8 @@
 import { bedKindTotals } from "@/components/ward-management/capacity/capacity-derivations";
 import { needsABed, noWardYet } from "@/components/ward-management/figures/bed-demand";
 import { defineFigure } from "@/components/ward-management/figures/figure-row";
-import { BED_ALERT_THRESHOLD_PERCENT, isBedAlert } from "@/components/ward-management/shell/ward-service-bed-alerts";
+import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
+import { overLineLabel } from "@/components/ward-management/shell-next/next-rail-parts";
 import { occupancyPercent } from "@/components/ward-management/statistics/statistics-occupancy";
 import { readyBedsNow, totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { wardBedsInUse } from "@/components/ward-management/ward-occupancy";
@@ -51,9 +52,9 @@ export const AT_OR_OVER_LINE_FIGURE = defineFigure({
   windowId: "now",
   population: "Every health service",
   scope: "network",
-  status: "wraps-pr-a",
-  compute: isBedAlert,
-  home: "`isBedAlert` (`shell/ward-service-bed-alerts.ts`); the count over every service is PR A's (RV1a-7)",
+  status: "built",
+  compute: overLineLabel,
+  home: "`overLineLabel(...).over` (`shell-next/next-rail-parts.tsx`), over `isBedAlert` (`shell/ward-service-bed-alerts.ts`); PR A, RV1a-7",
   how: [
     `A service counts when its whole percent in use is ${BED_ALERT_THRESHOLD_PERCENT}% or more.`,
     "Every service is counted, whether or not its row is shown.",
@@ -69,9 +70,9 @@ export const READY_NOW_FIGURE = defineFigure({
   windowId: "now",
   population: "Beds on the desk's wards",
   scope: "desk",
-  status: "wraps-pr-a",
+  status: "built",
   compute: totalReadyBedsNow,
-  home: "`totalReadyBedsNow` (`ward-bed-states.ts`); PR A aligns every caller's hold list",
+  home: "`totalReadyBedsNow` (`ward-bed-states.ts`), with the network's named holds (`networkNamedHolds`; PR A)",
   how: [
     "Free beds that are made up and not held.",
     "A bed pulled for an incoming patient, or named for an accepted referral, is not ready.",

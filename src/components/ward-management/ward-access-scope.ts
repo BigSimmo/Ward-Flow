@@ -934,10 +934,17 @@ function withReadyOutOfView(
   return units.map((unit) => {
     if (wholeRecordsSent(unit.id)) return unit;
     const counts = readyPartition(unit, whole.admissions, releases, holds);
+    const staysOnly = readyPartition(unit, whole.admissions, releases, []);
     // The same object while the counts hold, so a desk's steady lists do not redraw every ward.
     const before = readyOutOfViewCopies.get(unit);
-    if (before?.readyOutOfView && sameReadyCounts(before.readyOutOfView, counts)) return before;
-    const copy = { ...unit, readyOutOfView: counts };
+    if (
+      before?.readyOutOfView &&
+      before.readyOutOfViewStaysOnly &&
+      sameReadyCounts(before.readyOutOfView, counts) &&
+      sameReadyCounts(before.readyOutOfViewStaysOnly, staysOnly)
+    )
+      return before;
+    const copy = { ...unit, readyOutOfView: counts, readyOutOfViewStaysOnly: staysOnly };
     readyOutOfViewCopies.set(unit, copy);
     return copy;
   });

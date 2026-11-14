@@ -77,8 +77,11 @@ test("a site bed manager confirms a ward's beds at its site as itself, and the w
   };
   const asItself = engine.deskCommand(bedManager, { ...confirm, role: "bed_manager" });
   assert.equal(engine.commandRefusal(world, bedManager, asItself, at), null);
+  // D-223: the role comes from the membership, so a confirm the screen typed as the ward is recorded
+  // as the bed manager's own, never the ward's.
   const asWard = engine.deskCommand(bedManager, { ...confirm, role: "ward" });
-  assert.equal(engine.commandRefusal(world, bedManager, asWard, at), "This change is not part of your role.");
+  assert.equal(asWard.role, "bed_manager");
+  assert.equal(engine.commandRefusal(world, bedManager, asWard, at), null);
   const other = world.state.units.find((candidate) => candidate.siteCode && candidate.siteCode !== "RPH");
   assert.ok(other, "a synthetic ward at another site");
   const elsewhere = { ...confirm, role: "bed_manager", unitId: other.id, actingUnitId: other.id };

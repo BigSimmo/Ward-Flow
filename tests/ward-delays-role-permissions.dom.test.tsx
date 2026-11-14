@@ -93,35 +93,38 @@ describe("Delays escalation follows the existing desk permission", () => {
     expect(screen.queryByTestId(`delays-detail-${movement.id}`)).toBeNull();
   });
 
-  it.each(["bed_manager", "coordinator"] as const)("keeps the action visible and gates %s before dispatch", (role) => {
-    installMatchMediaStub(false);
-    act(() => {
-      setWardFeatureFlagOnDevice("role-access", true);
-      setWardAccess(
-        role === "bed_manager"
-          ? { role, scope: { kind: "site", siteCode: state.units[0]!.siteCode } }
-          : { role, scope: { kind: "statewide" } },
+  it.each(["bed_manager", "coordinator"] as const)(
+    "offers Escalate only to a desk that can use it: %s (D-192 item 5, D-218)",
+    (role) => {
+      installMatchMediaStub(false);
+      act(() => {
+        setWardFeatureFlagOnDevice("role-access", true);
+        setWardAccess(
+          role === "bed_manager"
+            ? { role, scope: { kind: "site", siteCode: state.units[0]!.siteCode } }
+            : { role, scope: { kind: "statewide" } },
+        );
+      });
+      renderAllDelays(
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <DelaysScreen />
+        </WardFlowProvider>,
       );
-    });
-    renderAllDelays(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <DelaysScreen />
-      </WardFlowProvider>,
-    );
-    openPerson(movement.id);
-    const button = screen.getByTestId(`delays-escalate-${movement.id}`);
-    if (role === "coordinator") expect(button).not.toBeDisabled();
-    else {
-      expect(button).toBeDisabled();
-      expect(button).toHaveAccessibleDescription("Coordinator only. Ask the bed coordinator to do this.");
-    }
-    fireEvent.click(button);
-    const escalations = sent.filter((event) => event.type === "RECORD_ESCALATION");
-    if (role === "coordinator") {
+      openPerson(movement.id);
+      if (role === "bed_manager") {
+        // A desk that can never escalate sees no button and no who-does-it line.
+        expect(screen.queryByTestId(`delays-escalate-${movement.id}`)).toBeNull();
+        expect(sent.filter((event) => event.type === "RECORD_ESCALATION")).toHaveLength(0);
+        return;
+      }
+      const button = screen.getByTestId(`delays-escalate-${movement.id}`);
+      expect(button).not.toBeDisabled();
+      fireEvent.click(button);
+      const escalations = sent.filter((event) => event.type === "RECORD_ESCALATION");
       expect(escalations.length).toBeGreaterThan(0);
       expect(escalations.every((event) => event.role === "coordinator")).toBe(true);
-    } else expect(escalations).toHaveLength(0);
-  });
+    },
+  );
 });
 
 /**

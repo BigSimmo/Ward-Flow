@@ -93,7 +93,12 @@ function journey() {
       genderPlacementReason: GENDER_PLACEMENT_REASONS[0],
       genderPlacementChecked: true,
     }) as WardFlowEvent;
-  const s0 = seedWardFlowState();
+  // Bed counts go stale after one hour (D-214, 14 Nov 2026); the fixture's wards confirm as the journey starts.
+  const seeded = seedWardFlowState();
+  const s0 = {
+    ...seeded,
+    units: seeded.units.map((unit) => ({ ...unit, allocatable: { ...unit.allocatable, confirmedAt: NOW_ANCHOR } })),
+  };
   const s1 = step(s0, refer(UNIT_DECLINED, t(10)), "refer");
   const s2 = step(
     s1,

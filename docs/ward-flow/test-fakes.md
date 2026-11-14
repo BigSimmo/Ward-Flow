@@ -115,6 +115,7 @@ The test fails when a test mocks a module not in this list. Add it here, and to 
 @/components/wf/use-is-phone
 @/lib/copy-to-clipboard
 @/lib/front-door-pass
+@/lib/ward-time-zone
 @axe-core/playwright
 html-to-image
 next/dynamic

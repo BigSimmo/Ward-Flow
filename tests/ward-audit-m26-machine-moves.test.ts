@@ -66,7 +66,12 @@ function diagramState(state: WardFlowState): string {
 
 /** Real reducer states, each with WF-012 in the named diagram state. */
 function buildSnapshots(): Record<string, WardFlowState[]> {
-  const s0 = seedWardFlowState();
+  // Bed counts go stale after one hour (D-214, 14 Nov 2026); the fixture's wards confirm as the journey starts.
+  const seeded = seedWardFlowState();
+  const s0 = {
+    ...seeded,
+    units: seeded.units.map((unit) => ({ ...unit, allocatable: { ...unit.allocatable, confirmedAt: NOW_ANCHOR } })),
+  };
   const refer = (unitId: string, now: Instant) =>
     ({
       type: "REFER_TO_UNITS",

@@ -12,9 +12,9 @@
  * - "Waiting in ED" (45) is a third population, people physically in a department
  *   (`waitingInEds`, `ward-shared-figures.ts`), and is not decided here.
  *
- * Phase 1: these are the rules' new home. The private `waitsForBed` (`capacity/capacity-derivations.ts`),
- * its second copy in `capacity/beds-forecast.ts` and Home's `flowStageOf(...) === "bed"` keep working
- * as they are until phase 2 points them here; `tests/figure-bed-demand.test.ts` pins that they agree.
+ * These are the rules' one home. Capacity (`capacity/capacity-derivations.ts`), the forecast
+ * (`capacity/beds-forecast.ts`) and Home's "No ward yet" tab read them;
+ * `tests/figure-dictionary.test.ts` pins that they agree.
  *
  * Pure: no React, no browser API.
  */

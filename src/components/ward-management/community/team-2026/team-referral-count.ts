@@ -11,7 +11,7 @@
  * The list is fixed demo data. A signed-in team desk needs a real source for the page itself later
  * (figures spec 7.6); this figure follows the page whatever its source becomes.
  *
- * Phase 1: new leaf only; the rail and `team-home.tsx` read it in phase 2.
+ * The rail (`use-desk-nav-counts.ts`) and the team page (`team-home.tsx`) both read it.
  */
 
 /** The ids of the team's demo referrals, in the page's order (`REFERRALS` in `midland-demo.ts`). */

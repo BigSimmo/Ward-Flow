@@ -49,7 +49,7 @@ import { useWardNetwork } from "@/components/ward-management/ward-flow-provider"
 import { countAxisMax } from "./statistics-axis";
 import { StatisticsCapacityChart } from "./statistics-capacity-chart";
 import { StatisticsEdSwarm } from "./statistics-ed-swarm";
-import { edJourneyWaitFigures as edWaitFigures } from "./statistics-ed-waits";
+import { edStatisticsFigures } from "./statistics-ed-waits";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { HeroTool, UnitStepper } from "./statistics-hero-tools";
 import { FlushRow, Follow } from "./statistics-layout";
@@ -379,11 +379,16 @@ function OperationalServiceScreen({ serviceId }: { serviceId: string }) {
         id: department.id,
         name: shortDepartmentName(department.name),
         href: edStatisticsHref(department.id),
-        entries: edWaitFigures(movements, department.id, now).waitingMovements,
+        entries: edStatisticsFigures(movements, department.id, now).waitingMovements,
       })),
     [serviceEds, movements, now],
   );
-  const edWaiting = useMemo(() => edSwarmRows.reduce((sum, row) => sum + row.entries.length, 0), [edSwarmRows]);
+  // D-220: the hero's figure is ED journeys open (people in transit included); the marks are the
+  // people still waiting in ED.
+  const edWaiting = useMemo(
+    () => serviceEds.reduce((sum, department) => sum + edStatisticsFigures(movements, department.id, now).onTheList, 0),
+    [serviceEds, movements, now],
+  );
 
   if (!service) {
     return (
@@ -471,7 +476,7 @@ function OperationalServiceScreen({ serviceId }: { serviceId: string }) {
               id: department.id,
               name: shortDepartmentName(department.name),
               figures: (() => {
-                const figures = edWaitFigures(movements, department.id, now);
+                const figures = edStatisticsFigures(movements, department.id, now);
                 return {
                   onTheList: figures.onTheList,
                   unplaced: figures.unplaced,
@@ -511,7 +516,7 @@ function OperationalServiceScreen({ serviceId }: { serviceId: string }) {
             <StatisticsEdSwarm
               rows={edSwarmRows}
               labelWidth={180}
-              label={`Each open ED movement from ${service}, by time since opening`}
+              label={`Each person waiting in ED from ${service}, by time since opening`}
               testId="ward-statistics-service-ed-swarm"
             />
           ),
@@ -626,7 +631,7 @@ function ServiceView({ model, slots }: { model: ServiceModel; slots: ServiceSlot
           <>
             <HeroStat value={totalBedBase} label="Beds" />
             <HeroStat value={totalReady} label="Ready" />
-            <HeroStat value={small(edWaiting)} label="Open ED movements" tone={longEdWait ? "warning" : undefined} />
+            <HeroStat value={small(edWaiting)} label="ED journeys open" tone={longEdWait ? "warning" : undefined} />
           </>
         ),
       }}
@@ -759,7 +764,7 @@ function ServiceView({ model, slots }: { model: ServiceModel; slots: ServiceSlot
             className={detail.anchor}
             icon={Clock}
             title="ED movements"
-            aside={`${small(edWaiting)} open movements from ${edCount} ${edCount === 1 ? "ED" : "EDs"}`}
+            aside={`${small(edWaiting)} ED journeys open from ${edCount} ${edCount === 1 ? "ED" : "EDs"}`}
             data-testid="ward-statistics-service-ed-waits"
           >
             <CardBody className={detail.swarmBody}>{slots.swarm}</CardBody>
@@ -905,7 +910,7 @@ function ServicePhone({
           </PhoneList>
         )}
       </PhoneGroup>
-      <PhoneGroup title="ED movements" aside={`${edWaiting} open ED movements`}>
+      <PhoneGroup title="ED movements" aside={`${edWaiting} ED journeys open`}>
         {busiest.length === 0 ? (
           <p className={phone.note}>No emergency department is recorded for this service.</p>
         ) : (
