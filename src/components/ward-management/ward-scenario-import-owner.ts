@@ -12,6 +12,8 @@ export async function readOwnedScenario(
   sequence: { current: number },
   owner: { current: { world: { worldGeneration: number }; sequence: number; active: boolean } },
   isCurrent: () => boolean,
+  // The board's day 0: the file's typed calendar days move onto it, as its timed records do (CC-4).
+  boardDayZero?: Date,
 ) {
   const selected = ++sequence.current;
   // Newer work is a command dispatched after this import began, or a reset or replaced world. Adopting
@@ -32,7 +34,7 @@ export async function readOwnedScenario(
     return { ok: false as const, reason: "That file could not be read, so nothing was loaded." };
   }
   if (!current()) return obsolete;
-  const read = await readScenarioFileLater(source);
+  const read = await readScenarioFileLater(source, boardDayZero);
   if (!read.ok) return read;
   if (read.now < NOW_ANCHOR + read.state.clockOffsetMinutes)
     return { ok: false as const, reason: "This scenario file is damaged or incomplete, so nothing was loaded." };

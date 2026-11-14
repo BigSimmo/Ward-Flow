@@ -1218,7 +1218,8 @@ function WardFlowWorld({
     dispatch({ type: "RESET_SCENARIO", role: "demo", now: nowRef.current });
   }, [dispatch, ownDevice, deviceSave]);
 
-  const saveScenarioFile = useCallback(() => buildScenarioFileLater(state, nowRef.current), [state]);
+  // The file records the board's day 0, so a later load moves its typed days onto that day (CC-4).
+  const saveScenarioFile = useCallback(() => buildScenarioFileLater(state, nowRef.current, dayZero), [state, dayZero]);
 
   const importSequence = useRef(0);
   const loadScenarioFile = useCallback(
@@ -1238,6 +1239,7 @@ function WardFlowWorld({
         importSequence,
         commandsRef,
         () => isCurrent() && request === localReplacementSequence.current,
+        dayZero,
       );
       if (!read.ok) return read;
       if (!read.isCurrent())
@@ -1269,7 +1271,7 @@ function WardFlowWorld({
       });
       return { ok: true };
     },
-    [initialNow, mountedAtAbsolute, anchorOffsetMinutes, shared.enabled, inTraining],
+    [initialNow, mountedAtAbsolute, anchorOffsetMinutes, shared.enabled, inTraining, dayZero],
   );
 
   const reportSnapshotReady = !shared.enabled || container.world === shared.snapshot?.payload.state;

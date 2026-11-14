@@ -235,17 +235,21 @@ export function useDemoStateRead(
 }
 
 /** `buildScenarioFile` and `readScenarioFile` at this build's state version, loaded on first use for
- *  the same reason as `readDemoStateLater`. A failed load changes nothing and says so. */
-export function buildScenarioFileLater(state: WardFlowState, now: Instant): Promise<ScenarioFileBuild> {
+ *  the same reason as `readDemoStateLater`. A failed load changes nothing and says so. The file
+ *  records the board's day 0, and a read with today's day 0 moves its typed days onto today (CC-4). */
+export function buildScenarioFileLater(state: WardFlowState, now: Instant, dayZero?: Date): Promise<ScenarioFileBuild> {
   return import("./ward-flow-scenario-file").then(
-    ({ buildScenarioFile }) => buildScenarioFile(state, now, WARD_FLOW_DEMO_STORAGE_VERSION, new Date()),
+    ({ buildScenarioFile }) => buildScenarioFile(state, now, WARD_FLOW_DEMO_STORAGE_VERSION, new Date(), dayZero),
     () => ({ ok: false, reason: SCENARIO_TOOLS_UNAVAILABLE }),
   );
 }
 
-export function readScenarioFileLater(text: string): Promise<ScenarioFileRead> {
+export function readScenarioFileLater(text: string, boardDayZero?: Date): Promise<ScenarioFileRead> {
   return Promise.all([import("./ward-flow-scenario-file"), loadScenarioNetworks()]).then(
-    ([{ readScenarioFile }]) => readScenarioFile(text, WARD_FLOW_DEMO_STORAGE_VERSION),
+    ([{ readScenarioFile, scenarioOnBoardDay }]) => {
+      const read = readScenarioFile(text, WARD_FLOW_DEMO_STORAGE_VERSION);
+      return read.ok && boardDayZero ? { ...read, state: scenarioOnBoardDay(read, boardDayZero) } : read;
+    },
     () => ({ ok: false, reason: SCENARIO_TOOLS_UNAVAILABLE }),
   );
 }

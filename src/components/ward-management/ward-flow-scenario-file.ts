@@ -2,6 +2,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { checkSyntheticPayload } from "@/lib/synthetic-data-guard";
 import { WARD_FLOW_SCENARIO_FILE_MAX_BYTES } from "./ward-flow-scenario-file-limits";
+import { wholeDaysBetween, withPatientCalendarDaysMoved } from "./ward-typed-calendar-days";
 import {
   isValidStoredWardFlowState,
   migrateStoredWardFlowState,
@@ -29,6 +30,15 @@ import {
  *   - Refusal records are never saved (`rejections: []`, as D-18 does for the browser copy).
  *   - A world holding a repatriation (a typed CAD number) cannot be saved: the shared fence refuses
  *     any stored repatriation, and quietly dropping one would make the file lie about the day.
+ *
+ * DAY 0 (mechanics and clock audit CC-4, 14 Nov 2026). The world's timed records are minutes from the
+ * board's day 0, so a file loaded on a later day replays on the new day. Its typed calendar days (a
+ * tribunal hearing, care plan dates) were written as dates and stayed behind, so a hearing two days
+ * away when saved could read as last week. The file now records its day 0, and loading moves those
+ * typed days by the same whole days as everything else (`ward-typed-calendar-days.ts`): the scenario
+ * plays as it was saved, on today. Dates of birth stay as written. A file saved before this has no
+ * day 0 and loads exactly as before. The field is optional, so the envelope version is unchanged: an
+ * older build reading a newer file ignores it.
  */
 
 export const WARD_FLOW_SCENARIO_FILE_FORMAT = "ward-flow-demo-scenario";
@@ -44,11 +54,14 @@ type ScenarioFile = {
   notice: string;
   savedAt: string;
   now: Instant;
+  /** The board's day 0 when saved (a Perth midnight, ISO). Absent from a file saved before CC-4. */
+  dayZero?: string;
   state: WardFlowState;
 };
 
 export type ScenarioFileBuild = { ok: true; json: string; fileName: string } | { ok: false; reason: string };
-export type ScenarioFileRead = { ok: true; state: WardFlowState; now: Instant } | { ok: false; reason: string };
+export type ScenarioFileRead =
+  { ok: true; state: WardFlowState; now: Instant; dayZero?: Date } | { ok: false; reason: string };
 
 const NOT_A_SCENARIO = "This file is not a Ward Flow demo scenario.";
 const WRONG_VERSION = "This scenario was saved by a different version of Ward Flow and cannot be loaded safely.";
@@ -63,6 +76,7 @@ export function buildScenarioFile(
   now: Instant,
   stateVersion: number,
   savedAt: Date,
+  dayZero?: Date,
 ): ScenarioFileBuild {
   if (state.repatriations.length > 0)
     return {
@@ -90,6 +104,7 @@ export function buildScenarioFile(
     notice: "Synthetic demonstration data only. Not a clinical record.",
     savedAt: savedAt.toISOString(),
     now,
+    ...(dayZero ? { dayZero: dayZero.toISOString() } : {}),
     // Refusals are never saved (D-18): a refusal can quote a caller-supplied id back.
     state: { ...state, rejections: [] },
   };
@@ -137,6 +152,9 @@ export function readScenarioFile(text: string, stateVersion: number): ScenarioFi
   if (stored === null) return { ok: false, reason: WRONG_VERSION };
   const now = file.now;
   if (typeof now !== "number" || !Number.isFinite(now)) return { ok: false, reason: DAMAGED };
+  const dayZero = typeof file.dayZero === "string" ? new Date(file.dayZero) : undefined;
+  if (file.dayZero !== undefined && !(dayZero && Number.isFinite(dayZero.getTime())))
+    return { ok: false, reason: DAMAGED };
   if (!isValidStoredWardFlowState(stored)) {
     const problem = storedStateRestoreProblem(stored);
     return {
@@ -148,5 +166,15 @@ export function readScenarioFile(text: string, stateVersion: number): ScenarioFi
   // The provider also refuses a clock earlier than the scenario anchor: only a named few files may
   // read that constant (`tests/ward-flow-single-source.test.ts`).
   if (state.auditEvents.some((event) => event.at !== null && event.at > now)) return { ok: false, reason: DAMAGED };
-  return { ok: true, state, now };
+  return { ok: true, state, now, ...(dayZero ? { dayZero } : {}) };
+}
+
+/**
+ * A loaded world on the board's day: its typed calendar days moved by the whole days from the day 0
+ * it was saved on to `boardDayZero`, as its timed records move (CC-4). A file with no day 0 (saved
+ * before CC-4) comes back as it is.
+ */
+export function scenarioOnBoardDay(read: { state: WardFlowState; dayZero?: Date }, boardDayZero: Date): WardFlowState {
+  const days = read.dayZero ? wholeDaysBetween(read.dayZero, boardDayZero) : 0;
+  return days === 0 ? read.state : { ...read.state, patients: withPatientCalendarDaysMoved(read.state.patients, days) };
 }
