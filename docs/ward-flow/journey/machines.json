@@ -1349,7 +1349,7 @@
           "guard": "refused if you are not the addressee, and refused a second time"
         }
       ],
-      "note": "Opening the drawer does not mark a notice read. MARK_NOTICE_READ requires the addressed role/place and an unread notice. These are append-only authored messages, separate from derived action-inbox rows and from broadcast alerts. Referral-answer notices resolve the referring ED for ed_medical referrals; other source kinds currently have no safe referrer addressee."
+      "note": "Opening the drawer does not mark a notice read. MARK_NOTICE_READ requires the addressed role/place and an unread notice that has been raised (D-221 late notices are stored ahead and raised at the first late minute). These are append-only authored messages, separate from derived action-inbox rows and from broadcast alerts. Referral-answer notices resolve the referring ED for ed_medical referrals; other source kinds currently have no safe referrer addressee."
     },
     {
       "id": "inbox",
@@ -1832,7 +1832,7 @@
       {
         "path": "src/components/ward-management/ward-flow-events.ts",
         "line": 1,
-        "sha256": "db8262e4f00ae27690b883ba79760f96133565bf141da6f08ac41bc0de104142"
+        "sha256": "21daa38c461335db6915a5b65595068bbbd3928319cd4e3a4f94b568f5f92c67"
       },
       {
         "path": "src/components/ward-management/ward-flow-placement-events.ts",
@@ -1862,7 +1862,7 @@
       {
         "path": "src/components/ward-management/ward-flow-reducer.ts",
         "line": 1195,
-        "sha256": "aad0dd053bd79e35e7761f53bbd4a8c7eeb93b13b89a7304dea271c5cdb3ebfd"
+        "sha256": "4252cedb4e1b3e299bac1169557af9a1063bba2d6957c5418c750d6415372001"
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
@@ -1882,7 +1882,7 @@
       {
         "path": "src/components/ward-management/ward-flow-transport-events.ts",
         "line": 100,
-        "sha256": "5a3fe339d292f3880c33018d75ab6a92e2633d0912f1529d3e10a19c580a908e"
+        "sha256": "5a4f0e03758d48a2c0df87178683ee03b3b46a74784998a9a1f8e28fdc9444bf"
       },
       {
         "path": "src/components/ward-management/ward-flow-undo-events.ts",
