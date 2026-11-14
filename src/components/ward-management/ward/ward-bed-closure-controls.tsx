@@ -6,8 +6,7 @@ import { ClosureChoice, REVIEW_AFTER_CHOICES } from "../ward-closure-choice";
 import styles from "./ward-bed-dossier-drawer.module.css";
 import { activeClosedBeds } from "@/components/ward-management/ward-ready-beds";
 import type { Unit } from "@/components/ward-management/ward-model";
-import { wardClosureReasonLabel } from "../ward-bed-closure-reason";
-import { WARD_CLOSURE_REASONS } from "../capacity/ward-closure";
+import { WARD_CLOSURE_REASONS, wardClosureReasonLabel } from "../ward-bed-closure-reason";
 
 /**
  * H-0978 / WS-15 (workflow speed audit, Josh 26 Oct 2026, "Close the exact bed"): an empty bed's

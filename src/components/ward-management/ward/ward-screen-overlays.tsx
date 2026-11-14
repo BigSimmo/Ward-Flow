@@ -11,8 +11,12 @@ import { reviewAtFrom } from "../ward-closure-choice";
 import { admissionCriteriaEligibility } from "@/components/ward-management/ward-flow-reducer";
 import { useWardCommandCompletion, wardCommandFailure } from "./use-ward-command-completion";
 import { useUndoableStep } from "../use-undoable-step";
-import { bedClosureReasonChoices, bedLabel, wardClosureReasonLabel } from "../ward-bed-closure-reason";
-import type { WardClosureReason } from "../capacity/ward-closure";
+import {
+  bedClosureReasonChoices,
+  bedLabel,
+  wardClosureReasonLabel,
+  type WardClosureReason,
+} from "../ward-bed-closure-reason";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { WardBedDossierDrawer } from "./ward-screen-lazy";
 import { notRecordedMessage } from "./ward-screen-messages";

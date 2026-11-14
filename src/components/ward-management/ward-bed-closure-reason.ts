@@ -2,8 +2,8 @@ import { WARD_CLOSURE_REASONS, wardClosureReasonLabel, type WardClosureReason } 
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { UndoStepChoices } from "./use-undoable-step";
 
-/** Re-exported for the bed's History, so the ward screen reads closure words through one file. */
-export { wardClosureReasonLabel };
+/** Re-exported for the bed's History and closure controls, so the ward screen reads closure words through one file. */
+export { WARD_CLOSURE_REASONS, wardClosureReasonLabel, type WardClosureReason };
 
 /** "Bed 07": the bed's number as the drawer writes it, so a toast and the drawer agree (R-BEDS-4). */
 export const bedLabel = (bedNumber: number) => `Bed ${String(bedNumber).padStart(2, "0")}`;

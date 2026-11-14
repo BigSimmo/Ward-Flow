@@ -12,7 +12,7 @@ import { EdBoardChips } from "./ed-board-chips";
 import { edRowReferralStatus } from "./ed-referral-status";
 import type { EdScreenContext } from "./ed-screen-context";
 import { edWaitTone } from "./ed-screen-model";
-import { typedClock } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import { typedClock } from "@/components/ward-management/ward-legal-time-as-typed";
 import { currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
 import { noFormWords } from "@/components/ward-management/ward-legal-status";
 import { legalFormNowWords } from "@/components/ward-management/ward-legal-form-progression";
