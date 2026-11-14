@@ -21,6 +21,7 @@ import { WardPhoneDesktopOnly } from "@/components/ward-management/shell/ward-ph
 import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-broadcast-banner";
 import { WardOfflineBanner, WardPracticeLine } from "@/components/ward-management/shell/ward-offline-banner";
 import { WardTrainingBanner } from "@/components/ward-management/shell/ward-training-banner";
+import { WardSignInEnding } from "@/components/ward-management/shell/ward-sign-in-ending";
 import { WardViewingAsBar } from "@/components/ward-management/shell/ward-viewing-as-bar";
 import { WardDowntimePackLine } from "@/components/ward-management/shell/ward-downtime-pack-line";
 import { WardSiteFeatureSwitchSync } from "@/components/ward-management/shell/ward-site-feature-switch-sync";
@@ -335,6 +336,7 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                   <WardDeskPendingClear />
                   <WardPrintFooter />
                   <WardIdleLock />
+                  <WardSignInEnding />
                   {/* A11: a browser locked as a TV shows only TV views until someone unlocks it. */}
                   <TvLockGuard />
                   <TvLockFallbackHost />

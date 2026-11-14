@@ -23,6 +23,7 @@ import {
 
 import { digestHref } from "@/components/ward-management/shell/ward-facade";
 import { FeatureFlagsCard } from "@/components/ward-management/settings/feature-flags-card";
+import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import { useCanLeaveDemo, useLeaveDemo } from "@/components/ward-management/shell/leave-demo";
 import { Button, Card, CardHead, StateLine, buttonClass } from "@/components/wf";
 
@@ -231,6 +232,16 @@ export function SettingsDemoTools({
                   : `${movementCount} movements held · ${eventCount} events this session`
               }
             />
+            <SettingRow setting="demo-controls" title="Demo controls" sub="Clock, scenario and practice">
+              <button
+                type="button"
+                className={buttonClass({ variant: "ghost", className: styles.pill })}
+                onClick={(event) => requestToolsTool("demo", event.currentTarget)}
+                data-testid="btn-open-demo-controls"
+              >
+                Open Demo
+              </button>
+            </SettingRow>
             <SettingRow setting="clear-session" title="Reset the demo in this tab" sub="Saved demo state and drafts">
               <button
                 type="button"

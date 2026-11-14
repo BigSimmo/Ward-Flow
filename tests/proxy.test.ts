@@ -292,12 +292,22 @@ describe("proxy malformed Ward Flow addresses", () => {
     }
   });
 
+  it("also answers a bad percent-encoding outside Ward Flow with a 404", async () => {
+    for (const path of ["/%E0%A4%A", "/sign-in%E0%A4%A", "/other/%ZZ"]) {
+      const res = await proxy(requestFor(path));
+      expect(res.status).toBe(404);
+      expect(res.headers.get("x-middleware-rewrite")).toContain("/ward-flow-malformed-address");
+    }
+    expect(hasMalformedWardFlowEncoding("/ward-flow/%E0%A4%A")).toBe(true);
+  });
+
   it("lets a well-formed address through, even an unknown id", async () => {
     for (const path of ["/ward-flow/people/nope", "/ward-flow/people/PT-004", "/ward-flow/movements/WF-%41"]) {
       const res = await proxy(requestFor(path));
       expect(res.status).toBe(200);
       expect(res.headers.get("x-middleware-rewrite")).toBeNull();
     }
-    expect(hasMalformedWardFlowEncoding("/other/%E0%A4")).toBe(false);
+    expect(hasMalformedWardFlowEncoding("/api/%E0%A4")).toBe(false);
+    expect(hasMalformedWardFlowEncoding("/other/%41")).toBe(false);
   });
 });

@@ -1,0 +1,40 @@
+/* R-STRUCT-43: a neutral strip, pinned under the top bar area like the other notes. */
+.strip {
+  position: fixed;
+  bottom: calc(0.75rem + var(--wf-foot-bar-lift, 0px));
+  left: 50%;
+  z-index: var(--wf-z-chrome);
+  transform: translateX(-50%);
+  box-sizing: border-box;
+  inline-size: max-content;
+  max-inline-size: min(36rem, calc(100vw - 1.5rem));
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--wf-border, currentColor);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e2);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  line-height: 1.4;
+}
+
+.strip a {
+  display: inline-block;
+  min-block-size: 2.5rem;
+  line-height: 2.5rem;
+  color: inherit;
+  text-decoration: underline;
+}
+
+@media (max-width: 46.4375rem) {
+  .strip {
+    bottom: calc(5rem + var(--wf-foot-bar-lift, 0px));
+  }
+}
+
+@media print {
+  .strip {
+    display: none;
+  }
+}

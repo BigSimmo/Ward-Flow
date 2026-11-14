@@ -157,6 +157,16 @@ export async function proxy(request: NextRequest) {
     return response;
   };
 
+  // A1K-05 and H-0195 (Josh, 27 Oct 2026): a malformed address anywhere on the site is a real 404, answered before the front door (it reveals nothing) so a visitor never sees a bare 502. Next fails
+  // decoding a bad percent-encoding in a dynamic segment before the page runs (a bare 500), so
+  // render the app's not-found page here instead, while a status can still be set.
+  if (hasMalformedWardFlowEncoding(pathname)) {
+    const url = request.nextUrl.clone();
+    url.pathname = MALFORMED_ADDRESS_REWRITE;
+    url.search = "";
+    return withCsp(NextResponse.rewrite(url, { status: 404, request: { headers: requestHeadersWithNonce() } }));
+  }
+
   const movedTarget = movedRouteTarget(pathname);
 
   // A15-21 (13 Nov 2026): the door answers before any old-address redirect, so an old address tells
@@ -185,16 +195,6 @@ export async function proxy(request: NextRequest) {
     return withCsp(NextResponse.redirect(url));
   }
 
-  // A1K-05 and H-0195 (Josh, 27 Oct 2026): a malformed Ward Flow address is a real 404. Next fails
-  // decoding a bad percent-encoding in a dynamic segment before the page runs (a bare 500), so
-  // render the app's not-found page here instead, while a status can still be set.
-  if (hasMalformedWardFlowEncoding(pathname)) {
-    const url = request.nextUrl.clone();
-    url.pathname = MALFORMED_ADDRESS_REWRITE;
-    url.search = "";
-    return withCsp(NextResponse.rewrite(url, { status: 404, request: { headers: requestHeadersWithNonce() } }));
-  }
-
   if (shouldBlockProductionMockups(pathname)) {
     return withCsp(new NextResponse(null, { status: 404 }));
   }
@@ -205,9 +205,9 @@ export async function proxy(request: NextRequest) {
 /** No route answers this path, so a rewrite to it renders the app's not-found page with a 404. */
 const MALFORMED_ADDRESS_REWRITE = "/ward-flow-malformed-address";
 
-/** True for a /ward-flow path holding a percent-encoding that does not decode (for example `%E0%A4`). */
+/** True for a page path holding a percent-encoding that does not decode (for example `%E0%A4`). API paths keep their own JSON errors. */
 export function hasMalformedWardFlowEncoding(pathname: string): boolean {
-  if (pathname !== "/ward-flow" && !pathname.startsWith("/ward-flow/")) return false;
+  if (pathname === "/api" || pathname.startsWith("/api/")) return false;
   try {
     for (const segment of pathname.split("/")) decodeURIComponent(segment);
     return false;

@@ -20,6 +20,11 @@ export const FRONT_DOOR_PASS_COOKIE = "wf_pass";
  * make no extra request.
  */
 export const FRONT_DOOR_MARKER_COOKIE = "wf_door";
+/**
+ * Readable end of the pass, `account.<ms>` or `demo.<ms>` (R-STRUCT-43, R-STRUCT-51). It holds no
+ * secret, so the page can warn 10 minutes before the sign-in limit ends the session.
+ */
+export const FRONT_DOOR_END_COOKIE = "wf_door_end";
 export const FRONT_DOOR_SIGN_IN_PATH = "/sign-in";
 export const ACCOUNT_PASS_HOURS = 12;
 export const DEMO_PASS_HOURS = 8;
