@@ -134,8 +134,8 @@ gone. The 16 November date for the sign-in test was dropped (Q390). Two asks are
 3. Check the merged clinical audit fixes for D-122 (#1599, #1609, #1621) and the D-170 wording audit.
 4. Sign-in renewal test (Q390): sign in with a test account in the morning, and make one save after
    lunch without signing in again.
-5. In Supabase: turn off "Allow new users to sign up", and turn off the organisation's AI SQL, log and
-   data options (Q391).
+5. In Supabase: turn off the organisation's AI SQL, log and data options (Q391). Open sign-up is off
+   since 14 November 2026 (D-173).
 6. Choose the Sentry organisation for server error reporting (PR #686).
 7. Turn on Remote Control for the backup-restore drill and the hosted two-person run.
 8. Set limits on who can grant administrator access.

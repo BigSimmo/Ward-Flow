@@ -195,7 +195,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-170](#d-170-clinical-wording-rulings-from-the-13-november-audit-13-november-2026)                                                                    | Clinical wording rulings from the 13 November audit                                    | Active                                           |
 | [D-171](#d-171-hosted-database-brought-to-schema-18-migrations-017-and-018-13-november-2026)                                                            | Hosted database brought to schema 18 (migrations 017 and 018)                          | Active                                           |
 | [D-172](#d-172-the-community-desks-ed-heads-up-stays-as-built-in-d-154-13-november-2026)                                                                | The community desk's ED heads-up stays as built in D-154                               | Active                                           |
-| [D-173](#d-173-turning-off-supabase-open-sign-up-is-deferred-13-november-2026)                                                                          | Turning off Supabase open sign-up is deferred                                          | Active                                           |
+| [D-173](#d-173-turning-off-supabase-open-sign-up-is-deferred-13-november-2026)                                                                          | Turning off Supabase open sign-up is deferred                                          | Done 14 November 2026                            |
 | [D-174](#d-174-audit-findings-name-the-system-cause-and-the-fix-round-ships-in-two-pull-requests-13-november-2026)                                      | Audit findings name the system cause, and the fix round ships in two pull requests     | Active                                           |
 | [D-175](#d-175-audit-16-and-the-demo-data-root-cause-review-approved-fixes-13-november-2026)                                                            | Audit 16 and the demo-data root-cause review: approved fixes                           | Active                                           |
 | [D-176](#d-176-clinical-check-pack-answers-13-november-2026)                                                                                            | Clinical check pack answers                                                            | Active                                           |
@@ -1919,7 +1919,7 @@ is inferred.
   2. **Non-clinical fixes:** one lapse check for pull holds, staff requests keep the shift the person chose, one reader for typed times, one length-of-stay calculation, a demo code shorter than 12 characters counts as no code (added after PR #1615 merged; spaces and dashes not counted), and a demo pass stops working when the code changes. Two lines added to the real-data go/no-go list (record ids never built from UMRNs; a check of the push library).
   3. **Features that finish existing screens** (not covered by the D-128 item 9 pause): Leave page links, print and entry point; Help for pages that had none; print and spreadsheet export on Legal forms and Movements. Triage risk reviews due waits until #1564 to #1577 close and needs its own clinical sign-off.
   4. **Code health:** the file line cap counts code lines, not comments or blank lines; one shared CI setup step; shared helpers for the forked side rail; reasons or fixes for unexplained React hook rule switch-offs; patch-level dependency updates.
-  5. **Josh's own action:** turn off Supabase open sign-up before real data.
+  5. **Josh's own action:** turn off Supabase open sign-up before real data. Done 14 November 2026 (see D-173).
 - **Screens approved (11 November 2026, 05:46 UTC):** after the design review page "Leave and export review", Josh chose "Yes, add them" on the decision card. This approves the item 3 screens and two new patterns: an icon-only Print button on phones, and the Export status line hidden until it has something to say (this affects every list with Export).
 - **Clinical sign-off (11 November 2026, 05:51 UTC):** Josh wrote "I approve all of them to remove labels" in the thread "Get all open PRs merged", approving the item 1 fixes in PR #1621 as built, including the Legal forms wording "Form ended; expiry as typed was HH:MM".
 - **Why:** findings from the 11 November review, each checked against source; the clinical items were display bugs, not changes to signed values.
@@ -1953,6 +1953,7 @@ is inferred.
   3. The coordinator's "Record added in error" card no longer hides when archive is not available. It says why in one line.
 - **Why:** the live audit's test patient could never be archived because a withdrawn referral and record-view audit rows named it, so test and mistaken records stayed on the board for good.
 - **Boundary:** synthetic data only. Archiving the live audit's test patient and the old TEST-Helper4 records is a live write that waits for Josh's yes after release.
+- **Done (14 November 2026):** on the live signed-in site, PT-A06 (ZZAUDIT-1111) and both TEST-Helper4 records (UMTEST4001 and TESTH4001) were archived as "Test record" with the app's own archive control.
 - **Note (11 November 2026, 15:34 UTC):** Josh approved, on a decision card in the Ward Flow project thread for PR #1626, adding `ward-patient-archive-reducer.ts` to the D-14 patient-link allowlist (60 to 61 files). The archive step reads `referral.patientId` only to unlink that one record's withdrawn front-door referrals; it reads no other referral and shows nothing.
 
 ## D-150. The signed-in site runs on real Perth time (11 November 2026)
@@ -2156,6 +2157,7 @@ is inferred.
 - **Decision:** Josh's own action from D-145 item 5, turning off Supabase open sign-up, is deferred. The site stays on synthetic data, so nothing changes now. It must still be done before any real data, and it stays on the real-data gate.
 - **Why:** the shared site holds synthetic data only, so an outside Supabase account that gets past the site lock reaches no real patient information.
 - **Boundary:** synthetic data only. No code change and no provider change. Changes no clinical rule or signed value, and approves no release.
+- **Done (14 November 2026):** Josh turned off "Allow new users to sign up" in the Ward Flow Supabase project (`zakzoemeedfepxcstsou`) on 14 November 2026. This closes D-145 item 5 and the real-data gate's sign-up line.
 
 ## D-174. Audit findings name the system cause, and the fix round ships in two pull requests (13 November 2026)
 

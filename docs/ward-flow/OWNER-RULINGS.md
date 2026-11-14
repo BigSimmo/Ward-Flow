@@ -320,62 +320,62 @@ safe global key across 30 files.
 | `D-147` | `decisions.md`:1934 | D-147. Demo-code tries keep per-address keying until a trusted proxy is set (11 November 2026) |
 | `D-148` | `decisions.md`:1940 | D-148. Closing a bed stays one tap, and its toast offers a reason (11 November 2026) |
 | `D-149` | `decisions.md`:1947 | D-149. A record whose only links are withdrawn referrals can be archived (11 November 2026) |
-| `D-150` | `decisions.md`:1958 | D-150. The signed-in site runs on real Perth time (11 November 2026) |
-| `D-151` | `decisions.md`:1966 | D-151. A bed tile says when a change is waiting to save (11 November 2026) |
-| `D-152` | `decisions.md`:1973 | D-152. Returned to ED prompt sees every return in shared mode (11 November 2026) |
-| `D-153` | `decisions.md`:1981 | D-153. Keep the drawn-time settle check, and defer a separate agent GitHub identity (11 November 2026) |
-| `D-154` | `decisions.md`:1989 | D-154. The community desk's ED heads-up reads a narrow scoped list (11 November 2026) |
-| `D-155` | `decisions.md`:1998 | D-155. Check the live clock offset before clearing it (11 November 2026) |
-| `D-156` | `decisions.md`:2005 | D-156. Reset the synthetic live world after the clock fix (11 November 2026) |
-| `D-157` | `decisions.md`:2013 | D-157. Legal forms Print and Export include people admitted on a form (12 November 2026) |
-| `D-158` | `decisions.md`:2019 | D-158. A This-shift staff request is refused once that shift has ended (12 November 2026) |
-| `D-159` | `decisions.md`:2025 | D-159. Fixes from the 10 to 12 November PR review (12 November 2026) |
-| `D-160` | `decisions.md`:2037 | D-160. A trusted proxy list of plain addresses falls back to per-address keying (12 November 2026) |
-| `D-161` | `decisions.md`:2044 | D-161. Home's changes-since strip is one line (12 November 2026) |
-| `D-162` | `decisions.md`:2051 | D-162. Fixes from the 12 November whole-site component review (12 November 2026) |
-| `D-163` | `decisions.md`:2061 | D-163. Pre-demo audits use the public demo after D-162 is live (12 November 2026) |
-| `D-164` | `decisions.md`:2070 | D-164. Home's changes-since strip names escalations first and leaves movements off (12 November 2026) |
-| `D-165` | `decisions.md`:2076 | D-165. The patient screen is a dashboard grid on every tab (13 November 2026) |
-| `D-166` | `decisions.md`:2087 | D-166. CI runs faster without dropping a check (12 November 2026) |
-| `D-167` | `decisions.md`:2096 | D-167. The Triage page has a left sign-off nav and joined section steps (13 November 2026) |
-| `D-168` | `decisions.md`:2107 | D-168. The demo script follows the 13 November pre-demo audit (13 November 2026) |
-| `D-169` | `decisions.md`:2117 | D-169. Demo script wording follows the hard questions audit (13 November 2026) |
-| `D-170` | `decisions.md`:2126 | D-170. Clinical wording rulings from the 13 November audit (13 November 2026) |
-| `D-171` | `decisions.md`:2139 | D-171. Hosted database brought to schema 18 (migrations 017 and 018) (13 November 2026) |
-| `D-172` | `decisions.md`:2146 | D-172. The community desk's ED heads-up stays as built in D-154 (13 November 2026) |
-| `D-173` | `decisions.md`:2153 | D-173. Turning off Supabase open sign-up is deferred (13 November 2026) |
-| `D-174` | `decisions.md`:2160 | D-174. Audit findings name the system cause, and the fix round ships in two pull requests (13 November 2026) |
-| `D-175` | `decisions.md`:2169 | D-175. Audit 16 and the demo-data root-cause review: approved fixes (13 November 2026) |
-| `D-176` | `decisions.md`:2184 | D-176. Clinical check pack answers (13 November 2026) |
-| `D-177` | `decisions.md`:2197 | D-177. Audit 15 answers on the public footprint (13 November 2026) |
-| `D-178` | `decisions.md`:2204 | D-178. Audits 4 and 5 answers (13 November 2026) |
-| `D-179` | `decisions.md`:2210 | D-179. Audit 9 answers from a real shift (13 November 2026) |
-| `D-180` | `decisions.md`:2225 | D-180. Audits 12 and 14 answers (13 November 2026) |
-| `D-181` | `decisions.md`:2236 | D-181. Fix round answers (13 November 2026) |
-| `D-182` | `decisions.md`:2257 | D-182. Audit chat and end-report answers (13 November 2026) |
-| `D-183` | `decisions.md`:2267 | D-183. End report addendum answers (13 November 2026) |
-| `D-184` | `decisions.md`:2278 | D-184. The system fixes merge before the demo (13 November 2026) |
-| `D-185` | `decisions.md`:2284 | D-185. Design critique v2 answers and the brand mark for the demo (13 November 2026) |
-| `D-186` | `decisions.md`:2294 | D-186. Clinical sign-off sitting, part 1: timing and the audit-backed recommendations (13 November 2026) |
-| `D-187` | `decisions.md`:2316 | D-187. Clinical sign-off sitting, part 2: the recommendations for Q17 to Q44 (13 November 2026) |
-| `D-188` | `decisions.md`:2344 | D-188. The Home pull form is filled from the record and can be changed (13 November 2026) |
-| `D-189` | `decisions.md`:2353 | D-189. Handling the open sitting questions, and how the remaining items are built (13 November 2026) |
-| `D-190` | `decisions.md`:2369 | D-190. The six-PR fix plan (13 November 2026) |
-| `D-191` | `decisions.md`:2383 | D-191. Home, Ward and Capacity mock-ups approved (13 November 2026) |
-| `D-192` | `decisions.md`:2404 | D-192. Shared design parts approved for building, wave 3, PR E (13 November 2026) |
-| `D-193` | `decisions.md`:2418 | D-193. Checked travel times wait until after the demo (13 November 2026) |
-| `D-194` | `decisions.md`:2427 | D-194. Time audit answers (13 November 2026) |
-| `D-195` | `decisions.md`:2439 | D-195. Merge each pull request when its checks pass (13 November 2026) |
-| `D-196` | `decisions.md`:2450 | D-196. Threads decide on their own to keep work moving (13 November 2026) |
-| `D-197` | `decisions.md`:2456 | D-197. System-fixes calls taken under D-196 (13 November 2026) |
-| `D-198` | `decisions.md`:2481 | D-198. One owner per screen for forecast words, and "reserved bed" retired (13 November 2026) |
-| `D-199` | `decisions.md`:2491 | D-199. ED and Ward phone limits raised past the allowance (13 November 2026) |
-| `D-200` | `decisions.md`:2498 | D-200. Shared design parts and the Home, Ward and Capacity redesign go live together (13 November 2026) |
-| `D-201` | `decisions.md`:2509 | D-201. Overnight merging without Josh (13 November 2026) |
-| `D-202` | `decisions.md`:2521 | D-202. Joint go summary recommendations (14 November 2026) |
-| `D-204` | `decisions.md`:2530 | D-204. A signed triage shows the desk's name (14 November 2026) |
-| `D-206` | `decisions.md`:2537 | D-206. CodeQL storage alerts are false positives for the demo (14 November 2026) |
-| `D-207` | `decisions.md`:2544 | D-207. Fit to travel recorded as not cleared, and the clinical go (14 November 2026) |
+| `D-150` | `decisions.md`:1959 | D-150. The signed-in site runs on real Perth time (11 November 2026) |
+| `D-151` | `decisions.md`:1967 | D-151. A bed tile says when a change is waiting to save (11 November 2026) |
+| `D-152` | `decisions.md`:1974 | D-152. Returned to ED prompt sees every return in shared mode (11 November 2026) |
+| `D-153` | `decisions.md`:1982 | D-153. Keep the drawn-time settle check, and defer a separate agent GitHub identity (11 November 2026) |
+| `D-154` | `decisions.md`:1990 | D-154. The community desk's ED heads-up reads a narrow scoped list (11 November 2026) |
+| `D-155` | `decisions.md`:1999 | D-155. Check the live clock offset before clearing it (11 November 2026) |
+| `D-156` | `decisions.md`:2006 | D-156. Reset the synthetic live world after the clock fix (11 November 2026) |
+| `D-157` | `decisions.md`:2014 | D-157. Legal forms Print and Export include people admitted on a form (12 November 2026) |
+| `D-158` | `decisions.md`:2020 | D-158. A This-shift staff request is refused once that shift has ended (12 November 2026) |
+| `D-159` | `decisions.md`:2026 | D-159. Fixes from the 10 to 12 November PR review (12 November 2026) |
+| `D-160` | `decisions.md`:2038 | D-160. A trusted proxy list of plain addresses falls back to per-address keying (12 November 2026) |
+| `D-161` | `decisions.md`:2045 | D-161. Home's changes-since strip is one line (12 November 2026) |
+| `D-162` | `decisions.md`:2052 | D-162. Fixes from the 12 November whole-site component review (12 November 2026) |
+| `D-163` | `decisions.md`:2062 | D-163. Pre-demo audits use the public demo after D-162 is live (12 November 2026) |
+| `D-164` | `decisions.md`:2071 | D-164. Home's changes-since strip names escalations first and leaves movements off (12 November 2026) |
+| `D-165` | `decisions.md`:2077 | D-165. The patient screen is a dashboard grid on every tab (13 November 2026) |
+| `D-166` | `decisions.md`:2088 | D-166. CI runs faster without dropping a check (12 November 2026) |
+| `D-167` | `decisions.md`:2097 | D-167. The Triage page has a left sign-off nav and joined section steps (13 November 2026) |
+| `D-168` | `decisions.md`:2108 | D-168. The demo script follows the 13 November pre-demo audit (13 November 2026) |
+| `D-169` | `decisions.md`:2118 | D-169. Demo script wording follows the hard questions audit (13 November 2026) |
+| `D-170` | `decisions.md`:2127 | D-170. Clinical wording rulings from the 13 November audit (13 November 2026) |
+| `D-171` | `decisions.md`:2140 | D-171. Hosted database brought to schema 18 (migrations 017 and 018) (13 November 2026) |
+| `D-172` | `decisions.md`:2147 | D-172. The community desk's ED heads-up stays as built in D-154 (13 November 2026) |
+| `D-173` | `decisions.md`:2154 | D-173. Turning off Supabase open sign-up is deferred (13 November 2026) |
+| `D-174` | `decisions.md`:2162 | D-174. Audit findings name the system cause, and the fix round ships in two pull requests (13 November 2026) |
+| `D-175` | `decisions.md`:2171 | D-175. Audit 16 and the demo-data root-cause review: approved fixes (13 November 2026) |
+| `D-176` | `decisions.md`:2186 | D-176. Clinical check pack answers (13 November 2026) |
+| `D-177` | `decisions.md`:2199 | D-177. Audit 15 answers on the public footprint (13 November 2026) |
+| `D-178` | `decisions.md`:2206 | D-178. Audits 4 and 5 answers (13 November 2026) |
+| `D-179` | `decisions.md`:2212 | D-179. Audit 9 answers from a real shift (13 November 2026) |
+| `D-180` | `decisions.md`:2227 | D-180. Audits 12 and 14 answers (13 November 2026) |
+| `D-181` | `decisions.md`:2238 | D-181. Fix round answers (13 November 2026) |
+| `D-182` | `decisions.md`:2259 | D-182. Audit chat and end-report answers (13 November 2026) |
+| `D-183` | `decisions.md`:2269 | D-183. End report addendum answers (13 November 2026) |
+| `D-184` | `decisions.md`:2280 | D-184. The system fixes merge before the demo (13 November 2026) |
+| `D-185` | `decisions.md`:2286 | D-185. Design critique v2 answers and the brand mark for the demo (13 November 2026) |
+| `D-186` | `decisions.md`:2296 | D-186. Clinical sign-off sitting, part 1: timing and the audit-backed recommendations (13 November 2026) |
+| `D-187` | `decisions.md`:2318 | D-187. Clinical sign-off sitting, part 2: the recommendations for Q17 to Q44 (13 November 2026) |
+| `D-188` | `decisions.md`:2346 | D-188. The Home pull form is filled from the record and can be changed (13 November 2026) |
+| `D-189` | `decisions.md`:2355 | D-189. Handling the open sitting questions, and how the remaining items are built (13 November 2026) |
+| `D-190` | `decisions.md`:2371 | D-190. The six-PR fix plan (13 November 2026) |
+| `D-191` | `decisions.md`:2385 | D-191. Home, Ward and Capacity mock-ups approved (13 November 2026) |
+| `D-192` | `decisions.md`:2406 | D-192. Shared design parts approved for building, wave 3, PR E (13 November 2026) |
+| `D-193` | `decisions.md`:2420 | D-193. Checked travel times wait until after the demo (13 November 2026) |
+| `D-194` | `decisions.md`:2429 | D-194. Time audit answers (13 November 2026) |
+| `D-195` | `decisions.md`:2441 | D-195. Merge each pull request when its checks pass (13 November 2026) |
+| `D-196` | `decisions.md`:2452 | D-196. Threads decide on their own to keep work moving (13 November 2026) |
+| `D-197` | `decisions.md`:2458 | D-197. System-fixes calls taken under D-196 (13 November 2026) |
+| `D-198` | `decisions.md`:2483 | D-198. One owner per screen for forecast words, and "reserved bed" retired (13 November 2026) |
+| `D-199` | `decisions.md`:2493 | D-199. ED and Ward phone limits raised past the allowance (13 November 2026) |
+| `D-200` | `decisions.md`:2500 | D-200. Shared design parts and the Home, Ward and Capacity redesign go live together (13 November 2026) |
+| `D-201` | `decisions.md`:2511 | D-201. Overnight merging without Josh (13 November 2026) |
+| `D-202` | `decisions.md`:2523 | D-202. Joint go summary recommendations (14 November 2026) |
+| `D-204` | `decisions.md`:2532 | D-204. A signed triage shows the desk's name (14 November 2026) |
+| `D-206` | `decisions.md`:2539 | D-206. CodeQL storage alerts are false positives for the demo (14 November 2026) |
+| `D-207` | `decisions.md`:2546 | D-207. Fit to travel recorded as not cleared, and the clinical go (14 November 2026) |
 | `D9-1` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | `D9-2` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
 | `D9-3` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:126 | D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION) |
@@ -835,62 +835,62 @@ safe global key across 30 files.
 - `D-147` — line 1934, heading: "D-147. Demo-code tries keep per-address keying until a trusted proxy is set (11 November 2026)"
 - `D-148` — line 1940, heading: "D-148. Closing a bed stays one tap, and its toast offers a reason (11 November 2026)"
 - `D-149` — line 1947, heading: "D-149. A record whose only links are withdrawn referrals can be archived (11 November 2026)"
-- `D-150` — line 1958, heading: "D-150. The signed-in site runs on real Perth time (11 November 2026)"
-- `D-151` — line 1966, heading: "D-151. A bed tile says when a change is waiting to save (11 November 2026)"
-- `D-152` — line 1973, heading: "D-152. Returned to ED prompt sees every return in shared mode (11 November 2026)"
-- `D-153` — line 1981, heading: "D-153. Keep the drawn-time settle check, and defer a separate agent GitHub identity (11 November 2026)"
-- `D-154` — line 1989, heading: "D-154. The community desk's ED heads-up reads a narrow scoped list (11 November 2026)"
-- `D-155` — line 1998, heading: "D-155. Check the live clock offset before clearing it (11 November 2026)"
-- `D-156` — line 2005, heading: "D-156. Reset the synthetic live world after the clock fix (11 November 2026)"
-- `D-157` — line 2013, heading: "D-157. Legal forms Print and Export include people admitted on a form (12 November 2026)"
-- `D-158` — line 2019, heading: "D-158. A This-shift staff request is refused once that shift has ended (12 November 2026)"
-- `D-159` — line 2025, heading: "D-159. Fixes from the 10 to 12 November PR review (12 November 2026)"
-- `D-160` — line 2037, heading: "D-160. A trusted proxy list of plain addresses falls back to per-address keying (12 November 2026)"
-- `D-161` — line 2044, heading: "D-161. Home's changes-since strip is one line (12 November 2026)"
-- `D-162` — line 2051, heading: "D-162. Fixes from the 12 November whole-site component review (12 November 2026)"
-- `D-163` — line 2061, heading: "D-163. Pre-demo audits use the public demo after D-162 is live (12 November 2026)"
-- `D-164` — line 2070, heading: "D-164. Home's changes-since strip names escalations first and leaves movements off (12 November 2026)"
-- `D-165` — line 2076, heading: "D-165. The patient screen is a dashboard grid on every tab (13 November 2026)"
-- `D-166` — line 2087, heading: "D-166. CI runs faster without dropping a check (12 November 2026)"
-- `D-167` — line 2096, heading: "D-167. The Triage page has a left sign-off nav and joined section steps (13 November 2026)"
-- `D-168` — line 2107, heading: "D-168. The demo script follows the 13 November pre-demo audit (13 November 2026)"
-- `D-169` — line 2117, heading: "D-169. Demo script wording follows the hard questions audit (13 November 2026)"
-- `D-170` — line 2126, heading: "D-170. Clinical wording rulings from the 13 November audit (13 November 2026)"
-- `D-171` — line 2139, heading: "D-171. Hosted database brought to schema 18 (migrations 017 and 018) (13 November 2026)"
-- `D-172` — line 2146, heading: "D-172. The community desk's ED heads-up stays as built in D-154 (13 November 2026)"
-- `D-173` — line 2153, heading: "D-173. Turning off Supabase open sign-up is deferred (13 November 2026)"
-- `D-174` — line 2160, heading: "D-174. Audit findings name the system cause, and the fix round ships in two pull requests (13 November 2026)"
-- `D-175` — line 2169, heading: "D-175. Audit 16 and the demo-data root-cause review: approved fixes (13 November 2026)"
-- `D-176` — line 2184, heading: "D-176. Clinical check pack answers (13 November 2026)"
-- `D-177` — line 2197, heading: "D-177. Audit 15 answers on the public footprint (13 November 2026)"
-- `D-178` — line 2204, heading: "D-178. Audits 4 and 5 answers (13 November 2026)"
-- `D-179` — line 2210, heading: "D-179. Audit 9 answers from a real shift (13 November 2026)"
-- `D-180` — line 2225, heading: "D-180. Audits 12 and 14 answers (13 November 2026)"
-- `D-181` — line 2236, heading: "D-181. Fix round answers (13 November 2026)"
-- `D-182` — line 2257, heading: "D-182. Audit chat and end-report answers (13 November 2026)"
-- `D-183` — line 2267, heading: "D-183. End report addendum answers (13 November 2026)"
-- `D-184` — line 2278, heading: "D-184. The system fixes merge before the demo (13 November 2026)"
-- `D-185` — line 2284, heading: "D-185. Design critique v2 answers and the brand mark for the demo (13 November 2026)"
-- `D-186` — line 2294, heading: "D-186. Clinical sign-off sitting, part 1: timing and the audit-backed recommendations (13 November 2026)"
-- `D-187` — line 2316, heading: "D-187. Clinical sign-off sitting, part 2: the recommendations for Q17 to Q44 (13 November 2026)"
-- `D-188` — line 2344, heading: "D-188. The Home pull form is filled from the record and can be changed (13 November 2026)"
-- `D-189` — line 2353, heading: "D-189. Handling the open sitting questions, and how the remaining items are built (13 November 2026)"
-- `D-190` — line 2369, heading: "D-190. The six-PR fix plan (13 November 2026)"
-- `D-191` — line 2383, heading: "D-191. Home, Ward and Capacity mock-ups approved (13 November 2026)"
-- `D-192` — line 2404, heading: "D-192. Shared design parts approved for building, wave 3, PR E (13 November 2026)"
-- `D-193` — line 2418, heading: "D-193. Checked travel times wait until after the demo (13 November 2026)"
-- `D-194` — line 2427, heading: "D-194. Time audit answers (13 November 2026)"
-- `D-195` — line 2439, heading: "D-195. Merge each pull request when its checks pass (13 November 2026)"
-- `D-196` — line 2450, heading: "D-196. Threads decide on their own to keep work moving (13 November 2026)"
-- `D-197` — line 2456, heading: "D-197. System-fixes calls taken under D-196 (13 November 2026)"
-- `D-198` — line 2481, heading: "D-198. One owner per screen for forecast words, and "reserved bed" retired (13 November 2026)"
-- `D-199` — line 2491, heading: "D-199. ED and Ward phone limits raised past the allowance (13 November 2026)"
-- `D-200` — line 2498, heading: "D-200. Shared design parts and the Home, Ward and Capacity redesign go live together (13 November 2026)"
-- `D-201` — line 2509, heading: "D-201. Overnight merging without Josh (13 November 2026)"
-- `D-202` — line 2521, heading: "D-202. Joint go summary recommendations (14 November 2026)"
-- `D-204` — line 2530, heading: "D-204. A signed triage shows the desk's name (14 November 2026)"
-- `D-206` — line 2537, heading: "D-206. CodeQL storage alerts are false positives for the demo (14 November 2026)"
-- `D-207` — line 2544, heading: "D-207. Fit to travel recorded as not cleared, and the clinical go (14 November 2026)"
+- `D-150` — line 1959, heading: "D-150. The signed-in site runs on real Perth time (11 November 2026)"
+- `D-151` — line 1967, heading: "D-151. A bed tile says when a change is waiting to save (11 November 2026)"
+- `D-152` — line 1974, heading: "D-152. Returned to ED prompt sees every return in shared mode (11 November 2026)"
+- `D-153` — line 1982, heading: "D-153. Keep the drawn-time settle check, and defer a separate agent GitHub identity (11 November 2026)"
+- `D-154` — line 1990, heading: "D-154. The community desk's ED heads-up reads a narrow scoped list (11 November 2026)"
+- `D-155` — line 1999, heading: "D-155. Check the live clock offset before clearing it (11 November 2026)"
+- `D-156` — line 2006, heading: "D-156. Reset the synthetic live world after the clock fix (11 November 2026)"
+- `D-157` — line 2014, heading: "D-157. Legal forms Print and Export include people admitted on a form (12 November 2026)"
+- `D-158` — line 2020, heading: "D-158. A This-shift staff request is refused once that shift has ended (12 November 2026)"
+- `D-159` — line 2026, heading: "D-159. Fixes from the 10 to 12 November PR review (12 November 2026)"
+- `D-160` — line 2038, heading: "D-160. A trusted proxy list of plain addresses falls back to per-address keying (12 November 2026)"
+- `D-161` — line 2045, heading: "D-161. Home's changes-since strip is one line (12 November 2026)"
+- `D-162` — line 2052, heading: "D-162. Fixes from the 12 November whole-site component review (12 November 2026)"
+- `D-163` — line 2062, heading: "D-163. Pre-demo audits use the public demo after D-162 is live (12 November 2026)"
+- `D-164` — line 2071, heading: "D-164. Home's changes-since strip names escalations first and leaves movements off (12 November 2026)"
+- `D-165` — line 2077, heading: "D-165. The patient screen is a dashboard grid on every tab (13 November 2026)"
+- `D-166` — line 2088, heading: "D-166. CI runs faster without dropping a check (12 November 2026)"
+- `D-167` — line 2097, heading: "D-167. The Triage page has a left sign-off nav and joined section steps (13 November 2026)"
+- `D-168` — line 2108, heading: "D-168. The demo script follows the 13 November pre-demo audit (13 November 2026)"
+- `D-169` — line 2118, heading: "D-169. Demo script wording follows the hard questions audit (13 November 2026)"
+- `D-170` — line 2127, heading: "D-170. Clinical wording rulings from the 13 November audit (13 November 2026)"
+- `D-171` — line 2140, heading: "D-171. Hosted database brought to schema 18 (migrations 017 and 018) (13 November 2026)"
+- `D-172` — line 2147, heading: "D-172. The community desk's ED heads-up stays as built in D-154 (13 November 2026)"
+- `D-173` — line 2154, heading: "D-173. Turning off Supabase open sign-up is deferred (13 November 2026)"
+- `D-174` — line 2162, heading: "D-174. Audit findings name the system cause, and the fix round ships in two pull requests (13 November 2026)"
+- `D-175` — line 2171, heading: "D-175. Audit 16 and the demo-data root-cause review: approved fixes (13 November 2026)"
+- `D-176` — line 2186, heading: "D-176. Clinical check pack answers (13 November 2026)"
+- `D-177` — line 2199, heading: "D-177. Audit 15 answers on the public footprint (13 November 2026)"
+- `D-178` — line 2206, heading: "D-178. Audits 4 and 5 answers (13 November 2026)"
+- `D-179` — line 2212, heading: "D-179. Audit 9 answers from a real shift (13 November 2026)"
+- `D-180` — line 2227, heading: "D-180. Audits 12 and 14 answers (13 November 2026)"
+- `D-181` — line 2238, heading: "D-181. Fix round answers (13 November 2026)"
+- `D-182` — line 2259, heading: "D-182. Audit chat and end-report answers (13 November 2026)"
+- `D-183` — line 2269, heading: "D-183. End report addendum answers (13 November 2026)"
+- `D-184` — line 2280, heading: "D-184. The system fixes merge before the demo (13 November 2026)"
+- `D-185` — line 2286, heading: "D-185. Design critique v2 answers and the brand mark for the demo (13 November 2026)"
+- `D-186` — line 2296, heading: "D-186. Clinical sign-off sitting, part 1: timing and the audit-backed recommendations (13 November 2026)"
+- `D-187` — line 2318, heading: "D-187. Clinical sign-off sitting, part 2: the recommendations for Q17 to Q44 (13 November 2026)"
+- `D-188` — line 2346, heading: "D-188. The Home pull form is filled from the record and can be changed (13 November 2026)"
+- `D-189` — line 2355, heading: "D-189. Handling the open sitting questions, and how the remaining items are built (13 November 2026)"
+- `D-190` — line 2371, heading: "D-190. The six-PR fix plan (13 November 2026)"
+- `D-191` — line 2385, heading: "D-191. Home, Ward and Capacity mock-ups approved (13 November 2026)"
+- `D-192` — line 2406, heading: "D-192. Shared design parts approved for building, wave 3, PR E (13 November 2026)"
+- `D-193` — line 2420, heading: "D-193. Checked travel times wait until after the demo (13 November 2026)"
+- `D-194` — line 2429, heading: "D-194. Time audit answers (13 November 2026)"
+- `D-195` — line 2441, heading: "D-195. Merge each pull request when its checks pass (13 November 2026)"
+- `D-196` — line 2452, heading: "D-196. Threads decide on their own to keep work moving (13 November 2026)"
+- `D-197` — line 2458, heading: "D-197. System-fixes calls taken under D-196 (13 November 2026)"
+- `D-198` — line 2483, heading: "D-198. One owner per screen for forecast words, and "reserved bed" retired (13 November 2026)"
+- `D-199` — line 2493, heading: "D-199. ED and Ward phone limits raised past the allowance (13 November 2026)"
+- `D-200` — line 2500, heading: "D-200. Shared design parts and the Home, Ward and Capacity redesign go live together (13 November 2026)"
+- `D-201` — line 2511, heading: "D-201. Overnight merging without Josh (13 November 2026)"
+- `D-202` — line 2523, heading: "D-202. Joint go summary recommendations (14 November 2026)"
+- `D-204` — line 2532, heading: "D-204. A signed triage shows the desk's name (14 November 2026)"
+- `D-206` — line 2539, heading: "D-206. CodeQL storage alerts are false positives for the demo (14 November 2026)"
+- `D-207` — line 2546, heading: "D-207. Fit to travel recorded as not cleared, and the clinical go (14 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 
