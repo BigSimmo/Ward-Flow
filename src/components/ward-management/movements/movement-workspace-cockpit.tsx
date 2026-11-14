@@ -1725,10 +1725,14 @@ export function MovementWorkspaceCockpit({
                   type="button"
                   className={styles.controlButton}
                   data-testid="ward-console-release-diverted-bed"
+                  // INV-ACTION-146 (14 Nov 2026): locked like its siblings, so a desk that may not
+                  // release (the site bed manager) is told why instead of the press doing nothing.
+                  {...lock("RELEASE_DIVERTED_BED").buttonProps}
                   onClick={() => setReleaseConfirm("diverted")}
                 >
                   Release the pulled bed
                 </button>
+                {lock("RELEASE_DIVERTED_BED").note}
               </section>
             ) : null}
 

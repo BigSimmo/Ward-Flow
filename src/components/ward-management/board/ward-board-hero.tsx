@@ -13,6 +13,7 @@ import type { BedStateCounts } from "@/components/ward-management/ward-bed-state
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { unitHref, wardBoardHref } from "@/components/ward-management/shell/ward-facade";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { WardSwitchPopover } from "@/components/ward-management/ward/ward-switch-menu";
 import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
 import {
@@ -386,8 +387,13 @@ export function WardBoardTools({
   const router = useOptionalRouter();
   const [switchOpen, setSwitchOpen] = useState(false);
   const deskWardIds = access.role === "ward" && access.scope.kind === "ward" ? access.scope.unitIds : null;
-  const units = deskWardIds ? everyWard.filter((candidate) => deskWardIds.includes(candidate.id)) : everyWard;
-  const showSwitch = !(deskWardIds && units.length <= 1);
+  // INV-CM (14 Nov 2026): and only boards this desk may open, so the site bed manager's list holds
+  // its own site's wards rather than ones ending at "Not part of your role".
+  const canOpen = useCanOpenHref();
+  const units = (deskWardIds ? everyWard.filter((candidate) => deskWardIds.includes(candidate.id)) : everyWard).filter(
+    (candidate) => candidate.id === currentUnitId || canOpen(wardBoardHref(candidate.id)),
+  );
+  const showSwitch = units.length > 1;
   const current = everyWard.find((candidate) => candidate.id === currentUnitId);
   return (
     <>

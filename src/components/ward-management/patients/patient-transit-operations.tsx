@@ -49,6 +49,7 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { ChipGroup, FilterChip, StateLine, StatusGlyph, buttonClass, RowUndo } from "@/components/wf";
 import { undoWindowEnds } from "../ward-undo-until";
 import { useUndoableStep } from "../use-undoable-step";
+import { referToUnitsUndoStep } from "../coordinator/shortlist-release-undo";
 import { BED_PULL_UNDONE, bedPullUndoEvent } from "../ward-bed-pull-undo";
 import { BED_PULL_UNDO_TOAST_MS } from "../ward-operational-defaults";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
@@ -151,7 +152,7 @@ export function PatientTransitOperations({
           return originUnitId ? { actingUnitId: originUnitId } : {};
         })()
       : {};
-  const { run: runStep } = useUndoableStep({ dispatch, rejections, now, routeRole });
+  const { run: runStep, offer: offerStep } = useUndoableStep({ dispatch, rejections, now, routeRole });
   const holdGate = gate("PULL_PATIENT");
   const bookGate = gate("BOOK_TRANSPORT");
   const handoverGate = gate("HANDOVER_READY");
@@ -443,13 +444,16 @@ export function PatientTransitOperations({
                       : {}),
                   });
                 },
-                () => {
+                (outcome) => {
                   setOverrideReason("");
                   noteAttempt();
                   // The wards are now asked: the Ask wards refusal and ticks it answered are done with.
                   if (attempted === "REFER_TO_UNITS") {
                     askSave.clearError();
                     setSelected([]);
+                    // INV-ACTION-195 (14 Nov 2026, D-217): asking wards offers Undo, as the shortlist does. The
+                    // accepted outcome ties the toast to this request's own record, not a later one.
+                    offerStep(referToUnitsUndoStep(movement.id, patientName), { completion: outcome });
                   }
                 },
               );
@@ -603,7 +607,12 @@ export function PatientTransitOperations({
                             ? { genderPlacementReason: genderReason, genderPlacementChecked: true as const }
                             : {}),
                         }),
-                      () => setSelected([]),
+                      (outcome) => {
+                        setSelected([]);
+                        // INV-ACTION-195 (14 Nov 2026, D-217): asking wards offers Undo, as the shortlist does. The
+                        // accepted outcome ties the toast to this request's own record, not a later one.
+                        offerStep(referToUnitsUndoStep(movement.id, patientName), { completion: outcome });
+                      },
                     );
                   }
             }
@@ -1125,14 +1134,21 @@ export function PatientTransitOperations({
                       return;
                     }
                     noteAttempt();
-                    wardRaise(
-                      dispatch,
-                      routeRole,
-                      now,
-                    )("CANCEL_TRANSPORT", {
-                      movementId: movement.id,
-                      reason: cancelReason,
-                    });
+                    // INV-ACTION-195 (14 Nov 2026; Tier 1 item 6, Josh 4 Nov 2026): the engine keeps an
+                    // exact Undo for a cancelled transport, so the toast offers it, as on the shortlist.
+                    runStep(
+                      { type: "CANCEL_TRANSPORT", role: routeRole, now, movementId: movement.id, reason: cancelReason },
+                      {
+                        success: `Transport cancelled for ${patientName}.`,
+                        undone: "Undone. The transport is booked again.",
+                        undo: (at) => ({
+                          type: "UNDO_RELEASE_STEP",
+                          role: routeRole,
+                          now: at,
+                          movementId: movement.id,
+                        }),
+                      },
+                    );
                     setCancelReason("");
                   }}
                 >

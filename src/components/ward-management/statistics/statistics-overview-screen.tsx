@@ -34,6 +34,7 @@ import type { HealthService } from "@/components/ward-management/ward-model";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 
 import { HospitalCapacityMatrix } from "./hospital-capacity-matrix";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { FlushRow, FlushStack, Follow } from "./statistics-layout";
 import { axisMax } from "./statistics-axis";
@@ -480,6 +481,8 @@ function OverviewPhone({
 }) {
   const { small } = useStatisticsCounts();
   const [showAll, setShowAll] = useState(false);
+  // INV-CM (14 Nov 2026): a link shows only when this desk may open it, never "Not part of your role".
+  const canOpen = useCanOpenHref();
   const sorted = [...wards].sort((a, b) => b.rate - a.rate || a.name.localeCompare(b.name));
   const inBed = stages.find((stage) => stage.position === "in-the-bed")?.shown ?? 0;
   return (
@@ -518,7 +521,7 @@ function OverviewPhone({
               </span>
             }
             time="in use"
-            href={wardStatisticsHref(ward.id)}
+            href={canOpen(wardStatisticsHref(ward.id)) ? wardStatisticsHref(ward.id) : undefined}
           />
         ))}
         {sorted.length > PHONE_WARDS_SHOWN ? (

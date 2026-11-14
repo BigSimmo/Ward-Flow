@@ -116,8 +116,15 @@ describe("Alerts redesign: the coordinator's page", () => {
     // Drawer review (6 Nov 2026): the alert opens in the kit drawer once a row is chosen.
     fireEvent.click(screen.getAllByTestId("ward-alerts-open")[0]!);
     const take = within(panel()).queryByRole("button", { name: /^Take / });
-    if (take) fireEvent.click(take);
-    expect(within(panel()).getByRole("button", { name: /^Hand back / })).toHaveTextContent("Hand back");
+    if (take) {
+      fireEvent.click(take);
+      expect(within(panel()).getByRole("button", { name: /^Hand back / })).toHaveTextContent("Hand back");
+    } else {
+      // INV-ACTION-148 (14 Nov 2026): a row that is the coordinator's by default was never taken, so
+      // there is nothing to hand back; it shows the greyed "Yours" rather than a refused Hand back.
+      expect(within(panel()).getByRole("button", { name: /^Yours: / })).toHaveTextContent("Yours");
+      expect(within(panel()).queryByRole("button", { name: /^Hand back / })).not.toBeInTheDocument();
+    }
     expect(within(panel()).getByTestId("alerts-more-actions")).toBeInTheDocument();
   });
 });

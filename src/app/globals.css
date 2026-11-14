@@ -243,9 +243,9 @@
   --text-2xs: 0.75rem;
   --text-sm-minus: 0.8125rem;
   --text-base-minus: 0.9375rem;
-  --text-lg-minus: 1.0625rem;
-  --text-2xl-minus: 1.375rem;
-  --text-3xl-minus: 1.625rem;
+  --text-lg-minus: 1rem;
+  --text-2xl-minus: 1.25rem;
+  --text-3xl-minus: 1.75rem;
 
   /* Fluid display heading for the hero / mode-home titles (hybrid-fluid type:
      the large display heading scales continuously; body / UI text stays on the
@@ -253,7 +253,7 @@
      baseline (23.2px at ≤~393px) is unchanged, then it ramps to the 2.15rem cap
      by ~1033px — no breakpoint jumps. Generates the `text-hero` utility.
      clamp() font sizes are not flagged by scripts/check-type-scale.mjs. */
-  --text-hero: clamp(1.75rem, 1.2rem + 2vw, 2.25rem);
+  --text-hero: 1.75rem;
   /* Companion line-height marks --text-hero as a font-SIZE token (Tailwind v4
      `--text-<name>--line-height` convention) so downstream tooling never
      misreads the clamp() value as a font-family list. Call sites that set an
@@ -1736,6 +1736,27 @@ html[data-motion="reduced"] *::after {
     display: none !important;
   }
 
+  /* Opt-in for a button that is really a title, a name or a group heading (R-FIGS-1, D-218): it
+     prints as plain text, never as a control. Ward Flow's kit parts carry it; a screen file that
+     cannot be marked is listed by test id in ward-flow-print.css instead. */
+  button[data-print-show],
+  [data-print-show] {
+    display: revert !important;
+    position: static !important;
+    border: 0 !important;
+    background: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    font: inherit !important;
+    color: #000 !important;
+    text-align: start !important;
+    text-decoration: none !important;
+  }
+
+  [data-print-show] svg {
+    display: none !important;
+  }
+
   main,
   section,
   article,
@@ -2300,4 +2321,18 @@ html:has([data-wf-bar-notes] > :not([data-wf-offline-slot]), [data-wf-offline-no
   html:has([data-wf-phone-foot-bar]) {
     --wf-phone-foot-lift: 6rem;
   }
+}
+
+/* R-STYLE-4: one icon line weight. CSS beats the stroke-width attribute, so every Lucide icon, kit
+   or not, draws at 1.75. The kit `Icon` sizes are 14, 16, 18 and 21. */
+svg.lucide {
+  stroke-width: 1.75;
+}
+
+/* R-STYLE-10: typed text never leaves its box. Put this on every container that shows free text
+   (a note, a name, a comment). A long unbroken string breaks anywhere it must; ordinary words and
+   names keep wrapping at spaces, in full, never cut with an ellipsis. */
+.wf-typed {
+  overflow-wrap: anywhere;
+  min-width: 0;
 }
