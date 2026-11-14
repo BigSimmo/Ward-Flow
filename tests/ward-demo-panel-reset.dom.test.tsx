@@ -201,11 +201,12 @@ describe("Demo menu layout (pop-demo)", () => {
 });
 
 // Shared design parts item 8: Pause in the clock row runs the page's own pause, the one a tap on the
-// Live chip runs, and shows only on a page whose chip can pause.
+// Live chip runs. D-229: on this device's demo it also holds Board time, so it shows on every page
+// (`tests/ward-demo-pause-board-time.dom.test.tsx`).
 describe("Demo clock Pause", () => {
-  it("is absent where no Live chip can pause", () => {
+  it("shows on this device's demo even where no Live chip can pause", () => {
     renderPanel();
-    expect(within(panel()).queryByTestId("ward-tools-demo-pause")).toBeNull();
+    expect(within(panel()).getByTestId("ward-tools-demo-pause")).toHaveTextContent("Pause");
   });
 
   it("pauses and resumes the page through its Live chip's action", () => {

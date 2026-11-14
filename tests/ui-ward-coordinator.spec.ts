@@ -120,8 +120,10 @@ async function expectReferralSheetFromRefer(page: Page, movementId: string) {
 function requireMovement(movementId: string | undefined | null): Movement {
   // The rulings-demo overlay's movements (WF-RD…) are only in the seeded state, and wait order
   // (Audit 1, D-71) can put one at the top of the queue.
+  // The seeded state is what the screen renders: the standard day's wait-list overlay (D-229)
+  // adds a live referral to WF-017 and WF-022 that the raw fixture does not carry.
   const movement = movementId
-    ? (movementById(movementId) ?? seedWardFlowState().movements.find((candidate) => candidate.id === movementId))
+    ? (seedWardFlowState().movements.find((candidate) => candidate.id === movementId) ?? movementById(movementId))
     : undefined;
   if (!movement) throw new Error(`Fixture is missing movement ${String(movementId)}`);
   return movement;
@@ -639,17 +641,22 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // (the "Parallel referral" badge), never a local optimistic flag, so this also proves the
     // dispatch actually reached shared state rather than merely toggling local UI. WF-017
     // already carries its own pre-existing "Parallel referral: BTY Adult Secure" from the
-    // fixture, so the pre-click assertion checks the SPECIFIC new referral is absent, not the
-    // phrase overall.
+    // fixture, and the seeded wait list adds a live referral to Dabakarn (D-229), so the test
+    // picks an eligible ward nobody has asked yet and checks that SPECIFIC referral is absent.
+    const wf017 = requireMovement("WF-017");
+    const unasked = eligibleCandidatesAmong(wf017, allUnits(), NOW_ANCHOR, PARALLEL_REFERRAL_CAP).find(
+      (candidate) => candidate.verdict.eligible && !wf017.referredUnitIds.includes(candidate.unit.id),
+    )!;
+    expect(unasked, "fixture assumption: WF-017 has an eligible ward not yet asked").toBeTruthy();
     await pickQueueRow(queue, "WF-017");
     await openShortlistSections(shortlist);
-    await shortlist.locator('[data-testid="ward-shortlist-candidate-rph-adult-secure"]').click();
+    await shortlist.locator(`[data-testid="ward-shortlist-candidate-${unasked.unit.id}"]`).click();
     await expect(referButton).not.toHaveAttribute("aria-disabled", "true");
-    await expect(shortlist).not.toContainText("Parallel referral: Dabakarn");
+    await expect(shortlist).not.toContainText(`Parallel referral: ${unasked.unit.name}`);
     await referButton.click();
     // Option B: Refer writes a referral through the slide-out; it never offers the ward directly.
     const afterRefer = await expectReferralSheetFromRefer(page, "WF-017");
-    await expect(afterRefer).not.toContainText("Parallel referral: Dabakarn");
+    await expect(afterRefer).not.toContainText(`Parallel referral: ${unasked.unit.name}`);
   });
 
   /**

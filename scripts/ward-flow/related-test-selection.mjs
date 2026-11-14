@@ -13,6 +13,31 @@ export const SOURCE_READING_CONTRACTS = Object.freeze([
   { test: "tests/ward-one-appearance-key.test.ts", roots: ["src/"] },
 ]);
 
+// A permission table, a signed window and a scoping filter each have a hand-written pinning test that
+// does not import the file it pins (or sits beyond the fan-out cap), so the import graph can miss it
+// (Deep-DP5-3, 14 Nov 2026: `npm run test:related` stayed green after the executive was added to
+// REQUEST_WARD_STAFF). Changing one of these files always selects its pins, after the cap like the
+// source-reading guards above.
+export const PINNING_TESTS = Object.freeze([
+  {
+    source: "src/components/ward-management/ward-flow-event-roles.ts",
+    tests: ["tests/ward-event-permissions.test.ts"],
+  },
+  { source: "src/components/ward-management/ward-flow-events.ts", tests: ["tests/ward-event-permissions.test.ts"] },
+  {
+    source: "src/components/ward-management/ward-operational-defaults.ts",
+    tests: ["tests/ward-undo-window-pin.test.ts"],
+  },
+  {
+    source: "src/components/ward-management/help/ward-help-howto.ts",
+    tests: ["tests/ward-undo-window-pin.test.ts"],
+  },
+  {
+    source: "src/components/ward-management/ward-access-state.ts",
+    tests: ["tests/ward-scope-staff-requests-ward-desk.test.ts"],
+  },
+]);
+
 /** Read-only selection shared by both focused entry points. Capped import selections remain partial. */
 export function selectRelatedTests({ root, changed, cap = 60, includeSourceGuards = true }) {
   const inputs = [...new Set(changed.map((file) => file.replaceAll("\\", "/")))];
@@ -107,6 +132,10 @@ export function selectRelatedTests({ root, changed, cap = 60, includeSourceGuard
       inputs.some((file) => contract.roots.some((prefix) => file.startsWith(prefix))) &&
       existsSync(path.join(root, contract.test)),
   ).map((contract) => contract.test);
+  const pinningTests = PINNING_TESTS.filter((pin) => inputs.includes(pin.source)).flatMap((pin) =>
+    pin.tests.filter((test) => existsSync(path.join(root, test))),
+  );
+  selected.push(...pinningTests);
   if (includeSourceGuards) selected.push(...sourceGuards);
   selected = [...new Set(selected)].sort();
   return {
