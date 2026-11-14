@@ -23,7 +23,14 @@ import { HELD_UP_BY_TOMORROW_LABEL, isHeldUpDueByTomorrow } from "@/components/w
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { riskFlagLabel } from "@/components/ward-management/referrals/referral-risk-flags";
-import { dayOf, formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  DEFAULT_DUE_SOON_THRESHOLDS,
+  dayOf,
+  formatInstantWithDay,
+  splitDuration,
+  type DueSoonThresholds,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { admissionLegalStatus } from "@/components/ward-management/ward-flow-reducer";
 import type { BedRelease, LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import {
@@ -97,6 +104,8 @@ type RecordInputs = {
   plannedAdmissions?: readonly PlannedAdmission[];
   /** The board's day 0, so a typed legal time on another day prints its date (D1, D-93). */
   dayZero?: Date;
+  /** The signed legal warnings as set in Settings (`dueSoon`, D-24); the defaults when left out. */
+  thresholds?: DueSoonThresholds;
 };
 
 /** The referrer's risk ticks for a journey, as words. The referral's own copy wins over the officer copy. */
@@ -113,14 +122,16 @@ function obsFact(observation: Observation | undefined): ClinicalFact {
   return { text: observationSummary(observation), tone: constant ? "warning" : undefined };
 }
 
-const HOURS_24 = 24 * 60;
-
-/** A legal form's line for the wall: the status, then the form and its end time as typed. */
+/**
+ * A legal form's line for the wall: the status, then the form and its end time as typed. "Ending soon"
+ * is the signed due soon warning (`dueSoon`), never a window of its own (D-194).
+ */
 function legalFact(
   status: string | undefined,
   movement: Movement | undefined,
   now: Instant,
   dayZero: Date | undefined,
+  thresholds: DueSoonThresholds = DEFAULT_DUE_SOON_THRESHOLDS,
 ): ClinicalFact | null {
   const form = movement?.legalForm;
   if (!form) return status ? { text: status } : null;
@@ -139,7 +150,7 @@ function legalFact(
   const left = dueAt - now;
   return {
     text: `${head}. ${typedTimeLine(dueAt, now, dayZero)}`,
-    tone: left <= 0 ? "danger" : left <= HOURS_24 ? "warning" : undefined,
+    tone: left <= 0 ? "danger" : left <= thresholds.soonMinutes ? "warning" : undefined,
   };
 }
 
@@ -180,7 +191,7 @@ export function wardClinicalRows(input: WardClinicalInputs): WardClinicalRow[] {
         },
         admission,
       );
-      const legal = legalFact(status ?? movement?.legalStatus, movement, now, input.dayZero);
+      const legal = legalFact(status ?? movement?.legalStatus, movement, now, input.dayZero, input.thresholds);
       const release = bedReleases.find(
         (record) => record.admissionId === admission.id && record.state !== "discharged",
       );
@@ -380,7 +391,7 @@ export function edClinicalRows(input: EdClinicalInputs): EdClinicalRow[] | undef
         waitMinutes,
         band,
         urgency: movement.urgency as 1 | 2 | 3,
-        legal: legalFact(movement.legalStatus, movement, now, input.dayZero),
+        legal: legalFact(movement.legalStatus, movement, now, input.dayZero, input.thresholds),
         underForm: isUnderAForm(movement),
         reviewed: movement.examination !== undefined,
         noBedYet: accepted === undefined,

@@ -8,6 +8,7 @@ import {
   legalNowText,
   transportExceptionText,
   transportStatusClashes,
+  TRANSPORT_EXCEPTION_STEP_LABELS,
   type TransportBookingAnswers,
 } from "@/components/ward-management/ward-transport-checks";
 import {
@@ -253,7 +254,7 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
               data-testid="ward-patient-transport-exception"
             >
               <span className={styles.transportFactLabel}>
-                {exception.step === "collected" ? "Collected" : "Booked"} {clock(exception.at)} with
+                {TRANSPORT_EXCEPTION_STEP_LABELS[exception.step]} {clock(exception.at)} with
               </span>
               <span className={styles.transportFieldNote}>{transportExceptionText(exception)}</span>
             </div>

@@ -366,6 +366,10 @@ describe("SV-2 community transport dialogs (shared mode)", () => {
     });
     // The redesigned form starts with neither Today nor Tomorrow chosen (Josh, 31 Oct 2026).
     fireEvent.click(within(dialog).getByTestId(`ward-community-transport-estimated-day-today-${id}`));
+    // D-187 item 10: no medical clearance is recorded, so the booking asks for a reason.
+    fireEvent.change(within(dialog).getByTestId(`ward-community-transport-legal-reason-${id}`), {
+      target: { value: "paper_sighted" },
+    });
     await press(within(dialog).getByTestId(`ward-community-book-transport-confirm-${id}`));
     expect(dispatch).toHaveBeenCalledTimes(1);
     if (mode === "accepted") {
@@ -555,6 +559,8 @@ describe("SV-4 observation level control (ward bed drawer and ED patient record)
     render(<WardObservationControl observation={GENERAL_OBSERVATION} now={NOW_ANCHOR} onSave={onSave} />);
     fireEvent.click(screen.getByTestId("ward-observation-change"));
     pickObservationLevel("intermittent");
+    // D-187 item 19 (Q44): the interval starts blank, so one is picked before recording.
+    pickObservationInterval(15);
     await press(screen.getByTestId("ward-observation-save"));
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     fireEvent.click(screen.getByTestId("ward-observation-change"));
@@ -579,6 +585,7 @@ describe("SV-4 observation level control (ward bed drawer and ED patient record)
       <WardObservationControl observation={GENERAL_OBSERVATION} now={NOW_ANCHOR} editingToken="v2" onSave={onSave} />,
     );
     pickObservationLevel("intermittent");
+    pickObservationInterval(15);
     await press(screen.getByTestId("ward-observation-save"));
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ level: "intermittent" }), "v1");
   });

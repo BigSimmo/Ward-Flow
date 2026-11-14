@@ -15,6 +15,7 @@ import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-c
 // Clinical owner ruling, 14 Oct 2026: no eligible bed keeps the patient on the waitlist with a
 // visible flag and notifies the bed coordinator. Never dropped, never silently released.
 describe("no eligible bed (clinical owner ruling 14 Oct 2026)", () => {
+  // D-189 item 8: WF-009's story now records SJGS Adult Secure's decline too (ward-movements.ts).
   const state = seedWardFlowState();
   const open = state.movements.filter(isOpen);
   // Every ward is asked, never the default top three, so no ward is missed.

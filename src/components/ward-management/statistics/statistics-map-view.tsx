@@ -317,14 +317,12 @@ const lensRing = (site: PresentedSiteFigures, lens: MapLens): number => {
   return site.occupied > 0 && long !== null ? long / site.occupied : 0;
 };
 
-/** Shape-coded status. Red only where somebody must act now: an ED wait past 48 hours. */
+/**
+ * Shape-coded status. Red only where somebody must act now: an ED wait past 48 hours (`veryLongWait`).
+ * A wait past 24 hours is Josh's default, shown neutral with no mark (D-24, restored by D-194).
+ */
 const lensStatus = (site: PresentedSiteFigures, lens: MapLens): WaMapNode["status"] => {
-  if (lens === "ed")
-    return (exactStatisticsCount(site.edOver48) ?? 0) > 0
-      ? "danger"
-      : (exactStatisticsCount(site.edOver24) ?? 0) > 0
-        ? "warning"
-        : undefined;
+  if (lens === "ed") return (exactStatisticsCount(site.edOver48) ?? 0) > 0 ? "danger" : undefined;
   if (lens === "beds") return site.wardsOverLine > 0 ? "warning" : undefined;
   if (lens === "dis") return (exactStatisticsCount(site.blocked) ?? 0) > 0 ? "warning" : undefined;
   return undefined;
@@ -361,7 +359,7 @@ const LENSES: ReadonlyArray<{ id: MapLens; label: string; listTitle: string; key
     id: "ed",
     label: "Open ED movements",
     listTitle: "Open ED movements by ED",
-    key: `Ring: longest time since opening, to ${VERY_LONG_WAIT_HOURS}h. Centre: open ED movements. Amber dot: past ${LONG_WAIT_HOURS}h. Triangle: over ${VERY_LONG_WAIT_HOURS}h.`,
+    key: `Ring: longest time since opening, to ${VERY_LONG_WAIT_HOURS}h. Centre: open ED movements. Triangle: over ${VERY_LONG_WAIT_HOURS}h.`,
   },
   {
     id: "dis",
@@ -595,7 +593,6 @@ function MapPresentation({
             {
               value: String(statisticsCountText(network.edOver24)),
               label: `Past ${LONG_WAIT_HOURS}h`,
-              tone: (exactStatisticsCount(network.edOver24) ?? 0) > 0 ? "warning" : undefined,
             },
           ]
         : lens === "dis"
@@ -780,11 +777,7 @@ function SiteCard({ site, lens, onClose }: { site: PresentedSiteFigures; lens: M
     <>
       <span className={styles.siteName}>{statisticsCountText(site.edWaiting)} open ED movements</span>
       <span className={styles.siteFig}>
-        {(exactStatisticsCount(site.edOver48) ?? 0) > 0 ? (
-          <StatusGlyph tone="danger" size={9} />
-        ) : (exactStatisticsCount(site.edOver24) ?? 0) > 0 ? (
-          <StatusGlyph tone="warning" size={9} />
-        ) : null}
+        {(exactStatisticsCount(site.edOver48) ?? 0) > 0 ? <StatusGlyph tone="danger" size={9} /> : null}
         {exactStatisticsCount(site.edWaiting) === null
           ? "longest held back (small numbers)"
           : site.edLongest === null

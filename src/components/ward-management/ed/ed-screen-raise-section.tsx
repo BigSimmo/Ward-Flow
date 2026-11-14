@@ -133,6 +133,7 @@ const MISSING_FIELD_LABELS: Record<ReferralDraftField, string> = {
   legalStatus: "Legal status",
   urgency: "Urgency",
   observation: "Observation level",
+  observationInterval: "Check every",
   observationReviewTime: "Observation review time",
   highAcuity: "High-acuity nursing",
   legalFormDueAtDate: "Expiry date",
@@ -149,6 +150,7 @@ const MISSING_FIELD_TEST_IDS: Record<ReferralDraftField, string> = {
   legalStatus: "ward-ed-referral-legal-status",
   urgency: "ward-ed-referral-urgency",
   observation: "ward-ed-referral-observation",
+  observationInterval: "ward-ed-referral-observation-interval",
   observationReviewTime: "ward-ed-referral-observation-review-time",
   highAcuity: "ward-ed-referral-high-acuity-required",
   legalFormDueAtDate: "ward-ed-referral-legal-form-due-at-date",
@@ -421,7 +423,8 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
               label="Check every"
               testId="ward-ed-referral-observation-interval"
               items={INTERVAL_ITEMS}
-              value={String(draft.observationIntervalMinutes)}
+              value={draft.observationIntervalMinutes === null ? "" : String(draft.observationIntervalMinutes)}
+              missing={isMissing("observationInterval")}
               onChange={(minutes) =>
                 setDraft((current) => ({ ...current, observationIntervalMinutes: Number(minutes) }))
               }

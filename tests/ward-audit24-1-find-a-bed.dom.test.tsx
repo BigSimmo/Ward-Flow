@@ -74,7 +74,11 @@ describe("Find a bed, audit 24-1 decision 1", () => {
     }
     expect(within(finder).queryByRole("list")).toBeNull();
     expect(within(finder).getByRole("status")).toHaveTextContent(
-      "Choose Voluntary or Involuntary under Legal status to list wards. Involuntary lists only authorised wards.",
+      "Choose Voluntary or Involuntary under Legal status to list wards.",
+    );
+    // D-189 items 8(a) and 9(i): the choice stays required, and says it narrows nothing.
+    expect(within(finder).getByTestId("ward-bed-finder-authorisation-hint")).toHaveTextContent(
+      "Authorisation is not stated for any ward, so this does not narrow the list.",
     );
   });
 

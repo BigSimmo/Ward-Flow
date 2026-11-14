@@ -6,7 +6,6 @@
  * and there is no low, medium or high rating and no computed score.
  */
 import type { Tier } from "./triage-record";
-import { SIGNED_IN_COORDINATOR_NAME } from "@/components/ward-management/ward-staff-names-seed";
 
 // The closed lists a signed triage records are kept with the record (`triage-record.ts`), so the
 // reducer, the stored-state check and the patient record read them without this file.
@@ -636,7 +635,8 @@ export const WHO_TOLD = [
 export const LEGAL_SHORT: Readonly<Record<string, string>> = {
   "Community treatment order": "CTO",
   "Inpatient treatment order": "ITO",
-  "Referred (Form 1A)": "Referred",
+  // The key follows the renamed status in `LEGAL` (D-187 item 18, TW-107), so the short form matches.
+  "Referred for psychiatric examination": "Referred",
   "Not yet recorded": "Not recorded",
 };
 /** Legal statuses with a form, whose form and date are kept only as typed. */
@@ -706,7 +706,7 @@ export const SOURCES = ["Person", "Family or carer", "GP", "Records", "Police", 
  * triage carries forward flags alone and every typed answer is written fresh.
  */
 export type PreviousTriage = {
-  /** "Last triage · 07 Nov · Dr S. Orlenby". */
+  /** "Last triage · 07 Nov · …", ending with the desk that signed it (A9-29, `signerName`). */
   label: string;
   /** "07 Nov", for "Carried from 07 Nov". */
   when: string;
@@ -768,9 +768,6 @@ export type TriagePerson = {
   /** The app address of the person's record. */
   recordHref: string;
 };
-
-/** The signed-in clinician in the synthetic world, who reviews and signs. */
-export const SIGNED_IN = SIGNED_IN_COORDINATOR_NAME;
 
 /** Where each PSOLIS field went on this form. Copy and the summary write the exact PSOLIS value for each pick-list. */
 export const PSOLIS_FIELD_MAP = [

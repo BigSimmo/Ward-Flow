@@ -13,6 +13,9 @@ import { isArrivalLate, isLegalClockFormCode, leaveBedNeedsOpenWarning } from ".
 import { perthDateTimeLocal } from "../ward-clock";
 import { legalFormTimeOrderProblem } from "../ward-legal-form-time-order";
 import { resolveSubjectPatient } from "../ward-patient-resolver";
+import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning";
+import { authorisationBlocksPlacement } from "@/components/ward-management/ward-authorisation";
+import { legalRecordWarnings } from "@/components/ward-management/ward-legal-order-rules";
 import styles from "./movement-workspace-cockpit.module.css";
 
 export function MovementWorkflowActions({ movement }: { movement: Movement }) {
@@ -46,8 +49,10 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
   const [written, setWritten] = useState("");
   const [expiry, setExpiry] = useState("");
   const unit = units.find((u) => u.id === movement.acceptedUnitId);
+  // The engine's own FLAG_LEGAL_MISMATCH rule: the named "not voluntary" rule (D-186 item 4), and no
+  // authorisation mismatch while every ward reads "not stated" (D-189 item 9(a)).
   const mismatch =
-    unit && movement.legalStatus !== "Voluntary" && !unit.authorised
+    unit && isNotVoluntary(movement.legalStatus) && authorisationBlocksPlacement(unit)
       ? "involuntary_on_voluntary_ward"
       : unit && movement.legalStatus === "Voluntary" && unit.lockedBeds > 0 && unit.beds - unit.lockedBeds <= 0
         ? "voluntary_on_locked_ward"
@@ -87,6 +92,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
     movement.transport && movement.transport.cancelledAt === undefined
       ? "Cancel the active transport booking before releasing the bed."
       : "Choose a release and reopen reason first.";
+  const continuationWarnings = form ? legalRecordWarnings(movement, { continuationFormCode: form }) : [];
   const unsupportedContinuation = !!form && !isLegalClockFormCode(form);
   const continuationUnavailable = !continuationGate.allowed || !form || !written || unsupportedContinuation;
   const continuationReason = unsupportedContinuation
@@ -115,7 +121,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
               } else {
                 raise("RAISE_EXPECT_FLAG", {
                   movementId: movement.id,
-                  kind: movement.legalStatus === "Voluntary" ? "voluntary_48h" : "involuntary_7d",
+                  kind: isNotVoluntary(movement.legalStatus) ? "involuntary_7d" : "voluntary_48h",
                 });
               }
             }}
@@ -290,6 +296,12 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
               ))}
             </select>
           </label>
+          {continuationWarnings.length > 0 ? (
+            // D-186 item 5 / D-187 item 6: warnings, never blocks. The continuation still records.
+            <p role="status" data-testid={`workflow-continuation-warnings-${movement.id}`}>
+              {continuationWarnings.map((warning) => (warning.endsWith(".") ? warning : `${warning}.`)).join(" ")}
+            </p>
+          ) : null}
           <label>
             Form written date and time
             <DateTimeField label="Form written" value={written} onValueChange={setWritten} />

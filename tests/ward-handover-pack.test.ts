@@ -96,7 +96,7 @@ describe("handover pack model", () => {
     expect(value(handoverPackModel(input({ riskFlags: "not_shared" })), "risks", "Risks")).toBe(
       "Not shared with this desk",
     );
-    expect(value(handoverPackModel(input({ riskFlags: [] })), "risks", "Risks")).toBe("None flagged on the referral");
+    expect(value(handoverPackModel(input({ riskFlags: [] })), "risks", "Risks")).toBe("None recorded on the referral");
     expect(value(handoverPackModel(input({ clearance: undefined })), "clearance", "Medical clearance")).toBe(
       "Not recorded",
     );

@@ -20,6 +20,7 @@ import type {
   WardReferralDestination,
 } from "@/components/ward-management/ward-model";
 import type { OverrideReason } from "@/components/ward-management/ward-change-reasons";
+import { authorisationBlocksPlacement, authorisationLabel } from "@/components/ward-management/ward-authorisation";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { genderReviewNeeded, type GenderPlacement } from "@/components/ward-management/ward-model";
 import { observationStaff, observationSummary, type Observation } from "@/components/ward-management/ward-observation";
@@ -119,6 +120,10 @@ export function wardAddressing(referral: Referral): WardAddressing | undefined {
 }
 
 /**
+ * THE D-69 RULE, "needs an involuntary-capable bed until status is set" (named under D-186 item 4).
+ * It is neither of the two named rules in `ward-legal-meaning.ts`: unlike `isNotVoluntary`, a blank
+ * or "Not recorded" status NEEDS the bed here, so it must not be swapped for that rule.
+ *
  * THE ONE RULE for whether a person needs a bed that can hold someone involuntarily, from a
  * recorded legal status. Owner ruling D-69 (Josh, 20 Oct 2026, 2:02 PM AWST): "Needs an
  * involuntary-capable bed until status is set." Only a recorded "Voluntary" clears it; a blank,
@@ -243,16 +248,23 @@ function readyBedsNow(unit: Unit): number {
  * own comment for why the movement path is allowed to be lenient.
  */
 
-/** Whether a ward is authorised for an involuntary admission, when the person needs one. */
+/**
+ * Authorisation for an involuntary admission (D-189 items 8(a) and 9(a)). Every ward's authorisation
+ * is "not stated" until Q42 is signed, so the gate never refuses: it is information only, marked as
+ * a need when the person's recorded legal status needs an involuntary-capable bed (the D-69 rule),
+ * and it reads the label every screen shows. The refusal branch is kept behind the one switch,
+ * `authorisationBlocksPlacement`, with D-186 item 8's wording, so the shape is ready when real
+ * authorisations are signed.
+ */
 function authorisationGate(gate: "authorisation" | "legal_status", needed: boolean, unit: Unit): GateResult {
+  if (needed && authorisationBlocksPlacement(unit))
+    return { gate, pass: false, detail: `${unit.name} is not set up for involuntary admissions (demo capability)` };
   return {
     gate,
-    pass: !needed || unit.authorised,
-    detail: needed
-      ? unit.authorised
-        ? `${unit.name} is marked able to take involuntary admissions (demo capability)`
-        : `${unit.name} is not set up for involuntary admissions (demo capability)`
-      : "No authorised destination required",
+    pass: true,
+    info: true,
+    ...(needed ? { need: true as const } : {}),
+    detail: authorisationLabel(unit),
   };
 }
 

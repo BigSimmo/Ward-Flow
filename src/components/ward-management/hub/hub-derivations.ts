@@ -38,7 +38,6 @@ export type HubEntry = {
   /** Ward only. */
   cohort?: string;
   security?: "Open" | "Locked" | "Mixed";
-  authorised?: boolean;
   beds?: number;
   ready?: number;
   /**
@@ -174,7 +173,6 @@ export function hubEntries(input: {
       service: site?.service,
       cohort: unit.cohort,
       security: wardSecurity(unit),
-      authorised: unit.authorised,
       beds: unit.beds,
       // `bedStates().ready` IS Ready, and leaves out beds still being made ready (D-179 item 8);
       // `pendingPreparation` sits beside it as its own number.
@@ -350,17 +348,6 @@ export function networkBeds(entries: HubEntry[]): {
     beds += entry.beds ?? 0;
   }
   return { ready, pulled, closed, occupied, beds, wards };
-}
-
-/**
- * Wards not authorised under the Mental Health Act, by name.
- *
- * ⚠️ **NAMES, NOT A COUNT.** "2 wards not authorised" tells a coordinator there is a problem and
- * not where; the whole value of the line is knowing WHICH ward cannot take the involuntary patient
- * in front of them. The mockup names them for the same reason.
- */
-export function unauthorisedWards(entries: HubEntry[]): HubEntry[] {
-  return entries.filter((entry) => entry.kind === "ward" && entry.authorised === false);
 }
 
 /**

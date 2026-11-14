@@ -22,7 +22,7 @@ About 880 test files replace something (a mocked module, a stubbed browser API, 
 
 ## Low-risk fakes
 
-Framework and presentation stand-ins: `next/link`, `next/navigation`, `next/headers`, `next/dynamic`, `react`, `html-to-image`, `@axe-core/playwright`, `@/components/wf` and its parts, help, tour and statistics display modules, clipboard and download helpers, `node:fs` and `node:child_process` in tooling tests, and `pg` in the M80 scheduled-jobs test (its receipt clean-up tests pass their own pool; the real driver runs in the backend job). The browser journeys render the real ones.
+Framework and presentation stand-ins: `next/link`, `next/navigation`, `next/headers`, `next/dynamic`, `next/font/local`, `react`, `html-to-image`, `@axe-core/playwright`, `@/components/wf` and its parts, help, tour and statistics display modules, clipboard and download helpers, `node:fs` and `node:child_process` in tooling tests, and `pg` in the M80 scheduled-jobs test (its receipt clean-up tests pass their own pool; the real driver runs in the backend job). The browser journeys render the real ones.
 
 ## Every mocked module
 
@@ -78,6 +78,7 @@ The test fails when a test mocks a module not in this list. Add it here, and to 
 @/components/ward-management/statistics/statistics-ed-swarm
 @/components/ward-management/statistics/statistics-hero
 @/components/ward-management/statistics/statistics-summary-phone
+@/components/ward-management/triage/triage-risk-state
 @/components/ward-management/use-online-status
 @/components/ward-management/use-ward-nav-counts
 @/components/ward-management/ward-access-scope
@@ -116,6 +117,7 @@ The test fails when a test mocks a module not in this list. Add it here, and to 
 @axe-core/playwright
 html-to-image
 next/dynamic
+next/font/local
 next/headers
 next/link
 next/navigation

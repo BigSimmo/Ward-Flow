@@ -39,6 +39,7 @@ import {
 } from "./triage-risk-data";
 import { Choice, type FormApi } from "./triage-risk-parts";
 import { isbarText } from "./triage-risk-isbar";
+import { legalLine } from "./triage-risk-people";
 import { FactorRow } from "./triage-risk-risk";
 import { allFactors, type Requirement, type Target } from "./triage-risk-state";
 import {
@@ -66,9 +67,8 @@ const summaryTabs = (alertCount: number, previousCount: number) => [
 const previousOf = (person: TriagePerson): readonly PreviousTriage[] =>
   person.previous ?? (person.last ? [person.last] : []);
 
-/** Who the triage is for, in record words: legal status as typed, never checked. */
-const legalWords = (person: TriagePerson) =>
-  person.legal ? `${person.legal}, ${person.legalTag}` : "Not recorded. Not legally checked.";
+/** Who the triage is for, in record words: legal status on record, never checked (D-186, Q11). */
+const legalWords = (person: TriagePerson) => (person.legal ? legalLine(person) : "Not recorded. Not legally checked.");
 
 /** Where a summary or "Before you sign" item goes: its section, and the field when there is one. */
 export type Jump = (section: SectionId, target?: Target) => void;
@@ -218,12 +218,12 @@ export function SummaryDocument({
   const { state, say } = form;
   const [open, setFull] = useState(false);
   const full = open || Boolean(signed);
-  const model = summaryModel(state, signed);
+  const model = summaryModel(state, signed, form.reviewer);
   const copy = () =>
     copyText(summaryText(model), "Summary copied.", "Copy not allowed here. Select the summary text instead.", say);
   const copyIsbar = () =>
     copyText(
-      isbarText(state, signed),
+      isbarText(state, signed, form.reviewer),
       "iSoBAR copied.",
       "Copy not allowed here. Select the summary text instead.",
       say,
@@ -567,7 +567,8 @@ function PreviousPane({ person }: { person: TriagePerson }) {
             <span className={styles.prevFacts}>
               {[
                 item.outcome,
-                `${item.legal} (as chosen then)`,
+                // D-186 (Q11): a status picked from buttons reads "as chosen"; the row's date already says when.
+                `${item.legal} (as chosen)`,
                 `Review by ${item.review}`,
                 `Signed by ${item.by ?? "–"}`,
               ].join(" · ")}

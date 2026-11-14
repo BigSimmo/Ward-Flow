@@ -436,6 +436,8 @@ export function reduceRecordedLegalEvent(
       if (!isLegalClockFormCode(event.formCode)) {
         return reject(state, event, "That form is not a recognised legal form in this prototype");
       }
+      // D-187 item 6 / D-186 item 5: a continuation with no form on file is accepted. The screen warns
+      // (`followOnFormWarning` in `ward-legal-order-rules.ts`); the engine never refuses for it.
       const expiryHistory =
         event.paperExpiresAt === undefined
           ? movement.legalFormExpiryHistory

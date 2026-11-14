@@ -19,7 +19,13 @@ import {
 import { AHD, LEGAL, OUTCOMES, TIER_LONG, TIERS, WHO_TOLD, type Tier } from "./triage-risk-data";
 import { seeBy } from "./triage-see-by";
 import { perthWallClockDate } from "./triage-risk-text";
-import { FOLLOW_UP_CHOICES, followUpHint, followUpShown, recentDischargeFor } from "./triage-risk-safety";
+import {
+  FOLLOW_UP_CHOICES,
+  FOLLOW_UP_WINDOWS_UNSIGNED,
+  followUpHint,
+  followUpShown,
+  recentDischargeFor,
+} from "./triage-risk-safety";
 import { Choice, PickMany, Reveal, Row, type FormApi } from "./triage-risk-parts";
 import { acuteFlagNames, hasLegalForm } from "./triage-risk-state";
 import styles from "./triage-risk-form.module.css";
@@ -37,11 +43,29 @@ const actionGroupOf = (code: string) => {
 };
 const isTold = (code: string) => WHO_TOLD.some(([action]) => action === code);
 
-export function UrgencyHint({ children }: { children: string }) {
+export function UrgencyHint({ children, unsigned = false }: { children: string; unsigned?: boolean }) {
   return (
     <p className={styles.urgHint}>
       <Icon icon={Info} size={14} />
-      <span>{children}</span>
+      <span>
+        {children}
+        {unsigned ? <b data-testid="triage-hint-unsigned"> Window not signed.</b> : null}
+      </span>
+    </p>
+  );
+}
+
+/**
+ * Review question 6 (labelling only): the see-by window's own "Window not signed." mark, beside
+ * choices whose windows are still unsigned in the values register. It changes no value.
+ */
+export function WindowNotSigned({ testId }: { testId: string }) {
+  return (
+    <p className={styles.urgHint} data-testid={testId}>
+      <Icon icon={Clock} size={14} />
+      <span>
+        <b>Window not signed.</b>
+      </span>
     </p>
   );
 }
@@ -54,6 +78,7 @@ export function DecisionBody({ form }: { form: FormApi }) {
     state.text.revTime,
     perthWallClockDate(form.now),
     state.urgency ? TIER_LONG[state.urgency] : "",
+    form.now,
   );
   const asked = state.person.referral?.urgency ?? null;
   // Follow-up (9 Nov 2026): a hint from marked current risk or a recent discharge on the record; never a choice.
@@ -182,7 +207,8 @@ export function DecisionBody({ form }: { form: FormApi }) {
                 value={state.followUp}
                 onChange={(v) => set("followUp", v)}
               />
-              {followHint ? <UrgencyHint>{followHint}</UrgencyHint> : null}
+              {FOLLOW_UP_WINDOWS_UNSIGNED ? <WindowNotSigned testId="triage-follow-up-unsigned" /> : null}
+              {followHint ? <UrgencyHint unsigned={FOLLOW_UP_WINDOWS_UNSIGNED}>{followHint}</UrgencyHint> : null}
               {state.followUp === "none" ? (
                 <TextInput
                   id="triage-follow-up-why"

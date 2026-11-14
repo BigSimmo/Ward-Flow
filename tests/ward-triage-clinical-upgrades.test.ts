@@ -177,7 +177,8 @@ describe("follow-up", () => {
     expect(followUpText(state)).toBe("Within 72 h, Community team to contact");
     expect(summaryText(summaryModel(state))).toContain("Follow-up: Within 72 h, Community team to contact");
     expect(isbarText(state).split("\n").at(-1)).toBe(
-      "R Recommendation: Actions – · Review risk by – · Follow-up Within 72 h, Community team to contact",
+      // D-187 item 17 (Q39): the safety plan's Plan and Crisis lines come before the follow-up.
+      "R Recommendation: Actions – · Review risk by – · Plan – · Crisis – · Follow-up Within 72 h, Community team to contact",
     );
     expect(followUpText({ ...state, followUp: "none", text: { ...state.text, followUpWhy: "Has GP Monday" } })).toBe(
       "Not needed: Has GP Monday",

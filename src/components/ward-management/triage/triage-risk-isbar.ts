@@ -4,7 +4,8 @@
  * disagree. A value not on the form prints "–"; nothing is invented. The UMRN sits on its own line,
  * which the copy helper drops (ward-clipboard.ts), so it never leaves the app. Synthetic data only.
  */
-import { FACTOR_NAME, SIGNED_IN, TIER_LONG } from "./triage-risk-data";
+import { FACTOR_NAME, TIER_LONG } from "./triage-risk-data";
+import { DEFAULT_REVIEWER } from "./triage-signer";
 import { allFactors, mseLines, type TriageState } from "./triage-risk-state";
 import { summaryModel, type DocValue, type SignedBy, type SummaryModel } from "./triage-risk-summary";
 import { parseHeadedText } from "./triage-risk-text";
@@ -42,12 +43,28 @@ function tags(model: SummaryModel, letter: string, label: string): string | null
   return block?.kind === "tags" && block.items.length ? block.items.join(", ") : null;
 }
 
+/**
+ * D-187 item 17 (Q39): the safety plan's lines under one heading ("Plan" or "Crisis", with any
+ * bracketed note kept), as written. Nothing is cut, so a crisis number keeps the "(Not checked)"
+ * mark step 5 writes beside it (D-186 item 12, `serviceText`). Null when the heading holds nothing.
+ */
+function planLines(entries: readonly [string, string][], heading: "Plan" | "Crisis"): string | null {
+  const lines = entries
+    .filter(([name]) => name === heading || name.startsWith(`${heading} (`))
+    .map(([name, body]) => {
+      const note = name.slice(heading.length).trim();
+      return `${note ? `${note} ` : ""}${body.trim()}`;
+    })
+    .filter(Boolean);
+  return lines.length ? lines.join(" ") : null;
+}
+
 const short = (text: string) => (text.length > MSE_CHARS ? `${text.slice(0, MSE_CHARS - 1).trimEnd()}…` : text);
 const or = (text: string | null | undefined) => (text && text.trim() ? text.trim() : NONE);
 
 /** The triage as iSoBAR lines: Identify, Situation, Observations, Background, Assessment, Recommendation. */
-export function isbarText(state: TriageState, signed?: SignedBy): string {
-  const model = summaryModel(state, signed);
+export function isbarText(state: TriageState, signed?: SignedBy, reviewer = DEFAULT_REVIEWER): string {
+  const model = summaryModel(state, signed, reviewer);
   const person = state.person;
   const factors = allFactors(state);
   const present = (kind: "bg" | "now") => factors.filter((f) => f.kind === kind && f.mark === "y");
@@ -55,7 +72,8 @@ export function isbarText(state: TriageState, signed?: SignedBy): string {
   const nowFlags = present("now").filter((f) => f.key !== RECENT_DISCHARGE);
   const discharged = state.f[RECENT_DISCHARGE] === "y";
   const followUp = followUpText(state);
-  const protective = parseHeadedText(state.text.rp).find(([heading]) => heading.startsWith("Protective"))?.[1];
+  const plan = parseHeadedText(state.text.rp);
+  const protective = plan.find(([heading]) => heading.startsWith("Protective"))?.[1];
   const stream = fact(model, "1", "Stream");
   const program = fact(model, "1", "Program");
   const mental = mseLines(state)
@@ -64,12 +82,13 @@ export function isbarText(state: TriageState, signed?: SignedBy): string {
 
   return [
     "iSoBAR handover · synthetic",
-    `I Identify: ${or(signed?.by ?? SIGNED_IN)} · ${stream || program ? [stream, program].filter(Boolean).join(", ") : NONE} · ${or(person.name)}, ${or(person.meta.split(" · ")[1])}`,
+    `I Identify: ${or(signed?.by ?? reviewer)} · ${stream || program ? [stream, program].filter(Boolean).join(", ") : NONE} · ${or(person.name)}, ${or(person.meta.split(" · ")[1])}`,
     `UMRN: ${or(person.umrn)}`,
     `S Situation: Urgency ${state.urgency ? `${state.urgency}, ${TIER_LONG[state.urgency].toLowerCase()}` : NONE} · Outcome ${or(state.outcome)} · Legal ${or(fact(model, "4", "Legal"))}`,
     `O Observations: ${mental.length ? mental.join("; ") : NONE}`,
     `B Background: Past risk ${pastFlags.length ? pastFlags.join(", ") : NONE}${discharged ? ` · ${FACTOR_NAME[RECENT_DISCHARGE]}` : ""}`,
     `A Assessment: Current risk ${nowFlags.length ? nowFlags.map((f) => f.name).join(", ") : NONE}${protective?.trim() ? ` · Protective: ${protective.trim()}` : ""}`,
-    `R Recommendation: Actions ${or(tags(model, "4", "Actions"))} · Review risk by ${or(fact(model, "6", "Review risk by"))}${followUp ? ` · Follow-up ${followUp}` : ""}`,
+    // D-187 item 17 (Q39): the safety plan's Plan and Crisis lines, in the plan's heading order.
+    `R Recommendation: Actions ${or(tags(model, "4", "Actions"))} · Review risk by ${or(fact(model, "6", "Review risk by"))} · Plan ${or(planLines(plan, "Plan"))} · Crisis ${or(planLines(plan, "Crisis"))}${followUp ? ` · Follow-up ${followUp}` : ""}`,
   ].join("\n");
 }

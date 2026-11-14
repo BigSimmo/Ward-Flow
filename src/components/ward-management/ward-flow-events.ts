@@ -492,6 +492,8 @@ export type WardFlowEvent =
        * in `docs/ward-flow/fields-with-no-producer-2026-09-01.md`.
        */
       provider?: TransportProvider;
+      /** D-187 item 10: handover ready with fit to travel not recorded, and why. Never required. */
+      exception?: TransportExceptionInput;
     }
   | { type: "TRANSPORT_ACCEPTED"; role: WardFlowRole; now: Instant; movementId: string }
   | { type: "TRANSPORT_EN_ROUTE"; role: WardFlowRole; now: Instant; movementId: string }

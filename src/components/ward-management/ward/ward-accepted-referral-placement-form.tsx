@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState, type FormEvent } from "react";
+import { StateLine } from "@/components/wf";
 import { useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
 import { allEmergencyDepartments } from "../ward-sites";
@@ -14,6 +15,7 @@ import { patientIdentityLine } from "../ward-patient-resolver";
 import styles from "./ward.module.css";
 import {
   INTERMITTENT_INTERVAL_MINUTES,
+  NO_INTERVAL_ERROR,
   OBSERVATION_LEVELS,
   observationAt,
   observationLevelName,
@@ -56,9 +58,10 @@ export function WardAcceptedReferralPlacementForm({
     legalFormCode: string;
     /** Fix plan item 10: unanswered ("") until the ward chooses a level. */
     observation: ObservationLevel | "";
-    /** Intermittent only: minutes between checks, as the ED intake form asks. */
-    intervalMinutes: number;
+    /** Intermittent only: minutes between checks, as the ED intake form asks. D-187 item 19: `null` until chosen. */
+    intervalMinutes: number | null;
   } | null>(null);
+  const [intervalError, setIntervalError] = useState<string | null>(null);
   const currentDraft = useRef(placementDraft);
   useLayoutEffect(() => {
     currentDraft.current = placementDraft;
@@ -92,6 +95,13 @@ export function WardAcceptedReferralPlacementForm({
     const legalStatus = LEGAL_STATUS_OPTIONS.find((status) => status === placementDraft.legalStatus);
     const observationLevel = placementDraft.observation;
     if (!current || !legalStatus || !placementDraft.legalFormCode || observationLevel === "") return;
+    // D-187 item 19 (Q44): Intermittent needs an interval someone chose; none starts chosen.
+    const intervalMinutes = placementDraft.intervalMinutes;
+    if (observationLevel === "intermittent" && intervalMinutes === null) {
+      setIntervalError(NO_INTERVAL_ERROR);
+      return;
+    }
+    setIntervalError(null);
     const { entry, cohort, ed } = current;
     const mismatch = legalStatusMismatchWarning(entry.destination.involuntaryBedNeeded, legalStatus);
     completeCommand(
@@ -110,7 +120,7 @@ export function WardAcceptedReferralPlacementForm({
             highAcuity: entry.destination.highAcuityNursingNeeded === true,
             observation:
               observationLevel === "intermittent"
-                ? { ...observationAt(observationLevel), intervalMinutes: placementDraft.intervalMinutes }
+                ? { ...observationAt(observationLevel), intervalMinutes }
                 : observationAt(observationLevel),
             legalStatus,
             legalFormCode: placementDraft.legalFormCode === "none" ? null : placementDraft.legalFormCode,
@@ -214,11 +224,16 @@ export function WardAcceptedReferralPlacementForm({
                 <label>
                   Check every
                   <select
-                    value={placementDraft.intervalMinutes}
-                    onChange={(event) =>
-                      setPlacementDraft({ ...placementDraft, intervalMinutes: Number(event.target.value) })
-                    }
+                    data-testid="ward-accepted-placement-interval"
+                    value={placementDraft.intervalMinutes ?? ""}
+                    aria-invalid={intervalError !== null || undefined}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setPlacementDraft({ ...placementDraft, intervalMinutes: value === "" ? null : Number(value) });
+                      if (value !== "") setIntervalError(null);
+                    }}
                   >
+                    <option value="">Choose how often to check</option>
                     {INTERMITTENT_INTERVAL_MINUTES.map((minutes) => (
                       <option key={minutes} value={minutes}>
                         {minutes} minutes
@@ -226,6 +241,14 @@ export function WardAcceptedReferralPlacementForm({
                     ))}
                   </select>
                 </label>
+              ) : null}
+              {intervalError && placementDraft.observation === "intermittent" ? (
+                <StateLine
+                  kind="error"
+                  compact
+                  title={intervalError}
+                  data-testid="ward-accepted-placement-interval-error"
+                />
               ) : null}
               <div className={styles.placementActions}>
                 <button
@@ -248,15 +271,16 @@ export function WardAcceptedReferralPlacementForm({
             <button
               type="button"
               className={styles.btnActionSec}
-              onClick={() =>
+              onClick={() => {
+                setIntervalError(null);
                 setPlacementDraft({
                   referralId: entry.id,
                   legalStatus: LEGAL_STATUS_OPTIONS.find((status) => status === entry.intake?.legalStatus) ?? "",
                   legalFormCode: "",
                   observation: "",
-                  intervalMinutes: INTERMITTENT_INTERVAL_MINUTES[0],
-                })
-              }
+                  intervalMinutes: null,
+                });
+              }}
             >
               Start placement
             </button>

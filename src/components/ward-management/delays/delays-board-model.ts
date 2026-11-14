@@ -149,16 +149,23 @@ export function dueTone(dueIn: number | undefined, thresholds: DueSoonThresholds
   return undefined;
 }
 
-/** One shape per person on the spread chart: act now, at risk or waiting. */
+/**
+ * One shape per person on the spread chart: act now, at risk or waiting. A typed legal time keeps its
+ * own tone; the wait alone is amber from 8 to 24 hours and neutral past 24 hours (`waitTone`).
+ */
 export function rowTone(row: BoardRow, thresholds: DueSoonThresholds): "danger" | "warning" | "neutral" {
   const legal = dueTone(row.dueIn, thresholds);
-  if (row.waited >= OVER_24H || legal === "danger") return "danger";
-  if (row.waited >= OVER_8H || legal === "warning") return "warning";
+  if (legal === "danger") return "danger";
+  if (legal === "warning" || waitTone(row.waited) === "warning") return "warning";
   return "neutral";
 }
 
-export function waitTone(waited: number): "danger" | "warning" | undefined {
-  if (waited >= OVER_24H) return "danger";
+/**
+ * D-24, restored by D-194 (Josh, 13 Nov 2026): a wait past 24 hours is Josh's default, never a limit,
+ * so it is neutral, not act-now red. 8 to 24 hours stays amber.
+ */
+export function waitTone(waited: number): "warning" | undefined {
+  if (waited >= OVER_24H) return undefined;
   if (waited >= OVER_8H) return "warning";
   return undefined;
 }

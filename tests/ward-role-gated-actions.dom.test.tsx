@@ -272,7 +272,8 @@ function TransportForm({ save }: { save: () => void }) {
       estimatedTime: "23:30",
       estimatedDay: "today",
     },
-    transportLegalReason: "",
+    // D-187 item 10: the seeded movement has no medical clearance recorded, so a reason is an answer too.
+    transportLegalReason: "treating_team_confirmed",
   } satisfies PatientTransportSectionContext;
   return <>{renderTransportSection(ctx)}</>;
 }

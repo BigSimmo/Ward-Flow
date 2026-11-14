@@ -35,28 +35,30 @@ describe("Record details says each fact once", () => {
   it("shows one legal status and no placement sex or gender when the record and the movement agree", () => {
     const pane = renderDetails(open, patient);
     expect(pane.getByText("Legal status")).toBeInTheDocument();
-    expect(pane.queryByText("Patient legal status")).not.toBeInTheDocument();
-    expect(pane.queryByText("Movement legal status")).not.toBeInTheDocument();
+    expect(pane.queryByText("Patient record")).not.toBeInTheDocument();
+    expect(pane.queryByText(/^This (ED stay|move)$/)).not.toBeInTheDocument();
     expect(pane.queryByText("Placement sex")).not.toBeInTheDocument();
     expect(pane.queryByText("Placement gender")).not.toBeInTheDocument();
   });
 
-  // A16-09 (Josh, 13 Nov 2026): one current legal status in every view. When the stay and the
-  // patient record differ, the stay's status is the one shown, never two lines.
-  it("shows one legal status, the stay's, when the stay and the patient record differ", () => {
+  // A16-09 (Josh, 13 Nov 2026) read one current legal status; D-187 item 1 (Q19, later the same
+  // evening) keeps both when the stay and the patient record differ, each named plainly.
+  it("shows the stay's status and the patient record's, named plainly, when they differ", () => {
     const other = open.legalStatus === "Voluntary" ? "Involuntary inpatient" : "Voluntary";
     const pane = renderDetails(open, { ...patient, legalStatus: other as Patient["legalStatus"] });
-    expect(pane.getByText("Legal status")).toBeInTheDocument();
+    // D-187 item 1 (Q19): named plainly.
+    expect(pane.getByText(/^This (ED stay|move)$/)).toBeInTheDocument();
+    expect(pane.getByText("Patient record")).toBeInTheDocument();
     expect(pane.getByText(open.legalStatus)).toBeInTheDocument();
-    expect(pane.queryByText("Movement legal status")).not.toBeInTheDocument();
-    expect(pane.queryByText("Patient legal status")).not.toBeInTheDocument();
   });
 
-  it("shows the stay's status, and no second row, when only the stay has one recorded", () => {
+  it("shows the stay's status and the patient record as not recorded, when only the stay has one", () => {
     const pane = renderDetails(open, { ...patient, legalStatus: undefined });
-    expect(pane.getByText("Legal status")).toBeInTheDocument();
+    // D-187 item 1 (Q19): named plainly.
+    expect(pane.getByText(/^This (ED stay|move)$/)).toBeInTheDocument();
+    expect(pane.getByText("Patient record")).toBeInTheDocument();
     expect(pane.getByText(open.legalStatus)).toBeInTheDocument();
-    expect(pane.queryByText("Patient legal status")).not.toBeInTheDocument();
+    expect(pane.queryByText("Legal status")).not.toBeInTheDocument();
   });
 
   it("writes the date of birth as DD/MM/YYYY, the header's format", () => {

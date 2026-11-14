@@ -1,4 +1,5 @@
 import type { LegalStatus } from "./ward-model";
+import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning";
 
 /**
  * Findings 6 and 78 (Josh, 27 Oct 2026): a legal form that does not fit the legal status is a
@@ -7,6 +8,9 @@ import type { LegalStatus } from "./ward-model";
  * no form for a status that rests on one. Which form fits which status is not judged here.
  *
  * `formCode` is the chosen form's code, `null` for "No form", or `undefined` while unanswered.
+ *
+ * D-186 item 5: this is the pairing half of the legal order rules, which live together in
+ * `ward-legal-order-rules.ts` (`legalRecordWarnings`) for the record actions and the sample check.
  */
 export function legalFormStatusWarning(
   legalStatus: LegalStatus | "" | undefined,
@@ -16,7 +20,7 @@ export function legalFormStatusWarning(
   if (legalStatus === "Voluntary" && formCode !== null) {
     return `Check the legal form: Form ${formCode} is chosen, but the legal status is Voluntary.`;
   }
-  if (legalStatus !== "Voluntary" && formCode === null) {
+  if (isNotVoluntary(legalStatus) && formCode === null) {
     return `Check the legal form: no form is chosen, but the legal status is ${legalStatus}.`;
   }
   return null;

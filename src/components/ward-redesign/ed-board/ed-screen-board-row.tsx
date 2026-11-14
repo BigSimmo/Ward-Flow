@@ -8,7 +8,7 @@
 // One board row: what the row knows about its person, and how it is put together as a board table
 // row (wider screens) or a phone list row. Split out of `ed-screen.tsx` unchanged (fix list 2.5 and
 // 9.6, 15 Oct 2026).
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { communityTeamOptionsForSuburb } from "@/components/ward-management/referrals/referral-destination-options";
 import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -50,7 +50,12 @@ import {
   renderEdRowFacts,
 } from "@/components/ward-redesign/legal-copies/ed-screen-row-facts";
 import { renderEdRowForms } from "@/components/ward-management/ed/ed-screen-row-forms";
-import { renderEdRowMenuItems, renderEdRowNextGroup } from "@/components/ward-management/ed/ed-screen-row-menu";
+import {
+  EdHandoverCheck,
+  pressEdHandoverReady,
+  renderEdRowMenuItems,
+  renderEdRowNextGroup,
+} from "@/components/ward-management/ed/ed-screen-row-menu";
 
 /** What one board row knows about its person: clocks, blocked reasons, open panels and its next step. */
 function edBoardRowModel(movement: Movement, ctx: EdScreenContext) {
@@ -63,7 +68,6 @@ function edBoardRowModel(movement: Movement, ctx: EdScreenContext) {
     referrals,
     registryPatients,
     thisEdId,
-    recordEdStep,
     examinationOpenFor,
     edOutcomeOpenFor,
     setEdOutcomeOpenFor,
@@ -93,7 +97,7 @@ function edBoardRowModel(movement: Movement, ctx: EdScreenContext) {
   const examBlocked = examinationBlockedReason(movement, patientInfo.displayName);
   const handoverBlocked = handoverBlockedReason(movement, patientInfo.displayName);
   const transportBlocked = bookTransportBlockedReason(movement, patientInfo.displayName);
-  const transportLegalFormWarning = transportLegalFormNotice(movement);
+  const transportLegalFormWarning = transportLegalFormNotice(movement, units);
   const transportOpen = transportOpenFor === movement.id;
   const withdrawBlocked = withdrawReferralBlockedReason(movement, patientInfo.displayName);
   const withdrawOpen = withdrawOpenFor === movement.id;
@@ -230,13 +234,9 @@ function edBoardRowModel(movement: Movement, ctx: EdScreenContext) {
                   label: "Handover ready",
                   blocked: handoverBlocked,
                   describedBy: `ward-ed-handover-unavailable-${movement.id}`,
-                  run: () =>
-                    recordEdStep({
-                      type: "HANDOVER_READY",
-                      role: "ed",
-                      now,
-                      movementId: movement.id,
-                    }),
+                  // D-187 item 10: the same press as the live board, so it asks for the fit to
+                  // travel reason when no medical clearance is recorded (never a block).
+                  run: () => pressEdHandoverReady({ movement, medicalClearance }, ctx),
                 }
               : undefined;
 
@@ -388,9 +388,22 @@ export function renderEdBoardRow(
         controls,
       })
     : null;
+  // D-187 item 10: the row's Mark handover ready reason dialog, as on the live board. It renders
+  // nothing until asked, and then into the page's overlay layer.
+  const handoverCheck = <EdHandoverCheck row={row} ctx={ctx} />;
   if (boardTable) {
     if (sheetOpen) onTableSheet(personSheet);
-    return renderEdBoardTableRow(row, ctx, { facts, menuItems, nextGroupBody, sheetOpen, phoneBay });
+    return (
+      <Fragment key={movement.id}>
+        {renderEdBoardTableRow(row, ctx, { facts, menuItems, nextGroupBody, sheetOpen, phoneBay })}
+        {handoverCheck}
+      </Fragment>
+    );
   }
-  return renderEdBoardPhoneRow(row, ctx, { personSheet, phoneBay });
+  return (
+    <Fragment key={movement.id}>
+      {renderEdBoardPhoneRow(row, ctx, { personSheet, phoneBay })}
+      {handoverCheck}
+    </Fragment>
+  );
 }

@@ -8,7 +8,12 @@ import { gateMark, type EligibilityGate, type GateResult } from "@/components/wa
  */
 const FIT_GROUPS: readonly { label: string; gates: readonly EligibilityGate[] }[] = [
   { label: "Sex", gates: ["gender_designation", "sex_mix"] },
-  { label: "Security", gates: ["security", "legal_status", "authorisation", "forensic"] },
+  { label: "Security", gates: ["security", "forensic"] },
+  // Review R7 (D-189 items 8(a), 9(a)): authorisation is its own group, never folded into a met
+  // security gate. While every ward reads "not stated" its gate is information only, so a person
+  // whose recorded status needs an involuntary-capable bed reads "Check authorisation". On the
+  // referral path the same gate is named `legal_status`.
+  { label: "Authorisation", gates: ["legal_status", "authorisation"] },
   { label: "Age", gates: ["age", "cohort"] },
   { label: "Special care", gates: ["specialling", "acuity"] },
 ];
@@ -22,7 +27,7 @@ export function fitLine(gates: readonly GateResult[]): FitLine {
     if (marks.length === 0) continue;
     if (marks.includes("not_met")) line.notMet.push(group.label);
     else if (marks.includes("met")) line.met.push(group.label);
-    // Information-only groups (special care) ask for a check only when the patient has that need.
+    // Information-only groups (special care, authorisation) ask for a check only when the patient has that need.
     else if (gates.some((gate) => group.gates.includes(gate.gate) && gate.need)) line.toConfirm.push(group.label);
   }
   return line;

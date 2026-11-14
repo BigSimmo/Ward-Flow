@@ -1,3 +1,6 @@
+import type { Unit } from "@/components/ward-management/ward-model";
+import { authorisationLabel } from "@/components/ward-management/ward-authorisation";
+import { SAMPLE_OBSERVATION_MIX_LABEL } from "@/components/ward-management/ward-sample-choices";
 import { wardSafeRejectionReason } from "./ward-rejection-text";
 
 /**
@@ -16,4 +19,16 @@ export function notRecordedMessage(message?: string): string {
 export function namedNotRecordedMessage(reason: string, who: string): string {
   const said = wardSafeRejectionReason(reason);
   return notRecordedMessage(said.includes(who) ? said : `${who}: ${said}`);
+}
+
+/**
+ * The Ward page's header and footer labels, kept here so the page stays within its line limit.
+ * D-189 items 6 and 8(a): no ward is shown as authorised or not until Q42 is signed. D-189: the
+ * observation levels are a sample mix, and the footer says so.
+ */
+export function wardLabels(unit: Pick<Unit, "authorised" | "name">): { authorisation: string; governanceNote: string } {
+  return {
+    authorisation: authorisationLabel(unit),
+    governanceNote: `Scoped to ${unit.name} · Bed decisions remain human-confirmed · Not approved for clinical use · Observation levels: ${SAMPLE_OBSERVATION_MIX_LABEL.toLowerCase()}`,
+  };
 }

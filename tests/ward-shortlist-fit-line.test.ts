@@ -17,7 +17,8 @@ describe("shortlist fit line", () => {
       gate("gender_designation", true),
       gate("sex_mix", true),
       gate("security", true),
-      gate("legal_status", true),
+      // Review R7: the legal_status gate is now the information-only authorisation gate; no need here.
+      gate("legal_status", true, true),
       gate("age", false),
       gate("specialling", true, true, true),
       gate("allocatable_bed", true),

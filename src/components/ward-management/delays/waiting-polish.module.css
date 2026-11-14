@@ -404,6 +404,9 @@ button.strip:disabled {
 .nxStat[data-tone="danger"] {
   --tone: var(--wf-danger);
 }
+.nxStat[data-tone="neutral"] {
+  --tone: var(--wf-neutral);
+}
 .nxStatIcon {
   display: inline-flex;
   align-items: center;
@@ -506,6 +509,9 @@ button.strip:disabled {
 }
 .nxRun[data-tone="danger"] {
   --tone: var(--wf-danger);
+}
+.nxRun[data-tone="neutral"] {
+  --tone: var(--wf-neutral);
 }
 .nxRun {
   position: absolute;
@@ -677,13 +683,6 @@ button.strip:disabled {
 }
 .spread [class*="gGrid"] {
   opacity: 0.55;
-}
-.spread [class*="gBeyond"] {
-  background: repeating-linear-gradient(
-    135deg,
-    transparent 0 6px,
-    color-mix(in srgb, var(--wf-line) 70%, transparent) 6px 7px
-  );
 }
 .spread [class*="gTicks"] {
   font-size: var(--wf-fs-12);
@@ -1120,8 +1119,9 @@ button.strip:disabled {
 .ownLongest[data-band="2"] {
   color: var(--wf-warning-ink);
 }
+/* D-24, restored by D-194 item 3 (review R5): past 24 hours is neutral here too, never act-now red. */
 .ownLongest[data-band="3"] {
-  color: var(--wf-danger-ink);
+  color: var(--wf-ink-1);
 }
 .ownBar.ownBar {
   height: 6px;

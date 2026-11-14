@@ -34,7 +34,7 @@ import {
 } from "@/components/ward-management/referrals/referral-submission";
 import { documentLabel } from "@/components/ward-management/referrals/referral-document-links";
 import { riskFlagLabel } from "@/components/ward-management/referrals/referral-risk-flags";
-import { FIT_NOT_CHECKED_LINE, referralFit, type ReferralFit } from "./ward-referral-fit";
+import { FIT_TO_CHECK_HEADING, fitToCheck, referralFit, type ReferralFit } from "./ward-referral-fit";
 import styles from "./ward-referral-detail.module.css";
 import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
@@ -149,6 +149,7 @@ export function WardReferralDetail({
   if (openDocument) return <DocumentViewer document={openDocument} onBack={() => setOpenDocumentId(null)} />;
 
   const riskFlags = intake?.riskFlags ?? dossier?.riskFlags ?? [];
+  const toCheck = fitToCheck(movement, intake, dossier, now, riskFlagLabel);
   const reason = intake?.reasonForReferral ?? dossier?.reasonForReferral;
   const diagnosis = tentativeDiagnosisPhrase(movement.tentativeDiagnosis ?? null) ?? dossier?.workingDiagnosis;
   // Audit 24-1 A-03: the chip reads recorded facts only, as the answer card does. The seeded
@@ -281,7 +282,7 @@ export function WardReferralDetail({
           <div>
             {fit.patientIssues.length === 0 ? (
               <>
-                <strong>Passes the {fit.patientTotal} bed checks.</strong> {FIT_NOT_CHECKED_LINE}
+                <strong>Passes the {fit.patientTotal} bed checks.</strong>
               </>
             ) : (
               <>
@@ -289,6 +290,22 @@ export function WardReferralDetail({
               </>
             )}
             <small>Checks: {fit.patientCheckNames.join(", ")}.</small>
+          </div>
+        </div>
+        {/* D-187 item 9: recorded facts to check, never a fail and never counted above. */}
+        <div className={styles.fitRow} data-testid="ward-referral-fit-to-check">
+          <span className={styles.dot} aria-hidden="true" />
+          <div>
+            <strong>{FIT_TO_CHECK_HEADING}</strong>
+            {toCheck.map((row) => (
+              <small key={row.key} data-testid={`ward-referral-fit-to-check-${row.key}`}>
+                {row.label}: {row.value}
+              </small>
+            ))}
+            {/* Josh, 13 Nov 2026 (go question 3): only when the recorded status needs it. */}
+            {fit.authorisationToCheck ? (
+              <small data-testid="ward-referral-fit-to-check-authorisation">{fit.authorisationToCheck}</small>
+            ) : null}
           </div>
         </div>
         {fit.wardIssues.length > 0 ? (

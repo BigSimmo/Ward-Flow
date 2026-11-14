@@ -50,7 +50,8 @@ import {
   type FlagGroup,
 } from "./triage-risk-data";
 import { labelOf, PSOLIS_ACTIONS } from "./triage-psolis-lists";
-import { UrgencyHint } from "./triage-risk-decision";
+import { REVIEW_WINDOWS_UNSIGNED } from "./triage-record";
+import { UrgencyHint, WindowNotSigned } from "./triage-risk-decision";
 import { autoRows, Choice, GuideBox, MultiChips, Reveal, Row, useDisclosure, type FormApi } from "./triage-risk-parts";
 import { useHeadedBox } from "./triage-risk-review";
 import {
@@ -814,6 +815,7 @@ export function PlanBody({ form }: { form: FormApi }) {
         </Row>
         <Row label="Review risk by" hint="Next RAMP due; sooner after any big change">
           <Choice label="Review risk by" options={REVIEW} value={state.review} onChange={(v) => set("review", v)} />
+          {REVIEW_WINDOWS_UNSIGNED ? <WindowNotSigned testId="triage-review-unsigned" /> : null}
           {urgent && state.review !== "24h" ? (
             // No typed window here (invented-figures guard): the choices above carry the times.
             <UrgencyHint>{`Urgency ${state.urgency}: consider the earliest risk review. You choose.`}</UrgencyHint>

@@ -123,7 +123,7 @@ test.describe("@mockup triage and risk", () => {
     const dialog = page.getByTestId("triage-sign-dialog");
     await dialog.getByRole("button", { name: "Sign", exact: true }).click();
     await expect(page.getByTestId("triage-signed")).toBeVisible();
-    await expect(page.getByTestId("triage-signed-tag")).toContainText("by Dr S. Orlenby");
+    await expect(page.getByTestId("triage-signed-tag")).toContainText("by Bed coordinator");
 
     await page.getByTestId("triage-signed").getByRole("link", { name: "Open patient record" }).click();
     await expect(page).toHaveURL(/\/ward-flow\/people\/[^/]+$/);

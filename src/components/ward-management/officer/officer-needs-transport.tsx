@@ -15,7 +15,7 @@ import {
 } from "@/components/ward-management/ed/ed-blocked-reasons";
 import { formatSince, type Instant } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
-import { legalNowText } from "@/components/ward-management/ward-transport-checks";
+import { legalNowText, TRANSPORT_EXCEPTION_GAP_LABELS } from "@/components/ward-management/ward-transport-checks";
 import {
   BLANK_TRANSPORT_BOOKING,
   TransportBookingForm,
@@ -24,7 +24,7 @@ import {
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
 import type { TransportExceptionReason } from "@/components/ward-management/ward-model";
-import type { TransportBookingAnswers } from "@/components/ward-management/ward-transport-checks";
+import type { TransportBookingAnswers, TransportSiteUnits } from "@/components/ward-management/ward-transport-checks";
 import { useDirtyStateGuard } from "../use-dirty-state-guard";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
@@ -148,6 +148,8 @@ type NeedsTransportProps = {
   umrnFor: (movement: Movement) => string | undefined;
   originShortFor: (movement: Movement) => string;
   destinationLabelFor: (movement: Movement) => string;
+  /** The live wards, so the paperwork notice reads the destination's site (D-186 item 6). */
+  units: TransportSiteUnits;
   onLog: (movementId: string) => void;
 };
 
@@ -160,6 +162,7 @@ export function NeedsTransportCard({
   umrnFor,
   originShortFor,
   destinationLabelFor,
+  units,
   onLog,
 }: NeedsTransportProps) {
   const [showAll, setShowAll] = useState(false);
@@ -186,8 +189,11 @@ export function NeedsTransportCard({
             const umrn = umrnFor(movement);
             const current = movement.id === bookingId;
             const clock = heldClock(movement, now);
-            // WLQ-5: the record's own fact, as a warning beside the row. Never a block.
-            const formGap = transportLegalFormNotice(movement) ? "No Form 4A recorded" : undefined;
+            // WLQ-5: the record's own fact, as a warning beside the row. Never a block. The words come
+            // from the one paperwork rule (D-186 item 6, D-170 item 5: no form number).
+            const formGap = transportLegalFormNotice(movement, units)
+              ? TRANSPORT_EXCEPTION_GAP_LABELS.transport_order_missing
+              : undefined;
             const next = index === 0;
             return (
               <li

@@ -62,7 +62,8 @@ type TriageOutcome = (typeof OUTCOMES)[number];
  */
 export const LEGAL = [
   ["vol", "Voluntary"],
-  ["ref", "Referred (Form 1A)"],
+  // D-187 item 18 (TW-107): the approved status words (D-170 item 4, D-187 item 2), not tied to a form number.
+  ["ref", "Referred for psychiatric examination"],
   ["det", "Detained"],
   ["cto", "Community treatment order"],
   ["ito", "Inpatient treatment order"],
@@ -73,13 +74,24 @@ export const TRIAGE_LEGAL_CODES: readonly TriageLegalCode[] = LEGAL.map(([code])
 
 /** When risk is to be reviewed, as chosen on the form. */
 export const REVIEW = [
-  ["24h", "24 hours"],
-  ["72h", "72 hours"],
-  ["7d", "7 days"],
+  ["24h", `${CLINICAL_VALUES.triageReviewRiskSoon.value} hours`],
+  ["72h", `${CLINICAL_VALUES.triageReviewRiskMid.value} hours`],
+  ["7d", `${CLINICAL_VALUES.triageReviewRiskWeek.value} days`],
   ["move", "At transfer"],
   ["dis", "At discharge"],
 ] as const;
 export type TriageReviewCode = (typeof REVIEW)[number][0];
+/**
+ * Review question 6 (labelling only): true while any "Review risk by" window is unsigned in the values
+ * register, so the form marks the choices "Window not signed." as the see-by window is marked.
+ */
+export const REVIEW_WINDOWS_UNSIGNED = (
+  [
+    CLINICAL_VALUES.triageReviewRiskSoon,
+    CLINICAL_VALUES.triageReviewRiskMid,
+    CLINICAL_VALUES.triageReviewRiskWeek,
+  ] as readonly { status: string }[]
+).some((entry) => entry.status !== "signed");
 export const TRIAGE_REVIEW_CODES: readonly TriageReviewCode[] = REVIEW.map(([code]) => code);
 
 /** The most RAMP factors one record may name (the form has fewer than sixty). */

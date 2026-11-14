@@ -60,11 +60,10 @@ export type DischargeCriteriaStatus =
 
 export type CriteriaEligibility = "voluntary" | "involuntary" | "cto" | "not_recorded";
 
-export const CRITERIA_VOLUNTARY_ONLY =
-  "Criteria led discharge is for voluntary patients only. An involuntary patient's discharge waits for the psychiatrist to revoke the order.";
+export const CRITERIA_VOLUNTARY_ONLY = "Criteria led discharge is switched on for voluntary patients only.";
 
 export const CRITERIA_CTO_EXCLUDED =
-  "Criteria led discharge is not used for a patient on a community treatment order. Their discharge waits for the treating psychiatrist.";
+  "Criteria led discharge is not used for a patient on a community treatment order. It is switched on for voluntary patients only.";
 
 export const CRITERIA_STATUS_NOT_RECORDED =
   "Criteria led discharge needs the patient recorded as voluntary. Check and record the legal status first.";

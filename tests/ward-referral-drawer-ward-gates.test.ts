@@ -17,8 +17,9 @@ describe("referral form ward refusals in words", () => {
     );
   });
 
-  it("says a ward not set up for involuntary admissions refuses a Form 1A", () => {
-    expect(wardRefusalWords(unit("sjgs-adult-open"), ward("sjgs-adult-open", "Male", "Form 1A"), "Adult", 0)).toBe(
+  // D-189 items 8(a) and 9(a): until Q42 is signed a ward the sample data flags false is not refused.
+  it("D-189: gives no authorisation refusal for a Form 1A at a ward the sample data flags false", () => {
+    expect(wardRefusalWords(unit("sjgs-adult-open"), ward("sjgs-adult-open", "Male", "Form 1A"), "Adult", 0)).not.toBe(
       "Not set up for involuntary admissions",
     );
   });

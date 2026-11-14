@@ -12,7 +12,6 @@ import {
   LEGAL,
   MSE,
   REVIEW,
-  SIGNED_IN,
   TIER_LONG,
   WHO_TOLD,
   type SectionId,
@@ -28,6 +27,7 @@ import {
   sinceLastText,
   type TriageState,
 } from "./triage-risk-state";
+import { DEFAULT_REVIEWER } from "./triage-signer";
 import {
   ALL_PROGRAMS,
   PROGRAMS,
@@ -57,7 +57,7 @@ export type DocPart = { letter: string; title: string; edit: SectionId; blocks: 
 export type SummaryModel = {
   kicker: string;
   name: string;
-  /** Urgency · Outcome · Legal as typed · Reviewed time and mode · Reviewer. */
+  /** Urgency · Outcome · Legal as chosen, with any form as typed · Reviewed time and mode · Reviewer. */
   keyLine: string;
   /** In PSOLIS order: review details, assessment, mental state, decision, risk, formulation and plan. */
   parts: DocPart[];
@@ -161,7 +161,11 @@ const names = (list: readonly { name: string }[]) => list.map((f) => f.name).joi
  * then six headed parts of label: value facts, mental state one line per domain, risk as Present,
  * Not known and Not present lists with past and current apart, then the signature block.
  */
-export function summaryModel(state: TriageState, signed?: SignedBy): SummaryModel {
+/**
+ * The document for one triage. A9-29: a signed one names `signed.by`, the desk that signed it; an
+ * unsigned one names `reviewer`, the desk filling it in (the form passes its own desk).
+ */
+export function summaryModel(state: TriageState, signed?: SignedBy, reviewer = DEFAULT_REVIEWER): SummaryModel {
   const t = state.text;
   const person = state.person;
   const notes = parseHeadedText(t.note);
@@ -244,10 +248,11 @@ export function summaryModel(state: TriageState, signed?: SignedBy): SummaryMode
       state.urgency ? `Urgency ${state.urgency}, ${TIER_LONG[state.urgency].toLowerCase()}` : "Urgency not chosen",
       state.outcome ?? "Outcome not set",
       state.legal
-        ? `${LEGAL_NAME[state.legal]}${hasLegalForm(state) && t.legalForm.trim() ? `, ${t.legalForm.trim().replace(/\s*·\s*/g, " ")}` : ""} (as typed)`
+        ? // D-186 (Q11): the status was picked from buttons, so "as chosen"; only the form and date are typed.
+          `${LEGAL_NAME[state.legal]} (as chosen)${hasLegalForm(state) && t.legalForm.trim() ? `, ${t.legalForm.trim().replace(/\s*·\s*/g, " ")} (as typed)` : ""}`
         : "Legal not set",
       mode ? `Reviewed ${mode}` : "Review time not set",
-      signed?.by ?? SIGNED_IN,
+      signed?.by ?? reviewer,
     ].join(" · "),
     parts: [
       {
@@ -352,7 +357,12 @@ export function summaryModel(state: TriageState, signed?: SignedBy): SummaryMode
           {
             kind: "facts",
             rows: [
-              ["Current: present", nowPresent.length ? [names(nowPresent)] : ["None flagged"]],
+              // D-187 item 18 (TW-173): read like Past: "None recorded" (D-186 item 2), and "Not answered"
+              // until Rest of current risk is answered, so it never says none before anyone has looked.
+              [
+                "Current: present",
+                nowPresent.length ? [names(nowPresent)] : state.rest ? ["None recorded"] : [{ quiet: "Not answered" }],
+              ],
               ...[...byArea.entries()].map(([area, list]) => [`  ${areaShortName(area)}`, [list.join(", ")]] as const),
               ...(by("now", "u").length ? [["Current: not known", [names(by("now", "u"))]] as const] : []),
               [
@@ -413,7 +423,7 @@ export function summaryModel(state: TriageState, signed?: SignedBy): SummaryMode
     ],
     signature: signed
       ? [`Signed ${signed.at} by ${signed.by}`, "Prints as SMHMR900 and SMHMR905"]
-      : [`Not signed. Reviewer: ${SIGNED_IN}`, "Prints as SMHMR900 and SMHMR905 once signed"],
+      : [`Not signed. Reviewer: ${reviewer}`, "Prints as SMHMR900 and SMHMR905 once signed"],
     foot: [hasLegalForm(state) ? "Legal form as typed. Not legally checked." : "", "Synthetic record"].filter(Boolean),
   };
 }

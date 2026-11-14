@@ -42,7 +42,7 @@ import {
   Row,
   type FormApi,
 } from "./triage-risk-parts";
-import type { TextKey, TriageState } from "./triage-risk-state";
+import { requirements, type TextKey, type TriageState } from "./triage-risk-state";
 import { addHeading, checkReviewTime, expandShortcut, reviewTimeStamp, wordCount } from "./triage-risk-text";
 import styles from "./triage-risk-form.module.css";
 
@@ -237,8 +237,12 @@ export function ReviewBody({
   const { state, set, setText } = form;
   const [timeFocused, setTimeFocused] = useState(false);
   const done = reviewDone(state, form.now);
+  // A9-22(b) (Audit 9 question 8): the fields fold only when nothing in them is left to check, so
+  // Aboriginal status and Interpreter stay open until both are answered. Signing is never blocked.
+  const leftToCheck = requirements(state, form.now).some((r) => r.section === "rev" && !r.ok);
+  const canFold = done && !leftToCheck;
   // Never folds away under the caret: the fields stay open while the time is being typed.
-  const folded = done && !editing && !timeFocused;
+  const folded = canFold && !editing && !timeFocused;
   const time = checkReviewTime(state.text.revTime, form.now);
   // A wrong time shows once the field is left or the time is complete; a future time at once.
   const showError = Boolean(time.message) && (time.future || !timeFocused || state.text.revTime.trim().length >= 16);
@@ -284,16 +288,18 @@ export function ReviewBody({
               </span>
             )}
           </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={styles.factAction}
-            aria-expanded={!folded}
-            aria-controls="triage-review-fields"
-            onClick={() => onEditing(!editing)}
-          >
-            {folded ? "Change" : "Done"}
-          </Button>
+          {canFold ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className={styles.factAction}
+              aria-expanded={!folded}
+              aria-controls="triage-review-fields"
+              onClick={() => onEditing(!editing)}
+            >
+              {folded ? "Change" : "Done"}
+            </Button>
+          ) : null}
         </div>
       ) : null}
       <div className={styles.rows} id="triage-review-fields" hidden={folded}>

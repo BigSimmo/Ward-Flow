@@ -39,7 +39,7 @@ import {
   type ReferralClocks,
 } from "@/components/ward-management/ward-referrals";
 import type { Patient } from "../ward-patients";
-import { INTERMITTENT_INTERVAL_MINUTES, type ObservationLevel } from "@/components/ward-management/ward-observation";
+import type { ObservationLevel } from "@/components/ward-management/ward-observation";
 
 /**
  * THE TWO CLOCKS ON AN INBOX ROW, AND WHY THIS SCREEN NOW HAS THEM.
@@ -290,8 +290,11 @@ export type ReferralDraftState = {
   tentativeDiagnosis: TentativeDiagnosisBlock | "none";
   /** Fix plan item 10: unanswered until a person chooses a level; never defaulted. */
   observation: ObservationLevel | undefined;
-  /** Intermittent only: minutes between checks, from `INTERMITTENT_INTERVAL_MINUTES`. */
-  observationIntervalMinutes: number;
+  /**
+   * Intermittent only: minutes between checks, from `INTERMITTENT_INTERVAL_MINUTES`. D-187 item 19:
+   * `null` until a person chooses one; "Raise referral" refuses Intermittent without it.
+   */
+  observationIntervalMinutes: number | null;
   /** The typed next review time, `HH:MM`, read today or tomorrow. Blank records none. */
   observationReviewTime: string;
   observationReviewDay: "today" | "tomorrow";
@@ -369,7 +372,7 @@ export const DEFAULT_DRAFT: ReferralDraftState = {
   // T15 (item 12): starts at "None", a real answer — never blocks the form.
   tentativeDiagnosis: NO_DIAGNOSIS_VALUE,
   observation: undefined,
-  observationIntervalMinutes: INTERMITTENT_INTERVAL_MINUTES[0],
+  observationIntervalMinutes: null,
   observationReviewTime: "",
   observationReviewDay: "today",
   // Unanswered for the SAME reason `observation` above is, and the reasoning transfers exactly:

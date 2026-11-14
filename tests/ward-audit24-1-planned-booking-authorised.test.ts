@@ -1,9 +1,10 @@
 // tests/ward-audit24-1-planned-booking-authorised.test.ts
 //
 // Audit 24-1 CS2-19 (Josh, 24 Oct 2026): a planned booking for someone whose legal status needs an
-// authorised bed, on a ward that is not authorised, is refused unless a reason is recorded, as a
-// pull past the same authorisation gate is. The reason comes from `OVERRIDE_REASONS`, never typed.
-// A refused booking is not kept, so the beds forecast never counts it.
+// authorised bed, on a ward that is not authorised, was refused unless a reason was recorded.
+// D-189 items 8(a) and 9(a) (Josh, 13 Nov 2026): every ward's authorisation is "not stated" until
+// Q42 is signed, so the invented flag no longer asks a reason or refuses a booking. A reason saved
+// on an older booking still loads, and is dropped at its next edit (no reason is needed).
 import { describe, expect, it } from "vitest";
 
 import { plannedAdmissionsStillNeedingABed } from "@/components/ward-management/capacity/planned-admissions-reducer";
@@ -11,12 +12,7 @@ import { authorisationReasonNeeded } from "@/components/ward-management/capacity
 import { OVERRIDE_REASONS, type OverrideReason } from "@/components/ward-management/ward-change-reasons";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
-import {
-  OVERRIDE_REASON_REQUIRED,
-  seedWardFlowState,
-  wardFlowReducer,
-  type WardFlowState,
-} from "@/components/ward-management/ward-flow-reducer";
+import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -91,37 +87,21 @@ const valid = (state: WardFlowState) =>
   isValidStoredWardFlowState(JSON.parse(JSON.stringify({ ...state, rejections: [] })));
 
 describe("Audit 24-1 CS2-19: booking onto a ward not authorised for the legal status", () => {
-  it("refuses the booking without a reason, in the words a pull uses, and the forecast does not count it", () => {
-    const before = world();
-    const after = book(before);
-    const refusal = after.rejections.at(-1)?.reason ?? "";
-    expect(refusal).toMatch(/failed gate authorisation/);
-    expect(refusal).toContain(OVERRIDE_REASON_REQUIRED);
-    expect(refusal).toMatch(/for this planned admission/);
-    expect(after.plannedAdmissions).toBe(before.plannedAdmissions);
-    expect(after.plannedAdmissionSequence).toBe(before.plannedAdmissionSequence);
-    expect(counted(after, UNAUTHORISED)).toEqual(counted(before, UNAUTHORISED));
-  });
-
-  it("refuses a reason that is not on the fixed list", () => {
-    const after = book(world(), { overrideReason: "Because I said so" as OverrideReason });
-    expect(after.rejections.at(-1)?.reason).toMatch(/overrideReason must be chosen from OVERRIDE_REASONS/);
-    expect(after.plannedAdmissions.some((planned) => planned.id === "PA-01")).toBe(false);
-  });
-
-  it("accepts the booking with a listed reason and records it, and the forecast counts it", () => {
-    const before = world();
-    const after = book(before, { overrideReason: REASON });
+  it("D-189 item 9(a): books without a reason while authorisation is not stated, and the forecast counts it", () => {
+    const after = book(world());
     expect(after.rejections).toEqual([]);
     const booked = after.plannedAdmissions.at(-1)!;
-    expect(booked.authorisationOverride).toEqual({
-      reason: REASON,
-      unitId: UNAUTHORISED,
-      at: NOW,
-      by: WARD_FLOW_ROLE_LABELS.coordinator,
-    });
+    expect(booked.authorisationOverride).toBeUndefined();
     expect(counted(after, UNAUTHORISED)).toContain(booked);
     expect(valid(after)).toBe(true);
+  });
+
+  it("records no reason sent when none is needed, listed or not", () => {
+    for (const overrideReason of [REASON, "Because I said so" as OverrideReason]) {
+      const after = book(world(), { overrideReason });
+      expect(after.rejections).toEqual([]);
+      expect(after.plannedAdmissions.at(-1)!.authorisationOverride).toBeUndefined();
+    }
   });
 
   it("needs no reason on an authorised ward, or for a voluntary booking, and records none sent", () => {
@@ -134,35 +114,38 @@ describe("Audit 24-1 CS2-19: booking onto a ward not authorised for the legal st
     expect(voluntary.plannedAdmissions.at(-1)!.authorisationOverride).toBeUndefined();
   });
 
-  it("refuses a change that moves a booking to the unauthorised ward without a reason", () => {
-    const booked = book(world(), { unitId: AUTHORISED });
-    const refused = change(booked, "PA-01", { unitId: UNAUTHORISED });
-    expect(refused.rejections.at(-1)?.reason).toContain(OVERRIDE_REASON_REQUIRED);
-    expect(refused.plannedAdmissions).toBe(booked.plannedAdmissions);
-
-    const moved = change(booked, "PA-01", { unitId: UNAUTHORISED, overrideReason: REASON });
+  it("a change onto the flagged ward, or to a status that needs the bed, needs no reason", () => {
+    const booked = book(world(), { unitId: AUTHORISED, legalStatus: "Voluntary" });
+    const moved = change(booked, "PA-01", { unitId: UNAUTHORISED });
     expect(moved.rejections).toEqual([]);
-    expect(moved.plannedAdmissions.at(-1)).toMatchObject({
-      unitId: UNAUTHORISED,
-      authorisationOverride: { reason: REASON, unitId: UNAUTHORISED },
-    });
+    expect(moved.plannedAdmissions.at(-1)).toMatchObject({ unitId: UNAUTHORISED });
+    const involuntary = change(moved, "PA-01", { legalStatus: "Involuntary inpatient" });
+    expect(involuntary.rejections).toEqual([]);
+    expect(involuntary.plannedAdmissions.at(-1)!.authorisationOverride).toBeUndefined();
   });
 
-  it("refuses a change of legal status that now needs an authorised bed without a reason", () => {
-    const booked = book(world(), { legalStatus: "Voluntary" });
-    const refused = change(booked, "PA-01", { legalStatus: "Involuntary inpatient" });
-    expect(refused.rejections.at(-1)?.reason).toContain(OVERRIDE_REASON_REQUIRED);
-  });
-
-  it("keeps a recorded reason through an unrelated edit, and drops it once the booking moves away", () => {
-    const booked = book(world(), { overrideReason: REASON });
-    const edited = change(booked, "PA-01", { expectedStayDays: 10 });
+  it("drops a reason recorded on an older save at its next edit, because no reason is needed", () => {
+    const booked = book(world());
+    const saved: WardFlowState = {
+      ...booked,
+      plannedAdmissions: booked.plannedAdmissions.map((planned) =>
+        planned.id === "PA-01"
+          ? {
+              ...planned,
+              authorisationOverride: {
+                reason: REASON,
+                unitId: UNAUTHORISED,
+                at: NOW,
+                by: WARD_FLOW_ROLE_LABELS.coordinator,
+              },
+            }
+          : planned,
+      ),
+    };
+    expect(valid(saved)).toBe(true);
+    const edited = change(saved, "PA-01", { expectedStayDays: 10 });
     expect(edited.rejections).toEqual([]);
-    expect(edited.plannedAdmissions.at(-1)!.authorisationOverride?.reason).toBe(REASON);
-
-    const away = change(edited, "PA-01", { unitId: AUTHORISED });
-    expect(away.rejections).toEqual([]);
-    expect(away.plannedAdmissions.at(-1)!.authorisationOverride).toBeUndefined();
+    expect(edited.plannedAdmissions.at(-1)!.authorisationOverride).toBeUndefined();
   });
 
   it("still loads, and still edits, a booking saved before the rule without a reason", () => {
@@ -180,9 +163,9 @@ describe("Audit 24-1 CS2-19: booking onto a ward not authorised for the legal st
     expect(edited.plannedAdmissions.at(-1)!.expectedStayDays).toBe(9);
   });
 
-  it("the form asks for a reason exactly when the reducer would refuse", () => {
-    expect(authorisationReasonNeeded("Involuntary inpatient", { authorised: false })).toBe(true);
-    expect(authorisationReasonNeeded("Referred for psychiatric examination", { authorised: false })).toBe(true);
+  it("the form never asks for a reason while authorisation is not stated, as the reducer never refuses", () => {
+    expect(authorisationReasonNeeded("Involuntary inpatient", { authorised: false })).toBe(false);
+    expect(authorisationReasonNeeded("Referred for psychiatric examination", { authorised: false })).toBe(false);
     expect(authorisationReasonNeeded("Voluntary", { authorised: false })).toBe(false);
     expect(authorisationReasonNeeded("Involuntary inpatient", { authorised: true })).toBe(false);
     expect(authorisationReasonNeeded("Involuntary inpatient", undefined)).toBe(false);
@@ -200,37 +183,20 @@ describe("Audit 24-1 CS2-19: arrival honours the reason recorded on the booking"
     });
   }
 
-  it("converts a booking whose reason was recorded for this same ward", () => {
-    const booked = book(world(), { overrideReason: REASON });
+  it("converts a booking at the flagged ward with no recorded reason", () => {
+    const booked = book(world());
     const arrived = convert(booked);
     expect(arrived.rejections).toEqual([]);
     const planned = arrived.plannedAdmissions.find((candidate) => candidate.id === "PA-01")!;
     expect(planned.state).toBe("arrived");
-    // The reason stays on the arrived booking, which names the admission it became.
-    expect(planned.authorisationOverride).toMatchObject({ reason: REASON, unitId: UNAUTHORISED });
+    expect(planned.authorisationOverride).toBeUndefined();
     expect(arrived.admissions.some((admission) => admission.id === planned.admissionId)).toBe(true);
   });
 
-  it("does not let a reason recorded for a different ward buy past the gate", () => {
-    const booked = book(world(), { overrideReason: REASON });
-    const elsewhere: WardFlowState = {
-      ...booked,
-      plannedAdmissions: booked.plannedAdmissions.map((planned) =>
-        planned.id === "PA-01"
-          ? { ...planned, authorisationOverride: { ...planned.authorisationOverride!, unitId: AUTHORISED } }
-          : planned,
-      ),
-    };
-    const refused = convert(elsewhere);
-    expect(refused.rejections.at(-1)?.reason).toMatch(/failed gate authorisation/);
-    expect(refused.admissions).toBe(elsewhere.admissions);
-  });
-
-  it("still refuses arrival for a booking with no recorded reason", () => {
+  it("converts a booking saved before the rule, with no reason, at a ward flagged since", () => {
     const legacy = notAuthorised(book(seedWardFlowState()));
-    const refused = convert(legacy);
-    expect(refused.rejections.at(-1)?.reason).toMatch(/failed gate authorisation/);
-    expect(refused.admissions).toBe(legacy.admissions);
+    const arrived = convert(legacy);
+    expect(arrived.rejections).toEqual([]);
   });
 
   it("still asks every other gate: a recorded reason does not buy past the cohort gate", () => {

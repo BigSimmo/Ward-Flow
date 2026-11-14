@@ -211,7 +211,9 @@ describe("wait factors", () => {
     const declineFactor = factors.find((factor) => factor.label === "Destinations declined");
     expect(declineFactor).toBeDefined();
     expect(declineFactor?.detail).not.toContain(" of 3");
-    expect(declineFactor?.detail).toContain("5");
+    // D-189 item 8(a): authorisation reads "not stated", so SJGS Adult Secure is no longer ruled out on
+    // the invented flag and the sample story gives it a sixth synthetic decline.
+    expect(declineFactor?.detail).toContain("6");
   });
 
   it("does not claim a transport delay for a movement already en route", () => {

@@ -12,6 +12,7 @@ import {
   type EdClinicalRow,
   type WardClinicalRow,
 } from "./tv-clinical-derivations";
+import { SAMPLE_OBSERVATION_MIX_LABEL } from "@/components/ward-management/ward-sample-choices";
 import styles from "./tv-clinical.module.css";
 
 /**
@@ -187,7 +188,11 @@ function Risks({ risks }: { risks: string[] }) {
   );
 }
 
-export function Summary({ items }: { items: { label: string; value: number; tone?: "danger" | "warning" }[] }) {
+export function Summary({
+  items,
+}: {
+  items: { label: string; value: number; tone?: "danger" | "warning"; note?: string }[];
+}) {
   return (
     <ul className={styles.summary} aria-label="At a glance">
       {items.map((item) => (
@@ -198,6 +203,11 @@ export function Summary({ items }: { items: { label: string; value: number; tone
         >
           <b>{item.value}</b>
           {item.label}
+          {item.note ? (
+            <small className={styles.summaryNote} data-testid="tv-summary-note">
+              {item.note}
+            </small>
+          ) : null}
         </li>
       ))}
     </ul>
@@ -229,7 +239,13 @@ export function WardClinicalTvView({ rows, footer }: { rows: WardClinicalRow[]; 
       <Summary
         items={[
           { label: "patients", value: rows.filter((row) => row.where !== "incoming").length },
-          { label: "on constant obs", value: count((row) => row.constantObs), tone: "warning" },
+          {
+            label: "on constant obs",
+            value: count((row) => row.constantObs),
+            tone: "warning",
+            // Review question 8 (D-189 item 2): the sample day's observation levels, labelled as on the ward page.
+            note: SAMPLE_OBSERVATION_MIX_LABEL,
+          },
           { label: "on leave", value: count((row) => row.where === "leave") },
           { label: "absent without leave", value: count((row) => row.where === "awol"), tone: "danger" },
           { label: "forms ending soon", value: count((row) => row.legal?.tone !== undefined), tone: "warning" },

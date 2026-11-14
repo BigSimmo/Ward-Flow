@@ -1,3 +1,4 @@
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 /**
  * Triage and risk (Josh approved the build, 9 Nov 2026; wording held for his sign-off): the pure
  * rules behind three clinical prompts.
@@ -20,22 +21,41 @@ const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&
 
 // ---- Safety plan builder ------------------------------------------------------------------------
 
+/** A step 5 service: its name, its number (or none), and who checked the number and when. */
+export type SafetyPlanService = {
+  name: string;
+  phone: string | null;
+  /** Who checked the name and number against the service (D-186, Q12). Null until Josh supplies it (Q41). */
+  checkedBy: string | null;
+  /** When it was checked, as typed (D-186, Q12). Null until Josh supplies it (Q41). */
+  checkedOn: string | null;
+};
+
 /**
  * Services offered as tap-to-add chips in step 5. JOSH MUST CHECK EVERY NAME AND NUMBER BEFORE
  * CLINICAL USE: they are typed here from memory for the prototype and have not been verified.
+ * D-186 (Q12): none is checked yet, so every number reads "Not checked" until both its checked by and
+ * checked on are filled in.
  */
-export const SAFETY_PLAN_SERVICES: readonly (readonly [name: string, phone: string | null])[] = [
-  ["Mental Health Emergency Response Line (metro WA)", "1300 555 788"],
-  ["Lifeline", "13 11 14"],
-  ["13YARN", "13 92 76"],
-  ["Kids Helpline", "1800 55 1800"],
-  ["Emergency", "000"],
-  ["Community team on-call", null],
+export const SAFETY_PLAN_SERVICES: readonly SafetyPlanService[] = [
+  { name: "Mental Health Emergency Response Line (metro WA)", phone: "1300 555 788", checkedBy: null, checkedOn: null },
+  { name: "Lifeline", phone: "13 11 14", checkedBy: null, checkedOn: null },
+  { name: "13YARN", phone: "13 92 76", checkedBy: null, checkedOn: null },
+  { name: "Kids Helpline", phone: "1800 55 1800", checkedBy: null, checkedOn: null },
+  { name: "Emergency", phone: "000", checkedBy: null, checkedOn: null },
+  { name: "Community team on-call", phone: null, checkedBy: null, checkedOn: null },
 ];
 
-/** A service as the text step 5 holds: its name, then its number when it has one. */
-export const serviceText = ([name, phone]: (typeof SAFETY_PLAN_SERVICES)[number]) =>
-  phone ? `${name} ${phone}` : name;
+/** A service's number check in words: "Not checked" until both who and when are filled in. */
+export const serviceCheck = ({ checkedBy, checkedOn }: SafetyPlanService) =>
+  checkedBy?.trim() && checkedOn?.trim() ? `checked by ${checkedBy.trim()} on ${checkedOn.trim()}` : "Not checked";
+
+/**
+ * A service as the text step 5 holds: its name, then its number when it has one, with the number's
+ * check beside it. The plan, Summary and Copy summary carry this text, so the check travels with it.
+ */
+export const serviceText = (service: SafetyPlanService) =>
+  service.phone ? `${service.name} ${service.phone} (${serviceCheck(service)})` : service.name;
 
 export type SafetyPlanDraft = {
   warning: string;
@@ -264,11 +284,29 @@ export function meansPrefill(state: Pick<TriageState, "f" | "means" | "text">): 
 // ---- Follow-up ----------------------------------------------------------------------------------
 
 /**
- * The follow-up windows. JOSH SETS THESE before clinical use; until he does they are synthetic.
- * `hintHours` is the window the hint suggests; `soonHours` and `weekDays` name the other choices;
- * `recentDischargeDays` is how recent a hospital discharge brings the hint.
+ * The follow-up windows, read from the values register (D-186 item 16): synthetic until Josh signs
+ * them. `hintHours` is the window the hint suggests; `soonHours` and `weekDays` name the other
+ * choices; `recentDischargeDays` is how recent a hospital discharge brings the hint.
  */
-export const FOLLOW_UP_WINDOWS = { soonHours: 24, hintHours: 72, weekDays: 7, recentDischargeDays: 28 } as const;
+export const FOLLOW_UP_WINDOWS = {
+  soonHours: CLINICAL_VALUES.triageFollowUpSoon.value,
+  hintHours: CLINICAL_VALUES.triageFollowUpHint.value,
+  weekDays: CLINICAL_VALUES.triageFollowUpWeek.value,
+  recentDischargeDays: CLINICAL_VALUES.triageRecentDischarge.value,
+} as const;
+
+/**
+ * Review question 6 (labelling only): true while any follow-up window the choices and the hint offer
+ * is unsigned in the values register, so the form marks them "Window not signed." as the see-by
+ * window is marked. No value changes.
+ */
+export const FOLLOW_UP_WINDOWS_UNSIGNED = (
+  [
+    CLINICAL_VALUES.triageFollowUpSoon,
+    CLINICAL_VALUES.triageFollowUpHint,
+    CLINICAL_VALUES.triageFollowUpWeek,
+  ] as readonly { status: string }[]
+).some((entry) => entry.status !== "signed");
 
 export const FOLLOW_UP_CHOICES = [
   ["24h", `Within ${FOLLOW_UP_WINDOWS.soonHours} h`],

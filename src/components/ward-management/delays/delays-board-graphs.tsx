@@ -28,7 +28,6 @@ import {
   H8,
   RUNWAY_WINDOW,
   hoursWord,
-  OVER_24H,
   OVER_8H,
   SPREAD_TICKS,
   WAIT_BANDS,
@@ -170,7 +169,6 @@ function Spread({
         <span key={minutes} className={styles.gGrid} style={{ left: `${spreadX(minutes)}%` }} />
       ))}
       <span className={styles.g8} style={{ left: `${spreadX(OVER_8H)}%` }} />
-      <span className={styles.gBeyond} style={{ left: `${spreadX(OVER_24H)}%` }} />
     </>
   );
   return (
@@ -360,7 +358,6 @@ function Matrix({
               const n = cell.length;
               const over8 = cell.filter((row) => row.waited >= OVER_8H).length;
               const on = isOn(origin, column.id);
-              const over24 = cell.filter((row) => row.waited >= OVER_24H).length;
               return (
                 <button
                   key={`${origin}-${column.id}`}
@@ -401,7 +398,7 @@ function Matrix({
                       <span className={polish.mxTop}>
                         <span className={`${styles.mxN} ${styles.num} ${polish.mxN}`}>{n}</span>
                         {over8 > 0 ? (
-                          <span className={polish.mxO} data-tone={over24 > 0 ? "danger" : "warning"}>
+                          <span className={polish.mxO} data-tone="warning">
                             <span className={styles.num}>{over8}</span>
                             {` over ${H8}`}
                           </span>

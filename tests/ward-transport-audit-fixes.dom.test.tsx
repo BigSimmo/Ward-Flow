@@ -88,6 +88,10 @@ describe("Log booking (A4-7, A4-6, A4-2, A4-5)", () => {
     // W32 (Josh's card 3, 5 Nov 2026, replacing A4-6): with no ETA every answer is in and the blank
     // time warns instead of blocking Save.
     fireEvent.change(within(form).getByTestId("ward-patient-input-cad"), { target: { value: "CAD-SYN-7" } });
+    // D-189 item 9(e): fit to travel is not recorded on WF-011, so the booking asks for a reason.
+    fireEvent.change(within(form).getByTestId("ward-patient-legal-reason"), {
+      target: { value: "treating_team_confirmed" },
+    });
     expect(within(form).getByTestId("ward-patient-book-transport-left")).toHaveTextContent(
       "Every required answer given",
     );
@@ -110,7 +114,9 @@ describe("Log booking (A4-7, A4-6, A4-2, A4-5)", () => {
     fireEvent.click(within(form).getByTestId("ward-patient-confirm-transport-btn"));
     const job = JSON.parse(screen.getByTestId("booked-job").textContent!);
     expect(job.transportLegalStatus).toBe("involuntary");
-    expect(job.exceptions).toBeUndefined();
+    expect(job.exceptions).toEqual([
+      expect.objectContaining({ gaps: ["fit_to_travel_missing"], reason: "treating_team_confirmed" }),
+    ]);
   });
 
   it("asks for a reason when the status is changed away from Legal now, and records it", () => {
@@ -128,7 +134,9 @@ describe("Log booking (A4-7, A4-6, A4-2, A4-5)", () => {
     fireEvent.change(within(form).getByTestId("ward-patient-input-cad"), { target: { value: "CAD-SYN-8" } });
     fireEvent.click(within(within(form).getByTestId("ward-patient-eta-presets")).getByRole("button", { name: "+30m" }));
     fireEvent.click(within(form).getByTestId("ward-patient-legal-voluntary"));
-    expect(form).toHaveTextContent("Differs from Legal now (Involuntary inpatient, Form 4C). Record why.");
+    expect(form).toHaveTextContent(
+      "Differs from Legal now (Involuntary inpatient, Form 4C). Fit to travel not recorded. Record why.",
+    );
     fireEvent.click(within(form).getByTestId("ward-patient-confirm-transport-btn"));
     expect(within(form).getByTestId("ward-patient-book-transport-left")).toHaveTextContent(
       "1 answer left: reason it differs",
@@ -141,7 +149,10 @@ describe("Log booking (A4-7, A4-6, A4-2, A4-5)", () => {
     fireEvent.click(within(form).getByTestId("ward-patient-confirm-transport-btn"));
     const job = JSON.parse(screen.getByTestId("booked-job").textContent!);
     expect(job.transportLegalStatus).toBe("voluntary");
-    expect(job.exceptions[0]).toMatchObject({ gaps: ["legal_status_differs"], reason: "treating_team_confirmed" });
+    expect(job.exceptions[0]).toMatchObject({
+      gaps: ["legal_status_differs", "fit_to_travel_missing"],
+      reason: "treating_team_confirmed",
+    });
     expect(screen.getByTestId("ward-patient-transport-legal-clash")).toHaveTextContent(
       "Involuntary inpatient, Form 4C, differs from the booking",
     );

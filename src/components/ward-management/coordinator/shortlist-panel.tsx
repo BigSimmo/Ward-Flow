@@ -57,6 +57,7 @@ import {
 } from "@/components/ward-management/ward-clock";
 import { targetHoursText } from "@/components/ward-management/ward-target-hours";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
+import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning";
 import { formTimeAsTyped } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { isOwnedLegalFormCode } from "@/components/ward-management/legal-forms/legal-forms-view";
 import { bedHold, PULL_NO_LIMIT_RECORDED } from "@/components/ward-management/ward-bed-hold";
@@ -1007,8 +1008,9 @@ export function ShortlistPanel({
           ? "Choose why this is urgent first"
           : undefined;
 
-  // Finding 120: the form's fields show for any status other than Voluntary.
-  const legalFormAsked = legalStatusDraft.legalStatus !== undefined && legalStatusDraft.legalStatus !== "Voluntary";
+  // Finding 120: the form's fields show for any status other than Voluntary, the "not voluntary"
+  // rule (D-186 item 4). No status chosen yet counts as not recorded, so no form is asked.
+  const legalFormAsked = isNotVoluntary(legalStatusDraft.legalStatus);
   const legalFormMinute = minuteOfDayFromClockText(legalFormDraft.time);
   const legalFormWrittenAt =
     legalFormMinute === undefined ? undefined : (dayOf(now) + legalFormDraft.day) * MINUTES_PER_DAY + legalFormMinute;

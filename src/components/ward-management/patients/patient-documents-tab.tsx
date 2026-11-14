@@ -29,6 +29,7 @@ import {
   useIsPhone,
   type WfTone,
 } from "@/components/wf";
+import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning";
 import type { ReferralChart } from "@/components/ward-management/referrals/referral-submission";
 import { formTitleForCode } from "@/lib/form-register";
 import { LegalLimitsNotChecked } from "../legal-limits-not-checked";
@@ -479,7 +480,8 @@ export function PatientDocumentsTab({
   const notes = [
     legalCount > 0
       ? "This entry records authority information. It is not a preview of a signed legal document."
-      : typedStatus && typedStatus !== "Voluntary"
+      : // D-186 item 4: the named "not voluntary" rule.
+        isNotVoluntary(typedStatus)
         ? "Legal status alone does not establish an order document."
         : undefined,
     rows.some((r) => r.category !== "Legal")

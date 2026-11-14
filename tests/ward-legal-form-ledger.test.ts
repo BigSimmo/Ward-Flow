@@ -123,10 +123,10 @@ describe("typed ledger fields", () => {
     expect(onceOnlyExtensionWarning(move({}))).toBeUndefined();
     const extended1A = move({ legalFormExpiryHistory: [entry(NOW - 20, "extension")] });
     expect(onceOnlyExtensionWarning(extended1A)).toBe(
-      "Form 1A already has an extension recorded. A Form 1B can only be made once, so check the paper.",
+      "Form 1A already has an extension recorded. Form 1B is already recorded. Check the paper.",
     );
     const extended4A = move({ legalForm: { code: "4A" }, legalFormExpiryHistory: [entry(NOW - 20, "extension")] });
-    expect(onceOnlyExtensionWarning(extended4A)).toMatch(/A Form 4B can only be made once/);
+    expect(onceOnlyExtensionWarning(extended4A)).toMatch(/Form 4B is already recorded\. Check the paper\./);
     // Corrections are not extensions, and other forms carry no once-only claim.
     expect(onceOnlyExtensionWarning(move({ legalFormExpiryHistory: [entry(NOW - 20, "correction")] }))).toBeUndefined();
     expect(

@@ -151,30 +151,31 @@ export const CLINICAL_VALUES = {
   },
 
   // ---- Emergency department waits -----------------------------------------------------------
+  // The four ED wait steps of D-108 item 2 stand (D-187 item 5); each name says which step it is.
   edElevatedPressure: {
     ...SIGNED_BY_JOSH,
-    name: "ED pressure shown as elevated from a wait of",
+    name: "ED pressure shown as elevated, and ED wait step 1 (Ask wards), from a wait of",
     group: "Emergency department waits",
     value: 3 * MINUTES_PER_HOUR,
     unit: "minutes",
   },
   edSeverePressure: {
     ...SIGNED_BY_JOSH,
-    name: "ED pressure shown as severe, and first escalation step, from a wait of",
+    name: "ED pressure shown as severe, and ED wait step 2 (Call bed manager), from a wait of",
     group: "Emergency department waits",
     value: 8 * MINUTES_PER_HOUR,
     unit: "minutes",
   },
   longWait: {
     ...SIGNED_BY_JOSH,
-    name: "Wait in hospital shown as long, and top escalation step, from",
+    name: "Wait in hospital shown as long, and ED wait step 3 (Consider out of area), from",
     group: "Emergency department waits",
     value: 24 * MINUTES_PER_HOUR,
     unit: "minutes",
   },
   veryLongWait: {
     ...SIGNED_BY_JOSH_16_OCT,
-    name: "Wait in hospital shown in the second, danger waiting band on statistics, from",
+    name: "Wait in hospital shown in the second, danger waiting band on statistics, and ED wait step 4 (Tell executive), from",
     group: "Emergency department waits",
     value: 48 * MINUTES_PER_HOUR,
     unit: "minutes",
@@ -585,14 +586,14 @@ export const CLINICAL_VALUES = {
   },
   breakGlassPerShift: {
     ...SIGNED_BY_JOSH_16_OCT,
-    name: "Break glass openings in one shift before the coordinator is told it is a pattern",
+    name: "Break glass openings in the counting window before the coordinator is told it is a pattern",
     group: "Access and privacy",
     value: 3,
     unit: "count",
   },
   breakGlassShift: {
     ...SIGNED_BY_JOSH_16_OCT,
-    name: "One shift, when counting break glass openings for a pattern, is the last",
+    name: "Counting window for a break glass pattern, the last",
     group: "Access and privacy",
     value: 12,
     unit: "hours",
@@ -627,7 +628,7 @@ export const CLINICAL_VALUES = {
   },
   coverLength: {
     ...SIGNED_BY_JOSH_16_OCT,
-    name: "Cover for a second ward or ED, given for one shift, lasts at most",
+    name: "Cover for a second ward or ED lasts at most",
     group: "Access and privacy",
     value: 12,
     unit: "hours",
@@ -739,6 +740,59 @@ export const CLINICAL_VALUES = {
     name: "Triage urgency E: seen within",
     group: "Triage urgency",
     value: 14,
+    unit: "days",
+  },
+  // ---- Triage follow-up and risk review (listed by D-186 item 16, 13 Nov 2026) --------------------
+  // The windows the triage form offers for a follow-up contact and for the next risk review, and the
+  // look-back that brings the follow-up hint. They were typed in the triage files; D-186 lists them here
+  // unchanged, synthetic until Josh signs them. Nothing flags or escalates from them.
+  triageFollowUpSoon: {
+    status: "synthetic",
+    name: "Triage follow-up choice: contact within",
+    group: "Triage urgency",
+    value: 24,
+    unit: "hours",
+  },
+  triageFollowUpHint: {
+    status: "synthetic",
+    name: "Triage follow-up choice, and the window the hint suggests: contact within",
+    group: "Triage urgency",
+    value: 72,
+    unit: "hours",
+  },
+  triageFollowUpWeek: {
+    status: "synthetic",
+    name: "Triage follow-up choice: contact within (longest)",
+    group: "Triage urgency",
+    value: 7,
+    unit: "days",
+  },
+  triageRecentDischarge: {
+    status: "synthetic",
+    name: "Triage follow-up hint shows after a hospital discharge within",
+    group: "Triage urgency",
+    value: 28,
+    unit: "days",
+  },
+  triageReviewRiskSoon: {
+    status: "synthetic",
+    name: "Triage review risk by choice",
+    group: "Triage urgency",
+    value: 24,
+    unit: "hours",
+  },
+  triageReviewRiskMid: {
+    status: "synthetic",
+    name: "Triage review risk by choice (middle)",
+    group: "Triage urgency",
+    value: 72,
+    unit: "hours",
+  },
+  triageReviewRiskWeek: {
+    status: "synthetic",
+    name: "Triage review risk by choice (longest)",
+    group: "Triage urgency",
+    value: 7,
     unit: "days",
   },
   // ---- Patient flags (care plans and safety flags, D-104, Josh, 9 Nov 2026) -----------------------

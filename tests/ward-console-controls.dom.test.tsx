@@ -524,12 +524,14 @@ describe("D1 — a figure tile must count the thing its label promises", () => {
     ).toBeInTheDocument();
   });
 
-  it("says the same 'None' differently on the movement five wards refused", () => {
-    // The third meaning the identical tile used to carry: asked five times, refused five times.
+  it("says the same 'None' differently on the movement six wards refused", () => {
+    // The third meaning the identical tile used to carry: asked six times, refused six times. Six since
+    // D-189 item 8(a): SJGS Adult Secure is no longer ruled out on the invented authorisation flag, so
+    // the sample story gives it a synthetic decline.
     renderWorkspace("WF-009");
     const figures = screen.getByTestId("ward-console-figures");
     expect(within(figures).getByText("Referrals still open")).toBeInTheDocument();
-    expect(within(figures).getByText("No referral is open. 5 wards declined and none accepted.")).toBeInTheDocument();
+    expect(within(figures).getByText("No referral is open. 6 wards declined and none accepted.")).toBeInTheDocument();
   });
 });
 

@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "re
 import { splitDuration } from "@/components/ward-management/ward-clock";
 
 import { HELD_UP_BY_TOMORROW_LABEL } from "@/components/ward-management/ward-held-up";
+import { SAMPLE_OBSERVATION_MIX_LABEL } from "@/components/ward-management/ward-sample-choices";
 import type { ClinicalFact, EdClinicalRow, WardClinicalRow } from "./tv-clinical-derivations";
 import { Fact, Summary } from "./tv-clinical-views";
 import styles from "./tv-function.module.css";
@@ -117,7 +118,8 @@ export function WardObsLeaveTvView({ rows, footer }: { rows: WardClinicalRow[]; 
     {
       id: "constant",
       title: "Constant observation",
-      hint: "One nurse each, all shift",
+      // Review question 8 (D-189 item 2): the sample day's observation levels, labelled as on the ward page.
+      hint: `One nurse each, all shift · ${SAMPLE_OBSERVATION_MIX_LABEL}`,
       tone: "warning",
       cards: onWard.filter((row) => row.constantObs).map((row) => wardCard(row, row.obs)),
     },
