@@ -50,7 +50,12 @@ export function readyPartition(
 ): ReadyPartition {
   // Josh, 14 Nov 2026 (RV2-17): a ward outside this desk's records carries its partition, worked
   // out from the whole workspace by the same arithmetic below, so every desk reads the same Ready.
-  if (unit.readyOutOfView) return { ...unit.readyOutOfView };
+  // A caller that passes no holds (occupancy) reads the stays-only partition, as it would in view.
+  if (unit.readyOutOfView) {
+    const cached =
+      holds.length === 0 && unit.readyOutOfViewStaysOnly ? unit.readyOutOfViewStaysOnly : unit.readyOutOfView;
+    return { ...cached };
+  }
   let livePulled = 0;
   let seededPulled = 0;
   for (const admission of admissions) {
