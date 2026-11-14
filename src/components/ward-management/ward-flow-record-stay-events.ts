@@ -2,7 +2,6 @@
 // discharge blockers, leave, absence, handover, repatriation, clinical contact and support
 // notifications. Moved out of `ward-flow-record-events.ts` unchanged, which hands these events here.
 import { stayLegalStatusIsInvoluntary } from "./ward-discharge-records";
-import { classifyLegalStatus } from "./ward-legal-status";
 import { openRestrictivePracticeRefusal } from "./restrictive-practice/ward-restrictive-practice";
 import { isLeavingDestination } from "./ward-admissions";
 import { stayBedKind } from "./ward-bed-numbers";
@@ -500,7 +499,7 @@ export function reduceRecordedStayEvent(
         const stayStatus = admission
           ? (dischargeMovement(state, admission)?.legalStatus ?? patient?.legalStatus)
           : undefined;
-        if (classifyLegalStatus(stayStatus) === "voluntary" && !patientRecordIsInvoluntary(patient?.legalStatus)) {
+        if (/^voluntary\b/i.test(stayStatus?.trim() ?? "") && !patientRecordIsInvoluntary(patient?.legalStatus)) {
           return reject(state, event, "A return order is not needed for a voluntary stay");
         }
       }
