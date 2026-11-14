@@ -76,7 +76,7 @@ Evidence and limits are in the WA report (archived; see [the history index](../.
 This part covers every Ward Flow test file: everything matching `tests/ward-*`, `tests/ui-ward-*`
 and `tests/helpers/ward-*`, plus the one further file that imports from
 `src/components/ward-management` or `src/app/ward-flow` without carrying a `ward-` name
-(`tests/tracker-derivations.test.ts`; `tests/pressure-strip.dom.test.tsx` was deleted on 20 Oct 2026 — found by
+(`tests/tracker-derivations.test.ts` was deleted on 1 Nov 2026 with its module; `tests/pressure-strip.dom.test.tsx` was deleted on 20 Oct 2026 — found by
 `grep -rl 'from "@/components/ward-management` over `tests/`). It also covers how these tests run:
 `vitest.config.mts`, the `chromium-mockups` Playwright project, `scripts/check-ward-expected-reds.mjs`
 and `tests/ward-expected-reds.json`, and `scripts/run-vitest.mjs`.
@@ -128,7 +128,7 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
   - **Discovers the ward population itself**, independent of this map: every `tests/**/*.{test,spec}.tsx?`
     file matching `tests/ward-*` (minus `tests/ui-*`), **plus** any other test file with a
     non-comment line matching `/ward-(management|flow)/` — the same union rule this map's brief
-    used to find `tracker-derivations.test.ts`.
+    used to find `pressure-strip.dom.test.tsx` and `tracker-derivations.test.ts` (both since deleted).
   - **Two floors, not one, and they are deliberately far below the real population**: at least 200
     files discovered and at least 2,500 tests executed. Both exist only to catch a _broken_
     discovery or run (an empty failing set compared against an empty manifest reports success,
@@ -186,7 +186,7 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 
 ### Engine, reducer and cross-cutting domain rules (152 files)
 
-- **`tests/tracker-derivations.test.ts`** (79 lines) — trackerRowState
+- **`tests/tracker-derivations.test.ts`** — deleted 1 Nov 2026 (commit `48e5b1b09`) with `tracker-derivations.ts`
 - **`tests/ward-absence-wording-is-one-per-fact.test.ts`** (109 lines) — an absent fact has one rendered wording
 - **`tests/ward-acting-unit-guards.test.ts`** (215 lines) — a ward cannot act on another ward's bed release
 - **`tests/ward-acuity-override-num.dom.test.tsx`** (245 lines) — the ward screen's high-acuity override: the tick
@@ -274,7 +274,7 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-movements-derivations.test.ts`** (663 lines) — journeyStages
 - **`tests/ward-movements-screen.dom.test.tsx`** (979 lines) — the Movements screen
 - **`tests/ward-movements-service-scope.dom.test.tsx`** (389 lines) — Movements — service scoping (build plan D2, item 44)
-- **`tests/ward-movements-traffic-diagram.dom.test.tsx`** (224 lines) — TrafficDiagram hover isolation and visual elevations
+- **`tests/ward-movements-traffic-diagram.dom.test.tsx`** — deleted 1 Nov 2026 (commit `48e5b1b09`) with the traffic diagram
 - **`tests/ward-no-control-characters.test.ts`** (137 lines) — no ward file carries a raw control character
 - **`tests/ward-notice-mark-read.dom.test.tsx`** (157 lines) — Item 48, Q2 — the Activity drawer's Mark as read control
 - **`tests/ward-notice-read.test.ts`** (177 lines) — MARK_NOTICE_READ — item 48, Q2 (owner answer 48)

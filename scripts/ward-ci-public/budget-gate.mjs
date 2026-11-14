@@ -15,7 +15,7 @@
  * and never for a PR that changes package.json, package-lock.json or .nvmrc (judged strictly).
  */
 import { execFileSync, spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, symlinkSync } from "node:fs";
+import { existsSync, mkdirSync, symlinkSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -33,29 +33,42 @@ function measure(cwd, out) {
   return run(process.execPath, [MEASURE, "--write", out], cwd);
 }
 
+/**
+ * Checks `mainSha` out in its own worktree at `tree`, reusing this checkout's installed packages.
+ *
+ * It deliberately does NOT copy this checkout's `.next/cache`. Webpack's saved cache records absolute
+ * paths, so a copied cache made Next resolve `src/instrumentation-client.ts` in this checkout instead
+ * of the worktree, outside the TypeScript loader. Main alone then never built ("Module parse failed:
+ * Unexpected token" at `declare const __WARD_RELEASE__`), and every over-budget route failed (audit
+ * Deep-DP5-6, 14 November 2026). It also meant a PR's own source could leak into the "main" figures.
+ * A cold build is slower but measures only main.
+ */
+export function prepareMainTree(root, mainSha, tree) {
+  execFileSync("git", ["worktree", "add", "--detach", "--force", tree, mainSha], { cwd: root, stdio: "inherit" });
+  symlinkSync(join(root, "node_modules"), join(tree, "node_modules"), "dir");
+}
+
 /** Builds and measures `mainSha` in its own worktree. Returns the measurement file, or undefined. */
 function measureMain(root, mainSha, outDir) {
   const tree = join(outDir, "main-tree");
   try {
-    execFileSync("git", ["worktree", "add", "--detach", "--force", tree, mainSha], { cwd: root, stdio: "inherit" });
-    symlinkSync(join(root, "node_modules"), join(tree, "node_modules"), "dir");
-    // A warm Next cache from the merged build cuts main's build to a few minutes.
-    if (existsSync(join(root, ".next/cache")))
-      cpSync(join(root, ".next/cache"), join(tree, ".next/cache"), { recursive: true });
+    prepareMainTree(root, mainSha, tree);
     const built = run(
       process.execPath,
       ["--max-old-space-size=8192", "node_modules/next/dist/bin/next", "build", "--webpack"],
       tree,
     );
     if (built !== 0) {
-      console.error("Main alone did not build, so it cannot be compared.");
+      console.error(
+        "::error title=Ward budget main build failed::Main alone did not build, so it cannot be compared. Every over-budget route is judged without main figures.",
+      );
       return undefined;
     }
     const file = join(outDir, "main.json");
     const status = measure(tree, file);
     return (status === 0 || status === OVER_BUDGET) && existsSync(file) ? file : undefined;
   } catch (error) {
-    console.error(`Main alone could not be measured: ${error.message}`);
+    console.error(`::error title=Ward budget main build failed::Main alone could not be measured: ${error.message}`);
     return undefined;
   }
 }

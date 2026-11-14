@@ -117,11 +117,7 @@ run individually per file; nothing here was executed. Back to [the code map inde
   `implementationFiles`/`implementationSha256`/`implementationStatus` (has the BUILT screen moved).
   Written after an audit finding where a drawing-hash match was printed as "CURRENT" and read as a claim
   about the built screen, which nothing had actually compared.
-- **`scripts/ward-flow/contact-sheet.mjs`** (102 lines) — Writes
-  `design/third-edition-mockups/CONTACT-SHEET.html`: one page of every current drawing as a live
-  `<iframe>` (never a screenshot — these drawings build their own navigation with JavaScript, so a
-  static capture renders a different, wrong design). Excludes the two superseded
-  patient-search drawings by name.
+- **`scripts/ward-flow/contact-sheet.mjs`** — retired (commit `97fa3e252`, 18 Oct 2026). It wrote `design/third-edition-mockups/CONTACT-SHEET.html`, which stays in the tree as a static page nothing regenerates.
 - **`scripts/ward-flow/sync-lessons.mjs`** - Retired importer. Ordinary and `--check` runs
   deliberately exit 1 without reading a private lesson store or writing files. The tracked
   `docs/history/lessons/` files are the authoritative Ward Flow lesson source; maintain them
@@ -600,7 +596,7 @@ file in the repository against (`schemaVersion: 1`, `product: "ward-flow"`). Top
 | `docs/ward-flow/permission-matrix.md`                                  | `permission-matrix.ts`                        | `tests/ward-permission-matrix.test.ts`                                                                                          |
 | `docs/ward-flow/SCREEN-MAP.md`                                         | `screen-map.mjs`                              | `node scripts/ward-flow/screen-map.mjs --check`                                                                                 |
 | `docs/ward-flow/SCREEN-VERIFICATION.md`                                | `screen-verification.mjs`                     | `node scripts/ward-flow/screen-verification.mjs --check`                                                                        |
-| `design/third-edition-mockups/CONTACT-SHEET.html`                      | `contact-sheet.mjs`                           | none (visual reference page, not a gate)                                                                                        |
+| `design/third-edition-mockups/CONTACT-SHEET.html`                      | (retired; static)                             | none (visual reference page, not a gate)                                                                                        |
 | `docs/ward-flow/LESSON-AUDIT-REPORT.md`                                | `audit-lessons.mjs`                           | `node scripts/ward-flow/audit-lessons.mjs --check`                                                                              |
 | `docs/ward-flow/journey/ward-journey-explorer.html`                    | `build-explorer.mjs` (via `ward:journey`)     | `npm run ward:journey` (build refuses rather than emitting a wrong page)                                                        |
 | `docs/ward-flow/journey/ward-patient-journey.bpmn`                     | `build-bpmn.mjs` (via `ward:journey`)         | part of `npm run ward:journey`                                                                                                  |

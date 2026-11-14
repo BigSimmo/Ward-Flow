@@ -420,12 +420,7 @@ search/preview screen, apart from the coordinator's Ask to confirm. **Reads:** i
   panel lists (PL1 follow-up, 4 Nov 2026): open movements a ward has accepted (heading there), or
   open movements still at an ED (waiting there), longest wait first. A team lists its suburbs
   instead, from `communityTeamSuburbs` in the same file.
-- **`src/components/ward-management/hub/hub-provenance.ts`** (87 lines) — `hubReconciliationLine`,
-  the hub's "Invented figures, reconciled/do not reconcile, no event feed" sentence, copied
-  verbatim from the mockup's own wording rather than composed. Handles a `problems: number | null`
-  distinction deliberately — `null` means "nothing was reconciled" (the check array does not exist
-  yet under `src/`), which a plain `0` could not express (see the file's own long comment on the
-  2026-09-11 defect this fixed).
+- **`hub/hub-provenance.ts`** — retired (deleted 1 Nov 2026, commit `48e5b1b09`, owner approval Q96). It built the hub's "Invented figures, reconciled" sentence, which no screen reads any more.
 - **`src/components/ward-management/hub/hub-screen.tsx`** (999 lines) — the search hub screen
   itself, `HubScreen` (140).
 - **`src/components/ward-management/hub/hub.module.css`** (1238 lines) — styles for `hub-screen.tsx`.
@@ -495,13 +490,7 @@ drawn but has no build contract (backs `movement-horizon-gantt.tsx`). **Dispatch
   PRESENTATION" discipline `legal-forms-derivations.ts` cites.
 - **`src/components/ward-management/movements/movements.module.css`** (2400 lines) — styles for
   `movements-screen.tsx`.
-- **`src/components/ward-management/movements/traffic-diagram.tsx`** (411 lines) — a standalone
-  corridor-traffic visual, `TrafficDiagram` (27). ⚠️ Declared in
-  `tests/ward-component-reachability.test.ts`'s `DECLARED_UNREACHABLE` list ("standalone movements
-  visual component; tested directly in `ward-movements-traffic-diagram.dom.test.tsx`") — not reached
-  from any route today, but exercised by a direct unit/DOM test rather than a screen.
-- **`src/components/ward-management/movements/traffic-diagram.module.css`** (429 lines) — styles for
-  the diagram above.
+- **`movements/traffic-diagram.tsx`** and **`traffic-diagram.module.css`** — retired (deleted 1 Nov 2026, commit `48e5b1b09`, owner approval Q96, with their tests). The standalone corridor-traffic visual was reached by no route.
 
 ## `officer/`
 
@@ -623,8 +612,7 @@ History, care-linked Community, grouped Details and authority/document-ledger pa
 its CSS module provide persistent reservation, transport and clearance context. Explicit clinical
 clearance recording and workflow focus handoffs stay in Patient Now / transit operations.
 `tests/ward-patient-dossier-tabs.dom.test.tsx` covers the new filters, metadata, clipboard and
-clearance/focus behaviour; `scripts/ward-flow/capture-patient-dossier-tabs.mjs` captures every tab,
-live/inactive records, filters and dialogs at desktop, tablet and mobile sizes with axe checks.
+clearance/focus behaviour. (The `capture-patient-dossier-tabs.mjs` capture script was retired on 18 Oct 2026, commit `97fa3e252`.)
 
 **4 October 2026 visual refinement:** `patient-flight-header.tsx` supplies the compact curved
 identity band; `patient-record-overview.tsx` and its CSS module supply the record-only hub. Live
@@ -763,19 +751,11 @@ demo clock). **Tests:** `ward-catchment-resolver.dom.test.tsx`, `ward-tools-shee
 
 ## `tracker/`
 
-**Route:** none live. `/transport` (`src/app/ward-flow/transport/page.tsx`) redirects to
-`/ward-flow/movements` — MERGE 03, owner-approved 2026-09-05, folding the live vehicle
-tracker into `MovementsScreen`. **Mockup:** none current. **Dispatches:** none. **Reads:**
-`transportLeg` (`ward-derivations.ts`) only, via its own `tracker-derivations.ts`. **Tests:**
-`tracker-derivations.test.ts` (tests the derivations module directly — legitimate unit-test
-coverage of logic, not a screen), `ward-component-reachability.test.ts`,
-`ward-transport-page-name.test.ts`. The folder's `live-tracker.tsx`, its `.module.css` and
-`ward-tracker-leg-badge.dom.test.tsx` were removed by PR #306 on 15 Oct 2026.
-
-- **`src/components/ward-management/tracker/tracker-derivations.ts`** (66 lines) — small, pure
-  helpers, formerly used by `live-tracker.tsx`, and unit-tested on their own:
-  `trackerRowState`, `stampAgeText`. Delegates all "which leg" logic to `transportLeg`
-  (`ward-derivations.ts`) rather than duplicating it.
+**Retired.** The `tracker/` folder no longer exists. `/transport` redirects to
+`/ward-flow/transport/officer`. The live vehicle tracker (`live-tracker.tsx`, its `.module.css` and
+dom test) was removed by PR #306 on 15 Oct 2026. `tracker/tracker-derivations.ts` and
+`tests/tracker-derivations.test.ts` were deleted on 1 Nov 2026 (commit `48e5b1b09`, owner approval
+Q96). Transport legs are read through `transportLeg` in `ward-derivations.ts`.
 
 ## `wards/`
 
@@ -810,12 +790,12 @@ from the separate `ward/` folder — the two are easy to conflate by name), plus
 4. **`wards/ward-overview.module.css` has no companion component and no importer anywhere in
    `src/`.** It is the only fully orphaned CSS module found in this pass — worth checking before
    assuming every `.module.css` here is load-bearing.
-5. **`movements/traffic-diagram.tsx` is unreachable from any route but IS tested directly**
-   (`ward-movements-traffic-diagram.dom.test.tsx`) and is declared as such in
-   `ward-component-reachability.test.ts`. Do not assume "has a passing test" means "a coordinator can
-   open it" anywhere in this map — verify against the reachability declarations.
-6. **`tracker/tracker-derivations.ts` and `on-call-roster.ts`-style logic files are deliberately
-   excluded from the reachability guard**, which only scans `.tsx` files
+5. **A passing test is not the same as a screen a coordinator can open.** The standalone
+   `movements/traffic-diagram.tsx` was an example (tested directly, reached by no route) and was
+   deleted on 1 Nov 2026; check the reachability declarations in `ward-component-reachability.test.ts`
+   before treating any tested component as reachable.
+6. **`.ts` logic modules such as `on-call/on-call-roster.ts` are deliberately excluded from the
+   reachability guard**, which only scans `.tsx` files
    (`tests/ward-component-reachability.test.ts`, "COMPONENTS ONLY — `.tsx`"). A `.ts` logic module
    imported only by tests is normal unit-test coverage, not a hidden orphan screen — do not flag it
    the same way.
