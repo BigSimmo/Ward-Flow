@@ -390,13 +390,6 @@
     );
   }
 
-  /* A sheet or dialog is open: phone dialogs rise from the bottom, so the toast moves to the top and
-     never covers the dialog's buttons (INV-A11-024: Undo sat over "Cancel transport" at 390 wide). */
-  :global(html:has([role="dialog"][aria-modal="true"])) .toastRegion {
-    top: max(var(--wf-s-2), env(safe-area-inset-top));
-    bottom: auto;
-  }
-
   .toast {
     /* D-192: the phone toast is a solid surface, so the row under it never shows through. */
     --toast-bg: light-dark(var(--wf-ink-1), var(--wf-track));
