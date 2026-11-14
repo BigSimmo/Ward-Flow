@@ -290,6 +290,30 @@ describe("H10: bed kind and bed number are one fact", () => {
     throw new Error(`no seeded stay could be transferred to the mixed ward: ${[...new Set(reasons)].join(" | ")}`);
   });
 
+  it("an Open journey arriving unpulled on a closed mixed ward takes a free open bed, not a locked kind with no bed (seed 9)", () => {
+    // Property seed 9: the ward's locked beds were all taken and its Ready figures were 0 (closed to
+    // admissions), so the arrival read as a locked stay with no locked bed left, while open beds stood empty.
+    activateScenarioNetwork("scarce");
+    const unitId = "bty-adult-secure";
+    let state = seedWardFlowState("scarce");
+    expect(state.movements.find((row) => row.id === "WF-313")).toMatchObject({ stage: "moving", security: "Open" });
+    state = send(state, {
+      type: "CLOSE_WARD_TO_ADMISSIONS",
+      unitId,
+      actingUnitId: unitId,
+      reason: "other_operational",
+      role: "ward",
+    });
+    const arrived = send(state, { type: "PATIENT_ARRIVED", movementId: "WF-313", actingUnitId: unitId, role: "ward" });
+    expect(arrived.rejections).toEqual(state.rejections);
+    const stay = arrived.admissions.find((row) => row.movementId === "WF-313")!;
+    const unit = arrived.units.find((row) => row.id === unitId)!;
+    expect(stay.bedKind).toBe("open");
+    expect(stay.bedNumber).toBeDefined();
+    expect(numberedBedKind(unit, stay.bedNumber!)).toBe("open");
+    expect(bedKindProblems(arrived)).toEqual([]);
+  });
+
   it("random pulls, arrivals, transfers, discharges and closures never part a stay's kind from its bed (property)", () => {
     let pulls = 0;
     let arrivals = 0;

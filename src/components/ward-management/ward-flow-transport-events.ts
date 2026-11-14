@@ -539,8 +539,20 @@ export function reduceTransportEvent(
       // The stay an unpulled arrival is given (below). A capacity conflict names it, so the journey,
       // the stay and the conflict agree when a saved session is restored (Codex review, 13 Nov 2026).
       const unpulledStayId = unpulled ? `AD-ARR-${String(state.admissionSequence + 1).padStart(2, "0")}` : undefined;
-      const unpulledBedKind: "locked" | "open" =
-        movement.security === "Secure" ? (freeLocked > 0 ? "locked" : "open") : freeOpen > 0 ? "open" : "locked";
+      // With no ready bed of either kind (a full or closed ward: the arrival is a capacity conflict),
+      // the stay still sits in a real bed. H10, D-210 (Josh, 14 Nov 2026): it takes the journey's own
+      // kind where a bed of that kind is free by number, else the other kind's free bed, so the kind
+      // is never one the ward has no bed for while a bed of the other kind stands empty.
+      const securityBedKind: "locked" | "open" = movement.security === "Secure" ? "locked" : "open";
+      const otherBedKind: "locked" | "open" = securityBedKind === "locked" ? "open" : "locked";
+      const hasFreeNumber = (kind: "locked" | "open") =>
+        chooseBedNumber(unit, state, kind, { movementId: movement.id, referralId: movement.referralId }) !== undefined;
+      let unpulledBedKind: "locked" | "open";
+      if (freeLocked + freeOpen > 0)
+        unpulledBedKind = (securityBedKind === "locked" ? freeLocked : freeOpen) > 0 ? securityBedKind : otherBedKind;
+      else
+        unpulledBedKind =
+          unpulled && !hasFreeNumber(securityBedKind) && hasFreeNumber(otherBedKind) ? otherBedKind : securityBedKind;
       const isBedTurnaround = !bedAlreadyCounted && (unit.empty.value <= 0 || (unpulled && !readyBedForUnpulled));
 
       // Owner ruling 2026-09-25: occupant counts follow gender (recorded sex for a non-binary person).

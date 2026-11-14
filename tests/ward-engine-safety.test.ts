@@ -527,6 +527,31 @@ function runSeed(seed: number, steps = STEPS, options: { readonly pullRoute?: bo
 }
 
 describe("sequences the random run found", () => {
+  // One-tap pull route, seed 1: a ward desk places a seeded pulled stay (joined to its journey only
+  // by Movement.admissionId) in a bed, then releases the pull. The bed number the placement held for
+  // that journey read as somebody else's hold, so the release could not be undone.
+  it("undoes releasing a pull whose seeded stay was placed in a bed", () => {
+    const placeThenRelease: WardFlowEvent[] = [
+      {
+        now: 872,
+        type: "PLACE_IN_BED",
+        admissionId: "AD-SJGA-07",
+        actingUnitId: "sjgm-adult-open",
+        bedNumber: 13,
+        role: "coordinator",
+      },
+      {
+        now: 922,
+        type: "RELEASE_PULL",
+        movementId: "WF-016",
+        actingUnitId: "sjgm-adult-open",
+        reason: "bed_needed_for_another_patient",
+        role: "ward",
+      },
+    ] as WardFlowEvent[];
+    expect(replay("scarce", placeThenRelease)).toBeNull();
+  });
+
   it("drops a Bed board placement's undo when releasing the pull removes that stay", () => {
     // Refer, accept, pull, place in a bed, release the pull: the pulled stay is removed, but its
     // bed-placement undo record used to stay behind, so the saved day was refused on reload.
