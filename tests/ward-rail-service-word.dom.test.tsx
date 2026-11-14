@@ -193,7 +193,9 @@ describe("rail bed alerts (live figures)", () => {
     // Audit 24-4 NA2-08: the header chip reads "N beds ready" (`readyBedsNow`, Capacity's word) and
     // each service row "N of M ready", in place of v6's "N unoccupied beds" / "N of M free".
     const header = screen.getByTestId("ward-rail-bed-alerts-free");
-    expect(header).toHaveTextContent(`${expected.totalFreeBeds} beds ready`);
+    expect(header).toHaveTextContent(`Network ${expected.totalFreeBeds} ready`);
+    // R-BEDS-5: the definition sits behind a tap-to-open ⓘ (D-224), not in a sentence.
+    expect(within(header).getByRole("button", { name: "About Ready" })).toBeInTheDocument();
     expect(header).not.toHaveTextContent("unoccupied");
 
     const rows = screen.getAllByTestId("ward-rail-bed-alert-row");

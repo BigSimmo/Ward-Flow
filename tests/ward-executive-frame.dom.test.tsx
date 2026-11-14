@@ -173,7 +173,7 @@ describe("the executive chrome in the new frame", () => {
     const card = screen.getByTestId("ward-rail-capacity-alerts-trigger");
     expect(card).toHaveTextContent("Bed alerts");
     expect(card).toHaveTextContent(/over 85%/);
-    expect(card).toHaveTextContent(`${report.network.beds.ready} beds ready now`);
+    expect(card).toHaveTextContent(`Network ${report.network.beds.ready} ready`);
     expect(card).toHaveTextContent("Metro");
     // A9-26 (F-27): statewide, the rows are the three fullest services and Metro is the foot line,
     // as on every other network desk, so the count over the line counts services, never Metro.
@@ -202,7 +202,7 @@ describe("the executive chrome in the new frame", () => {
     fireEvent.click(screen.getByTestId("ward-bar-phone-menu"));
     const top = within(screen.getByTestId("ward-phone-menu")).getByTestId("ward-phone-menu-top");
     expect(top).toHaveTextContent("Bed alerts");
-    expect(top).toHaveTextContent(`${report.network.beds.ready} beds ready now, across the whole network`);
+    expect(top).toHaveTextContent(`Network ${report.network.beds.ready} ready`);
     expect(within(top).getByRole("link")).toHaveAttribute("href", "/ward-flow/capacity");
     expect(guard.raw).not.toHaveBeenCalled();
   });

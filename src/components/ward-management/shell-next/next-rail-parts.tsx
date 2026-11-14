@@ -13,6 +13,7 @@ import type { WardNavCounts } from "@/components/ward-management/ward-nav-counts
 import { unitInScope } from "@/components/ward-management/ward-role-access";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
+import { NETWORK_SCOPE_WORD, figureScopeWords } from "@/components/ward-management/figures/figure-scope-words";
 import {
   BED_ALERT_THRESHOLD_PERCENT,
   formatOccupancyPercent,
@@ -290,7 +291,7 @@ export { RailAccountMenu } from "@/components/ward-management/shell-next/next-ac
  *  services) and the beds ready now.
  * WF-44 (5 Nov 2026): Metro sits on its own line above the ready count, so "Metro 74.6%" never
  * paints over the East Metro row above it on a tight rail. */
-export function RailReadyLine({ metro, ready }: { metro: number | null; ready: number }) {
+export function RailReadyLine({ metro, ready, scope }: { metro: number | null; ready: number; scope: string }) {
   return (
     <span className={parts.readyStack}>
       {metro !== null ? (
@@ -299,10 +300,23 @@ export function RailReadyLine({ metro, ready }: { metro: number | null; ready: n
         </span>
       ) : null}{" "}
       <span>
-        <b>{ready}</b> {ready === 1 ? "bed" : "beds"} ready now
+        {scope} <b>{ready}</b> ready
       </span>
     </span>
   );
+}
+
+/**
+ * R-BEDS-5 (D-220 phase 2): the one word naming whose Ready figure the rail shows, "RPH 2 ready" or
+ * "Network 23 ready", so a site figure and the network figure never read as one number. The rail's
+ * Ready narrows to a site, service or ward desk's own wards (`wardNavCounts`); every other desk
+ * counts the network. `ownName` is the desk's own capacity row name (a one-ward desk's ward).
+ */
+export function readyScopeWord(access: WardAccess, ownName: string | undefined): string {
+  const kind = access.scope.kind;
+  return kind === "site" || kind === "service" || kind === "ward"
+    ? figureScopeWords(access.scope, null, "desk", { ward: ownName })
+    : NETWORK_SCOPE_WORD;
 }
 
 export function RailLiveClock({
