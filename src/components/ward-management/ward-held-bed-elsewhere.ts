@@ -35,7 +35,7 @@ export function referralArmHoldingBed(
 }
 
 /** The ward an accepted arm holds its bed at. */
-export function heldBedUnitId(arm: ReferralAddressing): string | undefined {
+function heldBedUnitId(arm: ReferralAddressing): string | undefined {
   return arm.destination.kind === "psychiatric_ward" ? (arm.acceptedUnitId ?? arm.destination.unitId) : undefined;
 }
 

@@ -11,7 +11,7 @@ import type { WardFlowState } from "./ward-flow-reducer";
  * the person acted, but only when that is not later than the server's time and not earlier than
  * the record's last change; otherwise it is refused and the person is asked to enter it again.
  */
-export const OFFLINE_ENTRY_SLACK_MINUTES = 1;
+const OFFLINE_ENTRY_SLACK_MINUTES = 1;
 
 const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
 
@@ -40,7 +40,7 @@ function sameSubject(a: AuditSubject, b: AuditSubject): boolean {
  * leaves none of these stamps is still caught: a waiting save is checked against the board it was
  * made on (CS-19, `pinToBoard`), so a record changed after that board is refused as changed meanwhile.
  */
-export function subjectLastChange(state: WardFlowState, event: WardFlowEvent, notAfter: Instant): Instant | null {
+function subjectLastChange(state: WardFlowState, event: WardFlowEvent, notAfter: Instant): Instant | null {
   const stamps: number[] = [];
   const subject = auditSubject(state, event);
   if (subject.kind !== "unresolved" && subject.kind !== "configuration")

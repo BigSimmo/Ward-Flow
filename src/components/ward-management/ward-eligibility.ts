@@ -893,7 +893,7 @@ export function candidateReason(verdict: EligibilityVerdict) {
  * thing. `overridable` is the engine's own rule (`SUITABILITY_GATES`): whether every failing check
  * can be answered by a recorded reason, which is when "Accept anyway, record why" may be offered.
  */
-export type PlacementFitKind = "fits" | "stale_count" | "no_bed" | "needs_review" | "not_suitable";
+type PlacementFitKind = "fits" | "stale_count" | "no_bed" | "needs_review" | "not_suitable";
 
 export type PlacementFit = {
   kind: PlacementFitKind;
@@ -908,7 +908,7 @@ export type PlacementFit = {
  * pass rule is "someone of the same sex is already there, or more than one bed is Ready": when it
  * fails, more Ready beds would pass it (H9).
  */
-export const BED_COUNT_GATES: readonly EligibilityGate[] = [
+const BED_COUNT_GATES: readonly EligibilityGate[] = [
   "capacity_freshness",
   "allocatable_bed",
   "locked_bed_free",

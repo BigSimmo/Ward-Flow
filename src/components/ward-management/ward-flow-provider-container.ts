@@ -166,7 +166,7 @@ export const fixtureWorlds = (offsetMinutes = 0) =>
     seedWardFlowStateAt(offsetMinutes, scenario),
   ]);
 
-export function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: WardFlowEvent): WardFlowContainer {
+function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: WardFlowEvent): WardFlowContainer {
   const nextWorld = wardFlowReducer(container.world, event);
   const outcome = localCommandOutcome(container.world, nextWorld);
   const accepted = outcome.status === "accepted";
