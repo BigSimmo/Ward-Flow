@@ -272,7 +272,9 @@ describe("ward scenarios", () => {
       // RE-MEASURED 2026-11-13, D-189 items 8(a) and 9(a): the authorisation gate is information only
       // while every ward reads "not stated", so the two SJGS wards are open to involuntary movements:
       // 430 -> 461 pairs. Stranded stays 2: WF-009's story records SJGS Adult Secure's decline too.
-    ).toEqual({ openMovements: 53, eligiblePairs: 461, strandedMovements: 2 });
+      // RE-MEASURED 2026-11-14, D-209 item 3: Saoirse (WF-010) now needs a locked bed, so the wards
+      // with no locked beds drop out for her: 461 -> 453 pairs. Stranded UNCHANGED at 2.
+    ).toEqual({ openMovements: 53, eligiblePairs: 453, strandedMovements: 2 });
   });
 
   it("the scarce night exhausts the network for at least one open movement", () => {
@@ -300,7 +302,9 @@ describe("ward scenarios", () => {
       // each unit's position (index % 3), so removing one unit moved which later units draw a bed.
       // RE-MEASURED 2026-11-13, D-189 items 8(a) and 9(a): authorisation no longer refuses, so
       // 135 -> 154 pairs; stranded stays 3 (WF-009 records SJGS Adult Secure's decline too).
-    ).toEqual({ openMovements: 53, eligiblePairs: 154, strandedMovements: 3 });
+      // RE-MEASURED 2026-11-14, D-209 item 3: Saoirse (WF-010) now needs a locked bed: 154 -> 152
+      // pairs. Stranded UNCHANGED at 3.
+    ).toEqual({ openMovements: 53, eligiblePairs: 152, strandedMovements: 3 });
 
     expect(
       Math.min(...counts),

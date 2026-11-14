@@ -78,16 +78,16 @@ export const DEFAULT_BED_FINDER_FILTERS: BedFinderFilters = {
 };
 
 /**
- * D-189 items 8(a) and 9(i): the Voluntary or Involuntary choice stays required, so its shape holds
- * when Q42 is signed, but authorisation is "not stated" for every ward, so it narrows nothing.
+ * D-189 items 8(a) and 9(i), D-209 item 9: the Voluntary or Involuntary choice stays required, but
+ * authorisation steers no placement (Josh, no steering), so it narrows nothing. Each ward's page and
+ * fit card show its authorisation from the Chief Psychiatrist's register.
  */
-export const BED_FINDER_AUTHORISATION_HINT =
-  "Authorisation is not stated for any ward, so this does not narrow the list.";
+export const BED_FINDER_AUTHORISATION_HINT = "Authorisation does not narrow this list.";
 
 /**
  * The finder's note: what the quick filter leaves out, so nobody reads its list as a fit list (M118,
  * 10 Nov 2026). It checks cohort and sex only, and drops forensic wards (D7). Authorisation reads
- * through `authorisationBlocksPlacement`, which narrows nothing while every ward is "not stated".
+ * through `authorisationBlocksPlacement`, which narrows nothing (D-209 item 9: no steering).
  * Review R6: the note no longer says the referral checks "every rule", as authorisation is not
  * checked while it is not stated; the referral's own gates (`ward-eligibility.ts`) still run.
  */

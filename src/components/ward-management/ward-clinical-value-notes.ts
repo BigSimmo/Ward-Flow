@@ -37,7 +37,7 @@ const FORECAST_ALERT_SOURCE =
   "Forecasting build (Josh, 23 Oct 2026, per the forecast source comments; no decision entry), labelled default; added to the register 10 Nov 2026 (D-122)";
 /** The triage form's urgency windows (Josh, 7 Nov 2026: list them here, synthetic until signed). */
 const TRIAGE_URGENCY_SOURCE =
-  "WA mental health triage scale urgency categories, as on the triage form (SMHMR900); listed 7 Nov 2026, awaiting Josh's sign-off";
+  'D-209 item 7 (Josh, 14 Nov 2026): matches WA Health\'s "Triage to Discharge" Mental Health Framework for Statewide Standardised Clinical Documentation, Version 11.0 (9 Aug 2021), Appendix 1, Crisis Triage Rating Scale, word for word; the triage form itself (SMHMR900) is not public';
 
 const TRIAGE_FOLLOW_UP_SOURCE =
   'Typed in the triage files before 13 Nov 2026 ("JOSH SETS THESE before clinical use"); listed unchanged by D-186 item 16, awaiting Josh\'s sign-off';

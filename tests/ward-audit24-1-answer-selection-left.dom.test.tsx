@@ -62,7 +62,7 @@ function renderAnswer(unitId: string, start: Adjust = (movements) => movements, 
 }
 
 const shownId = () => screen.getByTestId(/^ward-incoming-/).dataset.testid!.replace("ward-incoming-", "");
-const UNIT = "sjgm-adult-open";
+const UNIT = "gry-adult-secure";
 const withSecond: Adjust = (movements) => {
   const first = movements.find((movement) => movement.referredUnitIds.includes(UNIT))!;
   return [...movements, { ...first, id: "WF-AUDIT-NEXT", openedAt: first.openedAt + 60_000 }];

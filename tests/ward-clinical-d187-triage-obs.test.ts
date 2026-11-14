@@ -38,7 +38,7 @@ describe("D-187 item 17 (Q39): the copied handover's Recommendation carries the 
     );
   });
 
-  it("carries the Plan and Crisis lines as written, with each crisis number's Not checked mark", () => {
+  it("carries the Plan and Crisis lines as written, with each crisis number's check mark", () => {
     const lifeline = SAFETY_PLAN_SERVICES.find((service) => service.name === "Lifeline")!;
     const blank = blankTriage(EXAMPLE_PERSON);
     const state: TriageState = {
@@ -58,10 +58,10 @@ describe("D-187 item 17 (Q39): the copied handover's Recommendation carries the 
     };
     const recommendation = line(isbarText(state), "R ");
     expect(recommendation).toBe(
-      "R Recommendation: Actions – · Review risk by – · Plan Home with mother tonight. Step 1, warning signs: not sleeping. · Crisis Step 5, services: Lifeline 13 11 14 (Not checked). (Rosa) Call the community team.",
+      "R Recommendation: Actions – · Review risk by – · Plan Home with mother tonight. Step 1, warning signs: not sleeping. · Crisis Step 5, services: Lifeline 13 11 14 (checked by Josh on 14 Nov 2026). (Rosa) Call the community team.",
     );
-    // D-186 item 12: the number keeps its mark; no number changes.
-    expect(recommendation).toContain(`${lifeline.phone} (Not checked)`);
+    // D-186 item 12 and D-209 item 8: the number keeps its check mark; no number changes.
+    expect(recommendation).toContain(`${lifeline.phone} (checked by Josh on 14 Nov 2026)`);
     // Only Plan and Crisis join it: Means safety and the plan's Follow-up heading stay where they were.
     expect(recommendation).not.toMatch(/Mother holds medicines|Seen tomorrow/u);
   });

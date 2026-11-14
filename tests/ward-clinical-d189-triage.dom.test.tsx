@@ -119,7 +119,7 @@ describe("A9-22(b): Review details fold only when nothing is left to check", () 
 });
 
 describe("F-80 (D-189 item 5): crisis numbers render as copy-only text", () => {
-  it("shows a crisis number with its Not checked mark and no call link", () => {
+  it("shows a crisis number with its check mark (D-209 item 8) and no call link", () => {
     const lifeline = SAFETY_PLAN_SERVICES.find((service) => service.name === "Lifeline")!;
     const blank = blankTriage(EXAMPLE_PERSON);
     const state: TriageState = {
@@ -132,7 +132,7 @@ describe("F-80 (D-189 item 5): crisis numbers render as copy-only text", () => {
     const { container } = render(
       <SummaryDocument form={formFor(state)} signed={{ at: "09/11/2026 11:00", by: "Nurse in charge" }} />,
     );
-    expect(container).toHaveTextContent(`${lifeline.phone} (Not checked)`);
+    expect(container).toHaveTextContent(`${lifeline.phone} (checked by Josh on 14 Nov 2026)`);
     expect(container.querySelector("a[href^='tel:'], a[href^='callto:'], a[href^='sms:']")).toBeNull();
     expect(container).toHaveTextContent("Signed 09/11/2026 11:00 by Nurse in charge");
   });

@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render, screen, within } from "@testing-librar
 import { afterEach, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/ward/sjgm-adult-open/answer",
+  usePathname: () => "/ward-flow/ward/gry-adult-secure/answer",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -67,7 +67,7 @@ it("shows community origin in the full referral instead of claiming an ED", () =
 
 it("does not carry a prior request's override answer to the next refused request", async () => {
   const state = seedWardFlowState();
-  const unitId = "sjgm-adult-open";
+  const unitId = "gry-adult-secure";
   const first = state.movements.find(
     (movement) =>
       !movement.closure && movement.stage === "destination_review" && movement.referredUnitIds.includes(unitId),

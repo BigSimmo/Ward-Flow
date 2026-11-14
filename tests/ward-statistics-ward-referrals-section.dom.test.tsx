@@ -66,7 +66,9 @@ const ALL_THREE_UNIT = "bty-adult-secure";
 const ONE_FIGURE_UNITS = [
   { unitId: "gry-older-adult", slot: "asked", expected: 1 },
   { unitId: "alb-adult-open", slot: "accepted", expected: 3 },
-  { unitId: "gry-adult-secure", slot: "declined", expected: 2 },
+  // D-209 item 3 (14 Nov 2026): Saoirse is now asked of Graylands Adult Secure, so it also carries
+  // one asked. No seeded ward has declines alone; asked 1 beside declined 2 still catches a swap.
+  { unitId: "gry-adult-secure", slot: "declined", expected: 2, alsoAsked: 1 },
 ] as const;
 
 function renderWard(unitId: string) {
@@ -114,9 +116,11 @@ describe("the ward statistics screen's referral counts", () => {
    * swap between two slots moves a number onto a ward that should be showing nought, so it reddens
    * — which a same-valued pair on a single ward cannot catch.
    */
-  it.each(ONE_FIGURE_UNITS)("carries only the $slot figure on $unitId", ({ unitId, slot, expected }) => {
+  it.each(ONE_FIGURE_UNITS)("carries only the $slot figure on $unitId", (entry) => {
+    const { unitId, slot, expected } = entry;
     const figures = renderedFigures(renderWard(unitId));
-    const wanted = { asked: "0", accepted: "0", declined: "0", [slot]: String(expected) };
+    const asked = "alsoAsked" in entry ? String(entry.alsoAsked) : "0";
+    const wanted = { asked, accepted: "0", declined: "0", [slot]: String(expected) };
     expect(figures).toEqual(wanted);
   });
 

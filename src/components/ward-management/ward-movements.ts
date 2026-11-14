@@ -16,6 +16,7 @@ import { requiresAuthorisedDestination } from "@/components/ward-management/ward
 import { generatedOccupantPatients, wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { derivedBedReleases } from "@/components/ward-management/ward-discharge-dates";
 import { withSeededDischargeLogistics } from "@/components/ward-management/discharges/discharge-dependency-seed";
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { GENERAL_OBSERVATION, observationAt } from "@/components/ward-management/ward-observation";
 import { withSampleLegalStatusFromForm } from "@/components/ward-management/ward-sample-legal-status";
 import {
@@ -31,6 +32,16 @@ import {
  * place and both seed writes reference it, rather than each carrying its own copy of the string.
  */
 const SEEDED_TRANSPORT_FORM_REQUIRED = "Form 1A";
+
+/**
+ * D-209 item 3 (Josh, 14 Nov 2026): Saoirse's ED observation, the least restrictive level above
+ * General: Intermittent, every 30 minutes (the signed longer interval).
+ */
+const SAOIRSE_OBSERVATION = {
+  level: "intermittent",
+  intervalMinutes: CLINICAL_VALUES.observationIntermittentLong.value,
+  reviewAt: null,
+} as const;
 
 /**
  * A16-13: a hand-authored pulled stay's `pullExpiresAt`, taken from the shared seeded hold for it
@@ -170,6 +181,10 @@ const seededMovements: Movement[] = [
     legalForm: {
       code: "3B",
       kind: "detention",
+      // D-209 item 2 (Josh, 14 Nov 2026): a Form 1A is on file before her 3B, so the 3B no longer
+      // stands with no earlier form. Tier 1, the locked bed and General observation stay; her
+      // referral records no risk flags ("None recorded").
+      earlierForms: [{ code: "1A", kind: "examination", at: NOW_ANCHOR - 240, by: "ed" }],
     },
     statusChanges: [],
     urgencyChanges: [],
@@ -544,13 +559,15 @@ const seededMovements: Movement[] = [
     flaggedUrgent: false,
     urgency: 2,
     cohort: "Adult",
-    security: "Open",
+    // D-209 item 3 (Josh, 14 Nov 2026): with two moderate risks, a barricade note and a two-staff
+    // escort with security, she is referred to a locked ward, on a level above General.
+    security: "Secure",
     sex: "Female",
     gender: "Female", // R7 (25 Sept 2026): authored demo data, not derived at runtime
-    observation: GENERAL_OBSERVATION,
+    observation: SAOIRSE_OBSERVATION,
     highAcuity: false,
-    // D-189 items 1 and 9(b) (Josh, 13 Nov 2026): Saoirse's story stays as it runs today, a named
-    // exception to D-187 item 2's "Referred for psychiatric examination", for the later sitting (Q20).
+    // D-189 items 1 and 9(b) (Josh, 13 Nov 2026): Saoirse's legal status stays a named exception to
+    // D-187 item 2's "Referred for psychiatric examination".
     legalStatus: "Detained awaiting examination",
     legalForm: { code: "1A", kind: "examination" },
     statusChanges: [
@@ -566,7 +583,7 @@ const seededMovements: Movement[] = [
     overrides: [],
     stage: "destination_review",
     owner: "Bed coordinator",
-    referredUnitIds: ["sjgm-adult-open"],
+    referredUnitIds: ["gry-adult-secure"],
     declines: [],
     blocker: "Awaiting destination response",
     withdrawnReferrals: [],

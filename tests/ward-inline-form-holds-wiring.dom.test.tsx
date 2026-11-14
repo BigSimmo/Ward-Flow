@@ -40,7 +40,7 @@ function harness(children: (state: ReturnType<typeof useWardFlow>) => ReactNode)
 
 describe("inline forms on the real screens carry their hold (audit CS3-01)", () => {
   it("ward answer view: the decline form, once used, is sent with its hold (page form safety net)", () => {
-    const sent = harness(() => <WardAnswerView unitId="sjgm-adult-open" />);
+    const sent = harness(() => <WardAnswerView unitId="gry-adult-secure" />);
     expect(openSheetHandles()).toHaveLength(0);
     const id = screen.getByTestId(/^ward-incoming-/).dataset.testid!.replace("ward-incoming-", "");
     fireEvent.click(screen.getByTestId(`ward-decline-toggle-${id}`));
@@ -55,7 +55,7 @@ describe("inline forms on the real screens carry their hold (audit CS3-01)", () 
   });
 
   it("ward answer view: opening the decline form holds it before any field is touched", () => {
-    harness(() => <WardAnswerView unitId="sjgm-adult-open" />);
+    harness(() => <WardAnswerView unitId="gry-adult-secure" />);
     const id = screen.getByTestId(/^ward-incoming-/).dataset.testid!.replace("ward-incoming-", "");
     expect(openSheetHandles()).toHaveLength(0);
     fireEvent.click(screen.getByTestId(`ward-decline-toggle-${id}`));

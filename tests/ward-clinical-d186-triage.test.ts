@@ -115,8 +115,8 @@ describe('Q11: "Chosen today" and "On record"; a picked status reads "as chosen"
   });
 });
 
-describe("Q12: crisis numbers read Not checked until checked", () => {
-  it("keeps every name and number, with checked by and checked on empty today", () => {
+describe("Q12: crisis numbers read Not checked until checked (D-209 item 8: the five numbers are checked)", () => {
+  it("keeps every name and number, each number checked by Josh on 14 Nov 2026 (D-209 item 8)", () => {
     expect(SAFETY_PLAN_SERVICES.map(({ name, phone }) => [name, phone])).toEqual([
       ["Mental Health Emergency Response Line (metro WA)", "1300 555 788"],
       ["Lifeline", "13 11 14"],
@@ -126,20 +126,25 @@ describe("Q12: crisis numbers read Not checked until checked", () => {
       ["Community team on-call", null],
     ]);
     for (const service of SAFETY_PLAN_SERVICES) {
-      expect(service.checkedBy).toBeNull();
-      expect(service.checkedOn).toBeNull();
+      expect(service.checkedBy).toBe(service.phone ? "Josh" : null);
+      expect(service.checkedOn).toBe(service.phone ? "14 Nov 2026" : null);
     }
   });
 
-  it("puts Not checked beside each number, and nothing beside a service with no number", () => {
+  it("puts the check beside each number, and nothing beside a service with no number", () => {
     const lifeline = SAFETY_PLAN_SERVICES.find((service) => service.name === "Lifeline")!;
-    expect(serviceText(lifeline)).toBe("Lifeline 13 11 14 (Not checked)");
+    expect(serviceText(lifeline)).toBe("Lifeline 13 11 14 (checked by Josh on 14 Nov 2026)");
+    expect(serviceText({ ...lifeline, checkedBy: null, checkedOn: null })).toBe("Lifeline 13 11 14 (Not checked)");
     const onCall = SAFETY_PLAN_SERVICES.find((service) => service.phone === null)!;
     expect(serviceText(onCall)).toBe("Community team on-call");
   });
 
   it("says Not checked until both checked by and checked on are filled", () => {
-    const lifeline = SAFETY_PLAN_SERVICES.find((service) => service.name === "Lifeline")!;
+    const lifeline = {
+      ...SAFETY_PLAN_SERVICES.find((service) => service.name === "Lifeline")!,
+      checkedBy: null,
+      checkedOn: null,
+    };
     expect(serviceCheck({ ...lifeline, checkedBy: "Synthetic Checker" })).toBe("Not checked");
     expect(serviceCheck({ ...lifeline, checkedOn: "01/12/2026" })).toBe("Not checked");
     expect(serviceCheck({ ...lifeline, checkedBy: " ", checkedOn: "01/12/2026" })).toBe("Not checked");
@@ -148,18 +153,19 @@ describe("Q12: crisis numbers read Not checked until checked", () => {
     );
   });
 
-  it("carries Not checked into the plan, the Summary and Copy summary", () => {
+  it("carries each number's check into the plan, the Summary and Copy summary", () => {
     const services = SAFETY_PLAN_SERVICES.filter((service) => service.phone)
       .map(serviceText)
       .join("; ");
     const state = exampleTriage();
     const rp = applySafetyPlan(state.text.rp, { ...BLANK_SAFETY_PLAN, services });
-    expect(rp).toContain("Lifeline 13 11 14 (Not checked)");
+    const check = "(checked by Josh on 14 Nov 2026)";
+    expect(rp).toContain(`Lifeline 13 11 14 ${check}`);
     const planned = { ...state, text: { ...state.text, rp } };
     const copied = summaryText(summaryModel(planned));
     for (const service of SAFETY_PLAN_SERVICES.filter((s) => s.phone))
-      expect(copied).toContain(`${service.name} ${service.phone} (Not checked)`);
-    expect(JSON.stringify(summaryModel(planned).parts)).toContain("Emergency 000 (Not checked)");
+      expect(copied).toContain(`${service.name} ${service.phone} ${check}`);
+    expect(JSON.stringify(summaryModel(planned).parts)).toContain(`Emergency 000 ${check}`);
   });
 });
 
