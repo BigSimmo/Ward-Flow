@@ -18,8 +18,8 @@ import { NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites"
 import { COMMUNITY_TEAMS } from "@/components/ward-management/ward-teams";
 
 /**
- * Phase 1 of the permissions build (D-223): `PLACE_RULES` is a copy of `commandScopeRefusal`'s place
- * rules. Until phase 2 makes the server run the table, this holds the two to the same answer: where
+ * D-223: `commandScopeRefusal` runs `PLACE_RULES` and then its record-reference pass, and `permit()`
+ * runs the table for the screen. This holds the two to the same answer: where
  * the table refuses, the server refuses in the same words; where the table lets a change through,
  * the server either lets it through too or refuses it only in its record-reference pass (which
  * answers `OUTSIDE_PLACE` and stays on the server). A change that names no record gets exactly the
@@ -133,7 +133,7 @@ function compare(access: WardAccess, fields: Record<string, unknown>, exact: boo
   }
 }
 
-describe("PLACE_RULES gives commandScopeRefusal's answers (phase 1 parity, D-223)", () => {
+describe("PLACE_RULES gives commandScopeRefusal's answers (D-223)", () => {
   it("matches exactly for every change that names no record", () => {
     for (const access of DESKS) for (const fields of PLACE_FIELDS) compare(access, fields, true);
   });
