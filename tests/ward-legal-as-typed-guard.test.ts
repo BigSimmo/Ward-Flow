@@ -165,8 +165,10 @@ describe("legal form times only as typed: what screens show", () => {
   const dayZero = perthMidnight(2026, 10, 13);
 
   it("words the typed time with no count, before and after it", () => {
-    expect(typedTimeLine(dueAt, before, dayZero)).toMatch(/^Ends \S+.* as typed$/);
-    expect(typedTimeLine(dueAt, after, dayZero)).toMatch(/^Ended \S+.* as typed$/);
+    // D-218 (Josh, 14 Nov 2026): no "as typed" suffix; still never a count (D-93).
+    expect(typedTimeLine(dueAt, before, dayZero)).toMatch(/^Ends \S+/);
+    expect(typedTimeLine(dueAt, after, dayZero)).toMatch(/^Ended \S+/);
+    expect(typedTimeLine(dueAt, after, dayZero)).not.toMatch(/as typed|legally/);
     expect(typedTimePhrase(dueAt, after, dayZero)).toMatch(/^ended /);
     expect(formTimeAsTyped(typed.legalForm, before, dayZero)).toMatch(
       new RegExp(`^Form ${typed.legalForm.code}\\b.* · ends `),
@@ -178,11 +180,11 @@ describe("legal form times only as typed: what screens show", () => {
     for (const now of [dueAt - 3 * MINUTES_PER_DAY, dueAt + 3 * MINUTES_PER_DAY]) {
       for (const day of [dayZero, undefined]) {
         const line = typedTimeLine(dueAt, now, day);
-        expect(line).toMatch(/ as typed$/);
+        expect(line).not.toMatch(/as typed/);
         expect(line).not.toMatch(COUNT_IN_TEXT);
         expect(line).not.toMatch(/\bin \d+ days?\b/);
       }
-      expect(typedTimeLine(dueAt, now, dayZero)).toMatch(/^End(?:s|ed) \w{3} \d{1,2} \w{3} \d{2}:\d{2} as typed$/);
+      expect(typedTimeLine(dueAt, now, dayZero)).toMatch(/^End(?:s|ed) \w{3} \d{1,2} \w{3} \d{2}:\d{2}$/);
     }
   });
 
@@ -200,18 +202,20 @@ describe("legal form times only as typed: what screens show", () => {
       };
       for (const [surface, text] of Object.entries(surfaces)) {
         if (text === undefined) continue;
-        expect(text, surface).toMatch(/as typed/);
+        expect(text, surface).toMatch(/\b(?:ends|ended)\b/i);
+        expect(text, surface).not.toMatch(/as typed|legally checked/);
         expect(text, surface).not.toMatch(COUNT_IN_TEXT);
       }
     }
   });
 
-  it('words the "Legal due time passed" alert as typed, with no overdue count', () => {
+  it('words the "Legal due time passed" alert with the typed time, with no overdue count', () => {
     const items = buildActionInbox(state.movements, after, state.units).filter(
       (item) => item.movementId === typed.id && item.title === "Legal due time passed",
     );
     expect(items).toHaveLength(1);
-    expect(items[0].detail).toMatch(/ended .* as typed$/);
+    expect(items[0].detail).toMatch(/ended \S/);
+    expect(items[0].detail).not.toMatch(/as typed/);
     expect(items[0].detail).not.toMatch(/\boverdue\b|\bago\b/);
   });
 });

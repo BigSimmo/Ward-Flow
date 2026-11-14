@@ -2,6 +2,7 @@ import { communityTeamById } from "./community/community-derivations";
 import type { Admission } from "./ward-admissions";
 import { calendarDateOf, type Instant } from "./ward-clock";
 import { EARLIER_ROLE_LABELS, WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
+import { WARD_TIME_ZONE } from "@/lib/ward-time-zone";
 
 /**
  * Who a care fact was recorded by, as stored. A19 (26 Oct 2026) renamed the coordinator desk, so a fact
@@ -451,7 +452,7 @@ export function separationHandoff(
     leftAt: admission.leftAt,
     timeBasis:
       dayZero && Number.isFinite(dayZero.getTime())
-        ? { unit: "minutes", origin: dayZero.toISOString(), timeZone: "Australia/Perth" }
+        ? { unit: "minutes", origin: dayZero.toISOString(), timeZone: WARD_TIME_ZONE }
         : null,
     departureAt:
       dayZero &&

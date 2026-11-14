@@ -47,7 +47,6 @@ import {
 // D-91: the one unit finder, on the Summary page.
 import { STATISTICS_UNIT_FINDER_HREF } from "./statistics-view-switch";
 import { edStatisticsHref, movementHref } from "@/components/ward-management/shell/ward-facade";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { isClockBreached, splitDuration } from "@/components/ward-management/ward-clock";
 import type { EmergencyDepartment, Movement } from "@/components/ward-management/ward-model";
 import { LONG_WAIT_MINUTES, VERY_LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
@@ -314,7 +313,7 @@ function OperationalStatisticsEdScreen({
               />
               <p className={detail.note}>
                 {department.name} is the first row. {LONG_WAIT_MINUTES / 60}h and {VERY_LONG_WAIT_MINUTES / 60}h lines
-                are your defaults, not legal limits.
+                are your defaults.
               </p>
             </>
           )}
@@ -634,7 +633,7 @@ function EdPresentation({
           ["Longest wait", longestWaitMinutes !== null ? splitDuration(longestWaitMinutes) : "none"],
           ["Median wait", median === null ? "none" : splitDuration(Math.round(median))],
           ["Flagged urgent", small(urgent)],
-          [`Past ${longHours}h`, small(over24h)],
+          [`Over ${longHours}h`, small(over24h)],
           ["No ward yet", small(unplaced)],
           ...(model.clearance
             ? [["Median time to medical clearance", clearanceMedianText(model.clearance)] as [string, string]]
@@ -695,7 +694,7 @@ function EdPresentation({
             label={
               <span className={styles.flagged}>
                 {edCountsDesk && exactStatisticsCount(over24h) !== 0 ? <StatusGlyph tone="warning" size={9} /> : null}
-                {`Past ${longHours}h`}
+                {`Over ${longHours}h`}
               </span>
             }
           />
@@ -776,13 +775,7 @@ function EdPresentation({
           </StatCard>
 
           {comparison.length > 1 ? (
-            <StatCard
-              icon={Scale}
-              title="Across departments"
-              id="ed-departments"
-              aside={<LegalLimitsNotChecked variant="tag" />}
-              data-testid="ward-stat-ed-comparison"
-            >
+            <StatCard icon={Scale} title="Across departments" id="ed-departments" data-testid="ward-stat-ed-comparison">
               <div className={styles.tableWrap}>
                 <table className={`${tableClasses.table} ${styles.table}`}>
                   <caption className={styles.srOnly}>Open ED movements from every emergency department</caption>
@@ -881,7 +874,7 @@ function EdPresentation({
         </>
       )}
       <SrOnly>
-        Over {longHours}h and over {veryLongHours}h are operational defaults, not legal limits.
+        Over {longHours}h and over {veryLongHours}h are operational defaults.
       </SrOnly>
     </StatisticsPage>
   );
@@ -949,7 +942,7 @@ function EdPhone({
             items={[
               { id: "all", label: "All", count: counts.all },
               { id: "unplaced", label: "No ward", count: counts.unplaced },
-              { id: "long", label: `Past ${longHours}h`, count: counts.long },
+              { id: "long", label: `Over ${longHours}h`, count: counts.long },
             ]}
           />
           {shown.length === 0 ? (
@@ -1137,11 +1130,11 @@ function Waits({
           <SrOnly>
             <p data-testid="ward-stat-ed-over-24h">
               {over24h} of the {onTheList} waiting {over24h === 1 ? "has" : "have"} been waiting more than {longHours}{" "}
-              hours, your default, not a legal limit.
+              hours, your default.
             </p>
             <p data-testid="ward-stat-ed-over-48h">
               {over48h} of the {onTheList} waiting {over48h === 1 ? "has" : "have"} been waiting more than{" "}
-              {veryLongHours} hours, your default, not a legal limit.
+              {veryLongHours} hours, your default.
             </p>
             <p data-testid="ward-stat-ed-longest-wait">
               Longest wait, {longestName.toLowerCase()}, {longestText} waiting.
@@ -1235,7 +1228,7 @@ function Waits({
             <CardFoot
               meta={
                 <span className={detail.legendLine}>
-                  <span>Tick at {longHours}h, your default, not a legal limit</span>
+                  <span>Tick at {longHours}h, your default</span>
                   <span data-testid="ward-stat-ed-wait-threshold-24h" className={styles.flagged}>
                     <StatusGlyph tone="warning" size={9} />
                     {`${longHours}h`}

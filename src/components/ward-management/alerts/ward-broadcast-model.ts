@@ -247,7 +247,7 @@ export const WA_BROADCAST_TEMPLATES: readonly BroadcastTemplate[] = [
     category: "capacity_gridlock",
     targetScope: "metro_adult",
     targetScopeLabel: "Metropolitan Adult Units Only",
-    defaultDurationMinutes: 120,
+    defaultDurationMinutes: 240,
     defaultMessage:
       "Demo alert. Not a live broadcast. Adult patients are waiting in metro EDs in this scenario. Tell the desk how many you can take today.",
   },

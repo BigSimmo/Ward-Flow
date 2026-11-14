@@ -99,7 +99,7 @@ describe("the Delays board's data views", () => {
     expect(timeline).toHaveTextContent(/Arrived, /u);
     expect(timeline).toHaveTextContent(/Now/u);
     // The recorded legal time only as typed (D-93): never a countdown, "left" or "overdue".
-    expect(timeline).toHaveTextContent(new RegExp(`Form ${withDue.movement.legalForm!.code} ends as typed`, "u"));
+    expect(timeline).toHaveTextContent(new RegExp(`Form ${withDue.movement.legalForm!.code} ends`, "u"));
     expect(timeline).not.toHaveTextContent(/\b(left|overdue)\b/u);
     expect(screen.getByTestId(`delays-select-${withDue.movement.id}`)).toHaveAttribute("aria-expanded", "true");
 

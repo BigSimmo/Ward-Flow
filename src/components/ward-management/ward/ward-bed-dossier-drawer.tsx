@@ -84,6 +84,7 @@ import { PhoneBedSheet } from "./ward-bed-dossier-phone";
 import { WardDrawerDischargeDate } from "./ward-drawer-discharge-date";
 import { observationEditingToken } from "@/components/ward-management/ward-flow-observation-events";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
+import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { WardUnder18Notice } from "./ward-under-18-notice";
 
 const roleLabel = (role: keyof typeof WARD_FLOW_ROLE_LABELS) => WARD_FLOW_ROLE_LABELS[role];
@@ -210,6 +211,11 @@ export function WardBedDossierDrawer({
     "movements",
   );
   const now = useWardFlowClock();
+  // Demo-Actions-AC1-3: a desk that can never record a departure (the site bed manager) is not
+  // offered "Record that they have left" (DESIGN-SYSTEM.md, Actions; F-54).
+  const roleGate = useRoleGate();
+  const leavingNever = roleGate("RECORD_LEAVING").never === true;
+  const dateNever = roleGate("UPDATE_EXPECTED_DISCHARGE").never === true;
   const [tab, setTab] = useState<DrawerTab>("now");
   const [historyOpen, setHistoryOpen] = useState(false);
   const [barrierOpen, setBarrierOpen] = useState(false);
@@ -365,7 +371,7 @@ export function WardBedDossierDrawer({
   );
   // WT-16: the ward sets or changes the date here, not only the coordinator.
   const dateEditor =
-    admission?.state === "occupied" ? (
+    admission?.state === "occupied" && !dateNever ? (
       <WardDrawerDischargeDate
         key={admission.id}
         admissionId={admission.id}
@@ -694,7 +700,7 @@ export function WardBedDossierDrawer({
   // the filled step for this stay, one plain step and the rest under More; each does what it did.
   const hasStay = Boolean(bedItem?.admissionId);
   const bedActions: BedAction[] = [
-    ...(isOccupied && hasStay
+    ...(isOccupied && hasStay && !leavingNever
       ? [
           {
             id: "leave" as const,

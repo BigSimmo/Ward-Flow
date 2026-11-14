@@ -1494,6 +1494,25 @@ describe("confirming a community decline dispatches a real DECLINE_REFERRAL (eng
     expect(screen.getByTestId("harness-declined-label").textContent).toBe("Queued.");
     expect(within(panel).getByRole("button", { name: /accept referral/i })).toBeTruthy();
   });
+
+  it("R-STRUCT-31 (Josh, 14 Nov 2026): Decline offers the same Undo, which puts the referral back", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ToastProvider>
+          <LiveQueueTest />
+        </ToastProvider>
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByTestId("seed-referral-btn"));
+    const panel = screen.getByTestId("ward-community-waiting");
+    fireEvent.click(within(panel).getByRole("button", { name: /decline referral/i }));
+    fireEvent.change(within(panel).getByRole("combobox"), { target: { value: "outside_the_teams_catchment" } });
+    fireEvent.click(within(panel).getByRole("button", { name: /confirm decline/i }));
+    expect(screen.getByText("Referral declined")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /^Undo/u }));
+    expect(screen.getByTestId("harness-declined-label").textContent).toBe("Queued.");
+    expect(within(panel).getByRole("button", { name: /decline referral/i })).toBeTruthy();
+  });
 });
 
 describe("v10 pass 3: Since you looked and Switch team", () => {

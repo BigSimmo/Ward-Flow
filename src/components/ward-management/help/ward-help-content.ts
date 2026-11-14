@@ -212,8 +212,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
       },
       {
         question: "Why is a referral marked overdue?",
-        answer:
-          "It has waited past its decision target. The targets are operational defaults set in Settings, not legal limits.",
+        answer: "It has waited past its decision target. The targets are operational defaults set in Settings.",
       },
     ],
   },
@@ -487,15 +486,13 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     title: "Legal forms",
     purpose: "Every open movement with a legal form, and the expiry time a person typed from that form.",
     actions: [
-      "Times are as typed from the paper form. Ward Flow does not work out legal periods, and the times are not legally checked.",
       "Switch between On a form, Checklist and History. Each row names its next step. Choose a patient to see their form.",
       "Use Record next form when a new form is written. Record and tell lists who to let know.",
     ],
     questions: [
       {
         question: "Does Ward Flow work out when a form expires?",
-        answer:
-          "No. A person types the time from the paper form, and Ward Flow keeps it as typed. It is never legally checked.",
+        answer: "No. A person types the time from the paper form.",
       },
       {
         question: "How do I record a new form?",
@@ -509,7 +506,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
       },
       {
         question: "Where do I record that the carer, PSP or MHAS were told?",
-        answer: "In the Carer, PSP and MHAS panel. Record who was told and when. It is a reminder, not a legal check.",
+        answer: "In the Carer, PSP and MHAS panel. Record who was told and when.",
       },
     ],
   },
@@ -538,13 +535,13 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     purpose: "An operational view of seclusion rooms, seclusion and restraint in use, and incidents, ward by ward.",
     actions: [
       "Choose the ward, then Mark available or Mark out of service for its seclusion room.",
-      "Record start when one begins and Record end when it finishes. Times are as typed, and nothing works out a legal limit.",
+      "Record start when one begins and Record end when it finishes.",
       "Use Record incident for an incident on the ward.",
     ],
     questions: [
       {
         question: "Does Ward Flow tell me when seclusion must end?",
-        answer: "No. Times are as typed, and nothing works out a legal limit.",
+        answer: "No. It shows the start and end times that were recorded.",
       },
       {
         question: "Where do finished episodes go?",
@@ -752,8 +749,7 @@ const PAGE_HELP: readonly PageHelp[] = [
       TV_QUESTION,
       {
         question: "Does Ward Flow work out when a form expires?",
-        answer:
-          "No. A person types the time from the paper form, and Ward Flow keeps it as typed. It is never legally checked.",
+        answer: "No. A person types the time from the paper form.",
       },
       {
         question: "What if a cleared patient becomes medically unwell?",
@@ -1154,8 +1150,7 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   { term: "Overdue waits", meaning: "Patients who have waited longer than the target for their urgency tier." },
   {
     term: "Access target",
-    meaning:
-      "An ED performance target set in Settings, counted from when the patient's wait began. It is not a legal deadline.",
+    meaning: "An ED performance target set in Settings, counted from when the patient's wait began.",
   },
   { term: "Fit to travel", meaning: "The ED doctor's recorded medical clearance. It is needed before transport." },
   {
@@ -1237,7 +1232,7 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   {
     term: "AWST",
     meaning:
-      "Australian Western Standard Time, Perth time. Signed-in times are AWST; the demo's board clock says demo time.",
+      "Australian Western Standard Time, Perth time. Signed-in times are AWST; the demo's clock is Board time, with no zone claimed.",
   },
   { term: "CAMHS", meaning: "Child and Adolescent Mental Health Service." },
   { term: "HDU", meaning: "High dependency unit: a ward area for patients who need closer care." },
@@ -1408,9 +1403,7 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
  */
 const FORM_TERMS: readonly GlossaryTerm[] = CONTINUATION_LEGAL_FORMS.flatMap(({ code }) => {
   const title = formTitleForCode(code);
-  return title === null
-    ? []
-    : [{ term: `Form ${code}`, meaning: `${title}. Any time shown is as typed from the paper form.` }];
+  return title === null ? [] : [{ term: `Form ${code}`, meaning: `${title}.` }];
 });
 
 /** Initial glossary retained for existing imports. The help sheet reads the active directory below. */

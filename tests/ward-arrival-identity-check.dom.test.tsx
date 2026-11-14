@@ -31,9 +31,18 @@ describe("Confirm arrival checks who has arrived first (walk-through WT-11)", ()
     renderWard();
     fireEvent.click(screen.getByTestId("ward-confirm-arrival-WF-014"));
     const check = screen.getByTestId("ward-arrival-identity");
-    const line = within(check).getByTestId("ward-arrival-identity-check").textContent ?? "";
-    expect(line).toMatch(/^Check: [A-Z][^·]+ · UM\d+$/u);
-    expect(line).not.toMatch(/not recorded/iu);
+    // R-MOVE-10 (Josh, 14 Nov 2026): titled for the ward; three identifiers in one name order, and
+    // where the person came from.
+    expect(within(check).getByRole("heading", { name: /^Confirm arrival at \S/u })).toBeTruthy();
+    const facts = within(check).getByTestId("ward-arrival-identity-check");
+    const value = (label: string) =>
+      Array.from(facts.querySelectorAll("dt")).find((term) => term.textContent === label)?.nextElementSibling
+        ?.textContent ?? "";
+    expect(value("Name")).toMatch(/^[A-Z' -]+, [A-Z][a-z]/u);
+    expect(value("UMRN")).toMatch(/^UM\d+$/u);
+    expect(value("Date of birth")).toMatch(/^\d{2}\/\d{2}\/\d{4} · \d+ y$/u);
+    expect(value("Coming from")).not.toBe("");
+    expect(facts.textContent).not.toMatch(/not recorded/iu);
     // Nothing is recorded until the check is confirmed.
     expect(screen.getByTestId("ward-confirm-arrival-WF-014")).toBeInTheDocument();
     fireEvent.click(within(check).getByRole("button", { name: "Confirm arrival" }));

@@ -44,13 +44,11 @@ function heroFigure(label: string): string {
   return labelled[0]!.parentElement!.textContent ?? "";
 }
 
-const SCOPE_NOTE =
-  "Operational view only. Times as typed; no order length, review or legal limit is worked out. The legal register stays in the health service's own system.";
-
 describe("seclusion, restraint and incidents view", () => {
   it("says it is operational only, word for word, and computes no legal limit", () => {
     renderScreen();
-    expect(screen.getByTestId("seclusion-scope-note").textContent).toBe(SCOPE_NOTE);
+    // D-218 (Josh, 14 Nov 2026): the operational-only scope note is gone.
+    expect(screen.queryByTestId("seclusion-scope-note")).toBeNull();
     expect(screen.getByTestId("seclusion-wards")).toHaveTextContent("No restraint recorded as in use");
     // D5 / D-70: no countdown or worked-out limit anywhere on the page.
     expect(screen.getByTestId("seclusion-screen").textContent).not.toMatch(/\b(left|remaining|overdue|due in)\b/iu);
@@ -163,7 +161,8 @@ describe("the site bed manager's seclusion view (D-80)", () => {
       setWardAccess({ role: "bed_manager", scope: { kind: "site", siteCode: "RPH" } });
     });
     renderScreen();
-    expect(screen.getByTestId("seclusion-scope-note").textContent).toBe(SCOPE_NOTE);
+    // D-218 (Josh, 14 Nov 2026): the operational-only scope note is gone.
+    expect(screen.queryByTestId("seclusion-scope-note")).toBeNull();
     // One secure ward at the site: the page is headed for the site and opens on that ward's record.
     expect(screen.getByText(/^Restrictive practice · /u)).toBeInTheDocument();
     expect(screen.queryByTestId("seclusion-ward-table")).not.toBeInTheDocument();
@@ -203,7 +202,8 @@ describe("the nurse in charge's seclusion view (D-80)", () => {
 
   it("opens straight on its own ward's record, records start and incident, and marks the room after asking", () => {
     asWard("rph-adult-secure");
-    expect(screen.getByTestId("seclusion-scope-note").textContent).toBe(SCOPE_NOTE);
+    // D-218 (Josh, 14 Nov 2026): the operational-only scope note is gone.
+    expect(screen.queryByTestId("seclusion-scope-note")).toBeNull();
     expect(screen.queryByTestId("seclusion-ward-table")).not.toBeInTheDocument();
     expect(screen.getAllByTestId("seclusion-ward-card")).toHaveLength(1);
     expect(screen.getByText("Seclusion in use")).toBeInTheDocument();

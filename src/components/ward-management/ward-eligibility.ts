@@ -20,10 +20,16 @@ import type {
   WardReferralDestination,
 } from "@/components/ward-management/ward-model";
 import type { OverrideReason } from "@/components/ward-management/ward-change-reasons";
-import { authorisationBlocksPlacement, authorisationLabel } from "@/components/ward-management/ward-authorisation";
+import {
+  authorisationBlocksPlacement,
+  authorisationLabel,
+  unitAuthorisation,
+  type UnitAuthorisation,
+} from "@/components/ward-management/ward-authorisation";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { genderReviewNeeded, type GenderPlacement } from "@/components/ward-management/ward-model";
 import { observationStaff, observationSummary, type Observation } from "@/components/ward-management/ward-observation";
+import { isBedCountStale } from "@/components/ward-management/ward-clinical-values";
 
 /**
  * ⚠️ **EVERY GATE NAME EITHER ELIGIBILITY FUNCTION CAN EMIT — the single source of truth, and it
@@ -85,7 +91,15 @@ export type EligibilityGate = (typeof ELIGIBILITY_GATES)[number];
  * check is `PULL_PATIENT`'s, which can see the admissions.
  */
 /** `need` marks an information-only gate whose need the patient has (fit line, D-110). */
-export type GateResult = { gate: EligibilityGate; pass: boolean; detail: string; info?: true; need?: true };
+export type GateResult = {
+  gate: EligibilityGate;
+  pass: boolean;
+  detail: string;
+  info?: true;
+  need?: true;
+  /** The authorisation gate only: the register's answer for this ward, so the fit line can say it (R-LEGAL-8). */
+  authorisation?: UnitAuthorisation;
+};
 export type EligibilityVerdict = { eligible: boolean; gates: GateResult[] };
 
 /** How a screen marks one gate: met, not met, or information only (`GateResult.info`). */
@@ -222,7 +236,7 @@ export function legalStatusMismatchWarning(involuntaryBedNeeded: boolean, legalS
 }
 
 function capacityIsFresh(unit: Unit, now: Instant) {
-  return now - unit.allocatable.confirmedAt <= unit.allocatable.staleAfterMinutes;
+  return !isBedCountStale(unit.allocatable.confirmedAt, now);
 }
 
 /** "a unit" vs "an older adult unit" — the only two cohort/security values start with a
@@ -315,6 +329,7 @@ function authorisationGate(gate: "authorisation" | "legal_status", needed: boole
     info: true,
     ...(needed ? { need: true as const } : {}),
     detail: authorisationLabel(unit),
+    authorisation: unitAuthorisation(unit),
   };
 }
 

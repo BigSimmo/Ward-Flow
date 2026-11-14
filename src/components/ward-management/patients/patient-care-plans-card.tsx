@@ -470,8 +470,7 @@ export function PatientCarePlansCard({
                   <span className={styles.mono}>
                     {typedDay(hearing.date)}
                     {hearing.time ? ` ${hearing.time}` : ""}
-                  </span>{" "}
-                  as typed
+                  </span>
                   {hearing.outcome ? (
                     <>
                       {" · "}

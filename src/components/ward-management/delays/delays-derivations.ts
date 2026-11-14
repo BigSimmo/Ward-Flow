@@ -27,6 +27,7 @@ import {
   REMINDER_MORNING_SHIFT_END_MINUTE,
   REMINDER_MORNING_SHIFT_START_MINUTE,
   SHIFT_PATTERN,
+  SILENT_WARD_ANOTHER_WARD_SUGGESTION,
   SILENT_WARD_FIRST_REMINDER_MINUTES,
   SILENT_WARD_SECOND_REMINDER_MINUTES,
 } from "@/components/ward-management/ward-operational-defaults";
@@ -67,7 +68,7 @@ export type DelayGroup = { cause: DelayCause; title: string; note: string; movem
  * legal judgement, and legal times show only as typed (D-93; Josh, 31 Oct 2026, renamed from "Form
  * overdue"). Every screen reads this one string. "Decision overdue" is not a legal time and stays.
  */
-export const FORM_TIME_PASSED_TITLE = "Form time passed, as typed";
+export const FORM_TIME_PASSED_TITLE = "Form time passed";
 
 const ORDER: { cause: DelayCause; title: string; note: string }[] = [
   {
@@ -77,7 +78,7 @@ const ORDER: { cause: DelayCause; title: string; note: string }[] = [
   },
   {
     cause: "legal_expiring",
-    title: "Form due time (as written) running out",
+    title: "Form due time running out",
     note: "",
   },
   { cause: "no_eligible_bed", title: "No suitable bed", note: "" },
@@ -526,7 +527,7 @@ export function waitingSplit(movements: Movement[], now: Instant): WardBarSegmen
     // Josh to rule, not this bucket — it only describes recorded waits, so it carries no
     // danger/warning colour of its own.
     {
-      label: `Past ${LONG_WAIT_MINUTES / 60} hours`,
+      label: `Over ${LONG_WAIT_MINUTES / 60}h`,
       value: open.filter((movement) => waited(movement) >= LONG_WAIT_MINUTES).length,
       tone: "rest",
     },
@@ -576,13 +577,7 @@ const MORNING_SHIFT_START = REMINDER_MORNING_SHIFT_START_MINUTE;
 const MORNING_SHIFT_END = REMINDER_MORNING_SHIFT_END_MINUTE;
 const firstMark = `${TWO_HOURS / 60} hours`;
 const secondMark = `${FOUR_HOURS / 60} hours`;
-/**
- * Silent ward reminders (Top 25 item 7). From the second reminder on, the
- * line also suggests asking another ward. Owner ruling, 15 Oct 2026: reminders only, nothing is
- * reallocated automatically, so this is words on the row and never an action.
- */
-export const SILENT_WARD_ANOTHER_WARD_SUGGESTION =
-  "Consider asking another ward as well. Nothing is moved automatically.";
+export { SILENT_WARD_ANOTHER_WARD_SUGGESTION };
 
 /**
  * The named shift a referral sits in, and when that shift ends: the one shift pattern every screen

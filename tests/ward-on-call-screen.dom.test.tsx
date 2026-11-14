@@ -91,7 +91,8 @@ describe("the on-call screen", () => {
     expect(within(hud).getByRole("heading", { level: 1, name: /^On-call: Who to call now$/u })).toBeVisible();
     expect(screen.getByTestId("ward-on-call-figure-answering")).toHaveTextContent(/^\d+ answering, all lists$/u);
     expect(panel().getByRole("heading", { level: 2, name: "Bed coordinator" })).toBeVisible();
-    expect(panel().getByText("Not verified")).toBeVisible();
+    // D-218 (Josh, 14 Nov 2026): the "Not verified" badge is gone.
+    expect(panel().queryByText("Not verified")).toBeNull();
   });
 
   it("🔴 renders no number that is not a mock, and nothing that dials or sends", () => {

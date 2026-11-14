@@ -30,8 +30,10 @@ import { EdMedicalPlacementControls } from "./ed-medical-placement-controls";
 import type { EdBoardRowModel } from "./ed-screen-board-row";
 import type { EdScreenContext } from "./ed-screen-context";
 import { formExpiryLine } from "./ed-screen-model";
+import { hasCurrentLegalMismatch, LEGAL_MISMATCH_WARNING } from "../ward-stay-legal";
 import { edStageLabel } from "./ed-referral-status";
 import styles from "./ed.module.css";
+import { psychReviewStatusWords } from "./ed-psych-review";
 
 /** The facts a board row carries, each a fragment the table row, phone row and person sheet place. */
 export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
@@ -40,6 +42,7 @@ export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
     medicalClearance,
     formExpiryText,
     formExpiryWarningText,
+    formExpiryTone,
     examBlocked,
     handoverBlocked,
     transportBlocked,
@@ -171,7 +174,7 @@ export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
         <span
           className={styles.accessWarning}
           data-testid={`ward-ed-form-expiry-warning-${movement.id}`}
-          data-level="warning"
+          data-level={formExpiryTone ?? "warning"}
         >
           {formExpiryWarningText}
         </span>
@@ -256,6 +259,17 @@ export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
   );
   const referredFact = (
     <>
+      {/* Master stress test D1a-E-2 (14 Nov 2026): a recorded legal mismatch shows beside the
+          accepted ward. A warning only; nothing on the row is blocked by it (D-16). */}
+      {acceptedUnit && hasCurrentLegalMismatch(movement) ? (
+        <span
+          className={styles.accessWarning}
+          data-level="danger"
+          data-testid={`ward-ed-legal-mismatch-${movement.id}`}
+        >
+          {LEGAL_MISMATCH_WARNING}
+        </span>
+      ) : null}
       {!acceptedUnit && movement.referredUnitIds.length > 0 ? (
         <div className={styles.sub} data-testid={`ward-ed-referred-${movement.id}`}>
           {movement.referredUnitIds
@@ -377,9 +391,7 @@ export function renderEdRowControls(row: EdBoardRowModel, ctx: EdScreenContext, 
   );
   const reviewControl = (
     <>
-      <span data-testid={`ward-ed-review-status-${movement.id}`}>
-        {movement.examination ? "Examination recorded" : "Awaiting review"}
-      </span>
+      <span data-testid={`ward-ed-review-status-${movement.id}`}>{psychReviewStatusWords(movement)}</span>
       {boardTable ? null : reviewFacts}
     </>
   );

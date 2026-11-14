@@ -32,7 +32,6 @@ import {
 import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning";
 import type { ReferralChart } from "@/components/ward-management/referrals/referral-submission";
 import { formTitleForCode } from "@/lib/form-register";
-import { LegalLimitsNotChecked } from "../legal-limits-not-checked";
 import { currentLegalPosition, formProgression, NEXT_FORM_TO_RECORD } from "../ward-legal-form-progression";
 import { clockStanding, standingWord, STANDING_TONE } from "../legal-forms/legal-forms-view";
 import { fieldsMatchEveryWord } from "../search/search-text";
@@ -72,7 +71,7 @@ import styles from "./patient-documents-tab.module.css";
  * the record holds, searchable and grouped by episode or by type. Legal status and every form time
  * read exactly as typed (D-93): the time written on the form, never when it was entered here, and
  * never a countdown, "due in", "left" or "ago". Ward Flow checks no Mental Health Act period
- * (D5, D-70), so a typed end carries the "limits not legally checked" tag.
+ * (D5, D-70); the "limits not legally checked" tag went in D-218 (Josh, 14 Nov 2026).
  */
 
 const STATUS_TONE: Record<DocStatus, WfTone> = {
@@ -130,7 +129,8 @@ export function PatientDocumentsTab({
   movementInForce: boolean;
   patient?: Patient;
   now: number;
-  onRecordDocument: () => void;
+  /** Absent when this desk can never record a document (D-192 item 5): the button is not shown. */
+  onRecordDocument?: () => void;
   /** WT-06: the charts the referrer attached, by type and size. */
   referralCharts?: readonly ReferralChart[];
 }) {
@@ -422,11 +422,12 @@ export function PatientDocumentsTab({
   })();
 
   // The one action: card head right on desktop, pinned at the card foot on a phone.
-  const recordButton = movement ? (
-    <Button icon={FilePlus} onClick={onRecordDocument}>
-      Record document details
-    </Button>
-  ) : undefined;
+  const recordButton =
+    movement && onRecordDocument ? (
+      <Button icon={FilePlus} onClick={onRecordDocument}>
+        Record document details
+      </Button>
+    ) : undefined;
 
   const clearAll = () => {
     setQuery("");
@@ -437,7 +438,7 @@ export function PatientDocumentsTab({
     const strong = r.status === "In force" || r.status === "To record";
     const typed =
       r.typedEndAt !== undefined
-        ? `${isClockBreached(r.typedEndAt, now) ? "Ended" : "Ends"} ${at(r.typedEndAt)} as typed`
+        ? `${isClockBreached(r.typedEndAt, now) ? "Ended" : "Ends"} ${at(r.typedEndAt)}`
         : undefined;
     return (
       <span className={styles.statusCell}>
@@ -454,8 +455,7 @@ export function PatientDocumentsTab({
                 <StatusGlyph tone={STANDING_TONE[standing]} size={9} />
                 {standingWord(standing, thresholds)}
               </span>
-            ) : null}{" "}
-            <LegalLimitsNotChecked variant="tag" />
+            ) : null}
           </span>
         ) : typed ? (
           <span className={styles.note}>{typed}</span>

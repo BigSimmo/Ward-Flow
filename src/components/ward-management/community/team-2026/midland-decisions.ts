@@ -80,6 +80,26 @@ export function undoMidlandDecision(id: string) {
   write(next);
 }
 
+/** Counts Reset demo's clears, so an Undo offered before one cannot act after it. */
+let clears = 0;
+const clearListeners = new Set<() => void>();
+
+/** How many times Reset demo has cleared the decisions on this page. */
+export function midlandClearCount(): number {
+  return clears;
+}
+
+/**
+ * Runs `callback` once, the next time Reset demo clears the decisions, even when the screen that
+ * asked has gone (Demo-Actions-D1a-S-2: the Accept toast outlived the answered row). Returns a cancel.
+ */
+export function onNextMidlandClear(callback: () => void): () => void {
+  clearListeners.add(callback);
+  return () => {
+    clearListeners.delete(callback);
+  };
+}
+
 /** Reset demo clears every decision with the demonstration's saved day (audit SD-06, 5 Nov 2026). */
 export function clearMidlandDecisions() {
   try {
@@ -88,6 +108,10 @@ export function clearMidlandDecisions() {
     /* storage unavailable: the in-memory copy below is still cleared */
   }
   cache = { raw: null, value: {} };
+  clears += 1;
+  const cleared = [...clearListeners];
+  clearListeners.clear();
+  cleared.forEach((callback) => callback());
   listeners.forEach((l) => l());
 }
 

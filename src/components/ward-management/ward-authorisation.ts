@@ -64,12 +64,29 @@ export function authorisationLabel(unit: Pick<Unit, "id">): string {
 /** The short value for an "Involuntary admissions" fact row. */
 export function authorisationValue(unit: Pick<Unit, "id">): string {
   switch (unitAuthorisation(unit)) {
+    // R-LEGAL-7 (Josh, 14 Nov 2026): D-209 item 9's word, source and date stay; the register names
+    // the hospital and its service type, not this sample ward, so the value says so.
     case "on_register":
-      return `Authorised (Chief Psychiatrist register, ${AUTHORISATION_REGISTER_DATE})`;
+      return `Authorised for the hospital (Chief Psychiatrist register, ${AUTHORISATION_REGISTER_DATE}), ward not checked`;
     case "not_on_register":
       return `Not on the authorised register (${AUTHORISATION_REGISTER_DATE})`;
     default:
       return AUTHORISATION_NOT_STATED;
+  }
+}
+
+/**
+ * R-LEGAL-8 (Josh, 14 Nov 2026): the few words the placement fit line adds after "Check
+ * authorisation", so the fit line, the ward page and the To check list give one answer per ward.
+ */
+export function authorisationShort(authorisation: UnitAuthorisation): string {
+  switch (authorisation) {
+    case "on_register":
+      return "hospital on register";
+    case "not_on_register":
+      return "not on register";
+    default:
+      return "not stated";
   }
 }
 

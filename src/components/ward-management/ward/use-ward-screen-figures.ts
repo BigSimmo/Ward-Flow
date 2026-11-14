@@ -9,6 +9,7 @@ import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import type { LeaveBed, Unit } from "@/components/ward-management/ward-model";
 import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { admittedLegalExpiryPassed } from "@/components/ward-management/ward-legal-admitted";
+import { strandedFlags } from "@/components/ward-management/ward-stranded";
 import { LEAVE_BED_OPEN_WARNING_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 
 import { wardBedRoster, wardLiveFormAlerts } from "./ward-screen-derivations";
@@ -72,6 +73,11 @@ export function useWardScreenFigures(
         admittedLegalPassed: admittedLegalExpiryPassed(movements, admissions, now).filter(
           (movement) => movement.acceptedUnitId === unit.id,
         ),
+        // R-HOME-11: this ward's stays at the long-stay line with no discharge plan recorded.
+        longStayNoPlanCount: strandedFlags(
+          admissions.filter((admission) => admission.unitId === unit.id),
+          now,
+        ).filter((flag) => flag.reasons.includes("long-stay-no-plan")).length,
       }).liveFormAlerts,
     [resolvePatientIdentity, accepted, now, thresholds, overdueLeaveBeds, unit, dayZero, movements, admissions],
   );

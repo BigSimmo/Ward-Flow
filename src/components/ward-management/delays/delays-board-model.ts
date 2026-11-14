@@ -66,7 +66,7 @@ export const WAIT_BANDS = [
   `Under ${H8}`,
   `${OVER_8H / 60} to ${H12}`,
   `${OVER_12H / 60} to ${H24}`,
-  `Past ${H24}`,
+  `Over ${H24}`,
 ] as const;
 export type BandCounts = [number, number, number, number];
 

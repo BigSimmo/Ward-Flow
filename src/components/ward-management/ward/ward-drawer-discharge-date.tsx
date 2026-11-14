@@ -56,6 +56,8 @@ export function WardDrawerDischargeDate({
   const recordedDay = recordedAt === null ? undefined : dayOf(recordedAt) - dayOf(now);
   const startOnRecorded = recordedDay !== undefined && DISCHARGE_DAYS.includes(recordedDay);
   if (!open) {
+    // Demo-Actions-AC1-3: a desk that can never set the date is not offered it (F-54).
+    if (gate.never) return null;
     return (
       <span className={styles.actions}>
         <Button
@@ -127,7 +129,7 @@ export function WardDrawerDischargeDate({
           : unchanged
             ? "Change the day or time to save"
             : past
-              ? `${formatInstantWithDay(parsed, now)}. That time has passed. It saves as typed.`
+              ? `${formatInstantWithDay(parsed, now)}. That time has passed.`
               : formatInstantWithDay(parsed, now)}
       </p>
       {save.error ? <p role="alert">{save.error}</p> : null}

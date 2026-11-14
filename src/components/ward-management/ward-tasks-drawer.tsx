@@ -229,7 +229,7 @@ function rowTiming(
     // Legal times only as typed (31 Oct 2026): the typed clock time, never a count past it.
     return {
       value: typedClock(legalDueAt, now, dayZero),
-      state: "Ended, as typed",
+      state: "Ended",
       tone: "danger",
       stateTone: "danger",
     };

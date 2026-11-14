@@ -170,8 +170,15 @@ export function RailOccupancyRing({ percent }: { percent: number | null }) {
  * no longer reads as a contradiction of the Alerts badge beside it, which counts alerts. "At or over"
  * matches isBedAlert (>=) and the Statistics screens (Josh, 5 Nov 2026).
  */
-export function overLineLabel(rows: readonly CapacityRow[]): { label: string; over: number } {
-  const over = rows.filter((row) => row.percent !== null && isBedAlert(row.percent)).length;
+export function overLineLabel(
+  rows: readonly CapacityRow[],
+  services?: readonly { occupancyPercent: number }[],
+): { label: string; over: number } {
+  // A network desk shows only the three fullest services, but the chip counts every service over the line.
+  const networkRows = services !== undefined && !rows.some((row) => row.key === "own" || row.key === "metro");
+  const over = networkRows
+    ? services.filter((row) => isBedAlert(row.occupancyPercent)).length
+    : rows.filter((row) => row.percent !== null && isBedAlert(row.percent)).length;
   return { label: `${over === 0 ? "None" : over} at or over ${BED_ALERT_THRESHOLD_PERCENT}% full`, over };
 }
 

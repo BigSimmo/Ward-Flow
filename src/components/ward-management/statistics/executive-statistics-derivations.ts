@@ -855,7 +855,7 @@ export function executiveJourney(
       const urgent = c(`${group.id}:urgent`, group.rows.filter((row) => row.flaggedUrgent).length);
       release.subset(total, past);
       release.subset(total, urgent);
-      rows = [breakdown(`Past ${LONG_WAIT_MINUTES / 60}h`, past), breakdown("Urgent", urgent)];
+      rows = [breakdown(`Over ${LONG_WAIT_MINUTES / 60}h`, past), breakdown("Urgent", urgent)];
       const distinct =
         group.id === "waiting"
           ? new Set(group.rows.filter(isEdOriginJourney).map((row) => row.originEdId)).size
@@ -974,7 +974,7 @@ export function executiveJourney(
       breakdown: [
         breakdown("Today", plannedToday),
         breakdown("Tomorrow", plannedTomorrow),
-        breakdown("Held up", heldUp),
+        breakdown("Held up, in the next 7 days", heldUp),
       ],
     },
     {

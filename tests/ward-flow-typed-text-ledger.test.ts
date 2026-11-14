@@ -34,6 +34,19 @@ describe("typed-text ledger", () => {
     expect(values).toEqual(["Synthetic blocker words"]);
   });
 
+  it("does not treat a community referral's chosen team and purpose as typed (Lead-REC-C-3)", () => {
+    // The ED form sends only these; a ledger holding them refused every later save in the tab.
+    const values = typedTextOf({
+      type: "REFER_TO_COMMUNITY_TEAM",
+      role: "coordinator",
+      now: 0,
+      movementId: "MOV-1",
+      team: "Synthetic team",
+      purpose: "follow_up",
+    });
+    expect(values).toEqual([]);
+  });
+
   it("reads nested typed text, such as a new unreviewed field inside a typed event", () => {
     const event = {
       type: "UPLOAD_PATIENT_FORM",

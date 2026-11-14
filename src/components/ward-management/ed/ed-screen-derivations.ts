@@ -638,8 +638,8 @@ export function deriveEdScreen({
   const heroChips = [
     {
       id: "past",
-      label: `Past ${waitLine(accessTarget)}`,
-      word: `past ${waitLine(accessTarget)}`,
+      label: `Over ${waitLine(accessTarget)}`,
+      word: `over ${waitLine(accessTarget)}`,
       value: patients.filter(heroHighlightMatch.past).length,
       tone: "danger" as const,
     },

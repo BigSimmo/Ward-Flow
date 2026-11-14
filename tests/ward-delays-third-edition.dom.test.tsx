@@ -116,6 +116,13 @@ describe("Delays — the drawing's panel names (task D1)", () => {
     expect(panelTitlesInOrder()).toEqual(["Whose move", "Waiting", "Escalations and resolved", "Delay graphs"]);
   });
 
+  it("keeps the fixed bands and names the ED target beside them (R-HOME-13)", () => {
+    renderScreen();
+    expect(screen.getByTestId("waiting-bands-fixed").textContent).toBe(
+      "Bands are fixed. Your ED target is 24 hours (Settings)",
+    );
+  });
+
   /**
    * The registers rail's four tabs: Escalated, Attention, Resolved and System.
    */

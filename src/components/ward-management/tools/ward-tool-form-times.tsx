@@ -10,7 +10,6 @@ import {
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
 import { AUDITABLE_FORM_CODES } from "@/components/ward-management/ward-audit";
-import { LEGAL_LIMITS_NOT_CHECKED_NOTICE } from "@/components/ward-management/ward-legal-clock";
 import {
   clockState,
   isClockBreached,
@@ -141,7 +140,6 @@ function FormTimesView({ dayZero, now, onNavigate }: { dayZero: Date; now: Insta
               <span className={styles.resultWord}>{isClockBreached(dueAt, now) ? "Ended" : "Ends"}</span>
               <span className={styles.clock}>{clock}</span>
               {day ? <span className={styles.day}>{day}</span> : null}
-              <span className={styles.resultWord}>as typed</span>
             </span>
             {tone.word ? (
               <Badge tone={tone.tone} size="sm" className={tone.tone === "danger" ? styles.tagAct : styles.tagSoon}>
@@ -163,7 +161,6 @@ function FormTimesView({ dayZero, now, onNavigate }: { dayZero: Date; now: Insta
           Add to My list
         </Button>
       ) : null}
-      <p className={styles.note}>{LEGAL_LIMITS_NOT_CHECKED_NOTICE}</p>
     </div>
   );
 }

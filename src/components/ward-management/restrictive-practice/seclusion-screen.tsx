@@ -237,10 +237,6 @@ export function SeclusionScreen() {
           </div>
         }
       />
-      <p className={styles.note} data-testid="seclusion-scope-note">
-        Operational view only. Times as typed; no order length, review or legal limit is worked out. The legal register
-        stays in the health service&apos;s own system.
-      </p>
 
       <div className={styles.layout} data-one-ward={own ? own.view : undefined}>
         {own ? null : (

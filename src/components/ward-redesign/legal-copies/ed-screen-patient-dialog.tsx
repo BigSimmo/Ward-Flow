@@ -24,7 +24,6 @@ import { EdObservationControl } from "@/components/ward-management/ed/ed-observa
 import type { EdScreenContext } from "@/components/ward-management/ed/ed-screen-context";
 import { movementMedicalClearance, outstandingItem } from "@/components/ward-management/ed/ed-screen-model";
 import { formExpiryWithName } from "./ed-form-expiry";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { edStageLabel } from "@/components/ward-management/ed/ed-referral-status";
 import { observationEditingToken } from "@/components/ward-management/ward-flow-observation-events";
 import styles from "@/components/ward-management/ed/ed.module.css";
@@ -105,15 +104,7 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
               {selectedPatient.legalForm && (
                 <div className={styles.pair}>
                   <dt>Recorded legal form</dt>
-                  <dd>
-                    {formExpiryWithName(selectedPatient.legalForm, now)}
-                    {selectedPatient.legalForm.dueAt !== undefined ? (
-                      <>
-                        {" "}
-                        <LegalLimitsNotChecked variant="tag" />
-                      </>
-                    ) : null}
-                  </dd>
+                  <dd>{formExpiryWithName(selectedPatient.legalForm, now)}</dd>
                 </div>
               )}
               <div className={styles.pair}>

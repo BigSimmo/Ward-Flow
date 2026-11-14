@@ -88,7 +88,7 @@ import { rememberReturnRow, rowWithAttribute, useReturnedView, useReturnToPlace 
 import { ShapeOfTheDay } from "./movements-shape-of-day";
 import { MovementPeopleSheet, corridorPeople, type MovementPeopleList } from "./movement-people-sheet";
 import { TransportFeed, TransportTiles } from "./movements-transport-now";
-import { LegalColumnHead, PhoneGroupHeading, StageRow } from "./movements-stage-row";
+import { PhoneGroupHeading, StageRow } from "./movements-stage-row";
 import { CommunityNoJourneys, MovementCheckInDrawer, StagePipeline } from "./movements-lazy-parts";
 import {
   CAUSES,
@@ -1254,7 +1254,7 @@ export function MovementsScreen() {
                 <span>Patient</span>
                 <span>Route</span>
                 <span>{boardTab === "resolved" ? "Outcome" : "Held up by"}</span>
-                <LegalColumnHead />
+                <span>Legal</span>
                 <span className={flow.columnEnd}>{boardTab === "resolved" ? "Took" : "Waited"}</span>
                 <span className={flow.columnEnd}>{boardTab === "resolved" ? "Closed" : "Next step"}</span>
                 <span />

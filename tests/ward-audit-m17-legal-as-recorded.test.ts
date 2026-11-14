@@ -274,7 +274,7 @@ describe("M17: one form, edited, replaced and lapsed, reads the same on every ou
     const dueAt = movement.legalForm!.dueAt!;
     for (const now of [NOW + 3, dueAt + 61]) {
       const page = legalDeadlineText(movement, now, DAY_ZERO);
-      expect(page).toBe(`Form ended; expiry as typed was ${typedClock(dueAt, now, DAY_ZERO)}`);
+      expect(page).toBe(`Form ended; expiry was ${typedClock(dueAt, now, DAY_ZERO)}`);
       expect(page).not.toContain(typedTimePhrase(dueAt, now, DAY_ZERO));
       expect(page).not.toMatch(COUNT);
     }
@@ -304,7 +304,7 @@ describe("M17: one form, edited, replaced and lapsed, reads the same on every ou
     const formEndColumn = ED_EXPORT_HEADER.indexOf("Form end");
     expect(formEndColumn).toBeGreaterThan(0);
     const live = movementOf(second);
-    expect(edExportLines([live], ctx)[1]![formEndColumn]).toBe(`${at(live.legalForm!.dueAt!)} as typed`);
+    expect(edExportLines([live], ctx)[1]![formEndColumn]).toBe(`${at(live.legalForm!.dueAt!)}`);
     const ended = apply(second, {
       type: "RECORD_LEGAL_FORM_DETAILS",
       role: "ed",

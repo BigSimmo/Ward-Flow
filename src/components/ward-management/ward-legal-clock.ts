@@ -36,14 +36,6 @@ export type LegalClock = {
   extended?: boolean;
 };
 
-/**
- * Owner decision, 25 September 2026: every statutory time limit in Ward Flow is typed in and has not
- * been checked by anyone with legal knowledge, so each screen that shows one says so, in these words,
- * until the WA legal review on the "before any real patient" list has happened.
- */
-export const LEGAL_LIMITS_NOT_CHECKED_NOTICE =
-  "Not legally checked: these Mental Health Act time limits are typed in and have not been checked against the Act by anyone with legal knowledge. Do not rely on them.";
-
 /** Minutes past estimated arrival before late notices fire: the named default, one rule not two. */
 export const ARRIVAL_LATE_AFTER_MINUTES = LATE_ARRIVAL_GRACE_MINUTES;
 

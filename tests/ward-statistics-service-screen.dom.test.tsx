@@ -51,7 +51,9 @@ describe("Health-service statistics — not found", () => {
 
     expect(screen.queryByTestId("ward-statistics-section-governance")).toBeNull();
     expect(screen.queryByTestId("ward-statistics-section-access")).toBeNull();
-    expect(within(main).getByTestId("ward-statistics-section-footer")).toHaveTextContent("Synthetic data");
+    expect(within(main).getByTestId("ward-statistics-section-footer")).toHaveTextContent(
+      "Not approved for clinical use",
+    );
   });
 });
 

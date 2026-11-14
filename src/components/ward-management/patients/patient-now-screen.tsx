@@ -31,6 +31,7 @@ import { type CallTarget } from "./patient-call-list";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { TransportExceptionReason } from "@/components/ward-management/ward-model";
 import { absenceStepsFor, ABSENCE_STEP_LABELS } from "@/components/ward-management/ward-model";
+import { divertedAwaitingRelease } from "@/components/ward-management/ward-stage-copy";
 import { heldUnitGenderRefusal } from "@/components/ward-management/ward-flow-reducer";
 import type { UploadFormsModalProps } from "@/components/ward-management/referrals/upload-forms-modal";
 import { acceptedWardReferralFor } from "@/components/ward-management/referrals/accepted-ward-referral";
@@ -318,6 +319,10 @@ export function PatientNowScreen({
     return resolvePatientNowRecord(selectedId, patients, movements, referrals, admissions, units, now, zone);
   }, [selectedId, patients, movements, referrals, admissions, units, now, zone]);
   const gate = useRoleGate({ patientId: resolved?.livePatient?.id });
+  const uploadRole =
+    routeRole === "ed" || routeRole === "ward" || routeRole === "community" || routeRole === "officer"
+      ? routeRole
+      : "coordinator";
   const clearanceGate = gate("RECORD_MOVEMENT_MEDICAL_CLEARANCE");
   const readOnlyRecord = clearanceGate.reason === "Exceptional access is read only.";
   const liveMovement = resolved?.liveMovement ?? movements.find((m) => m.id === selectedId);
@@ -611,7 +616,10 @@ export function PatientNowScreen({
         : originName
       : mode === "transit"
         ? // Handover ready is still in the ED, awaiting collection: only Moving is on the way.
-          `${liveMovement?.stage === "moving" ? "On the way to" : "Ready to go to"} ${acceptingUnit?.name ?? "the receiving ward"}`
+          // Together-X1b-3: a diverted journey is not on its way; its pulled bed waits to be released.
+          liveMovement && divertedAwaitingRelease(liveMovement)
+          ? `Diverted, bed pulled at ${acceptingUnit?.name ?? "the receiving ward"} to be released`
+          : `${liveMovement?.stage === "moving" ? "On the way to" : "Ready to go to"} ${acceptingUnit?.name ?? "the receiving ward"}`
         : mode === "leave"
           ? `On leave from ${stayUnit?.name ?? "the ward"}`
           : mode === "awol"
@@ -1525,7 +1533,11 @@ export function PatientNowScreen({
                     patient={livePatient}
                     referralCharts={referralCharts}
                     now={now}
-                    onRecordDocument={() => setShowUploadFormsModal(true)}
+                    onRecordDocument={
+                      // Hand check 203 (14 Nov 2026): a desk the matrix gives no upload (the site bed
+                      // manager, the executive) is not offered it.
+                      gate("UPLOAD_PATIENT_FORM").allowed ? () => setShowUploadFormsModal(true) : undefined
+                    }
                   />
                 </Suspense>
               ) : null}
@@ -1578,11 +1590,21 @@ export function PatientNowScreen({
           isOpen={showArrivalTimeModal}
           onClose={() => setShowArrivalTimeModal(false)}
           movement={targetMovement}
+          // R-STRUCT-4 (Josh, 14 Nov 2026; Together-X1b-6): the signed rules let the ED and the
+          // accepting ward save the arrival plan, so the patient page sends the desk's own role, as
+          // the ED board does; sent as the coordinator, the shared server refused it.
+          role={routeRole === "ed" || routeRole === "ward" || routeRole === "community" ? routeRole : "coordinator"}
         />
       )}
       {targetMovement && showUploadFormsModal && (
         <UploadFormsCloseContext.Provider value={() => setShowUploadFormsModal(false)}>
-          <UploadFormsModal isOpen onClose={() => setShowUploadFormsModal(false)} movement={targetMovement} />
+          <UploadFormsModal
+            isOpen
+            onClose={() => setShowUploadFormsModal(false)}
+            movement={targetMovement}
+            // Hand check 203: recorded as the desk that did it, not always "ward".
+            role={uploadRole}
+          />
         </UploadFormsCloseContext.Provider>
       )}
       {liveMovement ? (

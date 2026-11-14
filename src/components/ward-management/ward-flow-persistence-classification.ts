@@ -65,7 +65,8 @@ export const WARD_FLOW_TYPED_TEXT_EVENT_TYPES: ReadonlySet<WardFlowEvent["type"]
   // `blocker` IS the free prose — "so a human can say what is actually happening, IN THEIR WORDS".
   "RECORD_MOVEMENT_BLOCKER",
   // `reason` is an optional field the reducer stores as supplied, with no membership check against
-  // any fixed list — unlike every genuine reason field elsewhere in this model.
+  // any fixed list — unlike every genuine reason field elsewhere in this model. `team` and `purpose`
+  // are checked against fixed lists and are not typed (`NOT_TYPED_KEYS`, Lead-REC-C-3).
   "REFER_TO_COMMUNITY_TEAM",
   // `contact` is a bare `string`, stored verbatim by `case "RECORD_ESCALATION"` with no membership
   // check — the one UI call site (`shortlist-panel.tsx`) offers a closed `<select>` of role/service

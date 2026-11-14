@@ -10,6 +10,7 @@ import type {
 import { NO_INTERVAL_ERROR, type ObservationLevel } from "@/components/ward-management/ward-observation";
 import { minuteOfDayFromClockText } from "@/components/ward-management/ward-clock";
 import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning";
+import { divertedAwaitingRelease } from "@/components/ward-management/ward-stage-copy";
 import {
   TRANSPORT_EXCEPTION_GAP_LABELS,
   transportOrderGap,
@@ -297,6 +298,8 @@ export function dischargeChoiceBlockedReason(movement: Movement): string | undef
  * mirrors rather than the next time somebody reads it.
  */
 export function handoverBlockedReason(movement: Movement, who?: string): string | undefined {
+  if (divertedAwaitingRelease(movement))
+    return `${who ?? "This patient"} was diverted. Release the pulled bed instead.`;
   if (movement.stage === "moving") return `${who ?? "This patient"} is already on the way.`;
   // Mirrors the reducer's `noTransportNeeded` exception (`HANDOVER_READY`): a movement with no
   // transport job may still be marked handover-ready when a "no transport needed" answer is
@@ -332,6 +335,8 @@ export function handoverBlockedReason(movement: Movement, who?: string): string 
  * would tell somebody a patient cannot be transported when in truth they have not finished asking.
  */
 export function bookTransportBlockedReason(movement: Movement, who?: string): string | undefined {
+  if (divertedAwaitingRelease(movement))
+    return `${who ?? "This patient"} was diverted. Release the pulled bed instead.`;
   if (movement.stage === "moving") return `${who ?? "This patient"} is already on the way.`;
   // Owner answer 30 (2026-09-17), build plan item 30: cancelling a booked transport no longer
   // leaves a replacement job standing while a bed is held, so a person must be able to book again

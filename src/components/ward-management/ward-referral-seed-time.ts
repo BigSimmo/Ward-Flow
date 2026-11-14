@@ -1,5 +1,13 @@
 import { DEMONSTRATION_DAY_LABEL } from "./ward-sites";
-import { clockZoneLabel, formatInstantWithDay, PERTH_UTC_OFFSET_MS, type ClockZoneLabel } from "./ward-clock";
+import {
+  clockZoneLabel,
+  formatInstantWithDay,
+  perthMidnight,
+  wardZoneOffsetMs,
+  wardZoneOffsetText,
+  type ClockZoneLabel,
+} from "./ward-clock";
+import { WARD_TIME_ZONE } from "@/lib/ward-time-zone";
 import { monthIndexOfShort } from "@/components/ward-management/ward-month-names";
 
 /** Parse explicit ISO dates without accepting a device-local zone or normalising impossible dates. */
@@ -30,7 +38,7 @@ function explicitIsoTime(raw: unknown): number | undefined {
 export function isSyntheticReferralTimelineBase(value: unknown): value is string {
   const at = explicitIsoTime(value);
   if (at === undefined) return false;
-  const perth = new Date(at + PERTH_UTC_OFFSET_MS);
+  const perth = new Date(at + wardZoneOffsetMs(at));
   return (
     perth.getUTCHours() === 0 &&
     perth.getUTCMinutes() === 0 &&
@@ -39,11 +47,15 @@ export function isSyntheticReferralTimelineBase(value: unknown): value is string
   );
 }
 
-/** The sole canonical scenario day, expressed as an explicit Perth midnight. */
+/**
+ * The sole canonical scenario day, expressed as an explicit Perth midnight with the zone's own offset
+ * written out ("+08:00" for AWST; `WARD_TIME_ZONE`).
+ */
 export function seededReferralTimelineBase(): string {
   const [day, month, year] = DEMONSTRATION_DAY_LABEL.split(" ");
   const monthIndex = monthIndexOfShort(month!);
-  const base = `${year}-${String(monthIndex + 1).padStart(2, "0")}-${day?.padStart(2, "0")}T00:00:00+08:00`;
+  const zone = wardZoneOffsetText(perthMidnight(Number(year), monthIndex, Number(day)).getTime());
+  const base = `${year}-${String(monthIndex + 1).padStart(2, "0")}-${day?.padStart(2, "0")}T00:00:00${zone}`;
   if (!isSyntheticReferralTimelineBase(base)) throw new Error("Invalid canonical demonstration day");
   return base;
 }
@@ -88,13 +100,13 @@ export function formatReferralIntakeTime(
     day: "numeric",
     month: "short",
     year: "numeric",
-    timeZone: "Australia/Perth",
+    timeZone: WARD_TIME_ZONE,
   });
   const timeWords = date.toLocaleTimeString("en-AU", {
     hour: "2-digit",
     minute: "2-digit",
     hourCycle: "h23",
-    timeZone: "Australia/Perth",
+    timeZone: WARD_TIME_ZONE,
   });
   return `${dateWords}, ${timeWords} ${zone}`;
 }

@@ -149,7 +149,8 @@ describe("M-TIME-01: simulation clock resolution instead of browser wall-clock n
     fireEvent.click(screen.getByRole("menuitemradio", { name: /^Form 1A/u }));
     typeDate(screen.getByLabelText("Date on form"), `2026-08-${day}`);
     fireEvent.change(screen.getByLabelText("Time on form"), { target: { value: clock } });
-    expect(screen.getByTestId("ward-form-times-result").textContent).toMatch(new RegExp(`${clock}\\s*as typed`, "u"));
+    expect(screen.getByTestId("ward-form-times-result").textContent).toMatch(new RegExp(`${clock}`, "u"));
+    expect(screen.getByTestId("ward-form-times-result").textContent).not.toMatch(/as typed/u);
     // Read on the scenario day, a form typed at the demo clock time has not ended yet.
     expect(screen.getByTestId("ward-form-times-result").textContent).toMatch(new RegExp(`\\)Ends\\s*${clock}`, "u"));
   });

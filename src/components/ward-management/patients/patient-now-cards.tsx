@@ -228,9 +228,8 @@ export function PatientLegalNowCard({
   const onOrder = isNotVoluntary(status);
   // D-187 item 8 (Q29): a missing person shows only the recorded status and form. The card no
   // longer says the order stays in force while absent; which status shows is unchanged.
-  const statusNote = rows.some((row) => row.left)
-    ? "As recorded · expiry typed from the form"
-    : "As recorded · no lapse time shown";
+  // D-218 (Josh, 14 Nov 2026): the note no longer adds "expiry typed from the form" or "no lapse time shown".
+  const statusNote = "As recorded";
   // With a stay or placement current, the band names the status, so the card says only that no form
   // is on record. With nothing current, the band reads "No order in force" and the card agrees.
   const showNoForm = rows.length === 0 && !movement && !(absent && onOrder);

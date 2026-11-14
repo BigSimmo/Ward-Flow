@@ -96,7 +96,6 @@ import {
 } from "@/components/ward-management/use-return-to-place";
 import { WaitBar, phoneUpdate, updateCell } from "./delays-board-rows";
 import { legalCell, legalTimeAsTypedWords, phonePrefix } from "./delays-board-rows";
-import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import waitingKeys from "./waiting.module.css";
 import polish from "./waiting-polish.module.css";
 import { WaitingKeyRow } from "./waiting-hero-bar";
@@ -398,7 +397,6 @@ export function DelaysBoard({
   // up to the list's own count.
   const split = useMemo(() => waitingSplit(rows.map((row) => row.movement)), [rows]);
   // Decision 1: the colour key shows only when a row carries a typed legal time for it to explain.
-  const anyTypedTime = rows.some((row) => currentLegalDueAt(row.movement) !== undefined);
   const urgentMinutes = thresholds.urgentMinutes;
   // B4 (Josh, 19 Oct 2026): the 1 hour chip names its noun, beside the 3 hour Form due view.
   const dueSoonLabel = `Form due within ${windowText(urgentMinutes)}`;
@@ -927,7 +925,7 @@ export function DelaysBoard({
           data-testid={`delays-view-${view}`}
         >
           {/* Josh, 30 Oct 2026: no "(as written)" on form labels. */}
-          {tightHours(desk.viewLabel(view, thresholds).replace(" (as written)", ""))}{" "}
+          {tightHours(desk.viewLabel(view, thresholds))}{" "}
           <span className={styles.k}>{rows.filter((row) => inWaitingView(view, row, thresholds)).length}</span>
         </button>
       ))}
@@ -1309,7 +1307,7 @@ export function DelaysBoard({
               >
                 {/* Decision 1 (Josh, 30 Oct 2026): the one colour key for typed legal times sits beside
                     the tier key, on the list it explains. */}
-                <WaitingKeyRow anyTypedTime={anyTypedTime} />
+                <WaitingKeyRow />
                 <table className={`${styles.tbl} ${polish.noEdge}`} data-testid="delays-waiting-list" role="table">
                   <colgroup>
                     <col className={styles.colP} />

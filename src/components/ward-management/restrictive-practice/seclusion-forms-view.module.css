@@ -136,14 +136,6 @@
   color: var(--wf-ink-3);
 }
 
-/* The view's scope line: first, slim and quiet, no card. It is a safety line, so it stays. */
-.scopeNote {
-  margin: 0;
-  padding: 0 var(--wf-s-1);
-  font: 400 12.5px / 17px var(--wf-font);
-  color: var(--wf-ink-3);
-}
-
 .srOnly {
   position: absolute;
   width: 1px;

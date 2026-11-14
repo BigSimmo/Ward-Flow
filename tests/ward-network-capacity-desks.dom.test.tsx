@@ -159,6 +159,17 @@ describe("Capacity for a site bed manager", () => {
     expect(offered.length).toBeGreaterThan(0);
     expect([...offered].sort()).toEqual([...own].sort());
   });
+
+  it("prints a meeting sheet of its own site's beds, named in the title (R-FIGS-19)", () => {
+    const seed = seedWardFlowState();
+    const siteCode = seed.units[0].siteCode;
+    asDesk({ role: "bed_manager", scope: { kind: "site", siteCode } });
+    renderCapacity();
+    fireEvent.click(screen.getByRole("button", { name: "Bed meeting sheet" }));
+    const beds = seed.units.filter((unit) => unit.siteCode === siteCode).reduce((sum, unit) => sum + unit.beds, 0);
+    const title = `Bed meeting sheet · ${siteByCode(siteCode)!.name}, ${beds} beds`;
+    expect(screen.getByRole("dialog", { name: title })).toBeInTheDocument();
+  });
 });
 
 describe("Capacity offers only pages the desk may open", () => {

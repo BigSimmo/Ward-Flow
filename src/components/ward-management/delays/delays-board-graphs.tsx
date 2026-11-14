@@ -49,6 +49,7 @@ import { NextCrossings } from "./waiting-next-crossings";
 import { useDueSoonThresholds, useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { standingSuffix, typedTimeStanding } from "@/components/ward-management/legal-forms/legal-forms-view";
 import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import { targetHoursText } from "@/components/ward-management/ward-target-hours";
 type Graph = "spread" | "runway" | "matrix";
 
 const SHORT_CAUSE: Record<DelayCause, string> = {
@@ -447,6 +448,9 @@ export function DelaysBoardGraphs(props: Props) {
   // Role view (as ED clinician): an ED desk's people all come from its own catchment, so the
   // Catchment rows and the "Where and whose move" grid (catchment by owner) say nothing new there.
   const { edDesk } = useWaitingDeskWords();
+  // R-HOME-13 (Josh, 14 Nov 2026): the 8h and 24h bands are signed values (D-122) and stay fixed;
+  // the ED target is a local setting, so the legend names it beside them rather than moving them.
+  const edTarget = useOptionalWardFlowSelect("configuration")?.configuration.edAccessTargetMinutes;
   const [cols, setCols] = useState<"owner" | "cause">("owner");
   const [tip, setTip] = useState<Tip>(null);
   const graphId = useId();
@@ -483,7 +487,7 @@ export function DelaysBoardGraphs(props: Props) {
       <>
         <span className={styles.lg}>
           <StatusGlyph tone="danger" size={9} />
-          {`Past ${H24}, or recorded legal time within ${hoursOrDuration(urgentMinutes)}`}
+          {`Over ${H24}, or recorded legal time within ${hoursOrDuration(urgentMinutes)}`}
         </span>
         <span className={styles.lg}>
           <StatusGlyph tone="warning" size={9} />
@@ -499,7 +503,7 @@ export function DelaysBoardGraphs(props: Props) {
         </span>
         <span className={styles.lg}>
           <span className={styles.lgZ} />
-          {`Past ${H24}, compressed to 7d`}
+          {`Over ${H24}, compressed to 7d`}
         </span>
       </>
     ) : graph === "runway" ? (
@@ -514,7 +518,7 @@ export function DelaysBoardGraphs(props: Props) {
         </span>
         <span className={styles.lg}>
           <StatusGlyph tone="info" size={9} />
-          Recorded legal time, as typed. Not legally checked.
+          Recorded legal time
         </span>
         <span className={`${styles.lg} ${polish.lgNote}`}>If nobody moves · choose a person to open their row</span>
       </>
@@ -619,7 +623,14 @@ export function DelaysBoardGraphs(props: Props) {
         <span className={styles.sp} />
         {sub}
       </div>
-      <div className={`${styles.legend} ${styles.gLegend}`}>{legend}</div>
+      <div className={`${styles.legend} ${styles.gLegend}`}>
+        {legend}
+        {edTarget === undefined ? null : (
+          <span className={`${styles.lg} ${polish.lgNote}`} data-testid="waiting-bands-fixed">
+            {`Bands are fixed. Your ED target is ${targetHoursText(edTarget)} (Settings)`}
+          </span>
+        )}
+      </div>
       <div
         id={`${graphId}-panel`}
         role="tabpanel"

@@ -3916,6 +3916,15 @@
     backdrop-filter: none;
   }
 
+  /* Demo-Feel-V1-1: the bar is opaque white here, so the hero band's white ink would vanish on it. The
+   * bar takes page ink, the way the quiet hero does. */
+  :global(:root[data-mode="glare"]) .bar:not([data-band]) {
+    --wf-hero-ink: var(--wf-ink-1);
+    --wf-hero-ink-2: var(--wf-ink-2);
+    --wf-hero-ink-3: var(--wf-ink-3);
+    color: var(--wf-ink-1);
+  }
+
   :global(:root[data-mode="glare"]) .bar::before {
     background: none;
   }
