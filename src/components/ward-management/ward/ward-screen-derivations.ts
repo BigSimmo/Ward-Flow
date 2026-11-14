@@ -134,7 +134,9 @@ export function wardBedRoster({
   const freeSlots = states.ready + states.beingMadeReady;
   const rawBeds = Array.from({ length: unit.beds }, (_, i) => {
     const bedNumber = i + 1;
-    // B4: the Locked/Open tag and pod are set below from what sits on the tile, never its position.
+    const designation: "Locked" | "Open" | undefined = isMixed ? (i < lockedBeds ? "Locked" : "Open") : undefined;
+    const podId = isMixed ? (i < lockedBeds ? "locked" : "open") : "all";
+    const podLabel = isMixed ? `${unit.name} ${designation} Beds` : unit.name;
     const isHdu = false;
 
     // v10 "counts agree": the tiles follow the ruled four bed states (`bedStates`), the same
@@ -272,6 +274,9 @@ export function wardBedRoster({
     return {
       bedNumber,
       bedLabel: `Bed ${String(bedNumber).padStart(2, "0")}`,
+      podId,
+      podLabel,
+      designation,
       isHdu,
       status,
       statusText,
@@ -403,45 +408,22 @@ export function wardBedRoster({
   }
   // Item 6: a bed closed by number carries its review line ("Review 14:00", "Review overdue").
   const closedMarks = new Map(activeClosedBeds(unit).map((mark) => [mark.bedNumber, mark]));
-  // B4 (14 Nov 2026): on a mixed ward a tile's Locked/Open tag follows what sits on it. A stay's tile
-  // (occupied, on leave or pulled) takes the kind its stay recorded (`Admission.bedKind`), and a bed
-  // closed by number takes its number's kind (`numberedBedKind`). Every other tile (Ready, being made
-  // ready, closed with no number) shares the locked beds left over, lowest bed number first, so the
-  // Locked tiles still number `lockedBeds`. A stay with no recorded kind (seeded stays carry none) is
-  // not given an invented one: it shares the leftover the same way, which is its bed number's kind
-  // whenever the records agree. Only records that claim more beds of a kind than the ward has can
-  // move the Locked total off `lockedBeds`.
-  const stayKinds = new Map(
-    (admissions ?? []).flatMap((admission) =>
-      admission.unitId === unit.id && admission.bedKind !== undefined ? [[admission.id, admission.bedKind]] : [],
-    ) as [string, "locked" | "open"][],
-  );
-  const recordedKinds = rawBeds.map((bed, index): "locked" | "open" | undefined => {
-    if (bed.status === "closed")
-      return closedMarks.has(bedNumbers[index]) ? (bedNumbers[index] <= lockedBeds ? "locked" : "open") : undefined;
-    if (bed.status === "ready" || bed.stayAdmissionId === undefined) return undefined;
-    return stayKinds.get(bed.stayAdmissionId);
-  });
-  const lockedLeft = lockedBeds - recordedKinds.filter((kind) => kind === "locked").length;
-  const leftoverLocked = new Set(
-    rawBeds
-      .flatMap((_, index) => (recordedKinds[index] === undefined ? [index] : []))
-      .sort((left, right) => bedNumbers[left] - bedNumbers[right])
-      .slice(0, Math.max(0, lockedLeft)),
-  );
   const bedsList = rawBeds
     .map((bed, index) => {
       const bedNumber = bedNumbers[index];
       const closedMark = bed.status === "closed" ? closedMarks.get(bedNumber) : undefined;
       const preparingReleaseId = bed.status === "ready" ? preparingByBed.get(bedNumber) : undefined;
-      const kind = recordedKinds[index] ?? (leftoverLocked.has(index) ? "locked" : "open");
-      const designation: "Locked" | "Open" | undefined = isMixed ? (kind === "locked" ? "Locked" : "Open") : undefined;
+      const designation: "Locked" | "Open" | undefined = isMixed
+        ? bedNumber <= lockedBeds
+          ? "Locked"
+          : "Open"
+        : undefined;
       return {
         ...bed,
         bedNumber,
         bedLabel: `Bed ${String(bedNumber).padStart(2, "0")}`,
         designation,
-        podId: isMixed ? kind : "all",
+        podId: isMixed ? (bedNumber <= lockedBeds ? "locked" : "open") : "all",
         podLabel: isMixed ? `${unit.name} ${designation} Beds` : unit.name,
         heldFor: bed.status === "ready" ? heldBeds.find((held) => held.bed === bedNumber)?.name : undefined,
         preparing: preparingReleaseId !== undefined,

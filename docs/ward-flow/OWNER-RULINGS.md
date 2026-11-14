@@ -376,7 +376,7 @@ safe global key across 30 files.
 | `D-204` | `decisions.md`:2531 | D-204. A signed triage shows the desk's name (14 November 2026) |
 | `D-206` | `decisions.md`:2538 | D-206. CodeQL storage alerts are false positives for the demo (14 November 2026) |
 | `D-207` | `decisions.md`:2545 | D-207. Fit to travel recorded as not cleared, and the clinical go (14 November 2026) |
-| `D-208` | `decisions.md`:2552 | D-208. Appraised findings: fix the four real display bugs (14 November 2026) |
+| `D-208` | `decisions.md`:2552 | D-208. Appraised findings: fix three real display bugs (14 November 2026) |
 | `D9-1` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | `D9-2` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
 | `D9-3` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:126 | D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION) |
@@ -892,7 +892,7 @@ safe global key across 30 files.
 - `D-204` — line 2531, heading: "D-204. A signed triage shows the desk's name (14 November 2026)"
 - `D-206` — line 2538, heading: "D-206. CodeQL storage alerts are false positives for the demo (14 November 2026)"
 - `D-207` — line 2545, heading: "D-207. Fit to travel recorded as not cleared, and the clinical go (14 November 2026)"
-- `D-208` — line 2552, heading: "D-208. Appraised findings: fix the four real display bugs (14 November 2026)"
+- `D-208` — line 2552, heading: "D-208. Appraised findings: fix three real display bugs (14 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 

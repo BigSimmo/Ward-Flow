@@ -228,7 +228,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-204](#d-204-a-signed-triage-shows-the-desks-name-14-november-2026)                                                                                   | A signed triage shows the desk's name                                                  | Active                                           |
 | [D-206](#d-206-codeql-storage-alerts-are-false-positives-for-the-demo-14-november-2026)                                                                 | CodeQL storage alerts are false positives for the demo                                 | Active                                           |
 | [D-207](#d-207-fit-to-travel-recorded-as-not-cleared-and-the-clinical-go-14-november-2026)                                                              | Fit to travel: not cleared, and the clinical go                                        | Active                                           |
-| [D-208](#d-208-appraised-findings-fix-the-four-real-display-bugs-14-november-2026)                                                                      | Appraised findings: fix the four real display bugs                                     | Active                                           |
+| [D-208](#d-208-appraised-findings-fix-three-real-display-bugs-14-november-2026)                                                                         | Appraised findings: fix three real display bugs                                        | Active                                           |
 
 ---
 
@@ -2549,12 +2549,13 @@ is inferred.
 - **Clinical go:** Josh lifted the hold on the clinical PR (#1656). It may merge once its required checks pass. Review questions 2, 4 and 9 and the items labelled "not signed", "to verify" or "not stated" stay open for the clinical sitting.
 - **Boundary:** synthetic data only. No clinical value or threshold changes. Built in #1656.
 
-## D-208. Appraised findings: fix the four real display bugs (14 November 2026)
+## D-208. Appraised findings: fix three real display bugs (14 November 2026)
 
 - **Date:** 14 November 2026, 8:40 AM AWST (00:40 UTC). **Decided by:** Josh, "yes to all recommendations" on the appraisal of a pasted list of 15 findings, in the thread "Check which remaining-issue findings are real".
 - **Decision:**
-  1. Fix in one small PR: Ward bed tiles on wards that mix locked and open beds show each tile's real bed kind, not a tag by tile position (B4); ED bays show "Bay not recorded" instead of a number made up from the record's id (B3); the TV unlock box in the demo no longer asks for a password it does not need (A2); a repeated acknowledgement of the same task by the same role is not saved twice (B7). This replaces the event's earlier append-only design: the record names only the role, and only the coordinator acknowledges, so a second entry added nothing but a duplicate.
+  1. Fix in one small PR: ED bays show "Bay not recorded" instead of a number made up from the record's id (B3); the TV unlock box in the demo no longer asks for a password it does not need (A2); a repeated acknowledgement of the same task by the same role is not saved twice (B7). This replaces the event's earlier append-only design: the record names only the role, and only the coordinator acknowledges, so a second entry added nothing but a duplicate.
+     Ward bed tiles (B4) are not changed. The positional tags the finding named were never shown; the tiles follow the bed-number rule (locked beds are numbered first) that the placement checks also use, so relabelling tiles alone would offer placements the checks then refuse. The remaining gap, a stay whose recorded bed kind differs from its bed number's kind, needs the bed seating to change and waits until after the demo.
   2. Test accounts: one read-only Supabase read of the 8 test accounts' access dates. Result: all expire 2 February 2027, so the reported 16 November expiry was wrong and nothing changes.
   3. The old audit worktree on Josh's PC stays until after the demo. A read-only check found its branch merged into `main` (#1501) and no unsaved files, so removing it later loses nothing.
-- **Why:** of the 15 findings, 3 were wrong, 1 already fixed, 1 a repeat and 3 only partly right. These four were real and cheap to fix, and B4 and B3 cut against D-21 (show only what is recorded).
+- **Why:** of the 15 findings, 3 were wrong, 1 already fixed, 1 a repeat and 3 only partly right. These were real and cheap to fix, and B3 cut against D-21 (show only what is recorded).
 - **Boundary:** no clinical value or rule changes.
