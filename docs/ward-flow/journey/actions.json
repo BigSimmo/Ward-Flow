@@ -3426,8 +3426,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-provider.tsx",
-          "line": 1287,
-          "sha256": "245de614b66acaa1ba0eb8e36bb412c5355582d9e82372c96d0efde56aeaadc7"
+          "line": 1359,
+          "sha256": "99d2c21474bb70999626c986f0152a5a411eab7424a5ab32383c369ebfb37e67"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
@@ -4991,7 +4991,7 @@
     "lane": "record",
     "nodes": ["rkClock"],
     "roles": ["demo"],
-    "does": "Adds a finite nonnegative simulation offset to the app clock. Ordinary provider time follows wall time, refreshing at minute boundaries while visible and catching up on return; a device clock set back while the page is open holds the board at the furthest minute shown until the device catches up (time audit C1); initialNow pins deterministic test/render time. In shared mode the board counts from the server's time in its last answer, never shows a minute earlier than it has shown, and ticks when the server's minute turns (audit L1, D-210).",
+    "does": "Adds a finite nonnegative simulation offset to the app clock. Ordinary provider time follows wall time, refreshing at minute boundaries while visible and catching up on return; a device clock set back while the page is open holds the board at the furthest minute shown until the device catches up (time audit C1); initialNow pins deterministic test/render time. In shared mode the board counts from the server's time in its last answer, never shows a minute earlier than it has shown, and ticks when the server's minute turns (audit L1, D-210). Pause in the Tools demonstration panel holds this local board time at the paused minute (+15 min still adds while paused) and Resume carries on from there; the held minutes are kept for a reload. Shared mode has no Pause (D-229).",
     "needs": "The demo role and finite nonnegative minutes; coordinator is not in this event’s permission list.",
     "changes": "Increases clockOffsetMinutes; Reset demo and a scenario load take that offset off again; it does not itself create a legal expiry or resolve a timed task. In the local provider, command acceptance precedes device durability: the saved-on-device flag remains false until the matching committed safe copy is written, and owned unsaved work is protected on unload. These persistence indicators do not add an engine transition.",
     "reasons": [],
@@ -5029,13 +5029,13 @@
         },
         {
           "path": "src/components/ward-management/tools/ward-demo-panel.tsx",
-          "line": 305,
-          "sha256": "f8299cf414b15cc09acf6763a182c933d4a3b789b5a30ab97baca63bdfcbd8f1"
+          "line": 320,
+          "sha256": "c2ec9cd75d48cc175dce4fe628e3174220e59de5b08baf81de36183be1cfd80b"
         },
         {
           "path": "src/components/ward-management/ward-flow-provider.tsx",
-          "line": 460,
-          "sha256": "245de614b66acaa1ba0eb8e36bb412c5355582d9e82372c96d0efde56aeaadc7"
+          "line": 466,
+          "sha256": "99d2c21474bb70999626c986f0152a5a411eab7424a5ab32383c369ebfb37e67"
         },
         {
           "path": "src/components/ward-management/use-ward-minute-tick.ts",
@@ -5059,7 +5059,7 @@
     "roles": ["demo"],
     "does": "Restores the currently loaded recognised scenario, falling back to standard for a damaged scenario value. It keeps the legal-form worked examples when they were on (A16-14), read from the world's own workedExamples flag (M12), not from the example records a scoped desk may not hold.",
     "needs": "Nothing.",
-    "changes": "Re-seeds all board state at the current time less the simulation offset, rather than always selecting the standard scenario: hours added with ADVANCE_CLOCK come off, but the clock is not set back to the scenario's start and keeps running (F-34). Calendar-day seed fields move by whole Perth days and clock-face records (intake windows, the shift's staff request) are built from that time (time audit G1). A genuine accepted reseed advances worldGeneration exactly once; wrong-role/rejected reseeds do not. A non-safe or exhausted generation refuses replacement by retaining the old state, so generation is never wrapped or reused. Reset also invalidates older asynchronous local scenario-file import requests. A newer import, reset, changed world generation or retired provider lifetime prevents an older read from replacing the current day. Imported local state is not reported durable before its device copy is written. H10 (D-210): the authored seed gives its stays no bed kind or number; each seeded stay takes them once, from its seat and the ward's own free locked and open figures.",
+    "changes": "Re-seeds all board state at the current time less the simulation offset, rather than always selecting the standard scenario: hours added with ADVANCE_CLOCK come off, but the clock is not set back to the scenario's start and keeps running (F-34). Calendar-day seed fields move by whole Perth days and clock-face records (intake windows, the shift's staff request) are built from that time (time audit G1). A genuine accepted reseed advances worldGeneration exactly once; wrong-role/rejected reseeds do not. A non-safe or exhausted generation refuses replacement by retaining the old state, so generation is never wrapped or reused. Reset also invalidates older asynchronous local scenario-file import requests. A newer import, reset, changed world generation or retired provider lifetime prevents an older read from replacing the current day. Imported local state is not reported durable before its device copy is written. H10 (D-210): the authored seed gives its stays no bed kind or number; each seeded stay takes them once, from its seat and the ward's own free locked and open figures. A reseed while the demonstration is paused ends the pause and starts the new day at the paused minute, so the paused minutes do not age it (D-229).",
     "reasons": [],
     "refuses": [],
     "screen": {
@@ -5081,13 +5081,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-provider.tsx",
-          "line": 1190,
-          "sha256": "245de614b66acaa1ba0eb8e36bb412c5355582d9e82372c96d0efde56aeaadc7"
+          "line": 1262,
+          "sha256": "99d2c21474bb70999626c986f0152a5a411eab7424a5ab32383c369ebfb37e67"
         },
         {
           "path": "src/components/ward-management/tools/ward-demo-panel.tsx",
-          "line": 248,
-          "sha256": "f8299cf414b15cc09acf6763a182c933d4a3b789b5a30ab97baca63bdfcbd8f1"
+          "line": 263,
+          "sha256": "c2ec9cd75d48cc175dce4fe628e3174220e59de5b08baf81de36183be1cfd80b"
         }
       ]
     }
@@ -5101,7 +5101,7 @@
     "roles": ["demo"],
     "does": "Switches to a different pre-built simulated night, resetting every patient, ward and record.",
     "needs": "A recognised scenario. Optional workedExamples: only true adds the legal-form worked examples (off by default, A16-14); only the standard and scarce days carry them, and any other value loads without them.",
-    "changes": "Replaces the whole state with a fresh seed at the current time less any Tools clock offset: hours added with ADVANCE_CLOCK come off, but the clock is not set back to the scenario's start and keeps running (F-34). Calendar-day seed fields move by whole Perth days, and tonight's intake windows and the shift's staff request are built from that time (time audit G1). A genuine accepted reseed advances worldGeneration exactly once; wrong-role/rejected reseeds do not. A non-safe or exhausted generation refuses replacement by retaining the old state, so generation is never wrapped or reused. Sets the world's workedExamples flag (M12), which Reset demo keeps, the access projection sends to every desk, and a save from before the flag derives once from its records. H10 (D-210): the authored seed gives its stays no bed kind or number; each seeded stay takes them once, from its seat and the ward's own free locked and open figures.",
+    "changes": "Replaces the whole state with a fresh seed at the current time less any Tools clock offset: hours added with ADVANCE_CLOCK come off, but the clock is not set back to the scenario's start and keeps running (F-34). Calendar-day seed fields move by whole Perth days, and tonight's intake windows and the shift's staff request are built from that time (time audit G1). A genuine accepted reseed advances worldGeneration exactly once; wrong-role/rejected reseeds do not. A non-safe or exhausted generation refuses replacement by retaining the old state, so generation is never wrapped or reused. Sets the world's workedExamples flag (M12), which Reset demo keeps, the access projection sends to every desk, and a save from before the flag derives once from its records. H10 (D-210): the authored seed gives its stays no bed kind or number; each seeded stay takes them once, from its seat and the ward's own free locked and open figures. A reseed while the demonstration is paused ends the pause and starts the new day at the paused minute, so the paused minutes do not age it (D-229).",
     "reasons": ["WARD_SCENARIOS"],
     "refuses": [
       {
@@ -5137,8 +5137,8 @@
         },
         {
           "path": "src/components/ward-management/tools/ward-demo-panel.tsx",
-          "line": 249,
-          "sha256": "f8299cf414b15cc09acf6763a182c933d4a3b789b5a30ab97baca63bdfcbd8f1"
+          "line": 264,
+          "sha256": "c2ec9cd75d48cc175dce4fe628e3174220e59de5b08baf81de36183be1cfd80b"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
@@ -5225,8 +5225,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-provider.tsx",
-          "line": 1308,
-          "sha256": "245de614b66acaa1ba0eb8e36bb412c5355582d9e82372c96d0efde56aeaadc7"
+          "line": 1380,
+          "sha256": "99d2c21474bb70999626c986f0152a5a411eab7424a5ab32383c369ebfb37e67"
         },
         {
           "path": "src/components/ward-management/ward-flow-protected-record-events.ts",
@@ -5276,8 +5276,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-provider.tsx",
-          "line": 1338,
-          "sha256": "245de614b66acaa1ba0eb8e36bb412c5355582d9e82372c96d0efde56aeaadc7"
+          "line": 1410,
+          "sha256": "99d2c21474bb70999626c986f0152a5a411eab7424a5ab32383c369ebfb37e67"
         }
       ]
     }

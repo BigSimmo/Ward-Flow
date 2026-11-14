@@ -8,8 +8,10 @@ import type { Movement } from "./ward-model";
  * marks need, are left alone, so a changed fixture never breaks the seed.
  *
  * - WF-017 and WF-022, already asked of another adult ward, are each on Royal Perth Adult Secure's
- *   wait list. Only the answer history and the wait-list mark are added, not a `declines` entry,
- *   so the seeded decline figures the statistics tests pin stay as they were.
+ *   wait list. The live referral, the answer history and the wait-list mark are added, not a
+ *   `declines` entry, so the seeded decline figures the statistics tests pin stay as they were.
+ *   D-229 (stress test D1a-E-1): the live referral is added too, as the reducer's waitlist answer
+ *   keeps it, so the ED board and person page show the wait list the ward shows.
  * - At Peel ED, WF-020's registrar has seen the person and WF-319's review is asked for.
  */
 const WAITLIST_UNIT_ID = "rph-adult-secure";
@@ -31,6 +33,7 @@ export function applyWaitlistDemoOverlay<T extends { movements: Movement[] }>(st
       const at = Math.min(now - 30, movement.openedAt + 90);
       return {
         ...movement,
+        referredUnitIds: [...movement.referredUnitIds, WAITLIST_UNIT_ID],
         waitlistedUnitIds: [...(movement.waitlistedUnitIds ?? []), WAITLIST_UNIT_ID],
         referralAnswerHistory: [
           ...(movement.referralAnswerHistory ?? []),
