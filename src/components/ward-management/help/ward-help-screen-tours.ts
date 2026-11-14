@@ -219,6 +219,16 @@ const AROUND: readonly Around[] = [
         body: "People waiting against beds that fit, for each kind of bed. Short means more people than beds.",
       },
       {
+        device: "desk",
+        acts: ["CONVERT_PLANNED_ADMISSION"],
+        // Wave 4 (D-191): bookings sit on Capacity's Planned tab, so the step lights the tab chooser.
+        target: id("capacity-tabs"),
+        title: "Planned admissions",
+        body: "Admissions booked ahead, on the Planned tab. Press Arrived when the person reaches the ward.",
+      },
+      {
+        // Wave 4 (D-191): the phone's Overview shows Held up where Nearest ready beds was.
+        device: "phone",
         target: id("capacity-held-up-card"),
         title: "Held up",
         body: "Discharges due by tomorrow that are held up, with what is holding each one.",
