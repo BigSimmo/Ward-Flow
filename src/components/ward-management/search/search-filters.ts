@@ -1,6 +1,7 @@
 import type { Movement, Site, ReferralAddressing } from "@/components/ward-management/ward-model";
 import type { PatientSearchResult } from "@/components/ward-management/ward-derivations";
 import { minutesUntil } from "@/components/ward-management/ward-clock";
+import { isDetained } from "@/components/ward-management/ward-legal-meaning";
 import { wardSites } from "@/components/ward-management/ward-sites";
 import { SELECTABLE_LEGAL_FORMS, legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
@@ -185,7 +186,10 @@ export function matchesLegal(result: PatientSearchResult, legal: string): boolea
 
   if (result.kind === "movement") {
     if (legal === "Voluntary") return result.movement.legalStatus === "Voluntary";
-    if (legal === "Involuntary") return result.movement.legalStatus !== "Voluntary";
+    // D-187 item 3 (Q24): "Involuntary" uses the named `isDetained` rule, the same as the detained
+    // counts, so a person referred for psychiatric examination is left out (Act s 4; "Referred is
+    // not involuntary", 9 Oct 2026). Before this it matched any status other than Voluntary.
+    if (legal === "Involuntary") return isDetained(result.movement.legalStatus);
     // An exact code match against the form the record holds — never a substring, and never the
     // transport job's free-text `formRequired`, which is a known unvalidated string.
     return legal === `Form ${currentLegalPosition(result.movement).form?.code}`;

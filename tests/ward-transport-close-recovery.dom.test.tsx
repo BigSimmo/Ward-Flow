@@ -105,6 +105,8 @@ function answerBooking(prefix: "ed" | "community") {
   fireEvent.click(
     field(prefix, prefix === "ed" ? "transport-legal-status-involuntary" : "transport-legal-involuntary"),
   );
+  // D-187 item 10: no medical clearance is recorded on this synthetic record, so a reason is asked.
+  fireEvent.change(field(prefix, "transport-legal-reason"), { target: { value: "paper_sighted" } });
 }
 
 describe.each(["ed", "community"] as const)("%s transport answers survive close attempts", (prefix) => {

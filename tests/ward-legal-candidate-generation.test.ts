@@ -35,7 +35,13 @@ describe("legal sweep candidate generation", () => {
         ...(type === "ACCEPT_IN_PRINCIPLE" || type === "PULL_PATIENT" || type === "DECLINE"
           ? { actingUnitId: unit.id }
           : {}),
-        ...(type === "FLAG_LEGAL_MISMATCH" ? { kind: "involuntary_on_voluntary_ward" } : {}),
+        // D-189 item 9(a): the reducer no longer raises the involuntary kind, so a Voluntary
+        // movement tries the still-reachable locked-ward kind (helper `legalMismatchKindToTry`).
+        ...(type === "FLAG_LEGAL_MISMATCH"
+          ? {
+              kind: movement.legalStatus === "Voluntary" ? "voluntary_on_locked_ward" : "involuntary_on_voluntary_ward",
+            }
+          : {}),
         ...(type === "DECLINE" ? { reason: DECLINE_REASONS[0] } : {}),
         ...(type === "WITHDRAW_WARD_REQUEST" ? { reason: WARD_REQUEST_WITHDRAWAL_REASONS[0] } : {}),
       })),

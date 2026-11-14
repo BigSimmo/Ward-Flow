@@ -1,3 +1,4 @@
+import { authorisationBlocksPlacement } from "@/components/ward-management/ward-authorisation";
 import { requiresAuthorisedDestination } from "@/components/ward-management/ward-eligibility";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 
@@ -15,12 +16,16 @@ import type { Movement, Unit } from "@/components/ward-management/ward-model";
  * The reason is recorded with the restore pull (`PULL_PATIENT` with an override reason), as an
  * `authorisation` override for this ward. Only one made at or after the latest legal status change
  * counts, so an override given for an earlier status does not carry over to a new one.
+ *
+ * D-189 items 8(a) and 9(a): every ward's authorisation is "not stated" until Q42 is signed, so this
+ * reads the one switch (`authorisationBlocksPlacement`) and finds no gap. Handover ready, transport
+ * accepted, collection, arrival and the restore pull are therefore never refused for authorisation.
  */
 export function heldUnitAuthorisationGap(movement: Movement, units: readonly Unit[]): Unit | undefined {
   if (movement.closure !== undefined || movement.acceptedUnitId === undefined) return undefined;
   if (!requiresAuthorisedDestination(movement.legalStatus)) return undefined;
   const unit = units.find((candidate) => candidate.id === movement.acceptedUnitId);
-  return unit === undefined || unit.authorised ? undefined : unit;
+  return unit === undefined || !authorisationBlocksPlacement(unit) ? undefined : unit;
 }
 
 /** An `authorisation` override for this ward recorded at or after the latest legal status change. */

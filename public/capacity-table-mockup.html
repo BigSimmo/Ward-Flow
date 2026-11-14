@@ -894,7 +894,7 @@
                 <th scope="col" class="py-3 px-3 text-center w-24">Occupancy</th>
                 <th scope="col" class="py-3 px-3 text-center w-28">Discharges Due</th>
                 <th scope="col" class="py-3 px-3 text-center w-36">Held Up Releases</th>
-                <th scope="col" class="py-3 px-3 text-center w-28">MHA Auth</th>
+                <th scope="col" class="py-3 px-3 text-center w-28">Involuntary admissions</th>
                 <th scope="col" class="py-3 px-4 text-right w-44">Confirmation</th>
               </tr>
             </thead>
@@ -1009,7 +1009,6 @@
               expected: 2,
               heldUp: 0,
               heldUpDetail: "expected release in 2 days",
-              authorised: true,
               confirmedAt: "10:42 AWST",
               confirmedBy: "NUM Graylands",
               stale: false,
@@ -1029,7 +1028,6 @@
               expected: 3,
               heldUp: 0,
               heldUpDetail: null,
-              authorised: true,
               confirmedAt: "10:30 AWST",
               confirmedBy: "NUM Graylands",
               stale: false,
@@ -1049,7 +1047,6 @@
               expected: 4,
               heldUp: 1,
               heldUpDetail: "held up since 10:42 yesterday",
-              authorised: true,
               confirmedAt: "10:45 AWST",
               confirmedBy: "NUM SCGH",
               stale: false,
@@ -1069,7 +1066,6 @@
               expected: 4,
               heldUp: 0,
               heldUpDetail: null,
-              authorised: false,
               confirmedAt: "10:15 AWST",
               confirmedBy: "NUM SCGH",
               stale: false,
@@ -1095,7 +1091,6 @@
               expected: 3,
               heldUp: 1,
               heldUpDetail: "expected release in 1 days",
-              authorised: true,
               confirmedAt: "10:38 AWST",
               confirmedBy: "NUM Bentley",
               stale: false,
@@ -1115,7 +1110,6 @@
               expected: 1,
               heldUp: 0,
               heldUpDetail: null,
-              authorised: true,
               confirmedAt: "10:22 AWST",
               confirmedBy: "NUM Bentley",
               stale: false,
@@ -1135,7 +1129,6 @@
               expected: 5,
               heldUp: 1,
               heldUpDetail: "held up since 08:30 today",
-              authorised: true,
               confirmedAt: "08:15 AWST",
               confirmedBy: "Feed derived",
               stale: true, // Needs confirming!
@@ -1155,7 +1148,6 @@
               expected: 3,
               heldUp: 0,
               heldUpDetail: null,
-              authorised: true,
               confirmedAt: "10:50 AWST",
               confirmedBy: "NUM RPH",
               stale: false,
@@ -1181,7 +1173,6 @@
               expected: 2,
               heldUp: 0,
               heldUpDetail: null,
-              authorised: true,
               confirmedAt: "10:52 AWST",
               confirmedBy: "NUM Fiona Stanley",
               stale: false,
@@ -1201,7 +1192,6 @@
               expected: 4,
               heldUp: 0,
               heldUpDetail: null,
-              authorised: true,
               confirmedAt: "10:35 AWST",
               confirmedBy: "NUM Fremantle",
               stale: false,
@@ -1356,10 +1346,8 @@
                 heldUpCell = `<span class="text-[10px] text-[var(--text-muted)]">${ward.heldUpDetail}</span>`;
               }
 
-              // Involuntary Authorized
-              const authCell = ward.authorised
-                ? `<span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">Yes</span>`
-                : `<span class="px-2 py-0.5 rounded-md text-[11px] text-[var(--text-muted)] bg-[var(--card-subtle)] border border-[var(--border)]">No</span>`;
+              // Involuntary admissions: not stated for any ward (D-189 item 6, review R8).
+              const authCell = `<span class="px-2 py-0.5 rounded-md text-[11px] text-[var(--text-muted)] bg-[var(--card-subtle)] border border-[var(--border)]">Not stated</span>`;
 
               // Confirmation / Request Update
               const confirmCell = `

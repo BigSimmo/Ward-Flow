@@ -465,12 +465,12 @@ describe("owner pins carried over from the retired full-page form", () => {
     fireEvent.click(steps().getByRole("button", { name: "Wards" }));
     const rows = within(screen.getByRole("list", { name: "Destinations" })).getAllByRole("listitem");
     const text = rows.map((row) => row.textContent ?? "");
-    // WF-009's person needs an involuntary bed; SJGS is not set up for one, so it is not "Bed ready".
+    // WF-009's person needs an involuntary bed. D-189 items 8(a) and 9(a): until Q42 is signed the
+    // sample flag on SJGS refuses nothing, so its row gives no authorisation refusal.
     // Walk-through WT-27: rows show the ward name and site code, never the internal ward id.
     expect(text.some((row) => row.includes("sjgs-adult-secure"))).toBe(false);
     const sjgs = text.find((row) => row.includes("SJGS Adult Secure"))!;
-    expect(sjgs).toContain("Not set up for involuntary admissions");
-    expect(sjgs).not.toContain("Bed ready");
+    expect(sjgs).not.toContain("Not set up for involuntary admissions");
     // Every count says how fresh it is, and the order is by health service, never by beds or catchment.
     for (const row of text) expect(row).toMatch(/confirmed \d{2}:\d{2}/);
     const services = text.map(

@@ -69,14 +69,14 @@ describe("Start a triage search", () => {
 });
 
 describe("a world person on the banner", () => {
-  it("reads the record: surname first, DD/MM/YYYY, legal as typed, no previous triage", () => {
+  it("reads the record: surname first, DD/MM/YYYY, legal on record, no previous triage", () => {
     const person = triagePersonFromWorld(world({ legalStatus: "Form 1A", origin: "Peel Health Campus ED" }));
     expect(person.name).toBe("Ridgewell, Ada");
     expect(person.meta).toBe("Female · 41y");
     expect(person.dob).toBe("03/02/1985");
     expect(person.nowAt).toBe("Peel Health Campus ED");
     expect(person.legal).toBe("Form 1A");
-    expect(legalLine(person)).toBe("Form 1A, as typed. Not legally checked.");
+    expect(legalLine(person)).toBe("Form 1A, on record. Not legally checked.");
     expect(person.last).toBeNull();
     expect(person.recordHref).toBe("/ward-flow/people/code900");
   });
@@ -138,7 +138,7 @@ describe("a new triage", () => {
   it("names the chosen person in the summary and says there is no referral", () => {
     const model = summaryModel(state);
     expect(model.name).toBe("Ridgewell, Ada");
-    expect(model.keyLine).toContain("Dr S. Orlenby");
+    expect(model.keyLine).toContain("Bed coordinator");
     expect(summaryText(model)).toMatch(/\nReferral: None\n/);
   });
 
@@ -175,11 +175,12 @@ describe("a previous triage, read from a signed record", () => {
     expect(last.pastSummary).toMatch(/^Previous violence\. Carries these flags only/);
   });
 
-  it("names its codes in words and the synthetic reviewer", () => {
+  it("names its codes in words and the desk that signed it", () => {
     expect(last.urgencyText).toBe("C within 12 hours");
     expect(last.legal).toBe("Community treatment order");
     expect(last.review).toBe("72 hours");
-    expect(last.label).toMatch(/^Last triage · \d{2} [A-Z][a-z]{2} · Dr S\. Orlenby$/);
+    // A9-29 and go question 4: the record was signed on the ward desk, so it names that desk.
+    expect(last.label).toMatch(/^Last triage · \d{2} [A-Z][a-z]{2} · Nurse in charge$/);
   });
 
   it("puts that triage on the person, so the next one compares with it", () => {
@@ -193,7 +194,7 @@ describe("the document", () => {
   it("starts with the key line, keeps PSOLIS order and ends with the signature", () => {
     const model = summaryModel(exampleTriage(), { at: "07/11/2026 10:42", by: "Dr S. Orlenby" });
     expect(model.keyLine).toBe(
-      "Urgency not chosen · Outcome not set · Community treatment order, Form 5A 28/01/2027 23:59 (as typed) · Reviewed 06/11/2026 09:42 Phone · Dr S. Orlenby",
+      "Urgency not chosen · Outcome not set · Community treatment order (as chosen), Form 5A 28/01/2027 23:59 (as typed) · Reviewed 06/11/2026 09:42 Phone · Dr S. Orlenby",
     );
     expect(model.parts.map((p) => p.title)).toEqual([
       "Review details",
@@ -220,7 +221,7 @@ describe("the document", () => {
     const text = summaryText(summaryModel(state));
     expect(text).toMatch(/\nCurrent: not known: /);
     expect(text).toMatch(/\(carried from 12 Oct, not re-checked\)/);
-    expect(text).toMatch(/\nNot signed\. Reviewer: Dr S\. Orlenby/);
+    expect(text).toMatch(/\nNot signed\. Reviewer: Bed coordinator/);
   });
 });
 

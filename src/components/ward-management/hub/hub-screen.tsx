@@ -53,7 +53,6 @@ import {
   hubEntries,
   needsAttention,
   searchHub,
-  unauthorisedWards,
   type HubEntry,
   type HubKind,
 } from "@/components/ward-management/hub/hub-derivations";
@@ -256,7 +255,6 @@ export function HubScreen() {
     () => (deskSite === undefined ? [] : entries.filter((entry) => entry.kind === "ward" && canOpen(entry.href))),
     [entries, deskSite, canOpen],
   );
-  const unauthorised = useMemo(() => unauthorisedWards(entries), [entries]);
   // ROLE BRANCH (bed_manager): the site's own wards head the list once, in their own group, so the
   // service groups below leave them out instead of listing the same rows twice.
   const ownShown = deskSite !== undefined && ownEntries.length > 0 && !searching && (kind === "all" || kind === "ward");
@@ -621,12 +619,8 @@ export function HubScreen() {
         titleId="hub-preview-title"
         subtitle={subtitle === "" ? undefined : subtitle}
         tag={
-          // Mental Health Act authorisation decides who may legally be admitted, so it leads the tag.
-          selected.authorised === false ? (
-            <StatusPill tone="warning">Voluntary only</StatusPill>
-          ) : selected.stale === true ? (
-            <StatusPill tone="warning">Stale</StatusPill>
-          ) : undefined
+          // D-189 items 6 and 8(a): no ward is tagged by authorisation until Q42 is signed.
+          selected.stale === true ? <StatusPill tone="warning">Stale</StatusPill> : undefined
         }
         closeLabel={`Close ${selected.name}`}
         bodyLabel={`${selected.name} details`}
@@ -684,14 +678,6 @@ export function HubScreen() {
                 )}
               </>
             )}
-            {/* Mental Health Act authorisation is a SEPARATE fact from locked/open and decides who
-                may legally be admitted, so it is stated in words as well as in the tag. */}
-            {selected.authorised === false ? (
-              <span className={styles.flagPill}>
-                <StatusGlyph tone="warning" size={8} />
-                Not authorised — voluntary admissions only
-              </span>
-            ) : null}
             {deskSite !== undefined ? null : (
               <>
                 {selected.forensic === true ? <span className={styles.infoPill}>Forensic ward</span> : null}
@@ -826,16 +812,16 @@ export function HubScreen() {
       className={styles.glanceAnchor}
       panelClassName={styles.glancePanel}
       trigger={(props) => (
-        // Page tops (Josh, 9 Nov 2026): the "voluntary only" figure's label opens At a glance, which
-        // names those wards and every bed count to check.
+        // Page tops (Josh, 9 Nov 2026): the figure's label opens At a glance. D-189 items 6 and 8(a)
+        // removed the "voluntary only" count, so the figure is the bed counts to check it lists.
         <button
           type="button"
           {...props}
           className={styles.glanceFigure}
           data-testid="hub-glance-trigger"
-          aria-label={`voluntary only, at a glance: ${attention.length > 0 ? `${attention.length} to check` : "all bed counts current"}`}
+          aria-label={`bed counts to check, at a glance: ${attention.length > 0 ? `${attention.length} to check` : "all bed counts current"}`}
         >
-          voluntary only
+          to check
         </button>
       )}
     >
@@ -897,16 +883,6 @@ export function HubScreen() {
               {attention.length > 4 ? (
                 <p className={styles.moreNote}>{attention.length - 4} more marked Stale in the list.</p>
               ) : null}
-              {/* ⚠️ NAMED, NOT COUNTED: the value is knowing WHICH ward cannot take an involuntary patient. */}
-              {unauthorised.length === 0 ? null : (
-                <p className={styles.worthKnowing}>
-                  <StatusGlyph tone="neutral" size={8} />
-                  <span>
-                    <b>Voluntary only</b> {unauthorised.map((entry) => entry.name).join(", ")}
-                    <SrOnly>, not set up for involuntary admissions</SrOnly>
-                  </span>
-                </p>
-              )}
             </div>
 
             <div className={styles.glanceSection}>
@@ -1025,7 +1001,7 @@ export function HubScreen() {
             figures={
               <HeroFigures
                 items={[
-                  { id: "voluntary", value: unauthorised.length, label: glanceTrigger, testId: "hub-figure-voluntary" },
+                  { id: "to-check", value: attention.length, label: glanceTrigger, testId: "hub-figure-to-check" },
                 ]}
               />
             }

@@ -423,7 +423,16 @@ describe("Escalate only applies to a bed search that is really exhausted (PR #34
   const wf308 = open.find((movement) => movement.id === "WF-308")!;
 
   it("is offered for the seed's declined-by-all and no-eligible-bed movements", () => {
-    expect(escalationAppliesTo(declinesRow(wf009.id), wf009, units, NOW)).toBe(true);
+    // D-189 items 8(a) and 9(a): the two SJGS wards no longer refuse WF-009 on the invented
+    // authorisation flag, so they are eligible until they decline too. Declined by every ward:
+    const declinedByAll = {
+      ...wf009,
+      declines: units.map(
+        (unit) =>
+          wf009.declines.find((decline) => decline.unitId === unit.id) ?? { ...wf009.declines[0]!, unitId: unit.id },
+      ),
+    };
+    expect(escalationAppliesTo(declinesRow(wf009.id), declinedByAll, units, NOW)).toBe(true);
     expect(escalationAppliesTo(noBedRow(wf308.id), wf308, units, NOW)).toBe(true);
   });
 

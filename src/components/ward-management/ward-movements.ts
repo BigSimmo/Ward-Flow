@@ -243,7 +243,9 @@ const seededMovements: Movement[] = [
     gender: "Female",
     observation: GENERAL_OBSERVATION,
     highAcuity: false,
-    legalStatus: "Detained awaiting examination",
+    // D-187 item 2 (Josh, 13 Nov 2026): a Form 1A before the examination goes with "Referred for
+    // psychiatric examination" (D-170 item 4), not "Detained awaiting examination".
+    legalStatus: "Referred for psychiatric examination",
     legalForm: { code: "1A", kind: "examination" },
     legalFormReceivedAt: NOW_ANCHOR - 40,
     statusChanges: [],
@@ -487,11 +489,13 @@ const seededMovements: Movement[] = [
         at: NOW_ANCHOR - 5,
         reason: "capability_mismatch",
       },
+      // D-189 item 8: authorisation is "not stated", so SJGS Adult Secure is no longer ruled out on
+      // the invented flag. Its synthetic decline keeps this story's "nowhere left to ask" true.
+      { unitId: "sjgs-adult-secure", at: NOW_ANCHOR - 4, reason: "no_suitable_bed" },
     ],
-    // Every authorised secure adult unit in the network has now either declined this
-    // referral or fails an eligibility gate on its own (Broome has zero allocatable beds;
-    // SJGS Adult Secure is not MHA-authorised) — the search really is exhausted, not just
-    // capped at three parallel referrals.
+    // Every secure adult unit in the network has now either declined this referral or fails an
+    // eligibility gate on its own (Broome has zero allocatable beds) — the search really is
+    // exhausted, not just capped at three parallel referrals.
     blocker: "No secure adult bed available across the network",
     withdrawnReferrals: [],
     unwinds: [],
@@ -545,6 +549,8 @@ const seededMovements: Movement[] = [
     gender: "Female", // R7 (25 Sept 2026): authored demo data, not derived at runtime
     observation: GENERAL_OBSERVATION,
     highAcuity: false,
+    // D-189 items 1 and 9(b) (Josh, 13 Nov 2026): Saoirse's story stays as it runs today, a named
+    // exception to D-187 item 2's "Referred for psychiatric examination", for the later sitting (Q20).
     legalStatus: "Detained awaiting examination",
     legalForm: { code: "1A", kind: "examination" },
     statusChanges: [
@@ -1112,26 +1118,6 @@ function generatedTripMinutes(originSiteCode: string, destinationSiteCode: strin
 }
 
 /**
- * What is holding a generated movement up, set from its stage (A16-18, 13 Nov 2026). It used to be
- * "every fifth person is awaiting a destination response" whatever the stage, so people who had
- * arrived, or were on the road, still read as waiting on a ward's answer. The two "None — …"
- * sentences are the seed's own wording that the reducer also writes at those stages.
- */
-function generatedBlocker(stage: MovementStage, index: number): string {
-  switch (stage) {
-    case "placement_requested":
-    case "destination_review":
-      return index % 5 === 0 ? "Awaiting destination response" : "No blocker";
-    case "moving":
-      return "None — in transit";
-    case "arrived":
-      return "None — handover complete";
-    default:
-      return "No blocker";
-  }
-}
-
-/**
  * Stage-dependent fields a generated movement needs to not contradict its own `stage` — the
  * same fields the hand-authored `seededMovements` above always carry together. Kept as a
  * switch, rather than folded into the field literals below, so each stage's requirement
@@ -1278,15 +1264,90 @@ function stageFields(
  */
 const EDS_WITH_NO_ADULT_PATHWAY = new Set(["kemh-ed", "pch-ed"]);
 
+/**
+ * One generated person's short story (D-186 item 3, Q3 of the clinical sign-off sitting; D-189 item
+ * 9(h), Josh 13 Nov 2026): their tier, how long ago they reached the emergency department, their
+ * legal status and form, their psychiatric review and the reason they are waiting, written together
+ * on one line, so the fields come from one authored decision instead of each from its own
+ * `index %` sum.
+ *
+ * - `review` is minutes after they reached the department that a psychiatric review was asked for,
+ *   or null when none is recorded. A review falls after arrival.
+ * - `reason` is what holds them up. A person still waiting for a ward reads "Awaiting destination
+ *   response" or "No blocker"; on the road or arrived, it is the wording the reducer writes at that
+ *   stage (A16-18), so no one who has left reads as waiting on a ward's answer.
+ *
+ * Agreement here is mechanical only (D-189 item 9(h)): each status and form pass the legal order
+ * rules (`legalRecordWarnings`) and a review falls after arrival. Nothing here says what a long wait
+ * or a tier must show: that is Q17 and stays open, as does Calder's story (WF-312, D-189 item 1).
+ * The lines keep the sample day as it ran before the stories, so no figure moves. An arrived person
+ * on the referred line is an involuntary inpatient, the 9 Oct 2026 rule (the arrival checklist
+ * covers involuntary arrivals only). Synthetic.
+ */
+export type SampleStory = readonly [
+  tier: 1 | 2 | 3,
+  openedMinutesAgo: number,
+  status: LegalStatus,
+  form: "1A" | null,
+  review: number | null,
+  reason: string,
+];
+
+const AWAITING = "Awaiting destination response";
+const NO_BLOCKER = "No blocker";
+const IN_TRANSIT = "None — in transit";
+const HANDED_OVER = "None — handover complete";
+const REFERRED = "Referred for psychiatric examination";
+
+/** The stories of WF-300 to WF-329, in order: one line per generated person. */
+export const SAMPLE_STORIES: readonly SampleStory[] = [
+  [1, 360, "Involuntary inpatient", "1A", null, HANDED_OVER], // WF-300
+  [2, 397, "Voluntary", null, null, NO_BLOCKER], // WF-301
+  [3, 434, "Voluntary", null, null, NO_BLOCKER], // WF-302
+  [1, 471, REFERRED, "1A", null, NO_BLOCKER], // WF-303
+  [2, 508, "Voluntary", null, null, NO_BLOCKER], // WF-304
+  [3, 545, "Voluntary", null, null, AWAITING], // WF-305
+  [1, 582, REFERRED, "1A", null, IN_TRANSIT], // WF-306
+  [2, 619, "Voluntary", null, null, HANDED_OVER], // WF-307
+  [3, 656, "Voluntary", null, null, NO_BLOCKER], // WF-308
+  [1, 693, REFERRED, "1A", null, NO_BLOCKER], // WF-309
+  [2, 730, "Voluntary", null, null, NO_BLOCKER], // WF-310
+  [3, 767, "Voluntary", null, null, NO_BLOCKER], // WF-311
+  [1, 804, REFERRED, "1A", null, NO_BLOCKER], // WF-312, Calder: unchanged and unsigned (D-189 item 1)
+  [2, 841, "Voluntary", null, null, IN_TRANSIT], // WF-313
+  [3, 878, "Voluntary", null, null, HANDED_OVER], // WF-314
+  [1, 915, REFERRED, "1A", null, AWAITING], // WF-315
+  [2, 952, "Voluntary", null, null, NO_BLOCKER], // WF-316
+  [3, 89, "Voluntary", null, null, NO_BLOCKER], // WF-317
+  [1, 126, REFERRED, "1A", null, NO_BLOCKER], // WF-318
+  [2, 163, "Voluntary", null, null, NO_BLOCKER], // WF-319
+  [3, 200, "Voluntary", null, null, IN_TRANSIT], // WF-320
+  [1, 237, "Involuntary inpatient", "1A", null, HANDED_OVER], // WF-321
+  [2, 274, "Voluntary", null, null, NO_BLOCKER], // WF-322
+  [3, 311, "Voluntary", null, null, NO_BLOCKER], // WF-323
+  [1, 348, REFERRED, "1A", null, NO_BLOCKER], // WF-324
+  [2, 385, "Voluntary", null, null, NO_BLOCKER], // WF-325
+  [3, 422, "Voluntary", null, null, NO_BLOCKER], // WF-326
+  [1, 459, REFERRED, "1A", null, IN_TRANSIT], // WF-327
+  [2, 496, "Voluntary", null, null, HANDED_OVER], // WF-328
+  [3, 533, "Voluntary", null, null, NO_BLOCKER], // WF-329
+];
+
+/** The first generated record number; `SAMPLE_STORIES[0]` is this person's story. */
+export const SAMPLE_STORY_START = 300;
+
 function routineMovements(count: number, startIndex: number): Movement[] {
   const eds = allEmergencyDepartments().filter((ed) => !EDS_WITH_NO_ADULT_PATHWAY.has(ed.id));
   return Array.from({ length: count }, (_, offset) => {
     const index = startIndex + offset;
+    // D-186 item 3: this person's tier, wait, status, form, review and reason, from one story line.
+    const story = SAMPLE_STORIES[index - SAMPLE_STORY_START];
+    if (story === undefined) throw new Error(`WF-${index} has no sample story line`);
+    const [urgency, openedMinutesAgo, legalStatus, formCode, review, reason] = story;
     const ed = eds[index % eds.length];
     const cohort: Cohort = index % 4 === 0 ? "Older adult" : "Adult";
     const security: Security = index % 7 === 0 ? "Secure" : "Open";
     const sex = index % 2 === 0 ? "Female" : "Male";
-    const urgency = ((index % 3) + 1) as 1 | 2 | 3;
     const rawStage = MOVEMENT_STAGES[index % MOVEMENT_STAGES.length];
     // `stageFields` below has no case for "handover_ready" — and rightly so: giving it one would
     // mean fabricating the acceptedUnitId/pullExpiresAt/transport a real handover_ready movement
@@ -1333,20 +1394,9 @@ function routineMovements(count: number, startIndex: number): Movement[] {
     // is untouched by this remap, since it is HAND-AUTHORED (outside `routineMovements`) and its
     // `declines` is genuinely non-empty.
     const stage = rawStage === "handover_ready" || rawStage === "destination_review" ? "placement_requested" : rawStage;
-    // Hoisted out of the literal below because `stageFields` needs it: a generated destination
-    // must be lawful for THIS movement's status, and the status is what decides that. Passing the
-    // STATUS rather than a caller-computed boolean keeps `requiresAuthorisedDestination` the one
-    // place that decides what the status requires.
-    //
-    // Arrived slots that would have been "Referred for psychiatric examination" are instead
-    // Involuntary inpatient: the carer/PSP/MHAS checklist only covers involuntary arrivals, and
-    // "Referred for psychiatric examination" is not involuntary (9 Oct 2026).
-    const referred = index % 3 === 0;
-    const legalStatus: LegalStatus = referred
-      ? stage === "arrived"
-        ? "Involuntary inpatient"
-        : "Referred for psychiatric examination"
-      : "Voluntary";
+    // The status (from the story line) decides whether a generated destination must be lawful for
+    // it: `stageFields` passes the STATUS on, so `requiresAuthorisedDestination` stays the one place
+    // that decides what the status requires.
     const id: `WF-${string}` = `WF-${String(index).padStart(3, "0")}`;
     // Ward seed-audit follow-up, task T2 (D:/Temp/claude/seed-patient-link-audit.md, section 3):
     // every routine movement now names a patient. WF-308 is the one exception — it re-uses the
@@ -1362,7 +1412,7 @@ function routineMovements(count: number, startIndex: number): Movement[] {
       id,
       patientId,
       originEdId: ed.id,
-      openedAt: NOW_ANCHOR - (60 + ((index * 37) % 900)),
+      openedAt: NOW_ANCHOR - openedMinutesAgo,
       flaggedUrgent: false,
       urgency,
       cohort,
@@ -1392,13 +1442,8 @@ function routineMovements(count: number, startIndex: number): Movement[] {
       // 2026-08-23: no Form 1A in this model carries a dueAt (see LegalForm's own doc comment
       // in ward-model.ts) — the product owner's instruction was to drop the legal countdown
       // entirely, not to derive a corrected one, so this generator authors none.
-      legalForm:
-        index % 3 === 0
-          ? {
-              code: "1A",
-              kind: "examination" as const,
-            }
-          : undefined,
+      legalForm: formCode === null ? undefined : { code: formCode, kind: "examination" as const },
+      ...(review === null ? {} : { psychReview: { requestedAt: NOW_ANCHOR - openedMinutesAgo + review } }),
       statusChanges: [],
       urgencyChanges: [],
       overrides: [],
@@ -1406,7 +1451,7 @@ function routineMovements(count: number, startIndex: number): Movement[] {
       owner: index % 2 === 0 ? "Bed coordinator" : "ED mental health team",
       referredUnitIds: [],
       declines: [],
-      blocker: generatedBlocker(stage, index),
+      blocker: reason,
       withdrawnReferrals: [],
       unwinds: [],
       stageChanges: [],

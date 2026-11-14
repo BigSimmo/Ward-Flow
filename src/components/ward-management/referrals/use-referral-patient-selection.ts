@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { requestConfirm } from "@/components/wf";
 import { fieldsMatchEveryWord } from "../search/search-text";
-import { rankByNameStart } from "./referral-patient-rank";
+import { rankByNameStart } from "@/components/ward-management/ward-patient-name-rank";
 import type { Instant } from "../ward-clock";
 import { EMPTY_NEW_PATIENT, type useReferralRegistrationDraft } from "./use-referral-command-completion";
 import { referralDraftSessionVersion } from "./referral-draft-cache";

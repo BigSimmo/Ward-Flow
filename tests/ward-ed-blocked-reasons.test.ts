@@ -5,6 +5,8 @@
 // the exact reason text the screen renders.
 import { describe, expect, it } from "vitest";
 
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+
 import {
   bookTransportBlockedReason,
   communityReferralBlockedReason,
@@ -39,6 +41,8 @@ import {
 import { CANCEL_TRANSPORT_REASONS } from "@/components/ward-management/ward-change-reasons";
 
 const NOW = 10_000;
+/** The live wards the paperwork rule reads for the destination's site. */
+const UNITS = seedWardFlowState().units;
 const COLLECTED = "Collected — ask the bed coordinator to stop transport. The bed stays pulled until released.";
 const NOT_UNTIL_EXAMINED = "Not offered until the examination outcome is recorded.";
 
@@ -285,15 +289,19 @@ describe("bookTransportBlockedReason", () => {
 });
 
 describe("transportLegalFormNotice", () => {
-  it("warns for an involuntary patient with no Form 4A, with the exact text", () => {
-    expect(transportLegalFormNotice(movement(onFormUnexamined))).toBe(
-      "No Form 4A (Transport order) is recorded for this patient.",
+  it("warns for an involuntary patient with no transport order on file, with the exact text", () => {
+    // D-186 item 6: the one paperwork rule, in D-170 item 5's words, labelled not signed (D-189 8(b)).
+    expect(transportLegalFormNotice(movement(onFormUnexamined), UNITS)).toBe(
+      "Transport or transfer order not uploaded · rule not signed.",
     );
   });
   it("says nothing for a voluntary patient or one already carrying a 4A", () => {
-    expect(transportLegalFormNotice(movement())).toBeUndefined();
+    expect(transportLegalFormNotice(movement(), UNITS)).toBeUndefined();
     expect(
-      transportLegalFormNotice(movement({ ...onFormUnexamined, legalForm: { code: "4A" } as Movement["legalForm"] })),
+      transportLegalFormNotice(
+        movement({ ...onFormUnexamined, legalForm: { code: "4A" } as Movement["legalForm"] }),
+        UNITS,
+      ),
     ).toBeUndefined();
   });
 });

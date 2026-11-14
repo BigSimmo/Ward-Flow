@@ -108,17 +108,24 @@ describe("authorisation", () => {
     expect(requiresAuthorisedDestination("Involuntary inpatient")).toBe(true);
   });
 
-  it("blocks a detained patient from an unauthorised unit", () => {
+  // D-189 items 8(a) and 9(a): every ward's authorisation is "not stated" until Q42 is signed, so a
+  // unit the sample data flags false no longer blocks. The gate is information only and marks the need.
+  it("D-189: does not block a detained patient at a unit flagged false, and marks the need", () => {
     const verdict = eligibility(
       movement({ legalStatus: "Detained awaiting examination" }),
       unit({ authorised: false }),
       NOW,
     );
-    expect(verdict.eligible).toBe(false);
-    expect(verdict.gates.find((gate) => gate.gate === "authorisation")?.pass).toBe(false);
+    expect(verdict.gates.find((gate) => gate.gate === "authorisation")).toEqual({
+      gate: "authorisation",
+      pass: true,
+      info: true,
+      need: true,
+      detail: "Involuntary admissions: not stated",
+    });
   });
 
-  it("treats unknown-status movements as requiring authorisation, failing safe", () => {
+  it("treats unknown-status movements as needing an involuntary-capable bed (D-69), as information", () => {
     const verdict = eligibility(
       // A movement whose legal status never arrived. Cast deliberately: the point of the
       // test is the runtime fail-safe, not the type system.
@@ -126,7 +133,7 @@ describe("authorisation", () => {
       unit({ authorised: false }),
       NOW,
     );
-    expect(verdict.eligible).toBe(false);
+    expect(verdict.gates.find((gate) => gate.gate === "authorisation")).toMatchObject({ pass: true, need: true });
   });
 });
 

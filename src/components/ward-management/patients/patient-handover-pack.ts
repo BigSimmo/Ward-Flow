@@ -143,7 +143,7 @@ export function handoverPackModel(input: HandoverPackInput, dayZero?: Date): Han
       : input.riskFlags === undefined
         ? { label: "Risks", value: NOT_RECORDED, missing: true }
         : input.riskFlags.length === 0
-          ? { label: "Risks", value: "None flagged on the referral" }
+          ? { label: "Risks", value: "None recorded on the referral" }
           : letterRow(letter.key, "Risks");
 
   const clearance: ReferralLetterRow =

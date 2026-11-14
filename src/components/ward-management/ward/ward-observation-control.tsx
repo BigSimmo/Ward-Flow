@@ -8,6 +8,7 @@ import { useWardFormSave } from "@/components/ward-management/use-ward-form-save
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import {
   INTERMITTENT_INTERVAL_MINUTES,
+  NO_INTERVAL_ERROR,
   OBSERVATION_LEVELS,
   observationLevelName,
   observationRatio,
@@ -25,6 +26,8 @@ const INTERVAL_CHOICES = INTERMITTENT_INTERVAL_MINUTES.map((minutes) => ({
   id: String(minutes),
   label: `${minutes} minutes`,
 }));
+/** D-187 item 19 (Q44): the shared words live in `ward-observation.ts`, so other screens reuse them. */
+export { NO_INTERVAL_ERROR };
 const REVIEW_DAYS = [
   { id: "today" as const, label: "Today" },
   { id: "tomorrow" as const, label: "Tomorrow" },
@@ -48,7 +51,7 @@ function reviewInputs(reviewAt: Instant | null, now: Instant): { time: string; d
 /** C19: an open observation form's unsaved entries, kept across the phone and wide layouts. */
 type ObservationDraft = {
   level: ObservationLevel;
-  interval: number;
+  interval: number | null;
   reviewTime: string;
   reviewDay: "today" | "tomorrow";
   reviewEdited: boolean;
@@ -100,9 +103,9 @@ export function WardObservationControl({
   // Audit CS3-01: an open observation form is checked against the board it opened on.
   useHoldOpenForm(open);
   const [level, setLevel] = useState<ObservationLevel>(kept?.level ?? observation.level);
-  const [interval, setIntervalMinutes] = useState<number>(
-    kept?.interval ?? observation.intervalMinutes ?? INTERMITTENT_INTERVAL_MINUTES[0],
-  );
+  // D-187 item 19 (Q44): no interval starts chosen. A recorded or kept interval pre-fills; otherwise it is
+  // blank until someone picks one, and Intermittent cannot be recorded without it.
+  const [interval, setIntervalMinutes] = useState<number | null>(kept?.interval ?? observation.intervalMinutes);
   const [reviewTime, setReviewTime] = useState(kept?.reviewTime ?? "");
   const [reviewDay, setReviewDay] = useState<"today" | "tomorrow">(kept?.reviewDay ?? "today");
   const [reviewEdited, setReviewEdited] = useState(kept?.reviewEdited ?? false);
@@ -126,6 +129,11 @@ export function WardObservationControl({
         return;
       }
       reviewAt = typed;
+    }
+    // D-187 item 19 (Q44): Intermittent needs an interval someone chose.
+    if (level === "intermittent" && interval === null) {
+      setError(NO_INTERVAL_ERROR);
+      return;
     }
     setError(null);
     const next = { level, intervalMinutes: level === "intermittent" ? interval : null, reviewAt };
@@ -156,7 +164,7 @@ export function WardObservationControl({
           onClick={() => {
             const review = reviewInputs(observation.reviewAt, now);
             setLevel(observation.level);
-            setIntervalMinutes(observation.intervalMinutes ?? INTERMITTENT_INTERVAL_MINUTES[0]);
+            setIntervalMinutes(observation.intervalMinutes);
             setReviewTime(review.time);
             setReviewDay(review.day);
             setReviewEdited(false);
@@ -189,14 +197,16 @@ export function WardObservationControl({
               />
             </div>
             {level === "intermittent" ? (
-              <div className={styles.field} data-testid="ward-observation-interval" data-value={String(interval)}>
+              <div className={styles.field} data-testid="ward-observation-interval" data-value={interval ?? ""}>
                 <span className={styles.fieldLabel}>Check every</span>
                 <Segmented
                   label="Check every"
                   items={INTERVAL_CHOICES}
-                  value={String(interval)}
+                  value={interval === null ? "" : String(interval)}
                   onChange={(minutes) => {
-                    if (!recording.pending) setIntervalMinutes(Number(minutes));
+                    if (recording.pending) return;
+                    setIntervalMinutes(Number(minutes));
+                    if (error === NO_INTERVAL_ERROR) setError(null);
                   }}
                 />
               </div>

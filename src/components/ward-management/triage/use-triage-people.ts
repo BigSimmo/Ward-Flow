@@ -16,7 +16,7 @@ import type { Referral } from "@/components/ward-management/ward-model";
 import { formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
 
 import type { TriagePerson, TriageReferral } from "./triage-risk-data";
-import { previousTriageFrom, triagePersonFromWorld } from "./triage-risk-people";
+import { previousTriageFrom, recordLegalStatus, triagePersonFromWorld, wardStayFacts } from "./triage-risk-people";
 import { triagesFor, type TriageSignedRecord } from "./triage-record";
 
 /** Start a triage: the step that asks who the triage is for (`ward-nav.ts`). */
@@ -75,16 +75,18 @@ export function useTriagePeople(): {
   awaiting: AwaitingTriage[];
   byId: ReadonlyMap<string, TriagePerson>;
 } {
-  const { patients, movements, referrals, triages, now, dayZero, admissions, units } = useWardFlowSelect(
-    "patients",
-    "movements",
-    "referrals",
-    "triages",
-    "now",
-    "dayZero",
-    "admissions",
-    "units",
-  );
+  const { patients, movements, referrals, triages, now, dayZero, admissions, units, plannedAdmissions } =
+    useWardFlowSelect(
+      "patients",
+      "movements",
+      "referrals",
+      "triages",
+      "now",
+      "dayZero",
+      "admissions",
+      "units",
+      "plannedAdmissions",
+    );
   return useMemo(() => {
     const record = { movements, patients, referrals, dayZero, admissions, units };
     const openReferral = new Map<string, Referral>();
@@ -97,6 +99,12 @@ export function useTriagePeople(): {
       const profile = sampleProfile(key, record, now);
       const open = openReferral.get(patient.id);
       const previous = triagesFor(triages, patient.id).map((signed) => previousTriageFrom(signed, dayZero));
+      // D-186 (Q10): with no open movement the referral model has no place or legal status, so a person
+      // on a ward stay reads the ward and the stay's legal status the patient page shows.
+      const stay = key.startsWith("WF-") ? null : wardStayFacts(patient.id, { ...record, plannedAdmissions }, now);
+      // Review R9 (D-186 item 10): everyone else reads the patient page's legal reading, status as
+      // status. The referral model's own line puts the form code in place of the status.
+      const recordKey = key.startsWith("WF-") ? key : patient.id;
       const person = triagePersonFromWorld({
         patientId: patient.id,
         name: profile.name,
@@ -104,9 +112,9 @@ export function useTriagePeople(): {
         gender: profile.gender,
         umrn: patient.umrn,
         dob: patient.dateOfBirth,
-        origin: profile.origin,
-        legalStatus: profile.legalStatus,
-        recordAddress: encodeRecordAddress(key.startsWith("WF-") ? key : patient.id),
+        origin: stay?.origin ?? profile.origin,
+        legalStatus: stay?.legalStatus ?? recordLegalStatus(recordKey, record, now),
+        recordAddress: encodeRecordAddress(recordKey),
         openReferral: open ? asReferral(open) : null,
         last: previous[0] ?? null,
         previous,
@@ -134,5 +142,5 @@ export function useTriagePeople(): {
       })
       .sort((a, b) => a.raisedAt - b.raisedAt);
     return { people, awaiting, byId };
-  }, [patients, movements, referrals, triages, now, dayZero, admissions, units]);
+  }, [patients, movements, referrals, triages, now, dayZero, admissions, units, plannedAdmissions]);
 }

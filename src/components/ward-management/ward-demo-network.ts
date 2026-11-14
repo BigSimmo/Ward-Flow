@@ -832,6 +832,38 @@ function lapsingHoldWait(variant: DemoNetworkVariant): { edId: string; index: nu
   return eligible[0];
 }
 
+const REFERRED_1A = ["Referred for psychiatric examination", "1A"] as const;
+const VOLUNTARY = ["Voluntary", null] as const;
+
+/**
+ * Each waiting person's tier, legal status and form, as one short story line (D-186 item 3, D-189
+ * item 9(h), Josh 13 Nov 2026), so the three come from one authored decision rather than three
+ * `index %` sums. The person in each ED's queue takes the line at their place in the cycle; their
+ * wait is the ED's own authored list (`ED_WAITS`), and no review or reason is recorded for them.
+ *
+ * Agreement is mechanical only: each status and form pass the legal order rules. A Form 1A before
+ * the examination goes with "Referred for psychiatric examination" (D-187 item 2, D-170 item 4): the
+ * lines that read "Detained awaiting examination" with a 1A now read referred. Nothing here says
+ * what a tier or a wait must show (Q17 stays open). Synthetic.
+ */
+const NETWORK_STORIES: readonly (readonly [tier: 1 | 2 | 3, status: LegalStatus, form: "1A" | null])[] = [
+  [1, ...REFERRED_1A],
+  [2, ...VOLUNTARY],
+  [3, ...REFERRED_1A], // was "Detained awaiting examination" with a 1A
+  [1, ...REFERRED_1A],
+  [2, ...VOLUNTARY],
+  [3, ...VOLUNTARY],
+  [1, ...REFERRED_1A],
+  [2, ...REFERRED_1A], // was "Detained awaiting examination" with a 1A
+  [3, ...VOLUNTARY],
+  [1, ...REFERRED_1A],
+  [2, ...VOLUNTARY],
+  [3, ...VOLUNTARY],
+  [1, ...REFERRED_1A],
+  [2, ...VOLUNTARY],
+  [3, ...VOLUNTARY],
+];
+
 /**
  * One person waiting in an emergency department. Stages cycle so every ED shows a mix: most are
  * waiting for a bed; some are accepted and waiting for it to be ready; some have a bed held.
@@ -848,15 +880,9 @@ function edMovement(
   const service = serviceOf(siteCode);
   const cohort: Cohort = index % 6 === 4 ? "Older adult" : index % 9 === 7 ? "Youth" : "Adult";
   const person = build.person(cohort, OPEN, service);
-  const legalStatus: LegalStatus =
-    index % 3 === 0
-      ? "Referred for psychiatric examination"
-      : index % 5 === 2
-        ? "Detained awaiting examination"
-        : "Voluntary";
+  const [urgency, legalStatus, formCode] = NETWORK_STORIES[index % NETWORK_STORIES.length]!;
   const security: Security = legalStatus === "Voluntary" ? "Open" : index % 2 === 0 ? "Secure" : "Open";
-  const legalForm: LegalForm | undefined =
-    legalStatus === "Voluntary" ? undefined : { code: "1A", kind: "examination" };
+  const legalForm: LegalForm | undefined = formCode === null ? undefined : { code: formCode, kind: "examination" };
   const sameService =
     service === "East Metro"
       ? EMHS_SITES
@@ -882,7 +908,7 @@ function edMovement(
     originEdId: edId,
     openedAt: NOW_ANCHOR - waitedMinutes,
     flaggedUrgent: false,
-    urgency: ((index % 3) + 1) as 1 | 2 | 3,
+    urgency,
     cohort,
     security,
     sex: person.sex,

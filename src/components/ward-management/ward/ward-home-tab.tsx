@@ -764,7 +764,7 @@ export function WardHomeTab({
       return {
         key: `absent-${admission.id}`,
         title: "Absent without leave on an order",
-        detail: `${bed?.bedLabel ?? "A bed"} missing since ${formatInstantWithDay(leaveBed.absentWithoutLeave.since, now)}, order stays in force`,
+        detail: `${bed?.bedLabel ?? "A bed"} missing since ${formatInstantWithDay(leaveBed.absentWithoutLeave.since, now)}`,
         tone: "danger",
         action: bed ? { label: "Open bed", run: () => onSelectBed?.(Number(bed.bedNumber)) } : undefined,
       };

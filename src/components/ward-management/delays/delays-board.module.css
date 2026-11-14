@@ -301,8 +301,9 @@
   background: var(--wf-warning);
 }
 
+/* D-24, restored by D-194: past 24 hours is neutral, never act-now red. */
 .band3 {
-  background: var(--wf-danger);
+  background: var(--wf-neutral);
 }
 
 .keyAccent {
@@ -1520,15 +1521,6 @@ button.gLaneL:hover {
   border-left: 1.5px dashed var(--wf-line-3);
 }
 
-.gBeyond {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  border-left: 1px solid var(--wf-line-2);
-  background: repeating-linear-gradient(135deg, transparent 0 5px, var(--wf-line) 5px 6px);
-}
-
 .gDot {
   position: absolute;
   z-index: 1;
@@ -1642,10 +1634,6 @@ button.gLaneL:hover {
 
 .r8 {
   fill: var(--wf-warning);
-}
-
-.r24 {
-  fill: var(--wf-danger);
 }
 
 .rf {

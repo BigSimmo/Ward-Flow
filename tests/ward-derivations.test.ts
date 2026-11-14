@@ -229,18 +229,15 @@ describe("buildActionInbox", () => {
    * inbox actually surfacing what it returns. This is that guard, on an injected movement rather
    * than on a fixture population that is allowed to be empty.
    */
-  it("surfaces an accepted destination that is no longer suitable, on a movement built to be one", () => {
-    // A real fixture unit that is `authorised: false` — private, and never authorised to receive
-    // an involuntary admission under the Mental Health Act (see its own comment in ward-sites.ts).
-    const unlawful = movementFrom({ legalStatus: "Involuntary inpatient", acceptedUnitId: "sjgs-adult-open" });
-
-    expect(buildActionInbox([unlawful], NOW_ANCHOR, allUnits())).toContainEqual(
-      expect.objectContaining({
-        id: `destination-unlawful-${unlawful.id}`,
-        title: "Accepted destination no longer suitable",
-        movementId: unlawful.id,
-      }),
-    );
+  it("D-189 item 9(a): raises no 'no longer suitable' item from the invented authorisation flag", () => {
+    // `sjgs-adult-open` is flagged `authorised: false` in the sample data. Until Q42 is signed every
+    // ward's authorisation is "not stated", so the flag raises nothing.
+    const movement = movementFrom({ legalStatus: "Involuntary inpatient", acceptedUnitId: "sjgs-adult-open" });
+    expect(
+      buildActionInbox([movement], NOW_ANCHOR, allUnits()).filter((item) =>
+        item.id.startsWith("destination-unlawful-"),
+      ),
+    ).toEqual([]);
   });
 
   /**
@@ -514,10 +511,9 @@ describe("destinationNoLongerLawful", () => {
   // comment in ward-sites.ts).
   const UNAUTHORISED_UNIT_ID = "sjgs-adult-open";
 
-  it("returns the accepted unit when the current legal status requires authorisation and the accepted unit does not have it", () => {
+  it("D-189 item 9(a): returns undefined for a status needing authorisation at a flagged unit, while not stated", () => {
     const movement = movementFrom({ legalStatus: "Involuntary inpatient", acceptedUnitId: UNAUTHORISED_UNIT_ID });
-    const flagged = destinationNoLongerLawful(movement, allUnits());
-    expect(flagged?.id).toBe(UNAUTHORISED_UNIT_ID);
+    expect(destinationNoLongerLawful(movement, allUnits())).toBeUndefined();
   });
 
   it("returns undefined for the same movement when it is Voluntary — Voluntary needs no authorisation", () => {

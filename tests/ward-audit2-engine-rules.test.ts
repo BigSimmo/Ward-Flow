@@ -87,6 +87,9 @@ describe("E-02: a closed ward takes no new admission until a person reopens it",
   });
 });
 
+// D-189 items 8(a) and 9(a) (Josh, 13 Nov 2026): every ward's authorisation is "not stated" until Q42
+// is signed, so the invented flag no longer refuses a held bed after a status change (E-03) or an
+// acceptance with no recorded status (E-04). These cases now pin that nothing is refused.
 describe("E-03: a legal status change after a bed is held is re-checked before collection", () => {
   const toInvoluntary = (state: WardFlowState, movementId: string) =>
     send(state, {
@@ -97,7 +100,7 @@ describe("E-03: a legal status change after a bed is held is re-checked before c
       reason: "recorded_by_treating_team",
     }).next;
 
-  it("refuses the restore pull without a reason and records an authorisation override with one", () => {
+  it("D-189: lets the restore pull through without a reason, and records no authorisation override", () => {
     const stepped = send(fresh(), {
       type: "STEP_BACK_STAGE",
       role: "coordinator",
@@ -112,31 +115,17 @@ describe("E-03: a legal status change after a bed is held is re-checked before c
       movementId: "WF-029",
       unitId: "sjgs-adult-open",
     });
-    expect(bare.refused).toBe(true);
-    expect(bare.reason).toMatch(/not set up for involuntary admissions/);
-    expect(movement(bare.next, "WF-029").stage).toBe("accepted_awaiting_bed");
-
-    const answered = send(changed, {
-      type: "PULL_PATIENT",
-      role: "coordinator",
-      movementId: "WF-029",
-      unitId: "sjgs-adult-open",
-      overrideReason: OVERRIDE_REASONS[0],
-    });
-    expect(answered.refused).toBe(false);
-    const restored = movement(answered.next, "WF-029");
+    expect(bare.refused, bare.reason).toBe(false);
+    const restored = movement(bare.next, "WF-029");
     expect(restored.stage).toBe("pulled");
-    expect(restored.overrides.some((o) => o.gate === "authorisation" && o.unitIds.includes("sjgs-adult-open"))).toBe(
-      true,
-    );
+    expect(restored.overrides.some((o) => o.gate === "authorisation")).toBe(false);
   });
 
-  it("refuses the steps before collection once the status changes, and never refuses an arrival in transit", () => {
+  it("D-189: never refuses collection after the status changes, and never refuses an arrival in transit", () => {
     const enRoute = send(fresh(), { type: "TRANSPORT_EN_ROUTE", role: "officer", movementId: "WF-030" }).next;
     const changed = toInvoluntary(enRoute, "WF-030");
     const collected = send(changed, { type: "PATIENT_COLLECTED", role: "officer", movementId: "WF-030" });
-    expect(collected.refused).toBe(true);
-    expect(collected.reason).toMatch(/not set up for involuntary admissions/);
+    expect(collected.refused, collected.reason).toBe(false);
 
     // A patient already moving when the status changes still arrives.
     let moving = fresh();
@@ -155,7 +144,7 @@ describe("E-03: a legal status change after a bed is held is re-checked before c
 });
 
 describe("E-04: a referral with no recorded legal status needs an authorised bed", () => {
-  it("refuses RF-RD06 into an unauthorised ward without a reason", () => {
+  it("D-189: accepts RF-RD06 into a flagged ward without a reason", () => {
     expect(unit(fresh(), "sjgs-adult-open").authorised).toBe(false);
     // D-141 (11 Nov 2026): the seed now sends RF-RD06 to one named ward (the SCGH Mental Health
     // Unit), so a different ward would be refused as not addressed. This rule is about legal status,
@@ -184,7 +173,6 @@ describe("E-04: a referral with no recorded legal status needs an authorised bed
       destinationKind: "psychiatric_ward",
       unitId: "sjgs-adult-open",
     });
-    expect(accept.refused).toBe(true);
-    expect(accept.reason).toMatch(/legal_status/);
+    expect(accept.refused, accept.reason).toBe(false);
   });
 });

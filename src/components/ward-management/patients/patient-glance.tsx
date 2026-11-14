@@ -12,7 +12,7 @@ import type { ReactNode } from "react";
 import { StatusGlyph, type WfTone } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { LeaveBed, Movement } from "@/components/ward-management/ward-model";
-import { activeCommunityTreatmentOrder, type Patient } from "@/components/ward-management/ward-patients";
+import type { Patient } from "@/components/ward-management/ward-patients";
 import { observationSummary } from "@/components/ward-management/ward-observation";
 import { riskFlagLabel } from "@/components/ward-management/referrals/referral-risk-flags";
 import type { FormTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
@@ -23,17 +23,29 @@ import {
   NEXT_FORM_TO_RECORD,
 } from "@/components/ward-management/ward-legal-form-progression";
 import type { PatientMode } from "./patient-mode";
+import { patientLegalNow, type PatientLegalNow } from "./patient-now-adapter";
 import { interpreterRequired } from "./patient-flight-header";
 import styles from "./patient-glance.module.css";
 
-/** The five state tags Josh asked for (PT1). The mode words still say the finer state. */
-export type PatientStateTag = "In ED" | "Inpatient" | "In placement" | "Community active" | "Referred" | "Not active";
+/**
+ * The state tags Josh asked for (PT1). The mode words still say the finer state. A9-20(a): a person
+ * whose only open record is a referral still waiting for triage reads "Referral waiting for triage".
+ */
+export type PatientStateTag =
+  | "In ED"
+  | "Inpatient"
+  | "In placement"
+  | "Community active"
+  | "Referred"
+  | "Referral waiting for triage"
+  | "Not active";
 
 export function patientStateTag({
   mode,
   movement,
   communityActive,
   openWork,
+  waitingForTriage = false,
 }: {
   mode: PatientMode;
   movement?: Movement;
@@ -44,6 +56,8 @@ export function patientStateTag({
    * planned admission; "community" is a referral awaiting only a community team's answer.
    */
   openWork?: "bed" | "community";
+  /** A9-20(a): a referral for this person is queued and not yet triaged (`referralWaitingForTriage`). */
+  waitingForTriage?: boolean;
 }): { tag: PatientStateTag; tone: WfTone } {
   if (mode === "find" || mode === "held") {
     // Still waiting at the emergency department until the bed is pulled and they move.
@@ -60,6 +74,8 @@ export function patientStateTag({
   if (openWork === "bed") return { tag: "In placement", tone: "info" };
   if (communityActive) return { tag: "Community active", tone: "success" };
   if (openWork === "community") return { tag: "Referred", tone: "info" };
+  // A9-20(a): the same words as the status card, in place of "Not active" only.
+  if (waitingForTriage) return { tag: "Referral waiting for triage", tone: "info" };
   return { tag: "Not active", tone: "neutral" };
 }
 
@@ -84,6 +100,8 @@ export type PatientGlanceProps = {
   mode: PatientMode;
   patient?: Patient & { confidential?: boolean };
   movement?: Movement;
+  /** D-186 Q7: the page's one legal reading, shared with the Legal now card. */
+  legalNow?: PatientLegalNow;
   admission?: Admission;
   leaveBed?: LeaveBed;
   /** The stay is shown with ward and dates only to this desk (H-0096). */
@@ -107,9 +125,21 @@ export type PatientGlanceProps = {
 const PLACING: readonly PatientMode[] = ["find", "held", "transit"];
 const ON_STAY: readonly PatientMode[] = ["ward", "leave", "awol", "ed"];
 
-function legalTile({ patient, movement, formTimeLeft, mode, onOpenForms, recordCto }: PatientGlanceProps): GlanceTile {
-  const status = movement?.legalStatus ?? patient?.legalStatus;
-  const cto = activeCommunityTreatmentOrder(patient);
+function legalTile({
+  patient,
+  movement,
+  legalNow,
+  formTimeLeft,
+  mode,
+  onOpenForms,
+  recordCto,
+}: PatientGlanceProps): GlanceTile {
+  // D-186 Q7 (audit A9-31): the status, form and community order come from the page's one legal
+  // reading, the same value the Legal now card reads. A band drawn on its own (tests) reads its
+  // movement through the same rule.
+  const legal = legalNow ?? patientLegalNow({ liveMovement: movement, patient });
+  const status = legal.status;
+  const cto = legal.communityOrder;
   const open = (PLACING.includes(mode) || ON_STAY.includes(mode)) && mode !== "idle";
   const base = { key: "legal", icon: Scale, label: "Legal", onOpen: onOpenForms, openLabel: "Open legal forms" };
   // Stress test (round 2): with nothing open, a stale "Involuntary inpatient" in the band would read
@@ -138,7 +168,7 @@ function legalTile({ patient, movement, formTimeLeft, mode, onOpenForms, recordC
   // Audit S-6, D-170 item 1 and A1: after the examination or arrival the band keeps the form as
   // recorded and prompts "Next form to record", with no form number and no inferred end.
   // A form recorded as ended is read before the neutral 5A/5B arrival wording (as the Legal forms page).
-  const end = legalFormEnd(movement);
+  const end = legalFormEnd(legal.movement);
   if (end?.kind === "progressed")
     return {
       ...base,
@@ -147,14 +177,14 @@ function legalTile({ patient, movement, formTimeLeft, mode, onOpenForms, recordC
       sub: `${formProgressionPhrase(end.progression)} · ${NEXT_FORM_TO_RECORD}`,
       tone: "warning",
     };
-  if (end?.kind === "recorded" && movement?.legalForm)
+  if (end?.kind === "recorded" && legal.form)
     return {
       ...base,
       value: status ?? "Not recorded",
       quiet: status === undefined,
-      sub: `Form ${movement.legalForm.code} ${FORM_RECORDED_ENDED.toLowerCase()}`,
+      sub: `Form ${legal.form.code} ${FORM_RECORDED_ENDED.toLowerCase()}`,
     };
-  const form = movement?.legalForm ? `Form ${movement.legalForm.code}` : cto ? `Form ${cto.form}` : undefined;
+  const form = legal.form ? `Form ${legal.form.code}` : cto ? `Form ${cto.form}` : undefined;
   return {
     ...base,
     value: status ?? "Not recorded",
@@ -189,7 +219,7 @@ function riskTile({ riskFlags, riskFlagsWhen, riskNotShared }: PatientGlanceProp
       key: "risk",
       icon: Flag,
       label: "Risk",
-      value: riskFlags ? "None flagged" : "None recorded",
+      value: "None recorded",
       quiet: true,
       sub: riskFlags ? source : undefined,
     };

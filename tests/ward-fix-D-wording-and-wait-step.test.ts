@@ -63,7 +63,10 @@ describe("D-170 item 3: the examination outcome never says revoked", () => {
 
 describe("D-170 item 5: the transport order gap", () => {
   it("names a transport or transfer order", () => {
-    expect(TRANSPORT_EXCEPTION_GAP_LABELS.transport_order_missing).toBe("Transport or transfer order not uploaded");
+    // D-189 item 8(b): the same words, labelled not signed until Josh signs the Q28 table.
+    expect(TRANSPORT_EXCEPTION_GAP_LABELS.transport_order_missing).toBe(
+      "Transport or transfer order not uploaded · rule not signed",
+    );
   });
 });
 

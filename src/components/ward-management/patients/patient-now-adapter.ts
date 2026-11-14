@@ -5,10 +5,10 @@ import {
   type Instant,
 } from "@/components/ward-management/ward-clock";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
-import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
+import type { LegalForm, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { MOVEMENT_STAGES } from "@/components/ward-management/ward-model";
-import type { Patient } from "@/components/ward-management/ward-patients";
-import { patientDisplayName } from "@/components/ward-management/ward-patients";
+import type { CommunityTreatmentOrder, Patient } from "@/components/ward-management/ward-patients";
+import { activeCommunityTreatmentOrder, patientDisplayName } from "@/components/ward-management/ward-patients";
 import { edById } from "@/components/ward-management/ward-sites";
 import { stageCopy, transportLeg } from "@/components/ward-management/ward-derivations";
 import {
@@ -22,6 +22,7 @@ import { leavingDestinationLabel } from "@/components/ward-management/community/
 import { movementHasBedHold } from "@/components/ward-management/ward-movement-bed-hold";
 import { originName } from "@/components/ward-management/ward-movement-origin";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
+import { patientMode } from "./patient-mode";
 
 export interface ResolvedPatientNow {
   record: PatientNowRecord;
@@ -35,6 +36,108 @@ export interface ResolvedPatientNow {
   displayName: string;
   preferredName?: string;
   currentStageIndex: number;
+  /** D-186 Q7: the one legal reading the top band and the Legal now card share. */
+  legalNow: PatientLegalNow;
+}
+
+/**
+ * D-186 Q7 (audit A9-31, Josh 13 Nov 2026): what the patient page says is legally in force now,
+ * worked out once here. The top band and the Legal now card both read it, so one page cannot say
+ * "Involuntary inpatient" in one place and "No form in force" in the other. Every field is a
+ * recorded fact named with where it was recorded; nothing is inferred and no status is made up.
+ */
+export interface PatientLegalNow {
+  /** A placement is open or a ward stay is current, so the page speaks of now, not the last record. */
+  current: boolean;
+  /** The movement the band reads: the live movement while in force, else the current stay's own. */
+  movement?: Movement;
+  /** The status as recorded: the movement's own, else the patient record's. */
+  status?: string;
+  statusSource: "movement" | "patient" | "none";
+  /** The form recorded on that movement, only while something is current. */
+  form?: LegalForm;
+  formSource: "movement" | "none";
+  /** A community treatment order the patient record holds as in force (D-38). */
+  communityOrder?: CommunityTreatmentOrder;
+}
+
+/**
+ * The one derivation. The source movement keeps the band's rule as it stood (patient-now-screen's
+ * glance movement): the live movement while it is in force, otherwise the current stay's own
+ * movement, otherwise the live movement for its last recorded status. Which status a patient gone
+ * to ED shows is an open owner question, so that rule is kept, not changed.
+ */
+export function patientLegalNow({
+  liveMovement,
+  admission,
+  patient,
+  movements = [],
+}: {
+  liveMovement?: Movement;
+  admission?: Admission;
+  patient?: Patient;
+  movements?: readonly Movement[];
+}): PatientLegalNow {
+  const mode = patientMode({ movement: liveMovement, admission, patient });
+  const current = mode !== "idle" && mode !== "cto";
+  const stayCurrent = mode === "ward" || mode === "leave" || mode === "awol" || mode === "ed";
+  const movementInForce = Boolean(
+    liveMovement && current && (!liveMovement.closure || (liveMovement.closure.outcome === "arrived" && stayCurrent)),
+  );
+  const stayMovement =
+    stayCurrent && admission?.movementId ? movements.find((m) => m.id === admission.movementId) : undefined;
+  const movement = movementInForce ? liveMovement : stayCurrent ? stayMovement : liveMovement;
+  const status = movement?.legalStatus ?? patient?.legalStatus;
+  const form = current ? movement?.legalForm : undefined;
+  return {
+    current,
+    movement,
+    status,
+    statusSource:
+      movement?.legalStatus !== undefined ? "movement" : patient?.legalStatus !== undefined ? "patient" : "none",
+    form,
+    formSource: form ? "movement" : "none",
+    communityOrder: activeCommunityTreatmentOrder(patient),
+  };
+}
+
+/**
+ * A patient's current movement and stay, as the record resolves them. Collections keep history, so
+ * the current stay comes first, then its movement; with no stay, an open presentation is preferred
+ * over the newest historical one.
+ */
+function patientCurrentRecords(
+  patient: Patient,
+  movements: readonly Movement[],
+  referrals: readonly Referral[],
+  admissions: readonly Admission[],
+) {
+  const patientMovements = movements.filter(
+    (m) =>
+      m.patientId === patient.id ||
+      (m.referralId && referrals.some((r) => r.id === m.referralId && r.patientId === patient.id)),
+  );
+  const patientAdmissions = admissions.filter(
+    (a) =>
+      a.patientId === patient.id ||
+      (a.referralId && referrals.some((r) => r.id === a.referralId && r.patientId === patient.id)) ||
+      patientMovements.some((m) => m.id === a.movementId),
+  );
+  const activeAdmission =
+    [...patientAdmissions].reverse().find((a) => a.state === "occupied") ??
+    [...patientAdmissions].reverse().find((a) => a.state !== "departed");
+  const newestMovement = [...patientMovements].reverse();
+  const activeMovement = activeAdmission
+    ? (newestMovement.find(
+        (m) =>
+          !m.closure &&
+          m.stage !== "arrived" &&
+          (m.id === activeAdmission.movementId ||
+            m.admissionId === activeAdmission.id ||
+            m.sourceAdmissionId === activeAdmission.id),
+      ) ?? newestMovement.find((m) => m.id === activeAdmission.movementId || m.admissionId === activeAdmission.id))
+    : (newestMovement.find((m) => !m.closure) ?? newestMovement[0]);
+  return { patientAdmissions, activeAdmission, activeMovement };
 }
 
 /** The recorded departure as an event: a community discharge stays "Discharge"; a transfer or death keeps its own name. */
@@ -506,6 +609,12 @@ export function resolvePatientNowRecord(
       displayName,
       preferredName,
       currentStageIndex: stageIdx,
+      legalNow: patientLegalNow({
+        liveMovement: movement,
+        admission: linkedAdmission,
+        patient: livePatient,
+        movements,
+      }),
     };
   }
 
@@ -516,31 +625,13 @@ export function resolvePatientNowRecord(
 
     // Collections retain history. Resolve the current stay first, then its movement;
     // prefer an open presentation over the newest historical presentation when no stay exists.
-    const patientMovements = movements.filter(
-      (m) =>
-        m.patientId === patient.id ||
-        (m.referralId && referrals.some((r) => r.id === m.referralId && r.patientId === patient.id)),
+    const { patientAdmissions, activeAdmission, activeMovement } = patientCurrentRecords(
+      patient,
+      movements,
+      referrals,
+      admissions,
     );
-    const patientAdmissions = admissions.filter(
-      (a) =>
-        a.patientId === patient.id ||
-        (a.referralId && referrals.some((r) => r.id === a.referralId && r.patientId === patient.id)) ||
-        patientMovements.some((m) => m.id === a.movementId),
-    );
-    const activeAdmission =
-      [...patientAdmissions].reverse().find((a) => a.state === "occupied") ??
-      [...patientAdmissions].reverse().find((a) => a.state !== "departed");
-    const newestMovement = [...patientMovements].reverse();
-    const activeMovement = activeAdmission
-      ? (newestMovement.find(
-          (m) =>
-            !m.closure &&
-            m.stage !== "arrived" &&
-            (m.id === activeAdmission.movementId ||
-              m.admissionId === activeAdmission.id ||
-              m.sourceAdmissionId === activeAdmission.id),
-        ) ?? newestMovement.find((m) => m.id === activeAdmission.movementId || m.admissionId === activeAdmission.id))
-      : (newestMovement.find((m) => !m.closure) ?? newestMovement[0]);
+    const legalNow = patientLegalNow({ liveMovement: activeMovement, admission: activeAdmission, patient, movements });
     const linkedReferral = referrals.find((r) => r.id === (activeMovement?.referralId ?? activeAdmission?.referralId));
     const departedAdmission = activeAdmission
       ? undefined
@@ -702,6 +793,7 @@ export function resolvePatientNowRecord(
         displayName: patientDisplayName(patient),
         preferredName: patient.preferredName,
         currentStageIndex: stageIdx,
+        legalNow,
       };
     }
 
@@ -807,6 +899,7 @@ export function resolvePatientNowRecord(
         displayName: patientDisplayName(patient),
         preferredName: patient.preferredName,
         currentStageIndex: stageIdx >= 0 ? stageIdx : 0,
+        legalNow,
       };
     }
 
@@ -862,6 +955,7 @@ export function resolvePatientNowRecord(
       displayName: patientDisplayName(patient),
       preferredName: patient.preferredName,
       currentStageIndex: 0,
+      legalNow,
     };
   }
 

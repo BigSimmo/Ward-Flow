@@ -94,7 +94,7 @@ export function ShapeOfTheDay({
     onShowPeople?.({
       title: `${stageLabel}, ${WAIT_BANDS[band].toLowerCase()}`,
       caption: `Open movements at this stage that have waited ${WAIT_BANDS[band].toLowerCase()}.`,
-      tone: band === 3 ? "danger" : band === 2 ? "warning" : undefined,
+      tone: band === 2 ? "warning" : undefined, // D-194: past 24 hours is neutral (D-24)
       movements: list,
     });
   const bandTotals = [0, 1, 2, 3].map((band) => grid.reduce((total, row) => total + row.cells[band].length, 0));
@@ -179,7 +179,7 @@ export function ShapeOfTheDay({
               <p className={sh.actHead}>
                 {bandTotals[3] > 0 ? (
                   <>
-                    <b data-tone="danger">{bandTotals[3]}</b> waited {WAIT_BANDS[3].toLowerCase()}
+                    <b>{bandTotals[3]}</b> waited {WAIT_BANDS[3].toLowerCase()}
                   </>
                 ) : null}
                 {bandTotals[3] > 0 && bandTotals[2] > 0 ? ", " : null}
@@ -311,7 +311,7 @@ export function ShapeOfTheDay({
               <i data-band="2" />
               <i data-band="3" />
             </span>
-            Fewer to more in the first two columns. Amber is {WAIT_BANDS[2]}, red {WAIT_BANDS[3].toLowerCase()}. Choose
+            Fewer to more in the first two columns. Amber is {WAIT_BANDS[2]}, grey {WAIT_BANDS[3].toLowerCase()}. Choose
             a square to see who is in it.
           </p>
         </div>

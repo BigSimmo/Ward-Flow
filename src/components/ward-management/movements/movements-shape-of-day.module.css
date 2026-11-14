@@ -89,10 +89,6 @@
   color: var(--wf-warning-ink);
 }
 
-.heat thead th[data-band="3"] {
-  color: var(--wf-danger-ink);
-}
-
 .heat th[scope="row"] {
   width: 28%;
   padding-left: 2px;
@@ -159,15 +155,15 @@
   color: var(--wf-on-accent);
 }
 
-/* Waits that need acting on carry their tone: 12 to 24h amber, over 24h red. */
+/* 12 to 24h amber; past 24h neutral grey (D-24, restored by D-194), never act-now red. */
 .cell[data-band="2"]:not([data-empty="true"]) {
   background: color-mix(in srgb, var(--wf-warning) calc(16% + var(--heat, 0) * 34%), var(--wf-surface));
   color: var(--wf-warning-ink);
 }
 
 .cell[data-band="3"]:not([data-empty="true"]) {
-  background: color-mix(in srgb, var(--wf-danger) calc(14% + var(--heat, 0) * 34%), var(--wf-surface));
-  color: var(--wf-danger-ink);
+  background: color-mix(in srgb, var(--wf-neutral) calc(14% + var(--heat, 0) * 30%), var(--wf-surface));
+  color: var(--wf-ink-1);
 }
 
 @media (hover: hover) {
@@ -261,7 +257,7 @@
 }
 
 .ramp i[data-band="3"] {
-  background: color-mix(in srgb, var(--wf-danger) 40%, var(--wf-surface));
+  background: color-mix(in srgb, var(--wf-neutral) 40%, var(--wf-surface));
 }
 
 /* Figures: one container, label over value, a hairline between. */
@@ -538,10 +534,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.actHead b[data-tone="danger"] {
-  color: var(--wf-danger-ink);
-}
-
 .actHead b[data-tone="warning"] {
   color: var(--wf-warning-ink);
 }
@@ -600,8 +592,8 @@
 }
 
 .actChip[data-band="3"] b {
-  background: color-mix(in srgb, var(--wf-danger) 16%, var(--wf-surface));
-  color: var(--wf-danger-ink);
+  background: color-mix(in srgb, var(--wf-neutral) 16%, var(--wf-surface));
+  color: var(--wf-ink-1);
 }
 
 .actChip[data-band="2"] b {

@@ -13,8 +13,10 @@ const now = unit.allocatable.confirmedAt + 300;
 const pass = (gate: GateResult["gate"], detail = "ok"): GateResult => ({ gate, pass: true, detail });
 const fail = (gate: GateResult["gate"], detail: string): GateResult => ({ gate, pass: false, detail });
 
+// D-189 item 8(a): authorisation is information only while every ward reads "not stated", so it is
+// listed as the engine gives it and is not one of the six bed checks.
 const PATIENT_PASSES: GateResult[] = [
-  pass("authorisation"),
+  { gate: "authorisation", pass: true, info: true, need: true, detail: "Involuntary admissions: not stated" },
   pass("cohort"),
   pass("security"),
   pass("gender_designation"),
@@ -30,10 +32,12 @@ describe("referralFit", () => {
       unit,
       now,
     );
-    expect(fit.patientPassed).toBe(7);
-    expect(fit.patientTotal).toBe(7);
+    expect(fit.patientPassed).toBe(6);
+    expect(fit.patientTotal).toBe(6);
+    // D-187 item 9: the four recorded facts are named as to check, never counted. The fixture's
+    // authorisation gate marks a need, so go question 3 (Josh, 13 Nov 2026) adds its label.
     expect(patientFitLine(fit)).toBe(
-      "Passes the 7 bed checks. Recorded risks, escort need and medical clearance are not part of these checks.",
+      "Passes the 6 bed checks. To check: recorded risk, escort need, observation level and medical clearance. Involuntary admissions: not stated.",
     );
     // Root-cause 6.1 guard: never claim a full fit the check did not make.
     expect(patientFitLine(fit)).not.toMatch(/fits this ward/iu);
@@ -62,6 +66,6 @@ describe("referralFit", () => {
 
   it("leaves information-only gates out of the count", () => {
     const fit = referralFit([...PATIENT_PASSES, { gate: "acuity", pass: true, detail: "info", info: true }], unit, now);
-    expect(fit.patientTotal).toBe(7);
+    expect(fit.patientTotal).toBe(6);
   });
 });

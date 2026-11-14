@@ -478,7 +478,8 @@ export const wardPatients: Patient[] = [
     catchmentCommunityTeam: "Joondalup Community Team",
     legalStatus: "Voluntary",
     aboriginalOrTorresStraitIslanderStatus: "Torres Strait Islander, not Aboriginal",
-    interpreterLanguage: "Tagalog — interpreter required",
+    // F-91 (K27): a Torres Strait language, not Tagalog, so the synthetic language and identity agree.
+    interpreterLanguage: "Yumplatok (Torres Strait Creole) — interpreter required",
   },
   {
     id: "PT-025",

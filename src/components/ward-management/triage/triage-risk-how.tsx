@@ -176,8 +176,10 @@ function Saved() {
   return (
     <div className={styles.pane}>
       <div className={styles.callout}>
-        <b>Signing records codes only.</b> Urgency, outcome, legal status, review date and the risk flags marked present
-        go on the patient. Nothing you typed is part of that record.
+        {/* D-186 (Q14): every field signing saves (`TriageSignedRecord` in triage-record.ts). */}
+        <b>Signing records codes only.</b> Urgency, outcome, legal status, review, the risk flags marked present,
+        problems, actions, venue and referral type go on the patient, with when it was signed and by which desk. Nothing
+        you typed is part of that record.
       </div>
       <div className={styles.callout}>
         <b>Typed text is not kept.</b> The assessment, mental state, formulation and plan live on this page only.

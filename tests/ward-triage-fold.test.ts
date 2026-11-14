@@ -49,7 +49,7 @@ describe("the folded line", () => {
     expect(foldLine(state, "dec")).toEqual([
       "Urgency C, within 12 hours",
       "Accepted",
-      "Community treatment order, Form 5A · 28/01/2027 23:59 (as typed)",
+      "Community treatment order (as chosen), Form 5A · 28/01/2027 23:59 (as typed)",
     ]);
   });
 

@@ -24,6 +24,8 @@ import { instantFromDateAndTimeInputs } from "@/components/ward-management/legal
 
 /** Audit fixes, 13 Oct 2026 (transport group): the shared transport checks and what the engine records. */
 const job = (fields: Partial<Movement>) => fields as unknown as Movement;
+/** The live wards the paperwork rule reads for the destination's site. */
+const UNITS = seedWardFlowState().units;
 
 describe("transport status from Legal now (A4-7)", () => {
   it("reads voluntary only for a voluntary patient, involuntary for every other status", () => {
@@ -77,7 +79,7 @@ describe("ETA against the bed hold (A4-2)", () => {
 
 describe("collection gaps (A4-11, S-2)", () => {
   it("names the missing Form 4A for a pack job and an unrecorded fit to travel", () => {
-    expect(collectionGaps(job({ legalStatus: "Involuntary inpatient" }))).toEqual([
+    expect(collectionGaps(job({ legalStatus: "Involuntary inpatient" }), UNITS)).toEqual([
       "transport_order_missing",
       "fit_to_travel_missing",
     ]);
@@ -93,12 +95,13 @@ describe("collection gaps (A4-11, S-2)", () => {
             { id: "f", formName: "Form 4A transport order", fileName: "4a.pdf", sizeBytes: 1, uploadedAt: 1 } as never,
           ],
         }),
+        UNITS,
       ),
     ).toEqual([]);
   });
 
   it("asks only for fit to travel on a voluntary transfer", () => {
-    expect(collectionGaps(job({ legalStatus: "Voluntary" }))).toEqual(["fit_to_travel_missing"]);
+    expect(collectionGaps(job({ legalStatus: "Voluntary" }), UNITS)).toEqual(["fit_to_travel_missing"]);
   });
 });
 

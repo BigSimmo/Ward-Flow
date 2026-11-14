@@ -11,6 +11,7 @@ import { lockedBedsFree, openBedsFree, numberedBedKind } from "@/components/ward
 import { OVERRIDE_REASONS, RELEASE_PULL_REASONS } from "@/components/ward-management/ward-change-reasons";
 import { heldUnitAuthorisationRefusal } from "@/components/ward-management/ward-held-legal-check";
 import { examinationOutcomeInSentence } from "@/components/ward-management/ward-legal-forms";
+import { isExaminationAwaitingReleaseBlocker } from "@/components/ward-management/ward-examination-hold-up";
 import { pulledBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import {
@@ -612,7 +613,7 @@ export function reducePlacementEvent(
       const isRevokedExamHold =
         (examinationOutcome === "community_order" || examinationOutcome === "revoked") &&
         (movement.admissionId !== undefined || (movement.closure === undefined && movementHoldsBedByStage(movement)));
-      const awaitingRelease = movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease;
+      const awaitingRelease = isExaminationAwaitingReleaseBlocker(movement.blocker);
 
       if (!isStoppedTransport && !isRevokedExamHold && !awaitingRelease) {
         return reject(
@@ -626,7 +627,7 @@ export function reducePlacementEvent(
         movement.admissionId !== undefined ||
         (movement.closure === undefined && movementHoldsBedByStage(movement)) ||
         movement.blocker === STAGE_TRANSITION_BLOCKERS.transportStoppedAwaitingRelease ||
-        movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease;
+        isExaminationAwaitingReleaseBlocker(movement.blocker);
       if (!heldBedOutstanding) {
         return reject(state, event, `movement ${movement.id} has no bed pulled — it may already have been released`);
       }

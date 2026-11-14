@@ -32,7 +32,7 @@ import {
 // The few rules every screen's shell needs live apart, so the shell does not load all of these.
 export { PUSH_ROLES, STEP_UP_MINUTES, withCover } from "./ward-access-shell-rules";
 
-/** Cover lasts one shift at most (synthetic). */
+/** Cover lasts 12 hours at most (`coverLength`, D-194). */
 export const COVER_MAX_MINUTES = CLINICAL_VALUES.coverLength.value * 60;
 /** The review list shows a role ending this soon (synthetic). */
 export const ACCESS_ENDING_SOON_MINUTES = CLINICAL_VALUES.accessExpiringSoon.value * MINUTES_PER_DAY;

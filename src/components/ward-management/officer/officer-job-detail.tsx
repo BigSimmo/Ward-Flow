@@ -40,6 +40,7 @@ import {
   legalNowText,
   transportExceptionText,
   transportStatusClashes,
+  TRANSPORT_EXCEPTION_STEP_LABELS,
 } from "@/components/ward-management/ward-transport-checks";
 import {
   OFFICER_LEG_STEPS,
@@ -551,7 +552,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
         {(transport.exceptions ?? []).map((exception) => (
           <div key={`${exception.step}-${exception.at}`} data-testid={`ward-officer-exception-${movement.id}`}>
             <dt>
-              {exception.step === "collected" ? "Collected" : "Booked"} {formatInstantWithDay(exception.at, now)} with
+              {TRANSPORT_EXCEPTION_STEP_LABELS[exception.step]} {formatInstantWithDay(exception.at, now)} with
             </dt>
             <dd>{transportExceptionText(exception)}</dd>
           </div>

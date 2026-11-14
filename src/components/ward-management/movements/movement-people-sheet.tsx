@@ -47,11 +47,8 @@ export type MovementPeopleList = {
 };
 
 const STAGE_ORDER = Object.keys(STAGE_SHORT) as Movement["stage"][];
-/** Wait bands as the rest of the page draws them: the top band danger, the one below warning. */
-const waitTone = (minutes: number): WfTone | undefined => {
-  const band = waitBand(minutes);
-  return band === 3 ? "danger" : band === 2 ? "warning" : undefined;
-};
+/** Wait bands as the rest of the page draws them: 12 to 24 hours amber, past 24 hours neutral (D-24, D-194). */
+const waitTone = (minutes: number): WfTone | undefined => (waitBand(minutes) === 2 ? "warning" : undefined);
 const OVER_DAY_LABEL = WAIT_BANDS[3];
 
 export function MovementPeopleSheet({
@@ -234,9 +231,7 @@ export function MovementPeopleSheet({
         onClick={() => toggle("overDay")}
       >
         <span className={ps.statLabel}>{OVER_DAY_LABEL}</span>
-        <span className={ps.statValue} data-tone={overDay > 0 ? "danger" : undefined}>
-          {overDay}
-        </span>
+        <span className={ps.statValue}>{overDay}</span>
       </button>
     </div>
   );

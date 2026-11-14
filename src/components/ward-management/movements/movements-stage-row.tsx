@@ -56,6 +56,7 @@ import {
   movementProgressText,
 } from "./movements-screen-helpers";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
+import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning";
 
 /** The ED wait cue's words on a Movements row (P099): wait time, never a form deadline. */
 const WAIT_FLAG_WORDS = { soon: "Long wait", over: "Over target" };
@@ -261,7 +262,7 @@ export function StageRow({
       if (standing.word) legalTagTone = standing.urgent ? "danger" : "warn";
       legalText = `${typedTimePhrase(dueAt, now, dayZero)}${standingSuffix(standing)}`;
     }
-  } else if (movement.legalStatus !== "Voluntary") {
+  } else if (isNotVoluntary(movement.legalStatus)) {
     legalTagTone = "warn";
     legalText = "No form recorded";
   }

@@ -31,7 +31,8 @@ export const WAIT_BANDS: readonly {
     title: LONG_WAIT_TEXT.charAt(0).toUpperCase() + LONG_WAIT_TEXT.slice(1),
     // D-122 (Josh, 10 Nov 2026): no "past the access target" here, as that target is a setting and this band is fixed.
     note: "longest first",
-    tone: "danger",
+    // D-24, restored by D-194 (Josh, 13 Nov 2026): a wait past 24 hours is plain, like the other groups.
+    tone: undefined,
     limit: Number.POSITIVE_INFINITY,
     test: (row) => row.waited >= LONG_WAIT_MINUTES,
   },

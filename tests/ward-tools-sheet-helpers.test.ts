@@ -62,7 +62,9 @@ describe("Tools sheet, Find a bed", () => {
     }
   });
 
-  it("keeps involuntary patients to authorised wards and locked requests to free locked beds", () => {
+  // D-189 items 8(a) and 9(i): Involuntary narrows nothing while every ward's authorisation is "not
+  // stated", so it lists exactly the Voluntary wards, the two flagged SJGS wards included.
+  it("lists the same wards for Involuntary as for Voluntary, and keeps locked requests to free locked beds", () => {
     const matches = findBeds(
       seed.units,
       wardAdmissions,
@@ -71,8 +73,16 @@ describe("Tools sheet, Find a bed", () => {
       holds,
     );
     expect(matches.length).toBeGreaterThan(0);
+    const voluntary = findBeds(
+      seed.units,
+      wardAdmissions,
+      bedReleases,
+      { ...DEFAULT_BED_FINDER_FILTERS, legalStatus: "voluntary", bed: "locked" },
+      holds,
+    );
+    expect(matches.map((match) => match.unit.id)).toEqual(voluntary.map((match) => match.unit.id));
+    expect(matches.some((match) => match.unit.authorised === false)).toBe(true);
     for (const match of matches) {
-      expect(match.unit.authorised).toBe(true);
       expect(match.free).toBe(
         Math.min(lockedBedsFree(match.unit), readyBedsNow(match.unit, wardAdmissions, bedReleases, holds)),
       );

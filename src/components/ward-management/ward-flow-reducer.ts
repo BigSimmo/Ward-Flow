@@ -34,6 +34,13 @@ import type { TriageSignedRecord } from "./triage/triage-record";
 import { reduceStaffRequest, type StaffRequestRecord } from "./staffing/staff-requests";
 import type { PilotControlState } from "./ward-flow-pilot-control-events";
 import { classifyLegalStatus, legalStatusIsDetained } from "@/components/ward-management/ward-legal-status";
+import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning";
+import { authorisationBlocksPlacement } from "@/components/ward-management/ward-authorisation";
+import {
+  EXAMINATION_COMMUNITY_ORDER_AWAITING_RELEASE,
+  EXAMINATION_NO_ORDER_AWAITING_RELEASE,
+  isExaminationAwaitingReleaseBlocker,
+} from "@/components/ward-management/ward-examination-hold-up";
 import { appendRefreshRequest } from "./ward/ward-buzz-keys";
 import { referralState } from "./ward-referrals";
 import { endedBedSearch, withdrawAllLiveRequestsForReferrer } from "./ward-flow-movement-close";
@@ -257,10 +264,14 @@ export const STAGE_TRANSITION_BLOCKERS = {
    *  Nothing is blocking because there is no longer anything to block. */
   didNotProceed: "None — the movement did not proceed",
   /**
-   * `RECORD_EXAMINATION` (`community_order`/`revoked`) at `handover_ready` or `moving` (owner
-   * ruling WLQ-4). The movement stays open here, so this describes an active situation.
+   * `RECORD_EXAMINATION` (`revoked`, the no-order outcome) at `handover_ready` or `moving` (owner
+   * ruling WLQ-4), or while a bed is pulled. The movement stays open here, so this describes an
+   * active situation. F-15, D-170 item 3: "made no order", never "revoked"
+   * (`ward-examination-hold-up.ts`, which also recognises the saved old words).
    */
-  examinationRevokedAwaitingRelease: "Awaiting a coordinator to release the bed, because the examination was revoked",
+  examinationRevokedAwaitingRelease: EXAMINATION_NO_ORDER_AWAITING_RELEASE,
+  /** The same hold-up after a `community_order` outcome, which is an order, so it is named. */
+  examinationCommunityOrderAwaitingRelease: EXAMINATION_COMMUNITY_ORDER_AWAITING_RELEASE,
   /**
    * `WITHDRAW_WARD_REQUEST` (RA1), only when it empties `referredUnitIds`. Deliberately not "None —
    * …": a fresh `REFER_TO_UNITS` is outstanding, so `hasActiveBlocker` must keep scoring it as
@@ -2092,7 +2103,7 @@ export function reduceClinicalEvent(
       const examinationRevokedHoldingBed =
         (examinationOutcome === "community_order" || examinationOutcome === "revoked") &&
         movementHoldsBedByStage(movement);
-      const awaitingRelease = movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease;
+      const awaitingRelease = isExaminationAwaitingReleaseBlocker(movement.blocker);
       if (examinationRevokedHoldingBed || awaitingRelease) {
         return reject(
           state,
@@ -2198,9 +2209,11 @@ export function reduceClinicalEvent(
       if (movement.closure) return reject(state, event, "This movement is closed.");
       const unit = findUnit(state, event.unitId);
       if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
-      const involuntary = movement.legalStatus !== "Voluntary";
+      // D-186 item 4: the named "not voluntary" rule. D-189 item 9(a): the invented authorisation flag
+      // raises no mismatch while every ward reads "not stated" (`authorisationBlocksPlacement`).
+      const involuntary = isNotVoluntary(movement.legalStatus);
       const derived =
-        involuntary && !unit.authorised
+        involuntary && authorisationBlocksPlacement(unit)
           ? ("involuntary_on_voluntary_ward" as const)
           : movement.legalStatus === "Voluntary" && unit.lockedBeds > 0 && unit.beds - unit.lockedBeds <= 0
             ? ("voluntary_on_locked_ward" as const)

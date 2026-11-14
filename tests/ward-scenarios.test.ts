@@ -269,7 +269,10 @@ describe("ward scenarios", () => {
       // gender (authored demo data), so `gender_designation` can pass the two single-sex wards on gender:
       // 408 -> 430 pairs. Stranded UNCHANGED at 2. (A 453/1 reading at batch 3a was superseded by batch
       // 3g's own seed and capacity changes.)
-    ).toEqual({ openMovements: 53, eligiblePairs: 430, strandedMovements: 2 });
+      // RE-MEASURED 2026-11-13, D-189 items 8(a) and 9(a): the authorisation gate is information only
+      // while every ward reads "not stated", so the two SJGS wards are open to involuntary movements:
+      // 430 -> 461 pairs. Stranded stays 2: WF-009's story records SJGS Adult Secure's decline too.
+    ).toEqual({ openMovements: 53, eligiblePairs: 461, strandedMovements: 2 });
   });
 
   it("the scarce night exhausts the network for at least one open movement", () => {
@@ -295,7 +298,9 @@ describe("ward scenarios", () => {
       // RE-MEASURED 2026-09-26, after the Kununurra ward was removed (owner-approved ward facts):
       // 130 -> 135 pairs, stranded UNCHANGED at 3. The scarce night's allocatable beds are keyed by
       // each unit's position (index % 3), so removing one unit moved which later units draw a bed.
-    ).toEqual({ openMovements: 53, eligiblePairs: 135, strandedMovements: 3 });
+      // RE-MEASURED 2026-11-13, D-189 items 8(a) and 9(a): authorisation no longer refuses, so
+      // 135 -> 154 pairs; stranded stays 3 (WF-009 records SJGS Adult Secure's decline too).
+    ).toEqual({ openMovements: 53, eligiblePairs: 154, strandedMovements: 3 });
 
     expect(
       Math.min(...counts),

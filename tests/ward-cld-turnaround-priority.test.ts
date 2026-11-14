@@ -65,18 +65,19 @@ function refused(before: WardFlowState, after: WardFlowState) {
 }
 
 describe("CLD turnaround preference", () => {
-  it.each(["authorisation", "clinical fit"])(
-    "rechecks receiving %s before recording a movement preference",
-    (reason) => {
-      const f = fixture();
-      const unit = f.state.units.find((u) => u.id === f.unitId)!;
-      if (reason === "authorisation") {
-        unit.authorised = false;
-        f.movement.legalStatus = "Involuntary inpatient";
-      } else f.movement.cohort = unit.cohort === "Adult" ? "Older adult" : "Adult";
-      refused(f.state, wardFlowReducer(f.state, flag(f, "movement")));
-    },
-  );
+  it("rechecks receiving clinical fit before recording a movement preference", () => {
+    const f = fixture();
+    const unit = f.state.units.find((u) => u.id === f.unitId)!;
+    f.movement.cohort = unit.cohort === "Adult" ? "Older adult" : "Adult";
+    refused(f.state, wardFlowReducer(f.state, flag(f, "movement")));
+  });
+  it("D-189 items 8(a) and 9(a): the invented authorisation flag no longer refuses a preference", () => {
+    const f = fixture();
+    const unit = f.state.units.find((u) => u.id === f.unitId)!;
+    unit.authorised = false;
+    f.movement.legalStatus = "Involuntary inpatient";
+    expect(wardFlowReducer(f.state, flag(f, "movement")).rejections).toEqual([]);
+  });
   it.each(["no ward arm", "different named ward", "incompatible referral"])("refuses turnaround for %s", (reason) => {
     const f = fixture();
     const unit = f.state.units.find((u) => u.id === f.unitId)!;
@@ -103,7 +104,8 @@ describe("CLD turnaround preference", () => {
               state: "queued",
             },
           ];
-    if (reason === "incompatible referral") unit.authorised = false;
+    // An age group the ward does not take (the invented authorisation flag no longer refuses, D-189).
+    if (reason === "incompatible referral") f.referral.ageBand = unit.cohort === "Adult" ? "Older adult" : "Adult";
     refused(f.state, wardFlowReducer(f.state, flag(f, "referral")));
   });
   it("requires a direct movement to request the selected unit", () => {

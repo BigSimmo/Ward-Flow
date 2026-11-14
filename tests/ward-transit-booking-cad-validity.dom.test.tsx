@@ -55,6 +55,10 @@ function openBookingForm() {
   fireEvent.click(within(screen.getByRole("group", { name: "Quick times" })).getByRole("button", { name: "+30m" }));
   fireEvent.click(screen.getByTestId("ward-transit-transport-legal-involuntary-WF-012"));
   fireEvent.click(screen.getByTestId("ward-transit-transport-escort-yes-WF-012"));
+  // D-189 item 9(e): fit to travel is not recorded on this journey, so the booking asks for a reason.
+  fireEvent.change(screen.getByTestId("ward-transit-transport-legal-reason-WF-012"), {
+    target: { value: "paper_sighted" },
+  });
 }
 
 describe("patient transit booking CAD field", () => {

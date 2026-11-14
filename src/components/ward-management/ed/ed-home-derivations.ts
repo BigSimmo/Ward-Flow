@@ -7,6 +7,7 @@ import {
   recordedEdDeparture,
 } from "@/components/ward-management/ward-ed-presence";
 import { isOpen } from "@/components/ward-management/ward-derivations";
+import { isDetained } from "@/components/ward-management/ward-legal-meaning";
 import { ED_TREND_SPAN_MINUTES, ED_TREND_STEP_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import {
   type EmergencyDepartment,
@@ -49,16 +50,14 @@ export const ED_HOME_POPULATION_NOTE =
   "Every number on this screen counts the patient physically present in the department, awaiting an inpatient bed — never a referral raised for them. Counts exclude ward-origin transfers, people already collected or in transit, and recorded discharge or community outcomes. The department's psychiatry board separately retains movements it is still accountable for, including transit. A patient can be waiting before any referral exists, so this is deliberately never a referral count.";
 
 /**
- * "Detained under the Act" — the two legal statuses that place a person under the Mental Health
- * Act's authority right now. "Voluntary" carries none, and "Referred for psychiatric examination"
- * is a referral for assessment that has not yet resulted in detention (see `LegalStatus`'s own
- * doc comment in `ward-model.ts`) — so it stays out of this set even though it names a psychiatric
- * referral. A movement whose legal status is neither of these two is not counted as detained.
+ * "Detained under the Act": the named `isDetained` rule in `ward-legal-meaning.ts` (D-186 item 4,
+ * D-187 item 3). Detained awaiting examination or an involuntary inpatient. "Voluntary" carries no
+ * authority, and "Referred for psychiatric examination" is a referral for assessment that has not
+ * yet resulted in detention, so it stays out of every detained count. Kept under this name for the
+ * screens that already import it.
  */
-const DETAINED_LEGAL_STATUSES: readonly LegalStatus[] = ["Detained awaiting examination", "Involuntary inpatient"];
-
 export function isDetainedUnderTheAct(legalStatus: LegalStatus): boolean {
-  return DETAINED_LEGAL_STATUSES.includes(legalStatus);
+  return isDetained(legalStatus);
 }
 
 /**
