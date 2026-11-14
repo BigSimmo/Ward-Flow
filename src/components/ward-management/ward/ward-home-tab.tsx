@@ -29,6 +29,7 @@ import { HELD_UP_BY_TOMORROW_LABEL, heldUpDueByTomorrow } from "@/components/war
 import {
   BED_RELEASE_BLOCKED_FIGURE_LABEL,
   deriveAfternoonDischarges,
+  closureAwareVerdict,
   restrictionNotice,
   type OverrideEntry,
 } from "@/components/ward-management/ward-derivations";
@@ -1251,7 +1252,12 @@ export function WardHomeTab({
                   {visibleIncoming.map((movement) => {
                     const blocked = answerBlockedReason ?? referralAnswerBlocked(movement, unit);
                     const notice = restrictionNotice(movement, unit);
-                    const fit = referralFit(eligibility(movement, unit, now).gates, unit, now);
+                    // M14(c) (D-MCA (Josh, 14 Nov 2026)): a ward closed to admissions reads as such.
+                    const fit = referralFit(
+                      closureAwareVerdict(unit, eligibility(movement, unit, now)).gates,
+                      unit,
+                      now,
+                    );
                     const wardLine = wardStateLine(fit, now, unit);
                     const declineOpen = declineOpenFor === movement.id;
 

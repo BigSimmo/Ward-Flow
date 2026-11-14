@@ -17,6 +17,9 @@ export function turnaroundEligibilityAllows(verdict: EligibilityVerdict, unit: U
       gate.pass ||
       gate.gate === "allocatable_bed" ||
       gate.gate === "capacity_freshness" ||
+      // H9 (D-MCA (Josh, 14 Nov 2026)): a full locked side is its own capacity check on the referral
+      // path now; a clearing locked bed answers it, as it answered `security` before the split.
+      gate.gate === "locked_bed_free" ||
       (gate.gate === "security" && unitHasLockedBeds(unit)),
   );
 }

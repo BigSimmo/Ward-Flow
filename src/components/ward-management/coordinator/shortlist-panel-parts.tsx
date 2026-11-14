@@ -1,4 +1,9 @@
+import { useMemo, type ReactNode } from "react";
+
 import type { Admission } from "@/components/ward-management/ward-admissions";
+import type { Instant } from "@/components/ward-management/ward-clock";
+import { shortlistCandidates } from "@/components/ward-management/ward-derivations";
+import { useSharedReadyLookup } from "@/components/ward-management/use-shared-ready";
 import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import type { EligibilityGate } from "@/components/ward-management/ward-eligibility";
@@ -6,6 +11,7 @@ import {
   URGENCY_LEVELS,
   type BedRelease,
   type LegalStatus,
+  type Movement,
   type Referral,
   type Unit,
 } from "@/components/ward-management/ward-model";
@@ -14,9 +20,32 @@ import { isAwaitingAnswer } from "@/components/ward-management/ward-referrals";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { StatusGlyph } from "@/components/wf";
 
+import styles from "./coordinator.module.css";
 import shortlistStyles from "./shortlist-panel.module.css";
 
 // Module-level helpers of `shortlist-panel.tsx`, moved unchanged (H-0283).
+
+/** H7 (D-MCA (Josh, 14 Nov 2026)): the shortlist, with "bed ready" read from the shared Ready. */
+export function useShortlistCandidates(movement: Movement | undefined, units: Unit[], now: Instant) {
+  const ready = useSharedReadyLookup();
+  return useMemo(
+    () => (movement ? shortlistCandidates(movement, units, now, ready) : []),
+    [movement, units, now, ready],
+  );
+}
+
+/** One "Fits, ..." group of the shortlist: a heading with its count, then its rows. Nothing when empty. */
+export function FitGroup({ kind, title, children }: { kind: string; title: string; children: ReactNode[] }) {
+  if (children.length === 0) return null;
+  return (
+    <div className={shortlistStyles.fitGroup} data-fit-group={kind}>
+      <h5 className={shortlistStyles.fitGroupHead}>
+        {title} <span className={shortlistStyles.fitGroupCount}>{children.length}</span>
+      </h5>
+      <ul className={styles.shortlistCandidateList}>{children}</ul>
+    </div>
+  );
+}
 /**
  * Human labels for the eligibility gates. Order here is irrelevant — the rendered list is sorted
  * failures-first from the real `GateResult[]`, never from this map's key order.
@@ -43,6 +72,7 @@ export const GATE_LABELS: Record<EligibilityGate, string> = {
   cohort: "Ward cohort",
   forensic: "Forensic history",
   legal_status: "Legal status",
+  locked_bed_free: "Locked bed free",
   prior_decline: "Prior decline",
   security: "Security level",
   // 🔴 RENAMED FROM `sex_designation`, T10 (item 8, owner answer 17 September 2026): the ward's

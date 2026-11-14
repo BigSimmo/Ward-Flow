@@ -58,13 +58,18 @@ export const ELIGIBILITY_GATES = [
   "cohort",
   "forensic",
   "legal_status",
+  // H9 (D-MCA (Josh, 14 Nov 2026)): "is a locked bed free now", split out of `security` on the
+  // referral path so `security` asks only whether the ward is the right kind. A capacity check: a
+  // full locked side reads "no bed now", never "not suitable". Referral path only; the movement path
+  // leaves locked capacity to `PULL_PATIENT`, as before.
+  "locked_bed_free",
   "prior_decline",
   "security",
   // 🔴 RENAMED FROM `sex_designation`, T10 (item 8, owner answer 17 September 2026, "gender at
   // referral decides the incoming bed check"). Still the ward's own designation constraint, and
   // still shared by both paths below — only the FACT it is checked against changed, from
   // `movement.sex`/`ward.sex` to the gender recorded AT REFERRAL. Never overridable — see
-  // `SUITABILITY_GATES` in `ward-flow-reducer.ts`, which is typed so this gate cannot be a member.
+  // `SUITABILITY_GATES` below, which is typed so this gate cannot be a member.
   "gender_designation",
   "sex_mix",
   "specialling",
@@ -90,6 +95,51 @@ export function gateMark(gate: GateResult): GateMark {
   if (gate.info) return "info";
   return gate.pass ? "met" : "not_met";
 }
+
+/**
+ * H7 (D-MCA (Josh, 14 Nov 2026)): the shared Ready count for a ward, the figure Capacity prints and
+ * the pull gate refuses on (pulls since the last count, named holds and beds being made ready are
+ * all off it). Built by the caller from `sharedReadyLookup` (`ward-shared-ready.ts`) and handed in
+ * as a plain number per ward, so matching never reads the release model itself (spec D15). Left
+ * out, a check falls back to the ward's own two figures, `min(allocatable, empty)`: only for a caller
+ * that holds no bed records at all.
+ */
+export type ReadyBedsLookup = (unit: Unit) => number;
+
+/** The Ready a list prints for `unit`: the shared figure when the caller has it (H7). */
+export function readyBedsFor(unit: Unit, ready?: ReadyBedsLookup): number {
+  return ready?.(unit) ?? readyBedsNow(unit);
+}
+
+/**
+ * The gates a recorded reason may get past, re-exported by `ward-flow-reducer.ts` where the engine
+ * reads it. Declared here since 14 Nov 2026 so the shared fit classifier below (`placementFit`)
+ * reads the engine's own list without importing the reducer. Imported by
+ * `tests/ward-referral-reducer.test.ts` (pins `allocatable_bed` and `specialling` out of it) and by
+ * `shortlistCandidates`, so the screen and engine share one list.
+ *
+ * T10 (owner answer, item 8): "There is no override path on the gender gate." The `satisfies`
+ * clause below makes adding `"gender_designation"` a compile error, while the exported type stays
+ * the full gate union so `.includes(gate.gate)` call sites still compile.
+ */
+export const SUITABILITY_GATES: readonly EligibilityGate[] = [
+  "age",
+  "authorisation",
+  "cohort",
+  "forensic",
+  "legal_status",
+  "security",
+  // H9: the locked-bed capacity half of the old referral-path `security` gate keeps the override
+  // that gate had: a recorded reason lets a Secure referral be accepted where only open beds are
+  // free, as a Secure pull may take an open bed with a reason (`locked_bed_capacity`).
+  "locked_bed_free",
+  "sex_mix",
+  // Added by owner ruling: the only gate moved out of the world-fact group. A stale bed count is
+  // information, and "I have confirmed the current bed state with the ward directly" is a named
+  // person taking responsibility. It buys past a stale count, never past `allocatable_bed`. See
+  // docs/history/archive/dated-notes/owner-rulings-2026-09-02-staleness-and-legal-status.md.
+  "capacity_freshness",
+] as const satisfies readonly Exclude<EligibilityGate, "gender_designation">[];
 
 /** The gates that actually check something. "N of M met" counts these and only these. */
 export function checkedGates(gates: readonly GateResult[]): GateResult[] {
@@ -294,12 +344,14 @@ function forensicGate(unit: Unit): GateResult {
  * so no one is placed alone. Fix 2 (26 September 2026): both paths read `readyBedsNow`, never raw
  * `allocatable`, because a ward with three allocatable and one empty bed has one free bed.
  */
-function sexMixGate(gender: ReferralGender | undefined, sex: RecordedSex, unit: Unit): GateResult {
+function sexMixGate(gender: ReferralGender | undefined, sex: RecordedSex, unit: Unit, ready: number): GateResult {
   const mixSex = mixSexOf(gender, sex);
   const sameSexOccupants = mixSex === undefined ? 0 : (unit.sexMix[mixSex] ?? 0);
   return {
     gate: "sex_mix",
-    pass: sameSexOccupants > 0 || readyBedsNow(unit) > 1,
+    // H7: the shared Ready when the caller has it (`ReadyBedsLookup`), so this reads the same beds
+    // as the bed gate beside it.
+    pass: sameSexOccupants > 0 || ready > 1,
     detail:
       (mixSex !== undefined && sameSexOccupants > 0
         ? `${sameSexOccupants} ${mixSex.toLowerCase()} occupants already`
@@ -385,7 +437,17 @@ export type EligibilitySubject = Pick<
   legalStatus: Movement["legalStatus"] | undefined;
 };
 
-export function eligibility(movement: EligibilitySubject, unit: Unit, now: Instant): EligibilityVerdict {
+export function eligibility(
+  movement: EligibilitySubject,
+  unit: Unit,
+  now: Instant,
+  /**
+   * H7: the shared Ready, read by `sex_mix` only. `allocatable_bed` on this path stays the lenient
+   * figure on purpose (see its comment); a list that shows "bed ready" applies the shared Ready
+   * itself (`shortlistVerdict`, `ward-derivations-shortlist.ts`).
+   */
+  ready?: ReadyBedsLookup,
+): EligibilityVerdict {
   const authorisationNeeded = requiresAuthorisedDestination(movement.legalStatus);
   // A9-05: a wait list answer ("No suitable bed") that still stands keeps the ward's live referral,
   // so it is not a refusal and must not read as "Already declined" on that ward's referral.
@@ -452,7 +514,7 @@ export function eligibility(movement: EligibilitySubject, unit: Unit, now: Insta
       detail: genderDesignation.detail,
     },
     forensicGate(unit),
-    sexMixGate(movement.gender, movement.sex, unit),
+    sexMixGate(movement.gender, movement.sex, unit, ready?.(unit) ?? readyBedsNow(unit)),
     acuityGate(movement.highAcuity, unit, "movement"),
     speciallingGate(movement.observation, unit),
     {
@@ -697,18 +759,27 @@ export function referralEligibility(
   ward: WardReferralDestination,
   unit: Unit,
   now: Instant,
+  /** H7: the shared Ready (`ReadyBedsLookup`). Every screen and the engine pass it. */
+  ready?: ReadyBedsLookup,
 ): EligibilityVerdict {
   const genderDesignation = genderDesignationResult(ward.gender, unit, referral.genderPlacements);
   // S2-9: unlike `eligibility()` above, which checks ward capability (`unitHasLockedBeds(unit)`) so
   // `ACCEPT_IN_PRINCIPLE` can waitlist a Secure movement until `PULL_PATIENT` checks
   // `lockedBedsFree(unit)`, referral matching asks whether a suitable bed is free now, so it needs
   // both. Both paths share `bedKindGateDetail` so the coordinator sees the same locked-bed counts.
-  const securityMet = !ward.secureBedNeeded || (unitHasLockedBeds(unit) && lockedBedsFree(unit) > 0);
+  //
+  // H9 (D-MCA (Josh, 14 Nov 2026)): that capacity half is now its own gate, `locked_bed_free`, and
+  // `security` asks only whether the ward is the right kind, as it does on the movement path. A
+  // Secure referral whose locked beds are all taken reads "no locked bed now", never "not suitable".
+  const securityMet = !ward.secureBedNeeded || unitHasLockedBeds(unit);
   // Spec D15: the bed a coordinator can place someone in right now is `readyBedsNow`, never
   // `unit.allocatable.value` alone. `CONFIRM_CAPACITY` can raise allocatable above empty after
   // arrivals used the empty beds, so the two figures are not enforced to agree (see the D15 contract
-  // test in `ward-referral-matching.test.ts`).
-  const availableNow = readyBedsNow(unit);
+  // test in `ward-referral-matching.test.ts`). H7: the shared Ready when the caller hands it in, so
+  // pulls since the count, named holds and beds being made ready are off it here as on Capacity.
+  const availableNow = ready?.(unit) ?? readyBedsNow(unit);
+  // Locked beds free now, capped at Ready, the figure Capacity prints as "locked ready".
+  const lockedFreeNow = Math.min(lockedBedsFree(unit), availableNow);
 
   const gates: GateResult[] = [
     cohortGate("age", referral.ageBand, unit, "referral"),
@@ -724,9 +795,23 @@ export function referralEligibility(
     {
       gate: "security",
       pass: securityMet,
+      // The same words as the movement path's `security`, so both paths show the same locked counts.
       detail: bedKindGateDetail(ward.secureBedNeeded, unit),
     },
-    sexMixGate(ward.gender, ward.sex, unit),
+    {
+      gate: "locked_bed_free",
+      // Only asked when a locked bed is needed and the ward has some: a ward with none is answered
+      // by `security` above, and a free bed would not change that.
+      pass: !ward.secureBedNeeded || !unitHasLockedBeds(unit) || lockedFreeNow > 0,
+      detail: !ward.secureBedNeeded
+        ? "No locked bed needed"
+        : !unitHasLockedBeds(unit)
+          ? `${unit.name} has no locked beds`
+          : lockedFreeNow > 0
+            ? `${unit.name} has ${lockedFreeNow} locked bed${lockedFreeNow === 1 ? "" : "s"} free (${designationSummary(unit)})`
+            : `${unit.name} has locked beds but no locked bed is free now (${designationSummary(unit)})`,
+    },
+    sexMixGate(ward.gender, ward.sex, unit, availableNow),
     speciallingGate(undefined, unit),
     acuityGate(ward.highAcuityNursingNeeded, unit, "referral"),
     freshnessGate(unit, now),
@@ -783,6 +868,105 @@ export function candidateReason(verdict: EligibilityVerdict) {
   if (verdict.eligible) return "Eligible now";
   const failed = verdict.gates.find((gate) => !gate.pass);
   return failed ? failed.detail : "Not eligible";
+}
+
+/**
+ * H8 and H9 (mechanics and clock audit; D-MCA (Josh, 14 Nov 2026)): THE ONE FIT CLASSIFIER.
+ *
+ * The Place tab, the coordinator shortlist and Home's fit, the next ward after a refusal, Ask more
+ * wards and the patient page's Ask wards each sorted a ward from its verdict by their own rule, and
+ * an old bed count came out five ways: "Fits, no bed now" with a false "never confirmed", "Review",
+ * "Does not fit", dropped from the next-ward list, and not tickable. A full locked side and a
+ * bay-mix check that failed only for want of beds read "not for want of a bed". Every list now asks
+ * this one function.
+ *
+ * - `fits`: every check passes.
+ * - `stale_count`: every check passes except that the ward's bed count is old. Still askable; the
+ *   words are "Bed count N min old, check with the ward" (`staleCountWords`). Never "Does not fit"
+ *   and never "never confirmed". The stale limits themselves are unchanged.
+ * - `no_bed`: every check about the person passes and only the ward's beds fail (no Ready bed, no
+ *   locked bed free, a bay-mix check that more Ready beds would pass, possibly an old count too).
+ * - `needs_review`: a check about the person fails that a recorded reason may answer.
+ * - `not_suitable`: a check fails that no recorded reason can answer.
+ *
+ * `gate` is the check that decides the class, so a reason line and a count always name the same
+ * thing. `overridable` is the engine's own rule (`SUITABILITY_GATES`): whether every failing check
+ * can be answered by a recorded reason, which is when "Accept anyway, record why" may be offered.
+ */
+export type PlacementFitKind = "fits" | "stale_count" | "no_bed" | "needs_review" | "not_suitable";
+
+export type PlacementFit = {
+  kind: PlacementFitKind;
+  /** The deciding failing check, or `undefined` for a fit. */
+  gate?: GateResult;
+  /** Every failing check can be answered by a recorded reason (`SUITABILITY_GATES`). */
+  overridable: boolean;
+};
+
+/**
+ * The failures that turn on the ward's beds, never on the person. `sex_mix` is here because its own
+ * pass rule is "someone of the same sex is already there, or more than one bed is Ready": when it
+ * fails, more Ready beds would pass it (H9).
+ */
+export const BED_COUNT_GATES: readonly EligibilityGate[] = [
+  "capacity_freshness",
+  "allocatable_bed",
+  "locked_bed_free",
+  "sex_mix",
+];
+
+/** Which bed-count failure a `no_bed` row names first. */
+const NO_BED_ORDER: readonly EligibilityGate[] = [
+  "allocatable_bed",
+  "locked_bed_free",
+  "sex_mix",
+  "capacity_freshness",
+];
+
+/**
+ * Classifies one verdict. `ignore` lists failing checks that are information on this list (the
+ * movement path's `prior_decline`, which a list reports as its own note).
+ */
+export function placementFit(
+  verdict: EligibilityVerdict,
+  ignore: readonly EligibilityGate[] = ["prior_decline"],
+): PlacementFit {
+  const failing = verdict.gates.filter((gate) => !gate.pass && !gate.info && !ignore.includes(gate.gate));
+  const overridable = failing.every((gate) => SUITABILITY_GATES.includes(gate.gate));
+  if (failing.length === 0) return { kind: "fits", overridable: true };
+  const personal = failing.filter((gate) => !BED_COUNT_GATES.includes(gate.gate));
+  if (personal.length === 0) {
+    if (failing.length === 1 && failing[0].gate === "capacity_freshness") {
+      return { kind: "stale_count", gate: failing[0], overridable };
+    }
+    const gate = NO_BED_ORDER.map((name) => failing.find((g) => g.gate === name)).find((g) => g !== undefined);
+    return { kind: "no_bed", gate: gate ?? failing[0], overridable };
+  }
+  const blocking = personal.find((gate) => !SUITABILITY_GATES.includes(gate.gate));
+  if (blocking) return { kind: "not_suitable", gate: blocking, overridable };
+  return { kind: "needs_review", gate: personal[0], overridable };
+}
+
+/** Minutes since the ward last confirmed its bed count, or `undefined` when it never has. */
+export function bedCountAgeMinutes(unit: Pick<Unit, "allocatable">, now: Instant): number | undefined {
+  const age = now - unit.allocatable.confirmedAt;
+  return Number.isFinite(age) ? Math.max(0, age) : undefined;
+}
+
+/** "75 min" under two hours, then whole hours ("2 h"), the ward desk's own wording. */
+export function bedCountAgeWords(minutes: number): string {
+  return minutes < 120 ? `${minutes} min` : `${Math.floor(minutes / 60)} h`;
+}
+
+/**
+ * H8: the one sentence for a ward whose only failing check is an old bed count. Never "never
+ * confirmed" unless that is the fact.
+ */
+export function staleCountWords(unit: Pick<Unit, "allocatable">, now: Instant): string {
+  const age = bedCountAgeMinutes(unit, now);
+  return age === undefined
+    ? "Bed count never confirmed, check with the ward"
+    : `Bed count ${bedCountAgeWords(age)} old, check with the ward`;
 }
 
 /**

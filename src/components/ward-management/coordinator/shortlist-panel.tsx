@@ -71,7 +71,6 @@ import {
   elapsedLabel,
   blockingGate,
   referralForMovement,
-  shortlistCandidates,
   referralBlockedReason,
   needsNoRecordedReason,
   restrictionNotice,
@@ -116,7 +115,7 @@ import drawer from "@/components/ward-management/movements/movement-drawer.modul
 import shortlistStyles from "./shortlist-panel.module.css";
 import { WardDetailIntakeNotes } from "./shortlist-ward-intake-notes";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
-import { FIT_LABEL, fitGroups, type FitKind } from "./home-fit";
+import { FIT_LABEL, fitGroups, fitReasonWords, type FitKind } from "./home-fit";
 import { NextWardAfterRefusal } from "./next-ward-after-refusal";
 import { HomeReferralDecision, HomeReferralNote } from "./home-referral-decision";
 import { PreMatchCleaningNote } from "./prematch-cleaning-note";
@@ -135,6 +134,8 @@ import {
   referralAsked,
   referralFrom,
   URGENCY_OPTIONS,
+  FitGroup,
+  useShortlistCandidates,
 } from "./shortlist-panel-parts";
 
 /** Same defect, on the two unwind controls: option zero submitted as a stated reason nobody stated. */
@@ -389,7 +390,8 @@ export function ShortlistPanel({
    * there. Hiding them was defensible while the engine refused a mismatched placement outright, and
    * became the defect the moment a judgement gate turned overridable with a recorded reason.
    */
-  const shortlist = useMemo(() => (movement ? shortlistCandidates(movement, units, now) : []), [movement, units, now]);
+  // H7 (D-MCA (Josh, 14 Nov 2026)): "bed ready" reads the shared Ready Capacity prints.
+  const shortlist = useShortlistCandidates(movement, units, now);
   /** What a coordinator can act on: take it, or take it with a reason. Never collapsed, at any count. */
   const offerable = useMemo(() => shortlist.filter((c) => c.availability !== "unavailable"), [shortlist]);
   /** FitHighlight groups (v10 Home): fits with a bed, fits with no bed now, needs review, and what
@@ -1211,7 +1213,7 @@ export function ShortlistPanel({
             <span className={`${shortlistStyles.candidateReason} sr-only`}>{candidateReason(candidate.verdict)}</span>
           ) : (
             <span className={`${styles.shortlistCandidateReasonBad} ${shortlistStyles.candidateReason}`}>
-              {candidateReason(candidate.verdict)}
+              {fitReasonWords(candidate, kind, now)}
             </span>
           )}
           <CandidateFit unitId={candidate.unit.id} gates={candidate.verdict.gates} />
@@ -1705,26 +1707,18 @@ export function ShortlistPanel({
               ) : null}
               {/* The wards that fit lead: a bed ready, then fits with no bed now (never selectable: the
               engine refuses a ward with no bed). */}
-              {groups.bed.length > 0 ? (
-                <div className={shortlistStyles.fitGroup} data-fit-group="bed">
-                  <h5 className={shortlistStyles.fitGroupHead}>
-                    Fits, bed ready <span className={shortlistStyles.fitGroupCount}>{groups.bed.length}</span>
-                  </h5>
-                  <ul className={styles.shortlistCandidateList}>
-                    {groups.bed.map((candidate) => renderCandidate(candidate, "bed"))}
-                  </ul>
-                </div>
-              ) : null}
-              {groups["no-bed"].length > 0 ? (
-                <div className={shortlistStyles.fitGroup} data-fit-group="no-bed">
-                  <h5 className={shortlistStyles.fitGroupHead}>
-                    Fits, no bed now <span className={shortlistStyles.fitGroupCount}>{groups["no-bed"].length}</span>
-                  </h5>
-                  <ul className={styles.shortlistCandidateList}>
-                    {groups["no-bed"].map((candidate) => renderUnavailable(candidate, "no-bed"))}
-                  </ul>
-                </div>
-              ) : null}
+              <FitGroup kind="bed" title="Fits, bed ready">
+                {groups.bed.map((candidate) => renderCandidate(candidate, "bed"))}
+              </FitGroup>
+              <FitGroup kind="no-bed" title="Fits, no bed now">
+                {groups["no-bed"].map((candidate) => renderUnavailable(candidate, "no-bed"))}
+              </FitGroup>
+
+              {/* H8 (D-MCA (Josh, 14 Nov 2026)): every check passes except an old bed count. Still
+              choosable: asking is how the count is checked, with the reason the engine asks for. */}
+              <FitGroup kind="stale" title="Fits, bed count old">
+                {groups.stale.map((candidate) => renderCandidate(candidate, "stale"))}
+              </FitGroup>
 
               {/* Wards that take this person only with an override reason: still choosable, so the
               count is stated while closed and the list opens itself while one of them is chosen. */}

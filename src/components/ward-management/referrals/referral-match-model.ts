@@ -14,6 +14,7 @@ export const GATE_LABELS: Record<EligibilityGate, string> = {
   cohort: "Ward cohort",
   forensic: "Forensic history",
   legal_status: "Legal status",
+  locked_bed_free: "Locked bed free",
   prior_decline: "Prior decline",
   security: "Security level",
   gender_designation: "Gender designation",

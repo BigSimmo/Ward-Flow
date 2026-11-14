@@ -6,12 +6,14 @@
 import {
   type EligibilityGate,
   type GateResult,
+  type ReadyBedsLookup,
   eligibility,
+  readyBedsFor,
+  SUITABILITY_GATES,
   wardFacingGateDetail,
 } from "@/components/ward-management/ward-eligibility";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
-import { SUITABILITY_GATES } from "@/components/ward-management/ward-flow-reducer";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import { lockedBedsFree, unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 
@@ -214,6 +216,8 @@ export function needsNoRecordedReason(availability: ShortlistAvailability): bool
 export type ShortlistCandidate = {
   unit: Unit;
   verdict: ReturnType<typeof eligibility>;
+  /** H7: the shared Ready this list read for the ward (`readyBedsFor`). */
+  readyNow?: number;
   availability: ShortlistAvailability;
   /** A fact, not an order: an in-catchment ward of the same cohort with no bed free now. */
   waitlist?: boolean;
@@ -257,7 +261,13 @@ function isCatchmentUnit(movement: Movement, unit: Unit): boolean {
  * the original defect in a new costume: with three eligible wards present, every overridable one
  * would fall off the end and be invisible again. Order it, group it, scroll it — do not truncate it.
  */
-export function shortlistCandidates(movement: Movement, units: Unit[], now: Instant): ShortlistCandidate[] {
+export function shortlistCandidates(
+  movement: Movement,
+  units: Unit[],
+  now: Instant,
+  /** H7 (D-MCA (Josh, 14 Nov 2026)): the shared Ready (`sharedReadyLookup`). */
+  ready?: ReadyBedsLookup,
+): ShortlistCandidate[] {
   /*
    * Audit 1, Josh 20 Oct (NB-4): grouped by fit, then a fixed neutral order inside each group
    * (health service, then ward name). The catchment and free-bed tiers that used to order a
@@ -265,7 +275,7 @@ export function shortlistCandidates(movement: Movement, units: Unit[], now: Inst
    */
   return units
     .map((unit) => {
-      const verdict = closureAwareVerdict(unit, eligibility(movement, unit, now));
+      const verdict = shortlistVerdict(unit, eligibility(movement, unit, now, ready), ready);
       const failing = verdict.gates.filter((gate) => !gate.pass);
       /*
        * 🔴 Owner reversal, item 2, 17 September 2026: a Non-binary movement failing ONLY
@@ -309,6 +319,7 @@ export function shortlistCandidates(movement: Movement, units: Unit[], now: Inst
       return {
         unit,
         verdict,
+        readyNow: readyBedsFor(unit, ready),
         availability,
         // In catchment, same cohort, no bed now: shown as "waitlist for a locked bed". Never an order.
         waitlist: unit.cohort === movement.cohort && isCatchmentUnit(movement, unit) && available === 0,
@@ -352,7 +363,34 @@ export function blockingGate(verdict: ReturnType<typeof eligibility>) {
  * names the closure rather than a bed count. Shared by `shortlistCandidates` and
  * `eligibleCandidatesAmong`, so the shortlist and the Home bedflow agree.
  */
-function closureAwareVerdict(unit: Unit, verdict: ReturnType<typeof eligibility>): ReturnType<typeof eligibility> {
+/**
+ * H7 (D-MCA (Josh, 14 Nov 2026)): a fit LIST says "bed ready" only when the shared Ready (the figure
+ * Capacity prints, less pulls since the count, named holds and beds being made ready) has one. The
+ * movement path's own `allocatable_bed` gate stays lenient for accept-in-principle in the engine;
+ * this changes only what a list shows, as `closureAwareVerdict` does for a closed ward. Without a
+ * lookup the verdict is left as it is.
+ */
+export function shortlistVerdict(
+  unit: Unit,
+  verdict: ReturnType<typeof eligibility>,
+  ready?: ReadyBedsLookup,
+): ReturnType<typeof eligibility> {
+  const closed = closureAwareVerdict(unit, verdict);
+  if (ready === undefined || unit.isClosed) return closed;
+  const readyNow = ready(unit);
+  const gates = closed.gates.map((gate) =>
+    gate.gate === "allocatable_bed"
+      ? { ...gate, pass: readyNow > 0, detail: `${readyNow} ready (${unit.allocatable.value} allocatable)` }
+      : gate,
+  );
+  return { eligible: gates.every((gate) => gate.pass), gates };
+}
+
+/** M14(c): a ward closed to admissions never reads as having a bed, on any list or card. */
+export function closureAwareVerdict(
+  unit: Unit,
+  verdict: ReturnType<typeof eligibility>,
+): ReturnType<typeof eligibility> {
   if (!unit.isClosed) return verdict;
   return {
     eligible: false,

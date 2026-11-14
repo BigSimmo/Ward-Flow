@@ -8,8 +8,16 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { ArrowRight, BedSingle, Check, Hospital, Info, ShieldCheck, Ambulance } from "lucide-react";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { wardRaise } from "../ward-flow-raise";
-import { candidateReason, eligibility, gateMark } from "../ward-eligibility";
-import { stageCopy } from "../ward-derivations";
+import {
+  candidateReason,
+  eligibility,
+  gateMark,
+  placementFit,
+  readyBedsFor,
+  staleCountWords,
+} from "../ward-eligibility";
+import { shortlistVerdict, stageCopy } from "../ward-derivations";
+import { useSharedReadyLookup } from "../use-shared-ready";
 import { legalFormName } from "../ward-legal-forms";
 import { CAD_TO_FOLLOW, cadNumberLine, cadNumberToFollow } from "../ward-cad-number";
 import {
@@ -209,9 +217,13 @@ export function PatientTransitOperations({
   const open = !movement.closure && movement.stage !== "arrived";
   const destination = units.find((u) => u.id === movement.acceptedUnitId);
   const heldBed = admissions.find((a) => a.id === movement.admissionId);
+  // H7 and H8 (D-MCA (Josh, 14 Nov 2026)): the shared Ready and the shared fit classifier, as on the
+  // coordinator's shortlist, so a ward with no Ready bed never reads "Fits, bed ready" here, a closed
+  // ward never fits, and a ward whose only failing check is an old bed count can still be asked.
+  const ready = useSharedReadyLookup();
   const candidates = units
     .filter((u) => u.cohort === movement.cohort)
-    .map((unit) => ({ unit, verdict: eligibility(movement, unit, now) }));
+    .map((unit) => ({ unit, verdict: shortlistVerdict(unit, eligibility(movement, unit, now, ready), ready) }));
   const eligibleCount = candidates.filter((c) => c.verdict.eligible).length;
   // D-77 (Josh, 21 Oct 2026): one Ask wards list. Wards already asked come first, then the wards that
   // fit, then the rest to review, three at a time. D-91: the list is the one Find a ward list, A to Z,
@@ -221,7 +233,16 @@ export function PatientTransitOperations({
     .sort((a, b) => a.unit.name.localeCompare(b.unit.name));
   const notAskedRows = candidates
     .filter((c) => !movement.referredUnitIds.includes(c.unit.id))
-    .map(({ unit, verdict }) => ({ unit, fit: verdict.eligible, reason: candidateReason(verdict) }));
+    .map(({ unit, verdict }) => {
+      const kind = placementFit(verdict).kind;
+      return {
+        unit,
+        fit: kind === "fits" || kind === "stale_count",
+        ready: readyBedsFor(unit, ready),
+        ...(kind === "stale_count" ? { stale: staleCountWords(unit, now) } : {}),
+        reason: candidateReason(verdict),
+      };
+    });
   // F-108 (A14-14): asking wards and withdrawing the bed search are the coordinator's
   // (`EVENT_ROLE.REFER_TO_UNITS`). Both are raised as the coordinator below, so a desk that may never
   // ask (a ward desk) is not offered them at all: no Ask button and no Withdraw referral.

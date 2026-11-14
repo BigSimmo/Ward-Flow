@@ -8,9 +8,13 @@ import {
   type TravelBand,
 } from "@/components/ward-management/ward-distance";
 import {
+  bedCountAgeMinutes,
   candidateReason,
+  placementFit,
   referralEligibility,
+  staleCountWords,
   type EligibilityVerdict,
+  type ReadyBedsLookup,
 } from "@/components/ward-management/ward-eligibility";
 import {
   HOME_REGION_NOT_RECORDED,
@@ -156,6 +160,19 @@ export function referralWithdrawable(referral: Referral, movements?: readonly Mo
     return false;
   }
   return true;
+}
+
+/**
+ * M14(b) (mechanics and clock audit; D-MCA (Josh, 14 Nov 2026)): whether a ward or an emergency
+ * department has said yes. A community team's yes never competes for the placement (RB5), so it
+ * never makes a ward's own answer "already accepted elsewhere". `referralState` reads "accepted"
+ * once a community team has said yes and nothing else is open, which is right for the referral's
+ * outcome and wrong for the ward's accept and decline guards.
+ */
+export function bedPlacementAccepted(referral: Referral): boolean {
+  return referral.destinations.some(
+    (addressing) => addressing.destination.kind !== "community_team" && addressing.state === "accepted",
+  );
 }
 
 export function referralState(referral: Referral): ReferralState {
@@ -695,10 +712,12 @@ export function referralCandidates(
   ward: WardReferralDestination,
   units: Unit[],
   now: Instant,
+  /** H7 (D-MCA (Josh, 14 Nov 2026)): the shared Ready, from `sharedReadyLookup`. */
+  ready?: ReadyBedsLookup,
 ): { unit: Unit; verdict: EligibilityVerdict }[] {
   return units
     .filter((unit) => ward.unitId === undefined || ward.unitId === unit.id)
-    .map((unit) => ({ unit, verdict: referralEligibility(referral, ward, unit, now) }));
+    .map((unit) => ({ unit, verdict: referralEligibility(referral, ward, unit, now, ready) }));
 }
 
 export type ReferralCandidate = { unit: Unit; verdict: EligibilityVerdict };
@@ -1001,8 +1020,16 @@ export type NoBedBreakdown = {
   total: number;
   /** Failed on `allocatable_bed`: this ward would take the patient and has no bed. */
   noBedFree: number;
-  /** Failed on `capacity_freshness`: this ward has never confirmed a count. Not the same as full. */
+  /**
+   * H8: every check passes except that this ward's bed count is old (`stale_count`). Not the same as
+   * full, and not "never confirmed" unless that is the fact.
+   */
   capacityUnknown: number;
+  /**
+   * The newest of those old counts, in minutes, so a sentence can say "not confirmed a bed count in
+   * N min" truthfully of every one of them. `undefined` when none of them has ever confirmed one.
+   */
+  staleSinceMinutes?: number;
   /** Failed on anything else — clinical, legal, cohort, security, a prior decline. */
   notSuitable: number;
 };
@@ -1012,20 +1039,33 @@ export type NoBedBreakdown = {
  * explain — the screen lists the accepting units instead. Also `undefined` for an empty shortlist,
  * which is a different situation with its own sentence (see `referral-match.tsx`).
  */
-export function noBedBreakdown(candidates: ReferralCandidate[]): NoBedBreakdown | undefined {
+export function noBedBreakdown(candidates: ReferralCandidate[], now?: Instant): NoBedBreakdown | undefined {
   if (candidates.length === 0) return undefined;
   if (candidates.some(candidateAccepts)) return undefined;
 
   let noBedFree = 0;
   let capacityUnknown = 0;
   let notSuitable = 0;
+  let staleSinceMinutes: number | undefined;
+  // H8 and H9 (D-MCA (Josh, 14 Nov 2026)): counted by the shared classifier, not by the first
+  // failing check, so a full locked side or a bay-mix check that only lacks Ready beds counts as
+  // "turns on a bed", and `matchReason` below names the same deciding check.
   for (const candidate of candidates) {
-    const failed = candidate.verdict.gates.find((gate) => !gate.pass);
-    if (failed?.gate === "allocatable_bed") noBedFree += 1;
-    else if (failed?.gate === "capacity_freshness") capacityUnknown += 1;
-    else notSuitable += 1;
+    const kind = placementFit(candidate.verdict).kind;
+    if (kind === "no_bed") noBedFree += 1;
+    else if (kind === "stale_count") {
+      capacityUnknown += 1;
+      const age = now === undefined ? undefined : bedCountAgeMinutes(candidate.unit, now);
+      if (age !== undefined) staleSinceMinutes = Math.min(staleSinceMinutes ?? age, age);
+    } else notSuitable += 1;
   }
-  return { total: candidates.length, noBedFree, capacityUnknown, notSuitable };
+  return {
+    total: candidates.length,
+    noBedFree,
+    capacityUnknown,
+    notSuitable,
+    ...(staleSinceMinutes === undefined ? {} : { staleSinceMinutes }),
+  };
 }
 
 /**
@@ -1039,12 +1079,17 @@ export function aFreeBedCouldChangeThis(breakdown: NoBedBreakdown): boolean {
   return breakdown.noBedFree > 0 || breakdown.capacityUnknown > 0;
 }
 
-export function matchReason(candidate: ReferralCandidate): string {
+export function matchReason(candidate: ReferralCandidate, now?: Instant): string {
   if (!candidate.verdict.eligible) {
-    const failedGate = candidate.verdict.gates.find((gate) => !gate.pass);
-    if (failedGate?.gate === "capacity_freshness" && !hasConfirmedCapacity(candidate.unit)) {
-      return `${candidate.unit.name} has never confirmed its allocatable bed count`;
+    // H8: the shared classifier's deciding check, so the reason matches the group the row is in.
+    const fit = placementFit(candidate.verdict);
+    if (fit.kind === "stale_count") {
+      if (!hasConfirmedCapacity(candidate.unit)) {
+        return `${candidate.unit.name} has never confirmed its allocatable bed count`;
+      }
+      if (now !== undefined) return staleCountWords(candidate.unit, now);
     }
+    if (fit.gate) return fit.gate.detail;
   }
   return candidateReason(candidate.verdict);
 }

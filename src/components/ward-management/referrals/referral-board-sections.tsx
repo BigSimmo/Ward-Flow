@@ -6,6 +6,7 @@
 //
 // The referral board's two queue sections (waiting and recently decided), with the outcome detail
 // and due timer they draw. Moved out of `referral-board.tsx` to keep it under the line cap.
+import { useSharedReadyLookup } from "@/components/ward-management/use-shared-ready";
 import { openInformationNeeds } from "./referral-information-needs";
 import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { personLine } from "./referral-panel-parts";
@@ -170,6 +171,8 @@ export function QueuedSection({
   /** v10: a highlight dims the rows it does not match (`data-dim`); every row stays in place. */
   isDimmed?: (referral: Referral) => boolean;
 }) {
+  // H7 (D-MCA (Josh, 14 Nov 2026)): the Fit column reads the shared Ready, as the Place tab does.
+  const readyLookup = useSharedReadyLookup();
   const queuedResolverState = useMemo(
     () => ({ patients, referrals: allReferrals, movements }),
     [patients, allReferrals, movements],
@@ -236,8 +239,8 @@ export function QueuedSection({
                   siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode ?? ORIGIN_NOT_RECORDED;
                 const selected = referral.id === selectedId;
                 const priority = getReferralPriority(referral, now);
-                const ready = summary === undefined ? readyUnitCount(referral, units, now) : undefined;
-                const staleOnly = ready === 0 ? staleOnlyUnitCount(referral, units, now) : 0;
+                const ready = summary === undefined ? readyUnitCount(referral, units, now, readyLookup) : undefined;
+                const staleOnly = ready === 0 ? staleOnlyUnitCount(referral, units, now, readyLookup) : 0;
                 const ward = wardArm(referral)?.destination;
                 // Redesign (Josh, 30 Oct 2026): short words, not icons alone; "Locked" is the app's word (F-24).
                 const needs = [

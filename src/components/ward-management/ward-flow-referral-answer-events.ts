@@ -46,9 +46,9 @@ import {
   type ReferralHistoryField,
 } from "@/components/ward-management/ward-model";
 import {
+  bedPlacementAccepted,
   COMMUNITY_DECLINE_REASON_LABELS,
   DECLINE_REASON_LABELS,
-  referralState,
   referralSuburbIsAnswered,
   wardTransferNeedsCoordinator,
 } from "@/components/ward-management/ward-referrals";
@@ -745,6 +745,7 @@ export function reduceReferralAnswerEvent(
         arm.destination,
         unit,
         event.now,
+        state,
       );
       if (suitability.refusal) return reject(state, event, suitability.refusal);
       decision.outcome = "accepted";
@@ -851,9 +852,10 @@ export function reduceReferralAnswerEvent(
             ...(event.clearanceUpdated !== undefined ? { clearanceUpdated: event.clearanceUpdated } : {}),
           }
         : undefined;
+      // M14(b) (D-MCA (Josh, 14 Nov 2026)): a community team's yes does not block a ward's answer.
       if (
         event.destinationKind !== "community_team" &&
-        referralState(referral) === "accepted" &&
+        bedPlacementAccepted(referral) &&
         !(hasClinicalReassessment && addressing.state === "accepted")
       ) {
         return reject(state, event, `referral ${referral.id} has already been accepted elsewhere`);
@@ -1031,6 +1033,7 @@ export function reduceReferralAnswerEvent(
           addressing.destination,
           unit,
           event.now,
+          state,
         );
         if (acceptRefusal.refusal) return reject(state, event, acceptRefusal.refusal);
         decision.overrideFactRecorded = acceptRefusal.overrideApplied;
@@ -1206,7 +1209,8 @@ export function reduceReferralAnswerEvent(
       if (actingRefusal) return reject(state, event, actingRefusal);
       // RB5 (item 16): the same community exemption as `ACCEPT_REFERRAL`'s own guard, above -- a
       // community team may still decline its own arm after a ward or ED has accepted.
-      if (event.destinationKind !== "community_team" && referralState(referral) === "accepted") {
+      // M14(b): only a ward's or an emergency department's yes is "accepted elsewhere".
+      if (event.destinationKind !== "community_team" && bedPlacementAccepted(referral)) {
         return reject(state, event, `referral ${referral.id} has already been accepted elsewhere`);
       }
       if (addressing.state !== "queued") {

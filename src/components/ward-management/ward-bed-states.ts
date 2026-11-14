@@ -1,12 +1,8 @@
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
-import { pulledBedAvailability } from "@/components/ward-management/ward-ready-beds";
+import { readyPartition } from "@/components/ward-management/ward-shared-ready";
 import type { BedRelease, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
-import {
-  numberedReservationBeds,
-  type ReservationReferral as BaseReservationReferral,
-} from "@/components/ward-management/ward-movement-bed-hold";
+import { type ReservationReferral as BaseReservationReferral } from "@/components/ward-management/ward-movement-bed-hold";
 
 /**
  * The ward's bed states, as ruled (R-B-05, 2026-09-04, "option 2"; R-B-09 "Ready, everywhere";
@@ -49,17 +45,6 @@ export type BedStateCounts = {
 
 export type ReservationReferral = BaseReservationReferral | Movement;
 
-/** Named holds not yet taken up by a stay: the same rule the pull gates use (WF-CAP-001). */
-function namedReservationCount(
-  unit: Unit,
-  admissions: readonly Admission[],
-  referrals: readonly ReservationReferral[],
-): number {
-  const movements = referrals.filter((row): row is Movement => "stage" in row);
-  const others = referrals.filter((row): row is BaseReservationReferral => !("stage" in row));
-  return numberedReservationBeds(unit, admissions, movements, others).size;
-}
-
 /**
  * `referrals` is REQUIRED (A16-25, root-cause 3.4, 13 Nov 2026): it used to default to `[]`, so All
  * wards, Statistics, the hub, the ward page, the downtime pack and the leave tracker left it out and
@@ -75,27 +60,15 @@ export function bedStates(
   referrals: readonly ReservationReferral[],
 ): BedStateCounts {
   const capacity = unitCapacity(unit, bedReleases);
-  let livePulled = 0;
-  let seededPulled = 0;
-  for (const admission of admissions) {
-    if (admission.unitId !== unit.id || admission.state !== "pulled") continue;
-    if (admission.movementId === null) seededPulled += 1;
-    else livePulled += 1;
-  }
-  // Clamped to the box each one sits in, so a malformed fixture can never push a box negative or
-  // the four past the ward's beds.
-  const { ready, pulledFromEmpty, pulledFromAvailable } = pulledBedAvailability(unit, livePulled);
-  const named = namedReservationCount(unit, admissions, referrals);
-  const namedFromReady = Math.min(named, ready);
+  // H7 (D-MCA (Josh, 14 Nov 2026)): the Ready arithmetic lives in `readyPartition`, which the fit
+  // checks and the engine read too, so the box and the fit check can never count Ready apart.
+  const { ready, pulledFromEmpty, pulledFromAvailable, seededPulled, named, namedFromReady, beingMadeReady } =
+    readyPartition(unit, admissions, bedReleases, referrals);
   const namedFromClosed = Math.min(named - namedFromReady, capacity.held - pulledFromEmpty);
   const pulledFromOccupied = Math.min(seededPulled, capacity.occupied);
   const occupied = capacity.occupied - pulledFromOccupied;
-  // D-179 item 8: a bed still being made ready is not Ready. Named holds and pulls are taken off
-  // the clean beds first, so a bed already pulled is never also counted as being made ready.
-  const offered = ready - namedFromReady;
-  const beingMadeReady = Math.min(bedsPendingPreparation(unit.id, bedReleases), offered);
   return {
-    ready: offered - beingMadeReady,
+    ready,
     pulled: pulledFromEmpty + pulledFromAvailable + pulledFromOccupied + namedFromReady + namedFromClosed,
     closed: capacity.held - pulledFromEmpty - namedFromClosed + capacity.blocked,
     occupied,
@@ -181,3 +154,9 @@ export const BED_STATE_DETAILS = {
     "Released and still being made ready: not counted as Ready, but a patient can still be pulled into it",
   onLeave: "Already counted in Occupied: held for a patient on leave",
 } as const;
+
+/**
+ * H7 (D-MCA (Josh, 14 Nov 2026)): the shared Ready for the fit checks, re-exported beside
+ * `readyBedsNow` so a screen reaches both from one place.
+ */
+export { sharedReadyLookup } from "@/components/ward-management/ward-shared-ready";
