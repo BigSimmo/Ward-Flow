@@ -1594,6 +1594,21 @@ function candidatesForMovements(
           return [{ type, role, now, referralId: referral.id, unitId: unit.id, actingUnitId: unit.id, bedNumber }];
         }),
       );
+    case "RELEASE_REFERRAL_BED":
+      // M11 (D-210): give back a bed held on an accepted ward arm. One candidate per held bed.
+      return state.referrals.flatMap((referral) =>
+        referral.destinations.flatMap((arm) => {
+          if (
+            arm.state !== "accepted" ||
+            arm.heldBedNumber === undefined ||
+            arm.destination.kind !== "psychiatric_ward"
+          )
+            return [];
+          const unitId = arm.acceptedUnitId ?? arm.destination.unitId;
+          if (unitId === undefined) return [];
+          return [{ type, role, now, referralId: referral.id, unitId, actingUnitId: unitId }];
+        }),
+      );
     case "DECLINE_REFERRAL":
       // Every queued referral crossed with every real decline reason, same "offer every
       // legitimate candidate" reasoning as ACCEPT_REFERRAL above.
