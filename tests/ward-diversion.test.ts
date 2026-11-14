@@ -356,3 +356,61 @@ describe("RELEASE_DIVERTED_BED — build plan item 29 / OA-29", () => {
     expect(next.rejections.at(-1)?.reason).toMatch(/was not diverted/);
   });
 });
+
+describe("other screens honour a recorded diversion (Together-X1b-3, 14 Nov 2026)", () => {
+  it("the ward, ED and coordinator derivations stop saying on the way, and the ward is not asked to confirm arrival", async () => {
+    const { movementStatusLabel, divertedAwaitingRelease, DIVERTED_STATUS_LABEL } =
+      await import("../src/components/ward-management/ward-stage-copy");
+    const { arrivalRows, arrivalTransportLine } =
+      await import("../src/components/ward-management/ward/ward-coming-and-going-rows");
+    const { edReferralStatus } = await import("../src/components/ward-management/ed/ed-referral-status");
+    const { bookTransportBlockedReason, handoverBlockedReason } =
+      await import("../src/components/ward-management/ed/ed-blocked-reasons");
+    const { state: collectedState, movementId, unitId } = collected(seedWardFlowState());
+    const before = movement(collectedState, movementId);
+    expect(divertedAwaitingRelease(before)).toBe(false);
+    expect(movementStatusLabel(before)).toBe("Moving");
+
+    const diverted = divert(collectedState, movementId);
+    expect(diverted.rejections).toHaveLength(0);
+    const after = movement(diverted, movementId);
+    expect(after.stage).toBe("moving");
+    expect(divertedAwaitingRelease(after)).toBe(true);
+    expect(movementStatusLabel(after)).toBe(DIVERTED_STATUS_LABEL);
+
+    const unit = diverted.units.find((candidate) => candidate.id === unitId)!;
+    const [row] = arrivalRows({
+      accepted: [after],
+      beds: [],
+      unit,
+      now: NOW + 8,
+      nameOf: () => "Synthetic",
+      desk: "ward",
+    });
+    expect(row.action).toBeNull();
+    expect(row.lines[0]).toContain(DIVERTED_STATUS_LABEL);
+    expect(arrivalTransportLine(after, NOW + 8).text).toContain(TRANSPORT_WHEREABOUTS[1]);
+
+    const ed = edReferralStatus(after, {
+      acceptedUnitName: unit.name,
+      fallback: "",
+      referredTo: undefined,
+      now: NOW + 8,
+    });
+    expect(ed.line).not.toMatch(/on the way/u);
+    expect(ed.line).toMatch(/diverted/u);
+    expect(ed.steps?.at(-1)?.detail).toBe("Diverted");
+    expect(bookTransportBlockedReason(after)).toMatch(/diverted/u);
+    expect(handoverBlockedReason(after)).toMatch(/diverted/u);
+
+    // Released, the journey is closed and no longer reads as diverted-awaiting-release.
+    const released = wardFlowReducer(diverted, {
+      type: "RELEASE_DIVERTED_BED",
+      role: "coordinator",
+      now: NOW + 9,
+      movementId,
+    });
+    expect(released.rejections).toHaveLength(0);
+    expect(divertedAwaitingRelease(movement(released, movementId))).toBe(false);
+  });
+});

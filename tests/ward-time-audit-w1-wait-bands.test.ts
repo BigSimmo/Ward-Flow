@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from "vitest";
  */
 vi.mock("@/components/ward-management/ward-operational-defaults", async (importOriginal) => {
   const original = await importOriginal<typeof import("@/components/ward-management/ward-operational-defaults")>();
-  return { ...original, LONG_WAIT_MINUTES: 30 * 60, LONG_WAIT_TEXT: "past 30 hours" };
+  return { ...original, LONG_WAIT_MINUTES: 30 * 60, LONG_WAIT_TEXT: "over 30 hours" };
 });
 
 const { WAIT_BANDS } = await import("@/components/ward-management/delays/wait-bands");
@@ -18,7 +18,7 @@ const bandsFor = (waited: number) =>
 
 describe("Delays wait bands follow the long-wait value (T8)", () => {
   it("titles the top band from the value", () => {
-    expect(WAIT_BANDS[0]?.title).toBe("Past 30 hours");
+    expect(WAIT_BANDS[0]?.title).toBe("Over 30 hours");
   });
 
   it("puts every wait in exactly one band, with the top band starting at the value", () => {

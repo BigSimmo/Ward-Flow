@@ -896,10 +896,10 @@ const JOBS: readonly HowTo[] = [
   {
     id: "mha-times",
     topic: "Handover and reports",
-    title: "Why the app does not work out Mental Health Act times",
+    title: "How form times and warnings work",
     keywords: "mha legal form time expiry due calculate detention",
     answer:
-      "Ward Flow never works out Mental Health Act times or expiry. It shows only times someone typed from the paper form, and warns before those typed times using the form warnings in Settings.",
+      "Type each form time from the paper form. Ward Flow shows that time and warns before it, using the form warnings in Settings.",
     desks: EVERY_DESK,
   },
   {

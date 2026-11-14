@@ -287,7 +287,7 @@ export function DecisionBody({ form }: { form: FormApi }) {
       </Row>
       {hasLegalForm(state) ? (
         <Reveal>
-          <Row label="Form and date, as typed" hint="Not legally checked." htmlFor="triage-legal-form">
+          <Row label="Form and date" htmlFor="triage-legal-form">
             <TextInput
               id="triage-legal-form"
               className={styles.mono}

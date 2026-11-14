@@ -7,6 +7,7 @@ import { bedStates, type ReservationReferral } from "@/components/ward-managemen
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { BedRelease, LeaveBed, Site, Unit } from "@/components/ward-management/ward-model";
 import type { Instant } from "@/components/ward-management/ward-clock";
+import { isBedCountStale } from "@/components/ward-management/ward-clinical-values";
 
 /**
  * THE MASTER SEARCH HUB'S PURE LOGIC — one screen to search every ward, emergency department and
@@ -94,13 +95,13 @@ function wardSecurity(unit: Unit): "Open" | "Locked" | "Mixed" {
 }
 
 /**
- * A unit's own ward-confirmed capacity is stale once it is older than that SAME figure's own
- * `staleAfterMinutes` — never a network-wide constant. `unit.allocatable` is the ward's own
+ * A unit's own ward-confirmed capacity is stale once it is older than the one signed bed count time
+ * (`bedCountFresh`, owner ruling 14 Nov 2026, superseding each ward's own `staleAfterMinutes`). `unit.allocatable` is the ward's own
  * confirmation (`CapacitySource: "ward"`), as opposed to `unit.empty`, which is the feed's belief
  * about physical vacancy — so this reads `allocatable`, not `empty`.
  */
 function isStale(unit: Unit, now: Instant): boolean {
-  return now - unit.allocatable.confirmedAt > unit.allocatable.staleAfterMinutes;
+  return isBedCountStale(unit.allocatable.confirmedAt, now);
 }
 
 /**

@@ -122,6 +122,7 @@ describe("authorisation", () => {
       info: true,
       need: true,
       detail: "Involuntary admissions: not stated",
+      authorisation: "not_stated",
     });
   });
 

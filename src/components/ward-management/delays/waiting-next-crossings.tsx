@@ -100,7 +100,7 @@ export function NextCrossings({
             <FileClock size={15} aria-hidden="true" />
           </span>
           <b className={styles.nxSumN}>{forms}</b>
-          <span className={styles.nxSumL}>{forms === 1 ? "legal time as typed" : "legal times as typed"}</span>
+          <span className={styles.nxSumL}>{forms === 1 ? "legal time" : "legal times"}</span>
         </span>
       </div>
       {list.length === 0 ? (

@@ -7,6 +7,7 @@ import { SAMPLE_OBSERVATION_MIX_LABEL } from "@/components/ward-management/ward-
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
 import { WardPackPrintedLine } from "./ward-pack-printed-line";
 import styles from "./ward-hero-top-parts.module.css";
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 
 /** Count label "Label · window" (shared parts spec 2): the kit's window word, in the hero's quiet ink. */
 function windowed(label: string, window: Parameters<typeof WindowWord>[0]["word"]) {
@@ -154,7 +155,7 @@ export function wardHeroTopParts({
           label: "Stale counts",
           value: staleCount,
           tone: bedCountsStale ? "warning" : undefined,
-          ariaLabel: `Bed counts older than ${durMinutes(unit.allocatable.staleAfterMinutes)}: ${staleCount}`,
+          ariaLabel: `Bed counts older than ${durMinutes(CLINICAL_VALUES.bedCountFresh.value)}: ${staleCount}`,
         },
         {
           id: "obs",

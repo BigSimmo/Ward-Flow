@@ -473,7 +473,7 @@ describe("finding 3 — a statutory deadline must carry its day and its breach s
     expect(screen.queryByRole("button", { name: /legal & forms/i })).toBeNull();
     const legalPanel = screen.getByTestId("ward-console-legal-panel");
     // D-93 (31 Oct 2026): the typed time in words, never a count.
-    expect(within(legalPanel).getByText(/ends 15:42 as typed/)).toBeInTheDocument();
+    expect(within(legalPanel).getByText(/ends 15:42/)).toBeInTheDocument();
     expect(within(legalPanel).queryByText(/overdue/i)).toBeNull();
 
     // Readiness states the verdict and points at the panel above. It must not carry a second copy
@@ -486,13 +486,13 @@ describe("finding 3 — a statutory deadline must carry its day and its breach s
     fireEvent.click(screen.getByTestId("test-advance-clock"));
 
     // The breach still says so in words with its day-and-time, never "50m overdue" (D-93).
-    expect(within(legalPanel).getByText(/ended 15:42 as typed/)).toBeInTheDocument();
+    expect(within(legalPanel).getByText(/ended 15:42/)).toBeInTheDocument();
     expect(within(legalPanel).queryByText(/overdue/i)).toBeNull();
     // And the breach reaches the reader who is scanning rather than reading: the attention rail
     // carries the typed time, and Readiness says the deadline has passed and where to read it.
     expect(within(readiness).getByText("Recorded. Deadline passed.")).toBeInTheDocument();
     const rail = screen.getByTestId("ward-console-attention");
-    expect(within(rail).getByText(/ended 15:42 as typed/)).toBeInTheDocument();
+    expect(within(rail).getByText(/ended 15:42/)).toBeInTheDocument();
     expect(within(rail).queryByText(/50m overdue/)).toBeNull();
   });
 });

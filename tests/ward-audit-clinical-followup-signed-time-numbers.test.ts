@@ -78,7 +78,7 @@ describe("M16 follow-up: signed as they were, and read by the screens", () => {
       ["4 to 8 hours", 240],
       ["8 to 12 hours", 480],
       ["12 to 24 hours", 720],
-      ["Past 24 hours", 1440],
+      ["Over 24h", 1440],
     ]);
     const day = new Date("2026-10-24T00:00:00.000Z");
     const born = (years: number) => `${2026 - years}-01-01`;

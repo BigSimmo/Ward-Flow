@@ -234,3 +234,16 @@
   align-items: center;
   gap: var(--wf-s-2);
 }
+
+/* INV-PRINT-025: the global print rule hides every button, and a group row is one. On paper it is a
+   plain heading carrying the group's title and people, with the "Show each" control left out. */
+@media print {
+  .kindHead {
+    display: flex !important;
+    cursor: auto;
+  }
+
+  .kindOpen {
+    display: none;
+  }
+}

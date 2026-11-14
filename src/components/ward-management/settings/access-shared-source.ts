@@ -235,6 +235,11 @@ export type RecordOpening = {
   readonly recordId: string;
   readonly surface: string;
   readonly at: Instant | null;
+  /**
+   * R-FIGS-13: the break glass reason id when the record was opened through break glass, null when
+   * it was opened inside the desk's own scope, undefined when the server did not say.
+   */
+  readonly breakGlassReason?: string | null;
 };
 
 export type SharedRecordViewSource = {
@@ -253,6 +258,9 @@ function sharedRecordOpening(row: SharedRecordView, now: Instant): RecordOpening
     recordId: row.patient_id,
     surface: row.surface,
     at: typeof row.minutes === "number" ? now + row.minutes : null,
+    ...(row.break_glass_reason === undefined
+      ? {}
+      : { breakGlassReason: typeof row.break_glass_reason === "string" ? row.break_glass_reason : null }),
   };
 }
 

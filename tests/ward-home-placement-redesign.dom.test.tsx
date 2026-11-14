@@ -262,20 +262,22 @@ describe("Placement panel redesign", () => {
     const now = dueAt! + 3413;
     const panel = renderPanel({ movementId: ACCEPTED_ID, nowOverride: now });
     // The legal line under the patient (the "Why this wait" factors also name the deadline).
+    // D-218 (Josh, 14 Nov 2026): the tag is gone; the line is the shortlist's legal line.
     const line = within(panel)
-      .getAllByText(/ended .+ as typed/u)
-      .find((candidate) => within(candidate).queryByTestId("legal-limits-not-checked"));
-    expect(line, "the legal line lost its not-legally-checked tag").toBeDefined();
+      .getAllByText(/ended .+/u)
+      .find((candidate) => candidate.textContent?.includes(" · ended"));
+    expect(line, "the legal line is missing").toBeDefined();
+    expect(within(panel).queryByTestId("legal-limits-not-checked")).toBeNull();
     if (!line) return;
     // Two days on, the typed time carries its Perth date from the board's day 0, never an age (D1, D-93).
     const [formName] = formTimeAsTyped(movement.legalForm!, now, undefined).split(" · ");
     expect(line).toHaveTextContent(`${formName} · ended`);
-    expect(line.textContent).toMatch(/ended \w{3} \d{1,2} \w{3} \d{2}:\d{2} as typed/u);
+    expect(line.textContent).toMatch(/ended \w{3} \d{1,2} \w{3} \d{2}:\d{2}/u);
     expect(line.textContent).not.toMatch(/\bago\b|earlier day/u);
     expect(line).not.toHaveTextContent(splitDuration(3413));
     expect(line.textContent).not.toMatch(/\d+ min ago/u);
-    // Owner rule D5: wherever a legal limit shows, it says it was not legally checked.
-    expect(within(line).getByTestId("legal-limits-not-checked")).toBeInTheDocument();
+    // D-218 (Josh, 14 Nov 2026): the not-legally-checked tag is gone.
+    expect(line.textContent).not.toMatch(/legally checked/u);
   });
 
   // Home redesign (30 Oct 2026): the checks summary is stated once, in words, on the eligibility

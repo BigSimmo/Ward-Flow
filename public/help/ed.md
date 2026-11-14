@@ -16,7 +16,6 @@ My ED board
 
 - The board never re-sorts the queue. It stays longest wait first.
 - You cannot accept for a ward or place a patient.
-- The app never works out Mental Health Act times. It shows only times someone typed from the paper form.
 
 ## Colour code
 

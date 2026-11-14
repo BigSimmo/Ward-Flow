@@ -78,7 +78,13 @@ describe("capacity labels say what each figure counts", () => {
       rows.reduce((sum, row) => sum + row.pulled, 0),
       "no bed is pulled — this guard proved nothing",
     ).toBeGreaterThan(0);
-    expect(screen.getByTestId("capacity-hero-occupancy")).toHaveTextContent(/In use · now, including pulled beds$/u);
+    // R-STRUCT-42 (Josh, 14 Nov 2026): the 90% and 98% bands are drawn under the figure, with their words.
+    // The hidden pulled-beds words come last, so the link's visible words stay in one run in its name.
+    expect(screen.getByTestId("capacity-hero-occupancy")).toHaveTextContent(
+      /In use · now(Under|In) the (90|98)% band, including pulled beds$/u,
+    );
+    const bands = screen.getByTestId("capacity-occupancy-bands");
+    expect(["green", "yellow", "red"]).toContain(bands.dataset.band);
   });
 
   it("Referrals band shows its total, cells that add up to it, and locked as a part", () => {

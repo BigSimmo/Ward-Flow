@@ -29,6 +29,7 @@ import {
   Spinner,
 } from "./front-door-parts";
 import styles from "./front-door.module.css";
+import { WARD_TIME_ZONE } from "@/lib/ward-time-zone";
 
 /**
  * Readiness review item 12: a new or recovered password is a passphrase of at least this length,
@@ -728,13 +729,13 @@ function perthClock(now: number) {
     hour: "2-digit",
     minute: "2-digit",
     hourCycle: "h23",
-    timeZone: "Australia/Perth",
+    timeZone: WARD_TIME_ZONE,
   });
   const date = new Date(now).toLocaleDateString("en-AU", {
     weekday: "long",
     day: "numeric",
     month: "long",
-    timeZone: "Australia/Perth",
+    timeZone: WARD_TIME_ZONE,
   });
   return { time, date };
 }

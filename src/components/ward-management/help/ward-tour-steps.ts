@@ -404,7 +404,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
             sel: '[data-testid^="ward-ed-form-pick-"], span:has(> [aria-hidden="true"] + [data-testid^="ward-ed-form-expiry-"])',
           },
           "The legal form",
-          "The Form column shows the form recorded for each person. Choose it to change the form. In the row's menu, Mark Form 1A received and Record expiry from the form let the receiving ward and transport see it. The time is as typed from the paper form.",
+          "The Form column shows the form recorded for each person. Choose it to change the form. In the row's menu, Mark Form 1A received and Record expiry from the form let the receiving ward and transport see it.",
         ),
         step(
           "Your daily work",

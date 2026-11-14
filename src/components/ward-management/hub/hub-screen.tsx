@@ -77,6 +77,7 @@ import {
   usePinnedHubIds,
 } from "@/components/ward-management/hub/hub-browser-memory";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
+import { usePrinting } from "@/components/ward-management/use-printing";
 
 import { useWardFormSave } from "../use-ward-form-save";
 import styles from "./hub.module.css";
@@ -115,6 +116,8 @@ import {
 
 export function HubScreen() {
   usePrintableDisclosures();
+  // INV-PRINT-026: paper lists every place, as if every fold were open.
+  const printing = usePrinting();
   const {
     units,
     bedReleases,
@@ -504,7 +507,7 @@ export function HubScreen() {
 
   /** A fold row (a ward service) and its list with Show more. */
   function renderFold(key: string, label: string, meta: string, entries: HubEntry[], openByDefault: boolean) {
-    const open = searching || openByDefault !== flipped.has(key);
+    const open = printing || searching || openByDefault !== flipped.has(key);
     return (
       <div key={key}>
         <h3 className={styles.subGroupHead}>
@@ -530,7 +533,7 @@ export function HubScreen() {
 
   /** In All, a section (EDs or teams) whose heading is its own fold row, with the count once. */
   function renderSectionFold(key: string, label: string, entries: HubEntry[]) {
-    const open = searching || flipped.has(key);
+    const open = printing || searching || flipped.has(key);
     return (
       <section key={key} aria-label={label} className={styles.group}>
         <div className={styles.groupHeadRow}>

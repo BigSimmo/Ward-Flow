@@ -61,3 +61,47 @@ describe("Broadcasts view: live, then earlier", () => {
     expect(within(earlier).getByText(/Warning · Metro adult wards · stood down/)).toBeInTheDocument();
   });
 });
+
+// Together-X2-6 (master stress test, 14 Nov 2026): a ward's Broadcasts tab offered Extend, Add desks
+// and Stand down (coordinator and site bed manager steps) and no Acknowledge.
+describe("the live card offers each desk only its own steps", () => {
+  it("shows Acknowledge and no lifecycle steps when only acknowledging is given", async () => {
+    const { BroadcastLiveCard } = await import("@/components/ward-management/alerts/broadcast-live-card");
+    const acknowledge = vi.fn();
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <BroadcastLiveCard
+          alert={{
+            id: "BCAST-SYN-1",
+            kind: "directive",
+            title: "Synthetic directive",
+            message: "Review discharges.",
+            severity: "warning",
+            category: "capacity_gridlock",
+            targetScope: "all",
+            targetScopeLabel: "All units",
+            durationMinutes: 120,
+            dispatchedAt: NOW_ANCHOR,
+            expiresAt: NOW_ANCHOR + 120,
+            dispatchedByRole: "coordinator",
+            dispatchedByName: "Desk",
+            status: "active",
+            acknowledgedUnits: [],
+          }}
+          units={[]}
+          now={NOW_ANCHOR}
+          sentByYou={false}
+          acknowledgements={{ acknowledged: 0, of: 1 }}
+          onCopyAnswers={() => {}}
+          onAcknowledge={acknowledge}
+        />
+      </WardFlowProvider>,
+    );
+    const card = screen.getByLabelText("Current broadcast");
+    expect(within(card).queryByRole("button", { name: /Extend/ })).not.toBeInTheDocument();
+    expect(within(card).queryByRole("button", { name: /Add desks/ })).not.toBeInTheDocument();
+    expect(within(card).queryByRole("button", { name: "Stand down this alert" })).not.toBeInTheDocument();
+    fireEvent.click(within(card).getByRole("button", { name: /Acknowledge/ }));
+    expect(acknowledge).toHaveBeenCalledOnce();
+  });
+});

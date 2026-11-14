@@ -3,7 +3,6 @@ import { act, cleanup, fireEvent, render, screen, within } from "@testing-librar
 
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
 import { legalFormGroupRows } from "@/components/ward-management/legal-forms/legal-forms-derivations";
-import { TYPED_TIME_KEY } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -39,9 +38,10 @@ afterEach(() => {
 });
 
 describe("Legal forms redesign, coordinator desk", () => {
-  it("shows the colour key, counts that name their noun and the next form to end", () => {
+  it("shows no legal caveat, counts that name their noun and the next form to end", () => {
     renderScreen();
-    expect(screen.getByText(TYPED_TIME_KEY)).toBeInTheDocument();
+    // D-218 (Josh, 14 Nov 2026): the "Not legally checked" colour key is gone.
+    expect(screen.queryByText(/legally checked|as typed/iu)).toBeNull();
     // Page tops (9 Nov 2026): the top's figures highlight rows; each label names what it counts.
     expect(screen.getByRole("button", { name: /^\d+ within \d+/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^\d+ no time written$/u })).toBeInTheDocument();

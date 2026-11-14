@@ -494,8 +494,8 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
                     Paper authority checked for this admission
                   </label>
                   <p>
-                    Record an actual clinician-authorised order. No legal expiry or authority is calculated. A CTO
-                    requires a recorded community clinician and appointment.
+                    Record an actual clinician-authorised order. A CTO requires a recorded community clinician and
+                    appointment.
                   </p>
                 </>,
                 (d) => ({

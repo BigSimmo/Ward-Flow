@@ -54,8 +54,8 @@ export function WardBedListPrint({
       <div className={styles.head}>
         <h2 className={styles.title}>{unit.name} bed list</h2>
         <p className={styles.meta}>
-          As at {formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone })}. {beds.length} beds. Legal times
-          are as typed from the form, not legally checked. Synthetic data.
+          As at {formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone })}. {beds.length} beds. Synthetic
+          data.
         </p>
       </div>
       <table className={styles.table}>
@@ -142,5 +142,5 @@ function formEnd(bed: WardScreenBed, now: Instant, dayZero: Date): string {
   // The label names the form to record next when this one has ended, so its old time is history.
   if (!bed.legalStatusLabel?.startsWith(`Form ${form.code}`)) return "";
   // A dated time, never "tomorrow": the paper copy may be read days later.
-  return `${isClockBreached(form.dueAt, now) ? "Ended" : "Ends"} ${formatSheetMoment(form.dueAt, dayZero)} as typed`;
+  return `${isClockBreached(form.dueAt, now) ? "Ended" : "Ends"} ${formatSheetMoment(form.dueAt, dayZero)}`;
 }

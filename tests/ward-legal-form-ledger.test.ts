@@ -56,7 +56,7 @@ describe("typed ledger fields", () => {
       legalFormExpiryHistory: history,
     });
     expect(extensionsOfCurrentForm(current)).toBe(1);
-    expect(extendedWord(current)).toBe("Once, as typed");
+    expect(extendedWord(current)).toBe("Once");
     expect(extendedWord(move({}))).toBeUndefined();
   });
 

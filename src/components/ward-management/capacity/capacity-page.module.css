@@ -2899,6 +2899,46 @@ button.helpLink {
   color: var(--wf-hero-ink-3);
   font-weight: 400;
 }
+/* R-STRUCT-42: the 90% and 98% occupancy bands under In use. */
+.occBands {
+  display: block;
+  margin-top: var(--wf-s-1);
+  color: var(--wf-hero-ink-3);
+  font-weight: 400;
+}
+.occBandsTrack {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-width: 6rem;
+  height: 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--wf-hero-ink-3) 30%, transparent);
+  overflow: hidden;
+}
+.occBandAmber,
+.occBandRed,
+.occBandMark {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+.occBandAmber {
+  background: var(--wf-hero-warning);
+}
+.occBandRed {
+  background: var(--wf-hero-danger);
+}
+.occBandMark {
+  width: 2px;
+  margin-left: -1px;
+  background: var(--wf-hero-ink);
+}
+.occBandsWords {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--wf-fs-12);
+}
 /* A count label's window word (the kit's WindowWord) in the hero's quiet ink. */
 .winWord[data-wf-window] {
   color: var(--wf-hero-ink-3);

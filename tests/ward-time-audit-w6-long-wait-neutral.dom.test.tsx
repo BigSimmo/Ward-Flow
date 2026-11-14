@@ -130,7 +130,7 @@ describe("waits past 24 hours read neutral (T5)", () => {
     const act = screen.getByRole("region", { name: "Longest waits to act on" });
     expect(act.querySelector('[data-tone="danger"]')).toBeNull();
     expect(act.querySelector('[data-tone="warning"]')).not.toBeNull();
-    expect(screen.getByText(/Amber is 12 to 24h, grey past 24h\./u)).toBeInTheDocument();
+    expect(screen.getByText(/Amber is 12 to 24h, grey over 24h\./u)).toBeInTheDocument();
     fireEvent.click(act.querySelector('button[data-band="3"]')!);
     expect(onShowPeople).toHaveBeenCalledWith(expect.objectContaining({ tone: undefined }));
   });
@@ -152,7 +152,7 @@ describe("waits past 24 hours read neutral (T5)", () => {
     );
     const summary = screen.getByRole("group", { name: "Summary and filters" });
     expect(summary.querySelector('[data-tone="danger"]')).toBeNull();
-    expect(within(summary).getByText("Past 24h")).toBeInTheDocument();
+    expect(within(summary).getByText("Over 24h")).toBeInTheDocument();
   });
 
   it("names no amber past-24h mark on the Statistics map's ED lens; 48 hours keeps its triangle", () => {
@@ -166,7 +166,7 @@ describe("waits past 24 hours read neutral (T5)", () => {
     expect(key).not.toHaveTextContent(/past 24h/u);
     expect(key).toHaveTextContent("Triangle: over 48h.");
     const headline = screen.getByTestId("ward-statistics-map-headline");
-    const past24 = within(headline).getByText("Past 24h");
+    const past24 = within(headline).getByText("Over 24h");
     expect(past24.querySelector("svg")).toBeNull();
   });
 });

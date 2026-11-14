@@ -18,6 +18,7 @@ import { describe, expect, it } from "vitest";
 
 import { GENDER_PLACEMENT_REASONS } from "@/components/ward-management/ward-change-reasons";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { withFreshBedCounts } from "./helpers/fresh-bed-counts";
 import { stageReachedAt } from "@/components/ward-management/ward-management-console";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -41,7 +42,7 @@ const t = (offset: number): Instant => NOW_ANCHOR + offset;
 
 describe("stageReachedAt reports the current visit, not the first one ever", () => {
   it("dates a re-reached stage from the LATEST transition, not a withdrawn earlier one", () => {
-    let state = seedWardFlowState();
+    let state = withFreshBedCounts(seedWardFlowState());
 
     // T12 (item 9, owner answer 17 September 2026): WF-012 is Non-binary, so referring it needs a
     // reason and a recorded ward check — the fixture predates T12 and never carried either.

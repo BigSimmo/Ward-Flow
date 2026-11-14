@@ -8,7 +8,7 @@ One emergency department's mental health patients, each row with its next step.
 
 1. This ED. Who is waiting here and who is in transit.
 2. Each row's next step. The button is the row's next step, such as Record exam or Log transport booking.
-3. Legal form. The form on file. Type any expiry time from the paper form; nothing works it out.
+3. Legal form. The form on file. Type any expiry time from the paper form.
 4. New referrals. Referrals waiting at this ED. Ask for a bed starts a bed request.
 5. Add patient. Add patient registers a new synthetic person. On a phone it is under the plus button.
 

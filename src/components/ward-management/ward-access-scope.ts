@@ -32,9 +32,18 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Admission, PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { TYPED_TEXT_NOT_KEPT } from "@/components/ward-management/ward-flow-demo-storage-constants";
 import { STAGE_TRANSITION_BLOCKERS } from "@/components/ward-management/ward-flow-reducer";
-import type { BedRelease, LeaveBed, Movement, Notice, Referral, Unit } from "@/components/ward-management/ward-model";
+import type {
+  BedRelease,
+  LeaveBed,
+  Movement,
+  Notice,
+  ReadyCounts,
+  Referral,
+  Unit,
+} from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { seatReplayOrder, seatStart } from "@/components/ward-management/ward/ward-bed-layout";
+import { readyPartition } from "@/components/ward-management/ward-shared-ready";
 import {
   edInScope,
   unitInScope,
@@ -73,6 +82,8 @@ export type ScopableWorkspace = {
   readonly notices: readonly Notice[];
   readonly units: readonly Unit[];
   readonly edDepartments?: readonly { readonly id: string; readonly siteCode: string }[];
+  /** Read only to work out the Ready counts of wards outside the desk's records (`withReadyOutOfView`). */
+  readonly bedReleases?: readonly BedRelease[];
 };
 
 /** A break glass grant: one patient, read only, until a time. */
@@ -896,6 +907,55 @@ function edReferralCopy(referral: Referral): Referral {
   };
 }
 
+/** Desks sent their own wards' stays, releases and named holds whole; every other desk is sent none. */
+const WHOLE_OWN_WARD_ROLES: ReadonlySet<WardAccess["role"]> = new Set([
+  "coordinator",
+  "executive",
+  "bed_manager",
+  "ward",
+]);
+
+/**
+ * Josh, 14 Nov 2026 ("all screens align"; Demo-Rules-RV2-17): "Beds ready now" read 24 on the ED,
+ * community and Transport desks and 23 on the coordinator's, because those desks are not sent the
+ * bed being made ready (a released stay's record) or other desks' named holds and pulls, so the
+ * one rule (`readyPartition`) ran on less. Each ward whose records the desk is not sent now carries
+ * its partition, worked out here from the whole workspace: seven counts, nothing about a person or
+ * a record. The desk's own wards are left to its own records, so its own changes show at once.
+ */
+function withReadyOutOfView(
+  units: readonly Unit[],
+  whole: ScopableWorkspace,
+  wholeRecordsSent: (unitId: string) => boolean,
+): readonly Unit[] {
+  const releases = whole.bedReleases;
+  if (releases === undefined) return units;
+  const holds = [...whole.movements, ...whole.referrals];
+  return units.map((unit) => {
+    if (wholeRecordsSent(unit.id)) return unit;
+    const counts = readyPartition(unit, whole.admissions, releases, holds);
+    const staysOnly = readyPartition(unit, whole.admissions, releases, []);
+    // The same object while the counts hold, so a desk's steady lists do not redraw every ward.
+    const before = readyOutOfViewCopies.get(unit);
+    if (
+      before?.readyOutOfView &&
+      before.readyOutOfViewStaysOnly &&
+      sameReadyCounts(before.readyOutOfView, counts) &&
+      sameReadyCounts(before.readyOutOfViewStaysOnly, staysOnly)
+    )
+      return before;
+    const copy = { ...unit, readyOutOfView: counts, readyOutOfViewStaysOnly: staysOnly };
+    readyOutOfViewCopies.set(unit, copy);
+    return copy;
+  });
+}
+
+const readyOutOfViewCopies = new WeakMap<Unit, Unit>();
+
+function sameReadyCounts(a: ReadyCounts, b: ReadyCounts): boolean {
+  return (Object.keys(a) as (keyof ReadyCounts)[]).every((key) => a[key] === b[key]);
+}
+
 /**
  * F-150 (audit G FS-4): a ward's bed numbers come from replaying all its stays (`wardStaySeats`).
  * A desk not sent some of an own ward's stays (a ward desk drops a departed stay after its hand-off
@@ -1394,7 +1454,11 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
 
   return {
     ...workspace,
-    units: withSeatHistory(workspace.units, workspace.admissions, admissions, unitIn),
+    units: withReadyOutOfView(
+      withSeatHistory(workspace.units, workspace.admissions, admissions, unitIn),
+      workspace,
+      (unitId) => WHOLE_OWN_WARD_ROLES.has(access.role) && unitIn(unitId),
+    ),
     movements,
     referrals,
     admissions,

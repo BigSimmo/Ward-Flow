@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { etaPresetText } from "../src/components/ward-management/patients/patient-now-records";
+import { clock, etaPresetText } from "../src/components/ward-management/patients/patient-now-records";
 
 describe("ETA preset text", () => {
   it("writes an ordinary time without a day", () => {
@@ -17,5 +17,13 @@ describe("ETA preset text", () => {
   it("works on later demo days too", () => {
     expect(etaPresetText(1440 + 600, 15)).toBe("10:15");
     expect(etaPresetText(1440 + 1435, 15)).toBe("00:10 tomorrow");
+  });
+});
+
+describe("clock face for instants past one day", () => {
+  it("wraps to a 24-hour face, never 680:51", () => {
+    expect(clock(680 * 60 + 51)).toBe("08:51");
+    expect(clock(1440 + 59)).toBe("00:59");
+    expect(clock(545)).toBe("09:05");
   });
 });

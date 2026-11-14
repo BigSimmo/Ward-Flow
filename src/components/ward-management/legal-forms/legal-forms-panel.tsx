@@ -306,7 +306,7 @@ export function FocusPanel({
                           ? fact.gap === "written"
                             ? `Written ${typedClock(fact.at, now, dayZero)} on the form`
                             : fact.gap === "received" && movement.legalFormReceivedTyped
-                              ? `${typedClock(fact.at, now, dayZero)}, as typed`
+                              ? typedClock(fact.at, now, dayZero)
                               : formatInstantWithDay(fact.at, now)
                           : fact.gap === "examination"
                             ? "Not recorded. Recorded on the ED screen"

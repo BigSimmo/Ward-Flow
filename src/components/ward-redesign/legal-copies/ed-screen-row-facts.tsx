@@ -27,7 +27,6 @@ import { EdMedicalPlacementControls } from "@/components/ward-management/ed/ed-m
 import type { EdBoardRowModel } from "@/components/ward-management/ed/ed-screen-board-row";
 import type { EdScreenContext } from "@/components/ward-management/ed/ed-screen-context";
 import { formExpiryWithName } from "./ed-form-expiry";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { examinationOutcomeShort } from "@/components/ward-management/ward-legal-forms";
 import { edStageLabel } from "@/components/ward-management/ed/ed-referral-status";
 import styles from "@/components/ward-management/ed/ed.module.css";
@@ -421,21 +420,7 @@ export function renderEdRowExpandedCards(row: EdBoardRowModel, ctx: EdScreenCont
           </div>
           <div>
             <dt>Legal</dt>
-            <dd>
-              {movement.legalForm ? (
-                <>
-                  {formExpiryWithName(movement.legalForm, now)}
-                  {movement.legalForm.dueAt !== undefined ? (
-                    <>
-                      {" "}
-                      <LegalLimitsNotChecked variant="tag" />
-                    </>
-                  ) : null}
-                </>
-              ) : (
-                movement.legalStatus
-              )}
-            </dd>
+            <dd>{movement.legalForm ? <>{formExpiryWithName(movement.legalForm, now)}</> : movement.legalStatus}</dd>
           </div>
           <div>
             <dt>Plan</dt>

@@ -476,7 +476,7 @@ export function EdClinicalTvView({
         items={[
           { label: "waiting", value: rows.length },
           {
-            label: `past ${targetHours} hours`,
+            label: `over ${targetHours} hours`,
             value: rows.filter((row) => row.band === "over").length,
             tone: "danger",
           },

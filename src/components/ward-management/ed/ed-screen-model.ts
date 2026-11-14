@@ -4,7 +4,6 @@ import { recordedMovementMedicalClearance } from "../ward-medical-clearance";
 import { queueWaitThresholds } from "@/components/ward-management/coordinator/priority-queue";
 import { transportLeg } from "@/components/ward-management/ward-derivations";
 import {
-  clockState,
   type DueSoonThresholds,
   formatElapsed,
   type Instant,
@@ -15,7 +14,7 @@ import {
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { examinationOutcomeShort, legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { FORM_RECORDED_ENDED } from "@/components/ward-management/ward-legal-form-ended";
-import { currentLegalDueAt, currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
+import { currentLegalPosition, currentLegalStanding } from "@/components/ward-management/ward-legal-form-progression";
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import {
@@ -608,23 +607,37 @@ export function formExpiryLine(legalForm: LegalForm, now: Instant, dayZero?: Dat
 
 /**
  * A warning beside the expiry line, never a block — nothing on this screen may disable a control
- * because of it. Reuses `clockState`'s thresholds, the same ones already applied to Form 4A/4C
- * elsewhere on this screen, so "close" and "past" carry the same meaning everywhere they appear.
- * Returns `undefined` well clear of the expiry, or when none is recorded, so the caller renders no
- * warning row rather than an empty one.
+ * because of it. Reads the one band rule every legal screen uses (`currentLegalStanding`, D-210
+ * (Josh, 14 Nov 2026), ruling 3), so "Act now", "close" and "past" mean here what they mean on
+ * Forms, Delays and the TV. Returns `undefined` well clear of the expiry, or when none is recorded
+ * (or the form was recorded ended), so the caller renders no warning row rather than an empty one.
  */
 export function formExpiryWarning(
   legalForm: LegalForm,
   now: Instant,
   thresholds: DueSoonThresholds,
 ): string | undefined {
-  // A form a person recorded as ended raises no expiry warning (1.1): its typed end is history.
-  const dueAt = currentLegalDueAt({ legalForm });
-  if (dueAt === undefined) return undefined;
-  const state = clockState(dueAt, now, thresholds);
-  if (state === "breached") return "Warning: past the expiry written on the form. Check the form.";
-  if (state === "critical" || state === "due") return "Warning: the expiry written on the form is close.";
+  const standing = currentLegalStanding({ legalForm }, now, thresholds);
+  if (standing === "passed") return "Warning: past the expiry written on the form. Check the form.";
+  // Master stress test RV1a-1 (14 Nov 2026): within the urgent warning reads "Act now", in words as
+  // well as red, so 59 minutes never reads the same as nearly 3 hours.
+  if (standing === "urgent") return "Act now: the expiry written on the form is close.";
+  if (standing === "soon") return "Warning: the expiry written on the form is close.";
   return undefined;
+}
+
+/**
+ * The colour of that warning, from the same band rule: red ("danger") within the Settings urgent
+ * warning and once the typed time has passed, amber ("warning") within the soon warning, and
+ * `undefined` when no warning shows.
+ */
+export function formExpiryLevel(
+  legalForm: LegalForm,
+  now: Instant,
+  thresholds: DueSoonThresholds,
+): "danger" | "warning" | undefined {
+  const standing = currentLegalStanding({ legalForm }, now, thresholds);
+  return standing === "passed" || standing === "urgent" ? "danger" : standing === "soon" ? "warning" : undefined;
 }
 
 /**

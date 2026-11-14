@@ -22,7 +22,13 @@ import {
 } from "@/components/wf";
 
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
-import { formatInstantWithDay, MINUTES_PER_DAY, pastInstantFromClockText, type Instant } from "../ward-clock";
+import {
+  formatInstantWithDay,
+  MINUTES_PER_DAY,
+  pastInstantFromClockText,
+  splitDuration,
+  type Instant,
+} from "../ward-clock";
 import { useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
 import type { Unit } from "../ward-model";
@@ -209,11 +215,6 @@ export function SeclusionFormsView({
 
   return (
     <div className={styles.view} data-testid="seclusion-forms-view">
-      {/* The scope note stays first: it is the view's safety line (page tops, 9 Nov 2026: a slim line, no card). */}
-      <p className={styles.scopeNote} data-testid="seclusion-scope-note">
-        Operational view only. Times as typed. No order length, review time or legal limit is worked out. The legal
-        register stays in the health service&apos;s own system.
-      </p>
       {live.length === 0 ? (
         // Nothing in use: the page top says so ("None recorded as in use") and holds Start.
         <p className={styles.srOnly} data-testid="seclusion-live-empty">
@@ -239,7 +240,7 @@ export function SeclusionFormsView({
                     <StatusGlyph tone="danger" size={8} /> {restrictivePracticeLabel(row.episode.practice)}
                   </span>
                   <span className={styles.detail}>
-                    Started {formatInstantWithDay(row.episode.startedAt, now)} as typed · {row.episode.recordedBy}
+                    Started {formatInstantWithDay(row.episode.startedAt, now)} · {row.episode.recordedBy}
                   </span>
                 </span>
                 {mayRecord ? (
@@ -269,7 +270,7 @@ export function SeclusionFormsView({
                     <span className={styles.name}>{row.unit.name}</span>
                     <span className={styles.detail}>
                       {row.recorded
-                        ? `Marked by ${row.recorded.by}, ${formatInstantWithDay(row.recorded.at, now)}`
+                        ? `Marked by ${row.recorded.by}, ${formatInstantWithDay(row.recorded.at, now)} · ${splitDuration(Math.max(0, now - row.recorded.at))} ago`
                         : "Nobody has marked it yet"}
                     </span>
                   </span>
@@ -409,7 +410,7 @@ function StartDialog({
       open
       onClose={onClose}
       title="Start seclusion or restraint"
-      description="Record the time it started, as written. Nothing is worked out from it."
+      description="Record the time it started."
       size="md"
       secondary={[{ label: "Cancel", onAction: onClose }]}
       primary={{
@@ -503,7 +504,7 @@ function EndDialog({
       open
       onClose={onClose}
       title={`Record end of ${restrictivePracticeLabel(row.episode.practice).toLowerCase()}`}
-      description={`${row.name} · ${row.unit.name} · started ${formatInstantWithDay(row.episode.startedAt, now)} as typed`}
+      description={`${row.name} · ${row.unit.name} · started ${formatInstantWithDay(row.episode.startedAt, now)}`}
       size="sm"
       secondary={[{ label: "Cancel", onAction: onClose }]}
       primary={{

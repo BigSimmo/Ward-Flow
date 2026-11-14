@@ -112,7 +112,7 @@ const REGISTER_ON = new Set([
 const REGISTER_OFF = new Set(["sjgs-adult-open", "sjgs-adult-secure"]);
 const expectedLabel = (id: string) =>
   REGISTER_ON.has(id)
-    ? "Involuntary admissions: authorised (Chief Psychiatrist register, 7 Sep 2026)"
+    ? "Involuntary admissions: authorised for the hospital (Chief Psychiatrist register, 7 Sep 2026), ward not checked"
     : REGISTER_OFF.has(id)
       ? "Involuntary admissions: not on the authorised register (7 Sep 2026)"
       : "Involuntary admissions: not stated";
@@ -151,6 +151,7 @@ describe("D-189 items 8(a) and 9(a): no placement path refuses or warns because 
         info: true,
         need: true,
         detail: expectedLabel(unit.id),
+        authorisation: unitAuthorisation(unit),
       });
 
       // Held-bed refusals (handover, transport, collection, arrival, restore pull).

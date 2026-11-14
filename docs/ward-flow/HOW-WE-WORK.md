@@ -246,6 +246,10 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
      build fails only routes your PR grew. A bot opens one issue asking for a trim
      (`ward-flow-budget-heal.yml`; [PUBLIC-CI](PUBLIC-CI.md#phone-script-budget-on-a-moving-main)).
      It never raises a limit. A person decides any raise (5 November 2026).
+- **Speed target (Josh, 14 November 2026, R-STYLE-16).** Home should appear within 4 seconds on a weak
+  mobile signal. It does not block the demo and is not a CI gate: it is a target to measure by hand,
+  and a slower Home is a reason to look, not a reason to stop a release. It sits beside the phone
+  size limits above, which are the only speed-related check CI runs.
 
 ## 7. Model tiers for helpers and reviews
 

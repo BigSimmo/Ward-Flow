@@ -289,7 +289,7 @@ describe("one current legal position: behaviour", () => {
     expect(endColumn).toBe(formColumn + 1);
     const live = edExportLines([examined()], ctx)[1]!;
     expect(live[formColumn]).toBe("Form 3B");
-    expect(live[endColumn]).toBe(`T${NOW_ANCHOR + 120} as typed`);
+    expect(live[endColumn]).toBe(`T${NOW_ANCHOR + 120}`);
     const ended = edExportLines(
       [examined({ legalForm: { code: "3B", kind: "detention", dueAt: NOW_ANCHOR + 120, endedBy: "form_3e" } })],
       ctx,

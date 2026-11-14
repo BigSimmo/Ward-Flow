@@ -1,6 +1,6 @@
 import { createRef, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 vi.mock("next/navigation", () => ({
   usePathname: () => "/ward-flow/ward/rph-adult-secure",
   useSearchParams: () => new URLSearchParams(window.location.search),
@@ -19,6 +19,8 @@ import { setDeskRole } from "@/components/ward-management/ward-role-gate";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
+import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 
 /**
  * Walk-through WT-16 (26 Oct 2026): Going out read "No date" in the ward bed drawer with no way to
@@ -123,14 +125,63 @@ describe("the ward sets the discharge date from the bed drawer (WT-16)", () => {
     fireEvent.click(screen.getAllByTestId("ward-drawer-discharge-date-open")[0]);
     const form = screen.getByTestId("ward-drawer-discharge-date");
     fireEvent.change(within(form).getByLabelText("Expected discharge time"), { target: { value: "00:05" } });
-    expect(within(form).getByTestId("ward-drawer-discharge-date-hint")).toHaveTextContent(
-      "That time has passed. It saves as typed.",
-    );
+    expect(within(form).getByTestId("ward-drawer-discharge-date-hint")).toHaveTextContent("That time has passed.");
     const save = within(form).getByRole("button", { name: "Save date" });
     expect(save).not.toHaveAttribute("aria-disabled");
     fireEvent.click(save);
     const todayFive = Math.floor(NOW_ANCHOR / MINUTES_PER_DAY) * MINUTES_PER_DAY + 5;
     expect(screen.getByTestId("rejections").textContent).toBe("");
     expect(screen.getByTestId("edd").textContent).toBe(String(todayFive));
+  });
+});
+
+describe("a desk that can never set the date or record leaving is not offered them (Demo-Actions-AC1-3)", () => {
+  afterEach(() => {
+    setWardFeatureFlagOnDevice("role-access", null);
+    resetWardAccessStoreForTests();
+  });
+
+  function renderDrawer() {
+    return render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardBedDossierDrawer
+          selectedBed={3}
+          bedItem={{
+            bedNumber: 3,
+            bedLabel: "Bed 03",
+            status: "occupied",
+            statusText: "Inpatient",
+            admissionId: admission.id,
+            patientAlias: "Synthetic person",
+            dischargeConfirmed: true,
+          }}
+          unit={unit}
+          onClose={() => {}}
+          drawerLeavingDestination={LEAVING_DESTINATIONS[0].id}
+          setDrawerLeavingDestination={() => {}}
+          onRecordLeft={() => {}}
+          bedDrawerRef={createRef<HTMLElement>()}
+          onKeyDown={() => {}}
+        />
+      </WardFlowProvider>,
+    );
+  }
+
+  it("the ward still sees both", () => {
+    setDeskRole("ward");
+    renderDrawer();
+    expect(screen.getAllByRole("button", { name: "Record that they have left" }).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole("tab", { name: "Leaving" }));
+    expect(screen.getAllByTestId("ward-drawer-discharge-date-open").length).toBeGreaterThan(0);
+    cleanup();
+  });
+
+  it("shows the site bed manager neither Set discharge date nor Record that they have left", () => {
+    setWardFeatureFlagOnDevice("role-access", true);
+    setWardAccess({ role: "bed_manager", scope: { kind: "site", siteCode: unit.siteCode } });
+    renderDrawer();
+    fireEvent.click(screen.getByRole("tab", { name: "Leaving" }));
+    expect(screen.queryByTestId("ward-drawer-discharge-date-open")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Record that they have left" })).toBeNull();
   });
 });

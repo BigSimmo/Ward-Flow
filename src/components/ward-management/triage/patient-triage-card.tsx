@@ -39,7 +39,7 @@ export function triageRecordWords(record: TriageSignedRecord): string[] {
   return [
     `Urgency ${record.urgency}, ${TIER_LONG[record.urgency].toLowerCase()}`,
     record.outcome,
-    `${LEGAL_NAME[record.legal] ?? "Legal status not recorded"} (as chosen). Not legally checked.`,
+    LEGAL_NAME[record.legal] ?? "Legal status not recorded",
     `Review risk by ${(REVIEW_NAME[record.review] ?? "not set").toLowerCase()}`,
     flags ? `${flags} risk ${flags === 1 ? "flag" : "flags"} present` : "No risk flags marked present",
   ];

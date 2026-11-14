@@ -13,8 +13,13 @@ import { transportNeedState } from "@/components/ward-management/ward-derivation
 import { bedHold, pulledWithoutLimitLabel } from "@/components/ward-management/ward-bed-hold";
 import { isHeldUpDueByTomorrow } from "@/components/ward-management/ward-held-up";
 import { heldUntilExtendedLabel } from "@/components/ward-management/ward-bed-hold-extension";
-import { deliveredAwaitingWard, movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
+import {
+  deliveredAwaitingWard,
+  divertedAwaitingRelease,
+  movementStatusLabel,
+} from "@/components/ward-management/ward-stage-copy";
 import { originName } from "@/components/ward-management/ward-movement-origin";
+import { leaveOpenWarning } from "@/components/ward-management/ward-leave-open-warning";
 import type { BedItem } from "./ward-bed-tone";
 import { pullBlockedReason } from "./ward-pull-blocked";
 import { wardDischargesDueToday, wardFlowReleaseGroup } from "./ward-home-tab-model";
@@ -98,11 +103,14 @@ export function arrivalTransportLine(movement: Movement, now: Instant): { text: 
   const leg = movement.transport;
   if (leg && leg.cancelledAt === undefined) {
     const step =
-      leg.arrivedAt !== undefined
-        ? `arrived ${formatInstantWithDay(leg.arrivedAt, now)}`
-        : leg.collectedAt !== undefined
-          ? `collected ${formatInstantWithDay(leg.collectedAt, now)}`
-          : "booked";
+      // Together-X1b-3: a diverted journey says so, not the collection it has moved past.
+      leg.diversion !== undefined
+        ? `diverted ${formatInstantWithDay(leg.diversion.at, now)} · ${leg.diversion.place}`
+        : leg.arrivedAt !== undefined
+          ? `arrived ${formatInstantWithDay(leg.arrivedAt, now)}`
+          : leg.collectedAt !== undefined
+            ? `collected ${formatInstantWithDay(leg.collectedAt, now)}`
+            : "booked";
     return { text: `${leg.provider} · ${step}`, quiet: false };
   }
   if (transportNeedState(movement) === "not_needed") return { text: "No transport needed", quiet: false };
@@ -135,7 +143,9 @@ export function arrivalRows({
     const awaitingBed = movement.stage === "accepted_awaiting_bed";
     const bed = awaitingBed ? undefined : pulledBedFor(movement, beds);
     const eta = movement.arrivalDetails?.estimatedArrivalAt;
-    const late = eta !== undefined && eta < now && !deliveredAwaitingWard(movement);
+    // Together-X1b-3: a diverted person is not coming, so not late and not to be confirmed arrived.
+    const diverted = divertedAwaitingRelease(movement);
+    const late = eta !== undefined && eta < now && !deliveredAwaitingWard(movement) && !diverted;
     const hold = movement.stage === "pulled" ? bedHold(movement.pullExpiresAt, now, thresholds) : null;
     const blocked = awaitingBed ? pullBlockedReason(movement, unit, name) : undefined;
     const stageWords =
@@ -160,7 +170,7 @@ export function arrivalRows({
       quietLine: quiet || undefined,
       when: eta === undefined ? undefined : `${late ? "Due" : "ETA"} ${formatInstantWithDay(eta, now)}`,
       tone: hold?.state === "lapsed" ? "danger" : late || hold?.state === "at-risk" ? "warning" : "info",
-      action: awaitingBed ? "pull" : desk === "ward" ? "confirm-arrival" : null,
+      action: awaitingBed ? "pull" : desk === "ward" && !diverted ? "confirm-arrival" : null,
       blocked,
       alsoArrive: awaitingBed && desk === "ward" && blocked === undefined,
       hasPulledBed: bed !== undefined,
@@ -176,7 +186,9 @@ export function leaveRows(leave: readonly LeaveBed[], beds: readonly BedItem[], 
       key: `leave-${leaveBed.id}`,
       name: bed?.patientAlias ?? bed?.bedLabel ?? "Bed on leave",
       bedNumber: bed ? Number(bed.bedNumber) : undefined,
-      lines: [[bedWord(bed), "on approved leave"].filter(Boolean).join(" · ")],
+      lines: [[bedWord(bed), "on approved leave"].filter(Boolean).join(" · "), leaveOpenWarning(leaveBed, now)].filter(
+        (line): line is string => Boolean(line),
+      ),
       when: formatInstantWithDay(leaveBed.expectedReturn, now),
       tone: "neutral",
       action: null,

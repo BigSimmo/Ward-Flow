@@ -46,6 +46,14 @@ describe("referral stuck: no reply within the Settings limit", () => {
     expect(noReplyLine([past!])).toBe(`Stuck: no reply from ${ward.name} for 2h 10m (limit 2h 00m)`);
   });
 
+  it("adds the signed 4-hour ask-another-ward suggestion from 4 hours", () => {
+    const sent = referral("RF-T4H", NOW_ANCHOR - 500, { referredAt: NOW_ANCHOR - 239 });
+    const [before] = referralNoReplyWaits(sent, NOW_ANCHOR, limit, state.units);
+    expect(noReplyLine([before!])).not.toContain("another ward");
+    const [at] = referralNoReplyWaits(sent, NOW_ANCHOR + 1, limit, state.units);
+    expect(noReplyLine([at!])).toContain("Consider asking another ward");
+  });
+
   it("says the time is the longest wait when more than one place is named", () => {
     const two = {
       ...referral("RF-T11", NOW_ANCHOR - 300),
@@ -54,7 +62,7 @@ describe("referral stuck: no reply within the Settings limit", () => {
         { destination: { kind: "psychiatric_ward", unitId: ward.id }, state: "queued", referredAt: NOW_ANCHOR - 130 },
       ],
     } as unknown as Referral;
-    expect(noReplyLine(referralNoReplyWaits(two, NOW_ANCHOR, limit, state.units))).toBe(
+    expect(noReplyLine(referralNoReplyWaits(two, NOW_ANCHOR, limit, state.units))).toContain(
       `Stuck: no reply from ${ward.name} and ${ward.name} for longest 5h 00m (limit 2h 00m)`,
     );
   });

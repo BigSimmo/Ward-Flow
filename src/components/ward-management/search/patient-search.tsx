@@ -1163,7 +1163,7 @@ export function PatientSearchPage() {
             <span id="kpi-breaches">
               Waiting {LONG_WAIT_TEXT}
               <span data-testid="ward-patient-search-yield-breaches">{yieldMetrics.breaches}</span>
-              Your default, not a legal limit
+              Your default
             </span>
 
             <div role="group" aria-label="Quick queries">

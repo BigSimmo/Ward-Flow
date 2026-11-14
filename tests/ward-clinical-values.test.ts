@@ -356,7 +356,6 @@ const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> =
     name: "MORNING_ROLLUP_TIME_MINUTES",
     why: "a clock time for the roll-up (D-17), not a threshold",
   },
-  { file: "ward-clock.ts", name: "PERTH_UTC_OFFSET_MINUTES", why: "the WA time zone offset" },
   { file: "ward-operational-defaults.ts", name: "UNDO_WINDOW_MINUTES", why: "software undo window" },
   { file: "ward-operational-defaults.ts", name: "ED_TREND_SPAN_MINUTES", why: "chart window" },
   { file: "ward-operational-defaults.ts", name: "ED_TREND_STEP_MINUTES", why: "chart step" },
