@@ -1,6 +1,10 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  SharedSessionContext,
+  type SharedSession,
+} from "@/components/ward-management/shell/ward-shared-session-context";
 import {
   readSignInEnd,
   signInEndingSoon,
@@ -31,6 +35,19 @@ describe("sign-in ending strip (R-STRUCT-43, R-STRUCT-51)", () => {
     document.cookie = `wf_door_end=demo.${Date.now() + 5 * 60_000}; path=/`;
     render(<WardSignInEnding />);
     expect(screen.getByTestId("ward-sign-in-ending").textContent).toMatch(/^The demo code ends at/);
+    expect(screen.getByRole("button", { name: "enter the code again" })).toBeTruthy();
+  });
+
+  it("signs a signed-in account out, so the next sign-in starts a new 12 hours", () => {
+    document.cookie = `wf_door_end=account.${Date.now() + 5 * 60_000}; path=/`;
+    const signOut = vi.fn();
+    render(
+      <SharedSessionContext.Provider value={{ signOut } as unknown as SharedSession}>
+        <WardSignInEnding />
+      </SharedSessionContext.Provider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "sign out and sign in again" }));
+    expect(signOut).toHaveBeenCalledTimes(1);
   });
 
   it("shows nothing with no cookie or far from the end", () => {

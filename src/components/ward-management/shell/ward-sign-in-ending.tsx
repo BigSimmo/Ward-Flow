@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { FRONT_DOOR_END_COOKIE, FRONT_DOOR_SIGN_IN_PATH } from "@/lib/front-door-pass";
+import { useLeaveDemo } from "./leave-demo";
+import { SharedSessionContext } from "./ward-shared-session-context";
 import styles from "./ward-sign-in-ending.module.css";
 
 /** R-STRUCT-43 and R-STRUCT-51: the strip shows this long before the sign-in limit (or demo code) ends. */
@@ -27,8 +29,14 @@ function clock(ms: number): string {
   return new Date(ms).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
-/** A neutral strip 10 minutes before the sign-in limit (8 hours for a demo code) ends the session. */
+/**
+ * A neutral strip 10 minutes before the sign-in limit (8 hours for a demo code) ends the session.
+ * The 12-hour limit counts from the account's first sign-in, so only a real sign-out starts a new
+ * one: the strip's action signs out (or ends the demo code) and opens the sign-in page.
+ */
 export function WardSignInEnding() {
+  const session = useContext(SharedSessionContext);
+  const leaveDemo = useLeaveDemo();
   const [end, setEnd] = useState<SignInEnd | null>(null);
   useEffect(() => {
     const check = () => {
@@ -43,10 +51,21 @@ export function WardSignInEnding() {
     return () => clearInterval(timer);
   }, []);
   if (!end) return null;
+  const demo = end.kind === "demo";
+  const again = demo ? (
+    <button type="button" className={styles.again} onClick={leaveDemo}>
+      enter the code again
+    </button>
+  ) : session ? (
+    <button type="button" className={styles.again} onClick={() => session.signOut()}>
+      sign out and sign in again
+    </button>
+  ) : (
+    <a href={FRONT_DOOR_SIGN_IN_PATH}>sign in again</a>
+  );
   return (
     <p className={styles.strip} role="status" data-testid="ward-sign-in-ending">
-      {end.kind === "demo" ? "The demo code ends" : "Your sign-in ends"} at {clock(end.endsAt)}. Save what you are
-      doing, then <a href={FRONT_DOOR_SIGN_IN_PATH}>sign in again</a>.
+      {demo ? "The demo code ends" : "Your sign-in ends"} at {clock(end.endsAt)}. Save what you are doing, then {again}.
     </p>
   );
 }

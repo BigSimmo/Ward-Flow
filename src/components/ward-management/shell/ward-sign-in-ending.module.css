@@ -19,8 +19,14 @@
   line-height: 1.4;
 }
 
-.strip a {
+.strip a,
+.again {
   display: inline-block;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
   min-block-size: 2.5rem;
   line-height: 2.5rem;
   color: inherit;
