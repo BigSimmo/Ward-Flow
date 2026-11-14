@@ -66,6 +66,7 @@ import {
 import { SMALL_NUMBER_NOT_SHOWN } from "../ward-access-scope";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
+import { HELD_UP_ANY_DATE_LABEL } from "@/components/ward-management/ward-held-up";
 
 /**
  * WARD AND ED COMPARISONS. The way into one unit's detail page is the one unit finder (D-91).
@@ -656,7 +657,7 @@ const WARD_METRICS: Record<WardMetric, { label: string; chart: string; unit: str
   occupancy: { label: "Occupancy", chart: "Ward occupancy bar chart, percent of beds in use", unit: "percent" },
   stay: { label: "Stay", chart: "Ward average stay bar chart", unit: "days" },
   // the word the hero and All wards use for this count.
-  blocked: { label: "Held up", chart: "Ward discharges held up bar chart", unit: "people" },
+  blocked: { label: HELD_UP_ANY_DATE_LABEL, chart: "Ward discharges held up bar chart", unit: "people" },
   long: { label: "Long stays", chart: "Ward long stays bar chart", unit: "people" },
 };
 
@@ -1340,7 +1341,7 @@ const WARD_COLUMNS: readonly CompareColumn<WardColumnRow>[] = [
         : { text: `${statistics.averageLengthOfStayDays} days` },
   },
   // Both are genuine counts, so a nought is a measurement and renders as one.
-  { header: "Held up", cell: (statistics, words) => count(statistics.readyToLeaveCannot, words) },
+  { header: HELD_UP_ANY_DATE_LABEL, cell: (statistics, words) => count(statistics.readyToLeaveCannot, words) },
   { header: "Long stays", cell: (statistics, words) => count(statistics.longStays, words) },
   {
     // `consideredCount` is met + missed: 0 of 0 is undefined, not zero, so it keeps the absence wording.

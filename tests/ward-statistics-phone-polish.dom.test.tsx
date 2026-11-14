@@ -65,7 +65,7 @@ describe("Statistics hub on a phone", () => {
   it("links each ED in the waits sheet to its statistics page (stats-4)", () => {
     asPhone();
     renderInProvider(<StatisticsScreen />);
-    fireEvent.click(screen.getByRole("button", { name: /^Open ED movements/u }));
+    fireEvent.click(screen.getByRole("button", { name: /^ED journeys open/u }));
     const dialog = screen.getByRole("dialog");
     for (const department of allEmergencyDepartments()) {
       const link = within(dialog)

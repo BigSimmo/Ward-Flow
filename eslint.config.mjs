@@ -333,6 +333,12 @@ const eslintConfig = defineConfig([
               message:
                 "Production code must not import mockup modules (design-scratch, 404 in production). Mockup routes live under src/app/mockups/**.",
             },
+            {
+              // Figures spec 3.1 (D-220): every figure row, for tests and the doc check only.
+              group: ["**/figures/all-figures"],
+              message:
+                "all-figures.ts is for tests only: import the one domain row file (beds-figures, ed-figures, ...) instead.",
+            },
           ],
         },
       ],
