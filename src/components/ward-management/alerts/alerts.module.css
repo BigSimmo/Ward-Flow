@@ -1998,7 +1998,7 @@ button.check[aria-pressed="true"] {
 /* R-HOME-12: the phone Today strip keeps its height before its counts arrive, so the rows below
    do not move under a thumb. */
 @media (max-width: 46.4375rem) {
-  [data-testid="ward-alerts-today"] {
+  .todayReserve {
     min-height: 56px;
   }
 }
