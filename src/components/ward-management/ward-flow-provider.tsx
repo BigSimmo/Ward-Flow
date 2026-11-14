@@ -723,7 +723,7 @@ function WardFlowWorld({
           eventLog: [],
         };
       }
-      const world = seedWardFlowStateAt(offset);
+      const world = seedWardFlowStateAt(offset, "standard", { dayZero: firstDayZero });
       syncWorldGlobals(world);
       return {
         world,
