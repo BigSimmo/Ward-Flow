@@ -159,7 +159,7 @@ describe("Capacity for a signed-in executive (WF-06)", () => {
     expect(folded).toHaveAttribute("aria-expanded", "true");
     const first = data.wards[0]!;
     expect(screen.getByTestId(`ward-capacity-executive-ward-${first.id}`)).toHaveTextContent(
-      new RegExp(`^${first.beds.ready}ready of ${first.beds.total} beds`, "u"),
+      new RegExp(`^${first.beds.ready} ready of ${first.beds.total} beds`, "u"),
     );
   });
 

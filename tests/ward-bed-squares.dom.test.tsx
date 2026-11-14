@@ -21,7 +21,7 @@ describe("BedSquares", () => {
       />,
     );
     const block = screen.getByTestId("sq");
-    expect(block.textContent).toContain("1ready of 20 beds");
+    expect(block.textContent).toContain("1 ready of 20 beds");
     expect(block.textContent).toContain("Adult · Locked");
     const strip = screen.getByTestId("bed-squares-strip");
     expect(strip.getAttribute("aria-hidden")).toBe("true");
@@ -39,7 +39,7 @@ describe("BedSquares", () => {
   it("writes zero as 0, singular bed, and draws no note line when there is nothing to note", () => {
     render(<BedSquares counts={bedSquareCounts({ beds: 1, ready: 0 })} testId="one" />);
     const block = screen.getByTestId("one");
-    expect(block.textContent).toContain("0ready of 1 bed");
+    expect(block.textContent).toContain("0 ready of 1 bed");
     expect(block.querySelector('[data-zero="true"]')).not.toBeNull();
     expect(screen.queryByTestId("one-note")).toBeNull();
   });
@@ -68,7 +68,7 @@ describe("BedSquares", () => {
     const counts = bedSquareCounts({ beds: 10, ready: 1, beingMadeReady: 1 });
     render(<BedSquares counts={counts} testId="sq" />);
     expect(screen.getByTestId("sq-ready").textContent).toBe("1");
-    expect(screen.getByTestId("sq").textContent).toContain("1ready of 10 beds");
+    expect(screen.getByTestId("sq").textContent).toContain("1 ready of 10 beds");
   });
 
   it("names every square state in the key", () => {

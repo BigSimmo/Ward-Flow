@@ -300,7 +300,7 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
     // A16-13 (PR C): this ward's two seeded pulls are now people who arrived: 18 occupied, none pulled.
     expect(screen.getByRole("group", { name: "Ward capacity" })).toHaveTextContent(/18\D*20\s*Occupied · now/u);
     // The squares' head says the ready figure in words, the same figure as the hero.
-    expect(chipRow).toHaveTextContent("1ready of 20 beds");
+    expect(chipRow).toHaveTextContent("1 ready of 20 beds");
     expect(chipRow).not.toHaveTextContent("Occupied");
     expect(chipRow).not.toHaveTextContent(/[1-9] pulled/u);
     expect(chipRow).toHaveTextContent("1 closed");
