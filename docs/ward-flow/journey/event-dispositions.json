@@ -197,7 +197,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 679,
-          "sha256": "1fa08f480dc4c7beb99215d7b2afc395f3538b82cba050da8a807cec4dbfc8ba"
+          "sha256": "317215fad24902321f9e0da73d4e05cfbd2347711ae4c6d0ce268a4920872b9b"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -286,7 +286,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 253,
-          "sha256": "1fa08f480dc4c7beb99215d7b2afc395f3538b82cba050da8a807cec4dbfc8ba"
+          "sha256": "317215fad24902321f9e0da73d4e05cfbd2347711ae4c6d0ce268a4920872b9b"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1872,7 +1872,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 765,
-          "sha256": "1fa08f480dc4c7beb99215d7b2afc395f3538b82cba050da8a807cec4dbfc8ba"
+          "sha256": "317215fad24902321f9e0da73d4e05cfbd2347711ae4c6d0ce268a4920872b9b"
         },
         {
           "path": "src/components/ward-management/ward-discharge-criteria.ts",
@@ -2828,7 +2828,7 @@
     "model": {
       "subject": "A current occupied/pulled stay on one ward",
       "before": "Stay in another numbered bed or with known kind but no number",
-      "after": "Same stay recorded in the selected numbered bed and matching bed kind",
+      "after": "Same stay recorded in the selected numbered bed and matching bed kind; any discharged release still being made ready for that bed is no longer marked preparing",
       "payload": [
         "admissionId; integer bedNumber within unit.beds; now/role; actingUnitId for ward; optional listed overrideReason when moving a locked/secure/involuntary stay to an open bed."
       ],
@@ -2847,7 +2847,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 97,
-          "sha256": "1fa08f480dc4c7beb99215d7b2afc395f3538b82cba050da8a807cec4dbfc8ba"
+          "sha256": "317215fad24902321f9e0da73d4e05cfbd2347711ae4c6d0ce268a4920872b9b"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
