@@ -2697,6 +2697,8 @@ is inferred.
 - **Unchanged:** D-93 and D-70 behaviour. A legal time is still shown only as the time a person entered from the form, never as a countdown, and nothing works out a Mental Health Act period. Warnings that ask someone to act stay, with their words: the legal status mismatch warning, "Check authorisation", "Save Form N anyway", the real-identifier note, and the "within 1h", "within 3h" and "passed" band words beside their colours. "Not recorded" stays, because it is a state, not a disclaimer. The one synthetic data line in the footer stays (hard rule 1).
 - **Boundary:** wording only. No clinical value, threshold or saved field changes.
 
+D-219 is claimed by open PR #1673. D-220 is claimed by open PR #1673. D-221 is claimed by open PR #1673. D-222 is claimed by open PR #1673. D-223 is claimed by open PR #1673. D-224 is claimed by open PR #1672. D-225 is claimed by open PR #1672. D-226 is claimed by open PR #1675. D-227 is claimed by open PR #1675. D-228 is claimed by open PR #1675. D-229 is claimed by open PR #1678. D-230 is reserved for another overnight thread (block noted in PR #1677). D-231 is reserved for another overnight thread (block noted in PR #1677). D-232 is reserved for another overnight thread (block noted in PR #1677). D-233 is reserved for another overnight thread (block noted in PR #1677).
+
 ## D-234. Record gender on the ED board (14 November 2026)
 
 - **Date:** 14 November 2026, 10:56 PM AWST (14:56 UTC). **Decided by:** Josh, in the Ward Flow project: "Remove excessive wordiness, but make a way to record", answering the design plan's question on recording gender (R-LEGAL-6).

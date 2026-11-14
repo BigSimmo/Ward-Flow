@@ -389,7 +389,7 @@ safe global key across 30 files.
 | `D-216` | `decisions.md`:2676 | D-216. The 36 sign-off recommendations from the stress test pack (14 November 2026) |
 | `D-217` | `decisions.md`:2682 | D-217. Hand check answers: medical trips and Undo after referring (14 November 2026) |
 | `D-218` | `decisions.md`:2690 | D-218. No legal disclaimer wording on screens (14 November 2026) |
-| `D-234` | `decisions.md`:2700 | D-234. Record gender on the ED board (14 November 2026) |
+| `D-234` | `decisions.md`:2702 | D-234. Record gender on the ED board (14 November 2026) |
 | `D9-1` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | `D9-2` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
 | `D9-3` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:126 | D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION) |
@@ -918,7 +918,7 @@ safe global key across 30 files.
 - `D-216` — line 2676, heading: "D-216. The 36 sign-off recommendations from the stress test pack (14 November 2026)"
 - `D-217` — line 2682, heading: "D-217. Hand check answers: medical trips and Undo after referring (14 November 2026)"
 - `D-218` — line 2690, heading: "D-218. No legal disclaimer wording on screens (14 November 2026)"
-- `D-234` — line 2700, heading: "D-234. Record gender on the ED board (14 November 2026)"
+- `D-234` — line 2702, heading: "D-234. Record gender on the ED board (14 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 
