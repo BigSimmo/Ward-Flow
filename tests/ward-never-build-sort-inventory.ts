@@ -713,14 +713,6 @@ export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
     reason: "Delays board groups in wait order.",
   },
   {
-    file: "ed/ed-screen-model.ts",
-    match: "a.openedAt - b.openedAt || a.id.localeCompare(b.id)",
-    list: "patients",
-    key: "time the movement opened, oldest first",
-    order: "wait order",
-    reason: "ED movements first in first out.",
-  },
-  {
     file: "ed/ed-screen-derivations.ts",
     match: 'if (patientSort === "longest") return a.openedAt - b.openedAt;',
     list: "patients",

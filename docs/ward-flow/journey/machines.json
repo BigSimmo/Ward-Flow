@@ -1884,7 +1884,7 @@
       {
         "path": "src/components/ward-management/ward-inbox-reducer.ts",
         "line": 58,
-        "sha256": "08c484bdd2238608d2f341a4d4026e57d200d349d16dacafcf1ba57ec0d0c21e"
+        "sha256": "2dc71c3e1f7849c3f5e0556fe6aa3e459c913e2cf5e6d00c12b297e7a1651ded"
       },
       {
         "path": "src/components/ward-management/ward-model-leave.ts",

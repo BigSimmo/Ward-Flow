@@ -63,48 +63,63 @@ describe("ACKNOWLEDGE_INBOX_ITEM", () => {
     expect(after.some((item) => item.id === inboxItemId)).toBe(true);
   });
 
-  it("is not idempotent: a second acknowledgement is a distinct fact, not a duplicate collapsed away", () => {
-    const state = seeded();
-    const inboxItemId = firstRealInboxItemId();
-    const onceAcknowledged = wardFlowReducer(state, {
-      type: "ACKNOWLEDGE_INBOX_ITEM",
-      role: "coordinator",
-      now: NOW,
-      inboxItemId,
-    });
-    const twiceAcknowledged = wardFlowReducer(onceAcknowledged, {
-      type: "ACKNOWLEDGE_INBOX_ITEM",
-      role: "coordinator",
-      now: NOW,
-      inboxItemId,
-    });
-    expect(twiceAcknowledged.rejections).toEqual([]);
-    expect(twiceAcknowledged.inboxAcknowledgements[inboxItemId]).toHaveLength(2);
-  });
-
   /**
-   * 🔴 THE TIMING TRAP. `ADVANCE_CLOCK` is the only thing that moves `now` independently, so two
-   * dispatches in the same render carry the identical `at`. A join, sort or dedup keyed on `at`
-   * alone would collapse these two into one and silently drop the second acknowledger's record —
-   * this asserts both survive as two distinct array entries, identified by their position in the
-   * append-only array rather than by `at`.
+   * B7 (14 Nov 2026): `by` is a role, never a person, so a second acknowledgement by the same role in
+   * the same occurrence of a row (a double click, two dispatches in one tick) is accepted without a
+   * second record. It is accepted, not refused, so the drawer still reads the repeat as done.
    */
-  it("keeps two same-instant acknowledgements distinct — never joined or deduplicated by `at`", () => {
+  it("is idempotent per role: a repeat by the same role is accepted and adds no second record", () => {
     const state = seeded();
     const inboxItemId = firstRealInboxItemId();
     const event: WardFlowEvent = { type: "ACKNOWLEDGE_INBOX_ITEM", role: "coordinator", now: NOW, inboxItemId };
-
-    // Two dispatches, no ADVANCE_CLOCK between them — both events land at exactly NOW.
     const afterFirst = wardFlowReducer(state, event);
     const afterSecond = wardFlowReducer(afterFirst, event);
+    const later = wardFlowReducer(afterSecond, { ...event, now: NOW + 5 });
+    expect(later.rejections).toEqual([]);
+    expect(later.inboxAcknowledgements[inboxItemId]).toEqual([{ at: NOW, by: "Bed coordinator" }]);
+  });
 
-    const history = afterSecond.inboxAcknowledgements[inboxItemId];
-    expect(history).toHaveLength(2);
-    expect(history[0].at).toBe(NOW);
-    expect(history[1].at).toBe(NOW);
-    // Same instant, same role — and still two entries, not one. Distinctness comes from array
-    // position, never from the timestamp.
-    expect(history[0]).not.toBe(history[1]);
+  /**
+   * The timing trap still holds: two roles acknowledging in the same instant stay two entries, so
+   * nothing joins or deduplicates by `at` alone.
+   */
+  it("still appends an acknowledgement by a different role, even at the same instant", () => {
+    const inboxItemId = firstRealInboxItemId();
+    const byOtherRole = {
+      ...seeded(),
+      inboxAcknowledgements: { [inboxItemId]: [{ at: NOW, by: "Site bed manager" }] },
+    };
+    const next = wardFlowReducer(byOtherRole, {
+      type: "ACKNOWLEDGE_INBOX_ITEM",
+      role: "coordinator",
+      now: NOW,
+      inboxItemId,
+    });
+    expect(next.rejections).toEqual([]);
+    expect(next.inboxAcknowledgements[inboxItemId]).toEqual([
+      { at: NOW, by: "Site bed manager" },
+      { at: NOW, by: "Bed coordinator" },
+    ]);
+  });
+
+  it("lets the same role acknowledge a later occurrence of a reused row id", () => {
+    const state = seeded();
+    const row = buildActionInbox(state.movements, NOW, state.units).find(
+      (item) => item.kind === "fact" && item.since !== undefined,
+    );
+    if (!row || row.since === undefined) throw new Error("fixture has no fact row with a recorded start");
+    const fromEarlierOccurrence = {
+      ...state,
+      inboxAcknowledgements: { [row.id]: [{ at: row.since - 1, by: "Bed coordinator" }] },
+    };
+    const next = wardFlowReducer(fromEarlierOccurrence, {
+      type: "ACKNOWLEDGE_INBOX_ITEM",
+      role: "coordinator",
+      now: NOW,
+      inboxItemId: row.id,
+    });
+    expect(next.rejections).toEqual([]);
+    expect(next.inboxAcknowledgements[row.id]).toHaveLength(2);
   });
 
   it("is refused for a role EVENT_ROLE does not permit", () => {

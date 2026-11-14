@@ -217,7 +217,7 @@
       "control": "Record medically cleared"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-14",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -231,8 +231,8 @@
         },
         {
           "path": "src/components/ward-management/ed/ed-lists-desktop.tsx",
-          "line": 191,
-          "sha256": "46294754d3699f5a0d2e9c1eae29aef1d353aaf00b0dfbc9efee463766acaf83"
+          "line": 190,
+          "sha256": "3ce8d1f2917d97941217f056d625435bab4d3352fd5f78e7f046f0c1c560c368"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
@@ -273,7 +273,7 @@
       "control": "Mark arrived in department"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-14",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -287,8 +287,8 @@
         },
         {
           "path": "src/components/ward-management/ed/ed-lists-desktop.tsx",
-          "line": 371,
-          "sha256": "46294754d3699f5a0d2e9c1eae29aef1d353aaf00b0dfbc9efee463766acaf83"
+          "line": 370,
+          "sha256": "3ce8d1f2917d97941217f056d625435bab4d3352fd5f78e7f046f0c1c560c368"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
@@ -818,7 +818,7 @@
       "control": "Ask for a bed"
     },
     "review": {
-      "reviewedOn": "2026-11-05",
+      "reviewedOn": "2026-11-14",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -838,7 +838,7 @@
         {
           "path": "src/components/ward-management/ed/ed-screen.tsx",
           "line": 337,
-          "sha256": "328a3cd47aa16083b5b3b8553280a9e4eaa1ed55c74f649d92f77fbca46e7296"
+          "sha256": "e8e2a215f350a6eb73db538ebd9177b09c445ecb4876a9f7499f9a43462185cf"
         },
         {
           "path": "src/components/ward-management/referrals/pull-accepted-referral.tsx",
@@ -2120,7 +2120,7 @@
       "control": "No transport needed; Change (records transport needed, with Undo)"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-14",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -2150,7 +2150,7 @@
         {
           "path": "src/components/ward-management/ed/ed-screen-row-facts.tsx",
           "line": 96,
-          "sha256": "4a1e24daee0a799a7948eea72ad1648562b9c83882bdd741fd6993105e0fe24b"
+          "sha256": "d69d8155cf8f5554a26f3dc7b80a259e61e36ad1854031f28722e7ac030a74a2"
         },
         {
           "path": "src/components/ward-management/patients/patient-status-card.tsx",
@@ -4705,7 +4705,7 @@
       "control": "Mark as read"
     },
     "review": {
-      "reviewedOn": "2026-11-05",
+      "reviewedOn": "2026-11-14",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -4715,7 +4715,7 @@
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 290,
-          "sha256": "08c484bdd2238608d2f341a4d4026e57d200d349d16dacafcf1ba57ec0d0c21e"
+          "sha256": "2dc71c3e1f7849c3f5e0556fe6aa3e459c913e2cf5e6d00c12b297e7a1651ded"
         },
         {
           "path": "src/components/ward-management/shell/ward-bar-state.ts",
@@ -4735,12 +4735,12 @@
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 297,
-          "sha256": "08c484bdd2238608d2f341a4d4026e57d200d349d16dacafcf1ba57ec0d0c21e"
+          "sha256": "2dc71c3e1f7849c3f5e0556fe6aa3e459c913e2cf5e6d00c12b297e7a1651ded"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 301,
-          "sha256": "08c484bdd2238608d2f341a4d4026e57d200d349d16dacafcf1ba57ec0d0c21e"
+          "sha256": "2dc71c3e1f7849c3f5e0556fe6aa3e459c913e2cf5e6d00c12b297e7a1651ded"
         }
       ]
     }
@@ -4754,7 +4754,7 @@
     "roles": ["coordinator"],
     "does": "Records that the coordinator has seen a row and is on top of it, without removing or hiding it.",
     "needs": "The row names a real category and a real record.",
-    "changes": "Logs the acknowledgement. Touches nothing else.",
+    "changes": "Logs the acknowledgement once per role for each time the row appears; a repeat by the same role is accepted and saves nothing. Touches nothing else.",
     "reasons": [],
     "refuses": [
       {
@@ -4779,7 +4779,7 @@
       "control": "Acknowledge Alert"
     },
     "review": {
-      "reviewedOn": "2026-11-06",
+      "reviewedOn": "2026-11-14",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -4789,7 +4789,7 @@
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 312,
-          "sha256": "08c484bdd2238608d2f341a4d4026e57d200d349d16dacafcf1ba57ec0d0c21e"
+          "sha256": "2dc71c3e1f7849c3f5e0556fe6aa3e459c913e2cf5e6d00c12b297e7a1651ded"
         },
         {
           "path": "src/components/ward-management/ward-tasks-drawer.tsx",
@@ -4804,12 +4804,12 @@
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 316,
-          "sha256": "08c484bdd2238608d2f341a4d4026e57d200d349d16dacafcf1ba57ec0d0c21e"
+          "sha256": "2dc71c3e1f7849c3f5e0556fe6aa3e459c913e2cf5e6d00c12b297e7a1651ded"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 337,
-          "sha256": "08c484bdd2238608d2f341a4d4026e57d200d349d16dacafcf1ba57ec0d0c21e"
+          "sha256": "2dc71c3e1f7849c3f5e0556fe6aa3e459c913e2cf5e6d00c12b297e7a1651ded"
         }
       ]
     }
@@ -4831,7 +4831,7 @@
         "message": "COMPLETE_INBOX_ITEM inboxItemId must name a row — a blank names nothing",
         "source": {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 353
+          "line": 368
         }
       },
       {
@@ -4839,7 +4839,7 @@
         "message": "inbox row ${inboxItemId} does not name a day for the daily check",
         "source": {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 370
+          "line": 385
         }
       },
       {
@@ -4847,7 +4847,7 @@
         "message": "inbox row ${inboxItemId} is already complete",
         "source": {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 374
+          "line": 389
         }
       }
     ],
@@ -4856,7 +4856,7 @@
       "control": "Daily check completion; generic commitment action when supplied"
     },
     "review": {
-      "reviewedOn": "2026-11-05",
+      "reviewedOn": "2026-11-14",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -4865,8 +4865,8 @@
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 350,
-          "sha256": "08c484bdd2238608d2f341a4d4026e57d200d349d16dacafcf1ba57ec0d0c21e"
+          "line": 365,
+          "sha256": "2dc71c3e1f7849c3f5e0556fe6aa3e459c913e2cf5e6d00c12b297e7a1651ded"
         },
         {
           "path": "src/components/ward-management/ward-tasks-drawer.tsx",
@@ -4880,18 +4880,18 @@
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 353,
-          "sha256": "08c484bdd2238608d2f341a4d4026e57d200d349d16dacafcf1ba57ec0d0c21e"
+          "line": 368,
+          "sha256": "2dc71c3e1f7849c3f5e0556fe6aa3e459c913e2cf5e6d00c12b297e7a1651ded"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 370,
-          "sha256": "08c484bdd2238608d2f341a4d4026e57d200d349d16dacafcf1ba57ec0d0c21e"
+          "line": 385,
+          "sha256": "2dc71c3e1f7849c3f5e0556fe6aa3e459c913e2cf5e6d00c12b297e7a1651ded"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 374,
-          "sha256": "08c484bdd2238608d2f341a4d4026e57d200d349d16dacafcf1ba57ec0d0c21e"
+          "line": 389,
+          "sha256": "2dc71c3e1f7849c3f5e0556fe6aa3e459c913e2cf5e6d00c12b297e7a1651ded"
         }
       ]
     }
@@ -4913,7 +4913,7 @@
         "message": "REOPEN_INBOX_ITEM inboxItemId must name a row — a blank names nothing",
         "source": {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 388
+          "line": 403
         }
       },
       {
@@ -4921,7 +4921,7 @@
         "message": "inbox row ${inboxItemId} is not complete, so there is nothing to reopen",
         "source": {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 392
+          "line": 407
         }
       }
     ],
@@ -4930,7 +4930,7 @@
       "control": "Generic completion-history reopening action when a completed commitment is supplied"
     },
     "review": {
-      "reviewedOn": "2026-11-05",
+      "reviewedOn": "2026-11-14",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -4939,8 +4939,8 @@
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 385,
-          "sha256": "08c484bdd2238608d2f341a4d4026e57d200d349d16dacafcf1ba57ec0d0c21e"
+          "line": 400,
+          "sha256": "2dc71c3e1f7849c3f5e0556fe6aa3e459c913e2cf5e6d00c12b297e7a1651ded"
         },
         {
           "path": "src/components/ward-management/ward-tasks-drawer.tsx",
@@ -4949,13 +4949,13 @@
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 388,
-          "sha256": "08c484bdd2238608d2f341a4d4026e57d200d349d16dacafcf1ba57ec0d0c21e"
+          "line": 403,
+          "sha256": "2dc71c3e1f7849c3f5e0556fe6aa3e459c913e2cf5e6d00c12b297e7a1651ded"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
-          "line": 392,
-          "sha256": "08c484bdd2238608d2f341a4d4026e57d200d349d16dacafcf1ba57ec0d0c21e"
+          "line": 407,
+          "sha256": "2dc71c3e1f7849c3f5e0556fe6aa3e459c913e2cf5e6d00c12b297e7a1651ded"
         }
       ]
     }
