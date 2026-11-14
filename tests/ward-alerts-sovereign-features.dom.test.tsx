@@ -98,23 +98,32 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
     [3 * 60 + 5, "3h 05m overdue"],
     [5, "5m overdue"],
   ] as const)("shows a legal form %s minutes past its typed time as typed, never as %s (D-93)", (elapsed, expected) => {
+    // Audit M13b (D-210, 14 Nov 2026): a typed expiry must come after the time the form was
+    // written, so the expiry is typed as the current minute and the clock then runs `elapsed`
+    // minutes past it. Typing it `elapsed` minutes in the past would be refused for any form
+    // written more recently than that, and the row would never appear.
     function SetExpiry() {
-      const { movements, dispatch } = useWardFlow();
+      const { movements, dispatch, now } = useWardFlow();
       const movement = movements.find((m) => !m.closure && m.legalForm)!;
       return (
-        <button
-          onClick={() =>
-            dispatch({
-              type: "RECORD_LEGAL_FORM_EXPIRY",
-              role: "coordinator",
-              now: NOW,
-              movementId: movement.id,
-              dueAt: NOW - elapsed,
-            })
-          }
-        >
-          Set recorded expiry
-        </button>
+        <>
+          <button
+            onClick={() =>
+              dispatch({
+                type: "RECORD_LEGAL_FORM_EXPIRY",
+                role: "coordinator",
+                now,
+                movementId: movement.id,
+                dueAt: NOW,
+              })
+            }
+          >
+            Set recorded expiry
+          </button>
+          <button onClick={() => dispatch({ type: "ADVANCE_CLOCK", role: "demo", now, minutes: elapsed })}>
+            Run the clock past it
+          </button>
+        </>
       );
     }
     render(
@@ -124,10 +133,16 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByRole("button", { name: "Set recorded expiry" }));
+    fireEvent.click(screen.getByRole("button", { name: "Run the clock past it" }));
     // D-93 (31 Oct 2026): legal form times only as typed. The row shows "Ended 09:42 as typed",
-    // and the overdue duration this test used to pin is gone.
-    expect(screen.getAllByText(/^Ended .+ as typed$/u)[0]).toBeVisible();
-    expect(screen.queryByText(expected, { exact: true })).toBeNull();
+    // and the overdue duration this test used to pin is gone. The clock runs for every row, so a
+    // pull or a decision target may rightly read "2d overdue"; the check is on the legal rows.
+    const legalRows = screen.getAllByText(/^Ended .+ as typed$/u).map((typed) => typed.closest("li")!);
+    expect(legalRows[0]).toBeVisible();
+    for (const row of legalRows) {
+      expect(within(row).queryByText(expected, { exact: true })).toBeNull();
+      expect(row.textContent).not.toMatch(/overdue/u);
+    }
   });
 
   it("renders synthetic prototype badge in the subheader (FF8)", () => {

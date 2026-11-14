@@ -17,9 +17,16 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  *
  * This drives WF-014 — a real fixture movement carrying a 4A due time — past its due time with
  * `ADVANCE_CLOCK`, confirms the alert fires while the movement is still open, then closes it with
- * `PATIENT_ARRIVED` and confirms the alert and the count both disappear. The fixture is used
- * rather than a hand-built movement so the reducer's own real closing path is exercised, not an
- * assumption about what `isOpen` means.
+ * `PATIENT_ARRIVED` and confirms the journey's own row is gone. The fixture is used rather than a
+ * hand-built movement so the reducer's own real closing path is exercised, not an assumption about
+ * what `isOpen` means.
+ *
+ * Audit M1 and D-210 (Josh, 14 Nov 2026), ruling 2: arrival does not end the form. A person admitted
+ * on a form whose typed expiry has passed raises one act-now row of its own on the coordinator's
+ * alerts, owned by the ward's nurse in charge (`admittedLegalInboxItems`). So after arrival exactly
+ * one "Legal due time passed" row remains for WF-014, and it is the admitted stay's row, not the
+ * closed journey's. Were the closed journey still handed to `buildActionInbox`, its row would sit
+ * beside or in place of the stay's row, and this test would fail.
  */
 
 const WF_014_DUE_AT = wardMovements.find((movement) => movement.id === "WF-014")?.legalForm?.dueAt;
@@ -87,6 +94,8 @@ describe("the alerts screen scopes buildActionInbox to open movements only", () 
    * lapsed by this offset now run past it, and the figures are 9 and 8.
    * A9-13 (D-181 item 12): two ambulance referrals accepted at an ED (RF-008, RF-019) now join the
    * accepted-with-no-bed-pulled rows, so the figures are 11 and 10.
+   * D-210 ruling 2 (14 Nov 2026): the admitted stay's own row takes the journey's place on arrival,
+   * so the figure stays 11 after WF-014 closes.
    */
   it("counts and shows the alert while the movement is still open", () => {
     renderScreen();
@@ -102,20 +111,25 @@ describe("the alerts screen scopes buildActionInbox to open movements only", () 
     ).toBe(11);
   });
 
-  it("drops the alert, and excludes the movement from the count, once it closes", () => {
+  it("drops the journey's alert once it closes, leaving only the admitted stay's own row (D-210 ruling 2)", () => {
     renderScreen();
     fireEvent.click(screen.getByTestId("test-advance-clock"));
     fireEvent.click(screen.getByTestId("test-patient-arrived"));
 
     const actNow = screen.getByRole("region", { name: "Act now" });
+    const rows = within(actNow).getAllByText("Legal due time passed");
     expect(
-      within(actNow).queryByText("Legal due time passed"),
-      "WF-014 still renders an alert after closing — buildActionInbox is still being called on every movement",
-    ).not.toBeInTheDocument();
+      rows,
+      "WF-014 renders two legal rows after closing, so buildActionInbox is still being called on every movement",
+    ).toHaveLength(1);
+    expect(
+      rows[0]!.closest("li")!,
+      "the remaining row is not the admitted stay's row (owned by the nurse in charge), so it is the closed journey's",
+    ).toHaveTextContent("With Nurse in charge");
 
     expect(
       actNowFigure(),
-      "the Act now figure did not drop by one once the breached movement closed, so it still counts WF-014",
-    ).toBe(10);
+      "the Act now figure changed on arrival: the closed journey's row must give way to the stay's one row, not sit beside it",
+    ).toBe(11);
   });
 });
