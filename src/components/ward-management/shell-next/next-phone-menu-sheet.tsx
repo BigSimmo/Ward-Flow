@@ -24,6 +24,7 @@ import {
   BellRing,
   CircleHelp,
   ClipboardList,
+  ClipboardPen,
   Inbox,
   Clock3,
   LogOut,
@@ -890,12 +891,13 @@ export function PhoneMenuSheets({
     />
   );
   // Triage on the phone (Josh, 15 Nov 2026, D-NNN): Start a triage gets a Menu row, with how many
-  // referrals await it, for every desk that may sign one (the + sheet's own test).
+  // referrals await it, for every desk that may sign one (the + sheet's own test). A pen on the
+  // clipboard, as Handover's clipboard list sits just below it in the Menu.
   const { canTriage } = usePhoneCreateOptions(byId);
   const awaitingTriage = useAwaitingTriageCount();
   const triageRow = canTriage
     ? pageRow(
-        { id: "triage-new", href: WARD_TRIAGE_NEW_HREF, label: "Start a triage", icon: ClipboardList },
+        { id: "triage-new", href: WARD_TRIAGE_NEW_HREF, label: "Start a triage", icon: ClipboardPen },
         awaitingTriage > 0 ? { value: awaitingTriage, noun: "awaiting triage", urgent: false } : undefined,
       )
     : undefined;
