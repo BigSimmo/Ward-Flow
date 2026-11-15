@@ -448,7 +448,9 @@ describe("the comparisons page sets wards beside wards and departments beside de
     // 40rem/5 columns -> 44rem/6 columns, 31 Oct 2026: the redesign added Occupancy. Re-measured in
     // Playwright chromium on the dev server, 1440x900, min-width cleared to 0px and read back:
     // min-content 583.14px, max-content 692.33px, so 44rem (704px) sits clear of max-content.
-    { table: WARD_TABLE, selector: ".wardTable", pin: "44rem", columnsWhenMeasured: 6 },
+    // 44rem -> 55rem, 15 Nov 2026: the stay header became "Average completed stay" (R-FIGS-16).
+    // The CI browser sweep measured min-content 772px and max-content 872px, so 55rem (880px).
+    { table: WARD_TABLE, selector: ".wardTable", pin: "55rem", columnsWhenMeasured: 6 },
     { table: WARD_TABLE, selector: ".edTable", pin: "35rem", columnsWhenMeasured: 4, use: ED_TABLE },
   ])("$selector was measured at $pin against $columnsWhenMeasured columns, and still has them", (entry) => {
     const testId = entry.use ?? entry.table;

@@ -90,10 +90,12 @@
 597px, above its 592px pin, so that pin moved to 640px (40rem). 31 Oct 2026: the redesign added an
 Occupancy column (6 columns). Re-measured in Playwright chromium on the dev server, 1440x900, min-width
 cleared to 0px and read back: min-content 583.14px, max-content 692.33px. The pin sits clear of
-max-content at 704px (44rem).
+max-content at 704px (44rem). 15 Nov 2026: the stay column header became "Average completed stay"
+(R-FIGS-16). The browser threshold sweep in CI measured min-content 772px and max-content 872px, so
+the pin moved to 880px (55rem).
  */
 .wardTable {
-  min-width: 44rem;
+  min-width: 55rem;
 }
 
 .edTable {

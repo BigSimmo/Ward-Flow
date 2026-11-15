@@ -119,10 +119,14 @@ import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
  * in Chromium at 1440x900 on the dev server with min-width cleared to 0px (commit 830b04a59):
  * min-content 583px, max-content 692px. The pin is 704px (44rem) in `statistics-compare.module.css`,
  * whose comment records the same measurement; that commit missed this record.
+ *
+ * ⚠️ UPDATED AGAIN, 15 Nov 2026: the stay column header became "Average completed stay"
+ * (R-FIGS-16, PR #1683). This sweep measured the wards table in CI at min-content 772px and
+ * max-content 872px, so the pin is 880px (55rem) in `statistics-compare.module.css`.
  */
 const OWNED = "/ward-flow/statistics/compare";
 const OWNED_TABLES: readonly { readonly testId: string; readonly columns: number; readonly minWidthPx: number }[] = [
-  { testId: "ward-statistics-compare-wards", columns: 6, minWidthPx: 704 },
+  { testId: "ward-statistics-compare-wards", columns: 6, minWidthPx: 880 },
   { testId: "ward-statistics-compare-eds", columns: 4, minWidthPx: 560 },
 ];
 
