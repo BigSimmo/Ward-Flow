@@ -97,6 +97,7 @@ import {
 import { useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
 import type { CountMap, DrawerId, NeedRow, PhoneMenuModel } from "@/components/ward-management/shell/ward-phone-menu";
 import styles from "@/components/ward-management/shell/ward-phone-menu.module.css";
+import editStyles from "@/components/ward-management/shell-next/next-create-edit.module.css";
 import actNowStyles from "@/components/ward-management/shell/ward-phone-menu-act-now.module.css";
 
 /**
@@ -551,12 +552,14 @@ function CoordinatorCreateSheet({
         </li>
       ) : (
         list.map((item, index) => (
-          <li key={item.key} className={styles.editRow}>
+          <li key={item.key} className={editStyles.editRow}>
             <RowBody icon={item.icon} label={item.label} />
-            <span className={styles.editActions}>
+            <span className={editStyles.editActions}>
               <button
                 type="button"
-                className={group === "pinned" ? `${styles.editButton} ${styles.editPinned}` : styles.editButton}
+                className={
+                  group === "pinned" ? `${editStyles.editButton} ${editStyles.editPinned}` : editStyles.editButton
+                }
                 aria-label={group === "pinned" ? `Unpin ${item.label}` : `Pin ${item.label}`}
                 data-create-edit={`pin-${item.key}`}
                 onClick={() => togglePin(item)}
@@ -566,7 +569,7 @@ function CoordinatorCreateSheet({
               </button>
               <button
                 type="button"
-                className={styles.editButton}
+                className={editStyles.editButton}
                 aria-label={`Move ${item.label} up`}
                 data-create-edit={`up-${item.key}`}
                 disabled={index === 0}
@@ -576,7 +579,7 @@ function CoordinatorCreateSheet({
               </button>
               <button
                 type="button"
-                className={styles.editButton}
+                className={editStyles.editButton}
                 aria-label={`Move ${item.label} down`}
                 data-create-edit={`down-${item.key}`}
                 disabled={index === list.length - 1}
@@ -611,7 +614,7 @@ function CoordinatorCreateSheet({
       headerActions={
         <button
           type="button"
-          className={styles.createEdit}
+          className={editStyles.createEdit}
           aria-pressed={editing}
           data-testid="ward-phone-create-edit"
           onClick={() => setEditing((value) => !value)}
@@ -622,13 +625,13 @@ function CoordinatorCreateSheet({
     >
       {editing ? (
         <>
-          <section className={styles.editGroup} aria-labelledby="ward-create-edit-pinned">
+          <section className={editStyles.editGroup} aria-labelledby="ward-create-edit-pinned">
             <h3 id="ward-create-edit-pinned" className={styles.createHeading}>
               Pinned
             </h3>
             {editRows("pinned", pinned)}
           </section>
-          <section className={styles.editGroup} aria-labelledby="ward-create-edit-links">
+          <section className={editStyles.editGroup} aria-labelledby="ward-create-edit-links">
             <h3 id="ward-create-edit-links" className={styles.createHeading}>
               Quick links
             </h3>
