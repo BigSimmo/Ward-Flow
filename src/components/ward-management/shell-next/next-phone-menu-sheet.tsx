@@ -73,6 +73,7 @@ import {
   Section,
 } from "@/components/ward-management/shell/ward-phone-menu-parts";
 import { WardMyWards } from "@/components/ward-management/shell/ward-my-wards";
+import { useAwaitingTriageCount } from "@/components/ward-management/triage/use-triage-people";
 import { useWardHelpRow } from "@/components/ward-management/help/ward-help-link";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
@@ -492,8 +493,22 @@ function CreateSheet({
   });
   // Coordinator (Josh, 8 Nov 2026, "+ sheet reordered"): New referral alone on top, then the calls
   // and asks a coordinator makes all day, then the rarer starts as quiet links underneath.
+  // Triage on the phone (Josh, 15 Nov 2026, D-NNN): New triage is a full row under New referral, with
+  // how many referrals await it, not a quiet link at the foot of the sheet.
+  const awaitingTriage = useAwaitingTriageCount();
   const coordRows = coordinator
     ? [
+        ...(canTriage
+          ? [
+              {
+                key: "triage",
+                icon: ClipboardList,
+                label: "New triage",
+                meta: awaitingTriage > 0 ? `${awaitingTriage} awaiting triage` : "Choose the person, then the form",
+                href: WARD_TRIAGE_NEW_HREF,
+              },
+            ]
+          : []),
         {
           key: "call-log",
           icon: PhoneOutgoing,
@@ -530,17 +545,16 @@ function CreateSheet({
       ].filter((row) => row.tool !== undefined || (row.href !== undefined && canOpen(row.href)))
     : [];
   const coordLinks = coordinator
-    ? [
-        ...(canTriage ? [{ key: "triage", label: "New triage", href: WARD_TRIAGE_NEW_HREF }] : []),
-        ...CREATE_LINKS.filter((item) => item.id !== "delays" && ids.includes(item.id)).map((item) => ({
+    ? CREATE_LINKS.filter((item) => item.id !== "delays" && ids.includes(item.id))
+        .map((item) => ({
           key: item.id,
           label: item.label,
           href:
             item.id === "wards" && currentUnitId !== undefined
               ? unitHref(decodeURIComponent(currentUnitId))
               : (item.href ?? byId.get(item.id)?.href),
-        })),
-      ].filter((link): link is { key: string; label: string; href: string } => link.href !== undefined)
+        }))
+        .filter((link): link is { key: PhoneCreateId; label: string; href: string } => link.href !== undefined)
     : [];
   if (coordinator) {
     return (
@@ -590,7 +604,12 @@ function CreateSheet({
                   <Chevron />
                 </button>
               ) : (
-                <Link href={row.href!} className={styles.row} onClick={onClose}>
+                <Link
+                  href={row.href!}
+                  className={styles.row}
+                  onClick={onClose}
+                  data-testid={row.key === "triage" ? "ward-phone-create-triage" : undefined}
+                >
                   <RowBody icon={row.icon} label={row.label} meta={<span>{row.meta}</span>} />
                   <Chevron />
                 </Link>
@@ -752,9 +771,12 @@ function MenuPages({
   onClose,
   onSwitch,
   activityRow,
+  triageRow,
 }: {
   onSwitch: () => void;
   activityRow?: boolean;
+  /** Start a triage, listed straight after Referrals for a desk that may triage (Josh, 15 Nov 2026). */
+  triageRow?: ReactNode;
   query: string;
   entries: RailEntry[];
   /** Act-now and overdue rows only (device audit option A). */
@@ -781,7 +803,16 @@ function MenuPages({
       {groups.map((group) => (
         <Section key={group.label} label={group.label}>
           {group.entries.map((entry) =>
-            isRoleMenuAction(entry) ? <ActionRow key={entry.id} action={entry} onClose={onClose} /> : pageRow(entry),
+            isRoleMenuAction(entry) ? (
+              <ActionRow key={entry.id} action={entry} onClose={onClose} />
+            ) : entry.id === "referrals" && triageRow ? (
+              <Fragment key={entry.id}>
+                {pageRow(entry)}
+                {triageRow}
+              </Fragment>
+            ) : (
+              pageRow(entry)
+            ),
           )}
         </Section>
       ))}
@@ -858,6 +889,16 @@ export function PhoneMenuSheets({
       onNewReferral={onRefer}
     />
   );
+  // Triage on the phone (Josh, 15 Nov 2026, D-NNN): Start a triage gets a Menu row, with how many
+  // referrals await it, for every desk that may sign one (the + sheet's own test).
+  const { canTriage } = usePhoneCreateOptions(byId);
+  const awaitingTriage = useAwaitingTriageCount();
+  const triageRow = canTriage
+    ? pageRow(
+        { id: "triage-new", href: WARD_TRIAGE_NEW_HREF, label: "Start a triage", icon: ClipboardList },
+        awaitingTriage > 0 ? { value: awaitingTriage, noun: "awaiting triage", urgent: false } : undefined,
+      )
+    : undefined;
   return (
     <>
       <Sheet
@@ -884,6 +925,7 @@ export function PhoneMenuSheets({
           needs={needs}
           groups={groups}
           pageRow={pageRow}
+          triageRow={triageRow}
           onResult={(item) => {
             announceToWardShell(`${item.title}.`);
             onClose();
