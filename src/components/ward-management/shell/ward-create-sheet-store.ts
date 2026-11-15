@@ -18,7 +18,7 @@ export const CREATE_SHEET_STORAGE_KEY = "ward-flow-create-sheet";
 const createSheetChangeEvent = "ward-flow-create-sheet-change";
 
 /** Every start the coordinator's + sheet can show, in the standard order. */
-export const CREATE_ITEM_IDS = [
+const CREATE_ITEM_IDS = [
   "triage",
   "call-log",
   "ask",
@@ -33,7 +33,7 @@ export type CreateItemId = (typeof CREATE_ITEM_IDS)[number];
 export type CreateSheetLayout = { pinned: readonly CreateItemId[]; links: readonly CreateItemId[] };
 
 /** The standard sheet: the day's starts as full rows, the rarer ones as links (Josh, 8 and 15 Nov 2026). */
-export const STANDARD_CREATE_LAYOUT: CreateSheetLayout = Object.freeze({
+const STANDARD_CREATE_LAYOUT: CreateSheetLayout = Object.freeze({
   pinned: Object.freeze(["triage", "call-log", "ask", "transport", "delays", "remind"] as const),
   links: Object.freeze(["wards", "add-patient"] as const),
 });
