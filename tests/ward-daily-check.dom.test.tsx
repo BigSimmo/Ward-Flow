@@ -88,6 +88,25 @@ describe("Daily check: Mark all checked", () => {
     expect(within(list).getAllByRole("link").length).toBeGreaterThan(0);
   });
 
+  it("Reopen undoes a tick made by mistake, on the phone line and the laptop list (D-240)", () => {
+    const phone = render(inProvider(<DailyCheckLine />));
+    fireEvent.click(screen.getByRole("button", { name: "Show list" }));
+    expect(screen.queryByRole("button", { name: "Reopen" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: MARK_ALL }));
+    fireEvent.click(screen.getByRole("button", { name: "Reopen" }));
+    expect(screen.getByRole("button", { name: MARK_ALL })).toBeInTheDocument();
+    expect(screen.getByTestId("ward-missed-check")).not.toHaveTextContent("all checked by");
+    phone.unmount();
+
+    render(inProvider(<Laptop />));
+    fireEvent.click(screen.getByRole("button", { name: "Show list" }));
+    const list = screen.getByRole("region", { name: "Daily check" });
+    fireEvent.click(within(list).getByRole("button", { name: MARK_ALL }));
+    fireEvent.click(within(list).getByRole("button", { name: "Reopen" }));
+    expect(list).toHaveTextContent("Not checked today");
+    expect(within(list).getByRole("button", { name: MARK_ALL })).toBeInTheDocument();
+  });
+
   it("laptop tile: Hide closes the list under the header", () => {
     render(inProvider(<Laptop />));
     fireEvent.click(screen.getByRole("button", { name: "Show list" }));

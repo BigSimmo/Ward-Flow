@@ -1,7 +1,8 @@
 // The RECORD_* events about a person's stay on the ward: leaving, trips to an emergency department,
 // discharge blockers, leave, absence, handover, repatriation, clinical contact and support
 // notifications. Moved out of `ward-flow-record-events.ts` unchanged, which hands these events here.
-import { stayLegalStatusIsInvoluntary } from "./ward-discharge-records";
+import { plannedAdmissionLegalStatus, stayLegalStatusIsInvoluntary } from "./ward-discharge-records";
+import { classifyLegalStatus } from "./ward-legal-status";
 import { openRestrictivePracticeRefusal } from "./restrictive-practice/ward-restrictive-practice";
 import { isLeavingDestination } from "./ward-admissions";
 import { stayBedKind } from "./ward-bed-numbers";
@@ -488,6 +489,29 @@ export function reduceRecordedStayEvent(
           event,
           `RECORD_ABSENCE_STEP was raised acting as unit ${event.actingUnitId} but the absence is on unit ${bed.unitId}`,
         );
+      }
+      if (event.step === "return_order_made") {
+        // A3-13 (Josh signed off): a voluntary stay is not on an order, so no return order step.
+        // The screens hide it (absenceStepsFor); the server refuses it too (untested-537, INV-ACTION-230).
+        // Refused only when the stay's own record (movement, else converted booking, else the patient
+        // record) says voluntary and nothing on the stay or patient record says involuntary.
+        const admission = findAdmission(state, event.admissionId);
+        const patient = admission?.patientId
+          ? state.patients.find((candidate) => candidate.id === admission.patientId)
+          : undefined;
+        const stayStatus = admission
+          ? (dischargeMovement(state, admission)?.legalStatus ??
+            plannedAdmissionLegalStatus(state, admission) ??
+            patient?.legalStatus)
+          : undefined;
+        if (
+          admission &&
+          classifyLegalStatus(stayStatus) === "voluntary" &&
+          !stayLegalStatusIsInvoluntary(state, admission) &&
+          !patientRecordIsInvoluntary(patient?.legalStatus)
+        ) {
+          return reject(state, event, "A return order is not needed for a voluntary stay");
+        }
       }
       if (bed.absentWithoutLeave.steps.some((done) => done.step === event.step)) {
         return reject(state, event, `${event.step} is already recorded for admission ${event.admissionId}`);

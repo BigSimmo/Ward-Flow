@@ -1,4 +1,4 @@
-15 Nov 2026, PR #1683 (permit(), History, the one late rule, am/pm). Josh approved going above the 5 KB rule (D-238). Each limit is the size CI measured at 8029df345 (merged with main 6d09158ef) plus 0.2 KB. Main alone measured the size in brackets on the same run:
+15 Nov 2026, PR #1683 (permit(), History, the one late rule, am/pm). Josh approved going above the 5 KB rule (D-242). Each limit is the size CI measured at 8029df345 (merged with main 6d09158ef) plus 0.2 KB. Main alone measured the size in brackets on the same run:
 
 - `/ward-flow`: 608.4 → 617.8 KB (measured 617.6 KB; main 607.9 KB).
 - `/ward-flow/referrals`: 605.9 → 615.2 KB (measured 615.0 KB; main 606.2 KB).
