@@ -258,6 +258,8 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-241](#d-241-the-22-november-merge-freeze-is-confirmed-15-november-2026)                                                                              | The 22 November merge freeze is confirmed                                              | Active                                           |
 | [D-242](#d-242-raise-the-phone-size-limits-for-the-permission-check-and-history-15-november-2026)                                                       | Raise the phone size limits for the permission check and History                       | Active                                           |
 | [D-243](#d-243-four-follow-ups-from-the-figures-history-and-timing-work-15-november-2026)                                                               | Four follow-ups from the figures, history and timing work                              | Active                                           |
+| [D-244](#d-244-help-sits-beside-the-header-search-on-every-screen-15-november-2026)                                                                     | Help sits beside the header search on every screen                                     | Active                                           |
+| [D-245](#d-245-the-server-raises-late-arrival-notices-on-its-own-15-november-2026)                                                                      | The server raises late-arrival notices on its own                                      | Active                                           |
 
 ---
 
@@ -2875,4 +2877,19 @@ D-238 is reserved for design Lane D's block (noted in PR #1677). D-239 is reserv
 - **Why:** each was the recommended, lower-risk option. The privacy widening is the narrowest possible, the live database change waits until after the demo, and the clock rule matches D-215 item 3.
 - **Boundary:** no clinical value or rule changes. The migration and the D-14 allowlist entry each need their own PR.
 
-The next free number is D-244.
+## D-244. Help sits beside the header search on every screen (15 November 2026)
+
+- **Date:** 15 November 2026, 6:10 PM AWST (10:10 UTC). **Decided by:** Josh, in the Ward Flow project: "Can you please put the help icon next to search to click on and open help so it's much better and accessible".
+- **Decision:** a Help button (the circled question mark) sits right after the header search on every width: desktop, tablet and phone. One tap or Enter opens Help at How do I…, exactly as the rail's Help row does. It reads "Help" to a screen reader ("Help, new" until this desk's tour is seen), is a 48px target, and returns focus to itself when Help closes. On the Patients page, where the header search steps aside, Help keeps the same place.
+- **Why:** phones and tablets have no rail, so Help was two taps deep in the phone menu. Beside search is where people already look when they are stuck.
+- **Replaces:** the 31 October 2026 note in `next-bar.tsx` that Help lives only in the rail. The "no ? beside the page title" part still stands. The rail's and phone menu's Help rows stay.
+- **Boundary:** header layout only. No clinical value, rule or wording changes.
+
+## D-245. The server raises late-arrival notices on its own (15 November 2026)
+
+- **Date:** 15 November 2026, 10:03 PM AWST (14:03 UTC). **Decided by:** Josh, in the figures, history and timing thread: "Ok go ahead with all recommendations", answering the report that the automatic late-arrival notice was held in draft PR #1687 until he said go.
+- **Decision:** the backend's five-minute timer runs a late-notice sweep, whether or not push notifications are on. When an open journey has turned late under D-221 (after the signed 60 minutes) and the referrer or accepting ward has not yet been told, the server raises that notice itself, marked automatic, and saves once with a system History line. A desk cannot claim to be the automatic sweep. This is D-221 item 7 (X1b-5).
+- **Why:** before this, the notice was stored only when someone saved. A journey that turned late while nobody saved told no one.
+- **Boundary:** uses the signed D-221 values. No threshold or wording changes. Synthetic data only.
+
+The next free number is D-246.

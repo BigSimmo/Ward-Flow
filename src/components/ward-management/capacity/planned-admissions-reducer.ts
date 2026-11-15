@@ -9,7 +9,7 @@
 import { closedToAdmissionsRefusal } from "./ward-closure";
 import { bedsPendingPreparation } from "../ward-bed-availability";
 import { lockedBedsFree, openBedsFree } from "../ward-bed-designation";
-import { chooseBedNumber } from "../ward-bed-numbers";
+import { chooseBedNumber, endPreparationForSeatedBed } from "../ward-bed-numbers";
 import {
   numberedReservationBeds,
   pendingNumberedReservations,
@@ -665,6 +665,8 @@ export function reducePlannedAdmissionEvent(
         units: state.units.map((candidate) => (candidate.id === unit.id ? updatedUnit : candidate)),
         admissions: [...state.admissions, admission],
         admissionSequence: sequence,
+        // A4-24: an arrival seated in a bed still being made ready ends that bed's marker.
+        bedReleases: endPreparationForSeatedBed(state.bedReleases, state.admissions, unit.id, bedNumber),
         plannedAdmissions: plannedAdmissions(state).map((candidate) =>
           candidate.id === planned.id
             ? { ...candidate, state: "arrived" as const, convertedAt: event.now as Instant, admissionId: admission.id }
