@@ -92,6 +92,8 @@ import type { ExecutiveReportingFoundation } from "../statistics/executive-stati
 import { publishLiveClock } from "@/components/wf";
 import { areCharacterShortcutsEnabled } from "./ward-character-shortcuts";
 import bar from "./ward-bar.module.css";
+import polish from "../shell-next/next-bar.module.css";
+import { WardBarHelpButton } from "../shell-next/next-bar-help";
 import rail from "./ward-rail.module.css";
 import railParts from "../shell-next/next-rail.module.css";
 import phone from "./ward-phone-menu.module.css";
@@ -774,7 +776,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
                 <span className={bar.markLong}>Synthetic </span>prototype
               </span>
             </div>
-            <div className={bar.centerGroup}>
+            <div className={`${bar.centerGroup} ${polish.searchPair}`}>
               {report ? (
                 <div className={bar.searchWrap}>
                   <WardPublicSearch
@@ -785,6 +787,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
                   />
                 </div>
               ) : null}
+              <WardBarHelpButton />
             </div>
             <div className={bar.drawerTriggers}>
               <button
