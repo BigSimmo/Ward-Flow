@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
 
+import {
+  alertActionFor,
+  alertKindLabel,
+  isQueueItem,
+  type AlertSubject,
+} from "@/components/ward-management/alerts/alerts-model";
 import { alertsNowFigures } from "@/components/ward-management/ward-alerts-figures";
 import {
   leaveBedReminderInboxItems,
@@ -49,5 +55,22 @@ describe("timed reminders are on the shared alert list (R-HOME-10)", () => {
         0,
       ),
     ).toMatchObject({ actNow: 0, waiting: 2, outstanding: 2 });
+  });
+  it("reaches the Alerts queue and Home's list, with its own label and next step (PR #1685 review)", () => {
+    const [silent] = silentWardReminderInboxItems(
+      { units, configuration, referrals: [referral(SILENT_WARD_SECOND_REMINDER_MINUTES)] },
+      NOW,
+    );
+    const [leave] = leaveBedReminderInboxItems({ units, leaveBeds: [leaveBed(LEAVE_BED_OPEN_WARNING_MINUTES)] }, NOW);
+    expect(silent && isQueueItem(silent)).toBe(true);
+    expect(leave && isQueueItem(leave)).toBe(true);
+    expect(alertKindLabel(silent!.id)).toBe("No reply from a ward");
+    expect(alertKindLabel(leave!.id)).toBe("Leave bed held 24 hours");
+    expect(alertActionFor(silent!, {} as AlertSubject)).toMatchObject({ kind: "link", label: "Chase the ward" });
+    expect(alertActionFor(leave!, {} as AlertSubject)).toMatchObject({
+      kind: "link",
+      label: "Open leave",
+      href: "/ward-flow/leave",
+    });
   });
 });

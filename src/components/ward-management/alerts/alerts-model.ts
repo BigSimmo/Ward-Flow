@@ -41,7 +41,8 @@ export type AlertKind =
   | "target"
   | "running"
   | "duplicate"
-  | "pullnow";
+  | "pullnow"
+  | "reminder";
 
 /** The queue's three groups: act now (red), waiting (amber, counted) and running targets (listed, never counted). */
 export type { AlertGroup };
@@ -75,6 +76,10 @@ const KIND_PREFIXES: [AlertKind, string][] = [
   ["duplicate", INBOX_CATEGORIES.duplicate_bed_request.idPrefix],
   // Audit M2 (14 Nov 2026): a Pull now no asked ward answered in time. Its remainder is a movement id.
   ["pullnow", INBOX_CATEGORIES.pull_now_overdue.idPrefix],
+  // R-HOME-10: the timed reminders (a ward silent for 4 hours, a leave bed held 24 hours). Amber rows
+  // that reach Alerts and Home as the bell counts them. Their remainder is a referral or a leave bed.
+  ["reminder", INBOX_CATEGORIES.silent_ward_reminder.idPrefix],
+  ["reminder", INBOX_CATEGORIES.leave_bed_reminder.idPrefix],
 ];
 
 export function alertKindOf(id: string): AlertKind | undefined {
@@ -164,7 +169,7 @@ export function movementIdOfInboxId(id: string): string | undefined {
   // A planned arrival row names a booking, never a movement; a discharge notification row names a stay.
   if (!match || match[0] === "planned") return undefined;
   if (match[1] === INBOX_CATEGORIES.support_notification_discharge.idPrefix) return undefined;
-  if (match[0] === "awol" || match[0] === "duplicate") return undefined;
+  if (match[0] === "awol" || match[0] === "duplicate" || match[0] === "reminder") return undefined;
   return id.slice(match[1].length);
 }
 
@@ -195,6 +200,7 @@ const ALERT_KIND_LABELS: Record<AlertKind, string> = {
   running: "Decision target running",
   duplicate: "More than one active bed request",
   pullnow: "Pull now not answered",
+  reminder: "No reply from a ward",
 };
 
 /**
@@ -205,9 +211,9 @@ const ALERT_KIND_LABELS: Record<AlertKind, string> = {
 export function alertKindLabel(id: string): string | undefined {
   const kind = alertKindOf(id);
   if (kind === undefined) return undefined;
-  return id.startsWith(INBOX_CATEGORIES.transport_booking_estimate_passed.idPrefix)
-    ? "Booking estimate passed"
-    : ALERT_KIND_LABELS[kind];
+  if (id.startsWith(INBOX_CATEGORIES.transport_booking_estimate_passed.idPrefix)) return "Booking estimate passed";
+  if (id.startsWith(INBOX_CATEGORIES.leave_bed_reminder.idPrefix)) return "Leave bed held 24 hours";
+  return ALERT_KIND_LABELS[kind];
 }
 
 /** Remove the legacy movement reference from presentation, preserving the recorded detail. */
@@ -340,6 +346,11 @@ export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAct
       };
     case "duplicate":
       return { kind: "link", label: "Open oldest request", href: item.href ?? "/ward-flow/referrals" };
+    case "reminder":
+      // R-HOME-10: the referral to chase, or the Leave board where the bed is opened.
+      return item.id.startsWith(INBOX_CATEGORIES.leave_bed_reminder.idPrefix)
+        ? { kind: "link", label: "Open leave", href: item.href ?? "/ward-flow/leave" }
+        : { kind: "link", label: "Chase the ward", href: item.href ?? "/ward-flow/referrals" };
     case "pullnow":
       // Audit M2: the journey, where the Pull now and its answers are, to chase the ward.
       return { kind: "link", label: "Chase the ward", href: ownMovementHref };
