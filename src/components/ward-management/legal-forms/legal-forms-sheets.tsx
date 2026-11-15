@@ -278,6 +278,14 @@ export function RecordFormSheet({
   // D-226 (Josh, 14 Nov 2026): a continuation-type form after a Form 3E is refused; the coordinator
   // may record it with a listed reason.
   const [after3EReason, setAfter3EReason] = useState<After3EReason | "">("");
+  // A reason belongs to one patient and one form: changing either, Clear, or a saved form
+  // (which empties both) drops it, so it never carries over to the next record.
+  const reasonDraftKey = `${draft.movement}/${draft.form}`;
+  const [reasonFor, setReasonFor] = useState(reasonDraftKey);
+  if (reasonFor !== reasonDraftKey) {
+    setReasonFor(reasonDraftKey);
+    setAfter3EReason("");
+  }
   const after3E = !!draft.form && refusedAfter3E(selectedMovement, draft.form);
   // Keep the unsent synthetic draft on dismissal; explicit Clear or an accepted save removes it.
   const dismiss = onClose;

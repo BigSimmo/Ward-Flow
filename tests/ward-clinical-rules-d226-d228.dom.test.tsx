@@ -10,9 +10,9 @@ import { FindAWard, type FindAWardRow } from "@/components/ward-management/refer
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import { eligibility, placementFit } from "@/components/ward-management/ward-eligibility";
-import { restrictionNotice } from "@/components/ward-management/ward-derivations-shortlist";
 import { AFTER_3E_REFUSAL } from "@/components/ward-management/ward-legal-after-3e";
 import type { LegalForm, Movement, Unit } from "@/components/ward-management/ward-model";
+import { lockedForOpenBedNeed } from "@/components/ward-management/ward-bed-designation";
 import { pickRecordField } from "./helpers/legal-record-pick";
 
 const NOW = 2 * 1440 + 600;
@@ -78,6 +78,13 @@ describe("D-226: Record a form after a Form 3E", () => {
     fireEvent.click(within(sheet).getByRole("button", { name: "Save Form 6C anyway" }));
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ formCode: "6C", after3EReason: "form_3e_in_error" }));
   });
+
+  it("drops a picked reason when the form changes, so it never carries over", () => {
+    const { sheet } = openSheet(true);
+    fireEvent.click(within(sheet).getByRole("radio", { name: "Form 3E recorded in error" }));
+    pickRecordField("Form type", "3C");
+    for (const radio of within(sheet).getAllByRole("radio")) expect(radio).not.toBeChecked();
+  });
 });
 
 describe("D-227: a single-sex ward of the other gender is not suitable", () => {
@@ -119,16 +126,14 @@ describe("D-227 and D-228: Find a ward groups", () => {
     expect(screen.queryByText("Review")).toBeNull();
   });
 
-  it("marks only a wholly locked ward for an open-bed movement as Locked", () => {
-    const lockedWard = state.units.find((unit) => unit.lockedBeds > 0 && unit.lockedBeds >= unit.beds);
-    const openMovement: Movement = {
-      ...base,
-      closure: undefined,
-      security: "Open",
-      legalStatus: "Involuntary inpatient",
-    };
-    if (lockedWard) expect(restrictionNotice(openMovement, lockedWard)?.level).toBe("more_restrictive");
+  it("marks only a wholly locked ward for an open-bed movement as Locked, voluntary or not", () => {
+    const lockedWard = state.units.find((unit) => unit.lockedBeds > 0 && unit.lockedBeds >= unit.beds)!;
     const mixed = state.units.find((unit) => unit.beds > unit.lockedBeds)!;
-    expect(restrictionNotice(openMovement, mixed)?.level).not.toBe("more_restrictive");
+    for (const legalStatus of ["Involuntary inpatient", "Voluntary"] as const) {
+      const openMovement: Movement = { ...base, closure: undefined, security: "Open", legalStatus };
+      expect(lockedForOpenBedNeed(openMovement, lockedWard)).toBe(true);
+      expect(lockedForOpenBedNeed(openMovement, mixed)).toBe(false);
+    }
+    expect(lockedForOpenBedNeed({ ...base, security: "Secure" }, lockedWard)).toBe(false);
   });
 });

@@ -108,3 +108,12 @@ export function wardCategory(unit: Unit): WardCategory {
   if (!unitHasOpenBeds(unit)) return "Locked";
   return "Mixed";
 }
+
+/**
+ * D-228 (Josh, 14 Nov 2026): a ward whose every bed is locked, for a movement that needs an open
+ * bed, reads "Locked" in Ask wards. Read from the bed need and the beds alone, so a voluntary
+ * patient's warning (which `restrictionNotice` gives first) never hides it.
+ */
+export function lockedForOpenBedNeed(movement: { security?: string }, unit: Unit): boolean {
+  return movement.security === "Open" && !unitHasOpenBeds(unit);
+}

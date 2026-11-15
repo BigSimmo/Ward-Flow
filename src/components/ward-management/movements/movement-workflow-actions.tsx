@@ -314,7 +314,13 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
           <summary>Record paper continuation or country extension</summary>
           <label>
             Continuation form
-            <select value={form} onChange={(e) => setForm(e.target.value)}>
+            <select
+              value={form}
+              onChange={(e) => {
+                setForm(e.target.value);
+                setAfter3EReason("");
+              }}
+            >
               <option value="">Choose form</option>
               {/* Audit M13d (14 Nov 2026): the engine's own list, so nothing offered is refused. */}
               {CONTINUATION_FORM_CODES.map((code) => (
@@ -376,6 +382,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
                         ...(expiry ? { paperExpiresAt: due } : {}),
                         ...(after3E && after3EReason ? { after3EReason } : {}),
                       });
+                      setAfter3EReason("");
                     }
               }
             >
