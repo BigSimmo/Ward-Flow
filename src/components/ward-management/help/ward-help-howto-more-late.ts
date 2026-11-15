@@ -689,9 +689,10 @@ export const CRAWL_JOBS_LATE: readonly HowTo[] = [
         body: "Picks the patient up on the bed board. Open their bed first.",
       },
       {
-        target: { sel: '[data-testid="ward-board-say"]' },
+        // The whole plan, so the beds stay tappable while this step is lit.
+        target: [{ sel: '[data-testid="ward-bed-board-plan"]' }, { sel: '[data-testid="ward-board-say"]' }],
         title: "Choose the new bed",
-        body: "The line above the beds says what to do next. Tap the new bed.",
+        body: "Tap the new bed. The line above the beds says what to do next.",
       },
       {
         target: { sel: '[data-testid="ward-board-confirm"]' },

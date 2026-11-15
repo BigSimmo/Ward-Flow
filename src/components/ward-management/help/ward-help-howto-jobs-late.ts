@@ -362,21 +362,6 @@ export const LATE_JOBS: readonly HowTo[] = [
         title: "Help",
         body: "Help is in the side menu (in Menu on a phone).",
       },
-      {
-        target: [tid("ward-help-tour-row"), tid("ward-help-learn")],
-        title: "Tour of your desk",
-        body: "Under Learn Ward Flow. It shows the chapters, the steps and about how long it takes.",
-      },
-      {
-        target: tid("ward-help-view-tour"),
-        title: "Start or Resume",
-        body: "Start begins at the first step. Resume picks up where you stopped.",
-      },
-      {
-        target: tid("ward-help-show-me-around"),
-        title: "Show me around this screen",
-        body: "A shorter walk round the screen you are on.",
-      },
     ],
   },
   {
