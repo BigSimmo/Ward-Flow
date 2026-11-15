@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { expect, it, vi } from "vitest";
+import { pickRecordField } from "./helpers/legal-record-pick";
 import { ToastProvider } from "@/components/wf";
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -25,9 +26,8 @@ it("warns on a rejected legal-save completion while keeping the editable draft a
   );
   fireEvent.click(screen.getAllByRole("button", { name: "Record a form" })[0]!);
   const sheet = screen.getByTestId("ward-legal-record");
-  const type = within(sheet).getByLabelText("Form type") as HTMLSelectElement;
-  fireEvent.change(type, { target: { value: Array.from(type.options).find((option) => option.value !== "")!.value } });
-  fireEvent.change(within(sheet).getByLabelText("Movement"), { target: { value: movement.id } });
+  pickRecordField("Form type", "1A");
+  pickRecordField("Patient", movement.id);
   fireEvent.change(within(sheet).getByLabelText("Time on form"), { target: { value: "10:00" } });
   const save = screen.getByTestId("ward-legal-forms-register-confirm");
   expect(save).not.toHaveAttribute("aria-disabled", "true");

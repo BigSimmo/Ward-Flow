@@ -1,5 +1,6 @@
 // Audit 24-6 (time and clocks), fixes C: TC-03 and TC-07 on screen. All data synthetic.
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { pickRecordField } from "./helpers/legal-record-pick";
 import { useState, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -50,7 +51,7 @@ describe("TC-03: Record a form takes the date written on the form", () => {
       </WardFlowProvider>,
     );
     const sheet = screen.getByTestId("ward-legal-record");
-    fireEvent.change(within(sheet).getByLabelText("Movement"), { target: { value: movement.id } });
+    pickRecordField("Patient", movement.id);
     return sheet;
   }
 

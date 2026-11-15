@@ -7,6 +7,7 @@ import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/compon
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { wardStaySeats } from "@/components/ward-management/ward/ward-bed-layout";
 import type { Unit } from "@/components/ward-management/ward-model";
+import { WARD_CLOSURE_REASONS } from "@/components/ward-management/capacity/ward-closure";
 
 /**
  * H-0978 / WS-15 (Josh 26 Oct 2026, "Close the exact bed"): `SET_BED_CLOSED` records a closed mark
@@ -56,6 +57,33 @@ const readyOf = (state: WardFlowState, unitId: string) =>
   bedStates(unitOf(state, unitId), state.admissions, state.bedReleases, state.leaveBeds, []).ready;
 
 describe("SET_BED_CLOSED", () => {
+  it("adds a later reason to a bed closed without one in place, never reopening it (R-BEDS-4)", () => {
+    const { state, unit, freeBed } = setup();
+    const closed = setBedClosed(state, unit.id, freeBed, true);
+    const reason = WARD_CLOSURE_REASONS[0]!.id;
+    const raise = (from: WardFlowState, extra: Record<string, unknown>) =>
+      wardFlowReducer(from, {
+        type: "SET_BED_CLOSED",
+        role: "ward",
+        now: NOW + 5,
+        unitId: unit.id,
+        actingUnitId: unit.id,
+        bedNumber: freeBed,
+        closed: true,
+        ...extra,
+      } as Parameters<typeof wardFlowReducer>[1]);
+    const reasoned = raise(closed, { reason });
+    expect(reasoned.rejections).toEqual(closed.rejections);
+    // The same mark, still closed from the first moment, now carrying its reason.
+    expect(unitOf(reasoned, unit.id).closedBeds).toEqual([
+      { bedNumber: freeBed, at: NOW, by: expect.any(String), reason },
+    ]);
+    expect(readyOf(reasoned, unit.id)).toBe(readyOf(closed, unit.id));
+    // A bed that already has a reason, or a second review time, is still "already closed".
+    expect(raise(reasoned, { reason }).rejections.at(-1)?.reason).toMatch(/already closed/);
+    expect(raise(closed, { reason, reviewAt: NOW + 60 }).rejections.at(-1)?.reason).toMatch(/already closed/);
+  });
+
   it("closes the exact empty bed, refuses an occupied one, and reopens it", () => {
     const { state, unit, freeBed, occupiedBed } = setup();
     const readyBefore = readyOf(state, unit.id);

@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { act, cleanup, renderHook } from "@testing-library/react";
+import { pickRecordField, recordFieldValue } from "./helpers/legal-record-pick";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import {
@@ -227,7 +228,7 @@ describe("synthetic form integration", () => {
         }),
     );
     render(<LegalDraft save={save} />);
-    fireEvent.change(screen.getByLabelText("Movement"), { target: { value: wardMovements[0]!.id } });
+    pickRecordField("Patient", wardMovements[0]!.id);
     fireEvent.change(screen.getByLabelText("Time on form"), { target: { value: "00:00" } });
     act(() => vi.advanceTimersByTime(500));
     const key = sessionDraftKey("standard/0", "legal-record", "new");
@@ -281,13 +282,13 @@ it("restores legal form choices and time after refresh, and Clear removes the se
   clearReferralDraftSession();
   vi.useFakeTimers();
   const first = render(<LegalDraft save={() => false} />);
-  fireEvent.change(screen.getByLabelText("Movement"), { target: { value: wardMovements[0]!.id } });
+  pickRecordField("Patient", wardMovements[0]!.id);
   fireEvent.change(screen.getByLabelText("Time on form"), { target: { value: "00:00" } });
   act(() => vi.advanceTimersByTime(500));
   first.unmount();
   const second = render(<LegalDraft save={() => false} />);
   expect(screen.getByLabelText("Time on form")).toHaveValue("00:00");
-  expect(screen.getByLabelText("Movement")).toHaveValue(wardMovements[0]!.id);
+  expect(recordFieldValue("Patient")).toBe(wardMovements[0]!.id);
   // Redesign (Josh, 31 Oct 2026): Record a form's shorter draft notice.
   expect(screen.getByText("Draft restored · Clear removes it")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Clear" }));
@@ -387,12 +388,12 @@ it("does not clear a newer legal draft after Clear during a pending accepted sav
       }
     />,
   );
-  fireEvent.change(screen.getByLabelText("Movement"), { target: { value: wardMovements[0]!.id } });
+  pickRecordField("Patient", wardMovements[0]!.id);
   fireEvent.change(screen.getByLabelText("Time on form"), { target: { value: "00:00" } });
   fireEvent.click(screen.getByRole("button", { name: "Save form" }));
   expect(screen.getByLabelText("Time on form")).toBeDisabled();
   fireEvent.click(screen.getByRole("button", { name: "Clear" }));
-  fireEvent.change(screen.getByLabelText("Movement"), { target: { value: wardMovements[0]!.id } });
+  pickRecordField("Patient", wardMovements[0]!.id);
   fireEvent.change(screen.getByLabelText("Time on form"), { target: { value: "00:01" } });
   act(() => vi.advanceTimersByTime(500));
   await act(async () => complete(true));
@@ -409,7 +410,7 @@ it("asks a Form 1A's region, opening blank, and sends it only when chosen (findi
   const region = screen.getByTestId("ward-legal-forms-record-region");
   expect(region).toHaveValue("");
   fireEvent.change(region, { target: { value: "country" } });
-  fireEvent.change(screen.getByLabelText("Movement"), { target: { value: wardMovements[0]!.id } });
+  pickRecordField("Patient", wardMovements[0]!.id);
   fireEvent.change(screen.getByLabelText("Time on form"), { target: { value: "00:00" } });
   fireEvent.click(screen.getByRole("button", { name: "Save form" }));
   expect(save).toHaveBeenCalledWith(expect.objectContaining({ formCode: "1A", region: "country" }));

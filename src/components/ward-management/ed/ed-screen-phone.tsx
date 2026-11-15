@@ -3,7 +3,7 @@
 // The ED screen's phone-only pieces: the Board, Needs you and Lists switch, and a board row as a
 // phone list row. Split out of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
 import { Fragment, type ReactNode } from "react";
-import { splitDuration } from "@/components/ward-management/ward-clock";
+import { isClockBreached, splitDuration } from "@/components/ward-management/ward-clock";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { Maximize2, Minimize } from "lucide-react";
 import { FolderTabs, PhoneFilterFold, PhoneListRow, Segmented, StatusGlyph, folderTabClasses } from "@/components/wf";
@@ -12,6 +12,8 @@ import { EdBoardChips } from "./ed-board-chips";
 import { edRowReferralStatus } from "./ed-referral-status";
 import type { EdScreenContext } from "./ed-screen-context";
 import { edWaitTone } from "./ed-screen-model";
+import { typedClock } from "@/components/ward-management/ward-legal-time-as-typed";
+import { currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
 import { noFormWords } from "@/components/ward-management/ward-legal-status";
 import { legalFormNowWords } from "@/components/ward-management/ward-legal-form-progression";
 import styles from "./ed.module.css";
@@ -133,7 +135,7 @@ export function renderEdBoardPhoneRow(
   { personSheet, phoneBay }: { personSheet: ReactNode; phoneBay: string },
 ): ReactNode {
   const { movement, minutesInDepartment, medicalClearance, patientInfo, nextAction, formExpiryTone } = row;
-  const { accessTarget, isBoardRowDim, isPhone, setPhoneSheetReason, setPhoneSheetFor } = ctx;
+  const { accessTarget, now, dayZero, isBoardRowDim, isPhone, setPhoneSheetReason, setPhoneSheetFor } = ctx;
   // At or over, never strictly over: the one ED long-wait rule (ward-pressure.ts, ops-16, 13 Oct
   // 2026) is red "once the longest wait reaches the ED access target".
   const phoneOverTarget = minutesInDepartment >= accessTarget;
@@ -144,6 +146,13 @@ export function renderEdBoardPhoneRow(
       : movement.closure
         ? "Withdrawn"
         : nextAction?.label;
+  // R-LEGAL-3: inside the first warning window (the desktop row's own rule) the form's typed end
+  // leads the row's second line, so it needs no tap.
+  const formEndDueAt = currentLegalPosition(movement).dueAt;
+  const formEndLine =
+    formEndDueAt !== undefined && formExpiryTone !== undefined
+      ? `${legalFormNowWords(movement) ?? "Form"} ${isClockBreached(formEndDueAt, now) ? "ended" : "ends"} ${typedClock(formEndDueAt, now, dayZero)}`
+      : undefined;
   return (
     <Fragment key={movement.id}>
       <PhoneListRow
@@ -176,6 +185,7 @@ export function renderEdBoardPhoneRow(
         meta={[
           // No em-dash and no truncated destination; the form lives in the sheet. Change 2 (D-77):
           // the second line says where the referral stands, the same words as the board.
+          formEndLine,
           phoneBay,
           edRowReferralStatus(row, ctx).phone,
           ...(isPhone

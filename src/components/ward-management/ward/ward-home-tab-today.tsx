@@ -33,8 +33,17 @@ function formalParts(name: string): { last: string; given: string } | null {
  * then its hold time (Audit A1-3). The stage word is the journey's own short label (`stageCopy`), in
  * lower case after "Pulled"; a journey still at the pulled stage adds nothing to "Pulled".
  */
-export function pulledTileNote(stage: MovementStage | undefined, holdShort: string | undefined): string {
-  const stageWord = stage === undefined || stage === "pulled" ? "" : stageCopy[stage].shortLabel.toLowerCase();
+export function pulledTileNote(
+  stage: MovementStage | undefined,
+  holdShort: string | undefined,
+  diverted = false,
+): string {
+  // R-MOVE-1: a diverted journey's bed says so, so the ward knows to release it.
+  const stageWord = diverted
+    ? "diverted"
+    : stage === undefined || stage === "pulled"
+      ? ""
+      : stageCopy[stage].shortLabel.toLowerCase();
   return [BED_STATE_LABELS.pulled, stageWord, holdShort ?? ""].filter(Boolean).join(" · ");
 }
 

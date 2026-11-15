@@ -70,7 +70,10 @@ export const REFERRALS_AWAITING_FIGURE = defineFigure({
   status: "built",
   compute: referralsAwaitingDecision,
   home: "`referralsAwaitingDecision` (`figures/decision-counts.ts`)",
-  how: ["A referral whose destinations were all withdrawn is not counted (O-17.11)."],
+  how: [
+    "A referral whose destinations were all withdrawn is not counted (O-17.11).",
+    "A community referral every asked ward declined stays until someone acts (R-BEDS-13); a ward desk leaves it out.",
+  ],
   basis: "O-17.11",
   rail: { id: "referrals" },
 });

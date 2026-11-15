@@ -249,6 +249,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-224](#d-224-explanatory-tips-open-on-tap-14-november-2026)                                                                                           | Explanatory tips open on tap                                                           | Active                                           |
 | [D-225](#d-225-design-fix-phasing-14-november-2026)                                                                                                     | Design fix phasing                                                                     | Active                                           |
 | [D-229](#d-229-demo-pause-holds-board-time-and-seeded-wait-lists-match-the-engine-14-november-2026)                                                     | Demo Pause holds Board time; seeded wait lists match the engine                        | Active                                           |
+| [D-234](#d-234-record-gender-on-the-ed-board-14-november-2026)                                                                                          | Record gender on the ED board                                                          | Active                                           |
 | [D-237](#d-237-a-desks-own-save-is-never-another-desks-change-14-november-2026)                                                                         | A desk's own save is never another desk's change                                       | Active                                           |
 
 ---
@@ -2789,9 +2790,14 @@ D-226 is claimed by open PR #1675. D-227 is claimed by open PR #1675. D-228 is c
 - **Handed on:** the header step count after Mark handover ready (REG2-6, card X12) and the person page for a named ward wait-list stay with no referral (Lead-VM-1) go to design Lane D, whose patient-page work replaces that count and owns that page.
 - **Boundary:** synthetic data only. No clinical value or rule changes.
 
-The next free number is D-230.
+D-230 is reserved for another overnight thread (block noted in PR #1677). D-231 is reserved for another overnight thread (block noted in PR #1677). D-232 is reserved for another overnight thread (block noted in PR #1677). D-233 is reserved for another overnight thread (block noted in PR #1677). D-235 is claimed by open PR #1679. D-236 is claimed by open PR #1679.
 
-D-230 is reserved for another overnight thread (block noted in PR #1677). D-231 is reserved for another overnight thread (block noted in PR #1677). D-232 is reserved for another overnight thread (block noted in PR #1677). D-233 is reserved for another overnight thread (block noted in PR #1677). D-234 is reserved for another overnight thread (block noted in PR #1677). D-235 is reserved for another overnight thread (block noted in PR #1677). D-236 is reserved for another overnight thread (block noted in PR #1677).
+## D-234. Record gender on the ED board (14 November 2026)
+
+- **Date:** 14 November 2026, 10:56 PM AWST (14:56 UTC). **Decided by:** Josh, in the Ward Flow project: "Remove excessive wordiness, but make a way to record", answering the design plan's question on recording gender (R-LEGAL-6).
+- **Decision:** the ED board's row sheet shows the person's gender, and where it reads "Not yet recorded" it offers the existing Record gender control beside it: a choice with nothing pre-selected and a separate Record gender button. No extra wording is added.
+- **Why:** a gender-designated ward refuses a referral with "Record gender first", and the ED clinician who knows the answer had no place on the board to record it.
+- **Boundary:** reuses the existing `RECORD_MOVEMENT_GENDER` event and roles. No new rule, field, value or wording. Synthetic data only.
 
 ## D-237. A desk's own save is never another desk's change (14 November 2026)
 
@@ -2800,3 +2806,5 @@ D-230 is reserved for another overnight thread (block noted in PR #1677). D-231 
 - **Officer wording (R-MOVE-4):** the interim "Your last step is still saving" line is not used, because the cause is fixed. A refused Undo says the job has moved on and to check the board for its current step.
 - **Left for later:** the recorded hold-up on the person page (R-STRUCT-25) shows the hold-up but not who recorded it or when. That needs a new stored field and is not built here.
 - **Boundary:** save mechanics and wording only. No clinical value, threshold or saved field changes.
+
+The next free number is D-238.

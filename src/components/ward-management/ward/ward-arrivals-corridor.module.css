@@ -120,9 +120,9 @@
 }
 
 .statusTag[data-type="legal"] {
-  background: var(--danger-soft);
-  border-color: var(--danger-soft);
-  color: var(--danger);
+  background: var(--surface-2);
+  border-color: var(--line);
+  color: var(--ink-soft);
 }
 
 .statusTag[data-type="acuity"] {

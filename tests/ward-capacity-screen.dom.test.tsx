@@ -177,8 +177,8 @@ describe("the Capacity screen", () => {
     // after the fact.
     renderScreen();
     expect(screen.getByRole("main")).toBeInTheDocument();
-    // The hero title reads "Capacity, N beds ready of M" (the first word is screen-reader only).
-    expect(screen.getByRole("heading", { level: 1, name: /^Capacity,/u })).toBeInTheDocument();
+    // Design lane A (14 Nov 2026): one short title, the sidebar's name for the page.
+    expect(screen.getByRole("heading", { level: 1, name: "Capacity" })).toBeInTheDocument();
   });
 
   // Page tops (Josh, 9 Nov 2026): the hero's Locked ready / Open ready chips went with the new top;

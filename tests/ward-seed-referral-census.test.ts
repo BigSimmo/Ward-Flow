@@ -193,8 +193,9 @@ describe("K1 — seedWardFlowState() referral census (2026-09-17 pin)", () => {
 
     // Queued AND still genuinely awaiting an answer (excludes a withdrawn destination). No
     // seeded referral carries `withdrawnAt`, so this equals the queued count pinned above (7,
-    // 2026-09-25: was 6 before RF-RD06).
-    expect(counts.referrals).toEqual({ value: 7, noun: "awaiting a decision", urgent: false });
+    // 2026-09-25: was 6 before RF-RD06). R-BEDS-13 (14 Nov 2026): plus the one community referral
+    // every asked ward declined, which stays on the coordinator's queue, so 8.
+    expect(counts.referrals).toEqual({ value: 8, noun: "awaiting a decision", urgent: false });
     expect(counts.referrals?.value).toBeGreaterThan(0); // anti-vacuity
   });
 

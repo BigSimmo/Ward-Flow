@@ -387,7 +387,20 @@ describe("other screens honour a recorded diversion (Together-X1b-3, 14 Nov 2026
       nameOf: () => "Synthetic",
       desk: "ward",
     });
-    expect(row.action).toBeNull();
+    // R-MOVE-1 (design lane C): not Confirm arrival; the one button releases the pulled bed, on the
+    // ward desk and the coordinator's view alike.
+    expect(row.action).toBe("release-diverted");
+    expect(row.releaseLabel).toMatch(/^Release (bed \d{2}|pulled bed)$/u);
+    expect(row.arriveReason).toBeUndefined();
+    const [coordinatorRow] = arrivalRows({
+      accepted: [after],
+      beds: [],
+      unit,
+      now: NOW + 8,
+      nameOf: () => "Synthetic",
+      desk: "coordinator",
+    });
+    expect(coordinatorRow.action).toBe("release-diverted");
     expect(row.lines[0]).toContain(DIVERTED_STATUS_LABEL);
     expect(arrivalTransportLine(after, NOW + 8).text).toContain(TRANSPORT_WHEREABOUTS[1]);
 

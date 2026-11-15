@@ -12,6 +12,7 @@ import { networkNamedHolds, totalReadyBedsNow } from "@/components/ward-manageme
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
+import { referralQueueOrder } from "@/components/ward-management/ward-referrals";
 import { unitInScope, type WardAccessScope } from "@/components/ward-management/ward-role-access";
 import { NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
 
@@ -69,8 +70,9 @@ describe("rail counts read their page's figure on every desk (R-STRUCT-24)", () 
     const queued = referralsAwaitingDecision(state.referrals).length;
     expect(wardNavCounts(input).referrals!.value).toBe(queued);
     const scope: WardAccessScope = { kind: "ward", unitIds: [state.units[0]!.id] };
+    // R-BEDS-13: a referral every asked ward declined is the coordinator's, so a ward desk leaves it out.
     expect(wardNavCounts({ ...input, scope }).referrals!.value).toBe(
-      wardDeskAnswerCount(queued, state.movements, state.referrals),
+      wardDeskAnswerCount(referralQueueOrder(state.referrals).length, state.movements, state.referrals),
     );
   });
 

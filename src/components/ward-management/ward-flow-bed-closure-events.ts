@@ -90,7 +90,24 @@ export function reduceBedClosureEvent(
         return replaceUnit(state, unit.id, reopened);
       }
 
-      if (isMarked) return reject(state, event, `Bed ${event.bedNumber} on ${unit.name} is already closed`);
+      if (isMarked) {
+        // R-BEDS-4: a reason added later to a bed closed without one is written onto its mark in one
+        // step, so the bed is never reopened (and offered) on the way to recording why it is closed.
+        const active = activeClosedBeds(unit).find((mark) => mark.bedNumber === event.bedNumber);
+        if (event.reason === undefined || active?.reason !== undefined || event.reviewAt !== undefined) {
+          return reject(state, event, `Bed ${event.bedNumber} on ${unit.name} is already closed`);
+        }
+        if (!WARD_CLOSURE_REASON_IDS.includes(event.reason)) {
+          return reject(state, event, "SET_BED_CLOSED reason must be chosen from WARD_CLOSURE_REASONS");
+        }
+        decision.outcome = "accepted";
+        decision.reasonCode = "none";
+        const reason = event.reason;
+        return replaceUnit(state, unit.id, {
+          ...unit,
+          closedBeds: marks.map((mark) => (mark === active ? { ...mark, reason } : mark)),
+        });
+      }
       // Chosen, never typed: the runtime half of the union-type check, for an untyped caller.
       if (event.reason !== undefined && !WARD_CLOSURE_REASON_IDS.includes(event.reason)) {
         return reject(state, event, "SET_BED_CLOSED reason must be chosen from WARD_CLOSURE_REASONS");

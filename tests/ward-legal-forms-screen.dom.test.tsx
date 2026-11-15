@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import { pickRecordField } from "./helpers/legal-record-pick";
 import { describe, expect, it } from "vitest";
 import {
   draftSessionVersion,
@@ -465,14 +466,13 @@ it("clears an unsaved paper-form region on Clear and when the movement changes",
   }
   render(<RegionForm />);
   fireEvent.change(screen.getByTestId("ward-legal-forms-record-region"), { target: { value: "country" } });
-  fireEvent.change(screen.getByLabelText("Movement"), { target: { value: openMovements[1]!.id } });
+  pickRecordField("Patient", openMovements[1]!.id);
   expect(screen.getByTestId("ward-legal-forms-record-region")).toHaveValue("");
-  // Empty the movement first, so Clear (not the movement-change reset) must clear the region.
-  fireEvent.change(screen.getByLabelText("Movement"), { target: { value: "" } });
+  // Clear (not the patient-change reset) must clear the region.
   fireEvent.change(screen.getByTestId("ward-legal-forms-record-region"), { target: { value: "metro" } });
   expect(screen.getByTestId("ward-legal-forms-record-region")).toHaveValue("metro");
   fireEvent.click(screen.getByRole("button", { name: "Clear" }));
-  fireEvent.change(screen.getByLabelText("Form type"), { target: { value: "1A" } });
+  pickRecordField("Form type", "1A");
   expect(screen.getByTestId("ward-legal-forms-record-region")).toHaveValue("");
 });
 
@@ -500,4 +500,13 @@ it("recovers the optional paper-form region with the rest of its permitted draft
   }
   render(<RecoveryForm />);
   expect(screen.getByTestId("ward-legal-forms-record-region")).toHaveValue("country");
+});
+
+it("shows record-form choices as a short name with the register title on a second line", async () => {
+  const { recordFormOption } = await import("@/components/ward-management/legal-forms/legal-forms-sheets");
+  expect(recordFormOption("3B").label).toBe("3B · Continuation of detention");
+  expect(recordFormOption("3C")).toMatchObject({
+    label: "3C · Continuation of detention",
+    hint: "Continuation of detention to enable a further examination by a psychiatrist",
+  });
 });

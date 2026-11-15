@@ -24,7 +24,7 @@ import { heldUpDueByTomorrow } from "@/components/ward-management/ward-held-up";
 import { MOVEMENT_STAGES, type Movement } from "@/components/ward-management/ward-model";
 import { serviceRollup } from "@/components/ward-management/ward-morning-rollup";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
-import { referralQueueOrder } from "@/components/ward-management/ward-referrals";
+import { coordinatorReferralQueue } from "@/components/ward-management/ward-referrals";
 import { openEdJourneys, waitingInEds } from "@/components/ward-management/ward-shared-figures";
 import { NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
 
@@ -181,15 +181,16 @@ describe("the alerts and decision rows (Q260, A9-04)", () => {
     const awaiting = referralsAwaitingDecision(state.referrals);
     expect(awaiting.length, "the seed has referrals to decide").toBeGreaterThan(0);
     expect(counts.referrals?.value).toBe(awaiting.length);
+    // R-BEDS-13: the coordinator's Home queue holds the same set, held-declined referrals included.
     expect(
-      referralQueueOrder(state.referrals)
+      coordinatorReferralQueue(state.referrals)
         .map((r) => r.id)
         .sort(),
     ).toEqual(awaiting.map((r) => r.id).sort());
   });
 
   it("Needs you is act now plus the referrals to decide; Open alerts is act now plus waiting", () => {
-    const toDecide = referralQueueOrder(state.referrals).length;
+    const toDecide = coordinatorReferralQueue(state.referrals).length;
     expect(needsYouCount(figures.actNow, toDecide)).toBe(figures.actNow + toDecide);
     expect(figures.outstanding).toBe(figures.actNow + figures.waiting);
   });

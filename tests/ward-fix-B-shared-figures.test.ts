@@ -168,14 +168,10 @@ describe("beds ready agree across screens, with a bed named for an incoming pati
     expect(tv.services.reduce((sum, row) => sum + row.ready, 0)).toBe(capacityReady);
   });
 
-  it("the leave tracker numbers beds from the same Ready", () => {
-    // A leave bed with no recorded bed number is numbered after the ward's Ready beds.
+  it("the leave tracker never works a bed number out from list order (R-BEDS-6)", () => {
+    // A leave bed for a stay with no recorded bed number and no board seat reads "Bed not recorded".
     const leave = { ...state.leaveBeds[0]!, id: "LB-SYNTH-B", unitId: unit.id, admissionId: "AD-SYNTH-B-NONE" };
-    const label = (named: typeof holds) =>
-      leaveBedLabels(unit, [leave], state.admissions, state.bedReleases, [leave], named).get(leave.id);
-    const ready = readyBedsNow(unit, state.admissions, state.bedReleases, holds);
-    expect(label(holds)).toBe(`Bed ${String(ready + 1).padStart(2, "0")}`);
-    expect(label([])).toBe(`Bed ${String(ready + 2).padStart(2, "0")}`);
+    expect(leaveBedLabels(unit, [leave], state.admissions).get(leave.id)).toBe("Bed not recorded");
   });
 });
 

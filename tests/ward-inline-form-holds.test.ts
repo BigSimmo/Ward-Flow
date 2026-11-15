@@ -63,6 +63,7 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
     why: "Item 9: the three crew time boxes and Save crew times sit in one form (D-93, D-141).",
   },
   "ed/ed-screen-row-forms.tsx": { cover: "popup", why: "Row forms render in the person sheet (A2)." },
+  "ed/ed-screen-person-sheet.tsx": { cover: "popup", why: "Record gender sits inside the person sheet (R-LEGAL-6)." },
   "ed/ed-screen-row-menu.tsx": { cover: "popup" },
   "ed/ed-screen.tsx": { cover: "popup", why: "The person sheet holds the row forms." },
   "ed/use-ed-screen-decline.ts": { cover: "held" },
@@ -137,6 +138,10 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
   "ward/ward-arrivals-corridor.tsx": { cover: "page form" },
   "ward/ward-bed-dossier-drawer.tsx": { cover: "popup", why: "The bed drawer is modal." },
   "ward/ward-bed-move-reason-form.tsx": { cover: "held" },
+  "ward/ward-home-tab.tsx": {
+    cover: "popup",
+    why: "Arrival details are asked in the arrival identity dialog, which is modal (Desks-R3-11).",
+  },
   "restrictive-practice/seclusion-forms-view.tsx": {
     cover: "popup",
     why: "Start, end, room and incident each open in their own Dialog (FS3).",

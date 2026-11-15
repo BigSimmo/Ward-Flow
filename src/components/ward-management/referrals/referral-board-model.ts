@@ -14,6 +14,8 @@ import {
   referralState,
   referralClocks,
 } from "@/components/ward-management/ward-referrals";
+
+export { referralAllWardsDeclined } from "@/components/ward-management/ward-referrals";
 import {
   OVERDUE_AFTER_ANY_TIER_MINUTES,
   OVERDUE_AFTER_MINUTES_BY_TIER,
@@ -28,6 +30,9 @@ import { referralPresentation, type SenderReferralPresentation } from "../ward-p
  * already enforces at placement. It goes once a coordinator has recorded the review.
  */
 export const GENDER_REVIEW_FLAG = "Coordinator to review: gender or sex not recorded as female or male";
+
+/** R-BEDS-13: the tag a queued referral carries once every asked ward has declined. */
+export const ALL_ASKED_DECLINED_TAG = "All asked wards declined";
 
 export function referralNeedsGenderReview(referral: Referral): boolean {
   const ward = referral.destinations.find((addressing) => addressing.destination.kind === "psychiatric_ward");

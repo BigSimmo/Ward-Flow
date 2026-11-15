@@ -64,8 +64,8 @@ describe("ward answer: the Bed request panel and the census reason follow whethe
     expect(reason.tagName).toBe("SPAN");
     expect(reason.className).toMatch(/srOnly/);
 
-    // The safeguard line stays word for word, naming this ward only.
-    expect(document.body).toHaveTextContent(`Writes to ${unit.name} only — never any other ward.`);
+    // The safeguard line names this ward only.
+    expect(document.body).toHaveTextContent(`Changes ${unit.name} only.`);
   });
 
   it("with a request open, shows the census reason under the squares", () => {

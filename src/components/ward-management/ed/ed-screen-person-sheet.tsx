@@ -19,6 +19,7 @@ import { movementMedicalClearance } from "./ed-screen-model";
 import type { renderEdRowControls } from "./ed-screen-row-facts";
 import styles from "./ed.module.css";
 import { psychReviewStatusWords } from "./ed-psych-review";
+import { EdRecordGender } from "./ed-record-gender";
 
 /**
  * Holds a row's open form back for one commit after the person's sheet opens. Log transport booking
@@ -132,6 +133,20 @@ export function renderEdPersonSheet(
           </dd>
         </div>
       </dl>
+      {movement.legalForm ? (
+        // One form panel (L35, #1386): the form reads as it does on the Forms page, its typed end
+        // time, region, age band, any extension and the caveat, then its one next step. Recording
+        // or extending the expiry stays with the Legal form control below.
+        <section
+          className={styles.phoneSheetSection}
+          aria-label="Legal form"
+          data-testid={`ward-ed-person-legal-form-${movement.id}`}
+        >
+          <h3 className={styles.phoneSheetHeading}>Legal form</h3>
+          <LegalFormSummary movement={movement} now={now} fromLine={department.name} toLine={destinationLabel} />
+          <LegalFormNextStep movement={movement} now={now} />
+        </section>
+      ) : null}
       {referral.steps ? (
         <section
           className={styles.phoneSheetSection}
@@ -204,6 +219,23 @@ export function renderEdPersonSheet(
           </div>
         )}
         <div>
+          <dt>Gender</dt>
+          <dd data-testid={`ward-ed-sheet-gender-${movement.id}`}>
+            {movement.gender ?? "Not yet recorded"}
+            {/* R-LEGAL-6 (D-234, Josh 14 Nov 2026): record it where it reads "Not yet recorded". */}
+            {movement.gender === undefined && !movement.closure ? (
+              <EdRecordGender
+                movement={movement}
+                patientName={patientInfo.formalName}
+                raise={ctx.raise}
+                drafts={ctx.genderRecordDraft}
+                setDrafts={ctx.setGenderRecordDraft}
+                testId="ward-ed-sheet-record-gender"
+              />
+            ) : null}
+          </dd>
+        </div>
+        <div>
           <dt>Psychiatric review</dt>
           <dd>{psychReviewStatusWords(movement)}</dd>
         </div>
@@ -218,20 +250,6 @@ export function renderEdPersonSheet(
           </dd>
         </div>
       </dl>
-      {movement.legalForm ? (
-        // One form panel (L35, #1386): the form reads as it does on the Forms page, its typed end
-        // time, region, age band, any extension and the caveat, then its one next step. Recording
-        // or extending the expiry stays with the Legal form control below.
-        <section
-          className={styles.phoneSheetSection}
-          aria-label="Legal form"
-          data-testid={`ward-ed-person-legal-form-${movement.id}`}
-        >
-          <h3 className={styles.phoneSheetHeading}>Legal form</h3>
-          <LegalFormSummary movement={movement} now={now} fromLine={department.name} toLine={destinationLabel} />
-          <LegalFormNextStep movement={movement} now={now} />
-        </section>
-      ) : null}
       {subFormOpen ? (
         <div className={styles.phoneSheetForm}>
           <AfterSheetOpens>{subFormContent}</AfterSheetOpens>

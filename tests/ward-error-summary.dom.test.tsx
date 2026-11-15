@@ -127,16 +127,16 @@ describe("Record a form: error summary", () => {
     const heading = within(sheet).getByRole("heading", { name: "3 things to fix before saving" });
     expect(heading).toHaveFocus();
     expect(within(sheet).getByRole("link", { name: "Choose a form type" })).toBeInTheDocument();
-    const movement = within(sheet).getByLabelText("Movement") as HTMLSelectElement;
+    const movement = within(sheet).getByRole("combobox", { name: /^Patient/u });
     expect(movement).toHaveAttribute("aria-invalid", "true");
     expect(within(sheet).getByLabelText("Time on form")).toHaveAttribute("aria-invalid", "true");
     // The locked button keeps its own reason (no change to how Save looks).
     expect(screen.getByTestId("ward-legal-forms-register-confirm")).toHaveAttribute("aria-disabled", "true");
 
-    fireEvent.click(within(sheet).getByRole("link", { name: "Choose a movement" }));
+    fireEvent.click(within(sheet).getByRole("link", { name: "Choose a patient" }));
     expect(movement).toHaveFocus();
-    const option = Array.from(movement.options).find((entry) => entry.value !== "")!;
-    fireEvent.change(movement, { target: { value: option.value } });
+    fireEvent.click(movement);
+    fireEvent.click(document.querySelector('[role="option"]')!);
     expect(within(sheet).getByRole("heading", { name: "2 things to fix before saving" })).toBeInTheDocument();
     expect(movement).not.toHaveAttribute("aria-invalid");
   });

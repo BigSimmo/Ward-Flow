@@ -1,6 +1,7 @@
 import { BED_RELEASE_BLOCKED_FIGURE_LABEL, isOpen } from "@/components/ward-management/ward-derivations";
 import { SEVERE_CAUSES, delayGroups } from "@/components/ward-management/delays/delays-derivations";
 import { serviceRollup } from "@/components/ward-management/ward-morning-rollup";
+import { referralQueueOrder } from "@/components/ward-management/ward-referrals";
 import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
 import { rememberLastCall } from "@/components/ward-management/ward-last-call";
 import type {
@@ -228,12 +229,14 @@ function deriveWardNavCounts(input: WardNavCountInput): WardNavCounts {
        * 13 Nov 2026): on a ward desk, a bed offered straight to the ward is the ward's to answer too,
        * as the board's title and My ward's "Awaiting your answer" count it. R-STRUCT-24 (D-220): a
        * community team desk reads the team page's own figure, so the badge and the page agree.
+       * R-BEDS-13: the figure also keeps a community referral every asked ward declined, which is
+       * the coordinator's to act on; a ward desk's count leaves it out, as its board does.
        */
       value:
         scope?.kind === "team" && input.teamReferrals !== undefined
           ? input.teamReferrals
           : scope?.kind === "ward"
-            ? wardDeskAnswerCount(queued, movements, referrals)
+            ? wardDeskAnswerCount(referralQueueOrder(referrals).length, movements, referrals)
             : queued,
       noun: "awaiting a decision",
       urgent: false,

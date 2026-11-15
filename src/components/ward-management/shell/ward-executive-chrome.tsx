@@ -36,6 +36,7 @@ import { RailAccountMenu } from "../shell-next/next-account-menu";
 import { ACCESS_ADMIN_PERSONA } from "./ward-desk-personas";
 import { SharedSessionContext } from "./ward-shared-session-context";
 import { useEffectiveWardAccess } from "./ward-access-store";
+import { NETWORK_SCOPE_WORD, figureScopeWords } from "@/components/ward-management/figures/figure-scope-words";
 import {
   WardAccessBanner,
   WardAccessGate,
@@ -222,6 +223,8 @@ export function executiveCapacity(report: ExecutiveReportingFoundation) {
   // The foot line's Metro figure, only when Metro is not already a row.
   const metroFoot = rows.some((row) => row.key === "metro" || row.key === "own") ? null : metroPercent;
   const readyBeds = report.network.beds.ready;
+  // R-BEDS-5: one word says whose Ready figure this is ("Network 23 ready", "EMHS 9 ready").
+  const readyScope = scope.kind === "service" ? figureScopeWords(scope, null, "desk") : NETWORK_SCOPE_WORD;
   return {
     services,
     hottest,
@@ -229,7 +232,8 @@ export function executiveCapacity(report: ExecutiveReportingFoundation) {
     overLine: overLineLabel(rows),
     metroFoot,
     readyBeds,
-    readyLabel: `${readyBeds} ${readyBeds === 1 ? "bed" : "beds"} ready now`,
+    readyScope,
+    readyLabel: `${readyScope} ${readyBeds} ready`,
     note: scope.kind === "service" ? `for ${scope.service}` : "across the whole network",
   };
 }
@@ -263,7 +267,7 @@ function ExecutiveMenuCapacityCard({
   canOpen: (href: string) => boolean;
   onGo: () => void;
 }) {
-  const { rows, overLine, metroFoot, readyBeds, note } = executiveCapacity(report);
+  const { rows, overLine, metroFoot, readyBeds, readyScope } = executiveCapacity(report);
   const body = (
     <>
       <span className={rail.alertsHead}>
@@ -282,7 +286,7 @@ function ExecutiveMenuCapacityCard({
             Metro <b>{formatOccupancyPercent(metroFoot)}</b>,{" "}
           </>
         )}
-        <b>{readyBeds}</b> {readyBeds === 1 ? "bed" : "beds"} ready now, {note}
+        {readyScope} <b>{readyBeds}</b> ready
       </span>
     </>
   );
@@ -317,7 +321,8 @@ function ExecutiveBedAlerts({ report }: { report: ExecutiveReportingFoundation }
       document.removeEventListener("pointerdown", outside);
     };
   }, [open]);
-  const { services, hottest, rows, overLine, metroFoot, readyLabel, readyBeds, note } = executiveCapacity(report);
+  const { services, hottest, rows, overLine, metroFoot, readyLabel, readyBeds, readyScope, note } =
+    executiveCapacity(report);
   if (!hottest) return null;
   const firstRow = rows[0];
   // Bed alerts stay about capacity (Josh, 30 Oct 2026), as on the other desks' rail: occupancy rows
@@ -370,7 +375,7 @@ function ExecutiveBedAlerts({ report }: { report: ExecutiveReportingFoundation }
           ))}
         </span>{" "}
         <span className={rail.capacityReady} aria-hidden="true">
-          <RailReadyLine metro={metroFoot} ready={readyBeds} />
+          <RailReadyLine metro={metroFoot} ready={readyBeds} scope={readyScope} />
         </span>
       </button>
       {open && (
