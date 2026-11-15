@@ -1171,6 +1171,21 @@ export function createWorkspaceStore(
     unusedBefore,
     MAX_TERM,
   });
+  /**
+   * Phone push must never cost a save: an evaluation error rolls back to here, is logged, and the
+   * save still commits (false: nothing queued). A savepoint left open is released by COMMIT, so a
+   * successful check costs no RELEASE round trip. Used by the command save and the late sweep.
+   */
+  async function evaluatePushSafely(client, world, before, at, actorId) {
+    await client.query("SAVEPOINT push_evaluation");
+    try {
+      return await evaluatePush(client, world, before, at, actorId);
+    } catch (error) {
+      await client.query("ROLLBACK TO SAVEPOINT push_evaluation");
+      log({ event: "ward_backend_push_evaluation_failure", ...errorFields(error) });
+      return false;
+    }
+  }
   const accessMethods = accessStore({
     pool,
     workspaceId,
@@ -1236,28 +1251,17 @@ export function createWorkspaceStore(
         if (!row || !engine.validWorld(row.payload)) return 0;
         const swept = engine.raiseDueLateNotices(row.payload, at);
         if (!swept.raised.length) return 0;
-        const before = row.payload;
-        const priorRevision = Number(row.revision);
-        row.revision = priorRevision + 1;
-        row.payload = swept.world;
-        await saveWorld(client, row, swept.world, row.revision, at);
+        const revision = Number(row.revision) + 1;
+        await saveWorld(client, row, swept.world, revision, at);
         await audit(client, null, SYSTEM_ACTOR_ID, {
           action: "EVALUATE_ARRIVAL_LATENESS",
           outcome: "accepted",
-          priorRevision,
-          revision: row.revision,
+          priorRevision: revision - 1,
+          revision,
           changes: { automatic: true, domainAudit: swept.domainAudit },
         });
-        if (push) {
-          // As on a save: a push evaluation error never costs the notices.
-          await client.query("SAVEPOINT push_evaluation");
-          try {
-            await evaluatePush(client, swept.world, before, at, null);
-          } catch (error) {
-            await client.query("ROLLBACK TO SAVEPOINT push_evaluation");
-            log({ event: "ward_backend_push_evaluation_failure", ...errorFields(error) });
-          }
-        }
+        // As on a save: a push evaluation error never costs the notices.
+        if (push) await evaluatePushSafely(client, swept.world, row.payload, at, null);
         return swept.raised.length;
       });
       if (raised && push) await deliverOnce();
@@ -1792,17 +1796,8 @@ export function createWorkspaceStore(
             await saveWorld(client, row, row.payload, row.revision, at, bytes);
             commandTiming.lap("save");
             if (push) {
-              // Phone push must never cost the coordinator their change: an evaluation error rolls
-              // back to here, is logged, and the command still commits. A savepoint left open is
-              // released by COMMIT, so a successful check costs no RELEASE round trip.
-              await client.query("SAVEPOINT push_evaluation");
-              try {
-                queued = await evaluatePush(client, row.payload, before, at, actorId);
-              } catch (error) {
-                await client.query("ROLLBACK TO SAVEPOINT push_evaluation");
-                queued = false;
-                log({ event: "ward_backend_push_evaluation_failure", ...errorFields(error) });
-              }
+              // Phone push must never cost the coordinator their change (evaluatePushSafely).
+              queued = await evaluatePushSafely(client, row.payload, before, at, actorId);
               commandTiming.lap("push");
             }
           }

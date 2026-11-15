@@ -64,13 +64,13 @@ test("the sweep raises a due late notice once, as the system actor, and then wri
   );
   const saved = swept.world.state.movements.find((candidate) => candidate.id === movement.id);
   assert.equal(saved.arrivalLateNotifiedAt, now);
-  // History: any line it writes is raised automatically, never a desk's. (The event joins the
-  // domain audit once every save is captured, D-222; until then the server's audit row records it.)
-  assert.ok(swept.domainAudit.length <= 1);
-  for (const entry of swept.domainAudit) {
-    assert.equal(entry.action, "EVALUATE_ARRIVAL_LATENESS");
-    assert.deepEqual(entry.actor, { role: null, actingUnitId: null, attribution: "system" });
-  }
+  // History: every accepted save writes one line (D-222), and the sweep's reads as raised
+  // automatically, never a desk's.
+  assert.equal(swept.domainAudit.length, 1);
+  const [entry] = swept.domainAudit;
+  assert.equal(entry.action, "EVALUATE_ARRIVAL_LATENESS");
+  assert.equal(entry.outcome, "accepted");
+  assert.deepEqual(entry.actor, { role: null, actingUnitId: null, attribution: "system" });
   assert.ok(engine.validWorld(swept.world));
 
   const again = engine.raiseDueLateNotices(swept.world, new Date(START.getTime() + 5 * 60_000));
@@ -199,6 +199,9 @@ test("real PostgreSQL: the sweep saves once with a system audit row, then writes
     assert.equal(audit[0].actor_id, SYSTEM_ACTOR_ID);
     assert.equal(audit[0].action, "EVALUATE_ARRIVAL_LATENESS");
     assert.equal(audit[0].changes.automatic, true);
+    // D-222: the save's one History line, raised automatically by no desk.
+    assert.equal(audit[0].changes.domainAudit.length, 1);
+    assert.equal(audit[0].changes.domainAudit[0].actor.attribution, "system");
 
     at = new Date(START.getTime() + 6 * 60_000);
     assert.equal(await store.sweepLateNotices(), 0, "idempotent: told once");
