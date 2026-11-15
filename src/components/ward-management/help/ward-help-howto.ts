@@ -953,7 +953,7 @@ const JOBS: readonly HowTo[] = [
           tid("ward-bed-finder-summary"),
         ],
         title: "Ready beds by ward",
-        body: "In a fixed order, never ranked. To ask a ward, raise a referral; the ward answers.",
+        body: "In a fixed order, never ranked. To ask a ward, send a New referral; the ward answers.",
       },
     ],
   },

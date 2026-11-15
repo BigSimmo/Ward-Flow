@@ -330,8 +330,14 @@ const AROUND: readonly Around[] = [
       }),
       // Wave 4 (D-191): bookings sit on Capacity's Planned tab, so the step lights the tab chooser.
       step(id("capacity-tabs"), {
-        title: "Overview, Wards and Planned",
-        body: "Overview shows the figures, Wards each ward's beds, and Planned the admissions booked ahead. Press Arrived on a booking when the person reaches the ward.",
+        title: "Overview and Wards",
+        body: "Overview shows the figures and Wards each ward's beds.",
+      }),
+      step(id("capacity-tabs"), {
+        device: "desk",
+        acts: ["CONVERT_PLANNED_ADMISSION"],
+        title: "Planned admissions",
+        body: "Admissions booked ahead, on the Planned tab. Press Arrived when the person reaches the ward.",
       }),
       step(named("Highlight wards", '[role="group"]'), {
         device: "desk",
@@ -392,7 +398,7 @@ const AROUND: readonly Around[] = [
       step([id("ward-movement-horizon"), id("movements-timeline-switch")], {
         device: "desk",
         title: "The timeline",
-        body: "What is coming up for each receiving ward over the next 48 hours. Its switch hides or shows it.",
+        body: "What is coming up for each receiving ward. Its switch hides or shows it.",
       }),
       step(named("Transport right now", "section"), {
         device: "desk",
@@ -987,7 +993,7 @@ const AROUND: readonly Around[] = [
       step(named("Highlight", '[role="group"]'), {
         device: "phone",
         title: "Highlight",
-        body: "Lights the people who match, such as Tier 1 or Over 24h, without hiding anyone.",
+        body: "Lights the people who match, such as Tier 1, without hiding anyone.",
       }),
       step(id("ward-census-export"), {
         device: "desk",
@@ -1141,8 +1147,8 @@ const AROUND: readonly Around[] = [
         body: "Board lists everyone here. My list holds the ones you are following.",
       }),
       step(id("forecast-ed-risk"), {
-        title: "May pass 24 hours in ED",
-        body: "People who may pass 24 hours in the ED, from recorded waits and releases. It is not a prediction.",
+        title: "Long ED stays",
+        body: "People whose ED stay is getting long, from recorded waits and releases. It is not a prediction.",
       }),
       step(named("Find a patient or UMRN", "input"), {
         device: "desk",

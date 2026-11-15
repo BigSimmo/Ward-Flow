@@ -10,12 +10,13 @@ Each ward's confirmed beds, what is ready, pulled or closed, and when it was las
 2. Counts confirmed. How many wards confirmed their beds this shift, and the oldest count. Ask sends that ward a request to confirm.
 3. Bed meeting and TV. Bed meeting sheet opens the sheet in one tap. The arrow beside it holds Open the meeting agenda, and Open on TV when a TV is available, which puts the meeting on the room screen, read only.
 4. Mismatch. People waiting against beds that fit, for each kind of bed. Short means more people than beds. Press a bed type to see who is waiting and where.
-5. Overview, Wards and Planned. Overview shows the figures, Wards each ward's beds, and Planned the admissions booked ahead. Press Arrived on a booking when the person reaches the ward.
-6. Highlight wards. Any ready, Locked ready and the other choices highlight wards on the map. Every ward stays.
-7. Find a bed. Opens the bed finder to see which wards have a bed ready of the kind needed. A person always chooses.
-8. Every ward. Each ward's beds, ready and being made ready, one square a bed. Choose a ward to open its panel.
-9. Held up. Discharges due by tomorrow that are held up, with what is holding each one.
-10. Forecast. Tomorrow's spare and short beds by bed type, from the discharge dates wards recorded. Open shows the detail.
+5. Overview and Wards. Overview shows the figures and Wards each ward's beds.
+6. Planned admissions. Admissions booked ahead, on the Planned tab. Press Arrived when the person reaches the ward.
+7. Highlight wards. Any ready, Locked ready and the other choices highlight wards on the map. Every ward stays.
+8. Find a bed. Opens the bed finder to see which wards have a bed ready of the kind needed. A person always chooses.
+9. Every ward. Each ward's beds, ready and being made ready, one square a bed. Choose a ward to open its panel.
+10. Held up. Discharges due by tomorrow that are held up, with what is holding each one.
+11. Forecast. Tomorrow's spare and short beds by bed type, from the discharge dates wards recorded. Open shows the detail.
 
 ## Jobs done here
 

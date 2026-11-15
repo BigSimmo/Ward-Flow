@@ -11,7 +11,7 @@ One emergency department's mental health patients, each row with its next step.
 3. Board jobs. Updates since you last looked, Add patient and On TV. On a phone, Add patient is under the plus button.
 4. Switch ED. Every ED with how many wait and the longest wait. Choose one to open its board.
 5. Board and My list. Board lists everyone here. My list holds the ones you are following.
-6. May pass 24 hours in ED. People who may pass 24 hours in the ED, from recorded waits and releases. It is not a prediction.
+6. Long ED stays. People whose ED stay is getting long, from recorded waits and releases. It is not a prediction.
 7. Find and sort. Find a patient by name or UMRN. Sort and the filters beside it order and narrow the board.
 8. Each row's next step. The button is the row's next step, such as Record exam or Log transport booking.
 9. Legal form. The form on file. Type any expiry time from the paper form.

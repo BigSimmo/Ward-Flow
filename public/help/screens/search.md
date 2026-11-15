@@ -17,7 +17,7 @@ The register of everyone, found by record number, place, stage or owner.
 
 ## On a phone
 
-- Highlight. Lights the people who match, such as Tier 1 or Over 24h, without hiding anyone.
+- Highlight. Lights the people who match, such as Tier 1, without hiding anyone.
 
 ## Jobs done here
 
