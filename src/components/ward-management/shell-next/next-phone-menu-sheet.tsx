@@ -11,15 +11,19 @@ import {
   Fragment,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ComponentProps,
   type ComponentType,
+  type MouseEvent,
   type ReactNode,
   type RefObject,
 } from "react";
 import {
   Activity,
   Ambulance,
+  ArrowDown,
+  ArrowUp,
   BedSingle,
   BellRing,
   CircleHelp,
@@ -29,6 +33,7 @@ import {
   Clock3,
   LogOut,
   PhoneOutgoing,
+  Pin,
   Plus,
   Repeat,
   Search,
@@ -74,6 +79,12 @@ import {
   Section,
 } from "@/components/ward-management/shell/ward-phone-menu-parts";
 import { WardMyWards } from "@/components/ward-management/shell/ward-my-wards";
+import {
+  resolveCreateLayout,
+  saveCreateSheetLayout,
+  useCreateSheetLayout,
+  type CreateItemId,
+} from "@/components/ward-management/shell/ward-create-sheet-store";
 import { useAwaitingTriageCount } from "@/components/ward-management/triage/use-triage-people";
 import { useWardHelpRow } from "@/components/ward-management/help/ward-help-link";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -450,6 +461,262 @@ function WhoLink() {
   );
 }
 
+/** One start on the coordinator's + sheet: a page to open (`href`) or a Tools pop-up (`tool`). */
+type CreateItem = {
+  key: CreateItemId;
+  icon: LucideIcon;
+  label: string;
+  meta: string;
+  href?: string;
+  tool?: "call-log" | "remind";
+};
+
+/**
+ * The coordinator's + sheet (Josh, 8 Nov 2026, "+ sheet reordered"): New referral alone on top, then
+ * the pinned starts as full rows, then the rest as quiet links. Edit (Josh, 15 Nov 2026, D-NNN) lets
+ * each person pin, unpin and reorder them; the arrangement is kept on this device
+ * (`ward-create-sheet-store.ts`) and Reset goes back to the standard sheet.
+ */
+function CoordinatorCreateSheet({
+  open,
+  onClose,
+  returnFocusRef,
+  canRefer,
+  onNewReferral,
+  items,
+}: {
+  open: boolean;
+  onClose: () => void;
+  returnFocusRef: RefObject<HTMLButtonElement | null>;
+  canRefer: boolean;
+  onNewReferral: () => void;
+  items: readonly CreateItem[];
+}) {
+  const stored = useCreateSheetLayout();
+  const [editing, setEditing] = useState(false);
+  const focusAfterSave = useRef<string | null>(null);
+  const byKey = new Map(items.map((item) => [item.key, item]));
+  const layout = resolveCreateLayout(stored, new Set(byKey.keys()));
+  const pinned = layout.pinned.flatMap((key) => byKey.get(key) ?? []);
+  const links = layout.links.flatMap((key) => byKey.get(key) ?? []);
+  // A pinned or moved row changes place, so the button that moved it takes focus again there.
+  useEffect(() => {
+    if (focusAfterSave.current === null) return;
+    document.querySelector<HTMLElement>(`[data-create-edit="${focusAfterSave.current}"]`)?.focus();
+    focusAfterSave.current = null;
+  });
+  const close = () => {
+    setEditing(false);
+    onClose();
+  };
+  const save = (next: { pinned: CreateItemId[]; links: CreateItemId[] }, said: string, focus: string) => {
+    saveCreateSheetLayout(next);
+    announceToWardShell(said);
+    focusAfterSave.current = focus;
+  };
+  const togglePin = (item: CreateItem) => {
+    const isPinned = layout.pinned.includes(item.key);
+    const without = (list: CreateItemId[]) => list.filter((key) => key !== item.key);
+    save(
+      isPinned
+        ? { pinned: without(layout.pinned), links: [...without(layout.links), item.key] }
+        : { pinned: [...without(layout.pinned), item.key], links: without(layout.links) },
+      isPinned ? `${item.label} moved to quick links.` : `${item.label} pinned.`,
+      `pin-${item.key}`,
+    );
+  };
+  const move = (group: "pinned" | "links", item: CreateItem, step: -1 | 1) => {
+    const list = [...layout[group]];
+    const from = list.indexOf(item.key);
+    const to = from + step;
+    if (from < 0 || to < 0 || to >= list.length) return;
+    [list[from], list[to]] = [list[to], list[from]];
+    // At the end of the list the button that moved it is gone, so focus goes to the other one.
+    const edge = to === 0 || to === list.length - 1;
+    save(
+      { ...layout, [group]: list },
+      `${item.label} moved ${step < 0 ? "up" : "down"}.`,
+      `${edge ? (step < 0 ? "down" : "up") : step < 0 ? "up" : "down"}-${item.key}`,
+    );
+  };
+  const reset = () => {
+    saveCreateSheetLayout(null);
+    announceToWardShell("Back to the standard sheet.");
+  };
+  const editRows = (group: "pinned" | "links", list: readonly CreateItem[]) => (
+    <ul className={`${styles.list} ${styles.rich}`} data-testid={`ward-phone-create-edit-${group}`}>
+      {list.length === 0 ? (
+        <li className={styles.empty}>
+          {group === "pinned" ? "Nothing pinned. Pin a start to show it as a full row." : "No quick links."}
+        </li>
+      ) : (
+        list.map((item, index) => (
+          <li key={item.key} className={styles.editRow}>
+            <RowBody icon={item.icon} label={item.label} />
+            <span className={styles.editActions}>
+              <button
+                type="button"
+                className={group === "pinned" ? `${styles.editButton} ${styles.editPinned}` : styles.editButton}
+                aria-label={group === "pinned" ? `Unpin ${item.label}` : `Pin ${item.label}`}
+                data-create-edit={`pin-${item.key}`}
+                onClick={() => togglePin(item)}
+              >
+                {/* The pin shows the state: filled in the accent while pinned, an outline while a quick link. */}
+                <Pin aria-hidden="true" strokeWidth={1.75} fill={group === "pinned" ? "currentColor" : "none"} />
+              </button>
+              <button
+                type="button"
+                className={styles.editButton}
+                aria-label={`Move ${item.label} up`}
+                data-create-edit={`up-${item.key}`}
+                disabled={index === 0}
+                onClick={() => move(group, item, -1)}
+              >
+                <ArrowUp aria-hidden="true" strokeWidth={1.75} />
+              </button>
+              <button
+                type="button"
+                className={styles.editButton}
+                aria-label={`Move ${item.label} down`}
+                data-create-edit={`down-${item.key}`}
+                disabled={index === list.length - 1}
+                onClick={() => move(group, item, 1)}
+              >
+                <ArrowDown aria-hidden="true" strokeWidth={1.75} />
+              </button>
+            </span>
+          </li>
+        ))
+      )}
+    </ul>
+  );
+  const runItem = (item: CreateItem, event: MouseEvent<HTMLElement>) => {
+    close();
+    if (item.tool) requestToolsTool(item.tool, event.currentTarget);
+  };
+  return (
+    <Sheet
+      id="ward-phone-create"
+      testId="ward-phone-create-sheet"
+      open={open}
+      onClose={close}
+      title={editing ? "Edit Create" : "Create"}
+      description={editing ? "Pin what you start most. Saved on this phone." : "Start something new"}
+      mobileBreakpoint="phone"
+      returnFocusRef={returnFocusRef}
+      contentClassName={styles.sheet}
+      headerClassName={styles.createHead}
+      closeButtonClassName={styles.close}
+      bodyClassName={`${styles.body} ${styles.createBody}`}
+      headerActions={
+        <button
+          type="button"
+          className={styles.createEdit}
+          aria-pressed={editing}
+          data-testid="ward-phone-create-edit"
+          onClick={() => setEditing((value) => !value)}
+        >
+          {editing ? "Done" : "Edit"}
+        </button>
+      }
+    >
+      {editing ? (
+        <>
+          <section className={styles.editGroup} aria-labelledby="ward-create-edit-pinned">
+            <h3 id="ward-create-edit-pinned" className={styles.createHeading}>
+              Pinned
+            </h3>
+            {editRows("pinned", pinned)}
+          </section>
+          <section className={styles.editGroup} aria-labelledby="ward-create-edit-links">
+            <h3 id="ward-create-edit-links" className={styles.createHeading}>
+              Quick links
+            </h3>
+            {editRows("links", links)}
+          </section>
+          {stored !== null ? (
+            <p className={styles.createMore}>
+              <button type="button" onClick={reset} data-testid="ward-phone-create-reset">
+                Reset to the standard sheet
+              </button>
+            </p>
+          ) : null}
+        </>
+      ) : (
+        <>
+          {canRefer ? (
+            <div className={styles.createSingle}>
+              <button
+                type="button"
+                className={styles.createPrimary}
+                data-testid="ward-phone-create-referral"
+                onClick={() => {
+                  close();
+                  onNewReferral();
+                }}
+              >
+                <Inbox aria-hidden="true" strokeWidth={1.75} />
+                New referral
+              </button>
+            </div>
+          ) : null}
+          {pinned.length > 0 ? (
+            <ul className={`${styles.list} ${styles.rich}`} data-testid="ward-phone-create-coordinator">
+              {pinned.map((item) => (
+                <li key={item.key}>
+                  {item.tool ? (
+                    <button
+                      type="button"
+                      className={styles.row}
+                      data-testid={`ward-phone-create-${item.key}`}
+                      onClick={(event) => runItem(item, event)}
+                    >
+                      <RowBody icon={item.icon} label={item.label} meta={<span>{item.meta}</span>} />
+                      <Chevron />
+                    </button>
+                  ) : (
+                    <Link
+                      href={item.href!}
+                      className={styles.row}
+                      onClick={close}
+                      data-testid={`ward-phone-create-${item.key}`}
+                    >
+                      <RowBody icon={item.icon} label={item.label} meta={<span>{item.meta}</span>} />
+                      <Chevron />
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {links.length > 0 ? (
+            <p className={styles.createMore} data-testid="ward-phone-create-links">
+              {links.map((item, index) => (
+                <Fragment key={item.key}>
+                  {index > 0 ? <span className={styles.createMoreDot} aria-hidden="true" /> : null}
+                  {item.tool ? (
+                    <button
+                      type="button"
+                      data-testid={`ward-phone-create-${item.key}`}
+                      onClick={(event) => runItem(item, event)}
+                    >
+                      {item.label}
+                    </button>
+                  ) : (
+                    <Link href={item.href!} onClick={close} data-testid={`ward-phone-create-${item.key}`}>
+                      {item.label}
+                    </Link>
+                  )}
+                </Fragment>
+              ))}
+            </p>
+          ) : null}
+        </>
+      )}
+    </Sheet>
+  );
+}
+
 function CreateSheet({
   open,
   onClose,
@@ -497,140 +764,71 @@ function CreateSheet({
   // Triage on the phone (Josh, 15 Nov 2026, D-NNN): New triage is a full row under New referral, with
   // how many referrals await it, not a quiet link at the foot of the sheet.
   const awaitingTriage = useAwaitingTriageCount();
-  const coordRows = coordinator
-    ? [
-        ...(canTriage
-          ? [
-              {
-                key: "triage",
-                icon: ClipboardList,
-                label: "New triage",
-                meta: awaitingTriage > 0 ? `${awaitingTriage} awaiting triage` : "Choose the person, then the form",
-                href: WARD_TRIAGE_NEW_HREF,
-              },
-            ]
-          : []),
-        {
-          key: "call-log",
-          icon: PhoneOutgoing,
-          label: "Log a call",
-          meta: "What a ward or team told you",
-          tool: "call-log" as const,
-        },
-        {
-          key: "ask",
-          icon: Send,
-          label: "Ask wards for a bed",
-          meta: "Choose the patient, then the wards",
-          href: "/ward-flow/waiting",
-        },
-        {
-          key: "transport",
-          icon: Ambulance,
-          label: "Book transport",
-          meta: "For a patient ready to move",
-          href: "/ward-flow/transport/officer",
-        },
-        ...(ids.includes("delays")
-          ? [
-              {
-                key: "delays",
-                icon: Clock3,
-                label: "Log a delay",
-                meta: "Choose the patient, then the reason",
-                href: byId.get("delays")?.href,
-              },
-            ]
-          : []),
-        { key: "remind", icon: BellRing, label: "Remind me", meta: "A nudge at a set time", tool: "remind" as const },
-      ].filter((row) => row.tool !== undefined || (row.href !== undefined && canOpen(row.href)))
-    : [];
-  const coordLinks = coordinator
-    ? CREATE_LINKS.filter((item) => item.id !== "delays" && ids.includes(item.id))
-        .map((item) => ({
-          key: item.id,
-          label: item.label,
-          href:
-            item.id === "wards" && currentUnitId !== undefined
-              ? unitHref(decodeURIComponent(currentUnitId))
-              : (item.href ?? byId.get(item.id)?.href),
-        }))
-        .filter((link): link is { key: PhoneCreateId; label: string; href: string } => link.href !== undefined)
+  const coordItems: CreateItem[] = coordinator
+    ? (
+        [
+          ...(canTriage
+            ? [
+                {
+                  key: "triage" as const,
+                  icon: ClipboardList,
+                  label: "New triage",
+                  meta: awaitingTriage > 0 ? `${awaitingTriage} awaiting triage` : "Choose the person, then the form",
+                  href: WARD_TRIAGE_NEW_HREF,
+                },
+              ]
+            : []),
+          {
+            key: "call-log" as const,
+            icon: PhoneOutgoing,
+            label: "Log a call",
+            meta: "What a ward or team told you",
+            tool: "call-log" as const,
+          },
+          {
+            key: "ask" as const,
+            icon: Send,
+            label: "Ask wards for a bed",
+            meta: "Choose the patient, then the wards",
+            href: "/ward-flow/waiting",
+          },
+          {
+            key: "transport" as const,
+            icon: Ambulance,
+            label: "Book transport",
+            meta: "For a patient ready to move",
+            href: "/ward-flow/transport/officer",
+          },
+          {
+            key: "remind" as const,
+            icon: BellRing,
+            label: "Remind me",
+            meta: "A nudge at a set time",
+            tool: "remind" as const,
+          },
+          ...CREATE_LINKS.filter((item) => ids.includes(item.id)).map((item) => ({
+            key: item.id,
+            icon: item.icon,
+            label: item.label,
+            meta: item.meta,
+            href:
+              item.id === "wards" && currentUnitId !== undefined
+                ? unitHref(decodeURIComponent(currentUnitId))
+                : (item.href ?? byId.get(item.id)?.href),
+          })),
+        ] as CreateItem[]
+      ).filter((row) => row.tool !== undefined || (row.href !== undefined && canOpen(row.href)))
     : [];
   if (coordinator) {
     return (
-      <Sheet
-        id="ward-phone-create"
-        testId="ward-phone-create-sheet"
+      <CoordinatorCreateSheet
         open={open}
         onClose={onClose}
-        title="Create"
-        description="Start something new"
-        mobileBreakpoint="phone"
         returnFocusRef={returnFocusRef}
-        contentClassName={styles.sheet}
-        headerClassName={styles.createHead}
-        closeButtonClassName={styles.close}
-        bodyClassName={`${styles.body} ${styles.createBody}`}
-      >
-        {canRefer ? (
-          <div className={styles.createSingle}>
-            <button
-              type="button"
-              className={styles.createPrimary}
-              data-testid="ward-phone-create-referral"
-              onClick={() => {
-                onClose();
-                onNewReferral();
-              }}
-            >
-              <Inbox aria-hidden="true" strokeWidth={1.75} />
-              New referral
-            </button>
-          </div>
-        ) : null}
-        <ul className={`${styles.list} ${styles.rich}`} data-testid="ward-phone-create-coordinator">
-          {coordRows.map((row) => (
-            <li key={row.key}>
-              {row.tool ? (
-                <button
-                  type="button"
-                  className={styles.row}
-                  onClick={(event) => {
-                    onClose();
-                    requestToolsTool(row.tool, event.currentTarget);
-                  }}
-                >
-                  <RowBody icon={row.icon} label={row.label} meta={<span>{row.meta}</span>} />
-                  <Chevron />
-                </button>
-              ) : (
-                <Link
-                  href={row.href!}
-                  className={styles.row}
-                  onClick={onClose}
-                  data-testid={row.key === "triage" ? "ward-phone-create-triage" : undefined}
-                >
-                  <RowBody icon={row.icon} label={row.label} meta={<span>{row.meta}</span>} />
-                  <Chevron />
-                </Link>
-              )}
-            </li>
-          ))}
-        </ul>
-        {coordLinks.length > 0 ? (
-          <p className={styles.createMore}>
-            {coordLinks.map((link, index) => (
-              <Fragment key={link.key}>
-                {index > 0 ? <span className={styles.createMoreDot} aria-hidden="true" /> : null}
-                <Link href={link.href} onClick={onClose} data-testid={`ward-phone-create-${link.key}`}>
-                  {link.label}
-                </Link>
-              </Fragment>
-            ))}
-          </p>
-        ) : null}
-      </Sheet>
+        canRefer={canRefer}
+        onNewReferral={onNewReferral}
+        items={coordItems}
+      />
     );
   }
   return (
