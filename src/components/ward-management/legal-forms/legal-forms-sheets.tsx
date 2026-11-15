@@ -26,6 +26,8 @@ import {
 import { formatInstantWithDay, minuteOfDayFromClockText, type Instant } from "@/components/ward-management/ward-clock";
 import { movementRefuses3C } from "@/components/ward-management/ward-legal-clock";
 import { afterEndedOrderWarning } from "@/components/ward-management/ward-legal-order-rules";
+import { refusedAfter3E, type After3EReason } from "@/components/ward-management/ward-legal-after-3e";
+import { After3EReasonField } from "@/components/ward-management/after-3e-reason-field";
 import { currentLegalPosition, legalFormNowWords } from "@/components/ward-management/ward-legal-form-progression";
 import { legalFormName, RECORDABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -164,6 +166,7 @@ export function RecordFormSheet({
   recordUnavailable,
   onSaveForm,
   targetMovement,
+  coordinator = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -180,9 +183,13 @@ export function RecordFormSheet({
     writtenAt: Instant;
     /** Finding 203: Metro or Country for a Form 1A, sent only when chosen. */
     region?: "metro" | "country";
+    /** D-226: the coordinator's listed reason for a form refused after a Form 3E. */
+    after3EReason?: After3EReason;
   }) => boolean | string | Promise<boolean | string>;
   /** The movement a patient record's "Record a form" link opened the sheet for (&record=1). */
   targetMovement?: string;
+  /** D-226: the coordinator may record a form refused after a Form 3E with a listed reason. */
+  coordinator?: boolean;
 }) {
   // Bumped by Clear to remount the form's fields.
   const [formKey, setFormKey] = useState(0);
@@ -268,6 +275,18 @@ export function RecordFormSheet({
   const selectedMovement = openMovements.find((movement) => movement.id === draft.movement);
   // R-LEGAL-11 (Josh, 14 Nov 2026): a form after a recorded Form 3E warns here, never blocks (AK-L-14).
   const afterEndedOrder = afterEndedOrderWarning(selectedMovement, draft.form || undefined);
+  // D-226 (Josh, 14 Nov 2026): a continuation-type form after a Form 3E is refused; the coordinator
+  // may record it with a listed reason.
+  const [after3EReason, setAfter3EReason] = useState<After3EReason | "">("");
+  // A reason belongs to one patient and one form: changing either, Clear, or a saved form
+  // (which empties both) drops it, so it never carries over to the next record.
+  const reasonDraftKey = `${draft.movement}/${draft.form}`;
+  const [reasonFor, setReasonFor] = useState(reasonDraftKey);
+  if (reasonFor !== reasonDraftKey) {
+    setReasonFor(reasonDraftKey);
+    setAfter3EReason("");
+  }
+  const after3E = !!draft.form && refusedAfter3E(selectedMovement, draft.form);
   // Keep the unsent synthetic draft on dismissal; explicit Clear or an accepted save removes it.
   const dismiss = onClose;
   const saveBlockReason =
@@ -281,13 +300,15 @@ export function RecordFormSheet({
           ? `Form ${draft.form} written time is not recorded on this sheet.`
           : draft.form === "3C" && movementRefuses3C(selectedMovement)
             ? "Form 3C is refused when the person arrived on a Form 3D."
-            : dateUnread
-              ? "Enter the date written on the form as DD/MM/YYYY, or leave it blank for today."
-              : parsedWrittenAt === null
-                ? dayZero && dateOnForm !== ""
-                  ? "Enter the date and time written on the form, no later than now."
-                  : "Enter the time written on the form as HH:MM, no later than now."
-                : undefined);
+            : after3E && (!coordinator || !after3EReason)
+              ? "Form 3E is recorded. Choose a reason first."
+              : dateUnread
+                ? "Enter the date written on the form as DD/MM/YYYY, or leave it blank for today."
+                : parsedWrittenAt === null
+                  ? dayZero && dateOnForm !== ""
+                    ? "Enter the date and time written on the form, no later than now."
+                    : "Enter the time written on the form as HH:MM, no later than now."
+                  : undefined);
   const typeId = `${baseId}-legal-forms-new-instrument`;
   const movementId = `${baseId}-legal-forms-new-movement`;
   const timeId = `${baseId}-legal-forms-new-time`;
@@ -400,6 +421,7 @@ export function RecordFormSheet({
                     formCode: draft.form,
                     writtenAt: parsedWrittenAt,
                     ...(draft.form === "1A" && region ? { region } : {}),
+                    ...(after3E && after3EReason ? { after3EReason } : {}),
                   }) ?? false;
                 if (typeof result === "boolean" || typeof result === "string") finish(result);
                 else void result.then(finish, () => finish(false));
@@ -408,7 +430,7 @@ export function RecordFormSheet({
               }
             }}
           >
-            {afterEndedOrder ? `Save Form ${draft.form} anyway` : "Save form"}
+            {afterEndedOrder || after3E ? `Save Form ${draft.form} anyway` : "Save form"}
           </Button>
         </div>
       }
@@ -463,6 +485,14 @@ export function RecordFormSheet({
           options={RECORDABLE_LEGAL_FORMS.map((form) => recordFormOption(form.code))}
           onChange={(next) => onDraft({ ...draft, form: next ?? "" })}
         />
+        {after3E ? (
+          <After3EReasonField
+            coordinator={coordinator}
+            value={after3EReason}
+            onChange={setAfter3EReason}
+            testId="ward-legal-forms-after-3e-refused"
+          />
+        ) : null}
         {afterEndedOrder ? (
           <p className={styles.note} role="status" data-testid="ward-legal-forms-after-3e">
             {afterEndedOrder}

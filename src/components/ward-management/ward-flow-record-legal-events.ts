@@ -26,6 +26,7 @@ import {
 } from "./ward-model-vocabulary";
 import { ED_PRESENTATION_CHOICES, isEdPresentation } from "./ed/ed-presentation";
 import { legalFormTimeOrderProblem } from "./ward-legal-form-time-order";
+import { AFTER_3E_REFUSAL, isAfter3EReason, refusedAfter3E } from "./ward-legal-after-3e";
 
 type RecordedLegalEvent = Extract<
   RecordedFactEvent,
@@ -337,6 +338,10 @@ export function reduceRecordedLegalEvent(
       if (event.formCode === "3C" && form3CRefusedAfter3D(movement.legalForm?.code ?? movement.legalClock?.code)) {
         return reject(state, event, `Form 3C is refused when the person arrived on a Form 3D`);
       }
+      // D-226: a continuation-type form after a Form 3E is refused unless a coordinator picks a reason.
+      if (refusedAfter3E(movement, event.formCode) && !after3EOverride(event)) {
+        return reject(state, event, AFTER_3E_REFUSAL);
+      }
       const kind =
         event.formCode === "1A"
           ? ("examination" as const)
@@ -477,6 +482,10 @@ export function reduceRecordedLegalEvent(
       if (event.formCode === "3C" && movementRefuses3C(movement)) {
         return reject(state, event, `Form 3C is refused when the person arrived on a Form 3D`);
       }
+      // D-226: the same refusal after a Form 3E as a written form.
+      if (refusedAfter3E(movement, event.formCode) && !after3EOverride(event)) {
+        return reject(state, event, AFTER_3E_REFUSAL);
+      }
       // A Form 5B continues a current Form 5A; it cannot continue one a person recorded as ended.
       if (event.formCode === "5B" && movement.legalForm?.code === "5A" && currentLegalPosition(movement).ended) {
         return reject(
@@ -595,4 +604,9 @@ function legalFormDetailsOf(form: LegalFormDetails): LegalFormDetails {
     ...(consent ? { consent } : {}),
     ...(reviewBy === undefined ? {} : { reviewBy }),
   };
+}
+
+/** D-226: only a coordinator's listed reason records a form that is refused after a Form 3E. */
+function after3EOverride(event: { role: WardFlowRole; after3EReason?: unknown }): boolean {
+  return event.role === "coordinator" && isAfter3EReason(event.after3EReason);
 }

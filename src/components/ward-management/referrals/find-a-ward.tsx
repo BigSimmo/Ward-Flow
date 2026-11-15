@@ -59,6 +59,14 @@ export type FindAWardRow = {
    * under "Needs a recorded reason". Display grouping only; who can be ticked is unchanged.
    */
   unsuitable?: boolean;
+  /** D-227: set when only the ward's beds fail (the shared classifier's `no_bed`). Listed under "No bed now". */
+  noBed?: boolean;
+  /**
+   * D-228 (Josh, 14 Nov 2026): a fitting ward whose every bed is locked, for a movement that needs an
+   * open bed. Listed under "Fits, locked ward" with an amber "Locked", never as an equal fit. Still
+   * tickable, with no reason needed.
+   */
+  locked?: boolean;
 };
 
 export type FindAWardProps = {
@@ -108,14 +116,16 @@ export function FindAWard({
   const [showAllReview, setShowAllReview] = useState(false);
   const searching = query.trim().length > 0;
   const shown = rows.filter((row) => wardMatchesQuery(query, row.unit));
-  const fits = shown.filter((row) => row.fit && row.stale === undefined).sort(byName);
-  const staleRows = shown.filter((row) => row.fit && row.stale !== undefined).sort(byName);
-  const review = shown.filter((row) => !row.fit && !row.unsuitable).sort(byName);
+  const fits = shown.filter((row) => row.fit && row.stale === undefined && !row.locked).sort(byName);
+  const lockedRows = shown.filter((row) => row.fit && row.locked).sort(byName);
+  const staleRows = shown.filter((row) => row.fit && row.stale !== undefined && !row.locked).sort(byName);
+  const noBedRows = shown.filter((row) => !row.fit && !row.unsuitable && row.noBed).sort(byName);
+  const review = shown.filter((row) => !row.fit && !row.unsuitable && !row.noBed).sort(byName);
   const notSuitable = shown.filter((row) => !row.fit && row.unsuitable).sort(byName);
   const reviewShown = showAllReview || searching ? review : review.slice(0, REVIEW_FIRST_ROWS);
   const askedCount = asked?.count ?? 0;
 
-  const row = ({ unit, fit, reason, ready, stale, unsuitable }: FindAWardRow) => {
+  const row = ({ unit, fit, reason, ready, stale, unsuitable, noBed, locked }: FindAWardRow) => {
     const checked = chosen.includes(unit.id);
     const site = siteByCode(unit.siteCode)?.name;
     const tickable = fit && !disabled && (checked || (canTick?.(unit.id) ?? true));
@@ -123,7 +133,19 @@ export function FindAWard({
       <label
         key={unit.id}
         className={cx(ph.cand, styles.row)}
-        data-kind={fit ? (stale === undefined ? "yes" : "stale") : unsuitable ? "unsuitable" : "review"}
+        data-kind={
+          fit
+            ? locked
+              ? "locked"
+              : stale === undefined
+                ? "yes"
+                : "stale"
+            : unsuitable
+              ? "unsuitable"
+              : noBed
+                ? "nobed"
+                : "review"
+        }
         data-testid={`${testIdPrefix}-${unit.id}`}
       >
         <input
@@ -142,8 +164,21 @@ export function FindAWard({
           </span>
         </span>
         <span className={ph.lab}>
-          <StatusGlyph tone={fit ? (stale === undefined ? "success" : "warning") : "neutral"} size={9} />
-          {fit ? (stale === undefined ? "Fits" : "Count not current") : unsuitable ? "Not suitable" : "Needs a reason"}
+          <StatusGlyph
+            tone={fit ? (stale === undefined && !locked ? "success" : "warning") : noBed ? "warning" : "neutral"}
+            size={9}
+          />
+          {fit
+            ? locked
+              ? "Locked"
+              : stale === undefined
+                ? "Fits"
+                : "Count not current"
+            : unsuitable
+              ? "Not suitable"
+              : noBed
+                ? "No bed now"
+                : "Needs a reason"}
         </span>
       </label>
     );
@@ -160,7 +195,14 @@ export function FindAWard({
         onValueChange={onQueryChange}
         count={{ shown: shown.length, total: rows.length, noun: rows.length === 1 ? "ward" : "wards" }}
       />
-      {askedCount + fits.length + staleRows.length + review.length + notSuitable.length === 0 ? (
+      {askedCount +
+        fits.length +
+        lockedRows.length +
+        staleRows.length +
+        noBedRows.length +
+        review.length +
+        notSuitable.length ===
+      0 ? (
         <p className={styles.empty}>No ward matches that search.</p>
       ) : null}
       {asked && askedCount > 0 ? (
@@ -185,6 +227,16 @@ export function FindAWard({
           </div>
         </section>
       ) : null}
+      {lockedRows.length > 0 ? (
+        <section className={styles.group} aria-labelledby={`${baseId}-locked`}>
+          <p className={ph.ch} id={`${baseId}-locked`}>
+            Fits, locked ward <span className={ph.k}>{lockedRows.length}</span>
+          </p>
+          <div className={styles.rows} role="group" aria-label="Fits, locked ward">
+            {lockedRows.map(row)}
+          </div>
+        </section>
+      ) : null}
       {staleRows.length > 0 ? (
         <section className={styles.group} aria-labelledby={`${baseId}-stale`}>
           <p className={ph.ch} id={`${baseId}-stale`}>
@@ -192,6 +244,16 @@ export function FindAWard({
           </p>
           <div className={styles.rows} role="group" aria-label="Fits, bed count old">
             {staleRows.map(row)}
+          </div>
+        </section>
+      ) : null}
+      {noBedRows.length > 0 ? (
+        <section className={styles.group} aria-labelledby={`${baseId}-nobed`}>
+          <p className={ph.ch} id={`${baseId}-nobed`}>
+            No bed now <span className={ph.k}>{noBedRows.length}</span>
+          </p>
+          <div className={styles.rows} role="group" aria-label="No bed now">
+            {noBedRows.map(row)}
           </div>
         </section>
       ) : null}
