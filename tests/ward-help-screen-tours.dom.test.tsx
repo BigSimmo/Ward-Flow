@@ -110,11 +110,13 @@ describe("Show me around: the walk-rounds", () => {
     expect(unwalked.sort()).toEqual(["bed-finder", "community"]);
   });
 
-  it("keeps each walk round between two and seven steps on each device", () => {
+  // Josh, 15 Nov 2026: fuller walkthroughs, so a walk round may run up to 14 steps.
+  it("keeps each walk round between two and fourteen steps on each device", () => {
     for (const tour of SCREEN_TOURS) {
       for (const device of ["desk", "phone"] as const) {
         const steps = showMeSteps(tour, device).length;
-        expect(steps, `${tour.id} ${device}`).toBeLessThanOrEqual(7);
+        expect(steps, `${tour.id} ${device}`).toBeGreaterThanOrEqual(2);
+        expect(steps, `${tour.id} ${device}`).toBeLessThanOrEqual(14);
       }
     }
   });
@@ -168,7 +170,8 @@ describe("Show me around: in Help's slate top", () => {
     const tile = screen.getByTestId("ward-help-show-me-around");
     expect(tile.textContent).toMatch(/Show me around this screen/);
     // Josh's fifth notes (8 Nov 2026): Nearest ready beds is a phone-only step now.
-    expect(tile.textContent).toMatch(/5 steps/);
+    const walk = HOW_TOS.find((each) => each.id === "around-capacity");
+    expect(tile.textContent).toContain(`${showMeSteps(walk, "desk", "coordinator").length} steps`);
     fireEvent.click(within(tile).getByRole("button", { name: /^Start/ }));
     expect(onShowMe).toHaveBeenCalledWith("around-capacity");
   });
@@ -176,7 +179,10 @@ describe("Show me around: in Help's slate top", () => {
   it("counts only the phone's own steps on a phone", () => {
     phone.on = true;
     renderCapacity();
-    expect(screen.getByTestId("ward-help-show-me-around").textContent).toMatch(/3 steps/);
+    const walk = HOW_TOS.find((each) => each.id === "around-capacity");
+    expect(screen.getByTestId("ward-help-show-me-around").textContent).toContain(
+      `${showMeSteps(walk, "phone", "coordinator").length} steps`,
+    );
   });
 
   it("is not offered when Show me is switched off", () => {
@@ -209,6 +215,7 @@ describe("Show me around a page", () => {
       expect(tour.go, id).toBeUndefined();
       expect(tour.title, id).toMatch(/^Show me around this /);
     }
+    // "Show me around this ward" leads with the ward walk round, not "Take the tour again" (whose keywords leave out "show me around").
     expect(askHelp("show me around this ward", "ward")[0]?.howTo.id).toBe("around-ward");
   });
 });

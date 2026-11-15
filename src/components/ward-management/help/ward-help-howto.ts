@@ -14,9 +14,8 @@
  * never class names; `tests/ward-help-howto.test.ts` fails when a test id leaves the source.
  */
 import type { WardAccess, WardScreenId } from "@/components/ward-management/ward-role-access";
-
 import { ASK_WARDS_WINDOW_TEXT } from "@/components/ward-management/ward-operational-defaults";
-import { deskMayAct, deskOpens, EVERY_LOGIN, howToFor, type WardEventType } from "./ward-help-access";
+import { deskMayAct, howToFor, type WardEventType } from "./ward-help-access";
 import type { WardTourRole } from "./ward-help-store";
 import { MORE_JOBS, SCREEN_TOURS } from "./ward-help-screen-tours";
 import { DESK_JOBS, ED_ROW_ACTIONS, MOVEMENT_ROW } from "./ward-help-howto-desks";
@@ -24,6 +23,18 @@ import { CRAWL_JOBS } from "./ward-help-howto-more";
 import { HELP_SYNONYMS } from "./ward-help-synonyms";
 import { nearestWord } from "./ward-help-typo";
 import type { TourDevice, TourTarget } from "./ward-tour-steps";
+import {
+  EVERY_DESK,
+  PRIMARY_ACTION,
+  DESK_SWITCH,
+  tid,
+  tidStart,
+  opened,
+  onPage,
+  BOOKING_FORM,
+  REFERRAL_FORM,
+} from "./ward-help-howto-targets";
+import { LATE_JOBS } from "./ward-help-howto-jobs-late";
 
 /**
  * One spotlight in a Show me. Its targets are tried in order and the first on screen is lit, so a
@@ -89,20 +100,6 @@ export type HowTo = {
   readonly around?: string;
 };
 
-const EVERY_DESK = "all";
-const CLINICAL_DESKS: readonly WardTourRole[] = ["coordinator", "ward", "ed", "community", "bed_manager", "officer"];
-
-const PRIMARY_ACTION: TourTarget = {
-  sel: '[data-testid="ward-bar-primary-action"], [data-testid="ward-phone-create"]',
-};
-const DESK_SWITCH: TourTarget = {
-  sel: '[data-testid="ward-rail-persona-trigger"], [data-testid="ward-bar-phone-menu"]',
-};
-/** A Settings row; on a phone, whose rows sit in a sheet per tab, the tab's row in the list. */
-const setting = (id: string, tab: string): TourTarget => ({
-  sel: `[data-setting="${id}"], [data-testid="ward-settings-phone-area-${tab}"]`,
-});
-
 /** The Show me steps walked on this device: those for every device and those marked for it. */
 export function showMeSteps(howTo: HowTo | undefined, device: TourDevice, role?: WardTourRole): readonly ShowMeStep[] {
   return (howTo?.showMe ?? []).filter(
@@ -122,7 +119,7 @@ const JOBS: readonly HowTo[] = [
     title: "Pull the bed for a patient",
     keywords: "reserve keep book bed accepted placement",
     answer:
-      "Once a ward accepts, open the movement and press Pull the bed. The bed is kept for the patient within the pull time limit. A person always chooses the bed; nothing is placed automatically.",
+      "Once a ward accepts, open the movement and press Pull the bed on its Bed step. In Destination and placement, check the receiving ward, choose an observation level if asked, then press Pull the bed. The bed is kept within the pull time limit. A person always chooses the bed; nothing is placed automatically.",
     desks: ["coordinator"],
     acts: ["PULL_PATIENT"],
     go: "movements",
@@ -137,9 +134,33 @@ const JOBS: readonly HowTo[] = [
         body: "Rows where a ward has accepted show Pull the bed. Open one to see the bed, transport and legal form together.",
       },
       {
-        target: { sel: '[data-testid="ward-shortlist-hold-bed"]' },
+        target: [
+          { sel: '[data-testid="ward-patient-gate-bed"] button', text: "Pull the bed" },
+          { sel: '[data-testid="ward-patient-phone-action-bar"] button', text: "Pull the bed" },
+          tid("ward-shortlist-hold-bed"),
+        ],
         title: "Press Pull the bed",
-        body: "On the movement, check the bed and press Pull the bed. It is kept within the pull time limit, which is set in Settings, Rules.",
+        body: "On the movement, the Bed step names the ward that accepted. Pull the bed opens Destination and placement.",
+      },
+      {
+        target: opened("summary", "Receiving ward safety checks"),
+        title: "Check the receiving ward",
+        body: "Open Receiving ward safety checks to read each check for this ward before you pull.",
+      },
+      {
+        target: tid("ward-transit-pull-level"),
+        title: "Observation level, if asked",
+        body: "Shown only when no level is recorded. Choose one before the pull; Intermittent also asks how often.",
+      },
+      {
+        target: opened("[data-placement-action]", "Pull the bed"),
+        title: "Pull the bed",
+        body: "Press it to keep the bed for this patient. The message after it offers Undo.",
+      },
+      {
+        target: [tid("ward-patient-transit-pull-timer"), tid("ward-patient-gate-bed")],
+        title: "Time left on the pull",
+        body: "The bed then reads Bed pulled with the time left. It stays pulled until someone releases it.",
       },
     ],
   },
@@ -149,7 +170,7 @@ const JOBS: readonly HowTo[] = [
     title: "Release a pulled bed",
     keywords: "unpull give back free cancel pull expired",
     answer:
-      "Open the movement and use Release the pulled bed. Cancel transport first if it is booked. A pulled bed is never released by itself: when the pull time limit passes it shows in Act now as Pull expired, bed still pulled.",
+      "On Home, press Release pulled bed on the Act now row, choose a reason and press Release pulled bed for the patient. Or open the movement and use Release bed pull. Cancel transport first if it is booked. A pulled bed is never released by itself: past its limit it shows in Act now as Pull expired, bed still pulled.",
     desks: ["coordinator"],
     acts: ["RELEASE_PULL"],
     go: "home",
@@ -164,15 +185,26 @@ const JOBS: readonly HowTo[] = [
           { sel: "#main-content [data-wf-hero-next]", text: "a person now" },
         ],
         title: "Pulls past their limit are in Act now",
-        body: "Release pulled bed opens the movement at the release step. You decide whether to release it or keep it.",
+        body: "Release pulled bed opens a sheet for that patient. You decide whether to release it or keep it.",
+      },
+      {
+        target: { sel: '[data-testid="home-release-sheet"] select' },
+        title: "Choose the reason",
+        body: "The sheet names the patient and UMRN. Check them, then choose the reason for the release.",
+      },
+      {
+        target: { sel: '[data-testid="home-release-sheet"] button', text: "Release pulled bed for" },
+        title: "Release the bed",
+        body: "Press Release pulled bed for the patient. The message after it offers Undo.",
       },
       {
         target: [
-          { sel: '[data-testid="ward-cancel-transport-toggle"]' },
-          { sel: '[data-testid="ward-release-pull-toggle"]' },
+          tid("ward-cancel-transport-toggle"),
+          tid("ward-patient-cancel-transport"),
+          tid("ward-release-pull-toggle"),
         ],
-        title: "Cancel transport first, then release",
-        body: "If transport is booked, cancel it first so the officer is not sent. Then use Release the pulled bed.",
+        title: "Transport booked? Cancel it first",
+        body: "A bed with booked transport cannot be released. Cancel the transport on the movement first, so the officer is not sent.",
       },
     ],
   },
@@ -182,7 +214,7 @@ const JOBS: readonly HowTo[] = [
     title: "Accept or decline a referral",
     keywords: "decide answer approve reject refuse referral",
     answer:
-      "Press Decide on the referral, read it, then Accept referral or Decline referral. A decline needs a reason. Only the ward or team it was sent to can answer for itself.",
+      "Press Decide on the referral and read it, with the destination's own checks. Then press Accept referral (Accept in principle on a ward) or choose a reason and Decline referral. A decline needs a reason. Only the ward or team it was sent to can answer for itself.",
     desks: ["coordinator", "ward", "community"],
     acts: ["ACCEPT_REFERRAL", "DECLINE_REFERRAL"],
     go: "home",
@@ -203,9 +235,42 @@ const JOBS: readonly HowTo[] = [
         body: "They stay in wait order, oldest first. Press Decide to open one.",
       },
       {
-        target: [{ sel: '[data-testid^="ward-accept-"]' }, { sel: "#main-content button", text: "Accept referral" }],
-        title: "Accept or decline",
-        body: "Read the referral, then Accept referral or Decline referral. A decline needs a reason from the list.",
+        target: [tid("ward-referral-match-panel"), tidStart("ward-incoming-"), tid("ward-referral-match-summary")],
+        title: "Read the referral",
+        body: "Who the patient is, how long they have waited, and the destination's own checks for them.",
+      },
+      {
+        target: [
+          tidStart("ward-accept-"),
+          tidStart("ward-referral-match-accept-"),
+          tid("ward-referral-match-phone-accept"),
+          { sel: "#main-content button", text: "Accept referral" },
+        ],
+        title: "Accept",
+        body: "Accept referral, or Accept in principle on a ward. The bed coordinator then pulls the bed.",
+      },
+      {
+        target: [
+          tidStart("ward-referral-match-decline-reason-"),
+          tid("ward-referral-match-decline-open"),
+          tidStart("ward-decline-toggle-"),
+        ],
+        title: "Or decline, with a reason",
+        body: "Choose the reason from the list. A decline cannot be sent without one.",
+      },
+      {
+        target: [
+          tid("ward-referral-match-decline"),
+          tidStart("ward-referral-match-decline-"),
+          tidStart("ward-decline-form-"),
+        ],
+        title: "Decline referral",
+        body: "Sends the decline and its reason. The referrer sees it, and the other destinations still answer.",
+      },
+      {
+        target: tid("ward-referral-match-not-your-decision"),
+        title: "Not yours to answer",
+        body: "Shown when the referral went to another ward or team. Only that place can answer for itself.",
       },
     ],
   },
@@ -215,7 +280,7 @@ const JOBS: readonly HowTo[] = [
     title: "Ask more wards",
     keywords: "send another ward more destinations parallel enquiry",
     answer:
-      "Open the referral and choose Ask more wards, then tick the wards. They are listed A to Z and never ranked, and only a ward that fits can be ticked. The number asked at once is limited by Wards asked at once in Settings.",
+      "Open the referral. Wards asked shows each ward and its answer. Press Ask more wards, search or tick the wards, then press Ask. Wards are listed A to Z and never ranked, and only a ward that fits can be ticked. How many may wait at once is set by Wards asked at once in Settings.",
     desks: ["coordinator"],
     acts: ["REFER_TO_UNITS"],
     go: "referrals",
@@ -226,12 +291,27 @@ const JOBS: readonly HowTo[] = [
           { sel: '[data-testid^="ward-referral-board-card-select-"]' },
         ],
         title: "Open the referral",
-        body: "Select the patient's referral. Its panel has Ask more wards.",
+        body: "Select the patient's referral. Its panel has Wards asked and Ask more wards.",
       },
       {
-        target: { sel: '[data-testid="ward-referral-ask-open"]' },
+        target: tid("ward-referral-ask-more-wards"),
+        title: "Wards asked",
+        body: "Each ward asked, who asked it and its answer so far. The count shows how many are waiting of the most allowed.",
+      },
+      {
+        target: tid("ward-referral-ask-open"),
         title: "Ask more wards",
-        body: "Tick the wards to ask. They are listed A to Z, and only a ward that fits can be ticked.",
+        body: "Opens the list of wards. It is greyed when the most wards are already waiting.",
+      },
+      {
+        target: [{ sel: '[data-testid="ward-referral-ask-list"] input' }, tid("ward-referral-ask-list")],
+        title: "Search and tick the wards",
+        body: "Type a ward or hospital, then tick each ward to ask. They are listed A to Z, and only a ward that fits can be ticked.",
+      },
+      {
+        target: [tid("ward-referral-ask-submit"), tid("ward-referral-ask-cancel")],
+        title: "Ask the wards",
+        body: "The button reads Ask and the number ticked. Cancel closes the list without asking anyone.",
       },
     ],
   },
@@ -241,7 +321,7 @@ const JOBS: readonly HowTo[] = [
     title: "Chase overdue discharge dates",
     keywords: "discharge date passed overdue ask ward message ward confirm date edd chase",
     answer:
-      "On Discharges, the line under the counts says how many dates have passed on how many wards. Press Ask N wards to send those wards one desk alert asking them to confirm or record a new date. To ask about one person, open them and use Message ward beside the hold-up.",
+      "On Discharges, press Ask N wards in the top: it sends only the wards with a date that has passed one desk alert asking them to confirm or record a new date. It reads Asked once all have been asked. To ask about one person, open them and use Message ward, then choose what to ask.",
     desks: ["coordinator"],
     acts: ["DISPATCH_BROADCAST_ALERT"],
     go: "discharges",
@@ -251,6 +331,16 @@ const JOBS: readonly HowTo[] = [
         title: "Ask the wards",
         body: `Asks only the wards with a date that has passed. A ward asked in the last ${ASK_WARDS_WINDOW_TEXT} is not asked again.`,
       },
+      {
+        target: [tidStart("ward-discharge-cards-"), tidStart("ward-discharge-group-")],
+        title: "Find the person",
+        body: "Rows are grouped by status. Open a person whose date has passed to see the date and the hold-up.",
+      },
+      {
+        target: tid("ward-discharge-message-ward"),
+        title: "Message ward",
+        body: "Choose Confirm the discharge date, Update the hold-up or Call the bed coordinator. The ward gets it as a desk alert.",
+      },
     ],
   },
   {
@@ -259,7 +349,7 @@ const JOBS: readonly HowTo[] = [
     title: "Book transport",
     keywords: "ambulance car transfer move patient escort",
     answer:
-      "On the movement, press Book transport, or record that none is needed. The app records the booking for the transport officer; it does not order the vehicle itself.",
+      "Book by phone first. Then open a movement whose next step is Book transport, press Log booking on its Transport step and fill in the booking: who is collecting, the CAD number, the time, escort and legal status. Save transport booking. Ward Flow records it for the transport officer; it does not order the vehicle.",
     desks: ["coordinator"],
     acts: ["BOOK_TRANSPORT"],
     go: "movements",
@@ -274,9 +364,24 @@ const JOBS: readonly HowTo[] = [
         body: "Once the bed is pulled, the movement needs transport. Open it from the Pulled stage.",
       },
       {
-        target: { sel: '[data-testid="ward-shortlist-book-transport"]' },
-        title: "Book transport",
-        body: "Record the booking, or that none is needed. The officer sees it on their jobs list.",
+        target: [
+          { sel: '[data-testid="ward-patient-gate-transport"] button', text: "Log booking" },
+          { sel: '[data-testid="ward-patient-phone-action-bar"] button', text: "Log booking" },
+          tid("ward-shortlist-book-transport"),
+        ],
+        title: "Log booking",
+        body: "On the movement's Transport step. Greyed until the movement is ready for transport, with the reason under it.",
+      },
+      {
+        target: [tid("ward-patient-book-transport-btn"), tid("ward-patient-transport-form")],
+        title: "Mark as Booked",
+        body: "If the sheet shows Mark as Booked, press it to open the booking form.",
+      },
+      ...BOOKING_FORM,
+      {
+        target: [tid("ward-patient-transport-details"), tid("ward-patient-gate-transport")],
+        title: "The booking on the movement",
+        body: "The CAD number, time and provider then show here. The officer sees the job on their list.",
       },
     ],
   },
@@ -286,7 +391,7 @@ const JOBS: readonly HowTo[] = [
     title: "Book transport",
     keywords: "ambulance car transfer move patient escort",
     answer:
-      "On My ED board, open the patient's actions and choose Log transport booking. Record the booking made by phone. Ward Flow records it; it does not order a vehicle.",
+      "Book by phone first. On My ED board, open the patient's actions and choose Log transport booking. Fill in who is collecting, the CAD number, the time, escort and legal status, then Save transport booking. Ward Flow records it; it does not order a vehicle.",
     desks: ["ed"],
     acts: ["BOOK_TRANSPORT"],
     go: "home",
@@ -299,8 +404,9 @@ const JOBS: readonly HowTo[] = [
       {
         target: { sel: '[data-testid^="ward-ed-book-transport-toggle-"]' },
         title: "Log transport booking",
-        body: "Record the booking made by phone. Ward Flow does not order a vehicle.",
+        body: "Shown once the bed is pulled. It opens the booking form for the call you made.",
       },
+      ...BOOKING_FORM,
     ],
   },
   {
@@ -309,7 +415,7 @@ const JOBS: readonly HowTo[] = [
     title: "Book transport",
     keywords: "ambulance car transfer move patient escort",
     answer:
-      "On My team, open the patient's journey and choose Log transport booking. On a phone the action may read Log transport. Record the booking made by phone for your team's journey; Ward Flow does not order a vehicle.",
+      "On My team, find the patient's row and choose Log transport booking (Log transport on a phone). Fill in who is collecting, the CAD number, the time, escort and legal status, then Save transport booking. Ward Flow records the booking made by phone; it does not order a vehicle.",
     desks: ["community"],
     acts: ["BOOK_TRANSPORT"],
     go: "home",
@@ -322,6 +428,12 @@ const JOBS: readonly HowTo[] = [
         title: "Log transport booking",
         body: "On the patient's row, once a bed is pulled. Record the booking made by phone.",
       },
+      ...BOOKING_FORM,
+      {
+        target: [tidStart("ward-community-transport-eta-"), tidStart("ward-community-transport-cell-")],
+        title: "The booking on the row",
+        body: "The row then shows the estimated time, and Cancel this team's booking until collection.",
+      },
     ],
   },
   {
@@ -330,17 +442,23 @@ const JOBS: readonly HowTo[] = [
     title: "Book transport",
     keywords: "ambulance car transfer move patient escort",
     answer:
-      "Open the patient from Coming and going, then use Record transport booking on the journey. You may record a booking for a journey your ward sent. Ward Flow records the booking; it does not order a vehicle.",
+      "Open the patient from Coming and going, press the Destination row, then Record transport booking. Fill in the booking made by phone and press Save transport booking. You may record a booking for a journey your ward sent. Ward Flow records the booking; it does not order a vehicle.",
     desks: ["ward"],
     acts: ["BOOK_TRANSPORT"],
     go: "movements",
     showMe: [
       { target: MOVEMENT_ROW, title: "Open the movement", body: "Open the patient's journey from Coming and going." },
       {
-        target: { sel: "#main-content button", text: "Record transport booking" },
-        title: "Record transport booking",
-        body: "Shows once the bed is pulled and no booking is recorded yet.",
+        target: tid("ward-patient-destination-row"),
+        title: "Destination",
+        body: "Opens Destination and placement, where your ward records its booking.",
       },
+      {
+        target: [opened("button", "Record transport booking"), onPage("button", "Record transport booking")],
+        title: "Record transport booking",
+        body: "Shows once the bed is pulled and no booking is recorded yet, for a journey your ward sent.",
+      },
+      ...BOOKING_FORM,
     ],
   },
   {
@@ -349,19 +467,26 @@ const JOBS: readonly HowTo[] = [
     title: "Cancel transport",
     keywords: "stop ambulance unbook transfer orphaned no bed pulled",
     answer:
-      "On Movements, open a referral your ED sent. Under Transport booked with no bed pulled, choose a reason, then Cancel the transport job. This control handles orphaned jobs only; ask the coordinator about ordinary bookings. No cancellation is possible after collection.",
+      "On Movements, open a referral your ED sent. Under Transport booked with no bed pulled, choose a reason, then press Cancel the transport job. This control handles orphaned jobs only; ask the coordinator about ordinary bookings. No cancellation is possible after collection.",
     desks: ["ed"],
     acts: ["CANCEL_TRANSPORT"],
     go: "movements",
     showMe: [
       { target: MOVEMENT_ROW, title: "Open the movement", body: "Open the referral your ED sent." },
       {
-        target: [
-          { sel: '[data-testid="ward-patient-orphaned-transport"]' },
-          { sel: '[data-testid="ward-console-cancel-transport"]' },
-        ],
+        target: [tid("ward-patient-orphaned-transport"), tid("ward-console-cancel-transport")],
         title: "Transport booked with no bed pulled",
-        body: "Choose a reason, then Cancel the transport job.",
+        body: "Shown only when a job is still booked but the bed has gone. It says who may cancel it.",
+      },
+      {
+        target: tid("ward-console-cancel-transport-reason"),
+        title: "Why is the job being cancelled?",
+        body: "Choose the reason from the list. It goes to the officer with the cancellation.",
+      },
+      {
+        target: tid("ward-console-cancel-transport"),
+        title: "Cancel the transport job",
+        body: "Press it once the reason is chosen. Ring the provider as well; Ward Flow does not tell them.",
       },
     ],
   },
@@ -378,12 +503,19 @@ const JOBS: readonly HowTo[] = [
     showMe: [
       { target: MOVEMENT_ROW, title: "Open the movement", body: "Open the journey your ward sent." },
       {
-        target: [
-          { sel: '[data-testid="ward-patient-orphaned-transport"]' },
-          { sel: '[data-testid="ward-console-cancel-transport"]' },
-        ],
+        target: [tid("ward-patient-orphaned-transport"), tid("ward-console-cancel-transport")],
         title: "Transport booked with no bed pulled",
-        body: "Choose a reason, then Cancel the transport job. Only the sending ward recorded as booker may cancel.",
+        body: "Shown only when a job is still booked but the bed has gone. It names the ward that booked it.",
+      },
+      {
+        target: tid("ward-console-cancel-transport-reason"),
+        title: "Why is the job being cancelled?",
+        body: "Choose the reason from the list.",
+      },
+      {
+        target: [tid("ward-console-cancel-transport-not-yours"), tid("ward-console-cancel-transport")],
+        title: "Cancel the transport job",
+        body: "Works only for the sending ward recorded as booker. Otherwise the screen says so; ask the coordinator.",
       },
     ],
   },
@@ -393,7 +525,7 @@ const JOBS: readonly HowTo[] = [
     title: "Cancel transport",
     keywords: "stop ambulance unbook transfer",
     answer:
-      "On My team, use Cancel this team's booking for your own team's active transport job, then record the reason. You cannot cancel another team's booking or a job after collection. Ask the bed coordinator when those limits apply.",
+      "On My team, press Cancel this team's booking on the patient's row, choose the reason, then Confirm cancel. Ring the provider too. You cannot cancel another team's booking or a job after collection; ask the bed coordinator then.",
     desks: ["community"],
     acts: ["CANCEL_TRANSPORT"],
     go: "home",
@@ -401,7 +533,17 @@ const JOBS: readonly HowTo[] = [
       {
         target: { sel: '[data-testid^="ward-community-cancel-transport-"]' },
         title: "Cancel this team's booking",
-        body: "On your own team's active booking, before collection. Then record the reason.",
+        body: "On your own team's active booking, before collection.",
+      },
+      {
+        target: [tidStart("ward-community-cancel-transport-reason-"), opened("select", "Choose a reason")],
+        title: "Why is the job being cancelled?",
+        body: "The dialog names the patient and the job. Choose the reason from the list.",
+      },
+      {
+        target: [tidStart("ward-community-cancel-transport-confirm-"), opened("button", "Confirm cancel")],
+        title: "Confirm cancel",
+        body: "Records the cancellation for the officer and the receiving ward. Keep as is closes without cancelling.",
       },
     ],
   },
@@ -411,7 +553,7 @@ const JOBS: readonly HowTo[] = [
     title: "Cancel transport",
     keywords: "stop ambulance unbook transfer",
     answer:
-      "Open the movement and cancel the booked transport there. Do this before you release a pulled bed, so the officer is not sent for a patient whose bed has gone.",
+      "Open the movement and press its Destination row. Under Review & corrections, open Cancel transport, choose the reason and press Cancel transport. The bed stays pulled. Do this before you release a pulled bed, so the officer is not sent for a patient whose bed has gone.",
     desks: ["coordinator"],
     acts: ["CANCEL_TRANSPORT"],
     go: "movements",
@@ -426,9 +568,30 @@ const JOBS: readonly HowTo[] = [
         body: "Open the patient's movement from the list.",
       },
       {
-        target: { sel: '[data-testid="ward-cancel-transport-toggle"]' },
+        target: tid("ward-patient-destination-row"),
+        title: "Destination",
+        body: "Opens Destination and placement, where booked transport is cancelled.",
+      },
+      {
+        target: [tid("ward-patient-cancel-transport"), tid("ward-cancel-transport-toggle")],
         title: "Cancel transport",
-        body: "Choose a reason, then confirm. The officer's job is cancelled and says why.",
+        body: "Under Review & corrections. Open it to see the reasons.",
+      },
+      {
+        target: [
+          { sel: '[data-testid="ward-patient-cancel-transport"] [role="group"]' },
+          { sel: '[data-testid="ward-cancel-transport"] select' },
+        ],
+        title: "Choose the reason",
+        body: "Choose one reason. The line under it names the patient and says the bed stays pulled.",
+      },
+      {
+        target: [
+          { sel: '[data-testid="ward-patient-cancel-transport"] button', text: "Cancel transport" },
+          { sel: '[data-testid="ward-cancel-transport"] button', text: "Cancel transport" },
+        ],
+        title: "Cancel transport",
+        body: "The officer's job is cancelled and says why. The message after it offers Undo.",
       },
     ],
   },
@@ -438,7 +601,7 @@ const JOBS: readonly HowTo[] = [
     title: "Log a call",
     keywords: "phone rang contact follow up callback",
     answer:
-      "Open the referral and use Log a call, choosing who was rung and the outcome from the list. The next person sees who was called and when.",
+      "Open the referral. Under Log a call, choose Who was rung and What they said, then press Log a call. The next person sees who was called and when. A call does not answer the referral; the decision time keeps running.",
     desks: ["coordinator"],
     acts: ["LOG_REFERRAL_CONTACT"],
     go: "referrals",
@@ -449,12 +612,32 @@ const JOBS: readonly HowTo[] = [
           { sel: '[data-testid^="ward-referral-board-card-select-"]' },
         ],
         title: "Open the referral",
-        body: "Log a call is in the referral's panel, with the owner desk.",
+        body: "Log a call is in the referral's panel, with the desk that owns it.",
       },
       {
-        target: { sel: '[data-testid^="ward-referral-call-log-"]' },
+        target: tidStart("ward-referral-assign-"),
+        title: "The owner desk",
+        body: "Assign gives the referral to a desk, so everyone knows who is chasing it.",
+      },
+      {
+        target: tidStart("ward-referral-call-who-"),
+        title: "Who was rung",
+        body: "The referrer, a ward or a community team.",
+      },
+      {
+        target: tidStart("ward-referral-call-outcome-"),
+        title: "What they said",
+        body: "Choose the outcome from the list.",
+      },
+      {
+        target: tidStart("ward-referral-call-log-"),
         title: "Log a call",
-        body: "Choose who was rung and the outcome from the lists, then Log a call. The next person sees it.",
+        body: "Records the call with the time. It does not answer the referral; the decision time keeps running.",
+      },
+      {
+        target: [tidStart("ward-referral-calls-"), tidStart("ward-referral-call-log-")],
+        title: "Calls logged",
+        body: "Newest first, with who logged each and when.",
       },
     ],
   },
@@ -464,7 +647,7 @@ const JOBS: readonly HowTo[] = [
     title: "Raise a new referral",
     keywords: "refer send create start new referral",
     answer:
-      "Press New referral, choose the destinations (several can go at once), record the legal status if known, then send. Each destination answers on its own.",
+      "Press New referral. Choose Refer to, find or add the patient, check the catchment, then work down the steps; Before you send lists what is still needed. Several destinations can go at once and each answers on its own. Send referral, then Confirm and send. Save draft keeps it in this tab.",
     desks: ["coordinator", "ed", "community", "ward"],
     acts: ["RAISE_REFERRAL"],
     showMe: [
@@ -473,14 +656,7 @@ const JOBS: readonly HowTo[] = [
         title: "New referral",
         body: "Starts a referral from any screen. Shift+R does the same on a keyboard.",
       },
-      {
-        target: [
-          { sel: '[data-testid="ward-referral-summary-rail"]' },
-          { sel: '[data-testid="ward-referral-phone-continue"]' },
-        ],
-        title: "Destinations, then send",
-        body: "Choose one or more destinations and the legal status if known. Send referral works once it reads Ready to send.",
-      },
+      ...REFERRAL_FORM,
     ],
   },
   {
@@ -489,7 +665,7 @@ const JOBS: readonly HowTo[] = [
     title: "Hand over to the next shift",
     keywords: "handover handoff sign off shift change",
     answer:
-      "Open Handover. Read Act now first, then what is due before the next handover. Work through Before you sign, then choose Sign off.",
+      "Open Handover. Read Act now first, then what is due before the next handover. Work through Before you sign: each line has its own button where something needs doing. Then press Sign off. Undo sign-off takes it back if it was a mistake.",
     desks: ["coordinator", "ward"],
     acts: ["RECORD_HANDOVER_SIGN_OFF"],
     go: "handover",
@@ -500,24 +676,31 @@ const JOBS: readonly HowTo[] = [
           { sel: '[data-testid="ward-handover-phone-hero"]' },
         ],
         title: "Start with Act now",
-        body: "These counts open the rows they describe, act now first.",
+        body: "These counts open the rows they describe, act now first. Read each row's detail before you hand it on.",
       },
       {
-        target: [
-          { sel: '[data-testid="ward-handover-sign-off-checks"]' },
-          // On a phone the checks open from Sign off, so that button stands in.
-          { sel: '[data-testid="ward-handover-phone-sign-off"]' },
-        ],
+        device: "desk",
+        target: { sel: '[data-testid="ward-handover-sign-off-checks"]' },
         title: "Before you sign",
-        body: "Each line in Before you sign should be checked before you sign. On a phone, Sign off opens them.",
+        body: "Check each line before you sign. A line with a button opens what it needs.",
       },
       {
-        target: [
-          { sel: '[data-testid="ward-handover-sign-off-button"]' },
-          { sel: '[data-testid="ward-handover-phone-sign-off"]' },
-        ],
+        device: "phone",
+        target: [tid("ward-handover-phone-row"), tid("ward-handover-sheet")],
+        title: "The patients to hand over",
+        body: "Grouped as the counts are. Open a row to read its detail before you hand it on.",
+      },
+      {
+        device: "desk",
+        target: [tid("ward-handover-sign-off-button"), tid("ward-handover-sign-off-visible-status")],
         title: "Sign off",
-        body: "Records that the handover was given, with the time.",
+        body: "The button carries the time and records the handover by your desk. The time then shows here and in History; Undo sign-off takes it back.",
+      },
+      {
+        device: "phone",
+        target: tid("ward-handover-phone-sign-off"),
+        title: "Before you sign, then Sign off",
+        body: "Sign off opens the Before you sign checks. Work through them, then sign. Undo sign-off takes it back.",
       },
     ],
   },
@@ -526,7 +709,8 @@ const JOBS: readonly HowTo[] = [
     topic: "Handover and reports",
     title: "Print the handover sheet",
     keywords: "print paper copy present meeting",
-    answer: "Open Handover and choose Print handover. Review the sheet before printing it.",
+    answer:
+      "Open Handover and choose Print handover. Choose what to include, the paper (A4 landscape or portrait) and any highlight, review the pages, then press Print or save PDF. Back to handover returns without printing.",
     desks: ["coordinator", "ward", "bed_manager"],
     go: "handover",
     computerOnly: true,
@@ -534,7 +718,27 @@ const JOBS: readonly HowTo[] = [
       {
         target: { sel: '[data-testid="ward-handover-print"]' },
         title: "Print handover",
-        body: "Open the handover sheet, review it, then print the prepared copy.",
+        body: "Opens the print sheet, a live preview of the pages.",
+      },
+      {
+        target: { sel: '[data-testid="ward-handover-print-sheet"] section', text: "Include" },
+        title: "Include",
+        body: "Switch each part of the sheet on or off.",
+      },
+      {
+        target: { sel: '[data-testid="ward-handover-print-sheet"] section', text: "Paper" },
+        title: "Paper",
+        body: "A4 landscape or A4 portrait. The page count updates as you choose.",
+      },
+      {
+        target: { sel: '[data-testid="ward-handover-print-sheet"] section', text: "Highlight" },
+        title: "Highlight",
+        body: "Marks rows on the printed copy without leaving any out.",
+      },
+      {
+        target: { sel: '[data-testid="ward-handover-print-sheet"] button', text: "Print or save PDF" },
+        title: "Print or save PDF",
+        body: "Review the pages first. The sheet then says when the last copy was prepared.",
       },
     ],
   },
@@ -544,7 +748,7 @@ const JOBS: readonly HowTo[] = [
     title: "Confirm the ward's bed numbers",
     keywords: "morning count bed state update numbers census",
     answer:
-      "On your ward's home, press Confirm numbers after checking ready, pulled, closed and occupied beds. The time you confirm shows on every screen, so others know how fresh the figure is.",
+      "On your ward's home, press Confirm numbers. Check the staffed, in use, ready and closed figures, set Beds free to offer, then press Confirm beds (with the morning numbers while they are due). The time you confirm shows on every screen, so others know how fresh the figure is.",
     desks: ["ward"],
     acts: ["CONFIRM_CAPACITY"],
     go: "home",
@@ -554,6 +758,26 @@ const JOBS: readonly HowTo[] = [
         title: "Confirm numbers",
         body: "Press this once the figures match the ward. The morning count is due by the time set in Settings.",
       },
+      {
+        target: { sel: '[data-testid="ward-capacity-form"] section[aria-label="Bed roster and census"]' },
+        title: "Check the figures",
+        body: "Staffed beds, in use, ready and closed, with pulled beds not yet arrived under them.",
+      },
+      {
+        target: tid("ward-capacity-input"),
+        title: "Beds free to offer",
+        body: "Type the number, or use One bed fewer and One bed more. The line under it says when it was last confirmed.",
+      },
+      {
+        target: tid("ward-capacity-review-discharges-btn"),
+        title: "Expected discharges today",
+        body: "Opens the ward board to check today's discharges before you confirm.",
+      },
+      {
+        target: opened("button", "Confirm beds"),
+        title: "Confirm beds",
+        body: "Confirms the figure for this ward only. While the morning numbers are due, the button sends them too.",
+      },
     ],
   },
   {
@@ -562,7 +786,7 @@ const JOBS: readonly HowTo[] = [
     title: "Answer the ward's referrals",
     keywords: "accept decline ward referral answer one by one",
     answer:
-      "Open Referrals to answer, or Answer one by one on your ward's home, and accept or decline each. A decline needs a reason. A site bed manager can see them but cannot answer for the ward.",
+      "Open Answer one by one on your ward's home. Read each referral and the ward's own checks, then press Accept in principle (choosing the pull time limit) or Decline with a reason. A site bed manager can see them but cannot answer for the ward.",
     desks: ["ward"],
     acts: ["ACCEPT_REFERRAL", "DECLINE_REFERRAL"],
     go: "home",
@@ -576,6 +800,40 @@ const JOBS: readonly HowTo[] = [
         title: "Answer one by one",
         body: "Steps through the ward's referrals in wait order.",
       },
+      {
+        target: [
+          { sel: '#main-content [aria-label="Awaiting your answer"]' },
+          { sel: '#main-content [aria-label="Bed request position"]' },
+        ],
+        title: "Referrals waiting",
+        body: "Each referral waiting for this ward, oldest first. Move between them here.",
+      },
+      {
+        target: [tidStart("ward-incoming-"), tid("ward-answer-selection-left")],
+        title: "Read the referral",
+        body: "The patient's current facts and this ward's own checks, side by side.",
+      },
+      {
+        device: "desk",
+        target: { sel: '#main-content select[id^="ward-accept-hold-"]' },
+        title: "Pull time limit",
+        body: "Choose the time limit before you accept. Accept stays locked until one is chosen.",
+      },
+      {
+        target: tidStart("ward-accept-"),
+        title: "Accept in principle",
+        body: "Accepts for this ward. The coordinator then pulls the bed.",
+      },
+      {
+        target: [tidStart("ward-decline-form-"), tidStart("ward-decline-toggle-")],
+        title: "Decline with a reason",
+        body: "Decline opens the reasons. Choose one, then press Decline for the patient.",
+      },
+      {
+        target: tid("ward-answer-history"),
+        title: "Recent answers",
+        body: "Each answer this ward gave, with the time.",
+      },
     ],
   },
   {
@@ -584,7 +842,7 @@ const JOBS: readonly HowTo[] = [
     title: "See every bed on the ward",
     keywords: "bed board list beds occupied ready closed leave place move",
     answer:
-      "Every bed on your ward's home shows who is in each bed or whether it is ready, pulled, closed or held for a patient on leave. Use Place or move to put someone waiting in a bed or move someone to another bed.",
+      "Every bed on your ward's home shows who is in each bed or whether it is ready, pulled, closed or held for a patient on leave. Place or move opens the bed board: choose who needs a bed, then a lit bed, then confirm. Every bed list shows the beds as a list.",
     desks: ["ward"],
     go: "home",
     showMe: [
@@ -592,6 +850,26 @@ const JOBS: readonly HowTo[] = [
         target: { sel: '[data-testid="ward-open-bed-board"]' },
         title: "Place or move",
         body: "Opens the bed board to place someone waiting or move someone between beds. Open a bed for the patient in it.",
+      },
+      {
+        target: tid("ward-board-waitlist"),
+        title: "Who needs a bed",
+        body: "The people waiting for this ward. Choose one to light the beds that fit.",
+      },
+      {
+        target: tid("ward-bed-board-plan"),
+        title: "Choose a lit bed",
+        body: "Lit beds fit the person chosen. On a computer you can also drag the person onto a bed.",
+      },
+      {
+        target: [tid("ward-board-confirm"), tid("ward-board-say")],
+        title: "Confirm the bed",
+        body: "The board asks you to confirm. Choose another bed if it is wrong. A person always chooses the bed.",
+      },
+      {
+        target: onPage("button", "Every bed list"),
+        title: "Every bed list",
+        body: "The same beds as a list, with who is in each.",
       },
     ],
   },
@@ -601,7 +879,7 @@ const JOBS: readonly HowTo[] = [
     title: "Put the ward or bed meeting on a TV",
     keywords: "tv television screen display wall big screen meeting",
     answer:
-      "Use On TV on a ward's home, or Open on TV under the arrow beside Capacity's Bed meeting sheet for the bed meeting. Open the link on the TV's browser; it is read only and shows names in full.",
+      "For the bed meeting, open Capacity and choose Open on TV under the arrow beside Bed meeting sheet. For one ward, use On TV on the ward's home. Open the same link on the TV's browser. The TV view is read only and shows names in full, so check who can see the screen.",
     desks: ["coordinator", "ward", "bed_manager"],
     // Capacity's Bed meeting menu (it holds Open on TV) for the desks that open Capacity; a ward's own page has its own.
     go: ["capacity", "home"],
@@ -609,8 +887,18 @@ const JOBS: readonly HowTo[] = [
     showMe: [
       {
         target: { sel: '[data-testid="capacity-bed-meeting"], [data-testid="ward-open-tv"]' },
+        title: "Bed meeting sheet",
+        body: "On Capacity, the Bed meeting sheet opens the printable sheet. On a ward's home, On TV opens the ward's own TV view.",
+      },
+      {
+        target: [tid("capacity-bed-meeting-more"), tid("ward-open-tv")],
+        title: "More bed meeting views",
+        body: "The arrow beside Bed meeting sheet holds Open on TV and, for some desks, the meeting agenda.",
+      },
+      {
+        target: [{ sel: '[role="menu"] [role="menuitem"]', text: "Open on TV" }, tid("ward-open-tv")],
         title: "Open on TV",
-        body: "Open on TV, beside Capacity's Bed meeting sheet or on a ward's home, opens the large-type view for the meeting room or ward TV.",
+        body: "Opens the large-type view. Open the same link on the TV's browser; it is read only and shows names in full.",
       },
     ],
   },
@@ -620,7 +908,7 @@ const JOBS: readonly HowTo[] = [
     title: "See which wards have a bed that fits",
     keywords: "find bed vacancy availability free beds",
     answer:
-      "Use Find a bed in the side menu: choose the age group, bed type, sex and legal status, then read the wards that fit and their free beds. They are listed in a fixed order; the app never picks one.",
+      "Use Find a bed in the side menu (the bar at the foot on a phone). Choose the Age group, Bed, Ward for and Legal status, then read the ready beds by ward. They are listed in a fixed order; the app never picks one. A referral still asks the ward.",
     desks: ["ed"],
     showMe: [
       {
@@ -631,6 +919,42 @@ const JOBS: readonly HowTo[] = [
         title: "Find a bed",
         body: "In the side menu, or the bar at the foot on a phone. Choose the patient's needs, then read the wards that fit.",
       },
+      {
+        target: [
+          { sel: '[data-testid="ward-tools-bed-finder"] button', text: "Change" },
+          tid("ward-bed-finder-summary"),
+        ],
+        title: "The needs chosen",
+        body: "The line names the needs used last time on this device. Change opens them; Done closes them.",
+      },
+      {
+        target: { sel: '[data-testid="ward-tools-bed-finder"] [role="radiogroup"][aria-label="Age group"]' },
+        title: "Age group",
+        body: "The patient's age group. Only wards for that group are counted.",
+      },
+      {
+        target: { sel: '[data-testid="ward-tools-bed-finder"] [role="radiogroup"][aria-label="Bed"]' },
+        title: "Bed",
+        body: "The kind of bed needed, or Any bed.",
+      },
+      {
+        target: { sel: '[data-testid="ward-tools-bed-finder"] [role="group"][aria-label="Ward for"]' },
+        title: "Ward for",
+        body: "Who the ward takes. Choose the one that fits the patient.",
+      },
+      {
+        target: { sel: '[data-testid="ward-tools-bed-finder"] [role="radiogroup"][aria-label="Legal status"]' },
+        title: "Legal status",
+        body: "Required. The wards are listed once a legal status is chosen.",
+      },
+      {
+        target: [
+          { sel: '[data-testid="ward-tools-bed-finder"] [aria-label="Ready beds by ward"]' },
+          tid("ward-bed-finder-summary"),
+        ],
+        title: "Ready beds by ward",
+        body: "In a fixed order, never ranked. To ask a ward, raise a referral; the ward answers.",
+      },
     ],
   },
   {
@@ -639,7 +963,7 @@ const JOBS: readonly HowTo[] = [
     title: "Refer a patient from the ED",
     keywords: "ed emergency raise referral board patient",
     answer:
-      "On your ED board, open the patient and use New referral. The ED's waiting list stays in wait order; flags highlight a row but never move it.",
+      "On your ED board, open the patient and use New referral. Choose Refer to and the destinations, then work through the steps until Send referral; press Confirm and send. The ED's waiting list stays in wait order; flags highlight a row but never move it.",
     desks: ["ed"],
     acts: ["RAISE_REFERRAL"],
     go: "home",
@@ -649,6 +973,7 @@ const JOBS: readonly HowTo[] = [
         title: "New referral",
         body: "Start from the patient's row on the board.",
       },
+      ...REFERRAL_FORM,
     ],
   },
   {
@@ -657,7 +982,7 @@ const JOBS: readonly HowTo[] = [
     title: "Record a transport job",
     keywords: "officer job collected pickup arrived",
     answer:
-      "Open the job on My jobs to see the pickup, the destination and the booking, then record when the patient is collected.",
+      "Open the job on My jobs to see the pickup, the destination and the booking. Check the person's identity and the forms to carry, then press the job's next step, such as collected or arrived. Each step is recorded with the time.",
     desks: ["officer"],
     acts: ["TRANSPORT_ACCEPTED", "PATIENT_COLLECTED"],
     go: "home",
@@ -666,6 +991,26 @@ const JOBS: readonly HowTo[] = [
         target: [{ sel: '[data-testid="ward-officer-joblist"]' }, { sel: '#main-content section[aria-label="Jobs"]' }],
         title: "My jobs",
         body: "Every job booked for you, with the pickup, destination and booking. Select one to see it in full.",
+      },
+      {
+        target: [tidStart("ward-officer-select-"), tidStart("ward-officer-job-")],
+        title: "Select a job",
+        body: "Opens the job beside the list, or full screen on a phone.",
+      },
+      {
+        target: [tidStart("ward-officer-route-"), tid("ward-officer-nextcard-facts")],
+        title: "Pickup and destination",
+        body: "Where to collect the patient, where they are going, and the booked time.",
+      },
+      {
+        target: [tidStart("ward-officer-identity-check-"), tid("ward-officer-next-identity")],
+        title: "Check who you collect",
+        body: "Check the name and UMRN against the person before you leave.",
+      },
+      {
+        target: [tidStart("ward-officer-legal-"), tidStart("ward-officer-forms-pack-")],
+        title: "Legal status and forms",
+        body: "The legal status recorded for the journey and the forms that travel with the patient.",
       },
       {
         target: [
@@ -691,6 +1036,15 @@ const JOBS: readonly HowTo[] = [
         title: "Your account menu",
         body: "Switch desk is here when your account has more than one desk. In the demo, it is Try another desk (demo).",
       },
+      {
+        target: [
+          opened("button", "Switch desk"),
+          opened("button", "Try another desk"),
+          opened("a", "Try another desk"),
+        ],
+        title: "Switch desk",
+        body: "Choose the desk to work as. The menu and home change to suit it.",
+      },
     ],
   },
   {
@@ -699,13 +1053,18 @@ const JOBS: readonly HowTo[] = [
     title: "Look at one health service",
     keywords: "service scope north south east metro wachs filter statewide",
     answer:
-      "Use the service selector in the header to show one health service or the whole state. It changes what this screen shows, not anyone's access.",
+      "Use the service selector in the header to show one health service or the whole state. Each choice shows how many are waiting there. It changes what this screen shows, not anyone's access.",
     desks: ["coordinator", "bed_manager", "executive"],
     showMe: [
       {
         target: { sel: '[data-testid="ward-bar-service-trigger"]' },
         title: "Service in view",
         body: "Statewide, or one service.",
+      },
+      {
+        target: tid("ward-bar-service-panel"),
+        title: "Choose a health service",
+        body: "Statewide, or one service, each with the number waiting. The header then names the service shown.",
       },
     ],
   },
@@ -714,7 +1073,8 @@ const JOBS: readonly HowTo[] = [
     topic: "Finding your way",
     title: "See alerts for my desk",
     keywords: "alerts tasks notifications bell to do",
-    answer: "Press Alerts in the header. Shift+T opens it on a keyboard. Each alert opens the record it is about.",
+    answer:
+      "Press Alerts in the header. Shift+T opens it on a keyboard. Each alert opens the record it is about. Open alerts at the foot of the panel goes to the full Alerts page.",
     desks: EVERY_DESK,
     needs: "alerts",
     showMe: [
@@ -723,283 +1083,24 @@ const JOBS: readonly HowTo[] = [
         title: "Alerts",
         body: "Everything addressed to this desk, newest first.",
       },
-    ],
-  },
-  {
-    id: "alerts-log",
-    topic: "Finding your way",
-    title: "Find an alert I already cleared",
-    keywords: "alerts log history cleared earlier past filter acknowledged",
-    answer:
-      "Open the Alerts page. Open is what still needs someone, with chips to show one kind at a time. Cleared lists what was acted on this session, newest first. Broadcasts holds bed calls, live and past.",
-    desks: EVERY_DESK,
-    needs: "alerts",
-    go: "alerts",
-    showMe: [
       {
-        target: [
-          { sel: '[data-testid="ward-alerts-filters"]' },
-          { sel: '[role="tablist"][aria-label="Alerts views"]' },
-        ],
-        title: "Open, Cleared and Broadcasts",
-        body: "Chips show one kind of open alert at a time. Cleared, beside Open, lists what was acted on this session.",
+        target: [tid("ward-tasks-drawer-count"), tid("ward-bar-tasks-sheet")],
+        title: "Your alerts",
+        body: "The count of open alerts. Press an alert to open the record it is about.",
+      },
+      {
+        target: tid("ward-tasks-sort"),
+        title: "Order",
+        body: "Change how the alerts are ordered.",
+      },
+      {
+        target: tid("ward-tasks-open-alerts"),
+        title: "Open alerts",
+        body: "The full Alerts page, with what was cleared and the broadcasts.",
       },
     ],
   },
-  {
-    id: "search-patient",
-    topic: "Finding your way",
-    title: "Find a patient",
-    keywords: "search patient name umrn look up lookup",
-    answer:
-      "Type a name or UMRN in the header search. / or Ctrl+K jumps there on a keyboard. Questions such as no bed yet also work.",
-    desks: CLINICAL_DESKS,
-    needs: "search",
-    showMe: [
-      {
-        target: { sel: '[data-testid="ward-global-search-input"]' },
-        title: "Search",
-        body: "Names, UMRNs, places and a few common questions.",
-      },
-    ],
-  },
-  {
-    id: "patient-safety-facts",
-    topic: "Finding your way",
-    title: "Check a patient's legal status and risk",
-    keywords: "legal form observation obs risk flags alert interpreter diagnosis patient page band",
-    answer:
-      "Open the patient. The dark band at the top shows Legal, Observation and Risk flags, and Alerts when there is one. Risk flags come from the referral, with its date. The working diagnosis is under Details.",
-    desks: CLINICAL_DESKS,
-    needs: "search",
-    showMe: [
-      {
-        target: { sel: '[data-testid="ward-patient-glance"]' },
-        title: "Safety at a glance",
-        body: "Legal opens the forms. A health alert opens Details.",
-      },
-    ],
-  },
-  {
-    id: "pin-ward",
-    topic: "Finding your way",
-    title: "Pin a ward to my menu",
-    keywords: "pin favourite my wards shortcut",
-    answer: "Open the ward, then in the side menu choose Pin this ward. It stays under My wards on this device.",
-    desks: ["coordinator", "bed_manager"],
-    go: "wards",
-    showMe: [
-      {
-        target: { sel: '#main-content a[href^="/ward-flow/ward/"]' },
-        title: "Open the ward",
-        body: "Open the ward you want from the list.",
-      },
-      {
-        target: [{ sel: '[data-testid="ward-my-wards-pin"]' }, { sel: '[data-testid="ward-bar-phone-menu"]' }],
-        title: "Pin this ward",
-        body: "In the side menu, under My wards (in Menu on a phone). It stays pinned on this device.",
-      },
-    ],
-  },
-  {
-    id: "theme",
-    topic: "Settings and display",
-    title: "Use dark mode or the bright light theme",
-    keywords: "dark light night glare bright theme colour appearance",
-    answer:
-      "Settings, Display, Theme: Auto, Light, Dark or Bright light (for a bright room). It changes this device only.",
-    desks: EVERY_DESK,
-    go: "settings#display",
-    showMe: [
-      {
-        target: setting("theme", "display"),
-        title: "Theme",
-        body: "In Settings, Display. It saves at once, on this device only.",
-      },
-    ],
-  },
-  {
-    id: "density",
-    topic: "Settings and display",
-    title: "Fit more rows on screen",
-    keywords: "compact density smaller rows more on screen",
-    answer: "Settings, Display, Row density: Compact fits more rows on each screen.",
-    desks: EVERY_DESK,
-    go: "settings#display",
-    showMe: [
-      {
-        target: setting("density", "display"),
-        title: "Row density",
-        body: "In Settings, Display: Comfortable or Compact.",
-      },
-    ],
-  },
-  {
-    id: "notifications",
-    topic: "Settings and display",
-    title: "Get alerts when I am on another screen",
-    keywords: "notifications browser phone push alert notify lock screen",
-    answer:
-      "Settings, Alerts: turn on Alerts on this device. It covers this browser, and your phone where it can. It is for act-now and red alerts only.",
-    desks: EVERY_DESK,
-    needs: "alerts",
-    go: "settings#alerts",
-    showMe: [
-      {
-        target: setting("device-alerts", "alerts"),
-        title: "Alerts on this device",
-        body: "In Settings, Alerts. One switch for this browser and, where it can, your phone.",
-      },
-    ],
-  },
-  {
-    id: "buzz",
-    topic: "Settings and display",
-    title: "Turn the buzz sound on or off",
-    keywords: "sound chime audio noise mute buzz",
-    answer: "Settings, Alerts, Buzz sound. Use its test to hear it.",
-    desks: EVERY_DESK,
-    needs: "alerts",
-    go: "settings#alerts",
-    showMe: [
-      {
-        target: setting("buzz", "alerts"),
-        title: "Buzz sound",
-        body: "In Settings, Alerts. A chime on an urgent buzz.",
-      },
-    ],
-  },
-  {
-    id: "rules",
-    topic: "Settings and display",
-    title: "Change the pull time limit or ED target",
-    keywords: "rules settings pull time limit ed target wards asked morning count warning surge",
-    answer:
-      "Only the statewide coordinator may change global settings. In Settings, Rules, change the value, then Save to apply. Each save is recorded in the audit and changes what every screen shows. Surge switches all timings to the busy-day set.",
-    desks: ["coordinator"],
-    acts: ["SET_CONFIGURATION"],
-    requiresWholeNetwork: true,
-    go: "settings#rules",
-    showMe: [
-      {
-        target: setting("pull-hold", "rules"),
-        title: "Pull time limit",
-        body: "In Settings, Rules. How long a pulled bed is kept for the patient.",
-      },
-      {
-        target: setting("ed-target", "rules"),
-        title: "ED wait target",
-        body: "In Settings, Rules. An access measure only.",
-      },
-    ],
-  },
-  {
-    id: "mha-times",
-    topic: "Handover and reports",
-    title: "How form times and warnings work",
-    keywords: "mha legal form time expiry due calculate detention",
-    answer:
-      "Type each form time from the paper form. Ward Flow shows that time and warns before it, using the form warnings in Settings.",
-    desks: EVERY_DESK,
-  },
-  {
-    id: "undo",
-    topic: "Finding your way",
-    title: "Undo something I just did",
-    keywords: "undo mistake wrong reverse back",
-    answer:
-      "Many saves show Undo in the message at the foot of the screen, and Undo works for 5 minutes. After that, change the record back yourself; the history keeps both steps. Undo on Arrived can reverse a recent arrival when the normal Undo checks pass. If the person really has gone back, record that as its own step.",
-    desks: EVERY_DESK,
-  },
-  {
-    id: "downtime",
-    topic: "Handover and reports",
-    title: "What to do if Ward Flow is down",
-    keywords: "down offline outage paper downtime not working broken support help",
-    answer:
-      "Switch to the paper process. The downtime pack on Handover prints what you need. The app shows when it last saved, and says so when it is offline.",
-    desks: EVERY_DESK,
-    go: "handover",
-    computerOnly: true,
-    showMe: [
-      {
-        target: { sel: '#main-content a[href="/ward-flow/reports/downtime"]' },
-        title: "Downtime pack",
-        body: "Print it before you need it.",
-      },
-    ],
-  },
-  {
-    // The same question for a login that cannot open Handover, so no answer sends it there.
-    id: "downtime-paper",
-    topic: "Handover and reports",
-    title: "What to do if Ward Flow is down",
-    keywords: "down offline outage paper downtime not working broken support help",
-    answer:
-      "Tell the bed coordinator on shift, who decides when everyone switches to paper and keeps the printed downtime pack. Work from paper until the coordinator says Ward Flow is back.",
-    desks: EVERY_LOGIN.filter((role) => !deskOpens(role, "handover")),
-  },
-  {
-    id: "tour",
-    topic: "Finding your way",
-    title: "Take the tour again",
-    keywords: "tour tutorial guide walkthrough learn start",
-    answer: "Open Help and press Take the tour, or use Replay the tour in Settings, Display.",
-    desks: EVERY_DESK,
-    showMe: [
-      {
-        target: [{ sel: '[data-testid="ward-rail-help"]' }, { sel: '[data-testid="ward-bar-phone-menu"]' }],
-        title: "Help",
-        body: "Help is in the side menu (in Menu on a phone). Take the tour is the first row of How to.",
-      },
-    ],
-  },
-  {
-    id: "statistics",
-    topic: "Handover and reports",
-    title: "See the statistics",
-    keywords: "statistics stats trends reports figures numbers",
-    answer: "Open Statistics for the network's trends. Every figure is from synthetic records.",
-    desks: ["executive", "coordinator", "bed_manager"],
-    go: "statistics",
-    showMe: [
-      {
-        // The index's folder tabs carry ward-statistics-index (page tops, 9 Nov 2026).
-        target: { sel: '[data-testid="ward-statistics-nav"], [data-testid="ward-statistics-index"]' },
-        title: "Choose a view",
-        body: "Network, Compare, Services, Wards, EDs, Teams and Weekly. Every figure is from synthetic records.",
-      },
-      {
-        target: { sel: '[data-testid="ward-statistics-export"]' },
-        title: "Export the figures",
-        body: "Downloads the figures at the top of the page as a spreadsheet file, on a computer.",
-      },
-    ],
-  },
-  {
-    id: "give-access",
-    topic: "Settings and display",
-    title: "Give or remove someone's access",
-    keywords: "access account user role permission admin",
-    answer: "Settings, Access: find the person, then give or remove a desk. Each change is recorded.",
-    desks: ["admin"],
-    go: "settings#access",
-    showMe: [
-      {
-        target: [
-          { sel: '[data-testid="ward-access-grant"]' },
-          { sel: '[data-testid="ward-settings-phone-area-access"]' },
-        ],
-        title: "Give a desk",
-        body: "Find the person, choose the desk, then confirm. Each change is recorded.",
-      },
-      {
-        target: { sel: '[data-testid="ward-access-requests"]' },
-        title: "Requests",
-        body: "People who asked for access wait here until someone answers.",
-      },
-    ],
-  },
+  ...LATE_JOBS,
 ];
 
 /** The desks' jobs, the jobs added with the walk-rounds, the desk jobs added later, then the walks round each screen. */

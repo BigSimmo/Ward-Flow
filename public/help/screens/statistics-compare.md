@@ -6,14 +6,19 @@ Every ward and every ED side by side, as a chart or a table, with up to three wa
 
 ## What is on the screen
 
-1. Statistics views. Network, Compare, Services, Wards, EDs, Teams and Weekly.
-2. Ward comparison. Occupancy, stay, discharges held up and long stays for each ward. Data shows the table and CSV downloads it.
-3. ED comparison. Waiting, urgent, no ward yet and the longest wait for each ED.
-4. Pinned wards. Pin up to three wards to set them beside the network.
+1. Network figures. Ready beds, average completed stay and discharges held up across the network.
+2. Statistics views. Network, Compare, Services, Wards, EDs, Teams and Weekly. Each opens its own page.
+3. Open a unit. Find one ward or ED and open its own statistics.
+4. Ward comparison. Every ward against the network mean. Chart or Data switches the view, and CSV downloads the figures.
+5. Choose the measure. Occupancy, completed stay, discharges held up or long stays.
+6. Narrow the wards. Type a ward or hospital name, or show one group such as Locked or Older.
+7. ED comparison. Waiting, urgent, no ward yet and the longest wait for each ED, as a chart or data.
+8. Pinned wards. Pin up to three wards to set them beside the network.
 
 ## On a phone
 
 - Wards or EDs. Switch between wards and EDs, then choose the measure to set side by side.
+- Side by side. Each ward or ED against the network mean, on the measure chosen.
 - Compare two wards. Choose two wards to set against the network.
 
 In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.

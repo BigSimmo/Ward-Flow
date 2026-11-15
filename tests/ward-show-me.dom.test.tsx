@@ -28,7 +28,7 @@ vi.mock("@/components/wf", async (importOriginal) => ({
 
 import { HOW_TOS } from "@/components/ward-management/help/ward-help-howto";
 import { WardShowMe } from "@/components/ward-management/help/ward-show-me";
-import { Menu, PhoneSheet, Segmented } from "@/components/wf";
+import { Menu, PanelDrawer, PhoneSheet, Segmented } from "@/components/wf";
 import { SettingRow } from "@/components/ward-management/settings/settings-rows";
 import { OverlayRoot } from "@/components/wf/overlay-root";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
@@ -240,6 +240,71 @@ describe("Show me player", () => {
     expect(screen.getByRole("button", { name: "Another field", hidden: true }).closest("[inert]")).toBeNull();
     fireEvent.click(screen.getByTestId("ward-show-me-next"));
     await waitFor(() => expect(screen.getByTestId("ward-show-me-card").textContent).not.toMatch(/not on the screen/i));
+  });
+
+  it("joins above a drawer the person opens when it holds the next step, without closing the drawer", async () => {
+    vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue({ length: 1 } as DOMRectList);
+    vi.spyOn(HTMLElement.prototype, "scrollIntoView").mockImplementation(() => {});
+    // The officer job, ED and capacity drawers are kit PanelDrawers (a Sheet with a backdrop that closes on click).
+    const walk = HOW_TOS.find((each) => each.id === "sign-off-handover")!;
+    const second = walk.showMe!.filter((each) => !each.device || each.device === "desk")[1]!.target;
+    const sel = (Array.isArray(second) ? second[0]! : second).sel.split(",")[0]!;
+    const [, attr, value] = /\[([\w-]+)="([^"]+)"\]/u.exec(sel)!;
+    const closeDrawer = vi.fn();
+    function GuidedDrawer() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <OverlayRoot />
+          <section data-testid="ward-handover-kpi-strip" aria-label="Highlighted work">
+            <button type="button" onClick={() => setOpen(true)}>
+              Open the drawer
+            </button>
+          </section>
+          <WardShowMe id="sign-off-handover" onClose={() => {}} onBack={() => {}} />
+          <PanelDrawer
+            open={open}
+            title="The drawer"
+            onClose={() => {
+              closeDrawer();
+              setOpen(false);
+            }}
+          >
+            <button type="button" {...{ [attr!]: value }}>
+              Next step control
+            </button>
+            <button type="button">Another drawer field</button>
+          </PanelDrawer>
+        </>
+      );
+    }
+    render(<GuidedDrawer />);
+    await waitFor(() => expect(screen.getByTestId("ward-show-me-spot")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Open the drawer", hidden: true }));
+    const drawer = await screen.findByRole("dialog", { name: "The drawer", hidden: true });
+    await waitFor(() => expect(screen.getByTestId("ward-show-me-card").closest("[inert]")).toBeNull());
+    // The card sits above the drawer and its backdrop.
+    expect(
+      drawer
+        .closest("[data-overlay-layer]")!
+        .compareDocumentPosition(screen.getByTestId("ward-show-me-card").closest("[data-overlay-layer]")!) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Next step control", hidden: true }).closest("[inert]")).toBeNull();
+    expect(screen.getByRole("button", { name: "Another drawer field", hidden: true }).closest("[inert]")).toBeNull();
+    const next = screen.getByTestId("ward-show-me-next");
+    expect(next.closest("[inert]")).toBeNull();
+    const before = screen.getByTestId("ward-show-me-card").textContent;
+    fireEvent.pointerDown(next);
+    fireEvent.mouseDown(next);
+    fireEvent.pointerUp(next);
+    fireEvent.mouseUp(next);
+    fireEvent.click(next);
+    await waitFor(() => expect(screen.getByTestId("ward-show-me-card").textContent).not.toBe(before));
+    expect(screen.getByTestId("ward-show-me-card").textContent).not.toMatch(/not on the screen/i);
+    expect(closeDrawer).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog", { name: "The drawer", hidden: true })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Another drawer field", hidden: true }).closest("[inert]")).toBeNull();
   });
 
   it("keeps its highlighted work interactive, lets a menu consume Escape and gives a child modal priority", async () => {
