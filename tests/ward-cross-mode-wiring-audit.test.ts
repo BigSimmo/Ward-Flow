@@ -47,83 +47,97 @@ function send(state: WardFlowState, event: WardFlowEvent): WardFlowState {
   return next;
 }
 
+// The 24 replays (seeds 401 to 424) run as four tests of six seeds each, so every test has its own time
+// limit. Run as one test they took 29 s here but passed 90 s on the hosted runner when it was busy (#1692
+// and #1693, 15 Nov 2026). Every seed and every event is still checked.
+const SEED_CHUNKS = [
+  [401, 407],
+  [407, 413],
+  [413, 419],
+  [419, 425],
+] as const;
+
 describe("cross-mode calculations after synthetic event sequences", () => {
-  it("keeps Capacity, bed boxes, Statistics and both forecast views in agreement after every event", () => {
-    let accepted = 0;
-    let refused = 0;
-    for (let seed = 401; seed < 425; seed += 1) {
-      let state = seedWardFlowState();
-      const random = seededRandom(seed);
-      for (let step = 0; step < 120; step += 1) {
-        const event = nextEvent(state, random, step);
-        const next = wardFlowReducer(state, event);
-        if (next.rejections.length > state.rejections.length) refused += 1;
-        else accepted += 1;
-        state = next;
-        const now = nowFor(state, step);
-        const label = `seed=${seed}, step=${step}, action=${event.type}`;
-        const rows = networkWardRows(state.units, now, state.bedReleases, state.admissions, state.leaveBeds);
-        const boxes = state.units.map((unit) =>
-          bedStates(unit, state.admissions, state.bedReleases, state.leaveBeds, []),
-        );
-        const sum = (key: "ready" | "pulled" | "occupied" | "closed") =>
-          boxes.reduce((total, box) => total + box[key], 0);
-        for (const key of ["ready", "pulled", "occupied", "closed"] as const) {
-          expect(
-            rows.reduce((total, row) => total + row[key], 0),
-            `${label}: ${key}`,
-          ).toBe(sum(key));
-          expect(
-            boxes.every((box) => Number.isFinite(box[key]) && box[key] >= 0),
-            `${label}: bounded ${key}`,
-          ).toBe(true);
-        }
-        const stats = occupiedBeds(state.units, state.admissions, state.bedReleases, state.leaveBeds);
-        expect(stats.inUse, `${label}: occupancy`).toBe(
-          wardOccupancy(state.units, state.admissions, state.bedReleases).inUse,
-        );
-        expect(stats.inUse, `${label}: bed boxes in use`).toBe(sum("occupied") + sum("pulled"));
-        const gaps = bedKindGaps(state.movements, state.units, now, state.admissions);
-        // The gap tables do not depend on the horizon: work them out once per event, as the
-        // by-type totals do, so the replay stays inside its time limit on the slower CI runners.
-        const tables = forecastGapTables(state.units, state.bedReleases, state.admissions, state.movements, now);
-        const network = forecast(state, now, tables);
-        for (const days of [1, 2]) {
-          const horizon = network.horizons[days - 1];
-          const kind = forecastByKind(
-            state.units,
-            state.bedReleases,
-            state.admissions,
-            state.movements,
-            now,
-            days,
-            state.plannedAdmissions,
-            [],
-            tables,
+  it.each(SEED_CHUNKS)(
+    "keeps Capacity, bed boxes, Statistics and both forecast views in agreement after every event (seeds %i to %i)",
+    (firstSeed, endSeed) => {
+      let accepted = 0;
+      let refused = 0;
+      for (let seed = firstSeed; seed < endSeed; seed += 1) {
+        let state = seedWardFlowState();
+        const random = seededRandom(seed);
+        for (let step = 0; step < 120; step += 1) {
+          const event = nextEvent(state, random, step);
+          const next = wardFlowReducer(state, event);
+          if (next.rejections.length > state.rejections.length) refused += 1;
+          else accepted += 1;
+          state = next;
+          const now = nowFor(state, step);
+          const label = `seed=${seed}, step=${step}, action=${event.type}`;
+          const rows = networkWardRows(state.units, now, state.bedReleases, state.admissions, state.leaveBeds);
+          const boxes = state.units.map((unit) =>
+            bedStates(unit, state.admissions, state.bedReleases, state.leaveBeds, []),
           );
-          for (const key of [
-            "low",
-            "likely",
-            "high",
-            "confirmed",
-            "expected",
-            "heldUp",
-            "overdue",
-            "plannedNotFlagged",
-            "plannedAdmissions",
-          ] as const) {
-            expect(kind.total[key], `${label}: ${days} days ${key}`).toBe(horizon[key]);
+          const sum = (key: "ready" | "pulled" | "occupied" | "closed") =>
+            boxes.reduce((total, box) => total + box[key], 0);
+          for (const key of ["ready", "pulled", "occupied", "closed"] as const) {
+            expect(
+              rows.reduce((total, row) => total + row[key], 0),
+              `${label}: ${key}`,
+            ).toBe(sum(key));
+            expect(
+              boxes.every((box) => Number.isFinite(box[key]) && box[key] >= 0),
+              `${label}: bounded ${key}`,
+            ).toBe(true);
           }
-          expect(
-            gaps.reduce((total, row) => total + row.waiting, 0),
-            `${label}: waiting`,
-          ).toBe(horizon.waitingForBed);
+          const stats = occupiedBeds(state.units, state.admissions, state.bedReleases, state.leaveBeds);
+          expect(stats.inUse, `${label}: occupancy`).toBe(
+            wardOccupancy(state.units, state.admissions, state.bedReleases).inUse,
+          );
+          expect(stats.inUse, `${label}: bed boxes in use`).toBe(sum("occupied") + sum("pulled"));
+          const gaps = bedKindGaps(state.movements, state.units, now, state.admissions);
+          // The gap tables do not depend on the horizon: work them out once per event, as the
+          // by-type totals do, so the replay stays inside its time limit on the slower CI runners.
+          const tables = forecastGapTables(state.units, state.bedReleases, state.admissions, state.movements, now);
+          const network = forecast(state, now, tables);
+          for (const days of [1, 2]) {
+            const horizon = network.horizons[days - 1];
+            const kind = forecastByKind(
+              state.units,
+              state.bedReleases,
+              state.admissions,
+              state.movements,
+              now,
+              days,
+              state.plannedAdmissions,
+              [],
+              tables,
+            );
+            for (const key of [
+              "low",
+              "likely",
+              "high",
+              "confirmed",
+              "expected",
+              "heldUp",
+              "overdue",
+              "plannedNotFlagged",
+              "plannedAdmissions",
+            ] as const) {
+              expect(kind.total[key], `${label}: ${days} days ${key}`).toBe(horizon[key]);
+            }
+            expect(
+              gaps.reduce((total, row) => total + row.waiting, 0),
+              `${label}: waiting`,
+            ).toBe(horizon.waitingForBed);
+          }
         }
       }
-    }
-    expect(accepted).toBeGreaterThan(0);
-    expect(refused).toBeGreaterThan(0);
-  }, 90_000);
+      expect(accepted).toBeGreaterThan(0);
+      expect(refused).toBeGreaterThan(0);
+    },
+    90_000,
+  );
 });
 
 describe("linked booking follows the person's actual bed", () => {
