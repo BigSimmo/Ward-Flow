@@ -23,3 +23,9 @@ After merging main with PR #1678 (its own 0.7 KB demo Pause raise, D-229), each 
 0.7 KB on top: Coordinator 606.2, Referrals 604.7, ED 557.5, Ward 645.4, Movement 636.5, ED board 697.7,
 Bed meeting 606.7, Statistics 653.5. CI measured the merged tree at 605.8, 604.4, 557.3, 645.1, 636.1,
 697.3, 606.4 and 653.2.
+
+After merging main with Lane A (#1672), figures (#1673) and Lane B (#1682), main alone measured the ward
+page at 642.2 KB and the merged tree at 646.5 KB. Lane C's share is still the ward home work above plus
+the rail's Ready scope word and its ⓘ (R-BEDS-5, D-224). The ward limit moves to 647.0 KB, 4.8 KB over
+main's own figure, inside the 5 KB a PR may raise one screen without asking. The other limits keep the
+values already set here; each sits at or under 5 KB above main's own measurement.
