@@ -251,6 +251,8 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-229](#d-229-demo-pause-holds-board-time-and-seeded-wait-lists-match-the-engine-14-november-2026)                                                     | Demo Pause holds Board time; seeded wait lists match the engine                        | Active                                           |
 | [D-234](#d-234-record-gender-on-the-ed-board-14-november-2026)                                                                                          | Record gender on the ED board                                                          | Active                                           |
 | [D-237](#d-237-a-desks-own-save-is-never-another-desks-change-14-november-2026)                                                                         | A desk's own save is never another desk's change                                       | Active                                           |
+| [D-238](#d-238-raise-the-phone-size-limits-for-the-permission-check-and-history-15-november-2026)                                                       | Raise the phone size limits for the permission check and History                       | Active                                           |
+| [D-239](#d-239-four-follow-ups-from-the-figures-history-and-timing-work-15-november-2026)                                                               | Four follow-ups from the figures, history and timing work                              | Active                                           |
 
 ---
 
