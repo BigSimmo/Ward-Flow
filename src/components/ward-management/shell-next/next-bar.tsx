@@ -59,6 +59,7 @@ import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-t
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { WARD_BAR_PAGE_TOOLS_ID, useWardBarPageTitleFor } from "@/components/ward-management/shell/ward-bar-page-tools";
 import { WardHelpHost } from "@/components/ward-management/help/ward-help-host";
+import { WardBarHelpButton } from "@/components/ward-management/shell-next/next-bar-help";
 import { subscribeWardDrawer, subscribeWardDrawerClose } from "@/components/ward-management/shell/ward-drawer-bus";
 import { dischargeHref, movementHref, patientSearchHref } from "@/components/ward-management/shell/ward-facade";
 import type { WardPrimaryAction } from "@/components/ward-management/shell/ward-shell-types";
@@ -1077,8 +1078,8 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
         }
       >
         {/* Josh, 31 Oct 2026 (after seeing the new frame): today's order is back, the page name first
-            and then the place's dropdown, with no "›" and no "?" beside the title (Help stays in the
-            rail). A desk's own home page reads "My ward", "My ED", "My team" or "My jobs", then its
+            and then the place's dropdown, with no "›" and no "?" beside the title (Help sits beside
+            the search, D-244). A desk's own home page reads "My ward", "My ED", "My team" or "My jobs", then its
             place (`next-route-title.ts`), so the place is never said twice. */}
         <div className={styles.titleGroup}>
           <span
@@ -1123,7 +1124,7 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
         </span>
       </div>
 
-      <div className={styles.centerGroup}>
+      <div className={`${styles.centerGroup} ${polish.searchPair}`}>
         {/* The Patients page has its own search box, which filters its list in place, so the header
             search steps aside there and the screen keeps one search (simpler screens review, A5). */}
         {onPatientsPage ? null : (
@@ -1151,6 +1152,7 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
             />
           </div>
         )}
+        <WardBarHelpButton />
       </div>
 
       <WardBarDrawerTriggers
