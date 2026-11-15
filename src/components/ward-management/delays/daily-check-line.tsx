@@ -2,7 +2,7 @@
 
 import { useId, useMemo, useState } from "react";
 import Link from "next/link";
-import { CheckCheck, ChevronDown, ChevronRight, ChevronUp, ListChecks } from "lucide-react";
+import { CheckCheck, ChevronDown, ChevronRight, ChevronUp, ListChecks, RotateCcw } from "lucide-react";
 
 import { Button, StatusGlyph, useIsPhone } from "@/components/wf";
 import { ShowMoreRow } from "@/components/wf";
@@ -273,7 +273,21 @@ export function DailyCheckList({
           {all ? "Show fewer" : `Show ${hidden} more`}
         </ShowMoreRow>
       ) : null}
-      {checked ? null : (
+      {checked ? (
+        <div className={panel.foot}>
+          {/* Josh, 15 Nov 2026 (D-240, untested-537 INV-ACTION-150): a check ticked by mistake can be
+              reopened. Reopen records the role and the time beside the original tick. */}
+          <Button
+            variant="sec"
+            size="sm"
+            icon={RotateCcw}
+            data-testid="ward-daily-check-reopen"
+            onClick={() => raise("REOPEN_INBOX_ITEM", { inboxItemId: dailyCheckId(now) })}
+          >
+            Reopen
+          </Button>
+        </div>
+      ) : (
         <div className={panel.foot}>
           <span className={panel.footText}>
             <b>Worked through the list?</b>
@@ -399,7 +413,17 @@ export function DailyCheckLine({ initiallyOpen = false }: { initiallyOpen?: bool
               {all ? "Show fewer" : `Show ${items.length - CHECK_LIMIT} more`}
             </ShowMoreRow>
           ) : null}
-          {checked ? null : (
+          {checked ? (
+            <Button
+              variant="sec"
+              size="sm"
+              icon={RotateCcw}
+              data-testid="ward-daily-check-reopen"
+              onClick={() => raise("REOPEN_INBOX_ITEM", { inboxItemId: dailyCheckId(now) })}
+            >
+              Reopen
+            </Button>
+          ) : (
             <Button
               variant="sec"
               size="sm"
