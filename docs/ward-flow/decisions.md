@@ -259,6 +259,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-242](#d-242-raise-the-phone-size-limits-for-the-permission-check-and-history-15-november-2026)                                                       | Raise the phone size limits for the permission check and History                       | Active                                           |
 | [D-243](#d-243-four-follow-ups-from-the-figures-history-and-timing-work-15-november-2026)                                                               | Four follow-ups from the figures, history and timing work                              | Active                                           |
 | [D-244](#d-244-help-sits-beside-the-header-search-on-every-screen-15-november-2026)                                                                     | Help sits beside the header search on every screen                                     | Active                                           |
+| [D-245](#d-245-raise-eight-phone-size-limits-after-main-went-over-15-november-2026)                                                                     | Raise eight phone size limits after main went over                                     | Active                                           |
 
 ---
 
@@ -2884,4 +2885,11 @@ D-238 is reserved for design Lane D's block (noted in PR #1677). D-239 is reserv
 - **Replaces:** the 31 October 2026 note in `next-bar.tsx` that Help lives only in the rail. The "no ? beside the page title" part still stands. The rail's and phone menu's Help rows stay.
 - **Boundary:** header layout only. No clinical value, rule or wording changes.
 
-The next free number is D-245.
+## D-245. Raise eight phone size limits after main went over (15 November 2026)
+
+- **Date:** 15 November 2026, 9:31 PM AWST (13:31 UTC). **Decided by:** Josh, on a decision card: "Raise and release (recommended)", answering "Raise the eight phone size limits so the Help button can go live?".
+- **Decision:** PR #1690 raises eight phone size limits in `script-budget.json` to each screen's measured size plus 0.2 KB, every raise within the 5 KB D-82 allows: the main ward page, referrals, ED, the secure adult ward, a patient's movements, the ED arm, the bed meeting and statistics. Capacity stays as it was. Once main's checks pass, main is released so Help beside search (D-244) goes live.
+- **Why:** main had been about 1.4 KB over on these screens since #1683 (issue #1684), from shared header growth before #1688. That turned main's checks red and blocked every release, including the 6 am run. Help beside search was not the cause.
+- **Boundary:** size limits only. No clinical value, rule or wording changes. Trimming the shared header stays open as later work.
+
+The next free number is D-246.
