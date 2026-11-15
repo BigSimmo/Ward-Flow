@@ -460,6 +460,39 @@ function useFormsActNow(): number {
   return legalFormPopulation(movements).filter((movement) => isActNow(clockStanding(movement, now, thresholds))).length;
 }
 
+const DEMO_MOVED_KEY = "wf-demo-moved-seen";
+
+/** R-STRUCT-48: a one-word, once-per-device label that says the Demo panel moved here. */
+function DemoMovedLabel() {
+  // The sheet only draws in the browser after it opens, so reading the flag here cannot mismatch.
+  const [seen, setSeen] = useState(() => {
+    try {
+      return typeof window === "undefined" || window.localStorage.getItem(DEMO_MOVED_KEY) === "1";
+    } catch {
+      return true;
+    }
+  });
+  if (seen) return null;
+  return (
+    <button
+      type="button"
+      className={styles.groupCount}
+      data-testid="ward-tools-demo-moved"
+      aria-label="Moved here. Dismiss"
+      onClick={() => {
+        setSeen(true);
+        try {
+          window.localStorage.setItem(DEMO_MOVED_KEY, "1");
+        } catch {
+          // Storage blocked: the label returns next visit.
+        }
+      }}
+    >
+      Moved ×
+    </button>
+  );
+}
+
 export function WardToolsSheet(props: WardToolsSheetProps) {
   return useExecutiveStatisticsControl().executive ? (
     <ToolsSheetView {...props} executive counts={{}} />
@@ -958,7 +991,7 @@ function ToolsSheetView({
   const demoEntry: Entry = {
     key: "demo",
     icon: FlaskConical,
-    name: "Scenario and clock",
+    name: "Demo",
     detail: "Synthetic data only",
     body: (
       <div className={styles.toolBody}>
@@ -1057,7 +1090,7 @@ function ToolsSheetView({
     <section
       id={`ward-tools-page-${pageEntry.key}`}
       className={styles.page}
-      aria-label={pageEntry.name}
+      aria-label={pageEntry.key === "demo" ? "Scenario and clock" : pageEntry.name}
       tabIndex={-1}
       data-testid="ward-tools-page"
     >
@@ -1147,6 +1180,27 @@ function ToolsSheetView({
           {/* Needs you (Josh, 8 Nov 2026; words from shared design parts item 11, 13 Nov 2026, the same
             as Home's Needs you tab): the coordinator's few things that need them, each one tap from
             its tool. Only what is due shows; with nothing due, the section is gone. */}
+          {/* Q308: Viewing as joins the Demo controls at the head (R-STRUCT-23: Demo is the first row of Tools). */}
+          {!words ? (
+            <section className={styles.group} aria-label="Demo">
+              <h3 className={styles.groupHeading}>
+                Demo
+                <DemoMovedLabel />
+              </h3>
+              <div className={styles.card}>
+                <div className={styles.viewingAs}>
+                  <span className={styles.viewingText}>
+                    <span>Viewing as</span>
+                    <strong>{roleLabel}</strong>
+                  </span>
+                  <WardRoleSwitcher withWords />
+                </div>
+                {/* The executive desktop keeps its own scenario controls, so the demo row shows there on phone only. */}
+                {isPhone || !executive ? renderRow(demoEntry, "share") : null}
+              </div>
+            </section>
+          ) : null}
+
           {!words && role === "coordinator" && suggestions.length > 0 ? (
             <section className={styles.quick} aria-label="Needs you">
               <h3 className={styles.groupHeading}>Needs you</h3>
@@ -1270,30 +1324,12 @@ function ToolsSheetView({
               </section>
             ))
           )}
-
-          {/* Q308: Viewing as joins the Demo controls at the foot. */}
-          {!words ? (
-            <section className={styles.group} aria-label="Demo">
-              <h3 className={styles.groupHeading}>Demo</h3>
-              <div className={styles.card}>
-                <div className={styles.viewingAs}>
-                  <span className={styles.viewingText}>
-                    <span>Viewing as</span>
-                    <strong>{roleLabel}</strong>
-                  </span>
-                  <WardRoleSwitcher withWords />
-                </div>
-                {/* The executive desktop keeps its own scenario controls, so the demo row shows there on phone only. */}
-                {isPhone || !executive ? renderRow(demoEntry, "share") : null}
-              </div>
-            </section>
-          ) : null}
         </div>
 
         {twoPane ? (
           <section
             className={styles.pane}
-            aria-label={paneEntry?.name ?? "Tool"}
+            aria-label={(paneEntry?.key === "demo" ? "Scenario and clock" : paneEntry?.name) ?? "Tool"}
             id={shown ? `ward-tools-${shown}` : undefined}
           >
             {paneEntry ? (

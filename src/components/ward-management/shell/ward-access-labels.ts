@@ -45,8 +45,8 @@ export function accessPlaceLabel(access: WardAccess, units: readonly Unit[]): st
 export const SEED_UNITS: readonly Unit[] = STANDARD_WARD_SITES.flatMap((site) => site.units);
 
 /** A role and place in words on the standard network, for the shared workspace's status line. */
-export function sharedDeskLabel(access: WardAccess): string {
-  return `${ACCESS_ROLE_LABELS[access.role]}, ${accessPlaceLabel(access, SEED_UNITS)}`;
+export function sharedDeskLabel(access: WardAccess, units: readonly Unit[] = SEED_UNITS): string {
+  return `${ACCESS_ROLE_LABELS[access.role]}, ${accessPlaceLabel(access, units)}`;
 }
 
 /** Every place a role may hold, in words. Built from the workspace, never a literal list of wards. */

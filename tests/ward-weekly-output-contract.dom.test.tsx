@@ -37,6 +37,8 @@ function report() {
 it("carries complete Perth period boundaries and a dated generation stamp on detached reports", () => {
   report();
   const period = screen.getByTestId("ward-weekly-period");
+  // The report opens on this week so far (R-HOME-1 pack, 14 Nov 2026); pick the last full week first.
+  chooseWeek(0);
   expect(period).toHaveTextContent("Mon 12 Oct 2026, 00:00 demo time (inclusive)");
   expect(period).toHaveTextContent("Mon 19 Oct 2026, 00:00 demo time (exclusive)");
   expect(period).not.toHaveTextContent("Counted to");

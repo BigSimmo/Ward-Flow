@@ -194,7 +194,7 @@ describe("WardNotificationCenter DOM Component", () => {
     const row = screen.getByTestId("ward-census-overdue");
     expect(row).toHaveTextContent("Morning numbers not confirmed");
     expect(row).toHaveTextContent("Due 09:30");
-    expect(row).toHaveTextContent("2h 10m"); // 11:40 less 09:30
+    expect(row).toHaveTextContent("2 h 10 min"); // 11:40 less 09:30
     // Redesign (31 Oct 2026): a ward's own daily time is "Late"; "Overdue" is kept for legal form times.
     expect(row).toHaveTextContent("Late");
 

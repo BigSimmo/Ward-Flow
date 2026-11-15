@@ -16,24 +16,24 @@ const pad = (n: number) => String(n).padStart(2, "0");
 export const FUTURE_START_TEXT = "Start time is in the future";
 
 /**
- * Duration in milliseconds as `43s`, `5m 03s`, `52m`, `7h 05m`, `5h` or `1d 2h`. A whole hour is the
- * plain age, `5h`, never `5h 00m` (v10 content rule, wardanswer chapter).
+ * Duration in milliseconds as `43 s`, `5 min 03 s`, `52 min`, `7 h 05 min`, `5 h` or `1 d 2 h`. A whole hour is the
+ * plain age, `5 h`, never `5 h 00 min` (v10 content rule, wardanswer chapter).
  *
- * RC 2.5 (F-35, 13 Nov 2026): a negative length keeps its sign, `-18m`, as `splitDuration` does. It
+ * RC 2.5 (F-35, 13 Nov 2026): a negative length keeps its sign, `-18 min`, as `splitDuration` does. It
  * used to print its size, so a start still in the future read as a time already waited. A caller
  * that means "how far past" passes the size itself, as `Timer` does for "overdue".
  */
 export function dur(ms: number): string {
   if (ms < 0) return `-${dur(-ms)}`;
   const v = ms;
-  if (v < MINUTE) return `${Math.floor(v / 1000)}s`;
-  if (v < 10 * MINUTE) return `${Math.floor(v / MINUTE)}m ${pad(Math.floor((v % MINUTE) / 1000))}s`;
-  if (v < HOUR) return `${Math.floor(v / MINUTE)}m`;
+  if (v < MINUTE) return `${Math.floor(v / 1000)} s`;
+  if (v < 10 * MINUTE) return `${Math.floor(v / MINUTE)} min ${pad(Math.floor((v % MINUTE) / 1000))} s`;
+  if (v < HOUR) return `${Math.floor(v / MINUTE)} min`;
   if (v < DAY) {
     const minutes = Math.floor((v % HOUR) / MINUTE);
-    return minutes === 0 ? `${Math.floor(v / HOUR)}h` : `${Math.floor(v / HOUR)}h ${pad(minutes)}m`;
+    return minutes === 0 ? `${Math.floor(v / HOUR)} h` : `${Math.floor(v / HOUR)} h ${pad(minutes)} min`;
   }
-  return `${Math.floor(v / DAY)}d ${Math.floor((v % DAY) / HOUR)}h`;
+  return `${Math.floor(v / DAY)} d ${Math.floor((v % DAY) / HOUR)} h`;
 }
 
 /** Duration in whole minutes, same format. */

@@ -447,7 +447,7 @@ describe("Frontend-to-backend shared workspace contract", () => {
       expect(viewA?.error).toContain("This record changed while you were looking");
     });
 
-    // Client A adopted Coordinator B's committed +15 min state rather than its own +30 min state.
+    // Client A adopted Coordinator B's committed +15m state rather than its own +30m state.
     expect(viewA?.snapshot?.payload.state.clockOffsetMinutes).toBe(15);
     expect(viewA?.eventLog).toHaveLength(1);
     expect(viewA?.eventLog?.[0]?.accepted).toBe(false);

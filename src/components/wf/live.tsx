@@ -461,7 +461,7 @@ export function Timer({
             {wordFirst ? word : null}
             {/* Overdue is the size of the gap past the deadline: `dur` keeps a sign, so pass the size. */}
             <span className={styles.digits}>
-              {wholeMinutes && Math.abs(ms) < HOUR ? `${Math.floor(Math.abs(ms) / MINUTE)}m` : dur(Math.abs(ms))}
+              {wholeMinutes && Math.abs(ms) < HOUR ? `${Math.floor(Math.abs(ms) / MINUTE)} min` : dur(Math.abs(ms))}
             </span>
             {wordFirst ? null : word}
           </>

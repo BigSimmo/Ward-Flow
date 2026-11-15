@@ -270,7 +270,8 @@ describe("ReferralBoard", () => {
       .getAllByRole("row")
       .slice(1) // drop the header row
       .map((row) => row.getAttribute("data-referral-id"));
-    expect(ids).toEqual(["RF-015", "RF-014", "RF-011", "RF-001", "RF-009", "RF-005"]);
+    // R-BEDS-13: RF-EX-004, a community referral every asked ward declined, stays in the coordinator queue.
+    expect(ids).toEqual(["RF-015", "RF-EX-004", "RF-014", "RF-011", "RF-001", "RF-009", "RF-005"]);
   });
 
   /**
@@ -288,7 +289,9 @@ describe("ReferralBoard", () => {
     const rendered = within(table)
       .getAllByRole("row")
       .slice(1)
-      .map((row) => row.getAttribute("data-referral-id") ?? "");
+      .map((row) => row.getAttribute("data-referral-id") ?? "")
+      // Generated example lists are not in this fixture.
+      .filter((id) => !id.startsWith("RF-EX-"));
 
     const allReferrals = [...referrals, ...rulingsDemoOverlay(NOW_ANCHOR).referrals];
     const referralOf = (id: string) => allReferrals.find((referral) => referral.id === id);
@@ -349,14 +352,14 @@ describe("ReferralBoard", () => {
   });
 
   // M1 (fix round C): the figure must be bound to its OWN referral, not merely present. The
-  // previous `/waiting/i` matched "40m waiting", "20m waiting", "0m waiting" and the bare word,
+  // previous `/waiting/i` matched "40 min waiting", "20 min waiting", "0 min waiting" and the bare word,
   // so rendering `referralWaitLabel(queued[0], now)` on every row — RF-001's wait shown against
   // RF-005 — survived it untouched. The real fixture raises RF-001 at NOW_ANCHOR - 40 and RF-005
   // at NOW_ANCHOR - 20, and this is the board's headline requirement, so the values are pinned.
   it("renders each queued referral's own waiting figure, not just the word 'waiting'", () => {
     renderBoard();
-    expect(screen.getByTestId("ward-referral-board-wait-RF-001")).toHaveTextContent("40m waiting");
-    expect(screen.getByTestId("ward-referral-board-wait-RF-005")).toHaveTextContent("20m waiting");
+    expect(screen.getByTestId("ward-referral-board-wait-RF-001")).toHaveTextContent("40 min waiting");
+    expect(screen.getByTestId("ward-referral-board-wait-RF-005")).toHaveTextContent("20 min waiting");
   });
 
   /**
@@ -382,7 +385,7 @@ describe("ReferralBoard", () => {
     expect(headers).toContain("Since referral");
     expect(
       headers,
-      "the column is headed 'Waiting' again, over a cell that can now read '3h 00m referral to triage'",
+      "the column is headed 'Waiting' again, over a cell that can now read '3 h 00 min referral to triage'",
     ).not.toContain("Waiting");
   });
 
@@ -455,6 +458,7 @@ describe("ReferralBoard", () => {
     const cards = Array.from(container.querySelectorAll("[data-testid^='ward-referral-board-card-select-']"));
     expect(cards.map((card) => card.getAttribute("data-testid"))).toEqual([
       "ward-referral-board-card-select-RF-015",
+      "ward-referral-board-card-select-RF-EX-004",
       "ward-referral-board-card-select-RF-014",
       "ward-referral-board-card-select-RF-011",
       "ward-referral-board-card-select-RF-001",
@@ -2466,8 +2470,8 @@ describe("OutOfAreaBoard — the entries", () => {
   it("gives every length of stay in whole days, the way a stay is spoken about", () => {
     /*
      * The defect no assertion caught the first time. The seeded stays run from about a day to about
-     * 210 days, and rendered through `splitDuration` that is everything from `25h 30m` to
-     * `5041h 30m` — every figure correct, every figure unreadable, and the suite entirely green.
+     * 210 days, and rendered through `splitDuration` that is everything from `25 h 30 min` to
+     * `5041 h 30 min` — every figure correct, every figure unreadable, and the suite entirely green.
      * The number was never wrong; the FORMAT was.
      *
      * Checked over every rendered row rather than one, and asserted BOTH ways: no `h`/`m` duration
@@ -2487,7 +2491,7 @@ describe("OutOfAreaBoard — the entries", () => {
   it("gives each row that person's own length of stay, not a shape that looks like one", () => {
     /*
      * Format coverage is not value coverage, and this project has already shipped the difference.
-     * In Phase 1 a past timestamp handed to a countdown formatter rendered "1h 35m overdue" on all
+     * In Phase 1 a past timestamp handed to a countdown formatter rendered "1 h 35 min overdue" on all
      * 48 movements, at seven call sites, one of them under a column headed "Wait". Forty-three
      * tests were green and three reviews had passed, because every assertion checked the shape of
      * the string and none checked the number in it.

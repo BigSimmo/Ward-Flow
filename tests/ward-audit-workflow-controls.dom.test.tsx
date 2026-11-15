@@ -302,7 +302,7 @@ describe("referral evidence is visible and honestly qualified", () => {
     const unresolved = screen.getByRole("radiogroup", { name: "Fits, bed count old" });
     expect(within(unresolved).getAllByRole("radio")).toHaveLength(1);
     expect(unresolved).toHaveTextContent("Count not current");
-    expect(unresolved).toHaveTextContent(/Bed count \d+ h old, check with the ward/u);
+    expect(unresolved).toHaveTextContent(/Bed count \d+ (?:min|h|days) old, check with the ward/u);
     expect(document.body).not.toHaveTextContent("blocked, no bed");
   });
 });

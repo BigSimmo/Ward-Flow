@@ -53,3 +53,20 @@ describe("refusal words on screen", () => {
     ).toBe("Not recorded: No allocatable bed on this ward.");
   });
 });
+
+/** R-BEDS-14: a gate refusal is one line, why then what next, with no gate name or raw minutes. */
+describe("gate refusals on screen", () => {
+  it("says a stale bed count in days and what to do", () => {
+    const said = refusalReasonText(
+      "Royal Perth Older Adult is not eligible for this planned admission — failed gate capacity_freshness: Last confirmed 25678 min ago, stale. This booking needs a recorded override reason.",
+    );
+    expect(said).toBe("Bed count 17 days old. Ask the ward to confirm its count, then try again.");
+  });
+  it("never shows a gate name for a ward that cannot take the patient", () => {
+    const said = refusalReasonText(
+      "Ward A cannot accept referral RF-1 — failed gate security: Locked. This is not something a recorded reason can override.",
+    );
+    expect(said).toBe("Ward A cannot take this patient. Choose another ward.");
+    expect(said).not.toMatch(/gate|security/u);
+  });
+});

@@ -171,7 +171,7 @@ describe("the delays screen states the legal deadline it is already reacting to"
      * A negative rendered raw — "due in -10 min" — is the shape this branch exists to prevent, and
      * it is exactly what a screen shows when somebody formats a countdown without asking what
      * happens after zero. D-93 (31 Oct 2026): a passed typed time reads "ended 15:42" with the
-     * word "passed", never "overdue" or "passed its deadline 10m ago".
+     * word "passed", never "overdue" or "passed its deadline 10 min ago".
      */
     const wf006 = wardMovements.find((movement) => movement.id === "WF-006");
     const dueAt = wf006?.legalForm?.dueAt;

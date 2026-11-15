@@ -85,9 +85,9 @@ describe("F-113: one clock-zone label", () => {
 
 describe("F-35: one duration format, signed", () => {
   it("keeps the sign of a negative length, as splitDuration does, instead of printing its size", () => {
-    expect(dur(-18 * MIN)).toBe("-18m");
-    expect(durMinutes(-90)).toBe("-1h 30m");
-    expect(dur(18 * MIN)).toBe("18m");
+    expect(dur(-18 * MIN)).toBe("-18 min");
+    expect(durMinutes(-90)).toBe("-1 h 30 min");
+    expect(dur(18 * MIN)).toBe("18 min");
     expect(FUTURE_START_TEXT).toBe("Start time is in the future");
     // The kit and the engine's clock each keep a copy (neither may import the other): one wording.
     expect(KIT_FUTURE_START_TEXT).toBe(FUTURE_START_TEXT);
@@ -95,13 +95,13 @@ describe("F-35: one duration format, signed", () => {
 
   it("says a kept draft's age in the shared units, a day as days", () => {
     expect(referralDraftAgeText(0, 20_000)).toBe("just now");
-    expect(referralDraftAgeText(0, 65 * MIN)).toBe("1h 05m ago");
-    expect(referralDraftAgeText(0, 30 * 60 * MIN)).toBe("1d 6h ago");
+    expect(referralDraftAgeText(0, 65 * MIN)).toBe("1 h 05 min ago");
+    expect(referralDraftAgeText(0, 30 * 60 * MIN)).toBe("1 d 6 h ago");
   });
 
   it("says a pull time limit one way, as Ward and ED both showed a whole hour", () => {
     expect(pullHoldText(240)).toBe("4h");
-    expect(pullHoldText(270)).toBe("4h 30m");
+    expect(pullHoldText(270)).toBe("4 h 30 min");
     expect(pullHoldText(240 + 120)).toBe("6h");
   });
 });

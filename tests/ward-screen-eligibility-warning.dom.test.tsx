@@ -194,7 +194,9 @@ describe("ward screen eligibility warning — the engine, not the warning, is wh
     // And the ward is told, by the refusal surface rather than by the warning span.
     expect(refusalAlerts()).toHaveLength(1);
     const alert = refusalAlerts()[0];
-    expect(alert).toHaveTextContent(/forensic/i);
-    expect(alert).toHaveTextContent(/needs a recorded override reason/i);
+    // R-BEDS-14: one line, why then what next, without naming the criterion.
+    expect(alert).toHaveTextContent(/needs a recorded reason for this placement/i);
+    expect(alert).toHaveTextContent(/Add a reason, or choose another ward/);
+    expect(alert).not.toHaveTextContent(/forensic/i);
   });
 });

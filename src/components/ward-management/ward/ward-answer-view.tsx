@@ -64,10 +64,12 @@ import {
   PhoneSheet,
   ShowMoreRow,
 } from "@/components/wf";
+import { MissingValue } from "@/components/wf/missing-value";
 import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-morning-rollup";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import styles from "./ward-answer-view.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { useWardCommandCompletion, wardCommandFailure } from "./use-ward-command-completion";
 import { DeclineFailureNote, useAnswerToast, useAwaitingFocus, useDeclineFailure } from "./ward-answer-feedback";
 import {
   canSubmitDecline,
@@ -174,6 +176,12 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   const [declinePending, setDeclinePending] = useState(false);
   const [capacityDraft, setCapacityDraft] = useState<{ unitId: string; revision: number; value: string }>();
   const capacityRevision = unit?.allocatable.revision ?? 0;
+  const completeCommand = useWardCommandCompletion();
+  const [capacitySave, setCapacitySave] = useState<{
+    unitId: string;
+    state: "saving" | "saved" | "failed";
+    at?: Instant;
+  }>();
   const capacityValue =
     capacityDraft?.unitId === unitId && capacityDraft.revision === capacityRevision
       ? capacityDraft.value
@@ -503,13 +511,24 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
     event.preventDefault();
     const parsed = Number(capacityValue);
     if (!Number.isFinite(parsed) || parsed < 0) return;
-    raiseCapacity("CONFIRM_CAPACITY", {
-      unitId: currentUnit.id,
-      actingUnitId: currentUnit.id,
-      value: Math.floor(parsed),
-      expectedRevision: capacityRevision,
-    });
-    triggerToast(`Capacity confirmation requested for ${currentUnit.name}.`);
+    setCapacitySave({ unitId: currentUnit.id, state: "saving" });
+    // R-BEDS-18: one status line, moved by the server's own answer, so it clears when the save lands.
+    completeCommand(
+      `capacity:${currentUnit.id}`,
+      () =>
+        raiseCapacity("CONFIRM_CAPACITY", {
+          unitId: currentUnit.id,
+          actingUnitId: currentUnit.id,
+          value: Math.floor(parsed),
+          expectedRevision: capacityRevision,
+        }),
+      (outcome) =>
+        setCapacitySave(
+          wardCommandFailure(outcome)
+            ? { unitId: currentUnit.id, state: "failed" }
+            : { unitId: currentUnit.id, state: "saved", at: now },
+        ),
+    );
   }
 
   // The request waiting longest, for the hero's sub line.
@@ -1556,16 +1575,30 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                       <button
                         type="submit"
                         data-testid="ward-capacity-submit"
-                        // Secondary: Accept in principle is the page's one primary (device audit).
-                        className={styles.btn}
+                        // R-BEDS-16: the panel's one filled button, named for what it does.
+                        className={styles.btnPrimary}
                       >
-                        Confirm
+                        Confirm {Number(capacityValue) || 0} free
                       </button>
                     </div>
-                    <p className={styles.capacityConfirmed}>
-                      Currently confirmed {unit.allocatable.value} at {formatInstant(unit.allocatable.confirmedAt)}.
-                      Writes to {unit.name} only &mdash; never any other ward.
+                    <p className={styles.capacityConfirmed} data-testid="ward-capacity-checked">
+                      Checked {formatInstant(unit.allocatable.confirmedAt)} ·{" "}
+                      {Math.max(0, Math.floor(now - unit.allocatable.confirmedAt))} min ago. Changes {unit.name} only.
                     </p>
+                    {capacitySave?.unitId === unitId ? (
+                      <p className={styles.capacityConfirmed} role="status" data-testid="ward-capacity-save-status">
+                        {capacitySave.state === "saving"
+                          ? "Saving…"
+                          : capacitySave.state === "saved"
+                            ? `Saved ${formatInstantWithDay(capacitySave.at ?? now, now)}`
+                            : "Not saved · "}
+                        {capacitySave.state === "failed" ? (
+                          <button type="submit" className={styles.btn}>
+                            Retry
+                          </button>
+                        ) : null}
+                      </p>
+                    ) : null}
                   </form>
                 </div>
               </section>,
@@ -1612,14 +1645,17 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                       {recentAnswers.map((answer) => (
                         <li key={answer.key} data-testid={`ward-answer-history-${answer.key}`}>
                           {/* D-39 through the provider's identity projection, so a referral-linked journey keeps its UMRN. */}
-                          <strong>{resolvePatientIdentity({ movementId: answer.movementId }).umrn}</strong>
-                          <span>{answer.outcome}</span>
-                          <span>{answer.reason ? declineReasonLabel(answer.reason) : "Accepted by this ward"}</span>
+                          {/* R-BEDS-17: the person's name leads, time right-aligned, then the UMRN check and outcome. */}
+                          <strong>{resolvePatientIdentity({ movementId: answer.movementId }).formalName}</strong>
                           {answer.at === undefined ? (
-                            <span>Time not recorded</span>
+                            <MissingValue reason="not_recorded" className={styles.historyTime} />
                           ) : (
-                            <time>{formatInstantWithDay(answer.at, now)}</time>
+                            <time className={styles.historyTime}>{formatInstantWithDay(answer.at, now)}</time>
                           )}
+                          <span>
+                            {resolvePatientIdentity({ movementId: answer.movementId }).umrn} · {answer.outcome}
+                            {answer.reason ? `, ${declineReasonLabel(answer.reason)}` : ""}
+                          </span>
                         </li>
                       ))}
                     </ul>

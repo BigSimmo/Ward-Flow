@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import { pickRecordField, recordFieldValue } from "./helpers/legal-record-pick";
 
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -80,8 +81,8 @@ describe("a person admitted on a form stays on Legal forms (WT-03)", () => {
     fireEvent.click(within(admitted).getByRole("button", { name: /^Record a form for / }));
 
     const sheet = screen.getByTestId("ward-legal-record");
-    fireEvent.change(within(sheet).getByLabelText("Form type"), { target: { value: "6A" } });
-    expect(within(sheet).getByLabelText("Movement")).toHaveValue(MOVEMENT_ID);
+    pickRecordField("Form type", "6A");
+    expect(recordFieldValue("Patient")).toBe(MOVEMENT_ID);
     fireEvent.change(within(sheet).getByLabelText("Time on form"), { target: { value: "00:05" } });
     fireEvent.click(screen.getByTestId("ward-legal-forms-register-confirm"));
 

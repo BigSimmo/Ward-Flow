@@ -11,7 +11,9 @@ import { absenceInboxItems } from "../src/components/ward-management/ward-absenc
 import {
   bedMeetingActionInboxItems,
   duplicateBedRequestInboxItems,
+  leaveBedReminderInboxItems,
   overduePullNowInboxItems,
+  silentWardReminderInboxItems,
   heldBedElsewhereInboxItems,
 } from "../src/components/ward-management/ward-act-now-items";
 import { buildActionInbox, type InboxItem } from "../src/components/ward-management/ward-derivations";
@@ -41,6 +43,8 @@ const MEETING_ACTION_CATEGORIES = 1;
 const PULL_NOW_CATEGORIES = 1;
 /** M11 (14 Nov 2026): `heldBedElsewhereInboxItems` (`ward-act-now-items.ts`) emits one category. */
 const HELD_ELSEWHERE_CATEGORIES = 1;
+/** R-HOME-10: `silentWardReminderInboxItems` and `leaveBedReminderInboxItems` emit one category each. */
+const TIMED_REMINDER_CATEGORIES = 2;
 /**
  * Overall review (20 Oct 2026): the daily check is a commitment the coordinator ticks off once a
  * day (`dailyCheckId`). It names a day, not a row, so no list ever emits it.
@@ -174,7 +178,30 @@ function allInboxRows(movements: Movement[]): InboxItem[] {
     ...overduePullNowInboxItems(overduePullNowRecords(), NOW),
     // M11: a bed held for an accepted referral while the person is in a bed elsewhere.
     ...heldBedElsewhereInboxItems(heldBedElsewhereRecords()),
+    // R-HOME-10: a referral silent for the 4 hour reminder, and a leave bed held for the 24 hour prompt.
+    ...silentWardReminderInboxItems(
+      { units: allUnits(), configuration: defaultWardConfiguration(), referrals: silentReferralRecords() },
+      NOW,
+    ),
+    ...leaveBedReminderInboxItems(
+      {
+        units: allUnits(),
+        leaveBeds: [
+          { ...absenceOnOrderRecords().leaveBeds[0]!, absentWithoutLeave: undefined, confirmedAt: NOW - 24 * 60 },
+        ],
+      },
+      NOW,
+    ),
   ];
+}
+
+/** Seed referrals still awaiting a ward answer, asked a day ago. */
+function silentReferralRecords() {
+  return duplicateRequestRecords().map((referral) => ({
+    ...referral,
+    raisedAt: NOW - 24 * 60,
+    destinations: referral.destinations.map((arm) => ({ ...arm, referredAt: NOW - 24 * 60 })),
+  }));
 }
 
 /** A Pull now raised 20 minutes ago on a seed journey, with no asked ward answering (audit M2). */
@@ -409,7 +436,8 @@ describe("every action-inbox category is classified as a fact or a commitment", 
         DUPLICATE_CATEGORIES -
         MEETING_ACTION_CATEGORIES -
         PULL_NOW_CATEGORIES -
-        HELD_ELSEWHERE_CATEGORIES,
+        HELD_ELSEWHERE_CATEGORIES -
+        TIMED_REMINDER_CATEGORIES,
     );
   });
 

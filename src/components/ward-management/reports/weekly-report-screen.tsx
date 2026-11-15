@@ -76,7 +76,7 @@ function weekLabel(week: ReportWeek, dayZero: Date): string {
 export function WeeklyReportScreen() {
   const access = useEffectiveWardAccess();
   const controls = useExecutiveStatisticsControl();
-  const [offset, setOffset] = useState<number>(0);
+  const [offset, setOffset] = useState<number>(-1);
   return controls.executive || access.role === "executive" ? (
     <ExecutiveWeeklyReport offset={offset} setOffset={setOffset} />
   ) : (

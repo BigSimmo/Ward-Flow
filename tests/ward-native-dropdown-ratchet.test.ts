@@ -41,7 +41,8 @@ const KNOWN_DROPDOWNS: Readonly<Record<string, number>> = {
   // Moved, not added: the Going to drop-down left discharge-board.tsx for this file (item 7, 11 Nov 2026).
   "src/components/ward-management/discharges/discharge-departure-field.tsx": 1,
   "src/components/ward-management/discharges/discharge-follow-up.tsx": 1,
-  "src/components/ward-management/ed/ed-screen-referred.tsx": 1,
+  // Moved, not added: the one record-gender drop-down now lives in its shared component (R-LEGAL-6).
+  "src/components/ward-management/ed/ed-record-gender.tsx": 1,
   "src/components/ward-management/ed/ed-screen-row-forms.tsx": 6,
   "src/components/ward-management/forecast/forecast-miss-reason-control.tsx": 1,
   "src/components/ward-management/governance-registers.tsx": 5,

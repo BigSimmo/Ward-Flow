@@ -9,6 +9,12 @@ import {
 import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import Link from "next/link";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { originPlaceLabel } from "@/components/ward-management/ward-movement-origin";
+import { wardRaise } from "@/components/ward-management/ward-flow-raise";
+import { patientIdentityLine } from "@/components/ward-management/ward-patient-resolver";
+import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
+import { useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { arrivalGaps } from "@/components/ward-management/ward-arrival-gaps";
 import React, { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import styles from "./ward-home-tab.module.css";
 import { pendingDepartureLogRows, type WardShiftLogRow } from "./ward-departure-log";
@@ -61,6 +67,7 @@ import {
   Card,
   CardHead,
   Count,
+  Dialog,
   Drawer,
   durMinutes,
   PhoneSheet,
@@ -70,6 +77,7 @@ import {
   useIsPhone,
   type WfTone,
 } from "@/components/wf";
+import { MissingValue } from "@/components/wf/missing-value";
 import { bedGlyphTone, type BedItem } from "./ward-bed-tone";
 import { CriteriaLedTag } from "./ward-criteria-led-tag";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
@@ -97,6 +105,16 @@ export {
   type WardFlowTab,
   type WardShiftView,
 } from "./ward-home-tab-model";
+import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
+
+// The arrival identity check loads on first use, so it adds nothing to the ward page's first load.
+const ArrivalIdentityDialog = dynamic(
+  withLoadRetry(() =>
+    import("@/components/ward-management/arrival-identity-dialog").then((m) => m.ArrivalIdentityDialog),
+  ),
+  { ssr: false },
+);
 
 interface WardHomeTabProps {
   unit: Unit;
@@ -232,6 +250,7 @@ export function WardHomeTab({
   submitDecline,
   priorRejectionCountRef,
   rejections,
+  dispatch,
   setCheckToken,
   recentAnswers,
   resolvePatientIdentity,
@@ -519,7 +538,8 @@ export function WardHomeTab({
     // ("Discharge confir…", "Held up, Awaiti…"). The full note stays in the accessible name, the
     // list view and the bed panel.
     // FM-11 (Ward notes item 9): a pulled tile says "Pulled" and the journey's stage, then the hold.
-    const pulledNote = bed.status === "incoming" && !delivered ? pulledTileNote(bed.pulledStage, hold?.short) : null;
+    const pulledNote =
+      bed.status === "incoming" && !delivered ? pulledTileNote(bed.pulledStage, hold?.short, bed.pulledDiverted) : null;
     const tileNote = pulledNote
       ? pulledNote
       : hold
@@ -1132,7 +1152,41 @@ export function WardHomeTab({
       onPullThenArrive(row.movementId);
       return;
     }
+    // R-MOVE-11: the identity check opens here, in place. A row that cannot record arrival, or one
+    // that needs the transport-gap check, opens its card instead.
+    const movement = movements.find((item) => item.id === row.movementId);
+    if (row.action === "confirm-arrival" && !row.arriveReason && movement && arrivalGaps(movement).length === 0) {
+      setArriveRowId(row.movementId);
+      return;
+    }
     onOpenArrival?.(row.movementId);
+  }
+  const [arriveRowId, setArriveRowId] = useState<string | null>(null);
+  // R-MOVE-1: the diverted person's pulled bed, released from the home row after one check.
+  const [releaseDivertedId, setReleaseDivertedId] = useState<string | null>(null);
+  const releaseDivertedMovement = movements.find((item) => item.id === releaseDivertedId);
+  const routeRole = useRouteRole();
+  const { run: runStep } = useUndoableStep({ dispatch, rejections, now, routeRole });
+  const arriveRowMovement = movements.find((item) => item.id === arriveRowId);
+  function recordRowArrival(movement: Movement) {
+    priorRejectionCountRef.current = rejections.length;
+    const who = resolvePatientIdentity(movement).displayName;
+    runStep(
+      { type: "PATIENT_ARRIVED", role: "ward", now, movementId: movement.id, actingUnitId: unit.id },
+      {
+        success: `Arrival recorded for ${who}.`,
+        who,
+        undo: (at) => ({
+          type: "UNDO_TRANSPORT_STEP",
+          role: "ward",
+          now: at,
+          movementId: movement.id,
+          actingUnitId: unit.id,
+        }),
+        // The row has no inline line for a refused arrival, so the refusal shows on the toast (review: Codex).
+      },
+    );
+    setCheckToken((token) => token + 1);
   }
 
   function renderFlowCard() {
@@ -1295,6 +1349,7 @@ export function WardHomeTab({
         refusalFor={refusalUnder}
         onPull={(row) => row.movementId && onPullPatient?.(row.movementId, unit.id)}
         onConfirmArrival={confirmArrival}
+        onReleaseDiverted={(row) => row.movementId && setReleaseDivertedId(row.movementId)}
         onOpenArrival={(movementId) => onOpenArrival?.(movementId)}
         onOpenBed={(bedNumber) => onSelectBed?.(bedNumber)}
         onOpenArrivals={onOpenArrivals}
@@ -1678,6 +1733,53 @@ export function WardHomeTab({
         );
       })()}
 
+      <Dialog
+        open={releaseDivertedMovement !== undefined}
+        onClose={() => setReleaseDivertedId(null)}
+        size="sm"
+        title="Release pulled bed?"
+        description={`The bed pulled at ${unit.name} for ${releaseDivertedMovement ? resolvePatientIdentity(releaseDivertedMovement).displayName : "this patient"} is offered again and the diverted movement is closed. This cannot be undone.`}
+        secondary={[{ label: "Keep as is", onAction: () => setReleaseDivertedId(null) }]}
+        primary={{
+          label: "Release pulled bed",
+          onAction: () => {
+            setReleaseDivertedId(null);
+            if (!releaseDivertedMovement) return;
+            priorRejectionCountRef.current = rejections.length;
+            wardRaise(
+              dispatch,
+              deskRole === "coordinator" ? "coordinator" : "ward",
+              now,
+            )("RELEASE_DIVERTED_BED", {
+              movementId: releaseDivertedMovement.id,
+              actingUnitId: unit.id,
+            });
+          },
+        }}
+        data-testid="ward-home-release-diverted-confirm"
+      >
+        {releaseDivertedMovement ? (
+          <p data-testid="ward-home-release-diverted-identity">
+            Check: {patientIdentityLine(resolvePatientIdentity(releaseDivertedMovement))}
+          </p>
+        ) : null}
+      </Dialog>
+
+      {arriveRowMovement ? (
+        <ArrivalIdentityDialog
+          open
+          person={arriveRowMovement ? resolvePatientIdentity(arriveRowMovement).patient : undefined}
+          identity={arriveRowMovement ? patientIdentityLine(resolvePatientIdentity(arriveRowMovement)) : ""}
+          wardName={unit.name}
+          comingFrom={arriveRowMovement ? originPlaceLabel(arriveRowMovement) : undefined}
+          onClose={() => setArriveRowId(null)}
+          onConfirm={() => {
+            setArriveRowId(null);
+            recordRowArrival(arriveRowMovement);
+          }}
+        />
+      ) : null}
+
       {(() => {
         // The referral the accept dialog was opened for, while it is still waiting here (CS-08).
         const acceptMovement = visibleIncoming.find((movement) => movement.id === acceptFor);
@@ -1747,14 +1849,16 @@ export function WardHomeTab({
             <ul>
               {recentAnswers.map((answer) => (
                 <li key={answer.key} data-testid={`ward-answer-history-${answer.key}`}>
-                  <strong>{resolvePatientIdentity({ movementId: answer.movementId }).umrn}</strong>
-                  <span>{answer.outcome}</span>
-                  <span>{answer.reason ? declineReasonText(answer.reason) : "Accepted by this ward"}</span>
+                  <strong>{resolvePatientIdentity({ movementId: answer.movementId }).formalName}</strong>
                   {answer.at === undefined ? (
-                    <span>Time not recorded</span>
+                    <MissingValue reason="not_recorded" />
                   ) : (
                     <time>{formatInstantWithDay(answer.at, now)}</time>
                   )}
+                  <span>
+                    {resolvePatientIdentity({ movementId: answer.movementId }).umrn} · {answer.outcome}
+                    {answer.reason ? `, ${declineReasonText(answer.reason)}` : ""}
+                  </span>
                 </li>
               ))}
             </ul>

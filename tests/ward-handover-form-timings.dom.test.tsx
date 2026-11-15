@@ -60,7 +60,7 @@ describe("Handover recorded form timings", () => {
     renderAt(NOW_ANCHOR);
     const text = screen.getByTestId("ward-handover-sheet").textContent ?? "";
     expect(text.toLowerCase()).not.toContain("breach");
-    expect(text).not.toContain("26h 48m");
+    expect(text).not.toContain("26 h 48 min");
   });
 
   it("puts every recorded form whose typed time has passed in Act now once the clock passes it", () => {

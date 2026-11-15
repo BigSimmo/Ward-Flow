@@ -231,7 +231,7 @@ test.describe("@mockup Ward screen", () => {
 
   /**
    * Whole-branch review I3. Spec §2 decision 5 ("Does the clock move? Yes, with a jump-forward
-   * control") and §5 ("+15 min, +1 hour … so a held bed can be watched expiring in seconds
+   * control") and §5 ("+15m, +1 hour … so a held bed can be watched expiring in seconds
    * rather than in an hour") — `ADVANCE_CLOCK` was implemented and tested in the reducer from
    * Task 3 onward but dispatched only from test-harness buttons; no product surface ever raised
    * it. WF-003 is fixture-pinned `accepted_awaiting_bed` at `rph-adult-secure`
@@ -239,7 +239,7 @@ test.describe("@mockup Ward screen", () => {
    */
   test("the demo clock control advances a held bed toward expiry, and reads as demo scaffolding", async ({ page }) => {
     // The countdown floors wall-clock minutes. Pin the browser clock so crossing a minute
-    // boundary between the hold action and the assertion cannot turn 4h 00m into 3h 59m.
+    // boundary between the hold action and the assertion cannot turn 4 h 00 min into 3 h 59 min.
     // install() starts the fake clock RUNNING from its time, so pausing at that same instant
     // failed under load ("Cannot fast-forward to the past") whenever any time passed between the
     // two calls. Installing a minute earlier leaves pauseAt a real step forward; the paused time is
@@ -256,7 +256,7 @@ test.describe("@mockup Ward screen", () => {
     const card = wardScreen.getByTestId("ward-accepted-WF-003");
     await expect(card).toBeVisible();
     await card.getByTestId("ward-pull-WF-003").click();
-    await expect(card).toContainText("Bed pull 4h 00m left");
+    await expect(card).toContainText("Bed pull 4 h 00 min left");
 
     // The header has no Synthetic pill now (Josh, 30-31 Oct 2026): on a desktop the board clock
     // opens Tools at its Demo row, a layout-level sibling of `wardScreen`, so `page`-scoped.
@@ -282,8 +282,8 @@ test.describe("@mockup Ward screen", () => {
 
     // The one thing spec §5 says the control exists to demonstrate: a held bed watched
     // expiring in seconds. 3 hours 45 minutes advanced against a 240-minute (4-hour) hold leaves 15.
-    await expect(card).toContainText("Bed pull 15m left");
-    await expect(card).not.toContainText("Bed pull 4h 00m left");
+    await expect(card).toContainText("Bed pull 15 min left");
+    await expect(card).not.toContainText("Bed pull 4 h 00 min left");
   });
 
   // Change 8 (D-77), updated 31 Oct 2026: the header has no Synthetic pill, so the Board time pill in
@@ -577,7 +577,7 @@ test.describe("@mockup Movements — transport panel", () => {
       // 9 Nov 2026 (WCAG 2.5.3): the spoken name is now the row's own text plus a spoken tail,
       // "…, Collected via Patient transport service, booked 53m ago".
       await expect(row).toContainText(
-        /(Accepted|En route|Collected|Arrived|Cancelled) via .+, booked \d+(d|h|m)( \d+(h|m))? ago/,
+        /(Accepted|En route|Collected|Arrived|Cancelled) via .+, booked \d+ (d|h|min)( \d+ (h|min))? ago/,
       );
     }
   });
@@ -1052,7 +1052,7 @@ test.describe("@mockup Emergency department screen", () => {
    * ⚠️ Confirmed by RENDERING the department, not by this reasoning alone: two causes fit the old
    * failure equally well from the seed side — a stale fixture assumption (this one) or a genuine
    * regression that stopped filtering the inbox by department — and only opening the screen tells
-   * them apart. `peel-ed` shows "Referrals · 1 patient", `RF-013`, "In department", "7h 20m since
+   * them apart. `peel-ed` shows "Referrals · 1 patient", `RF-013`, "In department", "7 h 20 min since
    * triage" — one row, matching the predicate above exactly.
    *
    * The proof this test exists for — that each department's list is SELECTED for it, not rendered

@@ -18,7 +18,7 @@ import {
   referralPresentation,
   referralPresentationLists,
 } from "@/components/ward-management/ward-partial-view-presenters";
-import { presentationDecidedAt, outcomeLabel } from "./referral-board-model";
+import { presentationDecidedAt, outcomeLabel, referralAllWardsDeclined } from "./referral-board-model";
 import {
   acceptedPullDesk,
   acceptedReferralsAwaitingPull,
@@ -29,7 +29,8 @@ import { CopyNotesButton } from "./copy-notes-button";
 import { referralAcceptanceNotesText } from "@/components/ward-management/referral-notes-text";
 import { ChevronLeft, ChevronRight, FileText, ListOrdered, TriangleAlert, UserRound } from "lucide-react";
 
-import { formatSheetMoment } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, formatSheetMoment } from "@/components/ward-management/ward-clock";
+import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import { overlayOpener } from "@/components/wf/sheet-focus";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { type Referral } from "@/components/ward-management/ward-model";
@@ -257,7 +258,18 @@ export function ReferralBoard({
   const edDeskView = useEdDeskReferrals(movements, now);
   const sender = useSenderPresentation();
   const presentationLists = referralPresentationLists(referrals, sender.referralFor);
-  const queued = presentationLists.queued;
+  // R-BEDS-13: on the coordinator's desk a referral every asked ward declined stays in the queue,
+  // in wait order, until it is placed, closed or handed back; History no longer lists it.
+  const keepDeclined = routeRole === "coordinator";
+  const declinedStay = keepDeclined
+    ? presentationLists.decided.filter((referral) => referralAllWardsDeclined(referral))
+    : [];
+  const declinedStayIds = new Set(declinedStay.map((referral) => referral.id));
+  const queued = declinedStay.length
+    ? [...presentationLists.queued, ...declinedStay].sort(
+        (a, b) => a.raisedAt - b.raisedAt || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
+      )
+    : presentationLists.queued;
   const decidedAtFor = (referral: Referral) => presentationDecidedAt(referral, sender.referralFor(referral));
   // `undefined` = nobody has chosen yet; `null` = the coordinator closed the detail. Only the first
   // falls back to the page's default, and only where the detail sits beside the queue. Below 64rem
@@ -315,7 +327,7 @@ export function ReferralBoard({
 
   // Audit 24-1 B-03: the queued referral on screen, by id and name, so one decided at another desk
   // closes with a notice naming them rather than handing the panel to the next person in the queue.
-  const [watchedReferral, setWatchedReferral] = useState<{ id: string; name: string }>();
+  const [watchedReferral, setWatchedReferral] = useState<{ id: string; name: string; since: number }>();
   const [decidedHereId, setDecidedHereId] = useState<string>();
   const [leftNotice, setLeftNotice] = useState<string>();
 
@@ -390,10 +402,10 @@ export function ReferralBoard({
       },
     );
 
-  const decided = presentationLists.recentlyDecided;
+  const decided = presentationLists.recentlyDecided.filter((referral) => !declinedStayIds.has(referral.id));
   // The DENOMINATOR, uncapped. `decided` above is already truncated to the display limit, so its
   // length names how many rows are shown and cannot name how many have been decided.
-  const allDecided = presentationLists.decided;
+  const allDecided = presentationLists.decided.filter((referral) => !declinedStayIds.has(referral.id));
   const decidedTotal = allDecided.length;
   // Community desk: an empty queue opens on History, the team's decided referrals.
   const view = chosenView ?? (communityDesk && queued.length === 0 && decidedTotal > 0 ? "history" : "queue");
@@ -410,12 +422,38 @@ export function ReferralBoard({
       !presentationLists.unavailable.some((referral) => referral.id === watchedReferral.id)
     ) {
       setSelectedReferralId(null);
-      setLeftNotice(`${watchedReferral.name} was decided elsewhere. Choose the next referral from the queue.`);
+      // R-BEDS-15: this desk's own decline reads as its own; another desk's names that desk.
+      const left = referrals.find((referral) => referral.id === watchedReferral.id);
+      // Only a decision made after it was chosen, so an earlier decline is never named as the reason it left.
+      const arm = left?.destinations.findLast(
+        (addressing) => addressing.decidedAt !== undefined && addressing.decidedAt > watchedReferral.since,
+      );
+      const clock = arm?.decidedAt !== undefined ? formatInstantWithDay(arm.decidedAt, now) : undefined;
+      const armUnit = units.find(
+        (unit) =>
+          unit.id ===
+          (arm?.acceptedUnitId ?? (arm?.destination.kind === "psychiatric_ward" ? arm.destination.unitId : undefined)),
+      );
+      const own = arm?.state === "declined" && arm.decidedBy === WARD_FLOW_ROLE_LABELS[routeRole];
+      setLeftNotice(
+        own && clock
+          ? `${watchedReferral.name}: you declined this at ${clock}. Choose the next referral from the queue.`
+          : armUnit && clock
+            ? `${watchedReferral.name}: decided by ${armUnit.name} at ${clock}. Choose the next referral from the queue.`
+            : `${watchedReferral.name} was decided elsewhere. Choose the next referral from the queue.`,
+      );
     }
     setWatchedReferral(undefined);
   } else if (selectedInQueue) {
     if (watchedReferral?.id !== selectedInQueue.id)
-      setWatchedReferral({ id: selectedInQueue.id, name: nameOf(selectedInQueue) });
+      setWatchedReferral({
+        id: selectedInQueue.id,
+        name: nameOf(selectedInQueue),
+        since: Math.max(
+          -Infinity,
+          ...selectedInQueue.destinations.map((addressing) => addressing.decidedAt ?? -Infinity),
+        ),
+      });
   } else if (watchedReferral) {
     setWatchedReferral(undefined);
   }

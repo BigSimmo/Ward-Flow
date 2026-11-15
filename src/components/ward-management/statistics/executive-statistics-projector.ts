@@ -405,7 +405,7 @@ export function projectExecutiveReportingFoundation(
     .map((row) => row.arrivedAt! - row.pulledAt!)
     .filter((gap) => Number.isFinite(gap) && gap >= 0);
   const hold = input.pullHoldMinutes;
-  const hours = (minutes: number) => `${Math.round(minutes / 60)}h`;
+  const hours = (minutes: number) => `${Math.round(minutes / 60)} h`;
   const bandDefinitions = [
     { id: "half-hold", label: `Under ${hours(hold / 2)}`, from: 0, to: hold / 2 },
     { id: "hold", label: `${hours(hold / 2)} to ${hours(hold)}`, from: hold / 2, to: hold },

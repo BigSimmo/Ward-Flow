@@ -132,7 +132,9 @@ describe("planned admissions panel", () => {
     fireEvent.click(screen.getByTestId("ward-planned-submit"));
     fireEvent.click(within(screen.getByTestId("ward-planned-PA-01")).getByRole("button", { name: "Arrived" }));
     fireEvent.click(screen.getByRole("button", { name: "Confirm arrival" }));
-    expect(screen.getByTestId("ward-planned-refusal")).toHaveTextContent(/gender_designation/);
+    expect(screen.getByTestId("ward-planned-refusal")).toHaveTextContent(
+      /cannot take this patient\. Choose another ward/,
+    );
     expect(screen.getByTestId("ward-planned-PA-01")).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/PA-/);
   });

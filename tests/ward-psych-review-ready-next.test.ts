@@ -114,11 +114,11 @@ describe("psychiatry review tracker", () => {
       next: ["ask"],
     });
     const asked = psychReviewStage({ ...base, psychReview: { requestedAt: 550 } }, 675, 300);
-    expect(asked.line).toBe("Review asked 9:10 am · 2h\u00a005m");
+    expect(asked.line).toBe("Review asked 9:10 am · 2\u00a0h\u00a005\u00a0min");
     expect(asked.waitedMinutes).toBe(125);
     expect(asked.next).toEqual(["registrar", "consultant"]);
     const registrar = psychReviewStage({ ...base, psychReview: { requestedAt: 550, registrarSeenAt: 600 } }, 675, 300);
-    expect(registrar.line).toBe("Consultant pending · 2h\u00a005m");
+    expect(registrar.line).toBe("Consultant pending · 2\u00a0h\u00a005\u00a0min");
     expect(registrar.next).toEqual(["consultant"]);
   });
 });
@@ -204,10 +204,10 @@ describe("referral response timer", () => {
     };
     const inside = movementOfferNoReplyWaits(movement, 540, configuration, units);
     expect(inside).toHaveLength(1);
-    expect(noReplyTimeLabel(inside[0]!)).toBe("1h 20m left");
+    expect(noReplyTimeLabel(inside[0]!)).toBe("1 h 20 min left");
     const past = movementOfferNoReplyWaits(movement, 660, configuration, units);
     expect(past[0]!.pastLimit).toBe(true);
-    expect(noReplyTimeLabel(past[0]!)).toBe("Overdue 40m");
+    expect(noReplyTimeLabel(past[0]!)).toBe("Overdue 40 min");
     // A ward that declined is answered: no timer.
     const declined = { ...movement, declines: [{ unitId: "bty-adult-secure", at: 600 }] };
     expect(movementOfferNoReplyWaits(declined, 660, configuration, units)).toEqual([]);
@@ -251,13 +251,13 @@ describe("referral response timer", () => {
 });
 
 describe("the row sheet says a review is awaited only once one is asked for (R-STRUCT-28, Desks-R4-3)", () => {
-  it("reads Not asked yet, then Awaiting review, then Examination recorded", () => {
+  it("reads the list's words: Review not asked for, then Review asked, then Examination recorded (R-LEGAL-16)", () => {
     const movement = openMovement(seedWardFlowState());
     const unasked = { ...movement, psychReview: undefined, examination: undefined };
-    expect(psychReviewStatusWords(unasked)).toBe("Not asked yet");
+    expect(psychReviewStatusWords(unasked)).toBe("Review not asked for");
     expect(psychReviewStage(unasked, NOW_ANCHOR, 30).line).toBe("Review not asked for");
     const asked = { ...unasked, psychReview: { requestedAt: NOW_ANCHOR - 30 } } as Movement;
-    expect(psychReviewStatusWords(asked)).toBe("Awaiting review");
+    expect(psychReviewStatusWords(asked)).toBe("Review asked");
     expect(
       psychReviewStatusWords({ ...asked, examination: movement.examination ?? ({} as Movement["examination"]) }),
     ).toBe("Examination recorded");

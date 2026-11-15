@@ -66,13 +66,13 @@ describe("tasks drawer: ownership and snooze", () => {
     const { dispatch, drawer } = renderDrawer();
     const presets = openSnooze(drawer, red);
     // UX audit (21 Oct 2026): the first allowed time is selected on open and the chips are live.
-    expect(within(presets).getByRole("button", { name: /^30m/ })).toHaveAttribute("aria-pressed", "true");
-    const fourHours = within(presets).getByRole("button", { name: /^4h/ });
+    expect(within(presets).getByRole("button", { name: /^30 min/ })).toHaveAttribute("aria-pressed", "true");
+    const fourHours = within(presets).getByRole("button", { name: /^4 h/ });
     expect(fourHours).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(fourHours);
     expect(dispatch).not.toHaveBeenCalled();
 
-    fireEvent.click(within(presets).getByRole("button", { name: /^1h/ }));
+    fireEvent.click(within(presets).getByRole("button", { name: /^1 h/ }));
     expect(dispatch).not.toHaveBeenCalled();
 
     const reasons = screen.getByRole("group", { name: "Snooze because" });
@@ -90,7 +90,9 @@ describe("tasks drawer: ownership and snooze", () => {
   it("says when the row comes back and the act now limit in words, not only on hover", () => {
     const { drawer } = renderDrawer();
     openSnooze(drawer, red);
-    expect(screen.getByText(/^Back at/)).toHaveTextContent(/^Back at \d{1,2}:\d{2} [ap]m\. Act now: 1h 00m at most\.$/);
+    expect(screen.getByText(/^Back at/)).toHaveTextContent(
+      /^Back at \d{1,2}:\d{2} [ap]m\. Act now: 1 h 00 min at most\.$/,
+    );
   });
 
   it("opens as its own bottom sheet on a phone, and records the snooze from there", () => {
@@ -110,7 +112,7 @@ describe("tasks drawer: ownership and snooze", () => {
       const sheet = screen.getByRole("dialog", { name: "Snooze" });
       expect(sheet).toHaveAccessibleDescription("Synthetic alert");
       const presets = within(sheet).getByRole("group", { name: "Back in" });
-      expect(within(presets).getByRole("button", { name: /^30m/ })).toHaveAttribute("aria-pressed", "true");
+      expect(within(presets).getByRole("button", { name: /^30 min/ })).toHaveAttribute("aria-pressed", "true");
       const reasons = within(sheet).getByRole("group", { name: "Snooze because" });
       fireEvent.click(within(reasons).getByRole("button", { name: "Waiting on ward" }));
       expect(onSnooze).toHaveBeenCalledWith(NOW_ANCHOR + 30, "waiting_on_ward");
@@ -123,7 +125,7 @@ describe("tasks drawer: ownership and snooze", () => {
   it("forgets an abandoned time when the picker closes without a reason", () => {
     const { dispatch, drawer } = renderDrawer();
     let presets = openSnooze(drawer, red);
-    fireEvent.click(within(presets).getByRole("button", { name: /^1h/ }));
+    fireEvent.click(within(presets).getByRole("button", { name: /^1 h/ }));
     // Close with the trigger, then open again: the first allowed time is back.
     fireEvent.click(
       within(drawer)
@@ -132,8 +134,8 @@ describe("tasks drawer: ownership and snooze", () => {
     );
     expect(screen.queryByRole("group", { name: "Back in" })).toBeNull();
     presets = openSnooze(drawer, red);
-    expect(within(presets).getByRole("button", { name: /^30m/ })).toHaveAttribute("aria-pressed", "true");
-    expect(within(presets).getByRole("button", { name: /^1h/ })).toHaveAttribute("aria-pressed", "false");
+    expect(within(presets).getByRole("button", { name: /^30 min/ })).toHaveAttribute("aria-pressed", "true");
+    expect(within(presets).getByRole("button", { name: /^1 h/ })).toHaveAttribute("aria-pressed", "false");
     expect(dispatch).not.toHaveBeenCalled();
   });
 

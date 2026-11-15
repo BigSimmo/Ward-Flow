@@ -106,9 +106,9 @@ describe("hoursBreakdown: where the hours went", () => {
   });
 
   it("formats elapsed minutes as hours", () => {
-    expect(hoursText(45)).toBe("45m");
-    expect(hoursText(125)).toBe("2h 05m");
-    expect(hoursText(1440 + 180)).toBe("1d 3h");
+    expect(hoursText(45)).toBe("45 min");
+    expect(hoursText(125)).toBe("2 h 05 min");
+    expect(hoursText(1440 + 180)).toBe("1 d 3 h");
   });
 
   it("takes the median of recorded stages across closed journeys only", () => {

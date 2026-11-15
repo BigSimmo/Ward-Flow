@@ -29,6 +29,12 @@ export function originName(movement: Pick<Movement, "originEdId" | "originCommun
 }
 
 /** The origin's site: the department's, or the site the community referral was raised from. */
+/** Where an arriving person is coming from: the ED's name, or the community origin's label. */
+export function originPlaceLabel(movement: Pick<Movement, "originEdId" | "originCommunity">): string {
+  if (movement.originEdId === undefined) return communityOriginLabel(movement.originCommunity);
+  return originName(movement) ?? "Emergency department";
+}
+
 export function originSiteCode(movement: Pick<Movement, "originEdId" | "originCommunity">): string | undefined {
   return movement.originEdId === undefined ? movement.originCommunity?.siteCode : edById(movement.originEdId)?.siteCode;
 }

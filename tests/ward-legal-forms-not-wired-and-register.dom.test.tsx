@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { pickRecordField, recordFieldValue } from "./helpers/legal-record-pick";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
@@ -58,24 +59,19 @@ describe("Legal forms — wired confirm controls (F2.1)", () => {
     const registerConfirm = screen.getByTestId("ward-legal-forms-register-confirm");
     expect(registerConfirm).toHaveAttribute("aria-disabled", "true");
     expect(registerConfirm).not.toBeDisabled();
-    expect(registerConfirm).toHaveAttribute("title", "Choose a movement first.");
+    expect(registerConfirm).toHaveAttribute("title", "Choose a patient first.");
     fireEvent.click(registerConfirm);
     expect(screen.queryByText("Statutory Form registered successfully in registry.")).not.toBeInTheDocument();
 
-    const movementSelect = screen.getByLabelText("Movement") as HTMLSelectElement;
-    const firstOption = Array.from(movementSelect.options).find((opt) => opt.value !== "");
-    expect(firstOption).toBeDefined();
-    fireEvent.change(movementSelect, { target: { value: firstOption!.value } });
+    fireEvent.click(screen.getByRole("combobox", { name: /^Patient/u }));
+    fireEvent.click(document.querySelector('[role="option"]')!);
     // The form type opens blank (MHA forms are never prefilled) and is chosen from the paper.
     expect(screen.getByTestId("ward-legal-forms-register-confirm")).toHaveAttribute(
       "title",
       "Choose a form type first.",
     );
-    const typeSelect = screen.getByLabelText("Form type") as HTMLSelectElement;
-    expect(typeSelect).toHaveValue("");
-    fireEvent.change(typeSelect, {
-      target: { value: Array.from(typeSelect.options).find((o) => o.value !== "")!.value },
-    });
+    expect(recordFieldValue("Form type")).toBe("");
+    pickRecordField("Form type", "1A");
     // A blank, malformed or future time is refused rather than replaced with the save moment.
     const timeInput = screen.getByLabelText("Time on form") as HTMLInputElement;
     const timeBlockedConfirm = screen.getByTestId("ward-legal-forms-register-confirm");
@@ -208,15 +204,15 @@ describe("Legal forms — titles come from the Chief Psychiatrist register (F2.2
   it("builds the 'Record a form' picker options from the register too", () => {
     renderScreen();
     fireEvent.click(screen.getByRole("button", { name: "Record a form" }));
-    const select = screen.getByLabelText("Form type") as HTMLSelectElement;
-    const optionText = Array.from(select.options).map((o) => o.textContent);
+    fireEvent.click(screen.getByRole("combobox", { name: /^Form type/u }));
+    const optionText = Array.from(document.querySelectorAll('[role="option"]')).map((o) => o.textContent);
     for (const code of ["3C", "3D", "3E", "6D"]) {
       expect(optionText.some((t) => t?.includes(formTitleForCode(code) as string))).toBe(true);
     }
     // Gap list item 2 (4 Nov 2026): the sheet offers only forms the engine records here. 3B, 4A and
     // 4C are recorded at intake or on the move, so offering them here was a dead end.
     for (const code of ["3B", "4A", "4C"]) {
-      expect(optionText.some((t) => t?.startsWith(`Form ${code} `))).toBe(false);
+      expect(optionText.some((t) => t?.startsWith(`${code} · `))).toBe(false);
     }
   });
 });

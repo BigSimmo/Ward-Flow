@@ -48,9 +48,9 @@ export type InboxOwnershipEntry = { at: Instant; by: string; kind?: "released" }
 export type SnoozePresetId = "30m" | "1h" | "4h" | "shift-end";
 
 export const SNOOZE_PRESETS: readonly { id: SnoozePresetId; label: string; minutes?: number }[] = [
-  { id: "30m", label: "30m", minutes: 30 },
-  { id: "1h", label: "1h", minutes: 60 },
-  { id: "4h", label: "4h", minutes: 240 },
+  { id: "30m", label: "30 min", minutes: 30 },
+  { id: "1h", label: "1 h", minutes: 60 },
+  { id: "4h", label: "4 h", minutes: 240 },
   { id: "shift-end", label: "End of shift" },
 ];
 

@@ -344,6 +344,8 @@ export function wardBedRoster({
         !divertedAwaitingRelease(linkedMovement)
           ? linkedMovement.stage
           : undefined,
+      // R-MOVE-1: a diverted journey's bed reads "Pulled · diverted" until it is released.
+      pulledDiverted: status === "incoming" && linkedMovement !== undefined && divertedAwaitingRelease(linkedMovement),
     };
   });
 

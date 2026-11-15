@@ -52,7 +52,7 @@ import { pullBlockedReason } from "./ward-pull-blocked";
 import { ExtendHoldControl } from "@/components/ward-management/ward-extend-hold";
 import { PULL_NO_LIMIT_RECORDED } from "@/components/ward-management/ward-bed-hold";
 import { observationSummary } from "@/components/ward-management/ward-observation";
-import { communityOriginLabel, originName } from "@/components/ward-management/ward-movement-origin";
+import { originPlaceLabel } from "@/components/ward-management/ward-movement-origin";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 import { wardCopyReadmission } from "@/components/ward-management/ward-readmission-copy";
 import { ArrivalIdentityDialog } from "@/components/ward-management/arrival-identity-dialog";
@@ -70,11 +70,6 @@ function msSinceTap(tap: { at: number }): number {
 
 function tapNow(): number {
   return Date.now();
-}
-
-function originPlaceLabel(movement: Movement): string {
-  if (movement.originEdId === undefined) return communityOriginLabel(movement.originCommunity);
-  return originName(movement) ?? "Emergency department";
 }
 
 interface WardArrivalsCorridorProps {
@@ -361,9 +356,13 @@ export function WardArrivalsCorridor({
                         ? timingPhrase
                         : eta !== undefined
                           ? `ETA ${formatClockAmPmWithDay(eta, now)}`
-                          : canPull
-                            ? "Waiting for the ward to pull"
-                            : "No arrival time yet"}
+                          : movement.transport?.estimatedAt !== undefined &&
+                              movement.transport.cancelledAt === undefined
+                            ? // R-MOVE-12: the booking's own time, until the ward sets an ETA.
+                              `ETA ${formatClockAmPmWithDay(movement.transport.estimatedAt, now)} (booking)`
+                            : canPull
+                              ? "Waiting for the ward to pull"
+                              : "No arrival time yet"}
                     </span>
                   </div>
                   <div className={styles.corridorTrack}>
@@ -447,13 +446,14 @@ export function WardArrivalsCorridor({
 
                   {canArrive ? (
                     <div>
-                      <button
+                      <Button
+                        variant="pri"
+                        size="md"
                         type="button"
                         data-testid={`ward-confirm-arrival-${movement.id}`}
-                        aria-disabled={arriveBlocked ? "true" : undefined}
-                        aria-describedby={arriveBlocked ? `ward-confirm-arrival-unavailable-${movement.id}` : undefined}
-                        title={arriveBlocked ?? undefined}
-                        className={`${styles.btnCorridorPull} ${styles.btnCorridorGood} ${styles.fullWidth}`}
+                        disabledReason={arriveBlocked}
+                        reasonDisplay="tooltip"
+                        className={styles.fullWidth}
                         onClick={
                           arriveBlocked
                             ? ignoreUnavailableActivation
@@ -465,7 +465,7 @@ export function WardArrivalsCorridor({
                         }
                       >
                         Confirm arrival
-                      </button>
+                      </Button>
                       {arriveBlocked ? (
                         <span id={`ward-confirm-arrival-unavailable-${movement.id}`} className="sr-only">
                           {arriveBlocked}

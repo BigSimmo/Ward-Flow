@@ -485,7 +485,7 @@ describe("finding 3 — a statutory deadline must carry its day and its breach s
     // Advance `now` by 350 minutes: the deadline (NOW_ANCHOR + 300) is now 50 minutes in the past.
     fireEvent.click(screen.getByTestId("test-advance-clock"));
 
-    // The breach still says so in words with its day-and-time, never "50m overdue" (D-93).
+    // The breach still says so in words with its day-and-time, never "50 min overdue" (D-93).
     expect(within(legalPanel).getByText(/ended 15:42/)).toBeInTheDocument();
     expect(within(legalPanel).queryByText(/overdue/i)).toBeNull();
     // And the breach reaches the reader who is scanning rather than reading: the attention rail
@@ -493,7 +493,7 @@ describe("finding 3 — a statutory deadline must carry its day and its breach s
     expect(within(readiness).getByText("Recorded. Deadline passed.")).toBeInTheDocument();
     const rail = screen.getByTestId("ward-console-attention");
     expect(within(rail).getByText(/ended 15:42/)).toBeInTheDocument();
-    expect(within(rail).queryByText(/50m overdue/)).toBeNull();
+    expect(within(rail).queryByText(/50 min overdue/)).toBeNull();
   });
 });
 

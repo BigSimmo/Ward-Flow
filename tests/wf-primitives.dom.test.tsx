@@ -91,16 +91,16 @@ const MIN = 60_000;
 
 describe("v6 time formats", () => {
   it("formats durations with units and no colon", () => {
-    expect(dur(43_000)).toBe("43s");
-    expect(dur(5 * MIN + 3_000)).toBe("5m 03s");
-    expect(dur(52 * MIN)).toBe("52m");
-    // A whole hour is the plain age (v10 wardanswer content rule): "7h", never "7h 00m".
-    expect(dur(7 * 60 * MIN)).toBe("7h");
-    expect(dur(7 * 60 * MIN + 5 * MIN)).toBe("7h 05m");
-    expect(dur(26 * 60 * MIN)).toBe("1d 2h");
+    expect(dur(43_000)).toBe("43 s");
+    expect(dur(5 * MIN + 3_000)).toBe("5 min 03 s");
+    expect(dur(52 * MIN)).toBe("52 min");
+    // A whole hour is the plain age (v10 wardanswer content rule): "7h", never "7 h 00 min".
+    expect(dur(7 * 60 * MIN)).toBe("7 h");
+    expect(dur(7 * 60 * MIN + 5 * MIN)).toBe("7 h 05 min");
+    expect(dur(26 * 60 * MIN)).toBe("1 d 2 h");
     // RC 2.5 (F-35): a negative length keeps its sign, as splitDuration does, never its bare size.
-    expect(dur(-18 * MIN)).toBe("-18m");
-    expect(durMinutes(257)).toBe("4h 17m");
+    expect(dur(-18 * MIN)).toBe("-18 min");
+    expect(durMinutes(257)).toBe("4 h 17 min");
   });
 
   it("formats clock time as am/pm in Perth time (item 13, Josh, 14 Nov 2026)", () => {
@@ -257,17 +257,17 @@ describe("Timer", () => {
     const timers = screen.getAllByRole("timer");
     expect(timers).toHaveLength(3);
     for (const timer of timers) expect(timer).not.toHaveAttribute("aria-live");
-    expect(timers[0]).toHaveTextContent("1h 58mwaiting");
+    expect(timers[0]).toHaveTextContent("1 h 58 minwaiting");
     expect(screen.getByText("Overdue")).toBeInTheDocument();
-    expect(timers[1]).toHaveTextContent("5h");
-    expect(timers[1]).not.toHaveTextContent("00m");
-    expect(timers[2]).toHaveTextContent("in4h 17m");
+    expect(timers[1]).toHaveTextContent("5 h");
+    expect(timers[1]).not.toHaveTextContent("00 min");
+    expect(timers[2]).toHaveTextContent("in4 h 17 min");
   });
 
   it("shows seconds only under 10 minutes", () => {
     const now = Date.now();
     render(<Timer at={now - (4 * MIN + 29_000)} now={now} direction="left" />);
-    expect(screen.getByRole("timer")).toHaveTextContent("4m 29s");
+    expect(screen.getByRole("timer")).toHaveTextContent("4 min 29 s");
   });
 });
 

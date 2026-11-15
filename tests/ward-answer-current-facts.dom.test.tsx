@@ -230,14 +230,14 @@ describe("Ward answer current facts", () => {
       String(nextCapacity),
     );
     fireEvent.click(within(capacityPanel).getByTestId("ward-capacity-submit"));
-    expect(within(capacityPanel).getByText(new RegExp(`Currently confirmed ${nextCapacity} at`))).toBeInTheDocument();
+    expect(within(capacityPanel).getByTestId("ward-capacity-save-status")).toHaveTextContent(/Saved \d/);
 
     const historyPanel = screen.getByRole("region", { name: "Recent answers" });
     const history = within(historyPanel).getByTestId("ward-answer-history");
     expect(within(history).getAllByRole("listitem")).toHaveLength(accepted.length + declines.length);
     accepted.forEach((movement) => {
       expect(within(history).getByTestId(`ward-answer-history-${movement.id}-accepted`)).toHaveTextContent(
-        "Accepted by this ward",
+        "Accepted in principle",
       );
     });
     declines.forEach(({ movementId, decline, declineIndex }) => {
@@ -245,7 +245,7 @@ describe("Ward answer current facts", () => {
       expect(row).toHaveTextContent(DECLINE_REASON_LABELS[decline.reason!]);
       expect(row).toHaveTextContent(formatInstant(decline.at));
     });
-    expect(within(history).getAllByText("Time not recorded")).toHaveLength(
+    expect(within(history).getAllByText("Not recorded")).toHaveLength(
       accepted.filter((movement) => movement.acceptedAt === undefined).length,
     );
   });

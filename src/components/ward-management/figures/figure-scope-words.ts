@@ -9,7 +9,7 @@
  * that ignores a chosen service. The rail's hover title (`countScopeNote`,
  * `shell-next/next-rail-parts.tsx`) keeps its sentence; phase 2 makes both read this word.
  *
- * Phase 1: no screen reads this yet. Pure: no React, no browser API.
+ * The rail's Ready line reads it (`readyScopeWord`, `shell-next/next-rail-parts.tsx`; R-BEDS-5, PR #1679). Pure: no React, no browser API.
  */
 import type { FigureScopeKind } from "@/components/ward-management/figures/figure-row";
 import type { HealthService } from "@/components/ward-management/ward-model";

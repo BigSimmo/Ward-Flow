@@ -268,11 +268,7 @@ function shiftName(now: number): string {
  * "Day shift".
  */
 function Footer({ scope, scenario, now }: { scope: string; scenario: string; now: number }) {
-  return (
-    <p className={styles.footer}>
-      {TvFooterText({ scope, shift: shiftName(now), scenario, dayNote: asAtStamp(now).dayNote })}
-    </p>
-  );
+  return <p className={styles.footer}>{TvFooterText({ scope, shift: shiftName(now), scenario })}</p>;
 }
 
 /** People waiting somewhere, longest first: initials, where, stage and how long they have waited. */
@@ -817,7 +813,7 @@ function Trend({ values }: { values: number[] }) {
           <li key={hoursAgo} style={{ "--tv-bar": `${Math.round((value / max) * 100)}%` } as CSSProperties}>
             <span className={styles.trendValue}>{value}</span>
             <span className={styles.trendBar} aria-hidden="true" />
-            <span className={styles.trendLabel}>{hoursAgo === 0 ? "Now" : `${hoursAgo}h`}</span>
+            <span className={styles.trendLabel}>{hoursAgo === 0 ? "Now" : `${hoursAgo} h`}</span>
           </li>
         );
       })}
@@ -1284,6 +1280,10 @@ export function BedMeetingTvScreen({
           ...siteInputs,
           service: siteScope.service,
           scopeName: siteScope.name,
+          // INV-FIX-029: the site's own EDs, as its Capacity page counts them.
+          edIds: allEmergencyDepartments()
+            .filter((department) => department.siteCode === siteScope.siteCode)
+            .map((department) => department.id),
           thresholds,
           referrals,
           referralLimitMinutes: configuration.referralDecisionTargetMinutes,

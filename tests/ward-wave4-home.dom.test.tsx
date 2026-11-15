@@ -59,8 +59,8 @@ describe("Home after wave 4", () => {
     const needs = screen.getByTestId("home-my-list");
     expect(within(needs).queryByRole("region", { name: "Waiting on others" })).toBeNull();
     expect(needs.getAttribute("aria-label")).toMatch(/^Needs you, \d+ items$/u);
-    // Notes item 4: the head alone, then the parts on their own line when a bed is still to pull.
-    expect(screen.getByTestId("hero-next-answer").textContent).not.toContain(":");
+    // R-HOME-1: one answer with its parts, then one line each under it; the act-now parts sit on the act line.
+    expect(screen.getByTestId("hero-next-answer").textContent).toMatch(/^\d+ needs? you/u);
   });
 });
 

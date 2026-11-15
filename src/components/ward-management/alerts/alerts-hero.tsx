@@ -269,53 +269,55 @@ export function AlertsHero({
         chips={chips.length > 0 ? <HeroQuickChips label="Alert actions" items={chips} /> : undefined}
       >
         {isPhone ? null : todayBand}
-        <HeroBand
-          // On a desktop the timeline above already heads it "Today".
-          title={isPhone ? "Today" : <SrOnly>Today</SrOnly>}
-          testId="ward-alerts-today"
-          cells={[
-            {
-              id: "raised",
-              label: "Raised",
-              value: today.raised,
-              onClick: isPhone ? onToday : undefined,
-              ariaLabel: isPhone ? `Raised ${today.raised}, open the Today timeline` : undefined,
-            },
-            { id: "acted", label: "Acted on", value: today.acted },
-            ...(checks
-              ? [
-                  {
-                    id: "checking",
-                    label: "Checking",
-                    value: (
-                      <>
-                        {flagged}{" "}
-                        <span className={styles.bandWords}>
-                          flagged · <b>{checks.length - flagged}</b> clear
-                        </span>
-                      </>
-                    ),
-                    onClick: onChecking,
-                    ariaLabel: `Checking ${flagged} flagged · ${checks.length - flagged} clear`,
-                    testId: "ward-alerts-checking",
-                  },
-                ]
-              : []),
-            activeBroadcast
-              ? {
-                  id: "broadcast",
-                  label: "Broadcast",
-                  value: "live",
-                  quiet: true,
-                  sub: broadcastAcks
-                    ? `${broadcastAcks.acknowledged} of ${broadcastAcks.of} answered · ${minutesText(Math.max(0, activeBroadcast.expiresAt - now))} left`
-                    : `${minutesText(Math.max(0, activeBroadcast.expiresAt - now))} left`,
-                  onClick: onOpenBroadcast,
-                  testId: "ward-alerts-broadcast-live",
-                }
-              : { id: "broadcast", label: "Broadcast", value: "none live", quiet: true },
-          ]}
-        />
+        <div className={isPhone ? styles.todayReserve : undefined}>
+          <HeroBand
+            // On a desktop the timeline above already heads it "Today".
+            title={isPhone ? "Today" : <SrOnly>Today</SrOnly>}
+            testId="ward-alerts-today"
+            cells={[
+              {
+                id: "raised",
+                label: "Raised",
+                value: today.raised,
+                onClick: isPhone ? onToday : undefined,
+                ariaLabel: isPhone ? `Raised ${today.raised}, open the Today timeline` : undefined,
+              },
+              { id: "acted", label: "Acted on", value: today.acted },
+              ...(checks
+                ? [
+                    {
+                      id: "checking",
+                      label: "Checking",
+                      value: (
+                        <>
+                          {flagged}{" "}
+                          <span className={styles.bandWords}>
+                            flagged · <b>{checks.length - flagged}</b> clear
+                          </span>
+                        </>
+                      ),
+                      onClick: onChecking,
+                      ariaLabel: `Checking ${flagged} flagged · ${checks.length - flagged} clear`,
+                      testId: "ward-alerts-checking",
+                    },
+                  ]
+                : []),
+              activeBroadcast
+                ? {
+                    id: "broadcast",
+                    label: "Broadcast",
+                    value: "live",
+                    quiet: true,
+                    sub: broadcastAcks
+                      ? `${broadcastAcks.acknowledged} of ${broadcastAcks.of} answered · ${minutesText(Math.max(0, activeBroadcast.expiresAt - now))} left`
+                      : `${minutesText(Math.max(0, activeBroadcast.expiresAt - now))} left`,
+                    onClick: onOpenBroadcast,
+                    testId: "ward-alerts-broadcast-live",
+                  }
+                : { id: "broadcast", label: "Broadcast", value: "none live", quiet: true },
+            ]}
+          />
+        </div>
       </HeroTop>
     </Hero>
   );

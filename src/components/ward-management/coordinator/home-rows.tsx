@@ -46,7 +46,7 @@ function NameOpen({
 }) {
   const label = rowOpenName(openLabel, title);
   return href ? (
-    <Link ref={linkRef} href={href} className={className} aria-label={label}>
+    <Link ref={linkRef} href={href} className={className} aria-label={label} data-print-show="">
       {name}
     </Link>
   ) : (
@@ -55,6 +55,7 @@ function NameOpen({
       className={className}
       aria-current={selected ? "true" : undefined}
       aria-label={label}
+      data-print-show=""
       onClick={onOpen}
     >
       {name}

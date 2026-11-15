@@ -8,7 +8,7 @@ import { CapacityScreen } from "@/components/ward-management/capacity/capacity-s
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { referralQueueOrder } from "@/components/ward-management/ward-referrals";
+import { coordinatorReferralQueue } from "@/components/ward-management/ward-referrals";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
@@ -37,7 +37,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * below, struck only in spirit, for the reader who wants the history): Command had no referral
  * selection concept at all, so this file tested only the one state that existed and reported the
  * second back rather than faking it. Task C2 built exactly that second state — a `Referrals` tab
- * on the priority queue (`referralQueueOrder`, the same established derivation `wardNavCounts`
+ * on the priority queue (`coordinatorReferralQueue`, the same established derivation `wardNavCounts`
  * already uses, never a second filter) and a `selectedReferralId` on `coordinator-screen.tsx`,
  * independent of `selectedMovementId` exactly as the drawing's own quoted comment describes:
  * *"Selecting the tab decides which list is on screen. It never touches `state.movementId` or
@@ -288,12 +288,12 @@ describe("Command's Home lists carry Needs you and Flow, the successor to the Pa
       String(actRows.length + referralRows.length),
     );
 
-    // The population and its order are `referralQueueOrder`'s own — never a second filter or sort
+    // The population and its order are `coordinatorReferralQueue`'s own — never a second filter or sort
     // written down here. Read from the full seeded state (seedWardFlowState().referrals), not the
     // raw ward-movements.ts fixture: seedWardFlowState() additively overlays demonstration referrals
     // (ward-rulings-demo.ts), which include RF-RD06, added 2026-09-25 and queued — the same
     // population CoordinatorScreen itself renders from.
-    const expectedIds = referralQueueOrder(seedWardFlowState().referrals).map((referral) => referral.id);
+    const expectedIds = coordinatorReferralQueue(seedWardFlowState().referrals).map((referral) => referral.id);
     expect(referralRows.map((row) => row.getAttribute("data-referral-id"))).toEqual(expectedIds);
 
     showWholeFlow();

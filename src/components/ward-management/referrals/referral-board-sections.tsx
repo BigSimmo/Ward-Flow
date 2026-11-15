@@ -72,6 +72,7 @@ import styles from "./referrals.module.css";
 import a from "./referral-board.module.css";
 import {
   ALSO_CANCELLED_LEAD,
+  ALL_ASKED_DECLINED_TAG,
   ALSO_REFUSED_LEAD,
   GENDER_REVIEW_FLAG,
   QUEUED_REFUSED_LEAD,
@@ -79,6 +80,7 @@ import {
   presentationDecidedAt,
   outcomeLabel,
   referralDueAt,
+  referralAllWardsDeclined,
   referralNeedsGenderReview,
 } from "./referral-board-model";
 import { destinationWords, outcomeDetail, refusalLines } from "./referral-ward-names";
@@ -348,7 +350,9 @@ export function QueuedSection({
                     <td>
                       <span className={a.arms}>
                         {(summary === undefined
-                          ? armChips(referral, units)
+                          ? referralAllWardsDeclined(referral)
+                            ? [{ words: ALL_ASKED_DECLINED_TAG, refused: true, titles: refusals }]
+                            : armChips(referral, units)
                           : [{ words: "Awaiting answer", refused: false, titles: [] }]
                         ).map(({ words, refused, titles }) => (
                           <span key={words} className={cx(a.arm, refused && a.armNo)} title={titles.join("\n")}>
@@ -491,6 +495,11 @@ export function QueuedSection({
                       {dueAt !== undefined ? <DueTimer dueAt={dueAt} now={now} /> : null}
                     </span>
                   </button>
+                  {referralAllWardsDeclined(referral) ? (
+                    <span className={a.cardNote} data-testid={`ward-referral-board-card-all-declined-${referral.id}`}>
+                      {ALL_ASKED_DECLINED_TAG}
+                    </span>
+                  ) : null}
                   {refusals.length > 0 ? (
                     <span className={a.cardNote} data-testid={`ward-referral-board-card-refusals-${referral.id}`}>
                       {`${QUEUED_REFUSED_LEAD} — ${refusals.join(" · ")}`}

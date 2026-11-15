@@ -58,6 +58,8 @@ export type ComingAndGoingProps = {
   refusalFor?: (movementId: string) => ReactNode;
   onPull: (row: ComingRow) => void;
   onConfirmArrival: (row: ComingRow) => void;
+  /** R-MOVE-1: release the bed pulled for a diverted person (asks first). */
+  onReleaseDiverted?: (row: ComingRow) => void;
   onOpenArrival: (movementId: string) => void;
   onOpenBed: (bedNumber: number) => void;
   onOpenArrivals?: () => void;
@@ -132,7 +134,7 @@ export function WardComingAndGoing(props: ComingAndGoingProps) {
   // its first Confirm arrival (main-ward-*: Marrowvale's row), the coordinator's its first Pull the bed.
   // Only the ward desk's rows carry Confirm arrival, so the coordinator's panel is unchanged.
   const filledKey = (
-    arrivals.find((row) => row.action === "confirm-arrival" && !row.blocked) ??
+    arrivals.find((row) => row.action === "confirm-arrival" && !row.blocked && !row.arriveReason) ??
     arrivals.find((row) => row.action === "pull" && !row.blocked)
   )?.key;
 
@@ -170,6 +172,11 @@ export function WardComingAndGoing(props: ComingAndGoingProps) {
             </p>
           ))}
           {row.quietLine ? <p className={cx(styles.rowLine, styles.ink3)}>{row.quietLine}</p> : null}
+          {row.arriveReason ? (
+            <p className={cx(styles.rowLine, styles.ink3)} data-testid={`ward-coming-arrive-reason-${row.key}`}>
+              {row.arriveReason}
+            </p>
+          ) : null}
           {undo ? (
             <div className={styles.rowSub}>
               <RowUndo
@@ -204,6 +211,19 @@ export function WardComingAndGoing(props: ComingAndGoingProps) {
                 Confirm arrival <SrOnly>{row.name}</SrOnly>
               </Button>
             ) : null
+          ) : row.action === "release-diverted" && props.onReleaseDiverted ? (
+            <Button
+              variant="pri"
+              size="sm"
+              data-testid={`ward-coming-release-diverted-${row.key}`}
+              onClick={() => props.onReleaseDiverted?.(row)}
+            >
+              {row.releaseLabel} <SrOnly>{row.name}</SrOnly>
+            </Button>
+          ) : row.action === "confirm-arrival" && row.arriveReason ? (
+            <Button variant="sec" size="sm" onClick={openRow}>
+              Open <SrOnly>{row.name}</SrOnly>
+            </Button>
           ) : row.action === "confirm-arrival" ? (
             <Button
               variant={row.key === filledKey ? "pri" : "sec"}

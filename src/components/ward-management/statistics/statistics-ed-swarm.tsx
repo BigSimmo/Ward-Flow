@@ -92,7 +92,7 @@ function hoursLabel(minutes: number): string {
   const whole = Math.round(minutes);
   const hours = Math.floor(whole / 60);
   const rest = whole % 60;
-  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
+  return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`;
 }
 
 /**

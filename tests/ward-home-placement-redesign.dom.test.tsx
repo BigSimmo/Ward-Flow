@@ -216,7 +216,7 @@ describe("Placement panel redesign", () => {
     expect(facts).toHaveTextContent(`${movement.sex}`);
     expect(facts).toHaveTextContent(`Form ${movement.legalForm!.code}`);
     const wait = within(panel).getByTestId("ward-shortlist-wait-line");
-    expect(wait.textContent).toMatch(/^Waiting \S+( \S+)? \(target \S+( \S+)?\)/u);
+    expect(wait.textContent).toMatch(/^Waiting [^(]+ \(target [^)]+\)/u);
     if (wait.getAttribute("data-urgent") === "true") {
       expect(wait).toHaveTextContent("overdue");
     }
@@ -258,7 +258,7 @@ describe("Placement panel redesign", () => {
     const movement = seeded(ACCEPTED_ID);
     const dueAt = movement.legalForm?.dueAt;
     expect(dueAt, "WF-004 must carry a recorded deadline for this to test anything").toBeDefined();
-    // 3413 minutes past the recorded deadline: once "2d 8h ago", now the typed time only (D-93).
+    // 3413 minutes past the recorded deadline: once "2 d 8 h ago", now the typed time only (D-93).
     const now = dueAt! + 3413;
     const panel = renderPanel({ movementId: ACCEPTED_ID, nowOverride: now });
     // The legal line under the patient (the "Why this wait" factors also name the deadline).

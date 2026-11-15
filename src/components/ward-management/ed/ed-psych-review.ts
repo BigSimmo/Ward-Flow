@@ -17,12 +17,15 @@ export type PsychReviewStage = {
   next: readonly ("ask" | "registrar" | "consultant")[];
 };
 
+/** The list's word for a person no one has asked a psychiatrist to see. */
+const REVIEW_NOT_ASKED = "Review not asked for";
+
 /** `minutesInDepartment` is the wait shown only before a review is asked for; once asked, the wait runs from the request. */
 export function psychReviewStage(movement: Movement, now: Instant, minutesInDepartment: number): PsychReviewStage {
   const review = movement.psychReview;
   if (!review)
     return {
-      line: "Review not asked for",
+      line: REVIEW_NOT_ASKED,
       waitedMinutes: minutesInDepartment,
       from: "arrival",
       next: ["ask"],
@@ -52,15 +55,19 @@ export function psychReviewStage(movement: Movement, now: Instant, minutesInDepa
 
 /** " · 2h 05m" (kept on one line), or nothing in the first minute, so a fresh request never reads "waiting 0m". */
 function waitText(minutes: number): string {
-  return minutes < 1 ? "" : ` · ${splitDuration(minutes).replace(" ", "\u00a0")}`;
+  return minutes < 1 ? "" : ` · ${splitDuration(minutes).replaceAll(" ", "\u00a0")}`;
 }
 
 /**
- * R-STRUCT-28 (Josh, 14 Nov 2026; Desks-R4-3): the psychiatric review status in one word set, for the
- * row sheet and its header alike. "Awaiting review" only once a review has been asked for, so a nurse
- * never reads that a psychiatrist is coming when no one was asked.
+ * R-STRUCT-28 (Josh, 14 Nov 2026; Desks-R4-3) and R-LEGAL-16: the psychiatric review status for the
+ * row sheet and its header, in the list's own words (`psychReviewStage`), so list, row and sheet read
+ * one word set. A review only reads as asked once someone asked for it.
  */
 export function psychReviewStatusWords(movement: Pick<Movement, "examination" | "psychReview">): string {
   if (movement.examination) return "Examination recorded";
-  return movement.psychReview ? "Awaiting review" : "Not asked yet";
+  const review = movement.psychReview;
+  if (!review) return REVIEW_NOT_ASKED;
+  if (review.consultantSeenAt !== undefined) return "Consultant seen";
+  if (review.registrarSeenAt !== undefined) return "Consultant pending";
+  return "Review asked";
 }

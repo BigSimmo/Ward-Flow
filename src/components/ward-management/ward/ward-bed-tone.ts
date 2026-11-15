@@ -111,6 +111,8 @@ export interface BedItem {
    * `handover_ready`, `moving`). Absent with no linked journey, and once the officer records Delivered.
    */
   pulledStage?: MovementStage;
+  /** R-MOVE-1: the bed is pulled for a person whose journey was diverted, so it waits to be released. */
+  pulledDiverted?: boolean;
   [key: string]: unknown;
 }
 

@@ -378,13 +378,13 @@ describe("read-only report screens", () => {
     expect(screen.getByTestId("ward-chronology-table")).toBeTruthy();
   });
 
-  it("renders the weekly report for the last full week by default, with a Weekly tab current", () => {
+  it("opens the weekly report on this week so far, with a Weekly tab current", () => {
     inProvider(<WeeklyReportScreen />);
-    expect(screen.getByTestId("ward-weekly-range").textContent).toMatch(/^Week: Last full week/u);
+    expect(screen.getByTestId("ward-weekly-range").textContent).toMatch(/^Week: This week so far/u);
     const nav = within(screen.getByRole("navigation", { name: "Ward Flow statistics sections" }));
     expect(nav.getByRole("link", { name: "Weekly" })).toHaveAttribute("aria-current", "page");
-    chooseWeek(-1);
-    expect(screen.getByTestId("ward-weekly-range").textContent).toMatch(/^Week: This week so far/u);
+    chooseWeek(0);
+    expect(screen.getByTestId("ward-weekly-range").textContent).toMatch(/^Week: Last full week/u);
   });
 
   it("offers this week so far when the last full week has no arrival to state (Q198)", () => {

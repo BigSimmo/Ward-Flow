@@ -36,20 +36,20 @@ describe("WF-44 live rail occupancy labels", () => {
   });
 
   it("puts Metro and the ready count on separate lines inside one stack", () => {
-    const { container } = render(<RailReadyLine metro={74.6} ready={3} />);
+    const { container } = render(<RailReadyLine metro={74.6} ready={3} scope="Network" />);
     const stack = container.firstElementChild!;
     expect(stack.children).toHaveLength(2);
     expect(stack.children[0]).toHaveTextContent(/^Metro 75%$/u);
-    expect(stack.children[1]).toHaveTextContent("3 beds ready now");
+    expect(stack.children[1]).toHaveTextContent("Network 3 ready");
     expect(stack.className).not.toBe("");
     expect(stack.children[0]!.className).not.toBe("");
   });
 
   it("shows only the ready count when Metro already has its own row", () => {
-    const { container } = render(<RailReadyLine metro={null} ready={1} />);
+    const { container } = render(<RailReadyLine metro={null} ready={1} scope="RPH" />);
     const stack = container.firstElementChild!;
     expect(stack.children).toHaveLength(1);
-    expect(stack).toHaveTextContent("1 bed ready now");
+    expect(stack).toHaveTextContent("RPH 1 ready");
     expect(stack).not.toHaveTextContent(/Metro/u);
   });
 });

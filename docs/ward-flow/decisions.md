@@ -249,6 +249,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-224](#d-224-explanatory-tips-open-on-tap-14-november-2026)                                                                                           | Explanatory tips open on tap                                                           | Active                                           |
 | [D-225](#d-225-design-fix-phasing-14-november-2026)                                                                                                     | Design fix phasing                                                                     | Active                                           |
 | [D-229](#d-229-demo-pause-holds-board-time-and-seeded-wait-lists-match-the-engine-14-november-2026)                                                     | Demo Pause holds Board time; seeded wait lists match the engine                        | Active                                           |
+| [D-234](#d-234-record-gender-on-the-ed-board-14-november-2026)                                                                                          | Record gender on the ED board                                                          | Active                                           |
 | [D-237](#d-237-a-desks-own-save-is-never-another-desks-change-14-november-2026)                                                                         | A desk's own save is never another desk's change                                       | Active                                           |
 
 ---
@@ -2789,9 +2790,14 @@ D-226 is claimed by open PR #1675. D-227 is claimed by open PR #1675. D-228 is c
 - **Handed on:** the header step count after Mark handover ready (REG2-6, card X12) and the person page for a named ward wait-list stay with no referral (Lead-VM-1) go to design Lane D, whose patient-page work replaces that count and owns that page.
 - **Boundary:** synthetic data only. No clinical value or rule changes.
 
-The next free number is D-230.
+D-230 is reserved for another overnight thread (block noted in PR #1677). D-231 is reserved for another overnight thread (block noted in PR #1677). D-232 is reserved for another overnight thread (block noted in PR #1677). D-233 is reserved for another overnight thread (block noted in PR #1677). D-235 is claimed by open PR #1679. D-236 is claimed by open PR #1679.
 
-D-230 is reserved for another overnight thread (block noted in PR #1677). D-231 is reserved for another overnight thread (block noted in PR #1677). D-232 is reserved for another overnight thread (block noted in PR #1677). D-233 is reserved for another overnight thread (block noted in PR #1677). D-234 is reserved for another overnight thread (block noted in PR #1677). D-235 is reserved for another overnight thread (block noted in PR #1677). D-236 is reserved for another overnight thread (block noted in PR #1677).
+## D-234. Record gender on the ED board (14 November 2026)
+
+- **Date:** 14 November 2026, 10:56 PM AWST (14:56 UTC). **Decided by:** Josh, in the Ward Flow project: "Remove excessive wordiness, but make a way to record", answering the design plan's question on recording gender (R-LEGAL-6).
+- **Decision:** the ED board's row sheet shows the person's gender, and where it reads "Not yet recorded" it offers the existing Record gender control beside it: a choice with nothing pre-selected and a separate Record gender button. No extra wording is added.
+- **Why:** a gender-designated ward refuses a referral with "Record gender first", and the ED clinician who knows the answer had no place on the board to record it.
+- **Boundary:** reuses the existing `RECORD_MOVEMENT_GENDER` event and roles. No new rule, field, value or wording. Synthetic data only.
 
 ## D-237. A desk's own save is never another desk's change (14 November 2026)
 
@@ -2800,3 +2806,24 @@ D-230 is reserved for another overnight thread (block noted in PR #1677). D-231 
 - **Officer wording (R-MOVE-4):** the interim "Your last step is still saving" line is not used, because the cause is fixed. A refused Undo says the job has moved on and to check the board for its current step.
 - **Left for later:** the recorded hold-up on the person page (R-STRUCT-25) shows the hold-up but not who recorded it or when. That needs a new stored field and is not built here.
 - **Boundary:** save mechanics and wording only. No clinical value, threshold or saved field changes.
+
+## D-238. Raise the phone size limits for the permission check and History (15 November 2026)
+
+- **Date:** 15 November 2026, 2:50 PM AWST (06:50 UTC). **Decided by:** Josh, on a decision card in the figures, history and timing thread: "Raise the limits (recommended)", answering "Raise the phone size limits so PR #1683 can merge?"
+- **Decision:** PR #1683 raises the phone first-load limits in `script-budget.json` by more than the 5 KB a PR may add without asking (D-82). Most screens rise by about 8.5 KB, the person page by about 14.8 KB and Statistics by about 10.8 KB. Each limit is set at the measured size plus a small margin.
+- **Why:** the one permission source (`permit()` and its place rules, D-222 and D-223) and the History category table now run in the browser on every screen, where before only the server ran them. No small, safe trim was found, because the growth is the rule tables themselves. Speed on a weak signal stays a target, not a gate (R-STYLE-16).
+- **Left for later:** a trim that keeps the place rules on the server only.
+- **Boundary:** size limits only. No clinical value, rule or wording changes.
+
+## D-239. Four follow-ups from the figures, history and timing work (15 November 2026)
+
+- **Date:** 15 November 2026, 2:52 PM AWST (06:52 UTC). **Decided by:** Josh, in the Ward Flow project: "Yes to all recommendations", taking the four recommendations listed in PR #1683.
+- **Decision:**
+  1. **History on the person's own record (D-14).** Person-record History lines may read the patient link for that person's own record only. Nowhere else widens. Not built in PR #1683: the lines stay off the patient link until a later PR adds that one allowlist entry with its test.
+  2. **Account display name.** The `memberships.display_name` migration is applied after the demo, with a backup first. It is not applied now. Any live database change still needs its own go at the time.
+  3. **Redundant desk-role hook.** `use-recorded-desk-role.ts` is deleted in a later tidy-up PR, now that the desk stamp records the role.
+  4. **am/pm on paper.** Times on screen read am/pm. Legal times keep the 24-hour clock. This includes the daily sheet, the printed-by line, the handover copy and the referral letter, as built in PR #1683.
+- **Why:** each was the recommended, lower-risk option. The privacy widening is the narrowest possible, the live database change waits until after the demo, and the clock rule matches D-215 item 3.
+- **Boundary:** no clinical value or rule changes. The migration and the D-14 allowlist entry each need their own PR.
+
+The next free number is D-240.

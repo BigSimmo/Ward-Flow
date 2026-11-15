@@ -443,7 +443,7 @@ const REVIEWED_ACCEPTING = 1;
  * depending on how the reducer mints an id.
  *
  * This must hold EVERY seeded queued referral, not merely enough of them. It is read by a
- * `.find(id => !SEEDED_QUEUED_IDS.has(id))` over the board's queued cards, so a seeded id missing
+ * `.find(id => !BOARD_QUEUED_IDS.has(id))` over the board's queued cards, so a seeded id missing
  * from this set is not caught — it is returned AS the raised referral, and the rest of that
  * journey then asserts against the wrong card. `SEEDED_QUEUED` above is what makes an omission
  * visible: the fixture-assumption block checks this set against the real queue, by name.
@@ -473,6 +473,26 @@ if (SEEDED_QUEUED_IDS.size !== SEEDED_QUEUED) {
       `against, and the two must name the same set or one of those checks is silently wrong.`,
   );
 }
+
+/**
+ * R-BEDS-13 (lane C, 14 Nov 2026): on the coordinator's desk a referral every asked ward declined
+ * stays in the queue until it is placed, closed or handed back. The model's queue above does not
+ * hold it, so the board shows one more queued card and one fewer decided than the model. Pinned as
+ * a literal and cross-checked below, for the same reason the sets above are literals.
+ */
+const HELD_DECLINED_IDS = ["RF-EX-004"];
+{
+  // Written here over the raw seed, not imported from the board model (which also pulls in styles).
+  const held = BOARD_SEED_REFERRALS.filter((referral) => {
+    const wards = referral.destinations.filter((arm) => arm.destination.kind === "psychiatric_ward");
+    return referral.source === "community" && wards.length > 0 && wards.every((arm) => arm.state === "declined");
+  }).map((referral) => referral.id);
+  if (held.join() !== HELD_DECLINED_IDS.join())
+    throw new Error(`HELD_DECLINED_IDS is ${HELD_DECLINED_IDS.join()} and the seed now holds ${held.join()}.`);
+}
+const BOARD_QUEUED = SEEDED_QUEUED + HELD_DECLINED_IDS.length;
+const BOARD_QUEUED_IDS = new Set([...SEEDED_QUEUED_IDS, ...HELD_DECLINED_IDS]);
+const BOARD_DECIDED_TOTAL = SEEDED_DECIDED_STRUCTURAL - HELD_DECLINED_IDS.length;
 
 /**
  * D-181 item 7 (Josh, 13 Nov 2026; A16-04): travel times read "not recorded" until Josh supplies
@@ -767,7 +787,7 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
 
     // The seed, before anything is raised. Asserted so the counts below are a real change rather
     // than a number that happened to be right.
-    await expect(page.getByTestId("ward-referral-board-queued")).toContainText(`Awaiting decision ${SEEDED_QUEUED}`);
+    await expect(page.getByTestId("ward-referral-board-queued")).toContainText(`Awaiting decision ${BOARD_QUEUED}`);
     // 🔴 THE HEADING NAMES BOTH NUMBERS SINCE THE OWNER'S 2026-09-06 RULING, because it used to
     // print the display cap in the grammatical position of a total: "Recently decided (10)" while
     // eighteen had been decided. Asserted as two separate containments rather than as one pinned
@@ -775,9 +795,9 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     // does. The scope is the <h2> alone — the cards below it are full of other digits.
     const decidedHeading = page.getByTestId("ward-referral-board-decided").locator("h2");
     await expect(decidedHeading).toContainText(String(SEEDED_DECIDED_SHOWN));
-    await expect(decidedHeading).toContainText(String(SEEDED_DECIDED_STRUCTURAL));
+    await expect(decidedHeading).toContainText(String(BOARD_DECIDED_TOTAL));
     const queuedBefore = await queuedCardIds(page);
-    expect(queuedBefore).toHaveLength(SEEDED_QUEUED);
+    expect(queuedBefore).toHaveLength(BOARD_QUEUED);
 
     // --- Step 1: the referral slide-out, opened in place through the board's own "New referral"
     // <Link>. The board stays mounted underneath it; nothing navigates. ---
@@ -816,11 +836,9 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     await goToBoardViaPhoneRail(page);
     await expectNoReloadSince(page, "referral slide-out -> board via the phone rail");
 
-    await expect(page.getByTestId("ward-referral-board-queued")).toContainText(
-      `Awaiting decision ${SEEDED_QUEUED + 1}`,
-    );
+    await expect(page.getByTestId("ward-referral-board-queued")).toContainText(`Awaiting decision ${BOARD_QUEUED + 1}`);
     const queuedAfter = await queuedCardIds(page);
-    expect(queuedAfter).toHaveLength(SEEDED_QUEUED + 1);
+    expect(queuedAfter).toHaveLength(BOARD_QUEUED + 1);
 
     // Identified by set difference, never by a hardcoded id or `.first()`/`.last()` — the same
     // discipline `ui-ward-roles.spec.ts` (ruling R24) holds every journey in this prototype to.
@@ -938,7 +956,7 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
 
     // --- The board reflects the decision on the very next render: out of the queue, into
     // recently decided, with the outcome named. ---
-    await expect(page.getByTestId("ward-referral-board-queued")).toContainText(`Awaiting decision ${SEEDED_QUEUED}`);
+    await expect(page.getByTestId("ward-referral-board-queued")).toContainText(`Awaiting decision ${BOARD_QUEUED}`);
     /*
      * 🔴 **THIS HAS NOW BEEN WRONG IN BOTH DIRECTIONS, AND THE HEADING CHANGE IS WHY IT IS RIGHT
      * NOW.** It first read `SEEDED_DECIDED + 1`, which was true only while the seed sat below the
@@ -956,7 +974,7 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
      */
     const decidedHeadingAfter = page.getByTestId("ward-referral-board-decided").locator("h2");
     await expect(decidedHeadingAfter).toContainText(String(SEEDED_DECIDED_SHOWN));
-    await expect(decidedHeadingAfter).toContainText(String(SEEDED_DECIDED_STRUCTURAL + 1));
+    await expect(decidedHeadingAfter).toContainText(String(BOARD_DECIDED_TOTAL + 1));
     expect(await queuedCardIds(page)).not.toContain(referralId);
     // Option A (9 Oct 2026): decided referrals live in the board's History tab. On a phone the
     // referral detail covers the board, so it is closed first.
@@ -1055,7 +1073,7 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     await goToBoardViaPhoneRail(page);
     await expectNoReloadSince(page, "back to the board after raising the far referral");
 
-    const raisedId = (await queuedCardIds(page)).find((id) => !SEEDED_QUEUED_IDS.has(id));
+    const raisedId = (await queuedCardIds(page)).find((id) => !BOARD_QUEUED_IDS.has(id));
     expect(raisedId, "the referral raised in the slide-out never reached the board").toBeDefined();
     await page.getByTestId(`ward-referral-board-card-select-${raisedId}`).click();
     // v10 phone (11 Oct 2026): at phone width the match lists wards in fit groups, by design; the
@@ -1071,7 +1089,9 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     if (await more.count()) await more.click();
     const accepting = panel.locator('[data-testid^="ward-referral-match-phone-cand-"][data-kind="yes"]');
     await expect(accepting.first(), "no ward accepts this referral, so there is no acceptance to make").toBeVisible();
-    for (const row of await accepting.all()) await expect(row).toContainText(NOT_RECORDED_LABEL);
+    // R-BEDS-9: said once above the list, not on each row.
+    await expect(panel).toContainText(NOT_RECORDED_LABEL);
+    for (const row of await accepting.all()) await expect(row).not.toContainText(NOT_RECORDED_LABEL);
     for (const label of Object.values(TRAVEL_BAND_LABELS)) await expect(panel).not.toContainText(label);
 
     await accepting.first().click();
