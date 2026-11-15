@@ -988,13 +988,14 @@ tr:has(+ .moreRow) > td {
   max-width: none;
 }
 
-/* The kit's 44px phone control height, level with the search field (never 48px). */
+/* Find a patient on a phone is one 40px row (Josh, 15 Nov 2026, D-246): Date of birth matches the
+   kit's 40px phone search box beside it. */
 .searchFormPhone .dobToggle {
-  height: 44px;
+  height: 40px;
 }
 
-/* The field's box keeps the kit's phone height; the input inside it, which has no face of its own,
-   runs 48px tall and centred, so a tap just above or below the box still lands in the field. */
+/* The input inside the box, which has no face of its own, runs 48px tall and centred, so a tap just
+   above or below the 40px box still lands in the field. */
 .searchFormPhone .searchMain input[type="search"] {
   height: var(--ward-tap, var(--spacing-tap, 3rem));
   margin-block: 0;

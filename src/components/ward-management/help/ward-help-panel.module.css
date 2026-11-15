@@ -204,6 +204,14 @@
   }
 }
 
+/* Phone: the field draws at 40px like the header search and the kit's phone controls (Josh, 15 Nov
+   2026: 44px read as slightly too thick). */
+@media (max-width: 46.4375rem) {
+  .field {
+    height: 40px;
+  }
+}
+
 /* The suggestions block, at the top of the body: in the flow, so nothing jumps. */
 .suggest {
   min-width: 0;
@@ -302,6 +310,26 @@
 
 .actGo:hover {
   opacity: 0.9;
+}
+
+/* On a phone, Show me around heads How to's list, drawn as a body card (Josh, 15 Nov 2026). */
+.actBody {
+  border-color: var(--wf-line);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.actBody .actTitle {
+  color: var(--wf-ink-1);
+}
+
+.actBody .actSub {
+  color: var(--wf-ink-3);
+}
+
+.actBody .actGo {
+  background: var(--wf-accent);
+  color: var(--wf-on-accent);
 }
 
 /* Quick jumps to How to's own lists. */

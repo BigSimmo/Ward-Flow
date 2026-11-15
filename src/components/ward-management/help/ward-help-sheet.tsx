@@ -563,7 +563,9 @@ function WardHelpSheetView({
               )}
             </span>
           </div>
-          {calm ? (
+          {/* On a phone the slate top keeps only the title and search (Josh, 15 Nov 2026): Show me
+              around heads How to's list instead, and the quick jumps go; How to is the first tab. */}
+          {calm && !phone ? (
             <>
               <HelpAroundRow
                 role={role}

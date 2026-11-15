@@ -91,6 +91,15 @@
   white-space: nowrap;
 }
 
+/* 40px on a phone, level with the search box beside it (Josh, 15 Nov 2026, D-246); the kit Button
+   keeps its own 48px tap cover. */
+@media (max-width: 46.4375rem) {
+  .foldButton {
+    height: 40px;
+    min-height: 40px;
+  }
+}
+
 .foldButton[data-on="true"] {
   border-color: var(--wf-accent);
   box-shadow: inset 0 0 0 1px var(--wf-accent);

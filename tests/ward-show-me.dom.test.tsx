@@ -203,6 +203,45 @@ describe("Show me player", () => {
     expect(target).toHaveFocus();
   });
 
+  it("joins above a dialog the person opens when it holds the next step, keeping the dialog usable", async () => {
+    vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue({ length: 1 } as DOMRectList);
+    vi.spyOn(HTMLElement.prototype, "scrollIntoView").mockImplementation(() => {});
+    // Josh, 15 Nov 2026: a task's later steps can sit in the form a lit button opens.
+    const walk = HOW_TOS.find((each) => each.id === "sign-off-handover")!;
+    const second = walk.showMe!.filter((each) => !each.device || each.device === "desk")[1]!.target;
+    const sel = (Array.isArray(second) ? second[0]! : second).sel.split(",")[0]!;
+    const [, attr, value] = /\[([\w-]+)="([^"]+)"\]/u.exec(sel)!;
+    function GuidedForm() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <OverlayRoot />
+          <section data-testid="ward-handover-kpi-strip" aria-label="Highlighted work">
+            <button type="button" onClick={() => setOpen(true)}>
+              Open the form
+            </button>
+          </section>
+          <WardShowMe id="sign-off-handover" onClose={() => {}} onBack={() => {}} />
+          <PhoneSheet open={open} title="The form" onClose={() => setOpen(false)}>
+            <button type="button" {...{ [attr!]: value }}>
+              Next step control
+            </button>
+            <button type="button">Another field</button>
+          </PhoneSheet>
+        </>
+      );
+    }
+    render(<GuidedForm />);
+    await waitFor(() => expect(screen.getByTestId("ward-show-me-spot")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Open the form", hidden: true }));
+    await screen.findByRole("dialog", { name: "The form", hidden: true });
+    await waitFor(() => expect(screen.getByTestId("ward-show-me-card").closest("[inert]")).toBeNull());
+    expect(screen.getByRole("button", { name: "Next step control", hidden: true }).closest("[inert]")).toBeNull();
+    expect(screen.getByRole("button", { name: "Another field", hidden: true }).closest("[inert]")).toBeNull();
+    fireEvent.click(screen.getByTestId("ward-show-me-next"));
+    await waitFor(() => expect(screen.getByTestId("ward-show-me-card").textContent).not.toMatch(/not on the screen/i));
+  });
+
   it("keeps its highlighted work interactive, lets a menu consume Escape and gives a child modal priority", async () => {
     vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue({ length: 1 } as DOMRectList);
     vi.spyOn(HTMLElement.prototype, "scrollIntoView").mockImplementation(() => {});

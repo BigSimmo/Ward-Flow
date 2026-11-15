@@ -3381,7 +3381,8 @@
   .findBox {
     flex: 1 1 100%;
     order: -1;
-    height: var(--spacing-tap, 3rem);
+    /* 40px on a phone, level with the other search boxes (Josh, 15 Nov 2026, D-246). */
+    height: 40px;
     margin-right: 0;
   }
 

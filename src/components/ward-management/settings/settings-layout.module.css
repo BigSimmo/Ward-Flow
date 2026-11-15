@@ -701,8 +701,9 @@
   width: 100%;
 }
 
+/* 40px on a phone, level with the other search boxes (Josh, 15 Nov 2026, D-246). */
 .phoneTop > div:last-child > :first-child label {
-  height: 44px;
+  height: 40px;
 }
 
 /* 16px stops a phone zooming in on focus. */

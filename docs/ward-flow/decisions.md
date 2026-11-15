@@ -260,6 +260,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-243](#d-243-four-follow-ups-from-the-figures-history-and-timing-work-15-november-2026)                                                               | Four follow-ups from the figures, history and timing work                              | Active                                           |
 | [D-244](#d-244-help-sits-beside-the-header-search-on-every-screen-15-november-2026)                                                                     | Help sits beside the header search on every screen                                     | Active                                           |
 | [D-245](#d-245-raise-eight-phone-size-limits-after-main-went-over-15-november-2026)                                                                     | Raise eight phone size limits after main went over                                     | Active                                           |
+| [D-246](#d-246-phone-search-boxes-are-40px-helps-phone-top-is-trimmed-and-help-sits-left-of-search-15-november-2026)                                    | Phone search boxes are 40px, Help's phone top is trimmed, and Help sits left of search | Active                                           |
 
 ---
 
@@ -2892,4 +2893,11 @@ D-238 is reserved for design Lane D's block (noted in PR #1677). D-239 is reserv
 - **Why:** main had been about 1.4 KB over on these screens since #1683 (issue #1684), from shared header growth before #1688. That turned main's checks red and blocked every release, including the 6 am run. Help beside search was not the cause.
 - **Boundary:** size limits only. No clinical value, rule or wording changes. Trimming the shared header stays open as later work.
 
-The next free number is D-246.
+## D-246. Phone search boxes are 40px, Help's phone top is trimmed, and Help sits left of search (15 November 2026)
+
+- **Date:** 15 November 2026, 11:56 PM AWST to 16 November, 12:05 AM AWST (15:56 to 16:05 UTC). **Decided by:** Josh, in the Help thread: "No just remove this part please but also apply the appropriate shrink of the search bar", then "40px lock in and apply across the entire site please", then the header swap.
+- **Decision:** On a phone every search box is drawn 40px tall, and a control beside it in the same row (Date of birth, Close, filters) is 40px and centred with it. The kit does this once for every search box (`form.module.css`); pages with their own search box follow. On a phone, Help's slate top keeps only the title, the search and the tabs: Show me around this screen moves to the top of How to, and the Checklists and Your jobs jumps go. Help does not fold away on scroll (the earlier option A and B mock-ups were declined). In the header, Help moves to the left of the search (Josh, 16:05 UTC: "search bar is on the right and help on the left side"), on every desk and width. Search and Help sizes on computers and tablets are unchanged.
+- **Why:** 44 to 48px boxes read as too thick beside 40px buttons, and Help's top took about 40% of a phone screen. 40px matches the header search and the kit's drawn phone controls; 16px text still stops an iPhone zooming in, and tap bands stay 48px.
+- **Boundary:** sizes and Help's phone top only. No clinical value, rule or wording changes.
+
+The next free number is D-247.

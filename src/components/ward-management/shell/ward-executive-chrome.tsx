@@ -777,6 +777,8 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
               </span>
             </div>
             <div className={`${bar.centerGroup} ${polish.searchPair}`}>
+              {/* Help on the left of the search (Josh, 15 Nov 2026, D-246). */}
+              <WardBarHelpButton />
               {report ? (
                 <div className={bar.searchWrap}>
                   <WardPublicSearch
@@ -787,7 +789,6 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
                   />
                 </div>
               ) : null}
-              <WardBarHelpButton />
             </div>
             <div className={bar.drawerTriggers}>
               <button

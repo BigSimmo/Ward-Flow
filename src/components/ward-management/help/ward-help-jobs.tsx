@@ -324,7 +324,7 @@ function PracticeWhenLive({
 
 /**
  * Show me around this screen (page tops, Josh, 9 Nov 2026): one calm row in Help's slate top, first
- * thing seen, in place of the old tile in the On this screen card. Only when Show me can play this
+ * thing seen on a computer; on a phone it heads How to's list instead (Josh, 15 Nov 2026), in place of the old tile in the On this screen card. Only when Show me can play this
  * screen's walk round (`ward-help-screen-tours.ts`) here; the step count is this size's own.
  */
 export function HelpAroundRow({
@@ -334,6 +334,7 @@ export function HelpAroundRow({
   screen,
   showMeOn,
   onShowMe,
+  inBody = false,
 }: {
   role: WardTourRole;
   home: string | undefined;
@@ -341,6 +342,8 @@ export function HelpAroundRow({
   screen: (ScreenHelp & { id: string }) | undefined;
   showMeOn: boolean;
   onShowMe: (id: string) => void;
+  /** Drawn in How to's own list (phones) rather than the slate top. */
+  inBody?: boolean;
 }) {
   const phone = useIsPhone();
   const access = useEffectiveWardAccess();
@@ -348,7 +351,7 @@ export function HelpAroundRow({
   if (!walk || !canShowTask(walk, role, home, phone, showMeOn, pathname, access)) return null;
   const steps = showMeSteps(walk, phone ? "phone" : "desk", role).length;
   return (
-    <div className={s.act} data-testid="ward-help-show-me-around">
+    <div className={inBody ? `${s.act} ${s.actBody}` : s.act} data-testid="ward-help-show-me-around">
       <span className={s.actText}>
         <span className={s.actTitle}>Show me around this screen</span>
         <span className={s.actSub}>{steps} steps · this screen only</span>
@@ -489,6 +492,17 @@ export function HelpTasks({
 
   return (
     <>
+      {phone ? (
+        <HelpAroundRow
+          role={role}
+          home={home}
+          pathname={pathname}
+          screen={screen}
+          showMeOn={showMeOn}
+          onShowMe={onShowMe}
+          inBody
+        />
+      ) : null}
       {screen ? (
         <section className={`${s.card} ${s.here}`} aria-labelledby="ward-help-here" data-testid="ward-help-tasks-here">
           <div className={s.hereHead}>

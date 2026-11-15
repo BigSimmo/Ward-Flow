@@ -876,14 +876,15 @@
   padding-bottom: var(--wf-s-6);
 }
 
-/* Find a setting sits on the page here, not on the band: page ink and a 44px box. */
+/* Find a setting sits on the page here, not on the band: page ink and a 40px box. */
 .phoneFind .find {
   width: 100%;
 }
 
 .phoneFind .findBox {
   width: 100%;
-  height: var(--wf-touch);
+  /* 40px on a phone, level with the other search boxes (Josh, 15 Nov 2026, D-246). */
+  height: 40px;
   padding: 0 var(--wf-s-3);
   background: var(--wf-surface);
   border-color: var(--wf-line-2);
@@ -895,9 +896,12 @@
   border-color: var(--wf-line-3);
 }
 
-/* F-18: the field fills the 44px box, so the tap target is the box and not a 22px line of text. */
+/* F-18: the field fills the box, so the tap target is the box and not a 22px line of text. It runs
+   4px past the 40px box top and bottom (inside the 1px border, 5px each way) for a 48px tap band
+   (Josh, 15 Nov 2026, D-246). */
 .phoneFind .findBox input {
   align-self: stretch;
+  margin-block: -5px;
   color: var(--wf-ink-1);
   font-size: var(--wf-fs-16);
 }

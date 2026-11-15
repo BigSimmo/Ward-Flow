@@ -775,6 +775,13 @@
   }
 }
 
+/* The patient search box is drawn 40px on a phone, not the 44px touch height (Josh, 15 Nov 2026, D-246). */
+@media (max-width: 46.4375rem) {
+  .patientSearchInput {
+    height: 40px;
+  }
+}
+
 .patientSearchInput::placeholder {
   color: var(--wf-ink-3);
 }
@@ -1177,6 +1184,11 @@
   .fieldSelect,
   .clinicalTextarea {
     font-size: max(1rem, 16px);
+  }
+
+  /* A search field is drawn 40px on a phone, like every search box (Josh, 15 Nov 2026, D-246). */
+  .fieldInput[type="search"] {
+    height: 40px;
   }
 }
 

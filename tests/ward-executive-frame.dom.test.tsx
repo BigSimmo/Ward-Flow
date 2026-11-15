@@ -246,7 +246,7 @@ describe("the executive chrome in the new frame", () => {
   });
 
   // Josh, 15 Nov 2026 (D-244): a Help button sits right after the header search, on phone too.
-  it("puts a named Help button right after the header search that opens How do I…", () => {
+  it("puts a named Help button just left of the header search that opens How do I… (D-246)", () => {
     const opened = helpViews();
     guard.phone = true;
     openChrome();
@@ -254,7 +254,7 @@ describe("the executive chrome in the new frame", () => {
     const help = within(header).getByTestId("ward-bar-help-trigger");
     expect(help.tagName).toBe("BUTTON");
     expect(help).toHaveAccessibleName("Help, new");
-    expect(help.previousElementSibling).toContainElement(within(header).getByPlaceholderText("Search Ward Flow"));
+    expect(help.nextElementSibling).toContainElement(within(header).getByPlaceholderText("Search Ward Flow"));
     fireEvent.click(help);
     opened.stop();
     expect(opened.views).toEqual(["tasks"]);

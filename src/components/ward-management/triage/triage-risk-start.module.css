@@ -558,10 +558,17 @@
   }
 
   /* Phone: Add patient is an icon beside the search; its name stays for a screen reader. */
+  /* 40px on a phone, level with the search box (Josh, 15 Nov 2026, D-246); its ::after keeps the 48px tap area. */
   .add.add {
-    width: 44px;
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
     padding: 0;
     justify-content: center;
+  }
+
+  .heroTop .searchRow.searchRow {
+    align-items: center;
   }
 
   .addWords,

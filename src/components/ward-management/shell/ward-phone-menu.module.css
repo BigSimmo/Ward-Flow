@@ -136,8 +136,8 @@
   flex: none;
   align-items: center;
   gap: 8px;
-  /* F-22: a 44px box, the phone's touch height. */
-  min-height: 44px;
+  /* 40px on a phone, level with the search boxes elsewhere (Josh, 15 Nov 2026, D-246). */
+  min-height: 40px;
   padding: 0 12px;
   border: 1px solid var(--wf-line-3);
   border-radius: var(--wf-r-ctl);
@@ -160,7 +160,7 @@
 .search input {
   flex: 1;
   min-width: 0;
-  min-height: 42px;
+  min-height: 38px;
   border: 0;
   background: transparent;
   color: var(--wf-ink-1);
