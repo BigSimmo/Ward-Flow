@@ -62,7 +62,13 @@ test("P011: the store archives after the commit, logs timings, and keeps the pus
   const command = source.slice(source.indexOf("async command(actorId"));
   const commit = command.indexOf("const response = await transaction(");
   const after = command.indexOf("await archiveAfterCommit(");
-  const pushCheck = command.indexOf("SAVEPOINT push_evaluation");
+  // The savepoint lives in `evaluatePushSafely`, shared by the command save and the late sweep
+  // (X1b-5); the command must call it inside its own transaction.
+  assert.match(
+    source,
+    /async function evaluatePushSafely\([^)]*\) \{\s*await client\.query\("SAVEPOINT push_evaluation"\)/u,
+  );
+  const pushCheck = command.indexOf("await evaluatePushSafely(");
   assert.ok(commit > 0 && after > commit, "the routine archive runs after the save's transaction");
   assert.ok(pushCheck > commit && pushCheck < after, "the phone-push check stays inside the save (Josh, 10:12 PM)");
   assert.match(command, /commandTiming\.fields\(event\.type, response\.status\)/u);

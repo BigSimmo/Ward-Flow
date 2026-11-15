@@ -374,6 +374,20 @@ export async function sweepPush(sharedStore, log = logFailure) {
 }
 
 /**
+ * The five-minute sweep. X1b-5 (Josh, 14 Nov 2026, D-221 item 7): late notices that are due are
+ * raised whether or not push is on; then, where push is on, the act-now list is re-checked, since
+ * time alone can turn a row red. A failure in one never stops the other.
+ */
+export async function sweep(sharedStore, log = logFailure) {
+  try {
+    await sharedStore.sweepLateNotices();
+  } catch (error) {
+    log({ event: "ward_backend_late_notice_sweep_failure", ...errorFields(error) });
+  }
+  if (sharedStore.pushEnabled) await sweepPush(sharedStore, log);
+}
+
+/**
  * @param {any} server
  * @param {{ end(): Promise<unknown> } | undefined} pool
  * @param {Pick<NodeJS.EventEmitter, "once"> & Partial<Pick<NodeJS.EventEmitter, "on">> & { exitCode?: number | string | null; exit?: (code?: number) => unknown }} [signals] `process`, or an emitter in tests.
@@ -438,10 +452,11 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     if (sharedStore) processCacheNotice();
     const server = listen(createHandler(backend), config);
     registerShutdown(server, pool);
-    // Phone push: time alone can turn a row red, so the act-now list is re-checked every five minutes.
-    if (sharedStore?.pushEnabled)
+    // Every five minutes: due late notices are raised (X1b-5), and phone push re-checks the act-now
+    // list where it is on, since time alone can turn a row red.
+    if (sharedStore)
       setInterval(() => {
-        void sweepPush(sharedStore);
+        void sweep(sharedStore);
       }, 300_000).unref();
     server.on("listening", () => console.log("Ward Flow backend listening; authenticated readiness check required"));
   } catch {
