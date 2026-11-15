@@ -22,7 +22,8 @@ vi.mock("next/link", () => ({
 
 import { NextPhoneMenu } from "@/components/ward-management/shell-next/next-phone-menu";
 import { openWardMenu } from "@/components/ward-management/shell/ward-drawer-bus";
-import { resetWardAccessStoreForTests } from "@/components/ward-management/shell/ward-access-store";
+import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import {
   CREATE_SHEET_STORAGE_KEY,
   parseCreateSheet,
@@ -37,6 +38,7 @@ import { installMatchMediaStub } from "./setup/jsdom.setup";
 
 afterEach(() => {
   cleanup();
+  act(() => setWardFeatureFlagOnDevice("role-access", null));
   resetWardAccessStoreForTests();
   resetCreateSheetForTests();
   installMatchMediaStub(false);
@@ -67,6 +69,22 @@ describe("triage on the coordinator's phone (D-247)", () => {
     expect(triage).toHaveAttribute("href", "/ward-flow/triage/new");
     const referrals = screen.getByRole("link", { name: /^Referrals/u });
     expect(referrals.closest("li")?.nextElementSibling).toContainElement(triage);
+  });
+
+  // Review on PR #1691: these desks carry Referrals in the dock, so the Menu has no Referrals row.
+  it.each([
+    ["ward", { role: "ward", scope: { kind: "ward", unitIds: ["rph-adult-secure"] } }],
+    ["ED", { role: "ed", scope: { kind: "ed", edId: "fsh-ed" } }],
+    ["community", { role: "community", scope: { kind: "team", teamName: "Albany" } }],
+  ] as const)("lists Start a triage in the %s desk's Menu too", async (_desk, access) => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess(access as never);
+    });
+    renderPhoneMenu();
+    act(() => openWardMenu(null));
+    const triage = await screen.findByRole("link", { name: /^Start a triage/u }, { timeout: 15_000 });
+    expect(triage).toHaveAttribute("href", "/ward-flow/triage/new");
   });
 
   it("names triage on the + and leads its sheet with a New triage row", async () => {

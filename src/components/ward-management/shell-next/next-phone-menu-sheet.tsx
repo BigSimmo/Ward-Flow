@@ -977,7 +977,10 @@ function MenuPages({
 }: {
   onSwitch: () => void;
   activityRow?: boolean;
-  /** Start a triage, listed straight after Referrals for a desk that may triage (Josh, 15 Nov 2026). */
+  /**
+   * Start a triage for a desk that may triage (Josh, 15 Nov 2026, D-247): straight after Referrals,
+   * or at the end of the desk's own section where Referrals sits in the dock.
+   */
   triageRow?: ReactNode;
   query: string;
   entries: RailEntry[];
@@ -989,6 +992,7 @@ function MenuPages({
   onDrawer: (id: DrawerId) => void;
   onClose: () => void;
 }) {
+  const hasReferralsRow = groups.some((group) => group.entries.some((entry) => entry.id === "referrals"));
   if (query.trim().length > 0) {
     return <MenuSearchResults query={query} entries={entries} pageRow={pageRow} onGo={onResult} />;
   }
@@ -1002,7 +1006,7 @@ function MenuPages({
           needs.map((row) => <NeedRowLink key={row.id} row={row} onGo={onClose} onTasks={() => onDrawer("tasks")} />)
         )}
       </Section>
-      {groups.map((group) => (
+      {groups.map((group, groupIndex) => (
         <Section key={group.label} label={group.label}>
           {group.entries.map((entry) =>
             isRoleMenuAction(entry) ? (
@@ -1016,6 +1020,9 @@ function MenuPages({
               pageRow(entry)
             ),
           )}
+          {/* A desk whose dock carries Referrals (ward, ED, community) has no Referrals row here, so
+              Start a triage ends the desk's own section instead. */}
+          {groupIndex === 0 && !hasReferralsRow ? triageRow : null}
         </Section>
       ))}
       <WardMyWards variant="sheet" onNavigate={onClose} />
