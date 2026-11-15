@@ -18,7 +18,7 @@ import { describe, expect, it } from "vitest";
  *
  * **And it is still not a defect, which is the part that decides what this file asserts.** The ED
  * wait row derives `level` from `waitMinutes`, and the same row prints `splitDuration(waitMinutes)`
- * in a text column. A reader who cannot separate red from amber reads "2d 4h" and knows. The colour
+ * in a text column. A reader who cannot separate red from amber reads "2 d 4 h" and knows. The colour
  * is redundant reinforcement of a value stated in words, which is what WCAG 1.4.1 asks for.
  *
  * ⚠️ **So the obvious guard — "the three severity widths must differ" — would have been WRONG.** It
@@ -64,7 +64,7 @@ import { describe, expect, it } from "vitest";
  *
  * ⚠️ **And one limit of the property itself, worth stating rather than widening the test for.** It
  * proves the VALUE is visible, not that the THRESHOLD is. For a table that is enough: a reader
- * comparing "2d 4h" against "18h" gets the ordering, which is the decision. For the chart it is
+ * comparing "2 d 4 h" against "18h" gets the ordering, which is the decision. For the chart it is
  * enough only because the cutoffs are drawn. **A future screen flagging rows against a cutoff
  * nobody can see would satisfy this file and still leave a reader unable to tell which rows are
  * flagged.** (Ward Verifier.)

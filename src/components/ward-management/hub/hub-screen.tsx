@@ -1076,7 +1076,8 @@ export function HubScreen() {
             <Link href={PLACES_HREF} aria-current="page">
               Places
             </Link>
-            <Link href={PLACES_CATCHMENTS_HREF}>Catchments</Link>
+            {/* INV-CM (14 Nov 2026): only for a desk that may open it (the site bed manager may not). */}
+            {canOpen(PLACES_CATCHMENTS_HREF) ? <Link href={PLACES_CATCHMENTS_HREF}>Catchments</Link> : null}
           </div>
           {isPhone ? null : (
             <>

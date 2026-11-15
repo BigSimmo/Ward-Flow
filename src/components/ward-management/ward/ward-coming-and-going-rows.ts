@@ -8,6 +8,7 @@ import {
   perthDateLabel,
   type Instant,
 } from "@/components/ward-management/ward-clock";
+import { refusalLine } from "@/components/ward-management/ward-refusal-words";
 import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import { transportNeedState } from "@/components/ward-management/ward-derivations-transport";
 import { bedHold, pulledWithoutLimitLabel } from "@/components/ward-management/ward-bed-hold";
@@ -31,7 +32,7 @@ import { wardDischargesDueToday, wardFlowReleaseGroup } from "./ward-home-tab-mo
  * the "by tomorrow" and "still due today" windows).
  */
 
-type ComingRowAction = "pull" | "confirm-arrival" | null;
+type ComingRowAction = "pull" | "confirm-arrival" | "release-diverted" | null;
 
 export type ComingRow = {
   key: string;
@@ -55,7 +56,31 @@ export type ComingRow = {
   blocked?: string;
   /** Arrivals: true when a bed is pulled for this person at this ward. */
   hasPulledBed?: boolean;
+  /** Ward desk arrivals: why Confirm arrival cannot be recorded yet (R-MOVE-11), as one refusal line. */
+  arriveReason?: string;
+  /** A diverted person (R-MOVE-1): the one button's words, "Release bed 07". */
+  releaseLabel?: string;
 };
+
+/** R-MOVE-11: the corridor's own canArrive rule, so the row says why before the nurse taps. */
+function arriveReasonFor(movement: Movement, unit: Unit): string | undefined {
+  const liveJob = movement.transport !== undefined && movement.transport.cancelledAt === undefined;
+  const notNeeded =
+    (movement.transportNeed?.needed ?? movement.transport?.needed) === false &&
+    !liveJob &&
+    movement.transport?.collectedAt === undefined;
+  const canArrive =
+    movement.acceptedUnitId === unit.id &&
+    (movement.stage === "moving" ||
+      movement.transport?.collectedAt !== undefined ||
+      (notNeeded && (movement.stage === "pulled" || movement.stage === "handover_ready")));
+  if (canArrive) return undefined;
+  return notNeeded
+    ? refusalLine("The bed is not pulled yet", "Pull the bed first")
+    : liveJob
+      ? refusalLine("Not collected yet", "Confirm arrival once transport has collected them")
+      : refusalLine("No transport is booked", "Book transport, or record that none is needed");
+}
 
 const bedWord = (bed: BedItem | undefined) => (bed ? `Bed ${String(bed.bedNumber).padStart(2, "0")}` : undefined);
 
@@ -170,10 +195,15 @@ export function arrivalRows({
       quietLine: quiet || undefined,
       when: eta === undefined ? undefined : `${late ? "Due" : "ETA"} ${formatInstantWithDay(eta, now)}`,
       tone: hold?.state === "lapsed" ? "danger" : late || hold?.state === "at-risk" ? "warning" : "info",
-      action: awaitingBed ? "pull" : desk === "ward" && !diverted ? "confirm-arrival" : null,
+      // R-MOVE-1: a diverted person is not coming, so the ward and coordinator release the bed here.
+      action: awaitingBed ? "pull" : diverted ? "release-diverted" : desk === "ward" ? "confirm-arrival" : null,
+      ...(diverted && !awaitingBed
+        ? { releaseLabel: `Release ${bedWord(bed)?.replace(/^Bed/u, "bed") ?? "pulled bed"}` }
+        : {}),
       blocked,
       alsoArrive: awaitingBed && desk === "ward" && blocked === undefined,
       hasPulledBed: bed !== undefined,
+      ...(!awaitingBed && !diverted && desk === "ward" ? { arriveReason: arriveReasonFor(movement, unit) } : {}),
     };
   });
 }

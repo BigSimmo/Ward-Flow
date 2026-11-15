@@ -4837,10 +4837,10 @@
   width: 96px;
 }
 .a2Table col[data-col="Bay"] {
-  width: 52px;
+  width: 68px;
 }
 .a2Table col[data-col="Form"] {
-  width: 96px;
+  width: 144px;
 }
 .a2Table col[data-col="Cleared"] {
   width: 112px;
@@ -5152,6 +5152,7 @@
 .a2Mono {
   font-family: var(--wf-mono);
   font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
 }
 
 .a2Wait .a2Mono {

@@ -174,10 +174,10 @@ describe("the community clinician's phone hero", () => {
   const hero = (count: number) => (
     <ReferralPhoneHero
       count={count}
-      oldest={count > 0 ? "2h 0m" : undefined}
+      oldest={count > 0 ? "2 h 0 min" : undefined}
       median={
         <>
-          decided in <b>6h 38m</b> (median)
+          decided in <b>6 h 38 min</b> (median)
         </>
       }
       overdue={0}

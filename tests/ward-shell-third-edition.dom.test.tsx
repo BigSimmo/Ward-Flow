@@ -1090,13 +1090,13 @@ describe("assertion 9 — item 43: the unwired primary action shows visible text
 describe("computeShiftProgress", () => {
   it("computes shift progress correctly for Instant numbers without calling getUTCHours on a number", () => {
     // 10:42 AM is minute 642. Day shift: 07:00 (420) to 15:00 (900), duration 480 mins.
-    // Elapsed: 642 - 420 = 222 mins (3h 42m). Percent: round(222/480*100) = 46%.
-    // Remaining: 900 - 642 = 258 mins (4h 18m).
+    // Elapsed: 642 - 420 = 222 mins (3 h 42 min). Percent: round(222/480*100) = 46%.
+    // Remaining: 900 - 642 = 258 mins (4 h 18 min).
     const result = computeShiftProgress(642);
     expect(result.elapsedHours).toBe(3);
     expect(result.elapsedMins).toBe(42);
     expect(result.percent).toBe(46);
-    expect(result.countdownStr).toBe("4h 18m");
+    expect(result.countdownStr).toBe("4 h 18 min");
   });
 
   it("handles shift wrap and rollover correctly", () => {
@@ -1105,13 +1105,13 @@ describe("computeShiftProgress", () => {
     expect(early.shiftTitle).toBe("Night Shift (23:00–07:00)");
     expect(early.elapsedHours).toBe(7);
     expect(early.elapsedMins).toBe(0);
-    expect(early.countdownStr).toBe("1h 0m");
+    expect(early.countdownStr).toBe("1 h 0 min");
 
     // 16:00 PM (960) is during Evening shift (15:00–23:00), 7h before handover
     const late = computeShiftProgress(960);
     expect(late.shiftTitle).toBe("Evening Shift (15:00–23:00)");
-    expect(late.countdownStr).toBe("7h 0m");
-    expect(late.countdownStr).not.toBe("3h 38m");
+    expect(late.countdownStr).toBe("7 h 0 min");
+    expect(late.countdownStr).not.toBe("3 h 38 min");
     expect(late.percent).toBe(13);
 
     // Handover due within final 15 minutes of shift (e.g. 14:55 = minute 895)

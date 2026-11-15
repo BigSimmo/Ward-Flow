@@ -50,6 +50,7 @@ const DESCRIBERS = new Set(
     "ward-flow-reducer.ts",
     "ward-flow-subject-id.ts",
     "ward-audit.ts",
+    "ward-history-lines.ts",
     "governance-event-facts.tsx",
     "ed/ed-screen-model.ts",
   ].map((f) => `${WM}/${f}`),

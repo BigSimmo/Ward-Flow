@@ -23,6 +23,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Sheet } from "@/components/wf/sheet";
 import { Tooltip } from "@/components/wf/tooltip";
+import { InfoTip } from "@/components/wf/info-tip";
+import { NETWORK_SCOPE_WORD } from "@/components/ward-management/figures/figure-scope-words";
+import { READY_NOW_FIGURE } from "@/components/ward-management/figures/beds-figures";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
 import { useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
 import { useSettingsDeskProfile } from "@/components/ward-management/settings/settings-desk-profile";
@@ -94,6 +97,7 @@ import {
   RailLiveClock,
   RailOccupancyRing,
   RailReadyLine,
+  readyScopeWord,
   usePinnedPages,
 } from "@/components/ward-management/shell-next/next-rail-parts";
 import railParts from "@/components/ward-management/shell-next/next-rail.module.css";
@@ -385,14 +389,17 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   const hottest: ServiceBedAlert | null = servicesByOccupancy[0] ?? null;
   // H2: with the services ranked above it, the foot line carries Metro as a whole and the ready beds.
   const metroShown = capacityRows.some((row) => row.key === "metro" || row.key === "own");
-  const readyLine = <RailReadyLine metro={metroShown ? null : bedAlerts.metroOccupancyPercent} ready={readyBeds} />;
+  const readyScope = readyScopeWord(deskAccess, capacityRows.find((row) => row.key === "own")?.name);
+  const readyLine = (
+    <RailReadyLine metro={metroShown ? null : bedAlerts.metroOccupancyPercent} ready={readyBeds} scope={readyScope} />
+  );
   const metroSpoken =
     metroShown || bedAlerts.metroOccupancyPercent === null
       ? ""
       : `, Metro ${formatOccupancyPercent(bedAlerts.metroOccupancyPercent)}`;
   // CB-3 (axe 4.14 label-content-name-mismatch): the name reads the card's visible words in order
   // first ("East Metro 87%, North Metro 86%, ..."), then which places are over the line.
-  const capacityCardLabel = `Bed alerts: ${overLine.label}. ${capacityRowsLabel}${metroSpoken}, ${readyBeds} ${readyBeds === 1 ? "bed" : "beds"} ready now, ${cardScopeNote(capacityRows, deskAccess, service)}.${capacityRowsOver(capacityRows)}`;
+  const capacityCardLabel = `Bed alerts: ${overLine.label}. ${capacityRowsLabel}${metroSpoken}, ${readyScope} ${readyBeds} ready, ${cardScopeNote(capacityRows, deskAccess, service)}.${capacityRowsOver(capacityRows)}`;
   const handoverText = shiftProgress.handoverDue ? null : durMinutes(shiftProgress.remainingMinutes);
   // Feature 15 (9 Nov 2026): within 30 minutes of handover the open rail's card offers the Shift digest.
   const digestSoon = !shiftProgress.handoverDue && shiftProgress.remainingMinutes <= 30;
@@ -946,7 +953,8 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
                   </p>
                 </div>
                 <span className={styles.alertsTotalBadge} data-testid="ward-rail-bed-alerts-free">
-                  <span className={styles.alertsTotalValue}>{bedAlerts.totalFreeBeds}</span> beds ready
+                  {NETWORK_SCOPE_WORD} <span className={styles.alertsTotalValue}>{bedAlerts.totalFreeBeds}</span> ready
+                  <InfoTip about="Ready">{READY_NOW_FIGURE.rule}</InfoTip>
                 </span>
               </div>
 

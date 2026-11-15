@@ -62,6 +62,11 @@ import { fieldsMatchEveryWord } from "@/components/ward-management/search/search
  */
 export const SECLUSION_GOVERNANCE_HREF = "/ward-flow/governance?tab=registers";
 
+/** The ward desk that marked the room: the role label "Nurse in charge" names its ward. */
+function markedBy(by: string, ward: string): string {
+  return /^nurse in charge$/i.test(by) ? `${ward} nurse in charge` : by;
+}
+
 const ROOM_STATE: Record<SeclusionRoomState, { label: string; tone: WfTone }> = {
   in_use: { label: "In use", tone: "warning" },
   out_of_service: { label: "Out of service", tone: "danger" },
@@ -270,7 +275,7 @@ export function SeclusionFormsView({
                     <span className={styles.name}>{row.unit.name}</span>
                     <span className={styles.detail}>
                       {row.recorded
-                        ? `Marked by ${row.recorded.by}, ${formatInstantWithDay(row.recorded.at, now)} · ${splitDuration(Math.max(0, now - row.recorded.at))} ago`
+                        ? `Marked by ${markedBy(row.recorded.by, row.unit.name)}, ${formatInstantWithDay(row.recorded.at, now)} · ${splitDuration(Math.max(0, now - row.recorded.at))} ago`
                         : "Nobody has marked it yet"}
                     </span>
                   </span>
@@ -281,9 +286,9 @@ export function SeclusionFormsView({
                     variant="ghost"
                     size="sm"
                     onClick={() => setRoomFor(row.unit)}
-                    aria-label={`Change ${row.unit.name} seclusion room`}
+                    aria-label={`${row.recorded ? "Change" : "Mark"} ${row.unit.name} seclusion room`}
                   >
-                    Change
+                    {row.recorded ? "Change" : "Mark"}
                   </Button>
                 </li>
               ))}

@@ -678,8 +678,8 @@ describe("referral draft autosave (9 Oct 2026)", () => {
 
   it("says the draft's age in units", () => {
     expect(referralDraftAgeText(0, 20_000)).toBe("just now");
-    expect(referralDraftAgeText(0, 4 * 60_000)).toBe("4m ago");
-    expect(referralDraftAgeText(0, 65 * 60_000)).toBe("1h 05m ago");
+    expect(referralDraftAgeText(0, 4 * 60_000)).toBe("4 min ago");
+    expect(referralDraftAgeText(0, 65 * 60_000)).toBe("1 h 05 min ago");
   });
 });
 

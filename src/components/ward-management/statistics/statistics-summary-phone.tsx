@@ -27,6 +27,7 @@ import {
 import { edStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { useCanOpenHref, useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { formatInstant } from "@/components/ward-management/ward-clock";
+import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
@@ -347,7 +348,7 @@ function StatisticsSummaryPhoneView({
     };
   if (sheet?.kind === "eds")
     currentSheet = {
-      title: "Open ED movements",
+      title: "ED journeys open",
       body: (
         <ul className={styles.list}>
           {eds.map((ed) => (
@@ -358,12 +359,12 @@ function StatisticsSummaryPhoneView({
               meta={
                 ed.longest === null
                   ? exactStatisticsCount(ed.waiting) === 0
-                    ? "No open ED movements"
+                    ? "No ED journeys open"
                     : "Longest not recorded"
                   : `Longest ${durMinutes(ed.longest)}`
               }
               value={statisticsCountText(ed.waiting)}
-              time="open ED movements"
+              time="ED journeys open"
               href={ed.openable === false || !canOpen(edStatisticsHref(ed.id)) ? undefined : edStatisticsHref(ed.id)}
             />
           ))}
@@ -416,7 +417,7 @@ function StatisticsSummaryPhoneView({
                         {
                           id: "ed",
                           value: statisticsCountText(waitingInEd),
-                          label: <ShortLabel short="open movements" full="open ED movements" />,
+                          label: <ShortLabel short="journeys open" full="ED journeys open" />,
                         },
                       ]),
                 ]}
@@ -617,21 +618,21 @@ function StatisticsSummaryPhoneView({
             {/* The menu's ED icon; a clock is for time only. */}
             <IconTile icon={Siren} />
             <span className={styles.navText}>
-              <b>Open ED movements</b>
+              <b>ED journeys open</b>
               <span>
                 {!edPresenceKnown ? (
-                  // Role view (executive): "not shown open ED movements" read badly and was cut off.
+                  // Role view (executive): "not shown ED journeys open" read badly and was cut off.
                   held(waitingInEd) ? (
                     "Counts not shown"
                   ) : (
-                    <>{statisticsCountText(waitingInEd)} open ED movements · department totals protected</>
+                    <>{statisticsCountText(waitingInEd)} ED journeys open · department totals protected</>
                   )
                 ) : longestEd === null ? (
-                  `${edsWaiting.length} of ${eds.length} departments with open ED movements`
+                  `${edsWaiting.length} of ${eds.length} departments with ED journeys open`
                 ) : (
                   <>
                     Longest <b className={styles.num}>{durMinutes(longestEd)}</b> · {statisticsCountText(waitingInEd)}{" "}
-                    open movements from {edsWaiting.length} of {eds.length}
+                    journeys open from {edsWaiting.length} of {eds.length}
                   </>
                 )}
               </span>
@@ -665,6 +666,9 @@ function StatisticsSummaryPhoneView({
             </Link>
           )}
         </nav>
+        {/* INV-DISPLAY-060 (14 Nov 2026): the phone page kept no synthetic-data line; the shared footer
+            gives it the one every other page carries. */}
+        <WardPrototypeFooter testId="ward-statistics-footer" />
       </main>
       <PhoneSheet
         open={currentSheet !== null}

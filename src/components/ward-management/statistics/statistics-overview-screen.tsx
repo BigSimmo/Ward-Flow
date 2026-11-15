@@ -19,7 +19,7 @@ import {
 import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import {
-  admissionStagePosition,
+  blockedDischargesByReason,
   refusedAndNothingPending,
   type AdmissionStagePosition,
 } from "@/components/ward-management/statistics/statistics-derivations";
@@ -34,6 +34,7 @@ import type { HealthService } from "@/components/ward-management/ward-model";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 
 import { HospitalCapacityMatrix } from "./hospital-capacity-matrix";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { FlushRow, FlushStack, Follow } from "./statistics-layout";
 import { axisMax } from "./statistics-axis";
@@ -61,6 +62,7 @@ import {
 } from "./statistics-network-cards";
 import styles from "./statistics-v6.module.css";
 import detail from "./statistics-detail.module.css";
+import { HELD_UP_ANY_DATE_LABEL } from "@/components/ward-management/ward-held-up";
 
 /**
  * ACROSS ALL SERVICES — the whole-of-prototype and Western Australia section.
@@ -157,13 +159,8 @@ export function StatisticsOverviewScreen() {
     [unitRows],
   );
   const closedTotal = useMemo(() => unitRows.reduce((sum, row) => sum + row.states.closed, 0), [unitRows]);
-  // A blocked discharge: a current admission carrying a block reason (the Wards page's own count).
-  const blockedTotal = useMemo(
-    () =>
-      admissions.filter((admission) => admissionStagePosition(admission) !== "ended" && admission.blockReason !== null)
-        .length,
-    [admissions],
-  );
+  // D-220: every current stay with a recorded blocker, whatever its date ("Held up · any date").
+  const blockedTotal = useMemo(() => blockedDischargesByReason(admissions).totalCount, [admissions]);
 
   const services = useMemo(() => networkServiceRows(unitRows), [unitRows]);
 
@@ -188,7 +185,7 @@ export function StatisticsOverviewScreen() {
               label={`Over ${BED_ALERT_THRESHOLD_PERCENT}%`}
               tone={wardsOverLine > 0 ? "warning" : undefined}
             />
-            <HeroStat value={small(blockedTotal)} label="Held up" />
+            <HeroStat value={small(blockedTotal)} label={HELD_UP_ANY_DATE_LABEL} />
           </>
         ),
       }}
@@ -484,6 +481,8 @@ function OverviewPhone({
 }) {
   const { small } = useStatisticsCounts();
   const [showAll, setShowAll] = useState(false);
+  // INV-CM (14 Nov 2026): a link shows only when this desk may open it, never "Not part of your role".
+  const canOpen = useCanOpenHref();
   const sorted = [...wards].sort((a, b) => b.rate - a.rate || a.name.localeCompare(b.name));
   const inBed = stages.find((stage) => stage.position === "in-the-bed")?.shown ?? 0;
   return (
@@ -522,7 +521,7 @@ function OverviewPhone({
               </span>
             }
             time="in use"
-            href={wardStatisticsHref(ward.id)}
+            href={canOpen(wardStatisticsHref(ward.id)) ? wardStatisticsHref(ward.id) : undefined}
           />
         ))}
         {sorted.length > PHONE_WARDS_SHOWN ? (

@@ -26,8 +26,8 @@ import { FORM_TIMING_FACTOR_LABEL, waitFactors } from "../src/components/ward-ma
  * LEGAL FORM TIMES ONLY AS TYPED (Josh, 31 Oct 2026, D-93; replaces D-71 item 5; D5 and D-70 hold).
  *
  * A legal form's time shows only as the clock time a person typed from the form ("Ends 15:42 as
- * typed"), never as a running figure worked out from it ("3h 20m left", "passed 1h 05m ago",
- * "1h 15m overdue"). The build plan listed 11 places that still counted down; a full search found
+ * typed"), never as a running figure worked out from it ("3 h 20 min left", "passed 1 h 05 min ago",
+ * "1 h 15 min overdue"). The build plan listed 11 places that still counted down; a full search found
  * about 30 across 13 screens, so this guard watches the whole ward directory, not a list.
  *
  * Part 1 reads the source: no duration formatter may take a legal time, and the old countdown
@@ -38,7 +38,7 @@ import { FORM_TIMING_FACTOR_LABEL, waitFactors } from "../src/components/ward-ma
 
 const WARD_DIR = "src/components/ward-management";
 
-/** Every formatter that turns minutes into "1h 05m", "2d 3h" or "58m". */
+/** Every formatter that turns minutes into "1 h 05 min", "2 d 3 h" or "58 min". */
 const DURATION_CALL = /\b(?:formatRemaining|splitDuration|durText|durMinutes|minutesText|formatElapsed)\s*\(/;
 /**
  * The relative day formatter: "15:42, 3 days ago" and "15:42, in 2 days" are an age and a countdown
@@ -60,7 +60,7 @@ const RETIRED = [
   /The deadline (?:passed|is) \$\{/,
 ];
 
-/** A rendered legal time that carries a count: "1h 05m", "58m", "2d", "left", "ago", "overdue". */
+/** A rendered legal time that carries a count: "1 h 05 min", "58 min", "2d", "left", "ago", "overdue". */
 const COUNT_IN_TEXT = /\b\d+\s*[dhm]\b|\bleft\b|\bago\b|\boverdue\b|\bdue in\b|\baway\b/;
 
 function walk(dir: string): string[] {

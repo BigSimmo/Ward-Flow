@@ -113,7 +113,7 @@ describe("the condensed summary line (C1)", () => {
     const { container } = render(
       <div>
         <header data-wf-bar="" />
-        <main>{hero("9 on the board · longest 1d 5h")}</main>
+        <main>{hero("9 on the board · longest 1 d 5 h")}</main>
       </div>,
     );
     const bar = container.querySelector("[data-wf-bar]")!;
@@ -131,7 +131,7 @@ describe("the condensed summary line (C1)", () => {
     const line = screen.getByTestId("wf-hero-condensed");
     expect(line.dataset.shown).toBe("true");
     expect(line.style.top).toBe("56px");
-    expect(within(line).getByRole("button").textContent).toContain("9 on the board · longest 1d 5h");
+    expect(within(line).getByRole("button").textContent).toContain("9 on the board · longest 1 d 5 h");
     expect(main.style.getPropertyValue("--wf-header-height")).not.toBe("");
 
     // A tap brings the card back.

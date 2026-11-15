@@ -209,12 +209,8 @@ export function CapacityHero({
       // A chosen service or a site: say whose figures these are; otherwise the header says it.
       eyebrow={site || service !== null ? (site ? place : `${place}, not only ${service}`) : undefined}
       phoneEyebrow={site || service !== null ? "show" : undefined}
-      title={
-        <>
-          <SrOnly>Capacity, </SrOnly>
-          Beds <span className={styles.titleSoft}>ready and short</span>
-        </>
-      }
+      // Design lane A (14 Nov 2026): one short page title, the sidebar's name for the page.
+      title="Capacity"
       aside={<PageLiveChip paused={live.paused} onTogglePause={live.togglePause} />}
     >
       <HeroTop

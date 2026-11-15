@@ -10,7 +10,7 @@ import { CLINICAL_VALUES } from "../src/components/ward-management/ward-clinical
 import { formatInstantWithDay } from "../src/components/ward-management/ward-clock";
 import type { Movement } from "../src/components/ward-management/ward-model";
 
-// Synthetic instants only (minutes). Arrival at 1000, read at 1220: 3h 40m in the department.
+// Synthetic instants only (minutes). Arrival at 1000, read at 1220: 3 h 40 min in the department.
 const ARRIVED = 1000;
 const NOW = ARRIVED + 3 * 60 + 40;
 
@@ -18,7 +18,7 @@ describe("medical clearance tracker, one patient (Josh sign-off, 9 Nov 2026)", (
   it("shows elapsed time since arrival when no clearance is recorded, never a countdown", () => {
     expect(edClearanceTime(ARRIVED, undefined, NOW)).toEqual({
       kind: "not_recorded",
-      words: "Not recorded · 3h 40m since arrival",
+      words: "Not recorded · 3 h 40 min since arrival",
       flagged: false,
     });
   });
@@ -34,7 +34,7 @@ describe("medical clearance tracker, one patient (Josh sign-off, 9 Nov 2026)", (
 
   it("says how long a recorded clearance took from arrival", () => {
     const time = edClearanceTime(ARRIVED, { cleared: true, at: ARRIVED + 135 }, NOW);
-    expect(time).toEqual({ kind: "cleared", words: "Cleared in 2h 15m", flagged: false, minutes: 135 });
+    expect(time).toEqual({ kind: "cleared", words: "Cleared in 2 h 15 min", flagged: false, minutes: 135 });
   });
 
   it("reads a clearance recorded before (or at) arrival as cleared on arrival", () => {
@@ -54,13 +54,13 @@ describe("medical clearance tracker, one patient (Josh sign-off, 9 Nov 2026)", (
     expect(edClearanceTime(ARRIVED, undefined, ARRIVED + 6 * 60 - 1).flagged).toBe(false);
     const atSix = edClearanceTime(ARRIVED, undefined, ARRIVED + 6 * 60);
     expect(atSix.flagged).toBe(true);
-    expect(atSix.words).toBe("Not recorded · 6h 00m since arrival");
+    expect(atSix.words).toBe("Not recorded · 6 h 00 min since arrival");
     // A recorded answer is never flagged by the tracker: the clinician has spoken.
     expect(edClearanceTime(ARRIVED, { cleared: false, at: ARRIVED + 10 }, ARRIVED + 600).flagged).toBe(false);
   });
 
   it("never counts a future arrival as negative time", () => {
-    expect(edClearanceTime(NOW + 5, undefined, NOW).words).toBe("Not recorded · 0m since arrival");
+    expect(edClearanceTime(NOW + 5, undefined, NOW).words).toBe("Not recorded · 0 min since arrival");
   });
 });
 

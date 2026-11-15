@@ -21,11 +21,7 @@ import { edStatisticsHref } from "@/components/ward-management/shell/ward-facade
 import { LONG_WAIT_MINUTES, VERY_LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 
-import {
-  ED_WAIT_BANDS,
-  edJourneyWaitBands as edWaitBands,
-  edJourneyWaitFigures as edWaitFigures,
-} from "./statistics-ed-waits";
+import { ED_WAIT_BANDS, edWaitBands, edStatisticsFigures } from "./statistics-ed-waits";
 import { StatisticsEdSwarm } from "./statistics-ed-swarm";
 import { HeroTool } from "./statistics-hero-tools";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
@@ -93,9 +89,11 @@ function bandName(position: number): string {
  *
  * The roomy wait field across the full card width (Josh, 9 Oct 2026: the old field of dots was
  * messy), then every department in a table, each the way into its own page. Every figure is
- * `edWaitFigures` over the live movements: waiting is the open population, "no ward yet" is the
- * open movements no ward has accepted, and the long-wait counts OVERLAP (anyone past the second line
- * is past the first), so they are shown side by side and never summed.
+ * `edStatisticsFigures` over the live movements (D-220): "ED journeys open" is every open ED
+ * movement, people in transit included; the waits, the long-wait counts and the bands count the
+ * people still waiting in ED. "No ward yet" is the open movements no ward has accepted. The long-wait
+ * counts OVERLAP (anyone past the second line is past the first), so they are shown side by side and
+ * never summed.
  */
 
 type EdIndexRow = {
@@ -183,7 +181,7 @@ function OperationalEdsIndex() {
   const departments = useMemo(
     () =>
       allEmergencyDepartments().map((department) => {
-        const figures = edWaitFigures(movements, department.id, now);
+        const figures = edStatisticsFigures(movements, department.id, now);
         const waits = figures.waitingMovements.map((entry) => entry.waitMinutes);
         return {
           id: department.id,
@@ -268,7 +266,7 @@ function OperationalEdsIndex() {
               ? swarmRows
               : swarmRows.map((row) => ({
                   ...row,
-                  // The same tests `edWaitFigures` counts with: no ward accepted, or waiting past the long-wait line.
+                  // The same tests `edStatisticsFigures` counts with: no ward accepted, or waiting past the long-wait line.
                   entries: row.entries.filter((entry) =>
                     show === "unplaced"
                       ? entry.movement.acceptedUnitId === undefined
@@ -378,8 +376,8 @@ function EdsIndexView({
         // Live audit, 8 Nov 2026: a withheld count read "not shown open ED movements".
         title:
           shown(waiting) === SMALL_NUMBER_NOT_SHOWN
-            ? "Open ED movements not shown"
-            : `${shown(waiting)} open ED movements`,
+            ? "ED journeys open not shown"
+            : `${shown(waiting)} ED journeys open`,
         sub: `Longest ${waitText(longestRow?.longest ?? null)} · median ${waitText(networkMedian)}`,
         stats: (
           <>
@@ -395,7 +393,7 @@ function EdsIndexView({
       }}
       stats={
         <>
-          <HeroStat value={shown(waiting)} label="Open ED movements" />
+          <HeroStat value={shown(waiting)} label="ED journeys open" />
           <HeroStat
             value={waitText(longestRow?.longest ?? null)}
             label={longestRow ? `Longest, ${longestRow.code}` : "Longest"}
@@ -450,10 +448,10 @@ function EdsIndexView({
               );
             })}
           </PhoneList>
-          <PhoneGroup title="Time since opening" aside="Open ED movements">
+          <PhoneGroup title="Time since opening" aside="Waiting in ED">
             <div className={phone.chartCard}>
               <ColumnChart
-                label="Open ED movements, by time since opening"
+                label="Waiting in ED, by time since opening"
                 columns={bands.map((band) => ({
                   ...band,
                   ...withheldBar(exactStatisticsCount(band.value) ?? 0, shown(band.value)),
@@ -467,7 +465,7 @@ function EdsIndexView({
           ) : (
             <PhoneSheetRow
               icon={Users}
-              title="Open ED movements, one mark each"
+              title="Waiting in ED, one mark each"
               sub={`Axis to ${VERY_LONG_HOURS * 1.5}h, longer waits on its last line`}
               testId="ward-statistics-eds-phone-swarm"
             >
@@ -481,8 +479,8 @@ function EdsIndexView({
           <StatCard
             id="everyone-waiting"
             className={index.anchorTarget}
-            title="Open ED movements, by ED"
-            meta={`${shown(waiting)} open across ${departments.length} EDs`}
+            title="Waiting in ED, by ED"
+            meta={`Across ${departments.length} EDs`}
             action={
               executive ? undefined : (
                 <Segmented<SwarmShow>
@@ -505,9 +503,8 @@ function EdsIndexView({
                 executive
                   ? undefined
                   : [
-                      "Each mark is one open ED movement. Times run from when the movement opened.",
+                      "Each mark is one person waiting in ED. Times run from when the movement opened.",
                       `The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines are local defaults.`,
-                      "An open movement stays the ED’s until arrival.",
                     ]
               }
             >
@@ -533,13 +530,13 @@ function EdsIndexView({
               >
                 <table className={cx(tableClasses.table, redesign.table)} data-testid="ward-statistics-eds-table">
                   <caption className={styles.srOnly}>
-                    Every emergency department: open ED movements, including transit, those with no ward yet, long
-                    waits, the longest and the median wait
+                    Every emergency department: ED journeys open, including transit, those with no ward yet, and the
+                    long waits, longest and median wait of people still in ED
                   </caption>
                   <thead>
                     <tr>
                       <SortTh id="name" label="ED" sort={sort} asc={asc} onSort={onSort} />
-                      <SortTh id="waiting" label="Open" sort={sort} asc={asc} onSort={onSort} numeric />
+                      <SortTh id="waiting" label="Journeys open" sort={sort} asc={asc} onSort={onSort} numeric />
                       <SortTh id="unplaced" label="No ward yet" sort={sort} asc={asc} onSort={onSort} numeric />
                       <SortTh id="over24" label={`Over ${LONG_HOURS}h`} sort={sort} asc={asc} onSort={onSort} numeric />
                       <SortTh
@@ -627,7 +624,7 @@ function EdsIndexView({
             >
               <div className={redesign.bars}>
                 <BarList
-                  label="Open ED movements, by time since opening"
+                  label="Waiting in ED, by time since opening"
                   track
                   rows={bands.map((band, position) => ({
                     id: band.id,

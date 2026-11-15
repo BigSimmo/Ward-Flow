@@ -357,8 +357,8 @@
 
 .dupNameRow {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: flex-start;
   gap: var(--wf-s-2);
   min-width: 0;
 }

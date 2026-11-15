@@ -77,7 +77,7 @@ describe("waits past 24 hours read neutral (T5)", () => {
     for (const row of long) {
       expect(row.querySelector("svg")).toBeNull();
       // The time still says it in words: past 24 hours it reads in days.
-      expect(row).toHaveTextContent(/\d+d/u);
+      expect(row).toHaveTextContent(/\d+ d/u);
     }
   });
 
@@ -161,8 +161,8 @@ describe("waits past 24 hours read neutral (T5)", () => {
         <StatisticsMapView />
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByRole("radio", { name: /^Open ED movements/ }));
-    const key = screen.getByText(/^Ring: longest time since opening/u);
+    fireEvent.click(screen.getByRole("radio", { name: /^ED journeys open/ }));
+    const key = screen.getByText(/^Ring: longest wait in ED/u);
     expect(key).not.toHaveTextContent(/past 24h/u);
     expect(key).toHaveTextContent("Triangle: over 48h.");
     const headline = screen.getByTestId("ward-statistics-map-headline");

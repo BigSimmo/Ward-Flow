@@ -74,13 +74,13 @@
   width: 96px;
 }
 .handoverTable[data-columns="handover"] col[data-col="Bay"] {
-  width: 52px;
+  width: 68px;
 }
 .handoverTable[data-columns="handover"] col[data-col="Presentation"] {
   width: 124px;
 }
 .handoverTable[data-columns="handover"] col[data-col="Form"] {
-  width: 132px;
+  width: 156px;
 }
 .handoverTable[data-columns="handover"] col[data-col="Checks"] {
   width: 136px;

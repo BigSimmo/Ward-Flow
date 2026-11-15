@@ -66,7 +66,7 @@ describe("ward decision demonstration boundaries", () => {
         <WardHomeTab {...props} />
       </WardFlowProvider>,
     );
-    expect(view.container.textContent).not.toMatch(/Gianna Marrowvale|54m left|11:42 AWST/);
+    expect(view.container.textContent).not.toMatch(/Gianna Marrowvale|54 min left|11:42 AWST/);
   });
   it("renders the supplied ward alerts rather than a fixed example", () => {
     render(
@@ -77,7 +77,7 @@ describe("ward decision demonstration boundaries", () => {
             {
               key: "recorded-form",
               title: "Recorded review",
-              countdown: "20m",
+              countdown: "20 min",
               text: "Review time entered by clinician",
               tone: "warning",
             },
@@ -86,7 +86,7 @@ describe("ward decision demonstration boundaries", () => {
       </WardFlowProvider>,
     );
     expect(screen.getByText("Recorded review")).toBeVisible();
-    expect(screen.getByText("20m")).toBeVisible();
+    expect(screen.getByText("20 min")).toBeVisible();
     expect(screen.getByText("Review time entered by clinician")).toBeVisible();
   });
   it("lists the unsaved reminders in their own group without counting them as to do", () => {

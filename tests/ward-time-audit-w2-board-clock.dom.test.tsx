@@ -131,9 +131,9 @@ describe("D6: a Timer on the minute board clock shows whole minutes", () => {
       </>,
     );
     const timers = screen.getAllByRole("timer");
-    expect(timers[0]).toHaveTextContent(/^5mwaiting$/);
-    expect(timers[1]).toHaveTextContent(/^0mwaiting$/);
-    expect(timers[2]).toHaveTextContent(/^in3m$/);
-    expect(timers[3]).toHaveTextContent(/^2h 05mwaiting$/);
+    expect(timers[0]).toHaveTextContent(/^5 minwaiting$/);
+    expect(timers[1]).toHaveTextContent(/^0 minwaiting$/);
+    expect(timers[2]).toHaveTextContent(/^in3 min$/);
+    expect(timers[3]).toHaveTextContent(/^2 h 05 minwaiting$/);
   });
 });

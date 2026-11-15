@@ -689,12 +689,12 @@ describe("fixture stage/stamp coherence (ward-movements.ts)", () => {
 
 describe("the fixture can demonstrate a wait longer than a day", () => {
   /*
-   * WHY THIS EXISTS. `splitDuration` renders a day or more as "1d 6h" and `formatInstantWithDay`
+   * WHY THIS EXISTS. `splitDuration` renders a day or more as "1 d 6 h" and `formatInstantWithDay`
    * says "yesterday" - and until 2026-08-30 no seeded record could produce either, because
    * `routineMovements` caps `openedAt` at `60 + ((index * 37) % 900)` minutes and every hand-seeded
    * movement waited hours. A capability nothing exercises is indistinguishable from one that does
    * not work, and the whole suite stays green either way. That is not hypothetical here: the
-   * out-of-area screen rendered stays as "5041h 30m" for as long as it did precisely because no
+   * out-of-area screen rendered stays as "5041 h 30 min" for as long as it did precisely because no
    * assertion was ever about the format.
    *
    * So this asserts the DATA can reach the code path, which is a different claim from the code path
@@ -721,12 +721,12 @@ describe("the fixture can demonstrate a wait longer than a day", () => {
       expect(
         splitDuration(entry.minutes),
         `${entry.id} waits ${entry.minutes} minutes and must render in days, not in hours`,
-      ).toMatch(/^\d+d( \d+h)?$/);
+      ).toMatch(/^\d+ d( \d+ h)?$/);
     }
   });
 
   it("keeps one of them just over the boundary, where an hours-only formatter would look right", () => {
-    // WF-020 waits 29 hours. A formatter that truncated to hours would render "29h 00m", which is
+    // WF-020 waits 29 hours. A formatter that truncated to hours would render "29 h 00 min", which is
     // correct arithmetic and unreadable - and would look entirely plausible to a reviewer. The
     // boundary case is the one that catches a half-fix; a three-day wait would not.
     const wf020 = wardMovements.find((movement) => movement.id === "WF-020");
@@ -734,6 +734,6 @@ describe("the fixture can demonstrate a wait longer than a day", () => {
     const minutes = NOW_ANCHOR - (wf020?.openedAt ?? NOW_ANCHOR);
     expect(minutes).toBeGreaterThan(MINUTES_PER_DAY);
     expect(minutes).toBeLessThan(2 * MINUTES_PER_DAY);
-    expect(splitDuration(minutes)).toBe("1d 5h");
+    expect(splitDuration(minutes)).toBe("1 d 5 h");
   });
 });

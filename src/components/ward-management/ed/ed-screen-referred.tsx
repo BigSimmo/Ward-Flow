@@ -4,10 +4,8 @@
 // answered referrals. Split out of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
 import { useState } from "react";
 
-import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { Dialog, StatusGlyph } from "@/components/wf";
 import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
-import type { ReferralGender } from "@/components/ward-management/ward-model";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
@@ -19,7 +17,8 @@ import {
   isArrivalLate,
 } from "@/components/ward-management/referrals/arrival-time-modal";
 import type { EdScreenContext } from "./ed-screen-context";
-import { ANSWERED_VISIBLE_CAP, answeredAddressingLabel, GENDER_OPTIONS, urgencyTone } from "./ed-screen-model";
+import { ANSWERED_VISIBLE_CAP, answeredAddressingLabel, urgencyTone } from "./ed-screen-model";
+import { EdRecordGender } from "./ed-record-gender";
 import { edStageLabel } from "./ed-referral-status";
 import styles from "./ed.module.css";
 
@@ -219,65 +218,13 @@ export function EdReferredPanel({ ctx }: { ctx: EdScreenContext }) {
                     </div>
                   ) : null}
                   {!movement.closure && (
-                    <div className={styles.tableActionGroup}>
-                      <select
-                        data-testid={`ward-ed-record-gender-${movement.id}`}
-                        aria-label={`Record gender for ${patientInfo.formalName}`}
-                        value={genderRecordDraft[movement.id] ?? ""}
-                        onChange={({ target: { value } }) =>
-                          setGenderRecordDraft((current) => ({
-                            ...current,
-                            [movement.id]: value as ReferralGender | "",
-                          }))
-                        }
-                      >
-                        <option value="">Choose…</option>
-                        {GENDER_OPTIONS.map((gender) => (
-                          <option key={gender} value={gender}>
-                            {gender}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        type="button"
-                        data-testid={`ward-ed-record-gender-submit-${movement.id}`}
-                        className={styles.acceptButton}
-                        aria-disabled={
-                          !genderRecordDraft[movement.id] || genderRecordDraft[movement.id] === movement.gender
-                            ? "true"
-                            : undefined
-                        }
-                        aria-describedby={
-                          !genderRecordDraft[movement.id] || genderRecordDraft[movement.id] === movement.gender
-                            ? `ward-ed-record-gender-reason-${movement.id}`
-                            : undefined
-                        }
-                        title={
-                          !genderRecordDraft[movement.id] || genderRecordDraft[movement.id] === movement.gender
-                            ? "Choose a new gender value to record first."
-                            : undefined
-                        }
-                        onClick={(event) => {
-                          const gender = genderRecordDraft[movement.id];
-                          if (!gender || gender === movement.gender) {
-                            ignoreUnavailableActivation(event);
-                            return;
-                          }
-                          raise("RECORD_MOVEMENT_GENDER", {
-                            movementId: movement.id,
-                            gender,
-                          });
-                          setGenderRecordDraft((current) => ({ ...current, [movement.id]: "" }));
-                        }}
-                      >
-                        Record gender
-                      </button>
-                      {!genderRecordDraft[movement.id] || genderRecordDraft[movement.id] === movement.gender ? (
-                        <span id={`ward-ed-record-gender-reason-${movement.id}`} className="sr-only">
-                          Choose a new gender value to record first.
-                        </span>
-                      ) : null}
-                    </div>
+                    <EdRecordGender
+                      movement={movement}
+                      patientName={patientInfo.formalName}
+                      raise={raise}
+                      drafts={genderRecordDraft}
+                      setDrafts={setGenderRecordDraft}
+                    />
                   )}
                 </li>
               );

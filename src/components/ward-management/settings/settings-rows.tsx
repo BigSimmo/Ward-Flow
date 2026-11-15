@@ -105,6 +105,7 @@ export function RuleRow({
   noun,
   max,
   range,
+  clampNote,
   onChange,
   savedDisplay,
   onReset,
@@ -127,6 +128,8 @@ export function RuleRow({
   noun: string;
   /** Stepper ceiling when it is tighter than the range (the first warning stays below the second). */
   max?: number;
+  /** Why the live range is tighter than the full one ("Stays below Early warning (3h)."). */
+  clampNote?: string;
   range: RuleRange;
   onChange: (value: number) => void;
   /** The saved value in words ("24h"), read with the Changed tag. */
@@ -165,6 +168,11 @@ export function RuleRow({
             {!atDefault && defaultDisplay ? <span className={rx.defaultMark}> · Default {defaultDisplay}</span> : null}
           </span>
         </span>
+        {clampNote ? (
+          <span className={rx.rangeInline} data-testid={range.id ? `${range.id}-clamp` : undefined}>
+            {clampNote}
+          </span>
+        ) : null}
       </span>
       <span className={styles.resetCell}>
         {changed && onReset ? (

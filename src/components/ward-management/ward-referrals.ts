@@ -21,7 +21,11 @@ import {
   SUBURB_UNKNOWN_REASONS,
   suburbUnknownLabels,
 } from "@/components/ward-management/ward-model";
-import { EXPECT_RECONSIDER_AFTER_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import {
+  EXPECT_RECONSIDER_AFTER_MINUTES,
+  OVERDUE_AFTER_ANY_TIER_MINUTES,
+  OVERDUE_AFTER_MINUTES_BY_TIER,
+} from "@/components/ward-management/ward-operational-defaults";
 import { PLACE_NOT_RECORDED, placeDisplayName } from "@/components/ward-management/ward-place-names";
 import type { CommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
 import type {
@@ -210,6 +214,23 @@ export function referralWithdrawn(referral: Referral): boolean {
   return (
     referral.destinations.some((addressing) => addressing.withdrawnAt !== undefined) &&
     !referral.destinations.some((addressing) => addressing.state === "accepted" || isAwaitingAnswer(addressing))
+  );
+}
+
+/**
+ * R-BEDS-13: a community referral that every asked ward declined stays in the coordinator's queue
+ * until it is placed, closed or handed back, so someone is still asked to find it a bed. Derived
+ * from the record alone (no new record): declined, nothing accepted or withdrawn.
+ * Kept here, beside `referralState`, so the shell's count reads it without the board's modules.
+ */
+export function referralAllWardsDeclined(referral: Referral): boolean {
+  const wards = referral.destinations.filter((arm) => arm.destination.kind === "psychiatric_ward");
+  return (
+    referral.source === "community" &&
+    wards.length > 0 &&
+    referralState(referral) === "declined" &&
+    !referralWithdrawn(referral) &&
+    wards.every((arm) => arm.state === "declined" || arm.withdrawnAt !== undefined)
   );
 }
 
@@ -745,6 +766,17 @@ export function referralQueueOrder(referrals: Referral[]): Referral[] {
 }
 
 /**
+ * The coordinator's queue: everything still awaiting a ward's answer, plus (R-BEDS-13) a community
+ * referral every asked ward declined, which stays until someone places, closes or hands it back.
+ * Home, the menu badge and the Referrals board read this one list so their counts agree.
+ */
+export function coordinatorReferralQueue(referrals: Referral[]): Referral[] {
+  return [...referralQueueOrder(referrals), ...referrals.filter(referralAllWardsDeclined)].sort(
+    (a, b) => a.raisedAt - b.raisedAt || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
+  );
+}
+
+/**
  * The referral board's "recently decided" section is a DISPLAY truncation, not a domain rule, so
  * it gets its own constant rather than reusing one that means something else. Owner ruling,
  * 2026-09-02: this list holds exactly ten.
@@ -959,6 +991,22 @@ export function referralClocks(referral: Pick<Referral, "raisedAt" | "triagedAt"
     sinceReferralRunning: !triagedAfterReferral,
     inDepartment: triagedAt === undefined ? undefined : Math.max(0, minutesUntil(now, triagedAt)),
   };
+}
+
+/**
+ * Overdue once the running referral clock passes its tier's target or the any-tier ceiling. Josh's
+ * own defaults, not legal limits (D-22, D-24). Lives here so Home and the referral list share it.
+ */
+export function isReferralOverdue(
+  referral: Pick<Referral, "raisedAt" | "triagedAt" | "urgency">,
+  now: Instant,
+): boolean {
+  const clocks = referralClocks(referral, now);
+  return (
+    clocks.sinceReferralRunning &&
+    (clocks.sinceReferral >= OVERDUE_AFTER_MINUTES_BY_TIER[referral.urgency] ||
+      clocks.sinceReferral >= OVERDUE_AFTER_ANY_TIER_MINUTES)
+  );
 }
 
 /**

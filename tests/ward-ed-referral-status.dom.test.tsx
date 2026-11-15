@@ -89,14 +89,14 @@ describe("edReferralStatus", () => {
     });
     expect([status.title, status.line, status.phone, status.tone]).toEqual([
       "SJGM Adult Open",
-      "Accepted, bed pulled 27m left",
+      "Accepted, bed pulled 27 min left",
       "SJGM Adult Open accepted, bed pulled",
       "good",
     ]);
     expect(status.steps).toEqual([
       { label: "Referral sent", detail: "Coordinator asked wards", done: true },
       { label: "SJGM Adult Open accepted", detail: "Accepted in principle", done: true },
-      { label: "Bed pulled for this patient", detail: "27m left", done: true },
+      { label: "Bed pulled for this patient", detail: "27 min left", done: true },
       { label: "Transport", detail: "Not booked yet", done: false },
     ]);
   });
@@ -107,10 +107,10 @@ describe("edReferralStatus", () => {
       { ...options, acceptedUnitName: "SJGM Adult Open" },
     );
     expect([status.line, status.phone]).toEqual([
-      "Accepted, bed pulled 27m left",
+      "Accepted, bed pulled 27 min left",
       "SJGM Adult Open accepted, bed pulled",
     ]);
-    expect(status.steps?.[2]).toEqual({ label: "Bed pulled for this patient", detail: "27m left", done: true });
+    expect(status.steps?.[2]).toEqual({ label: "Bed pulled for this patient", detail: "27 min left", done: true });
   });
 
   it("marks a lapsed hold as danger and says it expired", () => {
@@ -118,8 +118,8 @@ describe("edReferralStatus", () => {
       ...options,
       acceptedUnitName: "SJGM Adult Open",
     });
-    expect(status.line).toBe("Accepted, bed pulled, expired 10m ago");
-    expect(status.phone).toBe("SJGM Adult Open accepted, bed pulled, expired 10m ago");
+    expect(status.line).toBe("Accepted, bed pulled, expired 10 min ago");
+    expect(status.phone).toBe("SJGM Adult Open accepted, bed pulled, expired 10 min ago");
     expect(status.tone).toBe("danger");
   });
 

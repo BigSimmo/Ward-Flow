@@ -85,6 +85,12 @@ const ALLOWED: readonly Allowed[] = [
     why: "drawing: a booking made within 12 h shows on the same track",
   },
   { file: "alerts/alerts-model.ts", expr: "value < 1440", n: 1, why: "formatting: hours and minutes under a day" },
+  {
+    file: "shell/ward-sign-in-ending.tsx",
+    expr: "10 * 60_000",
+    n: 1,
+    why: "notice: the sign-in ending strip shows for the last 10 minutes (R-STRUCT-43, 51)",
+  },
   { file: "alerts/alerts-model.ts", expr: "value < 60", n: 1, why: "formatting: minutes under an hour" },
   { file: "alerts/alerts-today-band.tsx", expr: "2 * 60", n: 1, why: "drawing: the today band window" },
   { file: "alerts/alerts-today-band.tsx", expr: "3 * 60", n: 1, why: "drawing: the today band window" },
@@ -318,11 +324,18 @@ const ALLOWED: readonly Allowed[] = [
     n: 1,
     why: "an alternative figure listed for Josh to compare, not in use",
   },
+
   {
-    file: "ward-eligibility.ts",
+    file: "ward-clock.ts",
     expr: "minutes < 120",
     n: 1,
     why: "wording: the bed count's age reads in minutes under two hours, then whole hours (H8, D-210)",
+  },
+  {
+    file: "ward-clock.ts",
+    expr: "2 * MINUTES_PER_DAY",
+    n: 1,
+    why: "wording: a bed count two or more days old reads in whole days, not hundreds of hours (R-BEDS-14)",
   },
   {
     file: "ward-operational-defaults.ts",

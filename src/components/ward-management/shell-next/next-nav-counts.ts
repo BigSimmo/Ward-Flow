@@ -2,35 +2,20 @@
 
 // Fork of src/components/ward-management/use-ward-nav-counts.ts: the rail's counts for the desk's own place.
 
-import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 
-import {
-  useDueSoonThresholds,
-  useWardFlowClock,
-  useWardFlowSelect,
-  useWardNetwork,
-} from "@/components/ward-management/ward-flow-provider";
 import { WARD_SHELL_ROLE, wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
-import { useAccessShellRole, useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
-import { wardNavCounts, type WardNavCounts } from "@/components/ward-management/ward-nav-counts";
+import { useAccessShellRole } from "@/components/ward-management/shell/ward-access-store";
+import type { WardNavCounts } from "@/components/ward-management/ward-nav-counts";
+import { useDeskNavCounts } from "@/components/ward-management/use-desk-nav-counts";
 import { wardPlaceIdFor } from "@/components/ward-management/ward-place";
-import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
-import { unitInScope } from "@/components/ward-management/ward-role-access";
-import { totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";
-import { wardDeskAnswerCount } from "@/components/ward-management/referrals/home-ward-offers";
 
 /**
  * The real hook's role, counts and place id (see its file for why the rail, dock and menu share one
- * hook). One change, approved by Josh on 30 Oct 2026:
- *
- * ROLE BRANCH (bed_manager, and any desk held to a site, service or ward): the workspace scope keeps
- * every ward's beds in view (they hold no patient), so the rail's Capacity counted the network's ready
- * beds (26) for a site bed manager. Capacity's figure is now the same rule (`totalReadyBedsNow`) over
- * the desk's own wards only. People (journeys, referrals, waits) and bed releases are already narrowed
- * by the workspace scope, so every other count is the real hook's, unchanged.
- * The statewide coordinator, executive and access admin count the whole network, as before.
+ * hook). The counts are the real hook's own (`useDeskNavCounts`): every desk adjustment (Capacity
+ * over the desk's own wards, Josh 30 Oct 2026; a ward desk's offers, A9-30; a team desk's referrals,
+ * R-STRUCT-24) lives in `wardNavCounts`, so the two forks cannot drift (D-220). The one difference
+ * kept here: the shell role is the access desk's, not the persona chosen in "Go to a desk".
  */
 export function useNextNavCounts(): {
   role: WardChromeRole;
@@ -40,66 +25,13 @@ export function useNextNavCounts(): {
   placeId: string | undefined;
 } {
   const pathname = usePathname() ?? "";
-  const { movements, units, referrals, bedReleases, leaveBeds, admissions } = useWardFlowSelect(
-    "movements",
-    "units",
-    "referrals",
-    "bedReleases",
-    "leaveBeds",
-    "admissions",
-  );
-  const now = useWardFlowClock();
-  const thresholds = useDueSoonThresholds();
-  const network = useWardNetwork();
-  const service = useServiceScope();
   const routeRole = wardChromeRole(pathname);
   // Role access plan: a non-coordinator desk's nav and Tasks follow its own role.
   const deskRole = useAccessShellRole(WARD_SHELL_ROLE);
-  const { scope } = useEffectiveWardAccess();
-  const placeUnits = useMemo(() => {
-    if (scope.kind !== "site" && scope.kind !== "service" && scope.kind !== "ward") return null;
-    const places = wardPlaceLookup(units);
-    return units.filter((unit) => unitInScope(scope, unit.id, places));
-  }, [scope, units]);
-  const counts = wardNavCounts({
-    movements,
-    units,
-    sites: network.sites,
-    referrals,
-    bedReleases,
-    leaveBeds,
-    admissions,
-    now,
-    thresholds,
-    service,
-  });
-  // A9-30 (F-27, 13 Nov 2026): on a ward desk, a bed offered straight to the ward is the ward's to
-  // answer too, so its Referrals badge counts it, as the board's title and My ward's "Awaiting your
-  // answer" do (`wardDeskAnswerCount`). Other desks keep the referral queue alone: an offer waits on
-  // a ward, not on them.
-  const deskCounts: WardNavCounts =
-    scope.kind === "ward" && counts.referrals
-      ? {
-          ...counts,
-          referrals: {
-            ...counts.referrals,
-            value: wardDeskAnswerCount(counts.referrals.value, movements, referrals),
-          },
-        }
-      : counts;
   return {
     role: deskRole === WARD_SHELL_ROLE ? routeRole : deskRole,
     shellRole: deskRole,
-    counts:
-      placeUnits && deskCounts.capacity
-        ? {
-            ...deskCounts,
-            capacity: {
-              ...deskCounts.capacity,
-              value: totalReadyBedsNow(placeUnits, admissions ?? [], bedReleases, [...movements, ...referrals]),
-            },
-          }
-        : deskCounts,
+    counts: useDeskNavCounts(),
     placeId: wardPlaceIdFor(pathname),
   };
 }

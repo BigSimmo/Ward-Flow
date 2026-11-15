@@ -76,7 +76,7 @@ describe("bed closure reason on the toast (D-148)", () => {
       reason: "staffing",
     });
     const again = screen.getByTestId("toast");
-    expect(again).toHaveTextContent("Bed 4 closed: Staffing.");
+    expect(again).toHaveTextContent("Bed 04 closed: Staffing.");
     // The step with its reason offers Undo as the first did, and no second reason picker.
     expect(within(again).getByRole("button", { name: "Undo" })).toBeInTheDocument();
     expect(within(again).queryByTestId("toast-choices")).toBeNull();
@@ -112,7 +112,7 @@ describe("bed closure reason on the toast (D-148)", () => {
     });
     expect(dispatch).toHaveBeenCalledTimes(3);
     expect(dispatch.mock.calls[2][0]).toMatchObject({ type: "SET_BED_CLOSED", closed: true, reason: "staffing" });
-    expect(await screen.findByText(/^Bed 4 closed: Staffing\./u)).toBeInTheDocument();
+    expect(await screen.findByText(/^Bed 04 closed: Staffing\./u)).toBeInTheDocument();
   });
 
   // PR #1626 review: after leaving, an Undo first reported as not confirmed and then confirmed still

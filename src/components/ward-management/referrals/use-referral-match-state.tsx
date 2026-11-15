@@ -141,7 +141,6 @@ export function useReferralMatchState({
   /* The decision sheet (phone and, since D-77, desktop): the picked unit, whether the decline reasons are showing, and the fit list cap. */
   const [phonePick, setPhonePick] = useState<string | undefined>(undefined);
   const [phoneDeclining, setPhoneDeclining] = useState(false);
-  const [phoneAllFits, setPhoneAllFits] = useState(false);
 
   useEffect(() => {
     if (checkToken === 0) return;
@@ -305,8 +304,6 @@ export function useReferralMatchState({
     setPhonePick,
     phoneDeclining,
     setPhoneDeclining,
-    phoneAllFits,
-    setPhoneAllFits,
     reviewUnitId,
     setReviewUnitId,
     wardArms,

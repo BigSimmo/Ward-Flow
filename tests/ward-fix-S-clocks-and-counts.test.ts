@@ -1,5 +1,5 @@
 // PR 2 fix round, worker S (13 Nov 2026): counts, figures and clocks.
-//   F-35 (RC 2.5)  one duration formatter that handles the sign; a future start never reads "0m".
+//   F-35 (RC 2.5)  one duration formatter that handles the sign; a future start never reads "0 min".
 //   F-32 (RC 3.2)  each ED wait step's label says where the step starts.
 //   F-113 (RC 2.6) one date-of-birth bound for the form and the engine; Midland dates follow the board day.
 //   F-27 (A9-26, A9-30, RC 3.7) Weekly measure 3, the ward desk's "to answer" count, the ED alert count.
@@ -32,23 +32,23 @@ import { dateOfBirthProblem, latestDateOfBirth } from "@/components/ward-managem
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 describe("F-35: one duration formatter, signed, and a future start said in words", () => {
-  it("prints minus 90 minutes as -1h 30m, never -30m", () => {
-    expect(splitDuration(-90)).toBe("-1h 30m");
-    expect(splitDuration(-5)).toBe("-5m");
-    expect(splitDuration(-(MINUTES_PER_DAY + 120))).toBe("-1d 2h");
-    expect(splitDuration(-0.2)).toBe("0m");
+  it("prints minus 90 minutes as -1 h 30 min, never -30m", () => {
+    expect(splitDuration(-90)).toBe("-1 h 30 min");
+    expect(splitDuration(-5)).toBe("-5 min");
+    expect(splitDuration(-(MINUTES_PER_DAY + 120))).toBe("-1 d 2 h");
+    expect(splitDuration(-0.2)).toBe("0 min");
   });
 
   it("says a start in the future instead of a zero wait", () => {
     expect(formatElapsed(-1)).toBe(FUTURE_START_TEXT);
-    expect(formatElapsed(0)).toBe("0m waiting");
+    expect(formatElapsed(0)).toBe("0 min waiting");
     expect(formatSince(NOW_ANCHOR + 30, NOW_ANCHOR)).toBe(FUTURE_START_TEXT);
-    expect(formatSince(NOW_ANCHOR - 365, NOW_ANCHOR)).toBe("6h 05m");
+    expect(formatSince(NOW_ANCHOR - 365, NOW_ANCHOR)).toBe("6 h 05 min");
   });
 
-  it("gives the patient page the same format as every other screen (6h 05m, not 6h 5m)", () => {
+  it("gives the patient page the same format as every other screen (6 h 05 min, not 6 h 5 min)", () => {
     expect(dur(365)).toBe(splitDuration(365));
-    expect(dur(365)).toBe("6h 05m");
+    expect(dur(365)).toBe("6 h 05 min");
   });
 });
 

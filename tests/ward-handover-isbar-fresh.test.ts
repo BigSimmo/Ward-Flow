@@ -45,9 +45,9 @@ describe("ISBAR from the latest state", () => {
 
   it("says a bed pull expired rather than 'Bed pulled', and recommends move or release", () => {
     const cadwaller = row({ stage: "pulled", to: { unitId: "bty", name: "BTY ward" }, pullExpiresAt: 50 });
-    expect(situationState(cadwaller, 80)).toBe("Bed pull at BTY ward expired 30m ago");
+    expect(situationState(cadwaller, 80)).toBe("Bed pull at BTY ward expired 30 min ago");
     expect(isbarLines(cadwaller, 80).find((line) => line.key === "R")!.text).toBe(
-      "Coordinator: Pull expired 30m ago. Move or release",
+      "Coordinator: Pull expired 30 min ago. Move or release",
     );
   });
 });

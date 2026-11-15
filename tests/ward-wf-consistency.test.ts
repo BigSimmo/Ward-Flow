@@ -65,7 +65,7 @@ describe("Waiting wait figure (WF-02)", () => {
     const inEd = minutesInEd({ openedAt: 0 }, 160);
     expect(since).toBe(60);
     expect(inEd).toBe(160);
-    // Row copy: "1h since referral · 2h 40m in ED"
+    // Row copy: "1h since referral · 2 h 40 min in ED"
     expect(`${since} since referral · ${inEd} in ED`).toBe("60 since referral · 160 in ED");
   });
 });

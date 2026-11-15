@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { bedGonePhrase, pulledTileTiming } from "@/components/ward-management/board/ward-board-model";
 
 /**
- * Time audit D15 (13 Nov 2026): the pulled-bed shift tile never says "0h ago", and never says
+ * Time audit D15 (13 Nov 2026): the pulled-bed shift tile never says "0 h ago", and never says
  * "Today" for a time nobody recorded. It reads the same hours the flow column's `bedGonePhrase` does.
  */
 describe("pulled-bed tile timing (D15)", () => {

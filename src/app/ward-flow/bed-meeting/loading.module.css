@@ -1,0 +1,12 @@
+/* R-FIGS-21: the TV heading's space is held at first paint, so the screen does not jump when it arrives. */
+.head {
+  min-height: 4.5rem;
+  padding: var(--wf-s-3) var(--wf-s-4) 0;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(var(--wf-fs-28), 2vw, 3.25rem);
+  font-weight: 700;
+  line-height: 1.1;
+}

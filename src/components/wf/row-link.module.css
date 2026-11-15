@@ -1,0 +1,28 @@
+/* R-STYLE-6: the name's press area covers the row on phones and touch screens. */
+.row {
+  position: relative;
+}
+
+.link {
+  color: inherit;
+  text-align: left;
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.action {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 46.4375rem), (pointer: coarse) {
+  .link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    min-height: 48px;
+  }
+}

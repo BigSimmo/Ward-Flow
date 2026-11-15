@@ -131,9 +131,9 @@ const CASES = [
     // ⚠️ **THIS CASE COVERS LESS THAN THE OTHERS SINCE 2026-09-06, AND THAT IS RECORDED RATHER
     // THAN LEFT TO BE NOTICED.** The measure moved to `splitDuration`, the formatter every other
     // duration in this feature uses, because the ward page printed "300 minutes" for the value the
-    // statistics home page printed as "5h 00m" — one number, two dresses, on the pair of screens a
-    // coordinator moves between. It now renders "1m", so there is no count NOUN here to disagree
-    // with. The bare-one anti-vacuity below still bites (the "1" in "1m" is bare), so the case is
+    // statistics home page printed as "5 h 00 min" — one number, two dresses, on the pair of screens a
+    // coordinator moves between. It now renders "1 min", so there is no count NOUN here to disagree
+    // with. The bare-one anti-vacuity below still bites (the "1" in "1 min" is bare), so the case is
     // not vacuous — but it no longer exercises noun agreement, and a future reader should not read
     // its green as evidence that it does.
     admissions: [admission({ pulledAt: NOW - DAY - 1, arrivedAt: NOW - DAY })],
