@@ -26,7 +26,8 @@ import { Tooltip } from "@/components/wf/tooltip";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
 import { useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
-import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
+import { minuteOfDay } from "@/components/ward-management/ward-clock";
+import { formatClockAmPm } from "@/components/ward-management/ward-clock-am-pm";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import { ACCESS_ADMIN_PERSONA, DESK_PERSONAS } from "@/components/ward-management/shell/ward-desk-personas";
 import { useDeskRoleLabel, useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -323,7 +324,6 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   // WF-13 (live test, 4 Nov 2026): a page the desk may not open names no place in the rail.
   const viewing = canOpen(pathname) ? viewingDeskLine(pathname, personaRole, units, currentPersona.role) : null;
   const boardMinute = minuteOfDay(now);
-  const boardClock = formatInstant(now);
   const shiftProgress = computeShiftProgress(boardMinute);
   const appearanceRef = useRef<HTMLDivElement>(null);
   const alertsRef = useRef<HTMLDivElement>(null);
@@ -345,7 +345,10 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   // Every figure below comes from the derivation. Over-the-line words count places, never Alerts (#793).
   const servicesByOccupancy = bedAlerts.services.toSorted((a, b) => b.occupancyPercent - a.occupancyPercent);
   const hottest: ServiceBedAlert | null = servicesByOccupancy[0] ?? null;
-  const handoverText = shiftProgress.handoverDue ? null : durMinutes(shiftProgress.remainingMinutes);
+  // R-HOME-2: the rail names the shift and the handover time, with the time left; the one clock is the bar's Board time pill.
+  const handoverText = shiftProgress.handoverDue
+    ? null
+    : `${formatClockAmPm(now + shiftProgress.remainingMinutes)}, ${durMinutes(shiftProgress.remainingMinutes)}`;
 
   const setOpen = useCallback((next: boolean) => {
     setRailOpenPreference(next);
@@ -481,15 +484,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
     <>
       <ClipboardList aria-hidden="true" className={styles.shiftClockIcon} strokeWidth={1.75} />
       <span className={styles.shiftTimerLabel}>Handover</span>
-      <span className={styles.shiftTimeBadge}>
-        {handoverText === null ? (
-          "due now"
-        ) : (
-          <>
-            <span className={styles.shiftTimeUnit}>in</span> {handoverText}
-          </>
-        )}
-      </span>
+      <span className={styles.shiftTimeBadge}>{handoverText === null ? "due now" : <>{handoverText}</>}</span>
     </>
   );
 
@@ -754,7 +749,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
         <div className={styles.shiftCockpit}>
           <div
             className={styles.shiftCockpitTop}
-            title={`Board time ${boardClock}. Shift ${shiftProgress.percent}% through. Shift times are ${OPERATIONAL_DEFAULT_LABEL}`}
+            title={`Shift ${shiftProgress.percent}% through. Shift times are ${OPERATIONAL_DEFAULT_LABEL}`}
           >
             {/* Josh, 31 Oct 2026: the person's name stays on the shift card, and wraps in full. */}
             <span className={styles.shiftAvatar} aria-hidden="true">
@@ -762,7 +757,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
             </span>
             <span className={styles.shiftMeta}>
               <span className={styles.shiftTitle}>
-                {shiftProgress.shiftName}
+                {shiftProgress.shiftName} shift
                 <span className={styles.shiftHours}>{shiftProgress.shiftHours}</span>
               </span>
               <span className={styles.shiftSub}>
@@ -784,8 +779,8 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
               title="Open shift handover board"
               aria-label={
                 handoverText === null
-                  ? `Handover due now. Handover countdown: ${shiftProgress.countdownStr}. Open shift handover board.`
-                  : `Handover in ${handoverText}. Handover countdown: ${shiftProgress.countdownStr}. Open shift handover board.`
+                  ? `Handover due now. Open shift handover board.`
+                  : `Handover ${handoverText}. Open shift handover board.`
               }
             >
               {handoverCountdown}
@@ -1261,7 +1256,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
           <p className={styles.menuContextCell}>
             <span className={styles.menuContextLabel}>Board time</span>
             <span className={styles.menuContextValue}>
-              <strong>{boardClock}</strong>
+              <strong>{formatClockAmPm(now)}</strong>
             </span>
           </p>
           {!showHandover ? null : handoverCardLinks ? (

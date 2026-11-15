@@ -191,7 +191,7 @@ describe("every Referral field has something that can write it", () => {
 
   it("refuses a triage instant later than the referral itself", () => {
     // A future triage would put a patient in the department before they got there, and the clock
-    // clamps at zero — so the wrong value renders as a plausible "0m" rather than an obvious error.
+    // clamps at zero — so the wrong value renders as a plausible "0 min" rather than an obvious error.
     const state = wardFlowReducer(seedWardFlowState(), {
       type: "RECEIVE_REFERRAL",
       role: "community",

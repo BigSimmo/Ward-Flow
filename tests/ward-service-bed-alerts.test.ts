@@ -184,20 +184,20 @@ describe("occupancyTone", () => {
 });
 
 describe("computeShiftProgress handover display", () => {
-  it('returns "Handover Due" during shift changeover window and never the literal "3h 38m"', () => {
+  it('returns "Handover Due" during shift changeover window and never the literal "3 h 38 min"', () => {
     // 14:55 AWST (minute 895) is in Day shift handover window (within 15m of 15:00)
     const dayHandover = computeShiftProgress(895);
     expect(dayHandover.countdownStr).toBe("Handover Due");
-    expect(dayHandover.countdownStr).not.toBe("3h 38m");
+    expect(dayHandover.countdownStr).not.toBe("3 h 38 min");
 
     // Same boundary via AWST Date: 14:55 AWST = 06:55 UTC
     const fromDate = computeShiftProgress(new Date("2026-09-17T06:55:00Z"));
     expect(fromDate.countdownStr).toBe("Handover Due");
-    expect(fromDate.countdownStr).not.toContain("3h 38m");
+    expect(fromDate.countdownStr).not.toContain("3 h 38 min");
 
     // 16:00 AWST (minute 960) is now in Evening Shift (15:00–23:00) with 7h remaining
     const eveningShift = computeShiftProgress(960);
     expect(eveningShift.shiftTitle).toBe("Evening Shift (15:00–23:00)");
-    expect(eveningShift.countdownStr).toBe("7h 0m");
+    expect(eveningShift.countdownStr).toBe("7 h 0 min");
   });
 });

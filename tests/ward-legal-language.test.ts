@@ -88,10 +88,10 @@ describe("ward legal-language scanner", () => {
   it("allows owner-approved Transport order titles with recorded-expiry framing (allowlist)", () => {
     // Documented allowlist: bare form titles + recorded-expiry wording are not Act-enforcement chrome.
     expect(
-      findBannedLegalLanguage("a.tsx", "<span>Transport order (4A) - recorded expiry in 2h 30m</span>"),
+      findBannedLegalLanguage("a.tsx", "<span>Transport order (4A) - recorded expiry in 2 h 30 min</span>"),
     ).toHaveLength(0);
     expect(
-      findBannedLegalLanguage("a.tsx", "<span>Transfer order (4C) - recorded expiry in 5h 00m</span>"),
+      findBannedLegalLanguage("a.tsx", "<span>Transfer order (4C) - recorded expiry in 5 h 00 min</span>"),
     ).toHaveLength(0);
   });
 

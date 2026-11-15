@@ -59,7 +59,7 @@ describe("ED patient record — police and ambulance crew times", () => {
     });
     fireEvent.click(within(crew).getByTestId("ward-ed-crew-times-save"));
     await waitFor(() => expect(screen.getByTestId("probe")).toHaveTextContent(`${typedArrival}|undefined|undefined`));
-    expect(await screen.findByTestId("ward-ed-crews-waiting")).toHaveTextContent("Crews waiting: 1, longest 40m");
+    expect(await screen.findByTestId("ward-ed-crews-waiting")).toHaveTextContent("Crews waiting: 1, longest 40 min");
 
     fireEvent.change(within(crew).getByTestId("ward-ed-crew-time-crewReleasedAt"), {
       target: { value: clock(NOW_ANCHOR - 5) },

@@ -713,7 +713,10 @@ function inboxRecordReference(rowId: string): CommandRecordReference | null {
     case "duplicate_bed_request":
       return { collection: "patients", id };
     case "bed_held_elsewhere":
+    case "silent_ward_reminder":
       return { collection: "referrals", id };
+    case "leave_bed_reminder":
+      return { collection: "leaveBeds", id };
     default:
       return { collection: "movements", id };
   }

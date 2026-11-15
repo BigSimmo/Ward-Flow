@@ -17,7 +17,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  *
  * `P9-D7`: a **community expect who has not arrived has only ONE clock**, and the screen must say
  * so. Time in department does not exist for them yet, and it must render as genuinely absent —
- * ⚠️ **not `0m`, not an em dash styled like a duration, and never a zero that sorts alongside real
+ * ⚠️ **not `0 min`, not an em dash styled like a duration, and never a zero that sorts alongside real
  * waits.** *"A not-yet-arrived expect showing '0m in department' reads as 'just arrived', which is
  * the opposite of the truth."*
  *

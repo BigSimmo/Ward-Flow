@@ -17,7 +17,7 @@ describe("one bed count limit (owner ruling 14 Nov 2026, supersedes P025)", () =
     expect(bedCountMarker(NOW_ANCHOR - 5, NOW_ANCHOR).state).toBe("fresh");
     const old = bedCountMarker(NOW_ANCHOR - 75, NOW_ANCHOR);
     expect(old.state).toBe("old");
-    expect(old.text).toMatch(/1h 15m old$/);
+    expect(old.text).toMatch(/1 h 15 min old$/);
     expect(bedCountMarker(undefined, NOW_ANCHOR)).toEqual({ state: "never", text: "Never checked" });
   });
 });

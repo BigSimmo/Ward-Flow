@@ -155,7 +155,7 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
 
       const pill = screen.getByTestId(`ward-queue-transit-eta-${movementEta.id}`);
       expect(pill).toBeInTheDocument();
-      expect(pill).toHaveTextContent("ETA in 45m · St John Ambulance");
+      expect(pill).toHaveTextContent("ETA in 45 min · St John Ambulance");
     });
 
     it("renders overdue warning pill when now > estimatedArrivalAt + 60", () => {
@@ -172,7 +172,7 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
 
       const pill = screen.getByTestId(`ward-queue-transit-overdue-${movementOverdue.id}`);
       expect(pill).toBeInTheDocument();
-      expect(pill).toHaveTextContent("ETA passed 2h 05m · RFDS");
+      expect(pill).toHaveTextContent("ETA passed 2 h 05 min · RFDS");
     });
 
     it("renders transit hold pill when arrivalDetails has no estimatedArrivalAt", () => {
@@ -239,7 +239,7 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
       expect(screen.getByTestId("ward-shortlist-transit-countdown")).toHaveTextContent("ETA in 30m");
     });
 
-    it("renders overdue alert when now > ETA + 60m", () => {
+    it("renders overdue alert when now > ETA + 60 min", () => {
       render(
         React.createElement(ShortlistPanel, {
           movement: movementPulledOverdue,
@@ -307,7 +307,7 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
           parallelReferralCap: 3,
         }),
       );
-      expect(screen.getByTestId("ward-shortlist-transit-countdown")).toHaveTextContent("Pull expired 10m ago");
+      expect(screen.getByTestId("ward-shortlist-transit-countdown")).toHaveTextContent("Pull expired 10 min ago");
     });
   });
 
@@ -333,7 +333,7 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
       expect(badge).toHaveTextContent("⏱ ETA in 45m · St John Ambulance");
     });
 
-    it("renders overdue transit warning badge when overdue past 60m", () => {
+    it("renders overdue transit warning badge when overdue past 60 min", () => {
       render(React.createElement(EdScreen, { edId: "jhc-ed" }));
 
       const badge = screen.getByTestId(`ward-ed-transit-badge-${movementOverdue.id}`);

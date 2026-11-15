@@ -15,7 +15,7 @@ vi.mock("next/link", () => ({
  * The ED statistics page shows no typed figures.
  *
  * Until 25 Sept 2026 it drew typed triage-category waits against benchmarks, a made-up 24-hour
- * arrivals curve, a made-up 30-day WEAT history with KPIs computed from it, and a "3h 42m" median
+ * arrivals curve, a made-up 30-day WEAT history with KPIs computed from it, and a "3 h 42 min" median
  * length of stay. Josh's ruling that day: a figure comes from the record, says "Not recorded", or is
  * a labelled target (the 4-hour ED target stays, labelled).
  */

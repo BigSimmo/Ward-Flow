@@ -393,7 +393,7 @@ export function daysBetween(from: Instant, to: Instant): number {
 export function splitDuration(rawMinutes: number): string {
   // Round first: an average (a total divided by a count) is rarely whole, and `% 60` passes the
   // fraction straight through ("4h 57.88659793814435m"). Rounding before the split also means a
-  // value like 59.6 becomes "1h 00m", never "60m".
+  // value like 59.6 becomes "1 h 00 min", never "60 min".
   const totalMinutes = Math.round(rawMinutes);
   // RC 2.5 (F-35, 13 Nov 2026): the sign is handled here, once. A negative length used to run
   // through the floor and modulo below and print minus 90 minutes as "-30m".
@@ -401,11 +401,11 @@ export function splitDuration(rawMinutes: number): string {
   if (totalMinutes >= MINUTES_PER_DAY) {
     const days = Math.floor(totalMinutes / MINUTES_PER_DAY);
     const hours = Math.floor((totalMinutes % MINUTES_PER_DAY) / 60);
-    return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
+    return hours > 0 ? `${days} d ${hours} h` : `${days} d`;
   }
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
-  return hours > 0 ? `${hours}h ${String(minutes).padStart(2, "0")}m` : `${minutes}m`;
+  return hours > 0 ? `${hours} h ${String(minutes).padStart(2, "0")} min` : `${minutes} min`;
 }
 
 /**

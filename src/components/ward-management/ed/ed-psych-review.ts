@@ -55,7 +55,7 @@ export function psychReviewStage(movement: Movement, now: Instant, minutesInDepa
 
 /** " · 2h 05m" (kept on one line), or nothing in the first minute, so a fresh request never reads "waiting 0m". */
 function waitText(minutes: number): string {
-  return minutes < 1 ? "" : ` · ${splitDuration(minutes).replace(" ", "\u00a0")}`;
+  return minutes < 1 ? "" : ` · ${splitDuration(minutes).replaceAll(" ", "\u00a0")}`;
 }
 
 /**

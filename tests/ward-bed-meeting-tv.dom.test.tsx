@@ -416,7 +416,7 @@ describe("the ward and ED TV views", () => {
 
   it("says what each time measures: the whole wait, and for a collected patient, the time on the road", () => {
     const { state, inputs } = seedInputs();
-    // Overall review (20 Oct 2026): "In transit · 8h 00m" read as 8 hours in an ambulance.
+    // Overall review (20 Oct 2026): "In transit · 8 h 00 min" read as 8 hours in an ambulance.
     const collected = state.movements.find(
       (movement) =>
         movement.acceptedUnitId !== undefined &&
@@ -434,7 +434,7 @@ describe("the ward and ED TV views", () => {
     expect(row?.stage).toBe(`In transit ${splitDuration(NOW_ANCHOR - collected.transport.collectedAt)}`);
     renderTv({ ward: unit.id });
     const items = within(screen.getByTestId("ward-tv-incoming-panel")).getAllByRole("listitem");
-    for (const item of items) expect(item).toHaveTextContent(/\d+m waiting/u);
+    for (const item of items) expect(item).toHaveTextContent(/\d+ min waiting/u);
   });
 
   it("shows one ward's figures from the Shift brief's and bed meeting's own selectors", () => {
@@ -734,7 +734,7 @@ describe("the ward and ED TV views", () => {
     expect(longest()).toBe(before);
     const stale = screen.getByTestId("bed-meeting-tv-stale");
     expect(stale).toHaveAttribute("data-level", "danger");
-    expect(stale).toHaveTextContent(/Figures are 7m old/u);
+    expect(stale).toHaveTextContent(/Figures are 7 min old/u);
     online.mockRestore();
   });
 
@@ -755,7 +755,7 @@ describe("the ward and ED TV views", () => {
     // Past the 24 hour mark the time reads in days, so the words say it.
     for (const row of screen.getByTestId("bed-meeting-tv").querySelectorAll("li[data-long]")) {
       expect(row.querySelector("svg")).toBeNull();
-      expect(row).toHaveTextContent(/\d+d/u);
+      expect(row).toHaveTextContent(/\d+ d/u);
     }
   });
 

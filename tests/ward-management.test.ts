@@ -207,6 +207,6 @@ describe("Ward Flow synthetic prototype", () => {
     // negative/clamped duration) fails this assertion.
     const movement = movementById("WF-001");
     expect(movement).toBeDefined();
-    expect(elapsedLabel(movement!, NOW_ANCHOR)).toBe("1h 35m waiting");
+    expect(elapsedLabel(movement!, NOW_ANCHOR)).toBe("1 h 35 min waiting");
   });
 });

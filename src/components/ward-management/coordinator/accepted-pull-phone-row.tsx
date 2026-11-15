@@ -23,6 +23,7 @@ export function AcceptedPullPhoneRow({
   ageNote,
   openLabel,
   onPull,
+  filled = true,
 }: {
   data: Record<string, string | undefined>;
   selected: boolean;
@@ -35,6 +36,8 @@ export function AcceptedPullPhoneRow({
   ageNote: string;
   openLabel: string;
   onPull: () => void;
+  /** One filled button per panel (R-HOME-1): only the first row in a list is filled. */
+  filled?: boolean;
 }) {
   return (
     <li className={styles.row} data-act="true" data-selected={selected ? "true" : undefined} {...data}>
@@ -63,7 +66,7 @@ export function AcceptedPullPhoneRow({
         <span className={styles.line}>{line}</span>
         <span className={styles.action}>
           <Button
-            variant="pri"
+            variant={filled ? "pri" : "sec"}
             data-placement-action
             aria-current={selected ? "true" : undefined}
             aria-label={openLabel}
