@@ -1,0 +1,80 @@
+/*
+ * Edit the coordinator's + sheet (Josh, 15 Nov 2026, D-247). Its own file so the phone dock, which
+ * loads the menu's stylesheet on every screen, does not carry these class names.
+ */
+.createEdit:focus-visible,
+.editButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Edit the + sheet (Josh, 15 Nov 2026): Edit beside Close, then each start with Pin and Move. */
+.createEdit {
+  min-width: var(--spacing-tap, 3rem);
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--wf-r-ctl);
+  background: transparent;
+  color: var(--wf-accent-ink);
+  font: inherit;
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .createEdit:hover,
+  .editButton:hover {
+    background: var(--wf-hover);
+  }
+}
+
+.editGroup {
+  display: grid;
+  gap: 0;
+}
+
+.editGroup > h3 {
+  margin-top: 0;
+}
+
+.editRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 58px;
+  padding: 0 4px 0 12px;
+}
+
+.editActions {
+  display: flex;
+  flex: none;
+  align-items: center;
+}
+
+.editButton {
+  display: grid;
+  place-items: center;
+  width: var(--spacing-tap, 3rem);
+  height: var(--spacing-tap, 3rem);
+  border: 0;
+  border-radius: var(--wf-r-ctl);
+  background: transparent;
+  color: var(--wf-ink-1);
+  cursor: pointer;
+}
+
+.editPinned {
+  color: var(--wf-accent);
+}
+
+.editGap {
+  width: var(--spacing-tap, 3rem);
+  height: var(--spacing-tap, 3rem);
+}
+
+.editButton svg {
+  width: 18px;
+  height: 18px;
+}

@@ -809,13 +809,25 @@
   color: var(--wf-ink-3);
 }
 
-.createMore a {
+.createMore a,
+.createMore button {
   display: inline-flex;
   align-items: center;
   min-height: 48px;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--wf-accent-ink);
+  font: inherit;
   font-weight: 600;
   text-decoration: none;
+  cursor: pointer;
+}
+
+.createMore a:focus-visible,
+.createMore button:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
 }
 
 .createMoreDot {

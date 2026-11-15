@@ -261,6 +261,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-244](#d-244-help-sits-beside-the-header-search-on-every-screen-15-november-2026)                                                                     | Help sits beside the header search on every screen                                     | Active                                           |
 | [D-245](#d-245-raise-eight-phone-size-limits-after-main-went-over-15-november-2026)                                                                     | Raise eight phone size limits after main went over                                     | Active                                           |
 | [D-246](#d-246-the-server-raises-late-arrival-notices-on-its-own-15-november-2026)                                                                      | The server raises late-arrival notices on its own                                      | Active                                           |
+| [D-247](#d-247-triage-is-one-tap-on-the-coordinators-phone-and-the--sheet-can-be-edited-15-november-2026)                                               | Triage is one tap on the coordinator's phone, and the + sheet can be edited            | Active                                           |
 
 ---
 
@@ -2900,4 +2901,12 @@ D-238 is reserved for design Lane D's block (noted in PR #1677). D-239 is reserv
 - **Why:** before this, the notice was stored only when someone saved. A journey that turned late while nobody saved told no one.
 - **Boundary:** uses the signed D-221 values. No threshold or wording changes. Synthetic data only.
 
-The next free number is D-247.
+## D-247. Triage is one tap on the coordinator's phone, and the + sheet can be edited (15 November 2026)
+
+- **Date:** 15 November 2026, 11:06 PM AWST (15:06 UTC). **Decided by:** Josh, on a decision card: "All three in one PR", answering "Which phone + sheet changes should go into the PR?", after asking "how come the triage can not be accessible on the phone device?" and "Please can you create an option on this page that lets me pin or change the popups please. So people can edit it." in the thread "Make triage work on phones". Numbered D-247 because D-246 is claimed by PR #1687.
+- **Decision:** (1) On the bed coordinator's phone + sheet, New triage is the first full row under New referral, showing how many referrals await triage. (2) The phone Menu lists "Start a triage", with the same count, straight after Referrals, for every desk that may sign a triage. (3) The coordinator's + sheet has an Edit button: each person pins a start as a full row or moves it to the quick links underneath, and reorders both groups. The arrangement is kept on that device, cleared at sign-out, and Reset goes back to the standard sheet. New referral always stays on top.
+- **Why:** the triage form already worked on a phone, but on the coordinator desk it was reachable only by a small link at the foot of the + sheet and was not in the Menu.
+- **Replaces:** part of the 8 November 2026 "+ sheet reordered" layout: New triage is no longer a quiet link by default. The rest of that order stands as the standard sheet.
+- **Boundary:** navigation only. No clinical value, rule, wording, permission or saved record changes. The ED, community and ward desks' + sheets are unchanged. Synthetic data only.
+
+The next free number is D-248.

@@ -144,3 +144,18 @@ export function useTriagePeople(): {
     return { people, awaiting, byId };
   }, [patients, movements, referrals, triages, now, dayZero, admissions, units, plannedAdmissions]);
 }
+
+/**
+ * Triage on the phone (Josh, 15 Nov 2026): how many referrals the Start a triage queue lists, for
+ * the phone Menu row and the coordinator's + sheet. The same rule as `useTriagePeople`'s `awaiting`
+ * (a queued referral for a known person, not yet triaged), without building each person.
+ */
+export function useAwaitingTriageCount(): number {
+  const { patients, referrals, triages } = useWardFlowSelect("patients", "referrals", "triages");
+  return useMemo(() => {
+    const known = new Set(patients.map((patient) => patient.id));
+    return referrals.filter(
+      (referral) => referral.patientId && known.has(referral.patientId) && awaitingTriage(referral, triages),
+    ).length;
+  }, [patients, referrals, triages]);
+}
