@@ -212,7 +212,7 @@ export function alertKindLabel(id: string): string | undefined {
   const kind = alertKindOf(id);
   if (kind === undefined) return undefined;
   if (id.startsWith(INBOX_CATEGORIES.transport_booking_estimate_passed.idPrefix)) return "Booking estimate passed";
-  if (id.startsWith(INBOX_CATEGORIES.leave_bed_reminder.idPrefix)) return "Leave bed held 24 hours";
+  if (id.startsWith(INBOX_CATEGORIES.leave_bed_reminder.idPrefix)) return "Leave bed still held";
   return ALERT_KIND_LABELS[kind];
 }
 

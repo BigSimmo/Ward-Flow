@@ -65,7 +65,7 @@ describe("timed reminders are on the shared alert list (R-HOME-10)", () => {
     expect(silent && isQueueItem(silent)).toBe(true);
     expect(leave && isQueueItem(leave)).toBe(true);
     expect(alertKindLabel(silent!.id)).toBe("No reply from a ward");
-    expect(alertKindLabel(leave!.id)).toBe("Leave bed held 24 hours");
+    expect(alertKindLabel(leave!.id)).toBe("Leave bed still held");
     expect(alertActionFor(silent!, {} as AlertSubject)).toMatchObject({ kind: "link", label: "Chase the ward" });
     expect(alertActionFor(leave!, {} as AlertSubject)).toMatchObject({
       kind: "link",
