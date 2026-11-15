@@ -1,7 +1,7 @@
 import { INBOX_CATEGORIES } from "./ward-inbox-reducer";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
 import { lockedBedsFree, numberedBedKind, openBedsFree } from "./ward-bed-designation";
-import { chooseBedNumber } from "./ward-bed-numbers";
+import { chooseBedNumber, endPreparationForSeatedBed } from "./ward-bed-numbers";
 import type { Admission } from "./ward-admissions";
 import { emptyCareJourney } from "./ward-care-journey";
 import { finiteInstant, type AuditDecision } from "./ward-audit";
@@ -701,6 +701,16 @@ export function reduceTransportEvent(
           ...(arrivalBedNumber === undefined ? {} : { bedNumber: arrivalBedNumber }),
           ...(isBedTurnaround ? { blockReason: "Awaiting clean" } : {}),
         });
+        // A4-24: an arrival seated in a bed still being made ready ends that bed's marker.
+        withPerson = {
+          ...withPerson,
+          bedReleases: endPreparationForSeatedBed(
+            withPerson.bedReleases,
+            withPerson.admissions,
+            unit.id,
+            arrivalBedNumber,
+          ),
+        };
       } else if (unpulled) {
         // A9-08: the named stay a pull would have made, arriving now. The reserved bed is used only
         // where it is still free; otherwise the ward's seating places it, never in a closed bed.
@@ -762,6 +772,13 @@ export function reduceTransportEvent(
           ...withUnit,
           admissions: [...withUnit.admissions, arrivedStay],
           admissionSequence: withUnit.admissionSequence + 1,
+          // A4-24: an arrival seated in a bed still being made ready ends that bed's marker.
+          bedReleases: endPreparationForSeatedBed(
+            withUnit.bedReleases,
+            withUnit.admissions,
+            unit.id,
+            unpulledBedNumber,
+          ),
         };
       } else {
         withPerson = withUnit;

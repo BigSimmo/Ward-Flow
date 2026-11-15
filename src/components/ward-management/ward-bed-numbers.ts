@@ -13,6 +13,7 @@
 import type { Admission } from "./ward-admissions";
 import { lockedBedsFree, numberedBedKind, openBedsFree } from "./ward-bed-designation";
 import type { Movement, Unit } from "./ward-model";
+import type { BedRelease } from "./ward-model-bed-release";
 import { numberedReservationBeds, type ReservationReferral } from "./ward-movement-bed-hold";
 import { activeClosedBeds } from "./ward-ready-beds";
 import { wardStaySeats } from "./ward/ward-bed-layout";
@@ -115,11 +116,54 @@ function heldBedNumbers(
  */
 export function chooseBedNumber(
   unit: Unit,
-  state: Parameters<typeof heldBedNumbers>[1],
+  state: Parameters<typeof heldBedNumbers>[1] & { bedReleases?: readonly BedRelease[] },
   kind: BedKind,
   except: { movementId?: string; referralId?: string; admissionId?: string } = {},
 ): number | undefined {
-  return freeBedNumbers(unit, state.admissions, kind, heldBedNumbers(unit, state, except), except.admissionId)[0];
+  const free = freeBedNumbers(unit, state.admissions, kind, heldBedNumbers(unit, state, except), except.admissionId);
+  // A4-24 (untested-537 S2, 15 Nov 2026): a ready bed comes before one still being made ready. A bed
+  // being made ready is taken only when no ready bed of the kind is free (D-181 item 5 allows it).
+  const preparing = bedNumbersBeingMadeReady(unit, state);
+  return free.find((bed) => !preparing.has(bed)) ?? free[0];
+}
+
+/**
+ * A4-24: the bed numbers on `unit` whose last stay left with the bed still being made ready (a
+ * discharged release with `preparing` set), read from the departed stay's recorded bed.
+ */
+export function bedNumbersBeingMadeReady(
+  unit: Pick<Unit, "id">,
+  state: { admissions: readonly Admission[]; bedReleases?: readonly BedRelease[] },
+): Set<number> {
+  const beds = new Set<number>();
+  for (const release of state.bedReleases ?? []) {
+    if (release.unitId !== unit.id || release.state !== "discharged" || !release.preparing) continue;
+    const bed = state.admissions.find((admission) => admission.id === release.admissionId)?.bedNumber;
+    if (bed !== undefined) beds.add(bed);
+  }
+  return beds;
+}
+
+/**
+ * A4-24 and INV-CROSSDESK-011: a stay now given `bedNumber` on `unitId` ends any "being made ready"
+ * marker an earlier departure from that bed left, so the marker never moves onto another empty bed
+ * and Ready is never counted one short. Returns the same array when nothing changes.
+ */
+export function endPreparationForSeatedBed<R extends BedRelease>(
+  bedReleases: R[],
+  admissions: readonly Admission[],
+  unitId: string,
+  bedNumber: number | undefined,
+): R[] {
+  if (bedNumber === undefined) return bedReleases;
+  const ends = (release: R) =>
+    release.unitId === unitId &&
+    release.state === "discharged" &&
+    release.preparing &&
+    admissions.find((admission) => admission.id === release.admissionId)?.bedNumber === bedNumber;
+  return bedReleases.some(ends)
+    ? bedReleases.map((release) => (ends(release) ? { ...release, preparing: false } : release))
+    : bedReleases;
 }
 
 /** The empty numbers of each kind (nobody in them, not closed by number), held beds included. */

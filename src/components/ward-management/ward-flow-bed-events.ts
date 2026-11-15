@@ -1,4 +1,5 @@
 import { updateExpectedDischargeDate } from "./ward-expected-discharge-update";
+import { endPreparationForSeatedBed } from "./ward-bed-numbers";
 import { appendRefreshRequest } from "./ward/ward-buzz-keys";
 import { type CountedFigure, nextUnchangedShifts } from "./capacity/shift-confirmations";
 import { isDelayedDischargeReason, isDischargeBarrier, liveMovementForAdmission } from "./ward-admissions";
@@ -171,24 +172,7 @@ export function reduceBedEvent(
       });
       // INV-CROSSDESK-011 (14 Nov 2026): a stay now in this bed ends any "being made ready" marker an
       // earlier discharge from the same bed left, so the marker never moves onto another bed later.
-      const vacatedBed = (release: (typeof placed.bedReleases)[number]) =>
-        placed.admissions.find((entry) => entry.id === release.admissionId)?.bedNumber;
-      const bedReleases = placed.bedReleases.some(
-        (release) =>
-          release.unitId === unit.id &&
-          release.state === "discharged" &&
-          release.preparing &&
-          vacatedBed(release) === event.bedNumber,
-      )
-        ? placed.bedReleases.map((release) =>
-            release.unitId === unit.id &&
-            release.state === "discharged" &&
-            release.preparing &&
-            vacatedBed(release) === event.bedNumber
-              ? { ...release, preparing: false }
-              : release,
-          )
-        : placed.bedReleases;
+      const bedReleases = endPreparationForSeatedBed(placed.bedReleases, placed.admissions, unit.id, event.bedNumber);
       return {
         ...placed,
         bedReleases,
