@@ -567,26 +567,33 @@ function CoordinatorCreateSheet({
                 {/* The pin shows the state: filled in the accent while pinned, an outline while a quick link. */}
                 <Pin aria-hidden="true" strokeWidth={1.75} fill={group === "pinned" ? "currentColor" : "none"} />
               </button>
-              <button
-                type="button"
-                className={editStyles.editButton}
-                aria-label={`Move ${item.label} up`}
-                data-create-edit={`up-${item.key}`}
-                disabled={index === 0}
-                onClick={() => move(group, item, -1)}
-              >
-                <ArrowUp aria-hidden="true" strokeWidth={1.75} />
-              </button>
-              <button
-                type="button"
-                className={editStyles.editButton}
-                aria-label={`Move ${item.label} down`}
-                data-create-edit={`down-${item.key}`}
-                disabled={index === list.length - 1}
-                onClick={() => move(group, item, 1)}
-              >
-                <ArrowDown aria-hidden="true" strokeWidth={1.75} />
-              </button>
+              {/* No arrow at either end of a list (a same-size gap keeps the columns lined up). */}
+              {index === 0 ? (
+                <span className={editStyles.editGap} aria-hidden="true" />
+              ) : (
+                <button
+                  type="button"
+                  className={editStyles.editButton}
+                  aria-label={`Move ${item.label} up`}
+                  data-create-edit={`up-${item.key}`}
+                  onClick={() => move(group, item, -1)}
+                >
+                  <ArrowUp aria-hidden="true" strokeWidth={1.75} />
+                </button>
+              )}
+              {index === list.length - 1 ? (
+                <span className={editStyles.editGap} aria-hidden="true" />
+              ) : (
+                <button
+                  type="button"
+                  className={editStyles.editButton}
+                  aria-label={`Move ${item.label} down`}
+                  data-create-edit={`down-${item.key}`}
+                  onClick={() => move(group, item, 1)}
+                >
+                  <ArrowDown aria-hidden="true" strokeWidth={1.75} />
+                </button>
+              )}
             </span>
           </li>
         ))

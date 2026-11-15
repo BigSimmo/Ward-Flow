@@ -129,7 +129,7 @@ describe("Edit the coordinator's + sheet (Josh, 15 Nov 2026)", () => {
   it("unpins a row to the quick links and moves rows up and down", async () => {
     const sheet = await openCreate();
     fireEvent.click(within(sheet).getByTestId("ward-phone-create-edit"));
-    expect(within(sheet).getByRole("button", { name: "Move New triage up" })).toBeDisabled();
+    expect(within(sheet).queryByRole("button", { name: "Move New triage up" })).toBeNull();
     fireEvent.click(within(sheet).getByRole("button", { name: "Move Log a call up" }));
     fireEvent.click(within(sheet).getByRole("button", { name: "Unpin Remind me" }));
     fireEvent.click(within(sheet).getByTestId("ward-phone-create-edit"));

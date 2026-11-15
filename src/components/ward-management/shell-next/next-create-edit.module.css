@@ -25,7 +25,7 @@
 
 @media (hover: hover) {
   .createEdit:hover,
-  .editButton:hover:not(:disabled) {
+  .editButton:hover {
     background: var(--wf-hover);
   }
 }
@@ -69,10 +69,9 @@
   color: var(--wf-accent);
 }
 
-.editButton:disabled {
-  color: var(--wf-ink-off);
-  opacity: 0.45;
-  cursor: default;
+.editGap {
+  width: var(--spacing-tap, 3rem);
+  height: var(--spacing-tap, 3rem);
 }
 
 .editButton svg {
