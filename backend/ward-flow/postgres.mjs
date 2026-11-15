@@ -110,6 +110,11 @@ const NOT_APPLIED_RESULT = {
   error:
     "This save was checked after the page reloaded and had not arrived, so it was not applied. Review the board before entering it again.",
 };
+/**
+ * X1b-5: the audit row's actor for a write no person made (the five-minute late-notice sweep). The
+ * nil UUID is never an account: account ids are random (v4), and config refuses it as a workspace.
+ */
+export const SYSTEM_ACTOR_ID = "00000000-0000-0000-0000-000000000000";
 export function storedAuditChanges(changes) {
   if (!changes || changes.reset !== true || !Array.isArray(changes.domainAudit)) return changes;
   return {
@@ -1166,6 +1171,21 @@ export function createWorkspaceStore(
     unusedBefore,
     MAX_TERM,
   });
+  /**
+   * Phone push must never cost a save: an evaluation error rolls back to here, is logged, and the
+   * save still commits (false: nothing queued). A savepoint left open is released by COMMIT, so a
+   * successful check costs no RELEASE round trip. Used by the command save and the late sweep.
+   */
+  async function evaluatePushSafely(client, world, before, at, actorId) {
+    await client.query("SAVEPOINT push_evaluation");
+    try {
+      return await evaluatePush(client, world, before, at, actorId);
+    } catch (error) {
+      await client.query("ROLLBACK TO SAVEPOINT push_evaluation");
+      log({ event: "ward_backend_push_evaluation_failure", ...errorFields(error) });
+      return false;
+    }
+  }
   const accessMethods = accessStore({
     pool,
     workspaceId,
@@ -1216,6 +1236,36 @@ export function createWorkspaceStore(
         await evaluatePush(client, row.payload, row.payload, at, null);
       });
       await deliverOnce();
+    },
+    /**
+     * X1b-5 (Josh, 14 Nov 2026, D-221 item 7): the five-minute timer calls this whether or not push
+     * is on. Open journeys that now read late and whose referrer or ward has not been told get their
+     * late notices raised (`engine.raiseDueLateNotices`). It writes only when something is due: one
+     * save under the workspace lock, with one audit row by the system actor (History reads "Raised
+     * automatically"). Notices scheduled when the time was saved are already stored, so a sweep
+     * after them finds nothing to do. Returns how many journeys were raised.
+     */
+    async sweepLateNotices() {
+      const raised = await transaction(async (client, at) => {
+        const row = await lockedWorld(client, "UPDATE");
+        if (!row || !engine.validWorld(row.payload)) return 0;
+        const swept = engine.raiseDueLateNotices(row.payload, at);
+        if (!swept.raised.length) return 0;
+        const revision = Number(row.revision) + 1;
+        await saveWorld(client, row, swept.world, revision, at);
+        await audit(client, null, SYSTEM_ACTOR_ID, {
+          action: "EVALUATE_ARRIVAL_LATENESS",
+          outcome: "accepted",
+          priorRevision: revision - 1,
+          revision,
+          changes: { automatic: true, domainAudit: swept.domainAudit },
+        });
+        // As on a save: a push evaluation error never costs the notices.
+        if (push) await evaluatePushSafely(client, swept.world, row.payload, at, null);
+        return swept.raised.length;
+      });
+      if (raised && push) await deliverOnce();
+      return raised;
     },
     read,
     /**
@@ -1746,17 +1796,8 @@ export function createWorkspaceStore(
             await saveWorld(client, row, row.payload, row.revision, at, bytes);
             commandTiming.lap("save");
             if (push) {
-              // Phone push must never cost the coordinator their change: an evaluation error rolls
-              // back to here, is logged, and the command still commits. A savepoint left open is
-              // released by COMMIT, so a successful check costs no RELEASE round trip.
-              await client.query("SAVEPOINT push_evaluation");
-              try {
-                queued = await evaluatePush(client, row.payload, before, at, actorId);
-              } catch (error) {
-                await client.query("ROLLBACK TO SAVEPOINT push_evaluation");
-                queued = false;
-                log({ event: "ward_backend_push_evaluation_failure", ...errorFields(error) });
-              }
+              // Phone push must never cost the coordinator their change (evaluatePushSafely).
+              queued = await evaluatePushSafely(client, row.payload, before, at, actorId);
               commandTiming.lap("push");
             }
           }

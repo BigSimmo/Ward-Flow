@@ -304,16 +304,21 @@ describe("never-build: nothing places a patient or changes the record by itself"
     ).toEqual([]);
   });
 
-  it("the backend's only timer re-checks phone alerts and never applies a command", () => {
+  it("the backend's only timer re-checks phone alerts and raises due late notices, and never applies a command", () => {
     const server = readFileSync("backend/ward-flow/server.mjs", "utf8");
     const intervals = [...server.matchAll(/setInterval\(/gu)];
     expect(intervals.length).toBe(1);
-    expect(blockFrom(server, "setInterval(")).toMatch(/sweepPush\(sharedStore\)/u);
+    expect(blockFrom(server, "setInterval(")).toMatch(/sweep\(sharedStore\)/u);
 
     const store = readFileSync("backend/ward-flow/postgres.mjs", "utf8");
     expect(store).not.toMatch(/setInterval\(/u);
     const sweep = blockFrom(store, "async sweepPush() {");
     expect(sweep).not.toMatch(/applyCommand|UPDATE ward_flow\.workspaces|saveWorld|planSave/u);
+    // X1b-5 (Josh, 14 Nov 2026, D-221 item 7): the timer's one write is the late notices that are due,
+    // and nothing else: no command, no placement.
+    const late = blockFrom(store, "async sweepLateNotices() {");
+    expect(late).toMatch(/engine\.raiseDueLateNotices\(/u);
+    expect(late).not.toMatch(/applyCommand/u);
     // The one place a command changes the shared world is the command path.
     expect([...store.matchAll(/engine\.applyCommand\(/gu)].length).toBe(1);
   });

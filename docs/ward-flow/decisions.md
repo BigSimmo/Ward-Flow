@@ -260,6 +260,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-243](#d-243-four-follow-ups-from-the-figures-history-and-timing-work-15-november-2026)                                                               | Four follow-ups from the figures, history and timing work                              | Active                                           |
 | [D-244](#d-244-help-sits-beside-the-header-search-on-every-screen-15-november-2026)                                                                     | Help sits beside the header search on every screen                                     | Active                                           |
 | [D-245](#d-245-raise-eight-phone-size-limits-after-main-went-over-15-november-2026)                                                                     | Raise eight phone size limits after main went over                                     | Active                                           |
+| [D-246](#d-246-the-server-raises-late-arrival-notices-on-its-own-15-november-2026)                                                                      | The server raises late-arrival notices on its own                                      | Active                                           |
 | [D-247](#d-247-triage-is-one-tap-on-the-coordinators-phone-and-the--sheet-can-be-edited-15-november-2026)                                               | Triage is one tap on the coordinator's phone, and the + sheet can be edited            | Active                                           |
 
 ---
@@ -2892,6 +2893,13 @@ D-238 is reserved for design Lane D's block (noted in PR #1677). D-239 is reserv
 - **Decision:** PR #1690 raises eight phone size limits in `script-budget.json` to each screen's measured size plus 0.2 KB, every raise within the 5 KB D-82 allows: the main ward page, referrals, ED, the secure adult ward, a patient's movements, the ED arm, the bed meeting and statistics. Capacity stays as it was. Once main's checks pass, main is released so Help beside search (D-244) goes live.
 - **Why:** main had been about 1.4 KB over on these screens since #1683 (issue #1684), from shared header growth before #1688. That turned main's checks red and blocked every release, including the 6 am run. Help beside search was not the cause.
 - **Boundary:** size limits only. No clinical value, rule or wording changes. Trimming the shared header stays open as later work.
+
+## D-246. The server raises late-arrival notices on its own (15 November 2026)
+
+- **Date:** 15 November 2026, 10:03 PM AWST (14:03 UTC). **Decided by:** Josh, in the figures, history and timing thread: "Ok go ahead with all recommendations", answering the report that the automatic late-arrival notice was held in draft PR #1687 until he said go.
+- **Decision:** the backend's five-minute timer runs a late-notice sweep, whether or not push notifications are on. When an open journey has turned late under D-221 (after the signed 60 minutes) and the referrer or accepting ward has not yet been told, the server raises that notice itself, marked automatic, and saves once with a system History line. A desk cannot claim to be the automatic sweep. This is D-221 item 7 (X1b-5).
+- **Why:** before this, the notice was stored only when someone saved. A journey that turned late while nobody saved told no one.
+- **Boundary:** uses the signed D-221 values. No threshold or wording changes. Synthetic data only.
 
 ## D-247. Triage is one tap on the coordinator's phone, and the + sheet can be edited (15 November 2026)
 
