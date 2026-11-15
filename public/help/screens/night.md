@@ -7,11 +7,14 @@ The coordinator's overnight page: beds ready, ED waits by Step, who is on the wa
 ## What is on the screen
 
 1. Tonight at a glance. Beds ready, people waiting in an ED and people on the way. The same figures as Home, Waiting and Movements.
-2. Beds ready now. Each ward with a bed ready, by health service then name, with when its count was confirmed. Never ranked.
-3. ED waits by Step. How many people are at each Step, by time in the department, with the suggested next step. A Step is a prompt for a person to act.
-4. On the way. Everyone collected and moving to a ward. Open one for their record and arrival.
-5. Intake windows. Says Not recorded until wards record their overnight intake windows.
-6. On call now. The state desk, each service's bed flow and the crisis line, with who answers now. Numbers are synthetic.
+2. Service in view. The page follows the header's service. Statewide shows every service; choose one to see only its wards and EDs.
+3. Beds ready now. Each ward with a bed ready, by health service then name. Never ranked. Capacity opens every ward's figures.
+4. One ward. The ward's service, when its count was last confirmed and how many beds are ready. Open its name for the ward.
+5. ED waits by Step. How many people are at each Step, by time in the department, with the next escalation step. Waiting opens the list.
+6. Under Step 1. People waiting who have not reached Step 1 yet. A Step is a prompt for a person to act.
+7. On the way. Everyone collected and moving to a ward, with where to and when due. Open a name for their record.
+8. Intake windows. Says Not recorded until wards record their overnight intake windows.
+9. On call now. The state desk, each service's bed flow and the crisis line, with who answers now and until when. Numbers are synthetic.
 
 In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
 

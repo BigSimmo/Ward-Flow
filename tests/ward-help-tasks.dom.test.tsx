@@ -35,7 +35,7 @@ vi.mock("@/components/wf", async (importOriginal) => ({
   useIsPhone: () => phone.on,
 }));
 
-import { HOW_TO_IDS, HOW_TO_TOPICS, HOW_TOS } from "@/components/ward-management/help/ward-help-howto";
+import { HOW_TO_IDS, HOW_TO_TOPICS, HOW_TOS, showMeSteps } from "@/components/ward-management/help/ward-help-howto";
 import { HelpTasks } from "@/components/ward-management/help/ward-help-jobs";
 import { SCREEN_HELP } from "@/components/ward-management/help/ward-help-content";
 import { WardHelpSheet } from "@/components/ward-management/help/ward-help-sheet";
@@ -172,7 +172,13 @@ describe("How do I… task list", () => {
         .getByRole("button", { name: /Pull the bed for a patient/ })
         .getAttribute("aria-expanded"),
     ).toBe("true");
-    expect(within(row).getAllByRole("listitem")).toHaveLength(2);
+    // One list item per Show me step on a computer, so the full walkthrough is listed (full walkthroughs, Josh, 15 Nov 2026).
+    const pullSteps = showMeSteps(
+      HOW_TOS.find((howTo) => howTo.id === "pull-bed"),
+      "desk",
+    ).length;
+    expect(pullSteps).toBeGreaterThan(2);
+    expect(within(row).getAllByRole("listitem")).toHaveLength(pullSteps);
     expect(within(row).getByTestId("ward-help-task-go").getAttribute("href")).toBe("/ward-flow/movements");
     expect(within(row).getByTestId("ward-help-task-go").textContent).toContain("Go to Movements");
     fireEvent.click(within(row).getByTestId("ward-help-task-show-me"));
