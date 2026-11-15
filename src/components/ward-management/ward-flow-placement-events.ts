@@ -32,7 +32,7 @@ import {
 } from "@/components/ward-management/ward-operational-defaults";
 import { extendedPullExpiry, pullExtensionChoices } from "@/components/ward-management/ward-bed-hold-extension";
 import { movementBedReservation, pendingNumberedReservations } from "./ward-movement-bed-hold";
-import { chooseBedNumber } from "./ward-bed-numbers";
+import { chooseBedNumber, endPreparationForSeatedBed } from "./ward-bed-numbers";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import type { PlacementEventHelpers, WardFlowState } from "./ward-flow-reducer";
 
@@ -447,6 +447,8 @@ export function reducePlacementEvent(
         ...withUnit,
         admissions: [...withUnit.admissions, admission],
         admissionSequence: withUnit.admissionSequence + 1,
+        // A4-24: a pull into a bed still being made ready ends that bed's marker.
+        bedReleases: endPreparationForSeatedBed(withUnit.bedReleases, withUnit.admissions, unit.id, bedNumberTaken),
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";

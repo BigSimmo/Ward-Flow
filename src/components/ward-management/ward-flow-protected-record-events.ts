@@ -32,7 +32,7 @@ import {
 } from "./ward-discharge-records";
 import { isLeavingDestination, isFollowUpState } from "./ward-admissions";
 import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-bed-designation";
-import { chooseBedNumber } from "./ward-bed-numbers";
+import { chooseBedNumber, endPreparationForSeatedBed } from "./ward-bed-numbers";
 import { eligibility, adjustSexMix, mixSexOf } from "@/components/ward-management/ward-eligibility";
 import { EVENT_ROLE, WARD_FLOW_ROLE_LABELS, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import type { MovementId, Movement } from "@/components/ward-management/ward-model";
@@ -427,6 +427,8 @@ export function reduceProtectedRecordEvent(
             careJourney: { ...emptyCareJourney(), followUp: careJourney.followUp },
           },
         ],
+        // A4-24: a transfer seated in a bed still being made ready ends that bed's marker.
+        bedReleases: endPreparationForSeatedBed(next.bedReleases, next.admissions, receiving.id, receivingBed),
         movements: [
           ...next.movements,
           {
