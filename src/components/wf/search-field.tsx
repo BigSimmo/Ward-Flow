@@ -5,7 +5,7 @@
  * 18 hand-made page boxes, each with its own CSS, some with no clear button on a phone. This is the
  * one look for every page's own search box, and the field pinned at the top of the phone search sheet.
  *
- * - The kit's `TextInput`, at the kit's control height (36px on a laptop, 40px on a phone (D-246), never
+ * - The kit's `TextInput`, at the kit's control height (36px on a laptop, 40px on a phone (D-248), never
  *   48px): magnifier, the typed words, and one clear button once something is typed.
  * - An optional "/" hint on a laptop while the box is empty, when the page binds "/" to it.
  * - An optional count line under it: "12 of 40 wards" while filtering, "40 wards" otherwise.

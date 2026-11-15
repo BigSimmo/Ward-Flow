@@ -570,7 +570,7 @@ function PhoneDock({
           <button
             type="button"
             className={styles.rise}
-            aria-label="Create: new referral, delay, bed or patient"
+            aria-label="Create: new referral, triage, delay, bed or patient"
             aria-haspopup="dialog"
             data-testid="ward-phone-create"
             onClick={(event) => onCreate(event.currentTarget)}

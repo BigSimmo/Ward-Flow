@@ -5621,9 +5621,9 @@
     "lane": "record",
     "nodes": ["edExpected"],
     "roles": ["coordinator", "ed", "ward"],
-    "does": "Brings a journey's stored late-arrival notices up to date now. Kept for journeys saved before notices were stored at the save (D-221 item 8).",
+    "does": "Brings a journey's stored late-arrival notices up to date now. Kept for journeys saved before notices were stored at the save, and run by the server's five-minute sweep (D-221 items 7 and 8).",
     "needs": "An open movement, and a role allowed to ask. A desk may not mark it automatic.",
-    "changes": "When the journey reads late and an addressee has not been told, stores the ED (or community team) and ward notices and stamps the movement; otherwise nothing changes. No journey stage moves.",
+    "changes": "When the journey reads late and an addressee has not been told, stores the ED (or community team) and ward notices and stamps the movement; otherwise nothing changes. The sweep's run is recorded as raised automatically. No journey stage moves.",
     "reasons": [],
     "refuses": [
       {
@@ -5645,7 +5645,7 @@
     ],
     "screen": {
       "screen": "NONE",
-      "control": "No button (D-221 item 8): the coordinator's Review late arrival button was removed."
+      "control": "No button (D-221 item 8): the server's five-minute sweep sends it; the coordinator's Review late arrival button was removed."
     },
     "review": {
       "reviewedOn": "2026-11-14",

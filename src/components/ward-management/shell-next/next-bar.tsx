@@ -1125,7 +1125,7 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
       </div>
 
       <div className={`${styles.centerGroup} ${polish.searchPair}`}>
-        {/* Help on the left of the search (Josh, 15 Nov 2026, D-246). */}
+        {/* Help on the left of the search (Josh, 15 Nov 2026, D-248). */}
         <WardBarHelpButton />
         {/* The Patients page has its own search box, which filters its list in place, so the header
             search steps aside there and the screen keeps one search (simpler screens review, A5). */}

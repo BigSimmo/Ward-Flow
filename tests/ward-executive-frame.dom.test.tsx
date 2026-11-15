@@ -246,7 +246,7 @@ describe("the executive chrome in the new frame", () => {
   });
 
   // Josh, 15 Nov 2026 (D-244): a Help button sits right after the header search, on phone too.
-  it("puts a named Help button just left of the header search that opens How do I… (D-246)", () => {
+  it("puts a named Help button just left of the header search that opens How do I… (D-248)", () => {
     const opened = helpViews();
     guard.phone = true;
     openChrome();

@@ -163,7 +163,7 @@
   }
 }
 
-/* Help beside the search box (Josh, 15 Nov 2026, D-244), on its left (D-246). The search and Help share the centre group,
+/* Help beside the search box (Josh, 15 Nov 2026, D-244), on its left (D-248). The search and Help share the centre group,
    so the group fits both where the search folds to its magnifier (tablet and phone), and Help is a
    48px square on the drawer buttons' face at every width. Tripled so it outranks `.bar .centerGroup`. */
 .searchPair.searchPair.searchPair {

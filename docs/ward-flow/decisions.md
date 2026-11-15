@@ -260,8 +260,10 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-243](#d-243-four-follow-ups-from-the-figures-history-and-timing-work-15-november-2026)                                                               | Four follow-ups from the figures, history and timing work                              | Active                                           |
 | [D-244](#d-244-help-sits-beside-the-header-search-on-every-screen-15-november-2026)                                                                     | Help sits beside the header search on every screen                                     | Active                                           |
 | [D-245](#d-245-raise-eight-phone-size-limits-after-main-went-over-15-november-2026)                                                                     | Raise eight phone size limits after main went over                                     | Active                                           |
-| [D-246](#d-246-phone-search-boxes-are-40px-helps-phone-top-is-trimmed-and-help-sits-left-of-search-15-november-2026)                                    | Phone search boxes are 40px, Help's phone top is trimmed, and Help sits left of search | Active                                           |
-| [D-247](#d-247-keep-todays-logo-until-after-the-demo-15-november-2026) | Keep today's logo until after the demo | Active |
+| [D-246](#d-246-the-server-raises-late-arrival-notices-on-its-own-15-november-2026)                                                                      | The server raises late-arrival notices on its own                                      | Active                                           |
+| [D-247](#d-247-triage-is-one-tap-on-the-coordinators-phone-and-the--sheet-can-be-edited-15-november-2026)                                               | Triage is one tap on the coordinator's phone, and the + sheet can be edited            | Active                                           |
+| [D-248](#d-248-phone-search-boxes-are-40px-helps-phone-top-is-trimmed-and-help-sits-left-of-search-15-november-2026)                                    | Phone search boxes are 40px, Help's phone top is trimmed, and Help sits left of search | Active                                           |
+| [D-249](#d-249-keep-todays-logo-until-after-the-demo-15-november-2026)                                                                                  | Keep today's logo until after the demo                                                 | Active                                           |
 
 ---
 
@@ -2894,18 +2896,33 @@ D-238 is reserved for design Lane D's block (noted in PR #1677). D-239 is reserv
 - **Why:** main had been about 1.4 KB over on these screens since #1683 (issue #1684), from shared header growth before #1688. That turned main's checks red and blocked every release, including the 6 am run. Help beside search was not the cause.
 - **Boundary:** size limits only. No clinical value, rule or wording changes. Trimming the shared header stays open as later work.
 
-## D-246. Phone search boxes are 40px, Help's phone top is trimmed, and Help sits left of search (15 November 2026)
+## D-246. The server raises late-arrival notices on its own (15 November 2026)
+
+- **Date:** 15 November 2026, 10:03 PM AWST (14:03 UTC). **Decided by:** Josh, in the figures, history and timing thread: "Ok go ahead with all recommendations", answering the report that the automatic late-arrival notice was held in draft PR #1687 until he said go.
+- **Decision:** the backend's five-minute timer runs a late-notice sweep, whether or not push notifications are on. When an open journey has turned late under D-221 (after the signed 60 minutes) and the referrer or accepting ward has not yet been told, the server raises that notice itself, marked automatic, and saves once with a system History line. A desk cannot claim to be the automatic sweep. This is D-221 item 7 (X1b-5).
+- **Why:** before this, the notice was stored only when someone saved. A journey that turned late while nobody saved told no one.
+- **Boundary:** uses the signed D-221 values. No threshold or wording changes. Synthetic data only.
+
+## D-247. Triage is one tap on the coordinator's phone, and the + sheet can be edited (15 November 2026)
+
+- **Date:** 15 November 2026, 11:06 PM AWST (15:06 UTC). **Decided by:** Josh, on a decision card: "All three in one PR", answering "Which phone + sheet changes should go into the PR?", after asking "how come the triage can not be accessible on the phone device?" and "Please can you create an option on this page that lets me pin or change the popups please. So people can edit it." in the thread "Make triage work on phones". Numbered D-247 because D-246 is claimed by PR #1687.
+- **Decision:** (1) On the bed coordinator's phone + sheet, New triage is the first full row under New referral, showing how many referrals await triage. (2) The phone Menu lists "Start a triage", with the same count, straight after Referrals, for every desk that may sign a triage. (3) The coordinator's + sheet has an Edit button: each person pins a start as a full row or moves it to the quick links underneath, and reorders both groups. The arrangement is kept on that device, cleared at sign-out, and Reset goes back to the standard sheet. New referral always stays on top.
+- **Why:** the triage form already worked on a phone, but on the coordinator desk it was reachable only by a small link at the foot of the + sheet and was not in the Menu.
+- **Replaces:** part of the 8 November 2026 "+ sheet reordered" layout: New triage is no longer a quiet link by default. The rest of that order stands as the standard sheet.
+- **Boundary:** navigation only. No clinical value, rule, wording, permission or saved record changes. The ED, community and ward desks' + sheets are unchanged. Synthetic data only.
+
+## D-248. Phone search boxes are 40px, Help's phone top is trimmed, and Help sits left of search (15 November 2026)
 
 - **Date:** 15 November 2026, 11:56 PM AWST to 16 November, 12:05 AM AWST (15:56 to 16:05 UTC). **Decided by:** Josh, in the Help thread: "No just remove this part please but also apply the appropriate shrink of the search bar", then "40px lock in and apply across the entire site please", then the header swap.
 - **Decision:** On a phone every search box is drawn 40px tall, and a control beside it in the same row (Date of birth, Close, filters) is 40px and centred with it. The kit does this once for every search box (`form.module.css`); pages with their own search box follow. On a phone, Help's slate top keeps only the title, the search and the tabs: Show me around this screen moves to the top of How to, and the Checklists and Your jobs jumps go. Help does not fold away on scroll (the earlier option A and B mock-ups were declined). In the header, Help moves to the left of the search (Josh, 16:05 UTC: "search bar is on the right and help on the left side"), on every desk and width. Search and Help sizes on computers and tablets are unchanged.
 - **Why:** 44 to 48px boxes read as too thick beside 40px buttons, and Help's top took about 40% of a phone screen. 40px matches the header search and the kit's drawn phone controls; 16px text still stops an iPhone zooming in, and tap bands stay 48px.
 - **Boundary:** sizes and Help's phone top only. No clinical value, rule or wording changes.
 
-## D-247. Keep today's logo until after the demo (15 November 2026)
+## D-249. Keep today's logo until after the demo (15 November 2026)
 
 - **Date:** 16 November 2026, 2:15 AM AWST (15 November, 18:15 UTC). **Decided by:** Josh, on a decision card: "Keep today's for now", answering "Which logo should become Ward Flow's own?".
 - **Decision:** Today's marks stay for the demo, as D-185 planned. The four options (A Arrival, recommended; B Level; C Bed board; D Stepping stones) are kept for the choice after the demo, in `/mnt/project-files/ward-flow-logo/` and the review page https://claude.ai/artifact/HV5gg3RNUQBnQY5yMTEKw4.
 - **Why:** a logo change touches the tab, home-screen icons, rail and front door just before the demo.
 - **Boundary:** no logo, icon or brand file changes now.
 
-The next free number is D-248.
+The next free number is D-250.

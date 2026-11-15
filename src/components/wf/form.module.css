@@ -541,7 +541,7 @@
     margin-block: -1px;
   }
 
-  /* Search boxes are drawn at 40px on a phone across Ward Flow (Josh, 15 Nov 2026, D-246), level
+  /* Search boxes are drawn at 40px on a phone across Ward Flow (Josh, 15 Nov 2026, D-248), level
      with the header search and the 40px buttons beside them. Their 16px text still stops an iPhone
      zooming in, and a page may run the input itself taller for a wider tap band. */
   .in:not(.area):has(> input[type="search"]) {

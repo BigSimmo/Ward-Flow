@@ -1507,7 +1507,7 @@
   min-width: 0;
 }
 
-/* The Filter button beside the search is 40px on a phone, level with it (Josh, 15 Nov 2026, D-246). */
+/* The Filter button beside the search is 40px on a phone, level with it (Josh, 15 Nov 2026, D-248). */
 .phoneSearchRow > button[aria-haspopup="dialog"] {
   height: 40px;
   min-height: 40px;
@@ -1517,7 +1517,7 @@
   display: inline-grid;
   flex: none;
   place-items: center;
-  /* 40px on a phone, level with the search box beside it (Josh, 15 Nov 2026, D-246). */
+  /* 40px on a phone, level with the search box beside it (Josh, 15 Nov 2026, D-248). */
   position: relative;
   width: 40px;
   height: 40px;
