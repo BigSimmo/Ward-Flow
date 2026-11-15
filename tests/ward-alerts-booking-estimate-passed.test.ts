@@ -28,9 +28,9 @@ describe("Alerts raise a passed booking estimate after 10 minutes (P068)", () =>
     expect(passedRows(withBookingEstimate(9))).toEqual([]);
   });
 
-  it("raises 'Booking estimate passed 13m ago' with Chase transport once 10 minutes have passed", () => {
+  it("raises 'Booking estimate passed 13 min ago' with Chase transport once 10 minutes have passed", () => {
     const [row] = passedRows(withBookingEstimate(13));
-    expect(row?.title).toBe("Booking estimate passed 13m ago");
+    expect(row?.title).toBe("Booking estimate passed 13 min ago");
     expect(row?.movementId).toBe(base.id);
     expect(alertKindOf(row!.id)).toBe("transport");
     expect(alertActionFor(row!, {} as Parameters<typeof alertActionFor>[1]).label).toBe("Chase transport");

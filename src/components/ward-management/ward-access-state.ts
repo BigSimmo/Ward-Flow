@@ -351,8 +351,12 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
   },
   // Coordinator records, narrowed to the coordinator's own service.
   rejections: () => [],
+  // A capacity review buzz is sent to the ward, so the ward's own desk and its bed manager keep it
+  // too (untested-537 INV-ALERT-029: the ward's Notices never showed the buzz it was sent).
   refreshRequests: (context) =>
-    context.coordinator ? context.state.refreshRequests.filter((request) => context.unitIn(request.unitId)) : [],
+    context.coordinator || context.access.role === "ward" || context.access.role === "bed_manager"
+      ? context.state.refreshRequests.filter((request) => context.unitIn(request.unitId))
+      : [],
   // Closing-the-loop (package E): directory checks name a mock directory entry and a desk, never a
   // person, so every desk keeps them.
   directoryChecks: (context) => context.state.directoryChecks ?? [],
@@ -709,7 +713,10 @@ function inboxRecordReference(rowId: string): CommandRecordReference | null {
     case "duplicate_bed_request":
       return { collection: "patients", id };
     case "bed_held_elsewhere":
+    case "silent_ward_reminder":
       return { collection: "referrals", id };
+    case "leave_bed_reminder":
+      return { collection: "leaveBeds", id };
     default:
       return { collection: "movements", id };
   }

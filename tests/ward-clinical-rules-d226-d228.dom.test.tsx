@@ -13,6 +13,7 @@ import { eligibility, placementFit } from "@/components/ward-management/ward-eli
 import { restrictionNotice } from "@/components/ward-management/ward-derivations-shortlist";
 import { AFTER_3E_REFUSAL } from "@/components/ward-management/ward-legal-after-3e";
 import type { LegalForm, Movement, Unit } from "@/components/ward-management/ward-model";
+import { pickRecordField } from "./helpers/legal-record-pick";
 
 const NOW = 2 * 1440 + 600;
 afterEach(() => cleanup());
@@ -55,7 +56,7 @@ function openSheet(coordinator: boolean) {
     </WardFlowProvider>,
   );
   const sheet = screen.getByTestId("ward-legal-record");
-  fireEvent.change(within(sheet).getByLabelText("Form type"), { target: { value: "6C" } });
+  pickRecordField("Form type", "6C");
   fireEvent.change(within(sheet).getByLabelText("Time on form"), { target: { value: "09:30" } });
   return { sheet, onSave };
 }

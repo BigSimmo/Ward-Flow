@@ -11,12 +11,12 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  *
  * `referralWaitLabel` is `formatElapsed(minutesUntil(now, raisedAt))` and nothing else. It has no
  * reference to `triagedAt`, so it CANNOT stop: a referral raised at 09:00 for somebody triaged into
- * the department at 09:20 still reads "3h 40m waiting" at 12:40. **Every minute of that figure after
+ * the department at 09:20 still reads "3 h 40 min waiting" at 12:40. **Every minute of that figure after
  * 09:20 is a wait nobody is serving, rendered in the same words as one somebody is.** `P9-D7` stops
  * the referral clock when the patient reaches the department, and `referralClocks` is where the
  * stopping lives — the referral board and the match view now read the clock through it.
  *
- * ⚠️ **THE POINT IS THE WORDING, NOT ONLY THE ARITHMETIC.** A stopped span printed as "3h 00m
+ * ⚠️ **THE POINT IS THE WORDING, NOT ONLY THE ARITHMETIC.** A stopped span printed as "3 h 00 min
  * waiting" would be numerically right and still assert something false — that a clock is running.
  * So `sinceReferralRunning` picks the register, and the two registers are asserted against each
  * other rather than each on its own: a mutation that worded both branches identically would satisfy
@@ -41,30 +41,30 @@ describe("the wait figure the referral board and match view print", () => {
     // No triage: nobody has reached a department, so there is nothing that could stop this clock.
     const waiting: Referral = { ...base, raisedAt: NOW - 40, triagedAt: undefined };
 
-    expect(referralWaitLine(waiting, NOW)).toBe("40m waiting");
+    expect(referralWaitLine(waiting, NOW)).toBe("40 min waiting");
     // The register is unchanged for a running clock, deliberately: a queue that has always read
-    // "40m waiting" still does, and only a clock that has ACTUALLY stopped reads differently.
+    // "40 min waiting" still does, and only a clock that has ACTUALLY stopped reads differently.
     expect(referralWaitLine(waiting, NOW)).toBe(referralWaitLabel(waiting, NOW));
   });
 
   /**
    * ⚠️ **THE DEFECT, WITH ITS OLD OUTPUT WRITTEN DOWN BESIDE THE NEW ONE.** This person was referred
    * at `NOW - 300` and triaged into the department at `NOW - 120`. The referral clock ended there,
-   * 180 minutes after it started. `referralWaitLabel` still counts to `now` and says "5h 00m
+   * 180 minutes after it started. `referralWaitLabel` still counts to `now` and says "5 h 00 min
    * waiting" — two hours of which are a wait that finished.
    */
   it("stops the clock at triage, and says so in different words from a wait still being served", () => {
     const reached: Referral = { ...base, raisedAt: NOW - 300, triagedAt: NOW - 120 };
 
-    expect(referralWaitLine(reached, NOW)).toBe("3h 00m referral to triage");
+    expect(referralWaitLine(reached, NOW)).toBe("3 h 00 min referral to triage");
 
     // The old figure, asserted as the thing this no longer prints. If `referralWaitLine` ever
     // returns to counting to `now`, this line names exactly what went wrong rather than reporting a
     // string mismatch and leaving the reader to work out which of the two numbers is right.
     expect(
       referralWaitLabel(reached, NOW),
-      "the never-stopping label no longer prints 5h 00m; re-read this test before trusting the fix",
-    ).toBe("5h 00m waiting");
+      "the never-stopping label no longer prints 5 h 00 min; re-read this test before trusting the fix",
+    ).toBe("5 h 00 min waiting");
     expect(
       referralWaitLine(reached, NOW),
       "the wait figure went back to counting past triage, so a finished wait is being shown as live",
@@ -105,7 +105,7 @@ describe("the wait figure the referral board and match view print", () => {
   it("prints no negative duration for a referral raised after now", () => {
     const future: Referral = { ...base, raisedAt: NOW + 20, triagedAt: undefined };
 
-    expect(referralWaitLine(future, NOW)).toBe("0m waiting");
+    expect(referralWaitLine(future, NOW)).toBe("0 min waiting");
     expect(referralWaitLine(future, NOW)).not.toContain("-");
   });
 });

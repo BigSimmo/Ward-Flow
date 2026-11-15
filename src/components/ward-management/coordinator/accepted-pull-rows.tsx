@@ -61,7 +61,7 @@ export function AcceptedPullRows({
             <PulledBedRow key={`pulled-${pulled.entry.referral.id}`} pulled={pulled} phone={phone} onUndo={onUndo} />
           ))
         : null}
-      {toPull.map((entry) => {
+      {toPull.map((entry, index) => {
         const { referral } = entry;
         const who = patientOf(referral);
         const name = nameFor(who.formalName, who.umrn);
@@ -79,6 +79,8 @@ export function AcceptedPullRows({
           umrn: who.umrn,
         };
         // FS-7: the place in words ("from Royal Perth ED"), as the referral rows say it.
+        // R-HOME-1 (HOME-M1): only the first row keeps the filled button; the rest are outlined.
+        const first = index === 0;
         const from = withSendingTeam(`from ${originPlace(referral)}`, referral);
         return phone ? (
           <AcceptedPullPhoneRow
@@ -94,6 +96,7 @@ export function AcceptedPullRows({
             ageNote={decidedAt === undefined ? "Time not recorded" : "since accepted"}
             openLabel={shared.openLabel}
             onPull={() => setPulling(entry)}
+            filled={first}
           />
         ) : (
           <HomeRow
@@ -103,10 +106,10 @@ export function AcceptedPullRows({
             age={age}
             ageNote={decidedAt === undefined ? "Time not recorded" : "since accepted"}
             action={
-              // FS-3: the panel's one filled button, as on the phone row and the Ward page.
+              // FS-3: the panel's one filled button (the first row's), as on the phone row and the Ward page.
               <Button
                 size="sm"
-                variant="pri"
+                variant={first ? "pri" : "sec"}
                 data-placement-action
                 aria-label={shared.openLabel}
                 onClick={() => setPulling(entry)}

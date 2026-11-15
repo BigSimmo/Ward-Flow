@@ -55,7 +55,7 @@ function expectNoNames(csv: string) {
   }
 }
 
-/** A legal time column never carries a count ("2h 05m", "left", "ago", "overdue"). */
+/** A legal time column never carries a count ("2 h 05 min", "left", "ago", "overdue"). */
 const COUNT = /\b\d+\s*[dhm]\b|\bleft\b|\bago\b|\boverdue\b/u;
 
 describe("Leave page", () => {

@@ -120,6 +120,12 @@ const APPROVED_SHARED_MODULES = new Map([
       "so extracting Ward Flow carries it anyway; the barrel would pull the whole kit into the clock.",
   ],
   [
+    "@/components/wf/info-tip",
+    "the one tap-to-open ⓘ for an explanatory tip (D-224, Josh, 14 Nov 2026: hover-only tips fail on phones and iPads). " +
+      "Inside the already-approved wf folder, so extracting Ward Flow carries it anyway; read from its own file so its " +
+      "styles stay off the kit barrel's first load. First reader: the rail's Ready rule (R-BEDS-5, PR #1679).",
+  ],
+  [
     "@/components/wf/missing-value",
     "the shared empty-value renderer, which distinguishes a field that CANNOT apply from one nobody filled in -- arrived with main and is a clinical-meaning distinction, not a convenience",
   ],
@@ -341,7 +347,9 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
     // so the loading boundary does not carry the whole kit (D-192).
     // 15 -> 16 on 2026-11-14: @/lib/ward-time-zone, the app's one time zone setting (D-213), read by
     // the kit's clock as well as the ward code, so it sits outside both.
-    expect(APPROVED_SHARED_MODULES.size).toBe(16);
+    // 16 -> 17 on 2026-11-14: @/components/wf/info-tip, the tap-to-open ⓘ Josh ruled for every
+    // explanatory tip (D-224), first read by the rail's Ready rule (R-BEDS-5).
+    expect(APPROVED_SHARED_MODULES.size).toBe(17);
     // ⚠️ AND THE MEMBERSHIP, NOT ONLY THE COUNT. A size pin cannot tell a widening from a SWAP:
     // remove one approved module, add another, and the count stays unchanged while Ward Flow's seam
     // has changed — which is the thing this list exists to control. The argument is already made
@@ -354,6 +362,7 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
       "@/components/ui-primitives",
       "@/components/wf",
       "@/components/wf/format",
+      "@/components/wf/info-tip",
       "@/components/wf/missing-value",
       "@/components/wf/sheet",
       "@/components/wf/sheet-focus",

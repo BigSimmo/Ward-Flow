@@ -64,6 +64,6 @@ export function occupancyShare(percent: number | null): string {
 
 /** Whole hours as "13h", or "7d 1h" once a wait passes a day, so long waits read at a glance. */
 export function hoursText(hours: number): string {
-  if (hours < 24) return `${hours}h`;
-  return `${Math.floor(hours / 24)}d ${hours % 24}h`;
+  if (hours < 24) return `${hours} h`;
+  return `${Math.floor(hours / 24)} d ${hours % 24} h`;
 }

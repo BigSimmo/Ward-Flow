@@ -9,6 +9,31 @@ const PLACEMENT_PROBLEMS = {
   sharedBed: "two records hold the same numbered bed",
 } as const;
 
+/**
+ * A ward holds more people than it has beds. An arrival recorded over capacity explains one person
+ * each (`arrivalCapacityConflicts`); nothing else does. Restore refuses such a day, and D-229
+ * (stress test RV2-18) names this rule in the refusal instead of the generic one.
+ */
+export function wardOverCapacity(
+  unit: Pick<WardFlowState["units"][number], "beds" | "sexMix" | "arrivalCapacityConflicts">,
+): boolean {
+  return unit.sexMix.Female + unit.sexMix.Male > unit.beds + (unit.arrivalCapacityConflicts?.length ?? 0);
+}
+
+/** The refusal's words for a ward over capacity, or a stay in a bed the ward does not have. */
+const CAPACITY_PROBLEM = "a ward holds more patients than it has beds";
+
+/** The bed rule a stored day breaks, in plain words, or null. */
+export function storedCapacityProblem(state: Pick<WardFlowState, "units" | "admissions">): string | null {
+  if (state.units.some(wardOverCapacity)) return CAPACITY_PROBLEM;
+  const beds = new Map(state.units.map((unit) => [unit.id, unit.beds]));
+  const pastLastBed = state.admissions.some((stay) => {
+    const wardBeds = beds.get(stay.unitId);
+    return wardBeds !== undefined && stay.bedNumber !== undefined && stay.bedNumber > wardBeds;
+  });
+  return pastLastBed ? CAPACITY_PROBLEM : null;
+}
+
 /** Each patient's active stays, grouped by the approved restore reader (identity stays there). */
 export type PatientStays = readonly (readonly Pick<Admission, "id" | "unitId" | "state">[])[];
 

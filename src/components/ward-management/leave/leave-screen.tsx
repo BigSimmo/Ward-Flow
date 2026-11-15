@@ -1,5 +1,6 @@
 "use client";
 
+import { LEAVE_BED_OPEN_WARNING_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { useEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import Link from "next/link";
@@ -77,6 +78,9 @@ const LEAVE_ROWS = 8;
  * recorded and ended from the ward's own page, which an overdue or absent row opens (Open ward).
  * Print uses the browser's own print, as the other lists do. Synthetic records only.
  */
+/** The signed leave prompt's hours (AK-V-53), for the "Over 24 h" chip (R-BEDS-7). */
+const OPEN_WARNING_HOURS = LEAVE_BED_OPEN_WARNING_MINUTES / 60;
+
 export function LeaveScreen() {
   const zone = useClockZoneLabel();
   const { leaveBeds, units, admissions, bedReleases, movements, referrals, resolvePatientIdentity, dayZero } =
@@ -93,7 +97,9 @@ export function LeaveScreen() {
   const now = useWardFlowClock();
   const access = useEffectiveWardAccess();
   const canOpenHref = useCanOpenHref();
-  const [needsActionOnly, setNeedsActionOnly] = useState(false);
+  // One list filter at a time: overdue or absent, or away over 24 hours (R-BEDS-7).
+  const [filter, setFilter] = useState<"all" | "needs_action" | "over_24h">("all");
+  const needsActionOnly = filter === "needs_action";
   const isPhone = useIsPhone();
   const [showAll, setShowAll] = useState(false);
   // Paper prints every row, whatever the screen folds (the browser's own print command too).
@@ -128,7 +134,8 @@ export function LeaveScreen() {
     );
   }, [leaveBeds, units, admissions, bedReleases, movements, referrals, now, access]);
   const needsAction = rows.filter((row) => row.status === "absent" || row.status === "overdue");
-  const shown = needsActionOnly ? needsAction : rows;
+  const over24h = rows.filter((row) => row.over24h);
+  const shown = needsActionOnly ? needsAction : filter === "over_24h" ? over24h : rows;
   const dueToday = rows.filter((row) => row.status === "due_today").length;
   // Someone absent without leave is not "on leave"; they are counted under "overdue or absent".
   const onLeave = rows.filter((row) => row.status !== "absent").length;
@@ -166,8 +173,12 @@ export function LeaveScreen() {
       </Hero>
       {/* On paper only: what the list holds and when, as the other printed lists say. */}
       <p className={styles.printScope} data-testid="ward-leave-print-scope">
-        {needsActionOnly ? "Overdue or absent only" : "Everyone on leave"} · As at{" "}
-        {formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone })} · Identifiers may be included
+        {needsActionOnly
+          ? "Overdue or absent only"
+          : filter === "over_24h"
+            ? `Over ${OPEN_WARNING_HOURS} h only`
+            : "Everyone on leave"}{" "}
+        · As at {formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone })} · Identifiers may be included
       </p>
       <Card aria-labelledby="ward-leave-list" className={styles.listCard}>
         <CardHead
@@ -177,8 +188,19 @@ export function LeaveScreen() {
             // Print sits with the list it prints, as on Legal forms and Movements, so the page title
             // keeps its own line height. On a phone the printer alone keeps the head on one line.
             <>
-              <FilterChip pressed={needsActionOnly} onPressedChange={setNeedsActionOnly} count={needsAction.length}>
+              <FilterChip
+                pressed={needsActionOnly}
+                onPressedChange={(pressed) => setFilter(pressed ? "needs_action" : "all")}
+                count={needsAction.length}
+              >
                 Overdue or absent
+              </FilterChip>
+              <FilterChip
+                pressed={filter === "over_24h"}
+                onPressedChange={(pressed) => setFilter(pressed ? "over_24h" : "all")}
+                count={over24h.length}
+              >
+                Over {OPEN_WARNING_HOURS} h
               </FilterChip>
               <ListPrintButton iconOnly={isPhone} disabled={shown.length === 0} testId="ward-leave-print" />
             </>
@@ -186,7 +208,13 @@ export function LeaveScreen() {
         />
         <CardBody flush>
           {shown.length === 0 ? (
-            <p className={styles.empty}>{needsActionOnly ? "Nobody is overdue or absent." : "Nobody is on leave."}</p>
+            <p className={styles.empty}>
+              {needsActionOnly
+                ? "Nobody is overdue or absent."
+                : filter === "over_24h"
+                  ? `Nobody has been away over ${OPEN_WARNING_HOURS} h.`
+                  : "Nobody is on leave."}
+            </p>
           ) : (
             <div className={styles.scroll}>
               <table
@@ -225,7 +253,7 @@ export function LeaveScreen() {
                         <td className={styles.ward}>
                           {row.wardName}
                           <span className={styles.sub}>{row.bedLabel}</span>
-                          {(row.status === "absent" || row.status === "overdue") &&
+                          {(row.status === "absent" || row.status === "overdue" || row.over24h) &&
                           canOpenHref(unitHref(row.unitId)) ? (
                             <Link
                               href={leaveOnWardHref(row.unitId)}
@@ -253,7 +281,7 @@ export function LeaveScreen() {
                             {LEAVE_STATUS_LABEL[row.status]}
                           </span>
                           {row.openWarning ? (
-                            <span className={styles.sub} data-testid={`ward-leave-open-warning-${row.id}`}>
+                            <span className={styles.openWarning} data-testid={`ward-leave-open-warning-${row.id}`}>
                               {row.openWarning}
                             </span>
                           ) : null}

@@ -13,6 +13,7 @@ import {
   DateField,
   ErrorSummary,
   Field,
+  ListPicker,
   Select,
   Sheet,
   SrOnly,
@@ -30,6 +31,7 @@ import { After3EReasonField } from "@/components/ward-management/after-3e-reason
 import { currentLegalPosition, legalFormNowWords } from "@/components/ward-management/ward-legal-form-progression";
 import { legalFormName, RECORDABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import type { Movement } from "@/components/ward-management/ward-model";
+import { formTitleForCode } from "@/lib/form-register";
 import { SupportNotificationChecklist } from "@/components/ward-management/movements/support-notification-checklist";
 import {
   SUPPORT_NOTIFICATION_OCCASION_LABELS,
@@ -283,7 +285,7 @@ export function RecordFormSheet({
     (saving ? "Saving form…" : undefined) ??
     recordUnavailable ??
     (!draft.movement
-      ? "Choose a movement first."
+      ? "Choose a patient first."
       : !draft.form
         ? "Choose a form type first."
         : !isOwnedLegalFormCode(draft.form)
@@ -316,7 +318,7 @@ export function RecordFormSheet({
     saving || recordUnavailable
       ? []
       : [
-          ...(!draft.movement ? [{ id: movementId, text: "Choose a movement" }] : []),
+          ...(!draft.movement ? [{ id: movementId, text: "Choose a patient" }] : []),
           ...(typeProblem ? [{ id: typeId, text: typeProblem }] : []),
           ...(parsedWrittenAt === null
             ? [
@@ -433,51 +435,48 @@ export function RecordFormSheet({
       ) : null}
       <div key={formKey} className={styles.recordForm}>
         {refusedSaves > 0 ? <ErrorSummary items={problems} action="before saving" focusKey={refusedSaves} /> : null}
-        <Field label="Movement" id={movementId} error={problemFor(movementId)}>
-          <Select
-            disabled={saving}
-            value={draft.movement}
-            onChange={(event) => {
-              // A time typed before any movement was chosen is kept. Replacing a chosen movement
-              // clears the time typed for it, and says so.
-              const replacing = draft.movement !== "" && event.target.value !== draft.movement;
-              if (replacing && (timeOnForm || dateOnForm)) {
-                clearDraft();
-                setTimeOnForm("");
-                setDateOnForm("");
-                setTimeClearedNote(true);
-              } else setTimeClearedNote(false);
-              onDraft({ ...draft, movement: event.target.value });
-            }}
-          >
-            <option value="">Choose a movement</option>
-            {openMovements.map((movement) => (
-              <option key={movement.id} value={movement.id}>
-                {labelOf(movement)}
-              </option>
-            ))}
-          </Select>
-        </Field>
+        <ListPicker
+          label="Patient"
+          name="record-patient"
+          id={movementId}
+          placeholder="Search name or UMRN"
+          required
+          disabled={saving}
+          invalid={!!problemFor(movementId)}
+          value={draft.movement || null}
+          options={openMovements.map((movement) => ({ value: movement.id, label: labelOf(movement) }))}
+          onChange={(next) => {
+            const value = next ?? "";
+            // A time typed before any patient was chosen is kept. Replacing a chosen patient
+            // clears the time typed for them, and says so.
+            const replacing = draft.movement !== "" && value !== draft.movement;
+            if (replacing && (timeOnForm || dateOnForm)) {
+              clearDraft();
+              setTimeOnForm("");
+              setDateOnForm("");
+              setTimeClearedNote(true);
+            } else setTimeClearedNote(false);
+            onDraft({ ...draft, movement: value });
+          }}
+        />
         {timeClearedNote ? (
           <p className={styles.note} role="status" data-testid="ward-legal-forms-time-cleared">
             Time cleared because the patient changed.
           </p>
         ) : null}
-        <Field label="Form type" id={typeId} error={problemFor(typeId)}>
-          <Select
-            disabled={saving}
-            value={draft.form}
-            onChange={(event) => onDraft({ ...draft, form: event.target.value })}
-          >
-            {/* MHA forms are never prefilled: the form type is chosen from the paper every time. */}
-            <option value="">Choose a form type</option>
-            {RECORDABLE_LEGAL_FORMS.map((form) => (
-              <option key={form.code} value={form.code}>
-                {legalFormName(form)}
-              </option>
-            ))}
-          </Select>
-        </Field>
+        <ListPicker
+          label="Form type"
+          name="record-form-type"
+          id={typeId}
+          // MHA forms are never prefilled: the form type is chosen from the paper every time.
+          placeholder="Choose a form type"
+          required
+          disabled={saving}
+          invalid={!!problemFor(typeId)}
+          value={draft.form || null}
+          options={RECORDABLE_LEGAL_FORMS.map((form) => recordFormOption(form.code))}
+          onChange={(next) => onDraft({ ...draft, form: next ?? "" })}
+        />
         {after3E ? (
           <After3EReasonField
             coordinator={coordinator}
@@ -839,4 +838,12 @@ export function TellSheet({
 /** The label a movement carries in pickers: name, UMRN and its form. */
 export function movementPickerLabel(name: string, umrn: string, movement: Movement): string {
   return `${name} (${umrn}), ${legalFormNowWords(movement) ?? "Voluntary"}`;
+}
+
+/** "3C · Continuation of detention", with the register's full title on a second line when longer. */
+export function recordFormOption(code: string): { value: string; label: string; hint?: string } {
+  const full = formTitleForCode(code);
+  if (full === null) return { value: code, label: `Form ${code}` };
+  const short = full.split(/\s(?:to|in)\s/u)[0] ?? full;
+  return { value: code, label: `${code} · ${short}`, ...(short === full ? {} : { hint: full }) };
 }

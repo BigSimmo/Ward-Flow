@@ -11,7 +11,12 @@ import { reviewAtFrom } from "../ward-closure-choice";
 import { admissionCriteriaEligibility } from "@/components/ward-management/ward-flow-reducer";
 import { useWardCommandCompletion, wardCommandFailure } from "./use-ward-command-completion";
 import { useUndoableStep } from "../use-undoable-step";
-import { bedClosureReasonChoices } from "../ward-bed-closure-reason";
+import {
+  bedClosureReasonChoices,
+  bedLabel,
+  wardClosureReasonLabel,
+  type WardClosureReason,
+} from "../ward-bed-closure-reason";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { WardBedDossierDrawer } from "./ward-screen-lazy";
 import { notRecordedMessage } from "./ward-screen-messages";
@@ -103,6 +108,9 @@ export function WardScreenBedDrawer({
   const { rejections } = useWardFlowSelect("rejections");
   // Feature 37 (9 Nov 2026): the discharge checklist is ticked by whoever may record the discharge.
   const dischargeCheckGate = useRoleGate()("RECORD_DISCHARGE_CHECK");
+  // INV-ACTION-067 (14 Nov 2026): "Move to another bed" is offered only to a desk that may place a
+  // stay (D-192), so the site bed manager is not refused after pressing it.
+  const moveGate = useRoleGate()("PLACE_IN_BED");
   const { run: runBedStep } = useUndoableStep({
     dispatch,
     rejections,
@@ -132,9 +140,15 @@ export function WardScreenBedDrawer({
     !pathname || routeRole === "ward" || routeRole === "bed_manager" || routeRole === "coordinator";
   // Tier 1 item 6 (Josh, 4 Nov 2026): closing or reopening a bed offers Undo on its toast.
   const bedClosureRole: WardFlowRole = !pathname || routeRole === "ward" ? "ward" : routeRole;
-  const setBedClosed = (bedNumber: number, closed: boolean, reviewAfter = "") => {
+  const setBedClosed = (
+    bedNumber: number,
+    closed: boolean,
+    reviewAfter = "",
+    // R-BEDS-4: a reason added from the drawer to a bed already closed, written in place.
+    again?: { reason: string },
+  ) => {
     // Item 6: "Review in" read to a time at the tap; "Not known" leaves it out.
-    const reviewAt = closed ? reviewAtFrom(reviewAfter, now) : undefined;
+    const reviewAt = closed && !again ? reviewAtFrom(reviewAfter, now) : undefined;
     return runBedStep(
       {
         type: "SET_BED_CLOSED",
@@ -145,11 +159,14 @@ export function WardScreenBedDrawer({
         bedNumber,
         closed,
         ...(reviewAt !== undefined ? { reviewAt } : {}),
+        ...(again ? { reason: again.reason as WardClosureReason } : {}),
       },
       {
         success: closed
-          ? `Bed ${bedNumber} closed. It is not offered until it is reopened.`
-          : `Bed ${bedNumber} reopened.`,
+          ? again
+            ? `${bedLabel(bedNumber)} closed: ${wardClosureReasonLabel(again.reason as WardClosureReason)}. It is not offered until it is reopened.`
+            : `${bedLabel(bedNumber)} closed. It is not offered until it is reopened.`
+          : `${bedLabel(bedNumber)} reopened.`,
         undo: (at) => ({
           type: "UNDO_BED_STEP",
           role: bedClosureRole,
@@ -158,9 +175,13 @@ export function WardScreenBedDrawer({
           bedNumber,
           ...(bedClosureRole === "ward" ? { actingUnitId: unitId } : {}),
         }),
-        undone: closed ? `Undone. Bed ${bedNumber} is open again.` : `Undone. Bed ${bedNumber} is closed again.`,
+        undone: again
+          ? `Undone. ${bedLabel(bedNumber)} has no reason recorded.`
+          : closed
+            ? `Undone. ${bedLabel(bedNumber)} is open again.`
+            : `Undone. ${bedLabel(bedNumber)} is closed again.`,
         // D-148 (Josh, 11 Nov 2026): closing stays one tap; its toast offers an optional reason.
-        ...(closed
+        ...(closed && !again
           ? {
               choices: bedClosureReasonChoices({
                 role: bedClosureRole,
@@ -175,6 +196,10 @@ export function WardScreenBedDrawer({
       },
     );
   };
+  // R-BEDS-4: the drawer's "Add a reason" writes the reason onto the closed bed in one step; the bed is
+  // never reopened on the way, so leaving the page mid-save cannot leave it open (review: Codex).
+  const addBedClosureReason = (bedNumber: number, reasonId: string) =>
+    setBedClosed(bedNumber, true, "", { reason: reasonId });
   return selectedBed !== null
     ? (() => {
         const selectedBedItem = bedsList.find((b) => b.bedNumber === selectedBed);
@@ -324,10 +349,16 @@ export function WardScreenBedDrawer({
                   ? () => setBedClosed(selectedBed, false)
                   : undefined,
               reviewLine: closedMark ? bedReviewLine(closedMark, now) : null,
+              onAddClosureReason:
+                bedClosureAllowed && selectedBedItem?.status === "closed" && closedByNumber && !closedMark?.reason
+                  ? (reasonId: string) => addBedClosureReason(selectedBed, reasonId)
+                  : undefined,
             }}
             bedDrawerRef={bedDrawerRef}
             onKeyDown={handleBedDrawerKeyDown}
-            onMove={selectedBedItem?.stayAdmissionId ? () => moveStayOnBoard(selectedBed) : undefined}
+            onMove={
+              selectedBedItem?.stayAdmissionId && moveGate.allowed ? () => moveStayOnBoard(selectedBed) : undefined
+            }
             onOpenBoard={() => {
               closeBedDrawer(false);
               setActiveTab("board");

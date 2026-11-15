@@ -379,7 +379,7 @@ describe("urgent-outside-service names literal movements per HealthService, over
   it("names exactly these movements as urgent-outside each service", () => {
     // WF-014 (Form 4A due in exactly 60 minutes; South Metro origin, East Metro ward) joined every
     // list outside those two on 13 Oct 2026, when the legal clock became inclusive at the hour
-    // (audit A3-4: exactly 60m left reads act now on every page, as Delays already did).
+    // (audit A3-4: exactly 60 min left reads act now on every page, as Delays already did).
     // WF-RD11 and WF-RD12 (`ward-rulings-demo.ts`'s overlay, appended after seeding) are urgent and
     // outside every service except East Metro — verified against the real seed's
     // `urgentMovementsOutsideService` output directly, not re-derived here.

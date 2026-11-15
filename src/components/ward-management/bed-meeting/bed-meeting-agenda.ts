@@ -115,7 +115,7 @@ export function bedMeetingAgenda(
         record: admission,
         unitId: admission.unitId,
         detail: strandedPromptText(flag),
-        value: `${flag.days}d`,
+        value: `${flag.days} d`,
         caption: "in hospital",
       },
     ];

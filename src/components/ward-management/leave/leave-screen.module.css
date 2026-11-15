@@ -68,6 +68,14 @@
   color: var(--wf-ink-3);
 }
 
+/* R-BEDS-7: the signed 24-hour prompt reads amber, not red; red stays for overdue or absent. */
+.openWarning {
+  display: block;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-warning-ink);
+}
+
 .umrn {
   font-family: var(--wf-mono);
   font-variant-numeric: tabular-nums;

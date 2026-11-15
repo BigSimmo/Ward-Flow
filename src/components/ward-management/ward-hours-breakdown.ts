@@ -190,9 +190,9 @@ export function hoursText(minutes: number): string {
   const days = Math.floor(whole / 1440);
   const hours = Math.floor((whole % 1440) / 60);
   const rest = whole % 60;
-  if (days > 0) return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
-  if (hours > 0) return `${hours}h ${rest < 10 ? "0" : ""}${rest}m`;
-  return `${rest}m`;
+  if (days > 0) return hours > 0 ? `${days} d ${hours} h` : `${days} d`;
+  if (hours > 0) return `${hours} h ${rest < 10 ? "0" : ""}${rest} min`;
+  return `${rest} min`;
 }
 
 /**

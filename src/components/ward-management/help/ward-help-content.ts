@@ -86,7 +86,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     purpose: "What needs the coordinator now, across every ward, ED and movement.",
     actions: [
       "Work down Needs you first: act now, then referrals to decide. Each row opens the record it is about.",
-      "Switch to Flow for every open movement. Its tabs narrow it to Needs a bed, Bed agreed, Ready to move or Moving.",
+      "Switch to Flow for every open movement. Its tabs narrow it to No ward yet, Bed agreed, Ready to move or Moving.",
       "Open Alerts in the header for everything addressed to this desk.",
     ],
     phoneActions: [

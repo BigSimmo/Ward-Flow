@@ -1791,7 +1791,7 @@ describe("Task 5 — referral board ordering (referralQueueOrder, recentlyDecide
 describe("Task 5 — referral wait label (referralWaitLabel)", () => {
   it("renders a plain elapsed-wait duration, never a countdown/overdue phrasing", () => {
     const referral: Referral = { ...referrals[0], raisedAt: NOW_ANCHOR - 65 };
-    expect(referralWaitLabel(referral, NOW_ANCHOR)).toBe("1h 05m waiting");
+    expect(referralWaitLabel(referral, NOW_ANCHOR)).toBe("1 h 05 min waiting");
   });
 });
 

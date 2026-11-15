@@ -92,7 +92,7 @@ function hoursLabel(minutes: number): string {
   const whole = Math.round(minutes);
   const hours = Math.floor(whole / 60);
   const rest = whole % 60;
-  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
+  return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`;
 }
 
 /**
@@ -104,7 +104,7 @@ function hoursLabel(minutes: number): string {
 export function StatisticsEdSwarm({
   rows,
   labelWidth = 168,
-  label = "Each open ED movement, by time since opening",
+  label = "Each person waiting in ED, by time since opening",
   testId = "ward-statistics-ed-swarm",
 }: {
   rows: readonly EdSwarmRow[];

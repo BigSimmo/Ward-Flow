@@ -16,7 +16,7 @@ import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/compon
 import { partitionSnoozed } from "@/components/ward-management/ward-inbox-snooze";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { queueOrder } from "@/components/ward-management/ward-priority";
-import { referralQueueOrder } from "@/components/ward-management/ward-referrals";
+import { coordinatorReferralQueue, referralQueueOrder } from "@/components/ward-management/ward-referrals";
 import { openJourneySplit, waitingInEds, waitingSplit } from "@/components/ward-management/ward-shared-figures";
 import type { PatientId } from "@/components/ward-management/ward-patients";
 import { NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
@@ -146,7 +146,7 @@ function surfaces(state: WardFlowState) {
     },
     referrals: {
       menuBadge: counts.referrals?.value,
-      homeTab: referralQueueOrder(state.referrals).length,
+      homeTab: coordinatorReferralQueue(state.referrals).length,
     },
     actNow: {
       menu: activeActNowItems(state, now).length,

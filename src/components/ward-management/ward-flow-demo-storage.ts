@@ -174,6 +174,9 @@ export type DeviceSaveInputs = {
   locked: boolean;
   dayZero: Date;
   mountedAtAbsolute: number;
+  /** The board clock's elapsed baseline. D-229: Resume moves it alone, and that still needs a save,
+   *  or a reload would count the paused minutes as time passed. Optional for older callers. */
+  clockBaseline?: number;
 };
 
 /**
@@ -189,6 +192,7 @@ export function deviceSaveUnchanged(previous: DeviceSaveInputs | undefined, next
     previous.locked !== next.locked ||
     previous.dayZero !== next.dayZero ||
     previous.mountedAtAbsolute !== next.mountedAtAbsolute ||
+    previous.clockBaseline !== next.clockBaseline ||
     previous.held.typedTextSeen !== next.held.typedTextSeen ||
     previous.held.typedTextEvents !== next.held.typedTextEvents ||
     previous.held.typedTextFromFile !== next.held.typedTextFromFile

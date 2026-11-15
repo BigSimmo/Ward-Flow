@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Button } from "@/components/wf";
+import { Button, useOptionalToast } from "@/components/wf";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import {
   candidateReason,
@@ -13,6 +13,7 @@ import {
 import { useSharedReadyLookup } from "@/components/ward-management/use-shared-ready";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { wardRaise } from "@/components/ward-management/ward-flow-raise";
+import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { dispatchPermission } from "@/components/ward-management/ward-role-permissions";
 import {
@@ -55,6 +56,8 @@ export function useAskMoreWards({
   rejections: Rejection[];
 }) {
   const configuration = useOptionalWardFlowSelect("configuration")?.configuration;
+  const toast = useOptionalToast();
+  const patientOf = usePatientOf();
   // H7 (D-210 (Josh, 14 Nov 2026)): the shared Ready, as ASK_MORE_WARDS checks it.
   const ready = useSharedReadyLookup();
   const [open, setOpen] = useState(false);
@@ -182,6 +185,12 @@ export function useAskMoreWards({
       save.submit(
         () => wardRaise(dispatch, role, now)("ASK_MORE_WARDS", { referralId: referral.id, unitIds: chosen }),
         () => {
+          // R-BEDS-12: the toast names the person, surname first, so a quick move between referrals is checked.
+          const count = chosen.length;
+          toast?.push({
+            tone: "success",
+            title: `Asked ${count} ward${plural(count)} for ${patientOf(referral).formalName}`,
+          });
           if (opening.current === asked) close();
         },
       );

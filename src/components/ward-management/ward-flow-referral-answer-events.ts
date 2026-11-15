@@ -120,7 +120,7 @@ export function reduceReferralAnswerEvent(
         return reject(
           state,
           event,
-          `movement ${movement.id} is already accepted at ${already?.name ?? movement.acceptedUnitId}; the referral to ${attemptedUnit?.name ?? event.unitId} was withdrawn`,
+          `movement ${movement.id} is already accepted at ${already?.name ?? movement.acceptedUnitId}, so ${attemptedUnit?.name ?? event.unitId} cannot accept it as well`,
         );
       }
       if (movement.stage !== "destination_review") {

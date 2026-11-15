@@ -33,12 +33,12 @@ describe("ward board-time features", () => {
   });
 
   it("pullHoldRemainingLabel uses formatRemaining against pullExpiresAt only", () => {
-    expect(pullHoldRemainingLabel(NOW_ANCHOR + 45, NOW_ANCHOR)).toBe("45m left");
-    expect(pullHoldRemainingLabel(NOW_ANCHOR - 20, NOW_ANCHOR)).toBe("20m overdue");
+    expect(pullHoldRemainingLabel(NOW_ANCHOR + 45, NOW_ANCHOR)).toBe("45 min left");
+    expect(pullHoldRemainingLabel(NOW_ANCHOR - 20, NOW_ANCHOR)).toBe("20 min overdue");
   });
 
   it("transportEtaRemainingLabel reports left or overdue against typed estimatedAt", () => {
-    expect(transportEtaRemainingLabel(NOW_ANCHOR + 90, NOW_ANCHOR)).toBe("1h 30m left");
-    expect(transportEtaRemainingLabel(NOW_ANCHOR - 15, NOW_ANCHOR)).toBe("15m overdue");
+    expect(transportEtaRemainingLabel(NOW_ANCHOR + 90, NOW_ANCHOR)).toBe("1 h 30 min left");
+    expect(transportEtaRemainingLabel(NOW_ANCHOR - 15, NOW_ANCHOR)).toBe("15 min overdue");
   });
 });

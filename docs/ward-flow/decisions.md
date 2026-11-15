@@ -241,9 +241,19 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-216](#d-216-the-36-sign-off-recommendations-from-the-stress-test-pack-14-november-2026)                                                              | The 36 sign-off recommendations                                                        | Active                                           |
 | [D-217](#d-217-hand-check-answers-medical-trips-and-undo-after-referring-14-november-2026)                                                              | Hand check answers: medical trips and Undo                                             | Active                                           |
 | [D-218](#d-218-no-legal-disclaimer-wording-on-screens-14-november-2026)                                                                                 | No legal disclaimer wording on screens                                                 | Active                                           |
+| [D-219](#d-219-figures-history-late-arrivals-and-permissions-are-built-before-the-freeze-14-november-2026)                                              | Figures, History, late and permissions before the freeze                               | Active                                           |
+| [D-220](#d-220-which-figure-is-which-14-november-2026)                                                                                                  | Which figure is which                                                                  | Active                                           |
+| [D-221](#d-221-late-arrivals-14-november-2026)                                                                                                          | Late arrivals                                                                          | Active                                           |
+| [D-222](#d-222-history-14-november-2026)                                                                                                                | History                                                                                | Active                                           |
+| [D-223](#d-223-permissions-and-the-clock-format-14-november-2026)                                                                                       | Permissions and the clock format                                                       | Active                                           |
+| [D-224](#d-224-explanatory-tips-open-on-tap-14-november-2026)                                                                                           | Explanatory tips open on tap                                                           | Active                                           |
+| [D-225](#d-225-design-fix-phasing-14-november-2026)                                                                                                     | Design fix phasing                                                                     | Active                                           |
 | [D-226](#d-226-forms-after-a-form-3e-continuation-forms-refused-coordinator-reason-14-november-2026)                                                    | Forms after a Form 3E: continuations refused, coordinator reason                       | Active                                           |
 | [D-227](#d-227-a-single-sex-ward-of-the-other-sex-reads-not-suitable-14-november-2026)                                                                  | Single-sex ward of the other sex reads Not suitable                                    | Active                                           |
 | [D-228](#d-228-a-fully-locked-ward-reads-locked-for-a-patient-who-needs-an-open-bed-14-november-2026)                                                   | Fully locked ward reads Locked for an open-bed patient                                 | Active                                           |
+| [D-229](#d-229-demo-pause-holds-board-time-and-seeded-wait-lists-match-the-engine-14-november-2026)                                                     | Demo Pause holds Board time; seeded wait lists match the engine                        | Active                                           |
+| [D-234](#d-234-record-gender-on-the-ed-board-14-november-2026)                                                                                          | Record gender on the ED board                                                          | Active                                           |
+| [D-237](#d-237-a-desks-own-save-is-never-another-desks-change-14-november-2026)                                                                         | A desk's own save is never another desk's change                                       | Active                                           |
 
 ---
 
@@ -2699,6 +2709,77 @@ is inferred.
 - **Unchanged:** D-93 and D-70 behaviour. A legal time is still shown only as the time a person entered from the form, never as a countdown, and nothing works out a Mental Health Act period. Warnings that ask someone to act stay, with their words: the legal status mismatch warning, "Check authorisation", "Save Form N anyway", the real-identifier note, and the "within 1h", "within 3h" and "passed" band words beside their colours. "Not recorded" stays, because it is a state, not a disclaimer. The one synthetic data line in the footer stays (hard rule 1).
 - **Boundary:** wording only. No clinical value, threshold or saved field changes.
 
+## D-219. Figures, History, late arrivals and permissions are built before the freeze (14 November 2026)
+
+- **Date:** 14 November 2026, 10:02 PM AWST (14:02 UTC), 10:12 PM AWST (14:12 UTC) and 10:30 PM AWST (14:30 UTC). **Decided by:** Josh. At 14:02 UTC, in the Ward Flow project chat: "Go ahead and launch fixes and plan fixes for all of the issues please except for the design issues". At 14:12 UTC, on the decision card in the "Fix remaining figures, history and timing rules" thread: "Before the 22 Nov freeze". At 14:30 UTC: "Yes to all your recommendations" on that thread's 17 choices (D-220 to D-223).
+- **Decision:** D-215 item 3 (History, late arrivals, Statistics windows, am/pm) and D-216's figure dictionary (R-FIGS-9) and permission source (R-STRUCT-1) are built now and merged before the 22 November freeze once checks pass, rather than after the demo. #1673 lands the shared figure, History, late-arrival and permission modules and the figure wiring first, so the design lanes are not held up; the remaining wiring follows in this thread's next PR:
+  1. One figure list is the only source of each published figure. Each row names its counting rule, window and scope, and a guard test stops a screen working a listed figure out on its own.
+  2. One permission source answers who may act, for the screen and the server alike.
+  3. Every accepted save writes one History line naming the desk that acted.
+  4. An arrival is late once the estimate plus the signed 1 hour has passed, with a stored notice to the referrer and the accepting ward.
+  5. Each Statistics window and its start time are written into the definitions in Perth time. Under Josh's wording rule (D-218; 14 November, 10:39 PM AWST, 14:39 UTC: "Extra wording should play a role. Not just policy or empty etc"), screens show the window without the words "Perth time", and a figure's scope is one word or a tap-to-open ⓘ, never a sentence or a visible "how counted" line.
+  6. Screens show times as am/pm. Printed legal times keep the 24-hour clock.
+  7. If History or permissions cannot be built and checked safely by 20 November, Josh is told then rather than the work being rushed into the freeze.
+- **Replaces:** the "after the demo" timing in D-215 item 3 and D-216 for these items.
+- **Boundary:** synthetic data only. No clinical value or threshold changes. Form 3E sequencing (D-215 item 1) is built separately by the clinical rules PR.
+
+## D-220. Which figure is which (14 November 2026)
+
+- **Date:** 14 November 2026, 10:30 PM AWST (14:30 UTC). **Decided by:** Josh, "Yes to all your recommendations" (choices 1 to 4).
+- **Decision:**
+  1. **Need a bed** is everyone with an open journey, from any origin, not yet holding a bed (the Capacity rule). People still physically in an ED are **Waiting in ED**. Open journeys no ward has accepted are **No ward yet**.
+  2. **Held up** on Statistics uses the "due by tomorrow" rule Capacity uses (D-191 item 5). Counts over any date read **Held up · any date**.
+  3. Statistics' over 8 hours, over 24 hours and wait bands count only people still in an ED. **ED journeys open** (including people in transit) is its own labelled figure. This applies to the signed-in executive figures too.
+  4. The Statistics week runs from Monday 12:00 am to the next Monday 12:00 am, Perth time.
+  5. **Discharges today** splits into **Left today** (stays ended since Perth midnight) and **Expected to leave today** (planned date today, not yet left), and **average stay** splits into **Average completed stay** and **Stay so far, median** (R-FIGS-12 and R-FIGS-16, approved in D-216).
+- **Boundary:** no clinical value or threshold changes.
+
+## D-221. Late arrivals (14 November 2026)
+
+- **Date:** 14 November 2026, 10:30 PM AWST (14:30 UTC). **Decided by:** Josh, "Yes to all your recommendations" (choices 5 to 9).
+- **Decision:**
+  1. With no ward ETA recorded, the booking estimate starts the late clock, and the screen says it is the booking estimate.
+  2. The late notice is saved when the time is entered and shown to desks at the estimate plus 1 hour. This counts as stored: it works offline and with no desk open.
+  3. The referrer (including a community team) and the accepting ward get the notice. The coordinator sees it in Act now and the bell.
+  4. Transport marked arrived but not yet confirmed by the ward is not late. A diversion replaces "late".
+  5. The coordinator's "Review late arrival" button is removed; old records keep their entries.
+  6. "Past ETA" shows from the existing 10-minute value (P068, unsigned, unchanged).
+  7. **Sent without anyone saving (Together-X1b-5).** On 14 November, 10:59 PM AWST (14:59 UTC), Josh answered "Yes to your recommendation" on the recheck of X1b-5 (`master-stress-test/run/verify/five-unverified-recheck.md`, option b): on the signed-in site the server's regular 5-minute sweep also checks open journeys and stores any late notice that is due, so a notice no longer depends on a save or on someone pressing a button. The sweep runs whether or not phone push is switched on, and its History line reads "Raised automatically". The demo, which has no server, relies on the notice stored at save (item 2).
+- **Boundary:** the signed 1-hour grace is unchanged.
+
+## D-222. History (14 November 2026)
+
+- **Date:** 14 November 2026, 10:30 PM AWST (14:30 UTC). **Decided by:** Josh, "Yes to all your recommendations" (choices 10 to 13).
+- **Decision:**
+  1. Any desk sees History lines for patients it can already see. Refused saves stay coordinator-only.
+  2. A coordinator acting on a ward's or ED's step reads "Bed coordinator, for <ward or ED>".
+  3. On the signed-in site, History shows a short staff name (initial and surname) that the access admin enters for each account, stored with each line. The demo shows desks only.
+  4. Only reading a notice, opening a referral and the three demo controls write no History line.
+- **Boundary:** History lines carry no typed text.
+
+## D-223. Permissions and the clock format (14 November 2026)
+
+- **Date:** 14 November 2026, 10:30 PM AWST (14:30 UTC). **Decided by:** Josh, "Yes to all your recommendations" (choices 14 to 17).
+- **Decision:**
+  1. A planned admission arriving when the bed count is out of date may use the existing override reasons. The gender check stays non-overridable.
+  2. The signed permission answer key (AK-A) is the test table for the one permission source. Any row where the key and the app disagree is listed for Josh. On 14 November, 10:58 PM AWST (14:58 UTC), Josh ruled on the seven disagreements found: "Yes keep the apps behaviour". The app's answer stands and the answer key is corrected for: a statewide coordinator taking back a site sign-off (bed manager only); a service coordinator signing off a site handover (refused, Q61); a service coordinator changing global settings (refused); the transport officer marking a notice read, recording a directory check and acknowledging a bed call (allowed); a service-level access admin switching a site feature (statewide admin only, D-142).
+  3. A control a desk can never use is hidden (D-192 item 5). Under Josh's wording rule of 14:39 UTC (D-219 item 5), no "who does this" line is shown with it.
+  4. am/pm on screen (D-219 item 6) is built in this PR.
+- **Boundary:** no clinical value changes.
+
+## D-224. Explanatory tips open on tap (14 November 2026)
+
+- **Date:** 14 November 2026, 10:44 PM AWST (14:44 UTC). **Decided by:** Josh, agreeing the design list and phasing in the Ward Flow project.
+- **Decision:** every explanatory tip is a small ⓘ that opens with a tap, a click or the keyboard, and closes with Escape, a tap outside or a second press. Hover-only tips are not used, because they do not work on phones or iPads. The kit part is `InfoTip` (`src/components/wf/info-tip.tsx`); a definition or scope that would otherwise be a sentence on screen goes in one (D-218).
+- **Boundary:** design only. No clinical value, threshold or saved field changes.
+
+## D-225. Design fix phasing (14 November 2026)
+
+- **Date:** 14 November 2026, 10:44 PM AWST (14:44 UTC). **Decided by:** Josh, agreeing the design list and phasing ("yes to all recommendations" at 15:02 UTC covered the plan's defaults).
+- **Decision:** the design fixes from the master stress test pack are built in four lanes (A kit, style and print; B Home, alerts, Statistics, TV and demo controls; C beds, legal, ED and ward desk; D movement, patient page and forms), safety and clarity items first, before the 22 November freeze. Speed work (a per-screen speed budget, the demo seed out of the first download, splitting the heaviest screens, first rows first), field types declared once, dropping one change safely and the wording style list come after the 27 November demo, once a speed target is signed. "Pressing a key line copies the number" is dropped. Plan: `master-stress-test/pack/design-build-plan.md`.
+- **Defaults taken from the plan:** "Record gender" sits beside "Not recorded"; the clock is named "Board time"; one review word, the one the list uses.
+- **Boundary:** design and wording only. No clinical value, threshold or saved field changes.
+
 ## D-226. Forms after a Form 3E: continuation forms refused, coordinator reason (14 November 2026)
 
 - **Date:** 14 November 2026, 11:02 PM AWST (15:02 UTC). **Decided by:** Josh, "Yes to all recommendations" in the Ward Flow project chat, on the clinical-rules thread's recommendation (option C of the Form 3E options paper, master-stress-test/run/post-demo-build/form-3e-spec.md).
@@ -2709,7 +2790,7 @@ is inferred.
   4. A continuation-type form with no earlier order on file stays a warning only (D-187 item 6), since someone may arrive with a paper from another hospital.
 - **Why:** stress-test findings Lead-REC-A-2, REG1-9, REG2-7 and LG-3: a 3C or 6C after a 3E was accepted silently. A refusal with a listed way past stops a wrong record without blocking a real paper form.
 - **Replaces:** for these four forms after a 3E only, the "warn, never block" rule for legal order (27 Oct 2026, R-LEGAL-11's "Save Form N anyway"). Everything else stays a warning.
-- **Boundary:** synthetic data only; labels, not legal advice. Both form lists are Josh's clinical call. Release held for Josh's morning summary. Built in the clinical-rules PR.
+- **Boundary:** synthetic data only; labels, not legal advice. Both form lists are Josh's clinical call. Josh confirmed the release after the morning summary (15 November 2026, 2:51 PM AWST, 06:51 UTC: "Yes to all recommendations"). Built in the clinical-rules PR.
 
 ## D-227. A single-sex ward of the other sex reads "Not suitable" (14 November 2026)
 
@@ -2726,4 +2807,32 @@ is inferred.
 - **Replaces:** the earlier "by design, no change" note for RV2-2.
 - **Boundary:** synthetic data only. No placement rule changes.
 
-The next free number is D-229. D-224 and D-225 are claimed by open PR #1672 (design lane A). D-219, D-220, D-221, D-222 and D-223 are reserved by open PR #1673 (figures and timing).
+## D-229. Demo Pause holds Board time, and seeded wait lists match the engine (14 November 2026)
+
+- **Date:** 14 November 2026, 11:00 PM AWST (15:00 UTC). **Decided by:** Josh, in the Ward Flow project chat, asking for every open stress-test issue to be fixed ("Otherwise confirm all issues and launch appropriate threads to fix and address all of them", 14:56 UTC), then "Yes to all recommendations" (15:02 UTC). Built in the "Fix demo and seed data issues" thread.
+- **Decision:**
+  1. **Pause holds Board time** (stress test D1a-S-1). On this device's demo, the Demo panel's Pause stops Board time as well as freezing the page's lists, and Resume carries on from the paused minute. +15 min and +1 hour still move a paused clock. Reset or a scenario card ends the pause and starts the new day at the paused minute. Loading a file, a restored save or a reload also ends it; after a reload the paused minutes count as time passed. The shared board's clock is the server's, so there Pause stays the page's own pause. This replaces "Pause does not stop Board time, by design" (INV-SCENARIO-011).
+  2. **Seeded wait lists are written as the engine writes a waitlist answer** (D1a-E-1): a live referral, a "waitlisted" answer and, for the worked example, the decline that carries its reason. Worked example RD-05 and the standard day's two Royal Perth Adult Secure wait lists now show on the ED board and person page as they do on the ward. A seed check covers every scenario, with and without the worked examples.
+  3. **A refused demo day with more patients than beds says why** (RV2-18): "a ward holds more patients than it has beds", as the two-ward-stays refusal already did.
+  4. **Seeded ward bed counts stay fresh through the demo.** A count older than the signed bed count time refuses a pull (D-214), and the presenter may wait up to 15 minutes after Reset, so each seeded count is confirmed 6 to 15 minutes before the start. Graylands Older Adult stays stale on purpose, as the ward the script names as still to confirm.
+- **Handed on:** the header step count after Mark handover ready (REG2-6, card X12) and the person page for a named ward wait-list stay with no referral (Lead-VM-1) go to design Lane D, whose patient-page work replaces that count and owns that page.
+- **Boundary:** synthetic data only. No clinical value or rule changes.
+
+D-230 is reserved for another overnight thread (block noted in PR #1677). D-231 is reserved for another overnight thread (block noted in PR #1677). D-232 is reserved for another overnight thread (block noted in PR #1677). D-233 is reserved for another overnight thread (block noted in PR #1677). D-235 is claimed by open PR #1679. D-236 is claimed by open PR #1679.
+
+## D-234. Record gender on the ED board (14 November 2026)
+
+- **Date:** 14 November 2026, 10:56 PM AWST (14:56 UTC). **Decided by:** Josh, in the Ward Flow project: "Remove excessive wordiness, but make a way to record", answering the design plan's question on recording gender (R-LEGAL-6).
+- **Decision:** the ED board's row sheet shows the person's gender, and where it reads "Not yet recorded" it offers the existing Record gender control beside it: a choice with nothing pre-selected and a separate Record gender button. No extra wording is added.
+- **Why:** a gender-designated ward refuses a referral with "Record gender first", and the ED clinician who knows the answer had no place on the board to record it.
+- **Boundary:** reuses the existing `RECORD_MOVEMENT_GENDER` event and roles. No new rule, field, value or wording. Synthetic data only.
+
+## D-237. A desk's own save is never another desk's change (14 November 2026)
+
+- **Date:** 14 November 2026. **Decided by:** Josh, overnight standing permission (15:00 UTC): "As any issues come up please autonomously identify them and find the recommended fix and address them" and "You are to fix all issues", with the design lane D plan he approved at 14:44 UTC.
+- **Decision:** a desk's quick second step on the same record is not refused as "Another desk changed this movement first" because of its own first step (stress test Together-X1b-2, R-MOVE-4). When another desk saved something else in between and no popup is open, the shared client now tells the server which records its own save changed and at which revision (the server's `covered` tokens, sent back as `seen`), as popups already did (CS-19). A real change by another desk is still refused and keeps its words.
+- **Officer wording (R-MOVE-4):** the interim "Your last step is still saving" line is not used, because the cause is fixed. A refused Undo says the job has moved on and to check the board for its current step.
+- **Left for later:** the recorded hold-up on the person page (R-STRUCT-25) shows the hold-up but not who recorded it or when. That needs a new stored field and is not built here.
+- **Boundary:** save mechanics and wording only. No clinical value, threshold or saved field changes.
+
+The next free number is D-238.

@@ -207,8 +207,8 @@ it("derives the network ED median from individual waits, including an even popul
     cell.textContent?.trim().startsWith("Median"),
   );
   expect(medianColumn).toBeGreaterThan(-1);
-  expect(row.cells[medianColumn].textContent).toBe("6h");
-  expect(table.tFoot!.rows[0].cells[medianColumn].textContent).toBe("6h");
+  expect(row.cells[medianColumn].textContent).toBe("6 h");
+  expect(table.tFoot!.rows[0].cells[medianColumn].textContent).toBe("6 h");
 });
 
 it("counts today's bed referrals once across parallel bed criteria, with recorded outcomes", () => {
@@ -295,8 +295,8 @@ it("gives the network ED median to the minute, the same figure All EDs shows (de
   const medianColumn = [...table.tHead!.rows[0].cells].findIndex((cell) =>
     cell.textContent?.trim().startsWith("Median"),
   );
-  // 60 and 120 minutes: the median is 1h 30m, not rounded to "2h".
-  expect(row.cells[medianColumn].textContent).toBe("1h 30m");
+  // 60 and 120 minutes: the median is 1 h 30 min, not rounded to "2h".
+  expect(row.cells[medianColumn].textContent).toBe("1 h 30 min");
 });
 
 it("says a scope with no beds is empty, with no Clear filters when no filter is on (design audit C18)", () => {

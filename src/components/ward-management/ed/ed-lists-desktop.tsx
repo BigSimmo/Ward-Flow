@@ -13,7 +13,11 @@ import type { EdScreenContext } from "./ed-screen-context";
 import { edReferralClockLines, outstandingItem } from "./ed-screen-model";
 import { askForBedFromReferral, EdInboxDecline } from "./ed-screen-inbox";
 import { recordedEdDeparture } from "@/components/ward-management/ward-ed-presence";
-import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import {
+  ED_SEVERE_PRESSURE_WAIT_MINUTES,
+  EXPECT_RECONSIDER_AFTER_MINUTES,
+  OPERATIONAL_DEFAULT_LABEL,
+} from "@/components/ward-management/ward-operational-defaults";
 import { formTitleForCode } from "@/lib/form-register";
 import {
   currentLegalPosition,
@@ -351,7 +355,7 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
                 const person = who(referral);
                 const eta = movements.find((m) => m.referralId === referral.id)?.transport?.estimatedAt;
                 return (
-                  <tr key={`${referral.id}-${destination.edId}`}>
+                  <tr key={`${referral.id}-${destination.edId}`} data-minutes-waiting={now - referral.raisedAt}>
                     <td>
                       <span className={handover.listWho}>
                         <span className={handover.listNameStatic}>{person.formalName}</span>
@@ -360,7 +364,20 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
                     </td>
                     <td>{referralPurposeLabel(destination.purpose)}</td>
                     <td>{eta === undefined ? "Not recorded" : formatInstantWithDay(eta, now)}</td>
-                    <td className={handover.listMono}>{formatElapsed(now - referral.raisedAt)}</td>
+                    <td className={handover.listMono}>
+                      {formatElapsed(now - referral.raisedAt)}
+                      {/* Untested-537 VALUE-049: the same reconsider note the phone list shows. */}
+                      {now - referral.raisedAt >= EXPECT_RECONSIDER_AFTER_MINUTES ? (
+                        <div
+                          className={handover.listReviewLine}
+                          data-testid={`ward-ed-expects-reconsider-${referral.id}`}
+                          title={OPERATIONAL_DEFAULT_LABEL}
+                        >
+                          Referred over {EXPECT_RECONSIDER_AFTER_MINUTES / 60} hours ago and not arrived. Does it still
+                          stand?
+                        </div>
+                      ) : null}
+                    </td>
                     <td className={handover.alignEnd}>
                       <button
                         type="button"

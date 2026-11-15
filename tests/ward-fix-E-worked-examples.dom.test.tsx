@@ -20,7 +20,7 @@ vi.mock("next/navigation", () => ({
 
 /**
  * A16-14 (root cause R8; Josh approved 13 Nov 2026). The legal-form worked examples were merged into
- * every Standard day at Armadale ED, so Armadale's 22 waiting, the 7d 1h longest wait and much of
+ * every Standard day at Armadale ED, so Armadale's 22 waiting, the 7 d 1 h longest wait and much of
  * the detained count were planted rows. They are now off by default and the presenter switches
  * them on from Tools, Demo, as the look-alike hard cases are opt-in.
  */

@@ -100,7 +100,7 @@ describe("service-capacity-tracker: deriveEdWarning", () => {
     expect(warning.label).toBe("Flow Manageable");
   });
 
-  it("returns Yellow when 3 or more patients waiting or longest wait >= 180m", () => {
+  it("returns Yellow when 3 or more patients waiting or longest wait >= 180 min", () => {
     const warning = deriveEdWarning(3, 100, 0, 0, 0, 5);
     expect(warning.code).toBe("yellow");
     expect(warning.label).toBe("Elevated Pressure");

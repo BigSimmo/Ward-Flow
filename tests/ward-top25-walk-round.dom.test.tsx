@@ -141,7 +141,7 @@ describe("phone round (item 23, redrawn as Option B on 20 Oct 2026)", () => {
   it("marks a bed changed this round when its state moves, not when only its text ticks", () => {
     const { rerender } = render(<Harness />);
     expect(screen.queryByText("Changed")).toBeNull();
-    const ticked = beds.map((bed) => (bed.bedNumber === 2 ? { ...bed, note: "Pull 26m left" } : bed));
+    const ticked = beds.map((bed) => (bed.bedNumber === 2 ? { ...bed, note: "Pull 26 min left" } : bed));
     rerender(<Harness bedList={ticked} />);
     expect(screen.queryByText("Changed")).toBeNull();
     const moved = beds.map((bed) =>

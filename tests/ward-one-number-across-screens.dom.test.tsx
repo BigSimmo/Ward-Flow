@@ -91,7 +91,7 @@ describe("Home and Statistics print the same figures as the bed meeting sheet (A
       leadingNumber(within(chips).getByTestId("ward-statistics-discharges-today-count")),
       "discharged today vs print",
     ).toBe(sheet.discharges.dischargedToday);
-    expect(leadingNumber(figureOf(/^open ED movements$/u)), "open ED movements").toBe(
+    expect(leadingNumber(figureOf(/^ED journeys open$/u)), "ED journeys open").toBe(
       openEdJourneys(state.movements, NOW_ANCHOR).total,
     );
   });

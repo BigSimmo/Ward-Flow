@@ -162,7 +162,7 @@ describe("acceptance", () => {
     }
   });
 
-  it("refuses a second acceptance and says the referral was withdrawn", () => {
+  it("refuses a second acceptance and says the second ward cannot accept it as well", () => {
     const accepted = wardFlowReducer(referred(), {
       type: "ACCEPT_IN_PRINCIPLE",
       role: "ward",
@@ -180,7 +180,7 @@ describe("acceptance", () => {
       actingUnitId: "fsh-adult-secure",
     });
     expect(next.rejections).toHaveLength(1);
-    expect(next.rejections[0].reason).toMatch(/withdraw/i);
+    expect(next.rejections[0].reason).toMatch(/cannot accept it as well/i);
     expect(movement(next, "WF-009").acceptedUnitId).toBe("rph-adult-secure");
   });
 });

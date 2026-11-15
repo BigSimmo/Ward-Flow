@@ -602,7 +602,7 @@ function WardsIndexView({
                             <td className={num(row.closed === 0)}>{row.closed}</td>
                             <td className={num(exactStatisticsCount(row.blocked) === 0)}>{shown(row.blocked)}</td>
                             <td className={num(row.longest === null)}>
-                              {row.longest === null ? "none" : `${row.longest}d`}
+                              {row.longest === null ? "none" : `${row.longest} d`}
                             </td>
                           </tr>
                         );

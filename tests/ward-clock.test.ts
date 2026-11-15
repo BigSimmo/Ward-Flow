@@ -41,10 +41,10 @@ describe("ward clock", () => {
   });
 
   it("formats a remaining duration for a coordinator, not a machine", () => {
-    expect(formatRemaining(93)).toBe("1h 33m left");
-    expect(formatRemaining(45)).toBe("45m left");
-    expect(formatRemaining(-42)).toBe("42m overdue");
-    expect(formatRemaining(-93)).toBe("1h 33m overdue");
+    expect(formatRemaining(93)).toBe("1 h 33 min left");
+    expect(formatRemaining(45)).toBe("45 min left");
+    expect(formatRemaining(-42)).toBe("42 min overdue");
+    expect(formatRemaining(-93)).toBe("1 h 33 min overdue");
   });
 
   it("formats an instant as a wall-clock time", () => {
@@ -62,8 +62,8 @@ describe("ward clock", () => {
 
   it("formats an elapsed duration as a wait, never as a breach", () => {
     // A movement opened 95 minutes ago: minutesUntil(now, openedAt) = now - openedAt.
-    expect(formatElapsed(minutesUntil(NOW, NOW - 95))).toBe("1h 35m waiting");
-    expect(formatElapsed(45)).toBe("45m waiting");
+    expect(formatElapsed(minutesUntil(NOW, NOW - 95))).toBe("1 h 35 min waiting");
+    expect(formatElapsed(45)).toBe("45 min waiting");
     // formatRemaining would call this "overdue"; formatElapsed must not, and must not go
     // negative even if given a future instant by mistake. RC 2.5 (F-35): nor may it read "0m
     // waiting", which looks like a new arrival; it says the start time is in the future.
@@ -126,14 +126,14 @@ describe("an instant carries a day as well as a clock face", () => {
 
   it("says a long wait in days, because nobody reads a wait in hundreds of hours", () => {
     // The measured defect, not a hypothetical: seeded out-of-area stays of one to two hundred days
-    // rendered through this function as `25h 30m` through `5041h 30m`. Every number correct, every
+    // rendered through this function as `25 h 30 min` through `5041 h 30 min`. Every number correct, every
     // number unreadable, and the suite entirely green because no assertion was about the format.
-    expect(splitDuration(45), "under an hour stays in minutes").toBe("45m");
-    expect(splitDuration(185), "under a day stays in hours and minutes").toBe("3h 05m");
-    expect(splitDuration(MINUTES_PER_DAY), "exactly one day is a day, not 24h 00m").toBe("1d");
-    expect(splitDuration(MINUTES_PER_DAY + 90), "a day and a half").toBe("1d 1h");
-    expect(splitDuration(30 * 60), "the 30-hour wait that used to read as six hours").toBe("1d 6h");
-    expect(splitDuration(5041 * 60 + 30), "the measured 5041h 30m becomes readable").toBe("210d 1h");
+    expect(splitDuration(45), "under an hour stays in minutes").toBe("45 min");
+    expect(splitDuration(185), "under a day stays in hours and minutes").toBe("3 h 05 min");
+    expect(splitDuration(MINUTES_PER_DAY), "exactly one day is a day, not 24 h 00 min").toBe("1 d");
+    expect(splitDuration(MINUTES_PER_DAY + 90), "a day and a half").toBe("1 d 1 h");
+    expect(splitDuration(30 * 60), "the 30-hour wait that used to read as six hours").toBe("1 d 6 h");
+    expect(splitDuration(5041 * 60 + 30), "the measured 5041 h 30 min becomes readable").toBe("210 d 1 h");
   });
 
   it("leaves every duration below a day exactly as it was", () => {
@@ -143,7 +143,7 @@ describe("an instant carries a day as well as a clock face", () => {
     for (const minutes of [0, 1, 59, 60, 61, 239, 240, MINUTES_PER_DAY - 1]) {
       const hours = Math.floor(minutes / 60);
       const remainder = minutes % 60;
-      const expected = hours > 0 ? `${hours}h ${String(remainder).padStart(2, "0")}m` : `${remainder}m`;
+      const expected = hours > 0 ? `${hours} h ${String(remainder).padStart(2, "0")} min` : `${remainder} min`;
       expect(splitDuration(minutes), `${minutes} minutes must render unchanged`).toBe(expected);
     }
   });

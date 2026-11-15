@@ -2402,6 +2402,11 @@ export type WardFlowEvent =
        * refuses it from any other desk. Never set together with `unitId`.
        */
       network?: true;
+      /**
+       * D-179 Question 6 (Josh, 13 Nov 2026): sign-off stays allowed with checks open, and History
+       * records them. The count of sign-off checks not clear when signed; a whole number, never text.
+       */
+      openChecks?: number;
     }
   | {
       /** Record that a team was contacted: the contact itself, not a sent message. Stores team, time and role. */

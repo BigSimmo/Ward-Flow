@@ -24,13 +24,13 @@ import {
 import Link from "next/link";
 import { useEffect, useId, useRef, useState, type MouseEvent, type RefObject } from "react";
 import { useWardFormSave } from "./use-ward-form-save";
-import type { WardCommandDispatch } from "./ward-shared-client";
+import type { WardCommandDispatch, WardCommandOutcome } from "./ward-shared-client";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 import { acceptedPullReferralId, isAcceptedPullRow } from "@/components/ward-management/ward-alerts-figures";
 import { TasksQuickJumps } from "./ward-tasks-quick-jumps";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { StatusGlyph, buttonClass, durMinutes, type WfTone } from "@/components/wf";
+import { StatusGlyph, buttonClass, durMinutes, useOptionalToast, type WfTone } from "@/components/wf";
 import { typedClock } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { currentLegalPosition } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { callRows, type CallRow, type CallTarget } from "./patients/patient-call-list";
@@ -301,6 +301,7 @@ export function WardTasksDrawer({
   alertsQueueForDesk = true,
 }: WardTasksDrawerProps) {
   const drawerRef = useRef<HTMLElement>(null);
+  const toast = useOptionalToast();
   const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   const words = alertsScreenOpen && alertsQueueForDesk ? ALERTS_WORDS : TASKS_WORDS;
   // A2-20: a row's name follows Discreet names (initials plus UMRN).
@@ -1025,8 +1026,26 @@ export function WardTasksDrawer({
                 actNow={inboxItemIsActNow(item.id)}
                 now={now}
                 onSnooze={(until, reason) => {
-                  const snooze = () =>
-                    dispatch({ type: "SNOOZE_INBOX_ITEM", role, now, inboxItemId: item.id, until, reason });
+                  const snooze = () => {
+                    const outcome = dispatch({
+                      type: "SNOOZE_INBOX_ITEM",
+                      role,
+                      now,
+                      inboxItemId: item.id,
+                      until,
+                      reason,
+                    });
+                    // R-HOME-8: one line saying what the press did and that it is not cleared, once saved.
+                    const confirm = (result: void | WardCommandOutcome) => {
+                      if (result && result.status !== "accepted") return;
+                      toast?.push({
+                        tone: "success",
+                        title: `Snoozed until ${formatInstantWithDay(until, now)}. It is not cleared.`,
+                      });
+                    };
+                    if (outcome instanceof Promise) void outcome.then(confirm, () => undefined);
+                    else confirm(outcome);
+                  };
                   if (escalating === item.id && !discardEscalation(snooze)) return;
                   snooze();
                 }}

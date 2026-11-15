@@ -15,7 +15,8 @@ import { bedStates, type ReservationReferral } from "@/components/ward-managemen
 import { bedIsOccupied, type Admission, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
-import type { BedRelease, Movement, MovementStage, Unit } from "@/components/ward-management/ward-model";
+import type { BedRelease, Movement, Unit } from "@/components/ward-management/ward-model";
+import { needsABed, noWardYet } from "@/components/ward-management/figures/bed-demand";
 import { bedsForecastSources, type BedsForecastSources } from "./beds-forecast-sources";
 import { patientsHoldingANamedBed, plannedAdmissionsStillNeedingABed } from "./planned-admissions-reducer";
 import { forecastReleaseAt } from "../forecast/forecast-release-date";
@@ -29,15 +30,13 @@ import { isExpectedToFree } from "../ward-releases-expected-to-free";
 const BEDS_FORECAST_HORIZON_DAYS = [1, 2, 3] as const;
 
 /**
- * Stages at which a person still needs a bed. From `pulled` onwards `PULL_PATIENT` has already
- * taken the bed off the ward's allocatable count, so counting that person again would subtract the
- * same bed twice.
+ * Journeys at a stage before the pull, holding a bed or not: their person is already accounted for, so
+ * a booking for the same person is not fresh demand. From `pulled` onwards `PULL_PATIENT` has already
+ * taken the bed off the ward's allocatable count.
  */
-const STAGES_STILL_NEEDING_A_BED: readonly MovementStage[] = [
-  "placement_requested",
-  "destination_review",
-  "accepted_awaiting_bed",
-];
+function beforeThePull(movement: Movement): boolean {
+  return noWardYet(movement) || (isOpen(movement) && movement.stage === "accepted_awaiting_bed");
+}
 
 type BedsForecastHorizon = {
   /** The window's length in hours, from `BEDS_FORECAST_HORIZON_DAYS`. */
@@ -136,16 +135,10 @@ export function bedsForecast(
   const expectedAt = (release: BedRelease) => forecastReleaseAt(release, admissionsById.get(release.admissionId));
   const pending = releases.filter((release) => release.state !== "discharged" && openUnitIds.has(release.unitId));
   const flaggedAdmissionIds = new Set(pending.map((release) => release.admissionId));
-  const waitingMovements = movements.filter(
-    (movement) => isOpen(movement) && STAGES_STILL_NEEDING_A_BED.includes(movement.stage),
-  );
-  // Clinical owner ruling, 14 Oct 2026: a movement already pulled into a bed (an admission or an
-  // allocated bed) is left out of the bed-wait count, and so out of `bedsNeeded` too.
-  // A journey holding a named bed is out of Ready already, so it is not counted as waiting too.
-  const waitingForBed = waitingMovements.filter(
-    (movement) =>
-      movement.admissionId === undefined && movement.allocatedBed === undefined && movement.heldBedNumber === undefined,
-  ).length;
+  const waitingMovements = movements.filter(beforeThePull);
+  // Need a bed (D-220), the rule Capacity counts: a journey already holding a bed (an admission, an
+  // allocated bed or a named held bed; owner ruling 14 Oct 2026) is not counted as waiting too.
+  const waitingForBed = movements.filter(needsABed).length;
 
   const horizons = BEDS_FORECAST_HORIZON_DAYS.map((days): BedsForecastHorizon => {
     const until = now + days * MINUTES_PER_DAY;

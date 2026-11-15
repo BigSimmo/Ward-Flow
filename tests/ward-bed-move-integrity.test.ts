@@ -445,3 +445,41 @@ describe("numbered bed designation integrity", () => {
     expect(next.admissions.at(-1)).toMatchObject({ bedKind: "locked", bedNumber: heldBed, state: "occupied" });
   });
 });
+
+describe("placing a stay in a bed ends that bed's old 'being made ready' marker (INV-CROSSDESK-011)", () => {
+  it("clears only the release that vacated the same bed", () => {
+    const { state, current } = bench();
+    const stay = current.find((row) => row.bedKind === "open" && row.state === "occupied")!;
+    const target = Math.max(...current.map((row) => row.bedNumber!)) + 1;
+    const template = state.bedReleases[0]!;
+    expect(template).toBeDefined();
+    const vacated = { ...stay, id: "AD-SYNTH-VACATED", state: "departed" as const, bedNumber: target };
+    const elsewhere = { ...stay, id: "AD-SYNTH-ELSEWHERE", state: "departed" as const, bedNumber: target + 1 };
+    const release = (id: string, admissionId: string) => ({
+      ...template,
+      id,
+      unitId: UNIT,
+      admissionId,
+      state: "discharged" as const,
+      preparing: true,
+    });
+    const seeded: WardFlowState = {
+      ...state,
+      admissions: [...state.admissions, vacated, elsewhere],
+      bedReleases: [
+        ...state.bedReleases,
+        release("BR-SYNTH-SAME", vacated.id),
+        release("BR-SYNTH-OTHER", elsewhere.id),
+      ],
+    };
+    const moved = send(seeded, {
+      type: "PLACE_IN_BED",
+      role: "ward",
+      admissionId: stay.id,
+      actingUnitId: UNIT,
+      bedNumber: target,
+    } as WardFlowEvent);
+    expect(moved.bedReleases.find((row) => row.id === "BR-SYNTH-SAME")?.preparing).toBe(false);
+    expect(moved.bedReleases.find((row) => row.id === "BR-SYNTH-OTHER")?.preparing).toBe(true);
+  });
+});

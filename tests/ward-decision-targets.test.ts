@@ -82,7 +82,7 @@ describe("decision targets through the real event walk", () => {
       startedAt: NOW,
       dueAt: NOW + defaults.referralDecisionTargetMinutes,
       overdue: false,
-      text: "1h 30m left",
+      text: "1 h 30 min left",
     });
     // Pending (not yet overdue) still emits a reachable inbox row so the countdown is visible
     // when the patient has no other alert.
@@ -93,7 +93,7 @@ describe("decision targets through the real event walk", () => {
       tone: "warning",
       kind: "fact",
       title: "Referral decision",
-      detail: expect.stringContaining("1h 30m left"),
+      detail: expect.stringContaining("1 h 30 min left"),
       movementId: MOVEMENT,
       dueAt: NOW + defaults.referralDecisionTargetMinutes,
     });
@@ -132,7 +132,7 @@ describe("decision targets through the real event walk", () => {
   it("raises one act-now inbox row once the referral decision is overdue", () => {
     const state = referred();
     const late = NOW + defaults.referralDecisionTargetMinutes + 65;
-    expect(decisionTargetReading(movement(state), late, defaults)?.text).toBe("1h 05m overdue");
+    expect(decisionTargetReading(movement(state), late, defaults)?.text).toBe("1 h 05 min overdue");
     const items = decisionTargetInboxItems([movement(state)], late, defaults);
     expect(items).toHaveLength(1);
     expect(items[0]).toMatchObject({
@@ -158,7 +158,7 @@ describe("decision targets through the real event walk", () => {
     const tighter = { ...defaults, referralDecisionTargetMinutes: 30 };
     expect(decisionTargetReading(movement(state), NOW + 45, tighter)).toMatchObject({
       overdue: true,
-      text: "15m overdue",
+      text: "15 min overdue",
     });
     expect(decisionTargetInboxItems([movement(state)], NOW + 45, tighter)).toHaveLength(1);
   });
@@ -181,7 +181,12 @@ describe("decision targets through the real event walk", () => {
       NOW + 40 + defaults.transportBookedTargetMinutes + 1,
       defaults,
     );
-    expect(reading).toMatchObject({ step: "transport_booked", startedAt: NOW + 40, overdue: true, text: "1m overdue" });
+    expect(reading).toMatchObject({
+      step: "transport_booked",
+      startedAt: NOW + 40,
+      overdue: true,
+      text: "1 min overdue",
+    });
     const items = decisionTargetInboxItems(
       [movement(pulled)],
       NOW + 40 + defaults.transportBookedTargetMinutes + 1,

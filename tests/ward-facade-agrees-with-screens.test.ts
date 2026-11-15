@@ -263,8 +263,13 @@ function bedReleased(state: WardFlowState): WardFlowState {
  * figure unmoved — a mutation that moves nothing, dressed as one that does.
  */
 function referralDeclined(state: WardFlowState): WardFlowState {
+  // R-BEDS-13: a community referral declined by its only ward stays queued for the coordinator,
+  // so it would move no figure. Settle one that leaves the queue when declined.
   const referral = state.referrals.find(
-    (candidate) => referralState(candidate) === "queued" && candidate.destinations.length === 1,
+    (candidate) =>
+      referralState(candidate) === "queued" &&
+      candidate.destinations.length === 1 &&
+      !(candidate.source === "community" && candidate.destinations[0].destination.kind === "psychiatric_ward"),
   );
   expect(
     referral,

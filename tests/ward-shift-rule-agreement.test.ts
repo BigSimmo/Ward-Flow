@@ -37,6 +37,6 @@ describe("one shift rule for the rail and the Handover chip (audit P104)", () =>
   it("the chip reads Handover Due only in the last 15 minutes, and not from 15:00", () => {
     expect(computeShiftProgress(14 * 60 + 59).handoverDue).toBe(true);
     expect(computeShiftProgress(15 * 60).handoverDue).toBe(false);
-    expect(computeShiftProgress(15 * 60).countdownStr).toBe("8h 0m");
+    expect(computeShiftProgress(15 * 60).countdownStr).toBe("8 h 0 min");
   });
 });

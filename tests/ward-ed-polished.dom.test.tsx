@@ -166,8 +166,12 @@ describe("ED compact draft selectors", () => {
       movement.legalForm ? `Form ${movement.legalForm.code}` : "No form recorded",
     );
     expect(within(sheet).getByTestId(`ward-ed-review-status-${movement.id}`)).toHaveTextContent(
-      // R-STRUCT-28 (Josh, 14 Nov 2026): "Awaiting review" only once a review is asked for.
-      movement.examination ? "Examination recorded" : movement.psychReview ? "Awaiting review" : "Not asked yet",
+      // R-STRUCT-28 and R-LEGAL-16 (14 Nov 2026): the list's own review words.
+      movement.examination
+        ? "Examination recorded"
+        : movement.psychReview
+          ? /^(Review asked|Consultant pending|Consultant seen)$/u
+          : "Review not asked for",
     );
     expect(within(sheet).getByTestId(`ward-ed-cleared-${movement.id}`)).toHaveTextContent(/^(Not recorded|Yes|No)$/);
   });

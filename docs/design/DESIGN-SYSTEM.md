@@ -199,7 +199,7 @@ Use Lucide's current names, never the old aliases: `TriangleAlert` not `AlertTri
 
 **Graphs, grids and beds.** Heat-map cells show the number alone, shade deepening, empty days a faint dot, days after tomorrow hatched, two-line day heads with today in accent. Bed pictures read "1 ready of 20 beds", a bed-type tag, squares on one line, a note line only when needed. One timeline per record with a live Now point.
 
-**Home: Needs you and Flow (Q340-Q345, #1324, 3 Nov).** One navigation row: **Needs you | Flow** as the raised switch, a rule, then the Flow stages as lighter trackless tabs with counts (All, Needs a bed, Bed agreed, Ready to move, Moving), red when someone in that stage is late. A stage tab opens Flow at that stage. Flow groups open movements by stage, oldest first, five rows per stage then "Show all N". Needs you holds act now, beds to pull and referrals to decide; a waiting alert is a mark on the patient's Flow row, not a second row. Later today sits in the right column on desktop and is a third tab on a phone. On a phone the row pins under the header. Use this one-row pattern for any page that pairs an action list with a staged list.
+**Home: Needs you and Flow (Q340-Q345, #1324, 3 Nov).** One navigation row: **Needs you | Flow** as the raised switch, a rule, then the Flow stages as lighter trackless tabs with counts (All, No ward yet, Bed agreed, Ready to move, Moving; first tab renamed by D-220), red when someone in that stage is late. A stage tab opens Flow at that stage. Flow groups open movements by stage, oldest first, five rows per stage then "Show all N". Needs you holds act now, beds to pull and referrals to decide; a waiting alert is a mark on the patient's Flow row, not a second row. Later today sits in the right column on desktop and is a third tab on a phone. On a phone the row pins under the header. Use this one-row pattern for any page that pairs an action list with a staged list.
 
 **Tools sheet (Q308-Q326, Q350-Q353, #1316, 3 Nov).** Search and a Recent row (Suggested until a tool is used) lead, then Do now, Look up and Print and share, ordered per desk. Rows show live counts and short second lines. One tool open at a time, scrolled into view; from 1280 wide it opens in a second pane. "/" jumps to search; no match offers Search Ward Flow. Viewing as and the demo controls sit together at the foot. Pickers come from the kit, picks come from lists only, and On-call Call copies the number (no tel links).
 
@@ -219,26 +219,26 @@ Short labels win. Josh rejected "For you / With other desks" as too wordy (Q179)
 
 One word for each thing (the full list and the banned phrases are in [word-list.md](../ward-flow/word-list.md), which `tests/ward-word-list.test.ts` reads; change both together):
 
-| Say                                            | Not                                                                            |
-| ---------------------------------------------- | ------------------------------------------------------------------------------ |
-| Alerts                                         | Tasks                                                                          |
-| movement                                       | journey                                                                        |
-| held up (a state)                              | barrier, blocker (Releases held up stays on Ward, Q305)                        |
-| discharge (the event)                          | release, departure, due out                                                    |
-| Bed board                                      | Stays and discharges, Bed Board, board                                         |
-| New referral                                   | Raise referral                                                                 |
-| Add patient                                    | Add a patient, New patient                                                     |
-| desks                                          | units, areas, screens (in Broadcast)                                           |
-| Locked, Locked bed                             | Secure, Secure bed (except inside ward names; Josh, 5 Nov 2026)                |
-| Board time                                     | Demo time (the live pill "Demo 10:42" stays: Josh, 5 Nov 2026, HOW-WE-WORK §6) |
-| Synthetic numbers                              | Mock numbers                                                                   |
-| Needs you (Tools), Next escalation step        | Suggested now, Suggested next step (D-192)                                     |
-| From ward dates                                | Forecast, likely (D-192)                                                       |
-| Community team                                 | team, Community teams (as a page)                                              |
-| Needs you, Flow (Home)                         | Open, Waiting, Queue (Waiting is the ED count)                                 |
-| Later today                                    | Planned                                                                        |
-| Needs a bed, Bed agreed, Ready to move, Moving | other stage names; the detailed steps are sub-labels only (Josh, 5 Nov 2026)   |
-| Nobody                                         | No one (empty lines; a whole sentence ends with a full stop)                   |
+| Say                                            | Not                                                                                 |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Alerts                                         | Tasks                                                                               |
+| movement                                       | journey                                                                             |
+| held up (a state)                              | barrier, blocker (Releases held up stays on Ward, Q305)                             |
+| discharge (the event)                          | release, departure, due out                                                         |
+| Bed board                                      | Stays and discharges, Bed Board, board                                              |
+| New referral                                   | Raise referral                                                                      |
+| Add patient                                    | Add a patient, New patient                                                          |
+| desks                                          | units, areas, screens (in Broadcast)                                                |
+| Locked, Locked bed                             | Secure, Secure bed (except inside ward names; Josh, 5 Nov 2026)                     |
+| Board time                                     | Demo time (the live pill "Demo 10:42" stays: Josh, 5 Nov 2026, HOW-WE-WORK §6)      |
+| Synthetic numbers                              | Mock numbers                                                                        |
+| Needs you (Tools), Next escalation step        | Suggested now, Suggested next step (D-192)                                          |
+| From ward dates                                | Forecast, likely (D-192)                                                            |
+| Community team                                 | team, Community teams (as a page)                                                   |
+| Needs you, Flow (Home)                         | Open, Waiting, Queue (Waiting is the ED count)                                      |
+| Later today                                    | Planned                                                                             |
+| No ward yet, Bed agreed, Ready to move, Moving | other stage names; the detailed steps are sub-labels only (Josh, 5 Nov 2026; D-220) |
+| Nobody                                         | No one (empty lines; a whole sentence ends with a full stop)                        |
 
 States: empty pages say what is empty without a Clear button ("No patients yet."). Offline: "You're offline. Tap again once you're back online." Slow: "Still loading. Check the connection." with Reload after about 15 seconds.
 

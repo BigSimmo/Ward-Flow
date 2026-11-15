@@ -1,5 +1,5 @@
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
-import type { Instant } from "@/components/ward-management/ward-clock";
+import { bedCountAgeWords, type Instant } from "@/components/ward-management/ward-clock";
 import { waitlistStands } from "@/components/ward-management/ward-waitlist";
 import {
   designationSummary,
@@ -966,11 +966,6 @@ export function placementFit(
 export function bedCountAgeMinutes(unit: Pick<Unit, "allocatable">, now: Instant): number | undefined {
   const age = now - unit.allocatable.confirmedAt;
   return Number.isFinite(age) ? Math.max(0, age) : undefined;
-}
-
-/** "75 min" under two hours, then whole hours ("2 h"), the ward desk's own wording. */
-export function bedCountAgeWords(minutes: number): string {
-  return minutes < 120 ? `${minutes} min` : `${Math.floor(minutes / 60)} h`;
 }
 
 /**

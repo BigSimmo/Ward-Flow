@@ -53,9 +53,9 @@ const FACTS: TourFacts = {
   openMovements: 70,
   referralsWaiting: 7,
   waitingInEd: 62,
-  topEd: { name: "Armadale ED", waiting: 22, longest: "7d 1h" },
+  topEd: { name: "Armadale ED", waiting: 22, longest: "7 d 1 h" },
   ward: { beds: 20, occupied: 16, ready: 1, confirmedAt: "10:22" },
-  ed: { waiting: 5, longest: "13h 24m", targetHours: 24 },
+  ed: { waiting: 5, longest: "13 h 24 min", targetHours: 24 },
   activeJobs: 13,
 };
 

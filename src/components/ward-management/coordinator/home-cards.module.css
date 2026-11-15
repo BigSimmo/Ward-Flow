@@ -209,3 +209,17 @@
   font-family: var(--wf-mono);
   color: var(--wf-ink-1);
 }
+
+/* R-HOME-6: phone lever toggle drawn 40px, tap area 48px. */
+@media (max-width: 46.4375rem) {
+  .leverToggle {
+    position: relative;
+    min-height: 40px;
+  }
+
+  .leverToggle::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+}

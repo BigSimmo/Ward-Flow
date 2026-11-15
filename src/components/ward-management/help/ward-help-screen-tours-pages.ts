@@ -552,14 +552,14 @@ export const MORE_PAGES: readonly Around[] = [
       {
         device: "desk",
         target: id("ward-statistics-services-ed-waits"),
-        title: "Open ED movements",
+        title: "ED journeys open",
         body: "People still in an ED or in transit, counted by service.",
       },
       {
         device: "phone",
         target: id("ward-statistics-services-phone"),
         title: "Each service",
-        body: "Beds in use, wards at the at-risk line and open ED movements. Open a service for its own figures.",
+        body: "Beds in use, wards at the at-risk line and ED journeys open. Open a service for its own figures.",
       },
       {
         device: "phone",

@@ -31,7 +31,7 @@ describe("WardRecordRow", () => {
             { level: "urgent", text: "5 declined" },
             { level: "stalled", text: "Escalated" },
           ]}
-          clock={{ value: "7h 00m", sub: "in ED", urgent: true }}
+          clock={{ value: "7 h 00 min", sub: "in ED", urgent: true }}
           attributes={["Adult", "Male", "Involuntary", "Needs a locked bed"]}
         />
       </WardRecordList>,
@@ -39,7 +39,7 @@ describe("WardRecordRow", () => {
     expect(screen.getByText("WF-009")).toBeInTheDocument();
     expect(screen.getByText("5 declined")).toBeInTheDocument();
     expect(screen.getByText("Escalated")).toBeInTheDocument();
-    expect(screen.getByText("7h 00m")).toBeInTheDocument();
+    expect(screen.getByText("7 h 00 min")).toBeInTheDocument();
     expect(screen.getByText(/Needs a locked bed/u)).toBeInTheDocument();
   });
 

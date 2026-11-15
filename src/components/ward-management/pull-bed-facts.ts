@@ -7,6 +7,7 @@ import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "./ward-flow-roles";
 import type { Movement } from "./ward-model";
 import { PULL_FORM_FIELDS, type PullFormField } from "./ward-model-movement-parts";
 import { UNDO_WINDOW_MINUTES } from "./ward-operational-defaults";
+import { refusalLine } from "./ward-refusal-words";
 import type { AcceptedAwaitingPull } from "./referrals/accepted-awaiting-pull";
 
 /** The desks that may pull a bed (D-188 point a): the ward-desk clinician and the coordinator. */
@@ -107,6 +108,17 @@ export function pullUndoUntil(pulled: Pick<PulledBed, "at">): Instant {
 /** The movement the pull started, once the state holds it. */
 export function pulledMovement(movements: readonly Movement[], pulled: PulledBed): Movement | undefined {
   return movements.find((movement) => movement.referralId === pulled.entry.referral.id && !movement.closure);
+}
+
+/** Whether a transport booking stands on the pulled bed's movement; the engine refuses Undo pull until it is cancelled. */
+export function pullHasTransportBooked(movements: readonly Movement[], pulled: PulledBed): boolean {
+  const transport = pulledMovement(movements, pulled)?.transport;
+  return transport !== undefined && transport.cancelledAt === undefined;
+}
+
+/** R-MOVE-14: the refused Undo pull, one line naming the person (never a code or a journey number). */
+export function pullUndoTransportBookedLine(pulled: Pick<PulledBed, "name">): string {
+  return refusalLine(`Transport is booked for ${pulled.name}`, "Cancel the booking first, then undo the pull");
 }
 
 /**

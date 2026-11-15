@@ -22,17 +22,17 @@ describe("bedHold: the one rule", () => {
     expect(bedHold(undefined, NOW)).toBeNull();
     expect(bedHold(NOW - 10, NOW)).toMatchObject({
       state: "lapsed",
-      label: "Pull expired 10m ago",
+      label: "Pull expired 10 min ago",
       nextStep: "Move or release",
     });
     // Audit L2 and L3, D-210 (Josh, 14 Nov 2026): lapsed once past its minute, and running out at the
     // Settings act-now warning inclusive, as `clockState` reads a legal form.
     expect(bedHold(NOW, NOW)?.state).toBe("at-risk");
     expect(bedHold(NOW - 1, NOW)?.state).toBe("lapsed");
-    expect(bedHold(NOW + 27, NOW)).toMatchObject({ state: "at-risk", label: "Pull 27m left", short: "27m left" });
+    expect(bedHold(NOW + 27, NOW)).toMatchObject({ state: "at-risk", label: "Pull 27 min left", short: "27 min left" });
     expect(bedHold(NOW + BED_HOLD_AT_RISK_MINUTES, NOW)?.state).toBe("at-risk");
     expect(bedHold(NOW + BED_HOLD_AT_RISK_MINUTES + 1, NOW)?.state).toBe("held");
-    expect(bedHold(NOW + 130, NOW)).toMatchObject({ state: "held", label: "Pull 2h 10m left" });
+    expect(bedHold(NOW + 130, NOW)).toMatchObject({ state: "held", label: "Pull 2 h 10 min left" });
   });
 });
 
@@ -69,7 +69,7 @@ describe("Movement detail (A4-1)", () => {
     const bed = status.cells.find((cell) => cell.key === "bed")!;
     expect(status.tone).toBe("danger");
     expect(bed.tone).toBe("danger");
-    expect(bed.sub).toBe("Pull expired 10m ago");
+    expect(bed.sub).toBe("Pull expired 10 min ago");
     expect(bed.clear).toBe(false);
     expect(bed.action).toMatchObject({ kind: "button", label: "Move or release" });
   });
@@ -78,7 +78,7 @@ describe("Movement detail (A4-1)", () => {
     const status = buildPatientStatus("held", ctx(NOW + 27));
     const bed = status.cells.find((cell) => cell.key === "bed")!;
     expect(bed.tone).toBe("warning");
-    expect(bed.sub).toBe("Bed pulled, 27m left");
+    expect(bed.sub).toBe("Bed pulled, 27 min left");
     expect(status.tone).not.toBe("danger");
   });
 });
@@ -97,7 +97,7 @@ describe("Handover (A4-3, A4-4)", () => {
 
   it("words a lapsed hold the same way and keeps it in Act now", () => {
     expect(isActNow(row(NOW - 10), NOW)).toBe(true);
-    expect(nextStep(row(NOW - 10), NOW, NOW + 300, () => 0).text).toBe("Pull expired 10m ago. Move or release");
+    expect(nextStep(row(NOW - 10), NOW, NOW + 300, () => 0).text).toBe("Pull expired 10 min ago. Move or release");
   });
 
   it("marks a hold ending within the hour at risk without promoting it to Act now", () => {

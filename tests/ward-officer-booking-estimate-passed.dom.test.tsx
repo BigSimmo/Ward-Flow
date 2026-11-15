@@ -9,7 +9,7 @@ afterEach(cleanup);
 /**
  * P068 (approved by Josh in chat, 27 Oct 2026, 8:35 PM AWST): a booking estimate that has passed is the
  * transport provider's quoted time, not a ward ETA, so the Arrivals card says "Booking estimate passed
- * 13m ago" rather than calling the job overdue. Synthetic demo data only.
+ * 13 min ago" rather than calling the job overdue. Synthetic demo data only.
  */
 function renderWith(eta: number, now: number) {
   const movement = { id: "m-p068" } as unknown as Movement;
@@ -32,7 +32,7 @@ function renderWith(eta: number, now: number) {
 describe("Arrivals card: a passed booking estimate (P068)", () => {
   it("says how long ago the booking estimate passed", () => {
     renderWith(1000, 1013);
-    expect(screen.getByText("Booking estimate passed 13m ago")).toBeTruthy();
+    expect(screen.getByText("Booking estimate passed 13 min ago")).toBeTruthy();
     expect(screen.queryByText(/overdue/)).toBeNull();
   });
 

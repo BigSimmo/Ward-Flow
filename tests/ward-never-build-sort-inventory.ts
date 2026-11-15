@@ -764,9 +764,10 @@ export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
   {
     file: "ward-referrals.ts",
     match: "a.raisedAt - b.raisedAt || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)",
+    occurrences: 2,
     list: "patients",
     key: "time raised, oldest first, then id",
     order: "wait order",
-    reason: "Referral list first in first out.",
+    reason: "Referral list first in first out; the coordinator's queue (R-BEDS-13) keeps the same wait order.",
   },
 ];
