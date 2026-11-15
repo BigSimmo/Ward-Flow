@@ -251,6 +251,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-229](#d-229-demo-pause-holds-board-time-and-seeded-wait-lists-match-the-engine-14-november-2026)                                                     | Demo Pause holds Board time; seeded wait lists match the engine                        | Active                                           |
 | [D-234](#d-234-record-gender-on-the-ed-board-14-november-2026)                                                                                          | Record gender on the ED board                                                          | Active                                           |
 | [D-237](#d-237-a-desks-own-save-is-never-another-desks-change-14-november-2026)                                                                         | A desk's own save is never another desk's change                                       | Active                                           |
+| [D-240](#d-240-the-server-refuses-a-return-order-step-on-a-voluntary-stay-15-november-2026) | The server refuses a return order step on a voluntary stay | Active |
 
 ---
 
@@ -2807,4 +2808,13 @@ D-230 is reserved for another overnight thread (block noted in PR #1677). D-231 
 - **Left for later:** the recorded hold-up on the person page (R-STRUCT-25) shows the hold-up but not who recorded it or when. That needs a new stored field and is not built here.
 - **Boundary:** save mechanics and wording only. No clinical value, threshold or saved field changes.
 
-The next free number is D-238.
+D-238 is reserved for design Lane D's block (noted in PR #1677). D-239 is reserved for design Lane D's block (noted in PR #1677).
+
+## D-240. The server refuses a return order step on a voluntary stay (15 November 2026)
+
+- **Date:** 15 November 2026, 2:51 PM AWST (06:51 UTC). **Decided by:** Josh, in the Ward Flow project: "Yes to all recommendations", answering the untested-checks report that recommended approving held draft PR #1681 (untested-537, INV-ACTION-230).
+- **Decision:** a `RECORD_ABSENCE_STEP` with "Return order made" is refused, with "A return order is not needed for a voluntary stay", when the stay's own record (its movement, else the converted booking, else the patient record) says voluntary and neither the stay nor the patient record shows involuntary. This is A3-13 applied on the server: the screens already hid the step (`absenceStepsFor`), but the server accepted it.
+- **Boundary:** any doubt keeps the step allowed. No clinical value, threshold or stored field changes. Synthetic data only.
+- **Also ruled in the same answer:** the phone Undo toast covering Cancel transport at 390 px (INV-A11-024, Low) waits for the post-demo design pass.
+
+The next free number is D-241.
