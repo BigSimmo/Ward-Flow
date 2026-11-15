@@ -61,17 +61,17 @@ describe("the look window", () => {
     expect(shiftLookWindowStart(undefined, FIRST_LOOK)).toBe(NIGHT_START);
     // A look made during the night shift is not a look in the day shift.
     expect(shiftLookWindowStart(at(5), FIRST_LOOK)).toBe(NIGHT_START);
-    expect(shiftLookLabel(NIGHT_START, FIRST_LOOK)).toBe("Since last night at 23:00");
+    expect(shiftLookLabel(NIGHT_START, FIRST_LOOK)).toBe("Since last night at 11:00 pm");
   });
 
   it("covers only the new shift on a second look", () => {
     expect(shiftLookWindowStart(FIRST_LOOK, SECOND_LOOK)).toBe(DAY_START);
-    expect(shiftLookLabel(DAY_START, SECOND_LOOK)).toBe("Since 07:00, the start of your shift");
+    expect(shiftLookLabel(DAY_START, SECOND_LOOK)).toBe("Since 7:00 am, the start of your shift");
   });
 
   it("names the earlier shift by name outside the morning", () => {
     expect(shiftLookLabel(previousShiftStartInstant(at(15, 5)), at(15, 5))).toBe(
-      "Since 07:00, the start of the day shift",
+      "Since 7:00 am, the start of the day shift",
     );
   });
 });
@@ -138,7 +138,7 @@ describe("the shift digest", () => {
 
   it("reads from the night shift's start on the first read at 07:05", () => {
     const digest = digestAt(FIRST_LOOK, true);
-    expect(digest.sinceClock).toBe("23:00 yesterday");
+    expect(digest.sinceClock).toBe("11:00 pm yesterday");
     expect(digest.changed.find((line) => line.id === "escalated")?.value).toBe(1);
     expect(digest.changed.find((line) => line.id === "opened")?.value).toBeGreaterThanOrEqual(1);
     expect(digest.changed.find((line) => line.id === "absent")?.value).toBe(1);
@@ -147,7 +147,7 @@ describe("the shift digest", () => {
 
   it("reads only the new shift on a later read", () => {
     const digest = digestAt(SECOND_LOOK, false);
-    expect(digest.sinceClock).toBe("07:00");
+    expect(digest.sinceClock).toBe("7:00 am");
     expect(digest.changed.find((line) => line.id === "escalated")).toBeUndefined();
     expect(digest.changed.find((line) => line.id === "absent")).toBeUndefined();
     expect(digest.changed.find((line) => line.id === "transferred")).toBeUndefined();
@@ -155,12 +155,12 @@ describe("the shift digest", () => {
 
   it("keeps a chosen earlier handover's own window", () => {
     const digest = buildHandoverDigest({ ...digestAtInput(), sinceAt: at(3) });
-    expect(digest.sinceClock).toBe("03:00");
+    expect(digest.sinceClock).toBe("3:00 am");
   });
 
   it("copies no names or record numbers on the widened read", () => {
     const text = handoverDigestText(digestAt(FIRST_LOOK, true));
-    expect(text).toContain("What changed since 23:00 yesterday");
+    expect(text).toContain("What changed since 11:00 pm yesterday");
     expect(text).toMatch(/1 absent without leave \(1 /u);
     expect(text).toMatch(/1 transfer out \(1 /u);
     expect(text).not.toContain(movedStay.id);

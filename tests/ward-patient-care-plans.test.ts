@@ -14,6 +14,7 @@ import {
 } from "@/components/ward-management/ward-patient-care-plans";
 import { recordExtrasFor } from "@/components/ward-management/patients/patient-record-extras";
 import { sampleIsoDay } from "@/components/ward-management/ward-sample-days";
+import { perthClock24 } from "@/components/ward-management/ward-clock";
 
 /** Care plans and safety flags (Josh, 9 Nov 2026, care plans and safety flags thread: defaults approved). */
 const NOW = 10 * 60 + 42;
@@ -86,6 +87,15 @@ describe("tribunal hearing date", () => {
     expect(tribunalHearingPassedWithoutOutcome(hearing("2026-11-09"), "2026-11-09", "16:00")).toBe(false);
     expect(tribunalHearingPassedWithoutOutcome(hearing("2026-11-09", "10:00"), "2026-11-09", "09:59")).toBe(false);
     expect(tribunalHearingPassedWithoutOutcome(hearing("2026-11-09", "10:00"), "2026-11-09", "10:01")).toBe(true);
+  });
+
+  it("compares against the 24-hour clock, so an am/pm screen clock never marks a later hearing passed", () => {
+    // 00:00 UTC is 8:00 am in Perth: a 9:00 hearing that morning has not happened yet.
+    const eightAm = new Date("2026-11-09T00:00:00Z");
+    expect(perthClock24(eightAm)).toBe("08:00");
+    expect(
+      tribunalHearingPassedWithoutOutcome(hearing("2026-11-09", "09:00"), "2026-11-09", perthClock24(eightAm)),
+    ).toBe(false);
   });
 
   it("records a date and then an outcome, refusing an outcome with no date", () => {

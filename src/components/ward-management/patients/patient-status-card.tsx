@@ -20,7 +20,8 @@ import { referralState } from "@/components/ward-management/ward-referrals";
 import { isOwnStay } from "./patient-now-adapter";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { bedHold, PULL_NO_LIMIT_RECORDED } from "@/components/ward-management/ward-bed-hold";
-import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { arrivalTiming, arrivalTimingWords } from "@/components/ward-management/ward-arrival-timing";
+import { formatClockAmPmWithDay } from "@/components/ward-management/ward-clock-am-pm";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { legalStatusTextIsInvoluntary } from "@/components/ward-management/ward-support-notifications";
 import { hasCurrentLegalMismatch, LEGAL_MISMATCH_WARNING } from "@/components/ward-management/ward-stay-legal";
@@ -32,7 +33,7 @@ import {
   perthIsoDay,
   type DueSoonThresholds,
 } from "@/components/ward-management/ward-clock";
-import { clock, dur } from "./patient-now-records";
+import { clock, dur, clockOn } from "./patient-now-records";
 import { cadNumberLine } from "@/components/ward-management/ward-cad-number";
 import { focusAfterAction } from "../focus-after-action";
 import type { PatientMode } from "./patient-mode";
@@ -293,6 +294,7 @@ function transportCell(
   waitingFor = "an accepted bed",
   bookingInCard = false,
   onChangeNeed?: () => void,
+  now?: number,
 ): StatusCell {
   const job = movement.transport && movement.transport.cancelledAt === undefined ? movement.transport : undefined;
   if (job)
@@ -305,7 +307,7 @@ function transportCell(
       value: job.provider,
       // Audit round 2, A4-19: a number recorded as "CAD-11111" is not prefixed again.
       sub: job.cadNumber ? cadNumberLine(job.cadNumber) : "CAD to follow",
-      time: job.estimatedAt !== undefined ? `ETA ${clock(job.estimatedAt)}, typed by the booker` : undefined,
+      time: job.estimatedAt !== undefined ? `ETA ${clockOn(job.estimatedAt, now)}, typed by the booker` : undefined,
       clear: true,
       action: bookingInCard
         ? {
@@ -530,7 +532,7 @@ function statusFor(
         },
         clearanceCell(movement, ctx.onClearance, ctx.now),
         withHref(
-          transportCell(movement, false, ctx.onBookTransport, undefined, false, ctx.onTransportNeeded),
+          transportCell(movement, false, ctx.onBookTransport, undefined, false, ctx.onTransportNeeded, ctx.now),
           ctx.transportHref,
         ),
       ],
@@ -565,7 +567,7 @@ function statusFor(
           },
           clearanceCell(movement, ctx.onClearance, ctx.now),
           withHref(
-            transportCell(movement, false, ctx.onBookTransport, undefined, false, ctx.onTransportNeeded),
+            transportCell(movement, false, ctx.onBookTransport, undefined, false, ctx.onTransportNeeded, ctx.now),
             ctx.transportHref,
           ),
         ],
@@ -600,7 +602,7 @@ function statusFor(
         : [`${declined} declined`, pending > 0 && waitlisted > 0 ? `${waitlisted} waitlisted` : undefined]
             .filter(Boolean)
             .join(" · "),
-      time: lastDecline ? `Last decline ${clock(lastDecline.at)}` : undefined,
+      time: lastDecline ? `Last decline ${clockOn(lastDecline.at, now)}` : undefined,
       // F-108 (A14-14): asking wards is the coordinator's (REFER_TO_UNITS), so the desk's role limits it.
       action: {
         kind: "button",
@@ -617,7 +619,7 @@ function statusFor(
         bed,
         clearanceCell(movement, ctx.onClearance, ctx.now),
         withHref(
-          transportCell(movement, false, ctx.onBookTransport, undefined, false, ctx.onTransportNeeded),
+          transportCell(movement, false, ctx.onBookTransport, undefined, false, ctx.onTransportNeeded, ctx.now),
           ctx.transportHref,
         ),
       ],
@@ -668,6 +670,7 @@ function statusFor(
             "the bed pulled",
             ctx.bookingInCard,
             ctx.onTransportNeeded,
+            ctx.now,
           ),
           ctx.transportHref,
         ),
@@ -708,7 +711,10 @@ function statusFor(
     if (diverted) return diverted;
     const job = movement.transport && movement.transport.cancelledAt === undefined ? movement.transport : undefined;
     const etaAt = movement.arrivalDetails?.estimatedArrivalAt ?? job?.estimatedAt;
-    const late = etaAt !== undefined && now > etaAt + LATE_ARRIVAL_GRACE_MINUTES;
+    // D-221: the one arrival-timing rule and phrase (B2d-Q-2: am/pm with its day, never "24:59").
+    const timing = arrivalTiming(movement, now);
+    const timingWords = arrivalTimingWords(timing, now);
+    const late = timing.state === "late";
     return {
       tone: late ? "danger" : "info",
       verdict: ctx.acceptedUnitName ? `Moving to ${ctx.acceptedUnitName}` : "Moving",
@@ -724,7 +730,7 @@ function statusFor(
           // Device audit (11 Oct 2026): a ticked cell counts as clear, so the phone's "N of 3 Clear"
           // agrees with the ticks on this card.
           clear: job?.collectedAt !== undefined,
-          value: job?.collectedAt !== undefined ? clock(job.collectedAt) : "Not yet",
+          value: job?.collectedAt !== undefined ? clockOn(job.collectedAt, now) : "Not yet",
           sub: job ? job.provider : "No transport logged",
           action: job
             ? ctx.bookingInCard
@@ -757,11 +763,16 @@ function statusFor(
           label: "Arrival",
           owner: "Receiving ward",
           tone: late ? "danger" : etaAt !== undefined ? "info" : "warning",
-          value: etaAt === undefined ? "ETA not recorded" : late ? `Late, due ${clock(etaAt)}` : `Due ${clock(etaAt)}`,
+          value:
+            etaAt === undefined
+              ? "ETA not recorded"
+              : (timingWords?.tag ?? `Due ${formatClockAmPmWithDay(etaAt, now)}`),
           sub:
             etaAt === undefined
               ? "Typed by the booker or the ward"
-              : `Flags late at ${formatInstantWithDay(etaAt + LATE_ARRIVAL_GRACE_MINUTES, now)}`,
+              : timing.state === "due"
+                ? `Late at ${formatClockAmPmWithDay(timing.lateAt, now)}`
+                : (timingWords?.line ?? `ETA ${formatClockAmPmWithDay(etaAt, now)}`),
           action: {
             kind: "button",
             label: etaAt === undefined ? "Set arrival time" : "Update arrival",
@@ -818,7 +829,7 @@ function statusFor(
           owner: "Ward",
           value: bed.kind === "medical_trip" ? "Medical trip" : "Off ward leave",
           sub: "Bed held while away",
-          time: `Left ${clock(bed.confirmedAt)}`,
+          time: `Left ${clockOn(bed.confirmedAt, now)}`,
         },
         {
           key: "due-back",
@@ -913,7 +924,7 @@ function statusFor(
         key: step,
         done: at !== undefined,
         label: ABSENCE_STEP_LABELS[step],
-        time: at !== undefined ? clock(at) : undefined,
+        time: at !== undefined ? clockOn(at, now) : undefined,
         action:
           at === undefined
             ? {

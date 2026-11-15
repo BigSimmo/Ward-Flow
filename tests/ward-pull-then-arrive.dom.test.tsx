@@ -123,7 +123,7 @@ describe("Ward: Confirm arrival with no pulled bed (F-2)", () => {
     expect(document.getElementById("tab-coming")).toHaveAttribute("data-active", "true");
 
     const undo = within(screen.getByTestId(`ward-coming-row-${movement.id}`)).getByRole("button", {
-      name: /^Undo pull · until \d\d:\d\d for /u,
+      name: /^Undo pull · until \d{1,2}:\d{2} [ap]m for /u,
     });
     // The pull's own toast is up, with its Undo. The live region says the words too; the toast is
     // the one carrying the Undo window.

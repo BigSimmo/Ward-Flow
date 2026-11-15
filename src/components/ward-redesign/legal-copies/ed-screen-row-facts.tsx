@@ -10,7 +10,7 @@ import {
   EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE,
   examinationRevokedWhileBedHeld,
 } from "@/components/ward-management/ward-derivations";
-import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { formatClock24WithDay, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { movementReadmissionFlag } from "@/components/ward-management/ward-readmission";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
@@ -127,7 +127,7 @@ export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
             <span data-testid={`ward-ed-form-expiry-${movement.id}`}>{formExpiryText}</span>
           ) : (
             <>
-              <span aria-hidden="true">{formatInstantWithDay(movement.legalForm.dueAt, now)}</span>
+              <span aria-hidden="true">{formatClock24WithDay(movement.legalForm.dueAt, now)}</span>
               <span className="sr-only" data-testid={`ward-ed-form-expiry-${movement.id}`}>
                 {formExpiryText}
               </span>
@@ -204,7 +204,7 @@ export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
             className={styles.cardMeta}
             data-testid={`ward-ed-legal-form-expiry-history-${movement.id}`}
           >
-            {`Extension recorded ${formatInstantWithDay(entry.at, now)}: new expiry ${formatInstantWithDay(entry.dueAt, now)}`}
+            {`Extension recorded ${formatInstantWithDay(entry.at, now)}: new expiry ${formatClock24WithDay(entry.dueAt, now)}`}
           </p>
         ))}
     </>

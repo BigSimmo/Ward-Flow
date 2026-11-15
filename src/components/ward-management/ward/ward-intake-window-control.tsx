@@ -7,7 +7,6 @@ import { useState } from "react";
 import { intakeWindowLine, tonightIntakeWindow } from "../ward-intake-window";
 import type { Instant } from "../ward-clock";
 import { useRouteRole } from "../ward-role-gate";
-import { useRecordedDeskRole } from "../use-recorded-desk-role";
 import type { Unit } from "../ward-model";
 import styles from "./ward-intake-window-control.module.css";
 
@@ -23,13 +22,11 @@ const WardIntakeWindowDialog = dynamic(
  * pre-filled, and the line reads "Tonight: not set" again after the 07:00 day start.
  *
  * The route's desk acts: the ward for itself, or the coordinator. Any other desk reads the line only.
- * The coordinator's desk on a ward page sets the hours as itself (permission matrix, SET_INTAKE_WINDOW;
- * Demo-Rules-RV2-8), never as the nurse in charge.
+ * The coordinator's desk on a ward page sets the hours as itself, for that ward: the routing point
+ * stamps the session desk (`stampDesk`, D-222; Demo-Rules-RV2-8), never the nurse in charge.
  */
 export function WardIntakeWindowControl({ unit, now }: { unit: Unit; now: Instant }) {
-  const routeRole = useRouteRole();
-  const asWardDesk = useRecordedDeskRole("ward");
-  const role = routeRole === "ward" ? asWardDesk : routeRole;
+  const role = useRouteRole();
   const tonight = tonightIntakeWindow(unit, now);
   const mayEdit = role === "ward" || role === "coordinator";
   const [open, setOpen] = useState(false);

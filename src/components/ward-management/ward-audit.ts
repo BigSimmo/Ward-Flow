@@ -17,6 +17,7 @@ import {
   LEGAL_STATUS_CHANGE_REASONS,
   OVERRIDE_REASONS,
   REFERRAL_CAP_REASONS,
+  RELEASE_PULL_REASONS,
   type ReferralCapReason,
   type BedPreparationNote,
   type BedReleaseBlocker,
@@ -48,7 +49,17 @@ import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "./ward-flow-roles";
 import type { WardFlowEvent } from "./ward-flow-events";
 import { COVER_REVIEW_PREFIX, isBreakGlassReviewId } from "./ward-break-glass-review-id";
 import { isOnBehalfReason, type OnBehalfReasonId } from "./ward-on-behalf-reason";
-import type { BreakGlassReasonId, CoverReasonId, WardAccessRole } from "./ward-role-access";
+import type { BreakGlassReasonId, CoverReasonId, WardAccessRole, WardAccessScope } from "./ward-role-access";
+import {
+  historyCategoryForType,
+  historyWritesOutcome,
+  type HistoryCategory,
+  type NewHistoryCategory,
+} from "./ward-audit-categories";
+import { eventDesk } from "./ward-desk-stamp-shape";
+import type { HistoryLineDetails } from "./ward-history-lines";
+import { BROADCAST_ANSWER_LABELS, type BroadcastAnswer } from "./alerts/ward-broadcast-model";
+import { TRIBUNAL_OUTCOMES } from "./ward-patient-care-plans";
 import type { WardFlowState } from "./ward-flow-reducer";
 import { inboxRowMovementId } from "./ward-inbox-reducer";
 import { seededGovernanceAuditEntry, syntheticGovernanceAuditEvents } from "./ward-governance-seed";
@@ -94,11 +105,26 @@ type AuditReason =
   | "generation"
   | "revision"
   | "transition";
+/**
+ * Who made a change. `declared-prototype-role`: the role the screen typed (every row stored before
+ * D-222). `desk-session`: stamped from the session desk (`ward-desk-stamp.ts`), so the desk's place
+ * can be named. `system`: raised automatically, with no desk.
+ */
 export type AuditActor = {
   role: WardFlowRole | null;
+  /** The ward desk's own ward, or the ward a coordinator acted for. */
   actingUnitId: string | null;
   actingTeamId?: string;
-  attribution: "declared-prototype-role";
+  /** `system`: raised automatically by the server, with no desk (D-221 item 7, X1b-5). */
+  attribution: "declared-prototype-role" | "desk-session" | "system";
+  /** desk-session: the desk's place. */
+  scope?: WardAccessScope;
+  /** desk-session: the role the step was recorded as, when it is not the desk's (a kept step role). */
+  asRole?: WardFlowRole;
+  /** desk-session: the access admin, which records under the executive role. */
+  accessAdmin?: true;
+  /** desk-session, signed in: the account's short display name (D-222 choice 2). */
+  account?: string;
 };
 export type AuditSubject =
   | { kind: "admission"; admissionId: string; unitId: string; patientId: PatientId | null }
@@ -107,6 +133,12 @@ export type AuditSubject =
   | { kind: "bed-release"; releaseId: string; unitId: string }
   | { kind: "audit-event"; eventId: string }
   | { kind: "configuration" }
+  /** D-222: a change about a person and no single record (care plan, tribunal, order). */
+  | { kind: "patient"; patientId: PatientId }
+  /** D-222: a change about a ward itself (bed numbers, intake hours, closures). */
+  | { kind: "unit"; unitId: string }
+  /** D-222: a bed call or broadcast. Coordinator only. */
+  | { kind: "alert"; alertId: string }
   | { kind: "unresolved" };
 type AuditBase = {
   id: string;
@@ -213,7 +245,7 @@ type DischargeDetails =
       requested: BedReleaseAuditRequest;
       after: BedReleaseAuditFacts | null;
     };
-export type AuditEvent = AuditBase &
+type TypedAuditEvent = AuditBase &
   (
     | { category: "referral"; action: "REFER_TO_UNITS"; details: OverrideDetails }
     | {
@@ -350,7 +382,53 @@ export type AuditEvent = AuditBase &
         };
       }
   );
-export type AuditCategory = AuditEvent["category"];
+/** The categories with their own typed details: every category History wrote before D-222. */
+export type AuditCategory = TypedAuditEvent["category"];
+/** The actions only a typed line carries, plus the four refined ones that are typed only sometimes. */
+type GenericAuditAction =
+  | Exclude<WardFlowEvent["type"], TypedAuditEvent["action"]>
+  | "PULL_PATIENT"
+  | "ACCEPT_IN_PRINCIPLE"
+  | "ACCEPT_REFERRAL"
+  | "RAISE_REFERRAL";
+/**
+ * D-222 (item 10): every other save's line. No payload is kept: ids through `subject`, and for three
+ * categories a few closed-list facts (`line`, `ward-history-lines.ts`). Never typed text.
+ */
+export type HistoryLineAuditEvent = AuditBase & {
+  /** The table's categories for types with no typed capture (`AUDIT_CATEGORY`). */
+  category:
+    | NewHistoryCategory
+    | "referral"
+    | "referral-answer"
+    | "legal-form"
+    | "discharge"
+    | "inbox"
+    | "patient-record"
+    | "configuration";
+  action: GenericAuditAction;
+  details: { kind: "history-line"; line: HistoryLineDetails | null };
+};
+export type AuditEvent = TypedAuditEvent | HistoryLineAuditEvent;
+/**
+ * D-222 (choice 1): a line as a desk other than the coordinator sees it, or `null` when it may not.
+ * Accepted lines only; refusals stay with the coordinator, and so do record-access receipts (their
+ * own rule) and reviews. A typed line's before and after facts are withheld: what changed, the desk
+ * and the time remain. The one shape the stored-state check pins (`RECORD_ADMISSION_CARE`) keeps it.
+ */
+export function sharedHistoryLine(event: AuditEvent): AuditEvent | null {
+  if (event.outcome !== "accepted" || event.category === "record-access" || event.category === "review") return null;
+  if (isHistoryLine(event) && event.details.line === null) return event;
+  const details =
+    event.action === "RECORD_ADMISSION_CARE"
+      ? { kind: "care", operation: null, recorded: null }
+      : { kind: "history-line", line: isHistoryLine(event) ? event.details.line : null };
+  return { ...event, details } as AuditEvent;
+}
+/** A line written by the D-222 table rather than a typed capture. Never on the Review list. */
+export function isHistoryLine(event: AuditEvent): event is HistoryLineAuditEvent {
+  return (event.details as { kind?: unknown } | undefined)?.kind === "history-line";
+}
 /** Mutable only inside one reducer call, filled at the original clinical decision branch. */
 export type AuditDecision = Pick<AuditBase, "outcome" | "reasonCode"> & {
   targets?: OverrideDetails["targets"];
@@ -386,7 +464,17 @@ function declineAnswerReason(value: unknown): string | null {
 }
 export const reviewDecision = (value: unknown) => enumValue(["reviewed", "follow-up-required"] as const, value);
 
-export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
+/**
+ * D-222 (item 10): every save writes one History line unless excluded. The typed captures keep their
+ * own category and refinements (an override, a legal form on a raise); every other type takes its
+ * row in `AUDIT_CATEGORY` (`ward-audit-categories.ts`).
+ */
+export function classifyAuditEvent(event: WardFlowEvent): HistoryCategory | null {
+  return typedAuditCategory(event) ?? historyCategoryForType(event.type);
+}
+
+/** The category of a save with its own typed capture, or null. History before D-222 wrote only these. */
+function typedAuditCategory(event: WardFlowEvent): AuditCategory | null {
   switch (event.type) {
     case "REFER_TO_UNITS":
       return event.overrideReason === undefined ? "referral" : "override";
@@ -464,21 +552,18 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
   }
 }
 
+const FLOW_ROLES = Object.keys(WARD_FLOW_ROLE_LABELS) as WardFlowRole[];
+
 function auditActor(state: WardFlowState, event: WardFlowEvent): AuditActor {
-  const role = enumValue(Object.keys(WARD_FLOW_ROLE_LABELS) as WardFlowRole[], event.role);
+  // X1b-5 (D-221 item 7): the server's five-minute sweep raises due late notices with no desk.
+  if (event.type === "EVALUATE_ARRIVAL_LATENESS" && event.automatic === true)
+    return { role: null, actingUnitId: null, attribution: "system" };
+  const desk = eventDesk(event);
+  if (desk) return deskActor(state, event, desk);
+  const role = enumValue(FLOW_ROLES, event.role);
   return {
     role,
-    actingUnitId:
-      role === "ward"
-        ? (uniqueRecord(
-            state.units,
-            event.type === "RECORD_OBSERVATION_LEVEL"
-              ? event.target?.actingUnitId
-              : "actingUnitId" in event
-                ? event.actingUnitId
-                : undefined,
-          )?.id ?? null)
-        : null,
+    actingUnitId: role === "ward" ? actingUnit(state, event) : null,
     ...("actingTeamId" in event &&
     role === "community" &&
     typeof event.actingTeamId === "string" &&
@@ -487,6 +572,43 @@ function auditActor(state: WardFlowState, event: WardFlowEvent): AuditActor {
       : {}),
     attribution: "declared-prototype-role",
   };
+}
+
+/** The ward the change names as acting for, when it is a ward the state knows. */
+function actingUnit(state: WardFlowState, event: WardFlowEvent): string | null {
+  const claimed =
+    event.type === "RECORD_OBSERVATION_LEVEL"
+      ? event.target?.actingUnitId
+      : "actingUnitId" in event
+        ? event.actingUnitId
+        : undefined;
+  return uniqueRecord(state.units, claimed)?.id ?? null;
+}
+
+/**
+ * D-222: the actor from the session desk stamp. A ward desk names its own ward (the one it acted
+ * for when it holds several); a coordinator names the ward it acted for, so the line reads "Bed
+ * coordinator, for <ward>". A kept step role (`COORDINATOR_STEP_ROLES`) is kept as `asRole`.
+ */
+function deskActor(state: WardFlowState, event: WardFlowEvent, desk: NonNullable<ReturnType<typeof eventDesk>>) {
+  const role: WardFlowRole = desk.role;
+  const scope = desk.scope;
+  const acting = actingUnit(state, event);
+  const ownWard = scope.kind === "ward" && scope.unitIds.length === 1 ? scope.unitIds[0]! : null;
+  const actingUnitId =
+    role === "ward"
+      ? acting !== null && scope.kind === "ward" && scope.unitIds.includes(acting)
+        ? acting
+        : ownWard
+      : role === "coordinator"
+        ? acting
+        : null;
+  const typed = enumValue(FLOW_ROLES, event.role);
+  const actor: AuditActor = { role, actingUnitId, attribution: "desk-session", scope };
+  if (typed !== null && typed !== role && typed !== "demo" && role === "coordinator") actor.asRole = typed;
+  if (desk.accessAdmin) actor.accessAdmin = true;
+  if (desk.account !== undefined) actor.account = desk.account;
+  return actor;
 }
 function patientReference(state: WardFlowState, id: unknown): PatientId | null {
   return uniqueRecord(state.patients, id)?.id ?? null;
@@ -603,6 +725,21 @@ export function auditSubject(state: WardFlowState, event: WardFlowEvent): AuditS
   }
   return { kind: "unresolved" };
 }
+
+/**
+ * D-222: the subject of a line no record above names: a bed call, a person, or a ward. Only ids the
+ * state knows; anything else stays unresolved, which no narrower desk ever sees.
+ */
+function otherSubject(state: WardFlowState, event: WardFlowEvent): AuditSubject {
+  const fields = event as { alertId?: unknown; patientId?: unknown; unitId?: unknown };
+  const alert = uniqueRecord(state.broadcastAlerts ?? [], fields.alertId);
+  if (alert) return { kind: "alert", alertId: alert.id };
+  const patientId = patientReference(state, fields.patientId);
+  if (patientId !== null) return { kind: "patient", patientId };
+  const unit = uniqueRecord(state.units, fields.unitId);
+  if (unit) return { kind: "unit", unitId: unit.id };
+  return { kind: "unresolved" };
+}
 function bedFacts(release: BedRelease | undefined): BedReleaseAuditFacts | null {
   if (!release) return null;
   return {
@@ -694,6 +831,7 @@ export function captureAuditEvent(
     reasonCode: decision.reasonCode,
     origin: "captured-this-session",
   };
+  if (typedAuditCategory(event) === null) return historyLine(before, after, event, base);
   let captured: AuditEvent;
   switch (event.type) {
     case "OPEN_DISCHARGE_RECORD":
@@ -1129,13 +1267,181 @@ export function captureAuditEvent(
   return structuredClone(captured);
 }
 
+/**
+ * D-222: a History line for a save with no typed capture, accepted saves only. The outcome is the
+ * branch's own verdict when it gave one; otherwise a changed state with no new refusal is accepted.
+ * A refused save, or one that changed nothing, writes no line.
+ */
+function historyLine(
+  before: WardFlowState,
+  after: WardFlowState,
+  event: WardFlowEvent,
+  base: AuditBase,
+): HistoryLineAuditEvent | null {
+  const category = classifyAuditEvent(event);
+  if (category === null) return null;
+  let outcome = base.outcome;
+  let reasonCode = base.reasonCode;
+  // D-222 choice 4: the signed-in database table keeps every refusal.
+  if (outcome !== "accepted") {
+    if (after === before || after.rejections.length > before.rejections.length) return null;
+    outcome = "accepted";
+    reasonCode = "none";
+  }
+  if (!historyWritesOutcome(category, outcome)) return null;
+  let subject = base.subject.kind === "unresolved" ? otherSubject(before, event) : base.subject;
+  if (subject.kind === "unresolved" && outcome === "accepted") subject = createdSubject(before, after);
+  return structuredClone({
+    ...base,
+    subject,
+    outcome,
+    reasonCode,
+    category: category as HistoryLineAuditEvent["category"],
+    action: event.type as GenericAuditAction,
+    details: { kind: "history-line" as const, line: lineFacts(before, after, event) },
+  });
+}
+
+/** The record an accepted save created, when it named none before (a new referral, journey, call or person). */
+function createdSubject(before: WardFlowState, after: WardFlowState): AuditSubject {
+  const added = <T extends { id: string }>(was: readonly T[] | undefined, now: readonly T[] | undefined) =>
+    was && now && now.length > was.length ? now.at(-1) : undefined;
+  const referral = added(before.referrals, after.referrals);
+  if (referral)
+    return { kind: "referral", referralId: referral.id, patientId: patientReference(after, referral.patientId) };
+  const movement = added(before.movements, after.movements);
+  if (movement)
+    return {
+      kind: "movement",
+      movementId: movement.id,
+      patientId: patientReference(after, movement.patientId),
+    };
+  const alert = added(before.broadcastAlerts, after.broadcastAlerts);
+  if (alert) return { kind: "alert", alertId: alert.id };
+  const patient = added(before.patients, after.patients);
+  if (patient) return { kind: "patient", patientId: patient.id };
+  return { kind: "unresolved" };
+}
+
+const wholeCount = (value: unknown): number | null =>
+  typeof value === "number" && Number.isInteger(value) && value >= 0 ? value : null;
+
+/**
+ * The closed-list facts a bed call, pulled bed or tribunal line keeps (`ward-history-lines.ts`).
+ * Kinds, counts, minutes, a fixed answer and ward ids only; never a title, message or name.
+ */
+function lineFacts(before: WardFlowState, after: WardFlowState, event: WardFlowEvent): HistoryLineDetails | null {
+  const fields = event as { alertId?: unknown; unitId?: unknown; movementId?: unknown };
+  const alertOf = (state: WardFlowState) =>
+    uniqueRecord(state.broadcastAlerts ?? [], fields.alertId) ??
+    (event.type === "DISPATCH_BROADCAST_ALERT" || event.type === "RAISE_PULL_NOW"
+      ? after.broadcastAlerts?.length > (before.broadcastAlerts?.length ?? 0)
+        ? after.broadcastAlerts.at(-1)
+        : undefined
+      : undefined);
+  const unitId = uniqueRecord(after.units, fields.unitId)?.id ?? null;
+  switch (event.type) {
+    case "DISPATCH_BROADCAST_ALERT":
+    case "EXTEND_BROADCAST_ALERT":
+    case "STAND_DOWN_BROADCAST_ALERT":
+    case "ADD_BROADCAST_ALERT_UNITS":
+    case "ACKNOWLEDGE_BROADCAST_ALERT":
+    case "REPLY_BROADCAST_ALERT":
+    case "RAISE_PULL_NOW":
+    case "SEND_WARD_BUZZ":
+    case "REQUEST_CAPACITY_REFRESH": {
+      const alert = alertOf(after);
+      const previous = alertOf(before);
+      const kind = alert?.kind ?? (alert ? "directive" : null);
+      return {
+        alertKind: kind === "bed_call" || kind === "directive" || kind === "pull_now" ? kind : null,
+        ...(event.type === "DISPATCH_BROADCAST_ALERT"
+          ? {
+              desksAsked: Array.isArray(alert?.targetUnitIds) ? alert.targetUnitIds.length : null,
+              durationMinutes: wholeCount(alert?.durationMinutes),
+            }
+          : {}),
+        ...(event.type === "ADD_BROADCAST_ALERT_UNITS"
+          ? { desksAsked: Array.isArray(event.unitIds) ? event.unitIds.length : null }
+          : {}),
+        ...(event.type === "EXTEND_BROADCAST_ALERT" && alert && previous
+          ? { minutesAdded: wholeCount(alert.expiresAt - previous.expiresAt) }
+          : {}),
+        ...(event.type === "REPLY_BROADCAST_ALERT"
+          ? {
+              answer: enumValue(Object.keys(BROADCAST_ANSWER_LABELS) as BroadcastAnswer[], event.answer),
+              beds: wholeCount(event.beds),
+            }
+          : {}),
+        unitId,
+      };
+    }
+    case "PULL_PATIENT":
+      return { unitId, reason: null };
+    case "RAISE_REFERRAL":
+      // Pull the bed: the one tap raises the journey and pulls the bed, and its line says both.
+      return event.pullBed === true
+        ? { unitId: uniqueRecord(after.units, event.acceptedUnitId)?.id ?? null, reason: null }
+        : null;
+    case "RELEASE_PULL":
+    case "EXTEND_PULL": {
+      const movement = uniqueRecord(before.movements, fields.movementId);
+      const minutes = event.type === "EXTEND_PULL" ? wholeCount(event.minutes) : null;
+      return {
+        unitId: uniqueRecord(before.units, movement?.acceptedUnitId)?.id ?? null,
+        reason: event.type === "RELEASE_PULL" ? enumValue(RELEASE_PULL_REASONS, event.reason) : null,
+        ...(minutes !== null && minutes % 60 === 0 ? { hoursAdded: minutes / 60 } : {}),
+      };
+    }
+    case "RECORD_TRIBUNAL_OUTCOME":
+      return { outcome: enumValue(TRIBUNAL_OUTCOMES, event.outcome) };
+    default:
+      return null;
+  }
+}
+
+/**
+ * The newest audit entries kept in the saved day. The server's audit table is the full record; the
+ * day's copy only feeds the on-screen views, and an unbounded copy eventually passes the 8 MB row
+ * limit so every save fails. Entries an audit review names are always kept, and so are this
+ * scenario's newest record-access receipts, because an open record is read against its receipt.
+ * The demo and the shared server keep the same bound (D-222).
+ */
+export const PERSISTED_AUDIT_EVENTS = 1000;
+export function boundAudit<S extends Pick<WardFlowState, "auditEvents" | "auditReviews" | "worldGeneration">>(
+  state: S,
+): S {
+  const excess = state.auditEvents.length - PERSISTED_AUDIT_EVENTS;
+  if (excess <= 0) return state;
+  const kept = new Set(state.auditReviews.map((review) => review.eventId));
+  state.auditEvents
+    .filter((entry) => entry.category === "record-access" && entry.generation === state.worldGeneration)
+    .slice(-PERSISTED_AUDIT_EVENTS)
+    .forEach((entry) => kept.add(entry.id));
+  return {
+    ...state,
+    auditEvents: state.auditEvents.filter((entry, index) => index >= excess || kept.has(entry.id)),
+  };
+}
+
+/**
+ * Events a composite save makes on the way to its own line, which write none of their own (D-222):
+ * Pull the bed's inner journey start and pull (`raiseAndPullBed`). Held by identity, so a sent
+ * change can never carry the mark.
+ */
+const NESTED_EVENTS = new WeakSet<object>();
+export function nestedHistoryEvent<E extends WardFlowEvent>(event: E): E {
+  NESTED_EVENTS.add(event);
+  return event;
+}
+
 export function appendAudit(
   before: WardFlowState,
   after: WardFlowState,
   event: WardFlowEvent,
   decision: AuditDecision,
 ): WardFlowState {
-  if (!classifyAuditEvent(event)) return after;
+  if (!classifyAuditEvent(event) || NESTED_EVENTS.has(event)) return after;
   // The wrapper reserves this sequence before any clinical write. Never wrap/reuse an ID.
   if (!safeCounter(after.auditSequence) || after.auditSequence >= Number.MAX_SAFE_INTEGER) return before;
   const sequence = after.auditSequence + 1;
@@ -1144,7 +1450,7 @@ export function appendAudit(
   captured.id = `audit-${sequence}`;
   captured.sequence = sequence;
   // captureAuditEvent already returns a deep copy that nothing else holds, so it is stored as is.
-  return { ...after, auditSequence: sequence, auditEvents: [...after.auditEvents, captured] };
+  return boundAudit({ ...after, auditSequence: sequence, auditEvents: [...after.auditEvents, captured] });
 }
 
 export function readAuditEvents(state: WardFlowState, actor: WardRecordActor): RecordRead<readonly AuditEvent[]> {

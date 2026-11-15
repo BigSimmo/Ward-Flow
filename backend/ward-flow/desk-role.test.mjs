@@ -16,7 +16,7 @@ test("a statewide coordinator's command is recorded as the coordinator's, whatev
   assert.equal(engine.commandRefusal(world, engine.STATEWIDE, stamped, at), null);
 });
 
-test("the demonstration controls keep their demo role, and desks other than a coordinator are left to the role check", async () => {
+test("the demonstration controls keep their demo role, and every desk is recorded under its membership's role", async () => {
   const engine = await import("./dist/engine.mjs");
   const at = new Date("2026-10-07T10:00:00Z");
   const world = engine.seedWorld(at);
@@ -26,9 +26,15 @@ test("the demonstration controls keep their demo role, and desks other than a co
   const read = { type: "MARK_NOTICE_READ", role: "ward", noticeId: "NT-SYN-1", actingPlaceId: "ward-a" };
   assert.equal(engine.deskCommand(engine.STATEWIDE, read), read);
   const ward = engine.parseAccess("ward", { kind: "ward", unitIds: [world.state.units[0].id] });
+  // D-222/D-223 (Josh, 14 Nov 2026): a ward's change is the ward's, whatever role its screen typed.
   const sent = { type: "RECEIVE_REFERRAL", role: "ed" };
-  assert.equal(engine.deskCommand(ward, sent), sent);
-  assert.equal(engine.deskCommand(engine.STATEWIDE, { type: "ADVANCE_CLOCK" }).role, undefined);
+  assert.deepEqual(engine.deskCommand(ward, sent), { ...sent, role: "ward" });
+  assert.equal(sent.role, "ed", "the supplied command is not changed in place");
+  // A change the ward's role does not take keeps the typed role, so the role check refuses it.
+  const borrowed = { type: "REQUEST_CAPACITY_REFRESH", role: "coordinator" };
+  assert.equal(engine.deskCommand(ward, borrowed), borrowed);
+  assert.equal(engine.commandRefusal(world, ward, borrowed, at), "This change is not part of your role.");
+  assert.equal(engine.deskCommand(engine.STATEWIDE, { type: "ADVANCE_CLOCK" }).role, "demo");
 });
 
 test("a service coordinator's command is recorded as the coordinator's too, not the ward's or ED's", async () => {
@@ -71,8 +77,11 @@ test("a site bed manager confirms a ward's beds at its site as itself, and the w
   };
   const asItself = engine.deskCommand(bedManager, { ...confirm, role: "bed_manager" });
   assert.equal(engine.commandRefusal(world, bedManager, asItself, at), null);
+  // D-223: the role comes from the membership, so a confirm the screen typed as the ward is recorded
+  // as the bed manager's own, never the ward's.
   const asWard = engine.deskCommand(bedManager, { ...confirm, role: "ward" });
-  assert.equal(engine.commandRefusal(world, bedManager, asWard, at), "This change is not part of your role.");
+  assert.equal(asWard.role, "bed_manager");
+  assert.equal(engine.commandRefusal(world, bedManager, asWard, at), null);
   const other = world.state.units.find((candidate) => candidate.siteCode && candidate.siteCode !== "RPH");
   assert.ok(other, "a synthetic ward at another site");
   const elsewhere = { ...confirm, role: "bed_manager", unitId: other.id, actingUnitId: other.id };

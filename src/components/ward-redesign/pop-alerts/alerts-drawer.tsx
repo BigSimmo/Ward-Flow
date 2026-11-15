@@ -26,7 +26,7 @@ import { useEffect, useId, useRef, useState, type MouseEvent, type RefObject } f
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import { WARD_ALERTS_HREF, WARD_HOME_HREF, WARD_NAV, WARD_VIEWS } from "@/components/ward-management/ward-nav";
 
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatClock24WithDay, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { StatusGlyph, buttonClass, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
 import { callRows, type CallRow, type CallTarget } from "@/components/ward-management/patients/patient-call-list";
 import { edHealthService } from "@/components/ward-management/ward-service-scope";
@@ -229,7 +229,7 @@ function rowTiming(
   if (movement && /legal/i.test(item.title) && movement.legalForm?.dueAt !== undefined) {
     // Mock-up (Josh, 30 Oct 2026): the typed form time, as Waiting shows it; no running figure.
     return {
-      value: `Due ${formatInstantWithDay(movement.legalForm.dueAt, now)}`,
+      value: `Due ${formatClock24WithDay(movement.legalForm.dueAt, now)}`,
       state: "",
       tone: "danger",
       stateTone: "danger",
@@ -307,7 +307,7 @@ function rowDetail(
     return `${unit?.name ?? "The pulled bed"}: the pull time limit passed at ${formatInstantWithDay(movement.pullExpiresAt, now)}`;
   }
   if (movement && /legal/i.test(item.title) && movement.legalForm?.dueAt !== undefined) {
-    return `Form ${movement.legalForm.code} recorded due time ${formatInstantWithDay(movement.legalForm.dueAt, now)} has passed`;
+    return `Form ${movement.legalForm.code} recorded due time ${formatClock24WithDay(movement.legalForm.dueAt, now)} has passed`;
   }
   return item.detail.replace(`${item.movementId} · `, "");
 }

@@ -48,16 +48,16 @@ describe("ward clock", () => {
   });
 
   it("formats an instant as a wall-clock time", () => {
-    expect(formatInstant(NOW)).toBe("10:42");
-    expect(formatInstant(9 * 60 + 5)).toBe("09:05");
+    expect(formatInstant(NOW)).toBe("10:42 am");
+    expect(formatInstant(9 * 60 + 5)).toBe("9:05 am");
   });
 
   it("wraps a negative instant into a valid wall-clock time instead of printing -1:-14", () => {
     // A synthetic movement can be authored with openedAt before the day began; the audit
     // timeline must still render a real time, not a negative fragment.
-    expect(formatInstant(-14)).toBe("23:46");
-    expect(formatInstant(-1440)).toBe("00:00");
-    expect(formatInstant(-310)).toBe("18:50");
+    expect(formatInstant(-14)).toBe("11:46 pm");
+    expect(formatInstant(-1440)).toBe("12:00 am");
+    expect(formatInstant(-310)).toBe("6:50 pm");
   });
 
   it("formats an elapsed duration as a wait, never as a breach", () => {
@@ -253,14 +253,14 @@ describe("the clock knows what day it is, not only what time it is", () => {
 
   it("says the day out loud whenever an instant is not today", () => {
     // The defect this exists to stop: a bare clock face SILENTLY ASSERTS today. A patient who
-    // arrived three days ago reading as "14:00" looks like this morning, and no test on the current
+    // arrived three days ago reading as "2:00 pm" looks like this morning, and no test on the current
     // fixture can contradict it because nothing seeded is older than today.
     const now = 10 * 60 + 42;
-    expect(formatInstantWithDay(9 * 60, now), "today needs no day said").toBe("09:00");
-    expect(formatInstantWithDay(9 * 60 - MINUTES_PER_DAY, now)).toBe("09:00 yesterday");
-    expect(formatInstantWithDay(9 * 60 + MINUTES_PER_DAY, now)).toBe("09:00 tomorrow");
-    expect(formatInstantWithDay(9 * 60 - 3 * MINUTES_PER_DAY, now)).toBe("09:00, 3 days ago");
-    expect(formatInstantWithDay(9 * 60 + 4 * MINUTES_PER_DAY, now)).toBe("09:00, in 4 days");
+    expect(formatInstantWithDay(9 * 60, now), "today needs no day said").toBe("9:00 am");
+    expect(formatInstantWithDay(9 * 60 - MINUTES_PER_DAY, now)).toBe("9:00 am yesterday");
+    expect(formatInstantWithDay(9 * 60 + MINUTES_PER_DAY, now)).toBe("9:00 am tomorrow");
+    expect(formatInstantWithDay(9 * 60 - 3 * MINUTES_PER_DAY, now)).toBe("9:00 am, 3 days ago");
+    expect(formatInstantWithDay(9 * 60 + 4 * MINUTES_PER_DAY, now)).toBe("9:00 am, in 4 days");
   });
 
   it("counts the day from the calendar day, not from the hours between", () => {
@@ -270,7 +270,7 @@ describe("the clock knows what day it is, not only what time it is", () => {
     const lateTonight = 23 * 60 + 50;
     const earlyTomorrow = MINUTES_PER_DAY + 10;
     expect(formatInstantWithDay(lateTonight, earlyTomorrow), "twenty minutes earlier, and yesterday").toBe(
-      "23:50 yesterday",
+      "11:50 pm yesterday",
     );
   });
 });

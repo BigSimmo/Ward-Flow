@@ -257,10 +257,10 @@ function executiveMessage(id: MessageId, report: ExecutiveReport, zone: ClockZon
   const pending = report.capacity.pendingPreparation;
   const readyLine = `Ready beds: ${network.beds.ready} of ${network.beds.total}${pending > 0 ? `, ${pending} pending preparation` : ""}.`;
   // No typed hour window here: a wait threshold needs a named source (invented-figures guard).
-  const waitingLines = [`Waiting in ED: ${releasedCountText(network.people.waitingInEd)}.`];
+  const waitingLines = [`ED journeys open: ${releasedCountText(network.people.edJourneysOpen)}.`];
   const byService = services.map(
     (service) =>
-      `${service.service}: ${service.beds.ready} ready, ${releasedCountText(service.waiting)} waiting in ED.`,
+      `${service.service}: ${service.beds.ready} ready, ${releasedCountText(service.waiting)} ED journeys open.`,
   );
   if (id === "escalation") {
     const occupancy = occupancyPercent({ beds: network.beds.total, inUse: network.beds.inUse });

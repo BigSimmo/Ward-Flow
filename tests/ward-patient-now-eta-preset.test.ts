@@ -21,9 +21,9 @@ describe("ETA preset text", () => {
 });
 
 describe("clock face for instants past one day", () => {
-  it("wraps to a 24-hour face, never 680:51", () => {
-    expect(clock(680 * 60 + 51)).toBe("08:51");
-    expect(clock(1440 + 59)).toBe("00:59");
-    expect(clock(545)).toBe("09:05");
+  it("wraps to one day's am/pm face, never 680:51", () => {
+    expect(clock(680 * 60 + 51)).toBe("8:51 am");
+    expect(clock(1440 + 59)).toBe("12:59 am");
+    expect(clock(545)).toBe("9:05 am");
   });
 });

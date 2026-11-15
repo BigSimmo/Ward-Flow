@@ -66,7 +66,7 @@ function ExecutiveFigures({ onNavigate }: { onNavigate: () => void }) {
     { label: "Beds ready", value: String(beds.ready) },
     { label: "Occupancy", value: beds.total ? `${occupancyPercent({ beds: beds.total, inUse: beds.inUse })}%` : "—" },
     { label: "Open movements", value: String(releasedCountText(report.network.people.stillOpen)) },
-    { label: "Waiting in ED", value: String(releasedCountText(report.network.people.waitingInEd)) },
+    { label: "ED journeys open", value: String(releasedCountText(report.network.people.edJourneysOpen)) },
   ];
   return (
     <FiguresView

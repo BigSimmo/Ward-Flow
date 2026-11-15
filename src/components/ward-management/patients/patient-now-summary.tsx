@@ -24,7 +24,7 @@ import { PatientFlightHeader } from "./patient-flight-header";
 import { absenceStepsFor } from "@/components/ward-management/ward-model";
 import { type Patient } from "@/components/ward-management/ward-patients";
 import { dayLabel, type PatientStatusContext } from "./patient-status-card";
-import { type PatientNowRecord, STAGES, clock } from "./patient-now-records";
+import { type PatientNowRecord, STAGES, clockOn } from "./patient-now-records";
 import { formatSince } from "@/components/ward-management/ward-clock";
 import styles from "./patient-now.module.css";
 import {
@@ -194,7 +194,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
         const recordedTransition = liveMovement?.stageChanges.find((change) => change.to === s.id);
         const stateAttr = liveMovement?.stage === s.id ? "now" : recordedTransition ? "recorded" : "todo";
         const isExpanded = expandedStageIndex === i;
-        const detail = getStageBedflowDetail(s.id, liveMovement);
+        const detail = getStageBedflowDetail(s.id, liveMovement, now);
         const firstTime = detail.milestones.find((m) => m.time)?.time;
         const whenText =
           stateAttr === "recorded"
@@ -408,7 +408,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                 {
                   id: "absent",
                   value: formatSince(absence.since, now),
-                  label: `absent since ${clock(absence.since)}`,
+                  label: `absent since ${clockOn(absence.since, now)}`,
                   tone: "warning" as const,
                 },
               ]
@@ -532,7 +532,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                   ? [
                       {
                         key: "due",
-                        value: clock(stayLeaveBed.expectedReturn),
+                        value: clockOn(stayLeaveBed.expectedReturn, now),
                         label: "Due back",
                         tone: "neutral" as const,
                       },
@@ -621,7 +621,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                   <strong className={styles.v6HeroWait}>
                     {formatSince(stayLeaveBed.absentWithoutLeave.since, now)}
                   </strong>
-                  absent since {clock(stayLeaveBed.absentWithoutLeave.since)}
+                  absent since {clockOn(stayLeaveBed.absentWithoutLeave.since, now)}
                 </span>
               ) : null}
               {(mode === "leave" || mode === "ed") && stayDay !== undefined ? (

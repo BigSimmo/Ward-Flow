@@ -29,17 +29,17 @@ const lastContact = (id: string) =>
 describe("community sample time precision", () => {
   it("preserves the half-hour instants recorded in the original synthetic fixture", () => {
     // design/third-edition-mockups/community-team-third-edition.html:
-    // same egress row (Today 11:30, Community Step-Down) and caseload rows
+    // same egress row (Today 11:30 am, Community Step-Down) and caseload rows
     // (Tier 1 High Acuity / RN T. Bradley; Tier 2 Case Management / RN C. Davis).
-    expect(egress("EGR-03").kpiStatusLabel).toBe("Due today 16:30");
-    expect(lastContact("CL-02")).toBe("Yesterday 11:30 (clinic)");
-    expect(lastContact("CL-04")).toBe("Fri 18 Sept 09:30 (home)");
+    expect(egress("EGR-03").kpiStatusLabel).toBe("Due today 4:30 pm");
+    expect(lastContact("CL-02")).toBe("Yesterday 11:30 am (clinic)");
+    expect(lastContact("CL-04")).toBe("Fri 18 Sept 9:30 am (home)");
   });
 
   it("retains whole hours where the synthetic fixture records whole hours", () => {
-    expect(lastContact("CL-01")).toBe("Yesterday 14:00 (home)");
-    expect(lastContact("CL-03")).toBe("Sat 19 Sept 15:00 (telehealth)");
-    expect(lastContact("CL-05")).toBe("Thu 17 Sept 16:00 (clinic)");
-    expect(lastContact("CL-06")).toBe("Tue 15 Sept 10:00 (clinic)");
+    expect(lastContact("CL-01")).toBe("Yesterday 2:00 pm (home)");
+    expect(lastContact("CL-03")).toBe("Sat 19 Sept 3:00 pm (telehealth)");
+    expect(lastContact("CL-05")).toBe("Thu 17 Sept 4:00 pm (clinic)");
+    expect(lastContact("CL-06")).toBe("Tue 15 Sept 10:00 am (clinic)");
   });
 });

@@ -61,16 +61,22 @@ import {
   EXPECT_FLAG_INVOLUNTARY_MINUTES,
   EXPECT_FLAG_VOLUNTARY_MINUTES,
   WAITLIST_INSTEAD_OF_DECLINE_REASONS,
-  isArrivalLate as isArrivalLateClock,
   leaveBedNeedsOpenWarning as leaveBedNeedsOpenWarningClock,
 } from "@/components/ward-management/ward-legal-clock";
 import { REFERRABLE_MOVEMENT_STAGES } from "@/components/ward-management/ward-flow-reducer";
+import {
+  arrivalTiming,
+  arrivalTimingIsLate,
+  arrivalTimingWords,
+  type ArrivalTimingMovement,
+} from "@/components/ward-management/ward-arrival-timing";
+import { formatClockAmPmWithDay } from "@/components/ward-management/ward-clock-am-pm";
 
 /** UI-only role concept; not part of the domain model. */
 export type WardRole = "flow" | "ed" | "ward";
 
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
-import { stageCopy } from "@/components/ward-management/ward-stage-copy";
+import { divertedAwaitingRelease, stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { supportNotificationInboxItems } from "@/components/ward-management/ward-support-notifications";
 import { INFORMATIONAL_GATES, eligibleCandidatesAmong, shortlistVerdict } from "./ward-derivations-shortlist";
 import { type TransportLeg, transportLeg } from "./ward-derivations-transport";
@@ -609,9 +615,6 @@ export type ActionInboxRecords = Partial<Omit<Parameters<typeof supportNotificat
   dayZero?: Date;
 };
 
-/** P068: minutes past the booking estimate before Alerts raise it (Josh, 27 Oct 2026, 10:02 PM AWST). */
-const BOOKING_ESTIMATE_PASSED_AFTER_MINUTES = CLINICAL_VALUES.bookingEstimatePassed.value;
-
 export function buildActionInbox(
   movements: Movement[],
   now: Instant,
@@ -747,25 +750,58 @@ export function buildActionInbox(
     });
   }
 
-  // P068 (Josh, 27 Oct 2026, 10:02 PM AWST): a booked job still not at the ward 10 minutes after
-  // its booking estimate, on the booking-ETA clock the officer's arrivals card uses.
+  // D-221 (Josh, 14 Nov 2026): one arrival-timing rule for every row (ward ETA, else the booking
+  // estimate). Past ETA (P068's 10 minutes up to the signed grace) stays a review row and ends when
+  // the journey reads late, as a countdown hands over to its overdue row; Late arrival and a
+  // diversion are act now. The P068 id prefix is kept, so stored snoozes still match.
   for (const movement of movements) {
-    const transport = movement.transport;
-    const estimatedAt = transport?.estimatedAt;
-    if (!transport || estimatedAt === undefined || transport.arrivedAt !== undefined) continue;
-    if (transport.cancelledAt !== undefined || movement.closure !== undefined) continue;
-    if (now - estimatedAt < BOOKING_ESTIMATE_PASSED_AFTER_MINUTES) continue;
+    if (movement.closure !== undefined) continue;
     const ward = movement.acceptedUnitId ? getUnitByIdMap(units).get(movement.acceptedUnitId)?.name : undefined;
+    const to = `to ${ward ?? "ward not recorded"}`;
+    const diversion = movement.transport?.diversion;
+    if (diversion !== undefined && divertedAwaitingRelease(movement)) {
+      items.push({
+        id: `${INBOX_CATEGORIES.transport_diverted.idPrefix}${movement.id}`,
+        kind: INBOX_CATEGORIES.transport_diverted.kind,
+        tone: "danger",
+        icon: Ambulance,
+        title: "Transport diverted",
+        detail: `${movement.id} · to ${diversion.place} ${formatClockAmPmWithDay(diversion.at, now)}, not to ${ward ?? "the ward"}. Release the pulled bed.`,
+        owner: "Bed coordinator and accepting ward",
+        movementId: movement.id,
+        since: diversion.at,
+      });
+      continue;
+    }
+    const timing = arrivalTiming(movement, now);
+    const words = arrivalTimingWords(timing, now);
+    if (!words || (timing.state !== "past_eta" && timing.state !== "late")) continue;
+    if (timing.state === "past_eta") {
+      items.push({
+        id: `${INBOX_CATEGORIES.transport_booking_estimate_passed.idPrefix}${movement.id}`,
+        kind: INBOX_CATEGORIES.transport_booking_estimate_passed.kind,
+        tone: "warning",
+        icon: Ambulance,
+        title: words.line,
+        detail: `${movement.id} · ${to}`,
+        owner: movement.owner,
+        movementId: movement.id,
+        since: timing.eta,
+      });
+      continue;
+    }
+    const referrer =
+      movement.originEdId === undefined && movement.originCommunity ? "referring community team" : "sending team";
     items.push({
-      id: `${INBOX_CATEGORIES.transport_booking_estimate_passed.idPrefix}${movement.id}`,
-      kind: INBOX_CATEGORIES.transport_booking_estimate_passed.kind,
-      tone: "warning",
+      id: `${INBOX_CATEGORIES.arrival_late.idPrefix}${movement.id}`,
+      kind: INBOX_CATEGORIES.arrival_late.kind,
+      tone: "danger",
       icon: Ambulance,
-      title: `Booking estimate passed ${splitDuration(now - estimatedAt)} ago`,
-      detail: `${movement.id} · to ${ward ?? "ward not recorded"}`,
-      owner: movement.owner,
+      title: words.tag ?? "Late arrival",
+      detail: `${movement.id} · ${words.line} · ${to}`,
+      owner: `Bed coordinator, accepting ward and ${referrer}`,
       movementId: movement.id,
-      since: estimatedAt,
+      since: timing.lateAt,
     });
   }
 
@@ -1260,16 +1296,12 @@ export function searchPatients(
   return [...referralHalf, ...movementHalf];
 }
 
-export function isArrivalLate(
-  movement: Pick<Movement, "arrivalDetails" | "stage" | "arrivalLateNotifiedAt" | "closure">,
-  now: Instant,
-): boolean {
-  return isArrivalLateClock(
-    movement.arrivalDetails?.estimatedArrivalAt,
-    movement.stage,
-    now,
-    movement.closure !== undefined,
-  );
+/**
+ * D-221: late is the one arrival-timing rule (`ward-arrival-timing.ts`): the ward ETA, else the
+ * booking estimate, plus the signed grace; never once transport delivered, diverted or closed.
+ */
+export function isArrivalLate(movement: ArrivalTimingMovement, now: Instant): boolean {
+  return arrivalTimingIsLate(movement, now);
 }
 
 export function leaveBedNeedsOpenWarning(leaveBed: LeaveBed, now: Instant): boolean {

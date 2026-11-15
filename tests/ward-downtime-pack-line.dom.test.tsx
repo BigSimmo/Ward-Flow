@@ -127,7 +127,7 @@ describe("WardDowntimePackLine (fix plan item 9)", () => {
     act(() => idle?.());
     expect(lastDowntimePack()?.shiftChangeAt).toBe(SHIFT_CHANGE);
     expect(screen.getByTestId("ward-downtime-pack-line").textContent).toMatch(
-      /^Shift change downtime pack 15:00 ready/u,
+      /^Shift change downtime pack 3:00 pm ready/u,
     );
   });
 
@@ -147,7 +147,7 @@ describe("WardDowntimePackLine (fix plan item 9)", () => {
     expect(screen.queryByTestId("ward-downtime-pack-line")).toBeNull();
     act(() => setClock(SHIFT_CHANGE));
     const line = screen.getByTestId("ward-downtime-pack-line");
-    expect(line.textContent).toMatch(/^Shift change downtime pack 15:00 ready\. Print it or save it as a PDF/u);
+    expect(line.textContent).toMatch(/^Shift change downtime pack 3:00 pm ready\. Print it or save it as a PDF/u);
     expect(screen.getByTestId("ward-downtime-pack-open").getAttribute("href")).toBe("/ward-flow/reports/downtime");
   });
 
@@ -166,7 +166,7 @@ describe("WardDowntimePackLine (fix plan item 9)", () => {
     renderShell();
     act(() => setClock(SHIFT_CHANGE));
     const line = screen.getByTestId("ward-downtime-pack-line");
-    expect(line.textContent).toMatch(/^Shift change downtime pack 15:00 ready\./u);
+    expect(line.textContent).toMatch(/^Shift change downtime pack 3:00 pm ready\./u);
     expect(line.getAttribute("data-shift-change")).toBe("true");
   });
 
@@ -176,7 +176,7 @@ describe("WardDowntimePackLine (fix plan item 9)", () => {
     act(() => setClock(SHIFT_CHANGE + 2));
     expect(lastDowntimePack()?.shiftChangeAt).toBe(SHIFT_CHANGE);
     expect(screen.getByTestId("ward-downtime-pack-line").textContent).toMatch(
-      /^Shift change downtime pack 15:02 ready\./u,
+      /^Shift change downtime pack 3:02 pm ready\./u,
     );
   });
 
@@ -201,7 +201,7 @@ describe("WardDowntimePackLine (fix plan item 9)", () => {
     act(() => setClock(16 * HOUR));
     expect(lastDowntimePack()?.generatedAt).toBe(16 * HOUR);
     expect(screen.getByTestId("ward-downtime-pack-line").textContent).toMatch(
-      /^Shift change downtime pack 16:00 ready\./u,
+      /^Shift change downtime pack 4:00 pm ready\./u,
     );
     fireEvent.click(screen.getByTestId("ward-downtime-pack-dismiss"));
     act(() => setClock(17 * HOUR));
@@ -227,7 +227,7 @@ describe("WardDowntimePackLine (fix plan item 9)", () => {
     act(() => setClock(16 * HOUR));
     expect(screen.queryByTestId("ward-downtime-pack-line")).toBeNull();
     act(() => setClock(23 * HOUR));
-    expect(screen.getByTestId("ward-downtime-pack-line").textContent).toMatch(/23:00/u);
+    expect(screen.getByTestId("ward-downtime-pack-line").textContent).toMatch(/11:00 pm/u);
     act(() => markDowntimePackHandled(lastDowntimePack()!));
     expect(screen.queryByTestId("ward-downtime-pack-line")).toBeNull();
   });
@@ -250,7 +250,7 @@ describe("WardDowntimePackLine (fix plan item 9)", () => {
     });
     expect(screen.queryByTestId("ward-downtime-pack-line")).toBeNull();
     expect(screen.getByTestId("ward-offline-banner").textContent).toMatch(
-      /use the downtime pack taken at 15:00, printed or saved as a PDF\.$/u,
+      /use the downtime pack taken at 3:00 pm, printed or saved as a PDF\.$/u,
     );
   });
 

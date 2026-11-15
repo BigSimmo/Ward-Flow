@@ -19,6 +19,7 @@ import {
   TimeField,
   WhoDoesThis,
 } from "@/components/wf";
+import { GatedButton, permitFromRoleGate } from "@/components/ward-management/shell/gated-action";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import type { WardFlowEvent, WardFlowRole } from "../ward-flow-events";
 import type { Patient } from "../ward-patients";
@@ -264,16 +265,16 @@ export function PatientCarePlansCard({
         title="Care and safety"
         level={3}
         action={
-          form === "plan" || planGate.never ? null : (
-            <Button
+          form === "plan" ? null : (
+            <GatedButton
+              permit={permitFromRoleGate(planGate)}
               size="sm"
               variant="sec"
-              onClick={() => open("plan")}
-              disabledReason={planGate.allowed ? undefined : planGate.reason}
+              onPress={() => open("plan")}
               data-testid="ward-patient-add-care-plan"
             >
               Add care plan
-            </Button>
+            </GatedButton>
           )
         }
       />
@@ -504,16 +505,14 @@ export function PatientCarePlansCard({
                 </span>
               ) : (
                 <span className={styles.inline}>
-                  {hearingGate.never ? null : (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => open("hearing")}
-                      disabledReason={hearingGate.allowed ? undefined : hearingGate.reason}
-                    >
-                      {hearing ? "New hearing date" : "Record hearing date"}
-                    </Button>
-                  )}
+                  <GatedButton
+                    permit={permitFromRoleGate(hearingGate)}
+                    size="sm"
+                    variant="ghost"
+                    onPress={() => open("hearing")}
+                  >
+                    {hearing ? "New hearing date" : "Record hearing date"}
+                  </GatedButton>
                   {hearing && !hearing.outcome && !outcomeGate.never ? (
                     <span className={styles.outcomeGroup}>
                       <span className={styles.quietInline}>Outcome</span>

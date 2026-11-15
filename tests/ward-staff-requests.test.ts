@@ -66,7 +66,7 @@ describe("staff needed requests", () => {
     // Reasons are kept in list order, whatever order they were tapped.
     expect(record.reasons).toEqual(["constant_observation", "high_acuity"]);
     expect(state.units).toBe(seed.units);
-    expect(staffRequestTagText(record, NOW_ANCHOR)).toMatch(/^Staff requested \d\d:\d\d · 2 · this shift$/);
+    expect(staffRequestTagText(record, NOW_ANCHOR)).toMatch(/^Staff requested \d{1,2}:\d{2} [ap]m · 2 · this shift$/);
     expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(state)))).toBe(true);
   });
 

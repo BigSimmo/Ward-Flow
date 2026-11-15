@@ -63,7 +63,9 @@ describe("A9-29: a signed triage names the desk that signed it, from the record"
     expect(summaryModel(state, by).keyLine).toMatch(/ · Nurse in charge$/u);
     expect(summaryText(summaryModel(state, by))).toContain("Signed 07/11/2026 10:42 by Nurse in charge");
     expect(isbarText(state, by)).toMatch(/\nI Identify: Nurse in charge · /u);
-    expect(triageSignedLine(signed, DAY_ZERO)).toMatch(/^Signed \d{2} [A-Z][a-z]{2} \d{2}:\d{2} by Nurse in charge$/u);
+    expect(triageSignedLine(signed, DAY_ZERO)).toMatch(
+      /^Signed \d{2} [A-Z][a-z]{2} \d{1,2}:\d{2} [ap]m by Nurse in charge$/u,
+    );
   });
 
   it("names the ED desk when the ED desk signed", () => {

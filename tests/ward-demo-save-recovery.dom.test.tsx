@@ -101,7 +101,7 @@ describe("successful save identity after storage failure", () => {
     expect(restored.saved?.now).toBe(NOW_ANCHOR);
     // DA-27: named by the board clock at the save (10:42), not the device's real time (10:00 here).
     expect(restored.recoveryNotice).toBe(
-      "Restored the last successful save from 10:42 on the board clock. Later changes may not have been saved.",
+      "Restored the last successful save from 10:42 am on the board clock. Later changes may not have been saved.",
     );
     expect(STORAGE_UNAVAILABLE).toContain("Changes stay in memory and may be lost");
   });
@@ -113,7 +113,7 @@ describe("successful save identity after storage failure", () => {
     failLaterWrite(dayZero, savedAt);
     // Reopened 14 real hours later: the board resumes at 00:42 the next day.
     expect(tryReadDemoState(dayZero, savedAt + 14 * 60).recoveryNotice).toBe(
-      "Restored the last successful save from 10:42 yesterday on the board clock. Later changes may not have been saved.",
+      "Restored the last successful save from 10:42 am yesterday on the board clock. Later changes may not have been saved.",
     );
   });
 
@@ -156,7 +156,7 @@ it("shows the retained successful save label alongside the storage warning after
   });
   // DA-27: the save is named by the board clock it was made at (10:42), whatever the device's time.
   expect(screen.getByRole("status").textContent).toMatch(
-    /Demo storage is unavailable.*last successful save from 10:42 on the board clock\./,
+    /Demo storage is unavailable.*last successful save from 10:42 am on the board clock\./,
   );
   fireEvent.click(screen.getByText("Reset"));
   expect(screen.getByRole("status").textContent).not.toContain("Restored the last successful save");

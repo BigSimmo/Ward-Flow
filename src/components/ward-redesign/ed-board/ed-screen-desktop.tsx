@@ -10,7 +10,7 @@
 // and 9.6, 15 Oct 2026).
 import type { ReactNode } from "react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
-import { clockState, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
+import { clockState, formatClock24WithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import {
   EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE,
   examinationRevokedWhileBedHeld,
@@ -317,7 +317,7 @@ export function renderEdBoardTableRow(
                   {formExpiryWarningText !== undefined ? (
                     <StatusGlyph tone={formExpiryPassed ? "danger" : "warning"} size={8} />
                   ) : null}{" "}
-                  {`${formExpiryPassed ? "ended" : "ends"} ${formatInstantWithDay(movement.legalForm.dueAt, now)}`}
+                  {`${formExpiryPassed ? "ended" : "ends"} ${formatClock24WithDay(movement.legalForm.dueAt, now)}`}
                 </span>
               ) : null}
             </FormCell>

@@ -28,10 +28,10 @@ afterEach(() => vi.unstubAllEnvs());
 describe.each(ZONES)("Perth recorded times in a %s browser", (zone) => {
   it("reads a recorded moment on the Perth clock (CL-2)", () => {
     vi.stubEnv("TZ", zone);
-    expect(perthClockTime(LATE_THURSDAY)).toBe("23:30");
-    expect(perthWeekdayTime(LATE_THURSDAY)).toBe("Thu 23:30");
+    expect(perthClockTime(LATE_THURSDAY)).toBe("11:30 pm");
+    expect(perthWeekdayTime(LATE_THURSDAY)).toBe("Thu 11:30 pm");
     const push = vi.fn(() => "t");
-    expect(noticeDraftKept({ push }, true, 0, LATE_THURSDAY)).toBe("Draft saved at 23:30");
+    expect(noticeDraftKept({ push }, true, 0, LATE_THURSDAY)).toBe("Draft saved at 11:30 pm");
   });
 
   it("counts a Thursday-night contact as yesterday on Friday morning in Perth (CL-3)", () => {

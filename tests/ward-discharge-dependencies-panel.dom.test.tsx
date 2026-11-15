@@ -102,9 +102,9 @@ describe("weekend and holiday preparation", () => {
     // Desk: one pill per closed service, in a fixed order; each pill's name carries when it closes and reopens.
     const pills = within(screen.getByRole("list", { name: "Closed services" })).getAllByRole("button");
     expect(pills.map((pill) => pill.getAttribute("aria-label"))).toEqual([
-      "Pharmacy, 1 waiting. Pharmacy closes Sat 24 Oct 12:00, reopens Mon 26 Oct 08:30 (Weekend).",
-      "Patient transport, 3 waiting. Patient transport closes Sat 24 Oct 14:00, reopens Mon 26 Oct 07:00 (Weekend).",
-      "Community mental health team, 1 waiting. Community mental health team closes Fri 23 Oct 17:00, reopens Mon 26 Oct 08:30 (Weekend).",
+      "Pharmacy, 1 waiting. Pharmacy closes Sat 24 Oct 12:00 pm, reopens Mon 26 Oct 8:30 am (Weekend).",
+      "Patient transport, 3 waiting. Patient transport closes Sat 24 Oct 2:00 pm, reopens Mon 26 Oct 7:00 am (Weekend).",
+      "Community mental health team, 1 waiting. Community mental health team closes Fri 23 Oct 5:00 pm, reopens Mon 26 Oct 8:30 am (Weekend).",
     ]);
     fireEvent.click(screen.getByTestId("ward-discharge-weekend-patient_transport"));
     const transport = screen.getByRole("dialog", { name: "Patient transport, 3 waiting" });
@@ -131,11 +131,11 @@ describe("weekend and holiday preparation", () => {
     const pill = screen.getByTestId("ward-discharge-weekend-community_team");
     expect(pill).toHaveAccessibleName(
       expect.stringContaining(
-        "Community mental health team closes Thu 31 Dec 17:00, reopens 4 Jan 2027 08:30 (New Year's Day, Weekend).",
+        "Community mental health team closes Thu 31 Dec 5:00 pm, reopens 4 Jan 2027 8:30 am (New Year's Day, Weekend).",
       ),
     );
     fireEvent.click(pill);
     const service = screen.getByRole("dialog", { name: /^Community mental health team, \d+ waiting$/ });
-    expect(within(service).getByText("Closes Thu 31 Dec 17:00 · reopens 4 Jan 2027 08:30")).toBeVisible();
+    expect(within(service).getByText("Closes Thu 31 Dec 5:00 pm · reopens 4 Jan 2027 8:30 am")).toBeVisible();
   });
 });

@@ -160,10 +160,10 @@ describe("Summary, Map view", () => {
     renderView();
     fireEvent.click(screen.getByRole("radio", { name: /^Stay/ }));
     expect(screen.getByText(/^Ring: share over 3 months/u)).toHaveTextContent(
-      "Centre: average stay in days, including people who have left.",
+      "Centre: average completed stay in days.",
     );
     const rank = screen.getByTestId("ward-statistics-map-rank");
-    expect(within(rank).getByRole("heading", { name: "Average stay by site" })).toBeTruthy();
+    expect(within(rank).getByRole("heading", { name: "Average completed stay by site" })).toBeTruthy();
     const view = screen.getByTestId("ward-statistics-map-view").textContent ?? "";
     expect(view).not.toMatch(/mean stay/iu);
     expect(view).not.toMatch(/\d\.\dd\b/u);

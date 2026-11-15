@@ -30,7 +30,8 @@
     "ed-over": ["src/components/ward-management/ward-shared-figures.ts"],
     "held-up": ["src/components/ward-management/ward-bed-availability.ts"],
     "alerts": ["src/components/ward-management/ward-alerts-figures.ts"],
-    "referrals-awaiting": ["src/components/ward-management/figures/decision-counts.ts"]
+    "referrals-awaiting": ["src/components/ward-management/figures/decision-counts.ts"],
+    "median": ["src/components/ward-management/ward-statistics.ts"]
   },
   "counts": {
     "need-a-bed": {
@@ -61,10 +62,6 @@
       "src/components/ward-management/ward-model-vocabulary.ts": 1,
       "src/components/ward-management/ward-movements.ts": 1,
       "src/components/ward-redesign/pop-search/search-preview.tsx": 1
-    },
-    "ready-now": {
-      "src/components/ward-management/statistics/executive-statistics-projector.ts": 1,
-      "src/components/ward-management/statistics/statistics-network-cards.tsx": 1
     },
     "waiting-in-ed": {
       "src/components/ward-management/bed-meeting/bed-meeting-agenda.ts": 1,
@@ -162,7 +159,6 @@
       "src/components/ward-management/statistics/statistics-eds-index.tsx": 1,
       "src/components/ward-management/statistics/statistics-screen-parts.tsx": 1,
       "src/components/ward-management/statistics/statistics-service-screen.tsx": 1,
-      "src/components/ward-management/statistics/statistics-ward-top.tsx": 1,
       "src/components/ward-management/ward-derivations-records.ts": 1,
       "src/components/ward-management/ward-hours-breakdown.ts": 1
     }

@@ -9,7 +9,7 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import { type Instant, dayOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { CAD_TO_FOLLOW, cadNumberToFollow } from "@/components/ward-management/ward-cad-number";
-import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { arrivalTimingIsLate } from "@/components/ward-management/ward-arrival-timing";
 import type { Movement, TransportJob, Unit } from "@/components/ward-management/ward-model";
 import { isExaminationAwaitingReleaseBlocker } from "@/components/ward-management/ward-examination-hold-up";
 import type { WfTone } from "@/components/wf";
@@ -305,12 +305,13 @@ export function expectedArrival(movement: Movement): { at: Instant; booked: bool
   return booked === undefined ? undefined : { at: booked, booked: true };
 }
 
-/** True once a job is more than the grace past its recorded ward ETA and has not arrived. */
+/**
+ * True once a job reads "Late arrival": D-221's one rule (`ward-arrival-timing.ts`), the ward ETA or
+ * else the booking estimate (item 1) plus the signed grace. Never once transport has delivered,
+ * after a diversion, or once closed.
+ */
 export function pastWardEta(movement: Movement, now: Instant): boolean {
-  return (
-    movement.arrivalDetails !== undefined &&
-    now > movement.arrivalDetails.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES
-  );
+  return arrivalTimingIsLate(movement, now);
 }
 
 export const LEG_TONE: Record<OfficerLeg, WfTone> = {

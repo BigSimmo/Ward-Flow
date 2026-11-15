@@ -16,7 +16,8 @@
  * `docs/ward-flow/statistics-definitions.md` carries a "Windows" table built from `FIGURE_WINDOWS`;
  * `tests/ward-figure-windows-doc.test.ts` fails when the two differ.
  *
- * Phase 1: no screen reads this yet. Pure: no React, no browser API.
+ * Statistics' Referrals today card and its Left today figure read `windowLine("today")`. Pure: no
+ * React, no browser API.
  */
 import {
   calendarDateOf,
@@ -80,7 +81,7 @@ export const FIGURE_WINDOWS: readonly FigureWindow[] = [
     name: "Today",
     start: "12:00 am on the board's day",
     end: "Now",
-    usedBy: "Referrals today, admitted today, gone today, due today",
+    usedBy: "Referrals today, admitted today, Left today, Expected to leave today",
     source: "`dayOf` (`ward-clock.ts`)",
   },
   {

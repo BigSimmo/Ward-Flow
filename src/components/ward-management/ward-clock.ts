@@ -197,11 +197,21 @@ export function perthDateLabel(instant: Instant, dayZero: Date, options: Intl.Da
 }
 
 /**
- * A real moment's clock face ("HH:MM") on the Perth (AWST) clock, whatever the device's zone. For a
- * time something was recorded at, so it reads on the same clock as the board (CL-2, 5 Nov 2026).
+ * A real moment's clock face on the Perth (AWST) clock, whatever the device's zone, am/pm on screen
+ * ("2:05 pm"). For a time something was recorded at, so it reads on the same clock as the board
+ * (CL-2, 5 Nov 2026).
  */
 export function perthClockTime(moment: Date): string {
-  return formatInstant(Math.floor((moment.getTime() + wardZoneOffsetMs(moment.getTime())) / 60_000));
+  return formatInstant(perthMinute(moment));
+}
+
+/** `perthClockTime` on the 24-hour face ("14:05"), for text that is parsed or printed. */
+export function perthClock24(moment: Date): string {
+  return formatClock24(perthMinute(moment));
+}
+
+function perthMinute(moment: Date): number {
+  return Math.floor((moment.getTime() + wardZoneOffsetMs(moment.getTime())) / 60_000);
 }
 
 /** "Thu 10:42": a recorded moment's Perth weekday and clock face, for a list of recent answers. */
@@ -265,7 +275,7 @@ export function formatSheetMoment(
     month: "short",
     ...(options.includeYearAndZone ? { year: "numeric" as const } : {}),
   });
-  return `${day}, ${formatInstant(instant)}${options.includeYearAndZone ? ` ${options.zone ?? clockZoneLabel(false)}` : ""}`;
+  return `${day}, ${formatClock24(instant)}${options.includeYearAndZone ? ` ${options.zone ?? clockZoneLabel(false)}` : ""}`;
 }
 
 /**
@@ -284,7 +294,15 @@ export function clockZoneLabel(signedIn: boolean): ClockZoneLabel {
 }
 
 export function formatInstantWithDay(instant: Instant, now: Instant): string {
-  const clockFace = formatInstant(instant);
+  return withDayWords(formatInstant(instant), instant, now);
+}
+
+/** `formatInstantWithDay` on the 24-hour face, for a legal form time shown as entered. */
+export function formatClock24WithDay(instant: Instant, now: Instant): string {
+  return withDayWords(formatClock24(instant), instant, now);
+}
+
+function withDayWords(clockFace: string, instant: Instant, now: Instant): string {
   const dayDifference = dayOf(instant) - dayOf(now);
   if (dayDifference === 0) return clockFace;
   if (dayDifference === -1) return `${clockFace} yesterday`;
@@ -448,15 +466,34 @@ export function formatSince(start: Instant, now: Instant): string {
 }
 
 /**
+ * The 24-hour clock face, "14:05": for print, legal form times as entered and time-field text.
+ * On screen use `formatInstant` (am/pm).
+ *
  * A synthetic movement can be authored with a negative instant (e.g. `openedAt` computed
  * before the day began) — this must still render as a valid wall-clock time rather than
  * `-1:-14`, so wrap into the 0–1439 range before splitting into hours and minutes.
  */
-export function formatInstant(instant: Instant) {
+export function formatClock24(instant: Instant): string {
   const wrapped = ((instant % 1440) + 1440) % 1440;
   const hours = Math.floor(wrapped / 60);
   const minutes = wrapped % 60;
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+/**
+ * ON SCREEN, A CLOCK TIME READS AM/PM (item 13, D-215 item 3, D-223 item 4; Josh 14 Nov 2026):
+ * "2:05 pm", "12:00 am", "12:00 pm". Lower case, a space before am/pm, no leading zero.
+ *
+ * The 24-hour face (`formatClock24`) stays where a 24-hour time is the record: printed sheets
+ * (`formatSheetMoment`), a legal form time shown as the person entered it (D-93, D-218: "Ends
+ * 15:42"), and text a time field reads back ("09:30", `minuteOfDayFromClockText`).
+ */
+export function formatInstant(instant: Instant): string {
+  const wrapped = ((instant % 1440) + 1440) % 1440;
+  const hours24 = Math.floor(wrapped / 60);
+  const minutes = wrapped % 60;
+  const hours12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
+  return `${hours12}:${String(minutes).padStart(2, "0")} ${hours24 < 12 ? "am" : "pm"}`;
 }
 
 /**

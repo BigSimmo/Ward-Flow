@@ -44,7 +44,9 @@ describe("intakeWindowFromClockText", () => {
   it("reads a window across midnight into the next morning", () => {
     const intake = intakeWindowFromClockText("21:00", "0200", at(18))!;
     expect(intake).toEqual({ from: at(21), to: at(2, 0, 1) });
-    expect(intakeWindowLine({ ...intake, at: at(18), by: "Nurse in charge" })).toBe("Tonight: admit 21:00 to 02:00");
+    expect(intakeWindowLine({ ...intake, at: at(18), by: "Nurse in charge" })).toBe(
+      "Tonight: admit 9:00 pm to 2:00 am",
+    );
   });
 
   it("reads a typed time after midnight as tonight, not this morning", () => {

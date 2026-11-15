@@ -274,7 +274,7 @@ describe("since you looked", () => {
     const change = forecastChangeSinceLook(before, worse)!;
     expect(change.delta).toBe(-4);
     expect(forecastChangeSentence(change, now)).toMatch(
-      /^Since you looked at 09:12, tomorrow moved from .+\. 2 more people waiting for a bed and 2 more releases held up\.$/,
+      /^Since you looked at 9:12 am, tomorrow moved from .+\. 2 more people waiting for a bed and 2 more releases held up\.$/,
     );
     expect(forecastChangeSinceLook(before, { ...worse, scenario: "other" })).toBeUndefined();
   });

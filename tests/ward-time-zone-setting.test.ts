@@ -51,10 +51,10 @@ describe("the app's one time zone setting", () => {
 
   it("runs the demo clock live on Perth time: now less day zero is the Perth clock face", () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-11-14T08:41:00Z")); // 16:41 in Perth
+    vi.setSystemTime(new Date("2026-11-14T08:41:00Z")); // 4:41 pm in Perth
     expect((Date.now() - demoDayZero(new Date()).getTime()) / 60_000).toBe(16 * 60 + 41);
     expect(absoluteWallClockMinutes() % MINUTES_PER_DAY).toBe(16 * 60 + 41);
-    expect(clk(Date.now())).toBe("16:41");
+    expect(clk(Date.now())).toBe("4:41 pm");
   });
 
   it("moves every computation when the setting names another zone, daylight saving included", async () => {
@@ -71,14 +71,14 @@ describe("the app's one time zone setting", () => {
     // November is AEDT (UTC+11); July is AEST (UTC+10).
     expect(clock.wardZoneOffsetMs(Date.parse("2026-11-14T08:41:00Z"))).toBe(11 * 3_600_000);
     expect(clock.wardZoneOffsetMs(Date.parse("2026-07-01T05:00:00Z"))).toBe(10 * 3_600_000);
-    const november = new Date("2026-11-14T08:41:00Z"); // 19:41 in Sydney
+    const november = new Date("2026-11-14T08:41:00Z"); // 7:41 pm in Sydney
     expect(clock.demoDayZero(november).toISOString()).toBe("2026-11-13T13:00:00.000Z");
     expect(engine.seedWorld(november).dayZero).toBe("2026-11-13T13:00:00.000Z");
     expect(clock.demoDayZero(new Date("2026-07-01T05:00:00Z")).toISOString()).toBe("2026-06-30T14:00:00.000Z");
-    expect(format.clk(november)).toBe("19:41");
-    expect(clock.perthClockTime(november)).toBe("19:41");
+    expect(format.clk(november)).toBe("7:41 pm");
+    expect(clock.perthClockTime(november)).toBe("7:41 pm");
     expect(clock.perthCalendarDay(new Date("2026-11-14T13:30:00Z"))).toMatchObject({ monthIndex: 10, day: 15 });
-    // 4 Oct 2026: Sydney's clocks go forward at 02:00, so midnight is +10 and 09:00 is +11.
+    // 4 Oct 2026: Sydney's clocks go forward at 2:00 am, so midnight is +10 and 9:00 am is +11.
     expect(clock.perthMidnight(2026, 9, 4).toISOString()).toBe("2026-10-03T14:00:00.000Z");
     expect(clock.perthDateTimeLocal("2026-10-04T09:00")?.toISOString()).toBe("2026-10-03T22:00:00.000Z");
     expect(clock.wardZonedLocalIso("2026-11-14T09:30")).toBe("2026-11-14T09:30+11:00");

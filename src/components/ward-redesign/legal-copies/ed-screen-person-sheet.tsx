@@ -8,7 +8,7 @@
 // 9.6, 15 Oct 2026).
 import type { ReactNode } from "react";
 import { Check } from "lucide-react";
-import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
+import { formatClock24WithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { typedTimeStanding } from "@/components/ward-redesign/legal-forms/typed-time-words";
 import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import { JourneyStrip, PhoneSheet, StatusGlyph } from "@/components/wf";
@@ -194,7 +194,7 @@ export function renderEdPersonSheet(
                   {typedStanding.word ? (
                     <StatusGlyph tone={typedStanding.tone} size={9} className={legal.legalGlyph} />
                   ) : null}
-                  {`${movement.legalForm.dueAt < now ? "Ended" : "Ends"} ${formatInstantWithDay(
+                  {`${movement.legalForm.dueAt < now ? "Ended" : "Ends"} ${formatClock24WithDay(
                     movement.legalForm.dueAt,
                     now,
                   )}${movement.legalForm.dueAt >= now && typedStanding.word ? ` · ${typedStanding.word}` : ""}`}

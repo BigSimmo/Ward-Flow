@@ -6,7 +6,7 @@ import { useState } from "react";
 
 import { Dialog, StatusGlyph } from "@/components/wf";
 import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
-import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { arrivalTimingPhrase } from "@/components/ward-management/ward-arrival-timing";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { referralPurposeLabel } from "@/components/ward-management/ward-referrals";
@@ -196,8 +196,8 @@ export function EdReferredPanel({ ctx }: { ctx: EdScreenContext }) {
                       role="status"
                       data-testid={`ward-ed-outbox-arrival-late-${movement.id}`}
                     >
-                      Arrival late — more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past the estimated ward time. Not
-                      marked arrived.
+                      {/* D-221: the one arrival-timing phrase. */}
+                      {arrivalTimingPhrase(movement, now)}. Not marked arrived.
                     </div>
                   ) : null}
                   {canSetArrivalPlan(movement) ? (

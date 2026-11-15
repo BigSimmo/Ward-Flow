@@ -7,7 +7,7 @@ import type { Movement } from "@/components/ward-management/ward-model";
 import { recordedByWords } from "@/components/ward-management/ward-flow-roles";
 import type { PatientMode } from "./patient-mode";
 import { type PatientStatusContext, buildPatientStatus } from "./patient-status-card";
-import { STAGES, clock } from "./patient-now-records";
+import { STAGES, clockOn } from "./patient-now-records";
 
 /**
  * Ward, site and emergency-department names read from the one data layer (`ward-sites.ts`) that
@@ -21,7 +21,7 @@ export interface StagePresentationDetail {
   milestones: Array<{ time?: string; label: string; detail: string }>;
 }
 
-export function getStageBedflowDetail(stageId: string, liveMovement?: Movement): StagePresentationDetail {
+export function getStageBedflowDetail(stageId: string, liveMovement?: Movement, now?: number): StagePresentationDetail {
   if (!liveMovement)
     return {
       statusText: "Not recorded",
@@ -53,7 +53,7 @@ export function getStageBedflowDetail(stageId: string, liveMovement?: Movement):
           ? "Before the current stage."
           : "Not reached yet.",
     milestones: changes.map((change) => ({
-      time: clock(change.at),
+      time: clockOn(change.at, now),
       label: "Stage recorded",
       detail: `Recorded by ${recordedByWords(change.by)}${change.reason ? `: ${change.reason}` : ""}.`,
     })),
@@ -100,5 +100,5 @@ export function etaAndNext(
     next = job?.collectedAt === undefined ? "collection" : "arrival";
   }
   if (job?.diversion !== undefined || etaAt === undefined) return { value: next, label: "next step", next };
-  return { value: clock(etaAt), label: `ward ETA · next: ${next}`, next };
+  return { value: clockOn(etaAt, context.now), label: `ward ETA · next: ${next}`, next };
 }

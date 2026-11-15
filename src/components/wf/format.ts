@@ -42,12 +42,14 @@ export function durMinutes(minutes: number): string {
 }
 
 /**
- * 24 hour Perth (AWST) clock time, `HH:MM`, whatever the device's time zone. Every other Ward Flow
- * clock face and date is Perth, so a device-zone reading here would disagree with them (F-22).
+ * Perth (AWST) clock time on screen, am/pm ("2:05 pm"), whatever the device's time zone. Every other
+ * Ward Flow clock face and date is Perth, so a device-zone reading here would disagree with them
+ * (F-22). Item 13 (Josh, 14 Nov 2026): times on screen read am/pm, as `formatInstant` does.
  */
 export function clk(at: Date | number): string {
   const ms = typeof at === "number" ? at : at.getTime();
   // The app's one time zone setting (`WARD_TIME_ZONE`, Perth by default), as in ward-clock.ts.
   const perth = new Date(ms + zoneOffsetMs(WARD_TIME_ZONE, ms));
-  return `${pad(perth.getUTCHours())}:${pad(perth.getUTCMinutes())}`;
+  const hours = perth.getUTCHours();
+  return `${hours % 12 === 0 ? 12 : hours % 12}:${pad(perth.getUTCMinutes())} ${hours < 12 ? "am" : "pm"}`;
 }

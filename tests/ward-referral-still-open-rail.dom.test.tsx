@@ -123,7 +123,7 @@ describe("Still open in the Ready to send rail", () => {
       within(list)
         .getAllByRole("listitem")
         .map((item) => item.textContent),
-    ).toEqual(["Medical clearance not recorded (since 09:12)", "Ward asked for: legal form copy"]);
+    ).toEqual(["Medical clearance not recorded (since 9:12 am)", "Ward asked for: legal form copy"]);
     const send = screen.getByRole("button", { name: "Send referral" });
     expect(send).toBeEnabled();
     expect(send).not.toHaveAttribute("aria-disabled");
@@ -150,7 +150,7 @@ describe("Still open in the Ready to send rail", () => {
       </WardFlowProvider>,
     );
     expect(screen.getByTestId("ward-referral-still-open-clearance")).toHaveTextContent(
-      "Medical clearance not recorded (since 09:07)",
+      "Medical clearance not recorded (since 9:07 am)",
     );
   });
 });

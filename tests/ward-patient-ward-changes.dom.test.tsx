@@ -66,7 +66,7 @@ describe("ward changes from the Patient page", () => {
     expect(screen.getByTestId("probe-leave")).toHaveTextContent(
       `medical_trip ${startOfToday + MINUTES_PER_DAY + 9 * 60 + 30}`,
     );
-    expect(screen.getByTestId("ward-patient-gate-due-back")).toHaveTextContent("09:30 tomorrow");
+    expect(screen.getByTestId("ward-patient-gate-due-back")).toHaveTextContent("9:30 am tomorrow");
     fireEvent.click(
       within(screen.getByTestId("ward-patient-gate-due-back")).getByRole("button", { name: "Record return" }),
     );

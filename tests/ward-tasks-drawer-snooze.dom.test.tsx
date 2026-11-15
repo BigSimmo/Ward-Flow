@@ -90,7 +90,9 @@ describe("tasks drawer: ownership and snooze", () => {
   it("says when the row comes back and the act now limit in words, not only on hover", () => {
     const { drawer } = renderDrawer();
     openSnooze(drawer, red);
-    expect(screen.getByText(/^Back at/)).toHaveTextContent(/^Back at \d\d:\d\d\. Act now: 1 h 00 min at most\.$/);
+    expect(screen.getByText(/^Back at/)).toHaveTextContent(
+      /^Back at \d{1,2}:\d{2} [ap]m\. Act now: 1 h 00 min at most\.$/,
+    );
   });
 
   it("opens as its own bottom sheet on a phone, and records the snooze from there", () => {

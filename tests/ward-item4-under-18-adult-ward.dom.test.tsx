@@ -155,7 +155,7 @@ describe("the notice on the bed record", () => {
     expect(quiet.getAttribute("data-tone")).toBe("quiet");
     expect(within(quiet).getByText(NOTICE)).toBeTruthy();
     expect(within(quiet).getByTestId("ward-under-18-notified").textContent).toMatch(
-      /^Chief Psychiatrist notified at .*09:30/,
+      /^Chief Psychiatrist notified at .*9:30 am/,
     );
   });
 

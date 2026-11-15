@@ -23,7 +23,7 @@ describe("TV change marks", () => {
   it("marks a changed figure with the time it changed, and leaves an unchanged one alone", () => {
     const first = nextTvChangeMarks(null, "ward:a", { ready: 3, asked: 1 }, AT - 5, false);
     const second = nextTvChangeMarks(first, "ward:a", { ready: 2, asked: 1 }, AT, false);
-    expect(tvChangeMarkText(second, "ready", AT)).toBe("Changed 14:32");
+    expect(tvChangeMarkText(second, "ready", AT)).toBe("Changed 2:32 pm");
     expect(tvChangeMarkText(second, "asked", AT)).toBeNull();
   });
 
@@ -35,7 +35,7 @@ describe("TV change marks", () => {
   it("stays until just before 15 minutes and clears at exactly 15", () => {
     const first = nextTvChangeMarks(null, "ward:a", { ready: 3 }, AT - 1, false);
     const marks = nextTvChangeMarks(first, "ward:a", { ready: 4 }, AT, false);
-    expect(tvChangeMarkText(marks, "ready", AT + TV_CHANGE_MARK_MINUTES - 1)).toBe("Changed 14:32");
+    expect(tvChangeMarkText(marks, "ready", AT + TV_CHANGE_MARK_MINUTES - 1)).toBe("Changed 2:32 pm");
     expect(tvChangeMarkText(marks, "ready", AT + TV_CHANGE_MARK_MINUTES)).toBeNull();
     expect(tvChangeMarkText(marks, "ready", AT + TV_CHANGE_MARK_MINUTES + 60)).toBeNull();
   });
@@ -44,7 +44,7 @@ describe("TV change marks", () => {
     const first = nextTvChangeMarks(null, "ward:a", { ready: 3 }, AT - 10, false);
     const once = nextTvChangeMarks(first, "ward:a", { ready: 4 }, AT - 10, false);
     const twice = nextTvChangeMarks(once, "ward:a", { ready: 5 }, AT, false);
-    expect(tvChangeMarkText(twice, "ready", AT + 10)).toBe("Changed 14:32");
+    expect(tvChangeMarkText(twice, "ready", AT + 10)).toBe("Changed 2:32 pm");
   });
 
   it("records no change while the screen is frozen", () => {
@@ -68,9 +68,9 @@ describe("TV change marks", () => {
     expect(tvChangeMarkText(other, "ready", AT + 1)).toBeNull();
   });
 
-  it("formats the time on the app's 24 hour clock, wrapping past midnight", () => {
+  it("formats the time on the app's am/pm clock, wrapping past midnight", () => {
     const first = nextTvChangeMarks(null, "s", { ed: 1 }, 1440 + 9 * 60 + 5 - 1, false);
     const marks = nextTvChangeMarks(first, "s", { ed: 2 }, 1440 + 9 * 60 + 5, false);
-    expect(tvChangeMarkText(marks, "ed", 1440 + 9 * 60 + 5)).toBe("Changed 09:05");
+    expect(tvChangeMarkText(marks, "ed", 1440 + 9 * 60 + 5)).toBe("Changed 9:05 am");
   });
 });

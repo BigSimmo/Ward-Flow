@@ -32,7 +32,7 @@ describe("saved print provenance", () => {
   it("distinguishes years and preserves conservative standalone fallbacks", () => {
     expect(asAtStamp(5, dayZero).time).toContain("31 Dec 2026, 00:05 demo time");
     expect(asAtStamp(now, dayZero).time).toContain(stamp);
-    expect(asAtStamp(now).time).toBe("00:05");
+    expect(asAtStamp(now).time).toBe("12:05 am");
     expect(asAtStamp(now, new Date(Number.NaN))).toEqual(asAtStamp(now));
     expect(asAtStamp(Number.NaN, dayZero).time).toBeNull();
     expect(asAtStamp(now).dayNote).toContain("day 2 of this demonstration");

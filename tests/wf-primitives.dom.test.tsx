@@ -103,10 +103,10 @@ describe("v6 time formats", () => {
     expect(durMinutes(257)).toBe("4 h 17 min");
   });
 
-  it("formats clock time as 24 hour HH:MM in Perth time", () => {
+  it("formats clock time as am/pm in Perth time (item 13, Josh, 14 Nov 2026)", () => {
     // Explicit +08:00 instants: clk reads Perth wall time whatever zone the test machine is in (F-22).
-    expect(clk(new Date("2026-10-07T09:05:00+08:00"))).toBe("09:05");
-    expect(clk(new Date("2026-10-07T22:42:00+08:00").getTime())).toBe("22:42");
+    expect(clk(new Date("2026-10-07T09:05:00+08:00"))).toBe("9:05 am");
+    expect(clk(new Date("2026-10-07T22:42:00+08:00").getTime())).toBe("10:42 pm");
   });
 });
 
@@ -286,7 +286,7 @@ describe("LiveChip", () => {
     rerender(<LiveChip state="paused" onTogglePause={onTogglePause} />);
     expect(screen.getByRole("button", { name: "Paused, pause demo updates" })).toHaveAttribute("aria-pressed", "true");
     rerender(<LiveChip state="stale" asAt={new Date("2026-10-07T10:26:00+08:00")} />);
-    expect(screen.getByRole("status")).toHaveTextContent(/^Not updating since 10:26$/);
+    expect(screen.getByRole("status")).toHaveTextContent(/^Not updating since 10:26 am$/);
   });
 
   // M8 (Josh, 3 Nov 2026): "One clock in the top bar. Stale is said in words, and phones and TVs keep
@@ -329,10 +329,10 @@ describe("LiveChip", () => {
     try {
       act(() => publishLiveRefresh({ unavailable: true, receivedAt }));
       const { rerender } = render(<LiveChip state="live" />);
-      expect(screen.getByRole("status")).toHaveTextContent(/^Not updating since 10:26$/);
+      expect(screen.getByRole("status")).toHaveTextContent(/^Not updating since 10:26 am$/);
       act(() => publishLiveRefresh({ unavailable: false, receivedAt, staleAfterMs: 6000 }));
       rerender(<LiveChip state="live" />);
-      expect(screen.getByRole("status")).toHaveTextContent(/^Not updating since 10:26$/);
+      expect(screen.getByRole("status")).toHaveTextContent(/^Not updating since 10:26 am$/);
       act(() => publishLiveRefresh({ unavailable: false, receivedAt: Date.now(), staleAfterMs: 60 * 60_000 }));
       rerender(<LiveChip state="live" />);
       expect(screen.getByRole("status")).toHaveTextContent(/^Demo$/);
@@ -349,7 +349,7 @@ describe("LiveChip", () => {
       render(<LiveChip state="live" />);
       expect(screen.getByRole("status")).toHaveTextContent(/^Demo$/);
       act(() => vi.advanceTimersByTime(7000));
-      expect(screen.getByRole("status")).toHaveTextContent(/^Not updating since 10:26$/);
+      expect(screen.getByRole("status")).toHaveTextContent(/^Not updating since 10:26 am$/);
     } finally {
       act(() => publishLiveRefresh(undefined));
       vi.useRealTimers();

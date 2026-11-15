@@ -18,6 +18,8 @@ import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-
 import { type BroadcastAlert, type getActiveBroadcastAlert } from "./ward-broadcast-model";
 import { directiveAcknowledgeDesk, isAlertLive } from "./global-alert-view";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
+import { usePermitFor } from "@/components/ward-management/shell/use-permit";
+import type { Change } from "@/components/ward-management/ward-permit";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { PullNowCard } from "./global-alert-panels";
@@ -61,10 +63,13 @@ export function AlertsLiveBroadcasts({
   // Together-X2-6: Extend, Add desks and Stand down only for a desk whose role may take them (the
   // coordinator and the site bed manager); a ward or ED asked to acknowledge a directive can do it
   // here, even while a Pull now holds the banner.
+  // D-223: permit() also asks each alert's place, so a desk outside it is not offered the step.
   const gate = useRoleGate();
-  const mayExtend = gate("EXTEND_BROADCAST_ALERT").allowed;
-  const mayAddUnits = gate("ADD_BROADCAST_ALERT_UNITS").allowed;
-  const mayStandDown = gate("STAND_DOWN_BROADCAST_ALERT").allowed;
+  const permitFor = usePermitFor();
+  const may = (
+    type: "EXTEND_BROADCAST_ALERT" | "ADD_BROADCAST_ALERT_UNITS" | "STAND_DOWN_BROADCAST_ALERT",
+    alertId: string,
+  ) => gate(type).allowed && permitFor({ type, alertId } as Change).kind !== "never";
   const access = useEffectiveWardAccess();
   const { movements } = useWardFlowSelect("movements");
   const ackDesk = activeBroadcast ? directiveAcknowledgeDesk(activeBroadcast, access, movements, now, units) : null;
@@ -75,7 +80,11 @@ export function AlertsLiveBroadcasts({
         <section className={styles.group} aria-label="Pull now">
           <GroupHead label="Pull now" count={livePullNows.length} />
           {livePullNows.map((alert) => (
-            <PullNowCard key={alert.id} alert={alert} onStandDown={mayStandDown ? handleStandDown : undefined} />
+            <PullNowCard
+              key={alert.id}
+              alert={alert}
+              onStandDown={may("STAND_DOWN_BROADCAST_ALERT", alert.id) ? handleStandDown : undefined}
+            />
           ))}
         </section>
       ) : null}
@@ -102,7 +111,7 @@ export function AlertsLiveBroadcasts({
               : undefined
           }
           onExtend={
-            mayExtend
+            may("EXTEND_BROADCAST_ALERT", activeBroadcast.id)
               ? () => {
                   track(
                     {
@@ -115,12 +124,18 @@ export function AlertsLiveBroadcasts({
                 }
               : undefined
           }
-          onAddUnits={mayAddUnits ? () => setAddingUnits(activeBroadcast.id) : undefined}
+          onAddUnits={
+            may("ADD_BROADCAST_ALERT_UNITS", activeBroadcast.id) ? () => setAddingUnits(activeBroadcast.id) : undefined
+          }
           addUnitsDisabledReason={
             addableGroups(activeBroadcast, units).length === 0 ? "Every desk is already asked." : undefined
           }
           onCopyAnswers={onCopyAnswers}
-          onStandDown={mayStandDown ? () => handleStandDown(activeBroadcast.id) : undefined}
+          onStandDown={
+            may("STAND_DOWN_BROADCAST_ALERT", activeBroadcast.id)
+              ? () => handleStandDown(activeBroadcast.id)
+              : undefined
+          }
         />
       ) : null}
       {activeBroadcast && addingUnits === activeBroadcast.id ? (

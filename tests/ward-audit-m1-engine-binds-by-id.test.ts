@@ -93,6 +93,12 @@ const STEPS = 300;
 const CHECKS_PER_TYPE = 4;
 /** Stop once this many seeds in a row add no new patient action. */
 const QUIET_SEEDS = 60;
+/**
+ * D-221 (14 Nov 2026): every save now stores its late notices, so the backfill event changes only a
+ * record saved before that, which a seeded run never holds. It finds its journey by id
+ * (`reconcileMovementLateNotices`); tests/ward-late-notices-reducer.test.ts covers its change.
+ */
+const BACKFILL_ONLY = new Set<WardFlowEvent["type"]>(["EVALUATE_ARRIVAL_LATENESS"]);
 
 describe("every patient action changes the record it names, whatever the list order (M1c)", () => {
   it(
@@ -137,11 +143,11 @@ describe("every patient action changes the record it names, whatever the list or
           state = next;
         }
         lastSeedRun = seed;
-        const allChecked = [...patientTypes].every((type) => checks.has(type));
+        const allChecked = [...patientTypes].every((type) => checks.has(type) || BACKFILL_ONLY.has(type));
         if (allChecked && seed - lastNewSeed >= QUIET_SEEDS) break;
       }
       expect(failures, `seeds ${FIRST_SEED}-${lastSeedRun}`).toEqual([]);
-      const unchecked = [...patientTypes].filter((type) => !checks.has(type));
+      const unchecked = [...patientTypes].filter((type) => !checks.has(type) && !BACKFILL_ONLY.has(type));
       expect(unchecked, "patient actions never seen making an accepted change").toEqual([]);
       // 135 patient action types on 10 Nov 2026 (seeds 1-105). A big drop means the generator lost some.
       expect(patientTypes.size, `seeds to ${lastSeedRun}`).toBeGreaterThanOrEqual(120);

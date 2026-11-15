@@ -96,7 +96,7 @@ describe("referral owner and call log", () => {
     expect(assign).toHaveAttribute("aria-disabled", "true");
     fireEvent.change(screen.getByRole("combobox", { name: "Assign to" }), { target: { value: "coordinator" } });
     fireEvent.click(assign);
-    expect(owner()).toHaveTextContent("Owner Bed coordinator · assigned 10:42 by Bed coordinator");
+    expect(owner()).toHaveTextContent("Owner Bed coordinator · assigned 10:42 am by Bed coordinator");
     expect(screen.getByTestId("record")).toHaveTextContent("queued|Owner Bed coordinator");
     expect(screen.getByTestId("timeline")).toHaveTextContent("Assigned to Bed coordinator by Bed coordinator");
   });

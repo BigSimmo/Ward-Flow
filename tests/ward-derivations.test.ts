@@ -11,7 +11,8 @@ import {
   transportLeg,
   unitCapacity,
 } from "../src/components/ward-management/ward-derivations";
-import { CLINICAL_VALUES } from "../src/components/ward-management/ward-clinical-values";
+import { arrivalTiming } from "../src/components/ward-management/ward-arrival-timing";
+import { divertedAwaitingRelease } from "../src/components/ward-management/ward-stage-copy";
 import { eligibility, requiresAuthorisedDestination } from "../src/components/ward-management/ward-eligibility";
 import {
   DECLINE_REASONS,
@@ -318,15 +319,16 @@ describe("buildActionInbox", () => {
         ),
     ).length;
 
-    // P068 (27 Oct 2026): a live booked job still not at the ward the signed number of minutes after
-    // its booking estimate. First reached by the fixture when feature 25 (9 Nov 2026) gave WF-015 a
-    // passed estimate for its Delayed demo; re-expressed here from the transport times.
-    const bookingEstimatePassedCount = wardMovements.filter((movement) => {
-      const transport = movement.transport;
-      if (transport?.estimatedAt === undefined || transport.arrivedAt !== undefined) return false;
-      if (transport.cancelledAt !== undefined || movement.closure !== undefined) return false;
-      return NOW_ANCHOR - transport.estimatedAt >= CLINICAL_VALUES.bookingEstimatePassed.value;
-    }).length;
+    // P068 (27 Oct 2026), bounded by D-221 (14 Nov 2026): one arrival-timing rule. Past ETA is a
+    // review row up to the signed grace; Late arrival and a diversion are their own act-now rows.
+    const open = wardMovements.filter((movement) => movement.closure === undefined);
+    const bookingEstimatePassedCount = open.filter(
+      (movement) => !divertedAwaitingRelease(movement) && arrivalTiming(movement, NOW_ANCHOR).state === "past_eta",
+    ).length;
+    const arrivalLateCount = open.filter(
+      (movement) => !divertedAwaitingRelease(movement) && arrivalTiming(movement, NOW_ANCHOR).state === "late",
+    ).length;
+    const divertedCount = open.filter((movement) => divertedAwaitingRelease(movement)).length;
 
     const items = buildActionInbox(wardMovements, NOW_ANCHOR, allUnits());
 
@@ -337,7 +339,9 @@ describe("buildActionInbox", () => {
         expiredHoldCount +
         unlawfulDestinationCount +
         noEligibleBedCount +
-        bookingEstimatePassedCount,
+        bookingEstimatePassedCount +
+        arrivalLateCount +
+        divertedCount,
     );
 
     // The anti-blindness half. Every id prefix the inbox can emit, listed here so a new category
@@ -351,6 +355,8 @@ describe("buildActionInbox", () => {
       "destination-unlawful-",
       "no-eligible-bed-",
       "eta-passed-",
+      "arrival-late-",
+      "diverted-",
     ];
     const unrecognised = items.filter((item) => !KNOWN_CATEGORY_PREFIXES.some((prefix) => item.id.startsWith(prefix)));
     expect(

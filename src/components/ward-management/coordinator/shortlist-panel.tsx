@@ -62,10 +62,9 @@ import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning"
 import { formTimeAsTyped } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { isOwnedLegalFormCode } from "@/components/ward-management/legal-forms/legal-forms-view";
 import { bedHold, PULL_NO_LIMIT_RECORDED } from "@/components/ward-management/ward-bed-hold";
-import {
-  LATE_ARRIVAL_GRACE_MINUTES,
-  OPERATIONAL_DEFAULT_LABEL,
-} from "@/components/ward-management/ward-operational-defaults";
+import { OPERATIONAL_DEFAULT_LABEL } from "@/components/ward-management/ward-operational-defaults";
+import { arrivalTimingIsLate, arrivalTimingPhrase } from "@/components/ward-management/ward-arrival-timing";
+import { formatClockAmPmWithDay } from "@/components/ward-management/ward-clock-am-pm";
 import {
   candidateReason,
   destinationUnit,
@@ -1650,9 +1649,9 @@ export function ShortlistPanel({
               label="Expected arrival"
               value={
                 movement.arrivalDetails?.estimatedArrivalAt !== undefined
-                  ? now > movement.arrivalDetails.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES
-                    ? `Overdue (+${Math.floor((now - movement.arrivalDetails.estimatedArrivalAt) / 60)}h)`
-                    : `ETA in ${Math.max(0, movement.arrivalDetails.estimatedArrivalAt - now)}m`
+                  ? // D-221: the one arrival-timing phrase (no "ETA in 0m" for the hour after the ETA).
+                    (arrivalTimingPhrase(movement, now) ??
+                    `ETA ${formatClockAmPmWithDay(movement.arrivalDetails.estimatedArrivalAt, now)}`)
                   : hold
                     ? hold.label
                     : // D-187 (F-46): this pull's own limit, or that none is recorded; never the default.
@@ -1660,21 +1659,19 @@ export function ShortlistPanel({
               }
               urgent={
                 movement.arrivalDetails?.estimatedArrivalAt !== undefined
-                  ? now > movement.arrivalDetails.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES
+                  ? arrivalTimingIsLate(movement, now)
                   : hold?.state === "lapsed"
               }
               testId="ward-shortlist-transit-countdown"
             />
           </dl>
-          {movement.arrivalDetails?.estimatedArrivalAt !== undefined &&
-          now > movement.arrivalDetails.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES ? (
+          {arrivalTimingIsLate(movement, now) ? (
             <div
               className={`${styles.queueTransitOverdue} ${styles.transitOverdueSpaced}`}
               data-testid="ward-shortlist-transit-overdue"
             >
               {/* Review 5 Nov 2026: the kit's act-now mark, not a typed warning sign. */}
-              <StatusGlyph tone="danger" size={12} /> Arrival overdue by{" "}
-              {Math.floor((now - movement.arrivalDetails.estimatedArrivalAt) / 60)}h.
+              <StatusGlyph tone="danger" size={12} /> Late arrival. Not marked arrived.
             </div>
           ) : null}
         </section>

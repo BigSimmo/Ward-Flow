@@ -53,6 +53,7 @@ type FigureId =
   | "act-now"
   | "needs-you"
   | "open-alerts"
+  | "late"
   | "referrals-awaiting"
   | "team-referrals-to-answer";
 
@@ -70,10 +71,9 @@ export type FigureScopeKind = "network" | "desk" | "ward" | "ed" | "service" | "
  * - "wraps-pr-a": `compute` exists today; PR A aligns its callers or adds the helper the row will
  *   finally read (the ready hold list, the one occupancy tone). The row wraps PR A's function and
  *   never reimplements it.
- * - "reserved": PR A builds the function (R-FIGS-12, R-FIGS-16). The row holds the name and rule;
- *   `compute` is `null` until PR A lands.
+ * (The four rows once reserved for PR A, R-FIGS-12 and R-FIGS-16, were built on 14 Nov 2026.)
  */
-type FigureStatus = "built" | "wraps-pr-a" | "reserved";
+type FigureStatus = "built" | "wraps-pr-a";
 
 /** A rail badge that shows this figure: the badge key, and the desk kind when only one desk shows it. */
 type FigureRail = {
@@ -97,8 +97,8 @@ export type FigureRow<F extends AnyCompute = AnyCompute> = {
   readonly population: string;
   readonly scope: FigureScopeKind;
   readonly status: FigureStatus;
-  /** THE one function, imported from its home module. `null` only on a reserved row. */
-  readonly compute: F | null;
+  /** THE one function, imported from its home module. */
+  readonly compute: F;
   /** Where `compute` lives: "`functionName` (`path from ward-management/`)". */
   readonly home: string;
   /** The lines a tap-to-open ⓘ or the `HowWorkedOut` fold shows; never a visible line of its own. */

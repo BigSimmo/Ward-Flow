@@ -195,7 +195,7 @@ describe("the bed meeting TV view", () => {
     // CS-10 (Audit 1): the ready figure says how old it is, on the checking line beside the top's chips
     // (page tops, 9 Nov 2026: each figure is one number and a few words).
     expect(screen.getByTestId("bed-meeting-tv-checking")).toHaveTextContent(
-      /^(Oldest count confirmed|\d+ wards? not confirmed since) \d\d:\d\d/,
+      /^(Oldest count confirmed|\d+ wards? not confirmed since) \d{1,2}:\d{2} [ap]m/,
     );
     // P025: the network mixes 60 and 90 minute wards, so the TV names the range.
     expect(screen.getByTestId("bed-meeting-tv-checking")).toHaveTextContent(/late after \d+( to \d+)? min/);
@@ -213,7 +213,7 @@ describe("the bed meeting TV view", () => {
     const labels = Array.from(
       screen.getByRole("group", { name: "Figures" }).querySelectorAll("[data-wf-hero-figure]"),
     ).map((item) => item.querySelector("span")?.textContent);
-    expect(labels).toEqual(["waiting in ED", "beds ready", "Discharges · today", "open movements"]);
+    expect(labels).toEqual(["waiting in ED", "beds ready", "expected to leave today", "open movements"]);
     const longest = sheet.ed.longestWaits[0];
     if (!longest) throw new Error("expected someone waiting");
     expect(screen.getByTestId("bed-meeting-tv-longest")).toHaveTextContent(
@@ -696,7 +696,7 @@ describe("the ward and ED TV views", () => {
       </WardFlowProvider>,
     );
     const asAt = screen.getByTestId("bed-meeting-tv-as-at");
-    expect(asAt).toHaveTextContent(/^Last updated \d\d:\d\d · connection unavailable, not updating$/);
+    expect(asAt).toHaveTextContent(/^Last updated \d{1,2}:\d{2} [ap]m · connection unavailable, not updating$/);
     expect(asAt).not.toHaveTextContent("updates on its own");
   });
 

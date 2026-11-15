@@ -125,7 +125,9 @@ describe("closing a bed with a review time (item 6)", () => {
     const mark = flow!.units.find((unit) => unit.id === UNIT)!.closedBeds!.at(-1)!;
     expect(mark).toMatchObject({ bedNumber: bed, reviewAt: now + 240 });
     expect(bedsIn("ready")).toHaveLength(ready.length - 1);
-    expect(screen.getByTestId("ward-drawer-reopen-bed-note")).toHaveTextContent(/^Review \d\d:\d\d\. Reopening/);
+    expect(screen.getByTestId("ward-drawer-reopen-bed-note")).toHaveTextContent(
+      /^Review \d{1,2}:\d{2} [ap]m\. Reopening/,
+    );
   });
 
   // PR #1626 review: a reason chosen on the toast (D-148) closes the bed again, and keeps the time.

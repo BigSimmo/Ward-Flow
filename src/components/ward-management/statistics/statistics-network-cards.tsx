@@ -12,7 +12,7 @@ import {
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import { readyBedsNow, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
+import { totalReadyBedsNow, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import type { BedRelease, DeclineReason, HealthService, LeaveBed, Unit } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
@@ -175,11 +175,12 @@ export function networkCapacity(
   admissions: readonly Admission[],
   holds: readonly ReservationReferral[] = [],
 ): { ready: number; empty: number; allocatable: number } {
-  let ready = 0;
+  // Beds ready now: the dictionary's one sum (`READY_NOW_FIGURE`), which reads a ward outside this
+  // desk's records through its count-only partition (`Unit.readyOutOfView`, D-210).
+  const ready = totalReadyBedsNow(units, admissions, bedReleases, holds);
   let empty = 0;
   let allocatable = 0;
   for (const unit of units) {
-    ready += readyBedsNow(unit, admissions, bedReleases, holds);
     empty += unit.empty.value;
     allocatable += unit.allocatable.value;
   }
@@ -735,7 +736,10 @@ export type SummaryModel = {
   waitingCount: StatisticsCount;
   stillOpenCount: StatisticsCount;
   admissionsCount: StatisticsCount;
+  /** Left today (R-FIGS-12). */
   dischargesCount: StatisticsCount;
+  /** Expected to leave today (R-FIGS-12); left out of the executive report, which carries no releases. */
+  expectedToLeaveCount?: number;
   arrivals: Counted<
     ReturnType<typeof import("@/components/ward-management/statistics/statistics-derivations").pullToArrival>,
     "measuredCount" | "endedCount" | "awaitingArrivalCount" | "incoherentCount"

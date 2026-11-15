@@ -177,7 +177,7 @@ describe("GovernanceView", () => {
     const history = within(detail).getByRole("region", { name: "Review history" });
     const recordedReview = within(history).getByRole("listitem");
     expect(recordedReview).toHaveTextContent("Reviewed");
-    expect(recordedReview).toHaveTextContent("10:42 · Bed coordinator");
+    expect(recordedReview).toHaveTextContent("10:42 am · Bed coordinator");
 
     const reviewEvent = capturedRow(register, /Review event/i);
     expect(reviewEvent).toHaveTextContent("Accepted");

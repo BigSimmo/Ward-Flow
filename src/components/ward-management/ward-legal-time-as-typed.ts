@@ -1,6 +1,6 @@
 import {
   dayOf,
-  formatInstant,
+  formatClock24,
   type Instant,
   isClockBreached,
   perthDayLabel,
@@ -53,7 +53,9 @@ export function typedClockParts(
   dayZero: Date | undefined,
 ): { clock: string; day: string; dayFirst: boolean } {
   // The day is always said beside this clock face when it is not today, so it never asserts today.
-  const clock = formatInstant(typedAt);
+  // Legal form times keep the 24-hour face they were entered with (D-215 item 3: am/pm on screen,
+  // the 24-hour clock in legal times).
+  const clock = formatClock24(typedAt);
   const days = dayOf(typedAt) - dayOf(now);
   if (days === 0) return { clock, day: "", dayFirst: false };
   if (days === -1 || days === 1) return { clock, day: days < 0 ? "yesterday" : "tomorrow", dayFirst: false };

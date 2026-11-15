@@ -179,7 +179,7 @@ describe("the sheet on Capacity", () => {
     // D-218 (Josh, 14 Nov 2026): no legal-limit disclaimer on the sheet.
     expect(copy.textContent).not.toMatch(/legal limit|not checked/u);
     expect(within(copy).getByTestId("ward-print-attribution").textContent).toBe(
-      "Printed by Bed coordinator, Statewide, at 10:42 board time. Synthetic data.",
+      "Printed by Bed coordinator, Statewide, at 10:42 am board time. Synthetic data.",
     );
   });
 
@@ -190,7 +190,7 @@ describe("the sheet on Capacity", () => {
       within(dialog).getByTestId(`bed-meeting-sheet-figure-${id}`).querySelector("dt")?.textContent ?? "";
     expect(label("ready")).toBe("Ready · now");
     expect(label("short")).toMatch(/^(Short|Spare) · now$/u);
-    expect(label("discharges")).toBe("Discharges · today");
+    expect(label("discharges")).toBe("Expected to leave · today");
     expect(label("ed")).toBe("Waiting in ED · now");
     // Review P4-5: the gap is network-wide; only a one-service sheet says so, so the statewide one does not.
     expect(within(dialog).getByTestId("bed-meeting-sheet-figure-short")).not.toHaveTextContent(/Network-wide/u);

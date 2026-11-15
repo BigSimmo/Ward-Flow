@@ -10,7 +10,14 @@ import { typedClock } from "@/components/ward-management/legal-forms/legal-time-
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Unit } from "@/components/ward-management/ward-model";
 import type { WardConfiguration } from "./ward-configuration";
-import type { AuditEvent, BedReleaseAuditFacts, BedReleaseAuditRequest } from "./ward-audit";
+import {
+  isHistoryLine,
+  type AuditEvent,
+  type BedReleaseAuditFacts,
+  type BedReleaseAuditRequest,
+  type HistoryLineAuditEvent,
+} from "./ward-audit";
+import { historyLineWording } from "./ward-history-lines";
 import { changeReasonLabels, legalFormReceiptCorrectionReasonLabels } from "./ward-change-reasons";
 import { snoozeReasonLabel } from "./ward-inbox-snooze";
 import { PATIENT_ARCHIVE_REASON_LABELS } from "./ward-patient-archive";
@@ -151,8 +158,21 @@ function wardName(units: readonly Unit[], unitId: string | null): string {
   const matches = units.filter((unit) => unit.id === unitId);
   return matches.length === 1 ? matches[0]!.name : "Not recorded";
 }
+/** D-222: a History line keeps no payload, so its facts are its wording and outcome. */
+function HistoryLineFacts({ event, units }: { event: HistoryLineAuditEvent; units: readonly Unit[] }) {
+  const unit = (id: string) => units.find((candidate) => candidate.id === id)?.name;
+  return (
+    <FactList
+      facts={[
+        ["Change", historyLineWording(event.action, event.details.line, { unit })],
+        ["Outcome", outcomeLabels[event.outcome]],
+      ]}
+    />
+  );
+}
 export function EventFacts({ event, units, now }: { event: AuditEvent; units: Unit[]; now: Instant }) {
   const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
+  if (isHistoryLine(event)) return <HistoryLineFacts event={event} units={units} />;
   switch (event.category) {
     case "referral":
     case "override":

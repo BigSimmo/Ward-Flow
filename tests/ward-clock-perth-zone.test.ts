@@ -21,17 +21,17 @@ describe("the demo clock reads Perth time whatever the device's zone", () => {
     vi.useRealTimers();
   });
 
-  it("reads 00:30 Perth just after Perth midnight, when Sydney reads 03:30 and UTC the day before", () => {
+  it("reads 12:30 am Perth just after Perth midnight, when Sydney reads 3:30 am and UTC the day before", () => {
     vi.useFakeTimers();
-    // 00:30 AWST on Monday 19 October 2026 = 16:30 UTC on 18 October = 03:30 AEDT on 19 October.
+    // 12:30 am AWST on Monday 19 October 2026 = 4:30 pm UTC on 18 October = 3:30 am AEDT on 19 October.
     const moment = new Date("2026-10-18T16:30:00Z");
     vi.setSystemTime(moment);
 
     expect(wallClockNow()).toBe(30);
-    expect(formatInstant(wallClockNow())).toBe("00:30");
+    expect(formatInstant(wallClockNow())).toBe("12:30 am");
     expect(minuteOfDay(absoluteWallClockMinutes())).toBe(30);
-    expect(clk(moment)).toBe("00:30");
-    expect(clk(moment.getTime())).toBe("00:30");
+    expect(clk(moment)).toBe("12:30 am");
+    expect(clk(moment.getTime())).toBe("12:30 am");
 
     // The absolute clock's day is the Perth calendar day, the same day day 0 is anchored to.
     const day = Math.floor(absoluteWallClockMinutes() / MINUTES_PER_DAY);
@@ -42,7 +42,7 @@ describe("the demo clock reads Perth time whatever the device's zone", () => {
 
   it("measures elapsed demo time from day 0 consistently with the absolute clock", () => {
     vi.useFakeTimers();
-    // 23:50 AWST on 19 October 2026: late enough that a Sydney or UTC reading lands on another day.
+    // 11:50 pm AWST on 19 October 2026: late enough that a Sydney or UTC reading lands on another day.
     const moment = new Date("2026-10-19T15:50:00Z");
     vi.setSystemTime(moment);
 
@@ -50,6 +50,6 @@ describe("the demo clock reads Perth time whatever the device's zone", () => {
     expect(sinceDayZero).toBe(23 * 60 + 50);
     expect(minuteOfDay(absoluteWallClockMinutes())).toBe(sinceDayZero);
     expect(wallClockNow()).toBe(sinceDayZero);
-    expect(clk(moment)).toBe("23:50");
+    expect(clk(moment)).toBe("11:50 pm");
   });
 });

@@ -207,7 +207,7 @@ describe("item 25: record an outage", () => {
     fireEvent.click(screen.getByTestId("ward-downtime-outage-save"));
     expect(done).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId("home-catch-up-summary")).toHaveTextContent(
-      `Down 08:00 to 10:40 · 0 of ${seed.units.length} wards caught up`,
+      `Down 8:00 am to 10:40 am · 0 of ${seed.units.length} wards caught up`,
     );
   });
 

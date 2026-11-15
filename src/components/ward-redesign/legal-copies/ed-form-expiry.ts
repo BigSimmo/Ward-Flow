@@ -4,7 +4,7 @@
 // says so in words ("ended Mon 09:00 as typed") with no elapsed count, and its colour comes from the
 // shared typed-time rule (`typedTimeStanding`). Bed pull limits and transport waits are not legal
 // times and keep their own wording.
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatClock24WithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { EdNeedsItem } from "@/components/ward-management/ed/ed-needs-you";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { LegalForm, Movement } from "@/components/ward-management/ward-model";
@@ -16,14 +16,14 @@ import type { LegalForm, Movement } from "@/components/ward-management/ward-mode
  */
 export function formExpiryLine(legalForm: LegalForm, now: Instant): string {
   if (legalForm.dueAt === undefined) return "No expiry recorded from the form.";
-  const when = formatInstantWithDay(legalForm.dueAt, now);
+  const when = formatClock24WithDay(legalForm.dueAt, now);
   return legalForm.dueAt < now ? `Ended ${when}` : `Ends ${when}`;
 }
 
 /** "Form 4C (Transfer order) · ends 15:42", the wording Movements and Placement use. */
 export function formExpiryWithName(legalForm: LegalForm, now: Instant): string {
   if (legalForm.dueAt === undefined) return `${legalFormName(legalForm)} · no expiry recorded from the form`;
-  const when = formatInstantWithDay(legalForm.dueAt, now);
+  const when = formatClock24WithDay(legalForm.dueAt, now);
   return `${legalFormName(legalForm)} · ${legalForm.dueAt < now ? "ended" : "ends"} ${when}`;
 }
 
@@ -45,7 +45,7 @@ export function needsYouAsTyped<T extends { needsYouItems: EdNeedsItem[]; patien
     const movement = derived.patients.find((m) => item.key.startsWith(`${m.id}-`));
     const dueAt = movement?.legalForm?.dueAt;
     if (dueAt === undefined) return item;
-    return { ...item, when: `ended ${formatInstantWithDay(dueAt, now)}` };
+    return { ...item, when: `ended ${formatClock24WithDay(dueAt, now)}` };
   });
   return { ...derived, needsYouItems };
 }

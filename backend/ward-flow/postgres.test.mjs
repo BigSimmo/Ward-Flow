@@ -1681,30 +1681,26 @@ test("break glass answers an unknown id and a patient already in care alike (D-8
   assert.equal(engine.breakGlassRefusal(world, ward, 42, at), unknown);
 });
 
-test("a ward desk may send the events its screen sends under another role, and nothing else borrowed", async () => {
+test("a ward desk's change is recorded under the ward's role, whatever role its screen sent", async () => {
+  // D-222/D-223 (Josh, 14 Nov 2026): the role comes from the membership, so a typed role neither
+  // refuses a change the ward may make nor lends it one it may not.
   const engine = await import("./dist/engine.mjs");
   const at = new Date("2026-10-07T10:00:00Z");
   const world = engine.seedWorld(at);
   const ward = engine.parseAccess("ward", { kind: "ward", unitIds: [world.state.units[0].id] });
   const notYours = "This change is not part of your role.";
-  const refusal = (event) => engine.commandRefusal(world, ward, event, at);
-  // A ward raises referrals in its own name only, from Raise referral and from its New referral
-  // sheet (Josh, 15 Oct 2026). It adds a patient in its own name too (role access plan v2, D-80), so
-  // it no longer borrows the ED role for that.
-  assert.notEqual(refusal({ type: "RECEIVE_REFERRAL", role: "ward" }), notYours);
-  assert.equal(refusal({ type: "RECEIVE_REFERRAL", role: "community" }), notYours);
-  assert.equal(refusal({ type: "RECEIVE_REFERRAL", role: "ed" }), notYours);
-  assert.notEqual(refusal({ type: "ADD_PATIENT", role: "ward" }), notYours);
-  assert.equal(refusal({ type: "ADD_PATIENT", role: "ed" }), notYours);
-  // A borrowed role the event does not take, the coordinator's role, or an event with no pair, is
-  // still refused.
-  assert.equal(refusal({ type: "RECEIVE_REFERRAL", role: "officer" }), notYours);
-  assert.equal(refusal({ type: "RECEIVE_REFERRAL", role: "coordinator" }), notYours);
-  assert.equal(refusal({ type: "ADD_PATIENT", role: "coordinator" }), notYours);
+  const refusal = (event) => engine.commandRefusal(world, ward, engine.deskCommand(ward, event), at);
+  for (const role of ["ward", "ed", "community", "officer", "coordinator"]) {
+    assert.equal(engine.deskCommand(ward, { type: "RECEIVE_REFERRAL", role }).role, "ward");
+    assert.notEqual(refusal({ type: "RECEIVE_REFERRAL", role }), notYours);
+    assert.notEqual(refusal({ type: "ADD_PATIENT", role }), notYours);
+  }
+  // The coordinator's own change stays the coordinator's, whatever role the ward types.
   assert.equal(
     refusal({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", unitId: world.state.units[0].id }),
     notYours,
   );
+  assert.equal(refusal({ type: "REQUEST_CAPACITY_REFRESH", role: "ward", unitId: world.state.units[0].id }), notYours);
 });
 
 test(
@@ -2986,8 +2982,9 @@ test(
       assert.equal((await store.command(deskA, randomUUID(), opened, urgency("WF-002", 1))).status, 200);
       const first = await store.command(deskB, randomUUID(), opened, urgency("WF-001", 2));
       assert.equal(first.status, 200, JSON.stringify(first.body.error ?? null));
-      assert.equal(first.body.covered.length, 1);
-      const seen = { [first.body.covered[0]]: first.body.commandRevision };
+      // The movement and, since D-222, the save's own History line: the popup has seen both.
+      assert.equal(first.body.covered.length, 2);
+      const seen = Object.fromEntries(first.body.covered.map((token) => [token, first.body.commandRevision]));
       // Without saying what the popup saw, its own first save looks like someone else's change.
       assert.equal((await store.command(deskB, randomUUID(), opened, urgency("WF-001", 3))).status, 409);
       const second = await store.command(deskB, randomUUID(), opened, urgency("WF-001", 3), { seen });

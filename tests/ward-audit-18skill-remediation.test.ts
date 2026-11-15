@@ -62,7 +62,8 @@ describe("18-skill audit remediation invariants", () => {
   });
 
   it("preserves monotonic notice counts in appendNotices and D-38 AWOL danger tone in ward-beds-matrix", () => {
-    const reducerSource = readRepoFile("src/components/ward-management/ward-flow-reducer.ts");
+    // appendNotices moved unchanged into ward-flow-notice-steps.ts for the reducer line cap (14 Nov 2026).
+    const reducerSource = readRepoFile("src/components/ward-management/ward-flow-notice-steps.ts");
     expect(reducerSource).toContain("return { ...state, notices: [...state.notices, ...notifiable] };");
 
     const bedsMatrixSource = readRepoFile("src/components/ward-management/ward/ward-beds-matrix.tsx");

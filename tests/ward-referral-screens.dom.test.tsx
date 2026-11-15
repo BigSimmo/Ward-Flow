@@ -2096,7 +2096,7 @@ describe("ReferralMatchView — the optional local-bed step is never owed", () =
 
     // The record now exists and the screen says so; the offer is gone because it is a one-shot.
     expect(screen.getByTestId("ward-referral-match-local-bed-sought-record")).toHaveTextContent(
-      /^Local bed sought, none suitable · \d{2}:\d{2}$/,
+      /^Local bed sought, none suitable · \d{1,2}:\d{2} [ap]m$/,
     );
     expect(screen.queryByTestId("ward-referral-match-local-bed-sought")).not.toBeInTheDocument();
     // Nothing was refused, and the referral is still queued — this step is not a decision.

@@ -174,7 +174,7 @@ describe("FS-2 and FS-9: Needs a look agrees with the hero and says dates", () =
     const look = needsALookRows(releases, beds, now, rowDate);
     expect(look.rows.map((row) => row.when)).toEqual(["12 Nov", "13 Nov", undefined]);
     expect(look.rows[2]!.quietLine).toBe("Date not recorded");
-    expect(rowDate(now + 330)).toBe("15:30");
+    expect(rowDate(now + 330)).toBe("3:30 pm");
     // PR C (F-151): a past date is not a discharge today; it stays under Needs a look's Past date.
     expect(
       dischargeTodayRows([release({ id: "r2", admissionId: "a2", expectedAt: now - day })], beds, now, rowDate),
@@ -185,6 +185,6 @@ describe("FS-2 and FS-9: Needs a look agrees with the hero and says dates", () =
       now,
       rowDate,
     );
-    expect(out[0]!.when).toBe("15:30");
+    expect(out[0]!.when).toBe("3:30 pm");
   });
 });

@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
+import { usePermit } from "@/components/ward-management/shell/use-permit";
+import type { Change } from "@/components/ward-management/ward-permit";
 import { journeySentByKind } from "@/components/ward-management/ward-journey-sender";
-import { journeySentByDesk } from "@/components/ward-management/ward-referral-sender";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { ArrowRight, BedSingle, Check, Hospital, Info, ShieldCheck, Ambulance } from "lucide-react";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
@@ -158,12 +157,18 @@ export function PatientTransitOperations({
   const holdGate = gate("PULL_PATIENT");
   const bookGate = gate("BOOK_TRANSPORT");
   const handoverGate = gate("HANDOVER_READY");
-  // D-80: a team readies only a journey it sent, never one it was asked to take (the server agrees).
-  const access = useEffectiveWardAccess();
+  // D-80 and Desks-R3-10: a ward or team books and readies only a journey it sent. permit() asks the
+  // server's place rule, so a desk that can never do this for this journey is not offered it (D-223).
+  const bookPermit = usePermit({
+    type: "BOOK_TRANSPORT",
+    role: routeRole,
+    ...wardSendingActing,
+    movementId: movement.id,
+  } as Change);
+  const handoverPermit = usePermit({ type: "HANDOVER_READY", role: routeRole, movementId: movement.id } as Change);
+  const bookOffered = bookPermit.kind !== "never";
   const handoverMine =
-    routeRole !== "community" ||
-    (journeySentByKind(referrals, movement, routeRole) &&
-      journeySentByDesk({ referrals, admissions }, movement, access, wardPlaceLookup(units)));
+    handoverPermit.kind !== "never" && (routeRole !== "community" || journeySentByKind(referrals, movement, routeRole));
   const acceptedGate = gate("TRANSPORT_ACCEPTED");
   const enRouteGate = gate("TRANSPORT_EN_ROUTE");
   const collectedGate = gate("PATIENT_COLLECTED");
@@ -857,7 +862,7 @@ export function PatientTransitOperations({
           )}
           {/* The booked provider, CAD number, quoted ETA and escort show once, in the Transport block
               below this workspace (device audit, 11 Oct 2026). */}
-          {open && movement.stage === "pulled" && !job && !booking && (
+          {open && movement.stage === "pulled" && !job && !booking && bookOffered && (
             <button
               ref={bookTriggerRef}
               type="button"
@@ -875,7 +880,7 @@ export function PatientTransitOperations({
               Record transport booking
             </button>
           )}
-          {open && movement.stage === "pulled" && !job && !booking && bookGate.note}
+          {open && movement.stage === "pulled" && !job && !booking && bookOffered && bookGate.note}
           {booking && !job && (
             // CS3-01: a page <form> is held against the board from its first touch. The shared booking
             // form books only from its own button, so Enter in a field must never submit here.

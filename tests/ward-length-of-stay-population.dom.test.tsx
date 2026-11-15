@@ -19,6 +19,12 @@ import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-redu
 import { installMatchMediaStub } from "./setup/jsdom.setup";
 
 /**
+ * ═══ 14 NOV 2026 (R-FIGS-16, D-216): THE ONE AVERAGE IS NOW TWO FIGURES ═══════════════════════
+ *
+ * "Average completed stay" counts ended stays only (`averageCompletedStayDays`), and "Stay so far,
+ * median" counts the people on the ward now (`medianStaySoFarDays`). The history below explains
+ * why the population each sentence names is pinned; it described the mixed average this replaced.
+ *
  * ═══ THE AVERAGE STAY IS NOT A COMPLETED-STAY AVERAGE, AND THE SCREEN SAID IT WAS ══════════════
  *
  * `lengthOfStayMinutes` (`ward-statistics.ts:152-157`) measures from `arrivedAt` to
@@ -98,28 +104,34 @@ describe("the average-stay sentence names the population the figure measures", (
     }
   });
 
-  it("produces a figure for a ward where nobody has left — which the derivation confirms", () => {
+  it("gives a ward where nobody has left a stay so far and no completed-stay average (R-FIGS-16)", () => {
     // Checked against the derivation directly as well as through the screen, so a screen that
     // stopped rendering the figure could not make this file pass by omission.
     const derived = wardStatistics(UNIT.id, ARRIVED_ONLY, NOW_ANCHOR);
-    expect(derived.averageLengthOfStayDays, "a stay in progress must still be measurable").not.toBeNull();
+    expect(derived.averageCompletedStayDays, "nobody has left, so no stay has completed").toBeNull();
+    expect(derived.medianStaySoFarDays, "a stay in progress must still be measurable").not.toBeNull();
 
     renderWith(ARRIVED_ONLY);
+    expect(screen.getByTestId("ward-stat-stay-median").textContent ?? "").toMatch(/\d/u);
     openStayData();
-    const text = screen.getByTestId("ward-stat-length-of-stay").textContent ?? "";
-    expect(text, "no figure rendered for a ward where people have arrived").toMatch(/\d/u);
+    expect(screen.queryByTestId("ward-stat-length-of-stay")).toBeNull();
   });
 
-  it("never claims the average covers only admissions that have left", () => {
-    renderWith(ARRIVED_ONLY);
+  it("averages only the stays that ended, and says so (R-FIGS-16)", () => {
+    const left: Admission = {
+      ...SEEDED,
+      id: "AD-STAY-LEFT",
+      unitId: UNIT.id,
+      state: "departed",
+      arrivedAt: (NOW_ANCHOR - 10 * 1440) as Admission["arrivedAt"],
+      leftAt: (NOW_ANCHOR - 4 * 1440) as Admission["leftAt"],
+    };
+    expect(wardStatistics(UNIT.id, [...ARRIVED_ONLY, left], NOW_ANCHOR).averageCompletedStayDays).toBe(6);
+    renderWith([...ARRIVED_ONLY, left]);
     openStayData();
-    const text = screen.getByTestId("ward-stat-length-of-stay").closest("p")?.textContent ?? "";
-    expect(
-      text,
-      "the screen says the average is over admissions that have both arrived and left. It is not: " +
-        "`lengthOfStayMinutes` measures to `leftAt ?? now`, so a stay still in progress is included " +
-        "and measured up to the clock. Say what is measured, not what would be tidier.",
-    ).not.toMatch(/both arrived and left/iu);
+    expect(screen.getByTestId("ward-stat-length-of-stay").closest("p")).toHaveTextContent(
+      "Average completed stay 6 days",
+    );
   });
 
   it("the empty state fires on nobody ARRIVED, not on nobody left", () => {
@@ -135,20 +147,18 @@ describe("the average-stay sentence names the population the figure measures", (
 describe("the Length of stay card covers the ward page's stay chart (owner polish, 3 Nov 2026)", () => {
   const THREE = [...ARRIVED_ONLY, arrivedNotLeft(SEEDED, "AD-STAY-3", 30)];
 
-  it("says how many are in beds and their median, keeps the all-stays average in Data, and shows the day buckets", () => {
+  it("says how many are in beds and their stay so far, and shows the day buckets", () => {
     renderWith(THREE);
     const card = screen.getByTestId("statistics-ward-stays-chart");
     expect(card).toHaveAttribute("id", "ward-stay");
     expect(within(card).getByTestId("ward-stat-stay-in-beds")).toHaveTextContent("3 in beds now");
     expect(within(card).getByTestId("ward-stat-stay-median").closest("p")).toHaveTextContent(
-      "Median 4 days, people in beds now",
+      "Stay so far, median 4 days",
     );
-    // Two different groups are never side by side: the all-stays average is only in the Data view.
+    // Nobody here has left, so there is no completed-stay average, even in the Data view.
     expect(within(card).queryByTestId("ward-stat-length-of-stay")).toBeNull();
     fireEvent.click(within(card).getByRole("radio", { name: "Data" }));
-    expect(within(card).getByTestId("ward-stat-length-of-stay").closest("p")).toHaveTextContent(
-      "All stays on this ward, including people who have left",
-    );
+    expect(within(card).queryByTestId("ward-stat-length-of-stay")).toBeNull();
     fireEvent.click(within(card).getByRole("radio", { name: "Days" }));
     const days = card;
     expect(days).toHaveTextContent("0 to 3 days");

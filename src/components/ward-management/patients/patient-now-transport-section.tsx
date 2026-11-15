@@ -19,7 +19,7 @@ import type { WardFlowEventType } from "@/components/ward-management/ward-role-p
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-events";
 import { CAD_TO_FOLLOW, cadNumberToFollow } from "@/components/ward-management/ward-cad-number";
 import { TransportCadToFollow } from "@/components/ward-management/transport/transport-cad-to-follow";
-import { clock } from "./patient-now-records";
+import { clockOn } from "./patient-now-records";
 import styles from "./patient-now.module.css";
 import { Ambulance } from "lucide-react";
 import { StatusGlyph } from "@/components/wf";
@@ -233,7 +233,7 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
               <span className={styles.transportFactLabel}>Pull time limit</span>
               <span className={styles.transportFieldNote}>
                 <StatusGlyph tone="warning" size={9} />
-                Ends {clock(liveMovement.pullExpiresAt!)}, before the ETA. Extend the pull or rebook.
+                Ends {clockOn(liveMovement.pullExpiresAt!, now)}, before the ETA. Extend the pull or rebook.
               </span>
             </div>
           ) : null}
@@ -257,7 +257,7 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
               data-testid="ward-patient-transport-exception"
             >
               <span className={styles.transportFactLabel}>
-                {TRANSPORT_EXCEPTION_STEP_LABELS[exception.step]} {clock(exception.at)} with
+                {TRANSPORT_EXCEPTION_STEP_LABELS[exception.step]} {clockOn(exception.at, now)} with
               </span>
               <span className={styles.transportFieldNote}>{transportExceptionText(exception)}</span>
             </div>

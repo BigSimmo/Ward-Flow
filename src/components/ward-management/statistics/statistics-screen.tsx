@@ -34,13 +34,7 @@ import { useServiceScope } from "@/components/ward-management/shell/ward-service
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import {
-  calendarDateOf,
-  formatSheetMoment,
-  dayOf,
-  splitDuration,
-  type Instant,
-} from "@/components/ward-management/ward-clock";
+import { formatSheetMoment, dayOf, splitDuration } from "@/components/ward-management/ward-clock";
 import { openEdJourneys } from "@/components/ward-management/ward-shared-figures";
 import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 import { readyBedsNow, totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";
@@ -73,7 +67,13 @@ import { StatisticsWardsCard, useWardTable } from "./statistics-wards-card";
 import { arrivalBandsFor } from "./statistics-bands";
 import { median, shortSiteName, wardFinderEntry, type EdSortKey } from "./statistics-screen-parts";
 import { ReasonCounts, SmallNumberNote, noCountReleased } from "./statistics-count-list";
-import { WARD_TIME_ZONE } from "@/lib/ward-time-zone";
+import { windowLine } from "@/components/ward-management/figures/figure-windows";
+import {
+  EXPECTED_TO_LEAVE_TODAY_LABEL,
+  expectedToLeaveToday,
+  LEFT_TODAY_LABEL,
+  leftToday,
+} from "@/components/ward-management/ward-leaving-today";
 
 function StatisticsViewLoading({ view }: { view: "journey" | "map" }) {
   // The loading card stands first in its view, so it carries the view switch until the view arrives.
@@ -157,14 +157,6 @@ import type { FinderEntry, FinderKind } from "./statistics-unit-finder";
  * - Admission.blockReason
  * - Movement.blocker
  */
-
-function formatReportDay(instant: Instant, dayZero: Date): string {
-  const date = calendarDateOf(instant, dayZero);
-  const weekday = date.toLocaleDateString("en-AU", { weekday: "long", timeZone: WARD_TIME_ZONE });
-  const day = date.toLocaleDateString("en-AU", { day: "numeric", timeZone: WARD_TIME_ZONE });
-  const month = date.toLocaleDateString("en-AU", { month: "long", timeZone: WARD_TIME_ZONE });
-  return `${weekday} ${day} ${month}`;
-}
 
 type StatisticsInputs = {
   admissions?: Admission[];
@@ -255,7 +247,7 @@ function ExecutiveStatisticsScreen() {
         occupiedPct: beds.total ? Math.round((beds.inUse / beds.total) * 100) : null,
         availableNow: beds.ready,
         pendingPreparation: data.capacity.pendingPreparation,
-        waitingCount: people.waitingInEd,
+        waitingCount: people.edJourneysOpen,
         stillOpenCount: people.stillOpen,
         admissionsCount: people.admissionsArrivedToday,
         dischargesCount: people.admissionsEndedToday,
@@ -359,7 +351,9 @@ function OperationalStatisticsScreen({
   const admissionsCount = sourceAdmissions.filter(
     (a) => a.arrivedAt !== null && dayOf(a.arrivedAt) === dayOf(now),
   ).length;
-  const dischargesCount = sourceAdmissions.filter((a) => a.leftAt !== null && dayOf(a.leftAt) === dayOf(now)).length;
+  // R-FIGS-12: what happened (Left today) and what is still expected today, each by its one rule.
+  const dischargesCount = leftToday(sourceAdmissions, now).length;
+  const expectedToLeaveCount = expectedToLeaveToday(sourceBedReleases, now).length;
 
   // Emergency departments
   const emergencyDepts = useMemo(() => {
@@ -476,6 +470,7 @@ function OperationalStatisticsScreen({
         stillOpenCount,
         admissionsCount,
         dischargesCount,
+        expectedToLeaveCount,
         emergencyDepts: emergencyDepts.map(({ id, name, site, waiting, longest, median, over8, over24 }) => ({
           id,
           name,
@@ -586,6 +581,7 @@ function StatisticsSummaryView({
     waitingCount,
     stillOpenCount,
     dischargesCount,
+    expectedToLeaveCount,
     emergencyDepts,
     totalEdWaiting,
     networkMedianWait,
@@ -604,10 +600,8 @@ function StatisticsSummaryView({
   const small = (count: StatisticsCount) => statisticsCountText(count, operationalSmall);
   const barValue = (count: StatisticsCount) => withheldBar(exactStatisticsCount(count) ?? 0, small(count));
   const isPhone = useIsPhone();
-  const reportDayCaption =
-    formatReportDay(now, dayZero) +
-    ", midnight to midnight, across " +
-    (scopeLabel === "whole network" ? "all wards" : scopeLabel);
+  // R-FIGS-14 (figures spec 3.5): the day's window on the clock, from its real start instant.
+  const reportDayCaption = windowLine("today", { now, dayZero });
   const longestEd = emergencyDepts.reduce<SummaryEd | null>(
     (best, ed) => (ed.longest !== null && (best === null || (best.longest ?? 0) < ed.longest) ? ed : best),
     null,
@@ -638,7 +632,10 @@ function StatisticsSummaryView({
       ["Occupancy percent", occupiedPct ?? "unknown"],
       ["Being made ready", pendingPreparation],
       // Issue #618: counts of people follow the executive's small number rule; beds stay exact.
-      ["Discharged today", small(dischargesCount)],
+      [LEFT_TODAY_LABEL, small(dischargesCount)],
+      ...(expectedToLeaveCount === undefined
+        ? []
+        : ([[EXPECTED_TO_LEAVE_TODAY_LABEL, expectedToLeaveCount]] as [string, number][])),
       ["ED journeys open", small(waitingCount)],
       ["Still open", small(stillOpenCount)],
     ],
@@ -1050,15 +1047,28 @@ function StatisticsSummaryView({
                               ),
                               label: (
                                 <>
-                                  discharged today
+                                  left today
                                   <span
                                     className={styles.srOnly}
                                     data-testid="ward-statistics-discharges-today-caption"
                                   >
-                                    {reportDayCaption}
+                                    {`, ${reportDayCaption}`}
                                   </span>
                                 </>
                               ),
+                            },
+                          ]),
+                      ...(expectedToLeaveCount === undefined
+                        ? []
+                        : [
+                            {
+                              id: "expected",
+                              value: (
+                                <span data-testid="ward-statistics-expected-to-leave-count">
+                                  {expectedToLeaveCount}
+                                </span>
+                              ),
+                              label: "expected to leave today",
                             },
                           ]),
                     ]}

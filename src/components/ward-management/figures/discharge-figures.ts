@@ -5,9 +5,8 @@
  * D-220: "Held up" on Statistics is the D-191 item 5 figure (by tomorrow), as on Capacity; every
  * any-date count reads "Held up · any date".
  *
- * Four rows are RESERVED for PR A (R-FIGS-12, R-FIGS-16): it builds Left today, Expected to leave
- * today, Average completed stay and Stay so far. The rows hold the names so nothing else takes them;
- * `compute` is `null` until PR A lands and the row wraps its function.
+ * R-FIGS-12 and R-FIGS-16 (D-216): "Discharges today" is two figures, Left today and Expected to
+ * leave today; "Average stay" is two, Average completed stay and Stay so far, median.
  */
 import { defineFigure } from "@/components/ward-management/figures/figure-row";
 import { blockedDischargesByReason } from "@/components/ward-management/statistics/statistics-derivations";
@@ -16,6 +15,13 @@ import {
   HELD_UP_BY_TOMORROW_LABEL,
   heldUpDueByTomorrow,
 } from "@/components/ward-management/ward-held-up";
+import {
+  EXPECTED_TO_LEAVE_TODAY_LABEL,
+  expectedToLeaveToday,
+  LEFT_TODAY_LABEL,
+  leftToday,
+} from "@/components/ward-management/ward-leaving-today";
+import { wardStatistics } from "@/components/ward-management/ward-statistics";
 
 export const HELD_UP_FIGURE = defineFigure({
   id: "held-up",
@@ -53,60 +59,63 @@ export const HELD_UP_ANY_DATE_FIGURE = defineFigure({
 
 export const LEFT_TODAY_FIGURE = defineFigure({
   id: "left-today",
-  name: "Left today",
-  rule: "Reserved: PR A builds this figure and its rule (R-FIGS-12).",
+  name: LEFT_TODAY_LABEL,
+  rule: "Stays recorded as ended today, from 12:00 am to now.",
   window: "today",
   windowId: "today",
-  population: "Reserved for PR A",
+  population: "Stays that ended",
   scope: "desk",
-  status: "reserved",
-  compute: null,
-  home: "PR A",
-  how: [],
-  basis: "Reserved: PR A builds (R-FIGS-12)",
+  status: "built",
+  compute: leftToday,
+  home: "`leftToday` (`ward-leaving-today.ts`)",
+  how: ["A stay with a leaving time recorded today counts once.", "A planned date does not count until they leave."],
+  basis: "R-FIGS-12 (D-216)",
 });
 
 export const EXPECTED_TO_LEAVE_TODAY_FIGURE = defineFigure({
   id: "expected-to-leave-today",
-  name: "Expected to leave today",
-  rule: "Reserved: PR A builds this figure and its rule (R-FIGS-12).",
+  name: EXPECTED_TO_LEAVE_TODAY_LABEL,
+  rule: "Planned discharges still to happen later today, not yet left.",
   window: "today",
   windowId: "today",
-  population: "Reserved for PR A",
+  population: "Bed releases not yet discharged",
   scope: "desk",
-  status: "reserved",
-  compute: null,
-  home: "PR A",
-  how: [],
-  basis: "Reserved: PR A builds (R-FIGS-12)",
+  status: "built",
+  compute: expectedToLeaveToday,
+  home: "`expectedToLeaveToday` (`ward-leaving-today.ts`, rule `isFreeingToday`)",
+  how: [
+    "A release planned for later today that has not happened.",
+    "A planned time already passed is overdue, not expected.",
+  ],
+  basis: "R-FIGS-12 (D-216); A16-05",
 });
 
 export const AVERAGE_COMPLETED_STAY_FIGURE = defineFigure({
   id: "average-completed-stay",
   name: "Average completed stay",
-  rule: "Reserved: PR A builds this figure and its rule (R-FIGS-16).",
+  rule: "Mean days from arrival to leaving, over stays that have ended.",
   window: "any date",
   windowId: "any-date",
-  population: "Reserved for PR A",
+  population: "Stays that have ended",
   scope: "desk",
-  status: "reserved",
-  compute: null,
-  home: "PR A",
-  how: [],
-  basis: "Reserved: PR A builds (R-FIGS-16); window to rule",
+  status: "built",
+  compute: wardStatistics,
+  home: "`wardStatistics(...).averageCompletedStayDays` (`ward-statistics.ts`)",
+  how: ["Every recorded stay that has ended, arrival to leaving.", "People still on the ward are left out."],
+  basis: "R-FIGS-16 (D-216); window to rule",
 });
 
 export const STAY_SO_FAR_FIGURE = defineFigure({
   id: "stay-so-far",
-  name: "Stay so far",
-  rule: "Reserved: PR A builds this figure and its rule (R-FIGS-16).",
+  name: "Stay so far, median",
+  rule: "The middle of the whole days since arrival, for people on the ward now.",
   window: "now",
   windowId: "now",
-  population: "Reserved for PR A",
+  population: "People on the ward now",
   scope: "desk",
-  status: "reserved",
-  compute: null,
-  home: "PR A",
-  how: [],
-  basis: "Reserved: PR A builds (R-FIGS-16)",
+  status: "built",
+  compute: wardStatistics,
+  home: "`wardStatistics(...).medianStaySoFarDays` (`ward-statistics.ts`)",
+  how: ["Each person on the ward now, whole days since they arrived.", "People who have left are left out."],
+  basis: "R-FIGS-16 (D-216)",
 });

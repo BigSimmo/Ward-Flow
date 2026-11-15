@@ -127,7 +127,7 @@ test("stale board: five minutes without a successful refresh shows its time and 
     await expect(sharedStatus(page)).toContainText("Connection unavailable", POLL);
     await page.clock.fastForward(300_001);
     expect((await page.evaluate(() => Date.now())) - beforeJump).toBeGreaterThanOrEqual(304_001);
-    await expect(sharedStatus(page)).toContainText(/Stale\. Last updated at \d{2}:\d{2}/u);
+    await expect(sharedStatus(page)).toContainText(/Stale\. Last updated at \d{1,2}:\d{2} [ap]m/u);
     await expectAccessible(page, info, "five-minute stale board with last good refresh time");
     mode = "hold";
     const before = attempts;

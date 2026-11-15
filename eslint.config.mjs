@@ -8,6 +8,8 @@ import requireZIndexLadder from "./eslint-rules/require-z-index-ladder.mjs";
 import restrictSuppressHydrationWarning from "./eslint-rules/restrict-suppress-hydration-warning.mjs";
 import noHardcodedHex from "./eslint-rules/no-hardcoded-hex.mjs";
 import requireDynamicLoadRetry from "./eslint-rules/require-dynamic-load-retry.mjs";
+import noLiteralDeskRole from "./eslint-rules/no-literal-desk-role.mjs";
+import { NO_LITERAL_DESK_ROLE_BASELINE } from "./eslint-rules/no-literal-desk-role-baseline.mjs";
 import { MAX_LINES_BASELINE, MAX_LINES_COUNTING, MAX_LINES_DEFAULT } from "./eslint-rules/max-lines-baseline.mjs";
 
 // Shared `local` plugin object. ESLint flat config requires every config block
@@ -27,6 +29,7 @@ const localRulesPlugin = {
     "restrict-suppress-hydration-warning": restrictSuppressHydrationWarning,
     "no-hardcoded-hex": noHardcodedHex,
     "require-dynamic-load-retry": requireDynamicLoadRetry,
+    "no-literal-desk-role": noLiteralDeskRole,
   },
 };
 
@@ -237,6 +240,19 @@ const eslintConfig = defineConfig([
       "local/require-dynamic-load-retry": "error",
     },
   },
+  // R-STRUCT-1/3 (D-222, D-223, Josh 14 Nov 2026): the shell and the server stamp the session's desk
+  // on every change, so no new change names its desk role as a literal. A shrink-only ratchet: each
+  // file keeps at most its 14 Nov count (eslint-rules/no-literal-desk-role-baseline.mjs).
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    plugins: { local: localRulesPlugin },
+    rules: { "local/no-literal-desk-role": ["error", { max: 0 }] },
+  },
+  ...Object.entries(NO_LITERAL_DESK_ROLE_BASELINE).map(([file, max]) => ({
+    files: [file],
+    plugins: { local: localRulesPlugin },
+    rules: { "local/no-literal-desk-role": ["error", { max }] },
+  })),
   // Z-index ladder enforcement
   {
     files: ["src/**/*.{js,jsx,ts,tsx}"],

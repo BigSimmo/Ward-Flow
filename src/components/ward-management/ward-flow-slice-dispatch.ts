@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { WardFlowEvent } from "./ward-flow-events";
+import { dispatchNetRefusal } from "./ward-dispatch-net";
+import { useEffectiveWardAccess } from "./shell/ward-access-store";
 import { reducerSlicesLoaded } from "./ward-flow-reducer-slice-registry";
 import { createRepeatTapGuard } from "./ward-repeat-tap-guard";
 import type { WardCommandDispatch, WardCommandOutcome } from "./ward-shared-client";
@@ -44,6 +46,8 @@ export function useSliceGatedDispatch(
     localRef.current = dispatchLocal;
   }, [dispatchLocal]);
   const queueRef = useRef<Promise<WardCommandOutcome> | null>(null);
+  // R-STRUCT-1 (D-223): the local demo refuses what the signed-in server refuses, in its words.
+  const access = useEffectiveWardAccess();
   // Tier 1 item 2: a double tap records once, in local and shared mode alike.
   const [repeatGuard] = useState(createRepeatTapGuard);
   useEffect(() => {
@@ -53,6 +57,9 @@ export function useSliceGatedDispatch(
     (event: WardFlowEvent) =>
       repeatGuard(event, (event) => {
         if (shared) return shared(event);
+        const refusal = dispatchNetRefusal(access, event);
+        if (refusal !== null)
+          return { commandId: `local-${++commands.current.sequence}`, status: "refused", message: refusal };
         if (reducerSlicesLoaded() && !queueRef.current) return dispatchLocal(event);
         const isCurrent = captureLifetime?.();
         const queued: Promise<WardCommandOutcome> = (queueRef.current ?? Promise.resolve())
@@ -83,6 +90,6 @@ export function useSliceGatedDispatch(
           .catch(() => undefined);
         return queued;
       }),
-    [shared, dispatchLocal, commands, captureLifetime, repeatGuard],
+    [shared, dispatchLocal, commands, captureLifetime, repeatGuard, access],
   );
 }

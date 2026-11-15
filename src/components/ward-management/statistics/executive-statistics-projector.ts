@@ -1,5 +1,5 @@
 import { scopeWardFlowState } from "../ward-access-state";
-import { bedStates, readyBedsNow } from "../ward-bed-states";
+import { bedStates, totalReadyBedsNow } from "../ward-bed-states";
 import { CLINICAL_VALUES } from "../ward-clinical-values";
 import { dayOf, type Instant } from "../ward-clock";
 import type { WardFlowState } from "../ward-flow-reducer";
@@ -170,7 +170,9 @@ export function projectExecutiveNetworkStatistics(
   const movementIds = new Set(scoped.movements.map((movement) => movement.id));
   const movements = state.movements.filter((movement) => movementIds.has(movement.id));
   const refused = refusedAndNothingPending(movements, units, now);
-  const waiting = waitingInEds(movements, now).total;
+  // D-220: the report's ED figure is "ED journeys open" on every path (`openEdJourneys`), the
+  // population Statistics and the executive chrome label it with; Waiting in ED stays the ED tables'.
+  const waiting = openEdJourneys(movements, now).total;
   const movementFigures = releaseFamily(
     [waiting, refused.openMovementCount, refused.count, refused.escalatedCount],
     [refused.openMovementCount - waiting, refused.openMovementCount - refused.count - refused.escalatedCount].some(
@@ -188,7 +190,7 @@ export function projectExecutiveNetworkStatistics(
     wards,
     beds,
     people: {
-      waitingInEd: movementFigures[0]!,
+      edJourneysOpen: movementFigures[0]!,
       stillOpen: movementFigures[1]!,
       admissionsArrivedToday: admissionFigures[1]!,
       admissionsEndedToday: admissionFigures[2]!,
@@ -279,7 +281,7 @@ export function projectExecutiveReportingFoundation(
   const network = {
     ...publicNetwork,
     people: {
-      waitingInEd: journeyWaiting,
+      edJourneysOpen: journeyWaiting,
       stillOpen,
       admissionsArrivedToday: arrivedToday,
       admissionsEndedToday: endedToday,
@@ -752,11 +754,8 @@ export function projectExecutiveReportingFoundation(
     settings: { pullHoldMinutes: input.pullHoldMinutes, parallelReferralCap: state.configuration.parallelReferralCap },
     capacity: {
       // D-115: a bed named for an accepted referral is not ready.
-      ready: units.reduce(
-        (sum, unit) =>
-          sum + readyBedsNow(unit, input.admissions, input.bedReleases, [...input.movements, ...input.referrals]),
-        0,
-      ),
+      // Beds ready now: the dictionary's one sum (`READY_NOW_FIGURE`).
+      ready: totalReadyBedsNow(units, input.admissions, input.bedReleases, [...input.movements, ...input.referrals]),
       empty: units.reduce((sum, unit) => sum + unit.empty.value, 0),
       allocatable: units.reduce((sum, unit) => sum + unit.allocatable.value, 0),
       openNow: units.reduce((sum, unit) => sum + openBedsNow(unit, input.bedReleases), 0),
@@ -812,7 +811,7 @@ export function projectExecutiveReportingFoundation(
       over8h,
       over24h,
       medianWaitMinutes: median(waits),
-      pooledAverageStayDays: wardStatistics("pooled", pooled, input.now).averageLengthOfStayDays,
+      pooledAverageCompletedStayDays: wardStatistics("pooled", pooled, input.now).averageCompletedStayDays,
       blockedTotal,
       longStayTotal,
       todayBedReferrals,

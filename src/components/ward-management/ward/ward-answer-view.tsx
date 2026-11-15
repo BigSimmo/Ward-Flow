@@ -29,7 +29,9 @@ import { useWardModalFocus, useWardPageScrollLock } from "@/components/ward-mana
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { usePermitFor } from "@/components/ward-management/shell/use-permit";
 import { dispatchPermission } from "@/components/ward-management/ward-role-permissions";
+import type { Change } from "@/components/ward-management/ward-permit";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import { CardSafetyTags } from "@/components/ward-management/patients/card-safety-tags";
 import { ArrivalStaffingNote } from "@/components/ward-management/ward-arrival-staffing-note";
@@ -234,8 +236,9 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   const raiseCapacity = useWardRaise(routeRole === "bed_manager" ? "bed_manager" : "ward");
   // Josh, 14 Nov 2026 (AK-A-03, D-192 item 5): a desk whose role may not answer referrals (the site
   // bed manager) is not shown Decline or Accept, only one quiet line naming who answers.
-  const mayDecline = dispatchPermission(routeRole, "DECLINE").allowed;
-  const mayAccept = dispatchPermission(routeRole, "ACCEPT_IN_PRINCIPLE").allowed;
+  // D-223: permit() asks the role and this ward's place for each request, so a desk that can never
+  // answer it is not offered Decline or Accept.
+  const permitFor = usePermitFor();
   const { run: runStep } = useUndoableStep({
     dispatch,
     rejections,
@@ -844,6 +847,21 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                 const checkedGateCount = checkedGates(eligibilityVerdict.gates).length;
                 const infoGateCount = eligibilityVerdict.gates.length - checkedGateCount;
                 const declineOpen = declineOpenFor === activeMovement.id;
+                // The route's role decides as before (a bed manager is not shown these, Josh 14 Nov);
+                // permit() adds this ward's place.
+                const answerFor = (type: "DECLINE" | "ACCEPT_IN_PRINCIPLE") =>
+                  ({
+                    type,
+                    role: routeRole,
+                    now,
+                    movementId: activeMovement.id,
+                    unitId: unit.id,
+                    actingUnitId: unit.id,
+                  }) as Change;
+                const mayAnswer = (type: "DECLINE" | "ACCEPT_IN_PRINCIPLE") =>
+                  dispatchPermission(routeRole, type).allowed && permitFor(answerFor(type)).kind !== "never";
+                const mayDecline = mayAnswer("DECLINE");
+                const mayAccept = mayAnswer("ACCEPT_IN_PRINCIPLE");
                 // FD-23: a ward-only view reads no referral records, so the shared reader gets none and
                 // returns the movement's own recorded clearance (recording one writes it here too).
                 const clearance = recordedMovementMedicalClearance(activeMovement, []);

@@ -85,6 +85,13 @@ export const ELIGIBILITY_GATES = [
 export type EligibilityGate = (typeof ELIGIBILITY_GATES)[number];
 
 /**
+ * D-223 (Josh, 14 Nov 2026), Together-X2-4: a planned admission's arrival recorded while the ward's
+ * bed count is old may take a reason from the existing override list, for the bed-count check only.
+ * The gender check stays non-overridable (T10), as does every other gate and every physical bed fact.
+ */
+export const PLANNED_ARRIVAL_OVERRIDABLE_GATES = ["capacity_freshness"] as const satisfies readonly EligibilityGate[];
+
+/**
  * `info` marks a gate that checks nothing and only records a staffing fact for the coordinator
  * (acuity and specialling). It always passes so it never stops a placement, and screens must show
  * it as information, never as a check that was met (review 18 Oct 2026, item 3). The real staffing

@@ -18,15 +18,15 @@ import { ToastProvider } from "@/components/wf";
 
 /*
  * D-192 (shared design parts item 4, Josh 13 Nov 2026): an Undo message names one clock time, and
- * after it has gone the card the step changed keeps a quiet "Undo pull · until 14:47" for the rest of
+ * after it has gone the card the step changed keeps a quiet "Undo pull · until 2:47 pm" for the rest of
  * the Undo window. The window stays `UNDO_WINDOW_MINUTES`. Synthetic seed data only.
  */
 afterEach(() => cleanup());
 
 describe("the Undo window as one clock time", () => {
-  it("ends the board's Undo window minutes after the step, as HH:MM", () => {
+  it("ends the board's Undo window minutes after the step, as one clock time", () => {
     expect(undoWindowUntil(10 * 60 + 42)).toBe(formatInstant(10 * 60 + 42 + UNDO_WINDOW_MINUTES));
-    expect(undoWindowUntil(10 * 60 + 42)).toBe(`10:4${2 + UNDO_WINDOW_MINUTES}`);
+    expect(undoWindowUntil(10 * 60 + 42)).toBe(`10:4${2 + UNDO_WINDOW_MINUTES} am`);
   });
 
   it("drops a closing full stop so the kit can add ' · Undo until …'", () => {
@@ -66,7 +66,7 @@ function Clock() {
 }
 
 describe("Undo pull stays on the card for the whole window", () => {
-  it("offers 'Undo pull · until HH:MM' after a pull, and it releases that pull", async () => {
+  it("offers 'Undo pull · until' a clock time after a pull, and it releases that pull", async () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <ToastProvider>
@@ -83,9 +83,9 @@ describe("Undo pull stays on the card for the whole window", () => {
     expect(screen.getByTestId("stage")).toHaveTextContent("pulled");
     const rowUndo = document.querySelector<HTMLElement>("[data-wf-row-undo]");
     expect(rowUndo).not.toBeNull();
-    expect(rowUndo).toHaveTextContent(/^Undo pull · until \d{2}:\d{2}$/u);
+    expect(rowUndo).toHaveTextContent(/^Undo pull · until \d{1,2}:\d{2} [ap]m$/u);
     // The toast names the same clock time.
-    const time = rowUndo!.textContent!.slice(-5);
+    const time = rowUndo!.textContent!.replace("Undo pull · until ", "");
     const toast = screen.getAllByTestId("toast").find((candidate) => candidate.textContent?.startsWith("Bed pulled"));
     expect(toast).toHaveTextContent(`Bed pulled · Undo until ${time}`);
     expect(toast).not.toHaveTextContent("Undo within");

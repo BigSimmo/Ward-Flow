@@ -8,25 +8,18 @@
  *
  * `tests/ward-permit-ak-a.test.ts` asks `permit()` and the shared server (`deskCommand` then
  * `commandRefusal`, then the reducer's role check) for every cell, and holds both to AK-A, except the
- * cells in `AK_A_DISAGREEMENTS`, where both are held to what the app does TODAY so a change to either
- * side fails until the list is updated.
+ * cells in `AK_A_DISAGREEMENTS`, which is empty and must stay empty: a row where the two part again
+ * fails until Josh rules on it.
  *
- * ┌───────────────────────────────────────────────────────────────────────────────────────────────┐
- * │ ROWS WHERE AK-A AND THE APP DISAGREE (for Josh, D-223) — mirrored in AK_A_DISAGREEMENTS below  │
- * ├───────────────────────────────────────────────────────────────────────────────────────────────┤
- * │ 1. AK-A-01 statewide coordinator, "every action": UNDO_SITE_HANDOVER_SIGN_OFF is the site bed   │
- * │    manager's alone (EVENT_ROLE), so the reducer refuses the coordinator. AK-A allow, app never. │
- * │ 2. AK-A-02 service coordinator, "as statewide inside its service": RECORD_SITE_HANDOVER_SIGN_OFF│
- * │    for a site in its service is refused (Q61: only the site's own bed manager). AK-A allow      │
- * │    (implied), app never.                                                                         │
- * │ 3. AK-A-02 service coordinator: SET_CONFIGURATION (global settings) is refused ("Only the       │
- * │    statewide coordinator may change global settings."). AK-A does not list it either way.      │
- * │ 4-6. AK-A-07 transport officer, "everything else" refused: the app lets the officer             │
- * │    MARK_NOTICE_READ, RECORD_DIRECTORY_CHECK and ACKNOWLEDGE_BROADCAST_ALERT. AK-A never, app    │
- * │    allow.                                                                                         │
- * │ 7. AK-A-09 access admin "its own scope" may switch a site feature: the app lets only the        │
- * │    STATEWIDE access admin (D-142). A service-scoped admin is refused. AK-A allow, app never.    │
- * └───────────────────────────────────────────────────────────────────────────────────────────────┘
+ * CORRECTED ON 14 NOV 2026 (Josh, 14:58Z, recorded under D-223): "keep the app's behaviour" for all
+ * seven cells where AK-A and the app disagreed. Each is now stated here as the app answers it, in a
+ * group marked "(corrected 14 Nov, D-223)":
+ * 1. AK-A-01 statewide coordinator: UNDO_SITE_HANDOVER_SIGN_OFF is never (the site bed manager's alone).
+ * 2. AK-A-02 service coordinator: RECORD_SITE_HANDOVER_SIGN_OFF is never (Q61: the site's own bed manager).
+ * 3. AK-A-02 service coordinator: SET_CONFIGURATION is never (global settings are the statewide coordinator's).
+ * 4-6. AK-A-07 transport officer: MARK_NOTICE_READ, RECORD_DIRECTORY_CHECK and ACKNOWLEDGE_BROADCAST_ALERT
+ *    are allowed (every desk marks its own notice, records its directory check and acknowledges a bed call).
+ * 7. AK-A-09 service-scoped access admin: SET_SITE_FEATURE_SWITCH is never (D-142: the statewide admin only).
  *
  * Mapping choices to sign with the table (not disagreements):
  * - AK-A-03 "blockers" is read as discharge blockers on stays and bed-release blocks
@@ -107,6 +100,11 @@ export const AK_A_ROWS: readonly AkARow[] = [
         answer: "allow",
         cells: ["ADVANCE_CLOCK", "RESET_SCENARIO", "SET_SCENARIO", "RECORD_OUTAGE_WINDOW"],
       },
+      {
+        phrase: "(corrected 14 Nov, D-223) taking back a site sign-off is the site bed manager's alone",
+        answer: "never",
+        cells: ["UNDO_SITE_HANDOVER_SIGN_OFF"],
+      },
     ],
     rest: "allow",
   },
@@ -122,10 +120,17 @@ export const AK_A_ROWS: readonly AkARow[] = [
           { type: "CONFIRM_CAPACITY", fields: ownWard },
           { type: "REFER_TO_UNITS", fields: (p) => ({ unitIds: [p.unitId] }) },
           { type: "CLOSE_WARD_TO_ADMISSIONS", fields: (p) => ({ unitId: p.unitId }) },
-          { type: "RECORD_SITE_HANDOVER_SIGN_OFF", fields: (p) => ({ siteCode: p.siteCode }) },
         ],
       },
-      { phrase: "(not stated) global settings", answer: "not stated", cells: ["SET_CONFIGURATION"] },
+      {
+        phrase:
+          "(corrected 14 Nov, D-223) site handover sign-off (Q61: the site's own bed manager) and global settings",
+        answer: "never",
+        cells: [
+          { type: "RECORD_SITE_HANDOVER_SIGN_OFF", fields: (p) => ({ siteCode: p.siteCode }) },
+          "SET_CONFIGURATION",
+        ],
+      },
       {
         phrase: "Advance clock, Reset, Set scenario, outage record, site feature switch",
         answer: "never",
@@ -308,6 +313,12 @@ export const AK_A_ROWS: readonly AkARow[] = [
       { phrase: "upload a form", answer: "allow", cells: ["UPLOAD_PATIENT_FORM"] },
       { phrase: "Undo a transport step", answer: "allow", cells: ["UNDO_TRANSPORT_STEP"] },
       { phrase: "(crew times are the ED's)", answer: "never", cells: ["RECORD_CREW_TIMES"] },
+      {
+        phrase:
+          "(corrected 14 Nov, D-223) mark its own notice read, record its directory check, acknowledge a bed call",
+        answer: "allow",
+        cells: ["MARK_NOTICE_READ", "RECORD_DIRECTORY_CHECK", "ACKNOWLEDGE_BROADCAST_ALERT"],
+      },
     ],
     rest: "never",
   },
@@ -337,8 +348,8 @@ export const AK_A_ROWS: readonly AkARow[] = [
     access: (p) => ({ role: "admin", scope: { kind: "service", service: p.service } }),
     groups: [
       {
-        phrase: "site feature switch",
-        answer: "allow",
+        phrase: "(corrected 14 Nov, D-223) site feature switch: the statewide access admin only (D-142)",
+        answer: "never",
         cells: [{ type: "SET_SITE_FEATURE_SWITCH", fields: (p) => ({ siteCode: p.siteCode }) }],
       },
     ],
@@ -346,54 +357,8 @@ export const AK_A_ROWS: readonly AkARow[] = [
   },
 ];
 
-export const AK_A_DISAGREEMENTS: readonly AkADisagreement[] = [
-  {
-    row: "AK-A-01",
-    type: "UNDO_SITE_HANDOVER_SIGN_OFF",
-    akA: "allow",
-    app: "never",
-    note: "EVENT_ROLE gives taking back a site sign-off to the site bed manager alone; AK-A says the statewide coordinator takes every action.",
-  },
-  {
-    row: "AK-A-02",
-    type: "RECORD_SITE_HANDOVER_SIGN_OFF",
-    akA: "allow",
-    app: "never",
-    note: "Q61: only the site's own bed manager (or the whole network) signs off a site; AK-A says 'as statewide inside its service'.",
-  },
-  {
-    row: "AK-A-02",
-    type: "SET_CONFIGURATION",
-    akA: "not stated",
-    app: "never",
-    note: "Global settings are the statewide coordinator's; AK-A-02 does not list them either way.",
-  },
-  {
-    row: "AK-A-07",
-    type: "MARK_NOTICE_READ",
-    akA: "never",
-    app: "allow",
-    note: "AK-A refuses the officer 'everything else'; the app lets every desk mark its own notice read.",
-  },
-  {
-    row: "AK-A-07",
-    type: "RECORD_DIRECTORY_CHECK",
-    akA: "never",
-    app: "allow",
-    note: "AK-A refuses the officer 'everything else'; the app lets every desk record its directory check.",
-  },
-  {
-    row: "AK-A-07",
-    type: "ACKNOWLEDGE_BROADCAST_ALERT",
-    akA: "never",
-    app: "allow",
-    note: "AK-A refuses the officer 'everything else'; the app lets every desk acknowledge a bed call it receives.",
-  },
-  {
-    row: "AK-A-09 (service)",
-    type: "SET_SITE_FEATURE_SWITCH",
-    akA: "allow",
-    app: "never",
-    note: "D-142 gives the switch to the statewide access admin only; AK-A-09 says an admin of 'its own scope'.",
-  },
-];
+/**
+ * Cells where AK-A and the app disagree. Empty since Josh's ruling of 14 Nov 2026 (14:58Z, D-223):
+ * the seven earlier rows were corrected to the app's answer above. A new row needs his yes or no.
+ */
+export const AK_A_DISAGREEMENTS: readonly AkADisagreement[] = [];

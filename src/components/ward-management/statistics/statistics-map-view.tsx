@@ -180,7 +180,7 @@ function pooledStay(admissions: readonly Admission[], unitIds: ReadonlySet<strin
     .filter((admission) => unitIds.has(admission.unitId))
     .map((admission) => ({ ...admission, unitId: "pooled" }));
   const figures = wardStatistics("pooled", pooled, now);
-  return { meanStay: figures.averageLengthOfStayDays, longStays: figures.longStays };
+  return { meanStay: figures.averageCompletedStayDays, longStays: figures.longStays };
 }
 
 export function siteFigures({
@@ -220,7 +220,7 @@ export function siteFigures({
         pctText: occupancyText({ beds: unit.beds, inUse: occupied }),
         dischargedToday: onWard.filter((admission) => leftToday(admission, now)).length,
         dueToday: onWard.filter((admission) => dueToday(admission, now)).length,
-        meanStay: wardStatistics(unit.id, [...admissions], now).averageLengthOfStayDays,
+        meanStay: wardStatistics(unit.id, [...admissions], now).averageCompletedStayDays,
       };
     });
     const unitIds = new Set(siteUnits.map((unit) => unit.id));
@@ -299,7 +299,7 @@ const lensSub = (site: PresentedSiteFigures, lens: MapLens): string => {
   if (lens === "ed")
     return site.edLongest === null ? "none waiting" : `${durMinutes(Math.round(site.edLongest))} longest`;
   if (lens === "dis")
-    return `${statisticsCountText(site.dischargedToday)} gone · ${statisticsCountText(site.dueToday)} due`;
+    return `${statisticsCountText(site.dischargedToday)} left · ${statisticsCountText(site.dueToday)} expected`;
   return `${statisticsCountText(site.longStays)} over 3 mo`;
 };
 
@@ -342,8 +342,8 @@ const lensAria = (site: PresentedSiteFigures, lens: MapLens): string => {
     return `${site.name} ED: ${statisticsCountText(site.edWaiting)} ED journeys open${longest}${over}`;
   }
   if (lens === "dis")
-    return `${site.name}: ${statisticsCountText(site.dischargedToday)} discharged today, ${statisticsCountText(site.dueToday)} due today${exactStatisticsCount(site.blocked) !== 0 ? `, ${statisticsCountText(site.blocked)} blocked` : ""}`;
-  return `${site.name}: average stay ${site.meanStay === null ? "none" : `${site.meanStay.toFixed(1)} days`}, ${statisticsCountText(site.longStays)} over 3 months`;
+    return `${site.name}: ${statisticsCountText(site.dischargedToday)} left today, ${statisticsCountText(site.dueToday)} expected to leave today${exactStatisticsCount(site.blocked) !== 0 ? `, ${statisticsCountText(site.blocked)} blocked` : ""}`;
+  return `${site.name}: average completed stay ${site.meanStay === null ? "none" : `${site.meanStay.toFixed(1)} days`}, ${statisticsCountText(site.longStays)} over 3 months`;
 };
 
 const LENSES: ReadonlyArray<{ id: MapLens; label: string; listTitle: string; key: string }> = [
@@ -363,13 +363,13 @@ const LENSES: ReadonlyArray<{ id: MapLens; label: string; listTitle: string; key
     id: "dis",
     label: "Discharge",
     listTitle: "Discharges by site",
-    key: "Ring: share already gone. Centre: gone or due today. Amber dot: a blocked discharge.",
+    key: "Ring: share already left. Centre: left or expected to leave today. Amber dot: a blocked discharge.",
   },
   {
     id: "stay",
     label: "Stay",
-    listTitle: "Average stay by site",
-    key: "Ring: share over 3 months. Centre: average stay in days, including people who have left.",
+    listTitle: "Average completed stay by site",
+    key: "Ring: share over 3 months. Centre: average completed stay in days.",
   },
 ];
 
@@ -465,7 +465,7 @@ function ExecutiveMapView({ data }: { data: ExecutiveReportingFoundation }) {
         pctText: occupancyText({ beds: ward.beds.total, inUse: ward.beds.inUse }),
         dischargedToday: ward.dischargedToday,
         dueToday: ward.dueToday,
-        meanStay: ward.statistics.averageLengthOfStayDays,
+        meanStay: ward.statistics.averageCompletedStayDays,
       })),
     ed: site.edId ? { id: site.edId, openable: data.openableEmergencyDepartmentIds.includes(site.edId) } : undefined,
     beds: site.beds.total,
@@ -504,7 +504,7 @@ function ExecutiveMapView({ data }: { data: ExecutiveReportingFoundation }) {
     dischargedToday: sumStatisticsCounts(sites.map((site) => site.dischargedToday)),
     dueToday: sumStatisticsCounts(sites.map((site) => site.dueToday)),
     blocked: data.networkDetails.blockedTotal,
-    meanStay: data.networkDetails.pooledAverageStayDays,
+    meanStay: data.networkDetails.pooledAverageCompletedStayDays,
     longStays: data.networkDetails.longStayTotal,
   };
   return (
@@ -600,8 +600,8 @@ function MapPresentation({
           ]
         : lens === "dis"
           ? [
-              { value: String(statisticsCountText(network.dischargedToday)), label: "Gone today" },
-              { value: String(statisticsCountText(network.dueToday)), label: "Due today" },
+              { value: String(statisticsCountText(network.dischargedToday)), label: "Left today" },
+              { value: String(statisticsCountText(network.dueToday)), label: "Expected to leave today" },
               {
                 value: String(statisticsCountText(network.blocked)),
                 // D-220: any date; "Held up" alone is the by-tomorrow figure.
@@ -610,7 +610,10 @@ function MapPresentation({
               },
             ]
           : [
-              { value: network.meanStay === null ? "none" : daysText(network.meanStay), label: "Average stay" },
+              {
+                value: network.meanStay === null ? "none" : daysText(network.meanStay),
+                label: "Average completed stay",
+              },
               { value: String(statisticsCountText(network.longStays)), label: "Over 3 months" },
               { value: String(network.occupied), label: "Beds in use" },
             ];
@@ -1015,13 +1018,13 @@ function BelowMap({
       <StatCard
         id="map-below"
         icon={Clock}
-        title="Average stay by ward"
+        title="Average completed stay by ward"
         aside="Top 10, days"
         data-testid="ward-statistics-map-below"
       >
         <CardBody>
           <BarList
-            label="Average stay by ward, top 10"
+            label="Average completed stay by ward, top 10"
             labelWidth="min(14rem, 42%)"
             axis
             rows={wards.map(({ ward, site }) => ({

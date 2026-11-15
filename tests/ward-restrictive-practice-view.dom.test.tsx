@@ -14,6 +14,13 @@ function clock(minutesAgo: number) {
   return `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
 }
 
+/** The same time as the screen shows it, am/pm (item 13, Josh, 14 Nov 2026): "10:22 am". */
+function shownClock(minutesAgo: number) {
+  const minute = (((NOW_ANCHOR - minutesAgo) % 1440) + 1440) % 1440;
+  const hours = Math.floor(minute / 60);
+  return `${hours % 12 === 0 ? 12 : hours % 12}:${String(minute % 60).padStart(2, "0")} ${hours < 12 ? "am" : "pm"}`;
+}
+
 function renderScreen() {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -87,10 +94,10 @@ describe("seclusion, restraint and incidents view", () => {
 
     // The table row and the header update at once; the time shows as typed.
     const row = screen.getByTestId(`seclusion-ward-row-${wardId}`);
-    expect(row).toHaveTextContent(`Seclusion, since ${clock(20)}`);
+    expect(row).toHaveTextContent(`Seclusion, since ${shownClock(20)}`);
     expect(row).toHaveTextContent("In use");
     expect(heroFigure("Seclusion rooms In use")).toMatch(/^1/u);
-    expect(screen.getByTestId("seclusion-room-status")).toHaveTextContent(`In use since ${clock(20)}`);
+    expect(screen.getByTestId("seclusion-room-status")).toHaveTextContent(`In use since ${shownClock(20)}`);
     expect(within(screen.getByTestId("seclusion-episode")).getByText(/^Seclusion · \S+, /u)).toBeInTheDocument();
 
     // Desk check (22 Oct): marking the room out of service while it is in use shows at once, and the
@@ -98,7 +105,7 @@ describe("seclusion, restraint and incidents view", () => {
     fireEvent.click(screen.getByTestId("seclusion-room-out-of-service"));
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Mark out of service" }));
     expect(screen.getByTestId("seclusion-room-status")).toHaveTextContent(
-      new RegExp(`^In use since ${clock(20)}\\. Last marked Out of service · recorded by`),
+      new RegExp(`^In use since ${shownClock(20)}\\. Last marked Out of service · recorded by`),
     );
     expect(screen.getByTestId("seclusion-room-out-of-service")).toHaveAttribute("aria-disabled", "true");
 
@@ -231,7 +238,7 @@ describe("the nurse in charge's seclusion view (D-80)", () => {
     fireEvent.change(screen.getByTestId("seclusion-start-practice"), { target: { value: "seclusion" } });
     fireEvent.change(screen.getByTestId("seclusion-start-time"), { target: { value: clock(15) } });
     fireEvent.click(screen.getByTestId("seclusion-start"));
-    expect(screen.getByTestId("seclusion-room-status")).toHaveTextContent(`In use since ${clock(15)}`);
+    expect(screen.getByTestId("seclusion-room-status")).toHaveTextContent(`In use since ${shownClock(15)}`);
     expect(heroFigure("Seclusion in use")).toMatch(/^1/u);
   });
 

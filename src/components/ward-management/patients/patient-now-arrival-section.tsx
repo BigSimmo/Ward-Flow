@@ -4,14 +4,12 @@
 // patient is in transit. Split out of `patient-now-screen.tsx`, which calls it during render.
 import { CircleAlert, Clock, FileText, FileUp } from "lucide-react";
 import { ARRIVAL_MODE_LABELS } from "@/components/ward-management/ward-model";
-import {
-  LATE_ARRIVAL_GRACE_MINUTES,
-  OPERATIONAL_DEFAULT_LABEL,
-} from "@/components/ward-management/ward-operational-defaults";
+import { OPERATIONAL_DEFAULT_LABEL } from "@/components/ward-management/ward-operational-defaults";
+import { arrivalTiming, arrivalTimingWords } from "@/components/ward-management/ward-arrival-timing";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import { formatInstantWithDay, type ClockZoneLabel } from "@/components/ward-management/ward-clock";
-import { clock } from "./patient-now-records";
+import { clockOn } from "./patient-now-records";
 import styles from "./patient-now.module.css";
 import type { Dispatch, SetStateAction } from "react";
 import type { Movement, MovementUploadedForm } from "@/components/ward-management/ward-model";
@@ -100,12 +98,9 @@ export function renderArrivalSection(ctx: PatientArrivalSectionContext) {
               >
                 <CircleAlert size={18} className={styles.overdueIcon} aria-hidden="true" />
                 <div>
-                  <strong>Arrival overdue:</strong> Patient is more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past
-                  estimated arrival time (
-                  {liveMovement?.arrivalDetails?.estimatedArrivalAt !== undefined
-                    ? `${formatInstantWithDay(liveMovement.arrivalDetails.estimatedArrivalAt, now)} ${zone}`
-                    : "not recorded"}
-                  ).
+                  {/* D-221: the one arrival-timing phrase. */}
+                  <strong>Late arrival.</strong>{" "}
+                  {liveMovement ? arrivalTimingWords(arrivalTiming(liveMovement, now), now)?.line : null} {zone}.
                 </div>
               </div>
             )}
@@ -162,8 +157,8 @@ export function renderArrivalSection(ctx: PatientArrivalSectionContext) {
               {hasArrivalPlan && liveMovement?.arrivalDetails && (
                 <span className={styles.recordedNote}>
                   {liveMovement.arrivalDetails.updatedAt !== undefined
-                    ? `Updated by ${liveMovement.arrivalDetails.updatedBy ?? "not recorded"} at ${clock(liveMovement.arrivalDetails.updatedAt)}`
-                    : `Recorded by ${liveMovement.arrivalDetails.recordedBy} at ${clock(liveMovement.arrivalDetails.recordedAt)}`}
+                    ? `Updated by ${liveMovement.arrivalDetails.updatedBy ?? "not recorded"} at ${clockOn(liveMovement.arrivalDetails.updatedAt, now)}`
+                    : `Recorded by ${liveMovement.arrivalDetails.recordedBy} at ${clockOn(liveMovement.arrivalDetails.recordedAt, now)}`}
                 </span>
               )}
             </div>
@@ -179,7 +174,7 @@ export function renderArrivalSection(ctx: PatientArrivalSectionContext) {
                     <div key={form.id} className={styles.pulledFormChip}>
                       <span className={styles.formChipName}>{form.formName}</span>
                       <span className={styles.pulledFormChipMeta}>
-                        {uploadedFileLabel(form)} · {clock(form.uploadedAt)} ({form.uploadedBy})
+                        {uploadedFileLabel(form)} · {clockOn(form.uploadedAt, now)} ({form.uploadedBy})
                       </span>
                     </div>
                   ))}

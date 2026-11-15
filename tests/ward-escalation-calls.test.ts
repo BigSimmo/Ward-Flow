@@ -188,7 +188,9 @@ describe("RECORD_ESCALATION_CALL", () => {
     expect(movement.escalationCalls).toEqual([
       { step: 2, roleCalled: "site_bed_manager", outcome: "agreed_plan", at: NOW_ANCHOR + 30, by: "coordinator" },
     ]);
-    expect(escalationCallText(lastEscalationCall(movement, 2)!, NOW_ANCHOR + 30)).toMatch(/^Agreed a plan \d\d:\d\d$/);
+    expect(escalationCallText(lastEscalationCall(movement, 2)!, NOW_ANCHOR + 30)).toMatch(
+      /^Agreed a plan \d{1,2}:\d{2} [ap]m$/,
+    );
     expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(second)))).toBe(true);
   });
 

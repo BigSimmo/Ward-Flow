@@ -34,7 +34,7 @@
 import { useEffect, useLayoutEffect, useRef, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { Button, Field, Select, StatusGlyph, TextInput } from "@/components/wf";
 import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
-import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
+import { dayOf, formatInstantWithDay, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import {
   TRANSPORT_EXCEPTION_GAP_LABELS,
   TRANSPORT_EXCEPTION_REASON_LABELS,
@@ -191,6 +191,7 @@ const ETA_PRESETS = [
   { label: "+1h", offset: 60 },
 ] as const;
 
+/** The ETA field's own 24-hour text, "14:05", which the field parses back. */
 function clockText(instant: Instant): string {
   const minutes = minuteOfDay(instant);
   const h = Math.floor(minutes / 60);
@@ -548,7 +549,7 @@ export function TransportBookingForm({
           {holdEnd !== undefined ? (
             <>
               <StatusGlyph tone="warning" size={9} />
-              Arrives after the pull time limit ends at {clockText(holdEnd)}. Extend the pull or rebook.
+              Arrives after the pull time limit ends at {formatInstantWithDay(holdEnd, now)}. Extend the pull or rebook.
             </>
           ) : (
             "\u00a0"

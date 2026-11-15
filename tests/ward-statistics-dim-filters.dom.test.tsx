@@ -32,7 +32,7 @@ describe("Statistics Summary v10 hero and pressure chip", () => {
     const chips = screen.getByRole("group", { name: "Network at a glance" });
     expect(chips.children.length).toBeLessThanOrEqual(5);
     expect(within(chips).getByText(/^beds? ready$/u)).toBeInTheDocument();
-    expect(within(chips).getByText("discharged today")).toBeInTheDocument();
+    expect(within(chips).getByText("left today")).toBeInTheDocument();
   });
 
   it("labels the line 'At or over 85%' and highlights rather than hides", () => {

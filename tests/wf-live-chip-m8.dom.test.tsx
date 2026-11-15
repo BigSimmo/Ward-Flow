@@ -40,7 +40,7 @@ describe("Live chip, one clock (M8)", () => {
     const region = screen.getByRole("status");
     rerender(<LiveChip state="stale" asAt={new Date("2026-10-07T10:26:00+08:00")} onHero />);
     expect(screen.getByRole("status")).toBe(region);
-    expect(region).toHaveTextContent(/^Not updating since 10:26$/);
+    expect(region).toHaveTextContent(/^Not updating since 10:26 am$/);
   });
 
   it("keeps the pause pill on tablet and desktop, without an age", () => {
@@ -54,8 +54,8 @@ describe("Live chip, one clock (M8)", () => {
     const { container, rerender } = render(<LiveChip state="paused" onHero />);
     expect(pill(container)).toHaveTextContent(/^Paused$/);
     rerender(<LiveChip state="stale" asAt={new Date("2026-10-07T10:26:00+08:00")} onHero />);
-    expect(pill(container)).toHaveTextContent(/^Not updating since 10:26$/);
-    expect(screen.getByRole("status")).toHaveTextContent(/^Not updating since 10:26$/);
+    expect(pill(container)).toHaveTextContent(/^Not updating since 10:26 am$/);
+    expect(screen.getByRole("status")).toHaveTextContent(/^Not updating since 10:26 am$/);
     rerender(<LiveChip state="offline" onHero />);
     expect(pill(container)).toHaveTextContent(/^Offline$/);
   });
@@ -65,7 +65,7 @@ describe("Live chip, one clock (M8)", () => {
     try {
       act(() => publishLiveRefresh({ unavailable: true, receivedAt }));
       const { container } = render(<LiveChip state="live" onHero />);
-      expect(pill(container)).toHaveTextContent(/^Not updating since 10:26$/);
+      expect(pill(container)).toHaveTextContent(/^Not updating since 10:26 am$/);
     } finally {
       act(() => publishLiveRefresh(undefined));
     }

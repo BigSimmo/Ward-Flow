@@ -39,7 +39,7 @@ describe("count breakdown", () => {
     act(() => {
       fireEvent.click(button);
     });
-    expect(screen.getByText("3 open ED movements. Counted 14:32.")).toBeInTheDocument();
+    expect(screen.getByText("3 open ED movements. Counted 2:32 pm.")).toBeInTheDocument();
     expect(screen.getAllByTestId("count-breakdown-row")).toHaveLength(3);
     expect(screen.getByRole("link", { name: /SYNTHETIC, Alex/ })).toHaveAttribute("href", "/ward-flow/movements/m-1");
     const dialog = screen.getByRole("dialog");

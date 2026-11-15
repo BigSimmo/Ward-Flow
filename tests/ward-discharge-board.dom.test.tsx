@@ -477,8 +477,8 @@ describe("DischargeBoard", () => {
     const confirmedBlockedRow = blockedRowByStage("Confirmed");
     fireEvent.click(rowOpener(confirmedBlockedRow));
     const detail = screen.getByRole("region", { name: "Selected discharge details" });
-    const stamp = within(detail).getByText(/^Confirmed \d{2}:\d{2} · .+$/);
-    const role = stamp.textContent?.replace(/^Confirmed \d{2}:\d{2} · /, "") ?? "";
+    const stamp = within(detail).getByText(/^Confirmed \d{1,2}:\d{2} [ap]m · .+$/);
+    const role = stamp.textContent?.replace(/^Confirmed \d{1,2}:\d{2} [ap]m · /, "") ?? "";
     expect(role.length).toBeGreaterThan(0);
     expect(detail.textContent?.match(new RegExp(escapeRegExp(role), "g")) ?? []).toHaveLength(1);
   });
@@ -519,7 +519,7 @@ describe("DischargeBoard", () => {
       for (const row of rows) {
         fireEvent.click(rowOpener(row));
         const details = screen.getByTestId("ward-discharge-detail");
-        expect(within(details).getByText(/^Confirmed \d{2}:\d{2} ·/)).toBeInTheDocument();
+        expect(within(details).getByText(/^Confirmed \d{1,2}:\d{2} [ap]m ·/)).toBeInTheDocument();
         inspected += 1;
       }
     }

@@ -14,7 +14,7 @@ import type { Movement, Notice } from "@/components/ward-management/ward-model";
  *
  * The late moment is fixed by the saved time: expected arrival plus the signed grace. So the save
  * that records (or changes) the time stores the referrer's and the accepting ward's notices at
- * once, with `raisedAt` = that moment. Every desk view already hides a notice until
+ * once, with `raisedAt` = the first minute the row reads late (`lateFrom`). Every desk view already hides a notice until
  * `raisedAt <= now` (`noticeIsForWardChrome`), so they appear on the minute with no timer, no
  * system actor and no server sweep, and the desk that saved the time is the true writer.
  *
@@ -26,10 +26,10 @@ import type { Movement, Notice } from "@/components/ward-management/ward-model";
  * - Wanted while `arrivalTiming` gives an expected time: open, not arrived (by stage or by
  *   transport), not diverted. Diverted, arrived, closed or no time: nothing new, and every
  *   unraised late notice is removed (nobody has seen it, so nothing is lost).
- * - Not yet late: exactly one pair at `lateAt`; any other unraised pair is removed. A new ETA
+ * - Not yet late: exactly one pair at `lateFrom`; any other unraised pair is removed. A new ETA
  *   therefore swaps the pair, and re-arms after an earlier lateness was already notified.
  * - Already late when saved (a typed time already past, or an old record touched): a pair raised
- *   now, unless that addressee was already told at or after this `lateAt`.
+ *   now, unless that addressee was already told at or after this `lateFrom`.
  * - Raised notices always stay, read or not: they are the record of what somebody was told.
  * - Idempotent: planning again over the applied result gives an empty plan.
  */
@@ -143,19 +143,20 @@ export function reconcileLateNotices({
   }
 
   const targets = lateNoticeTargets(after);
-  const { lateAt } = timing;
+  // Raised at the first minute the row reads "Late arrival", never a minute before it.
+  const { lateFrom } = timing;
 
-  if (lateAt > now) {
+  if (lateFrom > now) {
     const wanted = targets.map((target): LateNoticeDraft => ({
       ...target,
-      raisedAt: lateAt,
-      sentence: lateNoticeSentence(timing.eta, timing.source, lateAt),
+      raisedAt: lateFrom,
+      sentence: lateNoticeSentence(timing.eta, timing.source, lateFrom),
     }));
     const kept = unraised.filter((notice) => wanted.some((draft) => sameDraft(notice, draft)));
     return {
       schedule: wanted.filter((draft) => !kept.some((notice) => sameDraft(notice, draft))),
       cancel: unraised.filter((notice) => !kept.includes(notice)).map((notice) => notice.id),
-      marker: wanted.length > 0 ? lateAt : undefined,
+      marker: wanted.length > 0 ? lateFrom : undefined,
     };
   }
 
@@ -164,7 +165,7 @@ export function reconcileLateNotices({
   let marker: Instant | undefined;
   for (const target of targets) {
     const told = stored.filter(
-      (notice) => notice.raisedAt <= now && notice.raisedAt >= lateAt && sameTarget(notice, target),
+      (notice) => notice.raisedAt <= now && notice.raisedAt >= lateFrom && sameTarget(notice, target),
     );
     if (told.length > 0) {
       const at = Math.max(...told.map((notice) => notice.raisedAt));
@@ -175,4 +176,23 @@ export function reconcileLateNotices({
     marker = now;
   }
   return { schedule, cancel: unraised.map((notice) => notice.id), marker };
+}
+
+const raisedCache = new WeakMap<Notice[], { visible: number; raised: Notice[] }>();
+
+/**
+ * The notices raised by `now`, for every listing (D-221): a late notice stored ahead at the save
+ * stays out of sight until its first late minute. Returns `notices` itself while none is stored
+ * ahead, and the same filtered array while the raised set is unchanged, so readers do not wake on
+ * every clock tick. The raised set only grows or shrinks with `now`, so an equal count is the same set.
+ */
+export function raisedNotices(notices: Notice[], now: Instant): Notice[] {
+  let visible = 0;
+  for (const notice of notices) if (notice.raisedAt <= now) visible += 1;
+  if (visible === notices.length) return notices;
+  const cached = raisedCache.get(notices);
+  if (cached?.visible === visible) return cached.raised;
+  const raised = notices.filter((notice) => notice.raisedAt <= now);
+  raisedCache.set(notices, { visible, raised });
+  return raised;
 }

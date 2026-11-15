@@ -54,7 +54,7 @@ import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import type { LeaveBed, Unit } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
-import { wardStatistics } from "@/components/ward-management/ward-statistics";
+import { medianDays, wardStatistics } from "@/components/ward-management/ward-statistics";
 
 import { countAxisMax } from "./statistics-axis";
 import { StatisticsBedMap, StatisticsBedMapLegend, bedMapCells } from "./statistics-bed-map";
@@ -79,7 +79,7 @@ import { BedsNowCard, ReferralsCard } from "./statistics-ward-cards";
 import { CompactBedMap } from "./statistics-ward-compact-bed-map";
 import { ROSTER_FIRST_ROWS, WardPhone, rosterStatus, stayDaysOf } from "./statistics-ward-phone";
 import ward from "./statistics-ward.module.css";
-import { medianDays, wardStatisticsTop, type WardStayStrip } from "./statistics-ward-top";
+import { wardStatisticsTop, type WardStayStrip } from "./statistics-ward-top";
 import { useStatisticsSamples } from "./statistics-samples";
 import { shortSiteName } from "./statistics-screen-parts";
 
@@ -184,7 +184,7 @@ function ExecutiveWardScreen({ unitId }: { unitId: string }) {
     <StayCard
       bands={item.stayBands.map((band) => ({ band: { id: band.id, label: band.label }, count: band.count }))}
       unrecorded={item.unrecordedStay}
-      averageStay={item.statistics.averageLengthOfStayDays}
+      averageStay={item.statistics.averageCompletedStayDays}
       longStays={item.statistics.longStays}
       onPhone={onPhone}
     />
@@ -380,7 +380,7 @@ function OperationalWardScreen({
         count: current.filter((admission) => stayBand(admission, now)?.id === band.id).length,
       }))}
       unrecorded={current.filter((admission) => stayBand(admission, now) === null).length}
-      averageStay={statistics.averageLengthOfStayDays}
+      averageStay={statistics.averageCompletedStayDays}
       longStays={statistics.longStays}
       inBedDays={current.flatMap((admission) => {
         const days = daysInBed(admission, now);
@@ -477,7 +477,7 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
   const parts = (counts: StatisticsCount[]) => counts.map((count) => small(count));
   const headlineTotal = ready === null ? statistics.readyToLeaveCannot : ready.total;
   const cohortLabel = unit.cohort === "Adult" ? (unit.lockedBeds > 0 ? "Adult locked" : "Adult open") : unit.cohort;
-  const averageStay = statistics.averageLengthOfStayDays;
+  const averageStay = statistics.averageCompletedStayDays;
 
   // Executive desk: a count of people under the line is worded, and the parts of a breakdown whose
   // total is on screen are hidden together (`useStatisticsCounts`). Beds and bed states stay exact.
@@ -524,7 +524,8 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
           ["Occupancy percent (occupied or pulled)", occupancyPct],
           ["Pulled, not arrived", wardOccupancy.pulled],
           ["Ready", capacity.available],
-          ["Average stay, days", averageStay ?? "none"],
+          ["Average completed stay, days", averageStay ?? "none"],
+          ["Stay so far, median, days", statistics.medianStaySoFarDays ?? "none"],
           ["Discharges due, 7 days", small(dueThisWeek)],
         ],
       }}
@@ -786,11 +787,10 @@ function StayCard({
       <CardBody className={styles.bodyStack}>
         {median === null ? null : (
           <p className={ward.headFigure}>
-            Median{" "}
+            Stay so far, median{" "}
             <b data-testid="ward-stat-stay-median">
               {median} {dayWord(median)}
             </b>
-            , people in beds now
           </p>
         )}
         {choice === "days" && dayRows ? (
@@ -846,7 +846,7 @@ function StayCard({
         )}
         {choice === "data" && averageStay !== null ? (
           <p className={ward.note}>
-            All stays on this ward, including people who have left: average{" "}
+            Average completed stay{" "}
             <b data-testid="ward-stat-length-of-stay">
               {averageStay} {dayWord(averageStay)}
             </b>

@@ -106,8 +106,8 @@ describe("WardNotificationCenter DOM Component", () => {
     expect(rows[0]).toHaveTextContent("Please review pending discharges immediately");
     expect(rows[0]).toHaveTextContent("Urgent buzz");
     // Time formatted
-    expect(screen.getByText("09:00")).toBeInTheDocument();
-    expect(screen.getByText("09:30")).toBeInTheDocument();
+    expect(screen.getByText("9:00 am")).toBeInTheDocument();
+    expect(screen.getByText("9:30 am")).toBeInTheDocument();
 
     // Does NOT show buzz for Ward Beta
     expect(screen.queryByText("Bed review for Beta")).not.toBeInTheDocument();
@@ -216,6 +216,32 @@ describe("WardNotificationCenter DOM Component", () => {
     expect(screen.queryByTestId("ward-census-overdue")).not.toBeInTheDocument();
   });
 
+  it("names a late journey's booking estimate when the ward has set no ETA (D-221)", () => {
+    const now = 700;
+    const base = makeMovement({
+      id: "WF-004" as Movement["id"],
+      acceptedUnitId: "ward-alpha",
+      patientName: "Test Patient",
+    });
+    const movements = [
+      {
+        ...base,
+        arrivalDetails: undefined,
+        transport: {
+          ...base.transport!,
+          estimatedAt: 600,
+          arrivedAt: undefined,
+          cancelledAt: undefined,
+          stoppedAt: undefined,
+        },
+      } as Movement,
+    ];
+    render(<WardNotificationCenter {...defaultProps} now={now} movements={movements} />);
+    const late = screen.getAllByRole("listitem").filter((row) => row.textContent?.includes("Late arrival"));
+    expect(late).toHaveLength(1);
+    expect(late[0]).toHaveTextContent("Booking estimate 10:00 am.");
+  });
+
   it("renders overdue inbound arrival alerts", () => {
     const now = 700; // 11:40
     const movements = [
@@ -262,7 +288,7 @@ describe("WardNotificationCenter DOM Component", () => {
     const overdue = screen.getAllByRole("listitem").filter((row) => row.textContent?.includes("Late arrival"));
     expect(overdue).toHaveLength(1);
     expect(overdue[0]).toHaveTextContent("Jane Doe");
-    expect(overdue[0]).toHaveTextContent("Expected 10:00.");
+    expect(overdue[0]).toHaveTextContent("Expected 10:00 am.");
     expect(overdue[0]).toHaveTextContent("More than 60 minutes late.");
 
     // Does not display alert for non-overdue or other ward

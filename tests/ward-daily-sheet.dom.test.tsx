@@ -355,8 +355,8 @@ describe("the as-at stamp — DB-10's safeguard, and DB-12's rule that it cannot
     // The DB-12 test proper: the stamp is a pure function of the `now` handed to it. Two different
     // instants, two different stamps — which is what makes "the stamp reads the same instant the
     // figures read" enforceable rather than aspirational.
-    expect(asAtStamp(8 * 60 + 14).time).toBe("08:14");
-    expect(asAtStamp(15 * 60 + 22).time).toBe("15:22");
+    expect(asAtStamp(8 * 60 + 14).time).toBe("8:14 am");
+    expect(asAtStamp(15 * 60 + 22).time).toBe("3:22 pm");
     expect(asAtStamp(8 * 60 + 14).time).not.toBe(asAtStamp(15 * 60 + 22).time);
   });
 

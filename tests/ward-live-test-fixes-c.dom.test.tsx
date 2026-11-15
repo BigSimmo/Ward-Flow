@@ -49,25 +49,28 @@ describe("WF-49 created-by on the patient record", () => {
   });
 });
 
-describe("overdue arrival follows a ward ETA only", () => {
-  it("never reports a booking estimate as overdue", () => {
+describe("overdue arrival follows the one arrival-timing rule", () => {
+  // D-221 item 1 (Josh, 14 Nov 2026) reverses the earlier ward-ETA-only rule: a booking estimate
+  // reads late on the same grace as a ward ETA.
+  it("reports a booking estimate as late, as it does a ward ETA", () => {
     const booked = { transport: { estimatedAt: 100 } } as unknown as Parameters<typeof pastWardEta>[0];
     expect(expectedArrival(booked)).toEqual({ at: 100, booked: true });
-    expect(pastWardEta(booked, 10_000)).toBe(false);
+    expect(pastWardEta(booked, 10_000)).toBe(true);
+    expect(pastWardEta(booked, 160)).toBe(false);
     const ward = { arrivalDetails: { estimatedArrivalAt: 100 } } as unknown as Parameters<typeof pastWardEta>[0];
     expect(pastWardEta(ward, 10_000)).toBe(true);
   });
 });
 
 describe("WF-47 saved-at toast", () => {
-  it("says what was saved and the HH:MM on the board's clock", () => {
+  it("says what was saved and the time on the board's clock", () => {
     const push = vi.fn();
     // 09:07 on the board, whatever the device clock says (two-sign-in test, 8 Nov 2026).
     savedAtToast({ push } as never, "Hold-up saved: Awaiting pharmacy", 9 * 60 + 7);
     expect(push).toHaveBeenCalledWith({
       tone: "success",
       title: "Hold-up saved: Awaiting pharmacy",
-      body: "Saved at 09:07",
+      body: "Saved at 9:07 am",
     });
   });
 });
@@ -80,7 +83,7 @@ describe("WF-18 draft saved points to the Drafts list", () => {
     noticeDraftKept({ push }, true, 7, new Date("2026-11-05T01:00:00Z"));
     expect(push).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: "Draft saved at 09:07",
+        title: "Draft saved at 9:07 am",
         nextStep: { label: "View drafts", href: "/ward-flow/settings#you" },
       }),
     );

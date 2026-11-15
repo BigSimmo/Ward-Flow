@@ -7,10 +7,9 @@
  * check (the site feature switch and the outage record) are `DESK_RULES`, because the server asks
  * them first.
  *
- * ⚠️ PHASE 1 (14 Nov 2026): this is a COPY of the server's rules, each body and message unchanged,
- * so the same command gets the same answer from both. `ward-access-state.ts` is not edited yet.
- * Phase 2 makes `commandScopeRefusal` run this table and then its record-reference pass, and deletes
- * its own copy. `tests/ward-permit-place-rules.test.ts` holds the two to the same answers until then.
+ * `commandScopeRefusal` (`ward-access-state.ts`) runs this table and then its record-reference pass,
+ * and `permit()` (`ward-permit.ts`) runs it for the screen, so the same command gets the same answer
+ * from both (D-223, phase 2).
  *
  * Order matters only for the message: the rules that answer with their own words come first, as in
  * `commandScopeRefusal`. Every other rule answers `OUTSIDE_PLACE`, so running the server's
@@ -76,7 +75,7 @@ function placeIn({ access, places }: PlaceRuleContext, id: string): boolean {
   return unitInScope(access.scope, id, places) || edInScope(access.scope, id, places);
 }
 
-/** The desk's own community team, by name or slug. Copied from `ward-access-state.ts` (phase 2 shares it). */
+/** The desk's own community team, by name or slug. `ward-access-state.ts` shares it. */
 export function teamIsOwn(access: WardAccess, teamId: string, places: PlaceLookup): boolean {
   const scope = access.scope;
   if (scope.kind !== "team") return false;

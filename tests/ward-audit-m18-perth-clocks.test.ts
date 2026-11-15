@@ -36,6 +36,12 @@ const SKEWS = [
 ];
 
 /** Perth "HH:MM" worked out independently of the code under test, through Intl. */
+/** Item 13 (Josh, 14 Nov 2026): the on-screen face of a 24-hour "HH:MM" reading, "2:05 pm". */
+function amPm(clock24: string): string {
+  const [hours = 0, minutes = 0] = clock24.split(":").map(Number);
+  return `${hours % 12 === 0 ? 12 : hours % 12}:${String(minutes).padStart(2, "0")} ${hours < 12 ? "am" : "pm"}`;
+}
+
 const PERTH_HM = new Intl.DateTimeFormat("en-GB", {
   hour: "2-digit",
   minute: "2-digit",
@@ -113,7 +119,7 @@ describe("M18: a Sydney-zone device on both changeover nights", () => {
         const absolute = absoluteWallClockMinutes();
         if (previous !== undefined) expect(absolute - previous, moment.toISOString()).toBe(1);
         previous = absolute;
-        const expected = PERTH_HM.format(moment);
+        const expected = amPm(PERTH_HM.format(moment));
         expect(formatInstant(wallClockNow()), moment.toISOString()).toBe(expected);
         expect(clk(moment)).toBe(expected);
         expect(perthClockTime(moment)).toBe(expected);
@@ -134,7 +140,7 @@ describe("M18: a Sydney-zone device on both changeover nights", () => {
         expect(typed, clock).toBeDefined();
         const [hours, minutes] = clock.split(":").map(Number);
         expect(typed!.getTime()).toBe(night.changeUtc + (hours * 60 + minutes) * MINUTE_MS);
-        expect(perthClockTime(typed!)).toBe(clock);
+        expect(perthClockTime(typed!)).toBe(amPm(clock));
       }
     });
   }
@@ -144,10 +150,10 @@ describe("M18: a Sydney-zone device on both changeover nights", () => {
     const perthMidnightUtc = Date.UTC(2026, 10, 10, 16, 0); // 00:00 AWST 11 Nov = 03:00 AEDT
     vi.setSystemTime(new Date(perthMidnightUtc - MINUTE_MS));
     const before = absoluteWallClockMinutes();
-    expect(formatInstant(wallClockNow())).toBe("23:59");
+    expect(formatInstant(wallClockNow())).toBe("11:59 pm");
     vi.setSystemTime(new Date(perthMidnightUtc));
     const after = absoluteWallClockMinutes();
-    expect(formatInstant(wallClockNow())).toBe("00:00");
+    expect(formatInstant(wallClockNow())).toBe("12:00 am");
     expect(Math.floor(after / MINUTES_PER_DAY) - Math.floor(before / MINUTES_PER_DAY)).toBe(1);
     expect(perthIsoDay(new Date(perthMidnightUtc))).toBe("2026-11-11");
   });
@@ -165,8 +171,8 @@ describe("M18: a Sydney-zone device on both changeover nights", () => {
     expect(currentShift(at(15, 0)).name).toBe("Evening Shift");
     expect(currentShift(at(22, 59)).name).toBe("Evening Shift");
     expect(currentShift(at(23, 0)).name).toBe("Night Shift");
-    expect(formatInstant(shiftEndInstant(at(10, 42)))).toBe("15:00");
-    expect(formatInstant(shiftEndInstant(at(23, 30)))).toBe("07:00");
+    expect(formatInstant(shiftEndInstant(at(10, 42)))).toBe("3:00 pm");
+    expect(formatInstant(shiftEndInstant(at(23, 30)))).toBe("7:00 am");
   });
 
   // Fixed 10 Nov 2026 (M18, D-125): the triage "Reviewed time" Now button and its future check read

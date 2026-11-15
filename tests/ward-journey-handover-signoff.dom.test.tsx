@@ -16,12 +16,12 @@ function Probe() {
 
 describe("handover sign-off selection integrity", () => {
   it.each([
-    [600, "am", "07:00", false],
-    [600, "pm", "15:00", true],
-    [600, "ev", "23:00", false],
-    [360, "am", "07:00", true],
-    [960, "ev", "23:00", true],
-    [1410, "am", "07:00", true],
+    [600, "am", "7:00 am", false],
+    [600, "pm", "3:00 pm", true],
+    [600, "ev", "11:00 pm", false],
+    [360, "am", "7:00 am", true],
+    [960, "ev", "11:00 pm", true],
+    [1410, "am", "7:00 am", true],
   ] as const)("at %s selecting %s signs only the offered shift", (now, shift, time, allowed) => {
     render(
       <WardFlowProvider initialNow={now}>

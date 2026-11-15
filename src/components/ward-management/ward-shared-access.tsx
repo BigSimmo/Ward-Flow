@@ -52,7 +52,7 @@ import { WardPartialViewProvider } from "./ward-partial-view";
 import { RECOVERY_OUTCOME_WORDS } from "./ward-command-recovery-words";
 import { isTvPath } from "./bed-meeting/tv-lock-guard";
 import type { SenderReadSource } from "./ward-sender-read-collection";
-import { WARD_TIME_ZONE } from "@/lib/ward-time-zone";
+import { perthClockTime } from "@/components/ward-management/ward-clock";
 
 /** How long the first connection may wait before Reconnect is offered: one shared request's limit. */
 const CONNECTING_STALL_MS = 15_000;
@@ -820,12 +820,8 @@ export function WardSessionEndingNotice({ endsAt }: { endsAt: number | null }) {
   }, [endsAt, warning]);
   if (endsAt === null || !warning) return null;
   const secondsLeft = Math.max(0, Math.ceil((endsAt - now) / 1000));
-  const at = new Date(endsAt).toLocaleTimeString("en-AU", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-    timeZone: WARD_TIME_ZONE,
-  });
+  // Item 13 (Josh, 14 Nov 2026): a time on screen reads am/pm, "2:05 pm".
+  const at = perthClockTime(new Date(endsAt));
   const notice = (
     <p
       role="alert"

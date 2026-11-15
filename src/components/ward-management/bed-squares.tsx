@@ -32,7 +32,7 @@ import styles from "./bed-squares.module.css";
  * - `className`, `testId` for the caller's layout and tests.
  *
  * The strip is decorative (`aria-hidden`); the head and note line say it in words, so a screen
- * reader hears "1 ready of 20 beds, Adult · Locked. 2 discharges today, 1 held up, 1 closed."
+ * reader hears "1 ready of 20 beds, Adult · Locked. 2 expected to leave today, 1 held up, 1 closed."
  */
 export type BedSquareState = "ready" | "prep" | "free" | "use" | "closed";
 
@@ -64,7 +64,7 @@ const BED_SQUARE_ORDER: readonly BedSquareState[] = ["ready", "prep", "free", "u
 export const BED_SQUARE_LABELS: Readonly<Record<BedSquareState, string>> = {
   ready: "Ready",
   prep: "Being made ready",
-  free: "Discharge today",
+  free: "Expected to leave today",
   use: "In use",
   closed: "Closed",
 };
@@ -122,8 +122,7 @@ export function bedSquaresNotes({
 }): BedSquaresNote[] {
   const notes: BedSquaresNote[] = [];
   if (staleFor) notes.push({ text: `Count ${staleFor} old`, tone: "warning" });
-  if (dischargesToday > 0)
-    notes.push({ text: `${dischargesToday} ${dischargesToday === 1 ? "discharge" : "discharges"} today` });
+  if (dischargesToday > 0) notes.push({ text: `${dischargesToday} expected to leave today` });
   if (heldUp > 0) notes.push({ text: `${heldUp} held up` });
   if (pulled > 0) notes.push({ text: `${pulled} pulled` });
   if (prep > 0) notes.push({ text: `${prep} being made ready` });

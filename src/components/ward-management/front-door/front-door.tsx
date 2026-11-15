@@ -30,6 +30,7 @@ import {
 } from "./front-door-parts";
 import styles from "./front-door.module.css";
 import { WARD_TIME_ZONE } from "@/lib/ward-time-zone";
+import { perthClockTime } from "@/components/ward-management/ward-clock";
 
 /**
  * Readiness review item 12: a new or recovered password is a passphrase of at least this length,
@@ -725,12 +726,8 @@ function SignUpDoor({ form, back }: { form: WardCredentialForm; back: () => void
 }
 
 function perthClock(now: number) {
-  const time = new Date(now).toLocaleTimeString("en-AU", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-    timeZone: WARD_TIME_ZONE,
-  });
+  // Item 13 (Josh, 14 Nov 2026): the clock on screen reads am/pm, "2:05 pm".
+  const time = perthClockTime(new Date(now));
   const date = new Date(now).toLocaleDateString("en-AU", {
     weekday: "long",
     day: "numeric",

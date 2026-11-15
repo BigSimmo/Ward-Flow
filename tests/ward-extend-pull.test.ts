@@ -56,7 +56,7 @@ describe("EXTEND_PULL", () => {
     expect(f.state.rejections).toEqual([]);
     expect(f.movement().pullExpiresAt).toBe(before + 120);
     expect(f.movement().pullExtensions).toEqual([{ at: now, by: "ward", minutes: 120 }]);
-    expect(heldUntilExtendedLabel(f.movement(), now)).toMatch(/^Pulled until \d\d:\d\d.* · extended$/);
+    expect(heldUntilExtendedLabel(f.movement(), now)).toMatch(/^Pulled until \d{1,2}:\d{2} [ap]m.* · extended$/);
   });
 
   it("restores only extensions the event could write: a role, a listed amount, no other field", () => {

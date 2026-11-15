@@ -98,6 +98,6 @@ describe("the ward TV's change marks", () => {
     expect(mark).not.toHaveAttribute("aria-live");
     expect(mark).not.toHaveAttribute("role");
     expect(mark.getAttribute("style")).toBeNull();
-    expect(mark).toHaveTextContent(/^Changed \d{2}:\d{2}$/);
+    expect(mark).toHaveTextContent(/^Changed \d{1,2}:\d{2} [ap]m$/);
   });
 });

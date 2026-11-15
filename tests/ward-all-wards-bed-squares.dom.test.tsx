@@ -79,7 +79,9 @@ describe("All wards cards: shared bed squares", () => {
       </WardFlowProvider>,
     );
     const key = screen.getByRole("note", { name: "Reading a ward" });
-    expect(key).toHaveTextContent(/Ready.*Being made ready.*Discharge today.*In use.*Closed.*One square a bed\./u);
+    expect(key).toHaveTextContent(
+      /Ready.*Being made ready.*Expected to leave today.*In use.*Closed.*One square a bed\./u,
+    );
     expect(key).not.toHaveTextContent(/Pulled/u);
   });
 });

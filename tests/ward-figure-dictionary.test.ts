@@ -16,6 +16,7 @@ import { FIGURE_WINDOWS } from "@/components/ward-management/figures/figure-wind
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { activeTaskItems } from "@/components/ward-management/ward-act-now-items";
 import { alertsNowFigures } from "@/components/ward-management/ward-alerts-figures";
+import { arrivalTiming } from "@/components/ward-management/ward-arrival-timing";
 import { totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
@@ -62,21 +63,15 @@ describe("every figure row is complete", () => {
     expect(row.basis.trim()).not.toBe("");
     expect(COUNT_WINDOWS).toContain(row.window);
     expect(FIGURE_WINDOWS.map((window) => window.id)).toContain(row.windowId);
-    if (row.status === "reserved") {
-      expect(row.compute, "a reserved row has no function until PR A lands").toBeNull();
-      expect(row.basis).toMatch(/^Reserved: PR A builds/);
-    } else {
-      expect(typeof row.compute).toBe("function");
-      expect(row.how.length, "a built row explains how it is counted").toBeGreaterThan(0);
-    }
+    expect(typeof row.compute).toBe("function");
+    expect(row.how.length, "every row explains how it is counted").toBeGreaterThan(0);
   });
 
-  it("reserves exactly PR A's four figures (R-FIGS-12, R-FIGS-16)", () => {
-    expect(
-      ALL_FIGURES.filter((row) => row.status === "reserved")
-        .map((row) => row.id)
-        .sort(),
-    ).toEqual(["average-completed-stay", "expected-to-leave-today", "left-today", "stay-so-far"]);
+  it("has no reserved row left: PR A's four figures are built (R-FIGS-12, R-FIGS-16)", () => {
+    const ids = ALL_FIGURES.map((row) => row.id);
+    for (const id of ["average-completed-stay", "expected-to-leave-today", "left-today", "stay-so-far"])
+      expect(ids).toContain(id);
+    expect(ALL_FIGURES.every((row) => row.status !== ("reserved" as string))).toBe(true);
   });
 
   it("shows each rail badge from one row per desk", () => {
@@ -193,6 +188,15 @@ describe("the alerts and decision rows (Q260, A9-04)", () => {
     const toDecide = coordinatorReferralQueue(state.referrals).length;
     expect(needsYouCount(figures.actNow, toDecide)).toBe(figures.actNow + toDecide);
     expect(figures.outstanding).toBe(figures.actNow + figures.waiting);
+  });
+
+  it("the Late arrival row is the rule the act-now late rows are raised from (D-221)", () => {
+    const late = state.movements.filter((movement) => arrivalTiming(movement, now).state === "late");
+    expect(late.length, "the seed has a late arrival").toBeGreaterThan(0);
+    const lateRows = activeTaskItems(state, now).filter((item) => item.id.startsWith("arrival-late-"));
+    expect(lateRows.map((item) => item.id).sort()).toEqual(
+      late.map((movement) => `arrival-late-${movement.id}`).sort(),
+    );
   });
 });
 

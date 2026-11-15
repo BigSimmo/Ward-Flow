@@ -72,7 +72,7 @@ describe("offline entry time (H1)", () => {
     });
     expect(late.outcome).toBe("denied");
     expect(late.reason).toBe(
-      "This change was entered offline at 10:00, before the record last changed at 10:20. Review the record and enter it again",
+      "This change was entered offline at 10:00 am, before the record last changed at 10:20 am. Review the record and enter it again",
     );
     expect(late.world).toBe(other.world);
   });
@@ -142,8 +142,8 @@ describe("offline entry time (H1)", () => {
     const entry = { ...eventLogEntryFor(event, true), ...enteredOfflineLog({ actedAt: 600, sentAt: 645 }) };
     expect(entry).toMatchObject({ now: 600, sentAt: 645 });
     const row = buildHistoryEntry(entry as unknown as WardFlowEvent, 700);
-    expect(row.time).toBe("10:00");
-    expect(row.summary).toBe("Patient departed ward (entered offline, sent 10:45)");
+    expect(row.time).toBe("10:00 am");
+    expect(row.summary).toBe("Patient departed ward (entered offline, sent 10:45 am)");
     // A note that does not make sense is not shown.
     expect(enteredOfflineLog({ actedAt: 645, sentAt: 600 })).toEqual({});
     expect(enteredOfflineLog(undefined)).toEqual({});

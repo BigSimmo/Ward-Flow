@@ -25,7 +25,7 @@ describe("P056: Activity from the server audit", () => {
     expect(shown.changes.map((change) => change.text)).toEqual(["Close unit.", "Confirm capacity was refused."]);
     expect(shown.tones).toEqual({ "audit:5": "info", "audit:4": "danger" });
     expect(shown.lastEventAt).toBe(1200);
-    expect(shown.changes[0]?.time).toBe("20:00");
+    expect(shown.changes[0]?.time).toBe("8:00 pm");
     expect(JSON.stringify(shown)).not.toMatch(/CLOSE_UNIT|CONFIRM_CAPACITY/);
   });
 
@@ -74,7 +74,7 @@ describe("shared Activity clock and refused outcomes", () => {
   it("keeps the previous day's server timestamp on the same simulation timeline", () => {
     const shown = auditActivity([row("1", "CLOSE_UNIT", "accepted", "2026-10-26T15:55:00.000Z")], now, dayZero);
     expect(shown.lastEventAt).toBe(-5);
-    expect(shown.changes[0]?.time).toContain("23:55");
+    expect(shown.changes[0]?.time).toContain("11:55 pm");
     expect(shown.changes[0]?.time).toContain("yesterday");
   });
 

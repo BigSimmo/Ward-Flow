@@ -44,7 +44,7 @@ describe("carer, PSP and MHAS checklist", () => {
     fireEvent.change(within(carer).getByLabelText(/Time told/), { target: { value: "09:00" } });
     fireEvent.click(within(carer).getByRole("button", { name: "Save" }));
     expect(screen.getByTestId("ward-support-notification-carer")).toHaveTextContent(
-      "Told Synthetic carer · 09:00 yesterday",
+      "Told Synthetic carer · 9:00 am yesterday",
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Record Personal support person" }));
@@ -55,7 +55,7 @@ describe("carer, PSP and MHAS checklist", () => {
     fireEvent.change(within(psp).getByLabelText(/Time told/), { target: { value: "08:30" } });
     fireEvent.click(within(psp).getByRole("button", { name: "Save" }));
     expect(screen.getByTestId("ward-support-notification-personal_support_person")).toHaveTextContent(
-      "Told Synthetic PSP · 08:30, 2 days ago",
+      "Told Synthetic PSP · 8:30 am, 2 days ago",
     );
   });
 
@@ -75,7 +75,7 @@ describe("carer, PSP and MHAS checklist", () => {
     fireEvent.change(within(form).getByLabelText(/Time told/), { target: { value: "09:15" } });
     fireEvent.click(within(form).getByRole("button", { name: "Save" }));
     expect(screen.queryByRole("form", { name: "Record Carer" })).not.toBeInTheDocument();
-    expect(screen.getByTestId("ward-support-notification-carer")).toHaveTextContent("Told Synthetic carer · 09:15");
+    expect(screen.getByTestId("ward-support-notification-carer")).toHaveTextContent("Told Synthetic carer · 9:15 am");
 
     fireEvent.click(screen.getByRole("button", { name: "Record Mental Health Advocacy Service" }));
     const mhas = screen.getByRole("form", { name: "Record Mental Health Advocacy Service" });

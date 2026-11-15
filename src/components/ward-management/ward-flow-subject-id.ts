@@ -1,6 +1,7 @@
 import type { WardFlowEvent } from "./ward-flow-events";
 import { PATIENT_RECORD_UNDO_TYPES, undoStepSubjectId } from "./ward-undo";
 import type { HandedItemRef } from "@/components/ward-management/handover-work-events";
+import type { Notice } from "@/components/ward-management/ward-model";
 
 /** A hand-over's item id; a malformed item (from the wire) files against nothing rather than throwing. */
 function handedItemSubjectId(item: HandedItemRef | undefined): string {
@@ -254,4 +255,13 @@ export function subjectId(event: WardFlowEvent): string {
     default:
       return "movementId" in event ? (event.movementId as string) : "none";
   }
+}
+
+/**
+ * Like `subjectId`, but reads an already-built `Notice.about` (movement, referral, unit, then
+ * patient). Kept separate because `subjectId` reads an event and this reads a decision about a
+ * notice.
+ */
+export function noticeSubject(about: Notice["about"]): string {
+  return about.movementId ?? about.referralId ?? about.unitId ?? about.patientId ?? "none";
 }

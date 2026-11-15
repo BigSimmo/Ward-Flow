@@ -94,8 +94,10 @@ import { resolveSubjectPatient, type ResolvedPatientInfo } from "./ward-patient-
 import * as closingLoop from "./ward-flow-closing-loop-context";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { raisedNotices } from "@/components/ward-management/ward-late-notices";
 import type { BroadcastAlert } from "./alerts/ward-broadcast-model";
 import { useSliceGatedDispatch } from "./ward-flow-slice-dispatch";
+import { useDeskStampedDispatch } from "./ward-desk-stamp-dispatch";
 import {
   seedWardFlowStateAt,
   wardFlowReducer,
@@ -817,7 +819,7 @@ function WardFlowWorld({
   );
   // THE ROUTING POINT. Training always dispatches locally, even if a shared connection is enabled.
   const dispatch = useSliceGatedDispatch(
-    dispatchLocal,
+    useDeskStampedDispatch(dispatchLocal), // D-222: every local change names the session desk
     sharedEnabled && !inTraining ? dispatchShared : null,
     commandsRef,
     captureCommandLifetime,
@@ -1474,7 +1476,8 @@ function WardFlowWorld({
       inboxOwnership: shown.inboxOwnership,
       inboxSnoozes: shown.inboxSnoozes,
       undoRecords: shown.undoRecords,
-      notices: shown.notices,
+      // D-221: a late notice stored ahead at the save is listed from its first late minute.
+      notices: raisedNotices(shown.notices, now),
       morningRollupConfirmations: shown.morningRollupConfirmations,
       patients: shown.patients,
       admissions: shown.admissions,

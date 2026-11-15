@@ -41,10 +41,9 @@ export function StatisticsReferralsTodayCard({
       data-testid="ward-statistics-referrals-for-bed"
       foot={
         <Foot link={executive ? undefined : <MoreLink href="/ward-flow/referrals">Open referrals</MoreLink>}>
-          <span data-testid="ward-statistics-admissions-today-count">{small(admissionsCount)}</span> admitted today
-          <span className="sr-only" data-testid="ward-statistics-admissions-today-caption">
-            {reportDayCaption}
-          </span>
+          <span data-testid="ward-statistics-admissions-today-count">{small(admissionsCount)}</span> admitted today ·{" "}
+          {/* R-FIGS-14: the day's window, visible, from its real start on the clock. */}
+          <span data-testid="ward-statistics-admissions-today-caption">{reportDayCaption}</span>
         </Foot>
       }
     >

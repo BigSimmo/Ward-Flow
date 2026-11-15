@@ -53,7 +53,7 @@ describe("Still open: the recorded medical clearance timing (D-110)", () => {
     expect(referralStillOpen({ ...base, referrals: [], edMovement: edMovement() })).toEqual([
       { id: "clearance", words, flagged: false },
     ]);
-    expect(words).toBe("Medical clearance not recorded (since 09:07)");
+    expect(words).toBe("Medical clearance not recorded (since 9:07 am)");
     const before = referralStillOpen({ ...base, referrals: [], edMovement: edMovement(), now: ARRIVED + 6 * 60 - 1 });
     expect(before[0]?.flagged).toBe(false);
     const atSix = referralStillOpen({ ...base, referrals: [], edMovement: edMovement(), now: ARRIVED + 6 * 60 });
@@ -63,7 +63,7 @@ describe("Still open: the recorded medical clearance timing (D-110)", () => {
   it("names a recorded 'not yet' as to follow, and drops the line once clearance is recorded or answered", () => {
     const pending = edMovement({ medicalClearance: { cleared: false, at: ARRIVED + 50 } });
     expect(referralStillOpen({ ...base, referrals: [], edMovement: pending })[0]?.words).toBe(
-      "Medical clearance to follow (recorded 09:57)",
+      "Medical clearance to follow (recorded 9:57 am)",
     );
     const done = edMovement({ medicalClearance: { cleared: true, at: ARRIVED + 50 } });
     expect(referralStillOpen({ ...base, referrals: [], edMovement: done })).toEqual([]);

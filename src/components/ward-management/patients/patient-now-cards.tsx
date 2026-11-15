@@ -19,7 +19,7 @@ import {
   NEXT_FORM_TO_RECORD,
 } from "@/components/ward-management/ward-legal-form-progression";
 import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
-import { clock } from "./patient-now-records";
+import { clockOn } from "./patient-now-records";
 import { patientLegalNow, type PatientLegalNow } from "./patient-now-adapter";
 import styles from "./patient-now-cards.module.css";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
@@ -188,7 +188,7 @@ export function PatientLegalNowCard({
         ? FORM_RECORDED_ENDED
         : (formTitleForCode(formMovement.legalForm.code) ?? "Title not in the forms register"),
       // The typed expiry is already in `left` ("Ends 15:42 as typed"), so the time is not said twice.
-      time: expiry ? undefined : recordedAt !== undefined ? clock(recordedAt) : undefined,
+      time: expiry ? undefined : recordedAt !== undefined ? clockOn(recordedAt, now) : undefined,
       left: expiry?.text,
       ended: position.ended,
     });
@@ -204,7 +204,7 @@ export function PatientLegalNowCard({
         tone: "success",
         code: `Form ${formMovement.legalForm.continuedBy.code}`,
         name: "Continues the form above",
-        time: clock(formMovement.legalForm.continuedBy.recordedAt),
+        time: clockOn(formMovement.legalForm.continuedBy.recordedAt, now),
       });
   }
   if (formMovement?.examination)
@@ -212,7 +212,7 @@ export function PatientLegalNowCard({
       tone: "success",
       code: "Examination",
       name: "Psychiatric examination recorded",
-      time: clock(formMovement.examination.at),
+      time: clockOn(formMovement.examination.at, now),
     });
   // D-38: a community treatment order in force is shown with when it was recorded, never a lapse time.
   const order = activeCommunityTreatmentOrder(patient);
@@ -221,7 +221,7 @@ export function PatientLegalNowCard({
       tone: "success",
       code: `Form ${order.form}`,
       name: "Community treatment order, in force",
-      time: clock(order.recordedAt),
+      time: clockOn(order.recordedAt, now),
     });
   const status = legal.status;
   // D-186 item 4: the named "not voluntary" rule. A referral counts; nothing recorded does not.

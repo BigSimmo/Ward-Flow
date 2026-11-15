@@ -61,10 +61,14 @@ describe("R-STRUCT-4: allowed saves the app refused, pinned as allowed (D-223)",
     expect(save(bedManager, confirm(own.id))).toEqual({ refusal: null, rejected: false });
     expect(answer(bedManager, confirm(elsewhere.id))).toEqual({ kind: "never", refusal: OUTSIDE_PLACE });
     expect(save(bedManager, confirm(elsewhere.id)).refusal).toBe(OUTSIDE_PLACE);
-    // The demo fault: the screen typed "ward", which the server refuses for a bed manager's membership.
-    expect(commandRefusal(world, bedManager, { ...confirm(own.id), role: "ward", now: NOW_ANCHOR }, AT)).toBe(
-      NOT_YOUR_ROLE,
-    );
+    // The demo fault: the screen typed "ward". The server now records the membership's role instead
+    // of refusing (D-222/D-223), so the bed manager's Confirm is saved as the bed manager's.
+    const typedWard = deskCommand(bedManager, { ...confirm(own.id), role: "ward", now: NOW_ANCHOR }) as Record<
+      string,
+      unknown
+    >;
+    expect(typedWard.role).toBe("bed_manager");
+    expect(commandRefusal(world, bedManager, typedWard, AT)).toBeNull();
   });
 
   it("X1b-6: the person's own ED and the accepting ward save an arrival plan; another ward cannot", () => {
@@ -92,8 +96,14 @@ describe("R-STRUCT-4: allowed saves the app refused, pinned as allowed (D-223)",
     expect(save(ward, plan(accepting))).toEqual({ refusal: null, rejected: false });
     expect(answer(elsewhere, plan(otherWard.id)).kind).toBe("never");
     expect(save(elsewhere, plan(otherWard.id)).rejected).toBe(true);
-    // The live fault: the modal sent "coordinator" from the ED's membership.
-    expect(commandRefusal(world, ed, { ...plan(), role: "coordinator", now: NOW_ANCHOR }, AT)).toBe(NOT_YOUR_ROLE);
+    // The live fault: the modal sent "coordinator" from the ED's membership. The server records the
+    // ED's own role, never the typed one, so the plan is saved as the ED's.
+    const typedCoordinator = deskCommand(ed, { ...plan(), role: "coordinator", now: NOW_ANCHOR }) as Record<
+      string,
+      unknown
+    >;
+    expect(typedCoordinator.role).toBe("ed");
+    expect(commandRefusal(world, ed, typedCoordinator, AT)).toBeNull();
     expect(RECORD_CHECKS.map((check) => check.id)).toEqual(["arrival-plan-accepting-ward"]);
   });
 

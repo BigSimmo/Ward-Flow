@@ -532,7 +532,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
   const displayedScope = activeService ?? "Statewide";
   const displayedWaiting = activeService
     ? report?.services.find((service) => service.service === activeService)!.waiting
-    : report?.network.people.waitingInEd;
+    : report?.network.people.edJourneysOpen;
   // The phone dock (the new frame): Statistics, then Capacity and Activity. Each page shows only
   // where this desk may open it.
   const dockPages = ["statistics", "capacity"]
@@ -1026,7 +1026,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
               close();
             }}
           >
-            All services · {releasedCountText(report.network.people.waitingInEd)} open ED journeys
+            All services · {releasedCountText(report.network.people.edJourneysOpen)} open ED journeys
           </button>
         )}
         {services.map((service) => (

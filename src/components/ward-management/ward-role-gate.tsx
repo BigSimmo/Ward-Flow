@@ -2,8 +2,10 @@
 
 /**
  * Route-role hooks for action buttons (feature 11). Every screen that offers an action asks
- * `useRoleGate()` rather than reading `EVENT_ROLE` itself; the rule lives in
- * `ward-role-permissions.ts`, and the reducer remains the gate that actually refuses.
+ * `useRoleGate()` rather than reading `EVENT_ROLE` itself. The answer is `permit()` (`ward-permit.ts`,
+ * R-STRUCT-1, D-223) for the session's `Desk` (`useDesk`), the same answer the shared server gives,
+ * and the reducer remains the gate that actually refuses. `usePermit` adds the place rules for a
+ * change that names its record.
  */
 import { createContext, useCallback, useContext, useId, useSyncExternalStore, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
@@ -15,6 +17,8 @@ import {
   type WardFlowEventType,
   withOwnerHint,
 } from "@/components/ward-management/ward-role-permissions";
+import { deskFor } from "@/components/ward-management/ward-desk";
+import { permit } from "@/components/ward-management/ward-permit";
 import { navigateWithDirtyGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { useIsBreakGlassRecord } from "@/components/ward-management/shell/ward-access";
 import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";
@@ -165,8 +169,8 @@ export function useRoleGate(record?: {
   // an in-page desk switch would change nothing. Offer it only where it works: a coordinator's desk,
   // or role access off (the effective access is then the statewide coordinator).
   const { shared: sharedDesk, canSwitch: sharedCanSwitch, switchDesk } = useDeskRoleSwitch();
-  const accessRole = useEffectiveWardAccess().role;
-  const canSwitchDesk = sharedDesk ? sharedCanSwitch : accessRole === "coordinator";
+  const access = useEffectiveWardAccess();
+  const canSwitchDesk = sharedDesk ? sharedCanSwitch : access.role === "coordinator";
   const isBreakGlass = useIsBreakGlassRecord();
   const inheritedReadOnly = useContext(ReadOnlyRecordContext);
   const readOnly = inheritedReadOnly || isBreakGlass(record);
@@ -181,20 +185,27 @@ export function useRoleGate(record?: {
           buttonProps: { disabled: true, "aria-describedby": id },
           note: <DisabledReason id={id}>Exceptional access is read only.</DisabledReason>,
         };
+      // R-STRUCT-1 (D-223): the server's own answer for this desk (`permit`), so a control the
+      // server would refuse is never offered as if it would work.
+      const answer = permit(deskFor(access, { routeRole: role, canSwitch: canSwitchDesk }), { type: eventType });
+      if (answer.kind === "allow") return { allowed: true, buttonProps: {}, note: null };
       const permission = dispatchPermission(role, eventType);
-      if (permission.allowed) return { allowed: true, buttonProps: {}, note: null };
-      const required = requiredRoleForPermission(eventType, permission.reason);
+      // A role refusal keeps its short "… only" words; a place refusal the server makes before the
+      // role (outage record, site switch) reads in the server's words.
+      const shortReason = permission.allowed ? answer.refusal : permission.reason;
+      const required = requiredRoleForPermission(eventType, shortReason);
+      const switchable = answer.kind === "not-now" && canSwitchDesk;
       // WF-20: a desk that cannot switch is told who owns the step, never only that it is locked.
-      const reason = canSwitchDesk ? permission.reason : withOwnerHint(permission.reason, role, eventType);
+      const reason = switchable || permission.allowed ? shortReason : withOwnerHint(shortReason, role, eventType);
       return {
         allowed: false,
         reason,
-        never: !canSwitchDesk,
+        never: !switchable,
         buttonProps: { disabled: true, "aria-describedby": id },
         note: (
           <span className="lockline">
             <DisabledReason id={id}>{reason}</DisabledReason>
-            {canSwitchDesk ? (
+            {switchable ? (
               <>
                 {" "}
                 <button
@@ -211,6 +222,6 @@ export function useRoleGate(record?: {
         ),
       };
     },
-    [readOnly, role, baseId, pathname, canSwitchDesk, sharedDesk, switchDesk],
+    [readOnly, role, access, baseId, pathname, canSwitchDesk, sharedDesk, switchDesk],
   );
 }

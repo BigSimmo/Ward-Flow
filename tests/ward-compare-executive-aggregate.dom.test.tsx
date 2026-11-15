@@ -148,11 +148,11 @@ describe("Compare uses its released aggregate model", () => {
   it("preserves an unknown duration in charts and CSV without making it zero or a partial ED mean", () => {
     installMatchMediaStub(false);
     const data = protectedReport();
-    data.wards[0].statistics.averageLengthOfStayDays = null;
+    data.wards[0].statistics.averageCompletedStayDays = null;
     data.emergencyDepartments[0].longestWaitMinutes = null;
     render(wrap(<StatisticsCompareScreen />, data));
     // The ward chart opens on Occupancy; the unrecorded line belongs to Average stay.
-    fireEvent.click(within(wardCard()).getByRole("radio", { name: "Stay" }));
+    fireEvent.click(within(wardCard()).getByRole("radio", { name: "Completed stay" }));
     expect(screen.getByTestId("ward-statistics-compare-ward-chart-unrecorded")).toHaveTextContent(data.wards[0].name);
     fireEvent.click(within(edCard()).getByRole("radio", { name: "Longest" }));
     const figure = chart("Emergency department longest wait bar chart, in hours");

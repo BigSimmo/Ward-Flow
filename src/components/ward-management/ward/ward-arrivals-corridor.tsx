@@ -1,5 +1,7 @@
 "use client";
 
+import { arrivalTimingPhrase } from "@/components/ward-management/ward-arrival-timing";
+import { formatClockAmPmWithDay } from "@/components/ward-management/ward-clock-am-pm";
 import { Clock, ArrowRight } from "lucide-react";
 import React from "react";
 import { Button, Dialog } from "@/components/wf";
@@ -68,12 +70,6 @@ function msSinceTap(tap: { at: number }): number {
 
 function tapNow(): number {
   return Date.now();
-}
-
-function arrivalIsLate(movement: Movement, now: Instant): boolean {
-  const eta = movement.arrivalDetails?.estimatedArrivalAt;
-  if (eta === undefined) return false;
-  return minutesUntil(eta, now) < 0;
 }
 
 interface WardArrivalsCorridorProps {
@@ -231,6 +227,7 @@ export function WardArrivalsCorridor({
           {accepted.map((movement) => {
             const patientInfo = resolvePatientIdentity(movement);
             const eta = movement.arrivalDetails?.estimatedArrivalAt;
+            const timingPhrase = arrivalTimingPhrase(movement, now);
             const notice = restrictionNotice(movement, unit);
             const eligibilityIssue = eligibilityWarning(movement, unit, now);
             const readmission = wardCopyReadmission(movement);
@@ -354,16 +351,18 @@ export function WardArrivalsCorridor({
                       Stage: <strong>{movementStatusLabel(movement)}</strong>
                     </span>
                     <span className={styles.statusTag} data-type={canPull ? "acuity" : "mode"}>
-                      {eta !== undefined
-                        ? arrivalIsLate(movement, now)
-                          ? `Late · Expected ${formatInstantWithDay(eta, now)}`
-                          : `ETA: ${formatInstantWithDay(eta, now)}`
-                        : movement.transport?.estimatedAt !== undefined && movement.transport.cancelledAt === undefined
-                          ? // R-MOVE-12: the booking's own time, until the ward sets an ETA.
-                            `ETA ${formatInstantWithDay(movement.transport.estimatedAt, now)} (booking)`
-                          : canPull
-                            ? "Waiting for the ward to pull"
-                            : "No arrival time yet"}
+                      {/* D-221: the one arrival-timing phrase every desk shows. */}
+                      {timingPhrase
+                        ? timingPhrase
+                        : eta !== undefined
+                          ? `ETA ${formatClockAmPmWithDay(eta, now)}`
+                          : movement.transport?.estimatedAt !== undefined &&
+                              movement.transport.cancelledAt === undefined
+                            ? // R-MOVE-12: the booking's own time, until the ward sets an ETA.
+                              `ETA ${formatClockAmPmWithDay(movement.transport.estimatedAt, now)} (booking)`
+                            : canPull
+                              ? "Waiting for the ward to pull"
+                              : "No arrival time yet"}
                     </span>
                   </div>
                   <div className={styles.corridorTrack}>

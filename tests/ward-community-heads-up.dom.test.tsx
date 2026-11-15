@@ -23,7 +23,7 @@ describe("home team heads-up card", () => {
     );
     const items = screen.getAllByTestId("ward-community-heads-up-item");
     expect(items).toHaveLength(1);
-    expect(items[0]!.textContent).toMatch(/^UM\d{6} is in Armadale ED since \d{2}:\d{2}( yesterday)?$/u);
+    expect(items[0]!.textContent).toMatch(/^UM\d{6} is in Armadale ED since \d{1,2}:\d{2} [ap]m( yesterday)?$/u);
     const umrn = items[0]!.querySelector("span span");
     expect(umrn?.textContent).toMatch(/^UM\d{6}$/u);
     expect(umrn?.className).toMatch(/umrn/u);

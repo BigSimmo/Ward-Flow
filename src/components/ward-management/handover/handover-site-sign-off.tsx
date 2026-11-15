@@ -17,7 +17,9 @@ import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { usePermit } from "@/components/ward-management/shell/use-permit";
+import { GatedButton } from "@/components/ward-management/shell/gated-action";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
@@ -135,7 +137,6 @@ export function HandoverSiteSignOff({
   );
   const now = useWardFlowClock();
   const routeRole = useRouteRole();
-  const gate = useRoleGate()("RECORD_SITE_HANDOVER_SIGN_OFF");
   const headingId = useId();
 
   // The site signs the next handover only: the reducer refuses any other.
@@ -152,13 +153,16 @@ export function HandoverSiteSignOff({
     (stay) => siteUnitIds.has(stay.unitId) && stay.state === "occupied" && stay.blockReason,
   ).length;
   const record = siteSignOffFor(siteHandoverSignOffs, siteCode, shiftAt);
+  // D-223: permit() answers for this site, so a desk that can never sign or undo here is not offered
+  // the button, and a desk that can switch sees it disabled with its reason.
+  const signOffPermit = usePermit({ type: "RECORD_SITE_HANDOVER_SIGN_OFF", role: routeRole, now, siteCode, shiftAt });
+  const undoPermit = usePermit({ type: "UNDO_SITE_HANDOVER_SIGN_OFF", role: routeRole, now, siteCode });
   const outstanding = new Set(record ? outstandingWardSignOffs(record, handoverSignOffs) : []);
   const rows = checkRows(checks, blockedStays);
   const openCount = rows.filter((row) => row.open).length;
 
   const { run: runStep } = useUndoableStep({ dispatch, rejections, now, routeRole, onMessage: announceToWardShell });
   const signOff = () => {
-    if (!gate.allowed) return;
     runStep(
       { type: "RECORD_SITE_HANDOVER_SIGN_OFF", role: routeRole, now, siteCode, shiftAt },
       {
@@ -273,19 +277,19 @@ export function HandoverSiteSignOff({
               {openCount > 0 ? `${openCount} ${openCount === 1 ? "item" : "items"} open` : null}
             </span>
             {record ? (
-              <Button onClick={undoSignOff} data-testid="ward-handover-site-undo">
+              <GatedButton permit={undoPermit} onPress={undoSignOff} data-testid="ward-handover-site-undo">
                 Undo sign-off
-              </Button>
+              </GatedButton>
             ) : (
-              <Button
+              <GatedButton
+                permit={signOffPermit}
                 variant="pri"
                 icon={Check}
-                onClick={signOff}
-                disabledReason={gate.reason}
+                onPress={signOff}
                 data-testid="ward-handover-site-sign-off-button"
               >
                 Sign off at {formatInstantWithDay(now, now)}
-              </Button>
+              </GatedButton>
             )}
           </div>
         </Card>

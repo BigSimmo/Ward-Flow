@@ -236,7 +236,7 @@ describe("the comparisons page sets wards beside wards and departments beside de
    * the reader is handed a figure inside a statement that there is none. `Discharge dates` is a
    * third thing again: a ratio that cannot be formed, since 0 of 0 is undefined rather than zero.
    */
-  it.each([{ name: "Average stay" }, { name: "Dates met" }])(
+  it.each([{ name: "Average completed stay" }, { name: "Dates met" }])(
     "lets $name state its absence in words, and never with a numeral in them",
     ({ name }) => {
       renderCompare();
@@ -254,7 +254,7 @@ describe("the comparisons page sets wards beside wards and departments beside de
   /**
    * 🔴 **THE NULL-AVERAGE BRANCH IS RENDERED BY NOTHING IN THE SEEDED FIXTURE, SO EVERY ASSERTION
    * ABOVE IS SILENT ABOUT IT.** Measured on the running page: nought of twenty-three wards has a
-   * null `averageLengthOfStayDays` or `averageEmptyBedMinutes`. Ward Lead's ruling names a null
+   * null `averageCompletedStayDays` or `averageEmptyBedMinutes`. Ward Lead's ruling names a null
    * average rendered as a number **the single most likely way these screens could lie**, and on
    * this screen that branch had no test and no render. Found by a second reader asking what the
    * third styling treatment looked like, and discovering he had never seen the second.
@@ -280,13 +280,13 @@ describe("the comparisons page sets wards beside wards and departments beside de
     /** The premise, pinned rather than assumed: this fixture really does produce both kinds at once. */
     it("keeps producing two null averages and two true noughts", () => {
       const stats = wardStatistics(UNIT.id, [], NOW_ANCHOR);
-      expect(stats.averageLengthOfStayDays, "fixture no longer yields a null length of stay").toBeNull();
+      expect(stats.averageCompletedStayDays, "fixture no longer yields a null length of stay").toBeNull();
       expect(stats.averageEmptyBedMinutes, "fixture no longer yields a null empty-bed figure").toBeNull();
       expect(stats.readyToLeaveCannot, "readyToLeaveCannot is not a true nought here").toBe(0);
       expect(stats.longStays, "longStays is not a true nought here").toBe(0);
     });
 
-    it.each([{ name: "Average stay" }, { name: "Dates met" }])(
+    it.each([{ name: "Average completed stay" }, { name: "Dates met" }])(
       "renders $name in words, with no digit anywhere in it",
       ({ name }) => {
         renderEmpty();
@@ -309,7 +309,7 @@ describe("the comparisons page sets wards beside wards and departments beside de
     it("does not render an unmeasurable average the same way as a true nought", () => {
       renderEmpty();
       const cell = (header: string) => cellsUnder(WARD_TABLE, header)[0].toLowerCase();
-      const unmeasurable = [cell("Average stay"), cell("Dates met")];
+      const unmeasurable = [cell("Average completed stay"), cell("Dates met")];
       const noughts = [cell("Held up · any date"), cell("Long stays")];
       for (const absent of unmeasurable) {
         for (const nought of noughts) {
@@ -448,7 +448,9 @@ describe("the comparisons page sets wards beside wards and departments beside de
     // 40rem/5 columns -> 44rem/6 columns, 31 Oct 2026: the redesign added Occupancy. Re-measured in
     // Playwright chromium on the dev server, 1440x900, min-width cleared to 0px and read back:
     // min-content 583.14px, max-content 692.33px, so 44rem (704px) sits clear of max-content.
-    { table: WARD_TABLE, selector: ".wardTable", pin: "44rem", columnsWhenMeasured: 6 },
+    // 44rem -> 55rem, 15 Nov 2026: the stay header became "Average completed stay" (R-FIGS-16).
+    // The CI browser sweep measured min-content 772px and max-content 872px, so 55rem (880px).
+    { table: WARD_TABLE, selector: ".wardTable", pin: "55rem", columnsWhenMeasured: 6 },
     { table: WARD_TABLE, selector: ".edTable", pin: "35rem", columnsWhenMeasured: 4, use: ED_TABLE },
   ])("$selector was measured at $pin against $columnsWhenMeasured columns, and still has them", (entry) => {
     const testId = entry.use ?? entry.table;

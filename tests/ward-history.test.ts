@@ -286,12 +286,12 @@ describe("Ward Flow Read-Only Plain History", () => {
         { type: "ADVANCE_CLOCK", role: "coordinator", now: NOW - 1440 } as unknown as WardFlowEvent,
         NOW,
       );
-      expect(yesterday.time).toBe("11:40 yesterday");
+      expect(yesterday.time).toBe("11:40 am yesterday");
       const today = buildHistoryEntry(
         { type: "ADVANCE_CLOCK", role: "coordinator", now: NOW } as unknown as WardFlowEvent,
         NOW,
       );
-      expect(today.time).toBe("11:40");
+      expect(today.time).toBe("11:40 am");
     });
   });
 

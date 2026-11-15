@@ -85,8 +85,11 @@ describe("Alerts redesign safety rules", () => {
     renderScreen();
     const arrange = screen.getByRole("radiogroup", { name: "Arrange by" });
     fireEvent.click(within(arrange).getByRole("radio", { name: /Owner/u }));
+    // Each owner's own section: one holding rows and no further section. The page's Alerts section
+    // holds every owner in turn, and since D-221 more than one owner has act-now rows, so "act now
+    // first" is checked owner by owner, as the rule says.
     const groups = [...document.querySelectorAll<HTMLElement>("section[aria-label]")].filter(
-      (section) => section.querySelector("[data-alert-id]") !== null,
+      (section) => section.querySelector("[data-alert-id]") !== null && section.querySelector("section") === null,
     );
     expect(groups.length).toBeGreaterThan(0);
     for (const group of groups) {

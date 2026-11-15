@@ -86,7 +86,7 @@ describe("RowUndo", () => {
   it("offers the named undo with its clock time and runs it", () => {
     const onUndo = vi.fn();
     render(<RowUndo verb="pull" until={new Date("2026-11-13T02:47:00.000Z")} onUndo={onUndo} />);
-    const button = screen.getByRole("button", { name: "Undo pull · until 10:47" });
+    const button = screen.getByRole("button", { name: "Undo pull · until 10:47 am" });
     fireEvent.click(button);
     expect(onUndo).toHaveBeenCalledTimes(1);
   });
@@ -95,7 +95,7 @@ describe("RowUndo", () => {
     // 10:46:30 in Perth: the window ends at 10:47:00, thirty seconds on.
     vi.setSystemTime(new Date("2026-11-13T02:46:30.000Z"));
     render(<RowUndo verb="pull" until={new Date("2026-11-13T02:47:00.000Z").getTime()} onUndo={() => {}} />);
-    expect(screen.getByRole("button", { name: "Undo pull · until 10:47" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Undo pull · until 10:47 am" })).toBeInTheDocument();
     act(() => {
       vi.advanceTimersByTime(29_000);
     });
@@ -109,7 +109,7 @@ describe("RowUndo", () => {
   it("follows a clock the caller gives, such as the board clock", () => {
     const until = new Date("2026-11-13T02:47:00.000Z").getTime();
     const view = render(<RowUndo verb="pull" until={until} now={until - 60_000} onUndo={() => {}} />);
-    expect(screen.getByRole("button", { name: "Undo pull · until 10:47" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Undo pull · until 10:47 am" })).toBeInTheDocument();
     view.rerender(<RowUndo verb="pull" until={until} now={until} onUndo={() => {}} />);
     expect(screen.queryByRole("button", { name: /Undo pull/u })).toBeNull();
   });

@@ -9,7 +9,6 @@ import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import { occupiedBeds } from "../src/components/ward-management/statistics/statistics-occupancy";
 import { readyBedsNow, totalReadyBedsNow } from "../src/components/ward-management/ward-bed-states";
 import { lockedBedsFree, openBedsFree } from "../src/components/ward-management/ward-bed-designation";
-import { waitingInEds } from "../src/components/ward-management/ward-shared-figures";
 import { projectExecutiveNetworkStatistics } from "../src/components/ward-management/statistics/executive-statistics-projector";
 import type { WardFlowState } from "../src/components/ward-management/ward-flow-reducer";
 import { DECLINE_REASONS, type HealthService, type Movement } from "../src/components/ward-management/ward-model";
@@ -240,7 +239,7 @@ describe("the inactive full reporting bundle", () => {
     const dto = reporting(state);
     const ward = dto.wards[0]!;
     const stats = wardStatistics(ward.id, state.admissions, NOW_ANCHOR);
-    expect(ward.statistics.averageLengthOfStayDays).toBe(stats.averageLengthOfStayDays);
+    expect(ward.statistics.averageCompletedStayDays).toBe(stats.averageCompletedStayDays);
     expect(ward.statistics.averageEmptyBedMinutes).toBe(stats.averageEmptyBedMinutes);
     expect(ward.beds).toEqual(project(state).wards.find((item) => item.id === ward.id)!.beds);
     expect(dto.settings.parallelReferralCap).toBe(state.configuration.parallelReferralCap);
@@ -997,7 +996,7 @@ const emptyAggregate = {
   wards: [],
   beds: { total: 0, ready: 0, pulled: 0, closed: 0, occupied: 0, inUse: 0, beingMadeReady: 0, onLeave: 0 },
   people: {
-    waitingInEd: { kind: "exact", value: 0 },
+    edJourneysOpen: { kind: "exact", value: 0 },
     stillOpen: { kind: "exact", value: 0 },
     admissionsArrivedToday: { kind: "exact", value: 0 },
     admissionsEndedToday: { kind: "exact", value: 0 },
@@ -1054,8 +1053,8 @@ describe("the executive Network aggregate boundary", () => {
     );
     // The seed's linked movement family has protected information. Its large waiting figure
     // must no longer remain exact beside that family; unsuppressed source parity is checked below.
-    expect(waitingInEds(state.movements, NOW_ANCHOR).total).toBeGreaterThan(0);
-    expect(projected.people.waitingInEd).toEqual({ kind: "withheld" });
+    expect(openEdJourneys(state.movements, NOW_ANCHOR).total).toBeGreaterThan(0);
+    expect(projected.people.edJourneysOpen).toEqual({ kind: "withheld" });
     expect(projected.coverage).toBe("network-foundation");
     expect(isExecutiveNetworkAggregate(JSON.parse(JSON.stringify(projected)))).toBe(true);
     for (const record of [...state.patients, ...state.movements, ...state.admissions, ...state.referrals]) {
@@ -1158,14 +1157,14 @@ describe("the executive Network aggregate boundary", () => {
     },
   );
 
-  it.each(["waitingInEd", "stillOpen", "refused", "escalated"] as const)(
+  it.each(["edJourneysOpen", "stillOpen", "refused", "escalated"] as const)(
     "rejects exact-positive or small %s beside a protected movement-family counter",
     (field) => {
       const aggregate = {
         ...emptyAggregate,
         people: {
           ...emptyAggregate.people,
-          waitingInEd: { kind: "withheld" },
+          edJourneysOpen: { kind: "withheld" },
           stillOpen: { kind: "withheld" },
           refused: { kind: "withheld" },
           escalated: { kind: "withheld" },
@@ -1189,10 +1188,12 @@ describe("the executive Network aggregate boundary", () => {
     expect(JSON.stringify(state)).toBe(before);
   });
 
-  it("protects the small difference between exact waiting and open figures from a valid source", () => {
+  it("counts a journey that has left the ED as an ED journey open, so no small difference appears (D-220)", () => {
+    // D-220: the report's ED figure is ED journeys open; a journey in transport is still one. The
+    // contract's own refusal of a small exact complement is pinned below.
     const result = project(validMovementSource(6, 0, 0, 1));
-    expect(result.people.waitingInEd).toEqual({ kind: "withheld" });
-    expect(result.people.stillOpen).toEqual({ kind: "withheld" });
+    expect(result.people.edJourneysOpen).toEqual({ kind: "exact", value: 6 });
+    expect(result.people.stillOpen).toEqual({ kind: "exact", value: 6 });
     expect(result.people.refused).toEqual({ kind: "exact", value: 0 });
     expect(result.people.escalated).toEqual({ kind: "exact", value: 0 });
   });
@@ -1204,7 +1205,7 @@ describe("the executive Network aggregate boundary", () => {
     "protects small refusal cells or the open/refused/escalated residual (%i,%i,%i)",
     (size, refused, escalated) => {
       const result = project(validMovementSource(size, refused, escalated));
-      for (const field of ["waitingInEd", "stillOpen", "refused", "escalated"] as const)
+      for (const field of ["edJourneysOpen", "stillOpen", "refused", "escalated"] as const)
         expect(result.people[field]).toEqual({ kind: "withheld" });
       expect(isExecutiveNetworkAggregate(result)).toBe(true);
     },
@@ -1216,7 +1217,7 @@ describe("the executive Network aggregate boundary", () => {
         ...emptyAggregate,
         people: {
           ...emptyAggregate.people,
-          waitingInEd: { kind: "exact", value: 5 },
+          edJourneysOpen: { kind: "exact", value: 5 },
           stillOpen: { kind: "exact", value: 6 },
         },
       }),
@@ -1234,7 +1235,7 @@ describe("the executive Network aggregate boundary", () => {
           ...emptyAggregate,
           people: {
             ...emptyAggregate.people,
-            waitingInEd: { kind: "exact", value: waiting },
+            edJourneysOpen: { kind: "exact", value: waiting },
             stillOpen: { kind: "exact", value: open },
             refused: { kind: "exact", value: refused },
             escalated: { kind: "exact", value: escalated },

@@ -52,7 +52,14 @@ import {
 } from "./ward-turnaround-priority";
 import { recordedMovementMedicalClearance } from "./ward-medical-clearance";
 import { withoutRecordNumbers, withUmrnInPlaceOfMovementIds } from "./ward-patient-resolver";
-import { appendAudit, classifyAuditEvent, finiteInstant, type AuditDecision, type WardAuditState } from "./ward-audit";
+import {
+  appendAudit,
+  classifyAuditEvent,
+  finiteInstant,
+  nestedHistoryEvent,
+  type AuditDecision,
+  type WardAuditState,
+} from "./ward-audit";
 import {
   withUndoRecord,
   type UndoRecord,
@@ -79,6 +86,14 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { type BroadcastAlert } from "./alerts/ward-broadcast-model";
 import { reducePlannedAdmissionEvent } from "./capacity/planned-admissions-reducer";
 import { reduceInboxEvent } from "./ward-inbox-reducer";
+import {
+  appendNotices,
+  makeNotice,
+  reconcileMovementLateNotices,
+  withLateNoticesReconciled,
+  withSeedLateNotices,
+} from "./ward-flow-notice-steps";
+export { appendNotices, makeNotice, reconcileMovementLateNotices };
 import type { RecordedFactEventHelpers } from "./ward-flow-record-events";
 import { reduceObservationLevelEvent } from "./ward-flow-observation-events";
 import type { UndoEventHelpers } from "./ward-flow-undo-events";
@@ -128,7 +143,6 @@ import type {
   Movement,
   MovementStage,
   Notice,
-  NoticeKind,
   PullFormField,
   Referral,
   WardReferralDestination,
@@ -200,7 +214,6 @@ import { withSeedCalendarDays, withSeedClockFaceRecords } from "./ward-seed-cloc
 // S6 example data (3 Nov 2026): no demo list opens empty. A live shared build swaps in a no-op.
 import { applyExampleListsOverlay } from "@/components/ward-management/ward-demo-example-lists";
 import { stepUndoSubjectId, subjectId } from "./ward-flow-subject-id";
-import { withFreshIds } from "./ward-runtime-ids";
 // The departure arithmetic lives in its own file (line cap, 10 Nov 2026), re-exported here.
 import { departAdmission, recordedByLabel } from "./ward-flow-departure";
 import type { OverridableWardFlowEvent } from "./ward-flow-overridable-events";
@@ -577,7 +590,7 @@ export function seedWardFlowState(
   scenario: WardScenario = "standard",
   options: { workedExamples?: boolean } = {},
 ): WardFlowState {
-  return withSeedClockFaceRecords(seedAuthoredWorld(scenario, options), NOW_ANCHOR);
+  return withSeedLateNotices(withSeedClockFaceRecords(seedAuthoredWorld(scenario, options), NOW_ANCHOR), NOW_ANCHOR);
 }
 
 /** The seed before its clock-face records (time audit G1, `ward-seed-clock.ts`). */
@@ -671,7 +684,7 @@ export function seedWardFlowStateAt(
     NOW_ANCHOR,
     now,
   );
-  return withSeedClockFaceRecords(moved, now, options.dayZero);
+  return withSeedLateNotices(withSeedClockFaceRecords(moved, now, options.dayZero), now);
 }
 
 /**
@@ -1156,67 +1169,11 @@ function nextFrontDoorReferralId(sequence: number): string {
 // ── Communication addendum (docs/history/plans-2026-09/2026-09-1x-communication-addendum.md) ──────────
 
 /**
- * Like `subjectId`, but reads an already-built `Notice.about` (movement, referral, unit, then
- * patient). Kept separate because `subjectId` reads an event and this reads a decision about a
- * notice.
- */
-function noticeSubject(about: Notice["about"]): string {
-  return about.movementId ?? about.referralId ?? about.unitId ?? about.patientId ?? "none";
-}
-
-/**
  * A unit's display name for a notice, falling back to its bare id: a notice naming the wrong ward
  * is worse than one naming a searchable id.
  */
 function unitName(state: WardFlowState, unitId: string): string {
   return findUnit(state, unitId)?.name ?? unitId;
-}
-
-/**
- * Stable, non-random, derived from `(subject, kind, count)`, like `makeRejection`, to keep the
- * reducer pure.
- *
- * `count` is `state.notices.length` before the current event's notices are appended. An event
- * raising two notices gives each addressee its own `NoticeKind`, or the ids would collide and one
- * would be dropped.
- */
-export function makeNotice(
-  now: Instant,
-  count: number,
-  kind: NoticeKind,
-  to: Addressee,
-  about: Notice["about"],
-  sentence: string,
-): Notice {
-  return {
-    id: `notice-${noticeSubject(about)}-${kind}-${count}`,
-    raisedAt: now,
-    to,
-    about,
-    kind,
-    // D-39: a notice says "this referral" or "this stay", never the record number. The ids stay in
-    // `about` for the link.
-    sentence: withoutRecordNumbers(sentence),
-    readAt: undefined,
-  };
-}
-
-/**
- * The one gate every notice passes through before reaching `state.notices`, and where `demo` is
- * refused (addendum §1.2: "`demo` … must never receive a notice… refuse it in the reducer, not in a
- * screen").
- *
- * Silently drops a `demo`-addressed notice rather than rejecting the event: the underlying decision
- * is real and already recorded; only the courtesy notice is refused. Never touches
- * `state.rejections`. Exported so `tests/ward-notices.test.ts` can exercise the drop branch
- * directly, since no public dispatch can construct such a notice.
- */
-export function appendNotices(state: WardFlowState, notices: readonly Notice[]): WardFlowState {
-  const wanted = notices.filter((notice) => notice.to.role !== "demo");
-  if (wanted.length === 0) return state;
-  // ENG-01 (H-0334): an id an earlier Undo left clashing is renumbered; see `withFreshIds`.
-  const notifiable = withFreshIds(state.notices, wanted);
-  return { ...state, notices: [...state.notices, ...notifiable] };
 }
 
 /**
@@ -1518,7 +1475,11 @@ export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): War
   if (protectedEvent) {
     const recorded = advanceResourceRevisions(
       state,
-      reducerSlices().reduceProtectedRecordEvent(state, event, PROTECTED_RECORD_EVENT_HELPERS),
+      withLateNoticesReconciled(
+        state,
+        reducerSlices().reduceProtectedRecordEvent(state, event, PROTECTED_RECORD_EVENT_HELPERS),
+        event,
+      ),
     );
     // Audit A1-12: a recorded discharge ("Has left") keeps what it changed, so its toast can undo it.
     return event.type === "RECORD_PATIENT_DISCHARGE" ? withStepUndo(state, recorded, event) : recorded;
@@ -1540,7 +1501,11 @@ export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): War
     if (!safeCounter(revision) || revision >= Number.MAX_SAFE_INTEGER) return state;
   }
   const decision: AuditDecision = { outcome: "denied", reasonCode: "transition" };
-  let next = withReferralDecisionUndo(state, reduceClinicalEvent(state, event, decision), event);
+  let next = withReferralDecisionUndo(
+    state,
+    withLateNoticesReconciled(state, reduceClinicalEvent(state, event, decision), event),
+    event,
+  );
   if (event.type !== "RESET_SCENARIO" && event.type !== "SET_SCENARIO") {
     next = withStepUndo(state, advanceResourceRevisions(state, next), event);
   }
@@ -1559,7 +1524,8 @@ export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): War
 /**
  * WT-08 (Josh, 26 Oct 2026): Pull the bed is one tap. The accepted journey starts and its bed is
  * pulled in one event, each half through its own ordinary checks. A refused pull keeps the state as
- * it was and records that refusal, so nothing is left half started.
+ * it was and records that refusal, so nothing is left half started. D-222: the one tap writes one
+ * History line; the two halves write none of their own.
  */
 function raiseAndPullBed(state: WardFlowState, event: Extract<WardFlowEvent, { type: "RAISE_REFERRAL" }>) {
   const raise: typeof event = { ...event };
@@ -1570,22 +1536,27 @@ function raiseAndPullBed(state: WardFlowState, event: Extract<WardFlowEvent, { t
   if (event.acceptedUnitId === undefined) return refuse("Pulling the bed needs the ward that accepted");
   const changedRefusal = event.changedOnPull === undefined ? null : changedOnPullRefusal(event.changedOnPull);
   if (changedRefusal) return refuse(changedRefusal);
-  const started = wardFlowReducer(state, raise);
+  const started = wardFlowReducer(state, nestedHistoryEvent(raise));
   const journey = started.movements.find(
     (movement) => movement.referralId === event.referralId && !state.movements.some(({ id }) => id === movement.id),
   );
-  if (!journey) return started;
-  const pulled = wardFlowReducer(started, {
-    type: "PULL_PATIENT",
-    role: event.role,
-    now: event.now,
-    movementId: journey.id,
-    unitId: event.acceptedUnitId,
-    ...(event.actingUnitId === undefined ? {} : { actingUnitId: event.actingUnitId }),
-  });
+  if (!journey) return appendAudit(state, started, event, { outcome: "denied", reasonCode: "transition" });
+  const pulled = wardFlowReducer(
+    started,
+    nestedHistoryEvent({
+      type: "PULL_PATIENT",
+      role: event.role,
+      now: event.now,
+      movementId: journey.id,
+      unitId: event.acceptedUnitId,
+      ...(event.actingUnitId === undefined ? {} : { actingUnitId: event.actingUnitId }),
+      ...("desk" in event ? { desk: event.desk } : {}),
+    } as Extract<WardFlowEvent, { type: "PULL_PATIENT" }>),
+  );
   const refusal = pulled.rejections.at(-1);
   if (refusal !== started.rejections.at(-1) && refusal !== undefined) return refuse(refusal.reason);
-  return withChangedOnPull(pulled, journey.id, event.changedOnPull);
+  const done = withChangedOnPull(pulled, journey.id, event.changedOnPull);
+  return appendAudit(state, done, event, { outcome: "accepted", reasonCode: "none" });
 }
 
 /**
@@ -2160,6 +2131,13 @@ export function reduceClinicalEvent(
     case "RELEASE_INBOX_ITEM_OWNERSHIP":
     case "SNOOZE_INBOX_ITEM":
     case "UNSNOOZE_INBOX_ITEM": {
+      // D-221: a late notice is stored when its time is saved and raised later. Until it is raised
+      // nobody has been shown it, so nobody can have read it.
+      if (event.type === "MARK_NOTICE_READ") {
+        const notice = state.notices.find((candidate) => candidate.id === event.noticeId);
+        if (notice && notice.raisedAt > event.now)
+          return reject(state, event, `notice ${event.noticeId} has not been raised yet`);
+      }
       const next = reduceInboxEvent(state, event, decision, reject);
       if (next) return next;
       return state;
@@ -2482,6 +2460,7 @@ export type PlacementEventHelpers = typeof PLACEMENT_EVENT_HELPERS;
 const TRANSPORT_EVENT_HELPERS = {
   STAGE_TRANSITION_BLOCKERS,
   appendNotices,
+  reconcileMovementLateNotices,
   bedNumberRefusal,
   heldBedRefusal,
   departAdmission,

@@ -96,7 +96,7 @@ describe("shared recovery within an open sheet", () => {
     render(<Harness shared={shared} />);
     const dialog = await screen.findByRole("dialog", { name: "Synthetic record" });
     const recovery = await within(dialog).findByTestId("ward-shared-recovery");
-    expect(recovery).toHaveTextContent(/Not updated since \d\d:\d\d\. Still checking every few seconds\./u);
+    expect(recovery).toHaveTextContent(/Not updated since \d{1,2}:\d{2} [ap]m\. Still checking every few seconds\./u);
     fireEvent.click(within(recovery).getByRole("button", { name: "Retry" }));
     expect(shared.retry).toHaveBeenCalledOnce();
   });

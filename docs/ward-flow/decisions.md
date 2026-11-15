@@ -256,6 +256,8 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-237](#d-237-a-desks-own-save-is-never-another-desks-change-14-november-2026)                                                                         | A desk's own save is never another desk's change                                       | Active                                           |
 | [D-240](#d-240-the-server-refuses-a-return-order-step-on-a-voluntary-stay-15-november-2026)                                                             | The server refuses a return order step on a voluntary stay                             | Active                                           |
 | [D-241](#d-241-the-22-november-merge-freeze-is-confirmed-15-november-2026)                                                                              | The 22 November merge freeze is confirmed                                              | Active                                           |
+| [D-242](#d-242-raise-the-phone-size-limits-for-the-permission-check-and-history-15-november-2026)                                                       | Raise the phone size limits for the permission check and History                       | Active                                           |
+| [D-243](#d-243-four-follow-ups-from-the-figures-history-and-timing-work-15-november-2026)                                                               | Four follow-ups from the figures, history and timing work                              | Active                                           |
 
 ---
 
@@ -2854,4 +2856,23 @@ D-238 is reserved for design Lane D's block (noted in PR #1677). D-239 is reserv
 - **Decision:** D-184's freeze stands: nothing merges into `main` after 22 November 2026 until after the demo, so Josh rehearses on the final screens. Work finished after that date waits in its pull request.
 - **Boundary:** a process rule only. No clinical value, screen or data change.
 
-The next free number is D-242.
+## D-242. Raise the phone size limits for the permission check and History (15 November 2026)
+
+- **Date:** 15 November 2026, 2:50 PM AWST (06:50 UTC). **Decided by:** Josh, on a decision card in the figures, history and timing thread: "Raise the limits (recommended)", answering "Raise the phone size limits so PR #1683 can merge?"
+- **Decision:** PR #1683 raises the phone first-load limits in `script-budget.json` by more than the 5 KB a PR may add without asking (D-82). Most screens rise by about 8.5 KB, the person page by about 14.8 KB and Statistics by about 10.8 KB. Each limit is set at the measured size plus a small margin.
+- **Why:** the one permission source (`permit()` and its place rules, D-222 and D-223) and the History category table now run in the browser on every screen, where before only the server ran them. No small, safe trim was found, because the growth is the rule tables themselves. Speed on a weak signal stays a target, not a gate (R-STYLE-16).
+- **Left for later:** a trim that keeps the place rules on the server only.
+- **Boundary:** size limits only. No clinical value, rule or wording changes.
+
+## D-243. Four follow-ups from the figures, history and timing work (15 November 2026)
+
+- **Date:** 15 November 2026, 2:52 PM AWST (06:52 UTC). **Decided by:** Josh, in the Ward Flow project: "Yes to all recommendations", taking the four recommendations listed in PR #1683.
+- **Decision:**
+  1. **History on the person's own record (D-14).** Person-record History lines may read the patient link for that person's own record only. Nowhere else widens. Not built in PR #1683: the lines stay off the patient link until a later PR adds that one allowlist entry with its test.
+  2. **Account display name.** The `memberships.display_name` migration is applied after the demo, with a backup first. It is not applied now. Any live database change still needs its own go at the time.
+  3. **Redundant desk-role hook.** `use-recorded-desk-role.ts` is deleted in a later tidy-up PR, now that the desk stamp records the role.
+  4. **am/pm on paper.** Times on screen read am/pm. Legal times keep the 24-hour clock. This includes the daily sheet, the printed-by line, the handover copy and the referral letter, as built in PR #1683.
+- **Why:** each was the recommended, lower-risk option. The privacy widening is the narrowest possible, the live database change waits until after the demo, and the clock rule matches D-215 item 3.
+- **Boundary:** no clinical value or rule changes. The migration and the D-14 allowlist entry each need their own PR.
+
+The next free number is D-244.
