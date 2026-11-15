@@ -14,3 +14,10 @@
 **Why it grew.** The one permission source (`ward-permit.ts` and `ward-permit-place-rules.ts`, D-222 and D-223) and the History category table (`ward-audit-categories.ts`) now run in the browser on every screen. Before, only the server ran them. Together they add about 9 KB to the shared shell. The person page also gained the History tab wording, the late rule and times that say their day. Statistics gained the figure splits.
 
 **Trim.** No small, safe trim was found, because the growth is the rule tables themselves. A later trim could keep the place rules on the server only.
+
+**After #1675 merged (15 Nov, 08:35Z).** CI measured this PR at ea12c8000, merged with main 06b1fb2c0. The person page went over its limit by 0.1 KB from #1675's own code. Four limits moved to the new measured size plus 0.2 KB, on the same D-242 approval:
+
+- `/ward-flow/movements/WF-001`: 655.3 → 655.6 KB (measured 655.4 KB; main 640.6 KB).
+- `/ward-flow/ed`: 568.8 → 568.9 KB (measured 568.7 KB).
+- `/ward-flow/bed-meeting`: 617.5 → 617.6 KB (measured 617.4 KB).
+- `/ward-flow/statistics`: 666.9 → 667.0 KB (measured 666.8 KB).
