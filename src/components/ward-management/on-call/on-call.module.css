@@ -1507,19 +1507,33 @@
   min-width: 0;
 }
 
+/* The Filter button beside the search is 40px on a phone, level with it (Josh, 15 Nov 2026, D-248). */
+.phoneSearchRow > button[aria-haspopup="dialog"] {
+  height: 40px;
+  min-height: 40px;
+}
+
 .phoneMoreButton {
   display: inline-grid;
   flex: none;
   place-items: center;
-  /* D-91: the kit's 44px phone control height, level with the one page search field beside it. */
-  width: 44px;
-  height: 44px;
+  /* 40px on a phone, level with the search box beside it (Josh, 15 Nov 2026, D-248). */
+  position: relative;
+  width: 40px;
+  height: 40px;
   padding: 0;
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-ctl);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
   cursor: pointer;
+}
+
+/* A 40px button keeps a 48px tap area. */
+.phoneMoreButton::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
 }
 
 .phoneMoreButton:focus-visible {

@@ -17,13 +17,16 @@
   width: 100%;
 }
 
-/* The page-top lookup (Josh, 9 Nov 2026): a 44px field with 15px words, as the approved mock-up. */
-.topField :has(> input) {
-  min-height: 44px;
-}
+/* The page-top lookup (Josh, 9 Nov 2026): a 44px field with 15px words, as the approved mock-up.
+   On a phone it is the kit's 40px box and 16px words (Josh, 15 Nov 2026, D-248). */
+@media (min-width: 46.5rem) {
+  .topField :has(> input) {
+    min-height: 44px;
+  }
 
-.topField input {
-  font-size: var(--wf-fs-15);
+  .topField input {
+    font-size: var(--wf-fs-15);
+  }
 }
 
 .results {

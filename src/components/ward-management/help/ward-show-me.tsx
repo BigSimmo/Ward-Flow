@@ -18,7 +18,7 @@ import { walkPlaysHere } from "./ward-help-screen-tours";
 import { howToHref } from "./ward-help-href";
 import { HOW_TOS, showMeSteps } from "./ward-help-howto";
 import { useTourRole } from "./ward-help-store";
-import { SPOT_NOT_HERE, usePlacedCard, useSpotlight } from "./ward-spotlight";
+import { findTourTarget, SPOT_NOT_HERE, usePlacedCard, useSpotlight } from "./ward-spotlight";
 import { useTourFacts } from "./ward-tour-facts";
 import type { TourTarget } from "./ward-tour-steps";
 import { useSwipe, useTourDevice, walkDevice } from "./ward-tour-device";
@@ -103,18 +103,51 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
   usePlacedCard(cardRef, spotRef, box, device, ownsFocus ? step : undefined, missing);
 
   // Navigation can open the first target's PhoneSheet after the guide mounts. Join above that
-  // context once it is ready, then keep this stack position for the whole walk: a dialog opened
-  // by the person afterwards must still take priority. An unrelated dialog also keeps its turn
-  // if it opens while the initial target is being found.
+  // context once it is ready, then keep this stack position: a dialog opened by the person
+  // afterwards takes priority, and an unrelated dialog also keeps its turn if it opens while the
+  // initial target is being found. The one exception (Josh, 15 Nov 2026): a dialog the person opens
+  // that holds this step's or the next step's control, such as the form a lit button opens. The
+  // card joins above it, and the whole dialog stays usable, so the walk carries on inside it.
+  const ahead = steps[index + 1]?.target;
+  const [host, setHost] = useState<HTMLElement | null>(null);
+  // The sheet the card last joined above; only a newer one can call it up again.
+  const joinedAbove = useRef<HTMLElement | null>(null);
   useEffect(() => {
-    if (ownsFocus || !howTo || !step) return;
-    function admit() {
+    if (!howTo || !step) return;
+    const wanted = [step.target, ahead].flatMap((each) => (each ? (Array.isArray(each) ? each : [each]) : []));
+    const holdsWalk = (top: HTMLElement) =>
+      wanted.some((each: TourTarget) => {
+        const found = findTourTarget(each);
+        return Boolean(found && top.contains(found));
+      });
+    function onStack() {
       const top = topSheetRoot();
-      if (element ? !top || top.contains(element) : (!targets?.length || missing) && !top) setOwnsFocus(true);
+      if (host && !host.isConnected) setHost(null);
+      if (ownsFocus) {
+        // A newer dialog than the card: rejoin above it only when it holds the walk.
+        if (top && top !== joinedAbove.current && !top.contains(cardRef.current) && holdsWalk(top)) {
+          joinedAbove.current = top;
+          setHost(top);
+          setOwnsFocus(false);
+        }
+        return;
+      }
+      if (element ? !top || top.contains(element) || holdsWalk(top) : (!targets?.length || missing) && !top) {
+        joinedAbove.current = top;
+        // Rejoining waits a turn: the sheet stack keeps a just-closed layer's old place for one
+        // microtask, which would put the card back under the dialog.
+        if (host) later = window.setTimeout(() => setOwnsFocus(true), 0);
+        else setOwnsFocus(true);
+      }
     }
-    admit();
-    return subscribeToSheetStack(admit);
-  }, [ownsFocus, howTo, step, element, targets, missing]);
+    let later: number | undefined;
+    onStack();
+    const stop = subscribeToSheetStack(onStack);
+    return () => {
+      window.clearTimeout(later);
+      stop();
+    };
+  }, [ownsFocus, howTo, step, ahead, element, targets, missing, host]);
 
   // The card shows while it waits for its turn above any sheet, so Escape must still close it then.
   // An open sheet keeps its own Escape; once the card owns focus, useModalFocus handles it.
@@ -135,7 +168,7 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
     onClose,
     panelRef: cardRef,
     initialFocusRef: nextRef,
-    interactionRoots: [element],
+    interactionRoots: [element, host],
   });
 
   // A step change can take away the focused button (Back on the first step), so focus goes to Next.

@@ -930,7 +930,8 @@
   }
 
   .search {
-    height: var(--wf-touch);
+    /* 40px on a phone, level with the Filters pill (Josh, 15 Nov 2026, D-248). */
+    height: 40px;
     border-radius: var(--wf-r-ctl);
   }
 
