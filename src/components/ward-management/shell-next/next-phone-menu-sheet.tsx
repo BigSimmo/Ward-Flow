@@ -473,7 +473,7 @@ type CreateItem = {
 
 /**
  * The coordinator's + sheet (Josh, 8 Nov 2026, "+ sheet reordered"): New referral alone on top, then
- * the pinned starts as full rows, then the rest as quiet links. Edit (Josh, 15 Nov 2026, D-NNN) lets
+ * the pinned starts as full rows, then the rest as quiet links. Edit (Josh, 15 Nov 2026, D-247) lets
  * each person pin, unpin and reorder them; the arrangement is kept on this device
  * (`ward-create-sheet-store.ts`) and Reset goes back to the standard sheet.
  */
@@ -761,7 +761,7 @@ function CreateSheet({
   });
   // Coordinator (Josh, 8 Nov 2026, "+ sheet reordered"): New referral alone on top, then the calls
   // and asks a coordinator makes all day, then the rarer starts as quiet links underneath.
-  // Triage on the phone (Josh, 15 Nov 2026, D-NNN): New triage is a full row under New referral, with
+  // Triage on the phone (Josh, 15 Nov 2026, D-247): New triage is a full row under New referral, with
   // how many referrals await it, not a quiet link at the foot of the sheet.
   const awaitingTriage = useAwaitingTriageCount();
   const coordItems: CreateItem[] = coordinator
@@ -1088,7 +1088,7 @@ export function PhoneMenuSheets({
       onNewReferral={onRefer}
     />
   );
-  // Triage on the phone (Josh, 15 Nov 2026, D-NNN): Start a triage gets a Menu row, with how many
+  // Triage on the phone (Josh, 15 Nov 2026, D-247): Start a triage gets a Menu row, with how many
   // referrals await it, for every desk that may sign one (the + sheet's own test). A pen on the
   // clipboard, as Handover's clipboard list sits just below it in the Menu.
   const { canTriage } = usePhoneCreateOptions(byId);

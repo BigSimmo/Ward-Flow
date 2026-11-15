@@ -1,4 +1,4 @@
-// Triage on the phone (Josh, 15 Nov 2026, D-NNN): the bed coordinator's phone reaches Start a triage
+// Triage on the phone (Josh, 15 Nov 2026, D-247): the bed coordinator's phone reaches Start a triage
 // from the Menu, straight after Referrals, and from the + sheet as a full row with how many referrals
 // await triage, not a quiet link at the sheet's foot. All data here is synthetic.
 import "@testing-library/jest-dom/vitest";
@@ -59,7 +59,7 @@ function renderPhoneMenu() {
   );
 }
 
-describe("triage on the coordinator's phone (D-NNN)", () => {
+describe("triage on the coordinator's phone (D-247)", () => {
   it("lists Start a triage in the Menu straight after Referrals", async () => {
     renderPhoneMenu();
     act(() => openWardMenu(null));
