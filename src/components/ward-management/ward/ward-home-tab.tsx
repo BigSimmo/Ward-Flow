@@ -1172,13 +1172,14 @@ export function WardHomeTab({
     priorRejectionCountRef.current = rejections.length;
     const who = resolvePatientIdentity(movement).displayName;
     runStep(
-      { type: "PATIENT_ARRIVED", role: "ward", now, movementId: movement.id, actingUnitId: unit.id },
+      // Screens send the route's role; the shell's desk stamp decides (D-222).
+      { type: "PATIENT_ARRIVED", role: routeRole, now, movementId: movement.id, actingUnitId: unit.id },
       {
         success: `Arrival recorded for ${who}.`,
         who,
         undo: (at) => ({
           type: "UNDO_TRANSPORT_STEP",
-          role: "ward",
+          role: routeRole,
           now: at,
           movementId: movement.id,
           actingUnitId: unit.id,
