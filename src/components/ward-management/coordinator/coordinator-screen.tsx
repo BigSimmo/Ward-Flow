@@ -47,7 +47,7 @@ import { patientHref } from "@/components/ward-management/shell/ward-patient-hre
 import { movementBreakdownRows, wardReadyBreakdownRows } from "@/components/ward-management/count-breakdown-rows";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { queueOrder } from "@/components/ward-management/ward-priority";
-import { isReferralOverdue, referralQueueOrder } from "@/components/ward-management/ward-referrals";
+import { coordinatorReferralQueue, isReferralOverdue } from "@/components/ward-management/ward-referrals";
 import {
   movementBelongsToService,
   noRecordedServiceMovementCount,
@@ -433,7 +433,7 @@ export function CoordinatorScreen() {
       }
     : undefined;
 
-  const referralQueueAll = referralQueueOrder(referrals);
+  const referralQueueAll = coordinatorReferralQueue(referrals);
   const referralQueue = isReferralInServiceScope ? referralQueueAll.filter(isReferralInServiceScope) : referralQueueAll;
   // Resolved from the live queue each render. A referral decided in Home's panel (item 6a) leaves the
   // queue but stays open on its outcome, as on the board (CS-15), so its Undo toast still arrives.

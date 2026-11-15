@@ -81,6 +81,28 @@ describe("leaveOpenWarning (signed 24 hours)", () => {
     );
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.every((row) => row.openWarning !== undefined)).toBe(true);
+    // R-BEDS-7 and R-BEDS-8: the same rows feed the "Over 24 h" chip and get the Open ward link.
+    expect(rows.every((row) => row.over24h)).toBe(true);
+  });
+  it("is not over 24 h just before the signed limit, nor for a long medical trip that only began", () => {
+    const state = seedWardFlowState();
+    const unitId = state.units[0]!.id;
+    const rows = leaveTrackerRows(
+      {
+        ...state,
+        leaveBeds: [
+          { ...leave({ confirmedAt: now - (24 * 60 - 1) }), id: "LB-A", unitId },
+          {
+            ...leave({ kind: "medical_trip", confirmedAt: now - 10, expectedReturn: now + 40 * 60 }),
+            id: "LB-B",
+            unitId,
+          },
+        ],
+      },
+      now,
+      () => true,
+    );
+    expect(rows.map((row) => row.over24h)).toEqual([false, false]);
   });
 });
 

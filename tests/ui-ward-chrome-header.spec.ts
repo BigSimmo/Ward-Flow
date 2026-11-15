@@ -240,7 +240,7 @@ test.describe("@mockup phone navigation preparation", () => {
     // tab now opens Capacity at a glance, so Referrals is reached from the Menu and Capacity from the
     // glance's "Open full Capacity" link.
     { from: "menu", path: "/ward-flow/referrals", heading: /^Referrals$/ },
-    { from: "glance", path: "/ward-flow/capacity", heading: /^Capacity,/ },
+    { from: "glance", path: "/ward-flow/capacity", heading: /^Capacity$/ },
   ] as const) {
     test(`phone ${destination.from} prepares ${destination.path} before the tap`, async ({ page, request }) => {
       const identity = await request.get("/api/local-project-id");

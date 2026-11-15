@@ -197,7 +197,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 679,
-          "sha256": "1fa08f480dc4c7beb99215d7b2afc395f3538b82cba050da8a807cec4dbfc8ba"
+          "sha256": "317215fad24902321f9e0da73d4e05cfbd2347711ae4c6d0ce268a4920872b9b"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -286,7 +286,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 253,
-          "sha256": "1fa08f480dc4c7beb99215d7b2afc395f3538b82cba050da8a807cec4dbfc8ba"
+          "sha256": "317215fad24902321f9e0da73d4e05cfbd2347711ae4c6d0ce268a4920872b9b"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -908,14 +908,14 @@
     "model": {
       "subject": "One exact numbered bed’s closure mark",
       "before": "Empty offerable bed is open, or numbered bed has active closed mark",
-      "after": "closed=true appends a mark; closed=false stamps active mark reopenedAt",
+      "after": "closed=true appends a mark, or writes a listed reason onto an active mark that has none; closed=false stamps active mark reopenedAt",
       "payload": [
         "unitId; actingUnitId; integer bedNumber within 1..unit.beds; closed boolean",
         "Optional listed reason and optional review time (later than now, at most 48 hours) when closing; neither when reopening; role and now"
       ],
       "scope": "Ward, site bed manager or coordinator; actingUnitId must equal unitId. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.",
       "guards": [
-        "Closing rejects already-closed, occupied/replayed seat, pulled/held bed, or no Ready capacity",
+        "Closing rejects already-closed (except a first listed reason, with no review time, on a mark without one), occupied/replayed seat, pulled/held bed, or no Ready capacity",
         "Reopening requires an active mark and refuses any supplied reason"
       ],
       "effects": [
@@ -926,7 +926,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-closure-events.ts",
           "line": 56,
-          "sha256": "a7fb4804deda7184f118bef984d2f6d7c61a4cd48f26da5976e6140cc6f26716"
+          "sha256": "232ec22cd984adf7d658e047fe8ce4f79d3358c8d2e2b3bc110ded7157f1c067"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1872,7 +1872,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 765,
-          "sha256": "1fa08f480dc4c7beb99215d7b2afc395f3538b82cba050da8a807cec4dbfc8ba"
+          "sha256": "317215fad24902321f9e0da73d4e05cfbd2347711ae4c6d0ce268a4920872b9b"
         },
         {
           "path": "src/components/ward-management/ward-discharge-criteria.ts",
@@ -2828,7 +2828,7 @@
     "model": {
       "subject": "A current occupied/pulled stay on one ward",
       "before": "Stay in another numbered bed or with known kind but no number",
-      "after": "Same stay recorded in the selected numbered bed and matching bed kind",
+      "after": "Same stay recorded in the selected numbered bed and matching bed kind; any discharged release still being made ready for that bed is no longer marked preparing",
       "payload": [
         "admissionId; integer bedNumber within unit.beds; now/role; actingUnitId for ward; optional listed overrideReason when moving a locked/secure/involuntary stay to an open bed."
       ],
@@ -2847,7 +2847,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 97,
-          "sha256": "1fa08f480dc4c7beb99215d7b2afc395f3538b82cba050da8a807cec4dbfc8ba"
+          "sha256": "317215fad24902321f9e0da73d4e05cfbd2347711ae4c6d0ce268a4920872b9b"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",

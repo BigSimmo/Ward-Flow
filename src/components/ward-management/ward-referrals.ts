@@ -218,6 +218,23 @@ export function referralWithdrawn(referral: Referral): boolean {
 }
 
 /**
+ * R-BEDS-13: a community referral that every asked ward declined stays in the coordinator's queue
+ * until it is placed, closed or handed back, so someone is still asked to find it a bed. Derived
+ * from the record alone (no new record): declined, nothing accepted or withdrawn.
+ * Kept here, beside `referralState`, so the shell's count reads it without the board's modules.
+ */
+export function referralAllWardsDeclined(referral: Referral): boolean {
+  const wards = referral.destinations.filter((arm) => arm.destination.kind === "psychiatric_ward");
+  return (
+    referral.source === "community" &&
+    wards.length > 0 &&
+    referralState(referral) === "declined" &&
+    !referralWithdrawn(referral) &&
+    wards.every((arm) => arm.state === "declined" || arm.withdrawnAt !== undefined)
+  );
+}
+
+/**
  * ONE DESTINATION, STILL AWAITING AN ANSWER. `state === "queued"` alone is not enough.
  *
  * `RECORD_REFERRER_WITHDRAWAL` stamps `withdrawnAt` on every destination still `queued` at that
@@ -746,6 +763,17 @@ export function referralQueueOrder(referrals: Referral[]): Referral[] {
         referralState(referral) === "queued" && referral.destinations.some(isAwaitingAnswer),
     )
     .sort((a, b) => a.raisedAt - b.raisedAt || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
+
+/**
+ * The coordinator's queue: everything still awaiting a ward's answer, plus (R-BEDS-13) a community
+ * referral every asked ward declined, which stays until someone places, closes or hands it back.
+ * Home, the menu badge and the Referrals board read this one list so their counts agree.
+ */
+export function coordinatorReferralQueue(referrals: Referral[]): Referral[] {
+  return [...referralQueueOrder(referrals), ...referrals.filter(referralAllWardsDeclined)].sort(
+    (a, b) => a.raisedAt - b.raisedAt || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
+  );
 }
 
 /**

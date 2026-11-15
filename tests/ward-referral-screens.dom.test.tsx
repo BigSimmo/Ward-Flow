@@ -270,7 +270,8 @@ describe("ReferralBoard", () => {
       .getAllByRole("row")
       .slice(1) // drop the header row
       .map((row) => row.getAttribute("data-referral-id"));
-    expect(ids).toEqual(["RF-015", "RF-014", "RF-011", "RF-001", "RF-009", "RF-005"]);
+    // R-BEDS-13: RF-EX-004, a community referral every asked ward declined, stays in the coordinator queue.
+    expect(ids).toEqual(["RF-015", "RF-EX-004", "RF-014", "RF-011", "RF-001", "RF-009", "RF-005"]);
   });
 
   /**
@@ -288,7 +289,9 @@ describe("ReferralBoard", () => {
     const rendered = within(table)
       .getAllByRole("row")
       .slice(1)
-      .map((row) => row.getAttribute("data-referral-id") ?? "");
+      .map((row) => row.getAttribute("data-referral-id") ?? "")
+      // Generated example lists are not in this fixture.
+      .filter((id) => !id.startsWith("RF-EX-"));
 
     const allReferrals = [...referrals, ...rulingsDemoOverlay(NOW_ANCHOR).referrals];
     const referralOf = (id: string) => allReferrals.find((referral) => referral.id === id);
@@ -455,6 +458,7 @@ describe("ReferralBoard", () => {
     const cards = Array.from(container.querySelectorAll("[data-testid^='ward-referral-board-card-select-']"));
     expect(cards.map((card) => card.getAttribute("data-testid"))).toEqual([
       "ward-referral-board-card-select-RF-015",
+      "ward-referral-board-card-select-RF-EX-004",
       "ward-referral-board-card-select-RF-014",
       "ward-referral-board-card-select-RF-011",
       "ward-referral-board-card-select-RF-001",

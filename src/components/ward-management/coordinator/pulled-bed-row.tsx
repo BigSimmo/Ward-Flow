@@ -5,8 +5,14 @@
 // list like its neighbours.
 
 import alertStyles from "@/components/ward-management/alerts/alerts.module.css";
-import { clockText, pullUndoUntil, type PulledBed } from "@/components/ward-management/pull-bed-facts";
+import {
+  clockText,
+  pullHasTransportBooked,
+  pullUndoUntil,
+  type PulledBed,
+} from "@/components/ward-management/pull-bed-facts";
 import { PULLED_ROW_ATTRIBUTE } from "@/components/ward-management/pull-bed-step";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { Badge, Button, StatusGlyph } from "@/components/wf";
 
@@ -23,13 +29,16 @@ export function PulledBedRow({
   onUndo: (pulled: PulledBed) => void;
 }) {
   const patientOf = usePatientOf();
+  // R-MOVE-14: Undo pull is hidden while a transport booking stands, as the engine refuses it then.
+  const movements = useOptionalWardFlowSelect("movements")?.movements;
+  const booked = movements ? pullHasTransportBooked(movements, pulled) : false;
   const { referral, unitName } = pulled.entry;
   const umrn = patientOf(referral).umrn;
   const until = clockText(pullUndoUntil(pulled));
   const tag = `Bed pulled at ${unitName}`;
   // FS-7: the place in words ("Bunbury to Bunbury Acute Psychiatric Unit"), not a site code.
   const line = `Movement started · ${originPlace(referral)} to ${unitName}`;
-  const undo = (
+  const undo = booked ? null : (
     <Button
       size="sm"
       variant="ghost"

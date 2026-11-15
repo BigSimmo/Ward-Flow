@@ -75,6 +75,8 @@ describe("FM-11: a pulled tile says who the bed is for and the journey's stage",
   it("words the state line from the journey's own stage label, then the hold", () => {
     expect(pulledTileNote("moving", "2 h 10 min left")).toBe("Pulled · moving · 2 h 10 min left");
     expect(pulledTileNote("handover_ready", "2 h 10 min left")).toBe("Pulled · handover ready · 2 h 10 min left");
+    // R-MOVE-1: a diverted journey's bed says so, whatever its stage.
+    expect(pulledTileNote("moving", undefined, true)).toBe("Pulled · diverted");
     // Still at the pulled stage: "Pulled" says it all, never "Pulled · pulled".
     expect(pulledTileNote("pulled", "2 h 10 min left")).toBe("Pulled · 2 h 10 min left");
     expect(pulledTileNote(undefined, undefined)).toBe("Pulled");

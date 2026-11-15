@@ -552,9 +552,9 @@ const H1_ROUTES = [
 test.describe("@mockup Ward design sweep: one short h1 per page (R-STYLE-9)", () => {
   test.use({ colorScheme: "light", viewport: { width: 1280, height: 800 } });
 
-  // Owner: the screen lanes under D-225 (Capacity: Lane C; Discharges and Handover: unassigned).
-  // Failing today (screens belong to other lanes): /ward-flow/capacity h1 has 5 words,
-  // /ward-flow/discharges 8 words, /ward-flow/handover 9 words. Remove the fixme once they are shortened.
+  // Owner: the screen lanes under D-225 (Discharges and Handover: unassigned). Capacity's h1 is now
+  // "Capacity" (Lane C, PR #1679). Failing today: /ward-flow/discharges 8 words, /ward-flow/handover
+  // 9 words. Remove the fixme once both are shortened.
   test.fixme("each main route has exactly one h1 of at most 4 words", async ({ page }) => {
     test.setTimeout(240_000);
     const problems: string[] = [];

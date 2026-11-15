@@ -15,6 +15,7 @@ import {
   LEGAL_MISMATCH_CHIP,
   LEGAL_MISMATCH_WARNING,
 } from "@/components/ward-management/ward-stay-legal";
+import { pickRecordField } from "./helpers/legal-record-pick";
 import { LegalMismatchBadge } from "@/components/ward-management/legal-mismatch-badge";
 import { afterEndedOrderWarning, legalRecordWarnings } from "@/components/ward-management/ward-legal-order-rules";
 import { currentLegalPosition } from "@/components/ward-management/ward-legal-form-progression";
@@ -177,7 +178,7 @@ describe("R-LEGAL-11: Record a form says it on the spot and still saves", () => 
       </WardFlowProvider>,
     );
     const sheet = screen.getByTestId("ward-legal-record");
-    fireEvent.change(within(sheet).getByLabelText("Form type"), { target: { value: "3C" } });
+    pickRecordField("Form type", "3C");
     expect(within(sheet).getByTestId("ward-legal-forms-after-3e")).toHaveTextContent(
       "Form 3E is already recorded for this person. Check the paper. If Form 3C is right, save it.",
     );

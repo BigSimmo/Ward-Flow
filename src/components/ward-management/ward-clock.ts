@@ -408,6 +408,15 @@ export function splitDuration(rawMinutes: number): string {
   return hours > 0 ? `${hours} h ${String(minutes).padStart(2, "0")} min` : `${minutes} min`;
 }
 
+/**
+ * A bed count's age: "75 min" under two hours, whole hours ("2 h") under two days, then whole days
+ * ("18 days"), so no raw minutes reach a desk (H8, D-210, R-BEDS-14).
+ */
+export function bedCountAgeWords(minutes: number): string {
+  if (minutes >= 2 * MINUTES_PER_DAY) return `${Math.floor(minutes / MINUTES_PER_DAY)} days`;
+  return minutes < 120 ? `${minutes} min` : `${Math.floor(minutes / 60)} h`;
+}
+
 export function formatRemaining(minutes: number) {
   if (minutes < 0) return `${splitDuration(Math.abs(minutes))} overdue`;
   return `${splitDuration(minutes)} left`;

@@ -8,6 +8,8 @@
  * no event code, field name or revision number reaches the screen.
  */
 
+import { bedCountAgeWords } from "@/components/ward-management/ward-clock";
+
 /** An event type or a constant's name, such as `CONFIRM_CAPACITY` or `REPATRIATION_MODES`. */
 const CODE_NAME = /\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b/;
 /** A field name, such as `homeHospital` or `inboxItemId`. */
@@ -55,9 +57,46 @@ const SPECIFIC_REFUSALS: ReadonlyArray<readonly [RegExp, string]> = [
   ],
 ];
 
+/** The engine's front-door refusal: "<ward> ... — failed gate <key>: <detail>. <what a reason can do>". */
+const GATE_REFUSAL =
+  /^(.+?) (?:is not eligible for [^—]*|does not accept referral \S+|cannot accept referral \S+) — failed gate ([a-z_]+): (.*)$/su;
+
+/**
+ * R-BEDS-14: a gate refusal ("failed gate capacity_freshness: Last confirmed 25678 min ago") as one
+ * line saying why and what to do next. No gate name or raw minutes reach the screen.
+ */
+function gateRefusalText(reason: string): string | undefined {
+  const match = GATE_REFUSAL.exec(reason);
+  if (!match) return undefined;
+  const [, ward, gate, detail] = match;
+  if (gate === "capacity_freshness") {
+    const minutes = /(\d+) min/u.exec(detail)?.[1];
+    return refusalLine(
+      minutes === undefined
+        ? `${ward}'s bed count is out of date`
+        : `Bed count ${bedCountAgeWords(Number(minutes))} old`,
+      // A placement can still go ahead with a recorded reason, so the line names that route too. A
+      // planned admission's booking has no reason field yet (X2-4), so it is not offered there.
+      /This placement needs a recorded override reason/u.test(reason)
+        ? "Add an override reason, or ask the ward to confirm its count"
+        : "Ask the ward to confirm its count, then try again",
+    );
+  }
+  if (gate === "allocatable_bed") {
+    return refusalLine(`${ward} has no Ready bed now`, "Ask the ward to confirm its count, or choose another ward");
+  }
+  if (/not something a recorded reason can override/u.test(reason)) {
+    return refusalLine(`${ward} cannot take this patient`, "Choose another ward");
+  }
+  if (/needs a recorded override reason/u.test(reason)) {
+    return refusalLine(`${ward} needs a recorded reason for this placement`, "Add a reason, or choose another ward");
+  }
+  return refusalLine(`${ward} does not fit this patient`, "Choose another ward");
+}
+
 /** The specific line for a known engine reason, or undefined when there is none. */
 export function specificRefusalText(reason: string): string | undefined {
-  return SPECIFIC_REFUSALS.find(([pattern]) => pattern.test(reason))?.[1];
+  return SPECIFIC_REFUSALS.find(([pattern]) => pattern.test(reason))?.[1] ?? gateRefusalText(reason);
 }
 
 function capitalised(text: string): string {

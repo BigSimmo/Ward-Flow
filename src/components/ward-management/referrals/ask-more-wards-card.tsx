@@ -15,6 +15,7 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import styles from "./referral-ask-more-wards.module.css";
 
 import { FindAWard } from "./find-a-ward";
+import { ALL_ASKED_DECLINED_TAG, referralAllWardsDeclined } from "./referral-board-model";
 
 function answerOf(addressing: ReferralAddressing): string {
   if (addressing.withdrawnAt !== undefined) return "Withdrawn";
@@ -28,10 +29,13 @@ export function AskMoreWardsCard({ ask }: { ask: AskMoreWards }) {
   const baseId = useId();
   if (!ask.applies) return null;
   const full = ask.slots === 0;
+  // R-BEDS-13: every asked ward declined, so asking more is the one filled button.
+  const allDeclined = referralAllWardsDeclined(ask.referral);
   return (
     <section className={styles.card} aria-labelledby={`${baseId}-title`} data-testid="ward-referral-ask-more-wards">
       <div className={styles.head}>
         <h3 id={`${baseId}-title`}>Wards asked</h3>
+        {allDeclined ? <span data-testid="ward-referral-all-declined">{ALL_ASKED_DECLINED_TAG}</span> : null}
         <span className={styles.pill} data-full={full ? "true" : undefined} data-testid="ward-referral-ask-waiting">
           {ask.waiting} of {ask.cap} waiting
         </span>
@@ -73,7 +77,7 @@ export function AskMoreWardsCard({ ask }: { ask: AskMoreWards }) {
               : `Up to ${ask.cap} wards can be waiting at once.`}
           </p>
           <Button
-            variant="sec"
+            variant={allDeclined ? "pri" : "sec"}
             size="md"
             type="button"
             className={styles.open}

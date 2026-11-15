@@ -22,7 +22,14 @@ import {
   plannedAdmissionIsOverdue,
   type PlannedAdmission,
 } from "@/components/ward-management/ward-admissions";
-import { dayOf, formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  bedCountAgeWords,
+  dayOf,
+  formatInstant,
+  formatInstantWithDay,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
+import { bedCountAgeMinutes } from "@/components/ward-management/ward-eligibility";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { siteByCode } from "@/components/ward-management/ward-sites";
@@ -79,6 +86,8 @@ export function PlannedMoveDrawer({
   const linked = patientOf(planned).patient;
   const recordHref = linked ? patientHref(linked.id) : null;
   const boardHref = wardBoardHref(planned.unitId);
+  // R-BEDS-3: the age of the ward's confirmed count, beside "N ready now", before Record arrival.
+  const countAge = unit ? bedCountAgeMinutes(unit, now) : undefined;
   const step = dueToday ? 1 : 0;
   const run = (action: ((target: PlannedAdmission) => void) | undefined) =>
     action
@@ -202,6 +211,7 @@ export function PlannedMoveDrawer({
               {ready !== undefined ? (
                 <span className={styles.pmPill} data-tone={ready > 0 ? "success" : "neutral"}>
                   {ready} ready now
+                  {countAge !== undefined ? ` · count ${bedCountAgeWords(countAge)} old` : ""}
                 </span>
               ) : null}
             </p>

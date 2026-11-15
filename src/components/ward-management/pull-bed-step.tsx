@@ -25,6 +25,7 @@ import {
   pullStillUndoable,
   pullUndoUntil,
   type PulledBed,
+  pullUndoTransportBookedLine,
 } from "./pull-bed-facts";
 
 // WS-03: the one-step pull loads only when someone opens it.
@@ -157,7 +158,10 @@ export function usePullBedStep(): PullBedStep {
             expectedPull: { unitId: pulled.entry.unitId, stageIndex },
           }),
         (outcome) => {
-          const failure = wardCommandFailure(outcome);
+          const failure =
+            outcome?.status === "refused" && /transport job booked/u.test(outcome.message ?? "")
+              ? pullUndoTransportBookedLine(pulled)
+              : wardCommandFailure(outcome);
           if (failure) {
             toast?.push({ tone: "warning", title: failure });
             return;

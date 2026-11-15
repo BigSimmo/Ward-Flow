@@ -165,7 +165,7 @@ describe("ward screen's override reason control", () => {
     const incomingRow = screen.getByTestId("ward-incoming-WF-009");
     const alert = within(incomingRow).getByRole("alert");
     expect(alert).toHaveTextContent(/Accept in principle not recorded/i);
-    expect(alert).toHaveTextContent(/forensic/i);
+    expect(alert).toHaveTextContent(/needs a recorded reason for this placement/); // R-BEDS-14: no gate name
 
     const form = within(incomingRow).getByTestId("ward-override-form-WF-009");
     const radios = within(form).getAllByTestId("ward-override-option-WF-009");
