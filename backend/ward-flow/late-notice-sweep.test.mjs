@@ -49,6 +49,29 @@ function legacyJourney(engine, at, etaMinutesAgo) {
 const lateFor = (world, movementId) =>
   world.state.notices.filter((notice) => notice.about.movementId === movementId && LATE_KINDS.has(notice.kind));
 
+test("the sweep keeps its History line when the day's audit is already full", async () => {
+  const engine = await import("./dist/engine.mjs");
+  const { world: probe } = legacyJourney(engine, START, 90);
+  const [template] = engine.raiseDueLateNotices(probe, START).domainAudit;
+  assert.ok(template, "a sweep History line to copy");
+  // A day already holding the full 1,000 entries: the bound keeps its length, so the new line can
+  // only be found by sequence, never by position.
+  const { world, movement } = legacyJourney(engine, START, 90);
+  world.state.auditEvents = Array.from({ length: 1000 }, (_, index) => ({
+    ...structuredClone(template),
+    id: `synthetic-full-day-${index + 1}`,
+    sequence: index + 1,
+  }));
+  world.state.auditSequence = 1000;
+  assert.ok(engine.validWorld(world), "a valid full day");
+  const swept = engine.raiseDueLateNotices(world, START);
+  assert.deepEqual(swept.raised, [movement.id]);
+  assert.equal(swept.world.state.auditEvents.length, 1000);
+  assert.equal(swept.domainAudit.length, 1);
+  assert.equal(swept.domainAudit[0].sequence, 1001);
+  assert.equal(swept.domainAudit[0].action, "EVALUATE_ARRIVAL_LATENESS");
+});
+
 test("the sweep raises a due late notice once, as the system actor, and then writes nothing", async () => {
   const engine = await import("./dist/engine.mjs");
   const { world, movement, now } = legacyJourney(engine, START, 90);

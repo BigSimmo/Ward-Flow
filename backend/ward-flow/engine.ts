@@ -1097,7 +1097,8 @@ export function raiseDueLateNotices(
   return {
     world: { ...world, state: saved },
     raised,
-    domainAudit: next.auditEvents.slice(world.state.auditEvents.length),
+    // By sequence, not position: a full day's audit keeps its length, as in `applyCommand`.
+    domainAudit: next.auditEvents.filter((entry) => entry.sequence > world.state.auditSequence),
   };
 }
 
