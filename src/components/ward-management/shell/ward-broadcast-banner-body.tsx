@@ -75,6 +75,7 @@ type Lookup = Parameters<typeof resolveAlertSubject>[2];
 export function BannerBody({
   entry,
   more,
+  others = [],
   desk,
   now,
   units,
@@ -86,6 +87,8 @@ export function BannerBody({
   lifecycle?: { extend?: () => void; standDown?: () => void };
   entry: BannerEntry;
   more: number;
+  /** R-HOME-18: the notices behind the top one, so "N more waiting" can list them with Acknowledge. */
+  others?: readonly BannerEntry[];
   desk: { role: string; id: string | null };
   now: Instant;
   units: readonly Unit[];
@@ -125,10 +128,44 @@ export function BannerBody({
     setChanging(false);
   };
 
-  const acknowledge = () => {
+  const acknowledgeAlert = (alertId: string) => {
     if (!desk.id) return;
-    onDispatch({ type: "ACKNOWLEDGE_BROADCAST_ALERT", role: actingRole, now, alertId: alert.id, unitId: desk.id });
+    onDispatch({ type: "ACKNOWLEDGE_BROADCAST_ALERT", role: actingRole, now, alertId, unitId: desk.id });
   };
+  const acknowledge = () => acknowledgeAlert(alert.id);
+  const [showOthers, setShowOthers] = useState(false);
+  const moreNotices =
+    others.length > 0 ? (
+      <div className={styles.answers} data-testid="ward-broadcast-more">
+        <Button
+          size="sm"
+          variant="ghost"
+          aria-expanded={showOthers}
+          data-testid="ward-broadcast-more-toggle"
+          onClick={() => setShowOthers((open) => !open)}
+        >
+          {`${others.length} more waiting`}
+        </Button>
+        {showOthers ? (
+          <ul>
+            {others.map((other) => (
+              <li key={other.alert.id}>
+                <span className={styles.kind}>{kindLabel(other.alert)}</span> <strong>{other.alert.title}</strong>{" "}
+                {desk.id && other.needsAnswer && broadcastKind(other.alert) === "directive" ? (
+                  <Button size="sm" icon={Check} onClick={() => acknowledgeAlert(other.alert.id)}>
+                    Acknowledge
+                  </Button>
+                ) : canOpenAlerts ? (
+                  <Link href={WARD_ALERTS_HREF} className={buttonClass({ size: "sm", variant: "ghost" })}>
+                    Open Alerts
+                  </Link>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+    ) : null;
 
   const movement = alert.movementId ? lookup.movements?.find((m) => m.id === alert.movementId) : undefined;
   const fullSubject = kind === "pull_now" ? resolveAlertSubject(movement, alert.movementId, lookup, units) : undefined;
@@ -196,6 +233,7 @@ export function BannerBody({
         {showAnswers ? (
           <AnswerRow kind={kind} choosing={choosing} setChoosing={setChoosing} reply={reply} now={now} />
         ) : null}
+        {moreNotices}
       </section>
     );
   }
@@ -315,6 +353,8 @@ export function BannerBody({
       {showAnswers ? (
         <AnswerRow kind={kind} choosing={choosing} setChoosing={setChoosing} reply={reply} now={now} />
       ) : null}
+
+      {moreNotices}
 
       {kind === "pull_now" && desk.role === "coordinator" && board ? (
         <p className={styles.message}>

@@ -315,3 +315,11 @@
     color: HighlightText;
   }
 }
+
+/* R-STRUCT-46: the one line under the clock row while the demo is paused. */
+.pausedLine {
+  margin: 6px 0 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-2);
+}

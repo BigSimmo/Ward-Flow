@@ -4,6 +4,7 @@ import type { NextRequest } from "next/server";
 import {
   ACCOUNT_PASS_HOURS,
   DEMO_PASS_HOURS,
+  FRONT_DOOR_END_COOKIE,
   FRONT_DOOR_MARKER_COOKIE,
   FRONT_DOOR_PASS_COOKIE,
   demoCodeMatches,
@@ -42,7 +43,7 @@ function secureCookie(request: NextRequest): boolean {
   return process.env.NODE_ENV === "production" || request.nextUrl.protocol === "https:";
 }
 
-function withPass(request: NextRequest, value: string, maxAge: number) {
+function withPass(request: NextRequest, value: string, maxAge: number, kind: "account" | "demo") {
   const secure = secureCookie(request);
   const response = new Response(null, { status: 204, headers: NO_STORE });
   const cookie = (name: string, content: string, age: number, httpOnly: boolean) =>
@@ -56,6 +57,10 @@ function withPass(request: NextRequest, value: string, maxAge: number) {
     ].join("; ");
   response.headers.append("Set-Cookie", cookie(FRONT_DOOR_PASS_COOKIE, value, maxAge, true));
   response.headers.append("Set-Cookie", cookie(FRONT_DOOR_MARKER_COOKIE, "1", 30 * 24 * 3600, false));
+  response.headers.append(
+    "Set-Cookie",
+    cookie(FRONT_DOOR_END_COOKIE, `${kind}.${Date.now() + maxAge * 1000}`, maxAge, false),
+  );
   return response;
 }
 
@@ -106,7 +111,7 @@ export async function POST(request: NextRequest) {
     }
     reserved.release();
     const pass = await issuePass(secret, { kind: "demo", hours: DEMO_PASS_HOURS }, now);
-    return withPass(request, pass.value, pass.maxAge);
+    return withPass(request, pass.value, pass.maxAge, "demo");
   }
 
   if (typeof body.token !== "string" || body.token.length > 8_192) return answer(400, "Sign in again.");
@@ -132,7 +137,7 @@ export async function POST(request: NextRequest) {
   const expiresAt = Math.min(acceptedAt + ACCOUNT_PASS_HOURS * 3_600_000, endsBy ?? Infinity);
   const maxAge = Math.min(pass.maxAge, Math.floor((expiresAt - Date.now()) / 1000));
   if (maxAge <= 0) return answer(401, "Your sign-in has reached its 12-hour limit. Sign in again.");
-  return withPass(request, pass.value, maxAge);
+  return withPass(request, pass.value, maxAge, "account");
 }
 
 export function DELETE(request: NextRequest) {
@@ -144,5 +149,6 @@ export function DELETE(request: NextRequest) {
   );
   // Live audit item 19: the readable marker goes with the pass, so nothing stays after sign-out.
   response.headers.append("Set-Cookie", `${FRONT_DOOR_MARKER_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax${secure}`);
+  response.headers.append("Set-Cookie", `${FRONT_DOOR_END_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax${secure}`);
   return response;
 }

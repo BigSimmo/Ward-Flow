@@ -1191,3 +1191,19 @@
 /* The hero's changes chip: its count in the figures' typeface. */
 
 /* Appraisal 4 (Josh, 3 Nov 2026): the occupancy figure is a quiet link to Capacity, which owns the gauge. */
+
+/* R-HOME-6 and R-HOME-17: on a phone Home's small foot controls are drawn 40px tall, with a 48px tap area. */
+@media (max-width: 46.4375rem) {
+  .footLink,
+  .footButton {
+    position: relative;
+    min-height: 40px;
+  }
+
+  .footLink::after,
+  .footButton::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+}
