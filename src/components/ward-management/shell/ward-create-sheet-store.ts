@@ -18,16 +18,7 @@ export const CREATE_SHEET_STORAGE_KEY = "ward-flow-create-sheet";
 const createSheetChangeEvent = "ward-flow-create-sheet-change";
 
 /** Every start the coordinator's + sheet can show, in the standard order. */
-const CREATE_ITEM_IDS = [
-  "triage",
-  "call-log",
-  "ask",
-  "transport",
-  "delays",
-  "remind",
-  "wards",
-  "add-patient",
-] as const;
+const CREATE_ITEM_IDS = ["triage", "call-log", "ask", "transport", "delays", "remind", "wards", "add-patient"] as const;
 export type CreateItemId = (typeof CREATE_ITEM_IDS)[number];
 
 export type CreateSheetLayout = { pinned: readonly CreateItemId[]; links: readonly CreateItemId[] };
