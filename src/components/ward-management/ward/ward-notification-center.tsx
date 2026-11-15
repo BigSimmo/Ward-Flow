@@ -26,6 +26,7 @@ import {
   type Instant,
 } from "@/components/ward-management/ward-clock";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { expectedArrival } from "@/components/ward-management/ward-arrival-timing";
 import {
   NAME_NOT_RECORDED,
   UMRN_NOT_RECORDED,
@@ -457,7 +458,10 @@ export function WardNotificationCenter({
     ...(showAct
       ? overdueArrivals.map((m) => {
           const who = identityOf(m);
-          const eta = formatInstantWithDay(m.arrivalDetails!.estimatedArrivalAt, now);
+          // D-221: a journey is late by the ward's ETA, else the booking estimate; name which.
+          const expected = expectedArrival(m);
+          const eta = expected === undefined ? "" : formatInstantWithDay(expected.at, now);
+          const expectedLabel = expected?.source === "booking" ? "Booking estimate" : "Expected";
           return (
             <NoticeRow
               key={`overdue-${m.id}`}
@@ -468,8 +472,8 @@ export function WardNotificationCenter({
               meta={<PatientMeta {...who} />}
               // Redesign: "Overdue" is kept for legal form times.
               value={eta}
-              state="Past ETA"
-              detail={`Expected ${eta}. More than ${LATE_ARRIVAL_GRACE_MINUTES} minutes late.`}
+              state="Late"
+              detail={`${expectedLabel} ${eta}. More than ${LATE_ARRIVAL_GRACE_MINUTES} minutes late.`}
               actions={transferAction(m)}
             />
           );

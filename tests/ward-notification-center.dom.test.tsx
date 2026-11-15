@@ -216,6 +216,32 @@ describe("WardNotificationCenter DOM Component", () => {
     expect(screen.queryByTestId("ward-census-overdue")).not.toBeInTheDocument();
   });
 
+  it("names a late journey's booking estimate when the ward has set no ETA (D-221)", () => {
+    const now = 700;
+    const base = makeMovement({
+      id: "WF-004" as Movement["id"],
+      acceptedUnitId: "ward-alpha",
+      patientName: "Test Patient",
+    });
+    const movements = [
+      {
+        ...base,
+        arrivalDetails: undefined,
+        transport: {
+          ...base.transport!,
+          estimatedAt: 600,
+          arrivedAt: undefined,
+          cancelledAt: undefined,
+          stoppedAt: undefined,
+        },
+      } as Movement,
+    ];
+    render(<WardNotificationCenter {...defaultProps} now={now} movements={movements} />);
+    const late = screen.getAllByRole("listitem").filter((row) => row.textContent?.includes("Late arrival"));
+    expect(late).toHaveLength(1);
+    expect(late[0]).toHaveTextContent("Booking estimate 10:00 am.");
+  });
+
   it("renders overdue inbound arrival alerts", () => {
     const now = 700; // 11:40
     const movements = [
