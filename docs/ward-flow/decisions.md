@@ -261,6 +261,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-244](#d-244-help-sits-beside-the-header-search-on-every-screen-15-november-2026)                                                                     | Help sits beside the header search on every screen                                     | Active                                           |
 | [D-245](#d-245-raise-eight-phone-size-limits-after-main-went-over-15-november-2026)                                                                     | Raise eight phone size limits after main went over                                     | Active                                           |
 | [D-246](#d-246-phone-search-boxes-are-40px-helps-phone-top-is-trimmed-and-help-sits-left-of-search-15-november-2026)                                    | Phone search boxes are 40px, Help's phone top is trimmed, and Help sits left of search | Active                                           |
+| [D-247](#d-247-keep-todays-logo-until-after-the-demo-15-november-2026) | Keep today's logo until after the demo | Active |
 
 ---
 
@@ -2900,4 +2901,11 @@ D-238 is reserved for design Lane D's block (noted in PR #1677). D-239 is reserv
 - **Why:** 44 to 48px boxes read as too thick beside 40px buttons, and Help's top took about 40% of a phone screen. 40px matches the header search and the kit's drawn phone controls; 16px text still stops an iPhone zooming in, and tap bands stay 48px.
 - **Boundary:** sizes and Help's phone top only. No clinical value, rule or wording changes.
 
-The next free number is D-247.
+## D-247. Keep today's logo until after the demo (15 November 2026)
+
+- **Date:** 16 November 2026, 2:15 AM AWST (15 November, 18:15 UTC). **Decided by:** Josh, on a decision card: "Keep today's for now", answering "Which logo should become Ward Flow's own?".
+- **Decision:** Today's marks stay for the demo, as D-185 planned. The four options (A Arrival, recommended; B Level; C Bed board; D Stepping stones) are kept for the choice after the demo, in `/mnt/project-files/ward-flow-logo/` and the review page https://claude.ai/artifact/HV5gg3RNUQBnQY5yMTEKw4.
+- **Why:** a logo change touches the tab, home-screen icons, rail and front door just before the demo.
+- **Boundary:** no logo, icon or brand file changes now.
+
+The next free number is D-248.
