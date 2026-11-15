@@ -16,6 +16,7 @@ import {
   staleCountWords,
 } from "../ward-eligibility";
 import { shortlistVerdict, stageCopy } from "../ward-derivations";
+import { lockedForOpenBedNeed } from "@/components/ward-management/ward-bed-designation";
 import { useSharedReadyLookup } from "../use-shared-ready";
 import { legalFormName } from "../ward-legal-forms";
 import { currentLegalPosition, FORM_RECORDED_ENDED } from "../ward-legal-form-progression";
@@ -272,6 +273,9 @@ export function PatientTransitOperations({
         ready: readyBedsFor(unit, ready),
         ...(kind === "stale_count" ? { stale: staleCountWords(unit, now) } : {}),
         ...(kind === "not_suitable" ? { unsuitable: true } : {}),
+        ...(kind === "no_bed" ? { noBed: true } : {}),
+        // D-228: a fully locked ward for a movement that needs an open bed reads "Locked", not "Fits".
+        ...(lockedForOpenBedNeed(movement, unit) ? { locked: true } : {}),
         reason: candidateReason(verdict),
       };
     });

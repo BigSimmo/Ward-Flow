@@ -74,6 +74,12 @@ transition or record effects and evidence; event names alone are insufficient. R
 are an explicit local command. Provider state, backup/restore and physical-device acceptance remain
 separate checks. The guide below is retained historical evidence rather than current instructions.
 
+Source digests re-reviewed for D-226 to D-228 (14 November 2026):
+
+- `ward-flow-record-legal-events.ts` and `ward-flow-events.ts`: `RECORD_LEGAL_FORM_WRITTEN`, `RECORD_LEGAL_FORM_CODE` and `RECORD_LEGAL_FORM_CONTINUATION` now refuse a 3C, 5B, 6C or 6D after a Form 3E unless the coordinator sends a listed `after3EReason` (D-226). Their "needs" notes and refusals say so. Other events in these files are unchanged; cited lines moved.
+- `legal-forms/legal-forms-sheets.tsx`, `legal-forms/legal-forms-screen.tsx` and `movements/movement-workflow-actions.tsx`: the refusal line and the coordinator's reason choice; the reason is sent with the same events. Dispatches and roles are unchanged.
+- `patients/patient-transit-operations.tsx`: Ask wards row grouping only ("No bed now", "Locked"; D-227, D-228). No dispatch changed.
+
 <details>
 <summary>Historical guide — September/October claims and original build instructions</summary>
 
