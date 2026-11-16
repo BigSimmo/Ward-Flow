@@ -273,6 +273,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-257](#d-257-settings-is-your-own-settings-first-with-admin-work-in-staff-access-16-november-2026)                                                    | Settings is your own settings first, with admin work in Staff access                              | Active                                           |
 | [D-258](#d-258-no-clock-in-the-header-a-wider-search-and-service-colour-dots-16-november-2026)                                                          | No clock in the header, a wider search and service colour dots                                    | Active                                           |
 | [D-259](#d-259-the-demo-script-matches-the-screen-words-after-the-16-november-walk-16-november-2026)                                                    | The demo script matches the screen words after the 16 November walk                               | Active                                           |
+| [D-260](#d-260-a-privacy-and-data-page-tracks-the-australian-and-wa-health-data-rules-16-november-2026)                                                 | A Privacy and data page tracks the Australian and WA health data rules                            | Active                                           |
 | [D-262](#d-262-the-16-november-walk-polish-is-built-and-undo-of-a-one-tap-pull-ends-the-journey-it-started-16-november-2026)                            | 16 Nov walk polish built; Undo of a one-tap pull ends its journey                                 | Active                                           |
 
 ---
@@ -3006,6 +3007,14 @@ D-255 is reserved by other threads (PR #1700, PR #1702 and the handover).
 - **Decision:** DEMO-SCRIPT.md quotes the words now on screen: the Capacity title "Capacity", the sheet's "Bed meeting sheet · All services, 304 beds" and "Expected to leave · today", the Place group "Needs a recorded reason", "Bed pulled, 4 h 00 min left", the "Confirm arrival at Dabakarn" wristband check, and worked examples starting off in a fresh browser.
 - **Boundary:** script wording only. No app, clinical value, rule or saved record changes. Synthetic data only.
 
+## D-260. A Privacy and data page tracks the Australian and WA health data rules (16 November 2026)
+
+- **Date:** 16 November 2026, 5:27 PM AWST (09:27 UTC). **Decided by:** Josh, in the thread "List patient data requirements for WA": "Go ahead and build for me please and keep track of if I meet these in the current state and add anything missing" (08:59 UTC), then "build this as recommended" (09:27 UTC) and "ensure it is grounded in all the Australian requirements for this app for managing health care data" (09:27 UTC). Numbered D-260 by the coordinator.
+- **Decision:** (1) A signed-in page, Privacy and data (`/ward-flow/privacy`), sits under Reports and reference beside Governance, for the desks that open Governance (bed coordinator and access admin). (2) It lists 57 checks in 15 areas plus sign-off, each with today's status (Met, Partly, Not yet) and the evidence for it, checked against main 928fa1a8 on 16 Nov 2026: 6 met, 18 partly, 33 not yet. (3) A second view shows the example policy as if every check were met. (4) The checks cover the WA PRIS Act 2024, Health Services Act 2016, Mental Health Act 2014, State Records Act 2000, FOI Act 1992 and WA Health policies, and the Commonwealth Privacy Act 1988 (APPs 1, 3, 5, 8, 11 to 13, the breach scheme and the Schedule 2 privacy tort), Cyber Security Act 2024, SOCI Act 2018, My Health Records Act 2012, Healthcare Identifiers Act 2010, TGA rules and the NSQHS Standards.
+- **Boundary:** reference only. Nothing on the page is enforced, the app holds synthetic data only, and it is not legal advice. No permission, rule, clinical value or saved record changes. The research and sources live in the project's privacy checklist and tracker files.
+
+D-261 is claimed by open PR #1708 (the BedChart logo).
+
 ## D-262. The 16 November walk polish is built, and Undo of a one-tap pull ends the journey it started (16 November 2026)
 
 - **Date:** 16 November 2026, evening AWST; the Undo choice at 8:05 PM AWST (12:05 UTC). **Decided by:** Josh, in the thread "Read the Ward Flow handover pack": "Go ahead with all recommendations and build using parallel smart agents please", after the critical check of the easy improvements from the 16 November live-walk scorecard, then "Undo also removes the new journey" on the card "Fix Home's Waiting count after Undo of a one-tap bed pull?".
@@ -3013,4 +3022,4 @@ D-255 is reserved by other threads (PR #1700, PR #1702 and the handover).
 - **Replaces:** ruling P4-1's "never closes the movement", for the one-tap Undo only.
 - **Boundary:** "ED journeys open" keeps its D-220 name until Josh rules. No clinical rule or permission changes. Synthetic data only.
 
-D-260 is claimed by PR #1707 (the Privacy and data page). D-261 is claimed by open PR #1708 (the BedChart logo). The next free number is D-263.
+The next free number is D-263.
