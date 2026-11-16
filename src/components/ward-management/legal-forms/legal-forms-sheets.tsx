@@ -23,7 +23,7 @@ import {
   parseTypedDate,
   type ErrorSummaryItem,
 } from "@/components/wf";
-import { formatClock24WithDay, minuteOfDayFromClockText, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, minuteOfDayFromClockText, type Instant } from "@/components/ward-management/ward-clock";
 import { movementRefuses3C } from "@/components/ward-management/ward-legal-clock";
 import { afterEndedOrderWarning } from "@/components/ward-management/ward-legal-order-rules";
 import { refusedAfter3E, type After3EReason } from "@/components/ward-management/ward-legal-after-3e";
@@ -807,7 +807,7 @@ export function TellSheet({
             <span className={styles.meta}>
               <span className={styles.mono}>{subject.umrn}</span> ·{" "}
               {SUPPORT_NOTIFICATION_OCCASION_LABELS[subject.occasion]} · {subject.place} ·{" "}
-              {formatClock24WithDay(subject.completedAt, now)}
+              {formatInstantWithDay(subject.completedAt, now)}
             </span>
           </div>
           <SupportNotificationChecklist
@@ -827,7 +827,7 @@ export function TellSheet({
                   {SUPPORT_NOTIFICATION_OCCASION_LABELS[entry.occasion]} · {entry.place}
                 </span>
               </span>
-              <span className={cx(styles.sub, styles.mono)}>{formatClock24WithDay(entry.completedAt, now)}</span>
+              <span className={cx(styles.sub, styles.mono)}>{formatInstantWithDay(entry.completedAt, now)}</span>
               <Button size="sm" variant="sec" onClick={() => onSubject(entry.key)}>
                 Record
               </Button>

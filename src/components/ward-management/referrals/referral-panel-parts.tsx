@@ -10,7 +10,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { BedSingle, Ellipsis, Clock3, ListOrdered, Lock, TriangleAlert } from "lucide-react";
 
-import { formatInstantWithDay, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Referral } from "@/components/ward-management/ward-model";
 import { referralClocks } from "@/components/ward-management/ward-referrals";
 import {
@@ -54,11 +54,6 @@ function monoFigures(words: string, mono: string | undefined): ReactNode {
       part
     ),
   );
-}
-
-function clockTime(now: Instant): string {
-  const minutes = minuteOfDay(now);
-  return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
 }
 
 /** A small pulsing dot: the time beside it is still counting. Still under reduced motion. */
@@ -127,7 +122,7 @@ export function LiveDecisionClock({ referral, now }: { referral: Referral; now: 
         <span>
           {running ? (
             <>
-              Live · <span className={s.mono}>{clockTime(now)}</span>
+              Live · <span className={s.mono}>{formatInstant(now)}</span>
             </>
           ) : null}
         </span>

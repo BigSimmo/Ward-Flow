@@ -61,6 +61,7 @@ import {
   buildOnCallDirectory,
   entryMatchesQuery,
   hhmm,
+  hhmm24,
   isAnswering,
   keyLineLabel,
   numberAt,
@@ -108,10 +109,10 @@ const HIGHLIGHTS: { id: Highlight; label: string; test: (entry: DirectoryEntry, 
 
 const COVER_AT: { id: string; label: string }[] = [
   { id: "now", label: "Now" },
-  { id: "1320", label: "22:00" },
-  { id: "180", label: "03:00" },
-  { id: "480", label: "08:00" },
-  { id: "720", label: "12:00" },
+  { id: "1320", label: "10:00 pm" },
+  { id: "180", label: "3:00 am" },
+  { id: "480", label: "8:00 am" },
+  { id: "720", label: "12:00 pm" },
 ];
 
 const JUMP_LABEL: Record<string, string> = {
@@ -347,12 +348,12 @@ export function OnCallScreen() {
     // Each row names the line answering, so an office line in hours is never passed off as on call.
     const lines = on.map((entry) => {
       const now = availability(entry, minute);
-      const until = now.kind === "on" && !now.allDay ? `, until ${hhmm(now.until)}` : "";
+      const until = now.kind === "on" && !now.allDay ? `, until ${hhmm24(now.until)}` : "";
       const line = now.kind === "on" && now.line ? `${now.line.label} ` : "";
       return `${entry.name}, ${entry.place}: ${line}${numberAt(entry, minute) ?? "email only"}${until}`;
     });
     void copy(
-      [`Who answers at ${hhmm(minute)} (synthetic records)`, ...lines].join("\n"),
+      [`Who answers at ${hhmm24(minute)} (synthetic records)`, ...lines].join("\n"),
       `Copied ${on.length} rostered roles answering`,
     );
   }
@@ -1292,7 +1293,7 @@ function DowntimeCard({
         `${entry.name} (${entry.siteCode ?? SERVICE_META[entry.service].short}): ` +
         (entry.lines.length
           ? entry.lines
-              .map((item) => `${item.label} ${item.number ?? "not recorded"}, ${windowText(item.window)}`)
+              .map((item) => `${item.label} ${item.number ?? "not recorded"}, ${windowText(item.window, hhmm24)}`)
               .join("; ")
           : `email ${entry.email ?? "not recorded"}`),
     )
@@ -1335,7 +1336,7 @@ function DowntimeCard({
                 </span>
               </td>
               <td className={styles.number}>{item.number ?? "Not recorded"}</td>
-              <td className={styles.mono}>{windowText(item.window)}</td>
+              <td className={styles.mono}>{windowText(item.window, hhmm24)}</td>
             </tr>
           ))}
         </tbody>

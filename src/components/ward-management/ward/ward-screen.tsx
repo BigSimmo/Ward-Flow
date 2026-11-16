@@ -1101,9 +1101,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const isRollupConfirmedToday = Boolean(rollupConfirmation && dayOf(rollupConfirmation.confirmedAt) === dayOf(now));
   const morningRollupDeadlineMinutes = configuration?.morningRollupDeadlineMinutes ?? 570;
   const morningRollupDeadlinePassed = minuteOfDay(now) >= morningRollupDeadlineMinutes;
-  const rollupHour = Math.floor(morningRollupDeadlineMinutes / 60);
-  const rollupMin = morningRollupDeadlineMinutes % 60;
-  const morningRollupTimeLabel = `${String(rollupHour).padStart(2, "0")}:${String(rollupMin).padStart(2, "0")}`;
+  const morningRollupTimeLabel = formatInstant(morningRollupDeadlineMinutes);
 
   function handleConfirmMorningRollup() {
     if (!unit) return;

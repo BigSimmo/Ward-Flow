@@ -187,7 +187,7 @@ describe("After a pull (ruling item 3)", () => {
     });
 
     const kept = await screen.findByTestId("pulled-row-undo");
-    expect(kept).toHaveTextContent(/^Undo pull · until \d\d:\d\d$/u);
+    expect(kept).toHaveTextContent(/^Undo pull · until \d{1,2}:\d\d [ap]m$/u);
     const keptRow = kept.closest("li")!;
     expect(keptRow).toHaveAttribute("data-pulled-referral-id", first!.referral.id);
     expect(keptRow).toHaveTextContent(`Bed pulled at ${first!.unitName}`);
@@ -209,7 +209,9 @@ describe("After a pull (ruling item 3)", () => {
     }
     // The toast says one clock time and offers the same Undo (shared parts spec item 4; FM-13, the kit's
     // " · Undo until HH:MM" from `undo.until`).
-    expect(screen.getByText(`· Undo until ${kept.textContent!.slice(-5)}`)).toBeInTheDocument();
+    expect(
+      screen.getByText(`· Undo until ${kept.textContent!.replace(/^Undo pull · until /u, "")}`),
+    ).toBeInTheDocument();
 
     await act(async () => {
       fireEvent.click(kept);
@@ -416,7 +418,7 @@ describe("Home keeps the pulled row (ruling item 3)", () => {
     });
     // The list stays even when this was the last row to pull.
     const kept = within(await screen.findByTestId("home-accepted-to-pull")).getByTestId("pulled-row-undo");
-    expect(kept).toHaveTextContent(/^Undo pull · until \d\d:\d\d$/u);
+    expect(kept).toHaveTextContent(/^Undo pull · until \d{1,2}:\d\d [ap]m$/u);
     expect(kept.closest("li")).toHaveAttribute("data-pulled-referral-id", first.referral.id);
     expect(kept.closest("section")).toHaveAccessibleName("Act now");
   });

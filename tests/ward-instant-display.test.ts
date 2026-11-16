@@ -69,6 +69,18 @@ const MAY_ASSERT_TODAY = new Map([
     "Clock-only value for an HTML time input; its separately recorded date is preserved on save, and the visible departure display still names the day.",
   ],
   ["now", "the current instant - today by definition"],
+  // Live walk (16 Nov 2026, item 13): minute-of-day settings and patterns, not instants, so they
+  // name a time on every day and no day applies.
+  ["minutesFromMidnight", "Settings morning bed numbers time: a daily setting, a minute of the day."],
+  ["morningRollupDeadlineMinutes", "Ward morning bed numbers due time: the daily setting, a minute of the day."],
+  ["quiet.start", "Alert quiet hours: a daily window the person chose, a minute of the day."],
+  ["quiet.end", "Alert quiet hours: the closing end of the same daily window."],
+  [
+    "shift.startMinute",
+    "The shift pattern's start (SHIFT_PATTERN): a minute of the day, said on the ward and Waiting.",
+  ],
+  ["shift.endMinute", "The shift pattern's end: the closing end of the same daily shift."],
+  ["mod(minute", "On-call line hours: each line's daily window, a minute of the day wrapped past midnight."],
   [
     "at",
     "Patient Documents register (1 Nov 2026): moment() shows the bare clock only when dayOf(at) equals dayOf(now), and prefixes the Perth date on any other day, so the row still names the day.",

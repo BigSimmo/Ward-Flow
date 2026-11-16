@@ -68,7 +68,7 @@ export function CapacityIntakeWindowsCard({
         {notSetCount === 0
           ? "Every ward has set a window."
           : `${notSetCount} ${notSetCount === 1 ? "ward hasn't" : "wards haven't"} set a window.`}{" "}
-        For information only. Windows clear at 07:00.
+        For information only. Windows clear at 7:00 am.
       </p>
     </Card>
   );

@@ -20,6 +20,7 @@ import { wardAlerts } from "./ward-alert-counts";
 import { type Patient } from "@/components/ward-management/ward-patients";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import {
+  formatInstant,
   formatInstantWithDay,
   minuteOfDay,
   splitDuration,
@@ -314,9 +315,7 @@ export function WardNotificationCenter({
     [resolveIdentity, effectivePatients, movements],
   );
   const identityOf = (m: Movement) => getPatientIdentity(m, movements, resolveIdentity, effectivePatients);
-  const rollupHour = Math.floor(morningRollupDeadlineMinutes / 60);
-  const rollupMin = morningRollupDeadlineMinutes % 60;
-  const rollupTimeLabel = `${String(rollupHour).padStart(2, "0")}:${String(rollupMin).padStart(2, "0")}`;
+  const rollupTimeLabel = formatInstant(morningRollupDeadlineMinutes);
   const [filter, setFilter] = useState<FilterKey>("all");
   const [openGroups, setOpenGroups] = useState<ReadonlySet<string>>(new Set());
   // Redesign (owner rule): a long list shows its first rows, then Show more.

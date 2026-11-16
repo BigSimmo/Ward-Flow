@@ -1,4 +1,5 @@
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
+import { formatInstant } from "@/components/ward-management/ward-clock";
 import { type HealthService, type Site } from "@/components/ward-management/ward-model";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { wardSites } from "@/components/ward-management/ward-sites";
@@ -115,7 +116,10 @@ const SEEDED_CHECKERS: readonly WardFlowRole[] = ["coordinator", "bed_manager", 
 /** Minutes on the clock face, for wrapping times past midnight. A calendar fact, not a limit. */
 const CLOCK_DAY = 24 * 60;
 const mod = (value: number) => ((value % CLOCK_DAY) + CLOCK_DAY) % CLOCK_DAY;
-export const hhmm = (minute: number) =>
+/** A clock minute as the screen says it, am/pm (item 13): "8:00 pm". */
+export const hhmm = (minute: number) => formatInstant(mod(minute));
+/** The 24-hour face, "20:00", for the printed downtime card and text copied off this page. */
+export const hhmm24 = (minute: number) =>
   `${String(Math.floor(mod(minute) / 60)).padStart(2, "0")}:${String(mod(minute) % 60).padStart(2, "0")}`;
 
 export const SERVICE_META: Record<DirectoryService, { name: string; short: string; tone: string }> = {
@@ -832,8 +836,9 @@ export function numberAt(entry: DirectoryEntry, minute: number): string | null {
 
 export const isAnswering = (entry: DirectoryEntry, minute: number) => availability(entry, minute).kind === "on";
 
-export const windowText = (window: ContactWindow | null) =>
-  window === null ? "24 hours" : `${hhmm(window[0])} to ${hhmm(window[1])}`;
+/** "8:00 am to 8:00 pm" on screen; pass `hhmm24` for the printed card and copied text. */
+export const windowText = (window: ContactWindow | null, clock: (minute: number) => string = hhmm) =>
+  window === null ? "24 hours" : `${clock(window[0])} to ${clock(window[1])}`;
 
 /* ---------------- escalation ---------------- */
 
