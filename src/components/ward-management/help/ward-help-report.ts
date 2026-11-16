@@ -163,7 +163,7 @@ export function reportLines(context: ReportContext): readonly (readonly [string,
 /** The plain-text report, as emailed and copied. */
 export function reportText(whatHappened: string, context: ReportContext): string {
   return [
-    "Ward Flow problem report",
+    "BedChart problem report",
     "",
     "What happened:",
     whatHappened.trim(),

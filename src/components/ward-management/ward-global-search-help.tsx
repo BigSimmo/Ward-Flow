@@ -78,7 +78,7 @@ export function openHelpResult(
   role: WardTourRole,
   showMeOn: boolean,
   phone = false,
-  home: string | undefined = "/ward-flow",
+  home: string | undefined = "/bedchart",
   access?: WardAccess,
 ): boolean {
   const result = listed.get(id);
@@ -106,7 +106,7 @@ export function helpPreviewAnswer(
   role: WardTourRole,
   showMeOn: boolean,
   phone = false,
-  home: string | undefined = "/ward-flow",
+  home: string | undefined = "/bedchart",
   access?: WardAccess,
 ): HelpPreviewAnswer | undefined {
   const result = listed.get(id);

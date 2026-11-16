@@ -40,7 +40,7 @@ test("a preferences body is checked: closed desk ids, tip marks, What's new ids 
     { tips: ["ward"] },
     { tips: ["nurse:ward"] },
     { tips: ["ward:Ward Answer"] },
-    { tips: ["ward:/ward-flow/ward/rph"] },
+    { tips: ["ward:/bedchart/ward/rph"] },
     { whatsNew: ["typed text"] },
     { whatsNew: ["2026-11-04-PT-0001"] },
     { tipsOff: "yes" },

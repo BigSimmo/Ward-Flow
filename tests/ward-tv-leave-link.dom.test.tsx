@@ -31,8 +31,8 @@ afterEach(() => {
 
 describe("Leave TV view (audit P129)", () => {
   it("returns to the screen the TV was opened from", () => {
-    noteWardRoute("/ward-flow/wards");
-    noteWardRoute("/ward-flow/bed-meeting/tv");
+    noteWardRoute("/bedchart/wards");
+    noteWardRoute("/bedchart/bed-meeting/tv");
     render(<TvLeaveLink className="x" />);
     const link = screen.getByRole("link", { name: "Leave TV view" });
     fireEvent.click(link);
@@ -42,7 +42,7 @@ describe("Leave TV view (audit P129)", () => {
   it("falls back to Capacity when the TV was opened directly", () => {
     render(<TvLeaveLink className="x" />);
     const link = screen.getByRole("link", { name: "Leave TV view" });
-    expect(link).toHaveAttribute("href", "/ward-flow/capacity");
+    expect(link).toHaveAttribute("href", "/bedchart/capacity");
     fireEvent.click(link);
     expect(back).not.toHaveBeenCalled();
   });

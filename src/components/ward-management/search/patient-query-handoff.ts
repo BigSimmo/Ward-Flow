@@ -7,7 +7,7 @@
  * ----------------
  * `patient-typeahead.tsx`'s "Add this person" link and `patient-search.tsx`'s "Add patient" links
  * used to carry the box's typed text as a `?name=` or `?search=` query parameter on the link to
- * `/ward-flow/people/new`. The search box accepts a name OR a record number, so both kinds
+ * `/bedchart/people/new`. The search box accepts a name OR a record number, so both kinds
  * of identifying text ended up in the URL — written into browser history and logged by every proxy
  * between the browser and the server, on what this repository documents as routinely a SHARED ward
  * computer.

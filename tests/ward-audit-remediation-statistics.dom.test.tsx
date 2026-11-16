@@ -6,7 +6,7 @@ vi.mock("next/link", () => ({
   default: ({ children, ...props }: { children: ReactNode; href: string }) => <a {...props}>{children}</a>,
 }));
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/statistics",
+  usePathname: () => "/bedchart/statistics",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
 
@@ -165,7 +165,7 @@ describe("audit remediation: TV lock outcomes", () => {
   it("keeps authenticated recovery available when TV views are switched off while locked", () => {
     window.localStorage.setItem(WARD_FEATURE_FLAGS_STORAGE_KEY, JSON.stringify({ "bed-meeting-tv": false }));
     window.dispatchEvent(new StorageEvent("storage", { key: WARD_FEATURE_FLAGS_STORAGE_KEY }));
-    lockTv("/ward-flow/bed-meeting");
+    lockTv("/bedchart/bed-meeting");
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <BedMeetingTvScreen ward="no-such-ward" />
@@ -176,7 +176,7 @@ describe("audit remediation: TV lock outcomes", () => {
   });
 
   it("does not unlock after the password attempt was cancelled", async () => {
-    lockTv("/ward-flow/bed-meeting");
+    lockTv("/bedchart/bed-meeting");
     let finish!: () => void;
     const reauthenticate = () =>
       new Promise<void>((resolve) => {
@@ -184,7 +184,7 @@ describe("audit remediation: TV lock outcomes", () => {
       });
     render(
       <StepUpReauthContext.Provider value={reauthenticate}>
-        <TvLockControl href="/ward-flow/bed-meeting" className="" shared />
+        <TvLockControl href="/bedchart/bed-meeting" className="" shared />
       </StepUpReauthContext.Provider>,
     );
     fireEvent.click(screen.getByTestId("tv-unlock"));
@@ -192,7 +192,7 @@ describe("audit remediation: TV lock outcomes", () => {
     fireEvent.click(screen.getByRole("button", { name: "Sign in and unlock" }));
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     await act(async () => finish());
-    expect(window.localStorage.getItem(TV_LOCK_STORAGE_KEY)).toBe("/ward-flow/bed-meeting");
+    expect(window.localStorage.getItem(TV_LOCK_STORAGE_KEY)).toBe("/bedchart/bed-meeting");
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
@@ -200,7 +200,7 @@ describe("audit remediation: TV lock outcomes", () => {
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new Error("storage refused");
     });
-    render(<TvLockControl href="/ward-flow/bed-meeting" className="" shared={false} />);
+    render(<TvLockControl href="/bedchart/bed-meeting" className="" shared={false} />);
     fireEvent.click(screen.getByTestId("tv-lock"));
     // D-162: a refused lock is an error, announced as an alert (kit StateLine).
     expect(screen.getByRole("alert")).toHaveTextContent(/could not.*lock|lock.*could not/i);

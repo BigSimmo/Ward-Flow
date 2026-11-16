@@ -21,7 +21,7 @@ export function noticeDraftKept(toast: ToastApi | null, kept: boolean, now: Inst
       title: line,
       body: "Open New referral again, or Settings > Drafts, to carry on from it.",
       // #you opens the You section (a sheet on phones), which holds the Drafts card.
-      nextStep: { label: "View drafts", href: "/ward-flow/settings#you" },
+      nextStep: { label: "View drafts", href: "/bedchart/settings#you" },
     });
   announceToWardShell(kept ? `${line}.` : line);
   return line;

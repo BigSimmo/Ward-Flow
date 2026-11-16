@@ -502,7 +502,7 @@ export function CommunityIndex({
       const facts = teamFacts.get(team.name);
       lines.push([team.name, facts?.service ?? "", facts?.suburbs ?? 0, collisionByName.has(team.name) ? "Yes" : "No"]);
     }
-    downloadCsv("ward-flow-synthetic-community-team-list.csv", lines, {
+    downloadCsv("bedchart-synthetic-community-team-list.csv", lines, {
       asAt: formatSheetMoment(at, dayZero, { includeYearAndZone: true, zone: onBoard ? zone : clockZoneLabel(true) }),
       scope: "Community team directory; all teams",
       period: "Reference directory at export time; not a clinical snapshot",
@@ -673,7 +673,7 @@ export function CommunityIndex({
                           id: "referral",
                           label: "New referral",
                           icon: <Plus strokeWidth={1.75} aria-hidden="true" />,
-                          href: "/ward-flow/referrals/new",
+                          href: "/bedchart/referrals/new",
                           testId: "community-action-raise-referral",
                         },
                       ]),
@@ -1059,11 +1059,11 @@ export function CommunityIndex({
                   Actions
                 </h3>
                 <div className={guideStyles.guideActions}>
-                  <Link href="/ward-flow/referrals/new" className={buttonClass({ variant: "sec" })}>
+                  <Link href="/bedchart/referrals/new" className={buttonClass({ variant: "sec" })}>
                     <Icon icon={Plus} size={16} />
                     New referral
                   </Link>
-                  <Link href="/ward-flow/referrals" className={buttonClass({ variant: "sec" })}>
+                  <Link href="/bedchart/referrals" className={buttonClass({ variant: "sec" })}>
                     <Icon icon={ArrowRight} size={16} />
                     Open referrals
                   </Link>

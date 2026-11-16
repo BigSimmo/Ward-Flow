@@ -33,7 +33,7 @@ describe("AUD-A11Y-02 / TASK-L6-07: explanatory disabled button static guard", (
           <>
             <button
               type="button"
-              data-doc="https://wa.gov.au/ward-flow"
+              data-doc="https://wa.gov.au/bedchart"
               aria-disabled={
                 disabled
               }

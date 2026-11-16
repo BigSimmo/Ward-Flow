@@ -19,6 +19,6 @@ Every open movement with a legal form, and the expiry time a person typed from t
 
 - Record a new legal form. Open Legal forms and choose the patient, then Record next form. Or use Record a form at the top. Choose the patient and form type, type the time on the form, then Save form. Only the written time is recorded; no expiry is calculated.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

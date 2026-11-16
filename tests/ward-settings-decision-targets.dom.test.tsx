@@ -106,7 +106,7 @@ describe("settings: the one Alerts switch", () => {
     });
     expect(getActNowNotificationPreference()).toBe(true);
     expect(within(row).getByRole("switch", { name: SWITCH })).toBeChecked();
-    expect(screen.getByText("Alerts on while Ward Flow is open.")).toBeInTheDocument();
+    expect(screen.getByText("Alerts on while BedChart is open.")).toBeInTheDocument();
     await act(async () => {
       fireEvent.click(within(row).getByRole("switch", { name: SWITCH }));
     });
@@ -121,7 +121,7 @@ describe("settings: the one Alerts switch", () => {
     expect(within(openAlerts()).getByRole("switch", { name: SWITCH })).toBeChecked();
   });
 
-  it("a test alert shows in Ward Flow even when the browser cannot notify", () => {
+  it("a test alert shows in BedChart even when the browser cannot notify", () => {
     vi.stubGlobal("Notification", undefined);
     renderSettings();
     fireEvent.click(screen.getByRole("button", { name: "Send a test alert" }));
@@ -137,7 +137,7 @@ describe("settings: the one Alerts switch", () => {
     vi.stubGlobal("Notification", FakeNotification);
     renderSettings();
     fireEvent.click(screen.getByRole("button", { name: "Send a test alert" }));
-    expect(shown).toHaveBeenCalledWith("Ward Flow test alert", "Synthetic test. Nothing needs doing.");
+    expect(shown).toHaveBeenCalledWith("BedChart test alert", "Synthetic test. Nothing needs doing.");
     expect(screen.getByText("Test alert shown here and in the browser.")).toBeInTheDocument();
   });
 });

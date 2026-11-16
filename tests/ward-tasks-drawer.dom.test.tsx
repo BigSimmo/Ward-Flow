@@ -452,8 +452,8 @@ describe("the quick jumps go only where the desk may go (audit item 11, 1 Nov 20
 
   it("keeps Waiting list and Home for the coordinator, Home being Ward Flow's own", () => {
     const jumps = renderAtDesk(null);
-    expect(within(jumps).getByTestId("ward-tasks-jump-delays")).toHaveAttribute("href", "/ward-flow/waiting");
-    expect(within(jumps).getByTestId("ward-tasks-jump-coordinator")).toHaveAttribute("href", "/ward-flow");
+    expect(within(jumps).getByTestId("ward-tasks-jump-delays")).toHaveAttribute("href", "/bedchart/waiting");
+    expect(within(jumps).getByTestId("ward-tasks-jump-coordinator")).toHaveAttribute("href", "/bedchart");
     expect(jumps.textContent).toBe("Waiting list →·Home →");
   });
 
@@ -462,7 +462,7 @@ describe("the quick jumps go only where the desk may go (audit item 11, 1 Nov 20
     expect(within(jumps).getByTestId("ward-tasks-jump-delays")).toBeInTheDocument();
     expect(within(jumps).getByTestId("ward-tasks-jump-coordinator")).toHaveAttribute(
       "href",
-      "/ward-flow/ward/rph-adult-secure",
+      "/bedchart/ward/rph-adult-secure",
     );
   });
 
@@ -473,7 +473,7 @@ describe("the quick jumps go only where the desk may go (audit item 11, 1 Nov 20
     expect(within(jumps).queryByTestId("ward-tasks-jump-delays")).toBeNull();
     expect(within(jumps).getByTestId("ward-tasks-jump-coordinator")).toHaveAttribute(
       "href",
-      "/ward-flow/transport/officer",
+      "/bedchart/transport/officer",
     );
     expect(jumps.textContent).toBe("Home →");
   });

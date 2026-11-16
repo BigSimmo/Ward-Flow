@@ -16,6 +16,6 @@ Every ward, ED and community team in the network. The band names the wards whose
 8. The network. Every place, grouped by service. Choose one to see who is heading or waiting there, then refer or open it.
 9. Community teams. Teams are folded to keep the list short. Open the fold to list them.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

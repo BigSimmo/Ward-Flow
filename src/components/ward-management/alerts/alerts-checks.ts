@@ -106,14 +106,14 @@ export function alertChecks({
       key: "triage",
       label: "Triage waiting",
       n: untriaged.length,
-      href: "/ward-flow/referrals",
+      href: "/bedchart/referrals",
       scope: `Watches referrals that have never been triaged. ${untriaged.length} of ${(referrals ?? []).length} referrals have never been triaged. Opens Referrals.`,
     },
     {
       key: "ed",
       label: "ED over a day",
       n: prolongedEdCount,
-      href: "/ward-flow/waiting",
+      href: "/bedchart/waiting",
       scope: "Watches open ED waits of a day or more. Opens Waiting.",
     },
     {

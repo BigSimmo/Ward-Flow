@@ -45,7 +45,7 @@ import { queryBedStep } from "./helpers/ward-bed-steps";
 /** A ward with people in it, found from the seed; the bed is found on screen, since seeded stays have no bed number. */
 const UNIT_ID = wardAdmissions.find((a) => a.state === "occupied")?.unitId;
 if (!UNIT_ID) throw new Error("the seed has no occupied ward");
-const PATH = `/ward-flow/ward/${UNIT_ID}`;
+const PATH = `/bedchart/ward/${UNIT_ID}`;
 let bedNumber = 0;
 
 function openBed(bed: number) {

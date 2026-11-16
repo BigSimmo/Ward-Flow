@@ -84,12 +84,12 @@ export function implementationFiles(root, folder, route) {
     }
   }
   if (route) {
-    // Ward routes are relative to /ward-flow; the sign-in screen and anything under /mockups are
+    // Ward routes are relative to /bedchart; the sign-in screen and anything under /mockups are
     // their own top-level app routes.
-    const topLevel = route.startsWith("/mockups/") || route === "/ward-flow-sign-in";
+    const topLevel = route.startsWith("/mockups/") || route === "/bedchart-sign-in";
     const pageFile = topLevel
       ? join(root, "src", "app" + route, "page.tsx")
-      : join(root, "src", "app", "ward-flow" + route, "page.tsx");
+      : join(root, "src", "app", "bedchart" + route, "page.tsx");
     if (existsSync(pageFile)) files.add(pageFile);
   }
   return [...files].sort();

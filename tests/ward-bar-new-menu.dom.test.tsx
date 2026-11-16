@@ -20,7 +20,7 @@ vi.mock("next/link", () => ({
 
 const navigation = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => ({ push: navigation.push, replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
 }));
 
@@ -102,7 +102,7 @@ describe("the app bar's New menu", () => {
     await user.click(screen.getByTestId("ward-bar-primary-action"));
     await waitFor(() => expect(screen.getByTestId("ward-new-triage")).toHaveFocus());
     await user.keyboard("{Enter}");
-    expect(navigation.push).toHaveBeenCalledWith("/ward-flow/triage/new");
+    expect(navigation.push).toHaveBeenCalledWith("/bedchart/triage/new");
     expect(screen.queryByRole("menu")).toBeNull();
     expect(screen.queryByTestId("ward-bar-referral-sheet")).toBeNull();
   });

@@ -21,7 +21,7 @@ function renderView(id = "start-of-shift") {
     <WardHelpChecklistView
       id={id}
       role="coordinator"
-      home="/ward-flow"
+      home="/bedchart"
       onBack={onBack}
       onClose={onClose}
       onShowMe={onShowMe}
@@ -83,11 +83,11 @@ describe("a guided checklist in Help", () => {
     fireEvent.click(screen.getByTestId("ward-help-checklist-show-start-of-shift:2"));
     expect(onShowMe).toHaveBeenCalledWith("around-capacity");
     const go = screen.getByTestId("ward-help-checklist-go-start-of-shift:2");
-    expect(go).toHaveAttribute("href", "/ward-flow/capacity");
+    expect(go).toHaveAttribute("href", "/bedchart/capacity");
     expect(go).toHaveTextContent("Go to Capacity");
     fireEvent.click(go);
     expect(onClose).toHaveBeenCalled();
-    expect(screen.getByTestId("ward-help-checklist-go-start-of-shift:0")).toHaveAttribute("href", "/ward-flow");
+    expect(screen.getByTestId("ward-help-checklist-go-start-of-shift:0")).toHaveAttribute("href", "/bedchart");
     expect(screen.queryByTestId("ward-help-checklist-show-start-of-shift:4")).toBeNull();
     expect(screen.queryByTestId("ward-help-checklist-go-start-of-shift:4")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Back to Help" }));
@@ -100,7 +100,7 @@ describe("a guided checklist in Help", () => {
       <WardHelpChecklistView
         id="getting-started-coordinator"
         role="coordinator"
-        home="/ward-flow"
+        home="/bedchart"
         onBack={vi.fn()}
         onClose={vi.fn()}
         onShowMe={onShowMe}
@@ -113,7 +113,7 @@ describe("a guided checklist in Help", () => {
     expect(screen.getAllByRole("checkbox")).toHaveLength(6);
     expect(screen.getByTestId("ward-help-checklist-go-getting-started-coordinator:3")).toHaveAttribute(
       "href",
-      "/ward-flow/movements",
+      "/bedchart/movements",
     );
     fireEvent.click(screen.getByTestId("ward-help-checklist-show-getting-started-coordinator:2"));
     expect(onShowMe).toHaveBeenCalledWith("around-capacity");
@@ -126,7 +126,7 @@ describe("a guided checklist in Help", () => {
       <WardHelpChecklistView
         id="bed-meeting"
         role="ward"
-        home="/ward-flow"
+        home="/bedchart"
         onBack={vi.fn()}
         onClose={vi.fn()}
         onShowMe={vi.fn()}

@@ -75,7 +75,7 @@ sub-labels under those four, in order: **Referred**, **Review**, **Accepted**, *
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Legal form**          | The legal form a person recorded for a movement, with its due time as recorded.                                                             |
 | **Tentative diagnosis** | A broad ICD-10-AM Chapter V block from a fixed list. Never a confirmed diagnosis.                                                           |
-| **UMRN**                | Unit medical record number. Ward Flow uses invented ones only.                                                                              |
+| **UMRN**                | Unit medical record number. BedChart uses invented ones only.                                                                               |
 | **CAD number**          | The St John WA booking number for an ambulance transfer.                                                                                    |
 | **Form 1A**             | Referral for examination by a psychiatrist. Titles follow the Chief Psychiatrist register.                                                  |
 | **Form 3A**             | Detention order. Titles follow the Chief Psychiatrist register.                                                                             |
@@ -120,7 +120,7 @@ sub-labels under those four, in order: **Referred**, **Review**, **Accepted**, *
 | **KPI**           | Key performance indicator, such as the national seven-day follow-up measure.                                                  |
 | **MHERL**         | Mental Health Emergency Response Line, the WA crisis phone line.                                                              |
 | **PIR**           | Post-incident review. The PIR chronology lists one patient's events in time order.                                            |
-| **QR code**       | A square barcode a phone camera can read to open a link, such as a desk's Ward Flow link.                                     |
+| **QR code**       | A square barcode a phone camera can read to open a link, such as a desk's BedChart link.                                      |
 | **ATSI**          | Aboriginal and Torres Strait Islander.                                                                                        |
 | **CMHT**          | Community mental health team.                                                                                                 |
 | **CNS**           | Clinical nurse specialist.                                                                                                    |
@@ -186,7 +186,7 @@ Added 26 October 2026 with the Help glossary, so the two stay in step.
 | **Activity**             | The header drawer of recent changes and notices.                                                     |
 | **Board time**           | The clock every screen works from, shown at the top of the menu: Perth time (AWST) when signed in.   |
 | **Demo**                 | The Demo panel: scenario, clock and reset for the invented data. The live pill reads "Demo 10:42".   |
-| **Synthetic**            | Invented. Every patient, bed figure and record in Ward Flow is made up.                              |
+| **Synthetic**            | Invented. Every patient, bed figure and record in BedChart is made up.                               |
 
 ## Help glossary additions (5 November 2026)
 
@@ -220,7 +220,7 @@ step.
 | **Expected to leave**   | A planned discharge still to happen today. It moves to Left today when they go.                                |
 | **Open ED movement**    | A movement that started at an ED and has not closed, including people in transit.                              |
 | **Fewer than 5**        | Shown in place of a small count of people, so no one can be picked out.                                        |
-| **Not recorded**        | Nobody recorded this figure. Ward Flow does not guess it.                                                      |
+| **Not recorded**        | Nobody recorded this figure. BedChart does not guess it.                                                       |
 | **Pilot measures**      | The weekly report's own measures, such as referral to arrival.                                                 |
 | **Bed meeting**         | The regular meeting on beds, with an agenda built from fixed rules.                                            |
 | **Ward promise**        | A time a ward said it would ring back.                                                                         |
@@ -235,13 +235,13 @@ sentences live in one place, `src/components/ward-management/ward-save-failure.t
 than writing their own. A refusal that gives the workflow's own reason ("No allocatable bed on this ward.
 Nothing was changed.") says that reason, because it already names what to change.
 
-| Say                        | Means                                                                    | Do not say                                   |
-| -------------------------- | ------------------------------------------------------------------------ | -------------------------------------------- |
-| **Save is not confirmed.** | Ward Flow has no answer for this save; it may or may not have been kept. | "Review the board before trying again" alone |
-| **Nothing was saved.**     | The change definitely did not reach the board.                           | failed to persist, error saving              |
-| **Press Retry**            | Resend the same change. It is never saved twice.                         | resubmit, reload the page                    |
-| **Check the board**        | Look at the current board before making the change again.                | review the workflow requirements             |
-| **Waiting on this page**   | Offline: the change is kept in this page's memory and sends by itself.   | held (only for a leave bed, D-85), queued    |
+| Say                        | Means                                                                   | Do not say                                   |
+| -------------------------- | ----------------------------------------------------------------------- | -------------------------------------------- |
+| **Save is not confirmed.** | BedChart has no answer for this save; it may or may not have been kept. | "Review the board before trying again" alone |
+| **Nothing was saved.**     | The change definitely did not reach the board.                          | failed to persist, error saving              |
+| **Press Retry**            | Resend the same change. It is never saved twice.                        | resubmit, reload the page                    |
+| **Check the board**        | Look at the current board before making the change again.               | review the workflow requirements             |
+| **Waiting on this page**   | Offline: the change is kept in this page's memory and sends by itself.  | held (only for a leave bed, D-85), queued    |
 
 When another desk changed a record first (P058), the message names the record type (bed, stay, movement, referral, alert or discharge, otherwise record) and the desk only, never a patient name, UMRN, bed number or record id: **Another desk changed this bed first. Review the latest board before trying again.** Only queued actions on that same record are stopped: **1 queued action on this bed was not sent. Check the board, then try again.** These conflict sentences live in `src/components/ward-management/ward-conflict-scope.ts` and `staleReason` in `backend/ward-flow/records.mjs`.
 
@@ -279,6 +279,7 @@ away; pulled is a bed kept for an incoming patient; held up is a delay.
 | on the board                   | demo night (the live pill "Demo 10:42" stays, HOW-WE-WORK §6)         |
 | Nobody                         | No one ("Nobody waiting", not "No one waiting")                       |
 | Next escalation step           | Suggested next step, as the ED wait step label (D-192)                |
+| BedChart                       | Ward Flow, as the app's name (renamed 16 November 2026)               |
 
 ## Plain words (wording audit, 26 October 2026)
 

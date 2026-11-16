@@ -122,15 +122,15 @@ export function PrivacyTrackerScreen() {
             />
             {example ? (
               <p className={styles.lead}>
-                Ward Flow holds patient information only for bed flow and care coordination. It is hosted in Australia,
+                BedChart holds patient information only for bed flow and care coordination. It is hosted in Australia,
                 keeps an audit trail, and every requirement below is shown as met. This is an example of a finished
                 policy, not how the app works today.
               </p>
             ) : (
               <p className={styles.lead}>
-                Ward Flow meets {MET} of {TOTAL} checks today and has started {PARTLY} more. The biggest gaps: no
-                privacy officer or signed privacy impact assessment, hosting partly offshore, multi-factor sign-in not
-                required, no penetration test, no database backups, and a public code repository.
+                BedChart meets {MET} of {TOTAL} checks today and has started {PARTLY} more. The biggest gaps: no privacy
+                officer or signed privacy impact assessment, hosting partly offshore, multi-factor sign-in not required,
+                no penetration test, no database backups, and a public code repository.
               </p>
             )}
           </Card>
@@ -214,7 +214,7 @@ export function PrivacyTrackerScreen() {
           <Card aria-labelledby="privacy-note-title" data-testid="privacy-note">
             <CardHead iconPlain icon={ListChecks} id="privacy-note-title" title="Please note" />
             <ul className={styles.policy}>
-              <li>These are intended requirements. Ward Flow meets only the ones marked Met.</li>
+              <li>These are intended requirements. BedChart meets only the ones marked Met.</li>
               <li>The prototype holds synthetic data only. Never enter real patient details.</li>
               <li>This is not legal advice. Check each item with the privacy officer and legal team.</li>
             </ul>

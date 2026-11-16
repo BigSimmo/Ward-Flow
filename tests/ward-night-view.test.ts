@@ -99,7 +99,7 @@ describe("Night view figures match the day screens", () => {
 
 describe("Night view route", () => {
   it("is the coordinator's page only", () => {
-    expect(screenForPath("/ward-flow/night")).toEqual({ screen: "night" });
+    expect(screenForPath("/bedchart/night")).toEqual({ screen: "night" });
     expect(ROLE_SCREENS.coordinator.night).toBe("all");
     for (const role of Object.keys(ROLE_SCREENS) as (keyof typeof ROLE_SCREENS)[]) {
       if (role !== "coordinator") expect(ROLE_SCREENS[role].night, role).toBeUndefined();

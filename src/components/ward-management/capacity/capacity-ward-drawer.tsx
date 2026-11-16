@@ -41,7 +41,7 @@ import { currentLegalMismatchesFor } from "../ward-stay-legal";
 import { LegalMismatchBadge } from "../legal-mismatch-badge";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 
-const DISCHARGES_HREF = "/ward-flow/discharges";
+const DISCHARGES_HREF = "/bedchart/discharges";
 
 import type { CapacityWardTab } from "./capacity-ward-tabs";
 
@@ -480,7 +480,7 @@ export function CapacityWardFoot({ row, now }: { row: NetworkWardRow; now: Insta
   const recordActor =
     recordActors.find((actor) => actor.role === "ward" && actor.actingUnitId === row.unit.id) ?? recordActors[0]!;
   const [closures, setClosures] = useState(false);
-  const wardHref = `/ward-flow/ward/${row.unit.id}`;
+  const wardHref = `/bedchart/ward/${row.unit.id}`;
   // A ward desk may close beds only on its own ward, the same test as the closure panel's mayAct.
   const mayClose =
     recordActor.role === "coordinator" ||

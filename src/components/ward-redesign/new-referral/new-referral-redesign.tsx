@@ -11,7 +11,7 @@ import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-
 
 /**
  * New referral: the Referrals board with the referral slide-out open over it, as the app's
- * `/ward-flow/referrals/new` does. The slide-out is the app's own (the redesign is built in), mounted
+ * `/bedchart/referrals/new` does. The slide-out is the app's own (the redesign is built in), mounted
  * here in the same Sheet and classes the app bar uses, so it opens, closes and asks before
  * discarding a draft exactly as the app does.
  */

@@ -27,7 +27,7 @@ import { BED_KIND_LABEL, bedKindOfBed } from "@/components/ward-management/forec
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import styles from "./next-capacity-glance.module.css";
 
-const CAPACITY_HREF = "/ward-flow/capacity";
+const CAPACITY_HREF = "/bedchart/capacity";
 
 /**
  * Capacity at a glance (Josh, 8 Nov 2026: "a more phone optimised popup screen like for activity or

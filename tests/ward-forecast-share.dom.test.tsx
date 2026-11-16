@@ -73,7 +73,7 @@ describe("each ward's part in tomorrow's forecast (forecast integration, 27 Oct 
 
   it("links Home straight to the forecast panel on Capacity", () => {
     const [path, anchor] = HOME_FORECAST_HREF.split("#");
-    expect(path).toBe("/ward-flow/capacity");
+    expect(path).toBe("/bedchart/capacity");
     render(
       <WardFlowProvider initialNow={NOW}>
         <CapacityScreen />

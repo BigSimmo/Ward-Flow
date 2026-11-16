@@ -79,13 +79,13 @@ describe("workstation desks", () => {
 
 describe("current desk is the route", () => {
   it.each([
-    ["/ward-flow", COORDINATOR_DESK_ID],
-    ["/ward-flow/settings", COORDINATOR_DESK_ID],
-    ["/ward-flow/ward/arm-adult-open", "arm-adult-open"],
-    ["/ward-flow/ed/rph-ed", "rph-ed"],
-    ["/ward-flow/transport/officer", OFFICER_DESK_ID],
-    ["/ward-flow/community/midland-adult-cmht", "midland-adult-cmht"],
-    ["/ward-flow/community", null],
+    ["/bedchart", COORDINATOR_DESK_ID],
+    ["/bedchart/settings", COORDINATOR_DESK_ID],
+    ["/bedchart/ward/arm-adult-open", "arm-adult-open"],
+    ["/bedchart/ed/rph-ed", "rph-ed"],
+    ["/bedchart/transport/officer", OFFICER_DESK_ID],
+    ["/bedchart/community/midland-adult-cmht", "midland-adult-cmht"],
+    ["/bedchart/community", null],
   ])("%s", (pathname, expected) => {
     expect(currentDeskId(pathname)).toBe(expected);
   });

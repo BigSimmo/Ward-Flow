@@ -216,7 +216,7 @@ export function WardUpdatesRequest() {
           <>
             {sent.text}{" "}
             {sent.ok ? (
-              <Link href="/ward-flow/alerts" className={styles.link}>
+              <Link href="/bedchart/alerts" className={styles.link}>
                 Open Alerts
               </Link>
             ) : null}

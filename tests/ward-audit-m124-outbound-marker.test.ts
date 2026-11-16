@@ -88,9 +88,9 @@ describe("M124 downloads carry the marker", () => {
       const text = readFileSync(file, "utf8");
       for (const call of calls(text, "downloadBlob")) {
         if (/^downloadBlob\(blob: Blob/.test(call)) continue;
-        if (/ward-flow-synthetic-/.test(call)) continue;
+        if (/bedchart-synthetic-/.test(call)) continue;
         // The Report-a-problem picture's name is a constant, itself named synthetic (checked below).
-        if (/\bPICTURE_FILENAME\b/.test(call) && /PICTURE_FILENAME = "ward-flow-synthetic-/.test(PICTURE_SOURCE))
+        if (/\bPICTURE_FILENAME\b/.test(call) && /PICTURE_FILENAME = "bedchart-synthetic-/.test(PICTURE_SOURCE))
           continue;
         if (!reviewed.has(rel(file))) unmarked.push(`${rel(file)}: ${call.slice(0, 80)}`);
       }
@@ -168,7 +168,7 @@ describe("M124 each other outbound item keeps its marker test", () => {
       path.join(ROOT, "src/components/ward-management/help/ward-help-report-picture.ts"),
       "utf8",
     );
-    expect(picture).toMatch(/PICTURE_FILENAME = "ward-flow-synthetic-/);
+    expect(picture).toMatch(/PICTURE_FILENAME = "bedchart-synthetic-/);
   });
 });
 

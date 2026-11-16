@@ -159,7 +159,7 @@ function useActNowNotice(top: BannerEntry | undefined, deskId: string | null) {
     seen.current.add(id);
     if (!enabled || typeof window === "undefined" || window.Notification?.permission !== "granted") return;
     try {
-      new window.Notification("Ward Flow: act now", {
+      new window.Notification("BedChart: act now", {
         body: "A Pull now alert needs an answer. Synthetic demo data.",
         tag: "ward-flow-pull-now",
       });

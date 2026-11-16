@@ -78,7 +78,7 @@ describe("M45 server Sentry", () => {
     expect(sentry.startServerSentry({ NODE_ENV: "production", SENTRY_DSN: DSN })).toBe(true);
     sentry.captureServerFailure(new TypeError(`could not save ${NAME} (${UMRN}): ${NOTE}`), {
       routeType: "action",
-      path: `/ward-flow/patients/${NAME}`,
+      path: `/bedchart/patients/${NAME}`,
     });
     logger.error("ward.save_failed", { patientName: NAME, content: NOTE, reference: UMRN });
     const { getClient } = await import("@sentry/core");
@@ -102,12 +102,12 @@ describe("M45 request-error hook", () => {
       new Error(`${NAME} ${NOTE} ${UMRN}`),
       {
         method: "POST",
-        path: `/ward-flow/patients/${encodeURIComponent(NAME)}?note=${encodeURIComponent(NOTE)}`,
+        path: `/bedchart/patients/${encodeURIComponent(NAME)}?note=${encodeURIComponent(NOTE)}`,
         headers: { cookie: NOTE },
       },
       {
         routerKind: "App Router",
-        routePath: "/ward-flow/patients/[id]",
+        routePath: "/bedchart/patients/[id]",
         routeType: "action",
         renderSource: "react-server-components",
         revalidateReason: undefined,

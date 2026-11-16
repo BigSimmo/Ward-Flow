@@ -16,7 +16,7 @@ vi.mock("@/components/ward-management/ward-flow-provider", async (original) => (
 }));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
-  usePathname: () => "/ward-flow/statistics/compare",
+  usePathname: () => "/bedchart/statistics/compare",
 }));
 vi.mock("@/components/ward-management/statistics/statistics-csv", async (original) => ({
   ...(await original<typeof import("@/components/ward-management/statistics/statistics-csv")>()),
@@ -211,7 +211,7 @@ describe("Compare uses its released aggregate model", () => {
     expect(screen.queryByTestId("ward-statistics-compare-chooser")).toBeNull();
     expect(screen.getByTestId("ward-statistics-compare-tool-open-unit")).toHaveAttribute(
       "href",
-      "/ward-flow/statistics#choose-a-unit",
+      "/bedchart/statistics#choose-a-unit",
     );
     for (const ed of scoped.emergencyDepartments) {
       expect(document.querySelector(`a[href="${edStatisticsHref(ed.id)}"]`)).toBeNull();

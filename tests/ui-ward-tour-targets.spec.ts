@@ -160,7 +160,7 @@ async function signIn(page: Page, desk: Desk): Promise<void> {
     window.sessionStorage.setItem("wardflow:access-desk-v1", JSON.stringify(access));
   }, desk);
   // Straight to the desk's own home, where the tour walks anyway. A desk whose Home is closed
-  // (Executive) is otherwise sent on from /ward-flow, and a tour opened during that replace
+  // (Executive) is otherwise sent on from /bedchart, and a tour opened during that replace
   // started on the page being left and closed with it, one run in three.
   const home = homeHrefFor(desk as WardAccess, communityTeamSlug);
   await page.goto(`${home}?flags=role-access:on`, { waitUntil: "domcontentloaded" });

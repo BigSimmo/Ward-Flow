@@ -14,7 +14,7 @@ import { ReferralHistoryAndCorrections } from "@/components/ward-management/refe
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/referrals",
+  usePathname: () => "/bedchart/referrals",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
 afterEach(cleanup);

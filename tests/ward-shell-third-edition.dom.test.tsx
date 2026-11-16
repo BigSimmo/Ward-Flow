@@ -31,7 +31,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const route = { pathname: "/ward-flow" };
+const route = { pathname: "/bedchart" };
 const mockRouterPush = vi.fn();
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
@@ -112,7 +112,7 @@ function renderShell(
 // Same jsdom rAF guard `tests/sheet.dom.test.tsx` already carries — the shell's three drawers are
 // `<Sheet>`, whose open-focus controller schedules work via requestAnimationFrame.
 beforeEach(() => {
-  route.pathname = "/ward-flow";
+  route.pathname = "/bedchart";
   mockRouterPush.mockClear();
   if (typeof window.requestAnimationFrame !== "function") {
     window.requestAnimationFrame = ((cb: FrameRequestCallback) =>
@@ -188,8 +188,8 @@ describe("assertion 1 — owner-selected rail destinations", () => {
     const destinations = links.map((link) => link.getAttribute("href"));
     expect(new Set(destinations).size).toBe(19);
     // On-call is reachable from the rail; the coordinator reaches Alerts from the header bell (P116).
-    expect(destinations).not.toContain("/ward-flow/alerts");
-    expect(destinations).toContain("/ward-flow/on-call");
+    expect(destinations).not.toContain("/bedchart/alerts");
+    expect(destinations).toContain("/bedchart/on-call");
   });
 
   it("leaves the bed meeting TV view off the rail while its feature flag is off", async () => {
@@ -199,29 +199,29 @@ describe("assertion 1 — owner-selected rail destinations", () => {
       await openMorePages();
       const links = screen.getAllByTestId("ward-rail-link");
       expect(links).toHaveLength(18);
-      expect(links.some((link) => link.getAttribute("href") === "/ward-flow/bed-meeting")).toBe(false);
+      expect(links.some((link) => link.getAttribute("href") === "/bedchart/bed-meeting")).toBe(false);
     } finally {
       act(() => setWardFeatureFlagOnDevice("bed-meeting-tv", null));
     }
   });
 
   it("keeps Wards active for a ward answer without restoring the removed example link", async () => {
-    route.pathname = "/ward-flow/ward/rph-adult-secure/answer";
+    route.pathname = "/bedchart/ward/rph-adult-secure/answer";
     renderShell();
     await openMorePages();
     const links = screen.getAllByTestId("ward-rail-link");
-    expect(links.some((link) => link.getAttribute("href") === "/ward-flow/ward/rph-adult-secure")).toBe(false);
-    const wards = links.find((link) => link.getAttribute("href") === "/ward-flow/wards");
+    expect(links.some((link) => link.getAttribute("href") === "/bedchart/ward/rph-adult-secure")).toBe(false);
+    const wards = links.find((link) => link.getAttribute("href") === "/bedchart/wards");
     expect(wards).toHaveAttribute("aria-current", "page");
     expect(wards).toHaveAttribute("data-active", "true");
   });
 
   it.each([
-    [movementHref("WF-001"), "/ward-flow/movements"],
-    ["/ward-flow/statistics/ward/rph-adult-secure", "/ward-flow/statistics"],
+    [movementHref("WF-001"), "/bedchart/movements"],
+    ["/bedchart/statistics/ward/rph-adult-secure", "/bedchart/statistics"],
     // PL1 (Josh, 3 Nov 2026): Community left the sidebar for Places, which its pages now light.
-    ["/ward-flow/community/north-metro-community", "/ward-flow/hub"],
-    ["/ward-flow/hub/catchments", "/ward-flow/hub"],
+    ["/bedchart/community/north-metro-community", "/bedchart/hub"],
+    ["/bedchart/hub/catchments", "/bedchart/hub"],
   ])("highlights only the owning destination for %s", async (pathname, href) => {
     route.pathname = pathname;
     renderShell();
@@ -551,8 +551,8 @@ describe("assertion 8 — Tasks drawer network inbox follows the signed-in coord
    * the coordinator, so nothing is dispatched under a borrowed identity.
    */
   it.each([
-    ["ward", "/ward-flow/ward/rph-adult-secure/answer"],
-    ["ED", "/ward-flow/ed/answer"],
+    ["ward", "/bedchart/ward/rph-adult-secure/answer"],
+    ["ED", "/bedchart/ed/answer"],
   ])("keeps the signed-in coordinator's inbox and non-zero badge on a %s route", async (_kind, pathname) => {
     const user = userEvent.setup();
     route.pathname = pathname;
@@ -803,7 +803,7 @@ describe("assertion 5 — demonstration controls reachable from Tools", () => {
 
     const appearance = screen.getByRole("group", { name: "Appearance" });
     expect(within(appearance).getByRole("button", { name: "Dark" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute("href", "/ward-flow/settings");
+    expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute("href", "/bedchart/settings");
   });
 });
 
@@ -1033,7 +1033,7 @@ describe("assertion 9 — item 43: the unwired primary action shows visible text
     ["record-decision", "Record a decision"],
     ["contact-team", "Contact a team"],
   ];
-  const STABLE_ROUTES = ["/ward-flow/movements", `/ward-flow/community/${COMMUNITY_TEAM_PAGES[0]!.id}`];
+  const STABLE_ROUTES = ["/bedchart/movements", `/bedchart/community/${COMMUNITY_TEAM_PAGES[0]!.id}`];
 
   // Unlike `renderShell()` above, this resolves and passes `primaryAction` for the given route —
   // `renderShell()` renders `<WardBar />` bare, which is why no earlier test in this file exercises
@@ -1052,9 +1052,9 @@ describe("assertion 9 — item 43: the unwired primary action shows visible text
 
   // Triage and risk (built 7 Nov 2026): the referral action's button reads "New" (Triage or Referral).
   it("v10: Statistics carries New referral as its header primary, never Export the figures", () => {
-    const action = resolveWardPrimaryAction("/ward-flow/statistics");
+    const action = resolveWardPrimaryAction("/bedchart/statistics");
     expect(action?.kind).toBe("new-referral");
-    renderShellAt("/ward-flow/statistics");
+    renderShellAt("/bedchart/statistics");
     expect(screen.getByTestId("ward-bar-primary-action").textContent?.trim()).toBe("New");
     expect(screen.getByTestId("ward-bar-primary-action")).toHaveAttribute("aria-haspopup", "menu");
     expect(screen.queryByText("Export the figures")).toBeNull();
@@ -1069,7 +1069,7 @@ describe("assertion 9 — item 43: the unwired primary action shows visible text
       '"Not wired in this prototype.", and Escape closes it with focus returning to the button',
     async (kind, label) => {
       const user = userEvent.setup();
-      renderShellAt("/ward-flow", { kind, label } as WardPrimaryAction);
+      renderShellAt("/bedchart", { kind, label } as WardPrimaryAction);
 
       const trigger = screen.getByTestId("ward-bar-primary-action");
       expect(trigger).toHaveTextContent(label);

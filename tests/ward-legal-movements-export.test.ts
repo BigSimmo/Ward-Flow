@@ -60,22 +60,22 @@ describe("Legal forms and Movements exports (D-102)", () => {
 
 describe("help for pages that had none", () => {
   it.each([
-    ["/ward-flow/leave", "leave"],
-    ["/ward-flow/review", "todays-review"],
-    ["/ward-flow/triage/new", "triage-start"],
-    ["/ward-flow/people/PT-001/triage", "triage"],
+    ["/bedchart/leave", "leave"],
+    ["/bedchart/review", "todays-review"],
+    ["/bedchart/triage/new", "triage-start"],
+    ["/bedchart/people/PT-001/triage", "triage"],
   ])("%s has its own help", (path, id) => {
     expect(screenHelpFor(path, [])?.id).toBe(id);
   });
   it("keeps the patient page's help on the patient page", () => {
-    expect(screenHelpFor("/ward-flow/people/PT-001", [])?.id).toBe("patient");
+    expect(screenHelpFor("/bedchart/people/PT-001", [])?.id).toBe("patient");
   });
   it("leaves the bed meeting TV without help, since Help cannot open there (HF-10)", () => {
-    expect(screenHelpFor("/ward-flow/bed-meeting", [])).toBeUndefined();
+    expect(screenHelpFor("/bedchart/bed-meeting", [])).toBeUndefined();
   });
 });
 
 it("finds the Leave page in search", () => {
-  expect(searchCoreViews("leave").map((result) => result.href)).toContain("/ward-flow/leave");
-  expect(searchCoreViews("due back").map((result) => result.href)).toContain("/ward-flow/leave");
+  expect(searchCoreViews("leave").map((result) => result.href)).toContain("/bedchart/leave");
+  expect(searchCoreViews("due back").map((result) => result.href)).toContain("/bedchart/leave");
 });

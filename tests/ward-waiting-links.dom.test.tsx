@@ -29,7 +29,7 @@ const shownCount = () => screen.getByTestId("delays-shown-count").textContent ??
 
 describe("the Delays board's saved views", () => {
   it("opens on the view a link names, narrowed, with the chip pressed", () => {
-    window.history.replaceState(null, "", "/ward-flow/waiting?view=form");
+    window.history.replaceState(null, "", "/bedchart/waiting?view=form");
     withProvider(<DelaysScreen />);
     expect(screen.getByTestId("delays-view-form")).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByTestId("delays-view-form")).toHaveTextContent("Form due within 3h");
@@ -38,7 +38,7 @@ describe("the Delays board's saved views", () => {
   });
 
   it("keeps one view at a time and writes it to the address", () => {
-    window.history.replaceState(null, "", "/ward-flow/waiting");
+    window.history.replaceState(null, "", "/bedchart/waiting");
     withProvider(<DelaysScreen />);
     fireEvent.click(screen.getByTestId("delays-view-needs-me"));
     fireEvent.click(screen.getByTestId("delays-view-handover"));
@@ -51,7 +51,7 @@ describe("the Delays board's saved views", () => {
 
   it("names the next-hour chip's noun", () => {
     // Page tops (Josh, 9 Nov 2026): the Form due figure left the top; the hour chip names what it counts.
-    window.history.replaceState(null, "", "/ward-flow/waiting");
+    window.history.replaceState(null, "", "/bedchart/waiting");
     withProvider(<DelaysScreen />);
     expect(screen.queryByTestId("delays-stat-due")).toBeNull();
     const next = screen.queryByTestId("delays-hero-next8");
@@ -59,12 +59,12 @@ describe("the Delays board's saved views", () => {
   });
 
   it("counts the referrals not yet on the list, with a link to Referrals", () => {
-    window.history.replaceState(null, "", "/ward-flow/waiting");
+    window.history.replaceState(null, "", "/bedchart/waiting");
     withProvider(<DelaysScreen />);
     const line = screen.getByTestId("delays-referrals-line");
     const queued = referralQueueOrder(seedWardFlowState().referrals).length;
     expect(line).toHaveTextContent(queued === 0 ? "No referrals" : `${queued} referral`);
-    expect(within(line).getByRole("link", { name: "Open Referrals" })).toHaveAttribute("href", "/ward-flow/referrals");
+    expect(within(line).getByRole("link", { name: "Open Referrals" })).toHaveAttribute("href", "/bedchart/referrals");
   });
 });
 
@@ -76,7 +76,7 @@ describe("screens link into a view", () => {
     fireEvent.click(screen.getByRole("button", { name: "More handover actions" }));
     expect(screen.getByRole("link", { name: "Open in Waiting" })).toHaveAttribute(
       "href",
-      "/ward-flow/waiting?view=handover",
+      "/bedchart/waiting?view=handover",
     );
   });
 
@@ -94,7 +94,7 @@ describe("screens link into a view", () => {
       />,
     );
     const link = () => screen.getByRole("link", { name: "Open in Waiting" });
-    expect(link()).toHaveAttribute("href", "/ward-flow/waiting");
+    expect(link()).toHaveAttribute("href", "/bedchart/waiting");
   });
 
   it("Home's passed-form mark reads the current due time, as the Delays view does", () => {
@@ -146,6 +146,6 @@ describe("screens link into a view", () => {
         onHistory={() => {}}
       />,
     );
-    expect(screen.getByRole("link", { name: "Waiting list" })).toHaveAttribute("href", "/ward-flow/waiting");
+    expect(screen.getByRole("link", { name: "Waiting list" })).toHaveAttribute("href", "/bedchart/waiting");
   });
 });

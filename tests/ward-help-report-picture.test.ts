@@ -35,8 +35,8 @@ function stubBoxes(boxes: Record<string, Box>) {
 
 /** A synthetic sidebar whose page menu sits in its own scroller, scrolled part way. */
 const SHELL = `
-  <div id="row"><aside id="rail"><header>Ward Flow</header>
-    <div id="menu-scroll" style="overflow-y: auto"><nav id="menu" aria-label="Ward Flow views">Home</nav></div>
+  <div id="row"><aside id="rail"><header>BedChart</header>
+    <div id="menu-scroll" style="overflow-y: auto"><nav id="menu" aria-label="BedChart views">Home</nav></div>
     <footer>Profile</footer></aside>
   <div data-wf-scroller><main>Bed 4, synthetic</main></div></div>`;
 
@@ -57,7 +57,7 @@ afterEach(() => {
 
 const CONTEXT = {
   screen: "Home",
-  path: "/ward-flow",
+  path: "/bedchart",
   desk: "Bed manager",
   browser: "Chrome 131 on Android",
   time: "now",
@@ -81,7 +81,7 @@ describe("Report a problem: picture of the screen", () => {
 
   it("keeps only the sidebar's page menu readable", () => {
     document.body.innerHTML = `
-      <div id="row"><aside><nav aria-label="Ward Flow views">Home</nav></aside>
+      <div id="row"><aside><nav aria-label="BedChart views">Home</nav></aside>
       <div data-wf-scroller><header>Bed 4</header><main>Patient</main>
       <nav data-testid="ward-phone-dock">Quick</nav></div></div>`;
     const readable = Array.from(document.querySelectorAll(READABLE_SELECTOR)).map((node) => node.textContent);

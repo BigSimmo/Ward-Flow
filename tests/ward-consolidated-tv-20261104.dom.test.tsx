@@ -9,14 +9,14 @@ describe("TV unlock failure wording", () => {
   it.each(["credentials", "unavailable", "session"] as const)(
     "reports %s accurately while retaining the lock",
     async (kind) => {
-      act(() => lockTv("/ward-flow/bed-meeting"));
+      act(() => lockTv("/bedchart/bed-meeting"));
       render(
         <StepUpReauthContext.Provider
           value={async () => {
             throw new WardAuthError(kind, "Synthetic failure");
           }}
         >
-          <TvLockControl href="/ward-flow/bed-meeting" className="" shared />
+          <TvLockControl href="/bedchart/bed-meeting" className="" shared />
         </StepUpReauthContext.Provider>,
       );
       fireEvent.click(screen.getByTestId("tv-unlock"));
@@ -26,7 +26,7 @@ describe("TV unlock failure wording", () => {
         fireEvent.click(within(dialog).getByRole("button", { name: "Sign in and unlock" }));
       });
       expect(dialog.textContent?.includes("password was not accepted")).toBe(kind === "credentials");
-      expect(window.localStorage.getItem(TV_LOCK_STORAGE_KEY)).toBe("/ward-flow/bed-meeting");
+      expect(window.localStorage.getItem(TV_LOCK_STORAGE_KEY)).toBe("/bedchart/bed-meeting");
     },
   );
 });

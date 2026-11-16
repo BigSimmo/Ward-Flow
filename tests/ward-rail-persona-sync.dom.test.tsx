@@ -22,7 +22,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const route = { pathname: "/ward-flow" };
+const route = { pathname: "/bedchart" };
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
   usePathname: () => route.pathname,
@@ -31,7 +31,7 @@ vi.mock("next/navigation", () => ({
 
 afterEach(() => {
   cleanup();
-  route.pathname = "/ward-flow";
+  route.pathname = "/bedchart";
   act(() => dispatchPersonaSyncForRole("coordinator"));
 });
 
@@ -63,9 +63,9 @@ describe("rail menu follows the chosen desk (Q201)", () => {
         <RetiredWardRail />
       </WardFlowProvider>,
     );
-    act(() => dispatchPersonaSyncForRole("ward", "test-ward", "/ward-flow/ward/test-ward"));
+    act(() => dispatchPersonaSyncForRole("ward", "test-ward", "/bedchart/ward/test-ward"));
     const myWard = screen.getByRole("link", { name: /My ward/u });
-    expect(myWard).toHaveAttribute("href", "/ward-flow/ward/test-ward");
+    expect(myWard).toHaveAttribute("href", "/bedchart/ward/test-ward");
   });
 });
 
@@ -178,7 +178,7 @@ describe("a desk opened by its link (overall review, 20 Oct 2026)", () => {
   }
 
   it("keeps the coordinator and says which desk is being viewed", () => {
-    renderAt("/ward-flow/ed/rph-ed");
+    renderAt("/bedchart/ed/rph-ed");
     expect(screen.getByTestId("ward-rail-viewing-desk")).toHaveTextContent("Viewing RPH ED as Bed coordinator");
     expect(trigger().getAttribute("aria-label")).toContain(
       // Q226 (Josh, 2 Nov 2026): the person card names the person as written.
@@ -187,10 +187,10 @@ describe("a desk opened by its link (overall review, 20 Oct 2026)", () => {
   });
 
   it("names the ward and the transport desk the same way", () => {
-    renderAt("/ward-flow/ward/rph-adult-secure");
+    renderAt("/bedchart/ward/rph-adult-secure");
     expect(screen.getByTestId("ward-rail-viewing-desk")).toHaveTextContent(/^Viewing .+ as Bed coordinator$/u);
     cleanup();
-    renderAt("/ward-flow/transport/officer");
+    renderAt("/bedchart/transport/officer");
     expect(screen.getByTestId("ward-rail-viewing-desk")).toHaveTextContent(
       "Viewing the transport desk as Bed coordinator",
     );
@@ -198,21 +198,21 @@ describe("a desk opened by its link (overall review, 20 Oct 2026)", () => {
 
   it("names a community team by its own name, and stays general on the team index", () => {
     const team = COMMUNITY_TEAM_PAGES[0];
-    renderAt(`/ward-flow/community/${team.id}`);
+    renderAt(`/bedchart/community/${team.id}`);
     expect(screen.getByTestId("ward-rail-viewing-desk")).toHaveTextContent(`Viewing ${team.name} as Bed coordinator`);
     cleanup();
-    renderAt("/ward-flow/community/no-such-team");
+    renderAt("/bedchart/community/no-such-team");
     expect(screen.getByTestId("ward-rail-viewing-desk")).toHaveTextContent(
       "Viewing a community team as Bed coordinator",
     );
   });
 
   it("shows no viewing line on a network page or on the person's own kind of desk", () => {
-    renderAt("/ward-flow");
+    renderAt("/bedchart");
     expect(screen.queryByTestId("ward-rail-viewing-desk")).toBeNull();
     cleanup();
     act(() => dispatchPersonaSyncForRole("ed"));
-    renderAt("/ward-flow/ed/rph-ed");
+    renderAt("/bedchart/ed/rph-ed");
     expect(screen.queryByTestId("ward-rail-viewing-desk")).toBeNull();
     expect(trigger().getAttribute("aria-label")).toContain("Triage liaison nurse");
   });

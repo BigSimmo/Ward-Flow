@@ -2,7 +2,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const current = vi.hoisted(() => ({
-  pathname: "/ward-flow/statistics",
+  pathname: "/bedchart/statistics",
   role: "coordinator" as "coordinator" | "executive",
   operational: vi.fn(() => {
     throw new Error("Executive samples read operational rows");
@@ -61,7 +61,7 @@ function samples(report: ExecutiveReportingFoundation | null = data, now = 150) 
 afterEach(() => {
   cleanup();
   setStatisticsSamples(false);
-  current.pathname = "/ward-flow/statistics";
+  current.pathname = "/bedchart/statistics";
   current.role = "coordinator";
   vi.clearAllMocks();
 });
@@ -98,7 +98,7 @@ describe("executive sample chart data boundary", () => {
             : kind === "community"
               ? data.openableCommunityTeamIds[0]
               : data.openableServiceIds[0];
-      current.pathname = `/ward-flow/statistics/${kind}/${encodeURIComponent(id)}`;
+      current.pathname = `/bedchart/statistics/${kind}/${encodeURIComponent(id)}`;
       setStatisticsSamples(true);
       samples();
       const section = screen.getByTestId("statistics-sample-figures");
@@ -110,7 +110,7 @@ describe("executive sample chart data boundary", () => {
     },
   );
   it.each(["ward", "ed", "community", "service"])("does not invent a sample profile for an unknown %s", (kind) => {
-    current.pathname = `/ward-flow/statistics/${kind}/synthetic-absent`;
+    current.pathname = `/bedchart/statistics/${kind}/synthetic-absent`;
     setStatisticsSamples(true);
     samples();
     expect(screen.queryByTestId("statistics-sample-figures")).toBeNull();
@@ -119,7 +119,7 @@ describe("executive sample chart data boundary", () => {
   it("does not use public origin groups as permission to open their foreign detail samples", () => {
     const scoped = structuredClone(data);
     scoped.openableEmergencyDepartmentIds = [];
-    current.pathname = `/ward-flow/statistics/ed/${data.emergencyDepartments[0].id}`;
+    current.pathname = `/bedchart/statistics/ed/${data.emergencyDepartments[0].id}`;
     setStatisticsSamples(true);
     samples(scoped);
     expect(screen.queryByTestId("statistics-sample-figures")).toBeNull();

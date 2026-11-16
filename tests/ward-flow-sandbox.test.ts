@@ -14,8 +14,8 @@ const REPO_ROOT = path.resolve(__dirname, "..");
 
 describe("Ward Flow lives at its own address, outside /mockups", () => {
   it("has left /mockups, so production needs no exemption list to reach it", () => {
-    expect(existsSync(path.join(REPO_ROOT, "src", "app", "ward-flow", "page.tsx"))).toBe(true);
-    expect(existsSync(path.join(REPO_ROOT, "src", "app", "ward-flow-sign-in", "page.tsx"))).toBe(true);
+    expect(existsSync(path.join(REPO_ROOT, "src", "app", "bedchart", "page.tsx"))).toBe(true);
+    expect(existsSync(path.join(REPO_ROOT, "src", "app", "bedchart-sign-in", "page.tsx"))).toBe(true);
     expect(existsSync(path.join(REPO_ROOT, "src", "app", "mockups", "ward-flow"))).toBe(false);
     expect(existsSync(path.join(REPO_ROOT, "src", "app", "mockups", "ward-flow-sign-in"))).toBe(false);
     expect(DEVELOPER_GATED_PATH_PREFIXES).toEqual([]);

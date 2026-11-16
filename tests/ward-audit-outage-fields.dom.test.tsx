@@ -10,7 +10,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import type { ReactNode } from "react";
-vi.mock("next/navigation", () => ({ usePathname: () => "/ward-flow" }));
+vi.mock("next/navigation", () => ({ usePathname: () => "/bedchart" }));
 const seed = seedWardFlowState();
 const admission = seed.admissions.find((row) => row.state === "occupied")!;
 

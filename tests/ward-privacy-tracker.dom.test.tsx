@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/privacy",
+  usePathname: () => "/bedchart/privacy",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -61,7 +61,7 @@ describe("Privacy and data (D-260)", () => {
   });
 
   it("opens for the desks that open Governance, and no other", () => {
-    expect(screenForPath("/ward-flow/privacy")).toEqual({ screen: "privacy" });
+    expect(screenForPath("/bedchart/privacy")).toEqual({ screen: "privacy" });
     for (const [role, screens] of Object.entries(ROLE_SCREENS)) {
       expect(Boolean(screens.privacy), role).toBe(Boolean(screens.governance));
     }

@@ -6,14 +6,14 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/navigation")>()),
-  usePathname: () => "/ward-flow/movements/x",
+  usePathname: () => "/bedchart/movements/x",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
 
-import MovementAddressNotFound from "@/app/ward-flow/movements/[movementId]/not-found";
-import WardMovementPage from "@/app/ward-flow/movements/[movementId]/page";
-import PatientAddressNotFound from "@/app/ward-flow/people/[patientId]/not-found";
+import MovementAddressNotFound from "@/app/bedchart/movements/[movementId]/not-found";
+import WardMovementPage from "@/app/bedchart/movements/[movementId]/page";
+import PatientAddressNotFound from "@/app/bedchart/people/[patientId]/not-found";
 
 const NOT_FOUND = /NEXT_HTTP_ERROR_FALLBACK;404/u;
 const openMovement = (movementId: string) => WardMovementPage({ params: Promise.resolve({ movementId }) });

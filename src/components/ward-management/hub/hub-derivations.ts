@@ -125,7 +125,7 @@ function isStale(unit: Unit, now: Instant): boolean {
 
 /**
  * ⚠️ **THERE IS NO WORKING DEEP LINK FOR A `COMMUNITY_TEAMS` ENTRY, AND THIS IS A REAL GAP, NOT AN
- * OVERSIGHT.** `/ward-flow/community/[teamId]` resolves `teamId` against
+ * OVERSIGHT.** `/bedchart/community/[teamId]` resolves `teamId` against
  * `COMMUNITY_TEAM_PAGES` (`community/community-derivations.ts`), which is built from
  * `communityTeamOptions()` — the clinic names a REFERRAL actually records. `COMMUNITY_TEAMS` here
  * is a different, region-keyed placeholder vocabulary that shares no names with that list (by that
@@ -136,7 +136,7 @@ function isStale(unit: Unit, now: Instant): boolean {
  * the real index route instead is honest: it is a working page, just not a per-region one.
  */
 function communityHref(teamId: string): string {
-  return `/ward-flow/community/${teamId}`;
+  return `/bedchart/community/${teamId}`;
 }
 
 /**
@@ -169,7 +169,7 @@ export function hubEntries(input: {
       id: unit.id,
       kind: "ward",
       name: unit.name,
-      href: `/ward-flow/ward/${unit.id}`,
+      href: `/bedchart/ward/${unit.id}`,
       site: site?.name,
       service: site?.service,
       cohort: unit.cohort,
@@ -197,7 +197,7 @@ export function hubEntries(input: {
       id: ed.id,
       kind: "ed",
       name: ed.name,
-      href: `/ward-flow/ed/${ed.id}`,
+      href: `/bedchart/ed/${ed.id}`,
       site: site?.name,
       service: site?.service,
       // Read off the SITE, which is where the model keeps them — never inferred from a name match.

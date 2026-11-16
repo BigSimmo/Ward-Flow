@@ -191,9 +191,9 @@ test("bed manager cannot launch the coordinator or ward handover sign-off walkth
     await expect(page.getByTestId("ward-show-me-restricted")).toBeVisible({ timeout: 2_000 });
   }).toPass({ timeout: 30_000 });
   await expect(page.getByTestId("ward-show-me-card")).toHaveCount(0);
-  await expect(page).toHaveURL(/\/ward-flow\/capacity(?:\?|$)/u);
+  await expect(page).toHaveURL(/\/bedchart\/capacity(?:\?|$)/u);
   await page.getByTestId("ward-show-me-restricted").getByRole("button", { name: "Back to Help" }).click();
   await expect(page.getByTestId("ward-help-sheet")).toBeVisible();
   await expect(page.getByTestId("ward-show-me-card")).toHaveCount(0);
-  await expect(page).toHaveURL(/\/ward-flow\/capacity(?:\?|$)/u);
+  await expect(page).toHaveURL(/\/bedchart\/capacity(?:\?|$)/u);
 });

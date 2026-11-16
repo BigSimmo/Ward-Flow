@@ -117,13 +117,13 @@ export function EdOverview({
   const boardSplit =
     onBoardParts.length > 1 ? <span data-testid="ward-ed-board-split">{onBoardParts.join(", ")}</span> : undefined;
   const tvHref = bedMeetingTvHref({ ed: departmentId });
-  const addPatientHref = "/ward-flow/people/new";
+  const addPatientHref = "/bedchart/people/new";
   const waitingEds = departments
     .filter((department) => department.waiting > 0)
     .sort((a, b) => (b.longestMinutes ?? 0) - (a.longestMinutes ?? 0) || b.waiting - a.waiting);
   const clearEds = departments.filter((department) => department.waiting === 0);
   const edLink = (id: string) => {
-    const href = `/ward-flow/ed/${id}`;
+    const href = `/bedchart/ed/${id}`;
     // DA-09: a department this desk cannot open keeps its figures but is not a link; this one is here.
     return id !== departmentId && canOpen(href) ? href : undefined;
   };
@@ -246,7 +246,7 @@ export function EdOverview({
               <HeroBand
                 title="Switch ED"
                 aside="All EDs"
-                asideHref={canOpen("/ward-flow/ed") ? "/ward-flow/ed" : undefined}
+                asideHref={canOpen("/bedchart/ed") ? "/bedchart/ed" : undefined}
                 testId="ward-ed-switch"
                 cells={[
                   ...waitingEds.map((department) => ({

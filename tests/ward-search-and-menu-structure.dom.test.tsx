@@ -16,7 +16,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const route = { pathname: "/ward-flow" };
+const route = { pathname: "/bedchart" };
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
@@ -32,7 +32,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 afterEach(() => {
   cleanup();
-  route.pathname = "/ward-flow";
+  route.pathname = "/bedchart";
   resetServiceScopeForTests();
   clearGlobalSearchRecents();
 });
@@ -129,11 +129,11 @@ describe("one search box on the Patients page", () => {
   }
 
   it("leaves the header search to the Patients page's own box there, and keeps it everywhere else", () => {
-    route.pathname = "/ward-flow/search";
+    route.pathname = "/bedchart/search";
     const { unmount } = renderBar();
     expect(screen.queryByTestId("ward-global-search")).not.toBeInTheDocument();
     unmount();
-    route.pathname = "/ward-flow/movements";
+    route.pathname = "/bedchart/movements";
     renderBar();
     expect(screen.getByTestId("ward-global-search")).toBeInTheDocument();
   });

@@ -11,7 +11,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const PATHNAME = "/ward-flow/people/synthetic-return";
+const PATHNAME = "/bedchart/people/synthetic-return";
 vi.mock("next/navigation", () => ({
   usePathname: () => PATHNAME,
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),

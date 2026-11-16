@@ -84,7 +84,7 @@ const RELEASE_CHECK_ROUTES = Object.freeze([
   "/ward/rph-adult-secure",
   "/ward/rph-adult-secure/answer",
   "/wards",
-  "/ward-flow-sign-in",
+  "/bedchart-sign-in",
 ]);
 const RELEASE_DARK_CHECK_ROUTES = Object.freeze([
   "",

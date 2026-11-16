@@ -25,7 +25,7 @@ import { ReferralPatientStep } from "@/components/ward-management/referrals/ward
 import { ReferralConfirmation } from "@/components/ward-management/referrals/ward-referral-drawer-letter";
 import { WardLiveRegion, resetWardLiveRegionForTests } from "@/components/ward-management/shell/ward-live-region";
 
-const route = vi.hoisted(() => ({ pathname: "/ward-flow/ed/rph", push: vi.fn() }));
+const route = vi.hoisted(() => ({ pathname: "/bedchart/ed/rph", push: vi.fn() }));
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useRouter: () => route,
@@ -87,7 +87,7 @@ function ProbeView({ s, footer, panels }: { s: WardReferralDrawerState; footer: 
     </div>
   );
 }
-function setup(children = <Probe />, pathname = "/ward-flow/ed/rph") {
+function setup(children = <Probe />, pathname = "/bedchart/ed/rph") {
   dispatch.mockClear();
   route.pathname = pathname;
   return render(
@@ -163,7 +163,7 @@ describe("referral command completion across shared snapshots", () => {
     expect(state.footStatus.first).toContain("Referral saved");
     const savedAnnouncement = screen.getByTestId("ward-live-region").textContent;
     expect(savedAnnouncement).toContain("Referral saved");
-    expect(screen.getByRole("link", { name: "Open referrals board" })).toHaveAttribute("href", "/ward-flow/referrals");
+    expect(screen.getByRole("link", { name: "Open referrals board" })).toHaveAttribute("href", "/bedchart/referrals");
     expect(screen.getByRole("button", { name: "Close" })).toBeEnabled();
     expect(screen.queryByRole("button", { name: "Confirm and send" })).not.toBeInTheDocument();
     act(() => state.confirmAndSend({ preventDefault() {} } as React.FormEvent));
@@ -292,9 +292,9 @@ describe("referral command completion across shared snapshots", () => {
     expect(state.contact.phone).toBe("0412345678");
   });
   it.each([
-    ["/ward-flow/ed/rph", "ed"],
+    ["/bedchart/ed/rph", "ed"],
     // D-80: a ward adds a patient in its own name, with no borrowed role.
-    ["/ward-flow/ward/rph-adult-secure", "ward"],
+    ["/bedchart/ward/rph-adult-secure", "ward"],
   ] as const)("registers from %s using the supported source actor %s", (pathname, role) => {
     setup(<AddPatientForm />, pathname);
     fireEvent.change(screen.getByLabelText(/Record number|UMRN/i), { target: { value: "UM999993" } });

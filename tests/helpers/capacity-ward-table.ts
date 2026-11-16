@@ -4,7 +4,7 @@
 // ⚠️ `showWardTable` and `ensureWardTable` are kept only because other suites still import them.
 // They open the bed map's old Table layout (device audit option A, 11 Oct 2026), which the
 // redesign removed, so a call now throws: a suite that still needs the ward table must migrate to
-// the bed map readers below or to All wards (`/ward-flow/wards`), where every ward is a table now.
+// the bed map readers below or to All wards (`/bedchart/wards`), where every ward is a table now.
 import { fireEvent, screen, within } from "@testing-library/react";
 
 export function showWardTable(): void {

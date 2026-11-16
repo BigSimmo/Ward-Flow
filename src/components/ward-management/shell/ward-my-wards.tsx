@@ -14,7 +14,7 @@ import { announceToWardShell } from "./ward-live-region";
 import { MY_WARDS_LIMIT, toggleMyWard, useMyWards } from "./ward-my-wards-store";
 import styles from "./ward-my-wards.module.css";
 
-const WARD_PATH = /^\/ward-flow\/ward\/([^/?#]+)/;
+const WARD_PATH = /^\/bedchart\/ward\/([^/?#]+)/;
 
 /** The ward a ward page shows, from its address, or undefined on any other page. */
 export function wardIdFromPath(pathname: string): string | undefined {

@@ -27,11 +27,11 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
     title: "Purpose and scope",
     policy: [
       {
-        text: "This policy sets out how Ward Flow collects, uses, stores, shares and disposes of patient and staff information.",
+        text: "This policy sets out how BedChart collects, uses, stores, shares and disposes of patient and staff information.",
       },
       {
         lead: "Applies to",
-        text: "everyone who uses, runs or supports Ward Flow, including [Health service] staff, contractors and the vendor.",
+        text: "everyone who uses, runs or supports BedChart, including [Health service] staff, contractors and the vendor.",
       },
       {
         lead: "Covers",
@@ -77,13 +77,13 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
     title: "Privacy governance",
     policy: [
       {
-        text: "Ward Flow follows the 11 Information Privacy Principles, in force since 1 July 2026.",
+        text: "BedChart follows the 11 Information Privacy Principles, in force since 1 July 2026.",
       },
       {
         text: "Collection, use and disclosure are fair and reasonable. Information the app infers or generates counts as collected.",
       },
       {
-        text: "A register lists every kind of personal information Ward Flow holds and why.",
+        text: "A register lists every kind of personal information BedChart holds and why.",
       },
       {
         text: "A privacy impact assessment was signed before go-live, and is updated before any high privacy impact change.",
@@ -158,7 +158,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
     title: "Collecting only what is needed",
     policy: [
       {
-        text: "Ward Flow collects only the fields on its approved field list.",
+        text: "BedChart collects only the fields on its approved field list.",
       },
       {
         text: "Set choices replace free text wherever possible.",
@@ -314,7 +314,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         text: "All data is held and processed in Australia: database, servers, backups and logs.",
       },
       {
-        text: "Ward Flow is an Australian-hosted cloud service (WA Health Cloud Zone B), assessed by HSS Security and Risk.",
+        text: "BedChart is an Australian-hosted cloud service (WA Health Cloud Zone B), assessed by HSS Security and Risk.",
       },
       {
         text: "No patient information goes to offshore error, push, analytics or AI services.",
@@ -374,7 +374,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         text: "Security management follows AS/ISO 27001, 27002 and 27799.",
       },
       {
-        text: "Ward Flow meets the Essential Eight at Maturity Level One or higher.",
+        text: "BedChart meets the Essential Eight at Maturity Level One or higher.",
       },
       {
         text: "An independent penetration test runs before go-live, every year, and after major changes.",
@@ -395,7 +395,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         text: "If a ransom is ever paid, it is reported to the Australian Signals Directorate within 3 days (Cyber Security Act 2024, businesses with turnover of $3 million or more).",
       },
       {
-        text: "If a hospital using Ward Flow is a critical hospital under the SOCI Act 2018, Ward Flow sits inside that hospital's risk management program, and serious cyber incidents are reported to ASD (within half a day if critical).",
+        text: "If a hospital using BedChart is a critical hospital under the SOCI Act 2018, BedChart sits inside that hospital's risk management program, and serious cyber incidents are reported to ASD (within half a day if critical).",
       },
     ],
     checks: [
@@ -573,7 +573,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         text: "Patients can ask to see or correct their information, including under the FOI Act 1992 (WA).",
       },
       {
-        text: "Ward Flow can find and export one person's records when asked.",
+        text: "BedChart can find and export one person's records when asked.",
       },
       {
         text: "Corrections record who changed what, when and why.",
@@ -601,7 +601,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
     title: "Clinical safety",
     policy: [
       {
-        text: "Ward Flow is administrative bed management software and makes no clinical claims, so it sits outside TGA medical device rules.",
+        text: "BedChart is administrative bed management software and makes no clinical claims, so it sits outside TGA medical device rules.",
       },
       {
         text: "Any feature that scores or advises on a patient is reviewed against TGA clinical decision support guidance first.",
@@ -610,7 +610,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         text: "A clinical safety case is signed by the named clinical safety owner.",
       },
       {
-        text: "Patient safety incidents linked to Ward Flow are managed as clinical incidents.",
+        text: "Patient safety incidents linked to BedChart are managed as clinical incidents.",
       },
       {
         text: "Records meet the NSQHS Clinical Governance Standard for healthcare records (Actions 1.16 to 1.18).",
@@ -652,7 +652,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
     title: "Automated decisions, AI and identifiers",
     policy: [
       {
-        text: "Ward Flow makes no automated decisions about patients. People make every decision.",
+        text: "BedChart makes no automated decisions about patients. People make every decision.",
       },
       {
         text: "If that changes and the Privacy Act applies, the privacy policy explains them from 10 December 2026.",

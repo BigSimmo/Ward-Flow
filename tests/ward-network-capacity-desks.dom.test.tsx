@@ -174,7 +174,7 @@ describe("Capacity for a site bed manager", () => {
 
 describe("Capacity offers only pages the desk may open", () => {
   it("leaves out the meeting agenda and the TV view when the desk may not open them", () => {
-    access.canOpen = (href) => !href.startsWith("/ward-flow/bed-meeting");
+    access.canOpen = (href) => !href.startsWith("/bedchart/bed-meeting");
     renderCapacity();
     // Wave 4: the sheet stays one tap; with neither the TV view nor the agenda open to this desk,
     // the caret that holds them is not drawn.

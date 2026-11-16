@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render, screen, within } from "@testing-librar
 import { createRef, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const route = vi.hoisted(() => ({ pathname: "/ward-flow/ward/rph-adult-secure" }));
+const route = vi.hoisted(() => ({ pathname: "/bedchart/ward/rph-adult-secure" }));
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
@@ -233,7 +233,7 @@ async function recordBlockerOnScreen(control: ReturnType<typeof commands>) {
 describe("the ward screen's bed drawer wires the blocker for each desk that may record one", () => {
   beforeEach(() => {
     window.history.replaceState(null, "", "/");
-    route.pathname = `/ward-flow/ward/${SCREEN_UNIT}`;
+    route.pathname = `/bedchart/ward/${SCREEN_UNIT}`;
   });
 
   it("a signed-in site bed manager (role access on) records it as bed_manager", async () => {

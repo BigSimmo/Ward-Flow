@@ -120,7 +120,7 @@ describe("the community team screen names its viewer (item 45)", () => {
 
   it("routes to the community chrome role, so the coordinator task inbox is not exposed", () => {
     expect(
-      wardChromeRole(`/ward-flow/community/${team.id}`),
+      wardChromeRole(`/bedchart/community/${team.id}`),
       "this screen's own route no longer resolves to the community chrome role",
     ).toBe("community");
   });

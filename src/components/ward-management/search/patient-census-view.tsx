@@ -870,7 +870,7 @@ function CensusRecordLink({
       <Link
         className={className}
         data-census-bed-link={row.key}
-        href={`/ward-flow/ward/${encodeURIComponent(row.unitId)}?bed=${row.bedNumber}`}
+        href={`/bedchart/ward/${encodeURIComponent(row.unitId)}?bed=${row.bedNumber}`}
         onClick={() => {
           writeCensusMarker("wardflow:census-bed-opener", row.key);
           // ward-screen.tsx returns to Census on close only for this exact unit and bed.
@@ -884,7 +884,7 @@ function CensusRecordLink({
   }
   if (row.group === "off") {
     return (
-      <Link className={className} href="/ward-flow/referrals/new">
+      <Link className={className} href="/bedchart/referrals/new">
         New referral
       </Link>
     );

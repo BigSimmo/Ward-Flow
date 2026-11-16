@@ -10,7 +10,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const route = { pathname: "/ward-flow" };
+const route = { pathname: "/bedchart" };
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
@@ -91,7 +91,7 @@ describe("Figures in the Tools sheet", () => {
     }
     expect(within(figures).getByRole("link", { name: /See all on Statistics/u })).toHaveAttribute(
       "href",
-      "/ward-flow/statistics",
+      "/bedchart/statistics",
     );
     expect(screen.getAllByRole("dialog")).toHaveLength(1);
   });

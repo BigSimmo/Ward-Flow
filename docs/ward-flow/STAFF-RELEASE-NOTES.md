@@ -1,11 +1,17 @@
-# Ward Flow: what's new for staff
+# BedChart: what's new for staff
 
 <!-- last-checked: 2026-11-03 -->
 
-Plain-English notes on what changed on screen, for the clinicians and staff testing Ward Flow.
+Plain-English notes on what changed on screen, for the clinicians and staff testing BedChart.
 Newest first. The [desk guides](desk-guides/README.md) show each desk's steps in full.
 
-_Ward Flow is a prototype on synthetic data. Not for real patients._
+_BedChart is a prototype on synthetic data. Not for real patients._
+
+## New name, 16 November 2026
+
+- **Ward Flow is now called BedChart.** The name changes on every screen, page title, alert,
+  printout and Help sheet. Nothing else changes: the same steps, the same desks and the same web
+  addresses.
 
 ## Source changes since 24 October 2026
 
@@ -117,7 +123,7 @@ matching desk guide in the same change. A source entry is not proof of a live re
 - Use the app's own button and screen names, in bold.
 - No patient details, and no real staff names or endorsements.
 - Never describe risk scores, suggested wards, automatic placement, queue re-sorting, computed
-  legal times or automatic release of beds. Ward Flow does none of these.
+  legal times or automatic release of beds. BedChart does none of these.
 - A bed kept for an incoming patient is **Pulled**, with a pull time limit. "Held" is only for a
   patient's own bed while they are on leave or absent.
 - Avoid counts that change. Point to the screen instead.

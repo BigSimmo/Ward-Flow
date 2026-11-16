@@ -110,7 +110,7 @@ const PHONE_GROUP_CAP = 8;
 /** The hero chips' icons (page tops, 9 Nov 2026). */
 const CHIP_ICON = { size: 16, strokeWidth: 1.75, "aria-hidden": true } as const;
 const focusedElement = () => (document.activeElement instanceof HTMLElement ? document.activeElement : undefined);
-const MOVEMENTS_ROUTE = "/ward-flow/movements";
+const MOVEMENTS_ROUTE = "/bedchart/movements";
 /** What Back brings back (`use-return-to-place.ts`). The tab lives in the address, and the search is typed text, so neither is kept here. */
 type MovementsPlace = {
   order: "stands" | "cause" | "transport" | "wait";
@@ -952,7 +952,7 @@ export function MovementsScreen() {
                 <HeroQuickChips
                   label="Movement tools"
                   items={[
-                    ...(community || !canOpenHref("/ward-flow/transport/officer")
+                    ...(community || !canOpenHref("/bedchart/transport/officer")
                       ? []
                       : [
                           isPhone
@@ -966,7 +966,7 @@ export function MovementsScreen() {
                                 id: "transport",
                                 label: "Transport",
                                 icon: <Ambulance {...CHIP_ICON} />,
-                                href: "/ward-flow/transport/officer",
+                                href: "/bedchart/transport/officer",
                               },
                         ]),
                     {

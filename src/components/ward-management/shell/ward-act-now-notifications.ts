@@ -101,7 +101,7 @@ export function actNowNotificationText(
   const many = kind === "act-now" ? "new act-now alerts" : "alerts due soon";
   const body = items.length === 1 && only ? only.title : `${items.length} ${many}`;
   return {
-    title: kind === "act-now" ? "Ward Flow: act now" : "Ward Flow: due soon",
+    title: kind === "act-now" ? "BedChart: act now" : "BedChart: due soon",
     body: `${body}. Synthetic demo data.`,
   };
 }

@@ -785,7 +785,7 @@ export const CRAWL_JOBS: readonly HowTo[] = [
     showMe: [
       { target: MOVEMENT_ROW, title: "Open the movement", body: "The movement's page has its tools." },
       {
-        target: { sel: '#main-content a[href^="/ward-flow/movements/"]' },
+        target: { sel: '#main-content a[href^="/bedchart/movements/"]' },
         device: "phone",
         title: "Choose the person",
         body: "Press their row in the open group. Their movement page opens.",
@@ -812,7 +812,7 @@ export const CRAWL_JOBS: readonly HowTo[] = [
     showMe: [
       { target: MOVEMENT_ROW, title: "Open the movement", body: "Choose it in the list. Its page holds these tools." },
       {
-        target: { sel: '#main-content a[href^="/ward-flow/movements/"]' },
+        target: { sel: '#main-content a[href^="/bedchart/movements/"]' },
         device: "phone",
         title: "Choose the person",
         body: "Press their row in the open group. Their movement page opens.",

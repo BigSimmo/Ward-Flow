@@ -4,9 +4,9 @@
 
 - **Item 1 (count leak, D-137):** `shell/ward-desk-early.ts` `wardDeskHeldFromCookie` holds the server's page unless the `wardflow-desk-held` cookie is `0` (the whole-network coordinator's desk), so a fresh device gets the loading page first. `tests/ward-access-first-paint.dom.test.tsx`.
 - **Item 5:** `count-breakdown/` — tap a figure to see who or what it counts. `count-breakdown-model.ts` holds the small-number and scope rules; rows come from each figure's own list (`openEdJourneys().people`, `waitingInEds().people`, `readyBedsByWard`, `capacityBreakdownLists`); hero figures and band cells use the kit hook `renderPress` (`wf/hero-top.tsx`). Wired on Home, Capacity and the bed board; never on the TV. `tests/ward-count-breakdown*.ts(x)`.
-- **Item 29:** `night/night-view-screen.tsx` and `night-view-figures.ts` — Night view (`/ward-flow/night`), coordinator only, opened from Home's More menu. Figures come from `readyBedsNow`/`totalReadyBedsNow`, `edOpenSummaries` with `edWaitStep`, the Moving stage and the On-call key lines; `tests/ward-night-view.test.ts` checks they equal the day screens'. Its six-step walk round is in `help/ward-help-screen-tours-pages.ts`.
+- **Item 29:** `night/night-view-screen.tsx` and `night-view-figures.ts` — Night view (`/bedchart/night`), coordinator only, opened from Home's More menu. Figures come from `readyBedsNow`/`totalReadyBedsNow`, `edOpenSummaries` with `edWaitStep`, the Moving stage and the On-call key lines; `tests/ward-night-view.test.ts` checks they equal the day screens'. Its six-step walk round is in `help/ward-help-screen-tours-pages.ts`.
 - **Item 40:** `patient-carer-page*.ts(x)` — Print for patient or carer on an accepted movement (patient page, under the Handover pack). Fixed draft wording in `patient-carer-page-text.ts`; the model takes only the ward and hospital. `tests/ward-patient-carer-page.dom.test.tsx`.
-- **Item 42:** `settings/ward-desk-qr*.ts(x)` — ward desk QR code card in Settings, Your desk. The code holds `origin + /ward-flow/ward/<unitId>` only; `uqr` is lazy-loaded. `tests/ward-desk-qr.test.ts`.
+- **Item 42:** `settings/ward-desk-qr*.ts(x)` — ward desk QR code card in Settings, Your desk. The code holds `origin + /bedchart/ward/<unitId>` only; `uqr` is lazy-loaded. `tests/ward-desk-qr.test.ts`.
 - **Item 43:** `bed-meeting/tv-change-marks.ts` and `tv-change-mark.tsx` — TV "Changed HH:MM" marks on the ward TV's bed flow tiles and the bed meeting TV's hero figures. They compare each figure with the last refresh, last `tvChangeMark` minutes (15, D-137), record nothing while frozen and reset per screen or scenario. `tests/ward-tv-change-marks*.ts(x)`.
 
 ## Handover completion and ownership — 4 November 2026
@@ -348,8 +348,8 @@ live on `board/`, which owns bed release. **Reads:** `bedReleaseStateLabels`
 
 ## `escalation/`
 
-**Route:** none live. `/escalation` (`src/app/ward-flow/escalation/page.tsx`) is a
-`redirect()` to `/ward-flow/waiting` — MERGE 01, owner-approved 2026-09-05.
+**Route:** none live. `/escalation` (`src/app/bedchart/escalation/page.tsx`) is a
+`redirect()` to `/bedchart/waiting` — MERGE 01, owner-approved 2026-09-05.
 **Mockup:** none listed for this folder in `SCREEN-MAP.md`; the escalation board's design now lives
 inside `delays-third-edition.html`. **Dispatches:** none. **Reads:** none. The folder's
 `escalation-board.tsx`, `escalation.module.css` and their two DOM tests were removed by PR #306
@@ -752,7 +752,7 @@ demo clock). **Tests:** `ward-catchment-resolver.dom.test.tsx`, `ward-tools-shee
 ## `tracker/`
 
 **Retired.** The `tracker/` folder no longer exists. `/transport` redirects to
-`/ward-flow/transport/officer`. The live vehicle tracker (`live-tracker.tsx`, its `.module.css` and
+`/bedchart/transport/officer`. The live vehicle tracker (`live-tracker.tsx`, its `.module.css` and
 dom test) was removed by PR #306 on 15 Oct 2026. `tracker/tracker-derivations.ts` and
 `tests/tracker-derivations.test.ts` were deleted on 1 Nov 2026 (commit `48e5b1b09`, owner approval
 Q96). Transport legs are read through `transportLeg` in `ward-derivations.ts`.

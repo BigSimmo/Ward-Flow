@@ -11,8 +11,8 @@ describe("PAGE_OWNERS (kit rule a, 3 Nov 2026)", () => {
     );
   });
 
-  it.each(Object.entries(PAGE_OWNERS))("%s points at a real page under src/app/ward-flow", (_key, owner) => {
-    expect(owner.route.startsWith("/ward-flow")).toBe(true);
+  it.each(Object.entries(PAGE_OWNERS))("%s points at a real page under src/app/bedchart", (_key, owner) => {
+    expect(owner.route.startsWith("/bedchart")).toBe(true);
     const dir = join(process.cwd(), "src/app", ...owner.route.slice(1).split("/"));
     expect(existsSync(join(dir, "page.tsx")), `${owner.route} has no page.tsx`).toBe(true);
   });

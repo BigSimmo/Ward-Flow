@@ -45,7 +45,7 @@ beforeEach(() => {
   vi.stubEnv("NEXT_PUBLIC_WARD_API_BASE_URL", "https://api.example.test");
   sessionStorage.clear();
   sessionStorage.setItem(WARD_AUTH_STORAGE_KEY, JSON.stringify({ refresh_token: "refresh", recovery: false, user }));
-  window.history.replaceState({}, "", "/ward-flow");
+  window.history.replaceState({}, "", "/bedchart");
   workspaceReads = 0;
   vi.stubGlobal(
     "fetch",

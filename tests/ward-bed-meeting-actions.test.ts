@@ -185,6 +185,6 @@ describe("bed meeting agenda and action summary", () => {
 
 describe("bed meeting agenda title", () => {
   it("names the agenda in the shell, not Home", () => {
-    expect(resolveWardScreenTitle("/ward-flow/bed-meeting/agenda")).toBe("Bed meeting agenda");
+    expect(resolveWardScreenTitle("/bedchart/bed-meeting/agenda")).toBe("Bed meeting agenda");
   });
 });

@@ -4,7 +4,7 @@ For: staff using this desk in the shadow pilot. Status: current. Owner: pilot le
 
 _Updated 2026-11-08 - written for the shadow pilot from the desk guide and source at `d85618e6`; Documentation owns._
 
-## What you use Ward Flow for
+## What you use BedChart for
 
 You move patients between places for your own health service. You see only your own
 service's jobs. Your menu: **My jobs, Alerts**.
@@ -33,7 +33,7 @@ At the end of the shift, use **Copy handover** for a plain summary of open jobs.
 ## Do not use it for
 
 - **Not a clinical record.** Keep writing in the real notes and on the ward whiteboard.
-- **No clinical decisions.** Ward Flow never ranks patients, suggests a ward or works out Mental
+- **No clinical decisions.** BedChart never ranks patients, suggests a ward or works out Mental
   Health Act times. People decide.
 - **Synthetic data only.** In the shadow pilot every patient is invented. Never type a real name,
   UMRN or detail, in the app, a screenshot or a message about it.

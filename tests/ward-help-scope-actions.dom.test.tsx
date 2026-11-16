@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 const viewer = vi.hoisted(() => ({ statewide: false }));
 const push = vi.hoisted(() => vi.fn());
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => ({ push, replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -28,7 +28,7 @@ vi.mock("@/components/ward-management/help/ward-help-store", async (original) =>
   useTourRole: () => "coordinator",
 }));
 vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({
-  useTourFacts: () => ({ facts: {}, home: "/ward-flow", deskHome: "/ward-flow" }),
+  useTourFacts: () => ({ facts: {}, home: "/bedchart", deskHome: "/bedchart" }),
 }));
 import { WardShowMe } from "@/components/ward-management/help/ward-show-me";
 import { WardHelpSheet } from "@/components/ward-management/help/ward-help-sheet";
@@ -115,7 +115,7 @@ describe("Help action entry points honour current statewide scope", () => {
   it("retains routing and the walkthrough for the statewide coordinator", () => {
     viewer.statewide = true;
     render(<WardShowMe id="rules" onClose={vi.fn()} onBack={vi.fn()} />);
-    expect(push).toHaveBeenCalledWith("/ward-flow/settings#rules");
+    expect(push).toHaveBeenCalledWith("/bedchart/settings#rules");
     expect(screen.getByRole("dialog", { name: "Pull time limit" })).toBeTruthy();
     expect(screen.queryByTestId("ward-show-me-restricted")).toBeNull();
   });
@@ -125,8 +125,8 @@ describe("Help action entry points honour current statewide scope", () => {
     render(
       <HelpTasks
         role="coordinator"
-        home="/ward-flow"
-        pathname="/ward-flow"
+        home="/bedchart"
+        pathname="/bedchart"
         screen={undefined}
         onSearch={vi.fn()}
         screenName={() => "Settings"}

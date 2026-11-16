@@ -98,5 +98,5 @@ export function downloadLegalFormsList<M extends LegalFormsExportMovement>(
   ctx: LegalFormsExportContext<M>,
   provenance: ListExportProvenance,
 ): void {
-  downloadCsv("ward-flow-synthetic-legal-forms.csv", legalFormsExportLines(movements, ctx), provenance);
+  downloadCsv("bedchart-synthetic-legal-forms.csv", legalFormsExportLines(movements, ctx), provenance);
 }

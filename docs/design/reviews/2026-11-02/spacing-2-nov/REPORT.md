@@ -58,6 +58,6 @@ Method note: phone screenshots must wait until "Loading, not live yet" clears, o
 
 ## Batch 6: phone dark mode after load (Home, Capacity, Waiting, Discharges), checked on main b27fddcc plus #1285
 
-Home, Capacity and Waiting match the master in dark on phone, top to bottom: same gutters, card padding and row heights, and dividers stay visible. #1285's Waiting sheet fix (Q240) shows correctly. #1280 could not be included: merged with current main it fails to load (next-rail-body.tsx imports `surnameFirst`, which main no longer exports), so /ward-flow returns 500. (Since fixed on #1280 in 858eccb1c.)
+Home, Capacity and Waiting match the master in dark on phone, top to bottom: same gutters, card padding and row heights, and dividers stay visible. #1285's Waiting sheet fix (Q240) shows correctly. #1280 could not be included: merged with current main it fails to load (next-rail-body.tsx imports `surnameFirst`, which main no longer exports), so /bedchart returns 500. (Since fixed on #1280 in 858eccb1c.)
 
 Q248. Discharges phone, after #1285: the stage and barrier now sit side by side with only a gap ("Confirmed Awaiting accommodation"). The master keeps the "·" between them when they share a line. Recommend: bring the dot back as a clipped pseudo-element (the same trick #1285 uses for the glance strips), so it shows mid-line and disappears when the barrier wraps. Built in #1285 (c7aa0b49). Evidence: q248-discharges-dot-dark-390.jpg (master left, main right).

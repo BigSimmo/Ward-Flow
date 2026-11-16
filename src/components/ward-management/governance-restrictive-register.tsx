@@ -35,7 +35,7 @@ import {
 import styles from "./governance-restrictive-register.module.css";
 
 /** FS3: where seclusion and restraint in use now is recorded. */
-const SECLUSION_IN_USE_HREF = "/ward-flow/legal-forms?view=seclusion";
+const SECLUSION_IN_USE_HREF = "/bedchart/legal-forms?view=seclusion";
 
 type Filter = "all" | "seclusion" | "restraint";
 const SHOWN = 8;

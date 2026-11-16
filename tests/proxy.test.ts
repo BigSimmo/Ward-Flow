@@ -2,7 +2,13 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
-import { hasMalformedWardFlowEncoding, movedRouteTarget, proxy, shouldBlockProductionMockups } from "../src/proxy";
+import {
+  canonicalHostTarget,
+  hasMalformedWardFlowEncoding,
+  movedRouteTarget,
+  proxy,
+  shouldBlockProductionMockups,
+} from "../src/proxy";
 import { DEVELOPER_GATED_PATH_PREFIXES } from "@/lib/developer-area/headers";
 
 // The proxy owns the per-request nonce CSP (see src/proxy.ts). CI's verify:ui
@@ -106,7 +112,7 @@ describe("production mockup boundary", () => {
   // no coverage here at all — a dropped prefix would fail closed (404), but
   // nothing would catch it.
   it("lets the Ward Flow subtree through the blanket block, and keeps a look-alike prefix blocked", () => {
-    for (const path of ["/ward-flow", "/ward-flow/constellation"]) {
+    for (const path of ["/bedchart", "/bedchart/constellation"]) {
       expect(shouldBlockProductionMockups(path, { NODE_ENV: "production" }), path).toBe(false);
     }
     expect(shouldBlockProductionMockups("/mockups/ward-flow-archive", { NODE_ENV: "production" })).toBe(true);
@@ -115,12 +121,12 @@ describe("production mockup boundary", () => {
 
 describe("developer-area header (x-developer-area)", () => {
   it("sets the header for no path now that nothing under /mockups is public, and strips a client-supplied copy", async () => {
-    const wardFlowSignInResponse = await proxy(requestFor("/ward-flow-sign-in"));
+    const wardFlowSignInResponse = await proxy(requestFor("/bedchart-sign-in"));
     expect(wardFlowSignInResponse.headers.get("x-middleware-request-x-developer-area")).toBeNull();
 
     const otherRequest = requestFor("/documents/some-id");
     otherRequest.headers.set("x-developer-area", "1");
-    otherRequest.headers.set("x-developer-area-path", "/ward-flow-sign-in");
+    otherRequest.headers.set("x-developer-area-path", "/bedchart-sign-in");
     const otherResponse = await proxy(otherRequest);
     // Spoofed header must not survive into the forwarded request.
     expect(otherResponse.headers.get("x-middleware-request-x-developer-area")).toBeNull();
@@ -128,25 +134,25 @@ describe("developer-area header (x-developer-area)", () => {
   });
 
   it("forwards Ward Flow's old /mockups addresses permanently, query intact, and leaves the digest alone", async () => {
-    expect(movedRouteTarget("/mockups/ward-flow")).toBe("/ward-flow");
-    expect(movedRouteTarget("/mockups/ward-flow/ward/rph-adult-secure")).toBe("/ward-flow/ward/rph-adult-secure");
-    expect(movedRouteTarget("/mockups/ward-flow-sign-in")).toBe("/ward-flow-sign-in");
+    expect(movedRouteTarget("/mockups/ward-flow")).toBe("/bedchart");
+    expect(movedRouteTarget("/mockups/ward-flow/ward/rph-adult-secure")).toBe("/bedchart/ward/rph-adult-secure");
+    expect(movedRouteTarget("/mockups/ward-flow-sign-in")).toBe("/bedchart-sign-in");
     // One hop for the retired constellation and Network screens, not two.
-    expect(movedRouteTarget("/mockups/ward-flow/constellation")).toBe("/ward-flow");
-    expect(movedRouteTarget("/mockups/ward-flow/network")).toBe("/ward-flow");
+    expect(movedRouteTarget("/mockups/ward-flow/constellation")).toBe("/bedchart");
+    expect(movedRouteTarget("/mockups/ward-flow/network")).toBe("/bedchart");
     expect(movedRouteTarget("/mockups/ward-flow-digest")).toBeNull();
     expect(movedRouteTarget("/mockups/ward-flow-archive")).toBeNull();
-    expect(movedRouteTarget("/ward-flow/capacity")).toBeNull();
+    expect(movedRouteTarget("/bedchart/capacity")).toBeNull();
 
     const response = await proxy(requestFor("/mockups/ward-flow/referrals?view=open"));
     expect(response.status).toBe(308);
-    expect(new URL(response.headers.get("location") ?? "").pathname).toBe("/ward-flow/referrals");
+    expect(new URL(response.headers.get("location") ?? "").pathname).toBe("/bedchart/referrals");
     expect(new URL(response.headers.get("location") ?? "").search).toBe("?view=open");
     expect(response.headers.get("content-security-policy")).toBeTruthy();
   });
 
   it("forwards no Ward Flow offline marker, which nothing reads (CQ-14)", async () => {
-    const wardResponse = await proxy(requestFor("/ward-flow/capacity"));
+    const wardResponse = await proxy(requestFor("/bedchart/capacity"));
     expect(wardResponse.headers.get("x-middleware-request-x-ward-flow-offline")).toBeNull();
   });
 
@@ -165,24 +171,51 @@ describe("developer-area header (x-developer-area)", () => {
   });
 });
 
+describe("BedChart's new addresses (D-250)", () => {
+  it("forwards every old /ward-flow address to /bedchart, in one hop, query intact", async () => {
+    expect(movedRouteTarget("/ward-flow")).toBe("/bedchart");
+    expect(movedRouteTarget("/ward-flow/ward/rph-adult-secure")).toBe("/bedchart/ward/rph-adult-secure");
+    expect(movedRouteTarget("/ward-flow-sign-in")).toBe("/bedchart-sign-in");
+    expect(movedRouteTarget("/ward-flow/network")).toBe("/bedchart");
+    expect(movedRouteTarget("/ward-flow-offline.html")).toBeNull();
+
+    const response = await proxy(requestFor("/ward-flow/referrals?view=open"));
+    expect(response.status).toBe(308);
+    const location = new URL(response.headers.get("location") ?? "");
+    expect(location.pathname).toBe("/bedchart/referrals");
+    expect(location.search).toBe("?view=open");
+  });
+
+  it("sends www.bedchart.com and the old Railway address to https://bedchart.com, and leaves others alone", () => {
+    expect(canonicalHostTarget("www.bedchart.com", "/bedchart/ed", "?x=1")).toBe(
+      "https://bedchart.com/bedchart/ed?x=1",
+    );
+    expect(canonicalHostTarget("ward-flow-shared-production.up.railway.app", "/", "")).toBe("https://bedchart.com/");
+    expect(canonicalHostTarget("bedchart.com", "/bedchart", "")).toBeNull();
+    expect(canonicalHostTarget("ward-flow-production.up.railway.app", "/bedchart", "")).toBeNull();
+    expect(canonicalHostTarget("localhost:3000", "/bedchart", "")).toBeNull();
+    expect(canonicalHostTarget(null, "/bedchart", "")).toBeNull();
+  });
+});
+
 describe("static compatibility redirects", () => {
   it("forwards retired constellation and Network deep-links to Home", async () => {
-    for (const path of ["/ward-flow/constellation", "/ward-flow/network"]) {
+    for (const path of ["/bedchart/constellation", "/bedchart/network"]) {
       const response = await proxy(requestFor(path));
       expect(response.status, path).toBe(307);
       const location = new URL(response.headers.get("location")!);
-      expect(location.pathname, path).toBe("/ward-flow");
+      expect(location.pathname, path).toBe("/bedchart");
     }
   });
 
   it("forwards the other alias addresses before the app loads (A33), keeping the query", async () => {
     const aliases: [string, string][] = [
-      ["/ward-flow/command", "/ward-flow"],
-      ["/ward-flow/queue", "/ward-flow/waiting"],
-      ["/ward-flow/escalation", "/ward-flow/waiting"],
-      ["/ward-flow/exceptions", "/ward-flow/waiting"],
-      ["/ward-flow/delays", "/ward-flow/waiting"],
-      ["/ward-flow/statistics/overview", "/ward-flow/statistics"],
+      ["/bedchart/command", "/bedchart"],
+      ["/bedchart/queue", "/bedchart/waiting"],
+      ["/bedchart/escalation", "/bedchart/waiting"],
+      ["/bedchart/exceptions", "/bedchart/waiting"],
+      ["/bedchart/delays", "/bedchart/waiting"],
+      ["/bedchart/statistics/overview", "/bedchart/statistics"],
     ];
     for (const [path, target] of aliases) {
       const response = await proxy(requestFor(`${path}?site=rph`));
@@ -284,7 +317,7 @@ describe("developer-gated area comments name the constant instead of counting (L
 // dynamic segment before the page runs, so the proxy answers a real 404 first.
 describe("proxy malformed Ward Flow addresses", () => {
   it("rewrites a bad percent-encoding to the not-found page with a 404 status", async () => {
-    for (const path of ["/ward-flow/people/%E0%A4", "/ward-flow/movements/WF-%E0%A4%A", "/ward-flow/board/%ZZ"]) {
+    for (const path of ["/bedchart/people/%E0%A4", "/bedchart/movements/WF-%E0%A4%A", "/bedchart/board/%ZZ"]) {
       const res = await proxy(requestFor(path));
       expect(res.status).toBe(404);
       expect(res.headers.get("x-middleware-rewrite")).toContain("/ward-flow-malformed-address");
@@ -298,11 +331,11 @@ describe("proxy malformed Ward Flow addresses", () => {
       expect(res.status).toBe(404);
       expect(res.headers.get("x-middleware-rewrite")).toContain("/ward-flow-malformed-address");
     }
-    expect(hasMalformedWardFlowEncoding("/ward-flow/%E0%A4%A")).toBe(true);
+    expect(hasMalformedWardFlowEncoding("/bedchart/%E0%A4%A")).toBe(true);
   });
 
   it("lets a well-formed address through, even an unknown id", async () => {
-    for (const path of ["/ward-flow/people/nope", "/ward-flow/people/PT-004", "/ward-flow/movements/WF-%41"]) {
+    for (const path of ["/bedchart/people/nope", "/bedchart/people/PT-004", "/bedchart/movements/WF-%41"]) {
       const res = await proxy(requestFor(path));
       expect(res.status).toBe(200);
       expect(res.headers.get("x-middleware-rewrite")).toBeNull();

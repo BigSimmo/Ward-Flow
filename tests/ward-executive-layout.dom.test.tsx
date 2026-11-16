@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 const guard = vi.hoisted(() => ({
-  path: "/ward-flow/statistics",
+  path: "/bedchart/statistics",
   phone: false,
   connection: null as unknown,
   raw: vi.fn(),
@@ -48,7 +48,7 @@ vi.mock("../src/components/ward-management/ward-shared-access", async (original)
     return guard.connection;
   },
 }));
-import Layout from "../src/app/ward-flow/layout";
+import Layout from "../src/app/bedchart/layout";
 import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
 import { wardPlaceLookup } from "../src/components/ward-management/ward-access-places";
 import { projectExecutiveReportingFoundation } from "../src/components/ward-management/statistics/executive-statistics-projector";
@@ -133,7 +133,7 @@ async function openLayout() {
   return render(tree);
 }
 beforeEach(() => {
-  guard.path = "/ward-flow/statistics";
+  guard.path = "/bedchart/statistics";
   guard.phone = false;
   guard.raw.mockClear();
   guard.seed.mockClear();
@@ -345,7 +345,7 @@ describe("the real layout's authenticated executive branch", () => {
     fireEvent.keyDown(document, { key: "Escape" });
     fireEvent.click(screen.getByTestId("ward-bar-phone-menu"));
     const menu = screen.getByTestId("ward-phone-menu");
-    expect(within(menu).getByRole("link", { name: /Settings/ })).toHaveAttribute("href", "/ward-flow/settings");
+    expect(within(menu).getByRole("link", { name: /Settings/ })).toHaveAttribute("href", "/bedchart/settings");
     expect(within(menu).getByRole("link", { name: "Statistics" })).toBeInTheDocument();
     fireEvent.click(within(menu).getByTestId("ward-phone-menu-switch-workstation"));
     expect((guard.connection as WardSharedConnection).switchRole).toHaveBeenCalledTimes(1);

@@ -74,7 +74,7 @@ describe("This shift card: bed counts confirmed", () => {
     expect(section.queryByRole("button", { name: /^Ask/u })).toBeNull();
     expect(section.getByRole("link", { name: `Confirm beds on ${b!.name}` })).toHaveAttribute(
       "href",
-      `/ward-flow/ward/${b!.id}`,
+      `/bedchart/ward/${b!.id}`,
     );
   });
 

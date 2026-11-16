@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render, renderHook, screen, within } from "@te
 import { useEffect, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-let pathname = "/ward-flow/referrals";
+let pathname = "/bedchart/referrals";
 vi.mock("next/navigation", () => ({
   usePathname: () => pathname,
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
@@ -133,7 +133,7 @@ describe("URE-02: Send notice", () => {
 
 describe("URE-05: correction note", () => {
   beforeEach(() => {
-    pathname = "/ward-flow/referrals";
+    pathname = "/bedchart/referrals";
   });
 
   it("keeps the typed correction and says why when the shared answer is failed", async () => {
@@ -200,7 +200,7 @@ describe("URE-05: correction note", () => {
 
 describe("URE-05: call log", () => {
   beforeEach(() => {
-    pathname = "/ward-flow/referrals";
+    pathname = "/bedchart/referrals";
   });
 
   it("keeps who was rung and what they said when the shared answer is cancelled", async () => {
@@ -231,7 +231,7 @@ describe("URE-05: call log", () => {
 
 describe("URE-07: opened receipts", () => {
   beforeEach(() => {
-    pathname = `/ward-flow/ward/${WARD.id}`;
+    pathname = `/bedchart/ward/${WARD.id}`;
   });
 
   function entry(id: string): WardReferralInboxEntry {

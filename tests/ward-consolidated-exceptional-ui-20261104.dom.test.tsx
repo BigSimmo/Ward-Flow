@@ -1,7 +1,7 @@
 import { act, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/people/synthetic",
+  usePathname: () => "/bedchart/people/synthetic",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";

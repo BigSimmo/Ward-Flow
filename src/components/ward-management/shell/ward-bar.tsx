@@ -1170,7 +1170,7 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
               plannedAdmissions={plannedAdmissions}
               now={now}
               // Josh, 31 Oct 2026: search also finds Help, contacts and suburbs, so it names the app.
-              placeholder="Search Ward Flow"
+              placeholder="Search BedChart"
             />
           </div>
         )}

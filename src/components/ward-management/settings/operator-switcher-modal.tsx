@@ -743,10 +743,10 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
   );
 }
 
-const COORDINATOR_HOME_HREF = "/ward-flow";
-const CAPACITY_HREF = "/ward-flow/capacity";
-const STATISTICS_HREF = "/ward-flow/statistics";
-const SETTINGS_HREF = "/ward-flow/settings";
+const COORDINATOR_HOME_HREF = "/bedchart";
+const CAPACITY_HREF = "/bedchart/capacity";
+const STATISTICS_HREF = "/bedchart/statistics";
+const SETTINGS_HREF = "/bedchart/settings";
 
 function isHealthService(value: string): value is HealthService {
   return (HEALTH_SERVICES as readonly string[]).includes(value);

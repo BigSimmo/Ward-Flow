@@ -22,7 +22,7 @@ function deskCookie(): string | undefined {
 
 /** Another tab, on the coordinator's desk, writes "0". */
 function otherTabWritesCoordinator() {
-  document.cookie = `${WARD_DESK_HELD_COOKIE}=0;path=/ward-flow`;
+  document.cookie = `${WARD_DESK_HELD_COOKIE}=0;path=/bedchart`;
 }
 
 async function loadStore() {
@@ -34,9 +34,9 @@ async function loadStore() {
 }
 
 beforeEach(() => {
-  window.history.pushState({}, "", "/ward-flow/ward/scgh-adult-open");
+  window.history.pushState({}, "", "/bedchart/ward/scgh-adult-open");
   window.sessionStorage.clear();
-  document.cookie = `${WARD_DESK_HELD_COOKIE}=;path=/ward-flow;max-age=0`;
+  document.cookie = `${WARD_DESK_HELD_COOKIE}=;path=/bedchart;max-age=0`;
 });
 afterEach(() => {
   cleanup();
@@ -68,7 +68,7 @@ describe("F-115: the desk cookie follows the tab in use", () => {
     window.sessionStorage.setItem(KEY, WARD_DESK);
     const store = await loadStore();
     window.sessionStorage.removeItem(KEY);
-    document.cookie = `${WARD_DESK_HELD_COOKIE}=;path=/ward-flow;max-age=0`;
+    document.cookie = `${WARD_DESK_HELD_COOKIE}=;path=/bedchart;max-age=0`;
     store.syncStoredDeskCookie();
     expect(deskCookie()).toBeUndefined();
   });

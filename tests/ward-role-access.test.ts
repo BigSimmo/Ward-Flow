@@ -54,7 +54,7 @@ import {
  */
 import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
-const BASE = "/ward-flow";
+const BASE = "/bedchart";
 const state = seedWardFlowState();
 const places = wardPlaceLookup(state.units);
 const unitId = state.units[0].id;
@@ -70,14 +70,14 @@ describe("the access table", () => {
   });
 
   it("keeps the transport desk to the officer, bed manager and coordinator (WF-10, replaces Q154)", () => {
-    expect(screenForPath("/ward-flow/transport/officer")).toEqual({ screen: "officer" });
+    expect(screenForPath("/bedchart/transport/officer")).toEqual({ screen: "officer" });
     for (const role of ["ward", "ed", "community"] as const) expect(ROLE_SCREENS[role].officer, role).toBeUndefined();
     expect(ROLE_SCREENS.officer.officer).toBe("own");
   });
 
   it("opens the bed meeting agenda to the site bed manager, and to no other desk but the coordinator (decision 46)", () => {
     const places = wardPlaceLookup(seedWardFlowState().units);
-    const address = screenForPath("/ward-flow/bed-meeting/agenda");
+    const address = screenForPath("/bedchart/bed-meeting/agenda");
     expect(address).toEqual({ screen: "bed-meeting-agenda" });
     const bedManager: WardAccess = { role: "bed_manager", scope: { kind: "site", siteCode: "FSH" } };
     expect(screenDecision(bedManager, address, places)).toEqual({ open: true, grant: "own" });
@@ -207,7 +207,7 @@ describe("the access table", () => {
   });
 
   it("opens a service's statistics only to that service or the whole network", () => {
-    const path = "/ward-flow/statistics/service/" + encodeURIComponent("North Metro");
+    const path = "/bedchart/statistics/service/" + encodeURIComponent("North Metro");
     expect(screenForPath(path)).toMatchObject({ screen: "statistics", serviceId: "North Metro" });
     const north = { role: "executive", scope: { kind: "service", service: "North Metro" } } as const;
     const south = { role: "executive", scope: { kind: "service", service: "South Metro" } } as const;
@@ -930,7 +930,7 @@ describe("receiving copies hide reassessments duplicated from hidden destination
 
 /** Every page the app has, with a sample id in each dynamic segment. */
 function appRoutes(): string[] {
-  const root = join(process.cwd(), "src/app/ward-flow");
+  const root = join(process.cwd(), "src/app/bedchart");
   const found: string[] = [];
   const walk = (dir: string) => {
     for (const name of readdirSync(dir)) {

@@ -39,7 +39,7 @@ const phoneTail = (clock: string) => (
   </span>
 );
 const authorityPill = (clock: string) => (
-  <span className={styles.authorityPill} title={`Ward Flow prototype · ${clock.toLowerCase()} · synthetic only`}>
+  <span className={styles.authorityPill} title={`BedChart prototype · ${clock.toLowerCase()} · synthetic only`}>
     <svg
       className={styles.authorityIcon}
       viewBox="0 0 16 16"
@@ -55,7 +55,7 @@ const authorityPill = (clock: string) => (
       <path d="M8 1.5l5.5 2.5v4c0 3.5-2.5 6-5.5 7-3-1-5.5-3.5-5.5-7V4L8 1.5z" />
       <path d="M5.5 8l2 2 3.5-3.5" />
     </svg>
-    <span>Ward Flow prototype · Synthetic data only</span>
+    <span>BedChart prototype · Synthetic data only</span>
   </span>
 );
 

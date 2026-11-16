@@ -35,7 +35,7 @@ import {
 import { defaultHandoverShift, handoverAt, handoverShift } from "./handover-model";
 import styles from "./handover-site-sign-off.module.css";
 
-const CAPACITY_HREF = "/ward-flow/capacity";
+const CAPACITY_HREF = "/bedchart/capacity";
 
 function roleLabel(role: WardFlowRole): string {
   if (role === "coordinator") return "Bed coordinator";

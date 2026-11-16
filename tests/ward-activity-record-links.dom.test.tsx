@@ -6,7 +6,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/ward/rph-adult-secure",
+  usePathname: () => "/bedchart/ward/rph-adult-secure",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
 }));
 
@@ -147,6 +147,6 @@ describe("the live tally's emergency department rows link only where the desk ma
     const table = await openTally({ role: "coordinator", scope: { kind: "statewide" } });
     const links = within(table).getAllByRole("link");
     expect(links.length).toBe(within(table).getAllByRole("rowheader").length);
-    expect(links[0]).toHaveAttribute("href", expect.stringMatching(/^\/ward-flow\/ed\//u));
+    expect(links[0]).toHaveAttribute("href", expect.stringMatching(/^\/bedchart\/ed\//u));
   });
 });

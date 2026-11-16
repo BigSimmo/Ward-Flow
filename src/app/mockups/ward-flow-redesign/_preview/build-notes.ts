@@ -3,7 +3,7 @@
  * Shown under the design review's notes in the viewer.
  */
 export const GROUND =
-  "Built in React on 29 October 2026 from branch claude/core-pages-design-review-f5vf4g, which carries main at b6aa5cd (with #1109 Help) merged in. Each page reads the same synthetic world as /ward-flow, pinned to the 10:42 demo night, and is drawn inside the app's real menu and header. Synthetic data only. Nothing here is built into the app until Josh approves that page (D-74).";
+  "Built in React on 29 October 2026 from branch claude/core-pages-design-review-f5vf4g, which carries main at b6aa5cd (with #1109 Help) merged in. Each page reads the same synthetic world as /bedchart, pinned to the 10:42 demo night, and is drawn inside the app's real menu and header. Synthetic data only. Nothing here is built into the app until Josh approves that page (D-74).";
 
 export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
   "pop-refer-ward": [
@@ -152,7 +152,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Built into the app (31 October):** this is the real Waiting page (round 8, approved by Josh on 31 October), with the nurse in charge's and ED clinician's views as role branches in the same screen. It stays here only as the backdrop for the Loading (Waiting) pop-up.",
   ],
   "triage-risk": [
-    "**Built into the app (7 Nov 2026):** this is the real triage and risk form at /ward-flow/people/[patientId]/triage, drawn for a synthetic person from the preview world. The mock-up copy is gone (D-91). The patient record's Now tab has a Triage and risk card with the Triage action and the person's signed triages.",
+    "**Built into the app (7 Nov 2026):** this is the real triage and risk form at /bedchart/people/[patientId]/triage, drawn for a synthetic person from the preview world. The mock-up copy is gone (D-91). The patient record's Now tab has a Triage and risk card with the Triage action and the person's signed triages.",
     "**Kept from the approved mock-up:** the left column holds only the sections card, progress and Summary; folding, per-PSOLIS-box Copy and the sign line; CTO below 75rem; the 'Synthetic prototype.' first copy line (D-71); Not seen today only after an explicit Not present; the signed slide-out with the signature; FDV 'Asked alone?' first with the three questions word for word; no low, medium or high rating or score; urgency the clinician's choice; legal times only as typed with 'Not legally checked.'; nothing pre-selected.",
     "**Signing:** Sign asks to confirm, then records RECORD_TRIAGE_SIGNED on the person: urgency, outcome, legal status code, review and the RAMP factors marked present, with the time and the desk. No typed text is in the record; the typed assessment, mental state, formulation and plan stay in the form. The form then shows Signed with the summary, read-only.",
     "**Previous triage:** the world has no triage on record, so everyone reads 'No previous triage on record'. A person signed in this session carries that triage's past flags forward next time (codes only, so nothing typed is carried).",
@@ -160,7 +160,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Not wired:** Save draft, Awaiting information and Make a bed request say 'Not wired in this prototype.'",
   ],
   "triage-start": [
-    "**Built into the app (7 Nov 2026):** the real Start a triage step at /ward-flow/triage/new, opened by New, then Triage, in the app bar and New triage in the phone's Create sheet. It searches the world's synthetic people (surnames that start with the typed text first) and lists referrals awaiting triage; choosing a person opens their form blank.",
+    "**Built into the app (7 Nov 2026):** the real Start a triage step at /bedchart/triage/new, opened by New, then Triage, in the app bar and New triage in the phone's Create sheet. It searches the world's synthetic people (surnames that start with the typed text first) and lists referrals awaiting triage; choosing a person opens their form blank.",
   ],
   "new-referral": [
     "**Built from a copy of today's referral slide-out**, in the same panel and steps, so finding a patient, the four steps, the Before you send list, Save draft and the ask-before-closing guard all work as now.",

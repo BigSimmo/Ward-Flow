@@ -41,7 +41,7 @@ const siteCode = "RPH";
 const ownWardHrefs = new Set(
   allUnits()
     .filter((unit) => unit.siteCode === siteCode)
-    .map((unit) => `/ward-flow/statistics/ward/${encodeURIComponent(unit.id)}`),
+    .map((unit) => `/bedchart/statistics/ward/${encodeURIComponent(unit.id)}`),
 );
 
 const DESKS: Record<string, WardAccess> = {
@@ -138,7 +138,7 @@ describe("Statistics links follow the desk's access", () => {
     asDesk(DESKS.coordinator!);
     const shown = mapHrefs();
     expect(shown.some((href) => href.includes("/statistics/service/"))).toBe(true);
-    expect(shown).toContain(`/ward-flow/statistics/ed/${siteCode.toLowerCase()}-ed`);
+    expect(shown).toContain(`/bedchart/statistics/ed/${siteCode.toLowerCase()}-ed`);
   });
 
   it("gives each desk the section tabs it saw before", () => {

@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/people/PT-001",
+  usePathname: () => "/bedchart/people/PT-001",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
 }));
 import { PatientDetailsTab } from "@/components/ward-management/patients/patient-details-tab";

@@ -10,7 +10,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /** Smart features ideas 3 and 4 on screen: the ward's receipt, its ask, and the referrer's tick-off. */
-let pathname = "/ward-flow/referrals";
+let pathname = "/bedchart/referrals";
 vi.mock("next/navigation", () => ({
   usePathname: () => pathname,
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
@@ -81,7 +81,7 @@ function setup() {
 
 describe("referral receipts and what we still need", () => {
   beforeEach(() => {
-    pathname = "/ward-flow/referrals";
+    pathname = "/bedchart/referrals";
   });
 
   it("marks the referral opened when the ward itself shows it, and not when the coordinator does", () => {
@@ -90,13 +90,13 @@ describe("referral receipts and what we still need", () => {
   });
 
   it("stamps opened on the ward's own route, without answering", () => {
-    pathname = `/ward-flow/ward/${WARD.id}`;
+    pathname = `/bedchart/ward/${WARD.id}`;
     setup();
     expect(screen.getByTestId("copy")).toHaveTextContent(`queued|${NOW_ANCHOR}|`);
   });
 
   it("lets the ward ask for listed items, and keeps the tick-off for the referrer side", () => {
-    pathname = `/ward-flow/ward/${WARD.id}`;
+    pathname = `/bedchart/ward/${WARD.id}`;
     setup();
     const inbox = within(screen.getByRole("region", { name: "Ward referral inbox" }));
     const ask = inbox.getByRole("button", { name: "Ask the referrer" });

@@ -22,7 +22,7 @@
  * browser tab and the installed app's name now say Ward Flow. Only the name moved; the other
  * lines below are unchanged.
  */
-export const BRAND_NAME = "Ward Flow";
+export const BRAND_NAME = "BedChart";
 
 /**
  * The catchphrase.

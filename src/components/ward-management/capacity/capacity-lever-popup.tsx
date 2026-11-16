@@ -17,7 +17,7 @@ import type { NetworkWardRow } from "./capacity-derivations";
 import { HELD_UP_HREF } from "./capacity-held-up";
 import styles from "./capacity-page.module.css";
 
-const DISCHARGES_HREF = "/ward-flow/discharges";
+const DISCHARGES_HREF = "/bedchart/discharges";
 
 /** A row of "What would help tomorrow": one of the forecast's levers, or one of the page's own. */
 export type HelpItem =

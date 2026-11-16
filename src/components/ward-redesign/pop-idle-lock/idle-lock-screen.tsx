@@ -38,7 +38,7 @@ export function IdleLockScreen({
       aria-labelledby="ward-idle-lock-title"
     >
       <div className={styles.top}>
-        <span className={styles.wordmark}>Ward Flow</span>
+        <span className={styles.wordmark}>BedChart</span>
         <span className={styles.syn}>
           <i aria-hidden="true" />
           Synthetic data

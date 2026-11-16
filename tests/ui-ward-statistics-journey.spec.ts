@@ -43,7 +43,7 @@ import { expect, test } from "playwright/test";
  * is why this file's name is in those two regexes rather than trusted to a comment.
  */
 
-const HUB = "/ward-flow/statistics";
+const HUB = "/bedchart/statistics";
 
 /**
  * The four destinations, each with a marker that is only present when the screen genuinely rendered.
@@ -62,16 +62,16 @@ const DESTINATIONS = [
     navLabel: "Services",
     /** Device audit follow-up (11 Oct 2026): the phone Summary's "Services" row under More figures. */
     phoneEntry: { nav: "More figures", link: /^Services/u },
-    href: "/ward-flow/statistics/services",
+    href: "/bedchart/statistics/services",
     figure: undefined,
   },
 ] as const;
 
 /** Deep screens, reached from their chooser rather than from the hub. */
 const DEEP = [
-  { path: "/ward-flow/statistics/ward/rph-adult-secure", marker: "ward-statistics-ward-screen" },
+  { path: "/bedchart/statistics/ward/rph-adult-secure", marker: "ward-statistics-ward-screen" },
   // v10 phone (11 Oct 2026): the department's wait table is a list of rows on the phone.
-  { path: "/ward-flow/statistics/ed/rph-ed", marker: "ward-statistics-ed-phone" },
+  { path: "/bedchart/statistics/ed/rph-ed", marker: "ward-statistics-ed-phone" },
 ] as const;
 
 /**
@@ -178,7 +178,7 @@ test.describe("@mockup the statistics screens are reachable and readable on a ph
      * checked at 769px, the narrowest width that still draws the table.
      */
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto("/ward-flow/statistics/ed/rph-ed", { waitUntil: "load" });
+    await page.goto("/bedchart/statistics/ed/rph-ed", { waitUntil: "load" });
     await page.waitForLoadState("networkidle");
     await waitForStreamToSettle(page);
     await expect(page.getByTestId("ward-statistics-ed-phone")).toBeVisible({ timeout: 15_000 });
@@ -218,7 +218,7 @@ test.describe("@mockup the statistics screens are reachable and readable on a ph
 // These dynamic page families had no browser coverage. Exercise their actual scoped controls.
 test.describe("@mockup page-specific statistics insights", () => {
   test("service capacity stays in scope and its graph opens ward statistics", async ({ page }) => {
-    await page.goto("/ward-flow/statistics/service/North%20Metro", { waitUntil: "networkidle" });
+    await page.goto("/bedchart/statistics/service/North%20Metro", { waitUntil: "networkidle" });
     const capacity = page.getByTestId("ward-statistics-capacity-chart");
     await expect(capacity).toContainText("in North Metro");
     await expect(capacity.getByLabel("Health service filter")).toHaveCount(0);
@@ -239,7 +239,7 @@ test.describe("@mockup page-specific statistics insights", () => {
   });
   test("community handover and searchable comparison preserve team context on a phone", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/ward-flow/statistics/community/bentley", { waitUntil: "networkidle" });
+    await page.goto("/bedchart/statistics/community/bentley", { waitUntil: "networkidle" });
     // v10 phone (11 Oct 2026): the phone shows the team's own summary list; the handover chart and
     // the searchable comparison are the tablet and desktop cards, checked at 769px below.
     await expect(page.getByTestId("ward-statistics-community-phone")).toBeVisible();
@@ -258,13 +258,13 @@ test.describe("@mockup page-specific statistics insights", () => {
       /statistics\/community\/bentley$/,
     );
     await expectNoPageOverflow(page, "community chart and comparison");
-    await expect(page.getByRole("navigation", { name: "Ward Flow statistics sections" })).toHaveCount(1);
+    await expect(page.getByRole("navigation", { name: "BedChart statistics sections" })).toHaveCount(1);
   });
 });
 
 test("@mockup ward bed figures stay visible and the chart data view preserves records", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/ward-flow/statistics/ward/scgh-adult-open", { waitUntil: "networkidle" });
+  await page.goto("/bedchart/statistics/ward/scgh-adult-open", { waitUntil: "networkidle" });
   // v10 phone (11 Oct 2026): the phone keeps the bed figures in its own Beds group; the tiles
   // card and the stay chart's Chart and Data switch are the tablet and desktop view, at 769px.
   await expect(page.getByTestId("ward-statistics-ward-phone-beds")).toBeVisible();

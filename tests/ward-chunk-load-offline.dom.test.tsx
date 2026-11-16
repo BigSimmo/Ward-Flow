@@ -2,7 +2,7 @@ import { act, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import AppShellErrorBoundary from "@/app/error";
-import { WardFlowErrorPanel } from "@/app/ward-flow/ward-flow-error-panel";
+import { WardFlowErrorPanel } from "@/app/bedchart/ward-flow-error-panel";
 import { isChunkLoadError as hostIsChunkLoadError } from "@/lib/chunk-load-error";
 import { isChunkLoadError as wardIsChunkLoadError } from "@/components/ward-management/ward-chunk-load-error";
 

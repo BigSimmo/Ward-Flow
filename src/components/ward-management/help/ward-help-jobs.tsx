@@ -590,7 +590,7 @@ export function HelpTasks({
       {/* Learning the app in one place (Help overhaul, 9 Nov 2026): the tour, then practice. */}
       <section className={s.section} aria-labelledby="ward-help-learn" data-testid="ward-help-learn">
         <h3 id="ward-help-learn" className={s.sectionHead}>
-          Learn Ward Flow
+          Learn BedChart
         </h3>
         <TourRow role={role} onTour={onTour} />
         {/* The access admin records no ward work, so there is nothing to practise. */}

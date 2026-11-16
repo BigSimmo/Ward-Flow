@@ -64,7 +64,7 @@ export function boardUndoEvent(undo: NonNullable<BoardCheck["undo"]>, now: Insta
 /** The router, or null where the screen renders outside the app router (a test or preview). */
 /** This ward's Handover page, scoped to the ward. */
 export function wardHandoverHref(unitId: string): string {
-  return `/ward-flow/handover?scope=${encodeURIComponent(handoverScopeValue({ kind: "ward", id: unitId }))}`;
+  return `/bedchart/handover?scope=${encodeURIComponent(handoverScopeValue({ kind: "ward", id: unitId }))}`;
 }
 
 /** Set by the Census "Ward bed" link (patient-census-view.tsx): the exact `unit:bed` it opened. */

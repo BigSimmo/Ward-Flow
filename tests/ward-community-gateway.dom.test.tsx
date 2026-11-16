@@ -17,7 +17,7 @@ vi.mock("next/link", () => ({
 // `useRouter()` unconditionally, and there is no App Router context under jsdom to satisfy it.
 const router = { push: vi.fn() };
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/community",
+  usePathname: () => "/bedchart/community",
   useRouter: () => router,
 }));
 
@@ -66,7 +66,7 @@ function solidTeamLinks(): HTMLElement[] {
  * biconditional test pass vacuously over an empty side.
  */
 
-const TEAM_ROUTE_PREFIX = "/ward-flow/community/";
+const TEAM_ROUTE_PREFIX = "/bedchart/community/";
 
 function renderGateway() {
   return render(

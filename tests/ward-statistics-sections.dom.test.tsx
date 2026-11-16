@@ -128,10 +128,10 @@ describe("every statistics section page carries the disclaimer", () => {
     // v6: the hero's section track leads with Network, the statistics hub (D-77, change 9).
     const back =
       screen.queryByTestId("ward-statistics-section-back") ??
-      within(screen.getByRole("navigation", { name: "Ward Flow statistics sections" })).getByRole("link", {
+      within(screen.getByRole("navigation", { name: "BedChart statistics sections" })).getByRole("link", {
         name: "Network",
       });
-    expect(back.getAttribute("href")).toBe("/ward-flow/statistics");
+    expect(back.getAttribute("href")).toBe("/bedchart/statistics");
   });
 
   /**
@@ -354,7 +354,7 @@ describe("ward and ED comparisons — the way into one unit", () => {
 
     const open = screen.getByTestId("ward-statistics-compare-tool-open-unit");
     expect(open.getAttribute("href")).toBe(STATISTICS_UNIT_CHOOSER_HREF);
-    expect(open.getAttribute("href")).toBe("/ward-flow/statistics#choose-a-unit");
+    expect(open.getAttribute("href")).toBe("/bedchart/statistics#choose-a-unit");
     expect(document.getElementById(STATISTICS_UNIT_CHOOSER_ID)).toBeNull();
     expect(screen.queryByTestId("ward-statistics-compare-chooser")).toBeNull();
   });
@@ -427,7 +427,7 @@ describe("every link that offers the chooser lands on the chooser", () => {
   );
 
   it("points those links at the one unit finder on the statistics home page (D-91)", () => {
-    expect(STATISTICS_UNIT_CHOOSER_HREF).toBe(`/ward-flow/statistics#${STATISTICS_UNIT_CHOOSER_ID}`);
+    expect(STATISTICS_UNIT_CHOOSER_HREF).toBe(`/bedchart/statistics#${STATISTICS_UNIT_CHOOSER_ID}`);
   });
 });
 

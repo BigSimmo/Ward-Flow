@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, render, renderHook, screen } from "@testing-li
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // The role is the route: each test sets the path the gate reads.
-const navigation = vi.hoisted(() => ({ pathname: "/ward-flow" }));
+const navigation = vi.hoisted(() => ({ pathname: "/bedchart" }));
 vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/navigation")>()),
   usePathname: () => navigation.pathname,
@@ -39,7 +39,7 @@ afterEach(() => {
     setWardFeatureFlagOnDevice("role-access", null);
     resetWardAccessStoreForTests();
   });
-  navigation.pathname = "/ward-flow";
+  navigation.pathname = "/bedchart";
   vi.unstubAllEnvs();
   window.history.replaceState(null, "", "/");
 });
@@ -50,7 +50,7 @@ describe("RA-04: the desk switch is offered only where it can work", () => {
       setWardFeatureFlagOnDevice("role-access", true);
       setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: [unitId] } });
     });
-    navigation.pathname = "/ward-flow/ed";
+    navigation.pathname = "/bedchart/ed";
     render(<ExaminationButton />);
     expect(screen.getByTestId("record-examination")).toBeDisabled();
     expect(screen.getByText("ED or coordinator only. Ask the bed coordinator to do this.")).toBeInTheDocument();
@@ -62,7 +62,7 @@ describe("RA-04: the desk switch is offered only where it can work", () => {
       setWardFeatureFlagOnDevice("role-access", true);
       setWardAccess({ role: "coordinator", scope: { kind: "statewide" } });
     });
-    navigation.pathname = "/ward-flow/transport/officer";
+    navigation.pathname = "/bedchart/transport/officer";
     render(<ExaminationButton />);
     expect(screen.getByTestId("record-examination")).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Switch to ED desk →" }));
@@ -74,7 +74,7 @@ describe("RA-04: the desk switch is offered only where it can work", () => {
       setWardFeatureFlagOnDevice("role-access", false);
       setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: [unitId] } });
     });
-    navigation.pathname = "/ward-flow/transport/officer";
+    navigation.pathname = "/bedchart/transport/officer";
     render(<ExaminationButton />);
     fireEvent.click(screen.getByRole("button", { name: "Switch to ED desk →" }));
     expect(screen.getByTestId("record-examination")).toBeEnabled();
@@ -104,7 +104,7 @@ describe("RA-07: a shared build keeps the role access guard locked on", () => {
     vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "true");
     vi.resetModules();
     const store = await import("@/components/ward-management/shell/ward-feature-flag-store");
-    window.history.replaceState(null, "", "/ward-flow?flags=role-access:off,bed-meeting-tv:off");
+    window.history.replaceState(null, "", "/bedchart?flags=role-access:off,bed-meeting-tv:off");
     render(<store.WardFeatureFlagLink />);
     const { result } = renderHook(() => ({
       roleAccess: store.useWardFeatureFlag("role-access"),

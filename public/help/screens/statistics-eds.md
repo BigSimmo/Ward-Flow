@@ -17,6 +17,6 @@ Every emergency department's open movements and how long each has been open.
 
 - Every ED. Each ED's open journeys, busiest first. Open one for its own figures.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

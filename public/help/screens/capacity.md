@@ -26,6 +26,6 @@ Each ward's confirmed beds, what is ready, pulled or closed, and when it was las
 - Reopen a closed ward to admissions. On Capacity, open the ward and press Closures. Press Reopen to admissions and confirm. The ward is offered for new patients again straight away. Anything still pointed at it is listed so you can mark each one dealt with.
 - Ask a ward to confirm its bed numbers. On Capacity, open the ward and press Ask the ward. On Places, press Ask to confirm. The ward is asked to confirm its beds. Capacity then reads Update requested, and Places reads Asked, with the time. The ward confirms on its own home.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

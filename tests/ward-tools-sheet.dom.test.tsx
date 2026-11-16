@@ -17,7 +17,7 @@ import {
 } from "@/components/ward-management/tools/ward-bed-finder";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/capacity",
+  usePathname: () => "/bedchart/capacity",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -56,7 +56,7 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
       "Service now",
       "Figures at a glance",
       "Appearance",
-      "Ward Flow Digest",
+      "BedChart Digest",
       "Shift desk",
       "Utilities",
       "Directory",
@@ -248,12 +248,12 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
   it("adds Find a patient, Bed meeting agenda and TV board for the coordinator", () => {
     renderSheet(true);
     expect(screen.getByRole("link", { name: /Find a patient.*opens its page/u }).getAttribute("href")).toBe(
-      "/ward-flow/search",
+      "/bedchart/search",
     );
     expect(screen.getByRole("link", { name: /Bed meeting agenda/u }).getAttribute("href")).toBe(
-      "/ward-flow/bed-meeting/agenda",
+      "/bedchart/bed-meeting/agenda",
     );
-    expect(screen.getByRole("link", { name: /TV board/u }).getAttribute("href")).toBe("/ward-flow/bed-meeting");
+    expect(screen.getByRole("link", { name: /TV board/u }).getAttribute("href")).toBe("/bedchart/bed-meeting");
   });
 
   it("shows five rows of a long group in two panes, then Show more", async () => {
@@ -316,9 +316,9 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     expect(screen.queryByRole("region", { name: "Do now" })).toBeNull();
     fireEvent.change(search, { target: { value: "zzz" } });
     expect(screen.getByRole("status")).toHaveTextContent("No tool matches “zzz”.");
-    expect(within(screen.getByRole("status")).getByRole("button", { name: "Search Ward Flow" })).toBeTruthy();
+    expect(within(screen.getByRole("status")).getByRole("button", { name: "Search BedChart" })).toBeTruthy();
     // With no header search on the page (Patients is the search), the sheet stays open and says so.
-    fireEvent.click(within(screen.getByRole("status")).getByRole("button", { name: "Search Ward Flow" }));
+    fireEvent.click(within(screen.getByRole("status")).getByRole("button", { name: "Search BedChart" }));
     expect(screen.getByRole("status")).toHaveTextContent("Search is not on this page. Open Patients to search.");
     fireEvent.click(within(screen.getByRole("status")).getByRole("button", { name: "Clear" }));
     expect(search).toHaveValue("");
@@ -374,7 +374,7 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
       within(figures)
         .getByRole("link", { name: /See all on Statistics/u })
         .getAttribute("href"),
-    ).toBe("/ward-flow/statistics");
+    ).toBe("/bedchart/statistics");
   });
 });
 
@@ -421,7 +421,7 @@ describe("Tools offers each desk only the tools its role may use (audit, 1 Nov 2
     atDesk({ role: "bed_manager", scope: { kind: "site", siteCode: "FSH" } });
     let canOpenWaiting: boolean | undefined;
     function Probe() {
-      canOpenWaiting = useCanOpenHref()("/ward-flow/waiting");
+      canOpenWaiting = useCanOpenHref()("/bedchart/waiting");
       return null;
     }
     render(

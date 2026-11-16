@@ -22,7 +22,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const route = { pathname: "/ward-flow" };
+const route = { pathname: "/bedchart" };
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
@@ -175,7 +175,7 @@ describe("WardBar primary action — the five kinds, archived D-16", () => {
 
 describe("WardBarMount — the layout-level route resolution, archived D-16", () => {
   it("resolves the coordinator home route to the New menu (Triage or Referral)", () => {
-    route.pathname = "/ward-flow";
+    route.pathname = "/bedchart";
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardLiveRegion />
@@ -188,7 +188,7 @@ describe("WardBarMount — the layout-level route resolution, archived D-16", ()
   // Device audit, 11 Oct 2026 (stable shell): the header primary stays New referral everywhere;
   // Record a decision lives on the movement page itself.
   it("resolves a movement detail route to New (the referral action), like every other page", () => {
-    route.pathname = "/ward-flow/movements/mv-0001";
+    route.pathname = "/bedchart/movements/mv-0001";
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardLiveRegion />
@@ -200,7 +200,7 @@ describe("WardBarMount — the layout-level route resolution, archived D-16", ()
 
   // Universal header (Josh, 9 Oct 2026): every page offers New referral. A route the list does not
   // cover, or one marked "none", falls back to it on desktop as it already did on the phone.
-  it.each(["/ward-flow/handover", "/ward-flow/discharges", "/ward-flow/people/pt-0001"])(
+  it.each(["/bedchart/handover", "/bedchart/discharges", "/bedchart/people/pt-0001"])(
     "resolves %s, which has no action of its own, to New (the referral action)",
     (pathname) => {
       route.pathname = pathname;
@@ -215,7 +215,7 @@ describe("WardBarMount — the layout-level route resolution, archived D-16", ()
   );
 
   it("keeps the referral intake route, where the slide-out is already open, without a header action", () => {
-    route.pathname = "/ward-flow/referrals/new";
+    route.pathname = "/bedchart/referrals/new";
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardLiveRegion />

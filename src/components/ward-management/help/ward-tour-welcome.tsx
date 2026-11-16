@@ -31,8 +31,8 @@ export function welcomeCards(device: WardTourDevice, minutes: string): readonly 
     {
       id: "what",
       icon: LayoutDashboard,
-      title: "Welcome to Ward Flow",
-      body: "Ward Flow shows mental health beds across the network in one place: who is waiting in ED, which beds are ready, and which moves are under way. Each desk sees the part it works on.",
+      title: "Welcome to BedChart",
+      body: "BedChart shows mental health beds across the network in one place: who is waiting in ED, which beds are ready, and which moves are under way. Each desk sees the part it works on.",
     },
     {
       id: "prototype",

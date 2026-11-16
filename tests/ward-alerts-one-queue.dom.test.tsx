@@ -15,7 +15,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const route = { pathname: "/ward-flow" };
+const route = { pathname: "/bedchart" };
 const mockRouterPush = vi.fn();
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
@@ -46,7 +46,7 @@ const seed = seedWardFlowState();
 const items = buildActionInbox(seed.movements.filter(isOpen), NOW_ANCHOR, seed.units);
 
 beforeEach(() => {
-  route.pathname = "/ward-flow";
+  route.pathname = "/bedchart";
   mockRouterPush.mockClear();
   if (typeof window.requestAnimationFrame !== "function") {
     window.requestAnimationFrame = ((cb: FrameRequestCallback) =>

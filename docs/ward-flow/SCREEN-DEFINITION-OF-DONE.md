@@ -122,7 +122,7 @@ call it finished. If you cannot tick a box, the screen is not done — say so, d
 
 ## ③ Reachability
 
-- [ ] The screen has a real route under `src/app/ward-flow/`.
+- [ ] The screen has a real route under `src/app/bedchart/`.
 - [ ] Something in the running app links to that route. 🔴 A route or component that exists
       but that nothing points to is not reachable by a user, no matter how correct it is —
       `ed-home.tsx` is exactly this: it exists, nothing imports it, and it has no route.

@@ -55,8 +55,8 @@ in the service config, and the plan limit is unconfirmed.
 ## H-0965: TV and desk left open
 
 Script: `scripts/ward-flow/browser-soak.mjs`. It starts `next start` on `127.0.0.1:3917` from a local
-production build, opens the bed meeting TV (`/ward-flow/bed-meeting?service=all`) and one ward board
-(`/ward-flow/board/rph-adult-secure`) in headless Chromium, and every 10 minutes records each page's JS heap
+production build, opens the bed meeting TV (`/bedchart/bed-meeting?service=all`) and one ward board
+(`/bedchart/board/rph-adult-secure`) in headless Chromium, and every 10 minutes records each page's JS heap
 (Chrome DevTools `Performance.getMetrics`) before and after a forced garbage collection, plus DOM nodes and
 listeners.
 

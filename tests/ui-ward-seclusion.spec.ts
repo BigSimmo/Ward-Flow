@@ -8,7 +8,7 @@ import { expect, test, type Locator } from "playwright/test";
  * the real app. Times are typed or taken with Now, as the D5 rule asks. No duration or legal limit is
  * worked out, so none is asserted.
  */
-const SECLUSION = "/ward-flow/legal-forms?view=seclusion";
+const SECLUSION = "/bedchart/legal-forms?view=seclusion";
 
 /** HH:MM five minutes before a typed HH:MM, wrapping past midnight. */
 function fiveMinutesBefore(clock: string): string {

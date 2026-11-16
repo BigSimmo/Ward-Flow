@@ -53,7 +53,7 @@ Where: Movements (1280), ED board (1280 and 390), Home ED pressure strip. Seen: 
 
 ### T13. Page names drift between rail, browser tab and heading
 
-Where: All EDs, Community, Weekly, Referrals/new, Home and Ward. Seen: rail and heading "All EDs" but tab "Emergency departments"; rail "Community", tab "All community teams", Places heading "Community mental health teams", Patient card "Catchment team" (community team 47, community mental health team 6, catchment team 3); Weekly heading "Weekly operations", tab "Weekly operations report", eyebrow "WEEKLY REPORT"; tab separator is "·" on Home and Ward ("Home · Ward Flow") but "—" on every other page. Cause: app/ward-flow/page.tsx:6 and app/ward-flow/ward/[unitId]/page.tsx:30. Recommend: browser tab equals the rail name plus " — Ward Flow", and "Community team" as the one term. Severity: low. Confidence: high.
+Where: All EDs, Community, Weekly, Referrals/new, Home and Ward. Seen: rail and heading "All EDs" but tab "Emergency departments"; rail "Community", tab "All community teams", Places heading "Community mental health teams", Patient card "Catchment team" (community team 47, community mental health team 6, catchment team 3); Weekly heading "Weekly operations", tab "Weekly operations report", eyebrow "WEEKLY REPORT"; tab separator is "·" on Home and Ward ("Home · Ward Flow") but "—" on every other page. Cause: app/bedchart/page.tsx:6 and app/bedchart/ward/[unitId]/page.tsx:30. Recommend: browser tab equals the rail name plus " — Ward Flow", and "Community team" as the one term. Severity: low. Confidence: high.
 
 ## Could not check
 

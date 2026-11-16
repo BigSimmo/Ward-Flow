@@ -21,6 +21,6 @@ Planned discharges, held-up discharges first.
 - Clear a held-up discharge. Open Discharges, where held-up discharges come first. Choose the person: Held up says what is in the way, and Message ward asks the ward about it. Add what is outstanding under Discharge arrangements. On a phone, Clear hold-up removes it once it is sorted.
 - Track the arrangements a discharge needs. On Discharges, open the discharge; on a computer, choose its Held up tab. Under Discharge arrangements, choose the arrangement and who owns it, then Add as outstanding. Mark each one done, Not needed or Reconfirm as it moves. Nothing here frees the bed.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

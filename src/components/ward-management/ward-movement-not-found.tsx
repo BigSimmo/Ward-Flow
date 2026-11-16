@@ -26,7 +26,7 @@ import { patientHref } from "@/components/ward-management/shell/ward-facade";
  *
  * 🔴 AND THE FIRST VERSION OF THIS FIX INTRODUCED A WORSE FALSE STATEMENT THAN THE ONE IT REPLACED.
  * It ended "a person is not a movement, and their record is not reachable from here." A person's
- * record IS reachable: `/ward-flow/people/[patientId]` renders it, and the patient search
+ * record IS reachable: `/bedchart/people/[patientId]` renders it, and the patient search
  * links straight to it. So the page sent a coordinator AWAY from the screen holding what they
  * wanted, fluently and with authority. **The old bug quoted nonsense and the reader looked
  * elsewhere; this one was believable.** Caught by an adversarial review, not by me, and not by any
@@ -46,7 +46,7 @@ export function WardMovementNotFound({
   // read-once handoff), never in the link, so the search opens with it typed in.
   const searchLink = (
     <Link
-      href="/ward-flow/search"
+      href="/bedchart/search"
       onClick={(event) => handOffPatientSearchText(isNewTabClick(event) ? undefined : requestedId)}
     >
       Search patients for {requestedId}
@@ -63,7 +63,7 @@ export function WardMovementNotFound({
           {aboutPerson ? (
             <WardNotFoundBody
               title="Patient not found"
-              list={{ href: "/ward-flow/search", label: "All patients" }}
+              list={{ href: "/bedchart/search", label: "All patients" }}
               search={reason === "no-such-umrn" ? searchLink : null}
             >
               {reason === "no-such-umrn" ? `Nobody with UMRN ${requestedId}.` : "No patient matches this link."}
@@ -71,7 +71,7 @@ export function WardMovementNotFound({
           ) : (
             <WardNotFoundBody
               title="Movement not found"
-              list={{ href: "/ward-flow/movements", label: "All movements" }}
+              list={{ href: "/bedchart/movements", label: "All movements" }}
               extra={
                 reason === "not-a-movement-id" && requestedId.startsWith("PT-") ? (
                   <Link href={patientHref(requestedId)}>Open their patient record</Link>

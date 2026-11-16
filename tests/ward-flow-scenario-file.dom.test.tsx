@@ -76,7 +76,7 @@ describe("demo scenario save and load", () => {
     const savedNow = current!.now;
     const built = await current!.saveScenarioFile!();
     if (!built.ok) throw new Error(built.reason);
-    expect(built.fileName).toMatch(/^ward-flow-scenario-\d{4}-\d{2}-\d{2}-\d{4}\.json$/);
+    expect(built.fileName).toMatch(/^bedchart-scenario-\d{4}-\d{2}-\d{2}-\d{4}\.json$/);
 
     act(() => current!.resetDemoState());
     expect(current!.patients.some((patient) => patient.givenName === "Josephine")).toBe(false);
@@ -242,7 +242,7 @@ describe("demo scenario save and load", () => {
     });
     expect(createObjectURL).toHaveBeenCalledTimes(1);
     expect(clickSpy).toHaveBeenCalledTimes(1);
-    expect(message()).toHaveTextContent(/^Download requested: ward-flow-scenario-.*Check your browser downloads\.$/);
+    expect(message()).toHaveTextContent(/^Download requested: bedchart-scenario-.*Check your browser downloads\.$/);
     const built = await current!.saveScenarioFile!();
     if (!built.ok) throw new Error(built.reason);
 
@@ -266,7 +266,7 @@ describe("demo scenario save and load", () => {
     await act(async () => {
       fireEvent.change(input, { target: { files: [bad] } });
     });
-    await waitFor(() => expect(message()).toHaveTextContent("This file is not a Ward Flow demo scenario."));
+    await waitFor(() => expect(message()).toHaveTextContent("This file is not a BedChart demo scenario."));
     clickSpy.mockRestore();
   });
 });

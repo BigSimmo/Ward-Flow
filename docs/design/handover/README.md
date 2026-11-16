@@ -1,6 +1,6 @@
 # Ward Flow handover: start here
 
-_Updated 10 November 2026. This file replaces `/mnt/project-files/ward-flow/HANDOVER.md` (Q381, Josh, 3 November 2026), which now only points here._
+_Updated 10 November 2026. This file replaces `/mnt/project-files/bedchart/HANDOVER.md` (Q381, Josh, 3 November 2026), which now only points here._
 
 This is the one handover entry for the Ward Flow redesign and the **source of truth for owner question numbers (Q numbers)**. Record each new question and its answer in the [question log](#question-log) below, in the same PR as the work or in a small docs PR.
 
@@ -10,8 +10,8 @@ This is the one handover entry for the Ward Flow redesign and the **source of tr
 
 1. [AGENTS.md](../../../AGENTS.md), before any change.
 2. [Roadmap](../../ward-flow/roadmap.md) for what comes next, and [STATUS.md](../../ward-flow/STATUS.md) for decision state and the "Waiting on Josh" list.
-3. The design system of record, [DESIGN-SYSTEM.md](../DESIGN-SYSTEM.md) (Q327), and the master design artifact (https://claude.ai/artifact/91BETDiimnJVbyeCb2sxcK, source in `/mnt/project-files/ward-flow/mockups/master/`). Copy the shell from the newest master screens, never from main.
-4. Mock-up links: `/mnt/project-files/ward-flow/mockups/LINKS.md`. The old `ARTIFACTS.md` links do not open.
+3. The design system of record, [DESIGN-SYSTEM.md](../DESIGN-SYSTEM.md) (Q327), and the master design artifact (https://claude.ai/artifact/91BETDiimnJVbyeCb2sxcK, source in `/mnt/project-files/bedchart/mockups/master/`). Copy the shell from the newest master screens, never from main.
+4. Mock-up links: `/mnt/project-files/bedchart/mockups/LINKS.md`. The old `ARTIFACTS.md` links do not open.
 5. The screen handover file in this folder for the screen you are working on. Each one is dated history from 1 November 2026; recheck GitHub before trusting a PR state in it.
 
 ## State on 3 November 2026
@@ -103,7 +103,7 @@ Numbers not listed above in this block were not recorded in HANDOVER.md.
 ### Q307 to Q326 (2 November 2026)
 
 - Q307: dock fix. Yes (#1310).
-- Q308 to Q326 (Tools review, `/mnt/project-files/ward-flow/reviews/tools-2-nov/SUGGESTIONS.md`): all yes, plus an overhaul of every role view. Q308 to Q316 layout and look (Q311 two panes recommended "not yet"); Q317 to Q322 tool redesigns; Q323 to Q326 new tools (Remind me, Message builder, Book transport, Due back from leave).
+- Q308 to Q326 (Tools review, `/mnt/project-files/bedchart/reviews/tools-2-nov/SUGGESTIONS.md`): all yes, plus an overhaul of every role view. Q308 to Q316 layout and look (Q311 two panes recommended "not yet"); Q317 to Q322 tool redesigns; Q323 to Q326 new tools (Remind me, Message builder, Book transport, Due back from leave).
 
 ### Q327 to Q349 (design system and Home flow, 2 to 3 November 2026)
 

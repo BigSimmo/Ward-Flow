@@ -80,7 +80,7 @@ describe("M11: a bed held for someone in a bed elsewhere", () => {
     expect(rows).toHaveLength(1);
     const row = rows[0]!;
     expect(row.id).toBe(`${INBOX_CATEGORIES.bed_held_elsewhere.idPrefix}${REFERRAL}`);
-    expect(row.href).toContain("/ward-flow/referrals?");
+    expect(row.href).toContain("/bedchart/referrals?");
     expect(row.detail).toContain(`Bed ${bedNumber}`);
     expect(inboxRowExists(state, row.id)).toBe(true);
     expect(inboxItemsForRole(rows, "coordinator")).toHaveLength(1);

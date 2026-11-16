@@ -168,7 +168,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
     care,
   } = props;
   const readOnlyRecord = clearanceGate.reason === "Exceptional access is read only.";
-  const newReferralHref = livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/ward-flow/referrals/new";
+  const newReferralHref = livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/bedchart/referrals/new";
   // Community clinician (redesign, 31 Oct 2026): the team follows its person on the ward but records
   // none of the ward's changes (leave, gone to ED, discharge date are ward or coordinator only), so the
   // Record a change card of greyed buttons and its "Switch to Ward desk" link are left out for this desk.

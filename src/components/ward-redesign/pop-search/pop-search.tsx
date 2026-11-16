@@ -147,7 +147,7 @@ export function PopSearch({ page }: { page: ReactNode }) {
               tasksAreAlerts={oneAlertsQueue}
               plannedAdmissions={plannedAdmissions}
               now={now}
-              placeholder="Search Ward Flow"
+              placeholder="Search BedChart"
               findHelp={findHelp}
               onHelpResult={onHelpResult}
               accessLifetime={accessLifetime}

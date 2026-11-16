@@ -27,7 +27,7 @@ export async function attachBusyPhoneBaseline(page: Page, info: TestInfo) {
         )
         .catch(() => null);
       const started = performance.now();
-      await page.goto("/ward-flow", { waitUntil: "domcontentloaded" });
+      await page.goto("/bedchart", { waitUntil: "domcontentloaded" });
       phase = "full workspace response";
       const response = await snapshot;
       if (!response) throw new Error("Full workspace response unavailable");

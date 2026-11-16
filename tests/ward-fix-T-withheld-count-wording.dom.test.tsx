@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
-  usePathname: () => "/ward-flow/statistics",
+  usePathname: () => "/bedchart/statistics",
 }));
 
 import { ExecutiveStatisticsProvider } from "@/components/ward-management/statistics/executive-statistics-context";

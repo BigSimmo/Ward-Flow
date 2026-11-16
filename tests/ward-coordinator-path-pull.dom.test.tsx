@@ -217,6 +217,6 @@ describe("Home: Act now and Referrals to decide (WS-02, WS-04)", () => {
     );
     const decide = screen.getAllByRole("link", { name: /^Decide referral for / });
     expect(decide.length).toBeGreaterThan(0);
-    for (const link of decide) expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/referrals\?referral=/);
+    for (const link of decide) expect(link.getAttribute("href")).toMatch(/^\/bedchart\/referrals\?referral=/);
   });
 });

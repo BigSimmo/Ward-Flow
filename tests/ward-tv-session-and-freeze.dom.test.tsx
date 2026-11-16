@@ -3,7 +3,7 @@ import { act, cleanup, render, screen } from "@testing-library/react";
 import { useState, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const route = vi.hoisted(() => ({ pathname: "/ward-flow/bed-meeting" }));
+const route = vi.hoisted(() => ({ pathname: "/bedchart/bed-meeting" }));
 vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/navigation")>()),
   usePathname: () => route.pathname,
@@ -29,7 +29,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 afterEach(() => {
   cleanup();
-  route.pathname = "/ward-flow/bed-meeting";
+  route.pathname = "/bedchart/bed-meeting";
 });
 
 function signedOut(): WardSharedConnection {
@@ -62,13 +62,13 @@ describe("TV session end (TV-13, H-0787)", () => {
   });
 
   it("keeps the desk sign-in page off the TV route", () => {
-    route.pathname = "/ward-flow/capacity";
+    route.pathname = "/bedchart/capacity";
     render(
       <WardSharedAccess connection={signedOut()}>
         <p>Synthetic desk</p>
       </WardSharedAccess>,
     );
-    expect(screen.getByRole("main", { name: "Ward Flow sign-in" })).toBeVisible();
+    expect(screen.getByRole("main", { name: "BedChart sign-in" })).toBeVisible();
     expect(screen.queryByTestId("ward-tv-signed-out")).toBeNull();
   });
 

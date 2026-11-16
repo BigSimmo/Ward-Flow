@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 
 const routing = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/ward/rph-adult-secure",
+  usePathname: () => "/bedchart/ward/rph-adult-secure",
   useRouter: () => routing,
 }));
 vi.mock("next/link", () => ({
@@ -83,7 +83,7 @@ describe("ward switch destinations", () => {
     // The panel's own stylesheet turns pointer events back on inside the overlay layer; jsdom loads
     // no stylesheet, so the row is pressed directly.
     fireEvent.click(within(panel).getByRole("button", { name: new RegExp(covered.name) }));
-    expect(routing.push).toHaveBeenCalledWith(`/ward-flow/ward/${covered.id}`);
+    expect(routing.push).toHaveBeenCalledWith(`/bedchart/ward/${covered.id}`);
   });
 
   it("retains the nearby ward choices when role access is disabled", async () => {

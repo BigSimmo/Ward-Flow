@@ -117,7 +117,7 @@ it("retains the canonical work-column offset through auto-to-auto resize clamps"
 
 it("adopts a new route's position behind a persistent sheet before preserving further clamps", async () => {
   const original = window.location.href;
-  window.history.replaceState(null, "", "/ward-flow/search");
+  window.history.replaceState(null, "", "/bedchart/search");
   const column = document.createElement("div");
   column.setAttribute("data-wf-scroller", "");
   column.scrollTop = 420;
@@ -130,7 +130,7 @@ it("adopts a new route's position behind a persistent sheet before preserving fu
   );
   const view = render(<TwoSheets shown="a" />);
   try {
-    window.history.replaceState(null, "", "/ward-flow/capacity");
+    window.history.replaceState(null, "", "/bedchart/capacity");
     column.scrollTop = 73;
     const reads = vi.mocked(window.getComputedStyle).mock.calls.length;
     fireEvent(window, new Event("resize"));

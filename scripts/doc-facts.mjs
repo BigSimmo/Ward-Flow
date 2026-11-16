@@ -133,20 +133,20 @@ export function collectFacts(root = ROOT) {
     },
     {
       name: "ward-route-count",
-      value: String(countPages(path.join(root, "src/app/ward-flow"))),
-      about: "`page.tsx` routes under `/ward-flow`",
-      source: "src/app/ward-flow/",
+      value: String(countPages(path.join(root, "src/app/bedchart"))),
+      about: "`page.tsx` routes under `/bedchart`",
+      source: "src/app/bedchart/",
     },
     {
       name: "app-route-count",
       value: String(
-        ["src/app/ward-flow", "src/app/ward-flow-sign-in", "src/app/mockups"].reduce(
+        ["src/app/bedchart", "src/app/bedchart-sign-in", "src/app/mockups"].reduce(
           (total, dir) => total + countPages(path.join(root, dir), ["page.tsx", "route.ts"]),
           0,
         ),
       ),
       about: "Pages and route handlers: the Ward Flow routes plus sign-in and the `/mockups` digest",
-      source: "src/app/ward-flow/, src/app/ward-flow-sign-in/, src/app/mockups/",
+      source: "src/app/bedchart/, src/app/bedchart-sign-in/, src/app/mockups/",
     },
     {
       name: "latest-decision",

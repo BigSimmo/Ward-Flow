@@ -41,7 +41,7 @@ function toastFor(page: Page, title: string): Locator {
 test("Legal form: a Form 1A gets its time written and is marked received, the receipt undoes, and the move shows the form", async ({
   page,
 }, testInfo) => {
-  await page.goto("/ward-flow/legal-forms", { waitUntil: "load" });
+  await page.goto("/bedchart/legal-forms", { waitUntil: "load" });
   await waitForScreen(page, "ward-legal-forms-page");
   await plantSentinel(page);
   await dismissTip(page);
@@ -98,7 +98,7 @@ test("Legal form: a Form 1A gets its time written and is marked received, the re
 
   // The move's own page reads the same live record.
   await panel.getByRole("link", { name: "Open move" }).click();
-  await page.waitForURL("**/ward-flow/movements/**");
+  await page.waitForURL("**/bedchart/movements/**");
   await waitForScreen(page, "ward-person-screen");
   // Its Legal now panel names the form the coordinator just filed.
   // (a region on the phone, a headed block on desktop, each with the form's code in bold).

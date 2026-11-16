@@ -205,13 +205,13 @@ const allowSearchChoice = () => true;
 /**
  * A SHORT LIST, NOT A CATALOGUE. This is chrome that sits above every screen's own content, not a
  * replacement for the dedicated search console — a coordinator wanting the full result set already
- * has `/ward-flow/search` for that. Applied per kind so a query that matches many movements
+ * has `/bedchart/search` for that. Applied per kind so a query that matches many movements
  * cannot crowd every person result off the bottom of a short popup.
  */
 const MAX_RESULTS_PER_GROUP = 6;
 
 /** The full search console, linked from the palette footer. No query travels in the URL. */
-const PATIENT_SEARCH_HREF = "/ward-flow/search";
+const PATIENT_SEARCH_HREF = "/bedchart/search";
 
 /**
  * THE KIND CHIPS ALONG THE TOP OF THE PALETTE. "All" keeps the short list per kind; a single kind
@@ -1300,7 +1300,7 @@ export function WardGlobalSearch({
                     select(href, true);
                   });
                 }}
-                onHandover={() => select("/ward-flow/handover")}
+                onHandover={() => select("/bedchart/handover")}
               />
             ) : null}
           </div>

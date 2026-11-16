@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, expect, it, vi } from "vitest";
-const route = vi.hoisted(() => ({ pathname: "/ward-flow/search" }));
+const route = vi.hoisted(() => ({ pathname: "/bedchart/search" }));
 vi.mock("next/navigation", () => ({ usePathname: () => route.pathname }));
 import { useTourHome } from "@/components/ward-management/help/ward-tour-home";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -16,17 +16,17 @@ afterEach(() => {
     setWardFeatureFlagOnDevice("role-access", null);
     dispatchPersonaSyncForRole("coordinator");
   });
-  route.pathname = "/ward-flow/search";
+  route.pathname = "/bedchart/search";
 });
 it("updates local persona homes and retains current-route priority", () => {
   act(() => dispatchPersonaSyncForRole("ward", "fre-adult-open"));
   const view = renderHook(() => useTourHome("ward"), { wrapper });
-  expect(view.result.current.home).toBe("/ward-flow/ward/fre-adult-open");
+  expect(view.result.current.home).toBe("/bedchart/ward/fre-adult-open");
   act(() => dispatchPersonaSyncForRole("ward", "rph-adult-secure"));
-  expect(view.result.current.home).toBe("/ward-flow/ward/rph-adult-secure");
-  route.pathname = "/ward-flow/ward/fre-adult-open";
+  expect(view.result.current.home).toBe("/bedchart/ward/rph-adult-secure");
+  route.pathname = "/bedchart/ward/fre-adult-open";
   view.rerender();
-  expect(view.result.current.home).toBe("/ward-flow/ward/fre-adult-open");
+  expect(view.result.current.home).toBe("/bedchart/ward/fre-adult-open");
 });
 it("resolves an authenticated ward before route or persona", () => {
   act(() => {
@@ -37,11 +37,11 @@ it("resolves an authenticated ward before route or persona", () => {
     });
     dispatchPersonaSyncForRole("ward", "fre-adult-open");
   });
-  route.pathname = "/ward-flow/ward/fre-adult-open";
+  route.pathname = "/bedchart/ward/fre-adult-open";
   const view = renderHook(() => useTourHome("ward"), { wrapper });
   expect(view.result.current).toEqual({
-    home: "/ward-flow/ward/rph-adult-secure",
-    deskHome: "/ward-flow/ward/rph-adult-secure",
+    home: "/bedchart/ward/rph-adult-secure",
+    deskHome: "/bedchart/ward/rph-adult-secure",
   });
 });
 it("keeps missing-flow and executive-control early returns", () => {
@@ -60,7 +60,7 @@ it("keeps missing-flow and executive-control early returns", () => {
   );
   const view = renderHook(() => useTourHome("ward"), { wrapper: reporting });
   expect(view.result.current).toEqual({
-    home: "/ward-flow/statistics",
-    deskHome: "/ward-flow/statistics",
+    home: "/bedchart/statistics",
+    deskHome: "/bedchart/statistics",
   });
 });

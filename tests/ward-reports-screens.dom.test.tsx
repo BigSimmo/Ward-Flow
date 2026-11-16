@@ -9,7 +9,7 @@ vi.mock("next/link", () => ({
     </a>
   ),
 }));
-const route = vi.hoisted(() => ({ pathname: "/ward-flow/statistics/weekly" }));
+const route = vi.hoisted(() => ({ pathname: "/bedchart/statistics/weekly" }));
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useRouter: () => ({ push: vi.fn() }),
@@ -67,7 +67,7 @@ afterEach(() => {
   forgetDowntimePack();
   resetWardAccessStoreForTests();
   setWardFeatureFlagOnDevice("role-access", null);
-  route.pathname = "/ward-flow/statistics/weekly";
+  route.pathname = "/bedchart/statistics/weekly";
 });
 
 const OLD_PACK: DowntimePack = {
@@ -304,7 +304,7 @@ describe("read-only report screens", () => {
   });
 
   it("on a phone keeps record kind and the role view one tap away, in a sheet", () => {
-    route.pathname = "/ward-flow/reports/chronology";
+    route.pathname = "/bedchart/reports/chronology";
     vi.stubGlobal(
       "matchMedia",
       vi.fn((query: string) => ({
@@ -334,7 +334,7 @@ describe("read-only report screens", () => {
 
   // Renders every synthetic patient's chronology in turn; slower CI runners need the headroom.
   it("lists patients Family, Given in family-name order, and groups each board day once (ops-24, ops-18)", () => {
-    route.pathname = "/ward-flow/reports/chronology";
+    route.pathname = "/bedchart/reports/chronology";
     inProvider(<PatientChronologyScreen />);
     // The start list shows 6, then one Show more, then points to the search (Josh, 31 Oct 2026).
     expect(screen.getAllByTestId("ward-chronology-start-patient")).toHaveLength(6);
@@ -381,7 +381,7 @@ describe("read-only report screens", () => {
   it("opens the weekly report on this week so far, with a Weekly tab current", () => {
     inProvider(<WeeklyReportScreen />);
     expect(screen.getByTestId("ward-weekly-range").textContent).toMatch(/^Week: This week so far/u);
-    const nav = within(screen.getByRole("navigation", { name: "Ward Flow statistics sections" }));
+    const nav = within(screen.getByRole("navigation", { name: "BedChart statistics sections" }));
     expect(nav.getByRole("link", { name: "Weekly" })).toHaveAttribute("aria-current", "page");
     chooseWeek(0);
     expect(screen.getByTestId("ward-weekly-range").textContent).toMatch(/^Week: Last full week/u);
@@ -408,7 +408,7 @@ describe("read-only report screens", () => {
   });
 
   it("keeps recorded observations in both printable tables", () => {
-    route.pathname = "/ward-flow/reports/downtime";
+    route.pathname = "/bedchart/reports/downtime";
     const world = seedWardFlowState();
     const pack = downtimePack({ ...world, bedUnits: world.units, now: NOW_ANCHOR, identify: () => "Synthetic person" });
     inProvider(<DowntimePackScreen />, { pack });
@@ -427,7 +427,7 @@ describe("read-only report screens", () => {
   });
 
   it("names the pack year and zone, including the year on rows from an earlier year", () => {
-    route.pathname = "/ward-flow/reports/downtime";
+    route.pathname = "/bedchart/reports/downtime";
     const pack: DowntimePack = {
       ...OLD_PACK,
       generatedAt: NOW_ANCHOR,
@@ -459,7 +459,7 @@ describe("read-only report screens", () => {
   });
 
   it("keeps the offline warning and last sync in the complete print provenance", () => {
-    route.pathname = "/ward-flow/reports/downtime";
+    route.pathname = "/bedchart/reports/downtime";
     const pack: DowntimePack = {
       ...OLD_PACK,
       generatedAt: NOW_ANCHOR,
@@ -472,7 +472,7 @@ describe("read-only report screens", () => {
   });
 
   it("includes recorded observations in phone ED and pending-move detail sheets", () => {
-    route.pathname = "/ward-flow/reports/downtime";
+    route.pathname = "/bedchart/reports/downtime";
     vi.stubGlobal(
       "matchMedia",
       vi.fn((query: string) => ({
@@ -503,7 +503,7 @@ describe("read-only report screens", () => {
   });
 
   it("on a phone prints all four full tables, whichever section is open", () => {
-    route.pathname = "/ward-flow/reports/downtime";
+    route.pathname = "/bedchart/reports/downtime";
     vi.stubGlobal(
       "matchMedia",
       vi.fn((query: string) => ({
@@ -545,12 +545,12 @@ describe("read-only report screens", () => {
   });
 
   it("reads the coordinator audit only on a coordinator route, and says so elsewhere", () => {
-    route.pathname = "/ward-flow/reports/chronology";
+    route.pathname = "/bedchart/reports/chronology";
     const { unmount } = inProvider(<PatientChronologyScreen initialPatientId="PT-013" />);
     expect(screen.queryByTestId("ward-chronology-audit-withheld")).toBeNull();
     unmount();
 
-    route.pathname = "/ward-flow/ward/some-ward";
+    route.pathname = "/bedchart/ward/some-ward";
     inProvider(<PatientChronologyScreen initialPatientId="PT-013" />);
     expect(screen.getByTestId("ward-chronology-audit-withheld").textContent).toBe(
       "Coordinator audit not shown for this role",
@@ -766,7 +766,7 @@ describe("read-only report screens", () => {
   });
 
   it("filters the chronology by source and keeps the count line equal to the rows shown", () => {
-    route.pathname = "/ward-flow/reports/chronology";
+    route.pathname = "/bedchart/reports/chronology";
     inProvider(<PatientChronologyScreen initialPatientId="PT-013" />);
     const bodyRows = () =>
       within(screen.getByTestId("ward-chronology-table"))
@@ -780,7 +780,7 @@ describe("read-only report screens", () => {
   });
 
   it("opens a clicked event in the side panel and narrows the sources for the ward nurse view", () => {
-    route.pathname = "/ward-flow/reports/chronology";
+    route.pathname = "/bedchart/reports/chronology";
     inProvider(<PatientChronologyScreen initialPatientId="PT-013" />);
     const table = within(screen.getByTestId("ward-chronology-table"));
     fireEvent.click(table.getAllByRole("button")[0]);
@@ -792,7 +792,7 @@ describe("read-only report screens", () => {
   });
 
   it("offers Clear filters when nothing matches", () => {
-    route.pathname = "/ward-flow/reports/chronology";
+    route.pathname = "/bedchart/reports/chronology";
     inProvider(<PatientChronologyScreen initialPatientId="PT-013" />);
     fireEvent.change(screen.getByRole("searchbox", { name: "Find in events" }), {
       target: { value: "zzzz no such words" },
@@ -806,10 +806,10 @@ describe("read-only report screens", () => {
     inProvider(
       <WardToolsSheet isPhone={false} roleLabel="Bed coordinator" onNavigate={() => {}} onNewReferral={() => {}} />,
     );
-    expect(screen.getByRole("link", { name: /Downtime pack/u })).toHaveAttribute("href", "/ward-flow/reports/downtime");
+    expect(screen.getByRole("link", { name: /Downtime pack/u })).toHaveAttribute("href", "/bedchart/reports/downtime");
     expect(screen.getByRole("link", { name: /Patient chronology/u })).toHaveAttribute(
       "href",
-      "/ward-flow/reports/chronology",
+      "/bedchart/reports/chronology",
     );
   });
 });

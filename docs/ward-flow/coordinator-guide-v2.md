@@ -1,4 +1,4 @@
-# Ward Flow: a guide for the bed coordinator
+# BedChart: a guide for the bed coordinator
 
 **Audience:** coordinators exploring the synthetic prototype. **Status:** maintained guide with dated evidence.
 **Owner:** Documentation. Navigation in section 2 was checked against source at
@@ -25,9 +25,9 @@ _Updated 2026-11-09 - legal due time warnings corrected from source (early warni
 
 ---
 
-## 1. What Ward Flow is, and what it is not
+## 1. What BedChart is, and what it is not
 
-Ward Flow shows one picture of mental health beds, referrals and patient movements across a
+BedChart shows one picture of mental health beds, referrals and patient movements across a
 health service. It is a prototype.
 
 - **Every patient, ward and figure is made up.** No real patient data is ever entered.
@@ -252,7 +252,7 @@ the due time than the early warning. They only change when a typed due time is s
 
 ## 8. What is saved, and what is not
 
-In local demo mode, Ward Flow can save structured work in this tab’s session storage while
+In local demo mode, BedChart can save structured work in this tab’s session storage while
 browser storage is available and the privacy lock permits it. A valid same-day snapshot can return
 on reload; recovery after a crash, tab closure or restart is not guaranteed.
 
@@ -276,7 +276,7 @@ These source-based corrections have not been rechecked on screen.
 ## 9. Words the app uses
 
 - **Not recorded:** nobody has entered this. The app does not guess.
-- **Not legally checked:** a time someone typed from the paper form (`form-register.ts`), not checked against the Act. Ward Flow holds no statutory period table (`D-70`).
+- **Not legally checked:** a time someone typed from the paper form (`form-register.ts`), not checked against the Act. BedChart holds no statutory period table (`D-70`).
 - **Ready (`R-B-05`):** a bed the ward has confirmed is clean and staffed for an admission.
 - **Pulled (`R-B-05`):** a bed pulled for one named, accepted patient, from pull until arrival or release.
 - **Closed (`R-B-05`):** a bed that is out of service / closed and cannot be allocated.

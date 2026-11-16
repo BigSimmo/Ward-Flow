@@ -20,6 +20,6 @@ One patient's record: where they are now, their movement and the next step.
 12. Care and safety. Add care plan, the tribunal hearing date, whether a carer was told and cultural support asked for.
 13. Who to call. The ED or ward caring for them now, with a number to copy. Numbers are synthetic.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

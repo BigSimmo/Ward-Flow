@@ -180,9 +180,9 @@ describe("Figma mapped fixture identity", () => {
     for (const route of routes) expect(fixtureExists(route), route).toBe(true);
   });
   it("rejects existing dynamic pages with missing records", () => {
-    expect(fixtureExists("/ward-flow/ward/ahs-moodjar")).toBe(false);
-    expect(fixtureExists("/ward-flow/statistics/service/East")).toBe(false);
-    expect(fixtureExists("/ward-flow/ward/rph-adult-secure")).toBe(true);
-    expect(fixtureExists("/ward-flow/statistics/service/East%20Metro")).toBe(true);
+    expect(fixtureExists("/bedchart/ward/ahs-moodjar")).toBe(false);
+    expect(fixtureExists("/bedchart/statistics/service/East")).toBe(false);
+    expect(fixtureExists("/bedchart/ward/rph-adult-secure")).toBe(true);
+    expect(fixtureExists("/bedchart/statistics/service/East%20Metro")).toBe(true);
   });
 });

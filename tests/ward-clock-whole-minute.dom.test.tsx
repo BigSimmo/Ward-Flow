@@ -5,7 +5,7 @@ import { absoluteWallClockMinutes, wallClockNow } from "@/components/ward-manage
 import { WardFlowProvider, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
 }));
 

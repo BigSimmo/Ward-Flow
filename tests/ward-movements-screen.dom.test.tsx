@@ -1132,7 +1132,7 @@ describe("causeOf reads its severe causes from the shared delayGroups classifier
 // Usability review, 24 Oct 2026: the tab lives in the address, so Back from a record returns to it.
 describe("movements board tab in the address", () => {
   it("opens on the tab the address names and writes a fixed id when the tab changes", async () => {
-    window.history.replaceState(null, "", "/ward-flow/movements?tab=resolved");
+    window.history.replaceState(null, "", "/bedchart/movements?tab=resolved");
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <MovementsScreen />
@@ -1152,7 +1152,7 @@ describe("movements board tab in the address", () => {
   });
 
   it("ignores a tab id it does not know", async () => {
-    window.history.replaceState(null, "", "/ward-flow/movements?tab=Smith");
+    window.history.replaceState(null, "", "/bedchart/movements?tab=Smith");
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <MovementsScreen />
@@ -1190,7 +1190,7 @@ describe("M3: the worklist leads and check in lives on Transport (3 Nov 2026)", 
     expect(within(drawer).getByRole("region", { name: "Next step" })).toBeInTheDocument();
     expect(within(drawer).getByRole("link", { name: /Open full job on Transport/u })).toHaveAttribute(
       "href",
-      expect.stringMatching(/^\/ward-flow\/transport\/officer\?job=/u),
+      expect.stringMatching(/^\/bedchart\/transport\/officer\?job=/u),
     );
   });
 });
@@ -1211,7 +1211,7 @@ describe("Note 7: opening a patient keeps the page where it is (8 Nov 2026)", ()
 describe("movement detail browser history", () => {
   it("restores the exact owned movement on Forward, closes on Back, and retains Next metadata", () => {
     const nextState = { __NA: true, tree: ["ward-flow"] };
-    window.history.replaceState(nextState, "", "/ward-flow/movements");
+    window.history.replaceState(nextState, "", "/bedchart/movements");
     renderScreen();
     const row = findRecordRow(screen.getByRole("region", { name: /Movement worklist/u }), "WF-001");
     fireEvent.click(within(row).getByRole("button", { name: /What is recorded/u }));

@@ -17,7 +17,7 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -96,8 +96,8 @@ const world = {
   eds: allEmergencyDepartments(),
 };
 const hrefs = {
-  ward: (id: string) => `/ward-flow/ward/${id}`,
-  patient: (id: string) => `/ward-flow/people/${id}`,
+  ward: (id: string) => `/bedchart/ward/${id}`,
+  patient: (id: string) => `/bedchart/people/${id}`,
   canOpen: () => true,
 };
 const waitingMovement = seed.movements.find((movement) => isOpen(movement) && resolvePatient(movement).patient)!;

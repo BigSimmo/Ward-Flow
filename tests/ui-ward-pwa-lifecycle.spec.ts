@@ -56,7 +56,7 @@ async function ready(page: Page) {
 }
 
 async function controlled(page: Page, origin: string) {
-  await page.goto(`${origin}/ward-flow`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${origin}/bedchart`, { waitUntil: "domcontentloaded" });
   await ready(page);
   await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
 }
@@ -74,7 +74,7 @@ test.describe("real-worker recovery and update ownership @mockup", () => {
     await page.evaluate(async () => {
       await fetch("/api/health");
       // A screen's page data, fetched the way the app router asks for it.
-      await fetch("/ward-flow/capacity?_rsc=m160", { headers: { RSC: "1" } });
+      await fetch("/bedchart/capacity?_rsc=m160", { headers: { RSC: "1" } });
     });
     const cached = () =>
       page.evaluate(async () => {
@@ -100,22 +100,22 @@ test.describe("real-worker recovery and update ownership @mockup", () => {
       ),
     ).toBe(true);
     // M160: never a Ward Flow page, a React Server Components payload or an API response.
-    expect(paths.filter((path) => path === "/ward-flow" || path.startsWith("/ward-flow/"))).toEqual([]);
+    expect(paths.filter((path) => path === "/bedchart" || path.startsWith("/bedchart/"))).toEqual([]);
     expect(paths.filter((path) => path === "/api" || path.startsWith("/api/"))).toEqual([]);
     expect(urls.filter((url) => new URL(url).searchParams.has("_rsc"))).toEqual([]);
     await context.setOffline(true);
     try {
-      await page.goto(`${pwa.origin}/ward-flow/capacity`, {
+      await page.goto(`${pwa.origin}/bedchart/capacity`, {
         waitUntil: "domcontentloaded",
       });
-      await expect(page.getByRole("heading", { name: "Ward Flow needs a connection" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "BedChart needs a connection" })).toBeVisible();
     } finally {
       await context.setOffline(false);
     }
     await page.getByRole("link", { name: "Try again" }).click();
     await ready(page);
-    expect(new URL(page.url()).pathname).toBe("/ward-flow/capacity");
-    await expect(page.getByRole("heading", { name: "Ward Flow needs a connection" })).toHaveCount(0);
+    expect(new URL(page.url()).pathname).toBe("/bedchart/capacity");
+    await expect(page.getByRole("heading", { name: "BedChart needs a connection" })).toHaveCount(0);
   });
 
   for (const preload of [true, false]) {
@@ -127,13 +127,13 @@ test.describe("real-worker recovery and update ownership @mockup", () => {
         if (!registration.navigationPreload) throw new Error("This Chromium lane needs navigation preload support.");
         await registration.navigationPreload[enabled ? "enable" : "disable"]();
       }, preload);
-      pwa.state.heldPath = "/ward-flow/capacity";
+      pwa.state.heldPath = "/bedchart/capacity";
       // No rejection/release is injected. The application deadline must commit its offline document.
-      await page.goto(`${pwa.origin}/ward-flow/capacity`, {
+      await page.goto(`${pwa.origin}/bedchart/capacity`, {
         waitUntil: "domcontentloaded",
         timeout: 25_000,
       });
-      await expect(page.getByRole("heading", { name: "Ward Flow needs a connection" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "BedChart needs a connection" })).toBeVisible();
       expect(pwa.state.requests.length).toBeGreaterThan(0);
       expect(pwa.state.requests.some((request) => request.preload)).toBe(preload);
     });
@@ -147,7 +147,7 @@ test.describe("real-worker recovery and update ownership @mockup", () => {
     test.setTimeout(60_000);
     await controlled(first, pwa.origin);
     const second = await context.newPage();
-    await second.goto(`${pwa.origin}/ward-flow/referrals/new`, {
+    await second.goto(`${pwa.origin}/bedchart/referrals/new`, {
       waitUntil: "domcontentloaded",
     });
     await ready(second);
@@ -190,7 +190,7 @@ test.describe("real-worker recovery and update ownership @mockup", () => {
     });
     pwa.state.version = "B";
     await first.evaluate(async () => (await navigator.serviceWorker.ready).update());
-    const update = "New version of Ward Flow ready";
+    const update = "New version of BedChart ready";
     await expect(first.getByText(update, { exact: true })).toBeVisible();
     await expect(second.getByText(update, { exact: true })).toBeVisible();
     await expect(first.locator("html")).toHaveAttribute("data-pwa-document", "first");

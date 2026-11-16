@@ -5,7 +5,7 @@ import { installMatchMediaStub } from "./setup/jsdom.setup";
 vi.mock("next/dynamic", () => ({ default: () => () => null }));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useSearchParams: () => new URLSearchParams(),
 }));
 vi.mock("@/components/ward-management/ward-global-search-help", () => {

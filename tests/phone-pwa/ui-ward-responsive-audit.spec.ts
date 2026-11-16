@@ -3,7 +3,7 @@ import { expect, test } from "playwright/test";
 test("@mockup global alert title remains readable on small and large phones", async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/ward-flow/alerts", { waitUntil: "networkidle" });
+  await page.goto("/bedchart/alerts", { waitUntil: "networkidle" });
   // Alerts redesign (Q153, 1 Nov 2026): the composer sends a directive from Tell areas something.
   // Page tops (9 Nov 2026): Broadcast alert is a chip in the hero at every width, no longer under "…".
   await page.getByRole("button", { name: "Broadcast alert" }).click();

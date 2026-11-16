@@ -6,9 +6,9 @@ import { encodeRecordAddress } from "@/components/ward-management/shell/ward-rec
  * it is sent on to the coded address.
  */
 export function movementPath(movementId: string): string {
-  return `/ward-flow/movements/${encodeRecordAddress(movementId)}`;
+  return `/bedchart/movements/${encodeRecordAddress(movementId)}`;
 }
 
 export function personPath(patientId: string): string {
-  return `/ward-flow/people/${encodeRecordAddress(patientId)}`;
+  return `/bedchart/people/${encodeRecordAddress(patientId)}`;
 }

@@ -24,7 +24,7 @@ export const PATIENT_CARER_TEXT = {
   entrySub: "One page about the receiving ward in plain words. No health or legal details.",
   button: "Print for patient or carer",
   dialogTitle: "Page for patient or carer",
-  dialogDescription: "One page about the ward. It has no health or legal details. Ward Flow does not send it anywhere.",
+  dialogDescription: "One page about the ward. It has no health or legal details. BedChart does not send it anywhere.",
   printAction: "Print or save PDF",
   eyebrow: "Information for you and the people who support you",
   titleLead: "You are going to",
@@ -45,7 +45,7 @@ export const PATIENT_CARER_TEXT = {
     "You can ask the ward how you can stay in touch.",
   ],
   draftFooter: "Draft wording: awaiting consumer, carer and cultural review.",
-  prototypeFooter: "Ward Flow prototype. Synthetic data, not for use with real patients.",
+  prototypeFooter: "BedChart prototype. Synthetic data, not for use with real patients.",
 } as const;
 
 export type PatientCarerPage = {

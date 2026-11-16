@@ -137,7 +137,7 @@ function AboutCard({
         <ShieldCheck size={14} aria-hidden="true" />
         {auditAvailable ? "Every rule save is recorded in the audit." : "Rule-save history is not shown on this desk."}
         {auditAvailable && governanceOpen ? (
-          <Link className={styles.inlineLink} href="/ward-flow/governance">
+          <Link className={styles.inlineLink} href="/bedchart/governance">
             Governance
           </Link>
         ) : null}
@@ -146,7 +146,7 @@ function AboutCard({
       <p className={styles.cardNote}>
         <Info size={14} aria-hidden="true" />
         Invented records, what this browser keeps, how to leave
-        <Link className={styles.inlineLink} href="/ward-flow/about" data-testid="settings-about-demo-link">
+        <Link className={styles.inlineLink} href="/bedchart/about" data-testid="settings-about-demo-link">
           About this demo
         </Link>
       </p>
@@ -155,7 +155,7 @@ function AboutCard({
           <BookOpen size={14} aria-hidden="true" />
           Product design reference
           <a className={styles.inlineLink} href={digestHref()} target="_blank" rel="noopener noreferrer">
-            Ward Flow Digest
+            BedChart Digest
           </a>
         </p>
       ) : null}

@@ -35,10 +35,10 @@ describe("searchHelp", () => {
     if (!paperOnly) return;
     const paper = HOW_TOS.find((howTo) => howTo.id === "downtime-paper")?.answer;
     const handover = HOW_TOS.find((howTo) => howTo.id === "downtime")?.answer;
-    const details = results(searchHelp("Ward Flow down last saved", paperOnly)).map((result) => result.detail);
+    const details = results(searchHelp("BedChart down last saved", paperOnly)).map((result) => result.detail);
     expect(details).toContain(paper);
     expect(details).not.toContain(handover);
-    expect(results(searchHelp("Ward Flow down last saved", "coordinator")).map((r) => r.detail)).toContain(handover);
+    expect(results(searchHelp("BedChart down last saved", "coordinator")).map((r) => r.detail)).toContain(handover);
   });
 
   it("searches the sheet's own site directory when one is passed", () => {
@@ -127,7 +127,7 @@ describe("searchHelp", () => {
       expect(searchHelp(q, "ward").kind).toBe("clinical");
     }
     expect(CLINICAL_REPLY).toBe(
-      "Help covers how to use Ward Flow, not clinical decisions. For clinical questions, please use your clinical guidelines or speak to the treating team.",
+      "Help covers how to use BedChart, not clinical decisions. For clinical questions, please use your clinical guidelines or speak to the treating team.",
     );
   });
 

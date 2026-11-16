@@ -664,7 +664,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
       className={styles.rail}
       data-rail={earlyShape ? earlyShape.rail : shownOpen ? "open" : "closed"}
       data-tablet={earlyShape ? (earlyShape.tablet ?? undefined) : isTabletLandscape ? "landscape" : undefined}
-      aria-label="Ward Flow sections"
+      aria-label="BedChart sections"
       data-testid="ward-rail"
     >
       <div className={styles.brand}>
@@ -674,7 +674,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
           <button
             type="button"
             className={styles.brandLink}
-            aria-label="Ward Flow, open the menu"
+            aria-label="BedChart, open the menu"
             title="Open the menu"
             data-testid="ward-rail-brand-open"
             onClick={(event) => (isTabletLandscape ? openMore(event.currentTarget) : setOpen(true))}
@@ -687,13 +687,13 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
           <Link
             href={deskHome}
             className={styles.brandLink}
-            aria-label="Ward Flow WA, home"
-            title="Ward Flow Western Australia"
+            aria-label="BedChart WA, home"
+            title="BedChart Western Australia"
           >
             <span className={styles.brandEmblem} aria-hidden="true">
               <WardFlowMark className={styles.emblemGlyph} />
             </span>
-            <span className={styles.brandTitle}>Ward Flow</span> <span className={styles.brandStateText}>WA</span>
+            <span className={styles.brandTitle}>BedChart</span> <span className={styles.brandStateText}>WA</span>
           </Link>
         )}
         <button
@@ -991,7 +991,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
       ) : null}
 
       <div className={styles.railScroll}>
-        <nav aria-label="Ward Flow views" className={styles.railNav}>
+        <nav aria-label="BedChart views" className={styles.railNav}>
           <section aria-label={`${menuLabel} menu`} className={styles.railGroup} data-testid="ward-rail-role-menu">
             <div className={styles.groupHead}>
               <p className={styles.eyebrow}>{menuLabel}</p>

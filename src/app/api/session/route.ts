@@ -67,7 +67,7 @@ function withPass(request: NextRequest, value: string, maxAge: number, kind: "ac
 export async function POST(request: NextRequest) {
   if (!frontDoorRequired()) return answer(204);
   const secret = frontDoorSecret();
-  if (!secret) return answer(503, "Sign-in is not set up on this server yet. Tell the Ward Flow coordinator.");
+  if (!secret) return answer(503, "Sign-in is not set up on this server yet. Tell the BedChart coordinator.");
   let body: { token?: string; demoCode?: string };
   try {
     const parsed = await readFrontDoorBody(request);

@@ -47,7 +47,7 @@ UNMAPPED rather than disappearing.
 | `statistics-third-edition.html` | `/statistics` | `statistics/` | yes |
 | `statistics-compare-third-edition.html` | `/statistics/compare` | `statistics/` | yes |
 | `statistics-service-third-edition.html` | `/statistics/service/[serviceId]` | `statistics/` | yes |
-| `sign-in-third-edition.html` | `/ward-flow-sign-in` | `../ward-flow-sign-in/` | yes |
+| `sign-in-third-edition.html` | `/bedchart-sign-in` | `../ward-flow-sign-in/` | yes |
 | `ward-answer-third-edition.html` | `/ward/[unitId]/answer` | `ward/` | yes |
 
 ## Drawn, no build contract

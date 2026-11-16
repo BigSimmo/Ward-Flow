@@ -9,7 +9,7 @@ import postcss from "postcss";
 import { createRef, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const nav = vi.hoisted(() => ({ pathname: "/ward-flow" }));
+const nav = vi.hoisted(() => ({ pathname: "/bedchart" }));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => nav.pathname,
@@ -85,7 +85,7 @@ function railMenu() {
 
 afterEach(() => {
   cleanup();
-  nav.pathname = "/ward-flow";
+  nav.pathname = "/bedchart";
   installMatchMediaStub(false);
   act(() => setWardFeatureFlagOnDevice("role-access", null));
   resetWardAccessStoreForTests();
@@ -130,7 +130,7 @@ describe("the rail shows the desk's own menu (B1)", () => {
       expect.stringMatching(/^Coming and going/u),
       expect.stringMatching(/^Referrals to answer/u),
     ]);
-    expect(handoverCard()).toHaveAttribute("href", "/ward-flow/handover");
+    expect(handoverCard()).toHaveAttribute("href", "/bedchart/handover");
     expect(screen.getByTestId("ward-rail-role-menu")).toHaveAccessibleName("Nurse in charge menu");
   });
 
@@ -158,11 +158,11 @@ describe("the rail shows the desk's own menu (B1)", () => {
       expect.stringMatching(/^All EDs\b/u),
       expect.stringMatching(/^Referrals, /u),
     ]);
-    expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("href", "/ward-flow");
-    expect(screen.getByRole("link", { name: /^Capacity, /u })).toHaveAttribute("href", "/ward-flow/capacity");
-    expect(handoverCard()).toHaveAttribute("href", "/ward-flow/handover");
-    expect(screen.getByRole("link", { name: /^Waiting\b/u })).toHaveAttribute("href", "/ward-flow/waiting");
-    expect(screen.getByRole("link", { name: /^All EDs\b/u })).toHaveAttribute("href", "/ward-flow/ed");
+    expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("href", "/bedchart");
+    expect(screen.getByRole("link", { name: /^Capacity, /u })).toHaveAttribute("href", "/bedchart/capacity");
+    expect(handoverCard()).toHaveAttribute("href", "/bedchart/handover");
+    expect(screen.getByRole("link", { name: /^Waiting\b/u })).toHaveAttribute("href", "/bedchart/waiting");
+    expect(screen.getByRole("link", { name: /^All EDs\b/u })).toHaveAttribute("href", "/bedchart/ed");
   });
 
   it("gives the executive Statistics and Capacity (Josh, 27 Oct 2026)", () => {
@@ -225,7 +225,7 @@ describe("Handover shows once where the countdown card links to it (A5)", () => 
   });
 
   it("keeps the menu's Handover, with its active state, while you are on the handover board", () => {
-    nav.pathname = "/ward-flow/handover";
+    nav.pathname = "/bedchart/handover";
     render(wrap(<WardRail />));
     const item = screen.getAllByRole("link", { name: "Handover" }).map((link) => link.closest("li"));
     expect(item).toHaveLength(1);
@@ -239,7 +239,7 @@ describe("Handover shows once where the countdown card links to it (A5)", () => 
     const sheet = screen.getByRole("dialog", { name: "More pages" });
     const toHandover = within(sheet)
       .getAllByRole("link")
-      .filter((link) => link.getAttribute("href") === "/ward-flow/handover");
+      .filter((link) => link.getAttribute("href") === "/bedchart/handover");
     expect(toHandover).toHaveLength(1);
   });
 
@@ -249,7 +249,7 @@ describe("Handover shows once where the countdown card links to it (A5)", () => 
     const sheet = screen.getByRole("dialog", { name: "Menu" });
     const toHandover = within(sheet)
       .getAllByRole("link")
-      .filter((link) => link.getAttribute("href") === "/ward-flow/handover");
+      .filter((link) => link.getAttribute("href") === "/bedchart/handover");
     expect(toHandover).toHaveLength(1);
     expect(toHandover[0]).toHaveTextContent(/^Handover(in .+|due now)$/u);
     expect(
@@ -262,15 +262,15 @@ describe("a ward or ED desk is not offered pages outside its role (DA-09)", () =
   it("points the brand at the desk's own home", () => {
     atDesk(WARD_DESK);
     render(wrap(<WardRail />));
-    expect(screen.getByRole("link", { name: "Ward Flow WA, home" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "BedChart WA, home" })).toHaveAttribute(
       "href",
-      "/ward-flow/ward/rph-adult-secure",
+      "/bedchart/ward/rph-adult-secure",
     );
   });
 
-  it("keeps the brand on Ward Flow's home for the coordinator", () => {
+  it("keeps the brand on BedChart's home for the coordinator", () => {
     render(wrap(<WardRail />));
-    expect(screen.getByRole("link", { name: "Ward Flow WA, home" })).toHaveAttribute("href", "/ward-flow");
+    expect(screen.getByRole("link", { name: "BedChart WA, home" })).toHaveAttribute("href", "/bedchart");
   });
 
   it("offers an ED desk no Governance link from the rail's More sheet", () => {
@@ -283,7 +283,7 @@ describe("a ward or ED desk is not offered pages outside its role (DA-09)", () =
     expect(
       within(sheet)
         .queryAllByRole("link")
-        .filter((link) => link.getAttribute("href") === "/ward-flow/governance"),
+        .filter((link) => link.getAttribute("href") === "/bedchart/governance"),
     ).toHaveLength(0);
     expect(within(sheet).getByText("Synthetic prototype")).toBeInTheDocument();
   });
@@ -297,20 +297,20 @@ describe("a ward or ED desk is not offered pages outside its role (DA-09)", () =
       return answer;
     };
     const coordinator = canOpen(null);
-    expect(coordinator("/ward-flow/capacity")).toBe(true);
-    expect(coordinator("/ward-flow/governance")).toBe(true);
+    expect(coordinator("/bedchart/capacity")).toBe(true);
+    expect(coordinator("/bedchart/governance")).toBe(true);
 
     const ward = canOpen(WARD_DESK);
-    expect(ward("/ward-flow/capacity")).toBe(false);
-    expect(ward("/ward-flow/governance")).toBe(false);
-    expect(ward("/ward-flow/ward/rph-adult-secure")).toBe(true);
+    expect(ward("/bedchart/capacity")).toBe(false);
+    expect(ward("/bedchart/governance")).toBe(false);
+    expect(ward("/bedchart/ward/rph-adult-secure")).toBe(true);
     // Josh (19 Oct 2026): ward desks may open the TV, ED desks may not.
-    expect(ward("/ward-flow/bed-meeting")).toBe(true);
+    expect(ward("/bedchart/bed-meeting")).toBe(true);
 
     const ed = canOpen(ED_DESK);
-    expect(ed("/ward-flow/capacity")).toBe(false);
-    expect(ed("/ward-flow/bed-meeting")).toBe(false);
-    expect(ed("/ward-flow/ed/peel-ed")).toBe(true);
+    expect(ed("/bedchart/capacity")).toBe(false);
+    expect(ed("/bedchart/bed-meeting")).toBe(false);
+    expect(ed("/bedchart/ed/peel-ed")).toBe(true);
   });
 
   it("offers an ED desk no TV link and no department strip; the coordinator keeps both", () => {
@@ -354,7 +354,7 @@ describe("a ward or ED desk is not offered pages outside its role (DA-09)", () =
       expect(within(coordinatorStrip).getByTestId("ward-ed-switch-peel-ed")).not.toHaveAttribute("href");
       expect(within(coordinatorStrip).getByTestId("ward-ed-switch-rph-ed")).toHaveAttribute(
         "href",
-        "/ward-flow/ed/rph-ed",
+        "/bedchart/ed/rph-ed",
       );
       expect(screen.getByTestId("ward-ed-open-tv")).toBeInTheDocument();
     } finally {

@@ -51,57 +51,57 @@
   },
   "screens": {
     "Core": {
-      "Home": "/ward-flow",
-      "Sign in": "/ward-flow-sign-in",
-      "Settings": "/ward-flow/settings"
+      "Home": "/bedchart",
+      "Sign in": "/bedchart-sign-in",
+      "Settings": "/bedchart/settings"
     },
     "Patients": {
-      "Patients": "/ward-flow/search",
-      "Patient": "/ward-flow/people/WF-009",
-      "Add patient": "/ward-flow/people/new",
-      "New referral": "/ward-flow/referrals/new",
-      "Referrals": "/ward-flow/referrals",
-      "Legal forms": "/ward-flow/legal-forms"
+      "Patients": "/bedchart/search",
+      "Patient": "/bedchart/people/WF-009",
+      "Add patient": "/bedchart/people/new",
+      "New referral": "/bedchart/referrals/new",
+      "Referrals": "/bedchart/referrals",
+      "Legal forms": "/bedchart/legal-forms"
     },
     "Wards and capacity": {
-      "Wards": "/ward-flow/wards",
-      "Ward": "/ward-flow/ward/arm-adult-open",
-      "Ward answer": "/ward-flow/ward/arm-adult-open/answer",
-      "Ward board": "/ward-flow/board/arm-adult-open",
-      "Capacity": "/ward-flow/capacity",
-      "Places": "/ward-flow/hub",
-      "Network": "/ward-flow/network",
-      "Emergency": "/ward-flow/ed",
-      "Emergency department": "/ward-flow/ed/peel-ed"
+      "Wards": "/bedchart/wards",
+      "Ward": "/bedchart/ward/arm-adult-open",
+      "Ward answer": "/bedchart/ward/arm-adult-open/answer",
+      "Ward board": "/bedchart/board/arm-adult-open",
+      "Capacity": "/bedchart/capacity",
+      "Places": "/bedchart/hub",
+      "Network": "/bedchart/network",
+      "Emergency": "/bedchart/ed",
+      "Emergency department": "/bedchart/ed/peel-ed"
     },
     "Oversight": {
-      "Alerts": "/ward-flow/alerts",
-      "Delays": "/ward-flow/delays",
-      "Discharges": "/ward-flow/discharges",
-      "Governance": "/ward-flow/governance",
-      "Handover": "/ward-flow/handover",
-      "On call": "/ward-flow/on-call",
-      "Movements": "/ward-flow/movements",
-      "Movement": "/ward-flow/movements/WF-001"
+      "Alerts": "/bedchart/alerts",
+      "Delays": "/bedchart/delays",
+      "Discharges": "/bedchart/discharges",
+      "Governance": "/bedchart/governance",
+      "Handover": "/bedchart/handover",
+      "On call": "/bedchart/on-call",
+      "Movements": "/bedchart/movements",
+      "Movement": "/bedchart/movements/WF-001"
     },
     "Community, transport and stats": {
-      "Community": "/ward-flow/community",
-      "Community team": "/ward-flow/community/bentley",
-      "Out of area": "/ward-flow/out-of-area",
-      "Transport": "/ward-flow/transport",
-      "Transport officer": "/ward-flow/transport/officer",
-      "Statistics": "/ward-flow/statistics",
-      "Statistics overview": "/ward-flow/statistics/overview",
-      "Statistics service": "/ward-flow/statistics/service/East%20Metro",
-      "Statistics ward": "/ward-flow/statistics/ward/arm-adult-open",
-      "Statistics compare": "/ward-flow/statistics/compare"
+      "Community": "/bedchart/community",
+      "Community team": "/bedchart/community/bentley",
+      "Out of area": "/bedchart/out-of-area",
+      "Transport": "/bedchart/transport",
+      "Transport officer": "/bedchart/transport/officer",
+      "Statistics": "/bedchart/statistics",
+      "Statistics overview": "/bedchart/statistics/overview",
+      "Statistics service": "/bedchart/statistics/service/East%20Metro",
+      "Statistics ward": "/bedchart/statistics/ward/arm-adult-open",
+      "Statistics compare": "/bedchart/statistics/compare"
     }
   },
   "aliases": {
-    "/ward-flow/queue": "Delays",
-    "/ward-flow/command": "Home",
-    "/ward-flow/constellation": "Network",
-    "/ward-flow/exceptions": "Delays",
-    "/ward-flow/escalation": "Delays"
+    "/bedchart/queue": "Delays",
+    "/bedchart/command": "Home",
+    "/bedchart/constellation": "Network",
+    "/bedchart/exceptions": "Delays",
+    "/bedchart/escalation": "Delays"
   }
 }

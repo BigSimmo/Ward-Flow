@@ -124,7 +124,7 @@ export function WardDowntimePackLine() {
         <span className={styles.packTitle}>
           Shift change downtime pack <b>{at}</b> ready.
         </span>{" "}
-        <span className={styles.packBody}>Print it or save it as a PDF in case Ward Flow goes down.</span>{" "}
+        <span className={styles.packBody}>Print it or save it as a PDF in case BedChart goes down.</span>{" "}
       </span>
       <Link href={DOWNTIME_PACK_HREF} className={styles.packAction} data-testid="ward-downtime-pack-open">
         Open pack

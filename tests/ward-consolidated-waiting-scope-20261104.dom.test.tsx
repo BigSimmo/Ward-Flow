@@ -26,7 +26,7 @@ afterEach(() => {
   cleanup();
   setWardFeatureFlagOnDevice("role-access", null);
   resetWardAccessStoreForTests();
-  window.history.replaceState(null, "", "/ward-flow");
+  window.history.replaceState(null, "", "/bedchart");
 });
 
 describe("own ED Capacity figure destination", () => {

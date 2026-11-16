@@ -88,6 +88,15 @@ const BANNED: readonly Banned[] = [
   { id: "minutes for a long duration", pattern: /\b\d{3} minutes\b/, instead: "4h" },
   { id: "demo night", pattern: /\bdemo night\b/i, instead: "on the board" },
   // #1476 review (5 Nov 2026): the §6 "Nobody, not No one" rule, now kept by this test.
+  // Josh, 16 Nov 2026: the app is now BedChart. The approved redesign mock-up pages keep their
+  // review notes as written, so this rule skips them.
+  {
+    id: "Ward Flow",
+    pattern: /\bWard Flow\b/,
+    instead: "BedChart",
+    // ward-shared-client.ts compares the backend's own "No Ward Flow role" message; it is never shown.
+    skip: /^src\/app\/mockups\/|^src\/lib\/local-project-guard\.ts$|^src\/components\/ward-management\/ward-shared-client\.ts$/,
+  },
   // The ED board mock-up copies under ward-redesign/ stay as drawn (D-91), so this rule skips them.
   { id: "No one", pattern: /\bNo one\b/, instead: "Nobody", skip: /^src\/components\/ward-redesign\// },
   // D-192 (Josh, 13 Nov 2026): the ED wait step's label. Only the label: the steps themselves are

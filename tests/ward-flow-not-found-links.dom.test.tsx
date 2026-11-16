@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/no-such-page",
+  usePathname: () => "/bedchart/no-such-page",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -19,7 +19,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-import { WardFlowNotFoundBody } from "@/app/ward-flow/ward-flow-not-found-body";
+import { WardFlowNotFoundBody } from "@/app/bedchart/ward-flow-not-found-body";
 import { ToastProvider } from "@/components/wf/toast-provider";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
@@ -51,14 +51,14 @@ describe("the Ward Flow 404 offers only what the desk can open", () => {
   it("the coordinator gets Home and the patient search", () => {
     atDesk(null);
     renderNotFound();
-    expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("href", "/ward-flow");
-    expect(screen.getByRole("link", { name: "Search patients" })).toHaveAttribute("href", "/ward-flow/search");
+    expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("href", "/bedchart");
+    expect(screen.getByRole("link", { name: "Search patients" })).toHaveAttribute("href", "/bedchart/search");
   });
 
   it.each([
-    ["executive", { role: "executive", scope: { kind: "statewide" } }, "/ward-flow/statistics"],
+    ["executive", { role: "executive", scope: { kind: "statewide" } }, "/bedchart/statistics"],
     // #1471: access admins now land on Governance.
-    ["access admin", { role: "admin", scope: { kind: "statewide" } }, "/ward-flow/governance"],
+    ["access admin", { role: "admin", scope: { kind: "statewide" } }, "/bedchart/governance"],
   ] as const)("the %s desk gets its own home and no patient search", (_name, access, home) => {
     atDesk(access as WardAccess);
     renderNotFound();

@@ -10,7 +10,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const router = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => ({ push: router.push, replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -106,7 +106,7 @@ describe("rail account menu (DK1)", () => {
   it("goes to Settings from the menu", () => {
     renderRail();
     fireEvent.click(within(openAccountMenu()).getByRole("menuitem", { name: "Settings" }));
-    expect(router.push).toHaveBeenCalledWith("/ward-flow/settings");
+    expect(router.push).toHaveBeenCalledWith("/bedchart/settings");
   });
 
   it("signed in with several memberships: Switch desk and Sign out, and no separate rows", () => {

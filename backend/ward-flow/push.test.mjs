@@ -111,7 +111,7 @@ test("only items not on the last active list are announced, each once", () => {
 
 test("the payload carries a count, a site and the Alerts path only", () => {
   assert.deepEqual(pushPayload([{ id: "bed-pull-WF-004", site: "Royal Perth Hospital" }]), {
-    title: "Ward Flow: 1 new act now item",
+    title: "BedChart: 1 new act now item",
     body: "Royal Perth Hospital. Open Alerts to review. Synthetic demo data.",
     url: ALERTS_PATH,
     tag: "ward-flow-act-now",
@@ -125,7 +125,7 @@ test("the payload carries a count, a site and the Alerts path only", () => {
   );
   assert.equal(
     pushPayload([{ id: "x", site: null }]).body,
-    "Ward Flow network. Open Alerts to review. Synthetic demo data.",
+    "BedChart network. Open Alerts to review. Synthetic demo data.",
   );
 });
 
@@ -134,10 +134,10 @@ test("an officer's jobs and a team's updates get their own words, with no record
     { id: "job:WF-005:abc", site: "Peel Health Campus", kind: "job" },
     { id: "job:WF-006:def", site: "Peel Health Campus", kind: "job" },
   ]);
-  assert.equal(jobs.title, "Ward Flow: 2 new or changed transport jobs");
+  assert.equal(jobs.title, "BedChart: 2 new or changed transport jobs");
   assert.equal(jobs.url, OFFICER_PATH);
   const updates = pushPayload([{ id: "admitted:AD-01", site: null, kind: "community" }]);
-  assert.equal(updates.title, "Ward Flow: 1 update for your team");
+  assert.equal(updates.title, "BedChart: 1 update for your team");
   assert.equal(updates.url, ALERTS_PATH);
   for (const payload of [jobs, updates])
     for (const value of ["WF-005", "WF-006", "AD-01", "job:", "admitted:"])

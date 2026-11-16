@@ -14,7 +14,7 @@ import { ToolRemindMe } from "@/components/ward-management/tools/ward-tool-remin
  * part of any seeded patient's name or record number. Rows C1 and C4 are owned by another thread.
  */
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/capacity",
+  usePathname: () => "/bedchart/capacity",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));

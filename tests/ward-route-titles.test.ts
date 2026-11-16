@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { generateMetadata as boardMetadata } from "@/app/ward-flow/board/[unitId]/page";
-import { generateMetadata as communityMetadata } from "@/app/ward-flow/community/[teamId]/page";
-import { generateMetadata as edMetadata } from "@/app/ward-flow/ed/[edId]/page";
-import { metadata as movementMetadata } from "@/app/ward-flow/movements/[movementId]/page";
-import { metadata as personMetadata } from "@/app/ward-flow/people/[patientId]/page";
+import { generateMetadata as boardMetadata } from "@/app/bedchart/board/[unitId]/page";
+import { generateMetadata as communityMetadata } from "@/app/bedchart/community/[teamId]/page";
+import { generateMetadata as edMetadata } from "@/app/bedchart/ed/[edId]/page";
+import { metadata as movementMetadata } from "@/app/bedchart/movements/[movementId]/page";
+import { metadata as personMetadata } from "@/app/bedchart/people/[patientId]/page";
 import { communityTeamById } from "@/components/ward-management/community/community-derivations";
 import { knownWardUnit } from "@/components/ward-management/ward-known-places";
 
@@ -23,7 +23,7 @@ describe("browser tab titles", () => {
   it("names the ward on its board", async () => {
     const unit = knownWardUnit("dn-rph-acute")!;
     const { title } = await boardMetadata(params("unitId", unit.id));
-    expect(title).toBe(`${unit.name} Bed board — Ward Flow`);
+    expect(title).toBe(`${unit.name} Bed board — BedChart`);
   });
 
   it.each([
@@ -32,18 +32,18 @@ describe("browser tab titles", () => {
     ["emergency department", () => edMetadata(params("edId", TYPED))],
   ])("never echoes an unknown %s address into the title", async (_label, read) => {
     const { title, description } = await read();
-    expect(String(title)).toMatch(/not found — Ward Flow$/);
+    expect(String(title)).toMatch(/not found — BedChart$/);
     expect(`${String(title)} ${description ?? ""}`).not.toMatch(/Typed/);
   });
 
   it("still names a known community team", async () => {
     const team = communityTeamById("midland")!;
     const { title } = await communityMetadata(params("teamId", team.id));
-    expect(title).toBe(`${team.name} — Ward Flow`);
+    expect(title).toBe(`${team.name} — BedChart`);
   });
 
   it("tells a movement record apart from a person's page, with no name in either", () => {
-    expect(movementMetadata.title).toBe("Movement record — Ward Flow");
-    expect(personMetadata.title).toBe("Patient — Ward Flow");
+    expect(movementMetadata.title).toBe("Movement record — BedChart");
+    expect(personMetadata.title).toBe("Patient — BedChart");
   });
 });
