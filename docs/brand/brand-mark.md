@@ -31,7 +31,7 @@ sits on any ground without a stripe.
 
 ## Colours
 
-The colours are the v9 kit's own. `tests/brand-mark-optics.test.ts` pins them token by token.
+The colours are the v9 kit's own. `tests/design-token-contract.test.ts` pins them token by token.
 
 | Part       | On a light page       | On a dark page or the navy hero |
 | ---------- | --------------------- | ------------------------------- |
@@ -62,5 +62,5 @@ the two properties to `--wf-brand-hero-pillow` and `--wf-brand-hero-bed`. The li
 
 ## Regenerating
 
-`src/app/icon.svg` is `brandIconSvg()` written to disk; the optics test fails if they differ.
+`src/app/icon.svg` is `brandIconSvg()` written to disk; `tests/design-token-contract.test.ts` fails if they differ.
 `favicon.ico` is rendered from `brandTileSvg(16)`, `brandTileSvg(32)` and `brandTileSvg(48)`.

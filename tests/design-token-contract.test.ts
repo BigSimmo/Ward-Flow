@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
+import { BRAND_FIELD, BRAND_ON_DARK, BRAND_ON_LIGHT, brandIconSvg } from "@/lib/brand-mark";
 import { computeDivergences, diffAgainstPin, readLayers, readPin } from "../scripts/token-layer-divergences.mjs";
 import { sourceFrom, sourceSegment } from "./helpers/source-contract";
 import { blankCssComments } from "./helpers/strip-source-comments";
@@ -375,7 +376,7 @@ describe("disabled and pre-paint values", () => {
   it("keeps the brand mark on the current accent", () => {
     // The favicon and generated icon routes render outside any stylesheet, so they hard-code
     // the brand colours. Since D-261 the BedChart mark takes them from the v9 kit, which
-    // tests/brand-mark-optics.test.ts pins token by token; this only checks the old ink and
+    // the "BedChart mark colours" block below pins token by token; this only checks the old ink and
     // tile pair has not come back.
     const brand = readFileSync(new URL("../src/lib/brand-mark.ts", import.meta.url), "utf8");
     expect(brand).not.toMatch(/\bink: "#/);
@@ -786,5 +787,41 @@ describe("the sheet scrim fade lets the glass panel blur", () => {
     const token = /--animate-overlay-in:\s*([^;]+);/.exec(globals)?.[1];
     expect(token, "--animate-overlay-in is missing from globals.css").toBeDefined();
     expect(token).not.toMatch(/\b(both|forwards)\b/i);
+  });
+});
+
+describe("BedChart mark colours (D-261)", () => {
+  const tokens = readFileSync(new URL("../src/app/ward-flow-v9-tokens.css", import.meta.url), "utf8");
+  const darkStart = tokens.indexOf('\n:root[data-theme="dark"],');
+  const lightBlock = tokens.slice(0, darkStart);
+  const darkBlock = tokens.slice(darkStart);
+
+  function token(block: string, name: string): string {
+    const match = new RegExp(`${name}:\\s*(#[0-9a-fA-F]{3,8})\\s*;`).exec(block);
+    expect(match, `${name} is not set`).not.toBeNull();
+    return (match as RegExpExecArray)[1].toLowerCase();
+  }
+
+  it("stay on the v9 tokens", () => {
+    expect(BRAND_ON_LIGHT.pillow).toBe(token(lightBlock, "--wf-pri-1"));
+    expect(BRAND_ON_LIGHT.bed).toBe(token(lightBlock, "--wf-hero-2"));
+    expect(BRAND_ON_DARK.pillow).toBe(token(darkBlock, "--wf-accent"));
+    expect(BRAND_ON_DARK.bed).toBe(token(darkBlock, "--wf-ink-1"));
+    expect(BRAND_FIELD.light).toBe(token(lightBlock, "--wf-hero-1"));
+    expect(BRAND_FIELD.dark).toBe(token(darkBlock, "--wf-surface"));
+  });
+
+  it("match the in-app brand tokens", () => {
+    expect(token(lightBlock, "--wf-brand-pillow")).toBe(BRAND_ON_LIGHT.pillow);
+    expect(token(lightBlock, "--wf-brand-bed")).toBe(BRAND_ON_LIGHT.bed);
+    expect(token(lightBlock, "--wf-brand-hero-pillow")).toBe(BRAND_ON_DARK.pillow);
+    expect(token(lightBlock, "--wf-brand-hero-bed")).toBe(BRAND_ON_DARK.bed);
+    expect(token(darkBlock, "--wf-brand-pillow")).toBe(BRAND_ON_DARK.pillow);
+    expect(token(darkBlock, "--wf-brand-bed")).toBe(BRAND_ON_DARK.bed);
+  });
+
+  it("draw the committed browser-tab icon exactly as brandIconSvg() does", () => {
+    const committed = readFileSync(new URL("../src/app/icon.svg", import.meta.url), "utf8");
+    expect(committed).toBe(brandIconSvg());
   });
 });

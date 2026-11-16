@@ -147,8 +147,8 @@ export function brandTileSvg(px = 512, field: string = BRAND_FIELD.light, inset 
 }
 
 /** The browser-tab icon (app/icon.svg). Browsers draw it at 16 to 32 px, so it
- *  uses the small master on the navy tile, with a dark-mode field. Written by
- *  scripts/generate-brand-assets.ts and checked by tests/brand-mark-optics.test.ts. */
+ *  uses the small master on the navy tile, with a dark-mode field. The committed
+ *  file must equal this output; tests/design-token-contract.test.ts checks it. */
 export function brandIconSvg(): string {
   const t = BRAND_TILE;
   const m = BRAND_MASTERS.small;
