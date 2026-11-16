@@ -228,8 +228,9 @@
     <main>
       <h1>Ward Flow design system</h1>
       <p class="lead">
-        The one design standard for every Ward Flow screen, mock-up and build, written on 2 Nov 2026 from everything the
-        screen builds and reviews taught us. It is drawn from the
+        The one design standard for every Ward Flow screen, mock-up and build, written on 2 Nov 2026, updated 16 Nov
+        2026 with the D-192 shared parts and the D-218, D-220 and D-224 word rules, from everything the screen builds
+        and reviews taught us. It is drawn from the
         <a href="https://claude.ai/artifact/91BETDiimnJVbyeCb2sxcK" target="_blank" rel="noopener">master design</a>,
         not from the running app on <code>main</code>. The master also shows this page as its <b>Design system</b> tab.
       </p>
@@ -392,7 +393,7 @@
                     <code>--wf-svc-north</code>, <code>-south</code>, <code>-east</code>, <code>-wachs</code>,
                     <code>-cahs</code>, <code>-private</code>, <code>-statewide</code>
                   </td>
-                  <td>Service identity on maps and legends only.</td>
+                  <td>Neutral since D-192: no brand colours. A service is its short name in a plain Badge.</td>
                 </tr>
                 <tr>
                   <td>Materials</td>
@@ -472,8 +473,7 @@
                 <tr>
                   <td>Tabs and segments</td>
                   <td>
-                    40px items on a 48px track (Q225, 2 Nov, as built; this replaces D-94's 32px tab in a 40px track,
-                    and the kit overrides the older <code>--wf-phone-seg-*</code> 32/40)
+                    40px items on a 48px track (Q225; the kit overrides the older <code>--wf-phone-seg-*</code> 32/40)
                   </td>
                   <td>30px at 13px (Q231)</td>
                 </tr>
@@ -580,7 +580,12 @@
               Menu icon lights in accent (Q161). The tab is "Alerts" (Q268). Labels shrink to fit at large text and
               never split a word (Q307, #1310).
             </li>
-            <li><b>Toasts</b> sit <code>--wf-toast-dock-gap</code> above the dock (24px in the new frame).</li>
+            <li>
+              <b>Toasts</b> sit bottom-right of the work area on desktop, 24px in, on the solid overlay surface and
+              never over the row they name; on phone they sit <code>--wf-toast-dock-gap</code> above the pinned action
+              bar or the dock. An Undo toast says one clock time ("Undo until 10:47"), no seconds countdown, stays at
+              least 10 seconds, and <code>RowUndo</code> keeps Undo on the row for the whole window (D-192).
+            </li>
             <li>
               <b>Loading and offline notes</b> rest at the foot of the window, above the dock, never over the page title
               (Q276).
@@ -704,6 +709,64 @@
                   <td><code>format.ts</code> (<code>clk</code>, <code>dur</code>, <code>durMinutes</code>)</td>
                   <td>Never re-implement a formatter.</td>
                 </tr>
+                <tr>
+                  <td>Synthetic marker</td>
+                  <td><code>SyntheticMark</code></td>
+                  <td>
+                    Every enlarged or full-screen view carries it in its top row (D-192). One wording: "Synthetic data".
+                  </td>
+                </tr>
+                <tr>
+                  <td>Who acts</td>
+                  <td><code>WhoDoesThis</code></td>
+                  <td>
+                    A desk never sees a button it can never use; one quiet line names who does it. Unavailable for now:
+                    the reason is drawn under the button, on phone too (D-192).
+                  </td>
+                </tr>
+                <tr>
+                  <td>Service names</td>
+                  <td><code>ServiceNameTag</code>, Badge <code>tag</code></td>
+                  <td>
+                    A service shows as its short name in a neutral hairline tag, never a colour, and only where the name
+                    isn't already written (D-192).
+                  </td>
+                </tr>
+                <tr>
+                  <td>Count windows</td>
+                  <td><code>window</code> on HeroStat, Segmented, Tabs</td>
+                  <td>Drawn by <code>WindowWord</code>; only the D-192 window words, typed. Spoken after the label.</td>
+                </tr>
+                <tr>
+                  <td>Undo on a row</td>
+                  <td><code>RowUndo</code>, toast <code>undo.until</code></td>
+                  <td>One clock time; the row keeps Undo until the window ends (D-192).</td>
+                </tr>
+                <tr>
+                  <td>Full-screen views</td>
+                  <td><code>FullScreenFrame</code>, <code>FullScreenMarkSlot</code></td>
+                  <td>Every enlarged view draws the synthetic mark in its top row.</td>
+                </tr>
+                <tr>
+                  <td>Form rows</td>
+                  <td><code>Field</code> <code>layout="row"</code>, <code>reserveLine</code></td>
+                  <td>
+                    Help and error lines always sit under the box; reserve the line so answers don't move controls.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Answer choices</td>
+                  <td>Segmented <code>layout="answers"</code></td>
+                  <td>Choices size to their words and wrap; on phone a row that doesn't fit becomes 40px list rows.</td>
+                </tr>
+                <tr>
+                  <td>Explanatory tips</td>
+                  <td><code>InfoTip</code></td>
+                  <td>
+                    A small ⓘ that opens on tap, click or keyboard and closes with Escape, a tap outside or a second
+                    press. Never hover-only (D-224).
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -741,7 +804,7 @@
           </p>
           <p>
             <b>Home: Needs you and Flow (Q340-Q345, #1324, 3 Nov).</b> One navigation row: <b>Needs you | Flow</b> as
-            the raised switch, a rule, then the Flow stages as lighter trackless tabs with counts (All, Needs a bed, Bed
+            the raised switch, a rule, then the Flow stages as lighter trackless tabs with counts (All, No ward yet, Bed
             agreed, Ready to move, Moving), red when someone in that stage is late. A stage tab opens Flow at that
             stage. Flow groups open movements by stage, oldest first, five rows per stage then "Show all N". Needs you
             holds act now, beds to pull and referrals to decide; a waiting alert is a mark on the patient's Flow row,
@@ -773,11 +836,18 @@
             <li>Sentence case, verbs first, 24-hour times, digits, short durations ("2d 14h"), dates as "2 Nov".</li>
             <li>Titles five words at most, actions six. A row's second line is two to four words (Q313).</li>
             <li>
-              Say a time once: "Sent 3 days ago · Due 2 days ago". Legal-form times are only as typed, never a countdown
-              (D-93); "within 1h" stays on Forms (Q152).
+              Count windows: a figure shows its window as a quiet word after the label ("Discharges · any date") only
+              when it differs from what the page title already says, or when one strip mixes windows. Words: now, today,
+              by tomorrow, next 4h, next 24h, last 24h, this week, since 07:00, any date (D-192).
             </li>
             <li>
-              Fewer warnings: say it once, quietly. Safeguard wording stays word for word ("Not legally checked.").
+              Say a time once: "Sent 3 days ago · Due 2 days ago". A legal-form time shows as entered from the form,
+              never a countdown (D-93), with no "as typed" suffix (D-218); "within 1h" stays on Forms (Q152).
+            </li>
+            <li>
+              Fewer warnings: say it once, quietly. No hedging or disclaimer phrases ("as typed", "not legally checked",
+              "not verified"); a table cell holds the value or a short label, and any needed explanation appears once,
+              in the header or a tooltip (D-218). Warnings that ask someone to act keep their exact words.
             </li>
             <li>Screen-reader labels say what the screen shows (Q271).</li>
             <li>Browser tab: the sidebar name + " — Ward Flow" (Q272).</li>
@@ -835,6 +905,14 @@
                 <tr>
                   <td>Synthetic numbers</td>
                   <td>Mock numbers</td>
+                </tr>
+                <tr>
+                  <td>Needs you (Tools), Next escalation step</td>
+                  <td>Suggested now, Suggested next step (D-192)</td>
+                </tr>
+                <tr>
+                  <td>From ward dates</td>
+                  <td>Forecast, likely (D-192)</td>
                 </tr>
                 <tr>
                   <td>Community team</td>
@@ -983,7 +1061,8 @@
             <li class="chk">No coloured side edges; no text under 12px; phone controls 40px; desktop tabs 30px.</li>
             <li class="chk">One on-hero action, one filled button per panel, eight rows then Show more.</li>
             <li class="chk">
-              Words from section 6; patient names surname first, staff names as written, both in full; times as typed.
+              Words from section 6; patient names surname first, staff names as written, both in full; legal times as
+              entered, with no countdown and no disclaimer (D-218).
             </li>
             <li class="chk">At most one signature part, inside the limits in section 8.</li>
             <li class="chk">Synthetic data only; no names or typed text in URLs, screenshots or logs.</li>
