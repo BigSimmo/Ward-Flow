@@ -125,8 +125,11 @@
   outline-offset: 2px;
 }
 
+/* UI sweep (16 Nov 2026): the field fills the box's height, so the whole box takes the tap and the
+   click, not a 17px line of text. */
 .findBox input {
   flex: 1 1 auto;
+  align-self: stretch;
   min-width: 0;
   border: 0;
   outline: 0;
