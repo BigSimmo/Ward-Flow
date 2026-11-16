@@ -42,6 +42,7 @@ See also [`ward-flow/SCREEN-MAP.md`](ward-flow/SCREEN-MAP.md), which pairs each 
 - `/bedchart/people/[patientId]` - Route discovered from app directory Source: `src/app/bedchart/people/[patientId]/page.tsx`.
 - `/bedchart/people/[patientId]/triage` - Route discovered from app directory Source: `src/app/bedchart/people/[patientId]/triage/page.tsx`.
 - `/bedchart/people/new` - Route discovered from app directory Source: `src/app/bedchart/people/new/page.tsx`.
+- `/bedchart/privacy` - Route discovered from app directory Source: `src/app/bedchart/privacy/page.tsx`.
 - `/bedchart/queue` - Route discovered from app directory Source: `src/app/bedchart/queue/page.tsx`.
 - `/bedchart/referrals` - Route discovered from app directory Source: `src/app/bedchart/referrals/page.tsx`.
 - `/bedchart/referrals/new` - Route discovered from app directory Source: `src/app/bedchart/referrals/new/page.tsx`.

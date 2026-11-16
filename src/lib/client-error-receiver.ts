@@ -45,6 +45,7 @@ export const CLIENT_ROUTE_TEMPLATES: ReadonlySet<string> = new Set([
   "/bedchart/about",
   "/bedchart/on-call",
   "/bedchart/out-of-area",
+  "/bedchart/privacy",
   "/bedchart/people/[id]",
   "/bedchart/people/[id]/triage",
   "/bedchart/people/new",

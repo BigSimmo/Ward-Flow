@@ -103,6 +103,7 @@ import { DowntimePackScreen } from "@/components/ward-management/reports/downtim
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
 import { TodaysReviewScreen } from "@/components/ward-management/review/todays-review-screen";
 import { AboutDemoScreen } from "@/components/ward-management/about/about-demo-screen";
+import { PrivacyTrackerScreen } from "@/components/ward-management/privacy/privacy-tracker-screen";
 import { NightViewScreen } from "@/components/ward-management/night/night-view-screen";
 import { WeeklyReportScreen } from "@/components/ward-management/reports/weekly-report-screen";
 import { StatisticsServicesIndexScreen } from "@/components/ward-management/statistics/statistics-services-index";
@@ -322,6 +323,8 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/review`, render: () => createElement(TodaysReviewScreen) },
   { route: `${ROUTE_PREFIX}/night`, render: () => createElement(NightViewScreen) },
   { route: `${ROUTE_PREFIX}/about`, render: () => createElement(AboutDemoScreen) },
+  // D-260 (16 Nov 2026): Privacy and data.
+  { route: `${ROUTE_PREFIX}/privacy`, render: () => createElement(PrivacyTrackerScreen) },
   // Ward Flow sign-in screen (R09: sibling mockup route verified for landmark and heading contracts).
   { route: SIGN_IN_ROUTE, render: () => createElement(WardFlowSignInScreen) },
 ];
