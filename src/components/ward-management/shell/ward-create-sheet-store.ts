@@ -23,6 +23,7 @@ const createSheetChangeEvent = "ward-flow-create-sheet-change";
 
 /** Every start the coordinator's + sheet can show, in the standard order. */
 const CREATE_ITEM_IDS = [
+  "referral",
   "triage",
   "call-log",
   "ask",
@@ -49,11 +50,19 @@ export type CreateSheetLayout = {
   links: readonly CreateItemId[];
   /** Starts this person took off the sheet; any start not placed anywhere takes its standard place. */
   hidden?: readonly CreateItemId[];
+  /** The sheet's big button (Josh, 16 Nov 2026); New referral when not chosen, none when null. */
+  primary?: CreateItemId | null;
 };
-export type ResolvedCreateLayout = { pinned: CreateItemId[]; links: CreateItemId[]; hidden: CreateItemId[] };
+export type ResolvedCreateLayout = {
+  primary: CreateItemId | null;
+  pinned: CreateItemId[];
+  links: CreateItemId[];
+  hidden: CreateItemId[];
+};
 
 /** The standard sheet: the day's starts as full rows, the rarer ones as links (Josh, 8 and 15 Nov 2026). */
 const STANDARD_CREATE_LAYOUT: CreateSheetLayout = Object.freeze({
+  primary: "referral" as const,
   pinned: Object.freeze(["triage", "call-log", "ask", "transport", "delays", "remind"] as const),
   links: Object.freeze(["wards", "add-patient"] as const),
 });
@@ -88,15 +97,29 @@ export function parseCreateSheet(raw: string | null): CreateSheetLayout | null {
     return null;
   }
   if (typeof value !== "object" || value === null) return null;
-  const { pinned, links, hidden = [] } = value as { pinned?: unknown; links?: unknown; hidden?: unknown };
+  const {
+    pinned,
+    links,
+    hidden = [],
+    primary,
+  } = value as {
+    pinned?: unknown;
+    links?: unknown;
+    hidden?: unknown;
+    primary?: unknown;
+  };
   if (!Array.isArray(pinned) || !Array.isArray(links) || !Array.isArray(hidden)) return null;
   const seen = new Set<CreateItemId>();
+  // The big button is never listed as well, so it is taken first.
+  const main = isItemId(primary) ? primary : undefined;
+  if (main) seen.add(main);
   const take = (list: unknown[]) =>
     list.filter((id): id is CreateItemId => isItemId(id) && !seen.has(id) && Boolean(seen.add(id)));
   const layout = {
     pinned: Object.freeze(take(pinned)),
     links: Object.freeze(take(links)),
     hidden: Object.freeze(take(hidden)),
+    ...(main ? { primary: main } : {}),
   };
   return Object.freeze(layout);
 }
@@ -112,17 +135,23 @@ export function resolveCreateLayout(
 ): ResolvedCreateLayout {
   const layout = stored ?? STANDARD_CREATE_LAYOUT;
   const hiddenStored = layout.hidden ?? [];
-  const placed = new Set<CreateItemId>([...layout.pinned, ...layout.links, ...hiddenStored]);
-  const pinned = layout.pinned.filter((id) => available.has(id));
-  const links = layout.links.filter((id) => available.has(id));
-  const hidden = hiddenStored.filter((id) => available.has(id));
+  // The chosen big button, or New referral where it is not open to this desk now.
+  const wanted = layout.primary ?? "referral";
+  const primary = available.has(wanted) ? wanted : available.has("referral") ? "referral" : null;
+  const placed = new Set<CreateItemId>([...layout.pinned, ...layout.links, ...hiddenStored, wanted]);
+  const keep = (id: CreateItemId) => available.has(id) && id !== primary;
+  const pinned = layout.pinned.filter(keep);
+  const links = layout.links.filter(keep);
+  const hidden = hiddenStored.filter(keep);
   for (const id of CREATE_ITEM_IDS) {
-    if (placed.has(id) || !available.has(id)) continue;
-    if (STANDARD_CREATE_LAYOUT.pinned.includes(id)) pinned.push(id);
+    if (placed.has(id) || !keep(id)) continue;
+    // New referral, no longer the big button, leads the pinned rows.
+    if (id === "referral") pinned.unshift(id);
+    else if (STANDARD_CREATE_LAYOUT.pinned.includes(id)) pinned.push(id);
     else if (STANDARD_CREATE_LAYOUT.links.includes(id)) links.push(id);
     else hidden.push(id);
   }
-  return { pinned, links, hidden };
+  return { primary, pinned, links, hidden };
 }
 
 function getSnapshot(): CreateSheetLayout | null {

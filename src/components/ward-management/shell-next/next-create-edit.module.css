@@ -97,62 +97,188 @@
   color: var(--wf-accent);
 }
 
-/* Edit bar (Josh, 16 Nov 2026): a small picture of the bar, then one picker per spot. */
-.barPreview {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
-  grid-auto-flow: column;
+/* The big button (Josh, 16 Nov 2026): a picture of it, Change beside it, then the starts to choose. */
+.mainEdit {
+  display: flex;
   align-items: center;
-  gap: 4px;
-  margin: var(--wf-s-2) 0 var(--wf-s-3);
-  padding: 10px 8px;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-lg);
-  background: var(--wf-surface-2);
-}
-
-.barSpot {
-  display: grid;
-  justify-items: center;
-  gap: 4px;
-  min-width: 0;
-  overflow: hidden;
-  font-size: var(--wf-fs-12);
-  font-weight: 600;
-  color: var(--wf-ink-2);
-  text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.barSpot svg {
-  width: 22px;
-  height: 22px;
-}
-
-.barPlus {
-  display: grid;
-  place-items: center;
-  justify-self: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--wf-accent);
-  color: var(--wf-on-accent);
-}
-
-.barPlus svg {
-  width: 18px;
-  height: 18px;
-}
-
-.barSpots {
-  display: grid;
   gap: var(--wf-s-2);
 }
 
-.barField.barField {
+.mainPreview.mainPreview {
+  flex: 1;
+  min-width: 0;
+  pointer-events: none;
+}
+
+.mainChange {
+  flex: none;
+  min-width: var(--spacing-tap, 3rem);
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0 12px;
+  border: 1px solid var(--wf-line-3);
+  border-radius: var(--wf-r-ctl);
+  background: var(--wf-surface);
+  color: var(--wf-accent-ink);
+  font: inherit;
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mainChoices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: var(--wf-s-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mainChoice,
+.barTile {
+  position: relative;
+  display: flex;
   align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--spacing-tap, 3rem);
+  padding: 8px 12px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-size: var(--wf-fs-14);
+  font-weight: 500;
+  text-align: start;
+  cursor: pointer;
+  transition:
+    background-color var(--wf-m-fast, 120ms) var(--wf-ease, ease),
+    border-color var(--wf-m-fast, 120ms) var(--wf-ease, ease);
+}
+
+.mainChoice > svg:first-child,
+.barTile > svg:first-child {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--wf-ink-2);
+}
+
+.mainChoice > span {
+  flex: 1;
+  min-width: 0;
+}
+
+.mainChoice > svg:last-child:not(:first-child) {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--wf-accent);
+}
+
+/* The chosen one: the accent's tint and edge all round, its icon in the accent. */
+.mainChoice[aria-pressed="true"],
+.barTile[aria-pressed="true"] {
+  border-color: var(--wf-accent);
+  background: var(--wf-accent-tint);
+  font-weight: 600;
+}
+
+.mainChoice[aria-pressed="true"] > svg:first-child,
+.barTile[aria-pressed="true"] > svg:first-child {
+  color: var(--wf-accent);
+}
+
+.mainChoice:focus-visible,
+.mainChange:focus-visible,
+.barTile:focus-visible,
+.barSpot:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .mainChange:hover,
+  .mainChoice:hover:not([aria-pressed="true"]),
+  .barTile:hover:not([aria-pressed="true"]) {
+    background: var(--wf-hover);
+  }
+}
+
+/* Edit bar (Josh, 16 Nov 2026, polished): the bar drawn as it is, its spots buttons. */
+.barPreview.barPreview {
+  margin: var(--wf-s-1) 0 var(--wf-s-2);
+}
+
+.barRise.barRise {
+  pointer-events: none;
+}
+
+/* The spot being changed: lifted on the accent's tint with a ring, so it reads as picked up. */
+.barSpot[aria-pressed="true"] {
+  background: var(--wf-accent-tint);
+  box-shadow: inset 0 0 0 2px var(--wf-accent);
+}
+
+.barSpot[aria-pressed="true"] [class*="dockIcon"],
+.barSpot[aria-pressed="true"] [class*="dockLabel"] {
+  color: var(--wf-accent);
+}
+
+.barGroups {
+  display: grid;
+  gap: var(--wf-s-3);
+}
+
+.barGroup {
+  display: grid;
+  gap: 8px;
+}
+
+.barGroupName {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+}
+
+.barTiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.barTileLabel {
+  flex: 1;
+  min-width: 0;
+}
+
+.barTileCheck {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--wf-accent);
+}
+
+.barTileNote {
+  flex: none;
+  padding: 2px 6px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mainChoice,
+  .barTile {
+    transition: none;
+  }
 }
 
 /* With the minus or plus in front, a long name wraps to a second line instead of being cut. */

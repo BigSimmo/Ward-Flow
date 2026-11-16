@@ -27,6 +27,7 @@ import {
   BedSingle,
   BellRing,
   CalendarCheck,
+  Check,
   CalendarClock,
   ChartColumn,
   CircleHelp,
@@ -58,7 +59,7 @@ import type { LucideIcon } from "lucide-react";
 import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-tools-sheet";
 
 import { Sheet } from "@/components/wf/sheet";
-import { Dot, Field, Select } from "@/components/wf";
+import { Dot } from "@/components/wf";
 import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { WARD_ADD_PERSON_HREF, WARD_TRIAGE_NEW_HREF } from "@/components/ward-management/ward-nav";
 import { wardNavCountLabel, type WardNavCount } from "@/components/ward-management/ward-nav-counts";
@@ -113,6 +114,7 @@ import type { CountMap, DrawerId, NeedRow, PhoneMenuModel } from "@/components/w
 import type { DockOption } from "@/components/ward-management/shell-next/next-phone-menu";
 import styles from "@/components/ward-management/shell/ward-phone-menu.module.css";
 import editStyles from "@/components/ward-management/shell-next/next-create-edit.module.css";
+import dockStyles from "@/components/ward-management/shell-next/next-phone-dock.module.css";
 import actNowStyles from "@/components/ward-management/shell/ward-phone-menu-act-now.module.css";
 
 /**
@@ -502,6 +504,8 @@ type CreateItem = {
   meta: string;
   href?: string;
   tool?: ToolsSheetToolId;
+  /** New referral: opens the referral form in place. */
+  referral?: true;
 };
 
 /**
@@ -538,7 +542,6 @@ function CoordinatorCreateSheet({
   open,
   onClose,
   returnFocusRef,
-  canRefer,
   onNewReferral,
   items,
   onEditBar,
@@ -546,19 +549,20 @@ function CoordinatorCreateSheet({
   open: boolean;
   onClose: () => void;
   returnFocusRef: RefObject<HTMLButtonElement | null>;
-  canRefer: boolean;
   onNewReferral: () => void;
   items: readonly CreateItem[];
   onEditBar?: () => void;
 }) {
   const stored = useCreateSheetLayout();
   const [editing, setEditing] = useState(false);
+  const [choosingMain, setChoosingMain] = useState(false);
   const focusAfterSave = useRef<string | null>(null);
   const byKey = new Map(items.map((item) => [item.key, item]));
   const layout = resolveCreateLayout(stored, new Set(byKey.keys()));
   const pinned = layout.pinned.flatMap((key) => byKey.get(key) ?? []);
   const links = layout.links.flatMap((key) => byKey.get(key) ?? []);
   const hidden = layout.hidden.flatMap((key) => byKey.get(key) ?? []);
+  const main = layout.primary === null ? undefined : byKey.get(layout.primary);
   // A pinned or moved row changes place, so the button that moved it takes focus again there.
   useEffect(() => {
     if (focusAfterSave.current === null) return;
@@ -567,6 +571,7 @@ function CoordinatorCreateSheet({
   });
   const close = () => {
     setEditing(false);
+    setChoosingMain(false);
     onClose();
   };
   const save = (next: ResolvedCreateLayout, said: string, focus: string) => {
@@ -579,8 +584,9 @@ function CoordinatorCreateSheet({
     const without = (list: CreateItemId[]) => list.filter((key) => key !== item.key);
     save(
       isPinned
-        ? { pinned: without(layout.pinned), links: [...without(layout.links), item.key], hidden: layout.hidden }
+        ? { ...layout, pinned: without(layout.pinned), links: [...without(layout.links), item.key] }
         : {
+            ...layout,
             pinned: [...without(layout.pinned), item.key],
             links: without(layout.links),
             hidden: without(layout.hidden),
@@ -595,8 +601,13 @@ function CoordinatorCreateSheet({
     const without = (list: CreateItemId[]) => list.filter((key) => key !== item.key);
     save(
       isHidden
-        ? { pinned: layout.pinned, links: [...layout.links, item.key], hidden: without(layout.hidden) }
-        : { pinned: without(layout.pinned), links: without(layout.links), hidden: [...layout.hidden, item.key] },
+        ? { ...layout, links: [...layout.links, item.key], hidden: without(layout.hidden) }
+        : {
+            ...layout,
+            pinned: without(layout.pinned),
+            links: without(layout.links),
+            hidden: [...layout.hidden, item.key],
+          },
       isHidden ? `${item.label} added to quick links.` : `${item.label} taken off the sheet.`,
       `show-${item.key}`,
     );
@@ -617,7 +628,22 @@ function CoordinatorCreateSheet({
   };
   const reset = () => {
     saveCreateSheetLayout(null);
+    setChoosingMain(false);
     announceToWardShell("Back to the standard sheet.");
+  };
+  // The big button (Josh, 16 Nov 2026: "make the button editable also"). The start chosen takes the
+  // big button's place, and the start that was there takes the chosen one's place in its list.
+  const chooseMain = (item: CreateItem) => {
+    setChoosingMain(false);
+    if (item.key === layout.primary) return;
+    const old = layout.primary;
+    const swap = (list: CreateItemId[]) =>
+      old === null ? list.filter((key) => key !== item.key) : list.map((key) => (key === item.key ? old : key));
+    save(
+      { primary: item.key, pinned: swap(layout.pinned), links: swap(layout.links), hidden: swap(layout.hidden) },
+      `${item.label} is now the main button.`,
+      "main-change",
+    );
   };
   const editRows = (group: "pinned" | "links" | "hidden", list: readonly CreateItem[]) => (
     <ul className={`${styles.list} ${styles.rich}`} data-testid={`ward-phone-create-edit-${group}`}>
@@ -695,16 +721,34 @@ function CoordinatorCreateSheet({
   );
   const runItem = (item: CreateItem, event: MouseEvent<HTMLElement>) => {
     close();
-    if (item.tool) requestToolsTool(item.tool, event.currentTarget);
+    if (item.referral) onNewReferral();
+    else if (item.tool) requestToolsTool(item.tool, event.currentTarget);
   };
+  /** A start as a button (a form or Tools pop-up) or a link (a page), with the caller's look. */
+  const startControl = (item: CreateItem, className: string | undefined, testId: string, body: ReactNode) =>
+    item.href === undefined ? (
+      <button type="button" className={className} data-testid={testId} onClick={(event) => runItem(item, event)}>
+        {body}
+      </button>
+    ) : (
+      <Link href={item.href} className={className} onClick={close} data-testid={testId}>
+        {body}
+      </Link>
+    );
+  const MainIcon = main?.icon;
   return (
     <Sheet
       id="ward-phone-create"
       testId="ward-phone-create-sheet"
       open={open}
       onClose={close}
-      title={editing ? "Edit Create" : "Create"}
-      description={editing ? "Pin what you start most. Saved on this phone." : "Start something new"}
+      // UI sweep (16 Nov 2026): "Edit Create" read awkwardly, so edit mode says Customise.
+      title={editing ? "Customise" : "Create"}
+      description={
+        editing
+          ? "Choose what this sheet starts, and pin the ones you use most. Saved on this phone."
+          : "Start something new"
+      }
       mobileBreakpoint="phone"
       returnFocusRef={returnFocusRef}
       contentClassName={styles.sheet}
@@ -725,6 +769,53 @@ function CoordinatorCreateSheet({
     >
       {editing ? (
         <>
+          <section className={editStyles.editGroup} aria-labelledby="ward-create-edit-main">
+            <h3 id="ward-create-edit-main" className={styles.createHeading}>
+              Main button
+            </h3>
+            <div className={editStyles.mainEdit}>
+              {/* A picture of the big button as it will look, then Change. */}
+              <span className={`${styles.createPrimary} ${editStyles.mainPreview}`} aria-hidden="true">
+                {MainIcon ? <MainIcon aria-hidden="true" strokeWidth={1.75} /> : null}
+                {main?.label ?? "None"}
+              </span>
+              <button
+                type="button"
+                className={editStyles.mainChange}
+                aria-expanded={choosingMain}
+                aria-controls="ward-create-main-choices"
+                aria-label={`Change the main button, now ${main?.label ?? "none"}`}
+                data-create-edit="main-change"
+                data-testid="ward-phone-create-main-change"
+                onClick={() => setChoosingMain((value) => !value)}
+              >
+                {choosingMain ? "Cancel" : "Change"}
+              </button>
+            </div>
+            {choosingMain ? (
+              <ul
+                id="ward-create-main-choices"
+                className={editStyles.mainChoices}
+                aria-label="Choose the main button"
+                data-testid="ward-phone-create-main-choices"
+              >
+                {items.map((item) => (
+                  <li key={item.key}>
+                    <button
+                      type="button"
+                      className={editStyles.mainChoice}
+                      aria-pressed={item.key === layout.primary}
+                      onClick={() => chooseMain(item)}
+                    >
+                      <item.icon aria-hidden="true" strokeWidth={1.75} />
+                      <span>{item.label}</span>
+                      {item.key === layout.primary ? <Check aria-hidden="true" strokeWidth={2} /> : null}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </section>
           <section className={editStyles.editGroup} aria-labelledby="ward-create-edit-pinned">
             <h3 id="ward-create-edit-pinned" className={styles.createHeading}>
               Pinned
@@ -769,46 +860,31 @@ function CoordinatorCreateSheet({
         </>
       ) : (
         <>
-          {canRefer ? (
+          {main && MainIcon ? (
             <div className={styles.createSingle}>
-              <button
-                type="button"
-                className={styles.createPrimary}
-                data-testid="ward-phone-create-referral"
-                onClick={() => {
-                  close();
-                  onNewReferral();
-                }}
-              >
-                <Inbox aria-hidden="true" strokeWidth={1.75} />
-                New referral
-              </button>
+              {startControl(
+                main,
+                styles.createPrimary,
+                `ward-phone-create-${main.key}`,
+                <>
+                  <MainIcon aria-hidden="true" strokeWidth={1.75} />
+                  {main.label}
+                </>,
+              )}
             </div>
           ) : null}
           {pinned.length > 0 ? (
             <ul className={`${styles.list} ${styles.rich}`} data-testid="ward-phone-create-coordinator">
               {pinned.map((item) => (
                 <li key={item.key}>
-                  {item.tool ? (
-                    <button
-                      type="button"
-                      className={styles.row}
-                      data-testid={`ward-phone-create-${item.key}`}
-                      onClick={(event) => runItem(item, event)}
-                    >
+                  {startControl(
+                    item,
+                    styles.row,
+                    `ward-phone-create-${item.key}`,
+                    <>
                       <RowBody icon={item.icon} label={item.label} meta={<span>{item.meta}</span>} />
                       <Chevron />
-                    </button>
-                  ) : (
-                    <Link
-                      href={item.href!}
-                      className={styles.row}
-                      onClick={close}
-                      data-testid={`ward-phone-create-${item.key}`}
-                    >
-                      <RowBody icon={item.icon} label={item.label} meta={<span>{item.meta}</span>} />
-                      <Chevron />
-                    </Link>
+                    </>,
                   )}
                 </li>
               ))}
@@ -819,19 +895,7 @@ function CoordinatorCreateSheet({
               {links.map((item, index) => (
                 <Fragment key={item.key}>
                   {index > 0 ? <span className={styles.createMoreDot} aria-hidden="true" /> : null}
-                  {item.tool ? (
-                    <button
-                      type="button"
-                      data-testid={`ward-phone-create-${item.key}`}
-                      onClick={(event) => runItem(item, event)}
-                    >
-                      {item.label}
-                    </button>
-                  ) : (
-                    <Link href={item.href!} onClick={close} data-testid={`ward-phone-create-${item.key}`}>
-                      {item.label}
-                    </Link>
-                  )}
+                  {startControl(item, undefined, `ward-phone-create-${item.key}`, item.label)}
                 </Fragment>
               ))}
             </p>
@@ -894,6 +958,18 @@ function CreateSheet({
   const coordItems: CreateItem[] = coordinator
     ? (
         [
+          // The big button by default (Josh, 16 Nov 2026: now any start can take its place).
+          ...(canRefer
+            ? [
+                {
+                  key: "referral" as const,
+                  icon: Inbox,
+                  label: "New referral",
+                  meta: "Details and destination",
+                  referral: true as const,
+                },
+              ]
+            : []),
           ...(canTriage
             ? [
                 {
@@ -946,7 +1022,7 @@ function CreateSheet({
           // More starts (Josh, 16 Nov 2026): the coordinator's own Tools, off the sheet until added.
           ...MORE_CREATE_ITEMS,
         ] as CreateItem[]
-      ).filter((row) => row.tool !== undefined || (row.href !== undefined && canOpen(row.href)))
+      ).filter((row) => row.referral || row.tool !== undefined || (row.href !== undefined && canOpen(row.href)))
     : [];
   if (coordinator) {
     return (
@@ -954,7 +1030,6 @@ function CreateSheet({
         open={open}
         onClose={onClose}
         returnFocusRef={returnFocusRef}
-        canRefer={canRefer}
         onNewReferral={onNewReferral}
         items={coordItems}
         onEditBar={onEditBar}
@@ -1322,11 +1397,6 @@ export type EditBarProps = {
   onSave: (slots: readonly string[] | null) => void;
 };
 
-/** A spot's icon in the Edit bar picture, as the bar draws it. */
-function BarIcon({ icon: Icon }: { icon: typeof Plus | undefined }) {
-  return Icon ? <Icon aria-hidden="true" strokeWidth={1.75} /> : null;
-}
-
 /** A spot's name, from where it sits beside the +. */
 function spotName(index: number, leftCount: number, total: number): string {
   if (index < leftCount) return leftCount > 1 && index === 0 ? "Far left" : "Left of +";
@@ -1334,9 +1404,10 @@ function spotName(index: number, leftCount: number, total: number): string {
 }
 
 /**
- * Edit bar (Josh, 16 Nov 2026: "allow for change of option for the main action bar also"). One
- * picker per spot of the bottom bar, the + staying in the middle. Choosing what another spot already
- * opens swaps the two, so nothing is ever in the bar twice. Saved on this phone, for this desk only.
+ * Edit bar (Josh, 16 Nov 2026: "allow for change of option for the main action bar also", then
+ * "polish the ability to edit it"). The bar is drawn as it looks; tap a spot, then a tile below to
+ * choose what that spot opens. The + stays in the middle. A tile already in another spot swaps the
+ * two, so nothing is ever in the bar twice. Saved on this phone, for this desk only.
  */
 function EditBarSheet({
   open,
@@ -1349,21 +1420,28 @@ function EditBarSheet({
   onSave,
   returnFocusRef,
 }: EditBarProps & { returnFocusRef: RefObject<HTMLButtonElement | null> }) {
-  const labelFor = new Map(options.map((option) => [option.key, option.label]));
-  const iconFor = new Map(options.map((option) => [option.key, option.icon]));
+  const byKey = new Map(options.map((option) => [option.key, option]));
   const groups = [...new Set(options.map((option) => option.group))];
-  const choose = (index: number, key: string) => {
+  const firstSpot = Math.max(
+    0,
+    current.findIndex((key) => key !== null),
+  );
+  const [spot, setSpot] = useState(firstSpot);
+  const selected = current[spot] === null ? firstSpot : spot;
+  const name = (index: number) => spotName(index, leftCount, current.length);
+  const choose = (key: string) => {
     const next = current.map((slot, at) => slot ?? standard[at]);
     const from = next.indexOf(key);
-    if (from === index) return;
+    if (from === selected) return;
     // A choice already in another spot swaps places with this spot's.
-    if (from >= 0) next[from] = next[index];
-    next[index] = key;
+    if (from >= 0) next[from] = next[selected];
+    next[selected] = key;
     onSave(next);
+    const label = byKey.get(key)?.label ?? "That";
     announceToWardShell(
       from >= 0
-        ? `${labelFor.get(key) ?? "That"} swapped with ${labelFor.get(next[from]) ?? "the other spot"}.`
-        : `${spotName(index, leftCount, current.length)} now opens ${labelFor.get(key) ?? "that"}.`,
+        ? `${label} swapped with ${byKey.get(next[from])?.label ?? "the other spot"}.`
+        : `${name(selected)} now opens ${label}.`,
     );
   };
   return (
@@ -1373,7 +1451,7 @@ function EditBarSheet({
       open={open}
       onClose={onClose}
       title="Edit bottom bar"
-      description="Choose what each spot opens. The + stays in the middle. Saved on this phone."
+      description="Tap a spot, then choose what it opens. Saved on this phone."
       mobileBreakpoint="phone"
       returnFocusRef={returnFocusRef}
       contentClassName={styles.sheet}
@@ -1381,52 +1459,83 @@ function EditBarSheet({
       closeButtonClassName={styles.close}
       bodyClassName={`${styles.body} ${styles.createBody}`}
     >
-      {/* A picture of the bar as it will look; the pickers below say the same in words. */}
-      <div className={editStyles.barPreview} aria-hidden="true" data-testid="ward-phone-edit-bar-preview">
-        {current.map((key, index) => (
-          <Fragment key={index}>
-            {index === leftCount ? (
-              <span className={editStyles.barPlus}>
-                <Plus aria-hidden="true" strokeWidth={2} />
-              </span>
-            ) : null}
-            <span className={editStyles.barSpot}>
-              {key === null ? null : <BarIcon icon={iconFor.get(key)} />}
-              {key === null ? "" : (labelFor.get(key) ?? "")}
-            </span>
-          </Fragment>
+      {/* The bar as it will look. Each spot is a button that picks it for the tiles below. */}
+      <div
+        className={`${styles.dock} ${dockStyles.dock} ${editStyles.barPreview}`}
+        role="group"
+        aria-label="Bottom bar spots"
+        data-testid="ward-phone-edit-bar-preview"
+      >
+        {current.map((key, index) => {
+          const option = key === null ? undefined : byKey.get(key);
+          const Icon = option?.icon;
+          return (
+            <Fragment key={index}>
+              {index === leftCount ? (
+                <span className={styles.riseSlot} aria-hidden="true">
+                  <span className={`${styles.rise} ${editStyles.barRise}`}>
+                    <Plus aria-hidden="true" strokeWidth={2} />
+                  </span>
+                </span>
+              ) : null}
+              {key === null ? (
+                <span aria-hidden="true" />
+              ) : (
+                <button
+                  type="button"
+                  className={`${styles.dockItem} ${dockStyles.item} ${editStyles.barSpot}`}
+                  aria-pressed={index === selected}
+                  aria-label={`${name(index)}: ${option?.label ?? ""}`}
+                  data-testid={`ward-phone-edit-bar-spot-${index}`}
+                  onClick={() => setSpot(index)}
+                >
+                  <span className={styles.dockIcon} aria-hidden="true">
+                    {Icon ? <Icon aria-hidden="true" strokeWidth={1.75} /> : null}
+                  </span>
+                  <span className={`${styles.dockLabel} ${dockStyles.label}`}>{option?.label ?? ""}</span>
+                </button>
+              )}
+            </Fragment>
+          );
+        })}
+      </div>
+      <h3 className={styles.createHeading} id="ward-edit-bar-choices">
+        {name(selected)} opens
+      </h3>
+      <div className={editStyles.barGroups} aria-labelledby="ward-edit-bar-choices">
+        {groups.map((group) => (
+          <section key={group} className={editStyles.barGroup} aria-label={group}>
+            <p className={editStyles.barGroupName}>{group}</p>
+            <ul className={editStyles.barTiles}>
+              {options
+                .filter((option) => option.group === group)
+                .map((option) => {
+                  const at = current.indexOf(option.key);
+                  const here = at === selected;
+                  return (
+                    <li key={option.key}>
+                      <button
+                        type="button"
+                        className={editStyles.barTile}
+                        aria-pressed={here}
+                        data-testid={`ward-phone-edit-bar-option-${option.key}`}
+                        onClick={() => choose(option.key)}
+                      >
+                        <option.icon aria-hidden="true" strokeWidth={1.75} />
+                        <span className={editStyles.barTileLabel}>{option.label}</span>
+                        {here ? (
+                          <Check aria-hidden="true" className={editStyles.barTileCheck} strokeWidth={2.25} />
+                        ) : at >= 0 ? (
+                          <span className={editStyles.barTileNote}>In bar</span>
+                        ) : null}
+                      </button>
+                    </li>
+                  );
+                })}
+            </ul>
+          </section>
         ))}
       </div>
-      <section className={editStyles.barSpots} aria-label="Spots">
-        {current.map((key, index) =>
-          key === null ? null : (
-            <Field
-              key={index}
-              label={spotName(index, leftCount, current.length)}
-              layout="row"
-              className={editStyles.barField}
-            >
-              <Select
-                value={key}
-                data-testid={`ward-phone-edit-bar-spot-${index}`}
-                onChange={(event) => choose(index, event.currentTarget.value)}
-              >
-                {groups.map((group) => (
-                  <optgroup key={group} label={group}>
-                    {options
-                      .filter((option) => option.group === group)
-                      .map((option) => (
-                        <option key={option.key} value={option.key}>
-                          {option.label}
-                        </option>
-                      ))}
-                  </optgroup>
-                ))}
-              </Select>
-            </Field>
-          ),
-        )}
-      </section>
       {chosen ? (
         <p className={styles.createMore}>
           <button
