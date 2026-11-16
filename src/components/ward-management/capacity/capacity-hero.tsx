@@ -265,7 +265,7 @@ export function CapacityHero({
               {
                 // PR C owns the rule (ruling 6: add each type's shortfall); this reads `gapTotals`.
                 id: "gap",
-                // D-250: a gap of 0 reads "Enough" with no number, not "Short 0".
+                // D-251: a gap of 0 reads "Enough" with no number, not "Short 0".
                 value: gap === 0 ? "Enough" : Math.abs(gap),
                 label: (
                   <span className={styles.figLabel}>

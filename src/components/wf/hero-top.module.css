@@ -709,7 +709,7 @@ a.cellBody {
   }
 }
 
-/* D-250 (16 Nov 2026): on a tablet or desktop an inline band too long for its row (the ED page's
+/* D-251 (16 Nov 2026): on a tablet or desktop an inline band too long for its row (the ED page's
    Switch ED at 1280) scrolls sideways under a right-hand fade instead of being cut off. The fade is
    scroll-driven, so a band that fits (its cells stretch to the row's end) is drawn as before. */
 @property --wf-row-fade-end {

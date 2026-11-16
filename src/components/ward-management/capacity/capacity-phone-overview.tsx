@@ -56,7 +56,7 @@ export function PhoneOverview({
   const toCheck = networkRows.filter((row) => checkIds.has(row.unit.id));
   const extras = wardExtras(units, model.bedReleases ?? [], now);
   const detailIdBase = useId();
-  // D-250: the first 8 wards, then a Show more row, so the list matches its count.
+  // D-251: the first 8 wards, then a Show more row, so the list matches its count.
   const [showAllToCheck, setShowAllToCheck] = useState(false);
   const toCheckHidden = Math.max(0, toCheck.length - 8);
   return (

@@ -173,7 +173,7 @@ export function FindAWard({
               ? "Locked"
               : stale === undefined
                 ? "Fits"
-                : // D-250: the tag says what its group heading says.
+                : // D-251: the tag says what its group heading says.
                   "Fits, bed count old"
             : unsuitable
               ? "Not suitable"

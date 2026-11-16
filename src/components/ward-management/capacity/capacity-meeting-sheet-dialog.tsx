@@ -66,7 +66,7 @@ export function BedMeetingSheetDialog({
     ? `, ${perthDateText(calendarDateOf(now, dayZero), { weekday: "long", day: "numeric", month: "long" })}`
     : "";
 
-  // D-250: a gap of 0 reads "Enough" with no number, not "Short 0".
+  // D-251: a gap of 0 reads "Enough" with no number, not "Short 0".
   const shortWord = short.gap === 0 ? "Bed gap" : short.gap > 0 ? "Spare" : "Short";
   const spare = short.spare.map((kind) => `${shortNeed(kind.need).toLowerCase()} ${kind.count} spare`);
   const figures = [
