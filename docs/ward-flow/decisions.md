@@ -2925,7 +2925,7 @@ D-238 is reserved for design Lane D's block (noted in PR #1677). D-239 is reserv
 - **Why:** a logo change touches the tab, home-screen icons, rail and front door just before the demo.
 - **Boundary:** no logo, icon or brand file changes now.
 
-## D-250. The phone's + sheet and bottom bar can be customised, and the bar becomes a refined glass capsule (16 November 2026)
+## D-256. The phone's + sheet and bottom bar can be customised, and the bar becomes a refined glass capsule (16 November 2026)
 
 - **Date:** 16 November 2026, 1:56 PM and 2:36 PM AWST (05:56 and 06:36 UTC). **Decided by:** Josh, in the thread "Expand pinnable Create actions", after asking "Please add more options for editing to pin here. Also allow for change of option for the main action bar also" and for "an even more polished and beautiful and perfected bottom bar". He answered "Yes to your proposed recommendations also" to round 1 of the mock-up, then "Yes to all your recommendations including glass capsule refined" to round 2 (https://claude.ai/artifact/PPJ8mLV4GxUMybBABmpKbD).
 - **Decision:** (1) The coordinator's phone + sheet offers ten more starts (Find a bed, Hospital feed, Due back, Bed summary, On-call, Form times, Suburb lookup, Key figures, Find a patient, Broadcast). They sit under "Not shown" until someone adds them. (2) In edit mode, each row has a minus to remove it and a plus to add it back. (3) The big button can be any start, pages included; New referral then takes its place in the list. (4) Edit mode is called "Customise". (5) Every desk can edit its own phone bottom bar ("Edit bottom bar", from Customise and the Menu): tap a spot, then choose what it opens; choosing something already in the bar swaps the two, and Reset goes back to the standard bar. The + stays in the middle. (6) The bottom bar is style A, the refined glass capsule: 64px tall, softer glass, a filled pill on the current page, a larger + ringed by the bar, and red count badges. Choices are kept per desk on that device and cleared at sign-out.
@@ -2933,4 +2933,4 @@ D-238 is reserved for design Lane D's block (noted in PR #1677). D-239 is reserv
 - **Replaces:** D-247's "New referral always stays on top". The rest of D-247 stands.
 - **Boundary:** phone navigation and look only (below 46.4375rem). No clinical value, rule, wording of a record, permission or saved record changes; a stored choice cannot open a page the desk may not see. Synthetic data only.
 
-D-251 is claimed by PR #1699. The next free number is D-252.
+D-250 to D-255 are claimed by other open PRs (#1701, #1699, the handover and catch-up work). The next free number is D-257.

@@ -1,4 +1,4 @@
-16 Nov 2026, PR #1700 (Customise the phone + sheet and bottom bar, D-250). CI run 43819020149 on bad74e21 measured eight phone screens over their limits by 0.3 to 1.1 KB. Each new limit is the measured size plus 0.2 KB:
+16 Nov 2026, PR #1700 (Customise the phone + sheet and bottom bar, D-256). CI run 43819020149 on bad74e21 measured eight phone screens over their limits by 0.3 to 1.1 KB. Each new limit is the measured size plus 0.2 KB:
 
 - `/ward-flow`: 619.6 → 620.8 KB (measured 620.6 KB; main alone 619.5 KB).
 - `/ward-flow/referrals`: 617.3 → 618.2 KB (measured 618.0 KB; main alone 616.9 KB).
