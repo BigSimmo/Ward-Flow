@@ -1752,7 +1752,7 @@
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 767,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         },
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
@@ -1767,12 +1767,12 @@
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 774,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 789,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         }
       ]
     }
@@ -1854,7 +1854,7 @@
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 85,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
@@ -1874,32 +1874,32 @@
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 104,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 169,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 182,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 232,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 250,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 271,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         }
       ]
     }
@@ -1912,7 +1912,7 @@
     "nodes": ["sPullReleased"],
     "roles": ["coordinator", "ward"],
     "does": "A ward gives back a bed it was holding before the patient arrived. The admission record is deleted outright — nobody was ever in this bed.",
-    "needs": "An open movement at pulled, a listed release reason, an authorised holding ward/coordinator and no physical collection. Cancel a live booking first. An Undo carrying expectedPull must still name this exact pull.",
+    "needs": "An open movement at pulled, a listed release reason, an authorised holding ward/coordinator and no physical collection. Cancel a live booking first. An Undo carrying expectedPull must still name this exact pull. D-262: the Undo of a one-tap Pull the bed also carries endsStartedJourney, which closes the journey that tap started as did not proceed.",
     "changes": "Returns the bed to the ward, deletes the admission, sends the record back to “accepted, awaiting bed”, and tells the department. For a return movement with sourceAdmissionId, the in-app release/withdrawal notice targets the actual sending stay ward. Ordinary ED/community origins retain their existing recipient paths; no external-provider delivery is implied. The movement's and its referral arm's held bed numbers are cleared with the pull. A release that matches no releasable bed reservation is refused rather than recorded.",
     "reasons": ["RELEASE_PULL_REASONS"],
     "refuses": [
@@ -1964,7 +1964,7 @@
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 470,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         },
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
@@ -1984,17 +1984,17 @@
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 554,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 563,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 572,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         },
         {
           "path": "src/components/ward-management/referrals/pull-accepted-referral.tsx",
@@ -2056,7 +2056,7 @@
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 635,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         },
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
@@ -2071,17 +2071,17 @@
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 649,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 659,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 667,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         }
       ]
     }
@@ -5507,7 +5507,7 @@
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 703,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         },
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
@@ -5527,17 +5527,17 @@
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 710,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 716,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 722,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         }
       ]
     }
@@ -6788,7 +6788,7 @@
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 829,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         },
         {
           "path": "src/components/ward-management/movements/movement-workflow-actions.tsx",
@@ -6798,22 +6798,22 @@
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 833,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 839,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 850,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 856,
-          "sha256": "968224db1368c4297077e884c3e861966b467f1f2f7182e26c26e55cddc6f29e"
+          "sha256": "0301065e4e59212b8388707b5107655014225ff8020d26a41d58a89710cf99a0"
         }
       ]
     }

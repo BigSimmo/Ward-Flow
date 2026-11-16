@@ -273,6 +273,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-257](#d-257-settings-is-your-own-settings-first-with-admin-work-in-staff-access-16-november-2026)                                                    | Settings is your own settings first, with admin work in Staff access                              | Active                                           |
 | [D-258](#d-258-no-clock-in-the-header-a-wider-search-and-service-colour-dots-16-november-2026)                                                          | No clock in the header, a wider search and service colour dots                                    | Active                                           |
 | [D-259](#d-259-the-demo-script-matches-the-screen-words-after-the-16-november-walk-16-november-2026)                                                    | The demo script matches the screen words after the 16 November walk                               | Active                                           |
+| [D-262](#d-262-the-16-november-walk-polish-is-built-and-undo-of-a-one-tap-pull-ends-the-journey-it-started-16-november-2026)                            | 16 Nov walk polish built; Undo of a one-tap pull ends its journey                                 | Active                                           |
 
 ---
 
@@ -3005,4 +3006,11 @@ D-255 is reserved by other threads (PR #1700, PR #1702 and the handover).
 - **Decision:** DEMO-SCRIPT.md quotes the words now on screen: the Capacity title "Capacity", the sheet's "Bed meeting sheet · All services, 304 beds" and "Expected to leave · today", the Place group "Needs a recorded reason", "Bed pulled, 4 h 00 min left", the "Confirm arrival at Dabakarn" wristband check, and worked examples starting off in a fresh browser.
 - **Boundary:** script wording only. No app, clinical value, rule or saved record changes. Synthetic data only.
 
-The next free number is D-260.
+## D-262. The 16 November walk polish is built, and Undo of a one-tap pull ends the journey it started (16 November 2026)
+
+- **Date:** 16 November 2026, evening AWST; the Undo choice at 8:05 PM AWST (12:05 UTC). **Decided by:** Josh, in the thread "Read the Ward Flow handover pack": "Go ahead with all recommendations and build using parallel smart agents please", after the critical check of the easy improvements from the 16 November live-walk scorecard, then "Undo also removes the new journey" on the card "Fix Home's Waiting count after Undo of a one-tap bed pull?".
+- **Decision:** (1) The walk's easy improvements are built as recommended: on-screen times read am/pm (shift lines, on-call hours, provider hours, the Pull dialog, settings), while printed and copied sheets keep the 24-hour clock; cut-off text wraps; prints are fixed; feedback names the person; plain words replace codes; key numbers copy in one tap; rule values can be typed. (2) Built the careful way: tap areas grow with padding, not size; freshness sits in the hero's meta line; "Transfer paused" is a status mark, not a banner; the TV view keeps the existing foot offline note; the community phone goes in the hero only by replacing something (not done, as nothing could go). (3) Dropped: a "what to do next" line on every page, "Saved" ticks, and one empty state for every page. Movements list order and the Statistics phone cards wait for a mock-up. (4) Undo of a one-tap Pull the bed (WT-08) also ends the journey that tap started, as "did not proceed", so Home's figures return to where they were and the referral is offered for Pull the bed again. Undo of a pull on a journey already on the board still leaves that journey open.
+- **Replaces:** ruling P4-1's "never closes the movement", for the one-tap Undo only.
+- **Boundary:** "ED journeys open" keeps its D-220 name until Josh rules. No clinical rule or permission changes. Synthetic data only.
+
+D-260 is claimed by PR #1707 (the Privacy and data page). D-261 is claimed by open PR #1708 (the BedChart logo). The next free number is D-263.

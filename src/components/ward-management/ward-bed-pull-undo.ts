@@ -15,6 +15,8 @@ export type BedPullUndoTarget = {
   stageIndex: number;
   /** A ward caller states the ward it acts as; absent for the coordinator. */
   actingUnitId?: string;
+  /** D-262: the pull also started this journey (a one-tap Pull the bed), so Undo ends it too. */
+  startedJourney?: true;
 };
 
 /** What the toast says once a bed pull's Undo is accepted. */
@@ -32,6 +34,7 @@ export function bedPullUndoFields(target: BedPullUndoTarget): Omit<ReleasePullEv
     reason: "pull_made_in_error",
     ...(target.actingUnitId === undefined ? {} : { actingUnitId: target.actingUnitId }),
     expectedPull: { unitId: target.unitId, stageIndex: target.stageIndex },
+    ...(target.startedJourney ? { endsStartedJourney: true as const } : {}),
   };
 }
 
@@ -53,7 +56,7 @@ export function startedJourneyPull(
 ): BedPullUndoTarget | undefined {
   const journey = movements.find((movement) => movement.referralId === referralId && !before.has(movement.id));
   const stageIndex = journey?.stageChanges.findIndex((change) => change.to === "pulled") ?? -1;
-  return journey && stageIndex >= 0 ? { movementId: journey.id, unitId, stageIndex } : undefined;
+  return journey && stageIndex >= 0 ? { movementId: journey.id, unitId, stageIndex, startedJourney: true } : undefined;
 }
 
 /**
