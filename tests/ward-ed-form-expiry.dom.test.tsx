@@ -246,9 +246,9 @@ describe("the ED screen's form-expiry line reads only the typed expiry", () => {
     // and heads the menu it opens.
     const passed = screen.getByTestId(`ward-ed-form-passed-${PAST_DUE_ID}`);
     // D-218 (Josh, 14 Nov 2026): no "not checked" or "as typed" hedge on the row or its description.
-    expect(passed).toHaveTextContent(/^ended \d{2}:\d{2}( yesterday)?$/u);
+    expect(passed).toHaveTextContent(/^ended \d{1,2}:\d{2} [ap]m( yesterday)?$/u);
     expect(passed).not.toHaveTextContent(/ago|left|overdue|\dh|\dm/u);
-    const full = /^ended \d{2}:\d{2}( yesterday)?$/u;
+    const full = /^ended \d{1,2}:\d{2} [ap]m( yesterday)?$/u;
     expect(passed.getAttribute("title")).toMatch(full);
     const pick = screen.getByTestId(`ward-ed-form-pick-${PAST_DUE_ID}`);
     expect(pick).toHaveAccessibleDescription(full);
@@ -263,9 +263,9 @@ describe("the ED screen's form-expiry line reads only the typed expiry", () => {
     expect(screen.queryByTestId(`ward-ed-form-passed-${CLEAR_DUE_ID}`)).toBeNull();
     // A time not yet reached reads "ends …" under the form, with the full words behind it (D-218).
     const ends = screen.getByTestId(`ward-ed-form-ends-${CLEAR_DUE_ID}`);
-    expect(ends).toHaveTextContent(/^ends \d{2}:\d{2}( tomorrow)?$/u);
+    expect(ends).toHaveTextContent(/^ends \d{1,2}:\d{2} [ap]m( tomorrow)?$/u);
     expect(screen.getByTestId(`ward-ed-form-pick-${CLEAR_DUE_ID}`)).toHaveAccessibleDescription(
-      /^ends \d{2}:\d{2}( tomorrow)?$/u,
+      /^ends \d{1,2}:\d{2} [ap]m( tomorrow)?$/u,
     );
   });
 
