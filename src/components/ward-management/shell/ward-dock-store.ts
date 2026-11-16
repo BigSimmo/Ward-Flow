@@ -27,7 +27,7 @@ export type DockChoices = Readonly<Partial<Record<DockDesk, readonly string[]>>>
 const MAX_SLOTS = 4;
 const SLOT_KEY = /^(?:alerts|queue|activity|tools|bed-finder|page:[a-z][a-z0-9-]{0,39})$/u;
 
-export const isDockSlotKey = (value: unknown): value is string => typeof value === "string" && SLOT_KEY.test(value);
+const isDockSlotKey = (value: unknown): value is string => typeof value === "string" && SLOT_KEY.test(value);
 
 let inMemoryFallback: DockChoices | undefined;
 let lastRaw: string | null | undefined;
