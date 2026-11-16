@@ -135,6 +135,12 @@ describe("Movements redesign: the coordinator's board", () => {
     expect(screen.getByRole("link", { name: "Transport" })).toHaveAttribute("href", "/ward-flow/transport/officer");
     expect(screen.getByRole("button", { name: /Next in my queue/ })).toBeInTheDocument();
   });
+
+  it("says in one line why the queue differs from the open count (live walk 16 Nov 2026)", () => {
+    renderScreen();
+    const open = Number(screen.getAllByTestId("movements-day-metric")[0]!.textContent!.match(/\d+/u)![0]);
+    expect(screen.getByTestId("movements-queue")).toHaveTextContent(`Waiting on you, of ${open} open`);
+  });
 });
 
 describe("Movements redesign: the community clinician desk (D-76)", () => {

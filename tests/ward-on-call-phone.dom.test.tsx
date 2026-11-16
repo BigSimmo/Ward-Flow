@@ -120,6 +120,13 @@ describe("PhoneFocal, the hero's bed flow card", () => {
     expect(screen.queryByRole("button", { name: `Call ${crisis.name}, ${crisisNumber}` })).not.toBeInTheDocument();
   });
 
+  it("copies the MHERL crisis number in one tap (live walk 16 Nov 2026)", () => {
+    const actions = makeActions();
+    render(<PhoneFocal entries={ENTRIES} actions={actions} onOpen={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Copy MHERL crisis line number" }));
+    expect(actions.onCopy).toHaveBeenCalledWith(numberAt(entry("sw-mherl"), NOW_ANCHOR), "Number copied");
+  });
+
   it("shows 'Not recorded', no copy button and no crisis row when the line has no number", () => {
     const desk = synthetic({ id: "sw-bfc", name: "Synthetic desk", email: "desk@example.invalid" });
     render(<PhoneFocal entries={[desk]} actions={makeActions({ entries: [desk] })} onOpen={vi.fn()} />);

@@ -359,10 +359,16 @@ export function WardScreenBedDrawer({
             onMove={
               selectedBedItem?.stayAdmissionId && moveGate.allowed ? () => moveStayOnBoard(selectedBed) : undefined
             }
-            onOpenBoard={() => {
-              closeBedDrawer(false);
-              setActiveTab("board");
-            }}
+            // Live walk 16 Nov 2026: "Place someone here" is hidden for a desk that can never place a
+            // stay (D-192); a desk that may not for now still sees it.
+            onOpenBoard={
+              moveGate.never
+                ? undefined
+                : () => {
+                    closeBedDrawer(false);
+                    setActiveTab("board");
+                  }
+            }
             onRaiseReferral={raiseReferralGate.allowed ? () => handleRaiseWardReferral(selectedBedItem) : undefined}
             fullReferralHref={fullWardReferralHref(selectedBedItem?.patientInfo?.patient?.id)}
             roleLockNote={wardRoleLockNote}

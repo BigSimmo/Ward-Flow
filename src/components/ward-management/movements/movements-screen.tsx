@@ -939,6 +939,8 @@ export function MovementsScreen() {
                     tone="warning"
                     testId="movements-queue"
                     title={`${myQueue.length} in your queue`}
+                    // Live walk 16 Nov 2026: one line on why this differs from the open count.
+                    sub={`Waiting on you, of ${openMovements.length} open`}
                     action={{
                       label: "Next in my queue",
                       phoneLabel: "Next",
