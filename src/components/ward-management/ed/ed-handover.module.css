@@ -737,3 +737,17 @@
     cursor: auto;
   }
 }
+
+/* D-251 (size review 8): on a touch screen a person's name in the handover list reaches a 40px tap area that does not show; the
+   text is drawn exactly as before. Rows here sit further apart than 40px, so covers never overlap. */
+@media (pointer: coarse) {
+  :is(a, button).listName {
+    position: relative;
+  }
+
+  :is(a, button).listName::after {
+    content: "";
+    position: absolute;
+    inset: -10px 0;
+  }
+}

@@ -495,6 +495,11 @@
   font-variant-numeric: tabular-nums;
   font-weight: 650;
 }
+
+/* The chips count wards, not beds (Josh, 16 Nov 2026): the noun is shown, quieter than the count. */
+.chipNoun {
+  color: var(--wf-ink-3);
+}
 .mapCard .highlights {
   padding: 0 var(--wf-s-4) var(--wf-s-2);
 }
@@ -2934,6 +2939,17 @@ button.helpLink {
   display: block;
   margin-top: 2px;
   font-size: var(--wf-fs-12);
+}
+/* UI sweep (16 Nov 2026): on a phone the bands take the figure's width instead of setting it, so
+   "Under the 90% band" wraps under In use rather than pushing the fourth figure off the screen. */
+@media (max-width: 46.4375rem) {
+  .occBands {
+    width: 0;
+    min-width: 100%;
+  }
+  .occBandsTrack {
+    min-width: 0;
+  }
 }
 /* A count label's window word (the kit's WindowWord) in the hero's quiet ink. */
 .winWord[data-wf-window] {

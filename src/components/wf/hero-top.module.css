@@ -1,6 +1,6 @@
 /*
  * Page tops (Josh, 9 Nov 2026): Home's approved slate top as shared parts (hero-top.tsx). Final v6
- * sizes: figures 18px phone / 19px from tablet, labels 12.5px, act row 48px with a 34px button,
+ * sizes: figures 18px phone / 19px from tablet, labels 12.5px, act row 48px with a 36px button,
  * 36px chips, one slim band (12px label, 15px value). Tokens only; text keeps the 12px floor.
  * Phone below 46.5rem; tablet and desktop from 46.5rem, as Home's hero.
  */
@@ -171,10 +171,11 @@ a.figLink::after,
   line-clamp: 2;
 }
 
+/* D-251 (size review 6): 36px, the same height as the hero's quick chips (it was 34). */
 .actButton.actButton {
   flex: none;
-  min-height: 34px;
-  height: 34px;
+  min-height: 36px;
+  height: 36px;
   padding: 0 13px;
   border-radius: 9px;
   font-size: var(--wf-fs-13);
@@ -706,6 +707,67 @@ a.cellBody {
 
   .pillAction {
     position: relative;
+  }
+}
+
+/* D-251 (16 Nov 2026): on a tablet or desktop an inline band too long for its row (the ED page's
+   Switch ED at 1280) scrolls sideways under a right-hand fade instead of being cut off. The fade is
+   scroll-driven, so a band that fits (its cells stretch to the row's end) is drawn as before. */
+@property --wf-row-fade-end {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes wfRowFadeEnd {
+  0%,
+  90% {
+    --wf-row-fade-end: 36px;
+  }
+  100% {
+    --wf-row-fade-end: 0px;
+  }
+}
+
+@media (min-width: 46.5rem) {
+  .cells[data-variant="inline"] {
+    margin-block: -4px;
+    padding-block: 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-padding-right: 48px;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(90deg, black calc(100% - var(--wf-row-fade-end)), transparent);
+    mask-image: linear-gradient(90deg, black calc(100% - var(--wf-row-fade-end)), transparent);
+  }
+
+  @supports (animation-timeline: scroll()) {
+    .cells[data-variant="inline"] {
+      animation-name: wfRowFadeEnd;
+      animation-duration: 1ms;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: scroll(self inline);
+    }
+  }
+
+  .cells[data-variant="inline"]::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* UI sweep (16 Nov 2026): on a tablet or desktop "Ask" is drawn 18px tall; a tap band brings it to
+   40px without moving the pill's words. */
+@media (min-width: 46.5rem) {
+  .pillAction {
+    position: relative;
+  }
+
+  .pillAction::after {
+    content: "";
+    position: absolute;
+    inset: -11px -8px;
   }
 }
 

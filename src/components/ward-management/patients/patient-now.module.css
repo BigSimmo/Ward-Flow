@@ -1450,7 +1450,9 @@
   font-size: var(--t-0);
   color: var(--ink-soft);
 }
-.screen button,
+/* A kit hero chip and the kit "Show N more" row keep the kit's size, as on every other page
+   (D-251, size review 1). */
+.screen button:not(:where([data-wf-hero-chip], [data-wf-show-more])),
 .screen .ctl,
 .screen .tabBtn,
 .screen .backBtn {
@@ -1978,8 +1980,9 @@
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
+/* The kit "Show N more" row keeps its 40px desktop row, as on every other page (D-251, desktop size review). */
 @media (pointer: fine) {
-  .screen[data-ward-design="v6"] button,
+  .screen[data-ward-design="v6"] button:not(:where([data-wf-show-more])),
   .screen[data-ward-design="v6"] .ctl,
   .screen[data-ward-design="v6"] .backBtn {
     min-height: 0;
@@ -2713,6 +2716,13 @@
 
 .phIdSub > .ptTag {
   margin-left: var(--wf-s-2);
+}
+
+/* D-251 (16 Nov 2026): a tag that does not fit wraps onto a second line instead of being cut off at
+   the screen edge. A line that fits stays one line. */
+.phIdSub {
+  flex-wrap: wrap;
+  row-gap: var(--wf-s-1);
 }
 
 .phMoreRow {

@@ -40,7 +40,14 @@ export function ShowMoreRow({
   children: ReactNode;
 }) {
   return (
-    <button type="button" className={styles.row} onClick={onClick} aria-expanded={expanded} aria-controls={controls}>
+    <button
+      type="button"
+      data-wf-show-more=""
+      className={styles.row}
+      onClick={onClick}
+      aria-expanded={expanded}
+      aria-controls={controls}
+    >
       {children}
     </button>
   );

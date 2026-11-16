@@ -269,3 +269,10 @@
 .checkIn {
   flex: none;
 }
+
+/* D-251 (size review 5): on a touch tablet the Transport "now" tiles are drawn 36px, the tablet chip size. */
+@media (min-width: 46.5rem) and (pointer: coarse) {
+  .tile.tile {
+    min-height: 36px;
+  }
+}

@@ -124,8 +124,8 @@ describe("the rail's chosen-service word (item 52)", () => {
   });
 });
 
-describe("board time in the top bar (A7)", () => {
-  it("shows the demo clock once, in the top bar, and it opens the demo controls", () => {
+describe("board time in the menu, not the header (D-258)", () => {
+  it("shows no clock in the header, and the rail's shift card carries the board time", () => {
     // NOW_ANCHOR is 10:42 on the demonstration clock.
     setRailOpenPreference(true);
     render(
@@ -134,16 +134,13 @@ describe("board time in the top bar (A7)", () => {
         <WardBar />
       </WardFlowProvider>,
     );
-    const clocks = screen.getAllByLabelText(/Board time 10:42/i);
-    expect(clocks).toHaveLength(1);
-    const clock = clocks[0]!;
-    expect(clock).toHaveAttribute("data-testid", "ward-bar-demo-clock");
-    expect(clock).toHaveAccessibleName("Board time 10:42 am. Open demo controls");
-    expect(clock).toHaveTextContent("Board time");
+    expect(screen.queryByTestId("ward-bar-demo-clock")).not.toBeInTheDocument();
+    const clock = screen.getByTestId("ward-rail-live-clock");
     expect(clock).toHaveTextContent("10:42");
     // RC 2.6 (F-113): the board clock is the demo's scripted time, so it carries no real-time zone label.
     expect(clock).not.toHaveTextContent("AWST");
     expect(clock.textContent).not.toMatch(/\d{2}:\d{2}:\d{2}/);
+    expect(clock.closest("[title]")).toHaveAttribute("title", expect.stringMatching(/^Board time 10:42 am\./u));
   });
 });
 
@@ -153,7 +150,7 @@ describe("rail handover countdown", () => {
     setRailOpenPreference(true);
     renderRail(NOW_ANCHOR);
 
-    // A7 (overall review, 20 Oct 2026): the demo clock lives in the top bar only, not the rail.
+    // The shift card's clock is a title, never a second labelled Board time control (D-258).
     expect(screen.queryByLabelText(/Board time 10:42/i)).not.toBeInTheDocument();
     expect(screen.queryByText("Live Time")).not.toBeInTheDocument();
 

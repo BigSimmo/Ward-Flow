@@ -281,10 +281,8 @@
   }
 }
 
-/* Tablet portrait (device audit, 11 Oct 2026): the Prototype pill keeps its word (the safety
- * notice must stay legible) and New referral keeps its label. The room comes from the search field,
- * which folds to its magnifier here and still opens the full smart search; Activity and Tools stay,
- * because the portrait Menu sheet does not hold them. */
+/* Tablet portrait (device audit, 11 Oct 2026): New referral keeps its label; Activity and Tools
+ * stay, because the portrait Menu sheet does not hold them. The "/" hint is for keyboards only. */
 @media (min-width: 46.5rem) and (max-width: 62.5rem) {
   /* F-14: a phone on its side lands in this band, so the bar's sides clear the notch. */
   .bar {
@@ -321,39 +319,11 @@
     margin: 0 0 0 -7px;
   }
 
-  .bar .centerGroup,
-  .bar .searchWrap {
-    flex: 0 0 auto;
-    width: var(--spacing-tap, 3rem);
-    min-width: var(--spacing-tap, 3rem);
-    max-width: var(--spacing-tap, 3rem);
-    margin-left: auto;
-  }
-
-  .bar .searchWrap :global([data-testid="ward-global-search"]) {
-    width: var(--spacing-tap, 3rem);
-    min-width: var(--spacing-tap, 3rem);
-    max-width: var(--spacing-tap, 3rem);
-  }
-
-  .bar .searchWrap :global([data-testid="ward-global-search"] > div) {
-    width: var(--spacing-tap, 3rem);
-    min-width: var(--spacing-tap, 3rem);
-    max-width: var(--spacing-tap, 3rem);
-    height: var(--spacing-tap, 3rem);
-    padding: 0;
-    justify-content: center;
-  }
-
-  .bar .searchWrap :global([data-testid="ward-global-search-input"]) {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: var(--spacing-tap, 3rem);
-    height: var(--spacing-tap, 3rem);
-    max-width: none;
-    opacity: 0;
-    cursor: pointer;
+  /* Josh, 16 Nov 2026: with Board time out of the header, the search field opens out into the
+   * room on tablet (it was folded to its magnifier here). Its group starts from no width, so the
+   * page name keeps its words first, and it still folds below 9rem (`ward-search` below). */
+  .bar .centerGroup {
+    flex-basis: 0;
   }
 
   .bar .searchWrap :global([data-ward-search-shortcut]),
@@ -1228,9 +1198,8 @@
     padding: 0 12px 0 14px;
   }
 
-  .searchWrap {
-    flex-basis: 16rem;
-  }
+  /* The search kept a 16rem basis here; with Board time gone (Josh, 16 Nov 2026) it grows towards
+   * its 380px into whatever room the bar has, and still gives way first. */
 }
 
 /* From 1001px to 1300px both sides match (Josh, 30 Oct 2026): 12px on the right crowded New
@@ -4323,4 +4292,46 @@
     line-height: 18px;
     letter-spacing: -0.02em;
   }
+}
+
+/* Service colour dot (Josh, 16 Nov 2026): beside the service name in the header chip and in the
+ * Service picker. Each service has its own colour (`--wf-svc-dot-*`); Statewide's dot holds all six. */
+.serviceDot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--wf-svc-dot-north);
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.serviceDot[data-service="south"] {
+  background: var(--wf-svc-dot-south);
+}
+
+.serviceDot[data-service="east"] {
+  background: var(--wf-svc-dot-east);
+}
+
+.serviceDot[data-service="wachs"] {
+  background: var(--wf-svc-dot-wachs);
+}
+
+.serviceDot[data-service="cahs"] {
+  background: var(--wf-svc-dot-cahs);
+}
+
+.serviceDot[data-service="private"] {
+  background: var(--wf-svc-dot-private);
+}
+
+.serviceDot[data-service="statewide"] {
+  background: conic-gradient(
+    var(--wf-svc-dot-north) 0 60deg,
+    var(--wf-svc-dot-south) 0 120deg,
+    var(--wf-svc-dot-east) 0 180deg,
+    var(--wf-svc-dot-wachs) 0 240deg,
+    var(--wf-svc-dot-cahs) 0 300deg,
+    var(--wf-svc-dot-private) 0 360deg
+  );
 }
