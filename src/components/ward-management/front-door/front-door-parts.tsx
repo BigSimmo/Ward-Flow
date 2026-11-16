@@ -20,24 +20,17 @@ import {
   WifiOff,
 } from "lucide-react";
 
-import { BRAND_COUNTER_TRANSFORM, BRAND_VIEWBOX, brandMarkOptics } from "@/lib/brand-mark";
+import { BrandMark, BrandName } from "@/components/ward-management/brand-mark";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { DEMO_PASS_HOURS } from "@/lib/front-door-pass";
 
 import styles from "./front-door.module.css";
 
-/** The Ward Flow mark, drawn in the band's own ink. */
+/** The BedChart mark (D-261) in the front door's frosted glass tile, in the hero band's colours. */
 export function DoorMark() {
-  const { transform, stroke, point } = brandMarkOptics("display");
   return (
     <span className={styles.mark}>
-      <svg viewBox={BRAND_VIEWBOX} aria-hidden="true" focusable="false">
-        <g transform={transform} fill="currentColor">
-          <path d={stroke} />
-          <path d={stroke} transform={BRAND_COUNTER_TRANSFORM} />
-          <circle cx={point.cx} cy={point.cy} r={point.r} />
-        </g>
-      </svg>
+      <BrandMark size={40} />
     </span>
   );
 }
@@ -105,7 +98,7 @@ function Brand({ demo }: { demo: boolean }) {
     <section className={styles.brand} aria-label="About BedChart">
       <div className={styles.brandTop}>
         <DoorMark />
-        <span className={styles.wordmark}>BedChart</span>
+        <BrandName name="BedChart" className={styles.wordmark} />
         <span className={styles.syn}>
           <i aria-hidden="true" />
           Synthetic data

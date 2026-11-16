@@ -18,21 +18,21 @@ export default function OpengraphImage() {
         alignItems: "center",
         justifyContent: "center",
         gap: 44,
-        background: "#0b1013",
+        background: "linear-gradient(160deg, #2c4762 0%, #22384d 45%, #1c2f41 100%)",
         color: "#ffffff",
       }}
     >
-      <img src={brandMarkDataUri()} width={192} height={192} alt="" />
+      <img src={brandMarkDataUri()} width={176} height={176} alt="" />
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
         <div style={{ fontSize: 78, fontWeight: 700, letterSpacing: -1.5 }}>{BRAND_NAME}</div>
-        <div style={{ fontSize: 30, color: "#9fb2b8" }}>{BRAND_CATCHPHRASE_BARE}</div>
+        <div style={{ fontSize: 30, color: "#b8c7d6" }}>{BRAND_CATCHPHRASE_BARE}</div>
         {/* A15-20: a shared link's picture says the data is invented. */}
         <div
           style={{
             marginTop: 10,
             padding: "8px 22px",
             borderRadius: 999,
-            border: "2px solid #9fb2b8",
+            border: "2px solid #b8c7d6",
             fontSize: 28,
             fontWeight: 600,
             color: "#ffffff",

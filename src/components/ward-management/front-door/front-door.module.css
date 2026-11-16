@@ -186,6 +186,8 @@
   height: 60px;
   border-radius: var(--wf-r-lg);
   color: var(--door-mark-ink);
+  --bc-pillow: var(--wf-brand-hero-pillow);
+  --bc-bed: var(--wf-brand-hero-bed);
   background: linear-gradient(180deg, var(--door-white-14), color-mix(in srgb, var(--wf-hero-ink) 5%, transparent));
   border: 1px solid var(--door-white-18);
   box-shadow:

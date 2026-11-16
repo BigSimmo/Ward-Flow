@@ -38,6 +38,11 @@
   --wf-hero-2: #1c2f41;
   --wf-hero-edge: #172736;
   --wf-hero-ink: #fff;
+  /* BedChart mark (D-261): pillow and bed, on the page and on the navy hero. */
+  --wf-brand-pillow: #2f6aa3;
+  --wf-brand-bed: #1c2f41;
+  --wf-brand-hero-pillow: #8cbcf0;
+  --wf-brand-hero-bed: #e9eef3;
   --wf-hero-ink-2: #c3d1de;
   --wf-hero-ink-3: #b0c3d6;
   --wf-danger: #c4513f;
@@ -123,6 +128,8 @@
 
 :root[data-theme="dark"],
 .night {
+  --wf-brand-pillow: #8cbcf0;
+  --wf-brand-bed: #e9eef3;
   --wf-canvas: #0d141b;
   --wf-surface: #141d26;
   --wf-surface-2: #18232e;
@@ -184,6 +191,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
+    --wf-brand-pillow: #8cbcf0;
+    --wf-brand-bed: #e9eef3;
     --wf-canvas: #0d141b;
     --wf-surface: #141d26;
     --wf-surface-2: #18232e;

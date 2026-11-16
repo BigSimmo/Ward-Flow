@@ -121,6 +121,8 @@
   outline-offset: 2px;
 }
 
+/* The BedChart mark stands on the rail with no tile (D-261): the two-part mark carries its own
+   colour, so a blue tile would swallow the blue pillow. */
 .brandEmblem {
   display: grid;
   place-items: center;
@@ -128,16 +130,11 @@
   height: var(--wf-h-sm);
   flex-shrink: 0;
   box-sizing: border-box;
-  border-radius: var(--wf-r-md);
-  border: 1px solid var(--wf-pri-edge);
-  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wf-on-accent) 18%, transparent);
-  color: var(--wf-on-accent);
 }
 
 .emblemGlyph {
-  width: 1rem;
-  height: 1rem;
+  width: 22px;
+  height: 22px;
 }
 
 .brandTitle {
@@ -194,6 +191,8 @@
     .rail:not([data-rail="closed"])
     .brandLink {
     color: var(--wf-hero-ink);
+    --bc-pillow: var(--wf-brand-hero-pillow);
+    --bc-bed: var(--wf-brand-hero-bed);
   }
 
   :global(:root:has([data-wf-bar][data-band="ink"])) .rail:not([data-rail="closed"]) .brandStateText,
@@ -2034,24 +2033,18 @@
   .rail[data-rail="closed"] .brandEmblem {
     width: 2.25rem;
     height: 2.25rem;
-    border-radius: var(--wf-r-lg);
-    transition:
-      transform var(--wf-m-fast) var(--wf-ease),
-      box-shadow var(--wf-m-fast);
+    transition: transform var(--wf-m-fast) var(--wf-ease);
   }
 
   @media (hover: hover) and (pointer: fine) {
     .rail[data-rail="closed"] .brandLink:hover .brandEmblem {
-      box-shadow:
-        inset 0 1px 0 color-mix(in srgb, var(--wf-on-accent) 18%, transparent),
-        var(--wf-e2);
       transform: translateY(-1px);
     }
   }
 
   .rail[data-rail="closed"] .emblemGlyph {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 26px;
+    height: 26px;
   }
 
   /* Note 3 (Josh, 8 Nov 2026): the expand control is a 44px square in the foot, on the strip's centre

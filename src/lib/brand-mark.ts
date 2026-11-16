@@ -1,190 +1,172 @@
-// Single source of truth for the brand mark: the Ward Flow S — two
-// counter-turning strokes divided by one straight cut, with a settled point —
-// on a rounded tile. Every surface that draws the mark derives from the
-// geometry here so the favicon, the in-app <BrandMark>, the browser-tab icon
-// (app/icon.svg), and the generated app-icon / maskable / OG image routes can
-// never drift apart.
+// Single source of truth for the BedChart mark, the Folded B: a pillow above a
+// bed whose lower right corner is turned down like a sheet (D-261, 16 November
+// 2026). Every surface that draws the mark derives from the geometry here, so
+// the favicon, the in-app mark, the browser-tab icon (app/icon.svg) and the
+// generated app-icon, maskable, launch-screen and link-preview images can never
+// drift apart.
 //
-// The construction is recorded in docs/brand/brand-mark.md. The PsychSift
-// master artwork it came from is not in this repository. Do not re-draw the
-// paths below by hand: they are the exact output of that construction, and the
-// two strokes are one path and its point reflection, which is what keeps the
-// cut between them parallel.
+// The construction is recorded in docs/brand/brand-mark.md. The paths below are
+// the exact output of the master generator (master.py in the brand pack), not
+// hand drawn. Do not edit one master without regenerating the set.
 //
-// Pure data + strings (no JSX, no imports) so it is consumable everywhere: the
-// React <BrandMark> renders the exported geometry as JSX; scripts/generate-
-// brand-assets.ts writes app/icon.svg from brandIconSvg(); the next/og image
-// routes embed brandMarkSvg() as a data: URI.
+// Pure data and strings (no JSX, no imports), so it is consumable everywhere:
+// the in-app BrandMark renders the geometry as JSX, app/icon.svg is written from
+// brandIconSvg(), and the next/og image routes embed brandMarkSvg() as a data URI.
 
-/** 512×512 coordinate system shared by every rendering — the master artwork's own. */
-export const BRAND_VIEWBOX = "0 0 512 512";
+/** One optical-size master: its own square drawing grid and the three shapes.
+ *  `flap` is the turned-down corner; it is null where the fold is dropped. */
+export type BrandMaster = {
+  viewBox: number;
+  pillow: string;
+  bed: string;
+  flap: string | null;
+  /** Width of the crease cut between the flap and the bed, in grid units. */
+  crease: number;
+  /** The ink box of the whole mark, used to set it inside a line of type. */
+  ink: { x: number; y: number; width: number; height: number };
+};
 
-/** Rounded tile: a corner radius of 3/16 of the side. */
-export const BRAND_TILE = { x: 0, y: 0, size: 512, rx: 96 } as const;
+export type BrandMasterName = "display" | "text" | "small" | "micro";
 
-/** Places the 100-unit glyph inside the tile, centred on its ink bounding box,
- *  at 80% of the tile height so the rounded corners keep their margin. */
-export const BRAND_GLYPH_TRANSFORM = "translate(143.1125 51.2) scale(4.0804)";
+/** The four masters. The mark is redrawn, not just scaled, as it gets smaller:
+ *  - display (48 px and up): the full fold, a 2-unit crease.
+ *  - text (24 to 47 px): a heavier 2.6-unit crease and a rounder flap.
+ *  - small (17 to 23 px): a tighter bed corner, a bigger fold, a 3-unit crease.
+ *  - micro (16 px and below): redrawn on a 16-pixel grid, every edge on a whole
+ *    pixel, and no fold, because at that size a fold only blurs. */
+export const BRAND_MASTERS: Record<BrandMasterName, BrandMaster> = {
+  display: {
+    viewBox: 48,
+    pillow: "M11.75 5H28A7.75 7.75 0 0 1 28 20.5H11.75A2.5 2.5 0 0 1 9.25 18V7.5A2.5 2.5 0 0 1 11.75 5Z",
+    bed:
+      "M11.75 24.5H29.5A9.25 9.25 0 0 1 38.75 33.75V33.336Q38.75 33.75 38.457 34.043L29.793 42.707Q29.5 43 29.086 43" +
+      "H11.75A2.5 2.5 0 0 1 9.25 40.5V27A2.5 2.5 0 0 1 11.75 24.5Z",
+    flap: "M38.75 33.75H32.5A3 3 0 0 0 29.5 36.75V43Z",
+    crease: 2,
+    ink: { x: 9.25, y: 5, width: 29.5, height: 38 },
+  },
+  text: {
+    viewBox: 48,
+    pillow: "M11.75 5H28A7.75 7.75 0 0 1 28 20.5H11.75A2.5 2.5 0 0 1 9.25 18V7.5A2.5 2.5 0 0 1 11.75 5Z",
+    bed:
+      "M11.75 24.5H29.5A9.25 9.25 0 0 1 38.75 33.75V33.253Q38.75 33.75 38.399 34.101L29.851 42.649Q29.5 43 29.003 43" +
+      "H11.75A2.5 2.5 0 0 1 9.25 40.5V27A2.5 2.5 0 0 1 11.75 24.5Z",
+    flap: "M38.75 33.75H32.583A3.083 3.083 0 0 0 29.5 36.833V43Z",
+    crease: 2.6,
+    ink: { x: 9.25, y: 5, width: 29.5, height: 38 },
+  },
+  small: {
+    viewBox: 48,
+    pillow: "M11.75 5H28.125A7.625 7.625 0 0 1 28.125 20.25H11.75A2.5 2.5 0 0 1 9.25 17.75V7.5A2.5 2.5 0 0 1 11.75 5Z",
+    bed:
+      "M11.75 24.75H31.75A7 7 0 0 1 38.75 31.75V31.336Q38.75 31.75 38.457 32.043L27.793 42.707Q27.5 43 27.086 43" +
+      "H11.75A2.5 2.5 0 0 1 9.25 40.5V27.25A2.5 2.5 0 0 1 11.75 24.75Z",
+    flap: "M38.75 31.75H30.5A3 3 0 0 0 27.5 34.75V43Z",
+    crease: 3,
+    ink: { x: 9.25, y: 5, width: 29.5, height: 38 },
+  },
+  micro: {
+    viewBox: 16,
+    pillow: "M4 2H9.5A2.5 2.5 0 0 1 9.5 7H4A1 1 0 0 1 3 6V3A1 1 0 0 1 4 2Z",
+    bed: "M4 8H10A3 3 0 0 1 10 14H4A1 1 0 0 1 3 13V9A1 1 0 0 1 4 8Z",
+    flap: null,
+    crease: 0,
+    ink: { x: 3, y: 2, width: 10, height: 12 },
+  },
+};
 
-/** The small-size variant sits wider, because its point is slid out of the
- *  cradle (see BRAND_POINT_SMALL) and so the ink bounding box it is centred on
- *  is 10 units wider. Same scale, different centring. */
-export const BRAND_GLYPH_TRANSFORM_SMALL = "translate(122.7103 51.2) scale(4.0804)";
-
-/** The same glyph with no tile behind it, scaled so its ink fills the box top to
- *  bottom. Used by the in-app mark, where the symbol stands on the page ground
- *  and the surrounding layout — not a tile — provides the breathing room. The
- *  mark therefore occupies exactly the slot the tiled version used to. */
-export const BRAND_GLYPH_TRANSFORM_BARE = "translate(114.8907 0) scale(5.1006)";
-
-/** The bare glyph's small-size placement — the counterpart of
- *  BRAND_GLYPH_TRANSFORM_SMALL for the untiled, in-app mark.
- *
- *  Not a new measurement. The brand doc fixes the two ink boxes: the primary
- *  glyph spans 0 to 55.33 horizontally, the small variant 0 to 65.33, and both
- *  span the same 0 to 100.38 vertically. Every placement here centres that box
- *  in the 512 viewBox, which is verifiable against the three transforms above —
- *  each lands its centre on 256.000 to within 0.003, the rounding of a
- *  two-decimal box figure.
- *
- *  Two consequences, and both are why this is a derivation rather than a redraw:
- *
- *  The vertical extent is identical between the variants (the point slides
- *  sideways; its cy and r do not move), so the scale is unchanged at 5.1006 —
- *  100.3813 x 5.1006 = 512.0, the bare variant's whole point.
- *
- *  The point moves exactly 10 units out and is the box's right edge, so the box
- *  widens by exactly 10 and its centre by exactly 5. The placement therefore
- *  shifts left by 5 glyph units at this scale: 114.8907 - 5 x 5.1006 = 89.3877.
- *  The same arithmetic reproduces the committed tiled pair (143.1125 - 5 x
- *  4.0804 = 122.7103, as shipped), which is the check that the rule is the one
- *  actually used rather than one that merely fits.
- *
- *  It travels with BRAND_STROKE_PATH_SMALL and BRAND_POINT_SMALL as a set. The
- *  doc is explicit that mixing one variant's point with the other's placement
- *  puts the glyph off-centre; `brandMarkOptics()` below is the only supported
- *  way to pick, so a caller cannot half-apply the variant. */
-export const BRAND_GLYPH_TRANSFORM_BARE_SMALL = "translate(89.3877 0) scale(5.1006)";
-
-/** The two optical variants of the bare glyph, as whole sets.
- *
- *  `display` is the primary construction. `chrome` is the small-size cut: the
- *  4.2-unit gap between the strokes opened to 7.2, and the point slid 10 units
- *  out of its cradle so the crescent opens from 7.26 to 11.55.
- *
- *  The threshold is 32px, from the brand doc's own "at 32 px and below two
- *  things close up" - below it the cut and the crescent both fall under two
- *  pixels and the dot fuses into the S, which reads as a heavy blob at the top
- *  of a mark whose lower stroke is already the thinner one. That fusion is what
- *  made the mark look top-heavy in app chrome; the deeper `--brand-mark-emphasis`
- *  ink compensates for it, and this fixes it.
- *
- *  Below about 20px the crescent is under two pixels whatever is done. That is
- *  the size, not the placement, and no variant rescues it. */
-export function brandMarkOptics(variant: "display" | "chrome") {
-  return variant === "chrome"
-    ? { transform: BRAND_GLYPH_TRANSFORM_BARE_SMALL, stroke: BRAND_STROKE_PATH_SMALL, point: BRAND_POINT_SMALL }
-    : { transform: BRAND_GLYPH_TRANSFORM_BARE, stroke: BRAND_STROKE_PATH, point: BRAND_POINT };
+/** The master for a mark drawn `px` CSS pixels square. */
+export function pickBrandMaster(px: number): BrandMasterName {
+  if (px >= 48) return "display";
+  if (px >= 24) return "text";
+  if (px >= 17) return "small";
+  return "micro";
 }
 
-/** The upper stroke. Four arcs and the straight cut, meeting at two cusps. */
-export const BRAND_STROKE_PATH =
-  "M41.3675 2.6554 A17.7232 17.7232 0 0 0 29.0679 28.0493 A13 13 0 0 1 28.8667 40.1963 " +
-  "L18.0434 59.8793 A55.1234 55.1234 0 0 1 3.9761 43.9116 A29.2009 29.2009 0 0 1 41.3675 2.6554 Z";
+/** Two-part colours: the pillow carries the accent, the bed the deep ink. */
+export type BrandColors = { pillow: string; bed: string };
 
-/** The small-size optical cut: the same silhouette with the 4.2-unit gap opened
- *  to 7.2 so it does not close up under 32 px. Used by the browser-tab icon. */
-export const BRAND_STROKE_PATH_SMALL =
-  "M41.3675 2.6554 A17.7232 17.7232 0 0 0 28.6276 27.115 A13 13 0 0 1 28.1033 38.5768 " +
-  "L16.8897 58.9696 A55.1234 55.1234 0 0 1 3.9761 43.9116 A29.2009 29.2009 0 0 1 41.3675 2.6554 Z";
+/** On a light page: --wf-pri-1 and --wf-hero-2 from the v9 kit. */
+export const BRAND_ON_LIGHT: BrandColors = { pillow: "#2f6aa3", bed: "#1c2f41" };
+/** On a dark page, the navy hero band, and every icon tile: --wf-accent (dark)
+ *  and --wf-ink-1 (dark). The light pillow is only 2.1:1 on navy, so anything
+ *  dark always takes this pair. */
+export const BRAND_ON_DARK: BrandColors = { pillow: "#8cbcf0", bed: "#e9eef3" };
+/** One colour for platforms that read only the alpha channel. */
+export const BRAND_MONOCHROME: BrandColors = { pillow: "#ffffff", bed: "#ffffff" };
 
-/** The lower stroke IS the upper one under this transform — a 180° rotation and
- *  a 7% enlargement in one step. The cut is positioned so this carries the upper
- *  stroke's facing edge exactly onto the lower one; see the brand doc. */
-export const BRAND_COUNTER_TRANSFORM = "translate(55.1029 100.3813) scale(-1.07)";
+/** App-icon field: --wf-hero-1 (light) and --wf-surface (dark). */
+export const BRAND_FIELD = { light: "#22384d", dark: "#141d26" } as const;
 
-/** The settled point, cradled in the S's throat. Its centre is exactly the
- *  centre of the throat arc (17.7232 at (44.8724, 20.0286)), so the crescent of
- *  white between the point and the curve that cups it is a constant 7.2646
- *  units all the way round — the same constant-width idea as the straight cut
- *  between the two strokes. Move it off that centre and the crescent starts to
- *  taper. */
-export const BRAND_POINT = { cx: 44.8724, cy: 20.0286, r: 10.4586 } as const;
+/** 512-unit square app-icon tile with a 3/16 corner radius, as before. */
+export const BRAND_TILE = { size: 512, rx: 96 } as const;
 
-/** The small-size point: the same circle slid 10 units out of the cradle, so
- *  the crescent opens from 7.26 to 11.55 units and the point still separates
- *  from the S at 20–32 px instead of fusing into it. The counterpart of the
- *  widened cut in BRAND_STROKE_PATH_SMALL, and used by the same surfaces. At
- *  16 px the crescent is still under two pixels and the two do merge; that is
- *  the size, not the placement. */
-export const BRAND_POINT_SMALL = { cx: 54.8724, cy: 20.0286, r: 10.4586 } as const;
-
-/** Brand colours per theme. The symbol carries the colour and the ground stays
- *  out of its way: `ink` mirrors --clinical-accent, and `tile` mirrors the page
- *  ground it sits on (--surface-raised). So on a white page the mark reads as
- *  the bare symbol with no box around it, which is how it is meant to be seen;
- *  the tile exists only because a .ico and a raster app icon have no
- *  transparency to fall back on and must paint some ground.
- *
- *  These cannot read the tokens (the favicon and the generated PNG icon routes
- *  render outside any stylesheet), so they must be re-derived by hand whenever
- *  the accent moves — then `npm run brand:update` regenerates app/icon.svg,
- *  which `npm run brand:check` verifies in verify:cheap, and the design-token
- *  contract test fails if they ever disagree with the token. */
-export const BRAND_LIGHT = { tile: "#ffffff", ink: "#1d6fb8" } as const;
-export const BRAND_DARK = { tile: "#171b1e", ink: "#74bdf0" } as const;
-
-export type BrandColors = { tile: string; ink: string };
-
-/** Inner SVG markup (no <svg> wrapper) with explicit colours — shared by the
- *  flat SVG/PNG builders. The React <BrandMark> renders the same geometry from
- *  the exported constants above. */
-export function brandMarkInner({ tile, ink }: BrandColors, small = false): string {
-  const t = BRAND_TILE;
-  // The small-size variant is a set: the widened cut, the point slid out of the
-  // cradle, and the centring that its wider ink box needs. Mixing one with the
-  // other's placement puts the glyph off-centre in the tile.
-  const stroke = small ? BRAND_STROKE_PATH_SMALL : BRAND_STROKE_PATH;
-  const p = small ? BRAND_POINT_SMALL : BRAND_POINT;
-  const place = small ? BRAND_GLYPH_TRANSFORM_SMALL : BRAND_GLYPH_TRANSFORM;
+/** Inner SVG for one master. The crease is a cut, not a painted line: a mask
+ *  removes it from the bed and the flap, so the mark sits on any ground (tile,
+ *  hero band, card, transparent icon) without a visible stripe. `id` must be
+ *  unique in the document. */
+export function brandMarkInner(colors: BrandColors, master: BrandMasterName, id = "bc-crease"): string {
+  const m = BRAND_MASTERS[master];
+  if (!m.flap) {
+    return `<path d="${m.pillow}" fill="${colors.pillow}"/><path d="${m.bed}" fill="${colors.bed}"/>`;
+  }
+  const v = m.viewBox;
   return (
-    `<rect x="${t.x}" y="${t.y}" width="${t.size}" height="${t.size}" rx="${t.rx}" fill="${tile}" />` +
-    `<g transform="${place}" fill="${ink}">` +
-    `<path d="${stroke}" />` +
-    `<path d="${stroke}" transform="${BRAND_COUNTER_TRANSFORM}" />` +
-    `<circle cx="${p.cx}" cy="${p.cy}" r="${p.r}" />` +
-    `</g>`
+    `<defs><mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="${v}" height="${v}">` +
+    `<rect width="${v}" height="${v}" fill="#fff"/>` +
+    `<path d="${m.flap}" fill="none" stroke="#000" stroke-width="${m.crease}" stroke-linejoin="round"/>` +
+    `</mask></defs>` +
+    `<path d="${m.pillow}" fill="${colors.pillow}"/>` +
+    `<g mask="url(#${id})"><path d="${m.bed}" fill="${colors.bed}"/><path d="${m.flap}" fill="${colors.pillow}"/></g>`
   );
 }
 
-/** Standalone flat SVG (single colour pair) — embedded as a data: URI inside the
- *  next/og image routes (apple-icon, maskable, opengraph-image). */
-export function brandMarkSvg(colors: BrandColors = BRAND_LIGHT): string {
-  return `<svg viewBox="${BRAND_VIEWBOX}" xmlns="http://www.w3.org/2000/svg">${brandMarkInner(colors)}</svg>`;
+/** Standalone SVG of the bare mark, drawn for `px` pixels (which picks the
+ *  master). Embedded as a data URI in the next/og image routes. */
+export function brandMarkSvg(colors: BrandColors = BRAND_ON_LIGHT, px = 512): string {
+  const master = pickBrandMaster(px);
+  const v = BRAND_MASTERS[master].viewBox;
+  return `<svg viewBox="0 0 ${v} ${v}" xmlns="http://www.w3.org/2000/svg">${brandMarkInner(colors, master)}</svg>`;
 }
 
-/** Themed standalone SVG for the browser-tab icon (app/icon.svg): a
- *  prefers-color-scheme swap that a raster app-icon cannot do. Uses the
- *  small-size cut, because this is the file that renders at 16–32 px. Written to
- *  app/icon.svg by scripts/generate-brand-assets.ts (verified in verify:cheap). */
+/** The mark on its rounded navy tile, drawn for `px` pixels: the app icon.
+ *  `inset` is the mark's share of the tile side (0.64 leaves the corner margin). */
+export function brandTileSvg(px = 512, field: string = BRAND_FIELD.light, inset = 0.64): string {
+  const t = BRAND_TILE;
+  const markPx = px <= 16 ? px : px * inset;
+  const master = pickBrandMaster(markPx);
+  const v = BRAND_MASTERS[master].viewBox;
+  const s = (t.size * (px <= 16 ? 1 : inset)) / v;
+  const o = (t.size - v * s) / 2;
+  return (
+    `<svg viewBox="0 0 ${t.size} ${t.size}" xmlns="http://www.w3.org/2000/svg">` +
+    `<rect width="${t.size}" height="${t.size}" rx="${t.rx}" fill="${field}"/>` +
+    `<g transform="translate(${round(o)} ${round(o)}) scale(${round(s)})">${brandMarkInner(BRAND_ON_DARK, master)}</g>` +
+    `</svg>`
+  );
+}
+
+/** The browser-tab icon (app/icon.svg). Browsers draw it at 16 to 32 px, so it
+ *  uses the small master on the navy tile, with a dark-mode field. The committed
+ *  file must equal this output; tests/design-token-contract.test.ts checks it. */
 export function brandIconSvg(): string {
   const t = BRAND_TILE;
-  const p = BRAND_POINT_SMALL;
-  return `<svg viewBox="${BRAND_VIEWBOX}" xmlns="http://www.w3.org/2000/svg">
+  const m = BRAND_MASTERS.small;
+  const s = (t.size * 0.68) / m.viewBox;
+  const o = (t.size - m.viewBox * s) / 2;
+  return `<svg viewBox="0 0 ${t.size} ${t.size}" xmlns="http://www.w3.org/2000/svg">
   <style>
-    .tile { fill: ${BRAND_LIGHT.tile}; }
-    .ink { fill: ${BRAND_LIGHT.ink}; }
+    .field { fill: ${BRAND_FIELD.light}; }
     @media (prefers-color-scheme: dark) {
-      .tile { fill: ${BRAND_DARK.tile}; }
-      .ink { fill: ${BRAND_DARK.ink}; }
+      .field { fill: ${BRAND_FIELD.dark}; }
     }
   </style>
-  <rect class="tile" x="${t.x}" y="${t.y}" width="${t.size}" height="${t.size}" rx="${t.rx}" />
-  <g class="ink" transform="${BRAND_GLYPH_TRANSFORM_SMALL}">
-    <path d="${BRAND_STROKE_PATH_SMALL}" />
-    <path d="${BRAND_STROKE_PATH_SMALL}" transform="${BRAND_COUNTER_TRANSFORM}" />
-    <circle cx="${p.cx}" cy="${p.cy}" r="${p.r}" />
-  </g>
+  <rect class="field" width="${t.size}" height="${t.size}" rx="${t.rx}" />
+  <g transform="translate(${round(o)} ${round(o)}) scale(${round(s)})">${brandMarkInner(BRAND_ON_DARK, "small")}</g>
 </svg>
 `;
+}
+
+function round(n: number): string {
+  return String(Math.round(n * 1000) / 1000);
 }
