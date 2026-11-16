@@ -169,6 +169,14 @@ describe("the on-call screen", () => {
     expect(screen.getByRole("tab", { name: /^State(?! bed)/u })).toHaveAttribute("aria-selected", "true");
   });
 
+  it("copies a key line's number on a press, with the Number copied toast, and opens its card", async () => {
+    renderOnCall();
+    fireEvent.click(screen.getByTestId("ward-on-call-key-nmhs-bfc"));
+    await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
+    expect(writeText.mock.calls[0]![0].split("\n")[1]).toMatch(MOCK_NUMBER);
+    expect(await screen.findByText("Number copied")).toBeInTheDocument();
+  });
+
   it("has no copy-only Call button, and Copy number still copies the number (D-72)", async () => {
     renderOnCall();
     expect(panel().queryByRole("button", { name: /^Call 08 5550/u })).not.toBeInTheDocument();

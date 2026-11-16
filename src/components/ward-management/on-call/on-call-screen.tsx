@@ -521,7 +521,7 @@ export function OnCallScreen() {
           <>
             {/* R-HOME-23: what a press does, in a tip. */}
             <InfoTip about="key lines" placement="bottom">
-              Press a line to open its card, where you can call or copy the number.
+              Press a line to copy its number and open its card.
             </InfoTip>
             {bandLines.length > 3 ? (
               <button
@@ -549,7 +549,11 @@ export function OnCallScreen() {
                 {until ? <span className={styles.keyLineUntil}> {until}</span> : null}
               </>
             ),
-            onClick: () => pick(entry.id),
+            // Live walk 16 Nov 2026: a press copies the number (the same Copy and toast) and opens the card.
+            onClick: () => {
+              if (number) void copy(number, "Number copied");
+              pick(entry.id);
+            },
             // The name starts with the cell's visible words (WCAG 2.5.3, label in name).
             ariaLabel: `${keyName(entry)} ${number ?? "Email only"}${until ? ` ${until}` : ""}, ${keyLineLabel(entry)}`,
             testId: `ward-on-call-key-${entry.id}`,

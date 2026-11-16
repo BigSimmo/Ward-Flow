@@ -14,6 +14,8 @@ import { adverseExampleWard, incidentExampleWardIds, staffRequestExampleWard } f
  *
  * - WF-008, which did not proceed, has two of its four cancelled-move checks marked.
  * - WF-003 was accepted with two conditions, one met; WF-023 with a "bed after" time.
+ * - WF-028 carries a recorded legal mismatch (voluntary on an all-locked ward), so the ED board's
+ *   warning shows (live walk 16 Nov 2026).
  * - Graylands Adult Secure has an intake limit with a review due later today.
  * - One ward is closed for staffing with an overdue review, so its transition list
  *   shows what still points at it (A16-17 below).
@@ -49,6 +51,20 @@ const CLOSED_UNIT_ID = "gry-older-adult";
  * that fits: that is FSH Adult Secure, the bed-move fixture whose tests need a free open bed.
  */
 const CLOSED_BED_UNIT_ID = "bty-adult-secure";
+
+/**
+ * Live walk 16 Nov 2026: one open journey whose legal status and accepted ward do not match, so the
+ * ED board's "Legal status does not match this ward" warning shows on the Standard day. WF-028 is a
+ * voluntary person accepted to a ward whose every bed is locked, the one mismatch the reducer's own
+ * FLAG_LEGAL_MISMATCH derives today; the flag is set only while that still holds.
+ */
+const LEGAL_MISMATCH_MOVEMENT_ID = "WF-028";
+
+function isVoluntaryOnLockedWard(movement: Movement, units: readonly Unit[]): boolean {
+  if (movement.closure || movement.legalMismatch || movement.legalStatus !== "Voluntary") return false;
+  const unit = units.find((candidate) => candidate.id === movement.acceptedUnitId);
+  return unit !== undefined && unit.lockedBeds > 0 && unit.beds - unit.lockedBeds <= 0;
+}
 
 const COORDINATOR = "Bed coordinator";
 const WARD = "Ward manager";
@@ -157,6 +173,12 @@ export function applyLoopChecksDemoOverlay<
             readyAt: now + 150,
           },
         ],
+      };
+    }
+    if (movement.id === LEGAL_MISMATCH_MOVEMENT_ID && isVoluntaryOnLockedWard(movement, state.units)) {
+      return {
+        ...movement,
+        legalMismatch: { at: now - 30, unitId: movement.acceptedUnitId!, kind: "voluntary_on_locked_ward" },
       };
     }
     return movement;

@@ -145,7 +145,19 @@ export function PhoneFocal({
             <span className={styles.spacer} />
             <span className={styles.mono}>{numberAt(crisis, actions.minute) ?? "Not recorded"}</span>
           </button>
-          <CallButton entry={crisis} actions={actions} onHero />
+          {numberAt(crisis, actions.minute) ? (
+            // Live walk 16 Nov 2026: the crisis key line copies in one tap, as the bed flow line does.
+            <button
+              type="button"
+              className={cx(styles.phoneCall, styles.phoneCallHero)}
+              aria-label="Copy MHERL crisis line number"
+              onClick={() => actions.onCopy(numberAt(crisis, actions.minute)!, "Number copied")}
+            >
+              <Icon icon={Copy} size={20} />
+            </button>
+          ) : (
+            <CallButton entry={crisis} actions={actions} onHero />
+          )}
         </div>
       ) : null}
     </div>

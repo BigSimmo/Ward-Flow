@@ -84,6 +84,38 @@ export type RuleRange = {
   readonly maxLabel: string;
 };
 
+/** "07:30", "1h 30m" and "3 Wards" read as "7:30", "1h30m" and "3wards", so a typed value matches its words. */
+function plainWords(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/\s+/gu, "")
+    .replace(/(^|\D)0+(\d)/gu, "$1$2");
+}
+
+/**
+ * Reads a typed rule value (live walk 16 Nov 2026) against the values the stepper could reach, so
+ * typing gives exactly what stepping could and nothing else. The words as shown match ("1h 30m",
+ * "07:30", "3 wards"); a bare number matches the one reachable value whose words are that number and
+ * a unit ("2" is "2h" when 2m is not reachable). Anything else, or a tie, is null.
+ */
+export function parseRuleTyped(
+  text: string,
+  bounds: { readonly min: number; readonly max: number; readonly step: number },
+  format: (value: number) => string,
+): number | null {
+  const typed = plainWords(text);
+  if (typed === "") return null;
+  const reachable: number[] = [];
+  for (let value = bounds.min; value <= bounds.max && reachable.length <= 2000; value += bounds.step) {
+    reachable.push(value);
+  }
+  const exact = reachable.find((value) => plainWords(format(value)) === typed);
+  if (exact !== undefined) return exact;
+  if (!/^\d+$/u.test(typed)) return null;
+  const byNumber = reachable.filter((value) => new RegExp(`^${typed}[^\\d:]*$`, "u").test(plainWords(format(value))));
+  return byNumber.length === 1 ? byNumber[0]! : null;
+}
+
 /**
  * One coordination rule: words and the allowed range on one line ("Per referral · 1 ward to 3 wards"), a reset to the
  * saved value when changed, one stepper, and its effect and readers on the right.
@@ -114,6 +146,7 @@ export function RuleRow({
   unavailableReason,
   defaultValue,
   defaultDisplay,
+  format,
 }: {
   setting: string;
   title: string;
@@ -142,6 +175,8 @@ export function RuleRow({
   defaultValue?: number;
   /** The default in words ("24h"). */
   defaultDisplay?: string;
+  /** Any value in words, so the value can be typed as well as stepped. */
+  format?: (value: number) => string;
 }) {
   const changed = value !== saved;
   const atDefault = defaultValue === undefined || value === defaultValue;
@@ -212,6 +247,11 @@ export function RuleRow({
             valueText={display}
             display={display}
             valueTestId={displayTestId}
+            parse={
+              format
+                ? (text) => parseRuleTyped(text, { min: range.min, max: max ?? range.max, step: range.step }, format)
+                : undefined
+            }
           />
         )}
         {changed ? (

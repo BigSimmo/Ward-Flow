@@ -71,8 +71,8 @@ describe("settings screen due-time warning rows", () => {
     // The card that holds both rows says once that these are defaults (D-218: no legal-limit hedge).
     expect(screen.getByText("Your defaults")).toBeVisible();
 
-    expect(screen.getByTestId("due-soon-urgent-display")).toHaveTextContent("1h");
-    expect(screen.getByTestId("due-soon-display")).toHaveTextContent("3h");
+    expect(screen.getByTestId("due-soon-urgent-display")).toHaveValue("1h");
+    expect(screen.getByTestId("due-soon-display")).toHaveValue("3h");
     expect(valueOf(urgentStepper())).toBe(DUE_SOON_URGENT_MINUTES);
     expect(valueOf(soonStepper())).toBe(DUE_SOON_MINUTES);
 
@@ -85,7 +85,7 @@ describe("settings screen due-time warning rows", () => {
     expect(screen.getByTestId("probe-due-soon-urgent")).toHaveTextContent(String(DUE_SOON_URGENT_MINUTES));
 
     fireEvent.click(screen.getByRole("button", { name: "Increase final warning before a legal due time" }));
-    expect(screen.getByTestId("due-soon-urgent-display")).toHaveTextContent("1h 15m");
+    expect(screen.getByTestId("due-soon-urgent-display")).toHaveValue("1h 15m");
     expect(valueOf(urgentStepper())).toBe(DUE_SOON_URGENT_MINUTES + 15);
     // Not dispatched yet.
     expect(screen.getByTestId("probe-due-soon-urgent")).toHaveTextContent(String(DUE_SOON_URGENT_MINUTES));
@@ -111,7 +111,7 @@ describe("settings screen due-time warning rows", () => {
     }
 
     expect(valueOf(urgentStepper())).toBe(165);
-    expect(screen.getByTestId("due-soon-urgent-display")).toHaveTextContent("2h 45m");
+    expect(screen.getByTestId("due-soon-urgent-display")).toHaveValue("2h 45m");
     expect(valueOf(urgentStepper())).toBeLessThan(valueOf(soonStepper()));
   });
 
