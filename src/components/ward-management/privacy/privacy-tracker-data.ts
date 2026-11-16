@@ -9,7 +9,7 @@ export type PrivacyCheckStatus = "met" | "partly" | "notyet";
 
 export type PrivacyCheck = { name: string; status: PrivacyCheckStatus; evidence: string };
 
-export type PrivacyPolicyLine = { lead?: string; text: string };
+type PrivacyPolicyLine = { lead?: string; text: string };
 
 export type PrivacySection = {
   id: string;
@@ -47,7 +47,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       },
       {
         lead: "Laws followed",
-        text: "PRIS Act 2024 (WA), Health Services Act 2016 (WA), Mental Health Act 2014 (WA), State Records Act 2000 (WA), FOI Act 1992 (WA), and WA Health policies MP 0015/16, 0067/17, 0122/19, 0135/20, 0140/20 and 0144/20.",
+        text: "PRIS Act 2024 (WA), Health Services Act 2016 (WA), Mental Health Act (WA), State Records Act 2000 (WA), FOI Act 1992 (WA), and WA Health policies MP 0015/16, 0067/17, 0122/19, 0135/20, 0140/20 and 0144/20.",
       },
       {
         lead: "Where they apply",
@@ -151,8 +151,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         evidence: "Sign-in shows a synthetic-data warning only. No statement to accept.",
       },
     ],
-    source:
-      "Health Services Act 2016 (WA) confidentiality offences · Mental Health Act 2014 (WA) confidentiality offence",
+    source: "Health Services Act 2016 (WA) confidentiality offences · Mental Health Act (WA) confidentiality offence",
   },
   {
     id: "collect",
