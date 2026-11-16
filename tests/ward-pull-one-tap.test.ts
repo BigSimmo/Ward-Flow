@@ -108,7 +108,7 @@ describe("Pull the bed is one tap (WT-08)", () => {
     const before = new Set<string>();
     const pulled = wardFlowReducer(state, event);
     const target = startedJourneyPull(pulled.movements, referralId, before, unitId)!;
-    const { startedJourney: _ignored, ...plain } = target;
+    const plain = { movementId: target.movementId, unitId: target.unitId, stageIndex: target.stageIndex };
     const undone = wardFlowReducer(pulled, bedPullUndoEvent("coordinator", NOW_ANCHOR + 1, plain));
     const journey = undone.movements.find((m) => m.id === target.movementId);
     expect(journey?.closure).toBeUndefined();
