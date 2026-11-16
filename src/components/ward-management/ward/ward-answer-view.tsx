@@ -84,7 +84,6 @@ import { isConstantObservation, observationSummary } from "@/components/ward-man
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { identityAbsenceNote } from "./ward-screen-derivations";
 import { WardAnswerCensus } from "./ward-answer-census";
-import { originPlaceLabel } from "@/components/ward-management/ward-movement-origin";
 
 const ANSWER_ALERT_LINE = CLINICAL_VALUES.bedAlertLine.value; // the hero ring's signed alert line
 
@@ -1036,8 +1035,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                           </div>
                           <div>
                             <dt>From</dt>
-                            {/* Page scores 16 Nov 2026: name the sending ED, as the ward page does. */}
-                            <dd>{originPlaceLabel(activeMovement)}</dd>
+                            <dd>Emergency department (not named)</dd>
                           </div>
                           <div>
                             <dt>Referred</dt>
