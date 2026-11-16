@@ -573,7 +573,7 @@ function CoverPanel() {
         Cover lasts {plural(CLINICAL_VALUES.coverLength.value, "hour")} at most and ends by itself.
       </p>
       {result}
-      <Card data-testid="ward-access-cover">
+      <Card data-testid="ward-access-cover" data-setting="cover">
         <CardHead title="Give cover" icon={KeyRound} meta="One ward or one ED" />
         {givable.length === 0 ? (
           <p className={styles.empty}>This desk has no ward or ED to give cover of.</p>

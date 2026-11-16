@@ -114,7 +114,6 @@ import { SettingsFold } from "./settings-fold";
 import { SettingsProfileCard } from "./settings-profile-card";
 import { SettingsSaveBar } from "./settings-save-bar";
 import {
-  PHONE_QUICK_SETTINGS,
   copySettingsDiagnostics,
   isSurgePreset,
   ruleDiffs,
@@ -804,9 +803,9 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
     // Fixed defaults and Clinical values sit behind the reference card's tabs; show them first.
     if (entry.id === "fixed-defaults") setReference("defaults");
     if (entry.id === "clinical-values") setReference("clinical");
-    // Phone: the quick settings sit on the screen itself; every other one opens its section's sheet.
-    if (isPhone)
-      setPhoneSheet(PHONE_QUICK_SETTINGS.has(entry.id) || (accessInline && section === "access") ? null : section);
+    // Phone: every setting opens its section's sheet (D-257: Theme, Row density and Buzz sound are in
+    // Display and Alerts now); only the access admin's Access sits open on the page.
+    if (isPhone) setPhoneSheet(accessInline && section === "access" ? null : section);
     setHighlight(entry.id);
     setQuery("");
     setFindOpen(false);
@@ -1013,11 +1012,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
       <SettingsProfileCard now={now} />
       {role === "executive" ? null : <SettingsDraftsCard />}
       {role === "ward" ? <WardDeskQrCard demoUnitId={roleAccessOn ? undefined : personaDeskId} /> : null}
-      {accessOn && role !== "admin" && !staffAccessOn ? (
-        <div data-setting="cover">
-          <DeskCoverSettings />
-        </div>
-      ) : null}
+      {accessOn && role !== "admin" && !staffAccessOn ? <DeskCoverSettings /> : null}
     </div>
   );
 

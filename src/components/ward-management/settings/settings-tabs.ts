@@ -71,6 +71,8 @@ export function sectionForEntry(
   // Help lives in Help now; Find still answers someone who looks for it here.
   if (entry.id === "open-help") return context.sections[0] ?? "display";
   if (entry.id === "go-to-desk") return "you";
+  // Cover sits with the roles in Staff access on a desk that has it, and in Your desk otherwise.
+  if (entry.id === "cover") return context.sections.includes("access") ? "access" : "you";
   if (entry.id === "restore" || entry.id === "help-tips") return "display";
   if (DEMO_ROWS.has(entry.id)) return "demo";
   if (RULE_FILE_ROWS.has(entry.id)) return context.editsRules ? "rules" : "data";

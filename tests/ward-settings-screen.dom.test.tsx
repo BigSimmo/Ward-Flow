@@ -144,6 +144,12 @@ describe("the settings screen", () => {
     const youDesk = findRedesignSettings("cover", ["alerts", "display", "you"], 7, false).map((e) => e.id);
     expect(youDesk).toContain("cover");
     expect(youDesk).not.toContain("who-can");
+    // Codex review on #1703: on a desk with Staff access, cover is found there, with the roles.
+    const cover = { id: "cover", label: "Cover for a second ward or ED", tab: "profile" as const, keywords: "" };
+    expect(
+      sectionForEntry(cover, { editsRules: true, sections: ["rules", "alerts", "display", "you", "access"] }),
+    ).toBe("access");
+    expect(sectionForEntry(cover, { editsRules: false, sections: ["alerts", "display", "you"] })).toBe("you");
     expect(
       sectionForEntry(
         { id: "who-can", label: "Who can change what", tab: "access", keywords: "" },

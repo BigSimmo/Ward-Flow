@@ -130,6 +130,13 @@ describe("Settings on a phone", () => {
       within(screen.getByRole("dialog", { name: "Alerts" })).getByRole("switch", { name: "Buzz sound" }),
     ).toBeInTheDocument();
     fireEvent.click(within(screen.getByRole("dialog", { name: "Alerts" })).getByRole("button", { name: "Close" }));
+
+    // Codex review on #1703: Find a setting opens the sheet that now holds Theme.
+    fireEvent.change(within(page).getByRole("combobox", { name: "Find a setting" }), { target: { value: "theme" } });
+    fireEvent.click(screen.getAllByRole("option", { name: /Theme/ })[0]!);
+    expect(
+      within(screen.getByRole("dialog", { name: "Display" })).getByRole("radiogroup", { name: "Theme" }),
+    ).toBeInTheDocument();
     expect(screen.queryByTestId("ward-settings-phone-area-help")).toBeNull();
     // The desktop band's tab track is not on the phone.
     expect(within(page).queryByRole("tablist", { name: "Settings areas" })).toBeNull();
