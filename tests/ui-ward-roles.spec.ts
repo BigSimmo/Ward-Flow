@@ -261,11 +261,12 @@ test.describe("@mockup Ward screen", () => {
     // The header has no clock now (D-253, 16 Nov 2026): the Tools sheet footer's board clock opens
     // Tools at its Demo row, a layout-level sibling of `wardScreen`, so `page`-scoped.
     // Since #1488 the demo controls open like any tool: in the pane on a desktop, as a page below.
+    // The browser clock is paused, so the footer pill's close-then-reopen step is moved on by hand.
     await page.getByTestId("ward-bar-tools-trigger").click();
-    await page
-      .getByTestId("ward-bar-tools-sheet")
-      .getByRole("button", { name: /Open demo controls$/ })
-      .click();
+    const toolsSheet = page.getByTestId("ward-bar-tools-sheet");
+    await expect(toolsSheet).toBeVisible();
+    await toolsSheet.getByRole("button", { name: /Open demo controls$/ }).click();
+    await page.clock.runFor(1_000);
 
     // The menu must never be mistaken for a clinical action, checked in words, not merely by
     // colour: its heading row and its opening notice both say so explicitly.
