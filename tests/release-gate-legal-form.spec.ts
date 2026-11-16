@@ -75,7 +75,7 @@ test("Legal form: a Form 1A gets its time written and is marked received, the re
   await panel.getByRole("radio", { name: "Metro", exact: true }).click();
   await panel.getByRole("radio", { name: "Adult", exact: true }).click();
   await panel.getByRole("button", { name: "Save time written" }).click();
-  await expect(panel.getByText("Written 09:30 on the form")).toBeVisible();
+  await expect(panel.getByText("Written 9:30 am on the form")).toBeVisible();
   await expect(toastFor(page, `Form time recorded for ${name}`)).toBeVisible();
 
   // The paper reaches the coordinator. Received is the next step, and it offers Undo.
@@ -90,7 +90,7 @@ test("Legal form: a Form 1A gets its time written and is marked received, the re
   await receivedToast.getByRole("button", { name: "Undo", exact: true }).click();
   await expect(toastFor(page, `Received mark undone for ${name}`)).toBeVisible();
   await expect(panel.getByText("Form 1A received", { exact: true })).toHaveCount(0);
-  await expect(panel.getByText("Written 09:30 on the form")).toBeVisible();
+  await expect(panel.getByText("Written 9:30 am on the form")).toBeVisible();
 
   await markReceived.click();
   await expect(panel.getByText("Form 1A received", { exact: true })).toBeVisible();
