@@ -2419,7 +2419,7 @@
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
           "line": 512,
-          "sha256": "978ee241b2e8a3f82169bc8623686da8c68ca5af31ac78e053825383374adcb5"
+          "sha256": "83e1cdec2d347da2d6a1a239632d84200cc20d288f81b0703d6de04c3ae14abb"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2488,7 +2488,7 @@
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
           "line": 523,
-          "sha256": "978ee241b2e8a3f82169bc8623686da8c68ca5af31ac78e053825383374adcb5"
+          "sha256": "83e1cdec2d347da2d6a1a239632d84200cc20d288f81b0703d6de04c3ae14abb"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2565,7 +2565,7 @@
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
           "line": 531,
-          "sha256": "978ee241b2e8a3f82169bc8623686da8c68ca5af31ac78e053825383374adcb5"
+          "sha256": "83e1cdec2d347da2d6a1a239632d84200cc20d288f81b0703d6de04c3ae14abb"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2642,7 +2642,7 @@
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
           "line": 576,
-          "sha256": "978ee241b2e8a3f82169bc8623686da8c68ca5af31ac78e053825383374adcb5"
+          "sha256": "83e1cdec2d347da2d6a1a239632d84200cc20d288f81b0703d6de04c3ae14abb"
         },
         {
           "path": "src/components/ward-management/tools/ward-tool-feed.tsx",
