@@ -136,16 +136,16 @@ describe("the on-call screen", () => {
   it("states the time each number is available until, and what follows", () => {
     renderOnCall();
     const bedFlow = within(row("nmhs-bfc"));
-    expect(bedFlow.getByText("20:00")).toBeVisible();
+    expect(bedFlow.getByText("8:00 pm")).toBeVisible();
     expect(bedFlow.getByText("then on-call mobile")).toBeVisible();
     expect(panel().getByText(/Answering until/u)).toBeVisible();
   });
 
   it("shows cover at a later time, labelled as tomorrow when it has passed", () => {
     renderOnCall();
-    pickCoverAt("03:00");
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/Who answers at 03:00 tomorrow$/u);
-    expect(within(row("nmhs-bfc")).getByText("08:00")).toBeVisible();
+    pickCoverAt("3:00 am");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/Who answers at 3:00 am tomorrow$/u);
+    expect(within(row("nmhs-bfc")).getByText("8:00 am")).toBeVisible();
     expect(within(row("nmhs-bfc")).getByText("On-call mobile")).toBeVisible();
   });
 
@@ -153,7 +153,7 @@ describe("the on-call screen", () => {
     const { container } = renderOnCall();
     // Page tops (Josh, 9 Nov 2026): the State bed desk is the act row; the bed flow lines and the
     // crisis line are one slim Key lines row, three shown and the rest one tap away.
-    expect(screen.getByTestId("ward-on-call-act")).toHaveTextContent(/^State bed desk08 5550 \d{4}until 20:00/u);
+    expect(screen.getByTestId("ward-on-call-act")).toHaveTextContent(/^State bed desk08 5550 \d{4}until 8:00 pm/u);
     const strip = within(screen.getByRole("list", { name: "Key lines" }));
     const keys = () =>
       strip
@@ -369,7 +369,7 @@ describe("the on-call screen", () => {
 
   it("points a closed line at whoever answers now", () => {
     renderOnCall();
-    pickCoverAt("03:00");
+    pickCoverAt("3:00 am");
     fireEvent.click(within(row("nmhs-aml")).getByRole("button", { name: /^Aboriginal mental health liaison/u }));
     expect(panel().getByText(/Closed, opens/u)).toBeVisible();
     expect(panel().getByText(/Call now:/u)).toBeVisible();

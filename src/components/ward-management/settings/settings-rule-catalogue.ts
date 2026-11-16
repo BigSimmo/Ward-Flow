@@ -3,7 +3,7 @@
 // words and readers live in one place instead of four.
 import { defaultWardConfiguration, type WardConfiguration } from "@/components/ward-management/ward-configuration";
 import {
-  clock24,
+  settingsClock,
   fullRules,
   shortDuration,
   wardsText,
@@ -74,7 +74,7 @@ export const RULES: readonly RuleEntry[] = [
     label: "Morning bed numbers due",
     group: "Deadlines and reply targets",
     shownOn: "Wards, Ward alerts",
-    display: clock24,
+    display: settingsClock,
   },
   {
     key: "referralTarget",

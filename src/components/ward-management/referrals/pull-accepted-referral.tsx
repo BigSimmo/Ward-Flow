@@ -15,6 +15,7 @@ import { legalFormStatusWarning } from "../ward-legal-form-fit";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { BED_PULL_UNDO_TOAST_MS } from "../ward-operational-defaults";
 import { BED_PULL_UNDONE, bedPullUndoEvent, nextPullTarget, startedJourneyPull } from "../ward-bed-pull-undo";
+import { formatInstantWithDay } from "../ward-clock";
 import type { WardFlowEvent } from "../ward-flow-events";
 import type { WardCommandOutcome } from "../ward-shared-client";
 import { useUndoableStep } from "../use-undoable-step";
@@ -49,7 +50,6 @@ import {
   acceptedDecisionAt,
   CHOOSE_INTERVAL_LINE,
   chooseFactsLine,
-  clockText,
   pullFactSource,
   pullFactSourceText,
   pullFormChanges,
@@ -456,7 +456,7 @@ export function PullAcceptedReferral({
             <dd className={styles.nr}>Not recorded</dd>
           ) : (
             <dd>
-              <span className={styles.mono}>{clockText(decidedAt)}</span>
+              <span className={styles.mono}>{formatInstantWithDay(decidedAt, now)}</span>
               {` · ${minutesText(Math.max(0, now - decidedAt))} ago`}
             </dd>
           )}

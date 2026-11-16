@@ -273,26 +273,26 @@ describe("settings screen configuration draft", () => {
 
   it("morning rollup deadline stepper updates the draft and dispatches on save", () => {
     renderSettings();
-    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("09:30");
+    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("9:30 am");
     expect(rollupStepper()).toHaveAttribute("aria-valuenow", "570");
 
     // Click plus button (increase by 15m to 09:45 AM / 585)
     fireEvent.click(screen.getByRole("button", { name: "Increase morning bed numbers due time" }));
-    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("09:45");
+    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("9:45 am");
     expect(rollupStepper()).toHaveAttribute("aria-valuenow", "585");
     expect(screen.getByTestId("probe-morning-rollup")).toHaveTextContent("570"); // not saved yet
 
     // Click minus button twice (decrease by 30m to 09:15 AM / 555)
     fireEvent.click(screen.getByRole("button", { name: "Decrease morning bed numbers due time" }));
     fireEvent.click(screen.getByRole("button", { name: "Decrease morning bed numbers due time" }));
-    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("09:15");
+    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("9:15 am");
     expect(rollupStepper()).toHaveAttribute("aria-valuenow", "555");
 
     // Step up three times to 600 (10:00 AM)
     for (let press = 0; press < 3; press += 1) {
       fireEvent.click(screen.getByRole("button", { name: "Increase morning bed numbers due time" }));
     }
-    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("10:00");
+    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("10:00 am");
     expect(screen.getByTestId("probe-morning-rollup")).toHaveTextContent("570");
 
     // Save coordination rules

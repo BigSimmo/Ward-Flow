@@ -2,7 +2,7 @@
 // form and its kept row share. Pure functions only; nothing here raises an event.
 
 import type { Instant } from "./ward-clock";
-import { minuteOfDay } from "./ward-clock";
+import { formatInstant } from "./ward-clock";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "./ward-flow-roles";
 import type { Movement } from "./ward-model";
 import { PULL_FORM_FIELDS, type PullFormField } from "./ward-model-movement-parts";
@@ -69,12 +69,9 @@ export function chooseFactsLine(missing: readonly PullFact[]): string | undefine
   return `Choose ${list}`;
 }
 
-/** An instant's clock face, "09:57". */
+/** An instant's on-screen clock face, am/pm (item 13): "9:57 am". */
 export function clockText(at: Instant): string {
-  const minute = minuteOfDay(at);
-  const h = Math.floor(minute / 60);
-  const m = minute % 60;
-  return `${h < 10 ? "0" : ""}${h}:${m < 10 ? "0" : ""}${m}`;
+  return formatInstant(at);
 }
 
 /** When the ward accepted: the accepted arm's recorded decision time, when there is one. */

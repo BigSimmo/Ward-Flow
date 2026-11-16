@@ -716,16 +716,16 @@ describe("silent answer reminders — display only, from existing timestamps", (
     expect(silentWardReminder(NOW - 120, NOW)).toContain("(your default)");
     const morningReferral = 8 * 60;
     const afterMorningShift = 15 * 60 + 30;
-    expect(silentWardReminder(morningReferral, afterMorningShift)).toContain("07:00–15:00");
+    expect(silentWardReminder(morningReferral, afterMorningShift)).toContain("7:00 am to 3:00 pm");
     // One shift pattern (Josh, 26 Sept 2026): evening is 15:00–23:00 and night 23:00–07:00.
     const eveningReferral = 16 * 60;
     const afterEveningShift = 23 * 60 + 30;
-    expect(silentWardReminder(eveningReferral, afterEveningShift)).toContain("15:00–23:00");
+    expect(silentWardReminder(eveningReferral, afterEveningShift)).toContain("3:00 pm to 11:00 pm");
     const nightReferral = 23 * 60 + 30;
     const afterNightShift = 24 * 60 + 7 * 60 + 30;
-    expect(silentWardReminder(nightReferral, afterNightShift)).toContain("23:00–07:00");
+    expect(silentWardReminder(nightReferral, afterNightShift)).toContain("11:00 pm to 7:00 am");
     const earlyReferral = 24 * 60 + 2 * 60;
-    expect(silentWardReminder(earlyReferral, earlyReferral + 6 * 60)).toContain("23:00–07:00");
+    expect(silentWardReminder(earlyReferral, earlyReferral + 6 * 60)).toContain("11:00 pm to 7:00 am");
   });
 
   it("waits for 07:00 next morning, then the morning after, for a community team", () => {

@@ -6,6 +6,7 @@ import {
   clockState,
   dayOf,
   type DueSoonThresholds,
+  formatInstant,
   type Instant,
   minuteOfDay,
   MINUTES_PER_DAY,
@@ -588,8 +589,6 @@ export { SILENT_WARD_ANOTHER_WARD_SUGGESTION };
 function shiftContaining(instant: Instant): { label: string; endsAt: Instant } {
   const startOfDay = dayOf(instant) * MINUTES_PER_DAY;
   const clock = minuteOfDay(instant);
-  const clockFace = (minute: number) =>
-    `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
   for (const shift of SHIFT_PATTERN) {
     const crossesMidnight = shift.endMinute <= shift.startMinute;
     const inside = crossesMidnight
@@ -598,11 +597,11 @@ function shiftContaining(instant: Instant): { label: string; endsAt: Instant } {
     if (!inside) continue;
     const endsNextDay = crossesMidnight && clock >= shift.startMinute;
     return {
-      label: `${clockFace(shift.startMinute)}–${clockFace(shift.endMinute)}`,
+      label: `${formatInstant(shift.startMinute)} to ${formatInstant(shift.endMinute)}`,
       endsAt: startOfDay + (endsNextDay ? MINUTES_PER_DAY : 0) + shift.endMinute,
     };
   }
-  return { label: "07:00–15:00", endsAt: startOfDay + MORNING_SHIFT_END };
+  return { label: "7:00 am to 3:00 pm", endsAt: startOfDay + MORNING_SHIFT_END };
 }
 
 function nextMorningAtSeven(from: Instant): Instant {

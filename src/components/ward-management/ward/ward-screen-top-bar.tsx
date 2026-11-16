@@ -71,7 +71,7 @@ type WardScreenTopBarProps = {
   now: number;
   confirmTriggerRef: RefObject<HTMLButtonElement | null>;
   openCapacityModal: () => void;
-  /** "Day shift 07:00 to 15:00": the hero's title, the hours in the quieter weight. */
+  /** "Day shift 7:00 am to 3:00 pm": the hero's title, the hours in the quieter weight. */
   heroTitle: string;
   wardHeroTop: WardHeroTopInput;
   wardHeroMeta: ReactElement | null;
@@ -113,9 +113,9 @@ type WardScreenTopBarProps = {
   bedsList: WardScreenBed[];
 };
 
-/** The shift's name, then its hours in the quieter weight ("Day shift" "07:00 to 15:00"). */
+/** The shift's name, then its hours in the quieter weight ("Day shift" "7:00 am to 3:00 pm"). */
 function splitShift(line: string): { name: string; hours: string } {
-  const match = /^(.*?)\s+(\d{1,2}:\d{2}\s+to\s+\d{1,2}:\d{2})$/u.exec(line);
+  const match = /^(.*?)\s+(\d{1,2}:\d{2}(?:\s[ap]m)?\s+to\s+\d{1,2}:\d{2}(?:\s[ap]m)?)$/u.exec(line);
   return match ? { name: match[1]!, hours: match[2]! } : { name: line, hours: "" };
 }
 
