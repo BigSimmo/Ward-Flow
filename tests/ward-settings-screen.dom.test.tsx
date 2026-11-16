@@ -138,19 +138,27 @@ describe("the settings screen", () => {
     );
   });
 
-  // Codex review on #1392: a desk without Access keeps its cover request under You, so Find still finds it.
-  it("finds the access rows under You on a desk without an Access section", () => {
-    const youDesk = findRedesignSettings("cover", ["rules", "alerts", "display", "you"], 7, true).map((e) => e.id);
-    expect(youDesk).toContain("access");
+  // Codex review on #1392, Settings overhaul (Josh, 16 Nov 2026, D-257): a ward or ED desk keeps its
+  // cover in Your desk, so Find still finds it there; roles and Who can change what are Staff access.
+  it("finds cover under Your desk, and roles only in Staff access", () => {
+    const youDesk = findRedesignSettings("cover", ["alerts", "display", "you"], 7, false).map((e) => e.id);
+    expect(youDesk).toContain("cover");
+    expect(youDesk).not.toContain("who-can");
+    // Codex review on #1703: on a desk with Staff access, cover is found there, with the roles.
+    const cover = { id: "cover", label: "Cover for a second ward or ED", tab: "profile" as const, keywords: "" };
+    expect(
+      sectionForEntry(cover, { editsRules: true, sections: ["rules", "alerts", "display", "you", "access"] }),
+    ).toBe("access");
+    expect(sectionForEntry(cover, { editsRules: false, sections: ["alerts", "display", "you"] })).toBe("you");
     expect(
       sectionForEntry(
         { id: "who-can", label: "Who can change what", tab: "access", keywords: "" },
-        { editsRules: true, sections: ["rules", "alerts", "display", "you"] },
+        { editsRules: true, sections: ["rules", "alerts", "display", "you", "access"] },
       ),
-    ).toBe("you");
+    ).toBe("access");
     expect(
       sectionForEntry(
-        { id: "access", label: "Access", tab: "access", keywords: "" },
+        { id: "access", label: "Staff access", tab: "access", keywords: "" },
         { editsRules: false, sections: ["access", "data", "display", "you"] },
       ),
     ).toBe("access");

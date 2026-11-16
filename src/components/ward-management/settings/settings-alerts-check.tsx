@@ -31,7 +31,6 @@ export function SettingsAlertsPane({
   onBuzzChange,
   onTestBuzz,
   showToast,
-  phoneQuick = false,
 }: {
   notifications: boolean;
   permission: NotificationSupport;
@@ -42,8 +41,6 @@ export function SettingsAlertsPane({
   onBuzzChange: (next: boolean) => void;
   onTestBuzz: () => void;
   showToast: (message: string, tone?: "info" | "warning") => void;
-  /** On a phone Buzz sound is on the page itself, so the sheet leaves it out. */
-  phoneQuick?: boolean;
 }) {
   // Whether this was opened from the Home Screen is only readable after mount.
   const [installed, setInstalled] = useState(false);
@@ -103,19 +100,17 @@ export function SettingsAlertsPane({
         />
         <SettingsAlertChoices />
         <SettingsInstallHint />
-        {phoneQuick ? null : (
-          <SettingRow setting="buzz" title="Buzz sound" sub="Chime on an urgent buzz" testId="setting-buzz-alert-row">
-            <button
-              type="button"
-              className={buttonClass({ variant: "sec", className: styles.pill })}
-              onClick={onTestBuzz}
-            >
-              <Play size={14} aria-hidden="true" />
-              Test
-            </button>
-            <Switch checked={buzz} onCheckedChange={onBuzzChange} label={<SrOnly>Buzz sound</SrOnly>} />
-          </SettingRow>
-        )}
+        <SettingRow setting="buzz" title="Buzz sound" sub="Chime on an urgent buzz" testId="setting-buzz-alert-row">
+          <button
+            type="button"
+            className={buttonClass({ variant: "sec", className: styles.pill })}
+            onClick={onTestBuzz}
+          >
+            <Play size={14} aria-hidden="true" />
+            Test
+          </button>
+          <Switch checked={buzz} onCheckedChange={onBuzzChange} label={<SrOnly>Buzz sound</SrOnly>} />
+        </SettingRow>
       </Card>
       <Card aria-labelledby="alerts-check-title" data-setting="alerts-check" data-testid="ward-settings-alerts-check">
         <CardHead

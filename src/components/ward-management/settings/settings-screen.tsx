@@ -63,6 +63,7 @@ import { usePhonePush } from "@/components/ward-management/shell/ward-phone-push
 import { changeDeviceAlerts } from "@/components/ward-management/settings/settings-device-alerts";
 import {
   Avatar,
+  Badge,
   Button,
   CountCircle,
   Hero,
@@ -70,10 +71,8 @@ import {
   PhoneHero,
   PhoneListRow,
   PhoneSheet,
-  Segmented,
   SrOnly,
   StatusGlyph,
-  Switch,
   cx,
   useIsPhone,
   useOptionalToast,
@@ -95,7 +94,7 @@ import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-
 import { usePersonaDeskId, useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
 import { ROLE_SCREENS, type WardAccessRole } from "@/components/ward-management/ward-role-access";
 import { useConfigurationGate } from "@/components/ward-management/settings/settings-configuration-gate";
-import { AccessSettings, showsAccessTab } from "./access-settings";
+import { AccessSettings, DeskCoverSettings, showsAccessTab, showsStaffAccess } from "./access-settings";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal";
 import {
   THEME_CHOICES,
@@ -103,7 +102,6 @@ import {
   type ThemeChoice,
 } from "@/components/ward-management/settings/settings-panes";
 import { useRowDensity, type RowDensity } from "@/components/ward-management/settings/row-density";
-import { SettingRow } from "./settings-rows";
 import { type SettingsSearchEntry } from "@/components/ward-management/settings/settings-search-index";
 import { useSettingsDeskProfile } from "@/components/ward-management/settings/settings-desk-profile";
 import { publishedThresholds } from "@/components/ward-management/settings/settings-thresholds";
@@ -116,7 +114,6 @@ import { SettingsFold } from "./settings-fold";
 import { SettingsProfileCard } from "./settings-profile-card";
 import { SettingsSaveBar } from "./settings-save-bar";
 import {
-  PHONE_QUICK_SETTINGS,
   copySettingsDiagnostics,
   isSurgePreset,
   ruleDiffs,
@@ -225,6 +222,9 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   const deskRole: WardAccessRole = !roleAccessOn && access.role === "coordinator" ? personaRole : access.role;
   const role: WardAccessRole = source.kind === "executive" ? "executive" : deskRole;
   const accessOn = roleAccessOn && showsAccessTab(access);
+  // Settings overhaul (Josh, 16 Nov 2026): roles, requests and the access log are Staff access, on a
+  // desk that manages roles, never inside Your desk.
+  const staffAccessOn = roleAccessOn && showsStaffAccess(access);
   const helpAskOn = useWardFeatureFlag("help-ask");
   const editsRules = role === "coordinator";
   const alertsHere = role !== "admin" && role !== "executive";
@@ -233,7 +233,13 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   const sections: SettingsSection[] =
     role === "admin"
       ? [...(accessOn ? (["access"] as const) : []), "data", "display", "you"]
-      : [...(editsRules ? (["rules"] as const) : []), ...(alertsHere ? (["alerts"] as const) : []), "display", "you"];
+      : [
+          ...(editsRules ? (["rules"] as const) : []),
+          ...(alertsHere ? (["alerts"] as const) : []),
+          "display",
+          "you",
+          ...(staffAccessOn ? (["access"] as const) : []),
+        ];
   if (demoSite) sections.push("demo");
   const sectionContext: SectionContext = { editsRules, sections };
   // Desktop: the section last jumped to, marked in the tabs that stay in view above the page.
@@ -797,9 +803,9 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
     // Fixed defaults and Clinical values sit behind the reference card's tabs; show them first.
     if (entry.id === "fixed-defaults") setReference("defaults");
     if (entry.id === "clinical-values") setReference("clinical");
-    // Phone: the quick settings sit on the screen itself; every other one opens its section's sheet.
-    if (isPhone)
-      setPhoneSheet(PHONE_QUICK_SETTINGS.has(entry.id) || (accessInline && section === "access") ? null : section);
+    // Phone: every setting opens its section's sheet (D-257: Theme, Row density and Buzz sound are in
+    // Display and Alerts now); only the access admin's Access sits open on the page.
+    if (isPhone) setPhoneSheet(accessInline && section === "access" ? null : section);
     setHighlight(entry.id);
     setQuery("");
     setFindOpen(false);
@@ -926,9 +932,8 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
     showToast("Test buzz played.");
   };
 
-  const alertsContent = (phoneQuick: boolean) => (
+  const alertsContent = () => (
     <SettingsAlertsPane
-      phoneQuick={phoneQuick}
       notifications={actNowNotifications}
       permission={notificationPermission}
       phonePush={phonePush}
@@ -990,26 +995,24 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
 
   // ST1 (Josh, 3 Nov 2026): every section but the rule editor is one readable column of cards.
   const displayColumns = (phoneQuick: boolean) => <div className={rx.accessStack}>{displayContent(phoneQuick)}</div>;
-  const alertsColumns = (phoneQuick: boolean) =>
-    alertsHere ? <div className={rx.accessStack}>{alertsContent(phoneQuick)}</div> : null;
+  const alertsColumns = () => (alertsHere ? <div className={rx.accessStack}>{alertsContent()}</div> : null);
 
-  // Round 3: the Access pane adds the read-only Who can change what table under today's panels.
-  const accessPanels = accessOn ? (
+  // Staff access: cover (a statewide coordinator's), requests, roles and the access log, then the
+  // read-only Who can change what. A ward or ED desk keeps its own cover in Your desk.
+  const accessContent = (role === "admin" ? accessOn : staffAccessOn) ? (
     // Final round: the wrapper keeps the pane's card gap, which a plain block dropped (the cards touched).
     <div data-setting="access" className={rx.accessStack}>
       <AccessSettings />
       <SettingsWhoCan />
     </div>
   ) : null;
-  // The access admin's own section; a ward, ED or coordinator desk asks for cover from You.
-  const accessContent = role === "admin" ? accessPanels : null;
 
   const youContent = (
     <div className={rx.accessStack}>
       <SettingsProfileCard now={now} />
       {role === "executive" ? null : <SettingsDraftsCard />}
       {role === "ward" ? <WardDeskQrCard demoUnitId={roleAccessOn ? undefined : personaDeskId} /> : null}
-      {role === "admin" ? null : accessPanels}
+      {accessOn && role !== "admin" && !staffAccessOn ? <DeskCoverSettings /> : null}
     </div>
   );
 
@@ -1111,17 +1114,24 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
     const areaSummary: Record<SettingsSection, string> = {
       // Simplify Settings (Josh, 8 Nov 2026): each line says what is inside, in plain words.
       rules: readOnlyWords === null ? "ED targets, form warnings and reply targets" : "Read only",
-      alerts: `Alerts ${alertsOn ? "on" : "off"} · Buzz sound ${audioBuzz ? "on" : "off"}`,
-      display: "Motion, contrast, page tips and restore defaults",
-      access: "Roles, approvals and requests",
+      alerts: alertsOn
+        ? `On for this phone · Buzz sound ${audioBuzz ? "on" : "off"}`
+        : `Not reaching this phone · Buzz sound ${audioBuzz ? "on" : "off"}`,
+      display: `${THEME_CHOICES.find((choice) => choice.id === theme)?.label ?? "Auto"} theme · ${
+        rowDensity === "compact" ? "Compact" : "Comfortable"
+      } rows · motion and contrast`,
+      access: role === "admin" ? "Roles, requests and the access log" : "Cover, roles, requests and the access log",
       data: "Rules file, bug report copy, reference tables",
-      you: `${deskProfile.role} · ${deskProfile.location}`,
+      you:
+        role === "executive"
+          ? deskProfile.location
+          : `${deskProfile.location} · ${accessOn && !staffAccessOn ? "drafts and cover" : "shift and drafts"}`,
       demo: "Reset the demo, feature switches",
     };
     const sheetTab = phoneSheet;
     const sheetContent: Record<SettingsSection, ReactNode> = {
       rules: rulesContent,
-      alerts: alertsColumns(true),
+      alerts: alertsColumns(),
       display: displayColumns(true),
       access: accessContent,
       data: dataContent,
@@ -1129,6 +1139,21 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
       demo: demoContent,
     };
     const roleIsName = deskProfile.name === deskProfile.role;
+    const adminSections: readonly SettingsSection[] = ["access", "data", "demo"];
+    const phoneGroups = [
+      {
+        id: "yours",
+        title: "Settings",
+        sections: sections.filter((section) => !adminSections.includes(section)),
+      },
+      {
+        id: "admin",
+        title: "Admin",
+        sections: sections.filter(
+          (section) => adminSections.includes(section) && !(accessInline && section === "access"),
+        ),
+      },
+    ];
     return (
       <div
         className={cx(styles.screen, styles.phoneScreen)}
@@ -1155,33 +1180,19 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
                     one compact identity row rather than a name line and a role line under it. */}
                 <span className={styles.phoneWhoText}>
                   <span className={styles.phoneWhoName}>{deskProfile.name}</span>
-                  {roleIsName ? null : (
-                    <span className={styles.phoneWhoRole}>
-                      <SrOnly>, </SrOnly>
-                      {deskProfile.role}
-                    </span>
-                  )}
+                  {/* Settings overhaul (Josh, 16 Nov 2026): role and desk on one quiet line, as on a computer. */}
+                  <span className={styles.phoneWhoRole}>
+                    <SrOnly>, </SrOnly>
+                    {roleIsName ? deskProfile.location : `${deskProfile.role} · ${deskProfile.location}`}
+                  </span>
                 </span>
               </span>
             }
             eyebrow={deskProfile.location}
             className={cx(styles.phoneProfile, rx.phoneTop)}
-            actions={
-              <>
-                {findSetting}
-                <HeroAct
-                  tone="calm"
-                  testId="ward-settings-alerts-act"
-                  title={alertsTitle}
-                  action={{
-                    label: "Open alerts",
-                    phoneLabel: "Open",
-                    onClick: () => setPhoneSheet("alerts"),
-                    testId: "ward-settings-open-alerts",
-                  }}
-                />
-              </>
-            }
+            // Settings overhaul (Josh, 16 Nov 2026): no "Alerts are off" card on a phone. The Alerts row
+            // below carries an Off chip instead, so the header is the person and Find a setting only.
+            actions={findSetting}
           />
           {refusedLine}
           {accessInline ? (
@@ -1190,81 +1201,48 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
             </section>
           ) : null}
 
-          <section className={styles.phoneSection} aria-labelledby="settings-phone-quick">
-            <h2 id="settings-phone-quick" className={styles.phoneHead}>
-              On this phone
-              <span className={styles.phoneHeadMeta}>Saves at once</span>
-            </h2>
-            <div className={styles.phoneCard}>
-              <SettingRow setting="theme" title="Theme" stacked testId="ward-settings-phone-theme">
-                <Segmented<ThemeChoice>
-                  className={rx.phoneSeg}
-                  size="md"
-                  label="Theme"
-                  items={[...THEME_CHOICES]}
-                  value={theme}
-                  onChange={chooseTheme}
-                />
-              </SettingRow>
-              <SettingRow setting="density" title="Row density" stacked>
-                <Segmented<RowDensity>
-                  className={rx.phoneSeg}
-                  size="md"
-                  label="Row density"
-                  items={[
-                    { id: "comfortable", label: "Comfortable" },
-                    { id: "compact", label: "Compact" },
-                  ]}
-                  value={rowDensity}
-                  onChange={chooseRowDensity}
-                />
-              </SettingRow>
-              {alertsHere ? (
-                <SettingRow setting="buzz" title="Buzz sound" sub="Chime on an urgent buzz">
-                  <Switch
-                    checked={audioBuzz}
-                    onCheckedChange={(next) => {
-                      setAudioBuzz(next);
-                      setAudioBuzzPreference(next);
-                      showToast(next ? "Buzz sound on." : "Buzz sound off.");
-                    }}
-                    label={<SrOnly>Buzz sound</SrOnly>}
-                    className={styles.phoneSwitch}
-                  />
-                </SettingRow>
-              ) : null}
-            </div>
-          </section>
-
-          <section className={styles.phoneSection} aria-labelledby="settings-phone-all">
-            <h2 id="settings-phone-all" className={styles.phoneHead}>
-              All settings
-            </h2>
-            <ul className={styles.phoneList}>
-              {sections.flatMap((section) => {
-                const Icon = SECTION_ICONS[section];
-                if (accessInline && section === "access") return [];
-                return (
-                  <PhoneListRow
-                    key={section}
-                    as="li"
-                    data-testid={`ward-settings-phone-area-${section}`}
-                    leading={<Icon size={18} aria-hidden="true" className={styles.phoneAreaIcon} />}
-                    name={SECTION_LABELS[section]}
-                    meta={areaSummary[section]}
-                    value={
-                      section === "rules" && hasUnsavedRules ? (
-                        <CountCircle n={unsavedCount} label="unsaved" />
-                      ) : (
-                        <ChevronRight size={16} aria-hidden="true" className={styles.phoneChevron} />
-                      )
-                    }
-                    onSelect={() => setPhoneSheet(section)}
-                  />
-                );
-              })}
-            </ul>
-          </section>
+          {/* Settings overhaul (Josh, 16 Nov 2026): no "On this phone" block. Theme and Row density
+              live in Display and Buzz sound in Alerts, so the page is the areas only: your own
+              settings first, then admin work (Staff access, Demo tools) in its own group below. */}
+          {phoneGroups.map((group) =>
+            group.sections.length ? (
+              <section key={group.id} className={styles.phoneSection} aria-labelledby={`settings-phone-${group.id}`}>
+                <h2 id={`settings-phone-${group.id}`} className={styles.phoneHead}>
+                  {group.title}
+                </h2>
+                <ul className={styles.phoneList}>
+                  {group.sections.map((section) => {
+                    const Icon = SECTION_ICONS[section];
+                    return (
+                      <PhoneListRow
+                        key={section}
+                        as="li"
+                        data-testid={`ward-settings-phone-area-${section}`}
+                        leading={<Icon size={18} aria-hidden="true" className={styles.phoneAreaIcon} />}
+                        name={SECTION_LABELS[section]}
+                        meta={areaSummary[section]}
+                        value={
+                          section === "rules" && hasUnsavedRules ? (
+                            <CountCircle n={unsavedCount} label="unsaved" />
+                          ) : section === "alerts" && !alertsOn ? (
+                            <span className={styles.phoneAreaValue} data-testid="ward-settings-alerts-off">
+                              <Badge tone="warning" size="sm">
+                                Off
+                              </Badge>
+                              <ChevronRight size={16} aria-hidden="true" className={styles.phoneChevron} />
+                            </span>
+                          ) : (
+                            <ChevronRight size={16} aria-hidden="true" className={styles.phoneChevron} />
+                          )
+                        }
+                        onSelect={() => setPhoneSheet(section)}
+                      />
+                    );
+                  })}
+                </ul>
+              </section>
+            ) : null,
+          )}
 
           {hasUnsavedRules && sheetTab === null ? (
             <div
@@ -1335,7 +1313,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
 
   const sectionContent: Record<SettingsSection, ReactNode> = {
     rules: rulesContent,
-    alerts: alertsColumns(false),
+    alerts: alertsColumns(),
     display: displayColumns(false),
     access: accessContent,
     data: dataContent,

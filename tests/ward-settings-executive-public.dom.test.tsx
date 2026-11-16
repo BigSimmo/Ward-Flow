@@ -148,9 +148,10 @@ describe("executive Settings from public authority only", () => {
         <SettingsScreen />
       </PublicExecutive>,
     );
-    expect(screen.getByTestId("ward-settings-phone-theme")).toBeInTheDocument();
+    // Settings overhaul (Josh, 16 Nov 2026, D-257): Theme lives in the Display sheet on a phone.
     fireEvent.click(within(screen.getByTestId("ward-settings-phone-area-display")).getByRole("button"));
-    expect(screen.getByTestId("ward-settings-phone-sheet")).toBeInTheDocument();
+    const sheet = screen.getByTestId("ward-settings-phone-sheet");
+    expect(within(sheet).getByRole("radiogroup", { name: "Theme" })).toBeInTheDocument();
     expect(raw).not.toHaveBeenCalled();
   });
   it("shows the executive only Display and You, with no rules and no inferred empty records", () => {
