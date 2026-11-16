@@ -32,6 +32,7 @@ import {
   NOT_WIRED_SUFFIX,
   SERVICE_SCOPE_NOTE,
   SERVICE_SCOPE_SHEET_LINE,
+  SERVICE_SWATCH_KEY,
   type WardBarPopoverId,
 } from "@/components/ward-management/shell/ward-bar-model";
 import styles from "@/components/ward-management/shell/ward-bar.module.css";
@@ -256,6 +257,8 @@ export function WardBarServiceSelector({
           }
         }}
       >
+        {/* Josh, 16 Nov 2026: a dot in the service's colour; Statewide's dot holds every service's. */}
+        <span className={styles.serviceDot} data-service={activeSwatchKey} aria-hidden="true" />
         <span className={styles.scopeBadgeLabel}>{deskPlace ?? activeServiceBadgeLabel}</span>
         {!isFixedJurisdiction && <ChevronDown className={styles.scopeCaret} aria-hidden="true" strokeWidth={1.75} />}
         <span className="sr-only">{deskPlace ?? activeServiceBadgeLabel}</span>
@@ -300,6 +303,7 @@ export function WardBarServiceSelector({
             onClick={() => selectService(null)}
           >
             {/* shell-23 (13 Oct 2026): one word. The header says Statewide, so the option does too. */}
+            <span className={styles.serviceDot} data-service="statewide" aria-hidden="true" />
             <span className={styles.serviceName}>Statewide</span>
             <span className={`${styles.serviceOptionCount} ${styles.serviceAllCount}`} aria-hidden="true">
               {waitingText(allWaitingCount)}
@@ -317,6 +321,7 @@ export function WardBarServiceSelector({
                 aria-pressed={service === candidate}
                 onClick={() => selectService(candidate)}
               >
+                <span className={styles.serviceDot} data-service={SERVICE_SWATCH_KEY[candidate]} aria-hidden="true" />
                 <span className={styles.serviceName}>{candidate}</span>
                 <span className={styles.serviceOptionCount} aria-hidden="true">
                   {waitingText(waitingCount)}
