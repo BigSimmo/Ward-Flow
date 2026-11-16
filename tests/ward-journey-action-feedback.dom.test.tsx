@@ -157,13 +157,14 @@ describe("command-specific action feedback", () => {
     fireEvent.click(reason);
     fireEvent.submit(form);
     expect(screen.getByTestId("ward-decline-form-WF-002")).toBeInTheDocument();
-    expect(screen.queryByText("Referral declined.")).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Referral declined/u)).not.toBeInTheDocument();
     await act(async () => first.finish({ commandId: "first", status: "refused", message: "The request changed." }));
     expect(reason).toBeChecked();
     expect(screen.getByTestId("ward-decline-form-WF-002")).toBeInTheDocument();
     await act(async () => fireEvent.submit(form));
     expect(screen.queryByTestId("ward-decline-form-WF-002")).not.toBeInTheDocument();
-    expect(screen.getByText("Referral declined.")).toBeInTheDocument();
+    // 16 Nov walk: the toast names the person.
+    expect(screen.getByText(/^Referral declined for \S.*, \S.*\.$/u)).toBeInTheDocument();
   });
 
   it("keeps the collection exception reason while pending and after refusal", async () => {

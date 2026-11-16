@@ -826,16 +826,16 @@ const AROUND: readonly Around[] = [
       step(named("Governance actions", "ul"), {
         device: "desk",
         title: "Governance actions",
-        body: "PIR chronology opens the patient chronology report. Pattern highlights repeated events when there are any.",
+        body: "PIR chronology opens the patient chronology report. Repeat break glass highlights repeated openings when there are any.",
       }),
       step(id("ward-governance-tabs"), {
         title: "Views",
-        body: "Review, Form gaps, Audit trail, Registers and Reports.",
+        body: "Review, Forms to chase, Audit trail, Registers and Reports.",
       }),
       step(named("Show in the review list", '[role="radiogroup"]'), {
         device: "desk",
         title: "Show",
-        body: "All, Overrides, Refused or stale, or Record access.",
+        body: "All, Overrides, Steps not saved, or Record access.",
       }),
       step(id("wf-group-head"), {
         device: "phone",

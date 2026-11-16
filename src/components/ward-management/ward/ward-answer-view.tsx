@@ -417,6 +417,8 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
     decline.clear();
     declinePendingRef.current = true;
     setDeclinePending(true);
+    const declined = incoming.find((movement) => movement.id === movementId);
+    const who = declined ? resolvePatientIdentity(declined).formalName : undefined;
     try {
       const outcome = await raise("DECLINE", {
         movementId,
@@ -427,7 +429,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
       if (outcome?.status === "accepted" && outcome.isCurrent?.() !== false) {
         setDeclineOpenFor(undefined);
         setDeclineReason(undefined);
-        toastDeclined(declineReason);
+        toastDeclined(declineReason, who);
       } else {
         setAnsweredHereId(undefined);
         decline.fail(movementId, outcome?.message);
@@ -1532,11 +1534,11 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                       <dd>{unit.allocatable.value}</dd>
                     </div>
                     <div>
-                      <dt>Ready</dt>
+                      <dt>Ready now</dt>
                       <dd>{states.ready}</dd>
                     </div>
                     <div>
-                      <dt>Empty</dt>
+                      <dt>Empty, any state</dt>
                       <dd>{unit.empty.value}</dd>
                     </div>
                     <div>

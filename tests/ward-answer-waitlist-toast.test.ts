@@ -18,3 +18,12 @@ describe("Ward answer decline toast wording", () => {
     expect(declineToastText(undefined)).toBe("Referral declined.");
   });
 });
+
+describe("Ward decline toast names the person (16 Nov walk)", () => {
+  it("names who was declined or waitlisted", () => {
+    expect(declineToastText("capability_mismatch", "Testname, Alex")).toBe("Referral declined for Testname, Alex.");
+    expect(declineToastText("no_suitable_bed", "Testname, Alex")).toBe(
+      "Referral for Testname, Alex waitlisted for this ward.",
+    );
+  });
+});

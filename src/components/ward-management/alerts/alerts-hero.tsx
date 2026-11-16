@@ -201,6 +201,8 @@ export function AlertsHero({
           Alerts <span className={titles.soft}>needing a person</span>
         </>
       }
+      // 16 Nov walk: how fresh the list is, in the hero's quiet meta line.
+      titleMeta={`Updated ${formatInstant(now)}`}
       aside={
         <LiveChip
           state={live.paused ? "paused" : "live"}

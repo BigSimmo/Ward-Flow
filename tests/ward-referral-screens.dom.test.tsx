@@ -2068,9 +2068,7 @@ describe("ReferralMatchView — the optional local-bed step is never owed", () =
     // "12 of 40 are missing this step". The region holds no digit at all before the record exists.
     expect(region.textContent ?? "").not.toMatch(/\d/);
     // What IS there is the offer, and only the offer.
-    expect(screen.getByTestId("ward-referral-match-local-bed-sought")).toHaveTextContent(
-      "Local bed sought, none suitable",
-    );
+    expect(screen.getByTestId("ward-referral-match-local-bed-sought")).toHaveTextContent("Record: no local bed suits");
     expect(screen.queryByTestId("ward-referral-match-local-bed-sought-record")).not.toBeInTheDocument();
   });
 
@@ -2082,7 +2080,7 @@ describe("ReferralMatchView — the optional local-bed step is never owed", () =
       expect(
         screen.getByTestId("ward-referral-match-local-bed-sought"),
         `the local-bed control is missing for a ${homeRegion} referral`,
-      ).toHaveTextContent("Local bed sought, none suitable");
+      ).toHaveTextContent("Record: no local bed suits");
       unmount();
     }
   });

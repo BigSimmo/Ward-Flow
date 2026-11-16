@@ -116,6 +116,7 @@ import {
   referralWaitingForTriage,
   statusCardFocusTargets,
   type PatientStatusContext,
+  holdUpRecorder,
 } from "./patient-status-card";
 import { focusAfterAction, handFocusTo } from "../focus-after-action";
 import { cadNumberLine } from "@/components/ward-management/ward-cad-number";
@@ -218,6 +219,7 @@ export function PatientNowScreen({
     worldGeneration,
     plannedAdmissions,
     triages,
+    eventLog = [],
   } = useWardFlowSelect(
     "patients",
     "movements",
@@ -231,6 +233,7 @@ export function PatientNowScreen({
     "worldGeneration",
     "plannedAdmissions",
     "triages",
+    "eventLog",
   );
   const now = useWardFlowClock();
   // The held bed review warning sits behind its own flag: paused by D-65, on by default since 20 Oct 2026.
@@ -841,6 +844,7 @@ export function PatientNowScreen({
     thresholds,
     awolHoldReview,
     movement: liveMovement,
+    holdUpBy: holdUpRecorder(eventLog, liveMovement?.id),
     admission: resolved.liveAdmission,
     stayWithheld: isDatesOnlyStay(resolved.liveAdmission?.id),
     patient: livePatient,

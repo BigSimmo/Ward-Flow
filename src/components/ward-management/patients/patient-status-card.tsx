@@ -19,6 +19,8 @@ import {
 import { referralState } from "@/components/ward-management/ward-referrals";
 import { isOwnStay } from "./patient-now-adapter";
 import type { Patient } from "@/components/ward-management/ward-patients";
+import type { EventLogEntry } from "@/components/ward-management/ward-event-log";
+import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import { bedHold, PULL_NO_LIMIT_RECORDED } from "@/components/ward-management/ward-bed-hold";
 import { arrivalTiming, arrivalTimingWords } from "@/components/ward-management/ward-arrival-timing";
 import { formatClockAmPmWithDay } from "@/components/ward-management/ward-clock-am-pm";
@@ -198,6 +200,8 @@ export interface PatientStatusContext {
    * where the bed is held, instead of reading "Not active".
    */
   acceptedReferral?: { unitName: string; boardHref?: string; waiting?: boolean };
+  /** 16 Nov walk: the desk that recorded the hold-up shown, and when (`holdUpRecorder`). */
+  holdUpBy?: { label: string; at: number };
   /**
    * A16-11 (Josh, 13 Nov 2026): the newest referral for this person still awaiting an answer
    * (`openReferralFor`). With nothing else open the card says so instead of "Not currently active".
@@ -443,17 +447,34 @@ export function buildPatientStatus(
 /**
  * R-STRUCT-25: the head reads the hold-up the coordinator recorded, in their own picked words, with
  * Change opening the existing picker. With nothing recorded (or a "nothing is blocking" entry) it
- * keeps "Bed is the blocker". Who and when are not stored on the movement, so they are not said.
+ * keeps "Bed is the blocker". Who and when are not stored on the movement; the 16 Nov walk adds them
+ * from the step's own log entry (`holdUpBy`) when that is the newest step on the movement.
  */
 function holdUpHead(movement: Movement, ctx: PatientStatusContext): Pick<PatientStatus, "meta" | "metaAction"> {
   const recorded = movement.blocker.trim();
   if (recorded === "" || BLOCKERS_MEANING_NOTHING_IS_BLOCKING.some((inactive) => inactive === recorded)) {
     return { meta: "Bed is the blocker" };
   }
+  const by = ctx.holdUpBy;
   return {
-    meta: recorded,
+    meta: by ? `${recorded} · ${by.label}, ${clockOn(by.at, ctx.now)}` : recorded,
     metaAction: { kind: "button", label: "Change", secondary: true, onClick: ctx.onOpenPlacement },
   };
+}
+
+/**
+ * Who recorded the hold-up, from this session's log: only when the newest accepted step on the
+ * movement is that record, since a later step may have rewritten the hold-up line.
+ */
+export function holdUpRecorder(
+  log: readonly EventLogEntry[],
+  movementId: string | undefined,
+): { label: string; at: number } | undefined {
+  if (movementId === undefined) return undefined;
+  const last = log.findLast((entry) => entry.accepted && entry.movementId === movementId);
+  return last?.type === "RECORD_MOVEMENT_BLOCKER" && last.role !== undefined && last.now !== undefined
+    ? { label: WARD_FLOW_ROLE_LABELS[last.role], at: last.now }
+    : undefined;
 }
 
 /** R-STRUCT-26: the diversion as the page's headline, from the stored `transport.diversion`. */

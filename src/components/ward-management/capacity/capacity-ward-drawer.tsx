@@ -14,7 +14,7 @@ import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provid
 import { patientListName } from "@/components/ward-management/ward-patients";
 import { useCanOpenHref, useWardRecordActors } from "@/components/ward-management/shell/ward-access";
 import { BookUser, ChevronLeft, ChevronRight } from "lucide-react";
-import { Button, buttonClass, DrawerFootRow, StatusGlyph, useIsPhone } from "@/components/wf";
+import { Button, buttonClass, DrawerFootRow, StatusGlyph, useIsPhone, useOptionalToast } from "@/components/wf";
 import { siteLabel } from "@/components/ward-management/ward-absence-labels";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
@@ -72,6 +72,7 @@ export function CapacityWardSidebar({
   // Josh, 4 Nov 2026: on a phone "Open patient" beside each discharge row is a 40px icon button.
   const isPhone = useIsPhone();
   const refreshSave = useWardFormSave(`capacity-ward-refresh:${row.unit.id}`);
+  const toast = useOptionalToast();
   const {
     bedReleases,
     refreshRequests,
@@ -253,7 +254,8 @@ export function CapacityWardSidebar({
                     refreshSave.submit(
                       () =>
                         dispatch({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now, unitId: row.unit.id }),
-                      () => {},
+                      // 16 Nov walk: say the request was sent, as the Capacity page's own Ask does.
+                      () => toast?.push({ tone: "success", title: `Asked ${row.unit.name} to confirm its beds.` }),
                     )
                   }
                 >
