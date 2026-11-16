@@ -1303,3 +1303,10 @@
 .phoneSheetBody [data-setting="who-can"] td + td {
   margin-top: 2px;
 }
+
+/* The Alerts row's Off chip sits before its chevron (Settings overhaul, Josh 16 Nov 2026). */
+.phoneAreaValue {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}

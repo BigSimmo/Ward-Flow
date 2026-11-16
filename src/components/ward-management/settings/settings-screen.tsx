@@ -63,6 +63,7 @@ import { usePhonePush } from "@/components/ward-management/shell/ward-phone-push
 import { changeDeviceAlerts } from "@/components/ward-management/settings/settings-device-alerts";
 import {
   Avatar,
+  Badge,
   Button,
   CountCircle,
   Hero,
@@ -1118,7 +1119,9 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
     const areaSummary: Record<SettingsSection, string> = {
       // Simplify Settings (Josh, 8 Nov 2026): each line says what is inside, in plain words.
       rules: readOnlyWords === null ? "ED targets, form warnings and reply targets" : "Read only",
-      alerts: `Alerts ${alertsOn ? "on" : "off"} · Buzz sound ${audioBuzz ? "on" : "off"}`,
+      alerts: alertsOn
+        ? `On for this phone · Buzz sound ${audioBuzz ? "on" : "off"}`
+        : `Not reaching this phone · Buzz sound ${audioBuzz ? "on" : "off"}`,
       display: `${THEME_CHOICES.find((choice) => choice.id === theme)?.label ?? "Auto"} theme · ${
         rowDensity === "compact" ? "Compact" : "Comfortable"
       } rows · motion and contrast`,
@@ -1192,22 +1195,9 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
             }
             eyebrow={deskProfile.location}
             className={cx(styles.phoneProfile, rx.phoneTop)}
-            actions={
-              <>
-                {findSetting}
-                <HeroAct
-                  tone="calm"
-                  testId="ward-settings-alerts-act"
-                  title={alertsTitle}
-                  action={{
-                    label: "Open alerts",
-                    phoneLabel: "Open",
-                    onClick: () => setPhoneSheet("alerts"),
-                    testId: "ward-settings-open-alerts",
-                  }}
-                />
-              </>
-            }
+            // Settings overhaul (Josh, 16 Nov 2026): no "Alerts are off" card on a phone. The Alerts row
+            // below carries an Off chip instead, so the header is the person and Find a setting only.
+            actions={findSetting}
           />
           {refusedLine}
           {accessInline ? (
@@ -1239,6 +1229,13 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
                         value={
                           section === "rules" && hasUnsavedRules ? (
                             <CountCircle n={unsavedCount} label="unsaved" />
+                          ) : section === "alerts" && !alertsOn ? (
+                            <span className={styles.phoneAreaValue} data-testid="ward-settings-alerts-off">
+                              <Badge tone="warning" size="sm">
+                                Off
+                              </Badge>
+                              <ChevronRight size={16} aria-hidden="true" className={styles.phoneChevron} />
+                            </span>
                           ) : (
                             <ChevronRight size={16} aria-hidden="true" className={styles.phoneChevron} />
                           )
