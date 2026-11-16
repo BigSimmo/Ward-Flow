@@ -8,7 +8,7 @@ import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-reg
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
 
-import layoutStyles from "../../../ward-flow/ward-flow-layout.module.css";
+import layoutStyles from "../../../bedchart/ward-flow-layout.module.css";
 
 /**
  * Preview only. The same synthetic world every `/bedchart` page reads, pinned to the 10:42 night
