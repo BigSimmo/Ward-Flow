@@ -1,6 +1,6 @@
 /*
  * Page tops (Josh, 9 Nov 2026): Home's approved slate top as shared parts (hero-top.tsx). Final v6
- * sizes: figures 18px phone / 19px from tablet, labels 12.5px, act row 48px with a 34px button,
+ * sizes: figures 18px phone / 19px from tablet, labels 12.5px, act row 48px with a 36px button,
  * 36px chips, one slim band (12px label, 15px value). Tokens only; text keeps the 12px floor.
  * Phone below 46.5rem; tablet and desktop from 46.5rem, as Home's hero.
  */
@@ -171,10 +171,11 @@ a.figLink::after,
   line-clamp: 2;
 }
 
+/* D-251 (size review 6): 36px, the same height as the hero's quick chips (it was 34). */
 .actButton.actButton {
   flex: none;
-  min-height: 34px;
-  height: 34px;
+  min-height: 36px;
+  height: 36px;
   padding: 0 13px;
   border-radius: 9px;
   font-size: var(--wf-fs-13);

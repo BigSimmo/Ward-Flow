@@ -2243,3 +2243,10 @@
 .filterTab[aria-pressed="true"] .filterCount {
   color: var(--wf-ink-2);
 }
+
+/* D-251 (size review 5): on a touch tablet the Discharges filter tabs are drawn 36px, the tablet chip size. */
+@media (min-width: 46.5rem) and (pointer: coarse) {
+  .filterTab.filterTab {
+    height: 36px;
+  }
+}

@@ -52,8 +52,9 @@
   white-space: nowrap;
 }
 
-/* Wave 4 (notes item 5, A5-16): a 40 px tap cover on a phone, drawn no bigger. */
-@media (max-width: 46.4375rem) {
+/* Wave 4 (notes item 5, A5-16): a 40 px tap cover on a phone, drawn no bigger. D-251 (size review 9):
+   the same cover on a touch tablet. */
+@media (max-width: 46.4375rem), (pointer: coarse) {
   .edPopulation {
     position: relative;
   }
