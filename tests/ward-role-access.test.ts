@@ -188,7 +188,7 @@ describe("the access table", () => {
       },
       officer: { about: "own", alerts: "own", officer: "own", "on-call": "all", settings: "own" },
       executive: { about: "own", capacity: "counts", settings: "own", statistics: "counts" },
-      admin: { about: "own", governance: "own", settings: "own" },
+      admin: { about: "own", governance: "own", privacy: "own", settings: "own" },
     });
   });
 

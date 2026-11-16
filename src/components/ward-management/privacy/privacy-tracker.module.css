@@ -1,0 +1,196 @@
+/*
+ * D-259 Privacy and data. Page frame as About this demo: a main column and a side rail at 2:1 on
+ * desktop (DESIGN-SYSTEM §5), stacked below the content stack point. Check rows follow About's rows:
+ * a bold name, one quiet evidence line, the status badge on the right. Kit parts and tokens only.
+ */
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+  width: 100%;
+  min-width: 0;
+  padding: var(--wf-s-4) var(--wf-s-6) var(--wf-s-6);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: var(--wf-s-4);
+  align-items: start;
+}
+
+.column,
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+  min-width: 0;
+}
+
+.rail {
+  position: sticky;
+  top: var(--ward-sticky-top, 4.5rem);
+}
+
+.lead {
+  margin: 0;
+  padding: var(--wf-s-4) var(--wf-s-4) var(--wf-s-4);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-15);
+  line-height: var(--wf-lh-16);
+  text-wrap: pretty;
+  max-width: 68ch;
+}
+
+.cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--wf-s-4);
+  padding: var(--wf-s-4);
+}
+
+.capsLabel {
+  margin: 0 0 var(--wf-s-2);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+}
+
+.policy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0 0 0 var(--wf-s-6);
+  list-style: disc;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
+}
+
+.policy li::marker {
+  color: var(--wf-ink-3);
+}
+
+.rail .policy {
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4) var(--wf-s-8);
+}
+
+.checks,
+.roles,
+.toc {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.check,
+.roles li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-2) 0;
+  border-top: 1px solid var(--wf-line);
+}
+
+.check:first-child,
+.roles li:first-child {
+  border-top: 0;
+}
+
+.roles li {
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.rail .checks {
+  padding: var(--wf-s-1) var(--wf-s-4) var(--wf-s-2);
+}
+
+.checkMain {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.checkName {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
+  font-weight: 600;
+}
+
+.evidence {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  overflow-wrap: anywhere;
+}
+
+.status {
+  flex: none;
+}
+
+.source {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.toc {
+  padding: var(--wf-s-1) 0 var(--wf-s-2);
+}
+
+.toc a {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 40px;
+  padding: 0 var(--wf-s-4);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-14);
+  text-decoration: none;
+}
+
+.toc a:hover {
+  background: var(--wf-surface-2);
+}
+
+.tocNo {
+  flex: none;
+  width: var(--wf-s-6);
+  color: var(--wf-ink-3);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  text-align: right;
+}
+
+/* The content stack point (Q291): the rail drops under the main column. */
+@media (max-width: 56.25rem) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rail {
+    position: static;
+  }
+}
+
+@media (max-width: 46.4375rem) {
+  .main {
+    padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-6);
+  }
+
+  .cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

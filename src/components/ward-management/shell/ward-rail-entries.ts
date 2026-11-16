@@ -65,6 +65,7 @@ export const RAIL_GROUPS = [
     label: "Reports and reference",
     entries: [
       ["governance", "Governance"],
+      ["privacy", "Privacy and data"],
       ["statistics", "Statistics"],
       ["legal-forms", "Legal forms"],
       ["out-of-area", "Out of area"],

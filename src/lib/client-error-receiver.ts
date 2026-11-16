@@ -45,6 +45,7 @@ export const CLIENT_ROUTE_TEMPLATES: ReadonlySet<string> = new Set([
   "/ward-flow/about",
   "/ward-flow/on-call",
   "/ward-flow/out-of-area",
+  "/ward-flow/privacy",
   "/ward-flow/people/[id]",
   "/ward-flow/people/[id]/triage",
   "/ward-flow/people/new",

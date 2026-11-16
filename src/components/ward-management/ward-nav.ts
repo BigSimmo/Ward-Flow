@@ -185,6 +185,7 @@ export type WardNavId =
   | "seclusion"
   | "hub"
   | "legal-forms"
+  | "privacy"
   | "bed-meeting";
 
 export type WardNavItem = {
@@ -398,6 +399,12 @@ export const WARD_NAV: readonly WardNavItem[] = [
    * none of the others'.
    */
   { id: "legal-forms", href: "/ward-flow/legal-forms", label: "Legal forms", group: "board" },
+  /*
+   * Privacy and data (D-259, Josh, 16 Nov 2026): where the app stands against the Australian and WA
+   * health data rules, check by check, with an example of the finished policy. Reference only:
+   * nothing on it is enforced. Opens for the desks that open Governance.
+   */
+  { id: "privacy", href: "/ward-flow/privacy", label: "Privacy and data", group: "board" },
   /*
    * The bed meeting TV view (Josh, 15 Oct 2026): unfinished work shipped in the real app behind a
    * feature flag rather than on a hidden page. Listed only while `bed-meeting-tv` is on.
@@ -839,6 +846,7 @@ export function resolveWardScreenTitle(pathname: string, units: readonly Unit[] 
   if (isUnder("/ward-flow/capacity")) return "Capacity";
   if (isUnder("/ward-flow/network")) return "Network";
   if (isUnder("/ward-flow/governance")) return "Governance";
+  if (normalized === "/ward-flow/privacy") return "Privacy and data";
   if (normalized === "/ward-flow/review") return "Today's review";
   if (normalized === "/ward-flow/night") return "Night view";
   if (normalized === "/ward-flow/about") return "About this demo";

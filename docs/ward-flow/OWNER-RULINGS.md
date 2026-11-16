@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/his
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**806 rulings/items extracted, across 43 of 44 files.**
+**807 rulings/items extracted, across 43 of 44 files.**
 **0 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 **1 file(s) recorded as holding no ruling of their own**, each with its reason. See below.
 
@@ -32,7 +32,7 @@ line, in the order discovered — confirm which instance you mean before citing 
 
 ---
 
-## ID index — 556 distinct IDs
+## ID index — 557 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -415,6 +415,7 @@ safe global key across 30 files.
 | `D-252` | `decisions.md`:2933 | D-252. Capacity chips say "wards", the Discharges heading says "statewide", and the master design is refreshed from main (16 November 2026) |
 | `D-256` | `decisions.md`:2940 | D-256. The phone's + sheet and bottom bar can be customised, and the bar becomes a refined glass capsule (16 November 2026) |
 | `D-257` | `decisions.md`:2948 | D-257. Settings is your own settings first, with admin work in Staff access (16 November 2026) |
+| `D-259` | `decisions.md`:2958 | D-259. A Privacy and data page tracks the Australian and WA health data rules (16 November 2026) |
 | `D9-1` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | `D9-2` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
 | `D9-3` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:126 | D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION) |
@@ -723,7 +724,7 @@ safe global key across 30 files.
 
 **Title:** Ward Flow — decision log
 
-244 item(s):
+245 item(s):
 
 - `D-1` — line 273, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 283, heading: "D-2. Railway is disconnected"
@@ -969,6 +970,7 @@ safe global key across 30 files.
 - `D-252` — line 2933, heading: "D-252. Capacity chips say "wards", the Discharges heading says "statewide", and the master design is refreshed from main (16 November 2026)"
 - `D-256` — line 2940, heading: "D-256. The phone's + sheet and bottom bar can be customised, and the bar becomes a refined glass capsule (16 November 2026)"
 - `D-257` — line 2948, heading: "D-257. Settings is your own settings first, with admin work in Staff access (16 November 2026)"
+- `D-259` — line 2958, heading: "D-259. A Privacy and data page tracks the Australian and WA health data rules (16 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 

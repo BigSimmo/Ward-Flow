@@ -86,6 +86,7 @@ import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen"
 import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
 import { TodaysReviewScreen } from "@/components/ward-management/review/todays-review-screen";
 import { AboutDemoScreen } from "@/components/ward-management/about/about-demo-screen";
+import { PrivacyTrackerScreen } from "@/components/ward-management/privacy/privacy-tracker-screen";
 import { NightViewScreen } from "@/components/ward-management/night/night-view-screen";
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
 import { WeeklyReportScreen } from "@/components/ward-management/reports/weekly-report-screen";
@@ -1390,6 +1391,8 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/review`, render: () => createElement(TodaysReviewScreen) },
   { route: `${ROUTE_PREFIX}/night`, render: () => createElement(NightViewScreen) },
   { route: `${ROUTE_PREFIX}/about`, render: () => createElement(AboutDemoScreen) },
+  // D-259 (16 Nov 2026): Privacy and data, the requirements tracker under Reports and reference.
+  { route: `${ROUTE_PREFIX}/privacy`, render: () => createElement(PrivacyTrackerScreen) },
 ];
 
 describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on the map)", () => {
@@ -1497,7 +1500,8 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
     // 48: the Leave page (`/leave`, feature 23), 9 Nov 2026. Moved in both files together.
     // 49: the Night view (`/night`, feature plan item 29), 10 Nov 2026.
     // 50: About this demo (`/about`, F-77, Audit 15 A15-25), 13 Nov 2026. Moved in both files together.
-    expect(RENDERABLE_ROUTES.length).toBe(50);
+    // 51: Privacy and data (`/privacy`, D-259), 16 Nov 2026.
+    expect(RENDERABLE_ROUTES.length).toBe(51);
   });
 });
 

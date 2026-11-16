@@ -97,6 +97,7 @@ import { DowntimePackScreen } from "@/components/ward-management/reports/downtim
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
 import { TodaysReviewScreen } from "@/components/ward-management/review/todays-review-screen";
 import { AboutDemoScreen } from "@/components/ward-management/about/about-demo-screen";
+import { PrivacyTrackerScreen } from "@/components/ward-management/privacy/privacy-tracker-screen";
 import { NightViewScreen } from "@/components/ward-management/night/night-view-screen";
 import { WeeklyReportScreen } from "@/components/ward-management/reports/weekly-report-screen";
 import { StatisticsServicesIndexScreen } from "@/components/ward-management/statistics/statistics-services-index";
@@ -200,6 +201,7 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
   ["/ward-flow/review", { concrete: "/ward-flow/review", render: () => <TodaysReviewScreen /> }],
   ["/ward-flow/night", { concrete: "/ward-flow/night", render: () => <NightViewScreen /> }],
   ["/ward-flow/about", { concrete: "/ward-flow/about", render: () => <AboutDemoScreen /> }],
+  ["/ward-flow/privacy", { concrete: "/ward-flow/privacy", render: () => <PrivacyTrackerScreen /> }],
   ["/ward-flow/statistics/weekly", { concrete: "/ward-flow/statistics/weekly", render: () => <WeeklyReportScreen /> }],
   [
     "/ward-flow/statistics/services",
