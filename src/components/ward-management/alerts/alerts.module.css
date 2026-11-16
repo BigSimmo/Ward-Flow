@@ -1464,11 +1464,23 @@ button.check[aria-pressed="true"] {
   }
 }
 
+/* Print only: the print time at the head of the list, as well as the shared footer. */
+.printStamp {
+  display: none;
+}
+
 @media print {
   .modalOverlay,
   .rowAction,
   .toolbar {
     display: none !important;
+  }
+
+  .printStamp {
+    display: block;
+    margin: 0 0 var(--wf-s-2);
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-12);
   }
 }
 

@@ -120,8 +120,6 @@ type Property = "print time" | "second identifier" | "rows kept whole";
  * checked on the rendered page in ward-audit-m103-print-fidelity.dom.test.tsx (10 Nov 2026).
  */
 const FALSE_LEADS: Readonly<Record<string, readonly Property[]>> = {
-  // "Prepared 10:42" is on the page; the words are not in the static read's list of print words.
-  "Call sheet": ["print time"],
   // The shift brief names nobody, so needs no second identifier.
   "Ward daily sheet": ["second identifier"],
   // "Draft 10:42 AWST" is on the letter.

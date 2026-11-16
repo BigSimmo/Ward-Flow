@@ -25,6 +25,7 @@ import { useRoleGate } from "../ward-role-gate";
 
 import { useHoldOpenForm } from "../use-hold-open-form";
 import { useWardShellPublic } from "../shell/ward-shell-public-context";
+import { WardPrintFooter } from "../shell/ward-access";
 import type { WardCommandOutcome } from "../ward-shared-client";
 import { SAVE_NOT_CONFIRMED } from "../ward-save-failure";
 import styles from "./call-sheet.module.css";
@@ -123,6 +124,8 @@ export function CallSheet() {
           ))}
         </ol>
       )}
+      {/* The print isolation hides the shell's footer, so the sheet carries Printed by itself. */}
+      <WardPrintFooter />
     </div>
   );
 }

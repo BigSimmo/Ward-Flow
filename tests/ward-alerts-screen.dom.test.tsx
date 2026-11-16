@@ -92,6 +92,14 @@ function checkingList() {
 }
 
 describe("the Alerts screen reports on every condition it watches, firing or not", () => {
+  // 16 Nov walk: the printed list says when it was printed at the top as well as at the foot.
+  it("heads the list with a print-only Printed by line, before the hero", () => {
+    renderScreen();
+    const stamp = screen.getByTestId("ward-alerts-print-stamp");
+    expect(stamp.textContent).toMatch(/^Printed by .+ board time/u);
+    expect(stamp.closest("main")?.firstElementChild).toBe(stamp);
+  });
+
   it("retains visible wording in acknowledged alert action names", () => {
     renderScreen();
     fireEvent.click(screen.getAllByTestId("ward-alerts-open")[0]!);

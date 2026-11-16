@@ -1074,6 +1074,13 @@
   outline-offset: 2px;
 }
 
+/* 16 Nov walk: a link does nothing on paper, so the printed ward list drops each card's Open ward. */
+@media print {
+  .cardLink {
+    display: none;
+  }
+}
+
 /* Table: the ward's name opens its side panel. */
 .tableOpen {
   padding: 0;
