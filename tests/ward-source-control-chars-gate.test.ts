@@ -101,7 +101,7 @@ describe("the ward source-control-character gate is reachable and still guards",
     const { output } = runGate();
     // The lessons and archive moved from docs/ward-flow/ to docs/history/ on 8 November 2026. Both
     // roots are scanned; each must print its own count and together they keep the old floor.
-    const live = output.match(/docs\/bedchart:\s*(\d+) file\(s\) scanned/);
+    const live = output.match(/docs\/ward-flow:\s*(\d+) file\(s\) scanned/);
     const history = output.match(/docs\/history:\s*(\d+) file\(s\) scanned/);
     expect(
       live && history,

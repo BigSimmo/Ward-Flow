@@ -6,7 +6,7 @@ let memory: string | undefined;
 /** A known screen pathname only: no origin, encoded record, query, fragment or patient address. */
 export function safeScreenReturn(raw: string): string | undefined {
   const path = raw.split(/[?#]/)[0].replace(/\/+$/, "");
-  if (!/^\/ward-flow(?:\/[a-z0-9-]+)*$/.test(path)) return undefined;
+  if (!/^\/bedchart(?:\/[a-z0-9-]+)*$/.test(path)) return undefined;
   const address = screenForPath(path);
   // A patient address always has screen "patient" (screenForPath), so the screen check covers it
   // without reading the patient link (archived D-14).

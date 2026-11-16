@@ -828,7 +828,7 @@ const EXPECTED_BUILDER_LINE_TEXT = EXPECTED_BUILDER_LINES.map((entry) => entry.l
  * that cleanup target a scope no browser had registered.
  */
 const FORMER_ADDRESS_LINES = [
-  'export const LEGACY_PWA_SCOPES = ["/mockups/ward-flow", "/mockups/ward-flow/"] as const;',
+  'export const LEGACY_PWA_SCOPES = ["/mockups/ward-flow", "/mockups/ward-flow/", "/ward-flow"] as const;',
 ];
 
 /**
@@ -868,7 +868,7 @@ describe("the shell directory writes a route path in exactly one kind of place",
       for (const line of stripComments(readFileSync(file, "utf8")).split("\n")) {
         // A Ward Flow route itself (the digest still sits under /mockups), not a name that merely
         // contains one (`/ward-flow-push-sw.js`).
-        if (!/(?:(?<![\w./-])|\/mockups)\/ward-flow(?=[/"'`?#]|-sign-in|-digest|$)/u.test(line)) continue;
+        if (!/(?:(?<![\w./-])\/bedchart|\/mockups\/ward-flow)(?=[/"'`?#]|-sign-in|-digest|$)/u.test(line)) continue;
         const trimmed = line.trim();
         if (EXPECTED_BUILDER_LINE_TEXT.includes(trimmed)) found.push(trimmed);
         else if (!FORMER_ADDRESS_LINES.includes(trimmed)) offending.push(`${relative}: ${trimmed}`);

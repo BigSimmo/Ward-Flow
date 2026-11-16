@@ -112,7 +112,7 @@ function hrefConstants(): Map<string, string> {
   for (const path of everyWardSourceFile()) {
     const source = stripComments(readFileSync(path, "utf8"));
     for (const match of source.matchAll(
-      /export const ([A-Z0-9_]+)(?::\s*[^=]+)?\s*=\s*["'`](\/ward-flow[^"'`]*)["'`]/gu,
+      /export const ([A-Z0-9_]+)(?::\s*[^=]+)?\s*=\s*["'`](\/bedchart[^"'`]*)["'`]/gu,
     )) {
       constants.set(match[1], match[2]);
     }
@@ -129,7 +129,7 @@ function wardLinks(): { file: string; href: string }[] {
     const file = path.split(/[\\/]/u).pop() ?? path;
     const source = stripComments(readFileSync(path, "utf8"));
 
-    for (const match of source.matchAll(/href=\{?["'`](\/ward-flow[^"'`{}]*)["'`]/gu)) {
+    for (const match of source.matchAll(/href=\{?["'`](\/bedchart[^"'`{}]*)["'`]/gu)) {
       found.push({ file, href: match[1] });
     }
     for (const match of source.matchAll(/href=\{([A-Z0-9_]+)\}/gu)) {

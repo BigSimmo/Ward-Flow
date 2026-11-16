@@ -364,7 +364,7 @@ function linkDestinations(): Map<string, string> {
   const constants = new Map<string, string>();
   for (const file of sources) {
     for (const match of stripComments(readFileSync(file, "utf8")).matchAll(
-      /(?:export\s+)?const\s+([A-Z0-9_]+)(?::[^=]+)?\s*=\s*["'`](\/ward-flow[^"'`]*)["'`]/gu,
+      /(?:export\s+)?const\s+([A-Z0-9_]+)(?::[^=]+)?\s*=\s*["'`](\/bedchart[^"'`]*)["'`]/gu,
     )) {
       constants.set(match[1], match[2]);
     }
@@ -390,7 +390,7 @@ function linkDestinations(): Map<string, string> {
       if (object.length > 600 || object.indexOf("{", 1) !== -1) continue;
       const label = /\blabel:\s*["'`]([^"'`]+)["'`]/u.exec(object);
       if (!label) continue;
-      const literal = /\bhref:\s*["'`](\/ward-flow[^"'`]*)["'`]/u.exec(object);
+      const literal = /\bhref:\s*["'`](\/bedchart[^"'`]*)["'`]/u.exec(object);
       const reference = /\bhref:\s*([A-Z0-9_]+)\s*[,}]/u.exec(object);
       const href = literal?.[1] ?? (reference ? constants.get(reference[1]) : undefined);
       if (href) byLabel.set(label[1], href);
@@ -399,7 +399,7 @@ function linkDestinations(): Map<string, string> {
   return byLabel;
 }
 
-const NAVIGATION = /page\.goto\(\s*["'`](\/ward-flow[^"'`$]*)["'`]/gu;
+const NAVIGATION = /page\.goto\(\s*["'`](\/bedchart[^"'`$]*)["'`]/gu;
 /** `await page.getByRole("link", { name: "Delays", exact: true }).click()` — a navigation too. */
 const LINK_CLICK = /getByRole\(\s*["'`]link["'`]\s*,\s*\{[^}]*?name:\s*["'`]([^"'`]+)["'`][^}]*\}\s*\)/gu;
 /** `getByTestId("x")`, `[data-testid="x"]`, and the `^=` prefix form specs use for row families. */

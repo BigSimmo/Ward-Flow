@@ -161,7 +161,7 @@ export function documentChecks(entries) {
   const files = entries.map(({ file }) => file);
   return {
     owner_index: files.some((file) => {
-      const source = file.replace(/^(?:docs\/bedchart\/|docs\/history\/archive\/dated-notes\/)/u, "");
+      const source = file.replace(/^(?:docs\/ward-flow\/|docs\/history\/archive\/dated-notes\/)/u, "");
       return (
         file === "scripts/ward-flow/owner-rulings-index.mjs" ||
         ((file.startsWith("docs/ward-flow/") || file.startsWith("docs/history/archive/dated-notes/")) &&

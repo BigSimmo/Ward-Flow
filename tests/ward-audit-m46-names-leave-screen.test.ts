@@ -70,7 +70,7 @@ describe("M46 web addresses carry no names", () => {
     const offenders: string[] = [];
     for (const file of sourceFiles(path.join(ROOT, "src"))) {
       codeLines(file).forEach((line) => {
-        const template = /`[^`]*\/ward-flow[^`]*\$\{([^}]*)\}/.exec(line);
+        const template = /`[^`]*\/(?:bedchart|ward-flow)[^`]*\$\{([^}]*)\}/.exec(line);
         const param =
           /(?:searchParams|params|URLSearchParams)\b[^;]*\.(?:set|append)\(\s*["'][^"']+["']\s*,([^)]*)\)/.exec(line);
         const literal = /[?&](?:name|surname|initials|search|patientName)=/.test(line);
@@ -85,16 +85,16 @@ describe("M46 web addresses carry no names", () => {
     const reviewed = new Set([
       "icons/[variant]",
       "mockups/ward-flow-redesign/[screen]",
-      "ward-flow/board/[unitId]",
-      "ward-flow/community/[teamId]",
-      "ward-flow/ed/[edId]",
-      "ward-flow/movements/[movementId]",
-      "ward-flow/people/[patientId]",
-      "ward-flow/statistics/community/[teamId]",
-      "ward-flow/statistics/ed/[edId]",
-      "ward-flow/statistics/service/[serviceId]",
-      "ward-flow/statistics/ward/[unitId]",
-      "ward-flow/ward/[unitId]",
+      "bedchart/board/[unitId]",
+      "bedchart/community/[teamId]",
+      "bedchart/ed/[edId]",
+      "bedchart/movements/[movementId]",
+      "bedchart/people/[patientId]",
+      "bedchart/statistics/community/[teamId]",
+      "bedchart/statistics/ed/[edId]",
+      "bedchart/statistics/service/[serviceId]",
+      "bedchart/statistics/ward/[unitId]",
+      "bedchart/ward/[unitId]",
     ]);
     const found: string[] = [];
     const walk = (dir: string) => {

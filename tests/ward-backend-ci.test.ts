@@ -42,10 +42,10 @@ describe("Ward backend CI", () => {
     expect(install.text).toMatch(/id: backend-install/u);
     expect(install.text).toMatch(/steps\.install\.outcome == 'success'/u);
     expect(install.text).toMatch(
-      /^\s*run: node scripts\/install-locked-dependencies\.mjs --root backend\/bedchart\s*$/mu,
+      /^\s*run: node scripts\/install-locked-dependencies\.mjs --root backend\/ward-flow\s*$/mu,
     );
     expect(backendTest.text).toMatch(/steps\.backend-install\.outcome == 'success'/u);
-    expect(backendTest.text).toMatch(/working-directory: backend\/bedchart/u);
+    expect(backendTest.text).toMatch(/working-directory: backend\/ward-flow/u);
     expect(backendTest.text).toMatch(
       /^\s*run: npm run build:engine && npm run typecheck && npm run test:coverage\s*$/mu,
     );

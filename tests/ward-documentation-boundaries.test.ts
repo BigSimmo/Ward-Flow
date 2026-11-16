@@ -106,7 +106,7 @@ test("retired lesson importer refuses ordinary and check runs without file acces
 test("tooling map describes retirement without offering the importer as a generated-file gate", () => {
   const map = readFileSync(new URL("../docs/ward-flow/code-map/scripts-and-tooling.md", import.meta.url), "utf8");
   assert.match(map, /sync-lessons\.mjs.*Retired importer/);
-  assert.doesNotMatch(map, /node scripts\/bedchart\/sync-lessons\.mjs --check/);
+  assert.doesNotMatch(map, /node scripts\/ward-flow\/sync-lessons\.mjs --check/);
   assert.doesNotMatch(map, /\|[^\n]*sync-lessons\.mjs/);
 });
 
