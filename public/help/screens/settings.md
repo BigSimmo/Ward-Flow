@@ -22,7 +22,7 @@ The network's rules and this device's own choices, in tabs.
 
 ## On a phone
 
-- All settings. Each area opens in its own sheet. A count on Rules shows changes not yet saved.
+- Areas. Each area opens in its own sheet. A count on Rules shows changes not yet saved.
 
 In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
 
