@@ -120,21 +120,26 @@ function confirmStepUp() {
 }
 
 describe("the Access tab", () => {
-  // Settings by role (Josh, 3 Nov 2026, ST1): a coordinator, ward or ED desk asks for cover from
-  // its You section; only the access admin has a separate Access section.
+  // Settings by role (Josh, 3 Nov 2026, ST1), Settings overhaul (Josh, 16 Nov 2026, D-257): a ward or
+  // ED desk asks for cover from Your desk; a desk that manages roles (the access admin and a
+  // statewide coordinator) has Staff access, which holds its cover with the roles.
   it("is not offered with the role-access flag off", () => {
     settings();
     expect(screen.queryByTestId("ward-settings-jump-access")).not.toBeInTheDocument();
     expect(document.querySelector('[data-pane="access"]')).toBeNull();
     expect(screen.queryByTestId("ward-access-cover")).not.toBeInTheDocument();
-    // Anti-vacuity: the same desk with the flag on has cover, inside You and with no Access section.
+    // Anti-vacuity: the same statewide desk with the flag on has Staff access, which holds its cover;
+    // Your desk does not.
     cleanup();
     act(() => setWardFeatureFlagOnDevice("role-access", true));
     settings();
-    expect(screen.queryByTestId("ward-settings-jump-access")).not.toBeInTheDocument();
+    expect(screen.getByTestId("ward-settings-jump-access")).toHaveTextContent("Staff access");
     expect(
-      within(document.getElementById("settings-section-you")!).getByTestId("ward-access-cover"),
+      within(document.getElementById("settings-section-access")!).getByTestId("ward-access-cover"),
     ).toBeInTheDocument();
+    expect(
+      within(document.getElementById("settings-section-you")!).queryByTestId("ward-access-cover"),
+    ).not.toBeInTheDocument();
   });
 
   it("gives a statewide coordinator both cover and the roles lists", () => {
@@ -266,14 +271,15 @@ describe("the Access tab", () => {
     expect(readWardAccessSnapshot().covers).toHaveLength(1);
     // M58 (D-129): the form asks why, and the cover keeps the reason.
     expect(readWardAccessSnapshot().covers[0]?.reason).not.toBeNull();
-    const list = screen.getByTestId("ward-access-cover-list");
     // A statewide coordinator sees cover given by a ward inside its place, and may end it.
     act(() => setWardAccess({ role: "coordinator", scope: { kind: "statewide" } }));
     expect(
       within(screen.getByTestId("ward-access-cover-list")).getByRole("button", { name: "End cover" }),
     ).toBeInTheDocument();
     act(() => setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: ["fsh-adult-secure"] } }));
-    // Ending it goes through the same confirm, still fresh here, so it asks nothing more.
+    // Ending it goes through the same confirm, still fresh here, so it asks nothing more. The
+    // coordinator's cover sat in Staff access, so the ward's list is read again in Your desk.
+    const list = screen.getByTestId("ward-access-cover-list");
     await act(async () => fireEvent.click(within(list).getByRole("button", { name: "End cover" })));
     expect(screen.queryByTestId("ward-step-up")).not.toBeInTheDocument();
     expect(readWardAccessSnapshot().covers).toHaveLength(0);
