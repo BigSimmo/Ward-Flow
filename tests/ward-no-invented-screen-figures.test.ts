@@ -325,6 +325,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     name: /^SERVER_CHECK_TIMEOUT_MS$/,
   },
   {
+    id: "drawer-closing-back-timeout",
+    why: "How long a bar drawer that already closed waits for its own history Back to land before it stops holding other opens (Josh, 16 Nov 2026: the close was slow to answer); a UI wait, never shown, not a clinical limit.",
+    file: /^shell\/ward-bar-model\.ts$/,
+    name: /^CLOSING_BACK_TIMEOUT_MS$/,
+  },
+  {
     id: "tv-lock-fallback-wait",
     why: "F-65 (A14-24): how long a browser locked as a TV waits for its TV view to draw its own Unlock before the stand-in Unlock shows; a UI wait, never shown, not a clinical limit.",
     file: /^bed-meeting\/tv-lock-fallback-host\.tsx$/,

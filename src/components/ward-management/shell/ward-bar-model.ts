@@ -96,6 +96,9 @@ export const SERVICE_SCOPE_NOTE = `One service, or all of them. ${SERVICE_SCOPED
  *  identical wording rather than each typing a close paraphrase. */
 export const NOT_WIRED_SUFFIX = "is not wired in this prototype.";
 
+/** How long a drawer's closing Back may take to land before the bar stops waiting for it. */
+export const CLOSING_BACK_TIMEOUT_MS = 1500;
+
 /**
  * What closing a drawer does to history. A drawer pushes its own history entry when it opens, so
  * that the browser's Back closes it; closing it by hand normally steps back past that entry. But

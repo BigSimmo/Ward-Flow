@@ -61,8 +61,23 @@
   cursor: pointer;
 }
 
-:where(.close):hover {
+/* :active too, so a tap on a phone (no hover) shows at once that the close was taken. */
+:where(.close):hover,
+:where(.close):active {
   background: var(--wf-hover);
+}
+
+/* Touch (Josh, 16 Nov 2026: the close was hard to hit): the 44px touch face keeps the house 48px tap
+   area through an invisible cover (it counts from inside the 1px border), never a bigger face. */
+@media (pointer: coarse) {
+  :where(.close) {
+    position: relative;
+  }
+  :where(.close)::after {
+    content: "";
+    position: absolute;
+    inset: -3px;
+  }
 }
 
 :where(.close):focus-visible {

@@ -822,6 +822,12 @@
     position: absolute;
     inset: -6px;
   }
+  /* The close's 36px face has a 1px border the inset counts inside, and the kit button's own cover
+     outranked this one, so it reached only 44px (Josh, 16 Nov 2026: the close was hard to hit).
+     Tripled to outrank the kit cover; 7px each way makes the full 48px. */
+  .sheetClose.sheetClose.sheetClose::after {
+    inset: -7px;
+  }
 }
 
 /* ---------- preferences ---------- */
