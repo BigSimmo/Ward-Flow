@@ -271,6 +271,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-256](#d-256-the-phones--sheet-and-bottom-bar-can-be-customised-and-the-bar-becomes-a-refined-glass-capsule-16-november-2026)                         | The phone's + sheet and bottom bar can be customised, and the bar becomes a refined glass capsule | Active                                           |
 | [D-257](#d-257-settings-is-your-own-settings-first-with-admin-work-in-staff-access-16-november-2026)                                                    | Settings is your own settings first, with admin work in Staff access                              | Active                                           |
 | [D-258](#d-258-no-clock-in-the-header-a-wider-search-and-service-colour-dots-16-november-2026)                                                          | No clock in the header, a wider search and service colour dots                                    | Active                                           |
+| [D-259](#d-259-the-demo-script-matches-the-screen-words-after-the-16-november-walk-16-november-2026)                                                    | The demo script matches the screen words after the 16 November walk                               | Active                                           |
 
 ---
 
@@ -2990,4 +2991,10 @@ D-250 is claimed by open PR #1701 (the BedChart rename). D-255 is reserved by ot
 - **Perth time:** asked to "update and lock the time to Perth time for the site", Josh chose "Keep 10:42 start, Perth zone" on a decision card (16 November 2026, 3:29 PM AWST): the whole site stays on Perth time through its one tested setting (`src/lib/ward-time-zone.ts`), and the demo's board clock still opens at 10:42 so the script and day-shift scenarios hold for the demo.
 - **Boundary:** layout and wording only. No clinical value, rule, permission or saved record changes. Synthetic data only.
 
-The next free number is D-259.
+## D-259. The demo script matches the screen words after the 16 November walk (16 November 2026)
+
+- **Date:** 16 November 2026, 6:21 PM AWST (10:21 UTC). **Decided by:** Josh, in the catch-up thread: "Yes go ahead", answering "Fix those seven lines in the demo script in one small docs-only PR?" after a walk of the demo script from Setup to Close at 1440 x 900 on a local build of main 928fa1a8 (report in the project files, catch-up/demo-walk-2026-11-16).
+- **Decision:** DEMO-SCRIPT.md quotes the words now on screen: the Capacity title "Capacity", the sheet's "Bed meeting sheet · All services, 304 beds" and "Expected to leave · today", the Place group "Needs a recorded reason", "Bed pulled, 4 h 00 min left", the "Confirm arrival at Dabakarn" wristband check, and worked examples starting off in a fresh browser.
+- **Boundary:** script wording only. No app, clinical value, rule or saved record changes. Synthetic data only.
+
+The next free number is D-260.
