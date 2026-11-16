@@ -262,10 +262,10 @@ describe("Form times (Q319, D-93)", () => {
   const countdown = /\bleft\b|overdue|due in/iu;
 
   it.each([
-    ["a time already passed", "09:15"],
-    ["a time inside the warning window", "11:00"],
-    ["a later time", "23:30"],
-  ])("shows %s as typed, never as a countdown", (_case, time) => {
+    ["a time already passed", "09:15", "9:15 am"],
+    ["a time inside the warning window", "11:00", "11:00 am"],
+    ["a later time", "23:30", "11:30 pm"],
+  ])("shows %s as typed, never as a countdown", (_case, time, shown) => {
     withFlow(<ToolFormTimes onNavigate={vi.fn()} />);
     const tool = screen.getByTestId("ward-form-times");
     fireEvent.click(screen.getByTestId("ward-form-times-form"));
@@ -275,7 +275,8 @@ describe("Form times (Q319, D-93)", () => {
     const result = screen.getByTestId("ward-form-times-result");
     // D-218 (Josh, 14 Nov 2026): the time shows with no "as typed" or legal notice, and still no countdown.
     expect(result).not.toHaveTextContent("as typed");
-    expect(result).toHaveTextContent(time);
+    // D-254: typed 24-hour, read back am/pm on screen.
+    expect(result).toHaveTextContent(shown);
     expect(tool.textContent).not.toMatch(countdown);
     expect(tool.textContent).not.toMatch(/legally checked/iu);
   });

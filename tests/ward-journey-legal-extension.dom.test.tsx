@@ -164,7 +164,7 @@ describe("legal extension typed date", () => {
     );
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-date"), { target: { value: "26/10/2026" } });
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-expiry"), { target: { value: "09:00" } });
-    expect(screen.getByTestId("ward-legal-forms-renew-resolved")).toHaveTextContent("09:00");
+    expect(screen.getByTestId("ward-legal-forms-renew-resolved")).toHaveTextContent("9:00 am");
     fireEvent.click(screen.getByTestId("ward-legal-forms-renew-confirm"));
     expect(recorded).toEqual([2 * 1440 + 9 * 60]);
   });

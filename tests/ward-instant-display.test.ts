@@ -26,6 +26,10 @@ const WARD_DIR = "src/components/ward-management";
  */
 const MAY_ASSERT_TODAY = new Map([
   [
+    "position.typedEndAt",
+    "Patient page legal document row (D-254, 16 Nov 2026): the bare face is used only when no board clock is known (now is 0), so no day can be said; with a clock it names the day.",
+  ],
+  [
     "row.followUpDueAt",
     'Community follow-up due (F-33, RC 2.3, 13 Nov 2026): demoEgressAt prints it only when relativeDay says the due time is today, after the words "Due today".',
   ],

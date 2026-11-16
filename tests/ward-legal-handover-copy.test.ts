@@ -103,8 +103,8 @@ describe("legal form handover copy: passed and upcoming recorded times", () => {
     const lines = handoverLines(entries, 0, identify, WINDOW);
 
     expect(lines).toHaveLength(2);
-    expect(lines[0]).toContain("23:50 yesterday");
-    expect(lines[1]).toContain("00:10");
+    expect(lines[0]).toContain("11:50 pm yesterday");
+    expect(lines[1]).toContain("12:10 am");
     expect(entries).toEqual(before);
   });
 });

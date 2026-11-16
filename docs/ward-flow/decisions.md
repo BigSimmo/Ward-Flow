@@ -265,6 +265,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-248](#d-248-phone-search-boxes-are-40px-helps-phone-top-is-trimmed-and-help-sits-left-of-search-15-november-2026)                                    | Phone search boxes are 40px, Help's phone top is trimmed, and Help sits left of search | Active                                           |
 | [D-249](#d-249-keep-todays-logo-until-after-the-demo-15-november-2026)                                                                                  | Keep today's logo until after the demo                                                 | Active                                           |
 | [D-253](#d-253-this-project-is-now-the-main-ward-flow-project-a15-01-settled-by-rewording-and-the-page-scoring-finished-from-the-demo-16-november-2026) | Main project moved; A15-01 reworded; scoring finished from the demo                    | Active                                           |
+| [D-254](#d-254-legal-form-times-read-ampm-on-screen-prints-and-exports-keep-the-24-hour-clock-16-november-2026)                                         | Legal form times am/pm on screen; prints stay 24-hour                                  | Active                                           |
 
 ---
 
@@ -2936,4 +2937,11 @@ D-238 is reserved for design Lane D's block (noted in PR #1677). D-239 is reserv
 - **Why:** Josh moved the project to a new account, and the scoring should not wait on a release or on passwords.
 - **Boundary:** no clinical value, rule or permission changes. The privacy page's content is drafted in its own thread and is not built here. Synthetic data only.
 
-The next free number is D-254.
+## D-254. Legal form times read am/pm on screen; prints and exports keep the 24-hour clock (16 November 2026)
+
+- **Date:** 16 November 2026, 4:54 PM AWST (08:54 UTC). **Decided by:** Josh, in the Ward Flow project thread "Read the Ward Flow handover pack": "Yes sure", to showing legal form expiry times as am/pm on screen and keeping the 24-hour clock on prints.
+- **Decision:** a typed legal form time ("Ends 3:42 pm", "Runs to 11:42 am tomorrow") reads am/pm on every screen, like every other on-screen time. A printed or exported sheet (the ED-to-ward handover pack, `formatSheetMoment` prints) keeps the 24-hour face. Time boxes still take a 24-hour or am/pm time. This replaces the D-215 item 3 and D-218 carve-out that kept legal times on the 24-hour face on screen.
+- **Why:** one clock style on screen is easier to read, and the 24-hour face stays where a sheet is the record.
+- **Boundary:** wording only. The typed time is still never turned into a countdown or an age (D-93), and no legal rule, timing or permission changes.
+
+The next free number is D-255.

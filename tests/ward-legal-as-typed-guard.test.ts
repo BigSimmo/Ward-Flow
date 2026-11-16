@@ -184,7 +184,7 @@ describe("legal form times only as typed: what screens show", () => {
         expect(line).not.toMatch(COUNT_IN_TEXT);
         expect(line).not.toMatch(/\bin \d+ days?\b/);
       }
-      expect(typedTimeLine(dueAt, now, dayZero)).toMatch(/^End(?:s|ed) \w{3} \d{1,2} \w{3} \d{2}:\d{2}$/);
+      expect(typedTimeLine(dueAt, now, dayZero)).toMatch(/^End(?:s|ed) \w{3} \d{1,2} \w{3} \d{1,2}:\d{2} [ap]m$/);
     }
   });
 

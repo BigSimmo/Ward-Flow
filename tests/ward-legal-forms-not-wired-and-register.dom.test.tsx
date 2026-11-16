@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
 import { ExtendSheet } from "@/components/ward-management/legal-forms/legal-forms-sheets";
-import { formatClock24 } from "@/components/ward-management/ward-clock";
+import { formatClock24, formatInstant } from "@/components/ward-management/ward-clock";
 import { legalFormGroupRows } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { perthMidnight } from "@/components/ward-management/ward-clock";
@@ -161,7 +161,8 @@ describe("Legal forms — extension shows the day it will record", () => {
     });
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-expiry"), { target: { value: later } });
     expect(screen.getByTestId("ward-legal-forms-renew-resolved")).toHaveTextContent(
-      `Records the new expiry as ${later} tomorrow.`,
+      // D-254: the box takes a 24-hour time; the screen reads it back am/pm.
+      `Records the new expiry as ${formatInstant(dueAt + 30)} tomorrow.`,
     );
   });
 

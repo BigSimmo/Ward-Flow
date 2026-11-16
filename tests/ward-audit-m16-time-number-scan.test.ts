@@ -68,6 +68,7 @@ const UNIVERSAL_SHAPES: Readonly<Record<string, string>> = {
   "hours > 23": "bound on a typed clock time",
   "minutes > 59": "bound on a typed clock time",
   "hour > 23": "bound on a typed clock time",
+  "hour > 12": "bound on a typed am/pm clock time",
   "minute > 59": "bound on a typed clock time",
   "day > 31": "bound on a typed date",
   "minutes < 60": "formatting: show minutes rather than hours",
