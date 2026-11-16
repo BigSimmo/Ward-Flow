@@ -162,6 +162,7 @@ describe("the + sheet arrangement store", () => {
     ).toEqual({
       pinned: ["triage"],
       links: ["wards"],
+      hidden: [],
     });
   });
 
@@ -170,6 +171,65 @@ describe("the + sheet arrangement store", () => {
       { pinned: ["wards", "remind"], links: ["call-log"] },
       new Set(["wards", "call-log", "triage", "add-patient"] as const),
     );
-    expect(layout).toEqual({ pinned: ["wards", "triage"], links: ["call-log", "add-patient"] });
+    expect(layout).toEqual({
+      primary: null,
+      pinned: ["wards", "triage"],
+      links: ["call-log", "add-patient"],
+      hidden: [],
+    });
+  });
+
+  // More starts (Josh, 16 Nov 2026): the extra Tools starts stay off the sheet until added.
+  it("keeps the extra starts under Not shown, and New referral as the big button, until chosen", () => {
+    const layout = resolveCreateLayout(null, new Set(["referral", "triage", "bed-finder", "contacts"] as const));
+    expect(layout).toEqual({ primary: "referral", pinned: ["triage"], links: [], hidden: ["bed-finder", "contacts"] });
+  });
+
+  it("reads a chosen big button, never listing it twice, and puts New referral back in the list", () => {
+    const stored = parseCreateSheet(
+      JSON.stringify({ primary: "triage", pinned: ["triage", "call-log"], links: [], hidden: ["<b>"] }),
+    );
+    expect(stored).toEqual({ primary: "triage", pinned: ["call-log"], links: [], hidden: [] });
+    expect(resolveCreateLayout(stored, new Set(["referral", "triage", "call-log"] as const))).toEqual({
+      primary: "triage",
+      pinned: ["referral", "call-log"],
+      links: [],
+      hidden: [],
+    });
+    // A big button this desk cannot start now falls back to New referral.
+    expect(resolveCreateLayout(stored, new Set(["referral", "call-log"] as const)).primary).toBe("referral");
+  });
+});
+
+describe("Customise the + sheet (Josh, 16 Nov 2026)", () => {
+  it("adds an extra start, takes one off, and says Customise", async () => {
+    const sheet = await openCreate();
+    fireEvent.click(within(sheet).getByTestId("ward-phone-create-edit"));
+    expect(within(sheet).getByRole("heading", { name: "Customise" })).toBeInTheDocument();
+    const notShown = within(sheet).getByTestId("ward-phone-create-edit-hidden");
+    expect(within(notShown).getByRole("button", { name: "Add Find a bed" })).toBeInTheDocument();
+    fireEvent.click(within(notShown).getByRole("button", { name: "Add Find a bed" }));
+    fireEvent.click(within(sheet).getByRole("button", { name: "Remove Remind me" }));
+    fireEvent.click(within(sheet).getByTestId("ward-phone-create-edit"));
+    const links = within(sheet).getByTestId("ward-phone-create-links");
+    expect(within(links).getByRole("button", { name: "Find a bed" })).toBeInTheDocument();
+    expect(within(sheet).queryByTestId("ward-phone-create-remind")).toBeNull();
+    expect(parseCreateSheet(window.localStorage.getItem(CREATE_SHEET_STORAGE_KEY))?.hidden).toContain("remind");
+  });
+
+  it("makes New triage the big button and moves New referral into the list", async () => {
+    const sheet = await openCreate();
+    expect(within(sheet).getByTestId("ward-phone-create-referral")).toHaveTextContent("New referral");
+    fireEvent.click(within(sheet).getByTestId("ward-phone-create-edit"));
+    fireEvent.click(within(sheet).getByTestId("ward-phone-create-main-change"));
+    const choices = within(sheet).getByTestId("ward-phone-create-main-choices");
+    expect(within(choices).getByRole("button", { name: "New referral" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(within(choices).getByRole("button", { name: "New triage" }));
+    fireEvent.click(within(sheet).getByTestId("ward-phone-create-edit"));
+    expect(pinnedLabels(sheet)[0]).toMatch(/^New referral/u);
+    const triage = within(sheet).getByTestId("ward-phone-create-triage");
+    expect(triage).toHaveAttribute("href", "/ward-flow/triage/new");
+    expect(triage.closest("ul")).toBeNull();
+    expect(parseCreateSheet(window.localStorage.getItem(CREATE_SHEET_STORAGE_KEY))?.primary).toBe("triage");
   });
 });

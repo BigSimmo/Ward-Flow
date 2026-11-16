@@ -4106,8 +4106,8 @@
         },
         {
           "path": "src/components/ward-management/discharges/discharge-board.tsx",
-          "line": 494,
-          "sha256": "d8197dccfe9e626d19c685fe9af439e567708413b83e89ed80163de35619ce84"
+          "line": 493,
+          "sha256": "a1c5f02e7b1877e0b005e043b37dc2201e72017377b003ed3a9bb7e87cb05e8f"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",

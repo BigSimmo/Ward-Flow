@@ -7,9 +7,13 @@
  * `clearWardFlowBrowserData` sweeps it at sign-out, and the in-memory copy below registers its own
  * reset, so the next person at the device starts from the standard sheet.
  *
- * **Item ids only, never typed text.** The stored value is `{ pinned, links }`, two arrays of ids
- * from the closed list `CREATE_ITEM_IDS`, checked on every read. Anything else (free text, a stale
- * build's value, tampering) reads as "not arranged", never as an error.
+ * **Item ids only, never typed text.** The stored value is `{ pinned, links, hidden }`, three arrays
+ * of ids from the closed list `CREATE_ITEM_IDS`, checked on every read (a value saved before `hidden`
+ * existed reads as an empty one). Anything else (free text, a stale build's value, tampering) reads as
+ * "not arranged", never as an error.
+ *
+ * More starts (Josh, 16 Nov 2026): the Tools the coordinator already has can be added too. They start
+ * under "Not shown", so the standard sheet is unchanged until someone adds one.
  */
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
@@ -18,13 +22,47 @@ export const CREATE_SHEET_STORAGE_KEY = "ward-flow-create-sheet";
 const createSheetChangeEvent = "ward-flow-create-sheet-change";
 
 /** Every start the coordinator's + sheet can show, in the standard order. */
-const CREATE_ITEM_IDS = ["triage", "call-log", "ask", "transport", "delays", "remind", "wards", "add-patient"] as const;
+const CREATE_ITEM_IDS = [
+  "referral",
+  "triage",
+  "call-log",
+  "ask",
+  "transport",
+  "delays",
+  "remind",
+  "wards",
+  "add-patient",
+  "bed-finder",
+  "feed",
+  "leave-due",
+  "messages",
+  "contacts",
+  "form-times",
+  "catchment",
+  "figures",
+  "find-patient",
+  "broadcast",
+] as const;
 export type CreateItemId = (typeof CREATE_ITEM_IDS)[number];
 
-export type CreateSheetLayout = { pinned: readonly CreateItemId[]; links: readonly CreateItemId[] };
+export type CreateSheetLayout = {
+  pinned: readonly CreateItemId[];
+  links: readonly CreateItemId[];
+  /** Starts this person took off the sheet; any start not placed anywhere takes its standard place. */
+  hidden?: readonly CreateItemId[];
+  /** The sheet's big button (Josh, 16 Nov 2026); New referral when not chosen, none when null. */
+  primary?: CreateItemId | null;
+};
+export type ResolvedCreateLayout = {
+  primary: CreateItemId | null;
+  pinned: CreateItemId[];
+  links: CreateItemId[];
+  hidden: CreateItemId[];
+};
 
 /** The standard sheet: the day's starts as full rows, the rarer ones as links (Josh, 8 and 15 Nov 2026). */
 const STANDARD_CREATE_LAYOUT: CreateSheetLayout = Object.freeze({
+  primary: "referral" as const,
   pinned: Object.freeze(["triage", "call-log", "ask", "transport", "delays", "remind"] as const),
   links: Object.freeze(["wards", "add-patient"] as const),
 });
@@ -59,33 +97,61 @@ export function parseCreateSheet(raw: string | null): CreateSheetLayout | null {
     return null;
   }
   if (typeof value !== "object" || value === null) return null;
-  const { pinned, links } = value as { pinned?: unknown; links?: unknown };
-  if (!Array.isArray(pinned) || !Array.isArray(links)) return null;
+  const {
+    pinned,
+    links,
+    hidden = [],
+    primary,
+  } = value as {
+    pinned?: unknown;
+    links?: unknown;
+    hidden?: unknown;
+    primary?: unknown;
+  };
+  if (!Array.isArray(pinned) || !Array.isArray(links) || !Array.isArray(hidden)) return null;
   const seen = new Set<CreateItemId>();
+  // The big button is never listed as well, so it is taken first.
+  const main = isItemId(primary) ? primary : undefined;
+  if (main) seen.add(main);
   const take = (list: unknown[]) =>
     list.filter((id): id is CreateItemId => isItemId(id) && !seen.has(id) && Boolean(seen.add(id)));
-  const layout = { pinned: Object.freeze(take(pinned)), links: Object.freeze(take(links)) };
+  const layout = {
+    pinned: Object.freeze(take(pinned)),
+    links: Object.freeze(take(links)),
+    hidden: Object.freeze(take(hidden)),
+    ...(main ? { primary: main } : {}),
+  };
   return Object.freeze(layout);
 }
 
 /**
  * The sheet to draw from what this desk may start (`available`): the stored arrangement, or the
  * standard one. A start the person never placed (new in a later build) keeps its standard place, at
- * the end of its group.
+ * the end of its group: pinned, a quick link, or "Not shown" for a start the standard sheet leaves off.
  */
 export function resolveCreateLayout(
   stored: CreateSheetLayout | null,
   available: ReadonlySet<CreateItemId>,
-): { pinned: CreateItemId[]; links: CreateItemId[] } {
+): ResolvedCreateLayout {
   const layout = stored ?? STANDARD_CREATE_LAYOUT;
-  const placed = new Set<CreateItemId>([...layout.pinned, ...layout.links]);
-  const pinned = layout.pinned.filter((id) => available.has(id));
-  const links = layout.links.filter((id) => available.has(id));
+  const hiddenStored = layout.hidden ?? [];
+  // The chosen big button, or New referral where it is not open to this desk now.
+  const wanted = layout.primary ?? "referral";
+  const primary = available.has(wanted) ? wanted : available.has("referral") ? "referral" : null;
+  const placed = new Set<CreateItemId>([...layout.pinned, ...layout.links, ...hiddenStored, wanted]);
+  const keep = (id: CreateItemId) => available.has(id) && id !== primary;
+  const pinned = layout.pinned.filter(keep);
+  const links = layout.links.filter(keep);
+  const hidden = hiddenStored.filter(keep);
   for (const id of CREATE_ITEM_IDS) {
-    if (placed.has(id) || !available.has(id)) continue;
-    (STANDARD_CREATE_LAYOUT.pinned.includes(id) ? pinned : links).push(id);
+    if (placed.has(id) || !keep(id)) continue;
+    // New referral, no longer the big button, leads the pinned rows.
+    if (id === "referral") pinned.unshift(id);
+    else if (STANDARD_CREATE_LAYOUT.pinned.includes(id)) pinned.push(id);
+    else if (STANDARD_CREATE_LAYOUT.links.includes(id)) links.push(id);
+    else hidden.push(id);
   }
-  return { pinned, links };
+  return { primary, pinned, links, hidden };
 }
 
 function getSnapshot(): CreateSheetLayout | null {

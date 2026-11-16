@@ -69,8 +69,8 @@ export function BedMapHighlights({
   return (
     <div className={className} role="group" aria-label="Highlight wards">
       {HIGHLIGHTS.map((entry) => {
-        // Wave 4 (D-191): the label and a mono count of wards ("Any ready 19 wards"). The noun shows,
-        // so the count is never read as the hero's bed counts (UI sweep, 16 Nov 2026).
+        // Wave 4 (D-191): the label and a mono count of wards. The noun is shown as well (Josh,
+        // 16 Nov 2026: "Any ready 19 wards"), so the count never reads as the hero's beds.
         const wards = wardsMatching(entry);
         return (
           <FilterChip
@@ -79,7 +79,8 @@ export function BedMapHighlights({
             onPressedChange={(pressed) => onHighlight(pressed ? entry.id : null)}
           >
             <span className={styles.chipWords}>
-              {entry.label} <b className={styles.chipN}>{wards}</b> {wards === 1 ? "ward" : "wards"}
+              {entry.label} <b className={styles.chipN}>{wards}</b>{" "}
+              <span className={styles.chipNoun}>{wards === 1 ? "ward" : "wards"}</span>
             </span>
           </FilterChip>
         );
@@ -214,9 +215,7 @@ export function BedMapCards({
                   <span className={styles.mapGroupName}>
                     <SpelledCodes text={group.service} />
                   </span>
-                  <span className={styles.muted}>
-                    {group.wards.length} {group.wards.length === 1 ? "ward" : "wards"}
-                  </span>
+                  <span className={styles.muted}>{group.wards.length} wards</span>
                   <span className={styles.mapGroupFigures}>
                     <b>{ready}</b> ready · <b>{beds ? Math.round((inUse / beds) * 100) : 0}%</b> in use · {closed}{" "}
                     closed
