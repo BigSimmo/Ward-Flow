@@ -568,3 +568,75 @@ describe("Printed list contract (design lane A, 14 Nov 2026)", () => {
     expect(css).toContain('content: "Downtime"');
   });
 });
+
+/**
+ * 16 Nov 2026 live demo walk, layout fixes: nothing cut at 1280 on the ED board tools, the officer
+ * transport rows and Add patient's sex hint, and a tighter Referrals phone top. CSS contract only;
+ * the look is checked in a browser.
+ */
+const readLaneB = readCss;
+
+/** The first rule block for a selector, from the selector to its closing brace. */
+function laneBBlock(css: string, selector: string): string {
+  const start = css.indexOf(`${selector} {`);
+  expect(start, selector).toBeGreaterThan(-1);
+  return css.slice(start, css.indexOf("}", start));
+}
+
+describe("ED handover tools at 1280", () => {
+  const css = readLaneB("src/components/ward-management/ed/ed-handover.module.css");
+
+  it("wraps the tool row instead of squeezing Export and Enlarge", () => {
+    const tools = laneBBlock(css, ".handoverTools");
+    expect(tools).toContain("flex-wrap: wrap");
+    expect(tools).toContain("justify-content: flex-end");
+    expect(laneBBlock(css, ".handoverTools > *")).toContain("flex-shrink: 0");
+    expect(laneBBlock(css, ".handoverHead")).toContain("flex-wrap: wrap");
+  });
+
+  it("lets only the search box give way", () => {
+    expect(laneBBlock(css, ".handoverTools > .handoverSearch")).toContain("flex: 0 1 15rem");
+  });
+});
+
+describe("officer transport rows above phone width", () => {
+  const css = readLaneB("src/components/ward-management/officer/officer.module.css");
+
+  it("wraps the ETA and forms words rather than cutting them", () => {
+    const media = css.slice(css.indexOf("16 Nov live walk: at 1280 the ETA cell"));
+    expect(laneBBlock(media, ".jobsTable .etaCell")).toContain("white-space: normal");
+    expect(laneBBlock(media, ".jobsTable .etaCell")).toContain("flex-wrap: wrap");
+    expect(laneBBlock(media, ".jobsTable .etaCell b")).toContain("white-space: nowrap");
+    expect(laneBBlock(media, ".jobsTable .formsCell > span:last-child")).toContain("white-space: normal");
+  });
+
+  it("gives the forms column 14% of the table", () => {
+    expect(laneBBlock(css, ".jobsTable th:nth-child(4)")).toContain("width: 14%");
+  });
+});
+
+describe("Add patient sex hint", () => {
+  it("wraps the hint in full, never with an ellipsis", () => {
+    const hint = laneBBlock(readLaneB("src/components/ward-management/patients/add-patient.module.css"), ".choiceHint");
+    expect(hint).not.toContain("ellipsis");
+    expect(hint).not.toContain("nowrap");
+  });
+
+  it("puts the sex choices on a row of their own", () => {
+    expect(readLaneB("src/components/ward-management/patients/add-patient.tsx")).toContain(
+      "cx(styles.choiceField, styles.spanAll)",
+    );
+  });
+});
+
+describe("Referrals phone top", () => {
+  it("closes the gaps between the top's rows on a phone", () => {
+    const css = readLaneB("src/components/ward-management/referrals/referral-board-top.module.css");
+    const phone = css.slice(css.lastIndexOf("@media (max-width: 46.4375rem)"));
+    expect(laneBBlock(phone, ".heroTop.heroTop")).toContain("gap: var(--wf-s-3)");
+    expect(laneBBlock(phone, ".heroTop.heroTop")).toContain("margin-top: var(--wf-s-2)");
+    expect(readLaneB("src/components/ward-management/referrals/referral-board-top.tsx")).toContain(
+      "className={top.heroTop}",
+    );
+  });
+});

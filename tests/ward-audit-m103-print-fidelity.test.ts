@@ -182,3 +182,37 @@ describe("M103: each printed sheet's time, second identifier and whole rows (sta
     expect(actual, "a sheet lost or gained a print property: fix it, or update GAPS after checking").toEqual(GAPS);
   });
 });
+
+/** Declarations of `@media print` rules whose selector matches, from a stylesheet's text (16 Nov walk). */
+function printDeclsOf(css: string, selector: RegExp): Record<string, string> {
+  const found: Record<string, string> = {};
+  postcss.parse(css).walkAtRules("media", (media) => {
+    if (!/print/.test(media.params)) return;
+    media.walkRules((rule) => {
+      if (!selector.test(rule.selector)) return;
+      rule.walkDecls((decl) => {
+        found[decl.prop] = decl.important ? `${decl.value} !important` : decl.value;
+      });
+    });
+  });
+  return found;
+}
+
+describe("16 Nov live walk: other prints", () => {
+  it("prints a Patients list wait on one line, in a wider Time column", () => {
+    const css = readFileSync("src/components/ward-management/search/census.module.css", "utf8");
+    expect(printDeclsOf(css, /^\.colTime$/).width).toBe("132px");
+    expect(printDeclsOf(css, /\.time \*$/)["white-space"]).toBe("nowrap");
+    expect(printDeclsOf(css, /\.censusTable thead$/).display).toBe("table-header-group");
+  });
+
+  it("drops each ward card's Open ward link from the printed ward list", () => {
+    const css = readFileSync("src/components/ward-management/wards/ward-index.module.css", "utf8");
+    expect(printDeclsOf(css, /^\.cardLink$/).display).toBe("none");
+  });
+
+  it("shows the Alerts print time only on paper", () => {
+    const css = readFileSync("src/components/ward-management/alerts/alerts.module.css", "utf8");
+    expect(printDeclsOf(css, /^\.printStamp$/).display).toBe("block");
+  });
+});

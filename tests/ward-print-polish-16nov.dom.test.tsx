@@ -6,8 +6,7 @@
 // 2. Patients list: the Time column reads on one line on paper.
 // 3. Ward list: no Open ward link lines on paper.
 // 4. Alerts: a print-only time at the top (the DOM check is in ward-alerts-screen.dom.test.tsx).
-
-import { readFileSync } from "node:fs";
+// The stylesheet checks for 2 to 4 are in ward-audit-m103-print-fidelity.test.ts.
 
 import "@testing-library/jest-dom/vitest";
 import { act, cleanup, render, screen } from "@testing-library/react";
@@ -92,24 +91,5 @@ describe("handover pack prints the pack, not the patient page", () => {
     expect(ancestors.visibility).toBe("visible !important");
     const rest = printDecls(css, /:not\(:has\(\[data-wf-print-handover\]\)\)/);
     expect(rest.display).toBe("none !important");
-  });
-});
-
-describe("other prints", () => {
-  it("prints a Patients list wait on one line, in a wider Time column", () => {
-    const css = readFileSync("src/components/ward-management/search/census.module.css", "utf8");
-    expect(printDecls(css, /^\.colTime$/).width).toBe("132px");
-    expect(printDecls(css, /\.time \*$/)["white-space"]).toBe("nowrap");
-    expect(printDecls(css, /\.censusTable thead$/).display).toBe("table-header-group");
-  });
-
-  it("drops each ward card's Open ward link from the printed ward list", () => {
-    const css = readFileSync("src/components/ward-management/wards/ward-index.module.css", "utf8");
-    expect(printDecls(css, /^\.cardLink$/).display).toBe("none");
-  });
-
-  it("shows the Alerts print time only on paper", () => {
-    const css = readFileSync("src/components/ward-management/alerts/alerts.module.css", "utf8");
-    expect(printDecls(css, /^\.printStamp$/).display).toBe("block");
   });
 });

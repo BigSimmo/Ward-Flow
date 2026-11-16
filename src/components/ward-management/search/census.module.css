@@ -1185,9 +1185,10 @@ tr:has(+ .moreRow) > td {
     display: none !important;
   }
 
-  /* 16 Nov walk: on paper a wait reads on one line ("2 d 14 h waiting"), so the Time column is
-     wider and its value and words sit side by side without wrapping. The column headings repeat
-     at the top of each printed page; the page number is the shared `@page` counter. */
+  /* 16 Nov walk: on paper a wait reads on one line ("2 d 14 h waiting") where it fits, so the Time
+     column is wider and its value and words sit side by side. Each part never breaks inside itself,
+     but the words drop under the value rather than run past the sheet's edge. The column headings
+     repeat at the top of each printed page; the page number is the shared `@page` counter. */
   .colTime {
     width: 132px;
   }
@@ -1198,11 +1199,12 @@ tr:has(+ .moreRow) > td {
 
   table.censusTable td .time {
     flex-direction: row;
+    flex-wrap: wrap;
     align-items: baseline;
-    gap: 4px;
+    column-gap: 4px;
+    min-width: 0;
   }
 
-  table.censusTable td .time,
   table.censusTable td .time * {
     white-space: nowrap;
   }

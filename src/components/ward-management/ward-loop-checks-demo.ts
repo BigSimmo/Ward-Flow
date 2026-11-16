@@ -2,6 +2,7 @@ import { pointedAtWard } from "./capacity/ward-closure";
 import { closureTransitionItems } from "./loop-checks/ward-loop-checks";
 import { bedIsOccupied, type Admission, type PlannedAdmission } from "./ward-admissions";
 import type { Instant } from "./ward-clock";
+import { isNotVoluntary } from "./ward-legal-meaning";
 import type { Movement, Referral, Unit } from "./ward-model";
 import { boundedBedAvailability } from "./ward-ready-beds";
 import { wardStaySeats } from "./ward/ward-bed-layout";
@@ -61,7 +62,9 @@ const CLOSED_BED_UNIT_ID = "bty-adult-secure";
 const LEGAL_MISMATCH_MOVEMENT_ID = "WF-028";
 
 function isVoluntaryOnLockedWard(movement: Movement, units: readonly Unit[]): boolean {
-  if (movement.closure || movement.legalMismatch || movement.legalStatus !== "Voluntary") return false;
+  // Voluntary is recorded: a status is set and the named rule says it is not "not voluntary" (D-186).
+  if (movement.closure || movement.legalMismatch || !movement.legalStatus || isNotVoluntary(movement.legalStatus))
+    return false;
   const unit = units.find((candidate) => candidate.id === movement.acceptedUnitId);
   return unit !== undefined && unit.lockedBeds > 0 && unit.beds - unit.lockedBeds <= 0;
 }
