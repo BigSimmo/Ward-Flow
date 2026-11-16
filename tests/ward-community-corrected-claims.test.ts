@@ -131,8 +131,13 @@ function renderTeamMarkup(admissions?: Admission[], referrals?: Referral[]): str
 /** The visible text of the page, tags removed, so a sentence broken across JSX expressions is still
  *  one sentence to a reader and to an assertion. */
 function visibleText(markup: string): string {
-  return markup
-    .replace(/<[^>]*>/g, "")
+  // Strip tags until none remain, so a tag split by an earlier removal cannot survive.
+  let stripped = markup;
+  for (let previous = ""; previous !== stripped;) {
+    previous = stripped;
+    stripped = stripped.replace(/<[^>]*>/g, "");
+  }
+  return stripped
     .replace(/&apos;/g, "'")
     .replace(/&#x27;/g, "'")
     .replace(/&quot;/g, '"')
