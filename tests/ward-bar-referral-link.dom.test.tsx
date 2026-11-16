@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -25,6 +25,7 @@ vi.mock("next/navigation", () => ({
 
 import { discardReferralDraft } from "@/components/ward-management/referrals/referral-draft-store";
 import { NextBar as WardBar } from "@/components/ward-management/shell-next/next-bar";
+import { CLOSING_BACK_TIMEOUT_MS } from "@/components/ward-management/shell/ward-bar-model";
 import { WardLiveRegion, resetWardLiveRegionForTests } from "@/components/ward-management/shell/ward-live-region";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -114,7 +115,7 @@ describe("a link to the referral route opens the slide-out in place", () => {
     }
   });
 
-  it("keeps the sheet locked until its history step closes, before allowing another drawer", async () => {
+  it("closes the sheet at once and holds a new open until its history step lands (Josh, 16 Nov 2026)", async () => {
     renderBarWith();
     fireEvent.click(screen.getByTestId("ward-bar-tools-trigger"));
     const tools = await screen.findByRole("dialog", { name: "Tools" });
@@ -122,18 +123,40 @@ describe("a link to the referral route opens the slide-out in place", () => {
     try {
       fireEvent.click(within(tools).getByRole("button", { name: /^Close$/ }));
       expect(back).toHaveBeenCalledOnce();
-      expect(tools).toBeInTheDocument();
-      expect(document.documentElement.style.overflowY).toBe("hidden");
+      // The X answers straight away: the sheet does not wait for the browser's Back to land.
+      await waitFor(() => expect(screen.queryByRole("dialog", { name: "Tools" })).toBeNull());
 
+      // A tap on an opener while that Back is still landing is kept, not dropped, and runs after it.
+      fireEvent.click(screen.getByTestId("ward-bar-tools-trigger"));
+      expect(screen.queryByRole("dialog", { name: "Tools" })).toBeNull();
       window.history.replaceState(null, "");
       fireEvent.popState(window);
-      await waitFor(() => expect(screen.queryByRole("dialog", { name: "Tools" })).toBeNull());
-      fireEvent.click(screen.getByTestId("ward-bar-tools-trigger"));
       await screen.findByRole("dialog", { name: "Tools" });
       expect(window.history.state.wardDrawer).toBe("tools");
+      expect(back).toHaveBeenCalledOnce();
     } finally {
       back.mockRestore();
     }
+  });
+
+  it("stops waiting for a closing Back that never lands", async () => {
+    renderBarWith();
+    fireEvent.click(screen.getByTestId("ward-bar-tools-trigger"));
+    const tools = await screen.findByRole("dialog", { name: "Tools" });
+    const back = vi.spyOn(window.history, "back").mockImplementation(() => {});
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    try {
+      fireEvent.click(within(tools).getByRole("button", { name: /^Close$/ }));
+      fireEvent.click(screen.getByTestId("ward-bar-tools-trigger"));
+      expect(screen.queryByRole("dialog", { name: "Tools" })).toBeNull();
+      act(() => {
+        vi.advanceTimersByTime(CLOSING_BACK_TIMEOUT_MS);
+      });
+    } finally {
+      vi.useRealTimers();
+      back.mockRestore();
+    }
+    await screen.findByRole("dialog", { name: "Tools" });
   });
 
   it("opens the referral sheet and does not navigate", async () => {
