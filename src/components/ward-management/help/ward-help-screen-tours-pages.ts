@@ -617,7 +617,7 @@ export const MORE_PAGES: readonly Around[] = [
         body: "Type what you want to change, such as theme or alerts, and choose it to go straight there.",
       },
       {
-        target: [id("ward-settings-alerts-act"), id("ward-settings-open-alerts")],
+        target: [id("ward-settings-alerts-act"), id("ward-settings-phone-area-alerts")],
         title: "Alerts on this device",
         body: "Says whether alerts reach this device. Open alerts shows how to turn them on.",
       },
@@ -671,14 +671,18 @@ export const MORE_PAGES: readonly Around[] = [
         body: "Alerts lists each way an alert can reach this device and which are ready, with quiet hours and the buzz sound.",
       },
       {
-        target: [id("ward-settings-appearance"), id("ward-settings-phone-theme"), id("ward-settings-jump-display")],
+        target: [
+          id("ward-settings-appearance"),
+          id("ward-settings-phone-area-display"),
+          id("ward-settings-jump-display"),
+        ],
         title: "Display",
         body: "Theme, row density and the other choices for this device. They save at once.",
       },
       {
         device: "phone",
         target: starts("ward-settings-phone-area-"),
-        title: "All settings",
+        title: "Areas",
         body: "Each area opens in its own sheet. A count on Rules shows changes not yet saved.",
       },
       {

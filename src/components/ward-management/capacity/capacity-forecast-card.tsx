@@ -54,7 +54,7 @@ export function ForecastCard({
   const byKind = tomorrowByKind.kinds
     .map((kind) =>
       kind.likely < 0
-        ? `${KIND_SHORT[kind.id]} ${-kind.likely}`
+        ? `${KIND_SHORT[kind.id]} ${-kind.likely} short`
         : kind.likely > 0
           ? `${KIND_SHORT[kind.id]} ${kind.likely} spare`
           : "",
@@ -112,7 +112,9 @@ export function ForecastCard({
             <span className={styles.railName}>Going out · {days.length} days</span>
             <span className={styles.railSub}>{firmOut} firm today and tomorrow</span>
           </span>
-          <span className={styles.railValue}>{weekOut} beds</span>
+          <span className={styles.railValue}>
+            {weekOut} {weekOut === 1 ? "bed" : "beds"}
+          </span>
         </li>
       </ul>
       <p className={styles.railSubHead}>What would help tomorrow</p>

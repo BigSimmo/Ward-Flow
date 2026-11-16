@@ -16,7 +16,6 @@ import { formatInstant } from "@/components/ward-management/ward-clock";
 import { WARD_HISTORY_TRAVERSAL_CANCELLED } from "@/components/ward-management/use-dirty-state-guard";
 import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { useTrainingMode } from "@/components/ward-management/demo-reset/ward-training-mode";
 import { WardGlobalSearch } from "@/components/ward-management/ward-global-search-lazy";
 import type { HealthService, Unit } from "@/components/ward-management/ward-model";
 import { WARD_ALERTS_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
@@ -39,7 +38,6 @@ import {
   referralSheetRequestFromSearch,
   type ReferralSheetRequest,
 } from "@/components/ward-management/referrals/referral-sheet-link";
-import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import { wardTasksAreActionableForRole } from "@/components/ward-management/ward-chrome-role";
 // The Tools sheet (Tools review, 15 Oct 2026): one scrolling sheet in groups, Demo at the foot.
@@ -80,6 +78,7 @@ import {
   ALERTS_ACCESS_ENTRY,
   REFERRAL_BOARD_HREF,
   SERVICE_SWATCH_KEY,
+  CLOSING_BACK_TIMEOUT_MS,
   drawerCloseHistoryStep,
   fixedServiceFor,
   focusAlertsQueue,
@@ -305,13 +304,6 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
   const now = useWardFlowClock();
   // Phone Live chips read "Live HH:MM" from this one clock (v10 phone hero, `publishLiveClock`).
   const liveClockFace = formatInstant(now);
-  // D-194 (Josh, 13 Nov 2026, under D-150): training keeps its scripted clock, so the header names it
-  // "Training clock" rather than passing it off as the real Perth time.
-  const training = useTrainingMode();
-  // RC 2.6 (F-113): outside training the board clock is the demo's scripted time, with no real-time zone label.
-  const clockWords = training ? `Training clock ${liveClockFace}` : `Board time ${liveClockFace}`;
-  // UX audit (21 Oct 2026): offline, the clock's live dot turns amber so it agrees with the banner.
-  const online = useOnlineStatus();
   useEffect(() => {
     publishLiveClock(liveClockFace);
   }, [liveClockFace]);
@@ -354,6 +346,9 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
   // A history Back is asynchronous. Keep the drawer identity here so repeated closes are
   // ignored and a delayed popstate cannot close a drawer opened in the meantime.
   const closingViaHistoryRef = useRef<{ id: WardBarPopoverId; announce: boolean } | null>(null);
+  // An open tapped while that Back is still landing waits here and runs once it lands, rather than being
+  // dropped (Josh, 16 Nov 2026: a closed drawer must answer the next tap).
+  const queuedOpenRef = useRef<WardBarPopoverId | null>(null);
   const [referralRequest, setReferralRequest] = useState<ReferralOpenRequest>({ id: 0, category: "ward" });
   // The slide-out fills this with its guarded close, which asks before discarding a draft.
   const referralCloseRef = useRef<(() => void) | null>(null);
@@ -493,9 +488,22 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
         canGoBack: typeof window.history.back === "function",
       });
       if (step === "back") {
-        // Keep the sheet and its background lock until popstate completes the close.
-        closingViaHistoryRef.current = { id, announce };
+        // Close at once, then step Back over the drawer's own history entry behind it (Josh, 16 Nov
+        // 2026: on a phone that Back took about half a second, and the X looked dead until it
+        // landed). The pending marker swallows its popstate, so it cannot close anything else.
+        const closing = { id, announce: false };
+        closingViaHistoryRef.current = closing;
+        setOpenPanel((current) => (current === id ? null : current));
+        if (announce) announceToWardShell("Closed.");
         window.history.back();
+        // A Back that never lands (the browser dropped it) must not leave the bar refusing taps.
+        window.setTimeout(() => {
+          if (closingViaHistoryRef.current !== closing) return;
+          closingViaHistoryRef.current = null;
+          const queued = queuedOpenRef.current;
+          queuedOpenRef.current = null;
+          if (queued) popoverStepsRef.current?.open(queued);
+        }, CLOSING_BACK_TIMEOUT_MS);
       } else {
         setOpenPanel((current) => (current === id ? null : current));
         if (announce) announceToWardShell("Closed.");
@@ -526,8 +534,11 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
         return;
       }
       // A replacement open must wait for the pending Back; otherwise its popstate would
-      // be indistinguishable from the drawer that initiated the close.
-      if (closingViaHistoryRef.current !== null) return;
+      // be indistinguishable from the drawer that initiated the close. It runs when Back lands.
+      if (closingViaHistoryRef.current !== null) {
+        queuedOpenRef.current = id;
+        return;
+      }
       if (
         openPanel === "tasks" &&
         id !== "tasks" &&
@@ -716,16 +727,26 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
 
   useEffect(() => {
     function onHistoryTraversalCancelled() {
-      // Capture kept the panel open and restored its entry. The pending Back is finished,
-      // so a later close may try again without approving any other dirty form.
+      // Another unsaved form kept the page and restored this drawer's entry. The pending Back is
+      // finished, so a later close may try again without approving any other dirty form. The drawer
+      // closed when Back was asked for, so show it again: the screen and history agree.
+      const closing = closingViaHistoryRef.current;
       closingViaHistoryRef.current = null;
+      queuedOpenRef.current = null;
+      if (closing !== null) setOpenPanel(closing.id);
     }
     function onPopState() {
       const closing = closingViaHistoryRef.current;
       if (closing !== null) {
-        // Only the drawer that initiated Back may be closed by its delayed event, and it keeps
-        // the caller's choice not to announce (a service pick announces its own confirmation).
+        // The drawer already closed when Back was asked for; this is that Back landing. An open
+        // tapped meanwhile runs now, on the entry this Back returned to.
         closingViaHistoryRef.current = null;
+        const queued = queuedOpenRef.current;
+        queuedOpenRef.current = null;
+        if (queued) {
+          popoverStepsRef.current?.open(queued);
+          return;
+        }
         if (openPanel !== closing.id) return;
         setOpenPanel(null);
         if (closing.announce) announceToWardShell("Closed.");
@@ -1096,24 +1117,11 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
         {/* A page's own header tools land here (`ward-bar-page-tools.tsx`). Empty on most pages. */}
         <div id={WARD_BAR_PAGE_TOOLS_ID} className={styles.pageTools} data-testid="ward-bar-page-tools" />
 
-        {/* Josh, 30 Oct 2026: no "Synthetic prototype" pill or mark in the mock-ups' header. The page
-            footer's synthetic-data notice stays on every page, and the Demo menu opens from the
-            board clock and from Tools. */}
-
-        {/* A7 (overall review, 20 Oct 2026): the demo clock's one place. It opens the demo
-            controls in Tools; the rail no longer repeats it. At 1000px and below the bar has no
-            room (CSS hides it): the tablet Menu sheet keeps its "Board time" line and phone page
-            Live chips read the same time (`publishLiveClock` above). */}
-        <WardDemoClockPopover
-          className={`${styles.demoClock} ${polish.clockKeep}`}
-          testId="ward-bar-demo-clock"
-          title={`${clockWords}${online ? "" : ". Offline"}`}
-          aria-label={`${clockWords}${online ? "" : ". Offline"}`}
-        >
-          <span className={styles.demoClockDot} data-offline={online ? undefined : "true"} aria-hidden="true" />
-          <span className={styles.demoClockLabel}>{training ? "Training clock" : "Board time"}</span>{" "}
-          <span className={styles.demoClockTime}>{liveClockFace}</span>
-        </WardDemoClockPopover>
+        {/* Josh, 30 Oct 2026: no "Synthetic prototype" pill or mark in the header. The page footer's
+            synthetic-data notice stays on every page.
+            Josh, 16 Nov 2026: no Board time pill in the header on any screen either; the room goes to
+            the search. The rail's shift card and the Menu sheet show the time, phone page Live chips
+            read it (`publishLiveClock` above), and Tools opens the Demo menu. */}
 
         {/* The shell's synthetic-data marker for screen readers (visually hidden, so no pill shows). */}
         <span

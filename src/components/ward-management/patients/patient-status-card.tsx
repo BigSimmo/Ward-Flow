@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { recordedByWords } from "@/components/ward-management/ward-flow-roles";
 import dynamic from "next/dynamic";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
 import Link from "next/link";
@@ -467,7 +468,7 @@ function divertedStatus(movement: Movement, ctx: PatientStatusContext): PatientS
   return {
     tone: "danger",
     verdict: `Diverted ${where}`,
-    meta: `${diversion.by} · ${clock(diversion.at)} · ${diversion.reason}`,
+    meta: `${recordedByWords(diversion.by)} · ${clock(diversion.at)} · ${diversion.reason}`,
     cells: [
       {
         key: "collected",

@@ -290,6 +290,15 @@
   --wf-svc-cahs: var(--wf-ink-3);
   --wf-svc-private: var(--wf-ink-3);
   --wf-svc-statewide: var(--wf-ink-3);
+  /* D-258 (Josh, 16 Nov 2026): the one exception, a service's colour dot in the header's service chip
+     and the Service picker only. Mid tones, so one set reads on the dark bar and the light picker in
+     both themes, and kept clear of the alert red, amber and green. */
+  --wf-svc-dot-north: #4c8fdc;
+  --wf-svc-dot-south: #2fa58e;
+  --wf-svc-dot-east: #9475df;
+  --wf-svc-dot-wachs: #d58a36;
+  --wf-svc-dot-cahs: #de6a9a;
+  --wf-svc-dot-private: #8e9aab;
 }
 
 /*

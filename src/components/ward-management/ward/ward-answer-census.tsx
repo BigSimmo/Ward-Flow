@@ -61,14 +61,14 @@ export function WardAnswerCensus({
           const isPulled = !isVacant && !isPreparing && i < preparingEnd + states.pulled;
           const isClosed = !isVacant && !isPreparing && !isPulled && i < preparingEnd + states.pulled + states.closed;
           const statusLabel = isVacant
-            ? "READY"
+            ? BED_STATE_LABELS.ready
             : isPreparing
               ? BED_STATE_LABELS.beingMadeReady
               : isPulled
                 ? BED_STATE_LABELS.pulled
                 : isClosed
                   ? BED_STATE_LABELS.closed
-                  : "Inpatient";
+                  : BED_STATE_LABELS.occupied;
           const cellClass = `${styles.bedCell} ${
             isVacant
               ? styles.vacant

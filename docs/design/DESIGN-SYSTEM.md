@@ -51,7 +51,7 @@ Use tokens only. A raw hex value, pixel size or radius in a screen is a defect. 
 | Tones               | `--wf-danger`, `--wf-warning`, `--wf-success`, `--wf-info`, `--wf-neutral` and their `-ink`; `--wf-hero-*` tones on hero | Glyphs and tags. Danger is act now.                                                         |
 | Tints               | `--wf-act-tint`, `--wf-hold-tint`, `--wf-fit-tint` (`--wf-hold-edge`, `--wf-fit-edge` for glyph rings only)              | Row and tag backgrounds for act now, held and fits. The edge tokens never draw a side edge. |
 | Data                | `--wf-data-1` to `--wf-data-3`, `--wf-data-ready`, `--wf-data-closed`, `--wf-data-rest`, `--wf-hatch`, `--wf-now`        | Charts, bed squares, heat maps. The hatch means "may move" everywhere.                      |
-| Health services     | `--wf-svc-north`, `-south`, `-east`, `-wachs`, `-cahs`, `-private`, `-statewide`                                         | Neutral since D-192: no brand colours. A service is its short name in a plain Badge.        |
+| Health services     | `--wf-svc-north`, `-south`, `-east`, `-wachs`, `-cahs`, `-private`, `-statewide`                                         | Neutral since D-192. Only the header chip and Service picker show a service dot (D-258).    |
 | Materials           | `--wf-glass-bar`, `--wf-glass-pop`, `--wf-glass-sheet`, `--wf-sheen`, `--wf-scrim`, `--wf-scrim-strong`                  | Glass about 80% opaque, with the sheen, for chrome and overlays. Never glass on data.       |
 | Elevation           | `--wf-e1`, `--wf-e2`, `--wf-e3`, `--wf-e-bar`                                                                            | One raise per role. Cards that are not separate objects take no shadow.                     |
 

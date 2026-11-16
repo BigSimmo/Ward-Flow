@@ -484,6 +484,21 @@
   outline-offset: 2px;
 }
 
+/* D-251 (size review 4): on a phone the Filter chip matches the kit's quick chips beside it, 40px with
+   a 48px hit area that does not show. */
+@media (max-width: 46.4375rem) {
+  .heroChip {
+    position: relative;
+    height: 40px;
+  }
+
+  .heroChip::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+}
+
 .heroChipCount {
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
   color: var(--wf-hero-ink-2);

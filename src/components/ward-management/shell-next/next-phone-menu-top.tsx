@@ -4,8 +4,13 @@
 // own place.
 
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 
-import { Dot } from "@/components/wf";
+import { Dot, durMinutes } from "@/components/wf";
+import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
+import { useTrainingMode } from "@/components/ward-management/demo-reset/ward-training-mode";
+import { handoverHref } from "@/components/ward-management/shell/ward-facade";
+import { computeShiftProgress } from "@/components/ward-management/shell/ward-rail-helpers";
 import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import { WARD_CAPACITY_HREF } from "@/components/ward-management/ward-nav";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -61,6 +66,45 @@ export function NextPhoneMenuTop({
   const overLine = overLineLabel(rows, bedAlerts.services);
   const readyBeds = counts.capacity?.value ?? bedAlerts.totalFreeBeds;
   const note = cardScopeNote(rows, access, service);
+  // Josh, 16 Nov 2026: with no clock in any header, the phone Menu opens on the time and the
+  // handover countdown, as the tablet Menu does. Executive and access admin hold no shift.
+  const clockName = useTrainingMode() ? "Training clock" : "Board time";
+  const showHandover = access.role !== "executive" && access.role !== "admin";
+  const shift = computeShiftProgress(minuteOfDay(now));
+  const handoverValue = shift.handoverDue ? (
+    <strong>due now</strong>
+  ) : (
+    <>
+      in <strong>{durMinutes(shift.remainingMinutes)}</strong>
+    </>
+  );
+  const handoverLinks = canOpen(handoverHref());
+  const timeCard = (
+    <div className={railStyles.menuContext} data-testid="next-phone-menu-time">
+      <p className={railStyles.menuContextCell}>
+        <span className={railStyles.menuContextLabel}>{clockName}</span>
+        <span className={railStyles.menuContextValue}>
+          <strong>{formatInstant(now)}</strong>
+        </span>
+      </p>
+      {!showHandover ? null : handoverLinks ? (
+        <Link
+          href={handoverHref()}
+          className={`${railStyles.menuContextCell} ${railStyles.menuContextLink}`}
+          onClick={onGo}
+        >
+          <span className={railStyles.menuContextLabel}>Handover</span>
+          <span className={railStyles.menuContextValue}>{handoverValue}</span>
+          <ChevronRight aria-hidden="true" className={railStyles.sheetChevron} />
+        </Link>
+      ) : (
+        <p className={railStyles.menuContextCell}>
+          <span className={railStyles.menuContextLabel}>Handover</span>
+          <span className={railStyles.menuContextValue}>{handoverValue}</span>
+        </p>
+      )}
+    </div>
+  );
   const body = (
     <>
       <span className={railStyles.alertsHead}>
@@ -98,6 +142,7 @@ export function NextPhoneMenuTop({
   );
   return (
     <div className={parts.phoneTop} data-testid="next-phone-menu-top">
+      {timeCard}
       {canOpen(WARD_CAPACITY_HREF) ? (
         <Link href={WARD_CAPACITY_HREF} className={parts.phoneCard} onClick={onGo}>
           {body}

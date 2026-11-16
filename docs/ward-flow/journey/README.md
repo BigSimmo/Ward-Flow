@@ -184,6 +184,10 @@ Every person, ward and figure named anywhere in it is invented.
 
 </details>
 
+## Close tap area — 16 Nov 2026 (`claude/project-thread-f0ffc4`)
+
+The source digest for `hub/hub-screen.tsx` was re-reviewed after a class-only edit: the At a glance close became a kit icon-only button for its 48px phone tap area. The `REQUEST_CAPACITY_REFRESH` dispatch, its role and the cited line 725 are unchanged.
+
 ## Label review — 6 Nov 2026 (`fix/pr2-speed-keyboard`)
 
 Source digests for `ward-screen.tsx`, `officer-screen.tsx`, `discharge-board.tsx` and `out-of-area-board.tsx` were re-reviewed after accessible-name and spacing edits only (axe 4.14 label content, front-end fix PR 2). Event dispatches, roles and the cited lines are unchanged; the `CLEAR_BED_RELEASE_BLOCK` citation in `discharge-board.tsx` moved from line 1411 to 1408.

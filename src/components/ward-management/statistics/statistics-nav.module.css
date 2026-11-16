@@ -114,11 +114,12 @@
   font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
 }
 
-/* v10 phone second pass: 44px chips with 12px words (the hit area reaches 48px), the current
- * section edged in the accent. */
+/* v10 phone second pass: chips with 12px words, the current section edged in the accent. D-251 (size
+ * review 3): drawn at the 40px phone pill size like every other phone chip row; the hit area still
+ * reaches 48px. */
 .chip {
   position: relative;
-  min-height: 44px;
+  min-height: var(--wf-phone-pill-h);
   padding: 0 12px;
   border-color: var(--wf-line-2);
   font-size: var(--wf-fs-12);
@@ -127,7 +128,12 @@
 .chip::after {
   content: "";
   position: absolute;
-  inset: -2px 0;
+  inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
+}
+
+/* The row's own padding holds that hit band, so the sideways row never scrolls up and down. */
+.chipNav {
+  padding-block: var(--wf-phone-pill-hit);
 }
 
 .chip[aria-current="page"] {
