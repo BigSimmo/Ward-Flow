@@ -840,7 +840,7 @@ export function HubScreen() {
               </p>
               <button
                 type="button"
-                className={cx(buttonClass({ variant: "ghost", size: "sm" }), styles.glanceClose)}
+                className={cx(buttonClass({ variant: "ghost", size: "sm", iconOnly: true }), styles.glanceClose)}
                 aria-label="Close At a glance"
                 onClick={() => closeGlance()}
               >

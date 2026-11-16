@@ -137,7 +137,8 @@
   stroke-width: 1.75;
 }
 
-.closeButton:hover {
+.closeButton:hover,
+.closeButton:active {
   background: var(--wf-hover);
   color: var(--wf-ink-1);
 }
