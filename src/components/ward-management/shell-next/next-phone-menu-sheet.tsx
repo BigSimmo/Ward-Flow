@@ -26,23 +26,37 @@ import {
   ArrowUp,
   BedSingle,
   BellRing,
+  CalendarCheck,
+  Check,
+  CalendarClock,
+  ChartColumn,
   CircleHelp,
+  CircleMinus,
+  CirclePlus,
   ClipboardList,
   ClipboardPen,
   Inbox,
   Clock3,
   LogOut,
+  Map as MapIcon,
+  Megaphone,
+  MessageSquareText,
+  PanelBottom,
+  PhoneCall,
   PhoneOutgoing,
   Pin,
   Plus,
   Repeat,
   Search,
+  SearchCheck,
   Send,
   Settings,
   UserPlus,
+  UserSearch,
   Wrench,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-tools-sheet";
 
 import { Sheet } from "@/components/wf/sheet";
 import { Dot } from "@/components/wf";
@@ -84,6 +98,7 @@ import {
   saveCreateSheetLayout,
   useCreateSheetLayout,
   type CreateItemId,
+  type ResolvedCreateLayout,
 } from "@/components/ward-management/shell/ward-create-sheet-store";
 import { useAwaitingTriageCount } from "@/components/ward-management/triage/use-triage-people";
 import { useWardHelpRow } from "@/components/ward-management/help/ward-help-link";
@@ -96,8 +111,10 @@ import {
 } from "@/components/ward-management/shell/ward-desk-personas";
 import { useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
 import type { CountMap, DrawerId, NeedRow, PhoneMenuModel } from "@/components/ward-management/shell/ward-phone-menu";
+import type { DockOption } from "@/components/ward-management/shell-next/next-phone-menu";
 import styles from "@/components/ward-management/shell/ward-phone-menu.module.css";
 import editStyles from "@/components/ward-management/shell-next/next-create-edit.module.css";
+import dockStyles from "@/components/ward-management/shell-next/next-phone-dock.module.css";
 import actNowStyles from "@/components/ward-management/shell/ward-phone-menu-act-now.module.css";
 
 /**
@@ -275,10 +292,13 @@ function MoreSection({
   onClose,
   onSwitch,
   activityRow = false,
+  onEditBar,
 }: {
   onDrawer: (id: DrawerId) => void;
   onClose: () => void;
   onSwitch: () => void;
+  /** Edit bar (Josh, 16 Nov 2026): choose what the bottom bar's spots open. */
+  onEditBar?: () => void;
   /** Josh, 8 Nov 2026: Activity gets a row here when the desk's dock does not carry it. */
   activityRow?: boolean;
 }) {
@@ -306,6 +326,20 @@ function MoreSection({
               onClick={() => onDrawer("activity")}
             >
               <RowBody icon={Activity} label="Activity" />
+              <Chevron />
+            </button>
+          </li>
+        ) : null}
+        {onEditBar ? (
+          <li>
+            <button
+              type="button"
+              className={styles.row}
+              aria-haspopup="dialog"
+              data-testid="ward-phone-menu-edit-bar"
+              onClick={onEditBar}
+            >
+              <RowBody icon={PanelBottom} label="Edit bottom bar" />
               <Chevron />
             </button>
           </li>
@@ -469,8 +503,34 @@ type CreateItem = {
   label: string;
   meta: string;
   href?: string;
-  tool?: "call-log" | "remind";
+  tool?: ToolsSheetToolId;
+  /** New referral: opens the referral form in place. */
+  referral?: true;
 };
+
+/**
+ * More starts the coordinator can add to the + sheet (Josh, 16 Nov 2026: "add more options for
+ * editing to pin here"). Each is a Tools pop-up or page this desk already has, with the Tools sheet's
+ * own name; they sit under "Not shown" until someone adds or pins one.
+ */
+const MORE_CREATE_ITEMS: readonly CreateItem[] = [
+  { key: "bed-finder", icon: SearchCheck, label: "Find a bed", meta: "Ready beds by ward", tool: "bed-finder" },
+  { key: "feed", icon: Inbox, label: "Hospital feed", meta: "Messages to confirm", tool: "feed" },
+  { key: "leave-due", icon: CalendarCheck, label: "Due back", meta: "Leave ending today", tool: "leave-due" },
+  { key: "messages", icon: MessageSquareText, label: "Bed summary", meta: "Email or Teams text", tool: "messages" },
+  { key: "contacts", icon: PhoneCall, label: "On-call", meta: "Who is on now", tool: "contacts" },
+  { key: "form-times", icon: CalendarClock, label: "Form times", meta: "When a form runs out", tool: "form-times" },
+  { key: "catchment", icon: MapIcon, label: "Suburb lookup", meta: "Team by suburb or postcode", tool: "catchment" },
+  { key: "figures", icon: ChartColumn, label: "Key figures", meta: "Beds, flow and waits", tool: "figures" },
+  {
+    key: "find-patient",
+    icon: UserSearch,
+    label: "Find a patient",
+    meta: "By name, UMRN or place",
+    href: "/bedchart/search",
+  },
+  { key: "broadcast", icon: Megaphone, label: "Broadcast", meta: "To chosen units", href: "/bedchart/alerts" },
+];
 
 /**
  * The coordinator's + sheet (Josh, 8 Nov 2026, "+ sheet reordered"): New referral alone on top, then
@@ -482,24 +542,27 @@ function CoordinatorCreateSheet({
   open,
   onClose,
   returnFocusRef,
-  canRefer,
   onNewReferral,
   items,
+  onEditBar,
 }: {
   open: boolean;
   onClose: () => void;
   returnFocusRef: RefObject<HTMLButtonElement | null>;
-  canRefer: boolean;
   onNewReferral: () => void;
   items: readonly CreateItem[];
+  onEditBar?: () => void;
 }) {
   const stored = useCreateSheetLayout();
   const [editing, setEditing] = useState(false);
+  const [choosingMain, setChoosingMain] = useState(false);
   const focusAfterSave = useRef<string | null>(null);
   const byKey = new Map(items.map((item) => [item.key, item]));
   const layout = resolveCreateLayout(stored, new Set(byKey.keys()));
   const pinned = layout.pinned.flatMap((key) => byKey.get(key) ?? []);
   const links = layout.links.flatMap((key) => byKey.get(key) ?? []);
+  const hidden = layout.hidden.flatMap((key) => byKey.get(key) ?? []);
+  const main = layout.primary === null ? undefined : byKey.get(layout.primary);
   // A pinned or moved row changes place, so the button that moved it takes focus again there.
   useEffect(() => {
     if (focusAfterSave.current === null) return;
@@ -508,9 +571,10 @@ function CoordinatorCreateSheet({
   });
   const close = () => {
     setEditing(false);
+    setChoosingMain(false);
     onClose();
   };
-  const save = (next: { pinned: CreateItemId[]; links: CreateItemId[] }, said: string, focus: string) => {
+  const save = (next: ResolvedCreateLayout, said: string, focus: string) => {
     saveCreateSheetLayout(next);
     announceToWardShell(said);
     focusAfterSave.current = focus;
@@ -520,10 +584,32 @@ function CoordinatorCreateSheet({
     const without = (list: CreateItemId[]) => list.filter((key) => key !== item.key);
     save(
       isPinned
-        ? { pinned: without(layout.pinned), links: [...without(layout.links), item.key] }
-        : { pinned: [...without(layout.pinned), item.key], links: without(layout.links) },
+        ? { ...layout, pinned: without(layout.pinned), links: [...without(layout.links), item.key] }
+        : {
+            ...layout,
+            pinned: [...without(layout.pinned), item.key],
+            links: without(layout.links),
+            hidden: without(layout.hidden),
+          },
       isPinned ? `${item.label} moved to quick links.` : `${item.label} pinned.`,
       `pin-${item.key}`,
+    );
+  };
+  // More starts (Josh, 16 Nov 2026): minus takes a start off the sheet, plus puts it back as a quick link.
+  const toggleShown = (item: CreateItem) => {
+    const isHidden = layout.hidden.includes(item.key);
+    const without = (list: CreateItemId[]) => list.filter((key) => key !== item.key);
+    save(
+      isHidden
+        ? { ...layout, links: [...layout.links, item.key], hidden: without(layout.hidden) }
+        : {
+            ...layout,
+            pinned: without(layout.pinned),
+            links: without(layout.links),
+            hidden: [...layout.hidden, item.key],
+          },
+      isHidden ? `${item.label} added to quick links.` : `${item.label} taken off the sheet.`,
+      `show-${item.key}`,
     );
   };
   const move = (group: "pinned" | "links", item: CreateItem, step: -1 | 1) => {
@@ -542,17 +628,50 @@ function CoordinatorCreateSheet({
   };
   const reset = () => {
     saveCreateSheetLayout(null);
+    setChoosingMain(false);
     announceToWardShell("Back to the standard sheet.");
   };
-  const editRows = (group: "pinned" | "links", list: readonly CreateItem[]) => (
+  // The big button (Josh, 16 Nov 2026: "make the button editable also"). The start chosen takes the
+  // big button's place, and the start that was there takes the chosen one's place in its list.
+  const chooseMain = (item: CreateItem) => {
+    setChoosingMain(false);
+    if (item.key === layout.primary) return;
+    const old = layout.primary;
+    const swap = (list: CreateItemId[]) =>
+      old === null ? list.filter((key) => key !== item.key) : list.map((key) => (key === item.key ? old : key));
+    save(
+      { primary: item.key, pinned: swap(layout.pinned), links: swap(layout.links), hidden: swap(layout.hidden) },
+      `${item.label} is now the main button.`,
+      "main-change",
+    );
+  };
+  const editRows = (group: "pinned" | "links" | "hidden", list: readonly CreateItem[]) => (
     <ul className={`${styles.list} ${styles.rich}`} data-testid={`ward-phone-create-edit-${group}`}>
       {list.length === 0 ? (
         <li className={styles.empty}>
-          {group === "pinned" ? "Nothing pinned. Pin a start to show it as a full row." : "No quick links."}
+          {group === "pinned"
+            ? "Nothing pinned. Pin a start to show it as a full row."
+            : group === "links"
+              ? "No quick links."
+              : "Everything is on the sheet."}
         </li>
       ) : (
         list.map((item, index) => (
-          <li key={item.key} className={editStyles.editRow}>
+          <li key={item.key} className={`${editStyles.editRow} ${editStyles.editRowLead}`}>
+            {/* Minus takes it off the sheet; plus, under Not shown, adds it back as a quick link. */}
+            <button
+              type="button"
+              className={`${editStyles.editButton} ${group === "hidden" ? editStyles.editAdd : editStyles.editRemove}`}
+              aria-label={group === "hidden" ? `Add ${item.label}` : `Remove ${item.label}`}
+              data-create-edit={`show-${item.key}`}
+              onClick={() => toggleShown(item)}
+            >
+              {group === "hidden" ? (
+                <CirclePlus aria-hidden="true" strokeWidth={1.75} />
+              ) : (
+                <CircleMinus aria-hidden="true" strokeWidth={1.75} />
+              )}
+            </button>
             <RowBody icon={item.icon} label={item.label} />
             <span className={editStyles.editActions}>
               <button
@@ -568,7 +687,7 @@ function CoordinatorCreateSheet({
                 <Pin aria-hidden="true" strokeWidth={1.75} fill={group === "pinned" ? "currentColor" : "none"} />
               </button>
               {/* No arrow at either end of a list (a same-size gap keeps the columns lined up). */}
-              {index === 0 ? (
+              {group === "hidden" || index === 0 ? (
                 <span className={editStyles.editGap} aria-hidden="true" />
               ) : (
                 <button
@@ -581,7 +700,7 @@ function CoordinatorCreateSheet({
                   <ArrowUp aria-hidden="true" strokeWidth={1.75} />
                 </button>
               )}
-              {index === list.length - 1 ? (
+              {group === "hidden" || index === list.length - 1 ? (
                 <span className={editStyles.editGap} aria-hidden="true" />
               ) : (
                 <button
@@ -602,16 +721,34 @@ function CoordinatorCreateSheet({
   );
   const runItem = (item: CreateItem, event: MouseEvent<HTMLElement>) => {
     close();
-    if (item.tool) requestToolsTool(item.tool, event.currentTarget);
+    if (item.referral) onNewReferral();
+    else if (item.tool) requestToolsTool(item.tool, event.currentTarget);
   };
+  /** A start as a button (a form or Tools pop-up) or a link (a page), with the caller's look. */
+  const startControl = (item: CreateItem, className: string | undefined, testId: string, body: ReactNode) =>
+    item.href === undefined ? (
+      <button type="button" className={className} data-testid={testId} onClick={(event) => runItem(item, event)}>
+        {body}
+      </button>
+    ) : (
+      <Link href={item.href} className={className} onClick={close} data-testid={testId}>
+        {body}
+      </Link>
+    );
+  const MainIcon = main?.icon;
   return (
     <Sheet
       id="ward-phone-create"
       testId="ward-phone-create-sheet"
       open={open}
       onClose={close}
-      title={editing ? "Edit Create" : "Create"}
-      description={editing ? "Pin what you start most. Saved on this phone." : "Start something new"}
+      // UI sweep (16 Nov 2026): "Edit Create" read awkwardly, so edit mode says Customise.
+      title={editing ? "Customise" : "Create"}
+      description={
+        editing
+          ? "Choose what this sheet starts, and pin the ones you use most. Saved on this phone."
+          : "Start something new"
+      }
       mobileBreakpoint="phone"
       returnFocusRef={returnFocusRef}
       contentClassName={styles.sheet}
@@ -632,6 +769,53 @@ function CoordinatorCreateSheet({
     >
       {editing ? (
         <>
+          <section className={editStyles.editGroup} aria-labelledby="ward-create-edit-main">
+            <h3 id="ward-create-edit-main" className={styles.createHeading}>
+              Main button
+            </h3>
+            <div className={editStyles.mainEdit}>
+              {/* A picture of the big button as it will look, then Change. */}
+              <span className={`${styles.createPrimary} ${editStyles.mainPreview}`} aria-hidden="true">
+                {MainIcon ? <MainIcon aria-hidden="true" strokeWidth={1.75} /> : null}
+                {main?.label ?? "None"}
+              </span>
+              <button
+                type="button"
+                className={editStyles.mainChange}
+                aria-expanded={choosingMain}
+                aria-controls="ward-create-main-choices"
+                aria-label={`Change the main button, now ${main?.label ?? "none"}`}
+                data-create-edit="main-change"
+                data-testid="ward-phone-create-main-change"
+                onClick={() => setChoosingMain((value) => !value)}
+              >
+                {choosingMain ? "Cancel" : "Change"}
+              </button>
+            </div>
+            {choosingMain ? (
+              <ul
+                id="ward-create-main-choices"
+                className={editStyles.mainChoices}
+                aria-label="Choose the main button"
+                data-testid="ward-phone-create-main-choices"
+              >
+                {items.map((item) => (
+                  <li key={item.key}>
+                    <button
+                      type="button"
+                      className={editStyles.mainChoice}
+                      aria-pressed={item.key === layout.primary}
+                      onClick={() => chooseMain(item)}
+                    >
+                      <item.icon aria-hidden="true" strokeWidth={1.75} />
+                      <span>{item.label}</span>
+                      {item.key === layout.primary ? <Check aria-hidden="true" strokeWidth={2} /> : null}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </section>
           <section className={editStyles.editGroup} aria-labelledby="ward-create-edit-pinned">
             <h3 id="ward-create-edit-pinned" className={styles.createHeading}>
               Pinned
@@ -644,56 +828,63 @@ function CoordinatorCreateSheet({
             </h3>
             {editRows("links", links)}
           </section>
-          {stored !== null ? (
+          <section className={editStyles.editGroup} aria-labelledby="ward-create-edit-hidden">
+            <h3 id="ward-create-edit-hidden" className={styles.createHeading}>
+              Not shown
+            </h3>
+            {editRows("hidden", hidden)}
+          </section>
+          {stored !== null || onEditBar ? (
             <p className={styles.createMore}>
-              <button type="button" onClick={reset} data-testid="ward-phone-create-reset">
-                Reset to the standard sheet
-              </button>
+              {stored !== null ? (
+                <button type="button" onClick={reset} data-testid="ward-phone-create-reset">
+                  Reset to the standard sheet
+                </button>
+              ) : null}
+              {stored !== null && onEditBar ? <span className={styles.createMoreDot} aria-hidden="true" /> : null}
+              {onEditBar ? (
+                <button
+                  type="button"
+                  aria-haspopup="dialog"
+                  data-testid="ward-phone-create-edit-bar"
+                  onClick={() => {
+                    setEditing(false);
+                    onEditBar();
+                  }}
+                >
+                  Edit bottom bar
+                </button>
+              ) : null}
             </p>
           ) : null}
         </>
       ) : (
         <>
-          {canRefer ? (
+          {main && MainIcon ? (
             <div className={styles.createSingle}>
-              <button
-                type="button"
-                className={styles.createPrimary}
-                data-testid="ward-phone-create-referral"
-                onClick={() => {
-                  close();
-                  onNewReferral();
-                }}
-              >
-                <Inbox aria-hidden="true" strokeWidth={1.75} />
-                New referral
-              </button>
+              {startControl(
+                main,
+                styles.createPrimary,
+                `ward-phone-create-${main.key}`,
+                <>
+                  <MainIcon aria-hidden="true" strokeWidth={1.75} />
+                  {main.label}
+                </>,
+              )}
             </div>
           ) : null}
           {pinned.length > 0 ? (
             <ul className={`${styles.list} ${styles.rich}`} data-testid="ward-phone-create-coordinator">
               {pinned.map((item) => (
                 <li key={item.key}>
-                  {item.tool ? (
-                    <button
-                      type="button"
-                      className={styles.row}
-                      data-testid={`ward-phone-create-${item.key}`}
-                      onClick={(event) => runItem(item, event)}
-                    >
+                  {startControl(
+                    item,
+                    styles.row,
+                    `ward-phone-create-${item.key}`,
+                    <>
                       <RowBody icon={item.icon} label={item.label} meta={<span>{item.meta}</span>} />
                       <Chevron />
-                    </button>
-                  ) : (
-                    <Link
-                      href={item.href!}
-                      className={styles.row}
-                      onClick={close}
-                      data-testid={`ward-phone-create-${item.key}`}
-                    >
-                      <RowBody icon={item.icon} label={item.label} meta={<span>{item.meta}</span>} />
-                      <Chevron />
-                    </Link>
+                    </>,
                   )}
                 </li>
               ))}
@@ -704,19 +895,7 @@ function CoordinatorCreateSheet({
               {links.map((item, index) => (
                 <Fragment key={item.key}>
                   {index > 0 ? <span className={styles.createMoreDot} aria-hidden="true" /> : null}
-                  {item.tool ? (
-                    <button
-                      type="button"
-                      data-testid={`ward-phone-create-${item.key}`}
-                      onClick={(event) => runItem(item, event)}
-                    >
-                      {item.label}
-                    </button>
-                  ) : (
-                    <Link href={item.href!} onClick={close} data-testid={`ward-phone-create-${item.key}`}>
-                      {item.label}
-                    </Link>
-                  )}
+                  {startControl(item, undefined, `ward-phone-create-${item.key}`, item.label)}
                 </Fragment>
               ))}
             </p>
@@ -734,12 +913,14 @@ function CreateSheet({
   byId,
   onNewReferral,
   coordinator = false,
+  onEditBar,
 }: {
   open: boolean;
   onClose: () => void;
   returnFocusRef: RefObject<HTMLButtonElement | null>;
   byId: ReadonlyMap<string, RailEntry>;
   onNewReferral: () => void;
+  onEditBar?: () => void;
   /** The coordinator's + leads with the phone work of the day (Josh, 8 Nov 2026). */
   coordinator?: boolean;
 }) {
@@ -777,6 +958,18 @@ function CreateSheet({
   const coordItems: CreateItem[] = coordinator
     ? (
         [
+          // The big button by default (Josh, 16 Nov 2026: now any start can take its place).
+          ...(canRefer
+            ? [
+                {
+                  key: "referral" as const,
+                  icon: Inbox,
+                  label: "New referral",
+                  meta: "Details and destination",
+                  referral: true as const,
+                },
+              ]
+            : []),
           ...(canTriage
             ? [
                 {
@@ -826,8 +1019,10 @@ function CreateSheet({
                 ? unitHref(decodeURIComponent(currentUnitId))
                 : (item.href ?? byId.get(item.id)?.href),
           })),
+          // More starts (Josh, 16 Nov 2026): the coordinator's own Tools, off the sheet until added.
+          ...MORE_CREATE_ITEMS,
         ] as CreateItem[]
-      ).filter((row) => row.tool !== undefined || (row.href !== undefined && canOpen(row.href)))
+      ).filter((row) => row.referral || row.tool !== undefined || (row.href !== undefined && canOpen(row.href)))
     : [];
   if (coordinator) {
     return (
@@ -835,9 +1030,9 @@ function CreateSheet({
         open={open}
         onClose={onClose}
         returnFocusRef={returnFocusRef}
-        canRefer={canRefer}
         onNewReferral={onNewReferral}
         items={coordItems}
+        onEditBar={onEditBar}
       />
     );
   }
@@ -981,9 +1176,11 @@ function MenuPages({
   onSwitch,
   activityRow,
   triageRow,
+  onEditBar,
 }: {
   onSwitch: () => void;
   activityRow?: boolean;
+  onEditBar?: () => void;
   /**
    * Start a triage for a desk that may triage (Josh, 15 Nov 2026, D-247): straight after Referrals,
    * or at the end of the desk's own section where Referrals sits in the dock.
@@ -1033,7 +1230,13 @@ function MenuPages({
         </Section>
       ))}
       <WardMyWards variant="sheet" onNavigate={onClose} />
-      <MoreSection onDrawer={onDrawer} onClose={onClose} onSwitch={onSwitch} activityRow={activityRow} />
+      <MoreSection
+        onDrawer={onDrawer}
+        onClose={onClose}
+        onSwitch={onSwitch}
+        activityRow={activityRow}
+        onEditBar={onEditBar}
+      />
     </>
   );
 }
@@ -1066,7 +1269,10 @@ export function PhoneMenuSheets({
   onNewReferral,
   top,
   activityRow,
+  bar,
 }: {
+  /** Edit bar (Josh, 16 Nov 2026): the bottom bar's spots, their choices, and saving them. */
+  bar: EditBarProps;
   /** shell-next: drawn under the search box while nothing is typed. */
   top?: ReactNode;
   /** Activity gets a Menu row when the dock does not carry it (Josh, 8 Nov 2026). */
@@ -1151,6 +1357,7 @@ export function PhoneMenuSheets({
           activityRow={activityRow}
           onClose={onClose}
           onSwitch={onSwitch}
+          onEditBar={bar.options.length > 1 ? bar.onOpen : undefined}
         />
       </Sheet>
 
@@ -1163,7 +1370,186 @@ export function PhoneMenuSheets({
         byId={byId}
         onNewReferral={onNewReferral}
         coordinator={shellRole === "coordinator"}
+        onEditBar={bar.options.length > 1 ? bar.onOpen : undefined}
       />
+
+      <EditBarSheet {...bar} returnFocusRef={returnFocusRef} />
     </>
+  );
+}
+
+/** What `next-phone-menu.tsx` hands the Edit bar sheet. */
+export type EditBarProps = {
+  open: boolean;
+  onOpen: () => void;
+  onClose: () => void;
+  /** Every choice this desk has for a spot, under the Menu's own groups. */
+  options: readonly DockOption[];
+  /** Each spot's key now, or null where the desk cannot open that spot (it is not drawn). */
+  current: readonly (string | null)[];
+  /** Each spot's standard key, for a spot this desk cannot open and for Reset. */
+  standard: readonly string[];
+  /** How many spots sit left of the +. */
+  leftCount: number;
+  /** Whether this desk's bar differs from the standard one on this device. */
+  chosen: boolean;
+  /** Saves every spot in order; `null` goes back to the standard bar. */
+  onSave: (slots: readonly string[] | null) => void;
+};
+
+/** A spot's name, from where it sits beside the +. */
+function spotName(index: number, leftCount: number, total: number): string {
+  if (index < leftCount) return leftCount > 1 && index === 0 ? "Far left" : "Left of +";
+  return total - leftCount > 1 && index === total - 1 ? "Far right" : "Right of +";
+}
+
+/**
+ * Edit bar (Josh, 16 Nov 2026: "allow for change of option for the main action bar also", then
+ * "polish the ability to edit it"). The bar is drawn as it looks; tap a spot, then a tile below to
+ * choose what that spot opens. The + stays in the middle. A tile already in another spot swaps the
+ * two, so nothing is ever in the bar twice. Saved on this phone, for this desk only.
+ */
+function EditBarSheet({
+  open,
+  onClose,
+  options,
+  current,
+  standard,
+  leftCount,
+  chosen,
+  onSave,
+  returnFocusRef,
+}: EditBarProps & { returnFocusRef: RefObject<HTMLButtonElement | null> }) {
+  const byKey = new Map(options.map((option) => [option.key, option]));
+  const groups = [...new Set(options.map((option) => option.group))];
+  const firstSpot = Math.max(
+    0,
+    current.findIndex((key) => key !== null),
+  );
+  const [spot, setSpot] = useState(firstSpot);
+  const selected = current[spot] === null ? firstSpot : spot;
+  const name = (index: number) => spotName(index, leftCount, current.length);
+  const choose = (key: string) => {
+    const next = current.map((slot, at) => slot ?? standard[at]);
+    const from = next.indexOf(key);
+    if (from === selected) return;
+    // A choice already in another spot swaps places with this spot's.
+    if (from >= 0) next[from] = next[selected];
+    next[selected] = key;
+    onSave(next);
+    const label = byKey.get(key)?.label ?? "That";
+    announceToWardShell(
+      from >= 0
+        ? `${label} swapped with ${byKey.get(next[from])?.label ?? "the other spot"}.`
+        : `${name(selected)} now opens ${label}.`,
+    );
+  };
+  return (
+    <Sheet
+      id="ward-phone-edit-bar"
+      testId="ward-phone-edit-bar"
+      open={open}
+      onClose={onClose}
+      title="Edit bottom bar"
+      description="Tap a spot, then choose what it opens. Saved on this phone."
+      mobileBreakpoint="phone"
+      returnFocusRef={returnFocusRef}
+      contentClassName={styles.sheet}
+      headerClassName={styles.createHead}
+      closeButtonClassName={styles.close}
+      bodyClassName={`${styles.body} ${styles.createBody}`}
+    >
+      {/* The bar as it will look. Each spot is a button that picks it for the tiles below. */}
+      <div
+        className={`${styles.dock} ${dockStyles.dock} ${editStyles.barPreview}`}
+        role="group"
+        aria-label="Bottom bar spots"
+        data-testid="ward-phone-edit-bar-preview"
+      >
+        {current.map((key, index) => {
+          const option = key === null ? undefined : byKey.get(key);
+          const Icon = option?.icon;
+          return (
+            <Fragment key={index}>
+              {index === leftCount ? (
+                <span className={styles.riseSlot} aria-hidden="true">
+                  <span className={`${styles.rise} ${editStyles.barRise}`}>
+                    <Plus aria-hidden="true" strokeWidth={2} />
+                  </span>
+                </span>
+              ) : null}
+              {key === null ? (
+                <span aria-hidden="true" />
+              ) : (
+                <button
+                  type="button"
+                  className={`${styles.dockItem} ${dockStyles.item} ${editStyles.barSpot}`}
+                  aria-pressed={index === selected}
+                  aria-label={`${name(index)}: ${option?.label ?? ""}`}
+                  data-testid={`ward-phone-edit-bar-spot-${index}`}
+                  onClick={() => setSpot(index)}
+                >
+                  <span className={styles.dockIcon} aria-hidden="true">
+                    {Icon ? <Icon aria-hidden="true" strokeWidth={1.75} /> : null}
+                  </span>
+                  <span className={`${styles.dockLabel} ${dockStyles.label}`}>{option?.label ?? ""}</span>
+                </button>
+              )}
+            </Fragment>
+          );
+        })}
+      </div>
+      <h3 className={styles.createHeading} id="ward-edit-bar-choices">
+        {name(selected)} opens
+      </h3>
+      <div className={editStyles.barGroups} aria-labelledby="ward-edit-bar-choices">
+        {groups.map((group) => (
+          <section key={group} className={editStyles.barGroup} aria-label={group}>
+            <p className={editStyles.barGroupName}>{group}</p>
+            <ul className={editStyles.barTiles}>
+              {options
+                .filter((option) => option.group === group)
+                .map((option) => {
+                  const at = current.indexOf(option.key);
+                  const here = at === selected;
+                  return (
+                    <li key={option.key}>
+                      <button
+                        type="button"
+                        className={editStyles.barTile}
+                        aria-pressed={here}
+                        data-testid={`ward-phone-edit-bar-option-${option.key}`}
+                        onClick={() => choose(option.key)}
+                      >
+                        <option.icon aria-hidden="true" strokeWidth={1.75} />
+                        <span className={editStyles.barTileLabel}>{option.label}</span>
+                        {here ? (
+                          <Check aria-hidden="true" className={editStyles.barTileCheck} strokeWidth={2.25} />
+                        ) : at >= 0 ? (
+                          <span className={editStyles.barTileNote}>In bar</span>
+                        ) : null}
+                      </button>
+                    </li>
+                  );
+                })}
+            </ul>
+          </section>
+        ))}
+      </div>
+      {chosen ? (
+        <p className={styles.createMore}>
+          <button
+            type="button"
+            data-testid="ward-phone-edit-bar-reset"
+            onClick={() => {
+              onSave(null);
+              announceToWardShell("Back to the standard bar.");
+            }}
+          >
+            Reset to the standard bar
+          </button>
+        </p>
+      ) : null}
+    </Sheet>
   );
 }

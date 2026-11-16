@@ -362,9 +362,8 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   const heroPlace =
     ownWard || siteName
       ? `Discharges · ${ownWard ? ownWard.name : siteName}`
-      : isPhone
-        ? `Discharges · ${service === "all" ? "statewide" : service}`
-        : `Discharges · ${service === "all" ? "all services" : service}`;
+      : // One word on every width (Josh, 16 Nov 2026): "statewide", as the header's service chip says.
+        `Discharges · ${service === "all" ? "statewide" : service}`;
   // Plan item 2i (proposal): the hero's next step, from the same status counts as the chips. Held up
   // first, as the list is ordered; with nothing held up, the confirmed ones are next to see out.
   const noun = (n: number) =>
