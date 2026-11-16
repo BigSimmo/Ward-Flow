@@ -397,7 +397,7 @@ export function WardNotificationCenter({
         href={
           accepted
             ? movementHref(m.id)
-            : `/ward-flow/ward/${encodeURIComponent(unitId)}/answer?movement=${encodeURIComponent(encodeRecordAddress(m.id))}`
+            : `/bedchart/ward/${encodeURIComponent(unitId)}/answer?movement=${encodeURIComponent(encodeRecordAddress(m.id))}`
         }
         onClick={() => onClose?.()}
       >

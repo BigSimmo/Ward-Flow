@@ -28,7 +28,7 @@ import { WardToolsSheet } from "@/components/ward-management/tools/ward-tools-sh
 import { typeDate } from "./helpers/type-date-time";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/capacity",
+  usePathname: () => "/bedchart/capacity",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -253,7 +253,7 @@ describe("Key figures (Q321)", () => {
     expect(body.querySelectorAll("dt")).toHaveLength(4);
     expect(within(body).getByRole("link", { name: /See all on Statistics/u })).toHaveAttribute(
       "href",
-      "/ward-flow/statistics",
+      "/bedchart/statistics",
     );
   });
 });

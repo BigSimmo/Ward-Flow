@@ -21,6 +21,6 @@ What needs the coordinator now, across every ward, ED and movement.
 13. Later today. Planned moves and expected times for the rest of your shift and after it, from times the records hold. Past planned time comes first.
 14. Tomorrow. Expected and confirmed discharges and planned admissions for tomorrow.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

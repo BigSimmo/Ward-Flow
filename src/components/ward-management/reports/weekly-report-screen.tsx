@@ -39,7 +39,7 @@ import styles from "./reports.module.css";
 import weekly from "./weekly-report.module.css";
 import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
-const WAITING_HREF = "/ward-flow/waiting";
+const WAITING_HREF = "/bedchart/waiting";
 
 /** The out of area bands, in the words the rest of the app uses for them. */
 const OUT_OF_AREA_META = OUT_OF_AREA_BANDS.map((band) => TRAVEL_BAND_LABELS[band]).join(" or ");

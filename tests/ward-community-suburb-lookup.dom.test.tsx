@@ -12,7 +12,7 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/community",
+  usePathname: () => "/bedchart/community",
   useRouter: () => ({ push: vi.fn() }),
 }));
 
@@ -103,7 +103,7 @@ describe("Community suburb lookup — a shared suburb warns first, then every te
 
     for (const team of teams) {
       const open = within(team).getByRole("link", { name: /^Open / });
-      expect(open.getAttribute("href")).toMatch(/^\/ward-flow\/community\/[a-z0-9-]+$/u);
+      expect(open.getAttribute("href")).toMatch(/^\/bedchart\/community\/[a-z0-9-]+$/u);
       expect(within(team).getByRole("button", { name: "Show in list" })).toBeInTheDocument();
     }
     const openNames = teams.map((team) =>

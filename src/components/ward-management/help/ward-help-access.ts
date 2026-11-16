@@ -52,7 +52,7 @@ export function howToFor(howTo: HowTo, role: WardTourRole, access?: WardAccess):
   if (howTo.acts && !deskMayAct(role, howTo.acts)) return false;
   if (howTo.needs && !deskOpens(role, howTo.needs)) return false;
   // "home" always resolves for a signed-in desk, so any address stands in for it here.
-  return !howTo.go || howToHref(howTo.go, role, "/ward-flow") !== undefined;
+  return !howTo.go || howToHref(howTo.go, role, "/bedchart") !== undefined;
 }
 
 /**

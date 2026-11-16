@@ -2,11 +2,11 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";
 import { useDeskRoleSwitch } from "@/components/ward-management/ward-role-gate";
-vi.mock("next/navigation", () => ({ usePathname: () => "/ward-flow/officer" }));
+vi.mock("next/navigation", () => ({ usePathname: () => "/bedchart/officer" }));
 function Probe() {
   const action = useDeskRoleSwitch();
   return action.canSwitch ? (
-    <button onClick={() => action.switchDesk("ward", "/ward-flow/officer")}>
+    <button onClick={() => action.switchDesk("ward", "/bedchart/officer")}>
       {action.shared ? "Choose a desk" : "Switch to Ward desk"}
     </button>
   ) : (

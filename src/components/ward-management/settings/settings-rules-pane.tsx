@@ -432,7 +432,7 @@ export function RuleLastSave({
         {lastAccepted.actor.role ? WARD_FLOW_ROLE_LABELS[lastAccepted.actor.role] : "a desk not recorded"}:{" "}
         {configurationChangeText(lastAccepted.details.before, lastAccepted.details.after)}
       </span>
-      <Link className={rx.inlineLink} href="/ward-flow/governance">
+      <Link className={rx.inlineLink} href="/bedchart/governance">
         Full audit
       </Link>
     </>

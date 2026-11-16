@@ -271,7 +271,7 @@ function ExecutiveBedFinder({ onNavigate }: { onNavigate: () => void }) {
               <li key={ward.id}>
                 <Link
                   className={styles.matchRow}
-                  href={`/ward-flow/statistics/ward/${encodeURIComponent(ward.id)}`}
+                  href={`/bedchart/statistics/ward/${encodeURIComponent(ward.id)}`}
                   onClick={onNavigate}
                 >
                   <span>

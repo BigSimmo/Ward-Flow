@@ -5,9 +5,9 @@ import { encodeRecordAddress } from "@/components/ward-management/shell/ward-rec
  * text, so a path composed at runtime would leave a working route looking unlinked (see
  * `statistics-sections.ts`).
  */
-export const PATIENT_CHRONOLOGY_HREF = "/ward-flow/reports/chronology";
-export const DOWNTIME_PACK_HREF = "/ward-flow/reports/downtime";
-export const WEEKLY_REPORT_HREF = "/ward-flow/statistics/weekly";
+export const PATIENT_CHRONOLOGY_HREF = "/bedchart/reports/chronology";
+export const DOWNTIME_PACK_HREF = "/bedchart/reports/downtime";
+export const WEEKLY_REPORT_HREF = "/bedchart/statistics/weekly";
 
 /** One person's chronology. The query carries the synthetic patient id only, never a name. */
 export function patientChronologyHref(patientId: string): string {

@@ -4,7 +4,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -62,7 +62,7 @@ describe("Capacity at a glance", () => {
     expect(within(sheet).getByRole("heading", { level: 2 })).toHaveTextContent(/\d+ beds ready for \d+ waiting/u);
     expect(within(sheet).getByRole("heading", { name: /Place someone now/u })).toBeInTheDocument();
     expect(within(sheet).getByRole("heading", { name: /Freeing up today/u })).toBeInTheDocument();
-    expect(screen.getByTestId("ward-phone-capacity-open")).toHaveAttribute("href", "/ward-flow/capacity");
+    expect(screen.getByTestId("ward-phone-capacity-open")).toHaveAttribute("href", "/bedchart/capacity");
   });
 
   it("opens a short bed type's planned discharges, with the ward's own note, and goes back", () => {

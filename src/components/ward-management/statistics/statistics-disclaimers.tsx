@@ -85,7 +85,7 @@ export function CoordinatorAccessDisclaimer() {
   return (
     <>
       <strong>This is meant to be the coordinator&apos;s view — and nothing in this prototype enforces that.</strong>{" "}
-      There is no role check on this route. Anyone who can reach the Ward Flow mockups can reach this page and read
+      There is no role check on this route. Anyone who can reach the BedChart mockups can reach this page and read
       everything on it. Treat the coordinator framing as a statement of intent, not as access control.
     </>
   );

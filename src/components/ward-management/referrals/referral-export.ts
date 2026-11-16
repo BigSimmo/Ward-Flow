@@ -63,5 +63,5 @@ export function downloadReferralQueue<R extends ReferralExportRow>(
   ctx: ReferralExportContext<R>,
   provenance: ListExportProvenance,
 ): void {
-  downloadCsv("ward-flow-synthetic-referral-queue.csv", referralExportLines(referrals, ctx), provenance);
+  downloadCsv("bedchart-synthetic-referral-queue.csv", referralExportLines(referrals, ctx), provenance);
 }

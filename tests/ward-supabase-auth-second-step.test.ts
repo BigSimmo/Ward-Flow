@@ -98,17 +98,17 @@ describe("second sign-in step groundwork (Part B item 49)", () => {
   it("asks for the health service's sign-in address and accepts only https", async () => {
     let answer = "https://sso.example.invalid/saml/start";
     const { auth, fetcher } = signedIn((path) => (path === "/sso" ? Response.json({ url: answer }) : undefined));
-    expect(await auth.singleSignOnUrl(" Health.Example.Invalid ", "https://wardflow.example.invalid/ward-flow")).toBe(
+    expect(await auth.singleSignOnUrl(" Health.Example.Invalid ", "https://wardflow.example.invalid/bedchart")).toBe(
       answer,
     );
     expect(JSON.parse(String(fetcher.mock.calls.at(-1)?.[1]?.body))).toEqual({
       domain: "health.example.invalid",
-      redirect_to: "https://wardflow.example.invalid/ward-flow",
+      redirect_to: "https://wardflow.example.invalid/bedchart",
       skip_http_redirect: true,
     });
     answer = "http://sso.example.invalid/saml/start";
     await expect(
-      auth.singleSignOnUrl("health.example.invalid", "https://wardflow.example.invalid/ward-flow"),
+      auth.singleSignOnUrl("health.example.invalid", "https://wardflow.example.invalid/bedchart"),
     ).rejects.toMatchObject({ kind: "unavailable" });
     await expect(
       auth.singleSignOnUrl("health.example.invalid", "https://wardflow.example.invalid/elsewhere"),

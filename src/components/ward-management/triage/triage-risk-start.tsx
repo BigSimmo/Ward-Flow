@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Triage and risk (built 7 Nov 2026): the Start a triage step, at `/ward-flow/triage/new`. Opened from
+ * Triage and risk (built 7 Nov 2026): the Start a triage step, at `/bedchart/triage/new`. Opened from
  * New, then Triage, in the app bar (New triage in the phone's Create sheet), or from the form's own
  * "Start a new triage". It asks who the triage is for: a search over the synthetic world's people, the
  * referrals still waiting for a triage, and Add patient for someone not found. Choosing a person
@@ -525,7 +525,7 @@ export function TriageStart({ onChoose }: { onChoose: (person: TriagePerson) => 
         <QueueSide awaiting={awaiting} people={people} />
       </div>
       <p className={styles.footNote}>
-        Ward Flow prototype. Synthetic people only. Not validated clinical decision support.
+        BedChart prototype. Synthetic people only. Not validated clinical decision support.
       </p>
       <ReferralDrawer row={openRow} onClose={() => setOpenKey(null)} onChoose={onChoose} />
     </main>

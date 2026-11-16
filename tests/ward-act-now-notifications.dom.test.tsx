@@ -104,7 +104,7 @@ describe("act-now notifications", () => {
 
   it("words a notification with the alert title only, never a patient", () => {
     expect(actNowNotificationText([item("a", "danger", "Referral decision overdue")])).toEqual({
-      title: "Ward Flow: act now",
+      title: "BedChart: act now",
       body: "Referral decision overdue. Synthetic demo data.",
     });
     expect(actNowNotificationText([item("a", "danger"), item("b", "danger")]).body).toBe(
@@ -123,7 +123,7 @@ describe("act-now notifications", () => {
     expect(showActNowNotification([item("a", "danger", "Bed pull expiring")], onOpen)).toBe(true);
     expect(granted.shown).toEqual([
       {
-        title: "Ward Flow: act now",
+        title: "BedChart: act now",
         options: { body: "Bed pull expiring. Synthetic demo data.", tag: "ward-flow-act-now" },
       },
     ]);

@@ -17,6 +17,6 @@ export function reducerSlicesLoaded(): boolean {
 
 /** The registered slices. Throws if none are loaded: a caller must load them before dispatching. */
 export function reducerSlices(): WardFlowReducerSlices {
-  if (!registered) throw new Error("Ward Flow reducer slices are not loaded yet");
+  if (!registered) throw new Error("BedChart reducer slices are not loaded yet");
   return registered;
 }

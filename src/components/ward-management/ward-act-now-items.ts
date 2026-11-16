@@ -233,7 +233,7 @@ export function overduePullNowActNowForWard(
  * facade imports this file (the same reason `ward-patient-href.ts` exists).
  */
 function duplicateMovementHref(movementId: string): string {
-  return `/ward-flow/movements/${encodeURIComponent(encodeRecordAddress(movementId))}`;
+  return `/bedchart/movements/${encodeURIComponent(encodeRecordAddress(movementId))}`;
 }
 
 /** The bed coordinator's own owner words: `inboxOwnerRoles` places them on the coordinator alone. */
@@ -353,7 +353,7 @@ export function leaveBedReminderInboxItems(source: Pick<TaskSource, "units" | "l
         detail: `${ward} bed held since ${formatInstantWithDay(leaveBed.confirmedAt, now)}. Open it if the person is not coming back soon. Clears when the bed is opened.`,
         owner: "Nurse in charge",
         movementId: "",
-        href: "/ward-flow/leave", // the leave page (`WARD_LEAVE_HREF`); a literal here keeps ward-nav out of this file (import cycle)
+        href: "/bedchart/leave", // the leave page (`WARD_LEAVE_HREF`); a literal here keeps ward-nav out of this file (import cycle)
         dueAt: at,
         since: at,
       };

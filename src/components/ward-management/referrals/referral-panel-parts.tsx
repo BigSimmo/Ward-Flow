@@ -222,7 +222,7 @@ export function BedsStrip({ summary }: { summary: BedsReadySummary }) {
   return (
     <div className={s.bedsStrip} data-testid="ward-referral-beds-ready">
       <Link
-        href="/ward-flow/hub"
+        href="/bedchart/hub"
         className={s.bedsLead}
         title="Beds ready statewide for your desk's admissions. Open Places"
       >

@@ -19,13 +19,13 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/capacity",
+  usePathname: () => "/bedchart/capacity",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
 
 vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({
-  useTourFacts: () => ({ facts: {}, home: "/ward-flow", deskHome: "/ward-flow" }),
+  useTourFacts: () => ({ facts: {}, home: "/bedchart", deskHome: "/bedchart" }),
 }));
 
 const phone = vi.hoisted(() => ({ on: false }));
@@ -51,25 +51,25 @@ const CAPACITY = { ...SCREEN_HELP.capacity, id: "capacity" };
  * an address it plays on. Detail and stand-alone pages joined them on 5 Nov 2026.
  */
 const PAGE_WALK_PATHS: Readonly<Record<string, string>> = {
-  ward: "/ward-flow/ward/fsh-adult-secure",
-  "ed-board": "/ward-flow/ed/fsh-ed",
-  patient: "/ward-flow/movements/m1",
-  "add-patient": "/ward-flow/people/new",
-  board: "/ward-flow/board/fsh-adult-secure",
-  "ward-answer": "/ward-flow/ward/fsh-adult-secure/answer",
-  catchments: "/ward-flow/hub/catchments",
-  "community-team": "/ward-flow/community/armadale",
-  settings: "/ward-flow/settings",
-  downtime: "/ward-flow/reports/downtime",
-  "bed-meeting-agenda": "/ward-flow/bed-meeting/agenda",
-  chronology: "/ward-flow/reports/chronology",
-  "statistics-compare": "/ward-flow/statistics/compare",
-  "statistics-services": "/ward-flow/statistics/services",
-  "statistics-wards": "/ward-flow/statistics/wards",
-  "statistics-eds": "/ward-flow/statistics/eds",
-  "statistics-teams": "/ward-flow/statistics/teams",
-  "statistics-weekly": "/ward-flow/statistics/weekly",
-  night: "/ward-flow/night",
+  ward: "/bedchart/ward/fsh-adult-secure",
+  "ed-board": "/bedchart/ed/fsh-ed",
+  patient: "/bedchart/movements/m1",
+  "add-patient": "/bedchart/people/new",
+  board: "/bedchart/board/fsh-adult-secure",
+  "ward-answer": "/bedchart/ward/fsh-adult-secure/answer",
+  catchments: "/bedchart/hub/catchments",
+  "community-team": "/bedchart/community/armadale",
+  settings: "/bedchart/settings",
+  downtime: "/bedchart/reports/downtime",
+  "bed-meeting-agenda": "/bedchart/bed-meeting/agenda",
+  chronology: "/bedchart/reports/chronology",
+  "statistics-compare": "/bedchart/statistics/compare",
+  "statistics-services": "/bedchart/statistics/services",
+  "statistics-wards": "/bedchart/statistics/wards",
+  "statistics-eds": "/bedchart/statistics/eds",
+  "statistics-teams": "/bedchart/statistics/teams",
+  "statistics-weekly": "/bedchart/statistics/weekly",
+  night: "/bedchart/night",
 };
 const PAGE_WALKS = Object.keys(PAGE_WALK_PATHS);
 
@@ -77,8 +77,8 @@ function renderCapacity(onShowMe = vi.fn(), showMeOn = true) {
   render(
     <HelpAroundRow
       role="coordinator"
-      home="/ward-flow"
-      pathname="/ward-flow/capacity"
+      home="/bedchart"
+      pathname="/bedchart/capacity"
       screen={CAPACITY}
       onShowMe={onShowMe}
       showMeOn={showMeOn}
@@ -129,12 +129,12 @@ describe("Show me around: the walk-rounds", () => {
       expect(tour, screen).toBeDefined();
       expect(screenHelpFor(path, [])?.id, path).toBe(screen);
       expect(walkPlaysHere(tour!, path), path).toBe(true);
-      expect(walkPlaysHere(tour!, "/ward-flow/alerts"), screen).toBe(false);
+      expect(walkPlaysHere(tour!, "/bedchart/alerts"), screen).toBe(false);
     }
     // The patient record's walk round never plays on Add patient, which shares its address shape.
     const patient = SCREEN_TOURS.find((each) => each.around === "patient")!;
-    expect(walkPlaysHere(patient, "/ward-flow/people/new")).toBe(false);
-    expect(walkPlaysHere(patient, "/ward-flow/people/p1")).toBe(true);
+    expect(walkPlaysHere(patient, "/bedchart/people/new")).toBe(false);
+    expect(walkPlaysHere(patient, "/bedchart/people/p1")).toBe(true);
   });
 
   it("skips a step marked for the other device", () => {
@@ -226,10 +226,10 @@ describe("Show me around a page: where it is offered", () => {
     const { howToFor } = await import("@/components/ward-management/help/ward-help-access");
     const ward = SCREEN_TOURS.find((each) => each.id === "around-ward")!;
     const ed = SCREEN_TOURS.find((each) => each.id === "around-ed-board")!;
-    expect(walkPlaysHere(ward, "/ward-flow/ward/fsh-adult-secure")).toBe(true);
-    expect(walkPlaysHere(ward, "/ward-flow/alerts")).toBe(false);
-    expect(walkPlaysHere(ed, "/ward-flow/ed/fsh-ed")).toBe(true);
-    expect(walkPlaysHere(ed, "/ward-flow/ed")).toBe(false);
+    expect(walkPlaysHere(ward, "/bedchart/ward/fsh-adult-secure")).toBe(true);
+    expect(walkPlaysHere(ward, "/bedchart/alerts")).toBe(false);
+    expect(walkPlaysHere(ed, "/bedchart/ed/fsh-ed")).toBe(true);
+    expect(walkPlaysHere(ed, "/bedchart/ed")).toBe(false);
     expect(
       walkPlaysHere(
         SCREEN_TOURS.find((each) => each.id === "around-capacity")!,

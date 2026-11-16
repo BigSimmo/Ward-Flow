@@ -20,6 +20,6 @@ Patients in a bed outside their home health service, with days away and any retu
 
 - Plan a patient's return home. Open Out of area and choose the person. In the return plan, choose the receiving bed, then transport and legal status, then the CAD number and depart time. Record sent to ward once the ward is asked, and Record return once they are home.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

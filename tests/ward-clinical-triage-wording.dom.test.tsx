@@ -25,7 +25,7 @@ import { EXAMPLE_PERSON, exampleTriage, SIGNED_RECORD_WORDS } from "./helpers/tr
 // (source-text ratchet, CQ-10). Wording and display only; no clinical value changes. Synthetic data only.
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/triage/new",
+  usePathname: () => "/bedchart/triage/new",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));

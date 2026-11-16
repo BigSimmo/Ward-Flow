@@ -27,7 +27,7 @@ import type { ReferralIntakeDetails } from "@/components/ward-management/referra
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import type { PatientRegistrationScope } from "@/components/ward-management/ward-patient-registration";
 
-const route = vi.hoisted(() => ({ pathname: "/ward-flow/ed/rph", push: vi.fn() }));
+const route = vi.hoisted(() => ({ pathname: "/bedchart/ed/rph", push: vi.fn() }));
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useRouter: () => route,

@@ -1134,7 +1134,7 @@ export function HandoverPage() {
                 <Button variant="ghost" size="sm" icon={ClipboardCopy} onClick={copySummary}>
                   {copied ? "Copied" : "Copy summary"}
                 </Button>
-                <Link href="/ward-flow/reports/downtime" className={buttonClass({ variant: "ghost", size: "sm" })}>
+                <Link href="/bedchart/reports/downtime" className={buttonClass({ variant: "ghost", size: "sm" })}>
                   <Icon icon={Printer} size={14} />
                   Downtime pack
                 </Link>

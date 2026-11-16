@@ -266,7 +266,7 @@ describe("item 25: catch up after the outage", () => {
       `${ward.name}Beds not confirmed since the outagePack ${formatInstant(OUTAGE.from - 30)}`,
     );
     expect(screen.getByTestId(`home-catch-up-ward-${others[0]!.id}`)).toHaveTextContent("No pack printed");
-    expect(screen.getByRole("link", { name: "Change times" })).toHaveAttribute("href", "/ward-flow/reports/downtime");
+    expect(screen.getByRole("link", { name: "Change times" })).toHaveAttribute("href", "/bedchart/reports/downtime");
 
     // Only the ward's own confirmation counts: the coordinator's does not.
     record({

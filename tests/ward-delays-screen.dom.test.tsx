@@ -173,7 +173,7 @@ describe("the Delays screen", () => {
    *
    * That file pins "a lapsed bed reservation is called a **pull**, never a **hold**" against
    * `<WardModeWorkspace mode="exceptions" />`. MERGE 01 folded the exceptions inbox into this
-   * screen and turned `/ward-flow/exceptions` into a redirect — so the pin still runs,
+   * screen and turned `/bedchart/exceptions` into a redirect — so the pin still runs,
    * still passes, and **now stands over a surface no coordinator can reach.**
    *
    * ⚠️ **THE HOLE WAS REAL AND THIS CLOSES IT.** Measured before writing this: the live string
@@ -388,7 +388,7 @@ describe("the Delays screen", () => {
       expect(
         link.getAttribute("href"),
         `${movement.id}'s lapsed pull links nowhere, or to a ward other than the one holding its bed`,
-      ).toBe(`/ward-flow/ward/${movement.acceptedUnitId}`);
+      ).toBe(`/bedchart/ward/${movement.acceptedUnitId}`);
     }
   });
 
@@ -751,7 +751,7 @@ describe("the Delays filters narrow the table, and always say how many they hide
 describe("an old Queue, Exceptions or Escalation bookmark", () => {
   // UX audit (21 Oct 2026): the redirect is enough, so Waiting shows no old-bookmark banner.
   it("lands on Waiting with no banner about the old board", () => {
-    window.history.replaceState(null, "", "/ward-flow/waiting?from=queue");
+    window.history.replaceState(null, "", "/bedchart/waiting?from=queue");
     renderScreen();
     expect(screen.getByTestId("ward-delays-page")).toBeInTheDocument();
     expect(screen.queryByText(/bookmark/i)).not.toBeInTheDocument();
@@ -764,7 +764,7 @@ describe("the Menu's Delays row lands on its own figure (shell-9)", () => {
     const severe = delayGroups(seededMovements, allUnits(), NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS)
       .filter((group) => SEVERE_CAUSES.includes(group.cause))
       .reduce((total, group) => total + group.movements.length, 0);
-    window.history.replaceState(null, "", "/ward-flow/waiting?show=severe");
+    window.history.replaceState(null, "", "/bedchart/waiting?show=severe");
     try {
       renderScreen();
       expect(screen.getAllByText(`At a time limit or nowhere to go · ${severe}`).length).toBeGreaterThan(0);

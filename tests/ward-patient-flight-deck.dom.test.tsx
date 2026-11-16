@@ -15,7 +15,7 @@ vi.mock("next/navigation", () => ({
   redirect: (url: string) => {
     throw new Error(`NEXT_REDIRECT ${url}`);
   },
-  usePathname: () => "/ward-flow/people/WF-012",
+  usePathname: () => "/bedchart/people/WF-012",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
 }));
 function StateProbe() {
@@ -210,7 +210,7 @@ describe("unified Patient Now clinical flight deck", () => {
     expect(screen.getByText("Referral closed · no active transfer")).toBeInTheDocument();
   });
   it("sends an old raw-id movement link on to its coded address, keeping the query", async () => {
-    const { default: Page } = await import("@/app/ward-flow/movements/[movementId]/page");
+    const { default: Page } = await import("@/app/bedchart/movements/[movementId]/page");
     await expect(
       Page({
         params: Promise.resolve({ movementId: "WF-012" }),
@@ -219,7 +219,7 @@ describe("unified Patient Now clinical flight deck", () => {
     ).rejects.toThrow(`NEXT_REDIRECT ${movementHref("WF-012")}?taskAction=refer`);
   });
   it("legacy movement route renders the same dossier", async () => {
-    const { default: Page } = await import("@/app/ward-flow/movements/[movementId]/page");
+    const { default: Page } = await import("@/app/bedchart/movements/[movementId]/page");
     const page = await Page({ params: Promise.resolve({ movementId: encodeRecordAddress("WF-012") }) });
     render(<WardFlowProvider initialNow={NOW_ANCHOR}>{page}</WardFlowProvider>);
     fireEvent.click(within(screen.getByTestId("ward-patient-gate-bed")).getByRole("button"));
@@ -227,7 +227,7 @@ describe("unified Patient Now clinical flight deck", () => {
     expect(screen.getByRole("dialog", { name: "Destination and placement" })).toBeInTheDocument();
   });
   it("opens the ward shortlist directly from a task referral action", async () => {
-    const { default: Page } = await import("@/app/ward-flow/movements/[movementId]/page");
+    const { default: Page } = await import("@/app/bedchart/movements/[movementId]/page");
     const page = await Page({
       params: Promise.resolve({ movementId: encodeRecordAddress("WF-012") }),
       searchParams: Promise.resolve({ taskAction: "refer" }),
@@ -236,7 +236,7 @@ describe("unified Patient Now clinical flight deck", () => {
     expect(screen.getByRole("region", { name: "Ask wards" })).toBeVisible();
   });
   it("opens coordination contacts directly from a task contact action", async () => {
-    const { default: Page } = await import("@/app/ward-flow/movements/[movementId]/page");
+    const { default: Page } = await import("@/app/bedchart/movements/[movementId]/page");
     const page = await Page({
       params: Promise.resolve({ movementId: encodeRecordAddress("WF-012") }),
       searchParams: Promise.resolve({ taskAction: "contact" }),

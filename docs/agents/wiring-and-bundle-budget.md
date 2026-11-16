@@ -7,7 +7,7 @@ _Updated 2026-10-24 - navigation file reference matches current source; Document
 Follow the [Ward entry point](../ward-flow/README.md), current source and accepted app.
 Navigation is defined by `src/components/ward-management/ward-nav.ts` and drawn by
 `shell/ward-rail.tsx` (desktop) and `shell/ward-phone-menu*.tsx` (phone); routes live in
-`src/app/ward-flow/`.
+`src/app/bedchart/`.
 Every offered action must work, or expose its unavailable reason accessibly. Preserve focus,
 keyboard use and status meaning; do not copy a foreign route catalogue or widen lint exemptions.
 

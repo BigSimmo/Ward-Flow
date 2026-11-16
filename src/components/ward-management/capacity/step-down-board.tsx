@@ -227,7 +227,7 @@ export function StepDownRowDetail({
                 {row.placementReview.map((movement) => (
                   <li key={movement.id} className={styles.ward}>
                     <Link
-                      href="/ward-flow"
+                      href="/bedchart"
                       data-testid={`step-down-placement-review-${movement.id}`}
                       onClick={() => {
                         setFocusMovementId(movement.id);

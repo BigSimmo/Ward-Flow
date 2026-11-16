@@ -15,6 +15,6 @@ A printable copy of the last snapshot, for when the system is down: beds by ward
 7. Sections. Beds by ward, ED queue, pending movements and legal forms. Choose one to read it here.
 8. Beds by ward. Each ward's beds by health service, with the ready count and totals.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

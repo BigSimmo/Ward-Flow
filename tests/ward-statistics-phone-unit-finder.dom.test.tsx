@@ -38,7 +38,7 @@ afterEach(() => {
 describe("Statistics phone Summary unit finder", () => {
   it("shows the one finder at its anchor when a link arrives at #choose-a-unit, and Close shuts it", () => {
     phoneViewport();
-    window.history.replaceState(null, "", "/ward-flow/statistics#choose-a-unit");
+    window.history.replaceState(null, "", "/bedchart/statistics#choose-a-unit");
     const result = renderSummary();
 
     const finder = screen.getByTestId("ward-statistics-phone-unit-finder");
@@ -56,7 +56,7 @@ describe("Statistics phone Summary unit finder", () => {
 
   it("draws no finder on the phone Summary without the anchor", () => {
     phoneViewport();
-    window.history.replaceState(null, "", "/ward-flow/statistics");
+    window.history.replaceState(null, "", "/bedchart/statistics");
     const result = renderSummary();
 
     expect(screen.getByTestId("ward-statistics-screen")).toBeInTheDocument();
@@ -66,7 +66,7 @@ describe("Statistics phone Summary unit finder", () => {
 
   it("lists the Wards tab A to Z by ward name, not most ready beds first (D-126)", () => {
     phoneViewport();
-    window.history.replaceState(null, "", "/ward-flow/statistics#choose-a-unit");
+    window.history.replaceState(null, "", "/bedchart/statistics#choose-a-unit");
     renderSummary();
 
     const list = within(screen.getByTestId("ward-statistics-phone-unit-finder")).getByRole("list", { name: "wards" });

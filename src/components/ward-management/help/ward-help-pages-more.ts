@@ -5,13 +5,13 @@ import type { ScreenHelp } from "./ward-help-content";
  * Start a triage and a person's triage form. Kept in its own module so `ward-help-content.ts`'s
  * `PAGE_HELP` takes them in one line. Each entry describes the page as its source draws it.
  *
- * The bed meeting TV (`/ward-flow/bed-meeting`) has none on purpose: it hides the header, so Help
+ * The bed meeting TV (`/bedchart/bed-meeting`) has none on purpose: it hides the header, so Help
  * cannot open there, and its help sits on the screens that open it (HF-10, `TV_QUESTION`).
  */
 export const MORE_PAGE_HELP: readonly (ScreenHelp & { id: string; path: RegExp })[] = [
   {
     id: "leave",
-    path: /^\/ward-flow\/leave$/u,
+    path: /^\/bedchart\/leave$/u,
     title: "Leave",
     purpose:
       "Everyone on leave across your wards: their bed, the kind of leave, when they left, when they are expected back and their status.",
@@ -35,7 +35,7 @@ export const MORE_PAGE_HELP: readonly (ScreenHelp & { id: string; path: RegExp }
   },
   {
     id: "todays-review",
-    path: /^\/ward-flow\/review$/u,
+    path: /^\/bedchart\/review$/u,
     title: "Today's review",
     purpose:
       "What to settle before you hand over, and every decline, override, open problem and action the app stopped today.",
@@ -57,7 +57,7 @@ export const MORE_PAGE_HELP: readonly (ScreenHelp & { id: string; path: RegExp }
   },
   {
     id: "triage-start",
-    path: /^\/ward-flow\/triage\/new$/u,
+    path: /^\/bedchart\/triage\/new$/u,
     title: "Start a triage",
     purpose: "Choose who a mental health triage and risk assessment is for.",
     actions: [
@@ -68,7 +68,7 @@ export const MORE_PAGE_HELP: readonly (ScreenHelp & { id: string; path: RegExp }
   },
   {
     id: "triage",
-    path: /^\/ward-flow\/people\/[^/]+\/triage$/u,
+    path: /^\/bedchart\/people\/[^/]+\/triage$/u,
     title: "Triage and risk",
     purpose: "One person's triage and risk assessment (SMHMR900 and SMHMR905). It opens blank.",
     actions: [

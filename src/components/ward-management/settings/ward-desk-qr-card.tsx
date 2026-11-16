@@ -110,7 +110,7 @@ export function WardDeskQrCard({ demoUnitId }: { demoUnitId?: string } = {}) {
         open={shown !== null}
         onClose={() => setPrinting(null)}
         title="Desk QR code"
-        description="The code holds this ward's web address only. Ward Flow does not send it anywhere."
+        description="The code holds this ward's web address only. BedChart does not send it anywhere."
         size="md"
         primary={{
           label: "Print or save PDF",
@@ -157,11 +157,11 @@ function DeskQrPaper({ printing }: { printing: Printing }) {
           </p>
         )}
       </div>
-      <p className={styles.say}>Scan to open this ward in Ward Flow. You will be asked to sign in.</p>
+      <p className={styles.say}>Scan to open this ward in BedChart. You will be asked to sign in.</p>
       <p className={styles.url} data-testid="ward-desk-qr-url">
         {url}
       </p>
-      <p className={styles.foot}>Ward Flow prototype. Synthetic data only.</p>
+      <p className={styles.foot}>BedChart prototype. Synthetic data only.</p>
     </article>
   );
 }

@@ -7,7 +7,7 @@ import type { Unit } from "@/components/ward-management/ward-model";
 import { WardBedFinder } from "@/components/ward-management/tools/ward-bed-finder";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/capacity",
+  usePathname: () => "/bedchart/capacity",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));

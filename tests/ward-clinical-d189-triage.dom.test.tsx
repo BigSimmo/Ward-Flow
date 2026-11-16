@@ -19,7 +19,7 @@ import { EXAMPLE_PERSON } from "./helpers/triage-example";
 const triages: { current: TriageSignedRecord[] } = { current: [] };
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/people/PT-SYN-1",
+  usePathname: () => "/bedchart/people/PT-SYN-1",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));

@@ -203,7 +203,7 @@ export function PatientNowScreen({
   movementId,
   initialExampleId = "WF-009",
   initialTaskAction,
-  documentTitle = "Patient — Ward Flow",
+  documentTitle = "Patient — BedChart",
 }: PatientNowScreenProps) {
   const thresholds = useDueSoonThresholds();
   const {
@@ -460,7 +460,7 @@ export function PatientNowScreen({
       });
       const text = [
         SYNTHETIC_COPY_LINE,
-        `Ward Flow missing person summary — ${displayName}`,
+        `BedChart missing person summary — ${displayName}`,
         `${voluntaryNow ? "Not back from leave" : "Absent without leave"}, recorded ${clockOn(absence.since, now)}`,
         `Bed held on ${stayUnit?.name ?? "a ward not recorded"}`,
         ...steps,
@@ -478,7 +478,7 @@ export function PatientNowScreen({
     const urgencyLabel = urgencyTier ? `Tier ${urgencyTier}` : TIER_NOT_RECORDED;
     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
     // Audit 1 (CS-12, Josh 20 Oct): the synthetic line first in every copy.
-    const text = `${SYNTHETIC_COPY_LINE}\nWard Flow handover summary — ${displayName} (${urgencyLabel})\nStatus: ${record.verdict.title}\nSince movement opened: ${waitedStr}\nNext action: ${record.next[0]?.w ?? "Review"}`;
+    const text = `${SYNTHETIC_COPY_LINE}\nBedChart handover summary — ${displayName} (${urgencyLabel})\nStatus: ${record.verdict.title}\nSince movement opened: ${waitedStr}\nNext action: ${record.next[0]?.w ?? "Review"}`;
     void copyTextToClipboard(text).then(
       () => {
         setCopied(true);
@@ -855,23 +855,23 @@ export function PatientNowScreen({
       const unit = acceptingUnit ?? stayUnit;
       const bed = resolved.liveAdmission?.bedNumber;
       if (unit === undefined) return undefined;
-      const href = `/ward-flow/ward/${encodeURIComponent(unit.id)}${bed !== undefined ? `?bed=${bed}` : ""}`;
+      const href = `/bedchart/ward/${encodeURIComponent(unit.id)}${bed !== undefined ? `?bed=${bed}` : ""}`;
       return openable(href) === undefined ? undefined : () => router?.push(href);
     })(),
     bedHref: openable(
       (acceptingUnit ?? stayUnit) !== undefined
-        ? `/ward-flow/ward/${encodeURIComponent((acceptingUnit ?? stayUnit)!.id)}`
+        ? `/bedchart/ward/${encodeURIComponent((acceptingUnit ?? stayUnit)!.id)}`
         : undefined,
     ),
     acceptedReferral: acceptedWardFor
       ? {
           unitName: acceptedWardFor.unitName,
-          boardHref: openable(`/ward-flow/ward/${encodeURIComponent(acceptedWardFor.unitId)}?tab=board`),
+          boardHref: openable(`/bedchart/ward/${encodeURIComponent(acceptedWardFor.unitId)}?tab=board`),
         }
       : waitlistUnit
         ? {
             unitName: waitlistUnit.name,
-            boardHref: openable(`/ward-flow/ward/${encodeURIComponent(waitlistUnit.id)}?tab=board`),
+            boardHref: openable(`/bedchart/ward/${encodeURIComponent(waitlistUnit.id)}?tab=board`),
             waiting: true,
           }
         : undefined,

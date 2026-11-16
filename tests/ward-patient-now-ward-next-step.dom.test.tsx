@@ -2,7 +2,7 @@ import "@testing-library/jest-dom/vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/people/PT-001",
+  usePathname: () => "/bedchart/people/PT-001",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
 }));
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
@@ -66,10 +66,10 @@ describe("next step, stay progress and readiness from the recorded stay", () => 
     const expected = NOW_ANCHOR + 3 * MINUTES_PER_DAY;
     const unconfirmed = patientNextStep("ward", ctxFor(stay({ expectedDischargeAt: expected })), {
       voluntary: false,
-      confirmHref: "/ward-flow/ward/U-1?tab=out",
+      confirmHref: "/bedchart/ward/U-1?tab=out",
     });
     expect(unconfirmed?.title).toBe("Confirm discharge date");
-    expect(unconfirmed?.action?.href).toBe("/ward-flow/ward/U-1?tab=out");
+    expect(unconfirmed?.action?.href).toBe("/bedchart/ward/U-1?tab=out");
 
     const confirmed = patientNextStep(
       "ward",

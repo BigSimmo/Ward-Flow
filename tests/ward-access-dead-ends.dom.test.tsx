@@ -20,7 +20,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const route = { pathname: "/ward-flow" };
+const route = { pathname: "/bedchart" };
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
@@ -70,7 +70,7 @@ async function settleFrames() {
 afterEach(() => {
   cleanup();
   discardReferralDraft();
-  route.pathname = "/ward-flow";
+  route.pathname = "/bedchart";
   window.history.replaceState(null, "", "/");
   window.sessionStorage.clear();
   resetServiceScopeForTests();
@@ -112,7 +112,7 @@ describe("1. the New referral slide-out opens only for a desk that may open refe
     ["officer", officer],
   ])("leaves a referral link alone for the %s, with no slide-out", async (_name, access) => {
     useDesk(access);
-    renderBar(<a href="/ward-flow/referrals/new?refer=ward">Refer</a>);
+    renderBar(<a href="/bedchart/referrals/new?refer=ward">Refer</a>);
     const notPrevented = fireEvent.click(screen.getByRole("link", { name: "Refer" }));
     expect(notPrevented, "the bar must not take the click over").toBe(true);
     await settleFrames();
@@ -121,8 +121,8 @@ describe("1. the New referral slide-out opens only for a desk that may open refe
 
   it("opens no slide-out over the refused page when a bed manager arrives on the intake route", async () => {
     useDesk(bedManager);
-    route.pathname = "/ward-flow/referrals/new";
-    window.history.replaceState(null, "", "/ward-flow/referrals/new?refer=ed");
+    route.pathname = "/bedchart/referrals/new";
+    window.history.replaceState(null, "", "/bedchart/referrals/new?refer=ed");
     renderBar();
     await settleFrames();
     expect(screen.queryByTestId("ward-bar-referral-sheet")).toBeNull();
@@ -149,7 +149,7 @@ describe("1. the New referral slide-out opens only for a desk that may open refe
 
   it("still opens the slide-out in place from a referral link for an ED desk", async () => {
     useDesk(edDesk);
-    renderBar(<a href="/ward-flow/referrals/new?refer=ward">Refer</a>);
+    renderBar(<a href="/bedchart/referrals/new?refer=ward">Refer</a>);
     const notPrevented = fireEvent.click(screen.getByRole("link", { name: "Refer" }));
     expect(notPrevented, "the click still navigates").toBe(false);
     expect(await screen.findByTestId("ward-bar-referral-sheet")).toBeInTheDocument();
@@ -157,8 +157,8 @@ describe("1. the New referral slide-out opens only for a desk that may open refe
 
   it("still opens the slide-out when an ED desk arrives on the intake route", async () => {
     useDesk(edDesk);
-    route.pathname = "/ward-flow/referrals/new";
-    window.history.replaceState(null, "", "/ward-flow/referrals/new?refer=ed");
+    route.pathname = "/bedchart/referrals/new";
+    window.history.replaceState(null, "", "/bedchart/referrals/new?refer=ed");
     renderBar();
     expect(await screen.findByTestId("ward-bar-referral-sheet")).toBeInTheDocument();
   });
@@ -217,7 +217,7 @@ describe("2. Find a bed and Key figures link only to pages the desk may open", (
     const list = renderFinder();
     const links = within(list).getAllByRole("link");
     expect(links).toHaveLength(1);
-    expect(links[0]).toHaveAttribute("href", "/ward-flow/ward/finder-3");
+    expect(links[0]).toHaveAttribute("href", "/bedchart/ward/finder-3");
     expect(links[0]).toHaveTextContent("Karri ward");
     expect(within(list).getAllByTestId("ward-bed-finder-row-plain")).toHaveLength(WARDS.length - 1);
   });
@@ -229,7 +229,7 @@ describe("2. Find a bed and Key figures link only to pages the desk may open", (
       within(list)
         .getAllByRole("link")
         .map((link) => link.getAttribute("href")),
-    ).toEqual(WARDS.map((_name, index) => `/ward-flow/ward/finder-${index + 1}`));
+    ).toEqual(WARDS.map((_name, index) => `/bedchart/ward/finder-${index + 1}`));
     expect(within(list).queryByTestId("ward-bed-finder-row-plain")).toBeNull();
   });
 
@@ -260,7 +260,7 @@ describe("2. Find a bed and Key figures link only to pages the desk may open", (
     const figures = renderFigures();
     expect(within(figures).getByRole("link", { name: /See all on Statistics/u })).toHaveAttribute(
       "href",
-      "/ward-flow/statistics",
+      "/bedchart/statistics",
     );
   });
 });
@@ -292,7 +292,7 @@ describe("3. the broadcast banner speaks for the desk's own role", () => {
   }
 
   function renderBanner() {
-    route.pathname = "/ward-flow/alerts";
+    route.pathname = "/bedchart/alerts";
     renderRaised();
   }
 
@@ -319,7 +319,7 @@ describe("3. the broadcast banner speaks for the desk's own role", () => {
 
   it("still asks a bed manager on its own site's ward page for that ward (D-80)", () => {
     useDesk({ role: "bed_manager", scope: { kind: "site", siteCode: "RPH" } });
-    route.pathname = "/ward-flow/ward/rph-adult-secure";
+    route.pathname = "/bedchart/ward/rph-adult-secure";
     renderRaised();
     const banner = screen.getByTestId("ward-broadcast-banner");
     expect(banner).toHaveAttribute("data-tone", "act_now");

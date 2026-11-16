@@ -42,7 +42,7 @@ import { edById } from "@/components/ward-management/ward-sites";
 import { transportRouteLabels } from "./movements-screen-helpers";
 import s from "./movement-check-in-drawer.module.css";
 
-const TRANSPORT_HREF = "/ward-flow/transport/officer";
+const TRANSPORT_HREF = "/bedchart/transport/officer";
 
 type Step = { id: string; label: string; at?: Instant };
 

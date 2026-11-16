@@ -9,7 +9,7 @@ vi.mock("next/headers", () => ({
   headers: async () => new Headers(),
 }));
 
-import WardFlowMockupLayout from "@/app/ward-flow/layout";
+import WardFlowMockupLayout from "@/app/bedchart/layout";
 import { WardWorkspaceHost } from "@/components/ward-management/shell/ward-workspace-host";
 import { formatSheetMoment, demoDayZero } from "@/components/ward-management/ward-clock";
 import {

@@ -489,7 +489,7 @@ function NoAnswer({
       ) : null}
       <p className={s.note} data-testid="ward-help-ask-another-way">
         <b>Ask another way.</b> Use a button&rsquo;s name or the app&rsquo;s own word, such as pull rather than reserve,
-        in one or two words. Help covers how to use Ward Flow, not clinical decisions.
+        in one or two words. Help covers how to use BedChart, not clinical decisions.
       </p>
     </>
   );

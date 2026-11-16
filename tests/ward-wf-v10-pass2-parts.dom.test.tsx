@@ -307,7 +307,7 @@ describe("BarList axis, CardHead plain icon and the layout toast", () => {
   });
 
   it("mounts one ToastProvider in the ward-flow layout so useToast works on every page", () => {
-    const layout = read("src/app/ward-flow/layout.tsx");
+    const layout = read("src/app/bedchart/layout.tsx");
     // Audit 13 Oct 2026: the provider now carries the offline note as a prop.
     // The executive shell and the operational tree are alternatives (one mounts per page), and
     // each holds exactly one provider.

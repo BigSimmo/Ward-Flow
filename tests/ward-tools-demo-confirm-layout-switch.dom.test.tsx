@@ -13,7 +13,7 @@ import { WardToolsSheet } from "@/components/ward-management/tools/ward-tools-sh
 import { useToolsTwoPane } from "@/components/ward-management/tools/ward-tools-two-pane";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/capacity",
+  usePathname: () => "/bedchart/capacity",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));

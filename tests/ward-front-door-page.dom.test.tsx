@@ -59,17 +59,17 @@ afterEach(() => {
 
 describe("the public demo's code door", () => {
   it("opens the demo with the right code", async () => {
-    render(<FrontDoorPage next="/ward-flow/capacity" mode="demo-code" tv={false} />);
+    render(<FrontDoorPage next="/bedchart/capacity" mode="demo-code" tv={false} />);
     expect(screen.getByText(/for 8 hours/)).toBeVisible();
     fireEvent.change(screen.getByLabelText("Demo code"), { target: { value: "SYNTHETIC-CODE" } });
     fireEvent.click(screen.getByRole("button", { name: "Open the demo" }));
-    await waitFor(() => expect(replace).toHaveBeenCalledWith("/ward-flow/capacity"));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/bedchart/capacity"));
     expect(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body))).toEqual({ demoCode: "SYNTHETIC-CODE" });
   });
 
   it("says when the code is wrong, and when the server gave a reason", async () => {
     fetcher.mockResolvedValueOnce(answer(401)).mockResolvedValueOnce(answer(429, { error: "Wait ten minutes." }));
-    render(<FrontDoorPage next="/ward-flow" mode="demo-code" tv={false} />);
+    render(<FrontDoorPage next="/bedchart" mode="demo-code" tv={false} />);
     fireEvent.change(screen.getByLabelText("Demo code"), { target: { value: "WRONG" } });
     fireEvent.click(screen.getByRole("button", { name: "Open the demo" }));
     expect(await screen.findByText("That demo code is not right.")).toBeVisible();
@@ -82,7 +82,7 @@ describe("the public demo's code door", () => {
 
   it("says when there is no connection", async () => {
     fetcher.mockRejectedValueOnce(new TypeError("offline"));
-    render(<FrontDoorPage next="/ward-flow" mode="demo-code" tv={false} />);
+    render(<FrontDoorPage next="/bedchart" mode="demo-code" tv={false} />);
     fireEvent.change(screen.getByLabelText("Demo code"), { target: { value: "SYNTHETIC-CODE" } });
     fireEvent.click(screen.getByRole("button", { name: "Open the demo" }));
     expect(await screen.findByText("No connection.")).toBeVisible();
@@ -92,20 +92,20 @@ describe("the public demo's code door", () => {
 describe("the account door", () => {
   it("goes straight through for a tab that is still signed in", async () => {
     createWardAuth.mockResolvedValue(adapter({ userId: "synthetic-user" }));
-    render(<FrontDoorPage next="/ward-flow/ed" mode="account" tv={false} />);
+    render(<FrontDoorPage next="/bedchart/ed" mode="account" tv={false} />);
     expect(screen.getByText("Checking your sign-in. This usually takes a few seconds.")).toBeInTheDocument();
-    await waitFor(() => expect(replace).toHaveBeenCalledWith("/ward-flow/ed"));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/bedchart/ed"));
     expect(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body))).toEqual({ token: "synthetic-token" });
   });
 
   it("signs in, then asks for the pass and opens the page", async () => {
     const auth = adapter();
     createWardAuth.mockResolvedValue(auth);
-    render(<FrontDoorPage next="/ward-flow" mode="account" tv={false} />);
+    render(<FrontDoorPage next="/bedchart" mode="account" tv={false} />);
     fireEvent.change(await screen.findByLabelText("Email"), { target: { value: "synthetic@example.test" } });
     fireEvent.change(screen.getByLabelText("Password"), { target: { value: "synthetic-password" } });
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
-    await waitFor(() => expect(replace).toHaveBeenCalledWith("/ward-flow"));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/bedchart"));
     expect(auth.signIn).toHaveBeenCalledWith("synthetic@example.test", "synthetic-password");
   });
 
@@ -118,7 +118,7 @@ describe("the account door", () => {
     });
     createWardAuth.mockResolvedValue(auth);
     fetcher.mockResolvedValueOnce(answer(401, { error: "This account has no Ward Flow role." }));
-    render(<FrontDoorPage next="/ward-flow" mode="account" tv={false} />);
+    render(<FrontDoorPage next="/bedchart" mode="account" tv={false} />);
     fireEvent.change(await screen.findByLabelText("Email"), { target: { value: "synthetic@example.test" } });
     fireEvent.change(screen.getByLabelText("Password"), { target: { value: "synthetic-password" } });
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
@@ -132,24 +132,24 @@ describe("the account door", () => {
   it("sends a reset link", async () => {
     const auth = adapter();
     createWardAuth.mockResolvedValue(auth);
-    render(<FrontDoorPage next="/ward-flow" mode="account" tv={false} />);
+    render(<FrontDoorPage next="/bedchart" mode="account" tv={false} />);
     fireEvent.click(await screen.findByRole("button", { name: "Forgot password?" }));
     fireEvent.change(screen.getByLabelText("Email"), { target: { value: "synthetic@example.test" } });
     fireEvent.click(screen.getByRole("button", { name: /Send reset link/ }));
     await waitFor(() =>
-      expect(auth.recover).toHaveBeenCalledWith("synthetic@example.test", expect.stringMatching(/\/ward-flow$/)),
+      expect(auth.recover).toHaveBeenCalledWith("synthetic@example.test", expect.stringMatching(/\/bedchart$/)),
     );
   });
 
   it("sets a new password from a recovery link", async () => {
     const auth = adapter({ isRecovery: true, accountEmail: "synthetic@example.test" });
     createWardAuth.mockResolvedValue(auth);
-    render(<FrontDoorPage next="/ward-flow" mode="account" tv={false} />);
+    render(<FrontDoorPage next="/bedchart" mode="account" tv={false} />);
     const fields = await screen.findAllByLabelText(/password/i, { selector: "input" });
     for (const field of fields) fireEvent.change(field, { target: { value: "synthetic-new-password-1" } });
     fireEvent.submit(fields[0]!.closest("form")!);
     await waitFor(() => expect(auth.updatePassword).toHaveBeenCalledWith("synthetic-new-password-1"));
-    await waitFor(() => expect(replace).toHaveBeenCalledWith("/ward-flow"));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/bedchart"));
   });
 
   it("exchanges a recovery code only with this browser's verifier, and takes it off the address (SEC-2)", async () => {
@@ -165,7 +165,7 @@ describe("the account door", () => {
     } as Location);
     const auth = adapter();
     createWardAuth.mockResolvedValue(auth);
-    render(<FrontDoorPage next="/ward-flow" mode="account" tv={false} />);
+    render(<FrontDoorPage next="/bedchart" mode="account" tv={false} />);
     await waitFor(() => expect(auth.restore).toHaveBeenCalledWith({ code: "synthetic-code", verifier }));
     expect(history.mock.calls.map((call) => call[2])).toEqual(["/sign-in?next=%2Fward-flow"]);
     expect(localStorage.getItem(WARD_RECOVERY_VERIFIER_KEY)).toBeNull();
@@ -183,7 +183,7 @@ describe("the account door", () => {
     } as Location);
     const auth = adapter();
     createWardAuth.mockResolvedValue(auth);
-    render(<FrontDoorPage next="/ward-flow" mode="account" tv={false} />);
+    render(<FrontDoorPage next="/bedchart" mode="account" tv={false} />);
     expect(
       await screen.findByText(
         "Open this link on the device and browser where you asked for it, or ask for a new link here.",
@@ -196,7 +196,7 @@ describe("the account door", () => {
 
   it("shows the sign-in as unavailable when it is not set up", async () => {
     createWardAuth.mockRejectedValue(new Error("not configured"));
-    render(<FrontDoorPage next="/ward-flow" mode="account" tv />);
+    render(<FrontDoorPage next="/bedchart" mode="account" tv />);
     await waitFor(() =>
       expect(screen.queryByText("Checking your sign-in. This usually takes a few seconds.")).not.toBeInTheDocument(),
     );
@@ -206,7 +206,7 @@ describe("the account door", () => {
     let resolve: (value: WardBrowserAuthAdapter) => void = () => {};
     createWardAuth.mockReturnValue(new Promise((done) => (resolve = done)));
     const auth = adapter();
-    const { unmount } = render(<FrontDoorPage next="/ward-flow" mode="account" tv={false} />);
+    const { unmount } = render(<FrontDoorPage next="/bedchart" mode="account" tv={false} />);
     unmount();
     await act(async () => resolve(auth));
     expect(auth.dispose).toHaveBeenCalled();
@@ -220,7 +220,7 @@ describe("the account door", () => {
         token: vi.fn().mockRejectedValue(new Error("Synthetic token failure")),
       });
       createWardAuth.mockResolvedValue(auth);
-      render(<FrontDoorPage next="/ward-flow" mode="account" tv={false} />);
+      render(<FrontDoorPage next="/bedchart" mode="account" tv={false} />);
       if (!restored) {
         fireEvent.change(await screen.findByLabelText("Email"), { target: { value: "synthetic@example.test" } });
         fireEvent.change(screen.getByLabelText("Password"), { target: { value: "synthetic-password" } });
@@ -244,7 +244,7 @@ describe("the account door", () => {
           }),
       }),
     );
-    const { unmount } = render(<FrontDoorPage next="/ward-flow" mode="account" tv={false} />);
+    const { unmount } = render(<FrontDoorPage next="/bedchart" mode="account" tv={false} />);
     await waitFor(() => expect(token).toBeTypeOf("function"));
     unmount();
     await act(async () => token("synthetic-token"));

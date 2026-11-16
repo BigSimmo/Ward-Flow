@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
-vi.mock("next/navigation", () => ({ usePathname: () => "/ward-flow", useRouter: () => ({ push: vi.fn() }) }));
+vi.mock("next/navigation", () => ({ usePathname: () => "/bedchart", useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
     <a href={href} {...rest}>
@@ -46,16 +46,16 @@ describe("consolidated header search", () => {
   });
   it("promotes an exact community team to Go to", () => {
     const team = COMMUNITY_TEAM_PAGES[0]!;
-    const { input, navigate } = search({ canOpenHref: (href) => href === `/ward-flow/community/${team.id}` });
+    const { input, navigate } = search({ canOpenHref: (href) => href === `/bedchart/community/${team.id}` });
     fireEvent.change(input, { target: { value: team.name } });
     expect(screen.getByTestId("ward-global-search-group-goto")).toBeInTheDocument();
     fireEvent.keyDown(input, { key: "Enter" });
-    expect(navigate).toHaveBeenCalledWith(`/ward-flow/community/${team.id}`);
+    expect(navigate).toHaveBeenCalledWith(`/bedchart/community/${team.id}`);
   });
   it("finds the only permitted community team beyond the engine's former first 40", () => {
     const team = COMMUNITY_TEAM_PAGES[45]!;
     expect(team).toBeDefined();
-    const { input } = search({ canOpenHref: (href) => href === `/ward-flow/community/${team.id}` });
+    const { input } = search({ canOpenHref: (href) => href === `/bedchart/community/${team.id}` });
     fireEvent.change(input, { target: { value: "community" } });
     expect(screen.getAllByRole("option").some((option) => option.textContent?.includes(team.name))).toBe(true);
   });

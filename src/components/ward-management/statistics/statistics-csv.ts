@@ -31,7 +31,7 @@ export function downloadCsv(
  * the spreadsheet and the band always agree.
  */
 export type StatisticsExport = {
-  /** File name stem; the download is `ward-flow-synthetic-<stem>-figures.csv`. */
+  /** File name stem; the download is `bedchart-synthetic-<stem>-figures.csv`. */
   readonly stem: string;
   /** What the figures describe ("Whole network", a ward's name). */
   readonly scope: string;
@@ -42,7 +42,7 @@ export type StatisticsExport = {
 /** The rows of an exported figures sheet: scope and time first, then one figure per row. */
 export function statisticsExportLines(exported: StatisticsExport, asAt: string): (string | number)[][] {
   return [
-    ["Ward Flow statistics", exported.scope],
+    ["BedChart statistics", exported.scope],
     ["As at", asAt],
     ["Data", "Synthetic, not clinical records"],
     [],

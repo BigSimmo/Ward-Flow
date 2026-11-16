@@ -2,7 +2,7 @@
  * Ward desk QR code (Batch 5, item 42; QR library approved by Josh, 10 Nov 2026, D-137).
  *
  * The code holds the ward's web address only: this site's origin plus the ward route
- * (`/ward-flow/ward/<unitId>`), with no query string, fragment, sign-in token, code or patient
+ * (`/bedchart/ward/<unitId>`), with no query string, fragment, sign-in token, code or patient
  * detail. Scanning it opens that ward's screen after the normal sign-in. It is made in the browser;
  * the encoder (`uqr`) is loaded only when a code is drawn, so no screen's bundle carries it.
  */

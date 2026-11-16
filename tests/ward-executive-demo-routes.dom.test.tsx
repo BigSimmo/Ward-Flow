@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  * inside the executive frame, whether or not the desk's report could be made: a failed report used to
  * replace the whole page with one bare line and no way back. Synthetic data only.
  */
-const guard = vi.hoisted(() => ({ path: "/ward-flow/settings", phone: false, failReport: false }));
+const guard = vi.hoisted(() => ({ path: "/bedchart/settings", phone: false, failReport: false }));
 vi.mock("next/headers", () => ({
   cookies: async () => ({ get: () => undefined }),
   headers: async () =>
@@ -34,9 +34,9 @@ vi.mock("../src/components/ward-management/statistics/executive-statistics-proje
   };
 });
 
-import Layout from "../src/app/ward-flow/layout";
-import GovernancePage from "../src/app/ward-flow/governance/page";
-import SettingsPage from "../src/app/ward-flow/settings/page";
+import Layout from "../src/app/bedchart/layout";
+import GovernancePage from "../src/app/bedchart/governance/page";
+import SettingsPage from "../src/app/bedchart/settings/page";
 import { resetWardAccessStoreForTests } from "../src/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "../src/components/ward-management/shell/ward-feature-flag-store";
 import { resetServiceScopeForTests } from "../src/components/ward-management/shell/ward-service-store";
@@ -89,7 +89,7 @@ describe("the demo Executive desk on Settings and Governance", () => {
       it(`shows Settings in the executive frame on the ${width}, ${when}`, async () => {
         guard.phone = phone;
         guard.failReport = failReport;
-        await openAsDemoExecutive("/ward-flow/settings", SettingsPage);
+        await openAsDemoExecutive("/bedchart/settings", SettingsPage);
         if (failReport) {
           // Settings keeps its own explicit line rather than invented defaults, now inside the frame.
           expect(screen.getByRole("heading", { level: 1, name: "Settings" })).toBeInTheDocument();
@@ -108,12 +108,12 @@ describe("the demo Executive desk on Settings and Governance", () => {
       it(`shows Governance as "Not part of your role" in the executive frame on the ${width}, ${when}`, async () => {
         guard.phone = phone;
         guard.failReport = failReport;
-        await openAsDemoExecutive("/ward-flow/governance", GovernancePage);
+        await openAsDemoExecutive("/bedchart/governance", GovernancePage);
         const closed = screen.getByTestId("ward-access-closed");
         expect(within(closed).getByRole("heading", { level: 1, name: "Not part of your role" })).toBeInTheDocument();
         expect(within(closed).getByRole("link", { name: "Go to your home" })).toHaveAttribute(
           "href",
-          "/ward-flow/statistics",
+          "/bedchart/statistics",
         );
         expect(screen.queryByText(/Statistics are unavailable for this desk/)).toBeNull();
       }, 30_000);

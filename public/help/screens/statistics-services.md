@@ -19,6 +19,6 @@ Each health service's beds, where referrals were accepted and its open ED moveme
 - Amber dot. Says what an amber dot on a service means.
 - Where referrals were accepted. Every referral on record, counted by the service that accepted it.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

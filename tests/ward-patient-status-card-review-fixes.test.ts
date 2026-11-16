@@ -124,12 +124,12 @@ describe("gate board status card review fixes", () => {
       "held",
       ctx(base, {
         acceptedUnitName: "Synthetic ward",
-        bedHref: "/ward-flow/ward/U-1",
-        transportHref: `/ward-flow/movements/${base.id}`,
+        bedHref: "/bedchart/ward/U-1",
+        transportHref: `/bedchart/movements/${base.id}`,
       }),
     );
-    expect(held.cells.find((cell) => cell.key === "bed")?.href).toBe("/ward-flow/ward/U-1");
-    expect(held.cells.find((cell) => cell.key === "transport")?.href).toBe(`/ward-flow/movements/${base.id}`);
+    expect(held.cells.find((cell) => cell.key === "bed")?.href).toBe("/bedchart/ward/U-1");
+    expect(held.cells.find((cell) => cell.key === "transport")?.href).toBe(`/bedchart/movements/${base.id}`);
   });
 
   it("names each missing person step's Record button by its step", () => {

@@ -38,10 +38,10 @@ import {
 
 import styles from "./night-view.module.css";
 
-const CAPACITY_HREF = "/ward-flow/capacity";
-const WAITING_HREF = "/ward-flow/waiting";
-const MOVEMENTS_HREF = "/ward-flow/movements";
-const ON_CALL_HREF = "/ward-flow/on-call";
+const CAPACITY_HREF = "/bedchart/capacity";
+const WAITING_HREF = "/bedchart/waiting";
+const MOVEMENTS_HREF = "/bedchart/movements";
+const ON_CALL_HREF = "/bedchart/on-call";
 
 /** About eight rows, then the kit's Show more (DESIGN-SYSTEM.md section 4). */
 const NIGHT_ROWS = 8;
@@ -270,7 +270,7 @@ export function NightViewScreen() {
           {/* Feature plan item 13 (overnight intake windows) is not built yet. Until wards record
               their windows, this says so rather than showing a time nobody set. */}
           <p className={styles.notRecorded} data-testid="night-intake-not-recorded">
-            Not recorded. Wards do not record overnight intake windows in Ward Flow yet.
+            Not recorded. Wards do not record overnight intake windows in BedChart yet.
           </p>
         </Card>
 

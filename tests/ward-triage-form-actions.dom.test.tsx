@@ -9,7 +9,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { ToastProvider } from "@/components/wf";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/triage/new",
+  usePathname: () => "/bedchart/triage/new",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));

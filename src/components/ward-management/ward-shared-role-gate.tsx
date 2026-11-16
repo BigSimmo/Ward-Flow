@@ -125,7 +125,7 @@ export function WardAskForAccess({
         </>
       ) : (
         <>
-          <h1>No Ward Flow role yet</h1>
+          <h1>No BedChart role yet</h1>
           <p>An access admin gives roles.</p>
         </>
       )}

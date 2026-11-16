@@ -106,7 +106,7 @@ export function downloadDischargeReleases<R extends DischargeExportRelease>(
   ctx: DischargeReleaseExportContext<R>,
   provenance: ListExportProvenance,
 ): void {
-  downloadCsv("ward-flow-synthetic-discharges-now.csv", dischargeReleaseExportLines(releases, ctx), provenance);
+  downloadCsv("bedchart-synthetic-discharges-now.csv", dischargeReleaseExportLines(releases, ctx), provenance);
 }
 
 /** Builds the Recorded rows and hands the browser the file. */
@@ -115,7 +115,7 @@ export function downloadDischargeRecords<R extends DischargeExportRecord>(
   ctx: DischargeRecordExportContext<R>,
   provenance: ListExportProvenance,
 ): void {
-  downloadCsv("ward-flow-synthetic-discharges-recorded.csv", dischargeRecordExportLines(records, ctx), provenance);
+  downloadCsv("bedchart-synthetic-discharges-recorded.csv", dischargeRecordExportLines(records, ctx), provenance);
 }
 
 /**

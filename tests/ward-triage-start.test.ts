@@ -78,7 +78,7 @@ describe("a world person on the banner", () => {
     expect(person.legal).toBe("Form 1A");
     expect(legalLine(person)).toBe("Form 1A, on record.");
     expect(person.last).toBeNull();
-    expect(person.recordHref).toBe("/ward-flow/people/code900");
+    expect(person.recordHref).toBe("/bedchart/people/code900");
   });
 
   it("shows the record's alerts, allergies on their own chip", () => {

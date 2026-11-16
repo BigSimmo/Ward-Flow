@@ -320,7 +320,7 @@ export function HandoverPrintSheet({
         live board before acting.
       </span>
       <span className={styles.spacer} />
-      <span>Ward Flow prototype</span>
+      <span>BedChart prototype</span>
     </footer>
   );
 

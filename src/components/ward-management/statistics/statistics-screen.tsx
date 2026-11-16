@@ -787,7 +787,7 @@ function StatisticsSummaryView({
     <StatCardR
       id="held-up"
       title="Discharges held up"
-      foot={executive ? undefined : <Foot link={<MoreLink href="/ward-flow/discharges">Open Discharges</MoreLink>} />}
+      foot={executive ? undefined : <Foot link={<MoreLink href="/bedchart/discharges">Open Discharges</MoreLink>} />}
       data-testid="ward-statistics-blocked-discharges-by-reason"
       meta={
         notShown(blocked.totalCount) || notShown(blocked.admissionCount) ? undefined : (

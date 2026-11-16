@@ -27,6 +27,6 @@ What is addressed to this desk right now, across every movement and referral.
 - Take an alert as mine, or hand it back. Open the alert from Alerts, or the Alerts bell at the top, and press Take; it then reads Yours. To give it back, press Hand back and confirm. The alert returns to the queue and Undo shows for a short while. Yours at the top of Alerts counts the alerts you own.
 - Snooze or acknowledge an alert. Open the alert, then More actions. Snooze asks when it should come back and why. Acknowledge marks it Seen and leaves it on watch. Return now brings a snoozed alert back. Act now alerts can only be snoozed for a short time.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

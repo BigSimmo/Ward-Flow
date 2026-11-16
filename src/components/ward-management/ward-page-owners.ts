@@ -12,13 +12,13 @@ export type PageOwner = FigureOwner & {
 };
 
 export const PAGE_OWNERS = {
-  home: { route: "/ward-flow", name: "Home", job: "What needs me now" },
-  capacity: { route: "/ward-flow/capacity", name: "Capacity", job: "Do we have the right beds today and tomorrow" },
-  wards: { route: "/ward-flow/wards", name: "All wards", job: "What state one ward is in" },
-  waiting: { route: "/ward-flow/waiting", name: "Waiting", job: "Who in ED has waited longest and why" },
-  movements: { route: "/ward-flow/movements", name: "Movements", job: "Get each accepted patient to arrival" },
-  referrals: { route: "/ward-flow/referrals", name: "Referrals", job: "Decide each referral" },
-  discharges: { route: "/ward-flow/discharges", name: "Discharges", job: "Clear held-up discharges" },
-  // `/ward-flow/transport` only redirects here (shell-19), so the owner is the officer's page itself.
-  transport: { route: "/ward-flow/transport/officer", name: "Transport", job: "Get a booking for every pulled bed" },
+  home: { route: "/bedchart", name: "Home", job: "What needs me now" },
+  capacity: { route: "/bedchart/capacity", name: "Capacity", job: "Do we have the right beds today and tomorrow" },
+  wards: { route: "/bedchart/wards", name: "All wards", job: "What state one ward is in" },
+  waiting: { route: "/bedchart/waiting", name: "Waiting", job: "Who in ED has waited longest and why" },
+  movements: { route: "/bedchart/movements", name: "Movements", job: "Get each accepted patient to arrival" },
+  referrals: { route: "/bedchart/referrals", name: "Referrals", job: "Decide each referral" },
+  discharges: { route: "/bedchart/discharges", name: "Discharges", job: "Clear held-up discharges" },
+  // `/bedchart/transport` only redirects here (shell-19), so the owner is the officer's page itself.
+  transport: { route: "/bedchart/transport/officer", name: "Transport", job: "Get a booking for every pulled bed" },
 } as const satisfies Record<string, PageOwner>;

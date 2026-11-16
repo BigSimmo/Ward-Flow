@@ -889,7 +889,7 @@ function GovernanceSession({
                     ? "Every recorded event has been reviewed."
                     : "No override, refused action or record access this session."}{" "}
                   {/* Role (access admin): who opened which record lives in Settings, so point there. */}
-                  <Link href="/ward-flow/settings#access" className={eventList.accessLink}>
+                  <Link href="/bedchart/settings#access" className={eventList.accessLink}>
                     Open the Access log
                   </Link>
                 </p>

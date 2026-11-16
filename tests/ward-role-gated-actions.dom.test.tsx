@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // The role is the route: each test sets the path the gate reads.
-const navigation = vi.hoisted(() => ({ pathname: "/ward-flow" }));
+const navigation = vi.hoisted(() => ({ pathname: "/bedchart" }));
 const senderMode = vi.hoisted(() => ({ required: false, summary: undefined as unknown }));
 vi.mock("@/components/ward-management/ward-sender-presentation", () => ({
   useSenderPresentation: () => ({
@@ -38,7 +38,7 @@ import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 
 afterEach(() => {
   cleanup();
-  navigation.pathname = "/ward-flow";
+  navigation.pathname = "/bedchart";
   senderMode.required = false;
   senderMode.summary = undefined;
 });
@@ -217,7 +217,7 @@ function renderModal() {
 
 describe("actions limited by the route's role (feature 11)", () => {
   it("disables an action the route's role may not take, with a short visible reason", () => {
-    navigation.pathname = "/ward-flow/transport/officer";
+    navigation.pathname = "/bedchart/transport/officer";
     const save = renderModal();
     expect(save).toBeDisabled();
     const reason = screen.getByText("Coordinator, ED, ward or community team only");
@@ -229,7 +229,7 @@ describe("actions limited by the route's role (feature 11)", () => {
   });
 
   it("leaves the same action available on a route whose role may take it", () => {
-    navigation.pathname = "/ward-flow/ward/rph-adult-secure";
+    navigation.pathname = "/bedchart/ward/rph-adult-secure";
     const save = renderModal();
     expect(save).toBeEnabled();
     expect(save.hasAttribute("aria-describedby")).toBe(false);

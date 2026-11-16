@@ -19,6 +19,6 @@ One emergency department's mental health patients, each row with its next step.
 11. New referrals. Referrals waiting at this ED. Ask for a bed starts a bed request.
 12. Awaiting psychiatric review. Ask for review on a row asks for that patient's psychiatric review.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

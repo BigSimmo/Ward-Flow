@@ -6,5 +6,5 @@ import { redirect } from "next/navigation";
  * recommendation"): the front page opens the Coordinator view.
  */
 export default function RootRedirect() {
-  redirect("/ward-flow");
+  redirect("/bedchart");
 }

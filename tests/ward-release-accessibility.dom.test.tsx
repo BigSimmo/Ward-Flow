@@ -29,7 +29,7 @@ it("retains and fails the initial serious axe finding without a hidden retry", a
   const attach = vi.fn();
   const page = {
     evaluate: vi.fn().mockResolvedValue({ window: 0, column: 0 }),
-    url: () => "http://localhost:3100/ward-flow",
+    url: () => "http://localhost:3100/bedchart",
     waitForTimeout: vi.fn(),
     screenshot: vi.fn().mockResolvedValue(Buffer.from("synthetic-png")),
   } as unknown as Page;

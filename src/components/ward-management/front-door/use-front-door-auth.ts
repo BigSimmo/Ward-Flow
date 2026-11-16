@@ -141,7 +141,7 @@ export function useFrontDoorAuth(next: string): { phase: Phase; form: WardCreden
       if (auth.current === adapter) setState((old) => ({ ...old, busy: false, ...failure(error) }));
     }
   };
-  const home = () => window.location.origin + "/ward-flow";
+  const home = () => window.location.origin + "/bedchart";
 
   if (!configured) return { phase, form: undefined };
   return {

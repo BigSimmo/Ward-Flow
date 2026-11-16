@@ -102,9 +102,9 @@ describe("the worker's caching rule (D-18)", () => {
     "/api/health",
     "/api/local-project-id",
     "/api",
-    "/ward-flow",
-    "/ward-flow/referrals",
-    "/ward-flow/beds?ward=rph",
+    "/bedchart",
+    "/bedchart/referrals",
+    "/bedchart/beds?ward=rph",
     "/ward-flow-push-sw.js",
     "/screenshots/home-narrow.webp",
     "/icons-elsewhere/thing",
@@ -115,11 +115,11 @@ describe("the worker's caching rule (D-18)", () => {
   });
 
   it("never keeps a Server Components payload, even on a static-looking path", () => {
-    expect(rule(request("/ward-flow/referrals", { header: { RSC: "1" } }), ORIGIN)).toBeNull();
+    expect(rule(request("/bedchart/referrals", { header: { RSC: "1" } }), ORIGIN)).toBeNull();
     expect(rule(request("/_next/static/chunks/app.js", { header: { RSC: "1" } }), ORIGIN)).toBeNull();
     expect(rule(request("/icons/icon-192", { header: { "Next-Router-Prefetch": "1" } }), ORIGIN)).toBeNull();
     expect(rule(request("/_next/static/chunks/app.js?_rsc=abc12"), ORIGIN)).toBeNull();
-    expect(rule(request("/ward-flow?_rsc=abc12"), ORIGIN)).toBeNull();
+    expect(rule(request("/bedchart?_rsc=abc12"), ORIGIN)).toBeNull();
   });
 
   it("leaves other methods and other sites alone", () => {
@@ -129,9 +129,9 @@ describe("the worker's caching rule (D-18)", () => {
     expect(rule(request("https://cdn.example/_next/static/chunks/app.js"), ORIGIN)).toBeNull();
   });
 
-  it("takes Ward Flow page loads network first, and ignores a sibling such as ward-flow-digest", () => {
-    expect(rule(request("/ward-flow", { mode: "navigate" }), ORIGIN)).toBe("navigate");
-    expect(rule(request("/ward-flow/alerts", { mode: "navigate" }), ORIGIN)).toBe("navigate");
+  it("takes BedChart page loads network first, and ignores a sibling such as ward-flow-digest", () => {
+    expect(rule(request("/bedchart", { mode: "navigate" }), ORIGIN)).toBe("navigate");
+    expect(rule(request("/bedchart/alerts", { mode: "navigate" }), ORIGIN)).toBe("navigate");
     expect(rule(request("/mockups/ward-flow-digest", { mode: "navigate" }), ORIGIN)).toBeNull();
     expect(rule(request("/", { mode: "navigate" }), ORIGIN)).toBeNull();
   });
@@ -215,7 +215,7 @@ describe("worker lifecycle", () => {
     expect(WORKER_SOURCE).toContain("const STATIC_CACHE = `${CACHE_PREFIX}${CACHE_VERSION}-${OFFLINE_PAGE_REVISION}`;");
   });
 
-  it("enables navigation preload and removes older Ward Flow caches only", async () => {
+  it("enables navigation preload and removes older BedChart caches only", async () => {
     const deleted: string[] = [];
     let preload = false;
     const listeners: Record<string, (event: unknown) => void> = {};
@@ -275,7 +275,7 @@ describe("worker lifecycle", () => {
       });
       let reply: Promise<unknown> = Promise.resolve(undefined);
       listeners.fetch({
-        request: request("/ward-flow/referrals", { mode: "navigate" }),
+        request: request("/bedchart/referrals", { mode: "navigate" }),
         preloadResponse: Promise.resolve(undefined),
         respondWith: (promise: Promise<unknown>) => (reply = promise),
         waitUntil: () => {},
@@ -302,7 +302,7 @@ describe("worker lifecycle", () => {
       },
     });
     let answered = false;
-    for (const path of ["/api/health", "/ward-flow/beds?_rsc=1"]) {
+    for (const path of ["/api/health", "/bedchart/beds?_rsc=1"]) {
       listeners.fetch({ request: request(path), respondWith: () => (answered = true) });
     }
     expect(answered).toBe(false);
@@ -310,7 +310,7 @@ describe("worker lifecycle", () => {
 });
 
 describe("what a push may show (PS-13)", () => {
-  const FALLBACK = { title: "Ward Flow: act now", body: "Open Alerts to review. Synthetic demo data." };
+  const FALLBACK = { title: "BedChart: act now", body: "Open Alerts to review. Synthetic demo data." };
 
   async function shown(data: unknown) {
     const { title, options } = await notified(data);
@@ -375,7 +375,7 @@ describe("what a push may show (PS-13)", () => {
     expect(cache).toBe("ward-flow-last-push");
     // Its own cache, outside CACHE_PREFIX, so activate never deletes it.
     expect(cache.startsWith("ward-flow-static-")).toBe(false);
-    expect(key).toBe("/ward-flow/__last-push");
+    expect(key).toBe("/bedchart/__last-push");
     expect(type).toBe("application/json");
     expect(Object.keys(record as object).sort()).toEqual(["at", "kind"]);
     const { at, kind } = record as { at: string; kind: string };
@@ -436,21 +436,21 @@ describe("what a push may show (PS-13)", () => {
     ["free text", "Synthetic Person Example UM100001 arrived", "Synthetic Person Example UM100001 arrived"],
     [
       "a name inside the template",
-      "Ward Flow: 1 new act now item for Synthetic Person",
+      "BedChart: 1 new act now item for Synthetic Person",
       "Synthetic Person. Open Alerts to review. Synthetic demo data. Call UM100001",
     ],
     [
       "a long site",
-      "Ward Flow: 2 new act now items in bed 2",
+      "BedChart: 2 new act now items in bed 2",
       `${"A".repeat(61)}. Open Alerts to review. Synthetic demo data.`,
     ],
     [
       "a site with other characters",
-      "Ward Flow: 3 new act now items: Synthetic Person",
+      "BedChart: 3 new act now items: Synthetic Person",
       "Ward 4: Synthetic Person, bed 2. Open Alerts to review. Synthetic demo data.",
     ],
   ])("shows the fallback words for %s", async (_label, title, body) => {
-    expect(await shown({ title, body, url: "/ward-flow/alerts" })).toEqual({ ...FALLBACK, url: "/ward-flow/alerts" });
+    expect(await shown({ title, body, url: "/bedchart/alerts" })).toEqual({ ...FALLBACK, url: "/bedchart/alerts" });
   });
 
   it("checks the title and body separately, and keeps the length limits", async () => {
@@ -464,7 +464,7 @@ describe("what a push may show (PS-13)", () => {
       body: FALLBACK.body,
     });
     expect(await shown({})).toMatchObject(FALLBACK);
-    const long = `Ward Flow: 1 new act now item${" ".repeat(100)}`;
+    const long = `BedChart: 1 new act now item${" ".repeat(100)}`;
     expect(await shown({ title: long, body: good.body })).toMatchObject({ title: FALLBACK.title });
   });
 });
@@ -476,7 +476,7 @@ describe("the offline page", () => {
     expect(html).not.toMatch(/<script/i);
     expect(html).not.toMatch(/\bon[a-z]+=/i);
     expect(html).toMatch(/<a class="retry" href="">Try again<\/a>/);
-    expect(html).toContain("Ward Flow needs a connection");
+    expect(html).toContain("BedChart needs a connection");
     expect(html).toMatch(/made-up demo data/);
     expect(html).toContain("prefers-color-scheme: dark");
   });
@@ -525,7 +525,7 @@ function navigationProbe(preloadResponse: Promise<unknown>, signal?: AbortSignal
   runInNewContext(WORKER_SOURCE, context);
   const navigate = context.fromNetworkFirst as (event: unknown) => Promise<unknown>;
   const result = navigate({
-    request: { ...request("/ward-flow/capacity", { mode: "navigate" }), signal },
+    request: { ...request("/bedchart/capacity", { mode: "navigate" }), signal },
     preloadResponse,
   });
   let settled = false;

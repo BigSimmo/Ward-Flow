@@ -518,7 +518,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     ) : null;
   // Ward peek (8 Nov 2026): the ward's beds in a pop-up, the ward page one link further.
   const openWard = selectedUnitId ? (
-    <WardPeekButton unitId={selectedUnitId} href={`/ward-flow/ward/${selectedUnitId}`} label="Open ward" />
+    <WardPeekButton unitId={selectedUnitId} href={`/bedchart/ward/${selectedUnitId}`} label="Open ward" />
   ) : null;
   const recordLink =
     detailRelease && linkedReleaseRecord ? (

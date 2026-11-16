@@ -2,7 +2,7 @@
 
 _Updated 2026-11-01 - design and structure locked by Josh at 08:29 Perth time; Design owns._
 
-**In one line:** this folder holds the approved design for the community team page (`/ward-flow/community/[teamId]`), the source that draws it, and the instructions to build it. It changes no app code.
+**In one line:** this folder holds the approved design for the community team page (`/bedchart/community/[teamId]`), the source that draws it, and the instructions to build it. It changes no app code.
 
 - **Status:** design and structure locked by Josh on 1 November 2026 ("lock in this design and structure for mockups"). Josh approved the build at 08:33 ("complete all the builds for mockups"); it follows [BUILD.md](BUILD.md).
 - **Interactive mock-up:** <https://claude.ai/artifact/V4JG7mtEBPhF1Q25DkEnGB> (private to Josh until he shares it).

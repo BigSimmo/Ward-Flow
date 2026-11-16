@@ -53,7 +53,7 @@ type Links = { canOpen: (href: string | undefined) => href is string; onNavigate
 /** One notice as the panel draws it. */
 type NoticeView = { id: string; raisedAt: Instant; source: string; text: string; read: boolean };
 
-const GOVERNANCE_HREF = "/ward-flow/governance";
+const GOVERNANCE_HREF = "/bedchart/governance";
 
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 

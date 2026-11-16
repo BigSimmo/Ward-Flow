@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/ed/peel-ed",
+  usePathname: () => "/bedchart/ed/peel-ed",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -66,11 +66,11 @@ afterEach(() => {
 });
 
 describe("P142: the ED home offers Add patient", () => {
-  it("shows Add patient beside Raise referral on a phone, going to /ward-flow/people/new", () => {
+  it("shows Add patient beside Raise referral on a phone, going to /bedchart/people/new", () => {
     render(overview);
     const add = screen.getAllByTestId("ward-ed-add-patient")[0]!;
     expect(add).toHaveTextContent("Add patient");
-    expect(add).toHaveAttribute("href", "/ward-flow/people/new");
+    expect(add).toHaveAttribute("href", "/bedchart/people/new");
     const raise = screen.getAllByTestId("ward-ed-raise-referral-toggle")[0]!;
     // Page tops (Josh, 9 Nov 2026): both are chips in the hero's one chip row.
     expect(raise.closest("ul")).toBe(add.closest("ul"));
@@ -93,7 +93,7 @@ describe("P142: the ED home offers Add patient", () => {
     act(() => setWardAccess(ED_DESK));
     render(overview);
     const add = screen.getAllByTestId("ward-ed-add-patient")[0]!;
-    expect(add).toHaveAttribute("href", "/ward-flow/people/new");
+    expect(add).toHaveAttribute("href", "/bedchart/people/new");
     expect(screen.queryByTestId("ward-ed-raise-referral-toggle")).toBeNull();
   });
 });

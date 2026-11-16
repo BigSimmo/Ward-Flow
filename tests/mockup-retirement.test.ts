@@ -606,11 +606,11 @@ describe("the committed repository", () => {
     expect(listRouteSlugs(process.cwd())).toEqual(["ward-flow-redesign"]);
   });
 
-  it("declares no developer-gated prefixes now that Ward Flow has left /mockups", () => {
+  it("declares no developer-gated prefixes now that BedChart has left /mockups", () => {
     const prefixes = readDeveloperGatedPrefixes(process.cwd());
     // The developer hub, Care Plan and Caring Contacts prefixes went with their pages in the
     // PsychSift removal (batch 3a, 25 September 2026). Ward Flow and its sign-in sibling moved to
-    // /ward-flow and /ward-flow-sign-in on 19 October 2026, so nothing under /mockups is public.
+    // /bedchart and /bedchart-sign-in on 19 October 2026, so nothing under /mockups is public.
     expect(prefixes).toEqual([]);
   });
 

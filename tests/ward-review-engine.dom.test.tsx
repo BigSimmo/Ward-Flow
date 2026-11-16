@@ -8,7 +8,7 @@ const routing = vi.hoisted(() => ({
   lifecycle: null as "pulled" | "occupied" | "departed" | "waitlisted" | null,
 }));
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/ward/scgh-adult-open",
+  usePathname: () => "/bedchart/ward/scgh-adult-open",
   useSearchParams: () => new URLSearchParams(routing.query),
   useRouter: () => ({ push: routing.push, replace: vi.fn() }),
 }));
@@ -140,7 +140,7 @@ describe("review caller regressions", () => {
     fireEvent.click(screen.getAllByRole("button", { name: /^More$/ }).at(-1)!);
     fireEvent.click(screen.getByRole("menuitem", { name: /^Raise ward referral/ }));
     expect(routing.dispatch.mock.calls.filter(([event]) => event.type === "RECEIVE_REFERRAL")).toEqual([]);
-    expect(routing.push).toHaveBeenCalledWith(expect.stringMatching(/^\/ward-flow\/referrals\/new\?category=ward/));
+    expect(routing.push).toHaveBeenCalledWith(expect.stringMatching(/^\/bedchart\/referrals\/new\?category=ward/));
   });
   it("opens the operational board and holds an accepted any-ward arm without reaccepting it", () => {
     routing.query = "tab=board";

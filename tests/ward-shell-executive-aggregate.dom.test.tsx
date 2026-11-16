@@ -41,7 +41,7 @@ describe("public chrome mechanical reuse", () => {
           data-testid="ward-rail"
           data-rail="open"
         >
-          <a href="/ward-flow/statistics">Statistics</a>
+          <a href="/bedchart/statistics">Statistics</a>
         </WardRailFrame>
       </>,
     );

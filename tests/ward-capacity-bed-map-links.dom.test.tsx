@@ -42,7 +42,7 @@ describe("Capacity bed map links to each ward's own page (audit P093, redesign)"
         expect(drawer, ward.unit.id).toHaveTextContent(ward.unit.name);
         expect(within(drawer).getByRole("link", { name: "Open ward" }), ward.unit.id).toHaveAttribute(
           "href",
-          `/ward-flow/ward/${ward.unit.id}`,
+          `/bedchart/ward/${ward.unit.id}`,
         );
         checked += 1;
       });

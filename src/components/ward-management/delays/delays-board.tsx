@@ -147,7 +147,7 @@ export type DelaysBoardProps = {
   empty?: ReactNode;
 };
 
-const WAITING_ROUTE = "/ward-flow/waiting";
+const WAITING_ROUTE = "/bedchart/waiting";
 /** What Back brings back with the address's filters (`use-return-to-place.ts`): the opened groups. */
 type WaitingPlace = {
   openGroups: Partial<Record<DelayCause, boolean>>;
@@ -411,7 +411,7 @@ export function DelaysBoard({
       {queuedReferrals === 0
         ? `No referrals awaiting ${wardDesk ? "your ward's" : "a"} decision.`
         : `${queuedReferrals} ${queuedReferrals === 1 ? "referral" : "referrals"} awaiting ${wardDesk ? "your ward's" : "a"} decision, not yet on this list.`}{" "}
-      <Link href="/ward-flow/referrals" className={styles.lnk}>
+      <Link href="/bedchart/referrals" className={styles.lnk}>
         {wardDesk ? "Open Referrals to answer" : "Open Referrals"}
       </Link>
     </p>

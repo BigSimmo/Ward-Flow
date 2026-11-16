@@ -16,7 +16,7 @@ import { pickObservationInterval, pickObservationLevel } from "./helpers/ward-ch
 // show the coordinator-review message and filter no ward. Synthetic data only.
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/capacity",
+  usePathname: () => "/bedchart/capacity",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));

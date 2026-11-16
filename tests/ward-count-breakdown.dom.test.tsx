@@ -18,8 +18,8 @@ import type { BreakdownRow } from "@/components/ward-management/count-breakdown-
 import { WF_PHONE_QUERY } from "@/components/wf/use-is-phone";
 
 const rows: BreakdownRow[] = [
-  { id: "m-1", label: "SYNTHETIC, Alex", detail: "Example ED", href: "/ward-flow/movements/m-1" },
-  { id: "m-2", label: "SYNTHETIC, Billie", href: "/ward-flow/movements/m-2" },
+  { id: "m-1", label: "SYNTHETIC, Alex", detail: "Example ED", href: "/bedchart/movements/m-1" },
+  { id: "m-2", label: "SYNTHETIC, Billie", href: "/bedchart/movements/m-2" },
   { id: "m-3", label: "Name not recorded" },
 ];
 
@@ -41,7 +41,7 @@ describe("count breakdown", () => {
     });
     expect(screen.getByText("3 open ED movements. Counted 2:32 pm.")).toBeInTheDocument();
     expect(screen.getAllByTestId("count-breakdown-row")).toHaveLength(3);
-    expect(screen.getByRole("link", { name: /SYNTHETIC, Alex/ })).toHaveAttribute("href", "/ward-flow/movements/m-1");
+    expect(screen.getByRole("link", { name: /SYNTHETIC, Alex/ })).toHaveAttribute("href", "/bedchart/movements/m-1");
     const dialog = screen.getByRole("dialog");
     act(() => {
       fireEvent.keyDown(dialog, { key: "Escape" });

@@ -9,17 +9,17 @@ const ed = allEmergencyDepartments()[0]!;
 const team = COMMUNITY_TEAM_PAGES[0]!;
 const input = {
   access: STATEWIDE_COORDINATOR,
-  pathname: "/ward-flow/search",
+  pathname: "/bedchart/search",
   units,
   executive: false,
 };
 describe("Help home resolution", () => {
   it.each([
-    ["coordinator", "/ward-flow"],
-    ["officer", "/ward-flow/transport/officer"],
-    ["bed_manager", "/ward-flow/capacity"],
-    ["executive", "/ward-flow/statistics"],
-    ["admin", "/ward-flow/governance"],
+    ["coordinator", "/bedchart"],
+    ["officer", "/bedchart/transport/officer"],
+    ["bed_manager", "/bedchart/capacity"],
+    ["executive", "/bedchart/statistics"],
+    ["admin", "/bedchart/governance"],
   ] as const)("keeps the fixed %s tour home", (role, expected) => {
     expect(resolveTourHome({ ...input, role })).toEqual({
       home: expected,
@@ -34,8 +34,8 @@ describe("Help home resolution", () => {
         access: { role: "admin", scope: { kind: "statewide" } },
       }),
     ).toEqual({
-      home: "/ward-flow/governance",
-      deskHome: "/ward-flow/governance",
+      home: "/bedchart/governance",
+      deskHome: "/bedchart/governance",
     });
   });
   it.each(["ward", "ed", "community"] as const)("has no guessed %s home without a flow provider", (role) => {
@@ -57,8 +57,8 @@ describe("Help home resolution", () => {
         access: { role: "admin", scope: { kind: "statewide" } },
       }),
     ).toEqual({
-      home: "/ward-flow/governance",
-      deskHome: "/ward-flow/governance",
+      home: "/bedchart/governance",
+      deskHome: "/bedchart/governance",
     });
   });
   it("uses the executive reporting home even before operational flow exists", () => {
@@ -70,21 +70,21 @@ describe("Help home resolution", () => {
         executive: true,
       }),
     ).toEqual({
-      home: "/ward-flow/statistics",
-      deskHome: "/ward-flow/statistics",
+      home: "/bedchart/statistics",
+      deskHome: "/bedchart/statistics",
     });
   });
   it.each([
     [
       "ward",
       { role: "ward", scope: { kind: "ward", unitIds: ["rph-adult-secure"] } },
-      "/ward-flow/ward/rph-adult-secure",
+      "/bedchart/ward/rph-adult-secure",
     ],
-    ["ed", { role: "ed", scope: { kind: "ed", edId: ed.id } }, `/ward-flow/ed/${ed.id}`],
+    ["ed", { role: "ed", scope: { kind: "ed", edId: ed.id } }, `/bedchart/ed/${ed.id}`],
     [
       "community",
       { role: "community", scope: { kind: "team", teamName: team.name } },
-      `/ward-flow/community/${team.id}`,
+      `/bedchart/community/${team.id}`,
     ],
   ] satisfies [TourRole, WardAccess, string][])(
     "prefers the authenticated %s place over page and persona",
@@ -94,7 +94,7 @@ describe("Help home resolution", () => {
           ...input,
           role,
           access,
-          pathname: "/ward-flow/ward/fre-adult-open",
+          pathname: "/bedchart/ward/fre-adult-open",
           deskId: "fre-adult-open",
         }),
       ).toEqual({ home: expected, deskHome: expected });
@@ -105,18 +105,18 @@ describe("Help home resolution", () => {
       resolveTourHome({
         ...input,
         role: "ward",
-        pathname: `/ward-flow/${route}/rph-adult-secure`,
+        pathname: `/bedchart/${route}/rph-adult-secure`,
         deskId: "fre-adult-open",
       }),
     ).toEqual({
-      home: "/ward-flow/ward/rph-adult-secure",
-      deskHome: "/ward-flow/ward/rph-adult-secure",
+      home: "/bedchart/ward/rph-adult-secure",
+      deskHome: "/bedchart/ward/rph-adult-secure",
     });
   });
   it("uses the local persona place when the page has no place", () => {
     expect(resolveTourHome({ ...input, role: "ward", deskId: "fre-adult-open" })).toEqual({
-      home: "/ward-flow/ward/fre-adult-open",
-      deskHome: "/ward-flow/ward/fre-adult-open",
+      home: "/bedchart/ward/fre-adult-open",
+      deskHome: "/bedchart/ward/fre-adult-open",
     });
   });
   it("does not replace an unresolved route's ward with a neighbouring persona ward", () => {
@@ -124,7 +124,7 @@ describe("Help home resolution", () => {
       resolveTourHome({
         ...input,
         role: "ward",
-        pathname: "/ward-flow/ward/unknown",
+        pathname: "/bedchart/ward/unknown",
         deskId: "fre-adult-open",
       }),
     ).toEqual({ home: undefined, deskHome: undefined });
@@ -141,18 +141,18 @@ describe("Help home resolution", () => {
         },
       }),
     ).toEqual({
-      home: "/ward-flow/ward/rph-adult-secure",
-      deskHome: "/ward-flow/ward/rph-adult-secure",
+      home: "/bedchart/ward/rph-adult-secure",
+      deskHome: "/bedchart/ward/rph-adult-secure",
     });
   });
   it("resolves local ED and team persona IDs on unrelated pages", () => {
     expect(resolveTourHome({ ...input, role: "ed", deskId: ed.id })).toEqual({
-      home: `/ward-flow/ed/${ed.id}`,
-      deskHome: `/ward-flow/ed/${ed.id}`,
+      home: `/bedchart/ed/${ed.id}`,
+      deskHome: `/bedchart/ed/${ed.id}`,
     });
     expect(resolveTourHome({ ...input, role: "community", deskId: team.id })).toEqual({
-      home: `/ward-flow/community/${team.id}`,
-      deskHome: `/ward-flow/community/${team.id}`,
+      home: `/bedchart/community/${team.id}`,
+      deskHome: `/bedchart/community/${team.id}`,
     });
   });
   it("lets a current team route win over a different local persona", () => {
@@ -160,12 +160,12 @@ describe("Help home resolution", () => {
       resolveTourHome({
         ...input,
         role: "community",
-        pathname: `/ward-flow/community/${team.id}`,
+        pathname: `/bedchart/community/${team.id}`,
         deskId: "unknown",
       }),
     ).toEqual({
-      home: `/ward-flow/community/${team.id}`,
-      deskHome: `/ward-flow/community/${team.id}`,
+      home: `/bedchart/community/${team.id}`,
+      deskHome: `/bedchart/community/${team.id}`,
     });
   });
 });

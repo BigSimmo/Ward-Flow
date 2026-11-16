@@ -1,4 +1,4 @@
-# Desk guide: Seeing and using Ward Flow
+# Desk guide: Seeing and using BedChart
 
 <!-- last-checked: 2026-11-10 -->
 

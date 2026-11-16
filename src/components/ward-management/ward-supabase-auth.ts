@@ -360,7 +360,7 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
     this.invalidate();
     this.clear();
     const redirect = redirectTo ? new URL(redirectTo) : null;
-    if (redirect && (redirect.pathname !== "/ward-flow" || redirect.search || redirect.hash))
+    if (redirect && (redirect.pathname !== "/bedchart" || redirect.search || redirect.hash))
       throw new WardAuthError("unavailable", "Invalid confirmation destination.");
     const result = (await this.request(
       "/signup" + (redirect ? "?redirect_to=" + encodeURIComponent(redirect.toString()) : ""),
@@ -427,7 +427,7 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
   }
   async recover(email: string, redirectTo: string) {
     const redirect = new URL(redirectTo);
-    if (redirect.pathname !== "/ward-flow" || redirect.search || redirect.hash)
+    if (redirect.pathname !== "/bedchart" || redirect.search || redirect.hash)
       throw new WardAuthError("unavailable", "Invalid recovery destination.");
     // SEC-2 (Josh, 6 Nov 2026): a PKCE recovery. The link Supabase emails carries a code that only
     // works with this verifier, kept in this browser alone, so the link signs in nowhere else.
@@ -553,7 +553,7 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
    */
   async singleSignOnUrl(domain: string, redirectTo: string): Promise<string> {
     const redirect = new URL(redirectTo);
-    if (redirect.pathname !== "/ward-flow" || redirect.search || redirect.hash)
+    if (redirect.pathname !== "/bedchart" || redirect.search || redirect.hash)
       throw new WardAuthError("unavailable", "Invalid sign-in destination.");
     const result = (await this.request("/sso", {
       method: "POST",

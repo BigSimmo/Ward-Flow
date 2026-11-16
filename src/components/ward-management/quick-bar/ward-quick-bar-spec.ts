@@ -35,7 +35,7 @@ export const QUICK_BAR: Record<WardAccessRole, readonly QuickControl[]> = {
     tool("quick-actions", "Ward updates", "Not confirmed"),
     tool("bed-finder", "Find a bed", "Ready now"),
     tool("contacts", "Call and contacts", "Who is on"),
-    { kind: "link", href: "/ward-flow/handover", label: "Handover", detail: "Shift handover" },
+    { kind: "link", href: "/bedchart/handover", label: "Handover", detail: "Shift handover" },
   ],
   bed_manager: [
     tool("bed-finder", "Find a bed", "Ready now"),

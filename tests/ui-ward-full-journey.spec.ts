@@ -186,7 +186,7 @@ async function switchView(page: Page, pick: (drawer: Locator) => Locator | Promi
   await waitForScreen(page, screenTestId);
 }
 
-test.describe("@mockup Ward Flow full journey — referral to discharge planning, one browser window", () => {
+test.describe("@mockup BedChart full journey — referral to discharge planning, one browser window", () => {
   test.describe.configure({ timeout: 120_000 });
 
   /*
@@ -205,7 +205,7 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     // "Midland" is a real S2015-catchment clinic name (`ward-movements.ts` raises referrals
     // against it by that exact string, e.g. `destination: { kind: "community_team", teamName:
     // "Midland" }`), so its slug is a genuine, routable team page — not an invented id.
-    await page.goto("/ward-flow/community/midland", { waitUntil: "load" });
+    await page.goto("/bedchart/community/midland", { waitUntil: "load" });
     await waitForScreen(page, "ward-community-screen");
     await plantSentinel(page);
     await expect(page.getByText("Midland", { exact: false }).first()).toBeVisible();
@@ -292,7 +292,7 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await sheet.getByRole("button", { name: "Done", exact: true }).click();
     await expect(sheet).toHaveCount(0);
 
-    await goViaRail(page, "/ward-flow/referrals", "ward-referral-board-screen");
+    await goViaRail(page, "/bedchart/referrals", "ward-referral-board-screen");
     await expectNoReloadSince(page, "referral slide-out -> referral board");
     // The board is what "reaches the coordinator" means here. Option A (9 Oct 2026) shows the queue
     // as a table on desktop and as cards only on a phone, so at this desktop width the table is live.
@@ -307,7 +307,7 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     // ED form that raises the movement is reached only from an inbox referral's "Raise into a
     // movement". Royal Perth is used because its inbox holds RF-009, queued and not yet raised
     // (Peel's RF-013 is already the origin of WF-009, so it offers no raise). ---
-    await goViaRail(page, "/ward-flow/ed", "ward-ed-index");
+    await goViaRail(page, "/bedchart/ed", "ward-ed-index");
     await page.getByTestId("ed-index-link-rph-ed").click();
     await waitForScreen(page, "ward-ed-screen");
     await expectNoReloadSince(page, "referral board -> Royal Perth ED");
@@ -398,8 +398,7 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     // `referredUnitIds`. ---
     await switchView(
       page,
-      (drawer) =>
-        drawer.getByRole("group", { name: "Patient in focus" }).locator(`a[href="/ward-flow/ward/${unitId}"]`),
+      (drawer) => drawer.getByRole("group", { name: "Patient in focus" }).locator(`a[href="/bedchart/ward/${unitId}"]`),
       "ward-unit-screen",
     );
     await expectNoReloadSince(page, "coordinator -> ward");
@@ -456,7 +455,7 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     // then the officer accepts, departs (en route) and arrives. ---
     await switchView(
       page,
-      (drawer) => drawer.getByRole("group", { name: "Patient in focus" }).locator('a[href^="/ward-flow/ed/"]'),
+      (drawer) => drawer.getByRole("group", { name: "Patient in focus" }).locator('a[href^="/bedchart/ed/"]'),
       "ward-ed-screen",
     );
     await expectNoReloadSince(page, "ward -> ED for transport booking");

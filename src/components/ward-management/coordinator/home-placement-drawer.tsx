@@ -156,7 +156,7 @@ export function HomePlacementDrawer({
           </Link>
         ) : null}
         {referral ? (
-          <Link className={buttonClass({ variant: "sec", size: "sm" })} href="/ward-flow/referrals">
+          <Link className={buttonClass({ variant: "sec", size: "sm" })} href="/bedchart/referrals">
             <Inbox size={14} strokeWidth={1.75} aria-hidden="true" />
             All referrals
           </Link>

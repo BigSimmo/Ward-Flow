@@ -84,7 +84,7 @@ describe("WF-18 draft saved points to the Drafts list", () => {
     expect(push).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "Draft saved at 9:07 am",
-        nextStep: { label: "View drafts", href: "/ward-flow/settings#you" },
+        nextStep: { label: "View drafts", href: "/bedchart/settings#you" },
       }),
     );
   });

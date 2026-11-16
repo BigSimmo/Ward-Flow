@@ -33,9 +33,9 @@ describe("demo pass bound to the demo code", () => {
 
   it("opens the demo while the code stands and closes it as soon as the code changes", async () => {
     const { value } = await issuePass(SECRET, { kind: "demo", hours: 8 }, Date.now(), ON);
-    expect(await frontDoorVerdict(page("/ward-flow/capacity", value), ON)).toBeNull();
+    expect(await frontDoorVerdict(page("/bedchart/capacity", value), ON)).toBeNull();
     const changed = { ...ON, WARD_DEMO_CODE: "SYNTHETIC-DEMO-CODE-B" };
-    const refused = await frontDoorVerdict(page("/ward-flow/capacity", value), changed);
+    const refused = await frontDoorVerdict(page("/bedchart/capacity", value), changed);
     expect(refused?.status).toBe(307);
     expect(new URL(refused!.headers.get("location")!).pathname).toBe("/sign-in");
     expect((await frontDoorVerdict(page("/api/workspace", value), changed))?.status).toBe(401);
@@ -51,6 +51,6 @@ describe("demo pass bound to the demo code", () => {
     const checked = (await verifyPass(SECRET, account))!;
     expect(checked.code).toBeUndefined();
     expect(await passMatchesDemoCode(SECRET, checked, { ...ON, WARD_DEMO_CODE: "OTHER" })).toBe(true);
-    expect(await frontDoorVerdict(page("/ward-flow", account), { ...ON, WARD_DEMO_CODE: "OTHER" })).toBeNull();
+    expect(await frontDoorVerdict(page("/bedchart", account), { ...ON, WARD_DEMO_CODE: "OTHER" })).toBeNull();
   });
 });

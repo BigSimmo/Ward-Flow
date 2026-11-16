@@ -22,7 +22,7 @@ const STALE = /\bis stale\b|\bexpected revision\b/i;
 /** Said in place of a reason that someone else's change overtook. */
 export const REFUSAL_CHANGED_FIRST = "Someone else changed this first. Check the board and try again";
 /** Said in place of a reason written for developers. */
-export const REFUSAL_NOT_RECORDABLE = "Ward Flow could not record this change. Check the board and try again";
+export const REFUSAL_NOT_RECORDABLE = "BedChart could not record this change. Check the board and try again";
 
 /**
  * R-STYLE-17 (Josh, 14 Nov 2026): a refusal is one short line saying why, then what to do next.

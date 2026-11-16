@@ -24,15 +24,15 @@ export const DEVELOPER_AREA_PATH_HEADER = "x-developer-area-path";
 
 /** Ward Flow remains inside the repository for shared Next.js/design tooling,
  * but it is a standalone synthetic prototype rather than a Clinical KB surface. */
-export const WARD_FLOW_PATH_PREFIX = "/ward-flow";
+export const WARD_FLOW_PATH_PREFIX = "/bedchart";
 
 export function isWardFlowPath(pathname: string): boolean {
   return pathname === WARD_FLOW_PATH_PREFIX || pathname.startsWith(`${WARD_FLOW_PATH_PREFIX}/`);
 }
 
 /** Subtrees under `/mockups` that stay public in production, as exact prefixes. Empty since
- *  19 October 2026: Ward Flow and its sign-in screen moved out of `/mockups` to `/ward-flow` and
- *  `/ward-flow-sign-in` (rollout readiness review item 3.2), so production no longer depends on
+ *  19 October 2026: Ward Flow and its sign-in screen moved out of `/mockups` to `/bedchart` and
+ *  `/bedchart-sign-in` (rollout readiness review item 3.2), so production no longer depends on
  *  this list, and every `/mockups/**` path is blocked there. The old addresses redirect in
  *  `src/proxy.ts`.
  *

@@ -20,7 +20,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const route = { pathname: "/ward-flow" };
+const route = { pathname: "/bedchart" };
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
@@ -80,7 +80,7 @@ afterEach(() => {
   cleanup();
   discardReferralDraft();
   resetWardLiveRegionForTests();
-  route.pathname = "/ward-flow";
+  route.pathname = "/bedchart";
   window.history.replaceState(null, "", "/");
   window.sessionStorage.clear();
   resetServiceScopeForTests();
@@ -117,7 +117,7 @@ describe("1. Home opens the shared Activity panel from the master design's bar",
   });
 
   it("opens the same shared panel from the bar's own Activity button", async () => {
-    route.pathname = "/ward-flow/movements";
+    route.pathname = "/bedchart/movements";
     renderBar();
     fireEvent.click(screen.getByTestId("ward-bar-activity-trigger"));
     const dialog = await screen.findByRole("dialog", { name: "Activity · Statewide" });
@@ -132,7 +132,7 @@ describe("2. the master design's bar opens the referral slide-out only for a des
     ["officer", officer],
   ])("gives the %s no slide-out from a drawer request, a link or the intake route", async (_name, access) => {
     useDesk(access);
-    renderBar(<a href="/ward-flow/referrals/new?refer=ward">Refer</a>);
+    renderBar(<a href="/bedchart/referrals/new?refer=ward">Refer</a>);
     act(() => openWardDrawer("referral"));
     const notPrevented = fireEvent.click(screen.getByRole("link", { name: "Refer" }));
     expect(notPrevented, "the bar must not take the click over").toBe(true);
@@ -140,8 +140,8 @@ describe("2. the master design's bar opens the referral slide-out only for a des
     expect(screen.queryByTestId("ward-bar-referral-sheet")).toBeNull();
     cleanup();
 
-    route.pathname = "/ward-flow/referrals/new";
-    window.history.replaceState(null, "", "/ward-flow/referrals/new?refer=ed");
+    route.pathname = "/bedchart/referrals/new";
+    window.history.replaceState(null, "", "/bedchart/referrals/new?refer=ed");
     renderBar();
     await settleFrames();
     expect(screen.queryByTestId("ward-bar-referral-sheet")).toBeNull();
@@ -158,7 +158,7 @@ describe("2. the master design's bar opens the referral slide-out only for a des
 
   it("still opens it in place from a referral link for an ED desk", async () => {
     useDesk(edDesk);
-    renderBar(<a href="/ward-flow/referrals/new?refer=ward">Refer</a>);
+    renderBar(<a href="/bedchart/referrals/new?refer=ward">Refer</a>);
     const notPrevented = fireEvent.click(screen.getByRole("link", { name: "Refer" }));
     expect(notPrevented, "the bar takes the click over").toBe(false);
     expect(await screen.findByTestId("ward-bar-referral-sheet")).toBeInTheDocument();
@@ -166,8 +166,8 @@ describe("2. the master design's bar opens the referral slide-out only for a des
 
   it("still opens it when an ED desk arrives on the intake route", async () => {
     useDesk(edDesk);
-    route.pathname = "/ward-flow/referrals/new";
-    window.history.replaceState(null, "", "/ward-flow/referrals/new?refer=ed");
+    route.pathname = "/bedchart/referrals/new";
+    window.history.replaceState(null, "", "/bedchart/referrals/new?refer=ed");
     renderBar();
     expect(await screen.findByTestId("ward-bar-referral-sheet")).toBeInTheDocument();
   });

@@ -132,7 +132,7 @@ describe("Movements redesign: the coordinator's board", () => {
 
   it("offers the officers' Transport board and the coordinator's queue on the coordinator desk", () => {
     renderScreen();
-    expect(screen.getByRole("link", { name: "Transport" })).toHaveAttribute("href", "/ward-flow/transport/officer");
+    expect(screen.getByRole("link", { name: "Transport" })).toHaveAttribute("href", "/bedchart/transport/officer");
     expect(screen.getByRole("button", { name: /Next in my queue/ })).toBeInTheDocument();
   });
 
@@ -164,7 +164,7 @@ describe("Movements redesign: the community clinician desk (D-76)", () => {
     expect(within(panel).getByRole("link", { name: "Refer from team" })).toBeInTheDocument();
     expect(within(panel).getByRole("link", { name: "Team’s inpatients" })).toHaveAttribute(
       "href",
-      "/ward-flow/community/midland",
+      "/bedchart/community/midland",
     );
     expect(screen.queryByRole("navigation", { name: "Stages" })).not.toBeInTheDocument();
     expect(screen.queryByTestId("movements-needs-you")).not.toBeInTheDocument();

@@ -14,7 +14,7 @@ vi.mock("next/link", () => ({
 // The desk drawer ("Go to a desk") asks for the router, which jsdom cannot mount either.
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ back: vi.fn(), push: vi.fn(), replace: vi.fn() }),
-  usePathname: () => "/ward-flow/settings",
+  usePathname: () => "/bedchart/settings",
   useSearchParams: () => new URLSearchParams(),
 }));
 

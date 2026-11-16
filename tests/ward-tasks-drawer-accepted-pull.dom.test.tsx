@@ -46,6 +46,6 @@ describe("the bell's drawer lists what the badge counts", () => {
     expect(within(drawer).getByTestId(`ward-task-${rows[0]!.id}`)).toBeInTheDocument();
     const action = within(drawer).getByTestId(`ward-task-action-${rows[0]!.id}`);
     expect(action).toHaveTextContent("Pull the bed");
-    expect(action).toHaveAttribute("href", "/ward-flow/alerts");
+    expect(action).toHaveAttribute("href", "/bedchart/alerts");
   });
 });

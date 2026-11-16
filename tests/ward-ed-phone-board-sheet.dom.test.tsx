@@ -127,7 +127,7 @@ describe("ED board on phone", () => {
     );
     expect(screen.queryByTestId(`ward-ed-phone-sheet-${id}`)).toBeNull();
     expect(push).toHaveBeenCalledTimes(1);
-    expect(push.mock.calls[0][0]).toMatch(/^\/ward-flow\/people\/[^/]+$/u);
+    expect(push.mock.calls[0][0]).toMatch(/^\/bedchart\/people\/[^/]+$/u);
     expect(screen.queryByRole("button", { name: "Close patient details" })).toBeNull();
   });
 

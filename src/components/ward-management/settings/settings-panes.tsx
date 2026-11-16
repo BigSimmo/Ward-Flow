@@ -62,7 +62,7 @@ export function deviceAlertsRow({
           : phone.checked
             ? phone.sub
             : browserOn
-              ? "Act-now alerts while Ward Flow is open"
+              ? "Act-now alerts while BedChart is open"
               : "New act-now alerts on this device";
   return { checked, unavailable, phoneReady: !phone.unavailable, sub };
 }

@@ -4,7 +4,7 @@
  * Triage and risk: one entry that prints as the mental health triage (SMHMR900) and the risk
  * assessment and management plan (SMHMR905). Josh approved the mock-up (Option D, ported from
  * `d-lean.html` onto the kit) and it was built into the app on 7 Nov 2026, at
- * `/ward-flow/people/[patientId]/triage`, with Start a triage at `/ward-flow/triage/new`.
+ * `/bedchart/people/[patientId]/triage`, with Start a triage at `/bedchart/triage/new`.
  *
  * Layout: the patient banner (kit Hero), a section index on the left (step chips on a phone), one
  * form column of six numbered sections, and the record in a tabbed slide-out. The form's answers
@@ -328,14 +328,14 @@ function useFocusKeeper(state: TriageState) {
   }, [state]);
 }
 
-/** Start a triage (`/ward-flow/triage/new`): choosing a person opens their form, blank. */
+/** Start a triage (`/bedchart/triage/new`): choosing a person opens their form, blank. */
 export function TriageStartScreen() {
   const router = useRouter();
   return <TriageStart onChoose={(person) => router.push(triageHrefFor(person.id))} />;
 }
 
 /**
- * The triage form for one synthetic person (`/ward-flow/people/[patientId]/triage`). It opens blank,
+ * The triage form for one synthetic person (`/bedchart/people/[patientId]/triage`). It opens blank,
  * with nothing pre-selected; a person this desk is not sent reads as not found, as the record does.
  */
 export function TriageScreen({ patientId }: { patientId: string }) {
@@ -476,7 +476,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
   // Leaving drops typed text (it is never stored), so warn before any way out once something is entered.
   useDirtyStateGuard({
     isDirty: !signed && state !== initial,
-    confirmMessage: "Leave without signing? Ward Flow does not keep typed triage text, so it will be lost.",
+    confirmMessage: "Leave without signing? BedChart does not keep typed triage text, so it will be lost.",
   });
 
   // The index marks the section in view.
@@ -894,7 +894,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
           </div>
         </div>
         <p className={styles.footNote}>
-          Ward Flow prototype. Synthetic patient and figures only. Not validated clinical decision support. One entry
+          BedChart prototype. Synthetic patient and figures only. Not validated clinical decision support. One entry
           prints as SMHMR900 and SMHMR905.
         </p>
       </main>

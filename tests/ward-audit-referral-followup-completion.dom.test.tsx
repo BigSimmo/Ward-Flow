@@ -15,7 +15,7 @@ import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import type { Referral } from "@/components/ward-management/ward-model";
 
-const route = vi.hoisted(() => ({ pathname: "/ward-flow/referrals" }));
+const route = vi.hoisted(() => ({ pathname: "/bedchart/referrals" }));
 vi.mock("next/navigation", () => ({ usePathname: () => route.pathname, useRouter: () => ({ push: vi.fn() }) }));
 const seed = seedWardFlowState();
 const unit = seed.units[0]!;
@@ -46,7 +46,7 @@ function deferred<T>() {
   return { promise, resolve };
 }
 function setup(kind: Form, dispatch: WardCommandDispatch) {
-  route.pathname = kind === "information" || kind === "promise" ? `/ward-flow/ward/${unit.id}` : "/ward-flow/referrals";
+  route.pathname = kind === "information" || kind === "promise" ? `/bedchart/ward/${unit.id}` : "/bedchart/referrals";
   setWardFeatureFlagOnDevice("referral-information-needs", true);
   function Boundary({ children }: { children: ReactNode }) {
     const state = useWardFlow();

@@ -209,13 +209,13 @@ export const OTHER_SURFACE_CLAIMS: readonly ModelClaim[] = [
      * still built from the unit id. Read before repointing, as this file's own failure message
      * demands: the helper in its new home is byte-identical apart from its doc comment. */
     sourceFile: WARD_FACADE,
-    evidence: "return `/ward-flow/statistics/ward/${encodeURIComponent(unitId)}`;",
+    evidence: "return `/bedchart/statistics/ward/${encodeURIComponent(unitId)}`;",
     falsifiedBy: {
       change:
         "Per-ward detail stops being one dynamic route built from the unit id and becomes a per-ward lookup table. " +
         "(The 'a SINGLE href helper' half is an absence — a second helper added beside this one would leave this " +
         "line untouched.)",
-      find: "return `/ward-flow/statistics/ward/${encodeURIComponent(unitId)}`;",
+      find: "return `/bedchart/statistics/ward/${encodeURIComponent(unitId)}`;",
       replaceWith: "return WARD_STATISTICS_HREFS[unitId];",
     },
   },
@@ -230,12 +230,12 @@ export const OTHER_SURFACE_CLAIMS: readonly ModelClaim[] = [
     claim: "Per-department detail is a second dynamic route, built by its own href helper.",
     /* REPOINTED 2026-09-10 with its ward sibling above, and for the same reason. */
     sourceFile: WARD_FACADE,
-    evidence: "return `/ward-flow/statistics/ed/${encodeURIComponent(edId)}`;",
+    evidence: "return `/bedchart/statistics/ed/${encodeURIComponent(edId)}`;",
     falsifiedBy: {
       change:
         "Per-department detail stops being one dynamic route built from the department id and becomes a " +
         "per-department lookup table. (Same absence caveat as the ward helper above.)",
-      find: "return `/ward-flow/statistics/ed/${encodeURIComponent(edId)}`;",
+      find: "return `/bedchart/statistics/ed/${encodeURIComponent(edId)}`;",
       replaceWith: "return ED_STATISTICS_HREFS[edId];",
     },
   },
@@ -919,12 +919,12 @@ export const OTHER_SURFACE_CLAIMS: readonly ModelClaim[] = [
       "The community index route is registered in `ward-nav.ts`'s `WARD_NAV` list and linked from the root rail, " +
       "so the team pages it lists are reachable rather than reachable only by typing an address.",
     sourceFile: WARD_NAV,
-    evidence: 'id: "community", href: "/ward-flow/community",',
+    evidence: 'id: "community", href: "/bedchart/community",',
     falsifiedBy: {
       change:
         "The `community` entry is removed from `WARD_NAV` (or its href changes), so the root rail no longer " +
         "links this index and the claim becomes false again.",
-      find: 'id: "community", href: "/ward-flow/community",',
+      find: 'id: "community", href: "/bedchart/community",',
       replaceWith: "",
     },
   },

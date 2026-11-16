@@ -415,9 +415,9 @@ export function StageRow({
             <span className={flow.routeTo}>
               <ArrowRight size={12} className={flow.routeArrow} aria-hidden="true" />
               <SrOnly> to </SrOnly>
-              {canOpen(`/ward-flow/board/${movement.acceptedUnitId}`) ? (
+              {canOpen(`/bedchart/board/${movement.acceptedUnitId}`) ? (
                 <Link
-                  href={`/ward-flow/board/${movement.acceptedUnitId}`}
+                  href={`/bedchart/board/${movement.acceptedUnitId}`}
                   className={flow.wardLink}
                   title={`Open ${destinationLabel} Bed board`}
                 >

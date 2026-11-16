@@ -210,8 +210,8 @@ describe("where a person is now, and where a result opens", () => {
     for (const row of census.rows.slice(0, 400)) {
       const item = censusRowItem(row);
       if (row.kind === "movement") expect(item.href).toBe(movementHref(row.key));
-      if (row.kind === "referral") expect(item.href).toContain("/ward-flow/referrals?referral=");
-      if (row.kind === "admission" && row.unitId) expect(item.href).toContain(`/ward-flow/ward/`);
+      if (row.kind === "referral") expect(item.href).toContain("/bedchart/referrals?referral=");
+      if (row.kind === "admission" && row.unitId) expect(item.href).toContain(`/bedchart/ward/`);
       expect(item.subjectUmrn).toBe(row.umrn);
     }
   });
@@ -277,7 +277,7 @@ describe("beds and ready beds", () => {
 
   it("opens the named bed on the ward screen, and never a bed the ward does not have", () => {
     const beds = search(`${ward.name} bed 4`).beds;
-    expect(beds.map((bed) => bed.href)).toContain(`/ward-flow/ward/${encodeURIComponent(ward.id)}?bed=4`);
+    expect(beds.map((bed) => bed.href)).toContain(`/bedchart/ward/${encodeURIComponent(ward.id)}?bed=4`);
     expect(search(`${ward.name} bed ${ward.beds + 1}`).beds.filter((bed) => bed.unit.id === ward.id)).toEqual([]);
   });
 

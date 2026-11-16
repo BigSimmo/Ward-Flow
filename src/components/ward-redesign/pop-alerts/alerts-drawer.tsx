@@ -1431,7 +1431,7 @@ export function AlertsDrawer({
               </Link>
             ) : null}
             <Link
-              href={WARD_VIEWS.find((view) => view.id === "delays")?.href ?? "/ward-flow/waiting"}
+              href={WARD_VIEWS.find((view) => view.id === "delays")?.href ?? "/bedchart/waiting"}
               onClick={closeFromLink}
               data-testid="ward-tasks-jump-delays"
               className={styles.quickJump}

@@ -140,7 +140,7 @@ function subscribeHomeEdFilter(onChange: () => void) {
 const useHomeEdFilter = createBrowserStore(subscribeHomeEdFilter, readHomeEdFilter, null);
 const HOME_VIEWS = ["needs", "queue", "planned"] as const;
 const NEEDS_FOCI = ["all", "act", "decide"] as const;
-const DELAYS_HREF = "/ward-flow/waiting";
+const DELAYS_HREF = "/bedchart/waiting";
 
 /** Alerts whose work happens in Placement, so their row button opens it beside the list (Home v7). */
 const IN_PLACE_KINDS = new Set(["hold", "declines", "nobed", "unsuitable"]);
@@ -208,10 +208,10 @@ function HomeListMoreMenu() {
       items={[
         // Home notes 4, issue 4 (Josh, 9 Nov 2026): Today's review replaces the four Registers tabs
         // (Exceptions, Declines, Overrides, Refused) as the one page for what went off-plan today.
-        { id: "review", label: "Today's review", onSelect: () => router?.push("/ward-flow/review") },
+        { id: "review", label: "Today's review", onSelect: () => router?.push("/bedchart/review") },
         // Feature plan item 29: the overnight page, with the same figures as the day screens.
-        { id: "night", label: "Night view", onSelect: () => router?.push("/ward-flow/night") },
-        { id: "alerts", label: "Alerts history", onSelect: () => router?.push("/ward-flow/alerts") },
+        { id: "night", label: "Night view", onSelect: () => router?.push("/bedchart/night") },
+        { id: "alerts", label: "Alerts history", onSelect: () => router?.push("/bedchart/alerts") },
       ]}
       trigger={(props) => (
         <button
@@ -814,7 +814,7 @@ export function CoordinatorScreen() {
   const bedChecks = staleBedCounts + wardsNotReporting > 0;
   const packPointer =
     packWords !== "" ? (
-      <Link href="/ward-flow/reports/downtime" className={catchUpStyles.pointer} data-testid="home-next-old-packs">
+      <Link href="/bedchart/reports/downtime" className={catchUpStyles.pointer} data-testid="home-next-old-packs">
         {packWords}
       </Link>
     ) : null;
@@ -927,7 +927,7 @@ export function CoordinatorScreen() {
                               ) : (
                                 "In use"
                               ),
-                            href: "/ward-flow/capacity",
+                            href: "/bedchart/capacity",
                             testId: "home-figure-occupancy",
                             linkTestId: "ward-home-occupancy-link",
                           },

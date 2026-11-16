@@ -17,8 +17,8 @@ const { MyListCard } = await import("@/components/ward-management/coordinator/my
 const { WardFlowProvider } = await import("@/components/ward-management/ward-flow-provider");
 const { NOW_ANCHOR } = await import("@/components/ward-management/ward-sites");
 
-const FORMS = "/ward-flow/legal-forms";
-const PATIENT = "/ward-flow/patients/synthetic-person";
+const FORMS = "/bedchart/legal-forms";
+const PATIENT = "/bedchart/patients/synthetic-person";
 
 const entry = {
   item: { id: "synthetic-legal-alert", title: "Form time passed", detail: "", tone: "danger" },
@@ -47,7 +47,7 @@ function renderCard() {
         handlers={{ selectedId: undefined, onSelect: () => {}, onRelease: () => {}, onReturn: () => {} }}
         selectedReferralId={undefined}
         onSelectReferral={() => {}}
-        decideHref={() => "/ward-flow/referrals"}
+        decideHref={() => "/bedchart/referrals"}
       />
     </WardFlowProvider>,
   );

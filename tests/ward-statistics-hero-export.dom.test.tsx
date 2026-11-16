@@ -104,7 +104,7 @@ describe("Statistics hero: Export the figures", () => {
     expect(Number.isInteger(ready) && ready > 0, "the ready figure must be read, not defaulted").toBe(true);
 
     const { csv, name } = await exportedCsv(button);
-    expect(name).toBe("ward-flow-synthetic-network-figures.csv");
+    expect(name).toBe("bedchart-synthetic-network-figures.csv");
     expect(csv).toContain('"Data","Synthetic, not clinical records"');
     expect(csv).toContain(`"Beds ready now","${ready}"`);
   });
@@ -113,8 +113,8 @@ describe("Statistics hero: Export the figures", () => {
     const unit = allUnits()[0]!;
     inProvider(<StatisticsWardScreen unitId={unit.id} />);
     const { csv, name } = await exportedCsv(screen.getByTestId("ward-statistics-export"));
-    expect(name).toBe(`ward-flow-synthetic-${unit.id}-figures.csv`);
-    expect(csv).toContain(`"Ward Flow statistics","${unit.name}"`);
+    expect(name).toBe(`bedchart-synthetic-${unit.id}-figures.csv`);
+    expect(csv).toContain(`"BedChart statistics","${unit.name}"`);
     expect(csv).toContain(`"Beds","${unit.beds}"`);
   });
 

@@ -68,18 +68,18 @@ export function SettingsAlertsPane({
     ? permission === "denied"
       ? "Allow notifications for this site in the browser's settings, then turn them on here."
       : permission === "unsupported"
-        ? "This browser cannot show notifications. The buzz sound still plays while Ward Flow is open."
+        ? "This browser cannot show notifications. The buzz sound still plays while BedChart is open."
         : "Turn on Alerts on this device."
     : !buzz
       ? "Turn on Buzz sound."
-      : "Act-now alerts will reach you while Ward Flow is open here.";
+      : "Act-now alerts will reach you while BedChart is open here.";
 
   // Always shows in Ward Flow; also as a browser notification when the browser allows one.
   const sendTest = () => {
     let shown = false;
     if (permission === "granted" && typeof Notification !== "undefined") {
       try {
-        new Notification("Ward Flow test alert", { body: "Synthetic test. Nothing needs doing." });
+        new Notification("BedChart test alert", { body: "Synthetic test. Nothing needs doing." });
         shown = true;
       } catch {
         // The in-app test still shows.

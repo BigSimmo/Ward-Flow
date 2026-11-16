@@ -9,7 +9,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-let currentPathname = "/ward-flow";
+let currentPathname = "/bedchart";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => currentPathname,
@@ -67,7 +67,7 @@ describe("the Activity panel is consistently wired across all screens", () => {
   });
 
   it("labels the trigger as synthetic activity without a clock or a tone", () => {
-    currentPathname = "/ward-flow/movements";
+    currentPathname = "/bedchart/movements";
     render(<RetiredWardBar />);
     const trigger = screen.getByTestId("ward-bar-activity-trigger");
     expect(trigger.querySelector('[data-tone][aria-hidden="true"]')).toBeNull();
@@ -76,10 +76,10 @@ describe("the Activity panel is consistently wired across all screens", () => {
   });
 
   it.each([
-    ["the movements screen", "/ward-flow/movements"],
-    ["the Waiting screen", "/ward-flow/waiting"],
-    ["a ward route", "/ward-flow/ward/rph-adult-secure"],
-    ["Home", "/ward-flow"],
+    ["the movements screen", "/bedchart/movements"],
+    ["the Waiting screen", "/bedchart/waiting"],
+    ["a ward route", "/bedchart/ward/rph-adult-secure"],
+    ["Home", "/bedchart"],
   ])("shows the same panel, 20 events and the statewide live tally on %s", async (_name, pathname) => {
     currentPathname = pathname;
     const { user, sheet } = await openActivityPanel();

@@ -15,7 +15,7 @@ import { tourSteps as previewTourSteps } from "@/components/ward-redesign/pop-to
 afterEach(() => vi.unstubAllGlobals());
 
 it("names the current discharge controls in Help and both tour implementations", () => {
-  expect(screenHelpFor("/ward-flow/board/synthetic-ward", [])?.actions.join(" ")).toContain("Record hold-up");
+  expect(screenHelpFor("/bedchart/board/synthetic-ward", [])?.actions.join(" ")).toContain("Record hold-up");
   expect(JSON.stringify(SCREEN_TOURS)).toContain("Held up by reason");
   expect(JSON.stringify(SCREEN_TOURS)).not.toMatch(/Held up by barrier|counted by barrier/u);
   for (const steps of [tourSteps("ward", "desk", {}), previewTourSteps("ward", "desk", {})]) {

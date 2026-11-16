@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-const route = vi.hoisted(() => ({ path: "/ward-flow/waiting" }));
+const route = vi.hoisted(() => ({ path: "/bedchart/waiting" }));
 vi.mock("next/navigation", () => ({ usePathname: () => route.path, useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("next/dynamic", () => ({
   default: () =>
@@ -20,12 +20,12 @@ describe("Patient peek link", () => {
     const opened: string[] = [];
     const stop = onPatientPeek(({ movementId }) => opened.push(movementId));
     render(
-      <PatientPeekLink movementId="m-1" href="/ward-flow/movements/m-1">
+      <PatientPeekLink movementId="m-1" href="/bedchart/movements/m-1">
         Movement
       </PatientPeekLink>,
     );
     const link = screen.getByRole("link", { name: "Movement" });
-    expect(link).toHaveAttribute("href", "/ward-flow/movements/m-1");
+    expect(link).toHaveAttribute("href", "/bedchart/movements/m-1");
     expect(link).toHaveAttribute("aria-haspopup", "dialog");
     act(() => {
       fireEvent.click(link);
@@ -40,7 +40,7 @@ describe("Patient peek link", () => {
 
   it("stays a plain link when there is no movement to peek", () => {
     render(
-      <PatientPeekLink movementId={undefined} href="/ward-flow/people/p-1">
+      <PatientPeekLink movementId={undefined} href="/bedchart/people/p-1">
         Patient
       </PatientPeekLink>,
     );
@@ -52,14 +52,14 @@ describe("Patient peek link", () => {
 describe("Patient peek host", () => {
   afterEach(() => {
     cleanup();
-    route.path = "/ward-flow/waiting";
+    route.path = "/bedchart/waiting";
   });
 
   it("closes the peek when the route changes", () => {
     const { rerender } = render(<PatientPeekHost />);
     act(() => openPatientPeek("m-1"));
     expect(screen.getByTestId("peek-sheet")).toHaveTextContent("m-1");
-    route.path = "/ward-flow/movements/m-1";
+    route.path = "/bedchart/movements/m-1";
     rerender(<PatientPeekHost />);
     expect(screen.queryByTestId("peek-sheet")).toBeNull();
   });

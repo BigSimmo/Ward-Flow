@@ -7,7 +7,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
-  usePathname: () => "/ward-flow/ed",
+  usePathname: () => "/bedchart/ed",
   useSearchParams: () => new URLSearchParams(),
 }));
 
@@ -26,7 +26,7 @@ describe("All EDs — desktop wait lanes", () => {
     expect(await screen.findByRole("link", { name: "Open patient" })).toHaveAttribute("href");
     expect(screen.getByRole("link", { name: /^Open (?!patient).+/u })).toHaveAttribute(
       "href",
-      expect.stringMatching(/^\/ward-flow\/ed\//u),
+      expect.stringMatching(/^\/bedchart\/ed\//u),
     );
   });
 });

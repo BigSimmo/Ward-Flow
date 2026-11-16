@@ -149,7 +149,7 @@ describe("copyTextToClipboard", () => {
 
 // Every Ward Flow screen copies through ward-clipboard.ts, so none can skip the line or the scrub.
 describe("one way onto the clipboard", () => {
-  const roots = ["src/components/ward-management", "src/app/ward-flow"];
+  const roots = ["src/components/ward-management", "src/app/bedchart"];
   const helper = "src/components/ward-management/ward-clipboard.ts";
 
   function sourceFiles(dir: string): string[] {

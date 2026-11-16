@@ -148,7 +148,7 @@ describe("C08: the agenda's TV button says where it goes", () => {
     );
     const button = screen.getByTestId("agenda-start-meeting");
     expect(button).toHaveTextContent(/^Open on TV$/u);
-    expect(button).toHaveAttribute("href", "/ward-flow/bed-meeting");
+    expect(button).toHaveAttribute("href", "/bedchart/bed-meeting");
   });
 });
 

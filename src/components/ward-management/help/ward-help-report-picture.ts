@@ -16,13 +16,13 @@
 import { copyPngToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /** The menu that stays readable: it names pages, never patients. */
-export const READABLE_SELECTOR = 'nav[aria-label="Ward Flow views"]';
+export const READABLE_SELECTOR = 'nav[aria-label="BedChart views"]';
 
 /** Each block of the pixelated page, in CSS pixels: far coarser than any heading's letters. */
 const PICTURE_BLOCK_PX = 14;
 
 /** M124 (10 Nov 2026): the file is named synthetic, like every other download. */
-export const PICTURE_FILENAME = "ward-flow-synthetic-report-screen.png";
+export const PICTURE_FILENAME = "bedchart-synthetic-report-screen.png";
 
 /** M124: drawn across the foot of the picture, so it stays marked wherever it is pasted. */
 const PICTURE_MARKER = "Synthetic prototype";

@@ -127,7 +127,7 @@ export function triagePersonFromWorld(input: WorldPersonInput): TriagePerson {
     referral: input.openReferral,
     last: input.last ?? null,
     previous: input.previous ?? (input.last ? [input.last] : []),
-    recordHref: `/ward-flow/people/${input.recordAddress}`,
+    recordHref: `/bedchart/people/${input.recordAddress}`,
   };
 }
 

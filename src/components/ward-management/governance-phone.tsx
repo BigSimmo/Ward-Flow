@@ -397,7 +397,7 @@ export function GovernancePhone({
                 {adminDesk ? (
                   <>
                     {" "}
-                    <Link href="/ward-flow/settings#access" className={eventList.accessLink}>
+                    <Link href="/bedchart/settings#access" className={eventList.accessLink}>
                       Open the Access log
                     </Link>
                   </>

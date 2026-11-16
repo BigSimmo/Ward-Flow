@@ -27,7 +27,7 @@ const KNOWN_PROBLEMS: readonly { page: RegExp; text: RegExp; why: string }[] = [
   {
     // Found by this fixture on its first run, 10 Nov 2026 (M108). React's development build says a
     // component on the Legal forms page sets state before it has mounted. No visible fault yet.
-    page: /\/ward-flow\/legal-forms(?:[?#]|$)/,
+    page: /\/bedchart\/legal-forms(?:[?#]|$)/,
     text: /^Can't perform a React state update on a component that hasn't mounted yet\./,
     why: "M108 defect: state set before mount on Legal forms; component not yet traced",
   },

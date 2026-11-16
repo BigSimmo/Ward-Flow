@@ -26,7 +26,7 @@ describe("import map layers", () => {
     expect(layerOf(`${WM}/shell-next/next-rail-body.tsx`)).toBe("shell");
     expect(layerOf(`${WM}/referrals/referral-board.tsx`)).toBe("screen:referrals");
     expect(layerOf("src/app/mockups/ward-flow-digest/route.ts")).toBe("mockup");
-    expect(layerOf("src/app/ward-flow/page.tsx")).toBe("route");
+    expect(layerOf("src/app/bedchart/page.tsx")).toBe("route");
     expect(layerOf("src/components/ward-redesign/ed-board.tsx")).toBe("component");
   });
 

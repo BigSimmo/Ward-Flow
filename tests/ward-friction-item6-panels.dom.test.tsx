@@ -8,7 +8,7 @@ import { WardToolsSheet } from "@/components/ward-management/tools/ward-tools-sh
 import { BookingsPeekLink } from "@/components/ward-management/alerts/bookings-peek";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/alerts",
+  usePathname: () => "/bedchart/alerts",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -63,7 +63,7 @@ describe("Log a delay as a short form in Tools (item 6c)", () => {
 
 describe("Alerts bookings in a pop-up (item 6b)", () => {
   it("opens the ward's bookings over the page and keeps the ward page one link away", async () => {
-    const href = "/ward-flow/ward/fre-adult-open?bookings=1";
+    const href = "/bedchart/ward/fre-adult-open?bookings=1";
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <BookingsPeekLink unitId="fre-adult-open" href={href}>
@@ -83,7 +83,7 @@ describe("Alerts bookings in a pop-up (item 6b)", () => {
   it("stays a plain link when there is no ward to show", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <BookingsPeekLink unitId={undefined} href="/ward-flow/capacity">
+        <BookingsPeekLink unitId={undefined} href="/bedchart/capacity">
           Open bookings
         </BookingsPeekLink>
       </WardFlowProvider>,

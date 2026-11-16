@@ -96,7 +96,7 @@ export function censusRowItem(row: CensusRow): SearchResultItem {
     kind: "person",
     kindLabel: "Person",
     id: row.patientRecordId ?? row.key,
-    href: row.patientRecordId ? patientHref(row.patientRecordId) : "/ward-flow/search",
+    href: row.patientRecordId ? patientHref(row.patientRecordId) : "/bedchart/search",
   };
 }
 

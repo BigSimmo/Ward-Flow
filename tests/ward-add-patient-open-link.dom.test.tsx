@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const router = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => router,
   useSearchParams: () => new URLSearchParams(window.location.search),
 }));
@@ -60,7 +60,7 @@ describe("Add patient toast, Open patient link (audit P143)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Open patient" }));
     expect(router.push).toHaveBeenCalledTimes(2);
     const href = router.push.mock.calls[1][0] as string;
-    expect(href).toMatch(/^\/ward-flow\/people\/[0-9a-z]+$/);
+    expect(href).toMatch(/^\/bedchart\/people\/[0-9a-z]+$/);
     expect(decodeRecordAddress(href.split("/").at(-1)!)).toMatch(/^PT-A\d+$/);
   });
 

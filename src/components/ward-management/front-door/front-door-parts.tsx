@@ -102,10 +102,10 @@ export function doorPoints(demo: boolean) {
 function Brand({ demo }: { demo: boolean }) {
   const points = doorPoints(demo);
   return (
-    <section className={styles.brand} aria-label="About Ward Flow">
+    <section className={styles.brand} aria-label="About BedChart">
       <div className={styles.brandTop}>
         <DoorMark />
-        <span className={styles.wordmark}>Ward Flow</span>
+        <span className={styles.wordmark}>BedChart</span>
         <span className={styles.syn}>
           <i aria-hidden="true" />
           Synthetic data

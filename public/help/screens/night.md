@@ -16,6 +16,6 @@ The coordinator's overnight page: beds ready, ED waits by Step, who is on the wa
 8. Intake windows. Says Not recorded until wards record their overnight intake windows.
 9. On call now. The state desk, each service's bed flow and the crisis line, with who answers now and until when. Numbers are synthetic.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

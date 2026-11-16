@@ -141,7 +141,7 @@ export function ReferralConfirmation({ s }: { s: WardReferralDrawerState }) {
               <div className={styles.cardActions}>
                 <Link
                   className={styles.btn}
-                  href={s.sentReferralId ? referralBoardHref(s.sentReferralId) : "/ward-flow/referrals"}
+                  href={s.sentReferralId ? referralBoardHref(s.sentReferralId) : "/bedchart/referrals"}
                   onClick={onClose}
                 >
                   <Users aria-hidden="true" />

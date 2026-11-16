@@ -48,8 +48,8 @@ test.beforeEach(async ({ page }) => {
 
 for (const [name, route, screenId] of SCREENS) {
   test(`picture: ${name} matches its baseline`, async ({ page }) => {
-    const response = await page.goto(`/ward-flow${route}`, { waitUntil: "load" });
-    expect(response?.ok(), `/ward-flow${route} answered`).toBe(true);
+    const response = await page.goto(`/bedchart${route}`, { waitUntil: "load" });
+    expect(response?.ok(), `/bedchart${route} answered`).toBe(true);
     await expect(page.locator("html[data-wf-bar-ready]")).toHaveCount(1, { timeout: 30_000 });
     await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
     await expect(page.getByTestId(screenId)).toBeVisible({ timeout: 15_000 });

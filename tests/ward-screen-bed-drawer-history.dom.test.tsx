@@ -34,7 +34,7 @@ import { getBedStep } from "./helpers/ward-bed-steps";
  * - a leftover Census opener marker only sends the close Back for the exact unit and bed it opened.
  */
 const UNIT = allUnits()[0];
-const PATH = `/ward-flow/ward/${UNIT.id}`;
+const PATH = `/bedchart/ward/${UNIT.id}`;
 
 function renderWard() {
   return render(

@@ -30,7 +30,7 @@ const DESKTOP_ONLY_PREFIXES: readonly string[] = [
 ];
 
 export function isPhoneDesktopOnlyPath(pathname: string): boolean {
-  // Exact match: the bed meeting agenda (/ward-flow/bed-meeting/agenda) has a phone layout and stays open.
+  // Exact match: the bed meeting agenda (/bedchart/bed-meeting/agenda) has a phone layout and stays open.
   return DESKTOP_ONLY_PREFIXES.includes(pathname);
 }
 

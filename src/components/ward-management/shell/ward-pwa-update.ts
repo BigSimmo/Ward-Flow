@@ -13,8 +13,9 @@ import { PHONE_PUSH_SCOPE, PHONE_PUSH_WORKER_URL } from "./ward-phone-push";
 /** The page's notices (its toast region), or null outside one. */
 type Notices = { push: (toast: ToastInput) => string; dismiss: (id: string) => void } | null;
 
-/** Scopes registered before Ward Flow left /mockups (19 October 2026); the slashed one is pre-F-11. */
-export const LEGACY_PWA_SCOPES = ["/mockups/ward-flow", "/mockups/ward-flow/"] as const;
+/** Scopes registered before Ward Flow left /mockups (19 October 2026), the slashed one pre-F-11, and
+ *  /ward-flow before the move to /bedchart (D-250, 16 November 2026). */
+export const LEGACY_PWA_SCOPES = ["/mockups/ward-flow", "/mockups/ward-flow/", "/ward-flow"] as const;
 
 /** Shown instead of reloading while unsaved or unsent work would be lost (#1577). */
 export const UPDATE_HELD_NOTICE = {
@@ -25,7 +26,7 @@ export const UPDATE_HELD_NOTICE = {
 /** The one-time notice when removing the old registration ended this phone's alerts. */
 export const PHONE_ALERTS_MOVED_NOTICE = {
   title: "Turn phone alerts on again",
-  body: "An update moved Ward Flow's alerts. Switch them on again in Settings, Alerts.",
+  body: "An update moved BedChart's alerts. Switch them on again in Settings, Alerts.",
 } as const;
 
 async function hadPushSubscription(registration: ServiceWorkerRegistration): Promise<boolean> {
@@ -86,9 +87,7 @@ export function watchWardPwaWorker(container: ServiceWorkerContainer, notices: (
     if (!toasts) return;
     if (noticeId) toasts.dismiss(noticeId);
     noticeId = toasts.push({
-      ...(held
-        ? { tone: "warning", ...UPDATE_HELD_NOTICE }
-        : { tone: "info", title: "New version of Ward Flow ready" }),
+      ...(held ? { tone: "warning", ...UPDATE_HELD_NOTICE } : { tone: "info", title: "New version of BedChart ready" }),
       skipOfflineNote: true,
       action: {
         label: "Reload",

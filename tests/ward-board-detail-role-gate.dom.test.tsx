@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/navigation")>()),
-  usePathname: () => "/ward-flow/ward/board",
+  usePathname: () => "/bedchart/ward/board",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
 }));
 
@@ -42,7 +42,7 @@ function openAnOccupiedBed() {
 
 describe("the board's bed record follows the permission matrix", () => {
   it("offers the ward its bed steps", () => {
-    setDeskRole("ward", "/ward-flow/ward/board");
+    setDeskRole("ward", "/bedchart/ward/board");
     const detail = openAnOccupiedBed();
     expect(within(detail).getByTestId("ward-board-stepdown-toggle")).toBeInTheDocument();
     expect(within(detail).getByTestId("ward-board-record-leaving-submit")).toBeInTheDocument();
@@ -50,7 +50,7 @@ describe("the board's bed record follows the permission matrix", () => {
   });
 
   it("does not offer the site bed manager steps its role may not take, and keeps Record hold-up", () => {
-    setDeskRole("bed_manager", "/ward-flow/ward/board");
+    setDeskRole("bed_manager", "/bedchart/ward/board");
     const detail = openAnOccupiedBed();
     expect(within(detail).queryByTestId("ward-board-stepdown-toggle")).toBeNull();
     expect(within(detail).queryByTestId("ward-board-record-leaving-submit")).toBeNull();

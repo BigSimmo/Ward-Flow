@@ -395,7 +395,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
           {!countryExtensionEligible(movement) && (
             <p>
               A country extension requires a current Form 1A. Record its country paper setting in{" "}
-              <Link href="/ward-flow/legal-forms">Forms</Link> first.
+              <Link href="/bedchart/legal-forms">Forms</Link> first.
             </p>
           )}
           <p>No statutory interval is calculated.</p>

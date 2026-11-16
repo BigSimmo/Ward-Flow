@@ -990,7 +990,7 @@ export function WardBedDossierDrawer({
                 variant: isPreparing && onMarkReady ? "sec" : "pri",
                 className: cx(styles.pill, !(isPreparing && onMarkReady) && styles.bandMain),
               })}
-              href="/ward-flow/referrals"
+              href="/bedchart/referrals"
             >
               Review current referrals
             </Link>

@@ -330,7 +330,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
           <WardNotFoundBody
             title="Ward not found"
             testId="ward-unit-unresolved"
-            list={{ href: "/ward-flow/wards", label: "All wards" }}
+            list={{ href: "/bedchart/wards", label: "All wards" }}
           >
             No ward matches this link.
           </WardNotFoundBody>

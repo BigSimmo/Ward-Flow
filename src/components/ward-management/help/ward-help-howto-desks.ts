@@ -37,7 +37,7 @@ export const ED_ROW_ACTIONS: TourTarget[] = [
 ];
 /** A movement in the list; a phone groups the list by stage, so a stage stands in. */
 export const MOVEMENT_ROW: TourTarget[] = [
-  { sel: '#main-content a[href^="/ward-flow/movements/"]' },
+  { sel: '#main-content a[href^="/bedchart/movements/"]' },
   { sel: '[data-testid^="movements-group-toggle-"]' },
 ];
 const REFERRAL_ROW: TourTarget[] = [
@@ -88,7 +88,7 @@ export const DESK_JOBS: readonly HowTo[] = [
       {
         target: confirmButton("Record arrival"),
         title: "Record arrival",
-        body: "Ward Flow names the patient and asks you to confirm. Not yet goes back without recording.",
+        body: "BedChart names the patient and asks you to confirm. Not yet goes back without recording.",
       },
       {
         target: { sel: '[data-testid="ward-officer-toast-undo"]' },
@@ -451,7 +451,7 @@ export const DESK_JOBS: readonly HowTo[] = [
     title: "Read the weekly report",
     keywords: "weekly report week pilot measures operations print summary",
     answer:
-      "Open Statistics, then Weekly. Choose the week, then read Pilot measures (the four agreed measures; the two counted outside Ward Flow say so), Where the time goes, Supporting figures and Pressure this week. How this is counted explains each one. Print prints the report.",
+      "Open Statistics, then Weekly. Choose the week, then read Pilot measures (the four agreed measures; the two counted outside BedChart say so), Where the time goes, Supporting figures and Pressure this week. How this is counted explains each one. Print prints the report.",
     desks: ["executive", "coordinator"],
     go: "statistics",
     showMe: [
@@ -467,7 +467,7 @@ export const DESK_JOBS: readonly HowTo[] = [
       {
         target: { sel: '[aria-labelledby="rd-pilot"]' },
         title: "Pilot measures",
-        body: "The four agreed measures. Two are counted outside Ward Flow, and say so.",
+        body: "The four agreed measures. Two are counted outside BedChart, and say so.",
       },
       {
         target: { sel: '[aria-labelledby="rd-pilot"] summary' },
@@ -715,7 +715,7 @@ export const DESK_JOBS: readonly HowTo[] = [
       {
         target: { sel: '[data-testid="ward-closure-panel"]' },
         title: "Close the whole ward",
-        body: "Choose the reason and when it is expected to reopen. Ward Flow asks again before it closes the ward.",
+        body: "Choose the reason and when it is expected to reopen. BedChart asks again before it closes the ward.",
       },
     ],
   },
@@ -776,7 +776,7 @@ export const DESK_JOBS: readonly HowTo[] = [
       {
         target: { sel: '[data-testid="ward-planned-who"]' },
         title: "Patient",
-        body: "An existing patient, or Initials only for someone not yet in Ward Flow.",
+        body: "An existing patient, or Initials only for someone not yet in BedChart.",
       },
       {
         target: [{ sel: '[data-testid="ward-planned-patient"]' }, { sel: '[data-testid="ward-planned-initials"]' }],
@@ -1273,7 +1273,7 @@ export const DESK_JOBS: readonly HowTo[] = [
     title: "Mark that a patient left the department",
     keywords: "left department gone discharged off board remove ed",
     answer:
-      "After the outcome is recorded, open the patient and press Left the department. Ward Flow names the person and UMRN; press Left the department again to confirm. It takes them off your board and cannot be undone there.",
+      "After the outcome is recorded, open the patient and press Left the department. BedChart names the person and UMRN; press Left the department again to confirm. It takes them off your board and cannot be undone there.",
     desks: ["ed"],
     acts: ["RECORD_LEFT_DEPARTMENT"],
     go: "home",

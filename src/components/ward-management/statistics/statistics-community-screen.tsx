@@ -193,7 +193,7 @@ function ExecutiveCommunityScreen({ teamId }: { teamId: string }) {
 /**
  * ONE COMMUNITY TEAM, IN FIGURES — and deliberately NOT a second copy of its operational page.
  *
- * 🔴 **`/ward-flow/community/[teamId]` ALREADY SHOWS THIS TEAM'S LISTS.** This page carries
+ * 🔴 **`/bedchart/community/[teamId]` ALREADY SHOWS THIS TEAM'S LISTS.** This page carries
  * COUNTS and a CROSS-TEAM COMPARISON — the question the operational hub cannot answer, because it
  * only ever shows one team — and links to that hub for the work. The two short lists here (who is
  * due out, and follow-up for those discharged) are read from the same `communityHubLists`, never
@@ -1138,7 +1138,7 @@ function TeamComparison({
         String(cellText(row.figures.other)),
       ]),
     ];
-    downloadCsv("ward-flow-synthetic-community-teams.csv", lines, {
+    downloadCsv("bedchart-synthetic-community-teams.csv", lines, {
       asAt,
       scope: `Team comparison from ${current.name}; matching teams`,
     });

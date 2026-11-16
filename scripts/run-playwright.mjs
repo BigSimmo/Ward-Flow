@@ -64,12 +64,12 @@ const missingErrorComponentsNeedle = "missing required error components";
 // WARD_ONLY_BUILD=1 builds only the Ward Flow routes (R27), so the readiness probe must use them too.
 const wardOnlyRequested = process.env.WARD_ONLY_BUILD === "1";
 const WARD_ONLY_BUILD_PATHS = [
-  "app/ward-flow/**",
-  "app/ward-flow-sign-in/**",
+  "app/bedchart/**",
+  "app/bedchart-sign-in/**",
   "app/mockups/ward-flow-digest/**",
   "app/api/local-project-id/**",
 ].join(",");
-const wardSmokePaths = ["/ward-flow", "/ward-flow/capacity"];
+const wardSmokePaths = ["/bedchart", "/bedchart/capacity"];
 let routeSmokePaths;
 // Ward Flow is the only app left (PsychSift removal, 25 September 2026), so a full build is
 // probed on the same Ward Flow pages as a ward-only build.
@@ -685,7 +685,7 @@ try {
       } catch {
         builtRoutes = [];
       }
-      if (!builtRoutes.includes("/ward-flow/page")) {
+      if (!builtRoutes.includes("/bedchart/page")) {
         console.log(
           `Ward-only build is incomplete (${builtRoutes.length} route(s), no Ward Flow home page); falling back to a full build.`,
         );

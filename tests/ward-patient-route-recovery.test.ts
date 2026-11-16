@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import WardPersonPage from "@/app/ward-flow/people/[patientId]/page";
+import WardPersonPage from "@/app/bedchart/people/[patientId]/page";
 
 // A1K-05 (Josh, 27 Oct 2026): a malformed patient address is a real 404. A well-formed id stays
 // with the patient screen's soft not-found, as people added at runtime are held on the client.

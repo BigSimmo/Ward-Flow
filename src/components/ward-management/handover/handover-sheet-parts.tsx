@@ -79,7 +79,7 @@ export function HandoverKeysHelp({
         checked={enabled}
         onChange={(event) => onEnabledChange(event.target.checked)}
       />
-      <p>Applies across Ward Flow in this browser.</p>
+      <p>Applies across BedChart in this browser.</p>
       <dl className={refined.keys}>
         {KEYS.filter(([keys]) => signOff || keys !== "S").map(([keys, text]) => (
           <div key={keys}>

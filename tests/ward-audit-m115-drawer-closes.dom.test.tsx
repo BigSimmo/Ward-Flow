@@ -13,7 +13,7 @@ import { seedWardFlowStateAt, type WardFlowState } from "@/components/ward-manag
 import type { WardSharedConnection } from "@/components/ward-management/ward-shared-access";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/board/x",
+  usePathname: () => "/bedchart/board/x",
   useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
 }));

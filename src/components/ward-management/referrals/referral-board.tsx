@@ -664,7 +664,7 @@ export function ReferralBoard({
           </Button>
         ) : (
           <Link
-            href={`/ward-flow/ward/${targetWardUnitId}?tab=board`}
+            href={`/bedchart/ward/${targetWardUnitId}?tab=board`}
             className={buttonClass({ variant: "pri", size: "md" })}
             title={`Open ${targetWard?.name ?? "ward"} bed board`}
             data-testid="ward-referral-hold-bed"

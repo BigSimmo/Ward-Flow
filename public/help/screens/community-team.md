@@ -22,6 +22,6 @@ One community team's referrals and patients, from a referral sent to their retur
 - Team lists. Choose which list or section to read.
 - Team tools. How to reach the team, who is on duty today and the team's other tools.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

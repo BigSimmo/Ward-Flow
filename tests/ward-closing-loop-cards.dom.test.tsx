@@ -27,7 +27,7 @@ describe("closing-the-loop Statistics cards", () => {
     const links = list.querySelectorAll("a");
     expect(links.length).toBeGreaterThan(0);
     for (const link of links) {
-      expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/movements\//);
+      expect(link.getAttribute("href")).toMatch(/^\/bedchart\/movements\//);
       expect(link.textContent).not.toMatch(/WF-/);
     }
     expect(list.textContent).toContain("Not recorded");
@@ -49,6 +49,6 @@ describe("closing-the-loop Statistics cards", () => {
     const answer = screen.getByTestId("ward-fixed-answer");
     const links = answer.querySelectorAll("a");
     expect(links.length).toBeGreaterThan(0);
-    for (const link of links) expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/discharges\?admissionId=/);
+    for (const link of links) expect(link.getAttribute("href")).toMatch(/^\/bedchart\/discharges\?admissionId=/);
   });
 });

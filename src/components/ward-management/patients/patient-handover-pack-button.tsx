@@ -96,7 +96,7 @@ export function PatientHandoverPackButton({ input, dayZero }: { input: HandoverP
         open={open}
         onClose={() => setOpenMovement(null)}
         title="Handover pack"
-        description={<span role="status">{notice ?? "Print it or copy it. Ward Flow does not send it anywhere."}</span>}
+        description={<span role="status">{notice ?? "Print it or copy it. BedChart does not send it anywhere."}</span>}
         size="lg"
         secondary={[{ label: "Copy", onAction: () => void copy() }]}
         primary={{ label: "Print or save PDF", onAction: () => window.print() }}
@@ -106,7 +106,7 @@ export function PatientHandoverPackButton({ input, dayZero }: { input: HandoverP
           <style>{PRINT_CSS}</style>
           <div className={styles.head}>
             <div>
-              <p className={styles.eyebrow}>Ward Flow · Synthetic prototype</p>
+              <p className={styles.eyebrow}>BedChart · Synthetic prototype</p>
               <h3 className={styles.title}>{pack.title}</h3>
             </div>
             <p className={styles.stamp}>{stamp}</p>
@@ -135,7 +135,7 @@ export function PatientHandoverPackButton({ input, dayZero }: { input: HandoverP
               );
             })}
           </div>
-          <p className={styles.note}>Printed or copied by hand only. Not sent by Ward Flow.</p>
+          <p className={styles.note}>Printed or copied by hand only. Not sent by BedChart.</p>
         </article>
       </Dialog>
     </section>

@@ -35,7 +35,7 @@ import { wardPlaceLookup } from "@/components/ward-management/ward-access-places
 import { NOW_ANCHOR, STANDARD_WARD_SITES } from "@/components/ward-management/ward-sites";
 import { scenarioUnits } from "@/components/ward-management/ward-scenarios";
 
-const navigation = vi.hoisted(() => ({ path: "/ward-flow", push: vi.fn() }));
+const navigation = vi.hoisted(() => ({ path: "/bedchart", push: vi.fn() }));
 vi.mock("next/navigation", () => ({
   usePathname: () => navigation.path,
   useRouter: () => ({ push: navigation.push, replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
@@ -111,7 +111,7 @@ function UnsavedWork({ children }: { children: ReactNode }) {
 }
 
 beforeEach(() => {
-  navigation.path = "/ward-flow";
+  navigation.path = "/bedchart";
   navigation.push.mockImplementation((path: string) => {
     navigation.path = path;
   });
@@ -214,7 +214,7 @@ describe("Roles within the existing Demo selector", () => {
       ),
     );
     expect(readWardAccessSnapshot().access.role).toBe("officer");
-    expect(navigation.push).toHaveBeenCalledExactlyOnceWith("/ward-flow/transport/officer");
+    expect(navigation.push).toHaveBeenCalledExactlyOnceWith("/bedchart/transport/officer");
     navigation.push.mockClear();
     fireEvent.click(screen.getByRole("button", { name: "Exit role demo" }));
     const exitQuestion = await screen.findByRole("alertdialog", { name: "Leave this page?" });
@@ -228,7 +228,7 @@ describe("Roles within the existing Demo selector", () => {
       ),
     );
     expect(readWardAccessSnapshot().access).toEqual(original);
-    expect(navigation.push).toHaveBeenCalledExactlyOnceWith("/ward-flow");
+    expect(navigation.push).toHaveBeenCalledExactlyOnceWith("/bedchart");
   });
   it("lists all canonical roles beside the existing scenarios and survives repeated switches", () => {
     renderPanel();
@@ -288,7 +288,7 @@ describe("Roles within the existing Demo selector", () => {
     fireEvent.click(screen.getByRole("button", { name: "Exit role demo" }));
     expect(proof()).toHaveAttribute("data-role", "coordinator");
     expect(proof()).toHaveAttribute("data-scenario", scenario);
-    expect(navigation.push).toHaveBeenLastCalledWith("/ward-flow");
+    expect(navigation.push).toHaveBeenLastCalledWith("/bedchart");
     expect(screen.queryByRole("button", { name: "Exit role demo" })).toBeNull();
   });
 
@@ -371,7 +371,7 @@ describe("Roles within the existing Demo selector", () => {
     renderPanel();
     fireEvent.click(screen.getByRole("button", { name: "Back to Bed coordinator" }));
     expect(proof()).toHaveAttribute("data-role", "coordinator");
-    expect(navigation.push).toHaveBeenLastCalledWith("/ward-flow");
+    expect(navigation.push).toHaveBeenLastCalledWith("/bedchart");
     expect(screen.queryByRole("button", { name: "Back to Bed coordinator" })).toBeNull();
   });
 });
@@ -394,7 +394,7 @@ it("returns to a valid coordinator desk when a scenario change removes the start
   expect(scenarioUnits("winter-surge").some((unit) => unit.id === ward.id)).toBe(false);
   fireEvent.click(screen.getByRole("button", { name: "Exit role demo" }));
   expect(readWardAccessSnapshot().access).toEqual({ role: "coordinator", scope: { kind: "statewide" } });
-  expect(navigation.push).toHaveBeenLastCalledWith("/ward-flow");
+  expect(navigation.push).toHaveBeenLastCalledWith("/bedchart");
   expect(proof()).toHaveAttribute("data-scenario", "winter-surge");
   expect(Number(proof().getAttribute("data-records"))).toBeGreaterThan(0);
 });

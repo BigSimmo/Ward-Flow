@@ -24,6 +24,6 @@ One ward's beds, who is coming and going, and the decisions due this shift.
 
 - The round. Go through each patient in turn. The count shows how many are reviewed.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

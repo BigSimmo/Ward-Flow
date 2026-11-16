@@ -50,7 +50,7 @@ test.describe("@mockup Ward phone scrolling", () => {
     test.setTimeout(120_000);
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/ward-flow", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart", { waitUntil: "domcontentloaded" });
     await page.evaluate(() => localStorage.setItem("ward-flow-reduced-motion", "true"));
     await page.reload({ waitUntil: "domcontentloaded" });
     await expect(page.locator("html")).toHaveAttribute("data-reduced-motion", "");
@@ -81,7 +81,7 @@ test.describe("@mockup Ward phone scrolling", () => {
     test.setTimeout(120_000);
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/ward-flow", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart", { waitUntil: "domcontentloaded" });
     const bar = page.getByTestId("ward-bar");
     await expect(page.getByTestId("ward-bar-phone-menu")).toBeVisible();
     await page.waitForLoadState("networkidle");
@@ -124,7 +124,7 @@ test.describe("@mockup Ward phone scrolling", () => {
     test.setTimeout(120_000);
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/ward-flow", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("ward-bar-phone-menu")).toBeVisible();
     await page.waitForLoadState("networkidle");
     const bar = page.getByTestId("ward-bar");
@@ -169,7 +169,7 @@ test.describe("@mockup Ward phone scrolling", () => {
   test("short phone pages fill taller viewports and navigation returns to the top", async ({ page }) => {
     test.setTimeout(120_000);
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/ward-flow", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("ward-bar-phone-menu")).toBeVisible();
     await page.waitForLoadState("networkidle");
     await scrollColumn(page, 200);
@@ -209,7 +209,7 @@ test.describe("@mockup Ward responsive containment", () => {
       // compilation without classifying compilation time as a layout failure.
       test.setTimeout(120_000);
       await page.setViewportSize({ width: 390, height: 844 });
-      await page.goto(`/ward-flow${route}`, { waitUntil: "domcontentloaded" });
+      await page.goto(`/bedchart${route}`, { waitUntil: "domcontentloaded" });
       await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
       // The server renders the wide layout and the phone layout replaces it on hydration (v10), so
       // measure after the page has settled rather than a table that is about to be swapped out.
@@ -263,7 +263,7 @@ test.describe("@mockup Ward responsive containment", () => {
 
 test("@mockup approved overdue queue treatment fits phone, tablet and desktop", async ({ page }, testInfo) => {
   test.setTimeout(120_000);
-  await page.goto("/ward-flow", { waitUntil: "domcontentloaded" });
+  await page.goto("/bedchart", { waitUntil: "domcontentloaded" });
   await showEveryoneWaitingOn(page);
   const overdueRows = page.locator('[data-testid^="ward-queue-row-"][data-overdue="true"]:visible');
   await expect(overdueRows.first()).toBeVisible();
@@ -356,7 +356,7 @@ test("@mockup approved overdue queue treatment fits phone, tablet and desktop", 
 test("@mockup movement status stays inside phone, tablet and desktop viewports", async ({ page }) => {
   test.setTimeout(120_000);
   // D-39: an old raw-id link still works. It is sent on to the coded address, which shows no number.
-  await page.goto("/ward-flow/movements/WF-001", { waitUntil: "domcontentloaded" });
+  await page.goto("/bedchart/movements/WF-001", { waitUntil: "domcontentloaded" });
   await expect(page).toHaveURL(new RegExp(`${movementPath("WF-001")}$`, "u"));
   await expect(page).not.toHaveURL(/WF-001/u);
   // While the page streams in, React can hold a second, hidden copy in a <div hidden> until it
@@ -382,7 +382,7 @@ test.describe("@mockup Ward scroll geometry", () => {
     page,
   }) => {
     test.setTimeout(120_000);
-    await page.goto("/ward-flow/movements", { waitUntil: "networkidle" });
+    await page.goto("/bedchart/movements", { waitUntil: "networkidle" });
     await expect(page.getByTestId("ward-bar")).toHaveAttribute("data-band", /ink|light/);
     const panel = page.getByRole("region", { name: "Transport right now" });
     for (const width of [1361, 1440]) {
@@ -410,7 +410,7 @@ test.describe("@mockup Ward scroll geometry", () => {
     test.setTimeout(120_000);
     for (const width of [820, 1440]) {
       await page.setViewportSize({ width, height: 844 });
-      await page.goto("/ward-flow/statistics#journey-stages", { waitUntil: "networkidle" });
+      await page.goto("/bedchart/statistics#journey-stages", { waitUntil: "networkidle" });
       await expect(page.getByTestId("ward-statistics-journey-view")).toBeVisible();
       await expect
         .poll(() =>
@@ -425,7 +425,7 @@ test.describe("@mockup Ward scroll geometry", () => {
 
   test("Handover presentation selection leaves the background scroll positions unchanged", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 844 });
-    await page.goto("/ward-flow/handover", { waitUntil: "networkidle" });
+    await page.goto("/bedchart/handover", { waitUntil: "networkidle" });
     await expect(page.getByTestId("ward-bar")).toHaveAttribute("data-band", /ink|light/);
     // 1 Nov 2026 redesign: Present sits in the toolbar's More handover actions. The item reads
     // "Exit present" once presentation mode is on, which is the page's own record of the mode.
@@ -456,7 +456,7 @@ test.describe("@mockup Ward scroll geometry", () => {
 
   test("the shared header stays pinned with stable height on phone, tablet and desktop", async ({ page }) => {
     test.setTimeout(120_000);
-    await page.goto("/ward-flow/search", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart/search", { waitUntil: "domcontentloaded" });
     // The route's loading boundary streams the page into a hidden `S:` copy first; wait for the swap.
     await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
     await expect(page.getByTestId("ward-patient-search")).toBeVisible();
@@ -500,7 +500,7 @@ test.describe("@mockup Ward scroll geometry", () => {
   test("keyboard search reveals the last result without moving the page", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     // The Patients page keeps only its own search box, so the header search is tested on All wards.
-    await page.goto("/ward-flow/wards", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart/wards", { waitUntil: "domcontentloaded" });
     // The route's loading boundary streams the page into a hidden `S:` copy first; wait for the swap.
     await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
     await expect(page.getByTestId("ward-index")).toBeVisible();
@@ -539,7 +539,7 @@ test.describe("@mockup Ward scroll geometry", () => {
 
   test("a sheet follows responsive scroll owners and restores the desktop position", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/ward-flow/search", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart/search", { waitUntil: "domcontentloaded" });
     // The route's loading boundary streams the page into a hidden `S:` copy first; wait for the swap.
     await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
     await expect(page.getByTestId("ward-patient-search")).toBeVisible();
@@ -589,7 +589,7 @@ test.describe("@mockup Ward scroll geometry", () => {
 
   test("desktop Back returns to the previous position in the patient list", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/ward-flow/search", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart/search", { waitUntil: "domcontentloaded" });
     // The route's loading boundary streams the page into a hidden `S:` copy first; wait for the swap.
     await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
     await expect(page.getByTestId("ward-patient-search")).toBeVisible();
@@ -614,7 +614,7 @@ test.describe("@mockup Ward scroll geometry", () => {
     }, innerLeft);
     await expect.poll(() => census.evaluate((element) => element.scrollLeft)).toBe(innerLeft);
     // B1 (19 Oct 2026): Capacity is on the coordinator's own rail menu; Wards is now under More.
-    await page.locator('nav a[href="/ward-flow/capacity"]').first().click();
+    await page.locator('nav a[href="/bedchart/capacity"]').first().click();
     await expect(page).toHaveURL(/\/capacity$/);
     await expect.poll(() => column.evaluate((element) => element.scrollTop)).toBe(0);
     await page.goBack();
@@ -628,7 +628,7 @@ test.describe("@mockup Ward scroll geometry", () => {
 
   test("phone query changes retire the hidden desktop census position", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/ward-flow/search", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart/search", { waitUntil: "domcontentloaded" });
     const census = page.getByRole("region", { name: "Patient census rows" });
     await expect(census).toBeVisible();
     await page.waitForLoadState("networkidle");
@@ -675,7 +675,7 @@ test.describe("@mockup phone navigation follows the stable header", () => {
   for (const [label, route, classPrefix, collar] of strips) {
     test(`${label} keeps its navigation aligned while crossing the scroll threshold`, async ({ page }, testInfo) => {
       test.setTimeout(120_000);
-      await page.goto(`/ward-flow${route}`, { waitUntil: "networkidle" });
+      await page.goto(`/bedchart${route}`, { waitUntil: "networkidle" });
       const bar = page.getByTestId("ward-bar");
       await expect(bar).toHaveAttribute("data-band", /ink|light/);
       // Home flow (Josh, 3 Nov 2026): the "Home lists" nav pins under the header; check it on Flow.
@@ -719,7 +719,7 @@ test.describe("@mockup Movements timeline fits its rows on a ward desktop monito
   test("a service with few rows gets a panel that ends at its last row at 1920x1080", async ({ page }) => {
     test.setTimeout(120_000);
     await page.setViewportSize({ width: 1920, height: 1080 });
-    await page.goto("/ward-flow/movements", { waitUntil: "networkidle" });
+    await page.goto("/bedchart/movements", { waitUntil: "networkidle" });
     // M3 (Josh, 3 Nov 2026): the worklist leads and the timeline sits behind a switch, off by default.
     const timelineSwitch = page.getByRole("switch", { name: "Show timeline" });
     // A click before hydration is lost, so retry until the switch reports on and the chart has drawn.

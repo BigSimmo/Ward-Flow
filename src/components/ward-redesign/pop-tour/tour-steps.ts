@@ -133,7 +133,7 @@ function canDoStep(role: TourRole): TourStep {
     title: screensOnly ? "What your desk can open" : "What your desk can do",
     body:
       role === "coordinator"
-        ? "The bed coordinator can take every action in Ward Flow. Other desks will ask you for the ones they cannot take."
+        ? "The bed coordinator can take every action in BedChart. Other desks will ask you for the ones they cannot take."
         : screensOnly
           ? "Taken from the access table for your role."
           : "These come from the same rules the app checks when you act. For the rest, the list says who to ask.",
@@ -472,7 +472,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "raise",
           PRIMARY,
           "New referral",
-          "Start a referral to a ward from anywhere in Ward Flow.",
+          "Start a referral to a ward from anywhere in BedChart.",
         ),
         step(
           "Finding your way",

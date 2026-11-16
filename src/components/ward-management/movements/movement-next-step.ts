@@ -84,6 +84,6 @@ export function nextStepTarget(step: MovementNextStep, movementId: string): { hr
   // this href stays for a new tab, where the Patient page opens with its Ask wards list open.
   if (step.kind === "refer") return { href: askWardsHref(movementId), where: "the Patient page" };
   return step.kind === "escalate"
-    ? { href: "/ward-flow", where: "the coordinator screen" }
+    ? { href: "/bedchart", where: "the coordinator screen" }
     : { href: movementHref(movementId), where: "the Patient page" };
 }

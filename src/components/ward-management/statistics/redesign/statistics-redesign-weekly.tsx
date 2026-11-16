@@ -212,7 +212,7 @@ export function WeeklyBody(props: WeeklyBodyProps) {
           <Foot
             how={[
               <>Referral to arrival is the typical time {pilot.arrival.note}.</>,
-              "Measures 2 and 4 are counted outside Ward Flow: calls per placed referral on a paper tally, wrong-patient and lost changes through the incident route.",
+              "Measures 2 and 4 are counted outside BedChart: calls per placed referral on a paper tally, wrong-patient and lost changes through the incident route.",
               "Bed figures on time is today only, because each ward's latest confirmation is all that is kept.",
             ]}
           >
@@ -248,7 +248,7 @@ export function WeeklyBody(props: WeeklyBodyProps) {
                 <span className={s.mnum}>2</span>Calls per placed referral
               </>
             }
-            sub="Counted outside Ward Flow"
+            sub="Counted outside BedChart"
           >
             <p className={s.outside}>
               <ClipboardList size={15} aria-hidden="true" />
@@ -279,7 +279,7 @@ export function WeeklyBody(props: WeeklyBodyProps) {
                 <span className={s.mnum}>4</span>Wrong-patient and lost changes
               </>
             }
-            sub="Counted outside Ward Flow"
+            sub="Counted outside BedChart"
           >
             <p className={s.outside}>
               <ShieldAlert size={15} aria-hidden="true" />
