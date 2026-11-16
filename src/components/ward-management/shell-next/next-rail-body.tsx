@@ -3,6 +3,7 @@
 // Fork of src/components/ward-management/shell/ward-rail.tsx: the mock-ups' rail, with Josh's 30 Oct 2026 fixes.
 
 import { WardRailFrame } from "@/components/ward-management/shell/ward-chrome-frame";
+import { useTrainingMode } from "@/components/ward-management/demo-reset/ward-training-mode";
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { goToPageForShortcut, resetGoToShortcut } from "@/components/ward-management/shell/ward-goto-shortcuts";
 import { navigateWithDirtyGuard } from "@/components/ward-management/use-dirty-state-guard";
@@ -375,6 +376,9 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   const sheetAlertsClass = sheetShowsMain ? `${styles.sheetAlerts} ${railParts.sheetAlertsShow}` : styles.sheetAlerts;
   const boardMinute = minuteOfDay(now);
   const boardClock = formatInstant(now);
+  // D-194: in training the scripted clock is named "Training clock", never passed off as Board time.
+  // The rail and Menu carry its name now the header pill is gone (Josh, 16 Nov 2026).
+  const clockName = useTrainingMode() ? "Training clock" : "Board time";
   const shiftProgress = computeShiftProgress(boardMinute);
   const appearanceRef = useRef<HTMLDivElement>(null);
   // Opening Appearance moves focus to the current theme, so the keys act on the choices at once.
@@ -797,7 +801,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
         <div className={styles.shiftCockpit}>
           <div
             className={styles.shiftCockpitTop}
-            title={`Board time ${boardClock}. Shift ${shiftProgress.percent}% through. Shift times are ${OPERATIONAL_DEFAULT_LABEL}`}
+            title={`${clockName} ${boardClock}. Shift ${shiftProgress.percent}% through. Shift times are ${OPERATIONAL_DEFAULT_LABEL}`}
           >
             {/* Josh, 31 Oct 2026: the person's name stays on the shift card, as today. */}
             <span className={styles.shiftAvatar} aria-hidden="true">
@@ -815,8 +819,6 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
               ) : null}
             </span>
           </div>
-          {/* A7 (overall review, 20 Oct 2026): the demo clock shows in the top bar only
-            (`ward-bar.tsx`), which opens the demo controls; the rail no longer repeats it. */}
           {!showHandover ? null : handoverCardLinks ? (
             <Link
               href={digestSoon ? `${handoverHref()}?digest=1` : handoverHref()}
@@ -839,7 +841,17 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
             </span>
           )}
         </div>
-      ) : null}
+      ) : (
+        // Josh, 16 Nov 2026: the header has no clock now, so a desk with no shift card (Executive,
+        // access admin) keeps the time here, on the shift card's face.
+        <div className={styles.shiftCockpit} data-testid="ward-rail-board-time">
+          <div className={styles.shiftCockpitTop} title={`${clockName} ${boardClock}`}>
+            <span className={styles.shiftMeta}>
+              <RailLiveClock clock={boardClock} shift={clockName} classes={styles} />
+            </span>
+          </div>
+        </div>
+      )}
 
       {hottest ? (
         <div className={styles.alertsContainer} ref={alertsRef}>
@@ -1285,7 +1297,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
       >
         <div className={styles.menuContext}>
           <p className={styles.menuContextCell}>
-            <span className={styles.menuContextLabel}>Board time</span>
+            <span className={styles.menuContextLabel}>{clockName}</span>
             <span className={styles.menuContextValue}>
               <strong>{boardClock}</strong>
             </span>

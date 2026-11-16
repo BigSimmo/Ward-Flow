@@ -117,7 +117,7 @@ continue to use the existing derivations, including unavailable values rather th
 `tools/ward-tools-sheet.tsx` is the shared Tools drawer (Tools review, 15 Oct 2026): one scrolling
 sheet with Change view at the top, then Do now, Look up (All figures from `ward-tool-figures.tsx`
 first, then catchment, contacts from the On-call directory, Form times), Print and share, More pages,
-and one Demo panel (`ward-demo-panel.tsx`) at the foot. The header's Board time pill opens that Demo panel through
+and one Demo panel (`ward-demo-panel.tsx`) at the foot. The Board time pill in the Tools and Activity drawer footers opens that Demo panel through
 `ward-tools-open.ts`. Appearance, Settings and the Digest are not in Tools: the rail and Settings carry
 them. The sheet loads on demand through the existing drawer shell. Simpler screens (Josh, 19 Oct 2026)
 removed the Service now panel and `ward-service-now.tsx`: those figures repeated what each page shows.
@@ -653,7 +653,7 @@ file's scope note.
 - `ward-role-switcher.tsx` — mounted once, in the Tools sheet (`tools/ward-tools-sheet.tsx`), its
   only importer since the old sidebar was removed on 15 Oct 2026.
 - `ward-demo-controls.tsx` — now only `WardDemoClockPopover`, the Board time pill in the
-  `shell/ward-bar.tsx` header (above 1000px; the rail no longer repeats it, A7 overall review 20 Oct 2026) and the Activity and Tools drawer footers, which opens the Tools Demo panel
+  Activity and Tools drawer footers (no header pill since D-258, 16 Nov 2026), which opens the Tools Demo panel
   (`tools/ward-demo-panel.tsx`). The old `WardDemoControls` menu was removed on 15 Oct 2026.
 - `ward-global-search.tsx` — mounted once, inside `shell/ward-bar.tsx`, as the shell's one search
   box (`WardGlobalSearch`). 1 importer.

@@ -54,8 +54,8 @@ demo code out for up to 10 minutes, and a shared venue network counts as one add
    Act 2 had the least room, so trim your own words there first. The first time you open Keira's
    page and Dabakarn's page, a **Tip** card appears at the lower right. Press **Turn off tips**
    during the rehearsal so none appear in the real run.
-4. As the audience sits down (not earlier), press the **Board time** clock in the header. **Tools**
-   opens at **Scenario and clock**, with **Demo clock** and **Reset demo** at the top of the panel and
+4. As the audience sits down (not earlier), open **Tools** (the spanner at the top right) and press **Board time** at
+   its foot. Tools then shows **Scenario and clock**, with **Demo clock** and **Reset demo** at the top of the panel and
    **Scenario** below them. Check the scenario is **Standard day**, and pick it first if it is not:
    Reset demo reloads whichever scenario is loaded. Check **Worked examples** shows the button **Hide
    worked examples** (they are on for the demo). If it says **Show worked examples**, press it, then
@@ -98,7 +98,7 @@ If something goes wrong after the bed pull: press **Undo** on the "Bed pulled" m
 ends "Undo until" and a clock time five minutes after the pull, and stays until then unless you
 close it with its **X**. Until that time, the **Destination and placement** panel also keeps **Undo
 pull** under its "Bed pulled · … left" line. After that, press the **Destination** row, **Release bed
-pull**, choose **Pull made in error**, then **Release pull**. Or press the **Board time** clock,
+pull**, choose **Pull made in error**, then **Release pull**. Or open **Tools** and press **Board time** at its foot,
 **Reset demo**, and start again from Act 2. Acts 1 and 2 change nothing.
 
 If the code screen says "Too many tries", someone on the same network has typed wrong codes. A
@@ -256,7 +256,7 @@ is now lit), and the number beside **Capacity** in the left-hand menu, which has
 > by one. When the limit runs out, the pull does not release itself: the page says it has expired
 > and a person decides."
 
-**Optional (demo clock):** press the **Board time** clock and press **+1 hour** next to **Demo
+**Optional (demo clock):** open **Tools**, press **Board time** at its foot, then press **+1 hour** next to **Demo
 clock**. Close Tools with **Esc**. The pull time left has gone down by an hour. Say: "This is a demo
 control only, to show time passing. The clock in a real deployment would be the real one."
 
@@ -373,7 +373,7 @@ figure and the **Seclusion rooms** list.
 > they were typed. It works out no order length, no review time and no legal limit. The legal
 > register stays in the health service's own system."
 
-**C. The demo clock.** If you skipped it in Act 3, press the **Board time** clock and show **Demo
+**C. The demo clock.** If you skipped it in Act 3, open **Tools**, press **Board time** at its foot, and show **Demo
 clock** with **+15 min** and **+1 hour**, and the **Scenario** list. Close with **Esc**.
 
 > "For a demonstration we can move time forward or load a different day, like a surge. It only
@@ -593,5 +593,5 @@ Things that happen without a wrong press:
 | 6   | Graylands Adult Secure; More, Legal forms; clock | Loxbury, Saoirse, Esc; Seclusion tab; Board time, Demo clock                                                                                                      |
 | -   | Home                                             | -                                                                                                                                                                 |
 
-Before every run, as the audience sits down: **Board time** clock, **Reset demo**, confirm. Avoid
+Before every run, as the audience sits down: **Tools**, **Board time**, **Reset demo**, confirm. Avoid
 reloads and typed addresses; if "Part of this page did not load" appears, press **Reload page**.

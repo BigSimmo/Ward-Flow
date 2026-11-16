@@ -13,8 +13,8 @@ green. Quote a fact instead of restating it, and it updates itself when the sour
 | `migration-count`   | 18                                          | Numbered database migrations                                                          | `backend/ward-flow/migrations/`                                  |
 | `ward-route-count`  | 62                                          | `page.tsx` routes under `/bedchart`                                                   | `src/app/bedchart/`                                              |
 | `app-route-count`   | 66                                          | Pages and route handlers: the Ward Flow routes plus sign-in and the `/mockups` digest | `src/app/bedchart/, src/app/bedchart-sign-in/, src/app/mockups/` |
-| `latest-decision`   | D-257                                       | Newest entry in the decision log                                                      | `docs/ward-flow/decisions.md`                                    |
-| `next-decision`     | D-258                                       | Number to use for the next decision                                                   | `docs/ward-flow/decisions.md`                                    |
+| `latest-decision`   | D-258                                       | Newest entry in the decision log                                                      | `docs/ward-flow/decisions.md`                                    |
+| `next-decision`     | D-259                                       | Number to use for the next decision                                                   | `docs/ward-flow/decisions.md`                                    |
 | `node-engine`       | >=24.22.1 <25                               | Supported Node.js range                                                               | `package.json`                                                   |
 | `backend-env-vars`  | 33 names, [listed below](#backend-env-vars) | Environment variables the shared backend reads                                        | `backend/ward-flow/*.mjs`                                        |
 

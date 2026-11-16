@@ -57,7 +57,8 @@ const PHONE_ACTIVITY = id("ward-phone-menu-activity");
 /** Handover in the shift card at the top of the desktop menu, which counts down to the end of the shift. */
 const RAIL_HANDOVER: TourTarget = { sel: '[data-testid="ward-rail"] a[aria-label^="Handover"]' };
 const SERVICE = id("ward-bar-service-trigger");
-const BOARD_TIME = id("ward-bar-demo-clock");
+// Josh, 16 Nov 2026: the header has no clock; the time is the menu's top card (shift card or clock card).
+const BOARD_TIME = id("ward-rail-live-clock");
 const RAIL_HELP = id("ward-rail-help");
 const RAIL_MORE = id("ward-rail-more");
 // DK1 (3 Nov 2026): Settings is in the account menu, which the person at the foot of the menu opens.
@@ -174,7 +175,7 @@ const BOARD_TIME_STEP = more(
   "board-time",
   BOARD_TIME,
   "Synthetic figures",
-  "Every figure in BedChart is synthetic, from a demo. The clock in the header is the demo's own board time.",
+  "Every figure in BedChart is synthetic, from a demo. The clock at the top of the menu is the demo's own board time.",
 );
 
 /** The desktop's extra steps, or a tablet's, where the side menu is behind the bar's Menu button. */
