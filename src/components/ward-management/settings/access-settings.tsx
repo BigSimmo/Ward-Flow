@@ -163,6 +163,21 @@ function useResult(): [ReactNode, (message: string | null, done: string) => void
   return [line, (message, done) => setText(message ?? done)];
 }
 
+/**
+ * Settings overhaul (Josh, 16 Nov 2026): a ward or ED desk asks for cover from Your desk. A desk that
+ * manages roles has Staff access instead, which holds its cover with the roles and access log.
+ */
+export function DeskCoverSettings() {
+  const { desk, previewOf } = useWardAccessSnapshot();
+  if (previewOf || desk.role === "admin") return null;
+  return <CoverPanel />;
+}
+
+/** Whether this desk manages roles (an access admin or a statewide coordinator): it gets Staff access. */
+export function showsStaffAccess(desk: WardAccess): boolean {
+  return managesAccess(desk);
+}
+
 /** The Access tab's content for the current desk. */
 export function AccessSettings() {
   const { desk, previewOf } = useWardAccessSnapshot();

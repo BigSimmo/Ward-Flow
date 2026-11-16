@@ -856,10 +856,24 @@
   min-width: 0;
 }
 
+/* A long name wraps to a second line rather than ending in "…" (Josh, 16 Nov 2026). */
 .phoneWhoName {
+  display: -webkit-box;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
+}
+
+/* The kit's phone hero title is a two-line clamp. Safari counts every line inside it, the avatar's
+   initials included, so the role line and the avatar's lower edge were cut off (Josh, 16 Nov 2026,
+   screenshot). The identity row is a flex row with its own clamps, so the title here is not clamped. */
+.phoneProfile h1 {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: none;
+  line-clamp: none;
 }
 
 .phoneWhoRole {
@@ -1041,16 +1055,9 @@
   display: none;
 }
 
-/* Audit settings-21: the phone page lists Theme, Row density and Buzz above the
- * areas, so their sheets do not repeat them. A phone has no sidebar and no keyboard shortcuts. */
-.phoneSheetBody
-  :is(
-    [data-setting="theme"],
-    [data-setting="density"],
-    [data-setting="buzz"],
-    [data-setting="sidebar"],
-    [data-setting="shortcuts"]
-  ) {
+/* A phone has no sidebar and no keyboard shortcuts. Theme, Row density and Buzz sound now live in
+ * their sheets (Settings overhaul, Josh 16 Nov 2026), not in a block on the page. */
+.phoneSheetBody :is([data-setting="sidebar"], [data-setting="shortcuts"]) {
   display: none;
 }
 
@@ -1258,4 +1265,38 @@
 .phoneSheetBody div:has(> [data-setting="recent-changes"]) {
   row-gap: var(--wf-s-1);
   margin-block-end: 0;
+}
+
+/* Who can change what on a phone (Josh, 16 Nov 2026): the three-column table ran off the side of
+ * the sheet. Each row becomes a short block: the setting, then who, then how, with no sideways scroll. */
+.phoneSheetBody [data-setting="who-can"] .tableWrap {
+  overflow: visible;
+}
+
+.phoneSheetBody [data-setting="who-can"] :is(table, tbody, tr, td) {
+  display: block;
+  min-width: 0;
+  width: auto;
+}
+
+.phoneSheetBody [data-setting="who-can"] thead {
+  display: none;
+}
+
+.phoneSheetBody [data-setting="who-can"] tr {
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.phoneSheetBody [data-setting="who-can"] tr:first-child {
+  border-top: 0;
+}
+
+.phoneSheetBody [data-setting="who-can"] td {
+  padding: 0;
+  border: 0;
+}
+
+.phoneSheetBody [data-setting="who-can"] td + td {
+  margin-top: 2px;
 }

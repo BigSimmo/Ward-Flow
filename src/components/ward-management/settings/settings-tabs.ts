@@ -1,6 +1,9 @@
 // Settings by role (Josh, 3 Nov 2026, ST1, "yes to all"): the sections of the one page, their icons,
 // and Find a setting's index. Everyone has You, Display and (where alerts reach the desk) Alerts. The
-// coordinator also has Rules; the access admin has Access and Data. Demo tools show only on the demo
+// coordinator also has Rules; the access admin has Access and Data. Settings overhaul (Josh, 16 Nov
+// 2026): Access is "Staff access", the one home for roles, requests and the access log, on any desk
+// that manages roles (the access admin and a statewide coordinator); Your desk keeps only the desk's
+// own details, drafts and cover. Demo tools show only on the demo
 // site. Help, the tour and shortcuts live in Help, so Settings no longer repeats them. The index is
 // settings-search-index.ts with the rows it could not find, and each row is found only on a desk
 // whose page has its section.
@@ -20,7 +23,7 @@ export const SECTION_LABELS: Record<SettingsSection, string> = {
   rules: "Rules",
   alerts: "Alerts",
   display: "Display",
-  access: "Access",
+  access: "Staff access",
   data: "Data",
   you: "Your desk",
   demo: "Demo tools",
@@ -82,8 +85,8 @@ export function sectionForEntry(
     case "profile":
       return "you";
     case "access":
-      // A ward, ED or coordinator desk asks for cover from You; only the access admin has Access.
-      return !context.sections.includes("access") && context.sections.includes("you") ? "you" : "access";
+      // Roles, requests and the access log: Staff access, on a desk that manages roles.
+      return "access";
     case "data":
       return "data";
   }
@@ -147,8 +150,14 @@ const ADDED: readonly SettingsSearchEntry[] = [
     keywords: "diagnostics fault report support bug",
   },
   { id: "clinical-values", label: "Clinical values", tab: "data", keywords: "signed reference clinical" },
-  { id: "access", label: "Access", tab: "access", keywords: "roles cover grant give remove admin" },
+  {
+    id: "access",
+    label: "Staff access",
+    tab: "access",
+    keywords: "roles grant give remove admin requests access log break glass",
+  },
   { id: "who-can", label: "Who can change what", tab: "access", keywords: "permissions roles rules cover" },
+  { id: "cover", label: "Cover for a second ward or ED", tab: "profile", keywords: "cover second ward ed hours" },
   { id: "demo-tools", label: "Demo tools", tab: "data", keywords: "developer feature switches flags reset demo" },
   { id: "help-tips", label: "Page tips", tab: "display", keywords: "help hints first time tip" },
   {
