@@ -18,7 +18,7 @@ const test = base.extend<{
     const identity = await request.get(new URL("/api/local-project-id", baseURL!).href);
     expect(identity.ok()).toBe(true);
     const project = await identity.json();
-    expect(project.appName).toBe("BedChart");
+    expect(project.appName).toBe("Ward Flow");
     // The real registration is disabled in development. A dev-server pass cannot prove this lane.
     expect(project.localServer.runtimeMode).toBe("production");
     const pwa = await createWardPwaProxy(baseURL!);
