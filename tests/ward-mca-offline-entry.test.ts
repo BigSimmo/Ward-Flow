@@ -6,6 +6,7 @@ import { applyCommand, seedWorld, worldNow } from "../backend/ward-flow/engine";
 import { buildHistoryEntry } from "@/components/ward-management/ward-history";
 import { enteredOfflineLog, eventLogEntryFor } from "@/components/ward-management/ward-event-log";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { offlineEntryTime } from "@/components/ward-management/ward-offline-entry";
 
 const made = new Date("2026-11-14T02:00:00Z"); // 10:00 Perth
 const minutes = (count: number) => new Date(made.getTime() + count * 60_000);
@@ -115,6 +116,26 @@ describe("offline entry time (H1)", () => {
       { actedAt: sentAt - 12 * 60 },
     );
     expect(edge.outcome).toBe("accepted");
+  });
+
+  // Deep-DP1-2 (deep audit, 14 Nov 2026): a brand-new record has no earlier change to bound an
+  // offline save, so only the 12-hour limit stops it being recorded days in the past.
+  it("bounds a brand-new record's offline save by the 12-hour limit too", () => {
+    const world = seedWorld(made);
+    const sentAt = worldNow(world, minutes(13 * 60));
+    const addPatient = {
+      type: "ADD_PATIENT",
+      role: "ed",
+      now: sentAt,
+      umrn: "ZZ900001",
+      givenName: "Test",
+      familyName: "Synthetic",
+      dateOfBirth: "1990-01-01",
+    } as WardFlowEvent;
+    const old = offlineEntryTime(world.state, addPatient, sentAt - 3 * 24 * 60, sentAt);
+    expect(old).toMatchObject({ refusal: expect.stringMatching(/more than 12 hours ago/) });
+    const recent = offlineEntryTime(world.state, addPatient, sentAt - 2 * 60, sentAt);
+    expect(recent).toEqual({ now: sentAt - 2 * 60, offline: true, sentAt });
   });
 
   it("never applies an acted time to the demo controls", () => {

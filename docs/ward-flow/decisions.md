@@ -264,6 +264,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-247](#d-247-triage-is-one-tap-on-the-coordinators-phone-and-the--sheet-can-be-edited-15-november-2026)                                               | Triage is one tap on the coordinator's phone, and the + sheet can be edited            | Active                                           |
 | [D-248](#d-248-phone-search-boxes-are-40px-helps-phone-top-is-trimmed-and-help-sits-left-of-search-15-november-2026)                                    | Phone search boxes are 40px, Help's phone top is trimmed, and Help sits left of search | Active                                           |
 | [D-249](#d-249-keep-todays-logo-until-after-the-demo-15-november-2026)                                                                                  | Keep today's logo until after the demo                                                 | Active                                           |
+| [D-252](#d-252-this-project-is-now-the-main-ward-flow-project-a15-01-settled-by-rewording-and-the-page-scoring-finished-from-the-demo-16-november-2026) | Main project moved; A15-01 reworded; scoring finished from the demo                    | Active                                           |
 
 ---
 
@@ -2925,4 +2926,14 @@ D-238 is reserved for design Lane D's block (noted in PR #1677). D-239 is reserv
 - **Why:** a logo change touches the tab, home-screen icons, rail and front door just before the demo.
 - **Boundary:** no logo, icon or brand file changes now.
 
-The next free number is D-250.
+## D-252. This project is now the main Ward Flow project, A15-01 settled by rewording, and the page scoring finished from the demo (16 November 2026)
+
+- **Date:** 16 November 2026, 2:19 PM to 2:27 PM AWST (06:19 to 06:27 UTC). D-250 is claimed by open PR #1701. D-251 is claimed by open PR #1699. **Decided by:** Josh, in the Ward Flow project thread "Read the Ward Flow handover pack": "This is now the main. I handed over", "Yes" to copying the handover pack, "Ok well then complete the scoring from what you have now", and "Ok sure but keep public for now until I alter".
+- **Decision:**
+  1. The Ward Flow project in Josh's new account is the main project. It owns the plan, fixes, releases and D-numbers from today. The old account's 16 November handover pack is kept in the project files.
+  2. A15-01: the 7 November triage pick-list handover lists only the dropdown option values, with nothing about what the source images showed. The repository stays public until Josh changes it.
+  3. The page scoring is finished from the public demo and the current code, now, without waiting for a release. The signed-in rows stay at Low confidence until role passwords are given.
+- **Why:** Josh moved the project to a new account, and the scoring should not wait on a release or on passwords.
+- **Boundary:** no clinical value, rule or permission changes. The privacy page's content is drafted in its own thread and is not built here. Synthetic data only.
+
+The next free number is D-253.
