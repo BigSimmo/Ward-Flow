@@ -50,7 +50,6 @@ import { WardDeskPendingClear } from "./ward-access-hold";
 import { WardOfflineBanner } from "./ward-offline-banner";
 import { WardSignInEnding } from "./ward-sign-in-ending";
 import { WardGround } from "../ward-shell";
-import { WardDemoClockPopover } from "../ward-demo-controls";
 import { WardDemoPanel } from "../tools/ward-demo-panel";
 import { WardToolsSheet } from "../tools/ward-tools-sheet";
 import { railEntries, roleMenu, isActiveRailEntry, type RailEntry } from "./ward-rail-entries";
@@ -71,7 +70,6 @@ import { replayEarlyHeaderTap } from "./ward-early-tap";
 import { WARD_BAR_PAGE_TOOLS_ID } from "./ward-bar-page-tools";
 import { useMobileKeyboard } from "./use-mobile-keyboard";
 import { useRevealFocusedInRow } from "./use-reveal-focused-in-row";
-import { useOnlineStatus } from "../use-online-status";
 import { useServiceScope, setServiceScope } from "./ward-service-store";
 import { BedAlertMeter, overLineLabel, type CapacityRow } from "./ward-rail-parts";
 import {
@@ -80,7 +78,9 @@ import {
   compactPipPlace,
   RailOccupancyRing,
   RailReadyLine,
+  RailLiveClock,
 } from "../shell-next/next-rail-parts";
+import { useTrainingMode } from "../demo-reset/ward-training-mode";
 import { useBarScrolled, useBandScrolled } from "./ward-bar-scroll";
 import {
   BED_ALERT_THRESHOLD_PERCENT,
@@ -439,7 +439,6 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
   const flagOn = useWardFeatureFlagCheck();
   const home = useDeskHomeHref();
   const preferences = useWardDocumentPreferences();
-  const online = useOnlineStatus();
   const selectedService = useServiceScope();
   // The access admin borrows this desk's menu, with Governance leading it (Josh, 30 Oct 2026).
   const accessAdmin = useEffectiveWardAccess().role === "admin";
@@ -510,6 +509,8 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
     return () => document.removeEventListener("keydown", handle);
   }, [preferences.open, canRefer]);
   const clock = shell ? formatInstantWithDay(shell.now, shell.now) : "";
+  // D-253 (16 Nov 2026): no clock in the header, so the rail and Menu carry it, named as D-194 asks.
+  const clockName = useTrainingMode() ? "Training clock" : "Board time";
   useEffect(() => {
     publishLiveClock(clock || undefined);
     return () => publishLiveClock(undefined);
@@ -646,6 +647,13 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
               </button>
             </div>
             {/* Josh, 31 Oct 2026: the executive and access admin desks hold no shift, so no shift card. */}
+            <div className={rail.shiftCockpit} data-testid="ward-rail-board-time">
+              <div className={rail.shiftCockpitTop} title={`${clockName} ${clock}`}>
+                <span className={rail.shiftMeta}>
+                  <RailLiveClock clock={clock} shift={clockName} classes={rail} />
+                </span>
+              </div>
+            </div>
             {report ? <ExecutiveBedAlerts report={report} /> : null}
             <div className={rail.railScroll}>
               <nav className={rail.railNav} aria-label="Ward Flow views">
@@ -746,6 +754,11 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
                     aria-expanded={panel === "scope"}
                     onClick={() => setPanel("scope")}
                   >
+                    <span
+                      className={bar.serviceDot}
+                      data-service={activeService ? SERVICE_SWATCH_KEY[activeService] : "statewide"}
+                      aria-hidden="true"
+                    />
                     <span className={bar.scopeBadgeLabel}>{displayedScope}</span>
                     <ChevronDown className={bar.scopeCaret} aria-hidden="true" />
                   </button>
@@ -758,16 +771,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
               ) : null}
               <div id={WARD_BAR_PAGE_TOOLS_ID} className={bar.pageTools} data-testid="ward-bar-page-tools" />
               {/* Josh, 30-31 Oct 2026: no "Synthetic prototype" pill in the header. The footer's
-                  synthetic-data notice stays, and the board clock and Tools open the Demo menu. */}
-              <WardDemoClockPopover
-                className={bar.demoClock}
-                testId="ward-bar-demo-clock"
-                title={`Board time ${clock}${online ? "" : ". Offline"}`}
-              >
-                <span className={bar.demoClockDot} data-offline={online ? undefined : "true"} aria-hidden="true" />
-                <span className={bar.demoClockLabel}>Board time</span>{" "}
-                <span className={bar.demoClockTime}>{clock}</span>
-              </WardDemoClockPopover>
+                  synthetic-data notice stays, and Tools opens the Demo menu. No Board time pill (Josh, 16 Nov 2026). */}
               {/* The shell's synthetic-data marker for screen readers (visually hidden, so no pill shows). */}
               <span
                 className={bar.mark}
@@ -932,6 +936,14 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
             }}
           />
         ) : null}
+        <div className={rail.menuContext} data-testid="ward-executive-menu-time">
+          <p className={rail.menuContextCell}>
+            <span className={rail.menuContextLabel}>{clockName}</span>
+            <span className={rail.menuContextValue}>
+              <strong>{clock}</strong>
+            </span>
+          </p>
+        </div>
         {menuShowsCapacity && report ? (
           <ExecutiveMenuCapacityCard report={report} canOpen={canOpen} onGo={close} />
         ) : null}
@@ -1030,6 +1042,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
               close();
             }}
           >
+            <span className={bar.serviceDot} data-service="statewide" aria-hidden="true" />
             All services · {releasedCountText(report.network.people.edJourneysOpen)} open ED journeys
           </button>
         )}
@@ -1044,6 +1057,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
               close();
             }}
           >
+            <span className={bar.serviceDot} data-service={SERVICE_SWATCH_KEY[service.service]} aria-hidden="true" />
             {service.service}: {service.beds.ready} beds ready · {releasedCountText(service.waiting)} open ED journeys
           </button>
         ))}

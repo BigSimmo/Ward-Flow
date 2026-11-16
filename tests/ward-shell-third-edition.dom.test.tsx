@@ -762,7 +762,7 @@ describe("assertion 5 — demonstration controls reachable from Tools", () => {
 
   // The new frame (Josh, 31 Oct 2026): no Synthetic pill in the header, so the board clock opens the
   // one Demo panel in Tools (`requestDemoMenu` falls back to Tools). The footer notice stays.
-  it("keeps the role switcher in Tools and opens the one Demo panel from the board clock", async () => {
+  it("keeps the role switcher in Tools and opens the one Demo panel from the Tools foot's board clock", async () => {
     const user = userEvent.setup();
     renderShell();
 
@@ -780,7 +780,11 @@ describe("assertion 5 — demonstration controls reachable from Tools", () => {
     await waitFor(() => expect(screen.queryByRole("dialog", { name: /Tools/ })).toBeNull());
 
     expect(screen.queryByRole("button", { name: /^Data mode: Synthetic prototype/ })).toBeNull();
-    await user.click(screen.getByTestId("ward-bar-demo-clock"));
+    // D-253 (16 Nov 2026): no clock in the header; the Tools foot's Board time opens the Demo panel.
+    expect(screen.queryByTestId("ward-bar-demo-clock")).toBeNull();
+    await user.click(screen.getByTestId("ward-bar-tools-trigger"));
+    const reopened = await screen.findByRole("dialog", { name: /Tools/ });
+    await user.click(within(reopened).getByRole("button", { name: /^Board time/ }));
     const tools = await screen.findByRole("dialog", { name: /Tools/ }, { timeout: 15_000 });
     const panel = await within(tools).findByTestId("ward-tools-demo-panel");
     // One list of every scenario (the seven standard stories and the opt-in fictional network), so the

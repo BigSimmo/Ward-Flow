@@ -264,6 +264,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-247](#d-247-triage-is-one-tap-on-the-coordinators-phone-and-the--sheet-can-be-edited-15-november-2026)                                               | Triage is one tap on the coordinator's phone, and the + sheet can be edited            | Active                                           |
 | [D-248](#d-248-phone-search-boxes-are-40px-helps-phone-top-is-trimmed-and-help-sits-left-of-search-15-november-2026)                                    | Phone search boxes are 40px, Help's phone top is trimmed, and Help sits left of search | Active                                           |
 | [D-249](#d-249-keep-todays-logo-until-after-the-demo-15-november-2026)                                                                                  | Keep today's logo until after the demo                                                 | Active                                           |
+| [D-253](#d-253-no-clock-in-the-header-a-wider-search-and-service-colour-dots-16-november-2026)                                                          | No clock in the header, a wider search and service colour dots                         | Active                                           |
 
 ---
 
@@ -2925,4 +2926,11 @@ D-238 is reserved for design Lane D's block (noted in PR #1677). D-239 is reserv
 - **Why:** a logo change touches the tab, home-screen icons, rail and front door just before the demo.
 - **Boundary:** no logo, icon or brand file changes now.
 
-The next free number is D-250.
+## D-253. No clock in the header, a wider search and service colour dots (16 November 2026)
+
+- **Date:** 16 November 2026, 2:34 PM AWST (06:34 UTC). **Decided by:** Josh, in the thread "Remove header clock and widen search" (numbered D-253 because open PRs #1699, #1700 and #1701 claim D-250 and D-251): "Remove the board time clock at the header. It is shown in the side bar and takes up valuable space. This means the search bar can naturally extend on tablet", then "add the colour dot for the statewide part with the colour of dots linked to the health service colour there", then "Yes go ahead and build", after the review page https://claude.ai/artifact/U1Utj9PcDBEEcgHw9gCCk4 (version 2) and its five recommendations.
+- **Decision:** (1) No Board time pill in the header on any desk or width. (2) The header search opens out on tablet (it was a magnifier there) and grows to its full width wherever the bar has room; the page name keeps its words first. (3) The time shows at the top of the menu everywhere: the shift card on computers, the Menu's Board time and Handover card on tablets and, new, on phones. A desk with no shift card (Executive, access admin) gets a clock card in its place. The Demo controls open from Tools (its foot's Board time). (4) In training the rail and Menu name the clock "Training clock" (D-194). (5) The service chip and Service picker show a colour dot per health service: North Metro blue, South Metro teal, East Metro violet, WACHS ochre, CAHS pink, Private grey; Statewide's dot holds all six. These colours are kept clear of the alert red, amber and green.
+- **Replaces:** the 30 October 2026 ruling that Board time stays in the tablet header, and A7's "the demo clock's one place" in the header. D-192 item 1 stands everywhere else: service colours return only in the header chip and Service picker.
+- **Boundary:** layout and wording only. The app's time zone stays Perth (one setting, `src/lib/ward-time-zone.ts`, tested). No clinical value, rule, permission or saved record changes. Synthetic data only.
+
+The next free number is D-254.

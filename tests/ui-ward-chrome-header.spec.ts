@@ -476,7 +476,7 @@ test.describe("@mockup Ward shell bar", () => {
         await page.keyboard.press("Enter");
       } else if (width === 375) await menu.click();
       await expect(page.getByTestId("ward-reconciliation-line")).toHaveCount(0);
-      // The phone menu (375) carries no shift context; the tablet sheet (800) still does.
+      // Both Menus open on the time (D-253); the tablet sheet (800) names it Board time beside Handover.
       if (width <= 1000) {
         const sheetId = width === 375 ? "ward-phone-menu" : "ward-rail-more-pages";
         const sheet = page.getByTestId(sheetId);
