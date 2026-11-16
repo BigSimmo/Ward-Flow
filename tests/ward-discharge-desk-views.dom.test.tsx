@@ -62,7 +62,7 @@ afterEach(() => {
 describe("Discharges as each desk reads it", () => {
   it("the coordinator keeps the statewide wording, every filter and Confirm date", () => {
     renderBoard();
-    expect(screen.getByText("Discharges · all services")).toBeInTheDocument();
+    expect(screen.getByText("Discharges · statewide")).toBeInTheDocument();
     for (const label of ["Service", "Ward", "Held up by", "Sort"]) {
       expect(filterPick(label)).toBeInTheDocument();
     }
@@ -80,7 +80,7 @@ describe("Discharges as each desk reads it", () => {
     deskAs({ role: "ward", scope: { kind: "ward", unitIds: [WARD.id] } });
     renderBoard();
     expect(screen.getByText(`Discharges · ${WARD.name}`)).toBeInTheDocument();
-    expect(screen.queryByText("Discharges · all services")).not.toBeInTheDocument();
+    expect(screen.queryByText("Discharges · statewide")).not.toBeInTheDocument();
     expect(filterPick("Service")).not.toBeInTheDocument();
     expect(filterPick("Ward")).not.toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "Person" })).toBeInTheDocument();
