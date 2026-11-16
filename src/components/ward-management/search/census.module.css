@@ -1184,6 +1184,28 @@ tr:has(+ .moreRow) > td {
   .toolbar button {
     display: none !important;
   }
+
+  /* 16 Nov walk: on paper a wait reads on one line ("2 d 14 h waiting"), so the Time column is
+     wider and its value and words sit side by side without wrapping. The column headings repeat
+     at the top of each printed page; the page number is the shared `@page` counter. */
+  .colTime {
+    width: 132px;
+  }
+
+  .censusTable thead {
+    display: table-header-group;
+  }
+
+  table.censusTable td .time {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 4px;
+  }
+
+  table.censusTable td .time,
+  table.censusTable td .time * {
+    white-space: nowrap;
+  }
 }
 
 /* ───── desktop hit areas ─────
