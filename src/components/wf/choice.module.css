@@ -420,10 +420,20 @@
 
 @media (pointer: coarse) {
   .segItem,
-  .trk .segItem,
-  .chip {
+  .trk .segItem {
     min-height: 2.75rem;
     position: relative;
+  }
+  /* D-251 (size review 2): a touch filter chip is drawn 36px, the tablet chip size, and reaches 44px
+     through a hit area that does not show. It was drawn 44px on some pages and 36px on others. */
+  .chip {
+    min-height: 36px;
+    position: relative;
+  }
+  .chip::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
   }
   .chipRemove {
     position: relative;
@@ -804,11 +814,11 @@
   }
 }
 
-/* K3 (5 Nov 2026): a touch phone keeps the 44px chip floor of the coarse-pointer rule above, as it
-   did when the phone size was a fixed height under that min-height. */
+/* D-251 (size review 2): a touch phone draws every filter chip at the 40px phone pill size, with the
+   48px hit area above. K3 (5 Nov 2026) had kept a 44px face here, so some pages showed 44 and some 40. */
 @media (max-width: 46.4375rem) and (pointer: coarse) {
   .chip {
-    min-height: max(var(--wf-phone-pill-h), 2.75rem);
+    min-height: var(--wf-phone-pill-h);
   }
 }
 

@@ -91,9 +91,7 @@ describe("Coming and going (wave 4)", () => {
     const part = screen.getByTestId("ward-coming-and-going");
     expect(within(part).getByRole("heading", { name: /2 Arrivals\s*today/u })).toHaveTextContent("+ 1 back from leave");
     expect(within(part).getByRole("heading", { name: /1 Referrals\s*now/u })).toHaveTextContent("3 answered today");
-    expect(within(part).getByRole("heading", { name: /1 Needs a look\s*now/u })).toHaveTextContent(
-      "1 held up · 0 past date",
-    );
+    expect(within(part).getByRole("heading", { name: /1 Needs a look\s*now/u })).toHaveTextContent(/now\s*1 held up$/u);
     expect(within(part).getByRole("heading", { name: /0 Expected to leave\s*today/u })).toBeInTheDocument();
     expect(part).toHaveTextContent("None still due today. Bed 07 freed 07:42.");
     expect(screen.getByTestId("ward-tomorrow-line")).toHaveTextContent(

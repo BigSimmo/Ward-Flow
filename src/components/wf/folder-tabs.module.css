@@ -111,6 +111,12 @@
   z-index: 1;
 }
 
+/* UI sweep (16 Nov 2026): while a pop-up in the row is open (Handover's Keyboard shortcuts), the row
+   it sits in rises over the sticky table head below, which otherwise painted over the open panel. */
+.nav.nav > :not(.shape):not(.back):has([aria-expanded="true"]) {
+  z-index: var(--wf-z-popover);
+}
+
 .shape,
 .back {
   position: absolute;

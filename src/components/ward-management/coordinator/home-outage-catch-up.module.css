@@ -72,3 +72,17 @@
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* D-251 (size review 9): on a touch screen the outage-pack link reaches a 40px tap area that does not show; the
+   text is drawn exactly as before. Rows here sit further apart than 40px, so covers never overlap. */
+@media (pointer: coarse) {
+  :is(a, button).pointer {
+    position: relative;
+  }
+
+  :is(a, button).pointer::after {
+    content: "";
+    position: absolute;
+    inset: -12px 0;
+  }
+}
