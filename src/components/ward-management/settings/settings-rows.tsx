@@ -10,6 +10,7 @@ import { SrOnly, StatusGlyph, Stepper, cx } from "@/components/wf";
 
 import styles from "@/components/ward-management/settings/settings.module.css";
 import rx from "./settings-layout.module.css";
+import { minuteOfDayFromClockText } from "@/components/ward-management/ward-clock";
 
 /** One line under the band per tab: whether its changes wait for Save or apply at once. */
 export function ScopeLine({ kind }: { kind: "save" | "live" }) {
@@ -111,6 +112,13 @@ export function parseRuleTyped(
   }
   const exact = reachable.find((value) => plainWords(format(value)) === typed);
   if (exact !== undefined) return exact;
+  // A clock value reads am/pm on screen; "10:15", "10.15 am" and "22:15" each name one minute of the day.
+  if (/[:.]|[ap]\.?m/u.test(typed)) {
+    const minute = minuteOfDayFromClockText(text);
+    const clock =
+      minute === undefined ? undefined : reachable.find((value) => minuteOfDayFromClockText(format(value)) === minute);
+    if (clock !== undefined) return clock;
+  }
   if (!/^\d+$/u.test(typed)) return null;
   const byNumber = reachable.filter((value) => new RegExp(`^${typed}[^\\d:]*$`, "u").test(plainWords(format(value))));
   return byNumber.length === 1 ? byNumber[0]! : null;
