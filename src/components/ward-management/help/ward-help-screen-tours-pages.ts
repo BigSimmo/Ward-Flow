@@ -682,7 +682,7 @@ export const MORE_PAGES: readonly Around[] = [
       {
         device: "phone",
         target: starts("ward-settings-phone-area-"),
-        title: "Settings areas",
+        title: "Areas",
         body: "Each area opens in its own sheet. A count on Rules shows changes not yet saved.",
       },
       {
