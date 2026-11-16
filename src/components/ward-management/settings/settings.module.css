@@ -958,11 +958,6 @@
   color: var(--wf-ink-1);
 }
 
-.phoneHeadMeta {
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  color: var(--wf-ink-2);
-}
-
 .phoneCard,
 .phoneList {
   margin: 0;
@@ -1189,12 +1184,6 @@
   .ruleRow {
     transition: none;
   }
-}
-
-/* v10 phone (11 Oct 2026): the switch's track carries its state; the On or Off word (aria-hidden)
-   leaves the phone rows, as in the mockup. Only the phone "On this phone" card uses this class. */
-.phoneSwitch > span:last-child {
-  display: none;
 }
 
 /* v10 phone sheets: the switch alone shows its state; the On or Off word stays for wider screens

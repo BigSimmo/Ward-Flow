@@ -815,8 +815,8 @@ const PAGE_HELP: readonly PageHelp[] = [
     ],
     phoneActions: [
       "Change a rule under Rules, then Save. Rule changes wait for Save.",
-      "On this phone holds the theme and row density. They save at once.",
-      "Use Find a setting at the top, or open an area under All settings.",
+      "Display holds the theme and row density, and Alerts the buzz sound. They save at once.",
+      "Use Find a setting at the top, or open an area below it.",
     ],
     questions: [
       {

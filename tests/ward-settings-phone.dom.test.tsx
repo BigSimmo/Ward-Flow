@@ -93,7 +93,7 @@ describe("Settings: rule save answers with Undo in the wf toast", () => {
 });
 
 describe("Settings on a phone", () => {
-  it("opens on the compact hero, Find a setting, the four phone settings and the five areas", () => {
+  it("opens on the compact hero, Find a setting and the areas, with Theme and Buzz in their sheets", () => {
     asPhone();
     renderSettings();
     const page = screen.getByTestId("ward-settings-screen");
@@ -104,18 +104,32 @@ describe("Settings on a phone", () => {
     expect(within(page).queryByRole("button", { name: /Go to a desk/ })).toBeNull();
     expect(within(page).getByRole("combobox", { name: "Find a setting" })).toBeInTheDocument();
 
-    const quick = within(page).getByRole("region", { name: /On this phone/ });
-    expect(within(quick).getByRole("radiogroup", { name: "Theme" })).toBeInTheDocument();
-    // Josh, 31 Oct 2026: the bright-room theme is "Bright light".
-    expect(within(quick).getByRole("radio", { name: "Bright light" })).toBeInTheDocument();
-    expect(within(quick).getByRole("radiogroup", { name: "Row density" })).toBeInTheDocument();
-    expect(within(quick).getByRole("switch", { name: "Buzz sound" })).toBeInTheDocument();
+    // Settings overhaul (Josh, 16 Nov 2026, D-250): no "On this phone" block and no "Alerts are off"
+    // card. Theme and Row density are in Display, Buzz sound in Alerts, and the Alerts row says Off.
+    expect(within(page).queryByRole("region", { name: /On this phone/ })).toBeNull();
+    expect(within(page).queryByRole("radiogroup", { name: "Theme" })).toBeNull();
+    expect(screen.queryByTestId("ward-settings-alerts-act")).toBeNull();
+    expect(screen.getByTestId("ward-settings-alerts-off")).toHaveTextContent("Off");
 
-    // Settings by role (Josh, 3 Nov 2026, ST1): the coordinator's sections in order, Demo tools last on
-    // the demo site, and no Help row (Help, the tour and shortcuts live in the Help panel).
+    // The coordinator's own areas in order, then the Admin group (Demo tools on the demo site), and
+    // no Help row (Help, the tour and shortcuts live in the Help panel).
     expect(screen.getAllByTestId(/^ward-settings-phone-area-/).map((row) => row.getAttribute("data-testid"))).toEqual(
       ["rules", "alerts", "display", "you", "demo"].map((area) => `ward-settings-phone-area-${area}`),
     );
+    expect(within(page).getByRole("region", { name: "Admin" })).toBeInTheDocument();
+
+    fireEvent.click(within(screen.getByTestId("ward-settings-phone-area-display")).getByRole("button"));
+    const display = screen.getByRole("dialog", { name: "Display" });
+    expect(within(display).getByRole("radiogroup", { name: "Theme" })).toBeInTheDocument();
+    // Josh, 31 Oct 2026: the bright-room theme is "Bright light".
+    expect(within(display).getByRole("radio", { name: "Bright light" })).toBeInTheDocument();
+    expect(within(display).getByRole("radiogroup", { name: "Row density" })).toBeInTheDocument();
+    fireEvent.click(within(display).getByRole("button", { name: "Close" }));
+    fireEvent.click(within(screen.getByTestId("ward-settings-phone-area-alerts")).getByRole("button"));
+    expect(
+      within(screen.getByRole("dialog", { name: "Alerts" })).getByRole("switch", { name: "Buzz sound" }),
+    ).toBeInTheDocument();
+    fireEvent.click(within(screen.getByRole("dialog", { name: "Alerts" })).getByRole("button", { name: "Close" }));
     expect(screen.queryByTestId("ward-settings-phone-area-help")).toBeNull();
     // The desktop band's tab track is not on the phone.
     expect(within(page).queryByRole("tablist", { name: "Settings areas" })).toBeNull();
