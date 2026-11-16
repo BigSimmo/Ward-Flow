@@ -608,17 +608,26 @@
   container-type: inline-size;
 }
 @container (max-width: 1080px) {
+  /* Page scores 16 Nov 2026 (ED board, +4): In ED and Bay were cut off at laptop width ("11 h 33 min"
+     in 84px, "Not recorded" in 40px). They take a little from Patient and Presentation, whose text
+     wraps, and their own text wraps rather than being clipped. */
   .handoverTable[data-columns="handover"] col[data-col="Patient"] {
-    width: 196px;
+    width: 160px;
   }
   .handoverTable[data-columns="handover"] col[data-col="In ED"] {
-    width: 84px;
+    width: 112px;
   }
   .handoverTable[data-columns="handover"] col[data-col="Bay"] {
-    width: 40px;
+    width: 76px;
   }
   .handoverTable[data-columns="handover"] col[data-col="Presentation"] {
-    width: 120px;
+    width: 108px;
+  }
+  .handoverTable[data-columns="handover"] td[class*="a2Wait"],
+  .handoverTable[data-columns="handover"] td [class*="a2Wait"],
+  .handoverTable[data-columns="handover"] td[class*="a2Quiet"],
+  .handoverTable[data-columns="handover"] td [class*="a2Quiet"] {
+    white-space: normal;
   }
   .handoverTable[data-columns="handover"] col[data-col="Form"] {
     width: 92px;

@@ -216,7 +216,7 @@ describe("the one transport booking form", () => {
     expect(screen.queryByTestId(id("time-problem"))).toBeNull();
     fireEvent.change(screen.getByTestId(id("time")), { target: { value: "99:99" } });
     expect(screen.getByTestId(id("time-problem"))).toHaveTextContent(
-      "99:99 is not a clock time. Type it like 14:40 or 1440.",
+      "99:99 is not a clock time. Type it like 2:40 pm or 14:40.",
     );
     expect(screen.getByTestId(id("time"))).toHaveAttribute("aria-invalid", "true");
     fireEvent.click(screen.getByTestId(id("confirm")));
