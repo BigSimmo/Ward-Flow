@@ -78,6 +78,7 @@ import {
   ALERTS_ACCESS_ENTRY,
   REFERRAL_BOARD_HREF,
   SERVICE_SWATCH_KEY,
+  CLOSING_BACK_TIMEOUT_MS,
   drawerCloseHistoryStep,
   fixedServiceFor,
   focusAlertsQueue,
@@ -345,6 +346,9 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
   // A history Back is asynchronous. Keep the drawer identity here so repeated closes are
   // ignored and a delayed popstate cannot close a drawer opened in the meantime.
   const closingViaHistoryRef = useRef<{ id: WardBarPopoverId; announce: boolean } | null>(null);
+  // An open tapped while that Back is still landing waits here and runs once it lands, rather than being
+  // dropped (Josh, 16 Nov 2026: a closed drawer must answer the next tap).
+  const queuedOpenRef = useRef<WardBarPopoverId | null>(null);
   const [referralRequest, setReferralRequest] = useState<ReferralOpenRequest>({ id: 0, category: "ward" });
   // The slide-out fills this with its guarded close, which asks before discarding a draft.
   const referralCloseRef = useRef<(() => void) | null>(null);
@@ -484,9 +488,22 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
         canGoBack: typeof window.history.back === "function",
       });
       if (step === "back") {
-        // Keep the sheet and its background lock until popstate completes the close.
-        closingViaHistoryRef.current = { id, announce };
+        // Close at once, then step Back over the drawer's own history entry behind it (Josh, 16 Nov
+        // 2026: on a phone that Back took about half a second, and the X looked dead until it
+        // landed). The pending marker swallows its popstate, so it cannot close anything else.
+        const closing = { id, announce: false };
+        closingViaHistoryRef.current = closing;
+        setOpenPanel((current) => (current === id ? null : current));
+        if (announce) announceToWardShell("Closed.");
         window.history.back();
+        // A Back that never lands (the browser dropped it) must not leave the bar refusing taps.
+        window.setTimeout(() => {
+          if (closingViaHistoryRef.current !== closing) return;
+          closingViaHistoryRef.current = null;
+          const queued = queuedOpenRef.current;
+          queuedOpenRef.current = null;
+          if (queued) popoverStepsRef.current?.open(queued);
+        }, CLOSING_BACK_TIMEOUT_MS);
       } else {
         setOpenPanel((current) => (current === id ? null : current));
         if (announce) announceToWardShell("Closed.");
@@ -517,8 +534,11 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
         return;
       }
       // A replacement open must wait for the pending Back; otherwise its popstate would
-      // be indistinguishable from the drawer that initiated the close.
-      if (closingViaHistoryRef.current !== null) return;
+      // be indistinguishable from the drawer that initiated the close. It runs when Back lands.
+      if (closingViaHistoryRef.current !== null) {
+        queuedOpenRef.current = id;
+        return;
+      }
       if (
         openPanel === "tasks" &&
         id !== "tasks" &&
@@ -707,16 +727,26 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
 
   useEffect(() => {
     function onHistoryTraversalCancelled() {
-      // Capture kept the panel open and restored its entry. The pending Back is finished,
-      // so a later close may try again without approving any other dirty form.
+      // Another unsaved form kept the page and restored this drawer's entry. The pending Back is
+      // finished, so a later close may try again without approving any other dirty form. The drawer
+      // closed when Back was asked for, so show it again: the screen and history agree.
+      const closing = closingViaHistoryRef.current;
       closingViaHistoryRef.current = null;
+      queuedOpenRef.current = null;
+      if (closing !== null) setOpenPanel(closing.id);
     }
     function onPopState() {
       const closing = closingViaHistoryRef.current;
       if (closing !== null) {
-        // Only the drawer that initiated Back may be closed by its delayed event, and it keeps
-        // the caller's choice not to announce (a service pick announces its own confirmation).
+        // The drawer already closed when Back was asked for; this is that Back landing. An open
+        // tapped meanwhile runs now, on the entry this Back returned to.
         closingViaHistoryRef.current = null;
+        const queued = queuedOpenRef.current;
+        queuedOpenRef.current = null;
+        if (queued) {
+          popoverStepsRef.current?.open(queued);
+          return;
+        }
         if (openPanel !== closing.id) return;
         setOpenPanel(null);
         if (closing.announce) announceToWardShell("Closed.");

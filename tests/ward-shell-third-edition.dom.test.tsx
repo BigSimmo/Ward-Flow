@@ -780,7 +780,7 @@ describe("assertion 5 — demonstration controls reachable from Tools", () => {
     await waitFor(() => expect(screen.queryByRole("dialog", { name: /Tools/ })).toBeNull());
 
     expect(screen.queryByRole("button", { name: /^Data mode: Synthetic prototype/ })).toBeNull();
-    // D-253 (16 Nov 2026): no clock in the header; the Tools foot's Board time opens the Demo panel.
+    // D-258 (16 Nov 2026): no clock in the header; the Tools foot's Board time opens the Demo panel.
     expect(screen.queryByTestId("ward-bar-demo-clock")).toBeNull();
     await user.click(screen.getByTestId("ward-bar-tools-trigger"));
     const reopened = await screen.findByRole("dialog", { name: /Tools/ });

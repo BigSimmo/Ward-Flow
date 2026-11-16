@@ -509,7 +509,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
     return () => document.removeEventListener("keydown", handle);
   }, [preferences.open, canRefer]);
   const clock = shell ? formatInstantWithDay(shell.now, shell.now) : "";
-  // D-253 (16 Nov 2026): no clock in the header, so the rail and Menu carry it, named as D-194 asks.
+  // D-258 (16 Nov 2026): no clock in the header, so the rail and Menu carry it, named as D-194 asks.
   const clockName = useTrainingMode() ? "Training clock" : "Board time";
   useEffect(() => {
     publishLiveClock(clock || undefined);

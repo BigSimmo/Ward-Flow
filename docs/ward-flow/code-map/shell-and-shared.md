@@ -653,7 +653,7 @@ file's scope note.
 - `ward-role-switcher.tsx` — mounted once, in the Tools sheet (`tools/ward-tools-sheet.tsx`), its
   only importer since the old sidebar was removed on 15 Oct 2026.
 - `ward-demo-controls.tsx` — now only `WardDemoClockPopover`, the Board time pill in the
-  Activity and Tools drawer footers (no header pill since D-253, 16 Nov 2026), which opens the Tools Demo panel
+  Activity and Tools drawer footers (no header pill since D-258, 16 Nov 2026), which opens the Tools Demo panel
   (`tools/ward-demo-panel.tsx`). The old `WardDemoControls` menu was removed on 15 Oct 2026.
 - `ward-global-search.tsx` — mounted once, inside `shell/ward-bar.tsx`, as the shell's one search
   box (`WardGlobalSearch`). 1 importer.

@@ -124,7 +124,7 @@ describe("the rail's chosen-service word (item 52)", () => {
   });
 });
 
-describe("board time in the menu, not the header (D-253)", () => {
+describe("board time in the menu, not the header (D-258)", () => {
   it("shows no clock in the header, and the rail's shift card carries the board time", () => {
     // NOW_ANCHOR is 10:42 on the demonstration clock.
     setRailOpenPreference(true);
@@ -150,7 +150,7 @@ describe("rail handover countdown", () => {
     setRailOpenPreference(true);
     renderRail(NOW_ANCHOR);
 
-    // The shift card's clock is a title, never a second labelled Board time control (D-253).
+    // The shift card's clock is a title, never a second labelled Board time control (D-258).
     expect(screen.queryByLabelText(/Board time 10:42/i)).not.toBeInTheDocument();
     expect(screen.queryByText("Live Time")).not.toBeInTheDocument();
 

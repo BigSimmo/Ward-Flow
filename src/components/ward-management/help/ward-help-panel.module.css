@@ -112,11 +112,11 @@
   transition: background-color var(--wf-m-fast) var(--wf-ease);
 }
 
-/* A 48px tap area round the 36px face. */
+/* A 48px tap area round the 36px face (the inset counts from inside its 1px border). */
 .close::after {
   content: "";
   position: absolute;
-  inset: -6px;
+  inset: -7px;
 }
 
 .close:hover {

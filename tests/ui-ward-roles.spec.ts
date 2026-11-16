@@ -258,7 +258,7 @@ test.describe("@mockup Ward screen", () => {
     await card.getByTestId("ward-pull-WF-003").click();
     await expect(card).toContainText("Bed pull 4 h 00 min left");
 
-    // The header has no clock now (D-253, 16 Nov 2026): the Tools sheet footer's board clock opens
+    // The header has no clock now (D-258, 16 Nov 2026): the Tools sheet footer's board clock opens
     // Tools at its Demo row, a layout-level sibling of `wardScreen`, so `page`-scoped.
     // Since #1488 the demo controls open like any tool: in the pane on a desktop, as a page below.
     // The browser clock is paused, so the footer pill's close-then-reopen step is moved on by hand.

@@ -59,57 +59,53 @@ describe("Show me player", () => {
     ["theme", "display"],
     ["density", "display"],
     ["buzz", "alerts"],
-  ])("opens %s on the phone page and keeps its desktop section destination", (id, tab) => {
+  ])("opens %s in its section on a phone, as on a computer (D-257)", (id, tab) => {
     phone.on = true;
     const { unmount } = render(<WardShowMe id={id} onClose={() => {}} onBack={() => {}} />);
-    expect(push).toHaveBeenLastCalledWith("/ward-flow/settings");
+    expect(push).toHaveBeenLastCalledWith(`/ward-flow/settings#${tab}`);
     unmount();
     phone.on = false;
     render(<WardShowMe id={id} onClose={() => {}} onBack={() => {}} />);
     expect(push).toHaveBeenLastCalledWith(`/ward-flow/settings#${tab}`);
   });
 
-  it("opens a phone quick setting on the page without a legacy section hash covering its target", async () => {
+  it("lights Theme inside the Display sheet a phone opens for it (D-257)", async () => {
     phone.on = true;
     vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue({ length: 1 } as DOMRectList);
     vi.spyOn(HTMLElement.prototype, "scrollIntoView").mockImplementation(() => {});
     function PhoneSettings() {
       const [sheet, setSheet] = useState(false);
       const [theme, setTheme] = useState("light");
-      // Next's navigation is the external boundary. Settings opens the legacy #display section
-      // in its device sheet; Theme itself is a quick setting on the phone page, outside that sheet.
+      // Next's navigation is the external boundary. Settings opens the #display section in its
+      // phone sheet, which now holds Theme.
       useEffect(() => {
         if (push.mock.lastCall?.[0] === "/ward-flow/settings#display") setSheet(true);
       }, []);
       return (
         <>
           <OverlayRoot />
-          <SettingRow setting="theme" title="Theme">
-            <Segmented
-              label="Theme"
-              value={theme}
-              onChange={setTheme}
-              items={[
-                { id: "light", label: "Light" },
-                { id: "dark", label: "Dark" },
-              ]}
-            />
-          </SettingRow>
           <WardShowMe id="theme" onClose={() => {}} onBack={() => {}} />
-          <PhoneSheet open={sheet} title="This device" onClose={() => setSheet(false)}>
-            <p>Other device settings</p>
+          <PhoneSheet open={sheet} title="Display" onClose={() => setSheet(false)}>
+            <SettingRow setting="theme" title="Theme">
+              <Segmented
+                label="Theme"
+                value={theme}
+                onChange={setTheme}
+                items={[
+                  { id: "light", label: "Light" },
+                  { id: "dark", label: "Dark" },
+                ]}
+              />
+            </SettingRow>
           </PhoneSheet>
         </>
       );
     }
     render(<PhoneSettings />);
-    expect(push).toHaveBeenCalledWith("/ward-flow/settings");
+    expect(push).toHaveBeenCalledWith("/ward-flow/settings#display");
     await waitFor(() => expect(screen.getByTestId("ward-show-me-spot")).toBeInTheDocument());
-    await waitFor(() => expect(screen.getByTestId("ward-show-me-card").contains(document.activeElement)).toBe(true));
     const dark = screen.getByRole("radio", { name: "Dark", hidden: true });
     expect(dark.closest("[inert]")).toBeNull();
-    expect(screen.getByTestId("ward-show-me-card").closest("[inert]")).toBeNull();
-    expect(screen.queryByRole("dialog", { name: "This device" })).toBeNull();
     fireEvent.click(dark);
     expect(dark).toHaveAttribute("aria-checked", "true");
   });

@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  * Time audit C8 (D-194, Josh 13 Nov 2026, under D-150): training on the signed-in site keeps its
  * scripted clock (10:42, +15 minutes), and the clock is named "Training clock" so nobody reads it
  * as the real Perth time. Outside training it reads "Board time 10:42", with no zone label
- * (RC 2.6, F-113: the board clock is the demo's scripted time). Since D-253 (16 Nov 2026) the header
+ * (RC 2.6, F-113: the board clock is the demo's scripted time). Since D-258 (16 Nov 2026) the header
  * has no clock: the rail's shift card and the phone Menu's time card carry the name.
  * Synthetic data only.
  */

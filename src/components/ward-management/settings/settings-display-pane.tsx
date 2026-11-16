@@ -2,7 +2,8 @@
 // Settings by role (Josh, 3 Nov 2026, ST1): the Display section. Help, the tour and the shortcut list
 // live in Help; the Page tips switch, a display choice for this device, sits here. The round 3 "New for this browser" proposals
 // (Open Ward Flow on, Text size) are not built: nothing in the app reads them yet (D-72).
-// On a phone, Theme and Row density sit on the page itself, so the sheet leaves them out.
+// Settings overhaul (Josh, 16 Nov 2026): a phone has no "On this phone" block any more, so Theme and
+// Row density live here on every device, stacked full width on a phone.
 
 import { useSyncExternalStore } from "react";
 import { Palette } from "lucide-react";
@@ -17,6 +18,7 @@ import { THEME_CHOICES, type ThemeChoice } from "@/components/ward-management/se
 import { Button, Card, CardHead, Segmented, SrOnly, Switch } from "@/components/wf";
 
 import styles from "@/components/ward-management/settings/settings.module.css";
+import rx from "./settings-layout.module.css";
 import { SettingRow } from "./settings-rows";
 
 function RowSwitch({
@@ -60,7 +62,7 @@ export function SettingsDisplayPane({
   onRowDensityChange: (next: RowDensity) => void;
   characterShortcuts: boolean;
   onCharacterShortcutsChange: (next: boolean) => void;
-  /** On a phone Theme and Row density are on the page itself, so the sheet leaves them out. */
+  /** On a phone the choices stack full width and the computer-only rows (shortcuts) are left out. */
   phoneQuick?: boolean;
   /** Opens the restore dialog. Every desk can put this browser back; only the rule editor the rules. */
   onRestore: () => void;
@@ -71,17 +73,16 @@ export function SettingsDisplayPane({
   return (
     <Card aria-labelledby="display-title">
       <CardHead iconPlain id="display-title" icon={Palette} title="Display" />
-      {phoneQuick ? null : (
-        <SettingRow setting="theme" title="Theme" testId="ward-settings-appearance">
-          <Segmented<ThemeChoice>
-            className={styles.pillSeg}
-            label="Theme"
-            items={[...THEME_CHOICES]}
-            value={theme}
-            onChange={onThemeChange}
-          />
-        </SettingRow>
-      )}
+      <SettingRow setting="theme" title="Theme" stacked={phoneQuick} testId="ward-settings-appearance">
+        <Segmented<ThemeChoice>
+          className={phoneQuick ? rx.phoneSeg : styles.pillSeg}
+          size={phoneQuick ? "md" : undefined}
+          label="Theme"
+          items={[...THEME_CHOICES]}
+          value={theme}
+          onChange={onThemeChange}
+        />
+      </SettingRow>
       <SettingRow
         setting="sidebar"
         title="Sidebar"
@@ -100,20 +101,19 @@ export function SettingsDisplayPane({
           onChange={(choice) => onRailChange(choice === "full")}
         />
       </SettingRow>
-      {phoneQuick ? null : (
-        <SettingRow setting="density" title="Row density" testId="ward-settings-density">
-          <Segmented<RowDensity>
-            className={styles.pillSeg}
-            label="Row density"
-            items={[
-              { id: "comfortable", label: "Comfortable" },
-              { id: "compact", label: "Compact" },
-            ]}
-            value={rowDensity}
-            onChange={onRowDensityChange}
-          />
-        </SettingRow>
-      )}
+      <SettingRow setting="density" title="Row density" stacked={phoneQuick} testId="ward-settings-density">
+        <Segmented<RowDensity>
+          className={phoneQuick ? rx.phoneSeg : styles.pillSeg}
+          size={phoneQuick ? "md" : undefined}
+          label="Row density"
+          items={[
+            { id: "comfortable", label: "Comfortable" },
+            { id: "compact", label: "Compact" },
+          ]}
+          value={rowDensity}
+          onChange={onRowDensityChange}
+        />
+      </SettingRow>
       {/* Round 3: the sub line was a sentence; the keys still on are said once, in the Shortcuts list.
           ST1 (3 Nov 2026): a phone has no keyboard to use them, so the row stays on a computer. */}
       {phoneQuick ? null : (
