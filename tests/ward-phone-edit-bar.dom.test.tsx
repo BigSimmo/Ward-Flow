@@ -21,7 +21,8 @@ vi.mock("next/link", () => ({
 
 import { NextPhoneMenu } from "@/components/ward-management/shell-next/next-phone-menu";
 import { openWardMenu } from "@/components/ward-management/shell/ward-drawer-bus";
-import { resetWardAccessStoreForTests } from "@/components/ward-management/shell/ward-access-store";
+import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import {
   DOCK_STORAGE_KEY,
   parseDockChoices,
@@ -37,6 +38,7 @@ afterEach(() => {
   cleanup();
   resetWardAccessStoreForTests();
   resetDockChoicesForTests();
+  setWardFeatureFlagOnDevice("role-access", null);
   installMatchMediaStub(false);
 });
 
@@ -71,6 +73,24 @@ const dockNames = () =>
     .filter((name) => name !== "");
 
 describe("Edit bottom bar", () => {
+  // Review (16 Nov 2026): the transport officer's standard bar already carries the Alerts page, so
+  // Alerts is offered once and choosing it swaps the tab rather than drawing a second Alerts.
+  it("offers Alerts once on a desk whose bar already has the Alerts page", async () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "officer", scope: { kind: "jobs" } } as never);
+    });
+    const bar = await openEditBar();
+    const alertsTiles = within(bar)
+      .getAllByRole("button")
+      .filter((tile) => tile.getAttribute("data-testid")?.startsWith("ward-phone-edit-bar-option-"))
+      .filter((tile) => /Alerts/u.test(tile.textContent ?? ""));
+    expect(alertsTiles).toHaveLength(1);
+    fireEvent.click(within(bar).getByTestId("ward-phone-edit-bar-spot-0"));
+    fireEvent.click(alertsTiles[0]!);
+    expect(dockNames().filter((name) => name.includes("Alerts"))).toHaveLength(1);
+  });
+
   it("draws the bar's spots, with the first picked", async () => {
     const bar = await openEditBar();
     const spots = within(within(bar).getByTestId("ward-phone-edit-bar-preview")).getAllByRole("button");

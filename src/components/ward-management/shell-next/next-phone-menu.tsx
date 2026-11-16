@@ -288,7 +288,15 @@ function dockOptions(
   const dockLabel = new Map(standard.flatMap((slot) => (slot.kind === "page" ? [[slot.id, slot.label]] : [])));
   const queue = standard.some((slot) => slot.kind === "queue");
   if (queue) add({ kind: "queue" }, "Alerts", roleLabel);
-  else if (byId.has("alerts")) add({ kind: "alerts" }, "Alerts", roleLabel);
+  else {
+    // One Alerts choice: a desk whose standard bar already carries the Alerts page (the transport
+    // officer's) keeps that page, so choosing Alerts swaps the tab instead of drawing a second one.
+    const alertsPage = standard.find((slot) => slot.kind === "page" && slot.id === "alerts");
+    if (alertsPage && byId.has("alerts")) {
+      add(alertsPage, alertsPage.kind === "page" ? alertsPage.label : "Alerts", roleLabel);
+      slotFor.set("alerts", alertsPage);
+    } else if (byId.has("alerts")) add({ kind: "alerts" }, "Alerts", roleLabel);
+  }
   const pageOption = (entry: { id: string; label: string }, group: string) => {
     if (entry.id === "alerts" || entry.id === "referral-intake") return;
     add(page(entry.id, dockLabel.get(entry.id) ?? entry.label), dockLabel.get(entry.id) ?? entry.label, group);
