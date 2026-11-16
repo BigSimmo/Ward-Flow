@@ -23,14 +23,14 @@ async function referrerPolicyFor(pathname: string): Promise<string | undefined> 
 
 describe("Referrer-Policy on patient routes (P179)", () => {
   for (const pathname of [
-    "/ward-flow/people",
-    "/ward-flow/people/new",
-    "/ward-flow/people/P-123",
-    "/ward-flow/reports",
-    "/ward-flow/reports/chronology",
-    "/ward-flow/reports/downtime",
-    "/ward-flow/movements",
-    "/ward-flow/movements/M-9",
+    "/bedchart/people",
+    "/bedchart/people/new",
+    "/bedchart/people/P-123",
+    "/bedchart/reports",
+    "/bedchart/reports/chronology",
+    "/bedchart/reports/downtime",
+    "/bedchart/movements",
+    "/bedchart/movements/M-9",
   ])
     it(`${pathname} sends no referrer`, async () => {
       expect(await referrerPolicyFor(pathname)).toBe("no-referrer");
@@ -38,12 +38,12 @@ describe("Referrer-Policy on patient routes (P179)", () => {
 
   for (const pathname of [
     "/",
-    "/ward-flow",
-    "/ward-flow/referrals",
-    "/ward-flow/search",
-    "/ward-flow/ward/U-1",
-    "/ward-flow/peoplefinder",
-    "/ward-flow-sign-in",
+    "/bedchart",
+    "/bedchart/referrals",
+    "/bedchart/search",
+    "/bedchart/ward/U-1",
+    "/bedchart/peoplefinder",
+    "/bedchart-sign-in",
   ])
     it(`${pathname} keeps the site-wide policy`, async () => {
       expect(await referrerPolicyFor(pathname)).toBe("strict-origin-when-cross-origin");

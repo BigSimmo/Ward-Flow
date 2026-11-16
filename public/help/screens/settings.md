@@ -24,6 +24,6 @@ The network's rules and this device's own choices, in tabs.
 
 - Areas. Each area opens in its own sheet. A count on Rules shows changes not yet saved.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

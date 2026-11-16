@@ -13,14 +13,14 @@ import { edById } from "../ward-sites";
 import { useExecutiveStatisticsControl } from "../statistics/executive-statistics-context";
 import type { TourRole } from "./ward-tour-steps";
 
-const COMMUNITY_ROUTE = /\/ward-flow\/community\/([^/?#]+)/;
+const COMMUNITY_ROUTE = /\/bedchart\/community\/([^/?#]+)/;
 const FIXED_HOMES: Partial<Record<TourRole, string>> = {
-  coordinator: "/ward-flow",
-  officer: "/ward-flow/transport/officer",
-  bed_manager: "/ward-flow/capacity",
-  executive: "/ward-flow/statistics",
+  coordinator: "/bedchart",
+  officer: "/bedchart/transport/officer",
+  bed_manager: "/bedchart/capacity",
+  executive: "/bedchart/statistics",
   // WF-46: Access admin lands on Governance (roles and review), not the long Settings form.
-  admin: "/ward-flow/governance",
+  admin: "/bedchart/governance",
 };
 
 type TourHomeInputs = {

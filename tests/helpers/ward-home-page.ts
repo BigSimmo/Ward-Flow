@@ -63,6 +63,6 @@ export async function openTodaysReview(page: Page): Promise<void> {
     .getByRole("menu", { name: "More for this list" })
     .getByRole("menuitem", { name: "Today's review" })
     .click();
-  await page.waitForURL("**/ward-flow/review");
+  await page.waitForURL("**/bedchart/review");
   await page.getByTestId("ward-todays-review").waitFor();
 }

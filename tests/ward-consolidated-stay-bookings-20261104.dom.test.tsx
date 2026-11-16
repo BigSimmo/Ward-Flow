@@ -4,7 +4,7 @@ import { BellRing } from "lucide-react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/ward/fre-adult-open",
+  usePathname: () => "/bedchart/ward/fre-adult-open",
   useSearchParams: () => new URLSearchParams("bookings=1"),
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
@@ -52,7 +52,7 @@ describe("ward bookings and departed stay task destinations", () => {
     const subject = {
       displayName: "Synthetic person",
       from: "Synthetic ward",
-      patientHref: "/ward-flow/people/synthetic",
+      patientHref: "/bedchart/people/synthetic",
     } as QueueEntry["subject"];
     const action = alertActionFor(item, subject);
     const entry = {

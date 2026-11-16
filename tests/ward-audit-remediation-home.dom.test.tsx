@@ -7,7 +7,7 @@ import { pushSheet, popSheet } from "@/components/wf/sheet-focus";
 import { showEveryoneWaiting } from "./helpers/ward-home-queue";
 vi.mock("@/components/ward-management/coordinator/home-layout", () => ({ useHomeLayout: () => "phone" }));
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }),
 }));

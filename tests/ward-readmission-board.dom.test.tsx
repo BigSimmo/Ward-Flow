@@ -4,8 +4,8 @@ import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // The role is the route (`ward-chrome-role.ts`); the coordinator's referral queue by default.
-const COORDINATOR_ROUTE = "/ward-flow/referrals";
-const route = vi.hoisted(() => ({ pathname: "/ward-flow/referrals" }));
+const COORDINATOR_ROUTE = "/bedchart/referrals";
+const route = vi.hoisted(() => ({ pathname: "/bedchart/referrals" }));
 vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/navigation")>()),
   usePathname: () => route.pathname,
@@ -102,7 +102,7 @@ describe("28 day readmission flag on the referral queue", () => {
   });
 
   it("shows the coordinator only: another role's route hides it (Josh, 9 Oct 2026)", () => {
-    route.pathname = "/ward-flow/ward/fre-adult-open";
+    route.pathname = "/bedchart/ward/fre-adult-open";
     const id = receiveOnBoard();
     expect(screen.getByTestId(`ward-referral-board-row-${id}`)).toBeInTheDocument();
     expect(screen.queryByTestId(`ward-referral-board-readmission-${id}`)).toBeNull();
@@ -110,13 +110,13 @@ describe("28 day readmission flag on the referral queue", () => {
   });
 
   it("hides it on the ED index, which keeps the coordinator's chrome", () => {
-    route.pathname = "/ward-flow/ed";
+    route.pathname = "/bedchart/ed";
     // The chrome role is unchanged: only the flag treats the index as an ED screen.
     expect(wardChromeRole(route.pathname)).toBe("coordinator");
-    expect(readmissionFlagVisibleOn("/ward-flow/ed")).toBe(false);
-    expect(readmissionFlagVisibleOn("/ward-flow/ed/")).toBe(false);
-    expect(readmissionFlagVisibleOn("/ward-flow/ed/scgh")).toBe(false);
-    expect(readmissionFlagVisibleOn("/ward-flow/edit-settings")).toBe(true);
+    expect(readmissionFlagVisibleOn("/bedchart/ed")).toBe(false);
+    expect(readmissionFlagVisibleOn("/bedchart/ed/")).toBe(false);
+    expect(readmissionFlagVisibleOn("/bedchart/ed/scgh")).toBe(false);
+    expect(readmissionFlagVisibleOn("/bedchart/edit-settings")).toBe(true);
     expect(readmissionFlagVisibleOn(COORDINATOR_ROUTE)).toBe(true);
     const id = receiveOnBoard();
     expect(screen.getByTestId(`ward-referral-board-row-${id}`)).toBeInTheDocument();

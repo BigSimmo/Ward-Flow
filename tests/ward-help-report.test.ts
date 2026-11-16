@@ -95,7 +95,7 @@ describe("Report a problem: settings and report text", () => {
   it("builds the plain-text report", () => {
     const context = {
       screen: "Home",
-      path: "/ward-flow",
+      path: "/bedchart",
       desk: "Bed manager",
       version: { id: "2026-11-08-help-report-a-problem", date: "2026-11-08" },
       browser: "Chrome 131 on Android",
@@ -105,12 +105,12 @@ describe("Report a problem: settings and report text", () => {
     const text = reportText("  The board froze & would not scroll.  ", context);
     expect(text).toBe(
       [
-        "Ward Flow problem report",
+        "BedChart problem report",
         "",
         "What happened:",
         "The board froze & would not scroll.",
         "",
-        "Screen: Home (/ward-flow)",
+        "Screen: Home (/bedchart)",
         "Desk: Bed manager",
         "Version: latest change 2026-11-08 (2026-11-08-help-report-a-problem)",
         "Browser: Chrome 131 on Android",

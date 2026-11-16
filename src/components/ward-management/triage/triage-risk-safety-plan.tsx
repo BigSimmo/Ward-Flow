@@ -69,8 +69,7 @@ export function SafetyPlanDrawer({
   // The drawer keeps its draft after closing, so leaving with answers not yet added warns like the form.
   useDirtyStateGuard({
     isDirty: anything && draft !== added,
-    confirmMessage:
-      "Leave without adding the safety plan? Ward Flow does not keep typed answers, so they will be lost.",
+    confirmMessage: "Leave without adding the safety plan? BedChart does not keep typed answers, so they will be lost.",
   });
   const set = (key: keyof SafetyPlanDraft, value: string | boolean) => setDraft((d) => ({ ...d, [key]: value }));
   const add = () => {

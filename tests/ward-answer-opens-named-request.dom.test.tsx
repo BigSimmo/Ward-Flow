@@ -46,7 +46,7 @@ function Harness({ children }: { children: ReactNode }) {
 }
 
 function renderAnswerAt(search: string) {
-  window.history.replaceState(null, "", `/ward-flow/ward/${UNIT_ID}/answer${search}`);
+  window.history.replaceState(null, "", `/bedchart/ward/${UNIT_ID}/answer${search}`);
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <Harness>

@@ -371,7 +371,7 @@ export function PhoneBedSheet({
               </>
             ) : null}
             {isReady ? (
-              <Link className={buttonClass({ variant: "sec", className: styles.pill })} href="/ward-flow/referrals">
+              <Link className={buttonClass({ variant: "sec", className: styles.pill })} href="/bedchart/referrals">
                 Review current referrals
               </Link>
             ) : null}

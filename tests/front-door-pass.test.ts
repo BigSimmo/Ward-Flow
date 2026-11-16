@@ -79,7 +79,7 @@ describe("front door switch and secret", () => {
   it("opens only the sign-in page, its API and the files a signed-out device still needs", () => {
     for (const path of [
       "/sign-in",
-      "/ward-flow-sign-in",
+      "/bedchart-sign-in",
       "/api/session",
       "/api/health",
       "/ward-flow-offline.html",
@@ -89,10 +89,10 @@ describe("front door switch and secret", () => {
       expect(isFrontDoorOpenPath(path)).toBe(true);
     for (const path of [
       "/",
-      "/ward-flow",
+      "/bedchart",
       "/api/workspace",
       "/sign-in/extra",
-      "/ward-flow-sign-in/extra",
+      "/bedchart-sign-in/extra",
       "/mockups",
       "/.well-known/other.txt",
     ])
@@ -102,23 +102,23 @@ describe("front door switch and secret", () => {
 
 describe("where sign-in goes next", () => {
   it("keeps a Ward Flow address with its query", () => {
-    expect(safeNextPath("/ward-flow/bed-meeting")).toBe("/ward-flow/bed-meeting");
-    expect(safeNextPath("/ward-flow/capacity?site=synthetic")).toBe("/ward-flow/capacity?site=synthetic");
+    expect(safeNextPath("/bedchart/bed-meeting")).toBe("/bedchart/bed-meeting");
+    expect(safeNextPath("/bedchart/capacity?site=synthetic")).toBe("/bedchart/capacity?site=synthetic");
   });
 
   it("sends anything else to Ward Flow's home", () => {
     for (const raw of [
       null,
       "",
-      "https://evil.example/ward-flow",
-      "//evil.example/ward-flow",
+      "https://evil.example/bedchart",
+      "//evil.example/bedchart",
       "/\\evil.example",
       "/ward-flowish",
       "/api/workspace",
-      "/ward-flow/../api/workspace",
-      `/ward-flow/${"a".repeat(600)}`,
+      "/bedchart/../api/workspace",
+      `/bedchart/${"a".repeat(600)}`,
     ])
-      expect(safeNextPath(raw)).toBe("/ward-flow");
+      expect(safeNextPath(raw)).toBe("/bedchart");
   });
 });
 
@@ -184,32 +184,32 @@ describe("demo code", () => {
 
 describe("proxy front door", () => {
   it("lets everything through while the switch is off", async () => {
-    expect(await frontDoorVerdict(page("/ward-flow"), {})).toBeNull();
+    expect(await frontDoorVerdict(page("/bedchart"), {})).toBeNull();
   });
 
   it("sends a page without a pass to sign-in, carrying where it was going", async () => {
-    const answer = await frontDoorVerdict(page("/ward-flow/bed-meeting?tv=1"), ON);
+    const answer = await frontDoorVerdict(page("/bedchart/bed-meeting?tv=1"), ON);
     expect(answer?.status).toBe(307);
     const to = new URL(answer!.headers.get("location")!);
     expect(to.pathname).toBe("/sign-in");
-    expect(to.searchParams.get("next")).toBe("/ward-flow/bed-meeting?tv=1");
+    expect(to.searchParams.get("next")).toBe("/bedchart/bed-meeting?tv=1");
   });
 
   it("carries a recovery link's code onto the sign-in address, never inside next (SEC-2)", async () => {
-    const answer = await frontDoorVerdict(page("/ward-flow?code=synthetic-code&view=beds"), ON);
+    const answer = await frontDoorVerdict(page("/bedchart?code=synthetic-code&view=beds"), ON);
     const to = new URL(answer!.headers.get("location")!);
     expect(to.pathname).toBe("/sign-in");
     expect(to.searchParams.get("code")).toBe("synthetic-code");
-    expect(to.searchParams.get("next")).toBe("/ward-flow?view=beds");
-    const failed = await frontDoorVerdict(page("/ward-flow?error=access_denied&error_code=otp_expired"), ON);
+    expect(to.searchParams.get("next")).toBe("/bedchart?view=beds");
+    const failed = await frontDoorVerdict(page("/bedchart?error=access_denied&error_code=otp_expired"), ON);
     const back = new URL(failed!.headers.get("location")!);
     expect(back.searchParams.get("error_code")).toBe("otp_expired");
-    expect(back.searchParams.get("next")).toBe("/ward-flow");
+    expect(back.searchParams.get("next")).toBe("/bedchart");
     // Only the recovery destination itself carries a link; a deeper page keeps its address whole.
-    const deeper = await frontDoorVerdict(page("/ward-flow/capacity?code=synthetic"), ON);
+    const deeper = await frontDoorVerdict(page("/bedchart/capacity?code=synthetic"), ON);
     const kept = new URL(deeper!.headers.get("location")!);
     expect(kept.searchParams.get("code")).toBeNull();
-    expect(kept.searchParams.get("next")).toBe("/ward-flow/capacity?code=synthetic");
+    expect(kept.searchParams.get("next")).toBe("/bedchart/capacity?code=synthetic");
   });
 
   it("answers an API call without a pass with 401, not a redirect", async () => {
@@ -220,28 +220,28 @@ describe("proxy front door", () => {
 
   it("lets a valid pass and the open paths through", async () => {
     const { value } = await issuePass(SECRET, { kind: "account", hours: 12 });
-    expect(await frontDoorVerdict(page("/ward-flow/capacity", value), ON)).toBeNull();
+    expect(await frontDoorVerdict(page("/bedchart/capacity", value), ON)).toBeNull();
     expect(await frontDoorVerdict(page("/sign-in"), ON)).toBeNull();
-    expect(await frontDoorVerdict(page("/ward-flow-sign-in"), ON)).toBeNull();
+    expect(await frontDoorVerdict(page("/bedchart-sign-in"), ON)).toBeNull();
   });
 
   it("opens the signed-in (shared) site with an account pass only, never a demo pass", async () => {
     const SHARED = { ...ON, NEXT_PUBLIC_WARD_SHARED_ENABLED: "true" };
     const demo = (await issuePass(SECRET, { kind: "demo", hours: 8 })).value;
     const account = (await issuePass(SECRET, { kind: "account", subject: "synthetic-id", hours: 12 })).value;
-    const refused = await frontDoorVerdict(page("/ward-flow/capacity", demo), SHARED);
+    const refused = await frontDoorVerdict(page("/bedchart/capacity", demo), SHARED);
     expect(refused?.status).toBe(307);
     expect(new URL(refused!.headers.get("location")!).pathname).toBe("/sign-in");
     expect((await frontDoorVerdict(page("/api/workspace", demo), SHARED))?.status).toBe(401);
-    expect(await frontDoorVerdict(page("/ward-flow/capacity", account), SHARED)).toBeNull();
+    expect(await frontDoorVerdict(page("/bedchart/capacity", account), SHARED)).toBeNull();
     expect(await frontDoorVerdict(page("/sign-in", demo), SHARED)).toBeNull();
     // The public demo still opens with a demo pass.
-    expect(await frontDoorVerdict(page("/ward-flow/capacity", demo), ON)).toBeNull();
+    expect(await frontDoorVerdict(page("/bedchart/capacity", demo), ON)).toBeNull();
   });
 
   it("fails closed without a signing secret", async () => {
     const { value } = await issuePass(SECRET, { kind: "account", hours: 12 });
-    const answer = await frontDoorVerdict(page("/ward-flow", value), { WARD_FRONT_DOOR: "required" });
+    const answer = await frontDoorVerdict(page("/bedchart", value), { WARD_FRONT_DOOR: "required" });
     expect(answer?.status).toBe(307);
   });
 });

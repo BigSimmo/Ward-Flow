@@ -215,7 +215,7 @@ describe("Patient list export", () => {
     expect(lines[1]?.[5]).toBe(4);
     expectNoName(lines);
     expect(asCsv(lines)).not.toContain("1990-01-01");
-    expect(asCsv(lines)).toContain('"Recorded (see Ward Flow)"');
+    expect(asCsv(lines)).toContain('"Recorded (see BedChart)"');
   });
 });
 
@@ -227,8 +227,8 @@ describe("census legal column", () => {
     expect(exportLegal("form 3b")).toBe("Form 3B");
     expect(exportLegal("Detained awaiting examination")).toBe("Detained awaiting examination");
     expect(exportLegal("voluntary")).toBe("Voluntary");
-    expect(exportLegal("Form John")).toBe("Recorded (see Ward Flow)");
-    expect(exportLegal("FORM JOHN")).toBe("Recorded (see Ward Flow)");
-    expect(exportLegal("Brought in by police, Mr Smith said")).toBe("Recorded (see Ward Flow)");
+    expect(exportLegal("Form John")).toBe("Recorded (see BedChart)");
+    expect(exportLegal("FORM JOHN")).toBe("Recorded (see BedChart)");
+    expect(exportLegal("Brought in by police, Mr Smith said")).toBe("Recorded (see BedChart)");
   });
 });

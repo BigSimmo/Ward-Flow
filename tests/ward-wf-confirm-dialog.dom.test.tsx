@@ -76,7 +76,7 @@ describe("kit styled confirm", () => {
       useDirtyStateGuard({ isDirty: true, value: "synthetic" });
       return (
         <a
-          href="/ward-flow/waiting"
+          href="/bedchart/waiting"
           onClick={(event) => {
             // Stands in for the router: records the click when it is allowed through.
             if (!event.defaultPrevented) followed();

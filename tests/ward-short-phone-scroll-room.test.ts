@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
  * stops being pinned (it scrolls away with the page); the scroll padding still clears the header and
  * the route-level pinned view row.
  */
-const css = readFileSync(join(process.cwd(), "src/app/ward-flow/ward-flow-layout.module.css"), "utf8");
+const css = readFileSync(join(process.cwd(), "src/app/bedchart/ward-flow-layout.module.css"), "utf8");
 
 function shortPhoneBlock(): string {
   const start = css.indexOf("@media screen and (max-width: 46.4375rem) and (max-height: 32rem)");

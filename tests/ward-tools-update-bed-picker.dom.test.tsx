@@ -7,7 +7,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardToolsSheet } from "@/components/ward-management/tools/ward-tools-sheet";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/capacity",
+  usePathname: () => "/bedchart/capacity",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -35,7 +35,7 @@ describe("Tools > Update a bed (audit P023)", () => {
     const list = screen.getByRole("list", { name: "Choose a ward" });
     const links = within(list).getAllByRole("link");
     expect(links.length).toBeGreaterThan(1);
-    for (const link of links) expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/ward\/[^/?]+$/u);
+    for (const link of links) expect(link.getAttribute("href")).toMatch(/^\/bedchart\/ward\/[^/?]+$/u);
     // Find a ward narrows the list to the typed ward, which still links to its own page.
     const first = links[0]!;
     const name = first.textContent ?? "";

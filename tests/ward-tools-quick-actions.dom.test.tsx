@@ -9,7 +9,7 @@ import type { WardAccess } from "@/components/ward-management/ward-role-access";
 import { WardToolsSheet } from "@/components/ward-management/tools/ward-tools-sheet";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -83,7 +83,7 @@ describe("Coordinator Quick actions (Josh, 3 Nov 2026)", () => {
     expect(within(panel).getByRole("status")).toHaveTextContent(
       new RegExp(`^Asked ${waiting} wards?\\. It shows on their screen for 4 hours\\.`, "u"),
     );
-    expect(within(panel).getByRole("link", { name: "Open Alerts" })).toHaveAttribute("href", "/ward-flow/alerts");
+    expect(within(panel).getByRole("link", { name: "Open Alerts" })).toHaveAttribute("href", "/bedchart/alerts");
   });
 
   it("sends only to the wards ticked, then clears the ticks", async () => {

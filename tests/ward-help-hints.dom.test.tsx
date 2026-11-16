@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-const route = vi.hoisted(() => ({ path: "/ward-flow/capacity", role: "coordinator", toured: true }));
+const route = vi.hoisted(() => ({ path: "/bedchart/capacity", role: "coordinator", toured: true }));
 vi.mock("next/navigation", () => ({ usePathname: () => route.path }));
 vi.mock("../src/components/ward-management/help/ward-help-store", async (original) => ({
   ...(await original<object>()),
@@ -8,14 +8,14 @@ vi.mock("../src/components/ward-management/help/ward-help-store", async (origina
   useTourSeen: () => route.toured,
 }));
 const deskHomes = vi.hoisted(() => ({
-  coordinator: "/ward-flow",
-  ward: "/ward-flow/ward/synthetic-ward",
-  ed: "/ward-flow/ed/synthetic-ed",
-  community: "/ward-flow/community/synthetic-team",
-  officer: "/ward-flow/transport/officer",
-  bed_manager: "/ward-flow/capacity",
-  executive: "/ward-flow/statistics",
-  admin: "/ward-flow/governance",
+  coordinator: "/bedchart",
+  ward: "/bedchart/ward/synthetic-ward",
+  ed: "/bedchart/ed/synthetic-ed",
+  community: "/bedchart/community/synthetic-team",
+  officer: "/bedchart/transport/officer",
+  bed_manager: "/bedchart/capacity",
+  executive: "/bedchart/statistics",
+  admin: "/bedchart/governance",
 }));
 vi.mock("../src/components/ward-management/help/ward-tour-facts", () => ({
   useTourFacts: () => ({
@@ -35,7 +35,7 @@ import { pushSheet, popSheet } from "../src/components/wf/sheet-focus";
 
 beforeEach(() => {
   vi.useFakeTimers();
-  route.path = "/ward-flow/capacity";
+  route.path = "/bedchart/capacity";
   route.role = "coordinator";
   route.toured = true;
   localStorage.removeItem(HELP_HINTS_KEY);
@@ -64,7 +64,7 @@ describe("quiet first-visit Help hints", () => {
       await settle();
       expect(screen.queryByTestId("ward-help-hint")).toBeNull();
       expect(localStorage.getItem(HELP_HINTS_KEY)).toBeNull();
-      route.path = "/ward-flow/settings";
+      route.path = "/bedchart/settings";
       ui.rerender(<WardHelpHints />);
       await settle();
       // Every desk, the access admin included, gets help on a screen that is not its landing screen.
@@ -74,10 +74,10 @@ describe("quiet first-visit Help hints", () => {
   it("stores only known role and topic ids and refuses raw paths or text", () => {
     expect(
       parseHelpHints(
-        "coordinator:capacity,ward:ward,coordinator:/ward-flow/patient/TEST-ID,unknown:capacity,ed:ed:extra",
+        "coordinator:capacity,ward:ward,coordinator:/bedchart/patient/TEST-ID,unknown:capacity,ed:ed:extra",
       ),
     ).toEqual(["coordinator:capacity", "ward:ward"]);
-    expect(markHelpHint("coordinator", "/ward-flow/patient/TEST-ID")).toBe(false);
+    expect(markHelpHint("coordinator", "/bedchart/patient/TEST-ID")).toBe(false);
     expect(localStorage.getItem(HELP_HINTS_KEY)).toBeNull();
   });
   it("does not interrupt the first tour or an existing modal", async () => {
@@ -121,7 +121,7 @@ describe("quiet first-visit Help hints", () => {
     const ui = render(<WardHelpHints />);
     await settle();
     expect(screen.getByTestId("ward-help-hint")).toBeTruthy();
-    route.path = "/ward-flow/settings";
+    route.path = "/bedchart/settings";
     ui.rerender(<WardHelpHints />);
     await settle();
     expect(screen.getByTestId("ward-help-hint").textContent).toContain("Open Settings, then Display.");
@@ -132,7 +132,7 @@ describe("quiet first-visit Help hints", () => {
     "a tour offered to any desk on this device permits later-screen guidance (G3, role=%s)",
     async (role) => {
       const later = "settings";
-      route.path = `/ward-flow/${later}`;
+      route.path = `/bedchart/${later}`;
       route.role = role;
       route.toured = false;
       localStorage.setItem("ward_flow_choice_tour_auto_done", "yes");
@@ -157,7 +157,7 @@ describe("quiet first-visit Help hints", () => {
     fireEvent.click(screen.getByRole("button", { name: "Turn off tips" }));
     expect(screen.queryByTestId("ward-help-hint")).toBeNull();
     expect(localStorage.getItem(HELP_TIPS_OFF_KEY)).toBe("yes");
-    route.path = "/ward-flow/statistics";
+    route.path = "/bedchart/statistics";
     ui.rerender(<WardHelpHints />);
     await settle();
     expect(screen.queryByTestId("ward-help-hint")).toBeNull();
@@ -166,10 +166,10 @@ describe("quiet first-visit Help hints", () => {
     const ui = render(<WardHelpHints />);
     await settle();
     expect(screen.getByTestId("ward-help-hint")).toBeTruthy();
-    route.path = "/ward-flow/statistics";
+    route.path = "/bedchart/statistics";
     ui.rerender(<WardHelpHints />);
     expect(screen.queryByTestId("ward-help-hint")).toBeNull();
-    route.path = "/ward-flow/capacity";
+    route.path = "/bedchart/capacity";
     ui.rerender(<WardHelpHints />);
     expect(screen.queryByTestId("ward-help-hint")).toBeNull();
     await settle();

@@ -2,7 +2,7 @@ import { act, cleanup, render, renderHook, screen, waitFor } from "@testing-libr
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import AppShellErrorBoundary from "@/app/error";
-import { WardFlowErrorPanel } from "@/app/ward-flow/ward-flow-error-panel";
+import { WardFlowErrorPanel } from "@/app/bedchart/ward-flow-error-panel";
 import { useReloadWhenOnline as useHostReloadWhenOnline } from "@/lib/chunk-load-error";
 import { useReloadWhenOnline as useWardReloadWhenOnline } from "@/components/ward-management/ward-chunk-load-error";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";

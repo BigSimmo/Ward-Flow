@@ -126,7 +126,7 @@ const JOBS: readonly HowTo[] = [
     showMe: [
       {
         target: [
-          { sel: '#main-content a[href^="/ward-flow/movements/"]', text: "Pull the bed" },
+          { sel: '#main-content a[href^="/bedchart/movements/"]', text: "Pull the bed" },
           // On a phone the list is grouped by stage, so the Accepted group stands in for the button.
           { sel: '[data-testid="movements-group-toggle-accepted_awaiting_bed"]' },
         ],
@@ -349,14 +349,14 @@ const JOBS: readonly HowTo[] = [
     title: "Book transport",
     keywords: "ambulance car transfer move patient escort",
     answer:
-      "Book by phone first. Then open a movement whose next step is Book transport, press Log booking on its Transport step and fill in the booking: who is collecting, the CAD number, the time, escort and legal status. Save transport booking. Ward Flow records it for the transport officer; it does not order the vehicle.",
+      "Book by phone first. Then open a movement whose next step is Book transport, press Log booking on its Transport step and fill in the booking: who is collecting, the CAD number, the time, escort and legal status. Save transport booking. BedChart records it for the transport officer; it does not order the vehicle.",
     desks: ["coordinator"],
     acts: ["BOOK_TRANSPORT"],
     go: "movements",
     showMe: [
       {
         target: [
-          { sel: '#main-content a[href^="/ward-flow/movements/"]', text: "Book transport" },
+          { sel: '#main-content a[href^="/bedchart/movements/"]', text: "Book transport" },
           // Movements whose bed is pulled are the ones waiting for transport.
           { sel: "#main-content button", text: "Pulled" },
         ],
@@ -391,7 +391,7 @@ const JOBS: readonly HowTo[] = [
     title: "Book transport",
     keywords: "ambulance car transfer move patient escort",
     answer:
-      "Book by phone first. On My ED board, open the patient's actions and choose Log transport booking. Fill in who is collecting, the CAD number, the time, escort and legal status, then Save transport booking. Ward Flow records it; it does not order a vehicle.",
+      "Book by phone first. On My ED board, open the patient's actions and choose Log transport booking. Fill in who is collecting, the CAD number, the time, escort and legal status, then Save transport booking. BedChart records it; it does not order a vehicle.",
     desks: ["ed"],
     acts: ["BOOK_TRANSPORT"],
     go: "home",
@@ -415,7 +415,7 @@ const JOBS: readonly HowTo[] = [
     title: "Book transport",
     keywords: "ambulance car transfer move patient escort",
     answer:
-      "On My team, find the patient's row and choose Log transport booking (Log transport on a phone). Fill in who is collecting, the CAD number, the time, escort and legal status, then Save transport booking. Ward Flow records the booking made by phone; it does not order a vehicle.",
+      "On My team, find the patient's row and choose Log transport booking (Log transport on a phone). Fill in who is collecting, the CAD number, the time, escort and legal status, then Save transport booking. BedChart records the booking made by phone; it does not order a vehicle.",
     desks: ["community"],
     acts: ["BOOK_TRANSPORT"],
     go: "home",
@@ -442,7 +442,7 @@ const JOBS: readonly HowTo[] = [
     title: "Book transport",
     keywords: "ambulance car transfer move patient escort",
     answer:
-      "Open the patient from Coming and going, press the Destination row, then Record transport booking. Fill in the booking made by phone and press Save transport booking. You may record a booking for a journey your ward sent. Ward Flow records the booking; it does not order a vehicle.",
+      "Open the patient from Coming and going, press the Destination row, then Record transport booking. Fill in the booking made by phone and press Save transport booking. You may record a booking for a journey your ward sent. BedChart records the booking; it does not order a vehicle.",
     desks: ["ward"],
     acts: ["BOOK_TRANSPORT"],
     go: "movements",
@@ -486,7 +486,7 @@ const JOBS: readonly HowTo[] = [
       {
         target: tid("ward-console-cancel-transport"),
         title: "Cancel the transport job",
-        body: "Press it once the reason is chosen. Ring the provider as well; Ward Flow does not tell them.",
+        body: "Press it once the reason is chosen. Ring the provider as well; BedChart does not tell them.",
       },
     ],
   },
@@ -560,7 +560,7 @@ const JOBS: readonly HowTo[] = [
     showMe: [
       {
         target: [
-          { sel: '#main-content a[href^="/ward-flow/movements/"]' },
+          { sel: '#main-content a[href^="/bedchart/movements/"]' },
           // A phone groups the list by stage; open the stage, then the movement.
           { sel: '[data-testid^="movements-group-toggle-"]' },
         ],

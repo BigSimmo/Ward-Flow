@@ -430,7 +430,7 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
               <Field
                 label="ATS category"
                 htmlFor={`${sectionId}-atsCategory`}
-                hint="optional — does not change Ward Flow urgency"
+                hint="optional — does not change BedChart urgency"
               >
                 <SelectBox>
                   <select

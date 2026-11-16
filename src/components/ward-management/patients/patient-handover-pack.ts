@@ -90,7 +90,7 @@ export function handoverPackAvailable(
 }
 
 export const MEDICATION_LIST_NOTE =
-  "Ward Flow holds no medication list. Read the medication chart itself; this only records whether it is ready.";
+  "BedChart holds no medication list. Read the medication chart itself; this only records whether it is ready.";
 
 function medicationChartWords(done: boolean | undefined): string {
   if (done === true) return "Ready for the ward";

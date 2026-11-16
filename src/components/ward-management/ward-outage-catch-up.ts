@@ -56,8 +56,8 @@ export function reduceOutageWindow<S extends OutageState>(
 ): S {
   if (!isTime(event.from) || !isTime(event.to))
     return reject(state, `${event.type} needs both times typed, from and to`);
-  if (event.to <= event.from) return reject(state, "The time Ward Flow came back must be after the time it went down");
-  if (event.to > event.now) return reject(state, "The time Ward Flow came back cannot be later than now");
+  if (event.to <= event.from) return reject(state, "The time BedChart came back must be after the time it went down");
+  if (event.to > event.now) return reject(state, "The time BedChart came back cannot be later than now");
   const records = state.outageWindows ?? [];
   if (records.some((record) => record.from === event.from && record.to === event.to))
     return reject(state, "That outage is already recorded");

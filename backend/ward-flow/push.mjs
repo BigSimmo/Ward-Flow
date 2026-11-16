@@ -19,7 +19,7 @@ const PUSH_SERVICE_HOSTS = Object.freeze([
   "push.apple.com",
   "notify.windows.com",
 ]);
-export const ALERTS_PATH = "/ward-flow/alerts";
+export const ALERTS_PATH = "/bedchart/alerts";
 const PUSH_TOPIC = "wardflowactnow";
 /**
  * Audit M158: the Web Push Topic per notification tag. A push service replaces a message still
@@ -139,7 +139,7 @@ export function freshAlerts(previousIds, current) {
   });
 }
 
-export const OFFICER_PATH = "/ward-flow/transport/officer";
+export const OFFICER_PATH = "/bedchart/transport/officer";
 
 /**
  * The notification for a batch of new items. Takes only `{ site, kind }` per item, so no
@@ -149,24 +149,24 @@ export const OFFICER_PATH = "/ward-flow/transport/officer";
 export function pushPayload(alerts) {
   const count = alerts.length;
   const sites = [...new Set(alerts.map((alert) => alert?.site).filter((site) => typeof site === "string" && site))];
-  const where = sites.length === 1 ? sites[0] : sites.length > 1 ? `${sites.length} sites` : "Ward Flow network";
+  const where = sites.length === 1 ? sites[0] : sites.length > 1 ? `${sites.length} sites` : "BedChart network";
   const kinds = new Set(alerts.map((alert) => alert?.kind));
   if (kinds.size === 1 && kinds.has("job"))
     return {
-      title: `Ward Flow: ${count} new or changed transport ${count === 1 ? "job" : "jobs"}`,
+      title: `BedChart: ${count} new or changed transport ${count === 1 ? "job" : "jobs"}`,
       body: `${where}. Open Transport jobs to review. Synthetic demo data.`,
       url: OFFICER_PATH,
       tag: "ward-flow-jobs",
     };
   if (kinds.size === 1 && kinds.has("community"))
     return {
-      title: `Ward Flow: ${count} ${count === 1 ? "update" : "updates"} for your team`,
+      title: `BedChart: ${count} ${count === 1 ? "update" : "updates"} for your team`,
       body: "A referral answered, or a client admitted or discharged. Open Alerts to review. Synthetic demo data.",
       url: ALERTS_PATH,
       tag: "ward-flow-team",
     };
   return {
-    title: `Ward Flow: ${count} new act now ${count === 1 ? "item" : "items"}`,
+    title: `BedChart: ${count} new act now ${count === 1 ? "item" : "items"}`,
     body: `${where}. Open Alerts to review. Synthetic demo data.`,
     url: ALERTS_PATH,
     tag: "ward-flow-act-now",

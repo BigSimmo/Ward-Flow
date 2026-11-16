@@ -17,13 +17,13 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/settings",
+  usePathname: () => "/bedchart/settings",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
 
 vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({
-  useTourFacts: () => ({ facts: {}, home: "/ward-flow/settings", deskHome: "/ward-flow/settings" }),
+  useTourFacts: () => ({ facts: {}, home: "/bedchart/settings", deskHome: "/bedchart/settings" }),
 }));
 
 const login = vi.hoisted(() => ({ role: "coordinator" as string }));
@@ -53,7 +53,7 @@ describe("Help offers each login only what it can use", () => {
   it("lists no task whose screen the login cannot open or whose action it may not record", () => {
     for (const role of EVERY_LOGIN) {
       for (const howTo of tasksForDesk(role)) {
-        if (howTo.go) expect(howToHref(howTo.go, role, "/ward-flow"), `${role} ${howTo.id}`).toBeDefined();
+        if (howTo.go) expect(howToHref(howTo.go, role, "/bedchart"), `${role} ${howTo.id}`).toBeDefined();
         if (howTo.needs) expect(deskOpens(role, howTo.needs), `${role} ${howTo.id}`).toBe(true);
         if (howTo.acts) expect(deskMayAct(role, howTo.acts), `${role} ${howTo.id}`).toBe(true);
       }

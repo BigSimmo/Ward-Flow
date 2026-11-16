@@ -7,7 +7,7 @@ import { WardToolsSheet } from "@/components/ward-management/tools/ward-tools-sh
 import { subscribeWardHelp, type HelpRequest } from "@/components/ward-management/help/ward-help-events";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/patients",
+  usePathname: () => "/bedchart/patients",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));

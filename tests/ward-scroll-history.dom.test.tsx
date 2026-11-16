@@ -2,12 +2,12 @@ import { act, fireEvent, render } from "@testing-library/react";
 import type { ReactElement, ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-let pathname = "/ward-flow/search";
+let pathname = "/bedchart/search";
 vi.mock("next/navigation", () => ({ usePathname: () => pathname }));
 import { WardGround } from "@/components/ward-management/ward-shell";
 
 afterEach(() => {
-  pathname = "/ward-flow/search";
+  pathname = "/bedchart/search";
   window.history.replaceState(null, "", pathname);
 });
 
@@ -28,13 +28,13 @@ describe("Ward desktop scroll history", () => {
     fireEvent.scroll(column);
     // A shorter destination can clamp the old column during the route commit.
     column.scrollTop = 0;
-    pathname = "/ward-flow/wards";
+    pathname = "/bedchart/wards";
     window.history.pushState(null, "", pathname);
     rerender(view());
     expect(column.scrollTop).toBe(0);
     column.scrollTop = 75;
     fireEvent.scroll(column);
-    pathname = "/ward-flow/search";
+    pathname = "/bedchart/search";
     window.history.replaceState(null, "", pathname);
     act(() => window.dispatchEvent(new PopStateEvent("popstate")));
     rerender(view());
@@ -54,18 +54,18 @@ describe("Ward desktop scroll history", () => {
     const column = container.firstElementChild as HTMLElement;
     column.scrollTop = 420;
     fireEvent(window, new PopStateEvent("popstate"));
-    pathname = "/ward-flow/wards";
+    pathname = "/bedchart/wards";
     rerender(view());
     expect(column.scrollTop).toBe(0);
-    pathname = "/ward-flow/search";
+    pathname = "/bedchart/search";
     rerender(view());
     expect(column.scrollTop).toBe(0);
   });
 
   // Usability review, 24 Oct 2026: Back puts focus on the link the user opened, not on <body>.
   describe("focus on the opened link after Back", () => {
-    const LIST = "/ward-flow/search";
-    const RECORD = "/ward-flow/patients/synthetic-p1";
+    const LIST = "/bedchart/search";
+    const RECORD = "/bedchart/patients/synthetic-p1";
     const afterFrames = () =>
       act(
         () =>
@@ -100,7 +100,7 @@ describe("Ward desktop scroll history", () => {
     it("returns focus to the link that was opened", async () => {
       const { getByRole, rerender, view } = renderAt(() => (
         <>
-          <a href="/ward-flow/patients/synthetic-p0">First</a>
+          <a href="/bedchart/patients/synthetic-p0">First</a>
           <a href={RECORD}>Second</a>
         </>
       ));
@@ -140,7 +140,7 @@ describe("Ward desktop scroll history", () => {
     });
 
     it("keeps one opener per page so a second Back still returns to the list", async () => {
-      const NEXT = "/ward-flow/patients/synthetic-p2";
+      const NEXT = "/bedchart/patients/synthetic-p2";
       pathname = LIST;
       window.history.replaceState(null, "", pathname);
       const view = () => (

@@ -90,7 +90,7 @@ export function ReferralSummaryRail({
           <p className={styles.bodyMeta}>Follow {sentReferralId} on the Referrals board.</p>
           <Link
             className={styles.btn}
-            href={s.sentReferralId ? referralBoardHref(s.sentReferralId) : "/ward-flow/referrals"}
+            href={s.sentReferralId ? referralBoardHref(s.sentReferralId) : "/bedchart/referrals"}
             onClick={onClose}
           >
             Open Referrals board
@@ -296,7 +296,7 @@ export function ReferralDrawerFoot({ s }: { s: WardReferralDrawerState }) {
           <>
             <Link
               className={styles.btnCancelReferral}
-              href={s.sentReferralId ? referralBoardHref(s.sentReferralId) : "/ward-flow/referrals"}
+              href={s.sentReferralId ? referralBoardHref(s.sentReferralId) : "/bedchart/referrals"}
               onClick={onClose}
             >
               Open referrals board
@@ -358,7 +358,7 @@ export function ReferralDrawerFoot({ s }: { s: WardReferralDrawerState }) {
         ) : view === "inbox" ? (
           <Link
             className={styles.btnCancelReferral}
-            href={s.sentReferralId ? referralBoardHref(s.sentReferralId) : "/ward-flow/referrals"}
+            href={s.sentReferralId ? referralBoardHref(s.sentReferralId) : "/bedchart/referrals"}
             onClick={onClose}
           >
             Open referrals board

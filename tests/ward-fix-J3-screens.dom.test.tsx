@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/navigation")>()),
-  usePathname: () => "/ward-flow/bed-meeting",
+  usePathname: () => "/bedchart/bed-meeting",
   useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
 }));
@@ -66,7 +66,7 @@ describe("A9-16 (Q12): a site bed manager's TV is that site's bed meeting", () =
     expect(meetings[0]).toHaveAttribute("aria-current", "page");
     const eds = links.filter((link) => link.getAttribute("href")?.includes("ed="));
     expect(eds.map((link) => link.getAttribute("href"))).toEqual([
-      `/ward-flow/bed-meeting?ed=${site.emergencyDepartment!.id}`,
+      `/bedchart/bed-meeting?ed=${site.emergencyDepartment!.id}`,
     ]);
     const wardLinks = links.filter((link) => link.getAttribute("href")?.includes("ward="));
     const own = new Set(

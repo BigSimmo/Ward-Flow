@@ -24,8 +24,8 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function openSettled(page: Page, route: string, screenId: string) {
-  const response = await page.goto(`/ward-flow${route}`, { waitUntil: "load" });
-  expect(response?.ok(), `/ward-flow${route} answered`).toBe(true);
+  const response = await page.goto(`/bedchart${route}`, { waitUntil: "load" });
+  expect(response?.ok(), `/bedchart${route} answered`).toBe(true);
   await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
   await expect(page.getByTestId(screenId)).toBeVisible({ timeout: 30_000 });
   await page.waitForLoadState("networkidle");

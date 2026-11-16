@@ -326,9 +326,9 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
  * names the role on shift who decides on paper, not a phone number that does not exist.
  */
 export const WHEN_IT_IS_DOWN: readonly string[] = [
-  "Tell the bed coordinator on shift. They decide when everyone switches to paper and pass the problem to the Ward Flow team.",
+  "Tell the bed coordinator on shift. They decide when everyone switches to paper and pass the problem to the BedChart team.",
   "The coordinator keeps a printed Downtime pack: beds by ward, the ED queue, pending moves and legal forms, as at the last snapshot.",
-  "Work from paper and the phone until the coordinator says Ward Flow is back, then record what happened in the meantime.",
+  "Work from paper and the phone until the coordinator says BedChart is back, then record what happened in the meantime.",
 ];
 
 /** How to tell an action was saved: the same on every desk. */

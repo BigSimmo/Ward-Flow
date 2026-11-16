@@ -6,7 +6,7 @@
 import { perthClockTime, perthDateText, perthIsoDay } from "@/components/ward-management/ward-clock";
 
 export const LAST_PUSH_CACHE = "ward-flow-last-push";
-export const LAST_PUSH_KEY = "/ward-flow/__last-push";
+export const LAST_PUSH_KEY = "/bedchart/__last-push";
 
 /** The time this device last received a push, or null when none is recorded or it cannot be read. */
 export async function readLastPushAt(storage: CacheStorage | undefined = globalThis.caches): Promise<Date | null> {

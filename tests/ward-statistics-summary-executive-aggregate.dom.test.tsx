@@ -6,7 +6,7 @@ const guard = vi.hoisted(() => ({
   }),
 }));
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/statistics",
+  usePathname: () => "/bedchart/statistics",
   useRouter: () => ({ push: vi.fn() }),
 }));
 vi.mock("@/components/ward-management/shell/ward-access-store", async (original) => ({
@@ -67,7 +67,7 @@ function summary(
 afterEach(() => {
   cleanup();
   installMatchMediaStub(false);
-  window.history.replaceState(null, "", "/ward-flow/statistics");
+  window.history.replaceState(null, "", "/bedchart/statistics");
   vi.clearAllMocks();
 });
 
@@ -140,7 +140,7 @@ describe("Summary's executive aggregate view", () => {
     expect(screen.queryByRole("img", { name: /^Referrals raised today:/ })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Export" }));
     expect(downloadCsv).toHaveBeenCalledWith(
-      "ward-flow-synthetic-network-figures.csv",
+      "bedchart-synthetic-network-figures.csv",
       expect.arrayContaining([expect.arrayContaining(["fewer than 5"])]),
     );
     expect(document.body.textContent).not.toContain("[object Object]");
@@ -163,7 +163,7 @@ describe("Summary's executive aggregate view", () => {
     );
     fireEvent.click(within(chart).getByRole("button", { name: "Chart CSV" }));
     expect(downloadCsv).toHaveBeenCalledWith(
-      "ward-flow-synthetic-capacity.csv",
+      "bedchart-synthetic-capacity.csv",
       expect.any(Array),
       expect.objectContaining({ scope: expect.stringContaining("Capacity whole network") }),
     );

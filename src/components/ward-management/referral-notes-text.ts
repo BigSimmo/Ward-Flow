@@ -38,7 +38,7 @@ export function referralAcceptanceNotesText(
   const when = accepted.decidedAt === undefined ? "" : `, ${formatInstantWithDay(accepted.decidedAt, context.now)}`;
   return [
     SYNTHETIC_COPY_LINE,
-    `Ward Flow acceptance: ${context.patientName}.`,
+    `BedChart acceptance: ${context.patientName}.`,
     `Referral ${referral.id} accepted by ${ward}${when}.`,
     // F-91 (K23): a bed for an incoming patient is pulled, never "held" (a leave bed's word).
     `Bed: ${accepted.heldBedNumber === undefined ? "no numbered bed pulled yet" : `bed ${accepted.heldBedNumber} pulled`}.`,
@@ -68,7 +68,7 @@ export function movementTransferNotesText(
   const arrived = movement.closure?.outcome === "arrived" ? movement.closure.at : undefined;
   return [
     SYNTHETIC_COPY_LINE,
-    `Ward Flow transfer: ${context.patientName}.`,
+    `BedChart transfer: ${context.patientName}.`,
     `From ${from} to ${to}.`,
     `Stage: ${stageCopy[movement.stage].label}.`,
     // F-91 (K23): a bed for an incoming patient is pulled, never "held" (a leave bed's word).

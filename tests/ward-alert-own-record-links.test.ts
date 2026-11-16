@@ -46,14 +46,14 @@ describe("alert links open the row's own record", () => {
       ...({} as InboxItem),
       id: `${INBOX_CATEGORIES.planned_arrival_overdue.idPrefix}PA-1`,
       movementId: "",
-      href: "/ward-flow/capacity",
+      href: "/bedchart/capacity",
       plannedAdmission: { id: "PA-1" } as InboxItem["plannedAdmission"],
     };
     expect(alertKindOf(item.id)).toBe("planned");
     expect(alertActionFor(item, { displayName: "Initials RK", umrn: "", from: "Ward" })).toEqual({
       kind: "link",
       label: "Open bookings",
-      href: "/ward-flow/capacity",
+      href: "/bedchart/capacity",
     });
   });
 });

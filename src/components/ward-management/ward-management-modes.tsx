@@ -68,7 +68,7 @@ function ModeHeader({
             carries this exact name and tagline — seen side by side in one eyeline on a
             screenshot, which is the only place a duplicate like this shows up. */}
         <span className={styles.modeBrand}>
-          <strong>Ward Flow</strong>
+          <strong>BedChart</strong>
           <small>Synthetic patient-flow prototype</small>
         </span>
         <div className={styles.modeTitle}>

@@ -42,7 +42,7 @@ import { useSenderPresentation } from "../ward-sender-presentation";
 import { referralPresentation, type SenderReferralPresentation } from "../ward-partial-view-presenters";
 
 /** The page's one link for counts that open the bed picture. Places lists every ward's ready beds. */
-const REFERRAL_BEDS_HREF = "/ward-flow/hub";
+const REFERRAL_BEDS_HREF = "/bedchart/hub";
 
 export const REFERRAL_SOURCE_WORDS: Record<Referral["source"], string> = {
   community: "Community team",

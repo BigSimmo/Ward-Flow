@@ -145,7 +145,7 @@ it.each([
   "https://example.invalid:4594",
   "https://user@127.0.0.1:4594",
   "https://127.0.0.1:4594/",
-  "https://127.0.0.1:4594/ward-flow",
+  "https://127.0.0.1:4594/bedchart",
   "https://127.0.0.1:4594?query=1",
   "https://127.0.0.1:4594#fragment",
   "https://127.0.0.1:4594\\@example.invalid",

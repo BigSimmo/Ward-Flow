@@ -6,7 +6,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-let currentPathname = "/ward-flow/movements";
+let currentPathname = "/bedchart/movements";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => currentPathname,
@@ -26,7 +26,7 @@ import { installMatchMediaStub } from "./setup/jsdom.setup";
 afterEach(() => {
   installMatchMediaStub(false);
   resetWardLiveRegionForTests();
-  currentPathname = "/ward-flow/movements";
+  currentPathname = "/bedchart/movements";
   window.sessionStorage.clear();
 });
 
@@ -82,7 +82,7 @@ describe("the app bar's Activity button opens the one shared Activity panel", ()
   // Sticky header redesign (Josh, 9 Nov 2026): Home's hero changes chip is gone, so on Home too the
   // bar's button opens the one panel, and a tab request (as the Activity route makes) still opens there.
   it("is the one panel on Home too, and a request for a tab opens it there", async () => {
-    currentPathname = "/ward-flow";
+    currentPathname = "/bedchart";
     renderBar(true);
     expect(screen.queryByRole("button", { name: /· (Review|Activity)$/u })).toBeNull();
     const trigger = screen.getByTestId("ward-bar-activity-trigger");

@@ -105,7 +105,7 @@ describe("Summary, Map view", () => {
 
     expected.forEach((site, index) => {
       const first = [...site.wards].sort((a, b) => a.unit.name.localeCompare(b.unit.name))[0]!;
-      expect(links[index]!.getAttribute("href")).toBe(`/ward-flow/statistics/ward/${first.unit.id}`);
+      expect(links[index]!.getAttribute("href")).toBe(`/bedchart/statistics/ward/${first.unit.id}`);
       expect(links[index]!.querySelector("[class*='rankSub']")?.textContent?.startsWith(first.unit.name)).toBe(true);
     });
   });
@@ -117,7 +117,7 @@ describe("Summary, Map view", () => {
     expect(within(rank).getByRole("heading", { name: "ED journeys open by ED" })).toBeTruthy();
     const links = within(rank).getAllByRole("link");
     expect(links).toHaveLength(allEmergencyDepartments().length);
-    for (const link of links) expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/statistics\/ed\//);
+    for (const link of links) expect(link.getAttribute("href")).toMatch(/^\/bedchart\/statistics\/ed\//);
     const { state, sites } = figuresAtAnchor();
     const journeys = sites.reduce((sum, site) => sum + lensValue(site, "ed"), 0);
     expect(journeys).toBeGreaterThan(waitingInEds(state.movements, NOW_ANCHOR).total);
@@ -142,7 +142,7 @@ describe("Summary, Map view", () => {
       .getAllByRole("link")
       .map((link) => link.getAttribute("href"));
     expect(hrefs.some((href) => href?.includes("/statistics/ward/"))).toBe(true);
-    expect(hrefs).toContain("/ward-flow/statistics/ed/rph-ed");
+    expect(hrefs).toContain("/bedchart/statistics/ed/rph-ed");
     fireEvent.click(within(card).getByRole("button", { name: /^Close/ }));
     expect(screen.queryByTestId("ward-statistics-map-site")).toBeNull();
   });

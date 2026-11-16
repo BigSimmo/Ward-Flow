@@ -5,7 +5,7 @@ const guard = vi.hoisted(() => ({
   seed: vi.fn(),
   read: vi.fn(),
   poll: vi.fn(),
-  path: "/ward-flow/statistics",
+  path: "/bedchart/statistics",
 }));
 vi.mock("next/navigation", () => ({
   usePathname: () => guard.path,
@@ -125,7 +125,7 @@ function ReportProbe() {
     <>
       <span data-testid="report">{report?.network.asAt.now ?? "none"}</span>
       <span data-testid="role">{access.role}</span>
-      <span data-testid="permission">{String(canOpen("/ward-flow/movements"))}</span>
+      <span data-testid="permission">{String(canOpen("/bedchart/movements"))}</span>
       <WardPrintAttribution />
       {controls.togglePause ? (
         <button onClick={controls.togglePause}>{controls.paused ? "Resume" : "Pause"}</button>
@@ -148,7 +148,7 @@ beforeEach(() => {
   vi.useFakeTimers({ shouldAdvanceTime: true });
   vi.setSystemTime(deviceNow);
   guard.forbid = true;
-  guard.path = "/ward-flow/statistics";
+  guard.path = "/bedchart/statistics";
   guard.seed.mockClear();
   guard.read.mockClear();
   guard.poll.mockReset();
@@ -313,7 +313,7 @@ describe("workspace host actual authority before operational construction", () =
     }
   });
   it("does not mount a private route behind the aggregate host's role gate", () => {
-    guard.path = "/ward-flow/movements";
+    guard.path = "/bedchart/movements";
     render(
       host(
         connection(),

@@ -10,7 +10,7 @@ vi.mock("next/link", () => ({
 }));
 vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
-  usePathname: () => "/ward-flow/search",
+  usePathname: () => "/bedchart/search",
 }));
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { PatientSearchPage } from "@/components/ward-management/search/patient-search";

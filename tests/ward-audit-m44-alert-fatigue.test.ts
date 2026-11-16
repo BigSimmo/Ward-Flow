@@ -164,7 +164,7 @@ describe("M44: a burst never buries urgent work", () => {
     expect(shown.actNow.map((item) => item.id)).toEqual(["red-1"]);
     expect(shown.dueSoon).toHaveLength(40);
     expect(actNowNotificationText(shown.actNow, "act-now")).toEqual({
-      title: "Ward Flow: act now",
+      title: "BedChart: act now",
       body: "Alert red-1. Synthetic demo data.",
     });
   });
@@ -184,7 +184,7 @@ describe("M44: a burst never buries urgent work", () => {
     }));
     const red = { id: "red-1", site: "Royal Perth Hospital", kind: "act-now" };
     const coordinator = pushPayload([red]);
-    expect(coordinator.title).toBe("Ward Flow: 1 new act now item");
+    expect(coordinator.title).toBe("BedChart: 1 new act now item");
     // The server gives each desk one kind (engine `scopedActNowAlerts`); mixed kinds read as act now.
     expect(pushPayload([...jobs, red]).tag).toBe("ward-flow-act-now");
     expect(pushPayload(jobs).tag).toBe("ward-flow-jobs");

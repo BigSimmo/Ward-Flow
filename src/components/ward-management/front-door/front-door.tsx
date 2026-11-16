@@ -45,7 +45,7 @@ const RESEND_SECONDS = 60;
  * The public demo (Railway service `ward-flow`, local mode, see docs/hosting.md), offered under the
  * signed-in site's sign-in card. `NEXT_PUBLIC_WARD_DEMO_URL` moves it; "off" hides the row.
  */
-const PUBLIC_DEMO_URL = "https://ward-flow-production.up.railway.app/ward-flow";
+const PUBLIC_DEMO_URL = "https://ward-flow-production.up.railway.app/bedchart";
 export function publicDemoUrl(configured = process.env.NEXT_PUBLIC_WARD_DEMO_URL): string | null {
   const value = configured?.trim();
   if (value === "off") return null;
@@ -121,9 +121,9 @@ export function FrontDoor({
   // had comes back when this screen goes.
   useEffect(() => {
     const before = document.title;
-    document.title = "Sign in — Ward Flow";
+    document.title = "Sign in — BedChart";
     return () => {
-      if (document.title === "Sign in — Ward Flow") document.title = before;
+      if (document.title === "Sign in — BedChart") document.title = before;
     };
   }, []);
   if (form?.recovery) return <NewPasswordDoor form={form} />;
@@ -176,7 +176,7 @@ function SignInMessage({
         tone="warning"
         icon="warning"
         title="Sign-in is not available on this site."
-        body={notice ?? "Tell the Ward Flow coordinator."}
+        body={notice ?? "Tell the BedChart coordinator."}
       />
     );
   if (form.message) {
@@ -207,7 +207,7 @@ function SignInMessage({
           tone="warning"
           icon="warning"
           title={said?.title ?? form.message}
-          body={said?.body ?? "If this keeps happening, tell the Ward Flow coordinator."}
+          body={said?.body ?? "If this keeps happening, tell the BedChart coordinator."}
         />
       );
     }
@@ -262,12 +262,12 @@ function SignInDoor({
     void form.signIn(email.trim(), entered);
   };
   return (
-    <DoorScreen label="Ward Flow sign-in" note={hasMessage} focusTarget={emailRef}>
+    <DoorScreen label="BedChart sign-in" note={hasMessage} focusTarget={emailRef}>
       <div className={styles.card}>
         <form className={styles.form} onSubmit={submit} aria-busy={busy || undefined}>
           <header className={styles.cardHead}>
             <h1>Sign in</h1>
-            <p>Use your Ward Flow account.</p>
+            <p>Use your BedChart account.</p>
           </header>
           <SignInMessage form={form} notice={notice} online={online} accountLabel={accountLabel} />
           <EmailField
@@ -322,10 +322,10 @@ function SignInDoor({
             Stays signed in for up to {SESSION_HOURS} hours in this tab. Locks after {IDLE_MINUTES} minutes without use.
           </SessionNote>
           <div className={styles.cardFoot}>
-            <p>No account yet? Ask the Ward Flow coordinator.</p>
+            <p>No account yet? Ask the BedChart coordinator.</p>
             {form?.signupAvailable && (
               <button type="button" className={`${styles.link} ${styles.linkCentre}`} onClick={signup} disabled={busy}>
-                Create a Ward Flow account
+                Create a BedChart account
               </button>
             )}
             {demoUrl && (
@@ -345,7 +345,7 @@ function SignInDoor({
 /** The public demo's own entrance on the Ward Flow sign-in page: the demo, and nothing to sign in to. */
 function DemoFirstDoor({ demoUrl }: { demoUrl: string }) {
   return (
-    <DoorScreen label="Ward Flow demo" note={false} demo>
+    <DoorScreen label="BedChart demo" note={false} demo>
       <div className={styles.card}>
         <div className={styles.stack}>
           <span className={styles.demoBadge}>
@@ -409,7 +409,7 @@ function ForgotDoor({
   };
   if (sent)
     return (
-      <DoorScreen label="Ward Flow sign-in" note={false}>
+      <DoorScreen label="BedChart sign-in" note={false}>
         <div className={styles.card}>
           <div className={styles.stack} role="status">
             <span className={styles.bigicon}>
@@ -447,7 +447,7 @@ function ForgotDoor({
     );
   const problem = form.message && form.messageKind !== "sent" ? form.message : null;
   return (
-    <DoorScreen label="Ward Flow sign-in" note={problem !== null} focusTarget={emailRef}>
+    <DoorScreen label="BedChart sign-in" note={problem !== null} focusTarget={emailRef}>
       <div className={styles.card}>
         <form
           className={styles.form}
@@ -486,7 +486,7 @@ function ForgotDoor({
           <p className={styles.hint}>
             <Info aria-hidden="true" />
             <span>
-              Shared test accounts cannot receive email, so a reset link will not reach them. Ask the Ward Flow
+              Shared test accounts cannot receive email, so a reset link will not reach them. Ask the BedChart
               coordinator to reset those.
             </span>
           </p>
@@ -567,7 +567,7 @@ function NewPasswordDoor({ form }: { form: WardCredentialForm }) {
   const [mismatch, setMismatch] = useState(false);
   const problem = form.message && form.messageKind !== "sent" ? form.message : null;
   return (
-    <DoorScreen label="Ward Flow sign-in" note>
+    <DoorScreen label="BedChart sign-in" note>
       <div className={styles.card}>
         <form
           className={styles.form}
@@ -655,7 +655,7 @@ function SignUpDoor({ form, back }: { form: WardCredentialForm; back: () => void
   useDeskFocus(emailRef, true);
   const said = form.message ? frontDoorNotice(form.message) : null;
   return (
-    <DoorScreen label="Ward Flow sign-in" note={said !== null || mismatch} focusTarget={emailRef}>
+    <DoorScreen label="BedChart sign-in" note={said !== null || mismatch} focusTarget={emailRef}>
       <div className={styles.card}>
         <form
           className={styles.form}
@@ -682,7 +682,7 @@ function SignUpDoor({ form, back }: { form: WardCredentialForm; back: () => void
             disabled={form.busy}
           />
           <header className={styles.cardHead}>
-            <h1>Create a Ward Flow account</h1>
+            <h1>Create a BedChart account</h1>
             <p>An access admin still gives the account its role.</p>
           </header>
           {mismatch ? (
@@ -784,7 +784,7 @@ function TvDoor({
         <BedBoardTexture rows={14} />
         <div className={styles.tvTop}>
           <DoorMark />
-          <span className={styles.wordmark}>Ward Flow</span>
+          <span className={styles.wordmark}>BedChart</span>
           <TvClock />
         </div>
         <div className={styles.tvMain}>

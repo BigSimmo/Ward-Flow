@@ -43,7 +43,7 @@ export function CommunityNoJourneys({ teamName }: { teamName: string }) {
                     Refer from team
                   </Link>
                   <Link
-                    href={`/ward-flow/community/${teamId}`}
+                    href={`/bedchart/community/${teamId}`}
                     className={buttonClass({ variant: "ghost", size: "md" })}
                   >
                     Team&rsquo;s inpatients

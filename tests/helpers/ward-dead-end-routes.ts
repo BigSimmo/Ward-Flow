@@ -13,7 +13,7 @@ import path from "node:path";
 
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
 const APP_ROOT = path.join(REPO_ROOT, "src", "app");
-const WARD_FLOW_ROOT = path.join(APP_ROOT, "ward-flow");
+const WARD_FLOW_ROOT = path.join(APP_ROOT, "bedchart");
 
 export function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -78,7 +78,7 @@ export function hrefResolvesToRoute(href: string, routes: AppRoutes): boolean {
 }
 
 export type WardFlowRouteInfo = {
-  /** `/ward-flow/...`, matching what `usePathname()`/an `href` would carry. */
+  /** `/bedchart/...`, matching what `usePathname()`/an `href` would carry. */
   route: string;
   dynamic: boolean;
   /** True when the page's own default export calls `redirect(...)` and renders nothing to click. */
@@ -103,7 +103,7 @@ export function scanWardFlowRoutes(): WardFlowRouteInfo[] {
     const rendersAScreen = /\breturn\s*\(?\s*</u.test(body);
     // WF-42: Activity/Help are client stubs that open a shell panel on the desk's home — not screens.
     const clientPanelRedirect =
-      (route === "/ward-flow/activity" || route === "/ward-flow/help") && /<WardPanelAddress\b/u.test(body);
+      (route === "/bedchart/activity" || route === "/bedchart/help") && /<WardPanelAddress\b/u.test(body);
     const redirectOnly = (/\bredirect\(\s*["'`]/u.test(body) && !rendersAScreen) || clientPanelRedirect;
     return { route, dynamic, redirectOnly };
   });

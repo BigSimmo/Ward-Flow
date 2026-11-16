@@ -12,7 +12,7 @@ vi.mock("react", async (original) => {
     },
   };
 });
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }), usePathname: () => "/ward-flow" }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }), usePathname: () => "/bedchart" }));
 
 import {
   WardGlobalSearch as Search,

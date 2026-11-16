@@ -36,7 +36,7 @@ import { NOW_ANCHOR, allEmergencyDepartments } from "@/components/ward-managemen
  * page still says how many declines named no suitable bed and how many gave another reason.
  */
 
-const BASE = "/ward-flow";
+const BASE = "/bedchart";
 const state = seedWardFlowState();
 const places = wardPlaceLookup(state.units);
 const [ownUnit, otherUnit] = state.units;

@@ -24,7 +24,7 @@ vi.mock("@/components/ward-management/ward-flow-provider", async (original) => {
 });
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: guard.push }),
-  usePathname: () => "/ward-flow/statistics/ed",
+  usePathname: () => "/bedchart/statistics/ed",
 }));
 vi.mock("@/components/ward-management/statistics/statistics-csv", async (original) => ({
   ...(await original<typeof import("@/components/ward-management/statistics/statistics-csv")>()),

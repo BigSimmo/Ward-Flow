@@ -54,8 +54,8 @@ export function WardIndexDrawer({
         : undefined,
     [unit, now, bedReleases, admissions, leaveBeds, movements, referrals],
   );
-  const wardHref = unit ? `/ward-flow/ward/${unit.id}` : "";
-  const boardHref = unit ? `/ward-flow/board/${unit.id}` : "";
+  const wardHref = unit ? `/bedchart/ward/${unit.id}` : "";
+  const boardHref = unit ? `/bedchart/board/${unit.id}` : "";
   const showWard = !countsOnly && unit !== undefined && canOpen(wardHref);
   const showBoard = !countsOnly && unit !== undefined && canOpen(boardHref);
   const wardTabs = useCapacityWardTabs(row ? unit?.id : undefined);

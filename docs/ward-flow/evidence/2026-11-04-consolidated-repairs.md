@@ -53,13 +53,13 @@ The [dated reconciliation](../journey/CURRENT-REVIEW.md) records each source, un
 
 KB gzipped, measured from the actual latest production build; rounded to six decimals:
 
-| Route                              | Latest source KB | Limit KB |
-| ---------------------------------- | ---------------: | -------: |
-| `/ward-flow`                       |       555.436719 |    555.4 |
-| `/ward-flow/referrals`             |       561.677734 |    561.7 |
-| `/ward-flow/ed`                    |       509.258789 |    516.1 |
-| `/ward-flow/ward/rph-adult-secure` |       588.636719 |    588.8 |
-| `/ward-flow/movements/WF-001`      |       618.821289 |    619.0 |
+| Route                             | Latest source KB | Limit KB |
+| --------------------------------- | ---------------: | -------: |
+| `/bedchart`                       |       555.436719 |    555.4 |
+| `/bedchart/referrals`             |       561.677734 |    561.7 |
+| `/bedchart/ed`                    |       509.258789 |    516.1 |
+| `/bedchart/ward/rph-adult-secure` |       588.636719 |    588.8 |
+| `/bedchart/movements/WF-001`      |       618.821289 |    619.0 |
 
 Against integrated main's limits (554.1 / 558.9 / 516.1 / 585.1 / 614.7 KB), this PR changes limits by +1.3 / +2.8 / 0 / +3.7 / +4.3 KB, all within D-82's 5 KB per-route allowance. The earlier diagnosed header-facts trim remains; remeasurement showed no byte saving, so none is claimed. See the [complete history](../../script-budget-history/2026-11-04-consolidated-audit-repairs.md) for original and integrated baselines. No user-latency improvement is inferred from these sizes.
 

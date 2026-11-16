@@ -4,7 +4,7 @@ import { act, cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const nav = vi.hoisted(() => ({ pathname: "/ward-flow/statistics", replace: vi.fn() }));
+const nav = vi.hoisted(() => ({ pathname: "/bedchart/statistics", replace: vi.fn() }));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: nav.replace, push: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
   usePathname: () => nav.pathname,
@@ -46,7 +46,7 @@ afterEach(() => {
   cleanup();
   vi.useRealTimers();
   nav.replace.mockReset();
-  nav.pathname = "/ward-flow/statistics";
+  nav.pathname = "/bedchart/statistics";
   setStatisticsSamples(false);
   resetWardLiveRegionForTests();
   act(() => {
@@ -75,48 +75,48 @@ function renderGated(pathname: string, access: WardAccess, page: ReactNode = <p>
 
 describe("WF-42 bare /statistics stays closed and the closed screen redirects", () => {
   it("sends a ward desk from bare /statistics to its own ward's Statistics, never drawing the hub", () => {
-    renderGated("/ward-flow/statistics", wardDesk, <p>Statistics hub</p>);
+    renderGated("/bedchart/statistics", wardDesk, <p>Statistics hub</p>);
     expect(screen.queryByText("Statistics hub")).toBeNull();
     expect(screen.queryByText("Not part of your role")).toBeNull();
     expect(screen.getByText("Opening your statistics")).toBeInTheDocument();
     expect(screen.queryByTestId("ward-access-own-home-notice")).toBeNull();
-    expect(nav.replace).toHaveBeenCalledWith(`/ward-flow/statistics/ward/${WARD_UNIT}`);
+    expect(nav.replace).toHaveBeenCalledWith(`/bedchart/statistics/ward/${WARD_UNIT}`);
   });
 
   it("still shows the closed screen for a statistics section the ward desk may not open", () => {
-    renderGated("/ward-flow/statistics/compare", wardDesk, <p>Compare</p>);
+    renderGated("/bedchart/statistics/compare", wardDesk, <p>Compare</p>);
     expect(screen.getByText("Not part of your role")).toBeInTheDocument();
     expect(screen.queryByText("Compare")).toBeNull();
     expect(nav.replace).not.toHaveBeenCalled();
   });
 
   it("sends a ward desk signing in on a saved bare /statistics to its own Statistics, not home (#1471 review)", () => {
-    renderGated("/ward-flow/statistics", wardDesk, <p>Statistics hub</p>, true);
+    renderGated("/bedchart/statistics", wardDesk, <p>Statistics hub</p>, true);
     expect(screen.getByText("Opening your statistics")).toBeInTheDocument();
     expect(screen.queryByText("Opening your home")).toBeNull();
-    expect(nav.replace).toHaveBeenCalledWith(`/ward-flow/statistics/ward/${WARD_UNIT}`);
-    expect(nav.replace).not.toHaveBeenCalledWith(`/ward-flow/ward/${WARD_UNIT}`);
+    expect(nav.replace).toHaveBeenCalledWith(`/bedchart/statistics/ward/${WARD_UNIT}`);
+    expect(nav.replace).not.toHaveBeenCalledWith(`/bedchart/ward/${WARD_UNIT}`);
   });
 });
 
 describe("#1470 review: the role notice is only for a refused deep link", () => {
   it("sends the brand address to the desk's home without saying a page was refused", () => {
-    renderGated("/ward-flow", wardDesk);
+    renderGated("/bedchart", wardDesk);
     expect(screen.getByText("Opening your home")).toBeInTheDocument();
     expect(screen.queryByTestId("ward-access-own-home-notice")).toBeNull();
-    expect(nav.replace).toHaveBeenCalledWith(`/ward-flow/ward/${WARD_UNIT}`);
+    expect(nav.replace).toHaveBeenCalledWith(`/bedchart/ward/${WARD_UNIT}`);
   });
 
   it("says the page is not part of the role when a sign-in lands on a page the desk cannot open", () => {
-    renderGated("/ward-flow/governance", wardDesk, undefined, true);
+    renderGated("/bedchart/governance", wardDesk, undefined, true);
     expect(screen.getByTestId("ward-access-own-home-notice")).toHaveTextContent("That page is not part of your role.");
-    expect(nav.replace).toHaveBeenCalledWith(`/ward-flow/ward/${WARD_UNIT}`);
+    expect(nav.replace).toHaveBeenCalledWith(`/bedchart/ward/${WARD_UNIT}`);
   });
 });
 
 describe("WF-42 /activity and /help open their panel on each desk's own home", () => {
   it("lets every role through to the Activity and Help addresses", () => {
-    for (const path of ["/ward-flow/activity", "/ward-flow/help"]) {
+    for (const path of ["/bedchart/activity", "/bedchart/help"]) {
       const address = screenForPath(path);
       expect(address).toBeDefined();
       for (const [role, table] of Object.entries(ROLE_SCREENS)) {
@@ -128,11 +128,11 @@ describe("WF-42 /activity and /help open their panel on each desk's own home", (
   it("lands a ward desk on its own ward with the panel opened", () => {
     vi.useFakeTimers();
     const open = vi.fn();
-    renderGated("/ward-flow/activity", wardDesk, <WardPanelAddress label="Activity" open={open} />);
+    renderGated("/bedchart/activity", wardDesk, <WardPanelAddress label="Activity" open={open} />);
     expect(screen.queryByText("Not part of your role")).toBeNull();
     expect(screen.getByText("Opening Activity")).toBeInTheDocument();
-    expect(nav.replace).toHaveBeenCalledWith(`/ward-flow/ward/${WARD_UNIT}`);
-    expect(window.location.pathname).toBe(`/ward-flow/ward/${WARD_UNIT}`);
+    expect(nav.replace).toHaveBeenCalledWith(`/bedchart/ward/${WARD_UNIT}`);
+    expect(window.location.pathname).toBe(`/bedchart/ward/${WARD_UNIT}`);
     expect(open).not.toHaveBeenCalled();
     act(() => {
       vi.runOnlyPendingTimers();
@@ -144,7 +144,7 @@ describe("WF-42 /activity and /help open their panel on each desk's own home", (
     vi.useFakeTimers();
     const open = vi.fn();
     const edDesk: WardAccess = { role: "ed", scope: { kind: "ed", edId: "rph-ed" } };
-    renderGated("/ward-flow/help", edDesk, <WardPanelAddress label="Help" open={open} />);
+    renderGated("/bedchart/help", edDesk, <WardPanelAddress label="Help" open={open} />);
     expect(screen.queryByText("Not part of your role")).toBeNull();
     expect(nav.replace).toHaveBeenCalledWith(homeHrefFor(edDesk, (name) => name));
     act(() => {
@@ -156,10 +156,10 @@ describe("WF-42 /activity and /help open their panel on each desk's own home", (
   it("still opens the panel when the route change unmounts the address page first (#1471 review)", () => {
     vi.useFakeTimers();
     const open = vi.fn();
-    const view = renderGated("/ward-flow/activity", wardDesk, <WardPanelAddress label="Activity" open={open} />);
-    expect(nav.replace).toHaveBeenCalledWith(`/ward-flow/ward/${WARD_UNIT}`);
+    const view = renderGated("/bedchart/activity", wardDesk, <WardPanelAddress label="Activity" open={open} />);
+    expect(nav.replace).toHaveBeenCalledWith(`/bedchart/ward/${WARD_UNIT}`);
     // router.replace(home) commits: the address page unmounts before its zero-delay timer runs.
-    nav.pathname = `/ward-flow/ward/${WARD_UNIT}`;
+    nav.pathname = `/bedchart/ward/${WARD_UNIT}`;
     view.unmount();
     expect(open).not.toHaveBeenCalled();
     act(() => {
@@ -187,6 +187,6 @@ describe("WF-42 example history announcement", () => {
 
 describe("WF-46 access admin home", () => {
   it("sends the access admin home to Governance", () => {
-    expect(homeHrefFor({ role: "admin", scope: { kind: "statewide" } }, (name) => name)).toBe("/ward-flow/governance");
+    expect(homeHrefFor({ role: "admin", scope: { kind: "statewide" } }, (name) => name)).toBe("/bedchart/governance");
   });
 });

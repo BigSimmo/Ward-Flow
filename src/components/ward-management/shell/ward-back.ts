@@ -13,28 +13,28 @@ type DrillDown = { readonly pattern: RegExp; readonly parent: (match: RegExpExec
 
 /** Screens below a list, each with the page it falls back to. Order matters: `/people/new` first. */
 const DRILL_DOWNS: readonly DrillDown[] = [
-  { pattern: /^\/ward-flow\/people\/new\/?$/u, parent: patientSearchHref },
+  { pattern: /^\/bedchart\/people\/new\/?$/u, parent: patientSearchHref },
   // Triage and risk (built 7 Nov 2026): a person's triage falls back to their record, the start step Home.
-  { pattern: /^\/ward-flow\/people\/([^/]+)\/triage\/?$/u, parent: (match) => `${BASE}/people/${match[1]}` },
-  { pattern: /^\/ward-flow\/triage\/new\/?$/u, parent: () => BASE },
-  { pattern: /^\/ward-flow\/people\/[^/]+\/?$/u, parent: () => `${BASE}/movements` },
-  { pattern: /^\/ward-flow\/movements\/[^/]+\/?$/u, parent: () => `${BASE}/movements` },
-  { pattern: /^\/ward-flow\/ward\/([^/]+)\/answer\/?$/u, parent: (match) => unitHref(decodeSegment(match[1])) },
-  { pattern: /^\/ward-flow\/referrals\/new\/?$/u, parent: () => `${BASE}/referrals` },
+  { pattern: /^\/bedchart\/people\/([^/]+)\/triage\/?$/u, parent: (match) => `${BASE}/people/${match[1]}` },
+  { pattern: /^\/bedchart\/triage\/new\/?$/u, parent: () => BASE },
+  { pattern: /^\/bedchart\/people\/[^/]+\/?$/u, parent: () => `${BASE}/movements` },
+  { pattern: /^\/bedchart\/movements\/[^/]+\/?$/u, parent: () => `${BASE}/movements` },
+  { pattern: /^\/bedchart\/ward\/([^/]+)\/answer\/?$/u, parent: (match) => unitHref(decodeSegment(match[1])) },
+  { pattern: /^\/bedchart\/referrals\/new\/?$/u, parent: () => `${BASE}/referrals` },
   {
-    pattern: /^\/ward-flow\/statistics\/(?:ward|ed|community|service)\/[^/]+\/?$/u,
+    pattern: /^\/bedchart\/statistics\/(?:ward|ed|community|service)\/[^/]+\/?$/u,
     parent: () => `${BASE}/statistics`,
   },
-  { pattern: /^\/ward-flow\/bed-meeting\/agenda\/?$/u, parent: () => `${BASE}/capacity` },
-  { pattern: /^\/ward-flow\/reports\/(?:downtime|chronology)\/?$/u, parent: () => BASE },
+  { pattern: /^\/bedchart\/bed-meeting\/agenda\/?$/u, parent: () => `${BASE}/capacity` },
+  { pattern: /^\/bedchart\/reports\/(?:downtime|chronology)\/?$/u, parent: () => BASE },
 ];
 
 /** One ward, ED or community team. It is a drill-down unless it is the desk's own place. */
 const PLACE_PAGES: readonly (DrillDown & { readonly kind: "unit" | "ed" | "team" })[] = [
-  { kind: "unit", pattern: /^\/ward-flow\/ward\/([^/]+)\/?$/u, parent: () => `${BASE}/wards` },
-  { kind: "unit", pattern: /^\/ward-flow\/board\/([^/]+)\/?$/u, parent: () => `${BASE}/wards` },
-  { kind: "ed", pattern: /^\/ward-flow\/ed\/([^/]+)\/?$/u, parent: () => `${BASE}/ed` },
-  { kind: "team", pattern: /^\/ward-flow\/community\/([^/]+)\/?$/u, parent: () => `${BASE}/community` },
+  { kind: "unit", pattern: /^\/bedchart\/ward\/([^/]+)\/?$/u, parent: () => `${BASE}/wards` },
+  { kind: "unit", pattern: /^\/bedchart\/board\/([^/]+)\/?$/u, parent: () => `${BASE}/wards` },
+  { kind: "ed", pattern: /^\/bedchart\/ed\/([^/]+)\/?$/u, parent: () => `${BASE}/ed` },
+  { kind: "team", pattern: /^\/bedchart\/community\/([^/]+)\/?$/u, parent: () => `${BASE}/community` },
 ];
 
 function decodeSegment(segment: string): string {
@@ -61,8 +61,8 @@ export function wardBackParent(pathname: string, deskHomeHref: string): string |
   // Own-place desks cannot open the Statistics index. A first entry or reload still needs an
   // authorised parent, while coordinator, service and site desks keep the index fallback.
   if (
-    /^\/ward-flow\/statistics\/(?:ward|ed|community)\/[^/]+\/?$/u.test(pathname) &&
-    /^\/ward-flow\/(?:ward|ed|community)\/[^/]+\/?$/u.test(deskHomeHref)
+    /^\/bedchart\/statistics\/(?:ward|ed|community)\/[^/]+\/?$/u.test(pathname) &&
+    /^\/bedchart\/(?:ward|ed|community)\/[^/]+\/?$/u.test(deskHomeHref)
   )
     return deskHomeHref;
   for (const drill of DRILL_DOWNS) {

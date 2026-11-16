@@ -41,7 +41,7 @@ import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard
 import { rememberReturnRow, rowWithAttribute, useReturnedView, useReturnToPlace } from "../use-return-to-place";
 import type { OnBehalfReasonId } from "../ward-on-behalf-reason";
 
-const DISCHARGES_ROUTE = "/ward-flow/discharges";
+const DISCHARGES_ROUTE = "/bedchart/discharges";
 /**
  * What Back brings back (`use-return-to-place.ts`): the board's own fixed choices. Nothing typed is
  * kept, and neither is the open drawer — a return shows the list, not the record it was left from.

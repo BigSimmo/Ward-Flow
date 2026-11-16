@@ -31,10 +31,10 @@ import { SIGNED_RECORD_WORDS } from "./helpers/triage-example";
 // The independent clinical review's R1 (placement form), R10 (signer after signing) and question 8
 // (TV label), drawn on screen. Synthetic data only.
 
-const TRIAGE_PATH = "/ward-flow/triage/new";
+const TRIAGE_PATH = "/bedchart/triage/new";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/triage/new",
+  usePathname: () => "/bedchart/triage/new",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));

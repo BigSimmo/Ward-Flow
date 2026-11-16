@@ -42,7 +42,7 @@ export function IdleLockScreen({
         <span className={styles.brandTile} aria-hidden="true">
           <BrandMark size={22} />
         </span>
-        <BrandName name="Ward Flow" className={styles.wordmark} />
+        <BrandName name="BedChart" className={styles.wordmark} />
         <span className={styles.syn}>
           <i aria-hidden="true" />
           Synthetic data

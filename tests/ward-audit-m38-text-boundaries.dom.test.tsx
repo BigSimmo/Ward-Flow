@@ -34,7 +34,7 @@ import { RECEIVE_REFERRAL_CANDIDATE } from "./helpers/ward-legal-figure-sweep";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }),
-  usePathname: () => "/ward-flow/coordinator",
+  usePathname: () => "/bedchart/coordinator",
   useSearchParams: () => new URLSearchParams(),
 }));
 vi.mock("next/link", () => ({

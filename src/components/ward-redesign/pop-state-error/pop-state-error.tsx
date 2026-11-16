@@ -9,7 +9,7 @@ import styles from "./pop-state-error.module.css";
 
 /**
  * The Error mock-up: what Home shows when its screen throws while drawing. Drawn from a copy of
- * today's Ward Flow boundary panel (`src/app/ward-flow/error.tsx` and `ward-flow-error-panel.tsx`)
+ * today's Ward Flow boundary panel (`src/app/bedchart/error.tsx` and `ward-flow-error-panel.tsx`)
  * with the boundary's own title and description, inside the shell (rail and header stay, as they do
  * in the app). It shows what the signed-in shared site shows: the fixed sentence, not the message.
  * Try again draws Home again, as `retry()` re-renders the segment; Reload page reloads the mock-up.
@@ -30,7 +30,7 @@ export function PopStateError({ page }: { page: ReactNode }) {
         retry={() => setRetried(true)}
         title="This ward screen could not be shown"
         description="Try again keeps the same prototype state. Reloading may restore the last saved synthetic data; anything not yet saved may be lost."
-        logLabel="Unhandled runtime error captured by the Ward Flow boundary:"
+        logLabel="Unhandled runtime error captured by the BedChart boundary:"
         testId="ward-flow-error-boundary"
         showDetail={false}
       />

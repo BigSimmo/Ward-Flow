@@ -4,12 +4,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 /** P188 (Josh, 27 Oct 2026): the tour is offered by a small card on a desk's first visit, not opened. */
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
 vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({
-  useTourFacts: () => ({ facts: {}, home: "/ward-flow", deskHome: "/ward-flow" }),
+  useTourFacts: () => ({ facts: {}, home: "/bedchart", deskHome: "/bedchart" }),
 }));
 
 const desk = { role: "coordinator" as string };
@@ -43,7 +43,7 @@ describe("P188: the tour is offered, not forced", () => {
     render(<WardTourAutoStart onStart={onStart} />);
     const card = await screen.findByTestId("ward-tour-offer");
     // Nov 2026: three welcome cards come first; the last offers the tour.
-    expect(card.textContent).toMatch(/^Welcome to Ward Flow/u);
+    expect(card.textContent).toMatch(/^Welcome to BedChart/u);
     fireEvent.click(screen.getByTestId("ward-tour-welcome-next"));
     fireEvent.click(screen.getByTestId("ward-tour-welcome-next"));
     // The time follows the desk's tour length on this device (2 Nov 2026), as the first step says.

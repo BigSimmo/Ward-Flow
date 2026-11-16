@@ -6,7 +6,7 @@ the shadow pilot. Owner: pilot lead (to be named).
 _Updated 2026-11-08 - written for the shadow pilot from source at `d85618e6`; Documentation owns._
 
 The shadow pilot runs beside the ward whiteboard with invented patients only. Nobody types a real
-patient's details into Ward Flow, including on the request form below.
+patient's details into BedChart, including on the request form below.
 
 This page says how the app works today. The rules come from
 `src/components/ward-management/ward-access-admin.ts` (who may give what),
@@ -20,7 +20,7 @@ The decisions behind them are D-66, D-80 and D-86 in [decisions.md](../decisions
 | --------------------- | --------------------------------------------------- | --------------------------------------------------------------- |
 | Pilot lead            | To be named                                         | Agrees who joins the pilot. Runs the monthly access review.     |
 | Line manager          | The person's own manager                            | Confirms the person needs this desk and place. Reports leavers. |
-| Access admin          | To be named (one per health service, plus a deputy) | Gives, changes and removes roles in Ward Flow.                  |
+| Access admin          | To be named (one per health service, plus a deputy) | Gives, changes and removes roles in BedChart.                   |
 | Trainer               | To be named                                         | Runs the [competency check](competency-check.md) before access. |
 | Sign-in administrator | To be named (whoever runs the sign-in service)      | Creates and blocks the sign-in account itself.                  |
 | Privacy officer       | To be named                                         | Reads the access review. Advises if something looks wrong.      |
@@ -71,7 +71,7 @@ pilot starts.
 4. The person does the [competency check](competency-check.md) in demo mode and passes.
 5. The access admin gives the role (step 2 below).
 
-A person who already has a sign-in but no role sees **No Ward Flow role yet** after signing in.
+A person who already has a sign-in but no role sees **No BedChart role yet** after signing in.
 They can choose a role and place and press **Ask for access**. That request shows on the access
 admin's screen. It does not replace the request form: the access admin still checks the form and
 the competency sign-off first.
@@ -129,7 +129,7 @@ Once a month the pilot lead and an access admin go through **Everyone with a rol
 
 Pilot accounts are made by the sign-in administrator only, never by people signing themselves up.
 
-- In the app, the **Create a Ward Flow account** link is hidden unless the setting
+- In the app, the **Create a BedChart account** link is hidden unless the setting
   `NEXT_PUBLIC_WARD_OPEN_SIGNUP` is `"true"` and a coordinator email is also set. For the pilot it
   must not be `"true"`.
 - In the sign-in service (<!-- fact:auth-provider -->Supabase Auth<!-- /fact -->), open sign-up

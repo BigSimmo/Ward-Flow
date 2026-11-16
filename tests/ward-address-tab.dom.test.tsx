@@ -30,7 +30,7 @@ afterEach(() => {
 
 describe("useAddressTab", () => {
   it("writes the chosen tab to the address, keeps other keys, and a reload opens on it", async () => {
-    window.history.replaceState(null, "", "/ward-flow/people/x?mode=find");
+    window.history.replaceState(null, "", "/bedchart/people/x?mode=find");
     render(<Tabs />);
     expect(screen.getByTestId("tab")).toHaveTextContent("now");
     fireEvent.click(screen.getByRole("button", { name: "details" }));

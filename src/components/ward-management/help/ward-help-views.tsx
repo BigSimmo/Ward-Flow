@@ -210,7 +210,7 @@ export function HelpDesk({
         [
           ["Good to know", guide.limits],
           ["Is it saved?", SAVED_OR_NOT],
-          ["If Ward Flow is down", WHEN_IT_IS_DOWN],
+          ["If BedChart is down", WHEN_IT_IS_DOWN],
         ] as const
       ).map(([heading, points]) => (
         <section key={heading} className={s.section} aria-label={heading}>

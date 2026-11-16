@@ -54,7 +54,7 @@ export function exportLegal(legal: string): string {
   // A form code is one digit and one letter (1A, 3B, 6D): never a word, so "Form John" cannot pass.
   const code = /^form ([0-9][a-z])$/iu.exec(text)?.[1];
   if (code) return `Form ${code.toUpperCase()}`;
-  return EXPORT_LEGAL_LABELS.get(text.toLowerCase()) ?? "Recorded (see Ward Flow)";
+  return EXPORT_LEGAL_LABELS.get(text.toLowerCase()) ?? "Recorded (see BedChart)";
 }
 
 export function censusExportLines(rows: readonly CensusExportRow[], ctx: CensusExportContext): (string | number)[][] {
@@ -81,5 +81,5 @@ export function downloadPatientList(
   ctx: CensusExportContext,
   provenance: ListExportProvenance,
 ): void {
-  downloadCsv("ward-flow-synthetic-patients.csv", censusExportLines(rows, ctx), provenance);
+  downloadCsv("bedchart-synthetic-patients.csv", censusExportLines(rows, ctx), provenance);
 }

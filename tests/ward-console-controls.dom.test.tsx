@@ -11,7 +11,7 @@ vi.mock("next/navigation", () => ({
   // The Ward Flow sidebar derives its role from the route (ward-nav-role-order.ts), so every
   // suite that renders a rail needs a pathname. A whole-module mock without one makes
   // `usePathname` undefined, which throws at render rather than returning a wrong answer.
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => router,
 }));
 
@@ -1454,7 +1454,7 @@ describe("the site bed manager's desk (audit 0c5yr2)", () => {
 
   it("shows Record it and Clear off, and records nothing", () => {
     renderWorkspace("WF-001");
-    act(() => setDeskRole("bed_manager", "/ward-flow"));
+    act(() => setDeskRole("bed_manager", "/bedchart"));
     const panel = screen.getByTestId("ward-patient-blocker");
     fireEvent.change(screen.getByTestId("ward-console-blocker-input"), { target: { value: "Awaiting cleaner" } });
     expectLocked(screen.getByRole("button", { name: /record it/i }));
@@ -1469,7 +1469,7 @@ describe("the site bed manager's desk (audit 0c5yr2)", () => {
     fireEvent.click(screen.getByTestId("test-pull-patient"));
     fireEvent.click(screen.getByTestId("test-book-transport"));
     fireEvent.click(screen.getByTestId("test-step-back"));
-    act(() => setDeskRole("bed_manager", "/ward-flow"));
+    act(() => setDeskRole("bed_manager", "/bedchart"));
     expectLocked(screen.getByTestId("ward-console-cancel-transport"));
   });
 

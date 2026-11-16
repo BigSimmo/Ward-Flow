@@ -1,7 +1,7 @@
 /*
  * Ward Flow service worker: phone alerts (feature 4) and the offline fallback (PWA plan, Oct 2026).
  * Registered on every Ward Flow load (shell/ward-pwa-registration.tsx) and by the phone alerts
- * switch (shell/ward-phone-push.ts), both with scope /ward-flow, so Home is covered too.
+ * switch (shell/ward-phone-push.ts), both with scope /bedchart, so Home is covered too.
  *
  * Push: shows the notification the Ward Flow server sent and opens Ward Flow when it is tapped. It
  * shows only the server's generic words (a count, a site and "Synthetic demo data"), checked against
@@ -14,17 +14,18 @@
  * other request. A page is always fetched from the network; only when that fails is the offline
  * page shown in its place.
  */
-const WARD_FLOW_PATH = "/ward-flow";
+const WARD_FLOW_PATH = "/bedchart";
 const ALERTS_PATH = `${WARD_FLOW_PATH}/alerts`;
-const FALLBACK = { title: "Ward Flow: act now", body: "Open Alerts to review. Synthetic demo data." };
+const FALLBACK = { title: "BedChart: act now", body: "Open Alerts to review. Synthetic demo data." };
 // The only words a push may show: the templates pushPayload builds in backend/ward-flow/push.mjs.
+// The old "Ward Flow" prefix stays accepted until every server sends the BedChart one (D-250).
 // Anything else, such as free text that could name a person, is replaced by FALLBACK (PS-13). A site
 // is allowed only as a short plain label.
-const PUSH_WHERE = "(?:Ward Flow network|\\d{1,5} sites|[A-Za-z0-9][A-Za-z0-9 '&.()-]{0,59})";
+const PUSH_WHERE = "(?:BedChart network|Ward Flow network|\\d{1,5} sites|[A-Za-z0-9][A-Za-z0-9 '&.()-]{0,59})";
 const PUSH_TITLES = [
-  /^Ward Flow: \d{1,5} new act now items?$/,
-  /^Ward Flow: \d{1,5} new or changed transport jobs?$/,
-  /^Ward Flow: \d{1,5} updates? for your team$/,
+  /^(?:BedChart|Ward Flow): \d{1,5} new act now items?$/,
+  /^(?:BedChart|Ward Flow): \d{1,5} new or changed transport jobs?$/,
+  /^(?:BedChart|Ward Flow): \d{1,5} updates? for your team$/,
 ];
 const PUSH_BODIES = [
   new RegExp(`^${PUSH_WHERE}\\. Open (?:Alerts|Transport jobs) to review\\. Synthetic demo data\\.$`),
@@ -41,7 +42,7 @@ const RENOTIFY_TAGS = ["ward-flow-act-now"];
 // the kind (act-now, jobs or team), never the payload words. Its own cache, without CACHE_PREFIX, so
 // activate never deletes it. Must match settings/settings-last-push.ts.
 const LAST_PUSH_CACHE = "ward-flow-last-push";
-const LAST_PUSH_KEY = "/ward-flow/__last-push";
+const LAST_PUSH_KEY = "/bedchart/__last-push";
 const PUSH_KINDS = { "ward-flow-act-now": "act-now", "ward-flow-jobs": "jobs", "ward-flow-team": "team" };
 
 // Bump CACHE_VERSION when the precache list or the caching rules change; activate deletes the rest.
@@ -50,7 +51,7 @@ const PUSH_KINDS = { "ward-flow-act-now": "act-now", "ward-flow-jobs": "jobs", "
 // tests/ward-pwa-worker.test.ts recomputes it and fails when the page changes without it.
 const CACHE_PREFIX = "ward-flow-static-";
 const CACHE_VERSION = "v2";
-const OFFLINE_PAGE_REVISION = "da3d4e49fe3b";
+const OFFLINE_PAGE_REVISION = "ca0ccb3b06b2";
 const STATIC_CACHE = `${CACHE_PREFIX}${CACHE_VERSION}-${OFFLINE_PAGE_REVISION}`;
 const OFFLINE_URL = "/ward-flow-offline.html";
 // Best effort: a missing icon must not stop the worker installing, or phone alerts would stop too.

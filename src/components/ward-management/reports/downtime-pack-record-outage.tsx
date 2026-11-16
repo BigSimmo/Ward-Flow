@@ -85,8 +85,7 @@ export function DowntimeRecordOutage({ now, onDone }: { now: Instant; onDone: ()
   const save = () => {
     if (window === null) return;
     // The reducer refuses these too; saying so here keeps a local refusal from reading as saved.
-    if (window.to > now)
-      return setProblem("The time Ward Flow came back cannot be later than now. Check the end time.");
+    if (window.to > now) return setProblem("The time BedChart came back cannot be later than now. Check the end time.");
     if (recorded.some((row) => row.from === window.from && row.to === window.to))
       return setProblem("That outage is already recorded. Change a time to record another.");
     clearProblem();

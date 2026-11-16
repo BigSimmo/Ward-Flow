@@ -20,7 +20,7 @@ The axe-style clipping count ran to 121 elements on one page. Desktop zoom at 20
 
 ### A2. Add a patient: the choice buttons show no focus ring
 
-Where: /ward-flow/people/new, all widths, light and dark (Gender row and the other choice-button rows). Seen: tabbing onto "Female" gives `:focus-visible`, but computed `box-shadow: none` and `outline: none`, so there is no visible sign of focus. Every other screen's segments show the kit's inset ring. Cause: add-patient.module.css:511 `.segmented.segmented > button { box-shadow: none }` is more specific than the kit's `.segItem:focus-visible` ring (wf/choice.module.css:180). Recommend: add a `.segmented.segmented > button:focus-visible` rule that brings back the kit ring. Severity: medium (keyboard users cannot see where they are on a form). Confidence: high. Evidence: a-3-add-patient-focus-1280.jpg (Female is focused).
+Where: /bedchart/people/new, all widths, light and dark (Gender row and the other choice-button rows). Seen: tabbing onto "Female" gives `:focus-visible`, but computed `box-shadow: none` and `outline: none`, so there is no visible sign of focus. Every other screen's segments show the kit's inset ring. Cause: add-patient.module.css:511 `.segmented.segmented > button { box-shadow: none }` is more specific than the kit's `.segItem:focus-visible` ring (wf/choice.module.css:180). Recommend: add a `.segmented.segmented > button:focus-visible` rule that brings back the kit ring. Severity: medium (keyboard users cannot see where they are on a form). Confidence: high. Evidence: a-3-add-patient-focus-1280.jpg (Female is focused).
 
 ### A3. Closing two panels with Esc drops focus to the top of the page
 
@@ -28,7 +28,7 @@ Where: (1) the header "Statewide" service picker at 1280 and 820, light and dark
 
 ### A4. Switch ward panel: Tab leaves the open panel and jumps to the top of the page
 
-Where: /ward-flow/ward/<unitId> at 1280, light and dark. Seen: the panel opens with focus on the second ward. One Tab moves focus to "Ward Flow WA — home" at the top of the rail, while the panel stays open over the page. The current ward row cannot be reached by keyboard. The panel is `role="dialog"` without `aria-modal`. Cause: ward-switch-menu.tsx (about :123–145) is a portalled panel with no Tab handling or focus-out close. Recommend: either keep Tab inside the panel like the other pop-ups, or close it when focus leaves and return focus to "Switch ward". Severity: low. Confidence: high. Evidence: a-4-switch-ward-focus-1280.jpg.
+Where: /bedchart/ward/<unitId> at 1280, light and dark. Seen: the panel opens with focus on the second ward. One Tab moves focus to "Ward Flow WA — home" at the top of the rail, while the panel stays open over the page. The current ward row cannot be reached by keyboard. The panel is `role="dialog"` without `aria-modal`. Cause: ward-switch-menu.tsx (about :123–145) is a portalled panel with no Tab handling or focus-out close. Recommend: either keep Tab inside the panel like the other pop-ups, or close it when focus leaves and return focus to "Switch ward". Severity: low. Confidence: high. Evidence: a-4-switch-ward-focus-1280.jpg.
 
 ### A5. Statewide picker tells screen readers it is a menu, but it is a plain group
 
@@ -36,7 +36,7 @@ Where: header "Statewide" button, 820 and up, both themes. Seen: the button has 
 
 ### A6. Phone ward hero count badge fails contrast in dark
 
-Where: /ward-flow/ward/<unitId>, 390, dark, the red "1" on the bell. Seen: white 11–12px text on #e27a68 is 2.91:1 (needs 4.5). In light it passes. Cause: ward.module.css:4046–4056 `.phoneHeroBadge` uses `--wf-danger` with `--wf-on-accent`. Recommend: use dark ink on the dark-theme danger colour, or a deeper red fill in dark. Severity: low. Confidence: high (pixel-checked). Evidence: a-5-ward-badge-dark-390.jpg.
+Where: /bedchart/ward/<unitId>, 390, dark, the red "1" on the bell. Seen: white 11–12px text on #e27a68 is 2.91:1 (needs 4.5). In light it passes. Cause: ward.module.css:4046–4056 `.phoneHeroBadge` uses `--wf-danger` with `--wf-on-accent`. Recommend: use dark ink on the dark-theme danger colour, or a deeper red fill in dark. Severity: low. Confidence: high (pixel-checked). Evidence: a-5-ward-badge-dark-390.jpg.
 
 ### A7. Headings skip levels on three pages
 

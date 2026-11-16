@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 /**
  * The referral slide-out is the one place a referral is written (Josh, 8 Oct 2026). Every link to
- * `/ward-flow/referrals/new` — the patient page's Refer, the board's New referral, a search
+ * `/bedchart/referrals/new` — the patient page's Refer, the board's New referral, a search
  * preview — opens the slide-out in place, and arriving on that route opens it over the board.
  */
 
@@ -16,7 +16,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const route = { pathname: "/ward-flow" };
+const route = { pathname: "/bedchart" };
 const replace = vi.fn();
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
@@ -50,7 +50,7 @@ function renderBarWith(children?: ReactNode) {
 afterEach(() => {
   resetWardLiveRegionForTests();
   discardReferralDraft();
-  route.pathname = "/ward-flow";
+  route.pathname = "/bedchart";
   replace.mockReset();
   window.history.replaceState(null, "", "/");
   resetServiceScopeForTests();
@@ -160,7 +160,7 @@ describe("a link to the referral route opens the slide-out in place", () => {
   });
 
   it("opens the referral sheet and does not navigate", async () => {
-    renderBarWith(<a href="/ward-flow/referrals/new?patientId=PT-001&source=community&refer=community">Refer</a>);
+    renderBarWith(<a href="/bedchart/referrals/new?patientId=PT-001&source=community&refer=community">Refer</a>);
     expect(screen.queryByTestId("ward-bar-referral-sheet")).toBeNull();
 
     const link = screen.getByRole("link", { name: "Refer" });
@@ -174,23 +174,23 @@ describe("a link to the referral route opens the slide-out in place", () => {
   });
 
   it("puts the referral route in the address bar on an in-app click, and Back restores the page (P150)", async () => {
-    window.history.replaceState(null, "", "/ward-flow/patients");
-    renderBarWith(<a href="/ward-flow/referrals/new?refer=community">Refer</a>);
+    window.history.replaceState(null, "", "/bedchart/patients");
+    renderBarWith(<a href="/bedchart/referrals/new?refer=community">Refer</a>);
 
     fireEvent.click(screen.getByRole("link", { name: "Refer" }));
     await screen.findByTestId("ward-bar-referral-sheet");
-    expect(window.location.pathname + window.location.search).toBe("/ward-flow/referrals/new?refer=community");
+    expect(window.location.pathname + window.location.search).toBe("/bedchart/referrals/new?refer=community");
     expect(window.history.state?.wardDrawer).toBe("referral");
 
     const back = vi.spyOn(window.history, "back").mockImplementation(() => {
-      window.history.replaceState(null, "", "/ward-flow/patients");
+      window.history.replaceState(null, "", "/bedchart/patients");
       fireEvent.popState(window, { state: null });
     });
     try {
       fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
       await waitFor(() => expect(screen.queryByTestId("ward-bar-referral-sheet")).toBeNull());
       expect(back).toHaveBeenCalledTimes(1);
-      expect(window.location.pathname).toBe("/ward-flow/patients");
+      expect(window.location.pathname).toBe("/bedchart/patients");
       expect(replace).not.toHaveBeenCalled();
     } finally {
       back.mockRestore();
@@ -198,12 +198,12 @@ describe("a link to the referral route opens the slide-out in place", () => {
   });
 
   it("opens the slide-out again when Forward returns to its route after Back (P150)", async () => {
-    window.history.replaceState(null, "", "/ward-flow/patients");
+    window.history.replaceState(null, "", "/bedchart/patients");
     const tree = () => (
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardLiveRegion />
         <WardBar primaryAction={{ kind: "none" }} />
-        <a href="/ward-flow/referrals/new?refer=community">Refer</a>
+        <a href="/bedchart/referrals/new?refer=community">Refer</a>
       </WardFlowProvider>
     );
     const view = render(tree());
@@ -211,7 +211,7 @@ describe("a link to the referral route opens the slide-out in place", () => {
     await screen.findByTestId("ward-bar-referral-sheet");
 
     const back = vi.spyOn(window.history, "back").mockImplementation(() => {
-      window.history.replaceState(null, "", "/ward-flow/patients");
+      window.history.replaceState(null, "", "/bedchart/patients");
       fireEvent.popState(window, { state: null });
     });
     try {
@@ -222,8 +222,8 @@ describe("a link to the referral route opens the slide-out in place", () => {
     }
 
     // Forward: the address bar and the router's path are back on the slide-out route.
-    window.history.replaceState(null, "", "/ward-flow/referrals/new?refer=community");
-    route.pathname = "/ward-flow/referrals/new";
+    window.history.replaceState(null, "", "/bedchart/referrals/new?refer=community");
+    route.pathname = "/bedchart/referrals/new";
     view.rerender(tree());
     expect(await screen.findByTestId("ward-bar-referral-sheet")).toBeInTheDocument();
   });
@@ -231,8 +231,8 @@ describe("a link to the referral route opens the slide-out in place", () => {
   it("leaves a modified click (new tab) and every other link alone", () => {
     renderBarWith(
       <>
-        <a href="/ward-flow/referrals/new">New referral</a>
-        <a href="/ward-flow/referrals">Referrals</a>
+        <a href="/bedchart/referrals/new">New referral</a>
+        <a href="/bedchart/referrals">Referrals</a>
       </>,
     );
 
@@ -244,8 +244,8 @@ describe("a link to the referral route opens the slide-out in place", () => {
 
 describe("arriving on the referral route opens the slide-out over the board", () => {
   it("opens once with what the query asks for, and settles the URL on the board when closed", async () => {
-    route.pathname = "/ward-flow/referrals/new";
-    window.history.replaceState(null, "", "/ward-flow/referrals/new?refer=ed");
+    route.pathname = "/bedchart/referrals/new";
+    window.history.replaceState(null, "", "/bedchart/referrals/new?refer=ed");
     renderBarWith();
 
     const sheet = await screen.findByTestId("ward-bar-referral-sheet");
@@ -254,6 +254,6 @@ describe("arriving on the referral route opens the slide-out over the board", ()
     fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
 
     await waitFor(() => expect(screen.queryByTestId("ward-bar-referral-sheet")).toBeNull());
-    expect(replace).toHaveBeenCalledWith("/ward-flow/referrals");
+    expect(replace).toHaveBeenCalledWith("/bedchart/referrals");
   });
 });

@@ -49,7 +49,7 @@ export const PAIRS = [
   ["statistics-third-edition.html", "/statistics", "statistics", true],
   ["statistics-compare-third-edition.html", "/statistics/compare", "statistics", true],
   ["statistics-service-third-edition.html", "/statistics/service/[serviceId]", "statistics", true],
-  ["sign-in-third-edition.html", "/ward-flow-sign-in", "../ward-flow-sign-in", true],
+  ["sign-in-third-edition.html", "/bedchart-sign-in", "../ward-flow-sign-in", true],
   ["design-system-third-edition.html", null, null, false],
   ["ward-answer-third-edition.html", "/ward/[unitId]/answer", "ward", true],
   ["ward-flow-digest.html", "/mockups/ward-flow-digest", null, false],
@@ -104,7 +104,7 @@ export const SUPERSEDED = ["patient-search-console.html", "patient-search-workin
 
 /**
  * Complete 61-route roster mapping every commissioned Ward Flow route (59 under
- * `/ward-flow/**` plus `/ward-flow-sign-in` and `/mockups/ward-flow-digest`)
+ * `/bedchart/**` plus `/bedchart-sign-in` and `/mockups/ward-flow-digest`)
  * to its screen folder and current React component file relative to
  * `src/components/ward-management/` (`null` for server redirect stubs and the HTML digest route handler).
  */
@@ -114,6 +114,7 @@ export const ROUTE_COMPONENTS = [
   { route: "/activity", folder: "coordinator", react: null },
   // F-77 (13 Nov 2026): what the demo is, synthetic data, not clinical decision support.
   { route: "/about", folder: "about", react: "about/about-demo-screen.tsx" },
+  { route: "/privacy", folder: "privacy", react: "privacy/privacy-tracker-screen.tsx" },
   { route: "/alerts", folder: "alerts", react: "alerts/alerts-screen.tsx" },
   { route: "/bed-meeting", folder: "bed-meeting", react: "bed-meeting/bed-meeting-tv.tsx" },
   { route: "/bed-meeting/agenda", folder: "bed-meeting", react: "bed-meeting/bed-meeting-agenda-screen.tsx" },
@@ -184,7 +185,7 @@ export const ROUTE_COMPONENTS = [
   { route: "/ward/[unitId]/answer", folder: "ward", react: "ward/ward-screen.tsx" },
   { route: "/wards", folder: "wards", react: "wards/ward-index.tsx" },
   {
-    route: "/ward-flow-sign-in",
+    route: "/bedchart-sign-in",
     folder: "../ward-flow-sign-in",
     react: "../ward-flow-sign-in/ward-flow-sign-in-screen.tsx",
   },

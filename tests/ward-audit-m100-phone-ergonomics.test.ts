@@ -25,7 +25,7 @@ import { join } from "node:path";
 import postcss from "postcss";
 import { describe, expect, it } from "vitest";
 
-const LAYOUT = "src/app/ward-flow/ward-flow-layout.module.css";
+const LAYOUT = "src/app/bedchart/ward-flow-layout.module.css";
 const PAGE_DOCK = "src/components/ward-management/shell/ward-phone-page-dock.module.css";
 const NEXT_DOCK = "src/components/ward-management/shell-next/next-phone-dock.module.css";
 const MENU = "src/components/ward-management/shell/ward-phone-menu.module.css";

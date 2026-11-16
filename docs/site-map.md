@@ -7,70 +7,71 @@ See also [`ward-flow/SCREEN-MAP.md`](ward-flow/SCREEN-MAP.md), which pairs each 
 ## Main product routes
 
 - `/` - Route discovered from app directory Source: `src/app/page.tsx`.
+- `/bedchart` - Route discovered from app directory Source: `src/app/bedchart/page.tsx`.
+- `/bedchart-sign-in` - Route discovered from app directory Source: `src/app/bedchart-sign-in/page.tsx`.
+- `/bedchart/about` - Route discovered from app directory Source: `src/app/bedchart/about/page.tsx`.
+- `/bedchart/activity` - Route discovered from app directory Source: `src/app/bedchart/activity/page.tsx`.
+- `/bedchart/alerts` - Route discovered from app directory Source: `src/app/bedchart/alerts/page.tsx`.
+- `/bedchart/bed-meeting` - Route discovered from app directory Source: `src/app/bedchart/bed-meeting/page.tsx`.
+- `/bedchart/bed-meeting/agenda` - Route discovered from app directory Source: `src/app/bedchart/bed-meeting/agenda/page.tsx`.
+- `/bedchart/board/[unitId]` - Route discovered from app directory Source: `src/app/bedchart/board/[unitId]/page.tsx`.
+- `/bedchart/capacity` - Route discovered from app directory Source: `src/app/bedchart/capacity/page.tsx`.
+- `/bedchart/command` - Route discovered from app directory Source: `src/app/bedchart/command/page.tsx`.
+- `/bedchart/community` - Route discovered from app directory Source: `src/app/bedchart/community/page.tsx`.
+- `/bedchart/community/[teamId]` - Route discovered from app directory Source: `src/app/bedchart/community/[teamId]/page.tsx`.
+- `/bedchart/constellation` - Route discovered from app directory Source: `src/app/bedchart/constellation/page.tsx`.
+- `/bedchart/delays` - Route discovered from app directory Source: `src/app/bedchart/delays/page.tsx`.
+- `/bedchart/discharges` - Route discovered from app directory Source: `src/app/bedchart/discharges/page.tsx`.
+- `/bedchart/ed` - Route discovered from app directory Source: `src/app/bedchart/ed/page.tsx`.
+- `/bedchart/ed/[edId]` - Route discovered from app directory Source: `src/app/bedchart/ed/[edId]/page.tsx`.
+- `/bedchart/escalation` - Route discovered from app directory Source: `src/app/bedchart/escalation/page.tsx`.
+- `/bedchart/exceptions` - Route discovered from app directory Source: `src/app/bedchart/exceptions/page.tsx`.
+- `/bedchart/governance` - Route discovered from app directory Source: `src/app/bedchart/governance/page.tsx`.
+- `/bedchart/handover` - Route discovered from app directory Source: `src/app/bedchart/handover/page.tsx`.
+- `/bedchart/help` - Route discovered from app directory Source: `src/app/bedchart/help/page.tsx`.
+- `/bedchart/hub` - Route discovered from app directory Source: `src/app/bedchart/hub/page.tsx`.
+- `/bedchart/hub/catchments` - Route discovered from app directory Source: `src/app/bedchart/hub/catchments/page.tsx`.
+- `/bedchart/leave` - Route discovered from app directory Source: `src/app/bedchart/leave/page.tsx`.
+- `/bedchart/legal-forms` - Route discovered from app directory Source: `src/app/bedchart/legal-forms/page.tsx`.
+- `/bedchart/movements` - Route discovered from app directory Source: `src/app/bedchart/movements/page.tsx`.
+- `/bedchart/movements/[movementId]` - Route discovered from app directory Source: `src/app/bedchart/movements/[movementId]/page.tsx`.
+- `/bedchart/network` - Route discovered from app directory Source: `src/app/bedchart/network/page.tsx`.
+- `/bedchart/night` - Route discovered from app directory Source: `src/app/bedchart/night/page.tsx`.
+- `/bedchart/on-call` - Route discovered from app directory Source: `src/app/bedchart/on-call/page.tsx`.
+- `/bedchart/out-of-area` - Route discovered from app directory Source: `src/app/bedchart/out-of-area/page.tsx`.
+- `/bedchart/people/[patientId]` - Route discovered from app directory Source: `src/app/bedchart/people/[patientId]/page.tsx`.
+- `/bedchart/people/[patientId]/triage` - Route discovered from app directory Source: `src/app/bedchart/people/[patientId]/triage/page.tsx`.
+- `/bedchart/people/new` - Route discovered from app directory Source: `src/app/bedchart/people/new/page.tsx`.
+- `/bedchart/privacy` - Route discovered from app directory Source: `src/app/bedchart/privacy/page.tsx`.
+- `/bedchart/queue` - Route discovered from app directory Source: `src/app/bedchart/queue/page.tsx`.
+- `/bedchart/referrals` - Route discovered from app directory Source: `src/app/bedchart/referrals/page.tsx`.
+- `/bedchart/referrals/new` - Route discovered from app directory Source: `src/app/bedchart/referrals/new/page.tsx`.
+- `/bedchart/reports/chronology` - Route discovered from app directory Source: `src/app/bedchart/reports/chronology/page.tsx`.
+- `/bedchart/reports/downtime` - Route discovered from app directory Source: `src/app/bedchart/reports/downtime/page.tsx`.
+- `/bedchart/review` - Route discovered from app directory Source: `src/app/bedchart/review/page.tsx`.
+- `/bedchart/search` - Route discovered from app directory Source: `src/app/bedchart/search/page.tsx`.
+- `/bedchart/seclusion` - Route discovered from app directory Source: `src/app/bedchart/seclusion/page.tsx`.
+- `/bedchart/settings` - Route discovered from app directory Source: `src/app/bedchart/settings/page.tsx`.
+- `/bedchart/statistics` - Route discovered from app directory Source: `src/app/bedchart/statistics/page.tsx`.
+- `/bedchart/statistics/community/[teamId]` - Route discovered from app directory Source: `src/app/bedchart/statistics/community/[teamId]/page.tsx`.
+- `/bedchart/statistics/compare` - Route discovered from app directory Source: `src/app/bedchart/statistics/compare/page.tsx`.
+- `/bedchart/statistics/ed/[edId]` - Route discovered from app directory Source: `src/app/bedchart/statistics/ed/[edId]/page.tsx`.
+- `/bedchart/statistics/eds` - Route discovered from app directory Source: `src/app/bedchart/statistics/eds/page.tsx`.
+- `/bedchart/statistics/overview` - Route discovered from app directory Source: `src/app/bedchart/statistics/overview/page.tsx`.
+- `/bedchart/statistics/service/[serviceId]` - Route discovered from app directory Source: `src/app/bedchart/statistics/service/[serviceId]/page.tsx`.
+- `/bedchart/statistics/services` - Route discovered from app directory Source: `src/app/bedchart/statistics/services/page.tsx`.
+- `/bedchart/statistics/teams` - Route discovered from app directory Source: `src/app/bedchart/statistics/teams/page.tsx`.
+- `/bedchart/statistics/ward/[unitId]` - Route discovered from app directory Source: `src/app/bedchart/statistics/ward/[unitId]/page.tsx`.
+- `/bedchart/statistics/wards` - Route discovered from app directory Source: `src/app/bedchart/statistics/wards/page.tsx`.
+- `/bedchart/statistics/weekly` - Route discovered from app directory Source: `src/app/bedchart/statistics/weekly/page.tsx`.
+- `/bedchart/transport` - Route discovered from app directory Source: `src/app/bedchart/transport/page.tsx`.
+- `/bedchart/transport/officer` - Route discovered from app directory Source: `src/app/bedchart/transport/officer/page.tsx`.
+- `/bedchart/triage/new` - Route discovered from app directory Source: `src/app/bedchart/triage/new/page.tsx`.
+- `/bedchart/waiting` - Route discovered from app directory Source: `src/app/bedchart/waiting/page.tsx`.
+- `/bedchart/ward/[unitId]` - Route discovered from app directory Source: `src/app/bedchart/ward/[unitId]/page.tsx`.
+- `/bedchart/ward/[unitId]/answer` - Route discovered from app directory Source: `src/app/bedchart/ward/[unitId]/answer/page.tsx`.
+- `/bedchart/wards` - Route discovered from app directory Source: `src/app/bedchart/wards/page.tsx`.
 - `/sign-in` - Route discovered from app directory Source: `src/app/sign-in/page.tsx`.
-- `/ward-flow` - Route discovered from app directory Source: `src/app/ward-flow/page.tsx`.
-- `/ward-flow-sign-in` - Route discovered from app directory Source: `src/app/ward-flow-sign-in/page.tsx`.
-- `/ward-flow/about` - Route discovered from app directory Source: `src/app/ward-flow/about/page.tsx`.
-- `/ward-flow/activity` - Route discovered from app directory Source: `src/app/ward-flow/activity/page.tsx`.
-- `/ward-flow/alerts` - Route discovered from app directory Source: `src/app/ward-flow/alerts/page.tsx`.
-- `/ward-flow/bed-meeting` - Route discovered from app directory Source: `src/app/ward-flow/bed-meeting/page.tsx`.
-- `/ward-flow/bed-meeting/agenda` - Route discovered from app directory Source: `src/app/ward-flow/bed-meeting/agenda/page.tsx`.
-- `/ward-flow/board/[unitId]` - Route discovered from app directory Source: `src/app/ward-flow/board/[unitId]/page.tsx`.
-- `/ward-flow/capacity` - Route discovered from app directory Source: `src/app/ward-flow/capacity/page.tsx`.
-- `/ward-flow/command` - Route discovered from app directory Source: `src/app/ward-flow/command/page.tsx`.
-- `/ward-flow/community` - Route discovered from app directory Source: `src/app/ward-flow/community/page.tsx`.
-- `/ward-flow/community/[teamId]` - Route discovered from app directory Source: `src/app/ward-flow/community/[teamId]/page.tsx`.
-- `/ward-flow/constellation` - Route discovered from app directory Source: `src/app/ward-flow/constellation/page.tsx`.
-- `/ward-flow/delays` - Route discovered from app directory Source: `src/app/ward-flow/delays/page.tsx`.
-- `/ward-flow/discharges` - Route discovered from app directory Source: `src/app/ward-flow/discharges/page.tsx`.
-- `/ward-flow/ed` - Route discovered from app directory Source: `src/app/ward-flow/ed/page.tsx`.
-- `/ward-flow/ed/[edId]` - Route discovered from app directory Source: `src/app/ward-flow/ed/[edId]/page.tsx`.
-- `/ward-flow/escalation` - Route discovered from app directory Source: `src/app/ward-flow/escalation/page.tsx`.
-- `/ward-flow/exceptions` - Route discovered from app directory Source: `src/app/ward-flow/exceptions/page.tsx`.
-- `/ward-flow/governance` - Route discovered from app directory Source: `src/app/ward-flow/governance/page.tsx`.
-- `/ward-flow/handover` - Route discovered from app directory Source: `src/app/ward-flow/handover/page.tsx`.
-- `/ward-flow/help` - Route discovered from app directory Source: `src/app/ward-flow/help/page.tsx`.
-- `/ward-flow/hub` - Route discovered from app directory Source: `src/app/ward-flow/hub/page.tsx`.
-- `/ward-flow/hub/catchments` - Route discovered from app directory Source: `src/app/ward-flow/hub/catchments/page.tsx`.
-- `/ward-flow/leave` - Route discovered from app directory Source: `src/app/ward-flow/leave/page.tsx`.
-- `/ward-flow/legal-forms` - Route discovered from app directory Source: `src/app/ward-flow/legal-forms/page.tsx`.
-- `/ward-flow/movements` - Route discovered from app directory Source: `src/app/ward-flow/movements/page.tsx`.
-- `/ward-flow/movements/[movementId]` - Route discovered from app directory Source: `src/app/ward-flow/movements/[movementId]/page.tsx`.
-- `/ward-flow/network` - Route discovered from app directory Source: `src/app/ward-flow/network/page.tsx`.
-- `/ward-flow/night` - Route discovered from app directory Source: `src/app/ward-flow/night/page.tsx`.
-- `/ward-flow/on-call` - Route discovered from app directory Source: `src/app/ward-flow/on-call/page.tsx`.
-- `/ward-flow/out-of-area` - Route discovered from app directory Source: `src/app/ward-flow/out-of-area/page.tsx`.
-- `/ward-flow/people/[patientId]` - Route discovered from app directory Source: `src/app/ward-flow/people/[patientId]/page.tsx`.
-- `/ward-flow/people/[patientId]/triage` - Route discovered from app directory Source: `src/app/ward-flow/people/[patientId]/triage/page.tsx`.
-- `/ward-flow/people/new` - Route discovered from app directory Source: `src/app/ward-flow/people/new/page.tsx`.
-- `/ward-flow/queue` - Route discovered from app directory Source: `src/app/ward-flow/queue/page.tsx`.
-- `/ward-flow/referrals` - Route discovered from app directory Source: `src/app/ward-flow/referrals/page.tsx`.
-- `/ward-flow/referrals/new` - Route discovered from app directory Source: `src/app/ward-flow/referrals/new/page.tsx`.
-- `/ward-flow/reports/chronology` - Route discovered from app directory Source: `src/app/ward-flow/reports/chronology/page.tsx`.
-- `/ward-flow/reports/downtime` - Route discovered from app directory Source: `src/app/ward-flow/reports/downtime/page.tsx`.
-- `/ward-flow/review` - Route discovered from app directory Source: `src/app/ward-flow/review/page.tsx`.
-- `/ward-flow/search` - Route discovered from app directory Source: `src/app/ward-flow/search/page.tsx`.
-- `/ward-flow/seclusion` - Route discovered from app directory Source: `src/app/ward-flow/seclusion/page.tsx`.
-- `/ward-flow/settings` - Route discovered from app directory Source: `src/app/ward-flow/settings/page.tsx`.
-- `/ward-flow/statistics` - Route discovered from app directory Source: `src/app/ward-flow/statistics/page.tsx`.
-- `/ward-flow/statistics/community/[teamId]` - Route discovered from app directory Source: `src/app/ward-flow/statistics/community/[teamId]/page.tsx`.
-- `/ward-flow/statistics/compare` - Route discovered from app directory Source: `src/app/ward-flow/statistics/compare/page.tsx`.
-- `/ward-flow/statistics/ed/[edId]` - Route discovered from app directory Source: `src/app/ward-flow/statistics/ed/[edId]/page.tsx`.
-- `/ward-flow/statistics/eds` - Route discovered from app directory Source: `src/app/ward-flow/statistics/eds/page.tsx`.
-- `/ward-flow/statistics/overview` - Route discovered from app directory Source: `src/app/ward-flow/statistics/overview/page.tsx`.
-- `/ward-flow/statistics/service/[serviceId]` - Route discovered from app directory Source: `src/app/ward-flow/statistics/service/[serviceId]/page.tsx`.
-- `/ward-flow/statistics/services` - Route discovered from app directory Source: `src/app/ward-flow/statistics/services/page.tsx`.
-- `/ward-flow/statistics/teams` - Route discovered from app directory Source: `src/app/ward-flow/statistics/teams/page.tsx`.
-- `/ward-flow/statistics/ward/[unitId]` - Route discovered from app directory Source: `src/app/ward-flow/statistics/ward/[unitId]/page.tsx`.
-- `/ward-flow/statistics/wards` - Route discovered from app directory Source: `src/app/ward-flow/statistics/wards/page.tsx`.
-- `/ward-flow/statistics/weekly` - Route discovered from app directory Source: `src/app/ward-flow/statistics/weekly/page.tsx`.
-- `/ward-flow/transport` - Route discovered from app directory Source: `src/app/ward-flow/transport/page.tsx`.
-- `/ward-flow/transport/officer` - Route discovered from app directory Source: `src/app/ward-flow/transport/officer/page.tsx`.
-- `/ward-flow/triage/new` - Route discovered from app directory Source: `src/app/ward-flow/triage/new/page.tsx`.
-- `/ward-flow/waiting` - Route discovered from app directory Source: `src/app/ward-flow/waiting/page.tsx`.
-- `/ward-flow/ward/[unitId]` - Route discovered from app directory Source: `src/app/ward-flow/ward/[unitId]/page.tsx`.
-- `/ward-flow/ward/[unitId]/answer` - Route discovered from app directory Source: `src/app/ward-flow/ward/[unitId]/answer/page.tsx`.
-- `/ward-flow/wards` - Route discovered from app directory Source: `src/app/ward-flow/wards/page.tsx`.
 
 ## Mockup/prototype routes
 
@@ -91,15 +92,15 @@ See also [`ward-flow/SCREEN-MAP.md`](ward-flow/SCREEN-MAP.md), which pairs each 
 
 ## Redirects
 
-- `/` - Redirects to `/ward-flow`. Source: `src/app/page.tsx`.
-- `/ward-flow/command` - Redirects to `/ward-flow`. Source: `src/app/ward-flow/command/page.tsx`.
-- `/ward-flow/community` - Redirects to `/ward-flow/hub/catchments`. Source: `src/app/ward-flow/community/page.tsx`.
-- `/ward-flow/constellation` - Redirects to `/ward-flow`. Source: `src/app/ward-flow/constellation/page.tsx`.
-- `/ward-flow/escalation` - Redirects to `/ward-flow/waiting`. Source: `src/app/ward-flow/escalation/page.tsx`.
-- `/ward-flow/exceptions` - Redirects to `/ward-flow/waiting`. Source: `src/app/ward-flow/exceptions/page.tsx`.
-- `/ward-flow/network` - Redirects to `/ward-flow`. Source: `src/app/ward-flow/network/page.tsx`.
-- `/ward-flow/queue` - Redirects to `/ward-flow/waiting`. Source: `src/app/ward-flow/queue/page.tsx`.
-- `/ward-flow/transport` - Redirects to `/ward-flow/transport/officer`. Source: `src/app/ward-flow/transport/page.tsx`.
+- `/` - Redirects to `/bedchart`. Source: `src/app/page.tsx`.
+- `/bedchart/command` - Redirects to `/bedchart`. Source: `src/app/bedchart/command/page.tsx`.
+- `/bedchart/community` - Redirects to `/bedchart/hub/catchments`. Source: `src/app/bedchart/community/page.tsx`.
+- `/bedchart/constellation` - Redirects to `/bedchart`. Source: `src/app/bedchart/constellation/page.tsx`.
+- `/bedchart/escalation` - Redirects to `/bedchart/waiting`. Source: `src/app/bedchart/escalation/page.tsx`.
+- `/bedchart/exceptions` - Redirects to `/bedchart/waiting`. Source: `src/app/bedchart/exceptions/page.tsx`.
+- `/bedchart/network` - Redirects to `/bedchart`. Source: `src/app/bedchart/network/page.tsx`.
+- `/bedchart/queue` - Redirects to `/bedchart/waiting`. Source: `src/app/bedchart/queue/page.tsx`.
+- `/bedchart/transport` - Redirects to `/bedchart/transport/officer`. Source: `src/app/bedchart/transport/page.tsx`.
 
 ## Known caveats and stale-path flags
 
@@ -107,9 +108,9 @@ See also [`ward-flow/SCREEN-MAP.md`](ward-flow/SCREEN-MAP.md), which pairs each 
 
 ## Route ownership/source map
 
-| Area                         | Source                                                        |
-| ---------------------------- | ------------------------------------------------------------- |
-| Ward Flow screens            | `src/app/ward-flow, src/components/ward-management`           |
-| Ward Flow sign-in and digest | `src/app/ward-flow-sign-in, src/app/mockups/ward-flow-digest` |
-| Global shell layouts         | `src/app/layout.tsx`                                          |
-| Mockups                      | `src/app/mockups`                                             |
+| Area                         | Source                                                       |
+| ---------------------------- | ------------------------------------------------------------ |
+| Ward Flow screens            | `src/app/bedchart, src/components/ward-management`           |
+| Ward Flow sign-in and digest | `src/app/bedchart-sign-in, src/app/mockups/ward-flow-digest` |
+| Global shell layouts         | `src/app/layout.tsx`                                         |
+| Mockups                      | `src/app/mockups`                                            |

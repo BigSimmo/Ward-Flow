@@ -1,5 +1,5 @@
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/reports/downtime",
+  usePathname: () => "/bedchart/reports/downtime",
   useRouter: () => ({ push: vi.fn() }),
 }));
 vi.mock("next/link", () => ({

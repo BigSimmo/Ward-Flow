@@ -305,7 +305,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
     lines.splice(scopeAt + 1, 0, [csvCell("Filter"), csvCell(filterScope)].join(","));
     downloadBlob(
       new Blob([lines.join("\r\n")], { type: "text/csv;charset=utf-8" }),
-      "ward-flow-synthetic-chronology.csv",
+      "bedchart-synthetic-chronology.csv",
     );
   }
 

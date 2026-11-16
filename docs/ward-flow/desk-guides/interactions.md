@@ -2,7 +2,7 @@
 
 <!-- last-checked: 2026-11-14 -->
 
-The keys Ward Flow answers to. Each line is copied from Help in the app, under Keyboard shortcuts.
+The keys BedChart answers to. Each line is copied from Help in the app, under Keyboard shortcuts.
 
 | Key       | What it does                                                                                                                                                | Where it is handled                                                                        |
 | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |

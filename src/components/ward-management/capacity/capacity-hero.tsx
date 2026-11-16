@@ -43,7 +43,7 @@ import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import styles from "./capacity-page.module.css";
 import pageTop from "@/components/ward-management/page-top-title.module.css";
 
-const WARDS_HREF = "/ward-flow/wards";
+const WARDS_HREF = "/bedchart/wards";
 const ICON = { size: 16, strokeWidth: 1.75, "aria-hidden": true } as const;
 
 /** "6 short", "2 spare", "enough": the band's short words (the Mismatch pop-up keeps the long ones). */

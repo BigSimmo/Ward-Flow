@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 // A ward's own page (`ward-chrome-role.ts` reads the role from the route).
 vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/navigation")>()),
-  usePathname: () => "/ward-flow/ward/rph-adult-secure",
+  usePathname: () => "/bedchart/ward/rph-adult-secure",
 }));
 
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";

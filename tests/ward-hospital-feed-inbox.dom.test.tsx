@@ -19,7 +19,7 @@ import {
   useFeedInbox,
 } from "@/components/ward-management/tools/ward-feed-inbox-store";
 
-const route = vi.hoisted(() => ({ pathname: "/ward-flow/capacity" }));
+const route = vi.hoisted(() => ({ pathname: "/bedchart/capacity" }));
 // Lets a test stand in for a shared save that has not answered yet. Null keeps the real raise.
 const heldRaise = vi.hoisted(() => ({ raise: null as null | ((...args: unknown[]) => unknown) }));
 
@@ -42,7 +42,7 @@ vi.mock("next/navigation", () => ({
 
 afterEach(() => {
   cleanup();
-  route.pathname = "/ward-flow/capacity";
+  route.pathname = "/bedchart/capacity";
   heldRaise.raise = null;
   act(() => resetFeedInboxForTests());
 });
@@ -362,7 +362,7 @@ describe("feed inbox in Tools", () => {
     const suggestion = feedSuggestion(first.message, seed);
     if (suggestion.kind !== "arrival") throw new Error("first simulated message should be an arrival");
     const otherWard = seed.units.find((unit) => unit.id !== suggestion.unitId)!;
-    route.pathname = `/ward-flow/ward/${otherWard.id}`;
+    route.pathname = `/bedchart/ward/${otherWard.id}`;
     const { unmount } = render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <Feed />
@@ -378,7 +378,7 @@ describe("feed inbox in Tools", () => {
     unmount();
     act(() => resetFeedInboxForTests());
 
-    route.pathname = `/ward-flow/ed/${seed.movements[0]!.originEdId}`;
+    route.pathname = `/bedchart/ed/${seed.movements[0]!.originEdId}`;
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <Feed />

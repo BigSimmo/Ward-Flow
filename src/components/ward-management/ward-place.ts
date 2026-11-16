@@ -33,10 +33,10 @@ import { edById, edShortName } from "@/components/ward-management/ward-sites";
  */
 export type WardPlace = { kind: "ward" | "ed" | "team"; name: string };
 
-const WARD_ROUTE = /^\/ward-flow\/ward\/([^/]+)(?:\/answer)?\/?$/;
-const BOARD_ROUTE = /^\/ward-flow\/board\/([^/]+)\/?$/;
-const ED_ROUTE = /^\/ward-flow\/ed\/([^/]+)\/?$/;
-const COMMUNITY_TEAM_ROUTE = /^\/ward-flow\/community\/([^/]+)\/?$/;
+const WARD_ROUTE = /^\/bedchart\/ward\/([^/]+)(?:\/answer)?\/?$/;
+const BOARD_ROUTE = /^\/bedchart\/board\/([^/]+)\/?$/;
+const ED_ROUTE = /^\/bedchart\/ed\/([^/]+)\/?$/;
+const COMMUNITY_TEAM_ROUTE = /^\/bedchart\/community\/([^/]+)\/?$/;
 
 /**
  * A route segment reaches a page (and this function) percent-encoded — see

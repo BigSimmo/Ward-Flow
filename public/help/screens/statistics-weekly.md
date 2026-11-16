@@ -19,6 +19,6 @@ One week's operations: the pilot measures, where the time goes and the pressure 
 11. Declines and overrides. Placement and referral decisions that week, by reason. Switch between declines and overrides.
 12. Print. A paper copy of the week's report, with both declines and overrides.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

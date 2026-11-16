@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 const guard = vi.hoisted(() => ({ forbidRecords: false, push: vi.fn() }));
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/statistics",
+  usePathname: () => "/bedchart/statistics",
   useRouter: () => ({ push: guard.push }),
 }));
 vi.mock("next/link", () => ({
@@ -66,7 +66,7 @@ const places = wardPlaceLookup(units);
 const roleCanOpenHref = (href: string) =>
   screenDecision({ role: "executive", scope: { kind: "statewide" } }, screenForPath(href), places).open;
 // Exercise a caller's narrower permission set without pinning a changeable role rule.
-const canOpenHref = (href: string) => href !== "/ward-flow/capacity" && roleCanOpenHref(href);
+const canOpenHref = (href: string) => href !== "/bedchart/capacity" && roleCanOpenHref(href);
 afterEach(() => {
   cleanup();
   guard.forbidRecords = false;
@@ -137,19 +137,19 @@ describe("search choices follow caller-owned permissions", () => {
     fireEvent.change(input(), { target: { value: units[0]!.name } });
     expect(screen.getByTestId(`ward-global-search-result-ward-${units[0]!.id}`)).toHaveAttribute(
       "href",
-      `/ward-flow/statistics/ward/${units[0]!.id}`,
+      `/bedchart/statistics/ward/${units[0]!.id}`,
     );
     fireEvent.mouseEnter(screen.getByTestId(`ward-global-search-result-ward-${units[0]!.id}`));
     const wardPreview = within(screen.getByTestId("ward-global-search-preview"));
     expect(wardPreview.getByTestId("ward-global-search-preview-open")).toHaveAttribute(
       "href",
-      `/ward-flow/statistics/ward/${units[0]!.id}`,
+      `/bedchart/statistics/ward/${units[0]!.id}`,
     );
     expect(wardPreview.queryByRole("link", { name: "Open board" })).not.toBeInTheDocument();
     fireEvent.change(input(), { target: { value: "emergency" } });
     const edRow = screen.getAllByTestId(/^ward-global-search-result-ed-/)[0]!;
     fireEvent.mouseEnter(edRow);
-    expect(edRow.getAttribute("href")).toMatch(/^\/ward-flow\/statistics\/ed\//);
+    expect(edRow.getAttribute("href")).toMatch(/^\/bedchart\/statistics\/ed\//);
     expect(screen.getByTestId("ward-global-search-preview-open")).toHaveAttribute("href", edRow.getAttribute("href"));
   });
   it("public search needs no operational hooks or record arrays and keeps records explicitly unavailable", () => {
@@ -182,7 +182,7 @@ describe("search choices follow caller-owned permissions", () => {
     expect(screen.getByTestId("ward-global-search-popup")).toBeInTheDocument();
     confirm.mockReturnValue(true);
     fireEvent.keyDown(input(), { key: "Enter" });
-    expect(navigate).toHaveBeenCalledExactlyOnceWith("/ward-flow/statistics");
+    expect(navigate).toHaveBeenCalledExactlyOnceWith("/bedchart/statistics");
     expect(screen.queryByTestId("ward-global-search-popup")).not.toBeInTheDocument();
     fireEvent.keyDown(window, { key: "k", ctrlKey: true });
     fireEvent.keyDown(input(), { key: "Escape" });
@@ -197,11 +197,11 @@ describe("search choices follow caller-owned permissions", () => {
     );
     fireEvent.focus(input());
     for (const [query, kind, key, href] of [
-      ["ward", "ward", "SYN-WARD", "/ward-flow/statistics/ward/SYN-WARD"],
-      ["ed", "ed", "syn-north-ed", "/ward-flow/statistics/ed/syn-north-ed"],
-      ["team", "team", "syn-north-team", "/ward-flow/statistics/community/syn-north-team"],
-      ["site", "site", "SYN-NORTH", "/ward-flow/statistics/service/North%20Metro"],
-      ["service", "service", "North Metro", "/ward-flow/statistics/service/North%20Metro"],
+      ["ward", "ward", "SYN-WARD", "/bedchart/statistics/ward/SYN-WARD"],
+      ["ed", "ed", "syn-north-ed", "/bedchart/statistics/ed/syn-north-ed"],
+      ["team", "team", "syn-north-team", "/bedchart/statistics/community/syn-north-team"],
+      ["site", "site", "SYN-NORTH", "/bedchart/statistics/service/North%20Metro"],
+      ["service", "service", "North Metro", "/bedchart/statistics/service/North%20Metro"],
     ]) {
       fireEvent.change(input(), { target: { value: query } });
       expect(screen.getByTestId(`ward-global-search-result-${kind}-${key}`)).toHaveAttribute("href", href);
@@ -237,7 +237,7 @@ describe("search choices follow caller-owned permissions", () => {
     // The Capacity page row itself; a Help "How do I" answer may also link there (Phase 2), and it
     // passes the same permission filter, so it is checked with the other rows below.
     expect(screen.queryAllByRole("link", { name: /^Capacity/ })).toHaveLength(
-      Number(roleCanOpenHref("/ward-flow/capacity")),
+      Number(roleCanOpenHref("/bedchart/capacity")),
     );
     expect(
       screen.queryAllByRole("link", { name: /Capacity/ }).every((link) => roleCanOpenHref(link.getAttribute("href")!)),
@@ -247,7 +247,7 @@ describe("search choices follow caller-owned permissions", () => {
       expect(
         screen
           .getAllByTestId("ward-phone-menu-result")
-          .some((link) => link.getAttribute("href") === `/ward-flow/statistics/ward/${units[0]!.id}`),
+          .some((link) => link.getAttribute("href") === `/bedchart/statistics/ward/${units[0]!.id}`),
       ).toBe(true),
     );
     expect(
@@ -258,7 +258,7 @@ describe("search choices follow caller-owned permissions", () => {
 
 describe("role menu destination adaptation", () => {
   const ownWard = units[0]!.id;
-  const ownStats = `/ward-flow/statistics/ward/${ownWard}`;
+  const ownStats = `/bedchart/statistics/ward/${ownWard}`;
   const scope = (children: ReactNode) => (
     <WardShellPublicProvider value={{ places, placeLabel: "Synthetic ward", now: 100 }}>
       {children}

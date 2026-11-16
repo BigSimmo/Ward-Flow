@@ -10,7 +10,7 @@
  * (plan defects D8/D9).
  *
  * `tests/ward-nav.test.ts` enforces the two-way property this file exists to make possible:
- * every href below must resolve to a real route under `src/app/ward-flow/`, **and**
+ * every href below must resolve to a real route under `src/app/bedchart/`, **and**
  * every *static* route under that tree must appear here or in `WARD_NAV_INTENTIONALLY_UNLISTED`
  * with a stated reason. A one-way check ("every nav link is a real route") is exactly what let
  * D8 happen — it says nothing about a route with no link pointing at it at all.
@@ -68,7 +68,7 @@ export type WardMode = (typeof WARD_MODES)[number];
  *
  * ⚠️ **`command` IS NOT IN THIS MAP, AND WAS NEARLY RECORDED AS DEAD.** It is excluded from
  * `WardModeWorkspace`'s prop type, which reads like absence; measured 2026-09-05 it had two live
- * consumers — its own `WARD_VIEWS` entry pointing at `/ward-flow`, and
+ * consumers — its own `WARD_VIEWS` entry pointing at `/bedchart`, and
  * `coordinator-screen.tsx`, which rendered its own per-screen rail mount with an explicit prop so
  * the Command screen highlighted itself there. **Task 8, 2026-09-11: that second consumer's own
  * mechanism is gone** — the third-edition shell's rail (`shell/ward-rail.tsx`) takes no per-mode
@@ -114,21 +114,21 @@ export type WardViewItem = {
  * ⚠️ SIX, NOT SEVEN, as of MERGE 03 (owner-approved 2026-09-05). `movements` and `transport`
  * used to be two separate entries — the six-stage movement board and the live vehicle tracker,
  * asking "where is everyone right now" two different ways. `MovementsScreen` answers both, so the
- * `transport` entry is gone; the current route redirects to `/ward-flow/transport/officer` — see
+ * `transport` entry is gone; the current route redirects to `/bedchart/transport/officer` — see
  * `WARD_NAV_INTENTIONALLY_UNLISTED` below. The `transport` id stayed in `WardMode` until the
  * D-80 tidy-up on 23 October 2026 retired it.
  *
  * FIVE as of 19 October 2026 (Josh's decision): the `network` entry is gone. The Network screen
  * repeated Home and Capacity; its one unique list, ready beds by road time, moved to Capacity, and
- * `/ward-flow/network` is now a redirect to Home — see `WARD_NAV_INTENTIONALLY_UNLISTED`. The
+ * `/bedchart/network` is now a redirect to Home — see `WARD_NAV_INTENTIONALLY_UNLISTED`. The
  * `network` id was retired from `WardMode` with `transport` on 23 October 2026 (D-80 tidy-up).
  */
 export const WARD_VIEWS: readonly WardViewItem[] = [
-  { id: "command", href: "/ward-flow", label: "Home" },
-  { id: "delays", href: "/ward-flow/waiting", label: "Waiting" },
-  { id: "capacity", href: "/ward-flow/capacity", label: "Capacity" },
-  { id: "movements", href: "/ward-flow/movements", label: "Movements" },
-  { id: "governance", href: "/ward-flow/governance", label: "Governance" },
+  { id: "command", href: "/bedchart", label: "Home" },
+  { id: "delays", href: "/bedchart/waiting", label: "Waiting" },
+  { id: "capacity", href: "/bedchart/capacity", label: "Capacity" },
+  { id: "movements", href: "/bedchart/movements", label: "Movements" },
+  { id: "governance", href: "/bedchart/governance", label: "Governance" },
 ];
 
 /**
@@ -141,7 +141,7 @@ export const WARD_VIEWS: readonly WardViewItem[] = [
  * edition-build-master-plan.md` §1.3. The fold has since landed and the facade is real, but it
  * carries no home-route builder of its own (checked against its exported names and
  * `EXPECTED_BUILDER_LINES` directly, 2026-09-11) — only per-record builders like `movementHref`,
- * none of them a bare `/ward-flow`. This constant is still this route's one source; retire
+ * none of them a bare `/bedchart`. This constant is still this route's one source; retire
  * it in favour of the facade's own builder if one is ever added there.
  */
 export const WARD_HOME_HREF: string = WARD_VIEWS.find((view) => view.id === "command")!.href;
@@ -185,6 +185,7 @@ export type WardNavId =
   | "seclusion"
   | "hub"
   | "legal-forms"
+  | "privacy"
   | "bed-meeting";
 
 export type WardNavItem = {
@@ -211,15 +212,15 @@ export type WardNavItem = {
  * that file drifting from the route on disk. `tests/ward-nav.test.ts` checks every `WARD_NAV`
  * href against the real route tree, so the constant, the nav entry and the route stay one fact.
  */
-export const WARD_REFERRAL_INTAKE_HREF = "/ward-flow/referrals/new";
-export const WARD_ALERTS_HREF = "/ward-flow/alerts";
-export const WARD_CAPACITY_HREF = "/ward-flow/capacity";
-export const WARD_COMMAND_HREF = "/ward-flow/command";
-export const WARD_ED_HREF = "/ward-flow/ed";
+export const WARD_REFERRAL_INTAKE_HREF = "/bedchart/referrals/new";
+export const WARD_ALERTS_HREF = "/bedchart/alerts";
+export const WARD_CAPACITY_HREF = "/bedchart/capacity";
+export const WARD_COMMAND_HREF = "/bedchart/command";
+export const WARD_ED_HREF = "/bedchart/ed";
 /** Feature 23 (Josh, 9 Nov 2026): everyone on leave across the desk's wards. */
-export const WARD_LEAVE_HREF = "/ward-flow/leave";
+export const WARD_LEAVE_HREF = "/bedchart/leave";
 /** The bed meeting TV view (`bed-meeting/bed-meeting-tv.tsx`), behind the `bed-meeting-tv` flag. */
-export const WARD_BED_MEETING_TV_HREF = "/ward-flow/bed-meeting";
+export const WARD_BED_MEETING_TV_HREF = "/bedchart/bed-meeting";
 
 /** A TV screen: a bed meeting (`?service=` a health service or `all`), one ward (`?ward=`) or one ED (`?ed=`). */
 export function bedMeetingTvHref(view: { ward?: string; ed?: string; service?: string; board?: string } = {}): string {
@@ -234,7 +235,7 @@ export function bedMeetingTvHref(view: { ward?: string; ed?: string; service?: s
 /**
  * `role` — entry points for the role screens `WardRoleSwitcher` offers (Coordinator, Ward,
  * Officer, Emergency department — see that component's own doc comment). Coordinator is
- * deliberately absent here: it is `/ward-flow` itself, already present in `WARD_VIEWS`
+ * deliberately absent here: it is `/bedchart` itself, already present in `WARD_VIEWS`
  * as "Command" — see `WARD_NAV_INTENTIONALLY_UNLISTED` below, which is where that reasoning is
  * recorded and checked. Ward and Emergency department are dynamic detail routes
  * (`ward/[unitId]`, `ed/[edId]`); the rail can only ever link to one concrete instance of each,
@@ -266,45 +267,45 @@ export function bedMeetingTvHref(view: { ward?: string; ed?: string; service?: s
 export const WARD_NAV: readonly WardNavItem[] = [
   {
     id: "statistics",
-    href: "/ward-flow/statistics",
+    href: "/bedchart/statistics",
     label: "Statistics",
     group: "role",
   },
   {
     id: "wards",
-    href: "/ward-flow/wards",
+    href: "/bedchart/wards",
     label: "All wards",
     group: "role",
   },
   {
     id: "community",
-    href: "/ward-flow/community",
+    href: "/bedchart/community",
     label: "Community",
     group: "role",
   },
   {
     id: "ward",
-    href: "/ward-flow/ward/rph-adult-secure",
+    href: "/bedchart/ward/rph-adult-secure",
     label: "Example ward",
     group: "role",
     exampleOnly: true,
   },
   {
     id: "board",
-    href: "/ward-flow/board/rph-adult-secure",
+    href: "/bedchart/board/rph-adult-secure",
     label: "Example bed board",
     group: "role",
     exampleOnly: true,
   },
-  { id: "officer", href: "/ward-flow/transport/officer", label: "Transport", group: "role" },
+  { id: "officer", href: "/bedchart/transport/officer", label: "Transport", group: "role" },
   {
     id: "ed",
-    href: "/ward-flow/ed/peel-ed",
+    href: "/bedchart/ed/peel-ed",
     label: "Example ED",
     group: "role",
     exampleOnly: true,
   },
-  { id: "handover", href: "/ward-flow/handover", label: "Handover", group: "board" },
+  { id: "handover", href: "/bedchart/handover", label: "Handover", group: "board" },
   /* The `escalation` entry was REMOVED here by MERGE 01 (owner-approved 2026-09-05): the
    * escalation board's list of patients is now shown inside `DelaysScreen`, under its own cause
    * group, so a separate board entry would be a second listing of the same people. The route
@@ -312,7 +313,7 @@ export const WARD_NAV: readonly WardNavItem[] = [
    * — and the `escalation` id stays a member of `WardNavId` even though nothing in this array
    * uses it any more, for the same reason `queue`/`exceptions` stay in `WardMode`: nothing else
    * in this file depends on removing it, and leaving it costs nothing. */
-  { id: "search", href: "/ward-flow/search", label: "Patients", group: "board" },
+  { id: "search", href: "/bedchart/search", label: "Patients", group: "board" },
   /*
    * THE MASTER SEARCH HUB, added 2026-09-06 from the owner-approved mockup.
    *
@@ -326,8 +327,8 @@ export const WARD_NAV: readonly WardNavItem[] = [
    * derives its destination list from `WARD_VIEWS` alone, and a second chat was editing that array
    * at the time. Belonging here is why this is right; missing that guard is only a bonus.
    */
-  { id: "hub", href: "/ward-flow/hub", label: "Places", group: "board" },
-  { id: "discharges", href: "/ward-flow/discharges", label: "Discharges", group: "board" },
+  { id: "hub", href: "/bedchart/hub", label: "Places", group: "board" },
+  { id: "discharges", href: "/bedchart/discharges", label: "Discharges", group: "board" },
   /*
    * 🔴 **LISTED, NOT HIDDEN — AND THAT IS A JUDGEMENT ABOUT A DANGEROUS SCREEN.**
    *
@@ -338,12 +339,12 @@ export const WARD_NAV: readonly WardNavItem[] = [
    * its own disclosure at the top saying what it does not hold**, which is when that sentence is
    * cheap to read rather than unwelcome.
    */
-  { id: "on-call", href: "/ward-flow/on-call", label: "On-call", group: "board" },
+  { id: "on-call", href: "/bedchart/on-call", label: "On-call", group: "board" },
   /*
    * D-72 (21 Oct 2026): seclusion, restraint and incidents, an operational view only. Listed so a
    * ward or coordinator finds it in the ordinary way; nothing else links here yet.
    */
-  { id: "seclusion", href: "/ward-flow/seclusion", label: "Seclusion", group: "board" },
+  { id: "seclusion", href: "/bedchart/seclusion", label: "Seclusion", group: "board" },
   /*
    * The Alerts screen, 2026-09-12. LISTED rather than intentionally unlisted: it is addressed to a
    * role across every movement and referral, so a coordinator who cannot reach it has no way to
@@ -351,7 +352,7 @@ export const WARD_NAV: readonly WardNavItem[] = [
    * something. `WARD_NAV_INTENTIONALLY_UNLISTED` is for routes reached from another screen; nothing
    * links here.
    */
-  { id: "alerts", href: "/ward-flow/alerts", label: "Alerts", group: "board" },
+  { id: "alerts", href: "/bedchart/alerts", label: "Alerts", group: "board" },
   /* The `morning` entry was REMOVED here by MERGE 02 (owner-approved 2026-09-05): the morning bed
    * state board's figures are now shown inside `CapacityScreen`, so a separate board entry would be
    * a second listing of the same network/hospital/ward numbers. At that point the route itself kept
@@ -363,7 +364,7 @@ export const WARD_NAV: readonly WardNavItem[] = [
    * array entry: the `morning` id is no longer a member of `WardNavId`, its
    * `WARD_NAV_INTENTIONALLY_UNLISTED` entry is gone, and the Morning route file and its
    * implementation module were deleted in the same commit. */
-  { id: "referrals", href: "/ward-flow/referrals", label: "Referrals", group: "board" },
+  { id: "referrals", href: "/bedchart/referrals", label: "Referrals", group: "board" },
   /*
    * ⚠️ THIS ENTRY REVERSES A DELIBERATE DESIGN DECISION, BY OWNER RULING ON 2026-09-03:
    * "I would like the referral form/hub in the sidebar please."
@@ -389,7 +390,7 @@ export const WARD_NAV: readonly WardNavItem[] = [
     label: "New referral",
     group: "board",
   },
-  { id: "out-of-area", href: "/ward-flow/out-of-area", label: "Out of area", group: "board" },
+  { id: "out-of-area", href: "/bedchart/out-of-area", label: "Out of area", group: "board" },
   /*
    * The legal forms board — every open movement that carries a legal form, ordered by time
    * remaining. A board rather than an example, the same shape `wards`/`community` above are: it is
@@ -397,7 +398,13 @@ export const WARD_NAV: readonly WardNavItem[] = [
    * shortlist, the console and half a dozen other screens, each showing one movement's own form and
    * none of the others'.
    */
-  { id: "legal-forms", href: "/ward-flow/legal-forms", label: "Legal forms", group: "board" },
+  { id: "legal-forms", href: "/bedchart/legal-forms", label: "Legal forms", group: "board" },
+  /*
+   * Privacy and data (D-260, Josh, 16 Nov 2026): where the app stands against the Australian and WA
+   * health data rules, check by check, with an example of the finished policy. Reference only:
+   * nothing on it is enforced. Opens for the desks that open Governance.
+   */
+  { id: "privacy", href: "/bedchart/privacy", label: "Privacy and data", group: "board" },
   /*
    * The bed meeting TV view (Josh, 15 Oct 2026): unfinished work shipped in the real app behind a
    * feature flag rather than on a hidden page. Listed only while `bed-meeting-tv` is on.
@@ -414,7 +421,7 @@ export const WARD_NAV: readonly WardNavItem[] = [
 /**
  * In this standalone repository, the developer hub and home destination is /ward-flow.
  */
-export const WARD_DEVELOPER_HUB_HREF = "/ward-flow";
+export const WARD_DEVELOPER_HUB_HREF = "/bedchart";
 
 /* `WARD_REFERRAL_INTAKE_HREF` was declared here until 2026-09-03. It moved ABOVE `WARD_NAV`
  * because `WARD_NAV` now references it, and a `const` used before its declaration is a temporal
@@ -430,34 +437,34 @@ export const WARD_DEVELOPER_HUB_HREF = "/ward-flow";
  * disk with nothing noticing. The constant, the exemption below and the route are one fact in one
  * place.
  */
-export const WARD_ADD_PERSON_HREF = "/ward-flow/people/new";
+export const WARD_ADD_PERSON_HREF = "/bedchart/people/new";
 
 /**
  * Start a triage (Josh's approved triage and risk mock-up, built 7 Nov 2026). An action, like the
  * referral intake: the app bar's New menu (Triage), the phone's Create sheet (New triage) and the
- * form's own Start a new triage open it. A person's form is `/ward-flow/people/[patientId]/triage`.
+ * form's own Start a new triage open it. A person's form is `/bedchart/people/[patientId]/triage`.
  */
-export const WARD_TRIAGE_NEW_HREF = "/ward-flow/triage/new";
+export const WARD_TRIAGE_NEW_HREF = "/bedchart/triage/new";
 
 /**
  * Static Ward Flow routes intentionally absent from `WARD_VIEWS` and `WARD_NAV`, each with the
  * reason it is exempt — mirrors `REACHABILITY_ALLOWLIST` in `tests/route-reachability.test.ts`.
- * Every key must be a real static route under `src/app/ward-flow/` (checked by
+ * Every key must be a real static route under `src/app/bedchart/` (checked by
  * `tests/ward-nav.test.ts`, which fails on a stale entry) and must never also appear in a nav
  * array — a route belongs in exactly one of the two.
  */
 export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new Map([
   [
-    "/ward-flow/command",
-    "A deliberate redirect to /ward-flow, documented in its own route file (command/page.tsx) — route alias for the command view.",
+    "/bedchart/command",
+    "A deliberate redirect to /bedchart, documented in its own route file (command/page.tsx) — route alias for the command view.",
   ],
   [
-    "/ward-flow/constellation",
-    "A deliberate 307 redirect to /ward-flow, documented in its own route file (constellation/page.tsx) — not a destination.",
+    "/bedchart/constellation",
+    "A deliberate 307 redirect to /bedchart, documented in its own route file (constellation/page.tsx) — not a destination.",
   ],
   [
-    "/ward-flow/network",
-    "The retired Network screen (19 Oct 2026): a deliberate redirect to /ward-flow, documented in its own route file (network/page.tsx) — not a destination.",
+    "/bedchart/network",
+    "The retired Network screen (19 Oct 2026): a deliberate redirect to /bedchart, documented in its own route file (network/page.tsx) — not a destination.",
   ],
   /* The entry for `WARD_REFERRAL_INTAKE_HREF` was REMOVED on 2026-09-03, in the same change that
    * listed the form in `WARD_NAV` by owner ruling. It had to go in THAT commit and not a later
@@ -474,16 +481,16 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
     "An action, not a section: reached from the bar's New menu, the phone's Create sheet and a record's Triage action.",
   ],
   [
-    "/ward-flow/hub/catchments",
-    "The Catchments tab of Places (PL1, 3 Nov 2026): reached by the Places and Catchments switch on the Places band, and by /ward-flow/community, which redirects here. A second rail item would split one page in two.",
+    "/bedchart/hub/catchments",
+    "The Catchments tab of Places (PL1, 3 Nov 2026): reached by the Places and Catchments switch on the Places band, and by /bedchart/community, which redirects here. A second rail item would split one page in two.",
   ],
   [
-    "/ward-flow/statistics/overview",
+    "/bedchart/statistics/overview",
     "Reached by Link from the statistics hub, not from the rail. Three statistics entries in the sidebar would bury the hub the owner actually wants to land on — the same reasoning WARD_REFERRAL_INTAKE_HREF above already sets, where a destination inside a screen is not a section of the app.",
   ],
-  ["/ward-flow/statistics/compare", "Reached by Link from the statistics hub, for the same reason as /overview above."],
+  ["/bedchart/statistics/compare", "Reached by Link from the statistics hub, for the same reason as /overview above."],
   [
-    "/ward-flow/bed-meeting/agenda",
+    "/bedchart/bed-meeting/agenda",
     "Reached by the Meeting agenda Link on Capacity: the agenda belongs to the bed meeting, not a section of the app (smart features idea 5, 19 Oct 2026).",
   ],
   /*
@@ -504,30 +511,30 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
    * describes rather than left to contradict three live controls.
    */
   [
-    "/ward-flow/settings",
+    "/bedchart/settings",
     "No rail item by the drawing's own instruction — it opens from the Tools drawer on every screen. " +
       "Settings is reached from the Tools drawer (shell/ward-bar.tsx), the rail footer (shell/ward-rail.tsx) " +
       "and search (search/ward-smart-search.ts).",
   ],
   /* The next three entries were added by MERGE 01 (owner-approved 2026-09-05), which folded the
    * priority queue, the exceptions inbox and the escalation board into one screen, `DelaysScreen`
-   * at /ward-flow/delays (renamed /ward-flow/waiting in B4 step 3). Each of the three old routes now redirects there rather than
+   * at /bedchart/delays (renamed /bedchart/waiting in B4 step 3). Each of the three old routes now redirects there rather than
    * being deleted, so an existing bookmark or deep link does not 404 — the same reasoning
    * `/constellation` above already sets for a retired route kept as a redirect stub. */
   [
-    "/ward-flow/queue",
+    "/bedchart/queue",
     "A deliberate redirect to /waiting (MERGE 01), documented in its own route file (queue/page.tsx) — not a destination in its own right.",
   ],
   [
-    "/ward-flow/exceptions",
+    "/bedchart/exceptions",
     "A deliberate redirect to /waiting (MERGE 01), documented in its own route file (exceptions/page.tsx) — not a destination in its own right.",
   ],
   [
-    "/ward-flow/delays",
+    "/bedchart/delays",
     "A deliberate redirect to /waiting with its query kept (B4 step 3, Josh 19 Oct 2026), documented in its own route file (delays/page.tsx) — not a destination in its own right.",
   ],
   [
-    "/ward-flow/escalation",
+    "/bedchart/escalation",
     "A deliberate redirect to /waiting (MERGE 01), documented in its own route file (escalation/page.tsx) — not a destination in its own right.",
   ],
   /* MERGE 03 (owner-approved 2026-09-05) folded the live vehicle tracker into `MovementsScreen`.
@@ -535,55 +542,55 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
    * reason MERGE 01's and MERGE 02's entries above already set. `/transport/officer` is a separate,
    * nested route and is unaffected: it stays listed in WARD_NAV under its own `officer` entry. */
   [
-    "/ward-flow/transport",
+    "/bedchart/transport",
     "A deliberate redirect to /transport/officer (shell-19; MERGE 03 sent it to /movements), documented in its own route file (transport/page.tsx) — not a destination in its own right.",
   ],
   [
-    "/ward-flow/ed",
+    "/bedchart/ed",
     "The statewide ED index (ed/page.tsx). The rail's Emergency entry opens it through WARD_ED_HREF; this WARD_NAV keeps `ed` as the example department the role switcher uses.",
   ],
   // Read-only reports (stream C, 9 Oct 2026). Each is a destination inside an existing area, not a
   // section of the app, so none takes a rail item.
   [
-    "/ward-flow/statistics/weekly",
+    "/bedchart/statistics/weekly",
     "The weekly operations report. Reached from the statistics section track (statistics/statistics-nav.tsx, 'Weekly'), for the same reason as /overview and /compare above.",
   ],
   // The four statistics index pages (Statistics A, 9 Oct 2026): every service, ward, ED and team on
   // one page. Each is a destination inside Statistics, not a section of the app.
   [
-    "/ward-flow/statistics/services",
+    "/bedchart/statistics/services",
     "Every health service on one page. Reached from the statistics section track (statistics/statistics-nav.tsx, 'Services') and the unit finder, for the same reason as /overview and /compare above.",
   ],
   [
-    "/ward-flow/statistics/wards",
+    "/bedchart/statistics/wards",
     "Every ward on one page. Reached from the statistics section track (statistics/statistics-nav.tsx, 'Wards') and the unit finder, for the same reason as /overview and /compare above.",
   ],
   [
-    "/ward-flow/statistics/eds",
+    "/bedchart/statistics/eds",
     "Every emergency department on one page. Reached from the statistics section track (statistics/statistics-nav.tsx, 'EDs') and the unit finder, for the same reason as /overview and /compare above.",
   ],
   [
-    "/ward-flow/statistics/teams",
+    "/bedchart/statistics/teams",
     "Every community team on one page. Reached from the statistics section track (statistics/statistics-nav.tsx, 'Teams') and the unit finder, for the same reason as /overview and /compare above.",
   ],
   [
-    "/ward-flow/reports/downtime",
+    "/bedchart/reports/downtime",
     "The printable downtime pack. Reached from the Tools sheet's Print and share group (tools/ward-tools-sheet.tsx).",
   ],
   [
-    "/ward-flow/about",
+    "/bedchart/about",
     "About this demo (F-77, Audit 15 A15-25): invented data, what the browser keeps and sends, how to leave. Reached from the About card in Settings (settings/settings-help-and-demo.tsx).",
   ],
   [
-    "/ward-flow/night",
+    "/bedchart/night",
     "Night view (feature plan item 29). Reached from the More menu on Home's list tabs (coordinator/coordinator-screen.tsx), beside Today's review.",
   ],
   [
-    "/ward-flow/review",
+    "/bedchart/review",
     "Today's review (Josh, Home notes 4, 9 Nov 2026). Reached from the More menu on Home's list tabs (coordinator/coordinator-screen.tsx), where it replaced Registers.",
   ],
   [
-    "/ward-flow/reports/chronology",
+    "/bedchart/reports/chronology",
     "The PIR patient chronology (Reports build, 9 Oct 2026). Reached from the Tools sheet's Print and share group (tools/ward-tools-sheet.tsx).",
   ],
   [
@@ -591,8 +598,8 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
     "Everyone on leave across the desk's wards (feature 23). Reached from the Tools sheet's Leave due tool, 'See all leave' (tools/ward-tool-leave-due.tsx).",
   ],
   // WF-42: typed URLs open the shell panel then replace home.
-  ["/ward-flow/activity", "Shell panel redirect — not a page."],
-  ["/ward-flow/help", "Shell sheet redirect — not a page."],
+  ["/bedchart/activity", "Shell panel redirect — not a page."],
+  ["/bedchart/help", "Shell sheet redirect — not a page."],
 ]);
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════════
@@ -653,7 +660,7 @@ export type WardPrimaryAction =
 export type WardPrimaryActionEntry = {
   /**
    * A real route — static exactly as it appears in `staticRoutes`, or a dynamic pattern exactly as
-   * `tests/ward-nav.test.ts`'s own scan produces it (e.g. `"/ward-flow/ward/[unitId]"`).
+   * `tests/ward-nav.test.ts`'s own scan produces it (e.g. `"/bedchart/ward/[unitId]"`).
    * Never a hand-typed variant: the test resolves every one of these against the real route tree,
    * the same way it already does for `WARD_NAV` and `WARD_VIEWS` above.
    */
@@ -675,31 +682,31 @@ export const WARD_PRIMARY_ACTIONS: readonly WardPrimaryActionEntry[] = [
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/ward-flow/waiting",
+    route: "/bedchart/waiting",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/ward-flow/capacity",
+    route: "/bedchart/capacity",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/ward-flow/wards",
+    route: "/bedchart/wards",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/ward-flow/ward/[unitId]",
+    route: "/bedchart/ward/[unitId]",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/ward-flow/ward/[unitId]/answer",
+    route: "/bedchart/ward/[unitId]/answer",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/ward-flow/board/[unitId]",
+    route: "/bedchart/board/[unitId]",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/ward-flow/ed/[edId]",
+    route: "/bedchart/ed/[edId]",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   // Movements, a Movement and a Community team. Device audit, 11 Oct 2026 (item 6, "keep the shell
@@ -707,43 +714,43 @@ export const WARD_PRIMARY_ACTIONS: readonly WardPrimaryActionEntry[] = [
   // both unwired. New referral is now the one header primary on every page, as v10 set for
   // Statistics on 10 Oct 2026.
   {
-    route: "/ward-flow/movements",
+    route: "/bedchart/movements",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/ward-flow/movements/[movementId]",
+    route: "/bedchart/movements/[movementId]",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/ward-flow/community/[teamId]",
+    route: "/bedchart/community/[teamId]",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   // Statistics and its Ward, Community team, ED and Service detail routes. v10 (10 Oct 2026): New
   // referral is the one header primary on every page; Export moves into the statistics hero.
   {
-    route: "/ward-flow/statistics",
+    route: "/bedchart/statistics",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/ward-flow/statistics/ward/[unitId]",
+    route: "/bedchart/statistics/ward/[unitId]",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/ward-flow/statistics/community/[teamId]",
+    route: "/bedchart/statistics/community/[teamId]",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/ward-flow/statistics/ed/[edId]",
+    route: "/bedchart/statistics/ed/[edId]",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   {
-    route: "/ward-flow/statistics/service/[serviceId]",
+    route: "/bedchart/statistics/service/[serviceId]",
     action: { kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU },
   },
   // None in the bar — Patient search, Patient, Search hub, Raise a referral (the slide-out is already open).
-  { route: "/ward-flow/search", action: { kind: "none" } },
-  { route: "/ward-flow/people/[patientId]", action: { kind: "none" } },
-  { route: "/ward-flow/hub", action: { kind: "none" } },
+  { route: "/bedchart/search", action: { kind: "none" } },
+  { route: "/bedchart/people/[patientId]", action: { kind: "none" } },
+  { route: "/bedchart/hub", action: { kind: "none" } },
   { route: WARD_REFERRAL_INTAKE_HREF, action: { kind: "none" } },
 ];
 
@@ -759,7 +766,7 @@ function normalizeWardPathname(pathname: string): string {
 
 /**
  * Whether `pathname` is one concrete instance of a dynamic `route` pattern like
- * `/ward-flow/ward/[unitId]` — segment-by-segment, a `[bracketed]` route segment matches
+ * `/bedchart/ward/[unitId]` — segment-by-segment, a `[bracketed]` route segment matches
  * any single non-empty path segment, everything else must match exactly. The same shape
  * `tests/ward-nav.test.ts`'s own `routeToPattern` checks this very list against the real route
  * tree with (that file builds a `RegExp`; this is the same rule read segment-by-segment instead),
@@ -820,41 +827,41 @@ export function resolveWardPrimaryAction(pathname: string): WardPrimaryAction | 
  */
 export function resolveWardScreenTitle(pathname: string, units: readonly Unit[] = []): string {
   const normalized = normalizeWardPathname(pathname);
-  // Whole path segments only: `/ward-flow/wards` (All wards) is not under `/ward-flow/ward`.
+  // Whole path segments only: `/bedchart/wards` (All wards) is not under `/bedchart/ward`.
   const isUnder = (prefix: string) => normalized === prefix || normalized.startsWith(`${prefix}/`);
   const place = wardPlaceFor(normalized, units);
   if (place) return place.name;
 
-  if (normalized === "/ward-flow" || normalized === "/ward-flow/command") return "Home";
-  if (isUnder("/ward-flow/board")) return "Bed board";
-  if (isUnder("/ward-flow/ward")) return "Ward";
-  if (isUnder("/ward-flow/ed")) return "All EDs";
-  if (isUnder("/ward-flow/community")) return "Community";
+  if (normalized === "/bedchart" || normalized === "/bedchart/command") return "Home";
+  if (isUnder("/bedchart/board")) return "Bed board";
+  if (isUnder("/bedchart/ward")) return "Ward";
+  if (isUnder("/bedchart/ed")) return "All EDs";
+  if (isUnder("/bedchart/community")) return "Community";
   // PL1: Catchments is a tab of Places, so the header keeps the page's name.
-  if (isUnder("/ward-flow/hub")) return "Places";
-  if (isUnder("/ward-flow/movements")) return "Movements";
-  if (isUnder("/ward-flow/statistics")) return "Statistics";
-  if (isUnder("/ward-flow/waiting") || isUnder("/ward-flow/delays") || normalized === "/ward-flow/queue")
-    return "Waiting";
-  if (isUnder("/ward-flow/capacity")) return "Capacity";
-  if (isUnder("/ward-flow/network")) return "Network";
-  if (isUnder("/ward-flow/governance")) return "Governance";
-  if (normalized === "/ward-flow/review") return "Today's review";
-  if (normalized === "/ward-flow/night") return "Night view";
-  if (normalized === "/ward-flow/about") return "About this demo";
-  if (normalized === "/ward-flow/reports/downtime") return "Downtime pack";
-  if (normalized === "/ward-flow/reports/chronology") return "Patient chronology";
-  if (normalized === "/ward-flow/referrals/new") return "New referral";
-  if (isUnder("/ward-flow/referrals")) return "Referrals";
-  if (normalized === "/ward-flow/people/new") return "Add patient";
+  if (isUnder("/bedchart/hub")) return "Places";
+  if (isUnder("/bedchart/movements")) return "Movements";
+  if (isUnder("/bedchart/statistics")) return "Statistics";
+  if (isUnder("/bedchart/waiting") || isUnder("/bedchart/delays") || normalized === "/bedchart/queue") return "Waiting";
+  if (isUnder("/bedchart/capacity")) return "Capacity";
+  if (isUnder("/bedchart/network")) return "Network";
+  if (isUnder("/bedchart/governance")) return "Governance";
+  if (normalized === "/bedchart/privacy") return "Privacy and data";
+  if (normalized === "/bedchart/review") return "Today's review";
+  if (normalized === "/bedchart/night") return "Night view";
+  if (normalized === "/bedchart/about") return "About this demo";
+  if (normalized === "/bedchart/reports/downtime") return "Downtime pack";
+  if (normalized === "/bedchart/reports/chronology") return "Patient chronology";
+  if (normalized === "/bedchart/referrals/new") return "New referral";
+  if (isUnder("/bedchart/referrals")) return "Referrals";
+  if (normalized === "/bedchart/people/new") return "Add patient";
   // Triage and risk (built 7 Nov 2026).
-  if (normalized === "/ward-flow/triage/new") return "Start a triage";
-  if (/^\/ward-flow\/people\/[^/]+\/triage$/u.test(normalized)) return "Triage and risk";
-  if (isUnder("/ward-flow/people")) return "Patients";
-  if (isUnder("/ward-flow/transport/officer")) return "Transport";
-  if (isUnder("/ward-flow/transport")) return "Transport";
-  if (isUnder("/ward-flow/settings")) return "Settings";
-  if (normalized === "/ward-flow/bed-meeting/agenda") return "Bed meeting agenda";
+  if (normalized === "/bedchart/triage/new") return "Start a triage";
+  if (/^\/bedchart\/people\/[^/]+\/triage$/u.test(normalized)) return "Triage and risk";
+  if (isUnder("/bedchart/people")) return "Patients";
+  if (isUnder("/bedchart/transport/officer")) return "Transport";
+  if (isUnder("/bedchart/transport")) return "Transport";
+  if (isUnder("/bedchart/settings")) return "Settings";
+  if (normalized === "/bedchart/bed-meeting/agenda") return "Bed meeting agenda";
 
   const exactView = WARD_VIEWS.find((v) => v.href === normalized);
   if (exactView) return exactView.label;

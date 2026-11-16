@@ -18,7 +18,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 const forecastAt = vi.hoisted(() => ({ minutesLeft: 0 }));
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));

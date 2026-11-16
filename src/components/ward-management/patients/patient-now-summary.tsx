@@ -449,7 +449,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
       ) : null}
     </>
   ) : undefined;
-  const newReferralHref = livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/ward-flow/referrals/new";
+  const newReferralHref = livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/bedchart/referrals/new";
   return (
     <section className={styles.v6Summary} id="pnSubject" aria-label="Patient summary">
       <PatientFlightHeader

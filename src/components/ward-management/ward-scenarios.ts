@@ -73,7 +73,7 @@ export function scenarioNetwork(scenario: WardScenario): DemoNetwork | undefined
   const variant = SCENARIO_VARIANT[scenario];
   if (scenario !== "wa-synthetic" && !variant) return undefined;
   const networks = loadedScenarioNetworks();
-  if (!networks) throw new Error("Ward Flow demonstration networks are not loaded yet");
+  if (!networks) throw new Error("BedChart demonstration networks are not loaded yet");
   return variant ? networks.demoNetwork(variant) : networks.waSyntheticNetwork();
 }
 

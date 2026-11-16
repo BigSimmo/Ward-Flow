@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 // WS-18 (workflow speed audit, 26 Oct 2026): desktop keyboard paths.
 
-const route = vi.hoisted(() => ({ pathname: "/ward-flow" }));
+const route = vi.hoisted(() => ({ pathname: "/bedchart" }));
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useRouter: () => ({ push: vi.fn() }),
@@ -24,7 +24,7 @@ import { wardPatients } from "@/components/ward-management/ward-patients-seed";
 import { allUnits } from "@/components/ward-management/ward-sites";
 
 afterEach(() => {
-  route.pathname = "/ward-flow";
+  route.pathname = "/bedchart";
 });
 
 describe("Skip to Act now", () => {
@@ -52,7 +52,7 @@ describe("Skip to Act now", () => {
   });
 
   it("is not drawn on other pages", () => {
-    route.pathname = "/ward-flow/referrals";
+    route.pathname = "/bedchart/referrals";
     render(home());
     expect(screen.queryByTestId("ward-skip-to-act-now")).toBeNull();
   });
@@ -92,7 +92,7 @@ describe("arrow keys on header search results", () => {
     expect(active).toHaveAttribute("aria-selected", "true");
     expect(active.closest('[role="listbox"]')).not.toBeNull();
     const href = active.getAttribute("href");
-    expect(href).toMatch(/^\/ward-flow\//);
+    expect(href).toMatch(/^\/bedchart\//);
     fireEvent.keyDown(input, { key: "Enter" });
     expect(onNavigate).toHaveBeenCalledWith(href);
   });

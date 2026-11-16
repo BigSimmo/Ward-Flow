@@ -11,25 +11,25 @@ import {
 /** v10 build pass 2 shell fixes (10 Oct 2026). */
 describe("v10 pass 2 shell", () => {
   it("titles the two report pages by their own names, not Home", () => {
-    expect(resolveWardScreenTitle("/ward-flow/reports/downtime")).toBe("Downtime pack");
-    expect(resolveWardScreenTitle("/ward-flow/reports/chronology")).toBe("Patient chronology");
-    expect(resolveWardScreenTitle("/ward-flow/reports/chronology/")).toBe("Patient chronology");
+    expect(resolveWardScreenTitle("/bedchart/reports/downtime")).toBe("Downtime pack");
+    expect(resolveWardScreenTitle("/bedchart/reports/chronology")).toBe("Patient chronology");
+    expect(resolveWardScreenTitle("/bedchart/reports/chronology/")).toBe("Patient chronology");
   });
 
   it("titles the ward index All wards: a route prefix matches whole path segments only", () => {
-    expect(resolveWardScreenTitle("/ward-flow/wards")).toBe("All wards");
-    expect(resolveWardScreenTitle("/ward-flow/wards/")).toBe("All wards");
-    expect(resolveWardScreenTitle("/ward-flow/ward")).toBe("Ward");
-    expect(resolveWardScreenTitle("/ward-flow/ward/not-a-seeded-unit")).toBe("Ward");
+    expect(resolveWardScreenTitle("/bedchart/wards")).toBe("All wards");
+    expect(resolveWardScreenTitle("/bedchart/wards/")).toBe("All wards");
+    expect(resolveWardScreenTitle("/bedchart/ward")).toBe("Ward");
+    expect(resolveWardScreenTitle("/bedchart/ward/not-a-seeded-unit")).toBe("Ward");
   });
 
   it("puts New referral in the header on every statistics route, never Export the figures", () => {
     for (const route of [
-      "/ward-flow/statistics",
-      "/ward-flow/statistics/ward/rph-adult-secure",
-      "/ward-flow/statistics/community/any-team",
-      "/ward-flow/statistics/ed/rph",
-      "/ward-flow/statistics/service/east",
+      "/bedchart/statistics",
+      "/bedchart/statistics/ward/rph-adult-secure",
+      "/bedchart/statistics/community/any-team",
+      "/bedchart/statistics/ed/rph",
+      "/bedchart/statistics/service/east",
     ]) {
       expect(resolveWardPrimaryAction(route)?.kind, route).toBe("new-referral");
     }

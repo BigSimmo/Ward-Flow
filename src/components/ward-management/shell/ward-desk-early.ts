@@ -35,10 +35,10 @@ export const WARD_DESK_HELD_COOKIE = "wardflow-desk-held";
 /** The one value that lets the server draw the coordinator's page (D-137). */
 const WARD_DESK_WHOLE_NETWORK_VALUE = "0";
 
-const HELD_COOKIE = `${WARD_DESK_HELD_COOKIE}=1;path=/ward-flow;SameSite=Strict`;
-const CLEARED_COOKIE = `${WARD_DESK_HELD_COOKIE}=${WARD_DESK_WHOLE_NETWORK_VALUE};path=/ward-flow;SameSite=Strict`;
+const HELD_COOKIE = `${WARD_DESK_HELD_COOKIE}=1;path=/bedchart;SameSite=Strict`;
+const CLEARED_COOKIE = `${WARD_DESK_HELD_COOKIE}=${WARD_DESK_WHOLE_NETWORK_VALUE};path=/bedchart;SameSite=Strict`;
 /** Sign-out removes the cookie outright (live audit item 19). With none, the server holds the page (D-137). */
-const REMOVED_COOKIE = `${WARD_DESK_HELD_COOKIE}=;path=/ward-flow;SameSite=Strict;max-age=0`;
+const REMOVED_COOKIE = `${WARD_DESK_HELD_COOKIE}=;path=/bedchart;SameSite=Strict;max-age=0`;
 
 /** D-137: the server holds the page unless the request says the desk is the coordinator's. */
 export function wardDeskHeldFromCookie(value: string | undefined): boolean {

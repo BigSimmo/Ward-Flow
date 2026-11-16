@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/movements/patient",
+  usePathname: () => "/bedchart/movements/patient",
   useRouter: () => ({ back: vi.fn(), replace: vi.fn(), push: vi.fn() }),
 }));
 
@@ -301,7 +301,7 @@ describe("the ward corridor's bed releases follow the desk's own role", () => {
     "a %s journey: the site bed manager's release is greyed and asks nothing",
     (ending) => {
       cleanup();
-      setDeskRole("bed_manager", "/ward-flow/movements/patient");
+      setDeskRole("bed_manager", "/bedchart/movements/patient");
       const { movementId, unitId, steps } = journeySteps(ending);
       const state = reduce(steps);
       const movement = state.movements.find((m) => m.id === movementId)!;

@@ -14,7 +14,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { REPEAT_TAP_WINDOW_MS } from "@/components/ward-management/ward-repeat-tap-guard";
 
 /** Fix plan item 4 on screen: the referral's owner desk, Assign, and Log a call. */
-let pathname = "/ward-flow/referrals";
+let pathname = "/bedchart/referrals";
 vi.mock("next/navigation", () => ({
   usePathname: () => pathname,
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
@@ -85,7 +85,7 @@ function setup() {
 
 describe("referral owner and call log", () => {
   beforeEach(() => {
-    pathname = "/ward-flow/referrals";
+    pathname = "/bedchart/referrals";
   });
 
   it("assigns the referral to a chosen desk and shows the owner", () => {
@@ -129,7 +129,7 @@ describe("referral owner and call log", () => {
   });
 
   it("lets a community desk only take the referral for itself", () => {
-    pathname = "/ward-flow/community";
+    pathname = "/bedchart/community";
     setup();
     expect(screen.queryByRole("combobox", { name: "Assign to" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Take this referral" }));
@@ -169,7 +169,7 @@ function Owner() {
 
 describe("community team Assign", () => {
   it("takes the referral for the team's desk, and refuses a second tap", async () => {
-    pathname = `/ward-flow/community/${communityTeamSlug(TEAM)}`;
+    pathname = `/bedchart/community/${communityTeamSlug(TEAM)}`;
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <ReferToTeam />

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-import { HeldDeskLoading } from "@/app/ward-flow/loading-status";
+import { HeldDeskLoading } from "@/app/bedchart/loading-status";
 
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { presetWardBarPageTitle } from "../shell/ward-bar-page-tools";
@@ -11,7 +11,7 @@ import { ROLE_SCREENS } from "../ward-role-access";
 import { SeclusionScreen } from "./seclusion-screen";
 
 /** FS3: where seclusion and restraint in use now is recorded for a desk that opens Forms. */
-const SECLUSION_IN_FORMS_PATH = "/ward-flow/legal-forms";
+const SECLUSION_IN_FORMS_PATH = "/bedchart/legal-forms";
 const SECLUSION_IN_FORMS_HREF = `${SECLUSION_IN_FORMS_PATH}?view=seclusion`;
 
 /**

@@ -17,7 +17,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  * link notice ("You're offline. Tap again once you're back online."). Synthetic data only.
  */
 
-const route = vi.hoisted(() => ({ pathname: "/ward-flow" }));
+const route = vi.hoisted(() => ({ pathname: "/bedchart" }));
 const push = vi.hoisted(() => vi.fn());
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
@@ -32,7 +32,7 @@ vi.mock("@/components/ward-management/help/ward-help-store", async (importOrigin
 }));
 
 vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({
-  useTourFacts: () => ({ facts: {}, home: "/ward-flow", deskHome: "/ward-flow" }),
+  useTourFacts: () => ({ facts: {}, home: "/bedchart", deskHome: "/bedchart" }),
 }));
 
 import { EVERY_LOGIN } from "@/components/ward-management/help/ward-help-access";
@@ -50,7 +50,7 @@ function goOffline(): void {
 function taskThatOpensAScreen(role: WardTourRole): { id: string; path: string } | undefined {
   for (const howTo of tasksForDesk(role)) {
     if (!canShowMe(howTo, false) || !howTo.go) continue;
-    const href = howToHref(howTo.go, role, "/ward-flow");
+    const href = howToHref(howTo.go, role, "/bedchart");
     if (href) return { id: howTo.id, path: href.split("#")[0]! };
   }
   return undefined;
@@ -67,7 +67,7 @@ afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
   login.role = "coordinator";
-  route.pathname = "/ward-flow";
+  route.pathname = "/bedchart";
 });
 
 describe("M111: each desk's Show me, offline", () => {
@@ -89,7 +89,7 @@ describe("M111: each desk's Show me, offline", () => {
     (role) => {
       login.role = role;
       const task = taskThatOpensAScreen(role)!;
-      route.pathname = "/ward-flow/m111-somewhere-else";
+      route.pathname = "/bedchart/m111-somewhere-else";
       render(<WardShowMe id={task.id} onClose={() => {}} onBack={() => {}} />);
       expect(push, "offline, Show me must not send the router to a page it may not hold").not.toHaveBeenCalled();
       expect(screen.getByTestId("ward-show-me-card")).toHaveTextContent(NEEDS_CONNECTION);

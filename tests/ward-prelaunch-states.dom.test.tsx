@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { CensusEmpty } from "@/components/ward-management/search/patient-census-view";
-import WardFlowLoading from "@/app/ward-flow/loading";
+import WardFlowLoading from "@/app/bedchart/loading";
 import {
   WARD_LOADING_NOTE_EARLY_SCRIPT,
   WARD_LOADING_SLOW_ATTRIBUTE,
@@ -21,12 +21,12 @@ afterEach(() => {
 
 function link(testId?: string): HTMLAnchorElement {
   const a = document.createElement("a");
-  a.href = "/ward-flow/referrals";
+  a.href = "/bedchart/referrals";
   if (testId) a.setAttribute("data-testid", testId);
   return a;
 }
 
-const target = new URL("http://localhost:3000/ward-flow/referrals");
+const target = new URL("http://localhost:3000/bedchart/referrals");
 const fetched = (name: string, startTime: number, extra: object = { responseStatus: 200 }) => ({
   name,
   startTime,
@@ -37,8 +37,8 @@ const fetched = (name: string, startTime: number, extra: object = { responseStat
 describe("Q273: an offline tap opens a page the router already holds in full", () => {
   const now = 100_000;
   const both = (startTime: number, extra?: object) => [
-    fetched("http://localhost:3000/ward-flow/referrals?_rsc=tree", startTime, extra),
-    fetched("http://localhost:3000/ward-flow/referrals?_rsc=page", startTime, extra),
+    fetched("http://localhost:3000/bedchart/referrals?_rsc=tree", startTime, extra),
+    fetched("http://localhost:3000/bedchart/referrals?_rsc=page", startTime, extra),
   ];
 
   it("opens a dock page whose route tree and data both came back a moment ago", () => {
@@ -49,7 +49,7 @@ describe("Q273: an offline tap opens a page the router already holds in full", (
   it("does not open a link whose page was only part fetched", () => {
     expect(offlineCanOpen(link("ward-rail-link"), target, both(now - 5_000), now)).toBe(false);
     expect(offlineCanOpen(link(), target, both(now - 5_000), now)).toBe(false);
-    const treeOnly = [fetched("http://localhost:3000/ward-flow/referrals?_rsc=tree", now)];
+    const treeOnly = [fetched("http://localhost:3000/bedchart/referrals?_rsc=tree", now)];
     expect(offlineCanOpen(link("ward-phone-dock-link"), target, treeOnly, now)).toBe(false);
   });
 
@@ -57,13 +57,13 @@ describe("Q273: an offline tap opens a page the router already holds in full", (
     const late = now + OFFLINE_PREFETCH_FRESH_MS + 1_000;
     expect(offlineCanOpen(link("ward-phone-dock-link"), target, both(now - 5_000), late)).toBe(false);
     const other = [
-      fetched("http://localhost:3000/ward-flow/alerts?_rsc=tree", now),
-      fetched("http://localhost:3000/ward-flow/alerts?_rsc=page", now),
+      fetched("http://localhost:3000/bedchart/alerts?_rsc=tree", now),
+      fetched("http://localhost:3000/bedchart/alerts?_rsc=page", now),
     ];
     expect(offlineCanOpen(link("ward-phone-dock-link"), target, other, now)).toBe(false);
     const failed = [
-      fetched("http://localhost:3000/ward-flow/referrals?_rsc=tree", now),
-      fetched("http://localhost:3000/ward-flow/referrals?_rsc=page", now, { responseStatus: 500 }),
+      fetched("http://localhost:3000/bedchart/referrals?_rsc=tree", now),
+      fetched("http://localhost:3000/bedchart/referrals?_rsc=page", now, { responseStatus: 500 }),
     ];
     expect(offlineCanOpen(link("ward-phone-dock-link"), target, failed, now)).toBe(false);
   });

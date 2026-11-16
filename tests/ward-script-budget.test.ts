@@ -221,7 +221,7 @@ describe("phone script budget", () => {
     { "/a?changed=1": 5 },
     { "": 5 },
     { "/\\example.test/a": 5 },
-    { "/ward-flow/movements/../../ward-flow": 5 },
+    { "/bedchart/movements/../../ward-flow": 5 },
   ])("rejects invalid budgets: %j", (budgets) => {
     expect(() => validateBudgets(budgets)).toThrow();
   });
@@ -286,8 +286,8 @@ describe("phone script budget", () => {
   });
 
   it("preserves the configured movement's exact record-address redirect", async () => {
-    const legacy = "/ward-flow/movements/WF-001";
-    const canonical = `/ward-flow/movements/${encodeRecordAddress("WF-001")}`;
+    const legacy = "/bedchart/movements/WF-001";
+    const canonical = `/bedchart/movements/${encodeRecordAddress("WF-001")}`;
     await withPages(
       {
         [legacy]: { status: 307, location: canonical },
@@ -303,10 +303,10 @@ describe("phone script budget", () => {
 
   it.each([
     ["/a", "/login"],
-    ["/ward-flow/movements/WF-001", "/login"],
-    ["/ward-flow/movements/WF-001", "http://127.0.0.1:1/ward-flow/movements/1nfzcp26wc0g"],
-    ["/ward-flow/movements/WF-001", "/ward-flow/movements/1nfzcp26wc0g?other=record"],
-    ["/ward-flow/movements/WF-001", "/mockups/ward-flow/movements/1nfzcp26wc0g"],
+    ["/bedchart/movements/WF-001", "/login"],
+    ["/bedchart/movements/WF-001", "http://127.0.0.1:1/bedchart/movements/1nfzcp26wc0g"],
+    ["/bedchart/movements/WF-001", "/bedchart/movements/1nfzcp26wc0g?other=record"],
+    ["/bedchart/movements/WF-001", "/mockups/ward-flow/movements/1nfzcp26wc0g"],
   ])("rejects unexpected route redirects from %s to %s", async (route, location) => {
     await withPages({ [route]: { status: 307, location } }, async (base, requests) => {
       await expect(routeKb(base, route)).rejects.toThrow(/answered 307|unexpected redirect destination/);
@@ -390,7 +390,7 @@ describe("report-only sizes", () => {
   });
 
   it("reports the heavy unbudgeted triage page", () => {
-    expect(REPORT_ROUTES).toContain("/ward-flow/people/PT-028/triage");
+    expect(REPORT_ROUTES).toContain("/bedchart/people/PT-028/triage");
     for (const route of REPORT_ROUTES) expect(Object.keys(scriptBudget.budgets)).not.toContain(route);
   });
 });

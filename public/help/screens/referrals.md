@@ -23,6 +23,6 @@ Referrals waiting for an answer, and those decided recently.
 - Take a referral as your desk. Open the referral on Referrals, then its Patient tab (on a phone, Show patient details) and Owner and calls. The Owner line says who follows it up, or Not assigned. Press Take this referral. The Owner line then names your desk, with the time, so others know who is following it up.
 - Log a call. Open the referral on Referrals, then its Patient tab (on a phone, Show patient details) and Owner and calls. Under Log a call, choose who was rung and what they said, then press Log a call. The call is listed, newest first. A call does not answer the referral: the decision time keeps running.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

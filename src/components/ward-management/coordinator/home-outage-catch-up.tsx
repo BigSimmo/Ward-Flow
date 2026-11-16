@@ -12,7 +12,7 @@ import { wardCatchUp, type WardCatchUp } from "@/components/ward-management/ward
 import styles from "./home-outage-catch-up.module.css";
 
 /** Where the coordinator records an outage, and changes its times. */
-export const DOWNTIME_PACK_HREF = "/ward-flow/reports/downtime";
+export const DOWNTIME_PACK_HREF = "/bedchart/reports/downtime";
 
 /** Wards listed before "Show more". */
 const WARDS_FIRST = 5;

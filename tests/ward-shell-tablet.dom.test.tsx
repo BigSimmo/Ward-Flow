@@ -12,7 +12,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const route = { pathname: "/ward-flow" };
+const route = { pathname: "/bedchart" };
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
@@ -62,7 +62,7 @@ function renderShell() {
 }
 
 beforeEach(() => {
-  route.pathname = "/ward-flow";
+  route.pathname = "/bedchart";
   if (typeof window.requestAnimationFrame !== "function") {
     window.requestAnimationFrame = ((cb: FrameRequestCallback) =>
       setTimeout(() => cb(Date.now()), 0) as unknown as number) as typeof window.requestAnimationFrame;
@@ -89,7 +89,7 @@ describe("tablet landscape (1001px to 1200px)", () => {
       const rail = screen.getByTestId("ward-rail");
       await waitFor(() => expect(rail).toHaveAttribute("data-tablet", "landscape"));
       expect(rail).toHaveAttribute("data-rail", "closed");
-      const views = within(rail).getByRole("navigation", { name: "Ward Flow views" });
+      const views = within(rail).getByRole("navigation", { name: "BedChart views" });
       const groups = Array.from(views.querySelectorAll(":scope > section")).map((section) =>
         section.getAttribute("aria-label"),
       );
@@ -132,7 +132,7 @@ describe("tablet landscape (1001px to 1200px)", () => {
       expect(rail).toHaveAttribute("data-rail", "open");
       expect(within(rail).queryByTestId("ward-rail-tablet-more")).toBeNull();
       expect(within(rail).getByTestId("ward-rail-more")).toHaveAccessibleName("More pages");
-      const views = within(rail).getByRole("navigation", { name: "Ward Flow views" });
+      const views = within(rail).getByRole("navigation", { name: "BedChart views" });
       // B1: one section, the role's own menu; the other groups are one tap away under More.
       expect(views.querySelectorAll(":scope > section")).toHaveLength(1);
     } finally {
@@ -177,8 +177,8 @@ describe("tablet portrait (769px to 1000px)", () => {
 
 describe("header titles for the report pages (v10 pass 2)", () => {
   it.each([
-    ["/ward-flow/reports/downtime", "Downtime pack"],
-    ["/ward-flow/reports/chronology", "Patient chronology"],
+    ["/bedchart/reports/downtime", "Downtime pack"],
+    ["/bedchart/reports/chronology", "Patient chronology"],
   ])("titles %s as %s", (pathname, title) => {
     route.pathname = pathname;
     renderShell();

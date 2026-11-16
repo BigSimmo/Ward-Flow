@@ -491,7 +491,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     ],
     questions: [
       {
-        question: "Does Ward Flow work out when a form expires?",
+        question: "Does BedChart work out when a form expires?",
         answer: "No. A person types the time from the paper form.",
       },
       {
@@ -540,7 +540,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     ],
     questions: [
       {
-        question: "Does Ward Flow tell me when seclusion must end?",
+        question: "Does BedChart tell me when seclusion must end?",
         answer: "No. It shows the start and end times that were recorded.",
       },
       {
@@ -606,7 +606,7 @@ const PAGE_HELP: readonly PageHelp[] = [
   ...MORE_PAGE_HELP,
   {
     id: "ward-answer",
-    path: /^\/ward-flow\/ward\/[^/]+\/answer$/u,
+    path: /^\/bedchart\/ward\/[^/]+\/answer$/u,
     title: "Ward answer",
     purpose: "One bed request at a time, for this ward to accept or decline.",
     actions: [
@@ -629,7 +629,7 @@ const PAGE_HELP: readonly PageHelp[] = [
   },
   {
     id: "ward",
-    path: /^\/ward-flow\/ward\/[^/]+$/u,
+    path: /^\/bedchart\/ward\/[^/]+$/u,
     menuId: "wards",
     title: "Ward",
     purpose: "One ward's beds, who is coming and going, and the decisions due this shift.",
@@ -659,7 +659,7 @@ const PAGE_HELP: readonly PageHelp[] = [
   },
   {
     id: "board",
-    path: /^\/ward-flow\/board\/[^/]+$/u,
+    path: /^\/bedchart\/board\/[^/]+$/u,
     title: "Bed board",
     purpose: "Every bed on one ward, who is in it, who is coming in and who is going out today and tomorrow.",
     actions: [
@@ -681,7 +681,7 @@ const PAGE_HELP: readonly PageHelp[] = [
   },
   {
     id: "add-patient",
-    path: /^\/ward-flow\/people\/new$/u,
+    path: /^\/bedchart\/people\/new$/u,
     title: "Add patient",
     purpose: "Adds a new invented patient record. Only the core details are needed.",
     actions: [
@@ -703,7 +703,7 @@ const PAGE_HELP: readonly PageHelp[] = [
   },
   {
     id: "patient",
-    path: /^\/ward-flow\/(?:people|movements)\/[^/]+$/u,
+    path: /^\/bedchart\/(?:people|movements)\/[^/]+$/u,
     title: "Patient",
     purpose: "One patient's record: where they are now, their movement and the next step.",
     actions: [
@@ -736,7 +736,7 @@ const PAGE_HELP: readonly PageHelp[] = [
   },
   {
     id: "ed-board",
-    path: /^\/ward-flow\/ed\/[^/]+$/u,
+    path: /^\/bedchart\/ed\/[^/]+$/u,
     menuId: "ed",
     title: "ED board",
     purpose: "One emergency department's mental health patients, each row with its next step.",
@@ -748,7 +748,7 @@ const PAGE_HELP: readonly PageHelp[] = [
     questions: [
       TV_QUESTION,
       {
-        question: "Does Ward Flow work out when a form expires?",
+        question: "Does BedChart work out when a form expires?",
         answer: "No. A person types the time from the paper form.",
       },
       {
@@ -764,7 +764,7 @@ const PAGE_HELP: readonly PageHelp[] = [
   },
   {
     id: "catchments",
-    path: /^\/ward-flow\/hub\/catchments$/u,
+    path: /^\/bedchart\/hub\/catchments$/u,
     title: "Catchments",
     purpose: "Which community team covers a suburb, every community team from A to Z, and team names that read alike.",
     actions: [
@@ -783,7 +783,7 @@ const PAGE_HELP: readonly PageHelp[] = [
   },
   {
     id: "community-team",
-    path: /^\/ward-flow\/community\/[^/]+$/u,
+    path: /^\/bedchart\/community\/[^/]+$/u,
     menuId: "community",
     title: "Community team",
     purpose: "One community team's referrals and patients, from a referral sent to their return to the team.",
@@ -805,7 +805,7 @@ const PAGE_HELP: readonly PageHelp[] = [
   },
   {
     id: "settings",
-    path: /^\/ward-flow\/settings$/u,
+    path: /^\/bedchart\/settings$/u,
     title: "Settings",
     purpose: "The network's rules and this device's own choices, in tabs.",
     actions: [
@@ -831,7 +831,7 @@ const PAGE_HELP: readonly PageHelp[] = [
   },
   {
     id: "night",
-    path: /^\/ward-flow\/night$/u,
+    path: /^\/bedchart\/night$/u,
     title: "Night view",
     purpose:
       "The coordinator's overnight page: beds ready, ED waits by Step, who is on the way, intake windows and on-call lines.",
@@ -847,13 +847,13 @@ const PAGE_HELP: readonly PageHelp[] = [
       },
       {
         question: "Why do the intake windows say Not recorded?",
-        answer: "Wards do not record overnight intake windows in Ward Flow yet, so no time is shown.",
+        answer: "Wards do not record overnight intake windows in BedChart yet, so no time is shown.",
       },
     ],
   },
   {
     id: "downtime",
-    path: /^\/ward-flow\/reports\/downtime$/u,
+    path: /^\/bedchart\/reports\/downtime$/u,
     title: "Downtime pack",
     purpose:
       "A printable copy of the last snapshot, for when the system is down: beds by ward, the ED queue, pending moves and legal forms.",
@@ -867,15 +867,15 @@ const PAGE_HELP: readonly PageHelp[] = [
         answer: "Only the bed coordinator takes a new snapshot. Every desk sees when the last one was taken.",
       },
       {
-        question: "What if Ward Flow is down?",
+        question: "What if BedChart is down?",
         answer:
-          "Tell the bed coordinator on shift. They decide when everyone switches to paper and pass the problem to the Ward Flow team.",
+          "Tell the bed coordinator on shift. They decide when everyone switches to paper and pass the problem to the BedChart team.",
       },
     ],
   },
   {
     id: "bed-meeting-agenda",
-    path: /^\/ward-flow\/bed-meeting\/agenda$/u,
+    path: /^\/bedchart\/bed-meeting\/agenda$/u,
     title: "Bed meeting agenda",
     purpose: "The bed meeting's agenda, built from fixed rules, and the actions agreed at earlier meetings.",
     actions: [
@@ -897,7 +897,7 @@ const PAGE_HELP: readonly PageHelp[] = [
   },
   {
     id: "chronology",
-    path: /^\/ward-flow\/reports\/chronology$/u,
+    path: /^\/bedchart\/reports\/chronology$/u,
     title: "Patient chronology",
     purpose: "One patient's events in time order, for a post-incident review, ready to print or download.",
     actions: [
@@ -924,7 +924,7 @@ const PAGE_HELP: readonly PageHelp[] = [
   },
   {
     id: "statistics-compare",
-    path: /^\/ward-flow\/statistics\/compare$/u,
+    path: /^\/bedchart\/statistics\/compare$/u,
     title: "Compare",
     purpose: "Every ward and every ED side by side, as a chart or a table, with up to three wards pinned.",
     actions: [
@@ -936,7 +936,7 @@ const PAGE_HELP: readonly PageHelp[] = [
   },
   {
     id: "statistics-services",
-    path: /^\/ward-flow\/statistics\/services$/u,
+    path: /^\/bedchart\/statistics\/services$/u,
     title: "Health services",
     purpose: "Each health service's beds, where referrals were accepted and its open ED movements.",
     actions: [
@@ -948,7 +948,7 @@ const PAGE_HELP: readonly PageHelp[] = [
   },
   {
     id: "statistics-wards",
-    path: /^\/ward-flow\/statistics\/wards$/u,
+    path: /^\/bedchart\/statistics\/wards$/u,
     title: "All wards",
     purpose: "Every ward's beds in use, stay so far and discharges held up.",
     actions: [
@@ -966,7 +966,7 @@ const PAGE_HELP: readonly PageHelp[] = [
   },
   {
     id: "statistics-eds",
-    path: /^\/ward-flow\/statistics\/eds$/u,
+    path: /^\/bedchart\/statistics\/eds$/u,
     title: "All emergency departments",
     purpose: "Every emergency department's open movements and how long each has been open.",
     actions: [
@@ -984,7 +984,7 @@ const PAGE_HELP: readonly PageHelp[] = [
   },
   {
     id: "statistics-teams",
-    path: /^\/ward-flow\/statistics\/teams$/u,
+    path: /^\/bedchart\/statistics\/teams$/u,
     title: "Community teams",
     purpose: "Each community team's patients in a bed, and those with a discharge date.",
     actions: [
@@ -996,7 +996,7 @@ const PAGE_HELP: readonly PageHelp[] = [
   },
   {
     id: "statistics-weekly",
-    path: /^\/ward-flow\/statistics\/weekly$/u,
+    path: /^\/bedchart\/statistics\/weekly$/u,
     title: "Weekly operations",
     purpose: "One week's operations: the pilot measures, where the time goes and the pressure that week.",
     actions: [
@@ -1014,7 +1014,7 @@ const PAGE_HELP: readonly PageHelp[] = [
   },
   {
     id: "statistics-place",
-    path: /^\/ward-flow\/statistics\/(?:service|ward|ed|community)\/[^/]+$/u,
+    path: /^\/bedchart\/statistics\/(?:service|ward|ed|community)\/[^/]+$/u,
     title: "Statistics",
     purpose: "The figures for one health service, ward, ED or community team, worked out from the records.",
     actions: [
@@ -1163,7 +1163,7 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
 
   {
     term: "Catchment",
-    meaning: "The area a community mental health team covers. Ward Flow finds it from the patient's suburb.",
+    meaning: "The area a community mental health team covers. BedChart finds it from the patient's suburb.",
   },
   {
     term: "Cohort",
@@ -1194,7 +1194,7 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
     meaning: "A ward's own messages: buzzes from the coordinator, urgent tasks and notices, under the bell.",
   },
   { term: "Activity", meaning: "The header drawer of recent changes and notices. Shift+A opens it." },
-  { term: "Synthetic", meaning: "Invented. Every patient, bed figure and record in Ward Flow is made up." },
+  { term: "Synthetic", meaning: "Invented. Every patient, bed figure and record in BedChart is made up." },
   { term: "Demo", meaning: "The Demo panel: scenario, clock and reset for the invented data. Tools opens it." },
   {
     term: "Tentative diagnosis",
@@ -1219,7 +1219,7 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   { term: "BPSD", meaning: "Behavioural and psychological symptoms of dementia." },
   { term: "ED", meaning: "Emergency department." },
   { term: "EDD", meaning: "Expected date of discharge." },
-  { term: "UMRN", meaning: "Unit medical record number. Ward Flow uses invented ones only." },
+  { term: "UMRN", meaning: "Unit medical record number. BedChart uses invented ones only." },
   { term: "CAD number", meaning: "The St John WA booking number for an ambulance transfer." },
   { term: "ECT", meaning: "Electroconvulsive therapy." },
   { term: "NIC", meaning: "Nurse in charge." },
@@ -1241,7 +1241,7 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   { term: "PIR", meaning: "Post-incident review. The PIR chronology lists one patient's events in time order." },
   {
     term: "QR code",
-    meaning: "A square barcode a phone camera can read to open a link, such as a desk's Ward Flow link.",
+    meaning: "A square barcode a phone camera can read to open a link, such as a desk's BedChart link.",
   },
 
   // Chronology (5 Nov 2026): the words on the patient chronology and its sources.
@@ -1282,7 +1282,7 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
     term: "Fewer than 5",
     meaning: "Shown in place of a small count of people, so no one can be picked out.",
   },
-  { term: "Not recorded", meaning: "Nobody recorded this figure. Ward Flow does not guess it." },
+  { term: "Not recorded", meaning: "Nobody recorded this figure. BedChart does not guess it." },
   {
     term: "Pilot measures",
     meaning: "The weekly report's own measures, such as referral to arrival and bed figures on time.",

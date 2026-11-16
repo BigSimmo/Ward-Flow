@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "playwright/test";
 
-const HOME = "/ward-flow";
+const HOME = "/bedchart";
 
 async function settled(page: Page) {
   await expect(page.locator("html[data-wf-bar-ready]")).toHaveCount(1);

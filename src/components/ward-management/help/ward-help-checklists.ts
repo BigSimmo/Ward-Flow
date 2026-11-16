@@ -252,7 +252,7 @@ const SHIFT_CHECKLISTS: readonly Checklist[] = [
   },
   {
     id: "downtime",
-    title: "If Ward Flow is down",
+    title: "If BedChart is down",
     subtitle: CHECKLIST_SUBTITLE,
     desks: "all",
     steps: [
@@ -261,7 +261,7 @@ const SHIFT_CHECKLISTS: readonly Checklist[] = [
         text: "Use the printed Downtime pack: beds by ward, the ED queue, pending moves and legal forms.",
         showMe: "downtime",
       },
-      { text: "Work from paper and the phone until the coordinator says Ward Flow is back." },
+      { text: "Work from paper and the phone until the coordinator says BedChart is back." },
       { text: "Then record what happened in the meantime." },
     ],
   },
@@ -288,7 +288,7 @@ function forDesk(checklist: Checklist, role: WardTourRole): DeskChecklist {
     subtitle: checklist.subtitle,
     steps: checklist.steps.map((step, index) => {
       // "home" always resolves for a signed-in desk, so any address stands in for it here.
-      const go = step.go && howToHref(step.go, role, "/ward-flow") !== undefined ? step.go : undefined;
+      const go = step.go && howToHref(step.go, role, "/bedchart") !== undefined ? step.go : undefined;
       const howTo = step.showMe ? HOW_TOS.find((each) => each.id === step.showMe) : undefined;
       const showMe = howTo && howToFor(howTo, role) ? howTo.id : undefined;
       return {

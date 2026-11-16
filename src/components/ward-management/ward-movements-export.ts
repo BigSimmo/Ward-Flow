@@ -94,7 +94,7 @@ export function exportMovementsList(o: {
     now: o.now,
     dayZero: o.dayZero,
   };
-  downloadCsv("ward-flow-synthetic-movements.csv", movementsExportLines(o.movements, ctx), {
+  downloadCsv("bedchart-synthetic-movements.csv", movementsExportLines(o.movements, ctx), {
     asAt: formatSheetMoment(o.now, o.dayZero, { includeYearAndZone: true, zone: o.zone }),
     scope: o.resolved
       ? "Movements, Resolved today; every movement closed today in this view's service"

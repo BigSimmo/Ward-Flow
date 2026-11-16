@@ -6,7 +6,7 @@ import { WARD_ALERTS_HREF, WARD_NAV, WARD_VIEWS } from "@/components/ward-manage
 import { useCanOpenHref, useDeskHomeHref } from "@/components/ward-management/shell/ward-access";
 import styles from "./ward-tasks-drawer.module.css";
 
-const WAITING_HREF = WARD_VIEWS.find((view) => view.id === "delays")?.href ?? "/ward-flow/waiting";
+const WAITING_HREF = WARD_VIEWS.find((view) => view.id === "delays")?.href ?? "/bedchart/waiting";
 const ALERTS_JUMP_HREF = WARD_NAV.find((item) => item.id === "alerts")?.href ?? WARD_ALERTS_HREF;
 
 /**

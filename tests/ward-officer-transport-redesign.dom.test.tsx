@@ -181,7 +181,7 @@ describe("M3: check in arrives from Movements (Josh, 3 Nov 2026)", () => {
   it("opens the job named in the address, and the first choice on the page clears it", () => {
     installMatchMediaStub(false);
     const job = jobs.find((movement) => movement.transport !== undefined)!;
-    window.history.replaceState(null, "", `/ward-flow/transport/officer?job=${job.id}`);
+    window.history.replaceState(null, "", `/bedchart/transport/officer?job=${job.id}`);
     renderDesk();
     const panel = screen.getByTestId("ward-officer-detail");
     expect(panel).toHaveTextContent(resolveSubjectPatient(job, state).formalName);
@@ -194,7 +194,7 @@ describe("M3: check in arrives from Movements (Josh, 3 Nov 2026)", () => {
 
   it("ignores a job the desk does not hold", () => {
     installMatchMediaStub(false);
-    window.history.replaceState(null, "", "/ward-flow/transport/officer?job=not-a-job");
+    window.history.replaceState(null, "", "/bedchart/transport/officer?job=not-a-job");
     renderDesk();
     expect(screen.queryByTestId("ward-officer-detail")).toBeNull();
   });

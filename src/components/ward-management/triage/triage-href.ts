@@ -5,5 +5,5 @@ import { encodeRecordAddress } from "@/components/ward-management/shell/ward-rec
  * id or a UMRN (D-39). Its own small file so the patient record and the bar link here without the form.
  */
 export function triageHrefFor(patientId: string): string {
-  return `/ward-flow/people/${encodeRecordAddress(patientId)}/triage`;
+  return `/bedchart/people/${encodeRecordAddress(patientId)}/triage`;
 }

@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
  * Synthetic data only: a made-up record id and no patient details.
  */
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/people/synthetic",
+  usePathname: () => "/bedchart/people/synthetic",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));

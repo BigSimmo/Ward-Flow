@@ -199,7 +199,7 @@ function ArchiveConfirm({
     if (!mounted.current || (outcome?.isCurrent && !outcome.isCurrent())) return;
     if (outcome?.status === "accepted") {
       offerUndo(outcome);
-      router.replace("/ward-flow/search");
+      router.replace("/bedchart/search");
     } else {
       onProblem(outcome || undefined);
       if (outcome?.status === "failed" && outcome.confirmation) {

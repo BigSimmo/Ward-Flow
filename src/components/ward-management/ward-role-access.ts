@@ -126,7 +126,8 @@ export type WardScreenId =
   | "seclusion"
   | "leave"
   | "settings"
-  | "about";
+  | "about"
+  | "privacy";
 
 export const WARD_SCREEN_IDS: readonly WardScreenId[] = [
   "home",
@@ -168,6 +169,8 @@ export const WARD_SCREEN_IDS: readonly WardScreenId[] = [
   "settings",
   // F-77 (Audit 15, A15-25): About this demo, a plain facts page every desk can open.
   "about",
+  // D-260 (16 Nov 2026): Privacy and data, the requirements tracker. The desks that open Governance.
+  "privacy",
 ];
 
 /**
@@ -311,6 +314,7 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
   },
   admin: {
     governance: "own",
+    privacy: "own",
     settings: "own",
     about: "own",
   },
@@ -338,7 +342,7 @@ function homeScreenFor(role: WardAccessRole): WardScreenId {
   }
 }
 
-const BASE = "/ward-flow";
+const BASE = "/bedchart";
 
 /** The address of a role's home, with its own place filled in where the home is a place page. */
 export function homeHrefFor(access: WardAccess, slugForTeam: (teamName: string) => string): string {
@@ -439,6 +443,7 @@ export function screenForPath(pathname: string): ScreenAddress | undefined {
     case "leave":
     case "settings":
     case "about":
+    case "privacy":
       return second === undefined ? { screen: first } : undefined;
     case "ward":
       return second === undefined ? undefined : { screen: "ward", unitId: second };

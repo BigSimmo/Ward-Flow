@@ -16,7 +16,7 @@ vi.mock("@/components/ward-management/ward-flow-raise", async (original) => {
   };
 });
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/settings",
+  usePathname: () => "/bedchart/settings",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -93,7 +93,7 @@ describe("settings audited journey recovery", () => {
   beforeEach(() => {
     interception.raise = null;
     clearReferralDraftSession();
-    window.history.replaceState(null, "", "/ward-flow/settings");
+    window.history.replaceState(null, "", "/bedchart/settings");
   });
   afterEach(() => {
     cleanup();
@@ -288,12 +288,12 @@ describe("settings audited journey recovery", () => {
     renderSettings();
     // Demo tools (31 Oct 2026): the design reference line shows only where the link works.
     expect(within(demoTools()).getByText("About")).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Ward Flow Digest" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "BedChart Digest" })).not.toBeInTheDocument();
     expect(screen.queryByText("Product design reference")).not.toBeInTheDocument();
     cleanup();
     vi.unstubAllEnvs();
     renderSettings();
-    expect(within(demoTools()).getByRole("link", { name: "Ward Flow Digest" })).toBeInTheDocument();
+    expect(within(demoTools()).getByRole("link", { name: "BedChart Digest" })).toBeInTheDocument();
   });
 
   it("explains coordinator-only rules while retaining personal settings for a ward desk", () => {

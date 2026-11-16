@@ -191,7 +191,7 @@ export function StatisticsNav({
     const unitKinds: StatisticsNavSection[] = ["service", "ward", "ed", "community"];
     const onUnitPage = Boolean(activeSlug) && unitKinds.includes(activeSection);
     return (
-      <nav className={styles.chipNav} aria-label="Ward Flow statistics sections" data-testid="ward-statistics-nav">
+      <nav className={styles.chipNav} aria-label="BedChart statistics sections" data-testid="ward-statistics-nav">
         {items.map((item) => {
           const current = item.id === activeSection;
           return (
@@ -217,7 +217,7 @@ export function StatisticsNav({
   return (
     // The landmark wraps both forms of the section list, so it is there at every width: the track
     // on a desktop and the section menu on a phone.
-    <nav className={styles.navBar} aria-label="Ward Flow statistics sections" data-testid="ward-statistics-nav">
+    <nav className={styles.navBar} aria-label="BedChart statistics sections" data-testid="ward-statistics-nav">
       {/* The phone's section picker: the kit menu, not the browser's own select (owner polish, 3 Nov 2026). */}
       <Menu
         label="Statistics section"
@@ -275,7 +275,7 @@ function StatisticsFolderTabs({
   const rest = items.filter((item) => !shown.includes(item));
   return (
     <FolderTabs
-      label="Ward Flow statistics sections"
+      label="BedChart statistics sections"
       value={activeSection}
       testId={testId}
       more={

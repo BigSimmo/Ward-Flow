@@ -10,24 +10,24 @@ afterEach(() => {
 
 describe("front door tab title", () => {
   it("replaces a leftover page title with the sign-in title", () => {
-    document.title = "Referrals — Ward Flow";
+    document.title = "Referrals — BedChart";
     render(<FrontDoor form={undefined} demoUrl={null} />);
-    expect(document.title).toBe("Sign in — Ward Flow");
+    expect(document.title).toBe("Sign in — BedChart");
   });
 
   it("puts the page's title back when the sign-in screen goes, as after signing back in at the same address", () => {
-    document.title = "Patients — Ward Flow";
+    document.title = "Patients — BedChart";
     const view = render(<FrontDoor form={undefined} demoUrl={null} />);
-    expect(document.title).toBe("Sign in — Ward Flow");
+    expect(document.title).toBe("Sign in — BedChart");
     view.unmount();
-    expect(document.title).toBe("Patients — Ward Flow");
+    expect(document.title).toBe("Patients — BedChart");
   });
 
   it("leaves a title the next page has already set", () => {
-    document.title = "Patients — Ward Flow";
+    document.title = "Patients — BedChart";
     const view = render(<FrontDoor form={undefined} demoUrl={null} />);
-    document.title = "Referrals — Ward Flow";
+    document.title = "Referrals — BedChart";
     view.unmount();
-    expect(document.title).toBe("Referrals — Ward Flow");
+    expect(document.title).toBe("Referrals — BedChart");
   });
 });

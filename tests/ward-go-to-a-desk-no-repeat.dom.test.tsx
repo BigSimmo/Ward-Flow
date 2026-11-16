@@ -5,7 +5,7 @@ import "@testing-library/jest-dom/vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-const route = { pathname: "/ward-flow" };
+const route = { pathname: "/bedchart" };
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useRouter: () => ({ push: vi.fn() }),
@@ -29,14 +29,14 @@ function renderSheet(pathname: string) {
 
 describe("Go to a desk names the current desk once", () => {
   it("drops the You are here row on the coordinator desk; the coordinator tile stays as the current page", () => {
-    renderSheet("/ward-flow");
+    renderSheet("/bedchart");
     expect(screen.queryByRole("region", { name: "Your desk" })).toBeNull();
     const tile = screen.getByTestId("workstation-open-coordinator");
     expect(tile).toHaveAttribute("aria-current", "page");
   });
 
   it("keeps the desk row on a ward desk, viewed as the coordinator when opened by its link", () => {
-    renderSheet("/ward-flow/ward/rph-adult-secure");
+    renderSheet("/bedchart/ward/rph-adult-secure");
     // Overall review (20 Oct 2026): nobody chose this desk, so it is not "You are here, Nurse in charge".
     const row = screen.getByRole("region", { name: "Your desk" });
     expect(row).toHaveTextContent("You are viewing this desk as Bed coordinator");
@@ -45,14 +45,14 @@ describe("Go to a desk names the current desk once", () => {
 
   it("says You are here once the ward desk is the one chosen", () => {
     act(() => dispatchPersonaSyncForRole("ward", "rph-adult-secure"));
-    renderSheet("/ward-flow/ward/rph-adult-secure");
+    renderSheet("/bedchart/ward/rph-adult-secure");
     expect(screen.getByRole("region", { name: "Your desk" })).toHaveTextContent("You are here, Nurse in charge");
     act(() => dispatchPersonaSyncForRole("coordinator"));
   });
 
   it("does not call another ward of the same role 'here' (PR #489 review)", () => {
     act(() => dispatchPersonaSyncForRole("ward", "rph-adult-secure"));
-    renderSheet("/ward-flow/ward/bty-adult-secure");
+    renderSheet("/bedchart/ward/bty-adult-secure");
     const row = screen.getByRole("region", { name: "Your desk" });
     expect(row).toHaveTextContent("You are viewing this desk as Nurse in charge");
     expect(row).not.toHaveTextContent("You are here");
@@ -61,7 +61,7 @@ describe("Go to a desk names the current desk once", () => {
 
   it("does not call a ward 'here' after a switch that chose only the ward role", () => {
     act(() => dispatchPersonaSyncForRole("ward"));
-    renderSheet("/ward-flow/ward/rph-adult-secure");
+    renderSheet("/bedchart/ward/rph-adult-secure");
     expect(screen.getByRole("region", { name: "Your desk" })).toHaveTextContent(
       "You are viewing this desk as Nurse in charge",
     );
@@ -78,7 +78,7 @@ describe("a service coordinator desk resets the person (PR #489 review)", () => 
     act(() => setWardFeatureFlagOnDevice("role-access", true));
     act(() => dispatchPersonaSyncForRole("ed", "rph-ed"));
     try {
-      route.pathname = "/ward-flow";
+      route.pathname = "/bedchart";
       render(
         <WardFlowProvider initialNow={NOW_ANCHOR}>
           <PersonaProbe />

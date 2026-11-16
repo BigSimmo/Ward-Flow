@@ -80,70 +80,70 @@ export const CORE_SEARCH_VIEWS: readonly CoreSearchView[] = [
   {
     key: "handover",
     title: "Handover",
-    href: "/ward-flow/handover",
+    href: "/bedchart/handover",
     keywords: ["handover", "shift", "shift handover", "nursing", "notes"],
     description: "Handover notes",
   },
   {
     key: "capacity",
     title: "Capacity",
-    href: "/ward-flow/capacity",
+    href: "/bedchart/capacity",
     keywords: ["capacity", "bed map", "beds", "occupancy", "capacity bed map"],
     description: "Beds and occupancy",
   },
   {
     key: "delays",
     title: "Waiting",
-    href: "/ward-flow/waiting",
+    href: "/bedchart/waiting",
     keywords: ["waiting", "waiting list", "delays", "transfer delays", "past due", "wait"],
     description: "Waiting list and transfer delays",
   },
   {
     key: "movements",
     title: "Movements",
-    href: "/ward-flow/movements",
+    href: "/bedchart/movements",
     keywords: ["movements", "horizon", "intake", "transfers"],
     description: "Open movements",
   },
   {
     key: "escalation",
     title: "Waiting",
-    href: "/ward-flow/escalation",
+    href: "/bedchart/escalation",
     keywords: ["escalation", "desk", "escalation desk", "priority", "alerts"],
     description: "Same as Waiting",
   },
   {
     key: "statistics",
     title: "Statistics",
-    href: "/ward-flow/statistics",
+    href: "/bedchart/statistics",
     keywords: ["statistics", "stats", "reports", "metrics", "system statistics"],
     description: "Figures for this demo",
   },
   {
     key: "on-call",
     title: "On-call",
-    href: "/ward-flow/on-call",
+    href: "/bedchart/on-call",
     keywords: ["on-call", "on call", "oncall", "roster", "specialist", "doctors", "registrar", "consultant"],
     description: "Contacts — no roster in this prototype",
   },
   {
     key: "hub",
     title: "Places",
-    href: "/ward-flow/hub",
+    href: "/bedchart/hub",
     keywords: ["hub", "facilities", "facilities hub", "site overview"],
     description: "Wards, ED and teams",
   },
   {
     key: "settings",
     title: "Settings",
-    href: "/ward-flow/settings",
+    href: "/bedchart/settings",
     keywords: ["settings", "configuration", "preferences", "system settings"],
     description: "This browser",
   },
   {
     key: "legal-forms",
     title: "Forms",
-    href: "/ward-flow/legal-forms",
+    href: "/bedchart/legal-forms",
     keywords: ["legal-forms", "legal forms", "forms", "mha", "mental health act", "mental health act forms"],
     description: "Recorded forms (demo)",
   },
@@ -151,14 +151,14 @@ export const CORE_SEARCH_VIEWS: readonly CoreSearchView[] = [
     // Feature 23: the Leave page, also reached from the Tools sheet's Leave due ("See all leave").
     key: "leave",
     title: "Leave",
-    href: "/ward-flow/leave",
+    href: "/bedchart/leave",
     keywords: ["leave", "on leave", "due back", "overdue", "absent", "absent without leave", "awol"],
     description: "Everyone on leave and due back",
   },
   {
     key: "referrals",
     title: "Referrals",
-    href: "/ward-flow/referrals",
+    href: "/bedchart/referrals",
     keywords: ["referrals", "intake", "board", "queue"],
     // The rail's count noun (ward-nav-counts.ts), so a page is described one way (UX audit).
     description: "Awaiting a decision",
@@ -167,7 +167,7 @@ export const CORE_SEARCH_VIEWS: readonly CoreSearchView[] = [
     key: "community",
     // PL1 (3 Nov 2026): the community team list is Places' Catchments tab.
     title: "Catchments",
-    href: "/ward-flow/hub/catchments",
+    href: "/bedchart/hub/catchments",
     keywords: ["community", "teams", "directory", "clinics", "catchment", "suburb"],
     description: "Which community team covers a suburb",
   },
@@ -314,7 +314,7 @@ function searchEmergencyDepartments(query: string, eds?: EmergencyDepartment[], 
   );
   return withNearSpellings(nearly, candidateEds, exact, query, edFields, ["ed", "emergency"]).map((ed) => ({
     ed,
-    href: `/ward-flow/ed/${ed.id}`,
+    href: `/bedchart/ed/${ed.id}`,
   }));
 }
 
@@ -379,7 +379,7 @@ function searchLegalForms(
     .map((form) => ({
       form,
       title: legalFormName(form),
-      href: "/ward-flow/legal-forms",
+      href: "/bedchart/legal-forms",
     }));
 }
 

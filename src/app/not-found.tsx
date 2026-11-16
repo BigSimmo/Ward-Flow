@@ -4,7 +4,7 @@ import { ContextualBackLink } from "@/components/contextual-back-link";
 
 // Design audit DA-28: the tab named only "Ward Flow" on a missing page.
 export const metadata: Metadata = {
-  title: "Page not found — Ward Flow",
+  title: "Page not found — BedChart",
 };
 
 export default function NotFound() {
@@ -22,18 +22,18 @@ export default function NotFound() {
         <h1 className="mt-4 text-lg font-semibold tracking-tight text-[color:var(--text-heading)]">Page not found</h1>
 
         <p className="mt-2 text-sm text-[color:var(--text-muted)] leading-relaxed">
-          Check the address, or go back to Ward Flow.
+          Check the address, or go back to BedChart.
         </p>
 
         <div className="mt-6 flex flex-col gap-2">
           <ContextualBackLink
-            fallbackHref="/ward-flow"
+            fallbackHref="/bedchart"
             // Q197 (Josh, 1 Nov 2026): the accent button of the in-app not-found card, not the black one.
             // Drawn as the kit filled button (pri gradient, on-pri ink): white on the dark-mode accent failed 4.5:1.
             className="flex min-h-10 items-center justify-center gap-2 rounded-[var(--wf-r-ctl)] bg-[linear-gradient(180deg,var(--wf-pri-1),var(--wf-pri-2))] px-4 py-2 text-sm font-semibold text-[color:var(--wf-on-pri)] no-underline"
           >
             <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-            Back to Ward Flow
+            Back to BedChart
           </ContextualBackLink>
         </div>
       </div>

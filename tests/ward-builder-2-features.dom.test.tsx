@@ -12,7 +12,7 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/people/WF-009",
+  usePathname: () => "/bedchart/people/WF-009",
   useRouter: () => ({
     push: vi.fn(),
     replace: vi.fn(),

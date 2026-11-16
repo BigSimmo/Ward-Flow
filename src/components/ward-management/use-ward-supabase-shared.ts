@@ -134,8 +134,8 @@ const RESTORE_RETRY_MS = [2_000, 5_000, 10_000];
 const restoreBlocked = (error: unknown) => !(error instanceof WardAuthError) || error.kind === "unavailable";
 const restoreRetryNotice = (error: unknown) =>
   error instanceof WardAuthError && error.message === WARD_AUTH_BUSY_MESSAGE
-    ? "Sign-in is busy right now. Ward Flow will try again in a few seconds."
-    : "The sign-in service is slow to answer. Ward Flow will try again in a few seconds.";
+    ? "Sign-in is busy right now. BedChart will try again in a few seconds."
+    : "The sign-in service is slow to answer. BedChart will try again in a few seconds.";
 const emptyView: SharedView = {
   snapshot: null,
   executiveSnapshot: null,
@@ -530,7 +530,7 @@ export function useWardSupabaseShared(
           signUp: (email, password) =>
             run(async () => {
               disconnect();
-              await auth!.signUp(email, password, window.location.origin + "/ward-flow");
+              await auth!.signUp(email, password, window.location.origin + "/bedchart");
               if (!closed) {
                 setForm((old) => ({
                   ...old,
@@ -552,7 +552,7 @@ export function useWardSupabaseShared(
             }),
           recover: (email) =>
             run(async () => {
-              await auth!.recover(email, window.location.origin + "/ward-flow");
+              await auth!.recover(email, window.location.origin + "/bedchart");
               if (!closed) {
                 setForm((old) => ({
                   ...old,
@@ -670,7 +670,7 @@ export function useWardSupabaseShared(
           channel = new BroadcastChannel(SESSION_CHANNEL);
           channel.onmessage = ({ data }) => {
             if (data === "signed-out" && auth?.userId)
-              void actions.current?.signOut("Signed out in another Ward Flow tab. Sign in again to carry on.", false);
+              void actions.current?.signOut("Signed out in another BedChart tab. Sign in again to carry on.", false);
             else if (
               data?.ask &&
               data.userId === auth?.userId &&

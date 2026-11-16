@@ -90,7 +90,7 @@ function renderAnswer(unitId: string, movementId: string) {
   window.history.replaceState(
     null,
     "",
-    `/ward-flow/ward/${unitId}/answer?movement=${encodeURIComponent(encodeRecordAddress(movementId))}`,
+    `/bedchart/ward/${unitId}/answer?movement=${encodeURIComponent(encodeRecordAddress(movementId))}`,
   );
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>

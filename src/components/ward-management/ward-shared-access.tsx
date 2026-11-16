@@ -666,7 +666,7 @@ function WardSharedWorkspaceContent({
   if (connecting)
     return (
       <FrontDoorStatus
-        title="Opening Ward Flow"
+        title="Opening BedChart"
         testId="ward-shared-connecting"
         status={
           connection.restoreNotice ??
@@ -699,7 +699,7 @@ function WardSharedWorkspaceContent({
   if (connection.signedIn && !hasSnapshot && connection.status !== "not-authorised")
     return (
       <FrontDoorStatus
-        title="Ward Flow did not open"
+        title="BedChart did not open"
         busy={connection.status === "loading"}
         status={connection.error ?? "The shared workspace did not answer. Try again in a moment."}
       >

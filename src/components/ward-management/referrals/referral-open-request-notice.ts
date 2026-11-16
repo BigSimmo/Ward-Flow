@@ -27,7 +27,7 @@ export function openRequestNotice(input: {
   const { personHref, referralNotice, openJourney } = input;
   if (!personHref) return undefined;
   if (referralNotice.sentence) {
-    return { sentence: referralNotice.sentence, href: referralNotice.href ?? "/ward-flow/referrals" };
+    return { sentence: referralNotice.sentence, href: referralNotice.href ?? "/bedchart/referrals" };
   }
   const sameDepartmentRequest =
     openJourney !== undefined &&

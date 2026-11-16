@@ -6,7 +6,7 @@ import { act, cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const nav = vi.hoisted(() => ({ pathname: "/ward-flow", replace: vi.fn() }));
+const nav = vi.hoisted(() => ({ pathname: "/bedchart", replace: vi.fn() }));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => nav.pathname,
@@ -50,7 +50,7 @@ function asDesk(access: WardAccess) {
 
 afterEach(() => {
   cleanup();
-  nav.pathname = "/ward-flow";
+  nav.pathname = "/bedchart";
   nav.replace.mockReset();
   act(() => {
     setWardFeatureFlagOnDevice("role-access", null);
@@ -63,11 +63,11 @@ describe("DR-06: Ward Flow's own address sends each desk to its own home", () =>
     [
       "ward",
       { role: "ward", scope: { kind: "ward", unitIds: ["fsh-adult-secure"] } },
-      "/ward-flow/ward/fsh-adult-secure",
+      "/bedchart/ward/fsh-adult-secure",
     ],
-    ["ED", { role: "ed", scope: { kind: "ed", edId: "fsh-ed" } }, "/ward-flow/ed/fsh-ed"],
-    ["officer", { role: "officer", scope: { kind: "jobs" } }, "/ward-flow/transport/officer"],
-    ["executive", { role: "executive", scope: { kind: "statewide" } }, "/ward-flow/statistics"],
+    ["ED", { role: "ed", scope: { kind: "ed", edId: "fsh-ed" } }, "/bedchart/ed/fsh-ed"],
+    ["officer", { role: "officer", scope: { kind: "jobs" } }, "/bedchart/transport/officer"],
+    ["executive", { role: "executive", scope: { kind: "statewide" } }, "/bedchart/statistics"],
   ])("the %s desk goes to its home, not the refusal", (_name, access, home) => {
     asDesk(access);
     renderGate();
@@ -81,12 +81,12 @@ describe("DR-06: Ward Flow's own address sends each desk to its own home", () =>
     [
       "ward",
       { role: "ward", scope: { kind: "ward", unitIds: ["fsh-adult-secure"] } },
-      "/ward-flow/ward/fsh-adult-secure",
+      "/bedchart/ward/fsh-adult-secure",
     ],
-    ["ED", { role: "ed", scope: { kind: "ed", edId: "fsh-ed" } }, "/ward-flow/ed/fsh-ed"],
+    ["ED", { role: "ed", scope: { kind: "ed", edId: "fsh-ed" } }, "/bedchart/ed/fsh-ed"],
   ])("an old /transport link sends the %s desk home from the officer's page (INV-ROUTE-061)", (_name, access, home) => {
     asDesk(access);
-    nav.pathname = "/ward-flow/transport/officer";
+    nav.pathname = "/bedchart/transport/officer";
     renderGate();
     expect(nav.replace).toHaveBeenCalledWith(home);
     expect(screen.queryByText("Not part of your role")).toBeNull();
@@ -95,7 +95,7 @@ describe("DR-06: Ward Flow's own address sends each desk to its own home", () =>
   it("still refuses another closed screen", () => {
     asDesk({ role: "executive", scope: { kind: "statewide" } });
     // Capacity opened to the executive as counts on 27 Oct 2026, so Movements stands in.
-    nav.pathname = "/ward-flow/movements";
+    nav.pathname = "/bedchart/movements";
     renderGate();
     expect(screen.getByText("Not part of your role")).toBeInTheDocument();
     expect(nav.replace).not.toHaveBeenCalled();

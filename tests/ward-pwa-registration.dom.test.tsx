@@ -89,12 +89,12 @@ afterEach(() => {
 });
 
 describe("WardPwaRegistration", () => {
-  it("registers the one Ward Flow worker on load, with the phone alerts scope that covers Home", async () => {
+  it("registers the one BedChart worker on load, with the phone alerts scope that covers Home", async () => {
     const browser = installServiceWorker();
     renderRegistration();
     await waitFor(() => expect(browser.container.register).toHaveBeenCalledTimes(1));
     expect(browser.container.register).toHaveBeenCalledWith(PHONE_PUSH_WORKER_URL, {
-      scope: "/ward-flow",
+      scope: "/bedchart",
       updateViaCache: "none",
     });
     expect(browser.other.unregister).not.toHaveBeenCalled();
@@ -104,7 +104,7 @@ describe("WardPwaRegistration", () => {
     const browser = installServiceWorker({ legacy: true });
     renderRegistration();
     await waitFor(() => expect(browser.container.register).toHaveBeenCalled());
-    expect(LEGACY_PWA_SCOPES).toEqual(["/mockups/ward-flow", "/mockups/ward-flow/"]);
+    expect(LEGACY_PWA_SCOPES).toEqual(["/mockups/ward-flow", "/mockups/ward-flow/", "/ward-flow"]);
     for (const legacyRegistration of browser.legacyRegistrations)
       expect(legacyRegistration.unregister).toHaveBeenCalledTimes(1);
     expect(browser.other.unregister).not.toHaveBeenCalled();
@@ -134,7 +134,7 @@ describe("WardPwaRegistration", () => {
     vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, reload } as Location);
     renderRegistration();
     const button = await screen.findByRole("button", { name: "Reload" });
-    expect(screen.getByText("New version of Ward Flow ready")).toBeInTheDocument();
+    expect(screen.getByText("New version of BedChart ready")).toBeInTheDocument();
     expect(waiting.postMessage).not.toHaveBeenCalled();
     fireEvent.click(button);
     expect(waiting.postMessage).toHaveBeenCalledWith({ type: "SKIP_WAITING" });
@@ -185,24 +185,24 @@ describe("WardPwaRegistration", () => {
     }
   });
 
-  it("opens the Ward Flow page a tapped alert asks for, and nothing outside Ward Flow", async () => {
+  it("opens the BedChart page a tapped alert asks for, and nothing outside BedChart", async () => {
     const browser = installServiceWorker();
     renderRegistration();
     await waitFor(() => expect(browser.container.register).toHaveBeenCalled());
-    act(() => browser.emit("message", { data: { type: "ward-flow-open", url: "/ward-flow/alerts" } }));
-    expect(push).toHaveBeenCalledWith("/ward-flow/alerts");
-    act(() => browser.emit("message", { data: { type: "ward-flow-open", url: "https://evil.example/ward-flow" } }));
+    act(() => browser.emit("message", { data: { type: "ward-flow-open", url: "/bedchart/alerts" } }));
+    expect(push).toHaveBeenCalledWith("/bedchart/alerts");
+    act(() => browser.emit("message", { data: { type: "ward-flow-open", url: "https://evil.example/bedchart" } }));
     act(() => browser.emit("message", { data: { type: "ward-flow-open", url: "/mockups/ward-flow-digest" } }));
-    act(() => browser.emit("message", { data: { type: "other", url: "/ward-flow/alerts" } }));
+    act(() => browser.emit("message", { data: { type: "other", url: "/bedchart/alerts" } }));
     expect(push).toHaveBeenCalledTimes(1);
   });
 });
 
 describe("wardPwaOpenTarget", () => {
   const origin = "https://ward.example";
-  it("accepts only a same-site Ward Flow path", () => {
-    expect(wardPwaOpenTarget({ type: "ward-flow-open", url: "/ward-flow" }, origin)).toBe("/ward-flow");
-    expect(wardPwaOpenTarget({ type: "ward-flow-open", url: "/ward-flow/beds?x=1" }, origin)).toBe("/ward-flow/beds");
+  it("accepts only a same-site BedChart path", () => {
+    expect(wardPwaOpenTarget({ type: "ward-flow-open", url: "/bedchart" }, origin)).toBe("/bedchart");
+    expect(wardPwaOpenTarget({ type: "ward-flow-open", url: "/bedchart/beds?x=1" }, origin)).toBe("/bedchart/beds");
     expect(wardPwaOpenTarget({ type: "ward-flow-open", url: "/settings" }, origin)).toBeNull();
     expect(wardPwaOpenTarget({ type: "ward-flow-open", url: 42 }, origin)).toBeNull();
     expect(wardPwaOpenTarget("ward-flow-open", origin)).toBeNull();
@@ -224,7 +224,7 @@ describe("Settings install hint", () => {
     expect(screen.getByTestId("setting-install-row")).toHaveTextContent("Tap Share, then Add to Home Screen");
   });
 
-  it("is hidden once Ward Flow runs from the Home Screen", () => {
+  it("is hidden once BedChart runs from the Home Screen", () => {
     vi.spyOn(navigator, "userAgent", "get").mockReturnValue(IPHONE);
     Object.defineProperty(navigator, "standalone", { value: true, configurable: true });
     try {

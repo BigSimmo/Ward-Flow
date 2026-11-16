@@ -19,11 +19,11 @@ function deps(overrides: Partial<DeviceAlertsDeps> = {}) {
 }
 
 describe("the one Alerts on this device switch", () => {
-  it("on: browser first, then the phone, and says it works with Ward Flow closed", async () => {
+  it("on: browser first, then the phone, and says it works with BedChart closed", async () => {
     const d = deps();
     await changeDeviceAlerts(true, d);
     expect(d.setPhone).toHaveBeenCalledWith(true);
-    expect(d.toast).toHaveBeenCalledWith("Alerts on, even with Ward Flow closed.");
+    expect(d.toast).toHaveBeenCalledWith("Alerts on, even with BedChart closed.");
   });
 
   it("an off while the phone is still registering takes the phone back off when it lands", async () => {
@@ -81,7 +81,7 @@ describe("the one Alerts on this device switch", () => {
     land("off");
     await pending;
     expect(setPhone).toHaveBeenLastCalledWith(true);
-    expect(off.toast).toHaveBeenCalledWith("Alerts on, even with Ward Flow closed.");
+    expect(off.toast).toHaveBeenCalledWith("Alerts on, even with BedChart closed.");
     expect(off.toast).not.toHaveBeenCalledWith("Alerts off on this device.");
   });
 

@@ -216,9 +216,9 @@ export function MovementsPhoneNav({
         ) : (
           <div className={flow.phList}>{transportFeed(() => setPhoneSheet(null))}</div>
         )}
-        {canOpenHref("/ward-flow/transport/officer") ? (
+        {canOpenHref("/bedchart/transport/officer") ? (
           <Link
-            href="/ward-flow/transport/officer"
+            href="/bedchart/transport/officer"
             className={buttonClass({ variant: "pri", className: flow.phSheetAction })}
           >
             <Ambulance size={16} aria-hidden="true" />

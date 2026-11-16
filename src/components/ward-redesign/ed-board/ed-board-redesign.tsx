@@ -189,12 +189,12 @@ export function EdBoardRedesign({ edId }: EdScreenProps) {
   const canOpen = useCanOpenHref();
   const elsewhereLinks = [
     {
-      href: "/ward-flow/capacity",
+      href: "/bedchart/capacity",
       title: "Statewide capacity",
       sub: "Every unit's beds, on the Capacity page",
     },
     {
-      href: "/ward-flow/governance",
+      href: "/bedchart/governance",
       title: "Last 24 hours of events",
       sub: "This department's recorded events, in the Governance audit",
     },
@@ -250,7 +250,7 @@ export function EdBoardRedesign({ edId }: EdScreenProps) {
           <WardNotFoundBody
             title="Emergency department not found"
             testId="ward-ed-unresolved"
-            list={{ href: "/ward-flow/ed", label: "All emergency departments" }}
+            list={{ href: "/bedchart/ed", label: "All emergency departments" }}
           >
             No emergency department matches this link. It never falls back to a different department.
           </WardNotFoundBody>

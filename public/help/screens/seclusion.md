@@ -21,6 +21,6 @@ An operational view of seclusion rooms, seclusion and restraint in use, and inci
 - Mark the seclusion room available or out of service. Open Seclusion and choose the ward. Under Seclusion room, press Mark available or Mark out of service, then confirm. Everyone sees the status, and when it was last marked, until it is marked again.
 - Record the end of seclusion or restraint. Open Seclusion and restraint. Under In use now, press Record end on the live episode, type the time it ended and press Save end time. The episode then leaves In use now.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

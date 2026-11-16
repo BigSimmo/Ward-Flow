@@ -20,7 +20,7 @@ import { activeWardNetwork, NOW_ANCHOR } from "@/components/ward-management/ward
  * D-80 (role access plan v2): the sending ward and the sending community team change their own
  * journey's urgency and legal status from their own screens, and nobody else's journey offers it.
  */
-let pathname = "/ward-flow";
+let pathname = "/bedchart";
 vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/navigation")>()),
   usePathname: () => pathname,
@@ -106,7 +106,7 @@ function renderDossier() {
 
 describe("the sending ward's own journey (D-80)", () => {
   beforeEach(() => {
-    pathname = `/ward-flow/ward/${unit.id}`;
+    pathname = `/bedchart/ward/${unit.id}`;
   });
 
   it("changes the urgency of the journey leaving its own stay, as the ward", () => {
@@ -198,7 +198,7 @@ function renderSentTab() {
 
 describe("the sending community team's own journey (D-80)", () => {
   beforeEach(() => {
-    pathname = `/ward-flow/community/${team.id}`;
+    pathname = `/bedchart/community/${team.id}`;
   });
 
   it("changes the legal status of the journey its referral started, as the team", () => {
@@ -236,7 +236,7 @@ describe("the sending community team's own journey (D-80)", () => {
   });
 
   it("offers nothing to a ward desk, which did not send the team's referral", () => {
-    pathname = `/ward-flow/ward/${unit.id}`;
+    pathname = `/bedchart/ward/${unit.id}`;
     setState([journey("WF-D80-TEAM", { referralId: teamSent.id })]);
     renderSentTab();
     expect(screen.queryByTestId("sent-journey-changes")).not.toBeInTheDocument();

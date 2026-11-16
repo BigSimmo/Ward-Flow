@@ -119,7 +119,7 @@ export function EdOverview({
     </button>
   );
   // P142 (Josh, 27 Oct 2026, 10:12 PM AWST): Add patient sits beside the referral button.
-  const addPatientHref = "/ward-flow/people/new";
+  const addPatientHref = "/bedchart/people/new";
   const actions = (
     <>
       {raiseButton}
@@ -282,7 +282,7 @@ export function EdOverview({
         <ul className={cx(styles.list, rows.chipRow, redesign.deptRow)}>
           {departments.map((department) => {
             const isCurrent = department.id === departmentId;
-            const href = `/ward-flow/ed/${department.id}`;
+            const href = `/bedchart/ed/${department.id}`;
             const notShown = edDesk && !isCurrent && !canOpen(href);
             const tile = {
               className: cx(styles.tile, isCurrent && styles.current),

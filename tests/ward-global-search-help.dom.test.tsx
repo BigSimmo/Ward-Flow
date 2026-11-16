@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 const router = { push: vi.fn() };
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => router,
 }));
 vi.mock("next/link", () => ({
@@ -92,7 +92,7 @@ describe("Help in the header search (search and forms review, 31 Oct 2026)", () 
   });
 
   it("follows the row's own link when the Help action declines it", () => {
-    const go = { ...answer, href: "/ward-flow/capacity" };
+    const go = { ...answer, href: "/bedchart/capacity" };
     const { input, onNavigate } = renderSearch(
       () => ({ items: [go] }),
       vi.fn(() => false),
@@ -100,7 +100,7 @@ describe("Help in the header search (search and forms review, 31 Oct 2026)", () 
     fireEvent.change(input, { target: { value: "how do I pull a bed" } });
     fireEvent.keyDown(input, { key: "ArrowDown" });
     fireEvent.keyDown(input, { key: "Enter" });
-    expect(onNavigate).toHaveBeenCalledWith("/ward-flow/capacity");
+    expect(onNavigate).toHaveBeenCalledWith("/bedchart/capacity");
   });
 
   it("shows Help's fixed reply to a clinical question", () => {

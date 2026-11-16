@@ -37,13 +37,13 @@ describe("RA-02: transport officer role naming no health service", () => {
       />,
     );
     expect(screen.getByText(NEEDS_SERVICE)).toBeInTheDocument();
-    expect(screen.queryByText("No Ward Flow role yet")).toBeNull();
+    expect(screen.queryByText("No BedChart role yet")).toBeNull();
     expect(screen.getByRole("button", { name: "Ask for access" })).toBeInTheDocument();
   });
 
   it("keeps the no-role wording for any other reason", () => {
     render(<WardAskForAccess canRequest={false} api={null} reason="no-role" onRetry={vi.fn()} onSignOut={vi.fn()} />);
-    expect(screen.getByRole("heading", { name: "No Ward Flow role yet" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "No BedChart role yet" })).toBeInTheDocument();
     expect(screen.queryByText(NEEDS_SERVICE)).toBeNull();
   });
 

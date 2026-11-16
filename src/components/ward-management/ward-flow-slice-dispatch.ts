@@ -79,7 +79,7 @@ export function useSliceGatedDispatch(
               commandId: `local-${++commands.current.sequence}`,
               status: "failed",
               message:
-                "Ward Flow could not finish loading, so this was not recorded. Check the connection and try again.",
+                "BedChart could not finish loading, so this was not recorded. Check the connection and try again.",
             }),
           );
         queueRef.current = queued;

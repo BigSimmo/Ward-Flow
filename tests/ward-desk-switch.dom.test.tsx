@@ -7,7 +7,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const nav = vi.hoisted(() => ({ pathname: "/ward-flow", push: vi.fn(), replace: vi.fn() }));
+const nav = vi.hoisted(() => ({ pathname: "/bedchart", push: vi.fn(), replace: vi.fn() }));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => nav.pathname,
@@ -59,7 +59,7 @@ function switchToExecutive() {
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
-  nav.pathname = "/ward-flow";
+  nav.pathname = "/bedchart";
   nav.push.mockReset();
   nav.replace.mockReset();
   act(() => {
@@ -71,7 +71,7 @@ afterEach(() => {
 describe("a desk switch on its way", () => {
   it("says the desk is opening on the page it left, not that the page is closed", () => {
     switchToExecutive();
-    expect(nav.push).toHaveBeenCalledWith("/ward-flow/statistics");
+    expect(nav.push).toHaveBeenCalledWith("/bedchart/statistics");
     expect(screen.getByText("Opening the Executive desk")).toHaveAttribute("role", "status");
     expect(screen.queryByText("Not part of your role")).toBeNull();
     expect(screen.queryByText("Coordinator home")).toBeNull();
@@ -79,7 +79,7 @@ describe("a desk switch on its way", () => {
 
   it("opens the new home once it arrives", () => {
     const view = switchToExecutive();
-    nav.pathname = "/ward-flow/statistics";
+    nav.pathname = "/bedchart/statistics";
     view.rerender(app(false));
     expect(screen.getByText("Coordinator home")).toBeInTheDocument();
     expect(screen.queryByText(/^Opening the/)).toBeNull();
@@ -87,12 +87,12 @@ describe("a desk switch on its way", () => {
 
   it("ends the switch once the new home arrives, so going Back to Ward Flow's own address sends the desk home", () => {
     const view = switchToExecutive();
-    nav.pathname = "/ward-flow/statistics";
+    nav.pathname = "/bedchart/statistics";
     view.rerender(app(false));
-    nav.pathname = "/ward-flow";
+    nav.pathname = "/bedchart";
     view.rerender(app(false));
     // DR-06: Home is closed to the Executive desk, so its own home replaces the address.
-    expect(nav.replace).toHaveBeenCalledWith("/ward-flow/statistics");
+    expect(nav.replace).toHaveBeenCalledWith("/bedchart/statistics");
     expect(screen.queryByText("Not part of your role")).toBeNull();
     expect(screen.queryByText(/^Opening the/)).toBeNull();
   });
@@ -100,7 +100,7 @@ describe("a desk switch on its way", () => {
   it("leaves another closed page closed while a switch is on its way", () => {
     switchToExecutive();
     cleanup();
-    nav.pathname = "/ward-flow/movements";
+    nav.pathname = "/bedchart/movements";
     render(app(false));
     expect(screen.getByText("Not part of your role")).toBeInTheDocument();
   });
@@ -108,7 +108,7 @@ describe("a desk switch on its way", () => {
   it("shows the closed screen if the new home has not arrived after the wait", () => {
     vi.useFakeTimers();
     // A closed page other than Home: Home itself sends the desk on to its own home (DR-06).
-    nav.pathname = "/ward-flow/movements";
+    nav.pathname = "/bedchart/movements";
     switchToExecutive();
     expect(screen.getByText("Opening the Executive desk")).toBeInTheDocument();
     act(() => vi.advanceTimersByTime(DESK_SWITCH_WAIT_MS));

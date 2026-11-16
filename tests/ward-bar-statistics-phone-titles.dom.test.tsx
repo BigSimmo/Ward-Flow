@@ -5,7 +5,7 @@ import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const route = vi.hoisted(() => ({ pathname: "/ward-flow/statistics/compare" }));
+const route = vi.hoisted(() => ({ pathname: "/bedchart/statistics/compare" }));
 
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
@@ -48,13 +48,13 @@ afterEach(() => {
 
 describe("statistics titles in the phone bar", () => {
   it("uses the tab words on a phone", () => {
-    expect(titleOn("/ward-flow/statistics/overview", true)).toBe("Overview");
-    expect(titleOn("/ward-flow/statistics/compare", true)).toBe("Compare");
-    expect(titleOn("/ward-flow/statistics/eds", true)).toBe("EDs");
+    expect(titleOn("/bedchart/statistics/overview", true)).toBe("Overview");
+    expect(titleOn("/bedchart/statistics/compare", true)).toBe("Compare");
+    expect(titleOn("/bedchart/statistics/eds", true)).toBe("EDs");
   });
 
   it("leaves the desktop titles as they were", () => {
-    expect(titleOn("/ward-flow/statistics/overview", false)).toBe("Statistics overview");
-    expect(titleOn("/ward-flow/statistics/compare", false)).toBe("Statistics compare");
+    expect(titleOn("/bedchart/statistics/overview", false)).toBe("Statistics overview");
+    expect(titleOn("/bedchart/statistics/compare", false)).toBe("Statistics compare");
   });
 });

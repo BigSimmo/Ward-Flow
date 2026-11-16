@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { ARTIFACT, fetchMainMeasured, validMeasurement } from "../scripts/ward-ci-public/main-measured.mjs";
 
 const sha = "a".repeat(40);
-const good = JSON.stringify({ measured: { "/ward-flow": 553 } });
+const good = JSON.stringify({ measured: { "/bedchart": 553 } });
 
 function fakeGitHub(runs: object[], artifacts: Record<number, object[]>) {
   const calls: string[] = [];

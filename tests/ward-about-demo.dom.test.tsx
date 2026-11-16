@@ -9,7 +9,7 @@ import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/about",
+  usePathname: () => "/bedchart/about",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -70,7 +70,7 @@ describe("About this demo (F-77)", () => {
         <AboutDemoScreen />
       </SharedSessionContext.Provider>,
     );
-    expect(screen.getByRole("heading", { level: 1, name: "About Ward Flow" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "About BedChart" })).toBeInTheDocument();
     const page = screen.getByTestId("ward-about-demo");
     expect(page).not.toHaveTextContent("Nothing you do is saved on a server.");
     expect(page).not.toHaveTextContent("Your demo code");
@@ -98,12 +98,12 @@ describe("About this demo (F-77)", () => {
   });
 
   it("is open to every desk, unlisted in the menus, and linked from Settings", () => {
-    expect(screenForPath("/ward-flow/about")).toEqual({ screen: "about" });
-    expect(WARD_NAV_INTENTIONALLY_UNLISTED.get("/ward-flow/about")).toMatch(/Settings/);
+    expect(screenForPath("/bedchart/about")).toEqual({ screen: "about" });
+    expect(WARD_NAV_INTENTIONALLY_UNLISTED.get("/bedchart/about")).toMatch(/Settings/);
     const settings = readFileSync(
       join(process.cwd(), "src/components/ward-management/settings/settings-help-and-demo.tsx"),
       "utf8",
     );
-    expect(settings).toContain('href="/ward-flow/about"');
+    expect(settings).toContain('href="/bedchart/about"');
   });
 });

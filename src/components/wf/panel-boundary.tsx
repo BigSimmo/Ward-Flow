@@ -35,7 +35,7 @@ export class PanelBoundary extends Component<PanelBoundaryProps, PanelBoundarySt
 
   componentDidCatch(error: unknown) {
     const type = error instanceof Error ? error.name : typeof error;
-    console.error(`Ward Flow panel failed: ${this.props.label ?? "section"} (${type})`);
+    console.error(`BedChart panel failed: ${this.props.label ?? "section"} (${type})`);
   }
 
   private retry = () => this.setState({ failed: false });

@@ -17,7 +17,7 @@ describe("overall review tidy (20 Oct 2026)", () => {
    * over the page, and the measured jump is gone.
    */
   it("floats the loading note over the page instead of taking a line in it", () => {
-    const note = block("src/app/ward-flow/ward-flow-layout.module.css", ".loadingNote");
+    const note = block("src/app/bedchart/ward-flow-layout.module.css", ".loadingNote");
     expect(note).toContain("position: fixed");
     expect(note).toContain("pointer-events: none");
     expect(note).not.toContain("flex-shrink");

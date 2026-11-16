@@ -102,7 +102,7 @@ function teamPageHref(name: string): string | undefined {
   const candidates = [name, name.replace(/\s+community(\s+mental\s+health)?\s+team$/i, "")];
   for (const candidate of candidates) {
     const team = communityTeamById(communityTeamSlug(candidate));
-    if (team) return `/ward-flow/community/${team.id}`;
+    if (team) return `/bedchart/community/${team.id}`;
   }
   return undefined;
 }

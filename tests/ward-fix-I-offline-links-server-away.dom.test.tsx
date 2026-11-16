@@ -59,10 +59,10 @@ describe("server away, network up (A4-05)", () => {
     render(
       <ToastProvider>
         <WardOfflineLinks />
-        <a href="/ward-flow/capacity">Capacity</a>
+        <a href="/bedchart/capacity">Capacity</a>
       </ToastProvider>,
     );
-    const event = navigateEvent("/ward-flow/capacity");
+    const event = navigateEvent("/bedchart/capacity");
     act(() => {
       navigation.dispatchEvent(event);
     });
@@ -85,14 +85,14 @@ describe("server away, network up (A4-05)", () => {
     const stop = watchServerAwayNavigations(() => {
       throw new Error("not away");
     });
-    const event = navigateEvent("/ward-flow/capacity");
+    const event = navigateEvent("/bedchart/capacity");
     navigation.dispatchEvent(event);
     expect(event.defaultPrevented).toBe(true);
     await flush();
-    expect(assign).toHaveBeenCalledWith(new URL("/ward-flow/capacity", window.location.href).href);
+    expect(assign).toHaveBeenCalledWith(new URL("/bedchart/capacity", window.location.href).href);
 
     // The repeated load it starts is not held a second time.
-    const again = navigateEvent("/ward-flow/capacity");
+    const again = navigateEvent("/bedchart/capacity");
     navigation.dispatchEvent(again);
     expect(again.defaultPrevented).toBe(false);
     stop();
@@ -102,7 +102,7 @@ describe("server away, network up (A4-05)", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("", { status: 502 }));
     const away = vi.fn();
     const stop = watchServerAwayNavigations(away);
-    navigation.dispatchEvent(navigateEvent("/ward-flow/ed"));
+    navigation.dispatchEvent(navigateEvent("/bedchart/ed"));
     await flush();
     expect(away).toHaveBeenCalledOnce();
     expect(assign).not.toHaveBeenCalled();
@@ -112,13 +112,13 @@ describe("server away, network up (A4-05)", () => {
   it("leaves router moves, reloads, other sites and downloads alone", () => {
     const fetch = vi.spyOn(globalThis, "fetch");
     const stop = watchServerAwayNavigations(() => {});
-    const sameDocument = navigateEvent("/ward-flow/ed");
+    const sameDocument = navigateEvent("/bedchart/ed");
     Object.assign(sameDocument, {
-      destination: { url: new URL("/ward-flow/ed", window.location.href).href, sameDocument: true },
+      destination: { url: new URL("/bedchart/ed", window.location.href).href, sameDocument: true },
     });
-    const reload = navigateEvent("/ward-flow/ed", "reload");
+    const reload = navigateEvent("/bedchart/ed", "reload");
     const elsewhere = navigateEvent("https://example.org/page");
-    const download = navigateEvent("/ward-flow/export.csv");
+    const download = navigateEvent("/bedchart/export.csv");
     Object.assign(download, { downloadRequest: "export.csv" });
     for (const event of [sameDocument, reload, elsewhere, download]) {
       navigation.dispatchEvent(event);

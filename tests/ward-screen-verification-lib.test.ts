@@ -119,25 +119,25 @@ describe("implementationFiles", () => {
   it("does not imply whole-screen freshness when shared shell or global styles change", () => {
     const files = implementationFiles(repositoryRoot, "capacity", "/capacity");
     const relativePaths = files.map((file) => path.relative(repositoryRoot, file).split(path.sep).join("/"));
-    expect(relativePaths).toContain("src/app/ward-flow/capacity/page.tsx");
+    expect(relativePaths).toContain("src/app/bedchart/capacity/page.tsx");
     expect(relativePaths).not.toContain("src/app/globals.css");
     expect(relativePaths.some((file) => file.startsWith("src/components/ward-management/shell/"))).toBe(false);
   });
   it("resolves the top-level sign-in route under src/app<route>/page.tsx", () => {
     const dir = tempDir("wf-lib-files-");
     try {
-      const pageDir = path.join(dir, "src", "app", "ward-flow-sign-in");
+      const pageDir = path.join(dir, "src", "app", "bedchart-sign-in");
       mkdirSync(pageDir, { recursive: true });
       const pageFile = path.join(pageDir, "page.tsx");
       writeFileSync(pageFile, "export default function Page() {}\n");
 
-      expect(implementationFiles(dir, null, "/ward-flow-sign-in")).toEqual([pageFile]);
+      expect(implementationFiles(dir, null, "/bedchart-sign-in")).toEqual([pageFile]);
     } finally {
       cleanup(dir);
     }
   });
 
-  it("resolves a plain route under src/app/ward-flow<route>/page.tsx and includes every file under the folder", () => {
+  it("resolves a plain route under src/app/bedchart<route>/page.tsx and includes every file under the folder", () => {
     const dir = tempDir("wf-lib-files-");
     try {
       const folderDir = path.join(dir, "src", "components", "ward-management", "delays");
@@ -145,7 +145,7 @@ describe("implementationFiles", () => {
       const componentFile = path.join(folderDir, "delays-screen.tsx");
       writeFileSync(componentFile, "export {};\n");
 
-      const pageDir = path.join(dir, "src", "app", "ward-flow", "delays");
+      const pageDir = path.join(dir, "src", "app", "bedchart", "delays");
       mkdirSync(pageDir, { recursive: true });
       const pageFile = path.join(pageDir, "page.tsx");
       writeFileSync(pageFile, "export default function Page() {}\n");

@@ -35,14 +35,14 @@
  */
 
 /** The statistics home page — the hub that indexes the sections below. */
-export const STATISTICS_HOME_HREF = "/ward-flow/statistics";
+export const STATISTICS_HOME_HREF = "/bedchart/statistics";
 
 /**
  * ⚠️ **THE FULL PATH IS WRITTEN OUT, NEVER COMPOSED — and that is a reachability requirement rather
  * than a style preference.** The repository's route scan reads SOURCE TEXT: it can see a literal
  * route path and cannot see one assembled at runtime, however correct the resulting string is. Both
  * of these were composed from `STATISTICS_HOME_HREF` until 2026-09-01, and on that day the strings
- * "/ward-flow/statistics/overview" and "/ward-flow/statistics/compare" appeared
+ * "/bedchart/statistics/overview" and "/bedchart/statistics/compare" appeared
  * NOWHERE in `src` — only in this module's own test. Two real, linked, working routes were invisible
  * to the scan, and nothing anywhere went red about it.
  *
@@ -51,19 +51,19 @@ export const STATISTICS_HOME_HREF = "/ward-flow/statistics";
  * them because it is a route in its own right and is linked as one.
  *
  * Ward Lead is building an invariant test that walks every route directory under
- * `src/app/ward-flow` and asserts its literal prefix appears in `src` source text. These
+ * `src/app/bedchart` and asserts its literal prefix appears in `src` source text. These
  * three sites were written out by hand ahead of it; if that test later flags something here, the
  * two are the same finding.
  */
-export const STATISTICS_OVERVIEW_HREF = "/ward-flow/statistics/overview";
+export const STATISTICS_OVERVIEW_HREF = "/bedchart/statistics/overview";
 
-export const STATISTICS_COMPARE_HREF = "/ward-flow/statistics/compare";
+export const STATISTICS_COMPARE_HREF = "/bedchart/statistics/compare";
 
 /** The four index pages (Statistics A, 9 Oct 2026): every service, ward, ED and team on one page. */
-export const STATISTICS_SERVICES_HREF = "/ward-flow/statistics/services";
-export const STATISTICS_WARDS_HREF = "/ward-flow/statistics/wards";
-export const STATISTICS_EDS_HREF = "/ward-flow/statistics/eds";
-export const STATISTICS_TEAMS_HREF = "/ward-flow/statistics/teams";
+export const STATISTICS_SERVICES_HREF = "/bedchart/statistics/services";
+export const STATISTICS_WARDS_HREF = "/bedchart/statistics/wards";
+export const STATISTICS_EDS_HREF = "/bedchart/statistics/eds";
+export const STATISTICS_TEAMS_HREF = "/bedchart/statistics/teams";
 
 /**
  * The id of the one unit finder on the statistics home page (D-91). The third section's `href` points
