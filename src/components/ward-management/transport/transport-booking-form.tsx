@@ -74,7 +74,7 @@ import styles from "./transport-booking-form.module.css";
 const LEGAL_STATUS_FROM_LEGAL_NOW = false;
 
 /** The top line once every answer is given but the person is not medically cleared (D-211). */
-export const TRANSFER_PAUSED_LINE = "Transfer paused: not medically cleared. Booking waits for re-clearance.";
+const TRANSFER_PAUSED_LINE = "Transfer paused: not medically cleared. Booking waits for re-clearance.";
 
 /** Answers before anything is chosen. Re-applied on every open, so one patient's answers never reach the next. */
 export const BLANK_TRANSPORT_BOOKING: TransportBookingAnswers = {

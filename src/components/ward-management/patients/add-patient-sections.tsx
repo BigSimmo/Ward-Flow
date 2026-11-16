@@ -66,7 +66,7 @@ export function extrasEntered(extras: PatientExtras): boolean {
 export const PATIENT_TEXT_LIMIT = 4000;
 
 /** 16 Nov live walk: the Street address box shows its length limit (the box's own maxLength). */
-export const ADDRESS_LIMIT_HELP = `Up to ${PATIENT_TEXT_LIMIT.toLocaleString("en-AU")} characters`;
+const ADDRESS_LIMIT_HELP = `Up to ${PATIENT_TEXT_LIMIT.toLocaleString("en-AU")} characters`;
 
 /** The first optional text field over the server limit, named for a refusal ("Street address is too long"). */
 export function overLimitFieldLabel(extras: PatientExtras): string | undefined {
