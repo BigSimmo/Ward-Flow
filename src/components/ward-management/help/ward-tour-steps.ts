@@ -702,7 +702,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "review",
           HERO,
           "What is waiting for review",
-          "How many events wait for review. When there are some, the chips count overrides, refused or stale actions, record access, patterns and follow-ups, and the ring counts how many are reviewed.",
+          "How many events wait for review. When there are some, the chips count overrides, steps not saved, record access, repeat break glass and follow-ups, and the ring counts how many are reviewed.",
         ),
         step(
           "Your daily work",

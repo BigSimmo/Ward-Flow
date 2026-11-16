@@ -107,3 +107,35 @@ describe("Referrals board: a referral decided elsewhere (B-03)", () => {
     expect(drawerOpen()).toBe(true);
   });
 });
+
+/** The referrer took it back (16 Nov walk): every open destination withdrawn now. */
+const withdrawn =
+  (id: string): Adjust =>
+  (referrals) =>
+    referrals.map((referral) =>
+      referral.id === id
+        ? {
+            ...referral,
+            destinations: referral.destinations.map((addressing) =>
+              addressing.state === "queued" ? { ...addressing, withdrawnAt: NOW_ANCHOR } : addressing,
+            ),
+          }
+        : referral,
+    );
+
+describe("Referrals board: a referral the referrer withdrew (16 Nov walk)", () => {
+  it("says it was withdrawn by the referrer, not decided elsewhere", () => {
+    const adjust = renderBoard();
+    const target = queueIds()[0]!;
+    fireEvent.click(screen.getByTestId(`ward-referral-board-select-${target}`));
+    const name = screen.getByTestId(`ward-referral-board-select-${target}`).textContent ?? "";
+
+    act(() => adjust(withdrawn(target)));
+
+    expect(queueIds()).not.toContain(target);
+    const notice = screen.getByTestId("ward-referral-decided-elsewhere");
+    expect(notice.textContent).toContain(`${name}: referral withdrawn by the referrer at `);
+    expect(notice.textContent).toMatch(/[ap]m\. Choose the next referral from the queue\.$/u);
+    expect(notice.textContent).not.toContain("decided elsewhere");
+  });
+});

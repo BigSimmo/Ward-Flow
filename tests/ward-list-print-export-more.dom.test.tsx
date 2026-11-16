@@ -93,6 +93,8 @@ describe("Leave page", () => {
     expect(
       within(screen.getByTestId("ward-leave-row-l-later")).queryByRole("link", { name: /^Open ward/u }),
     ).toBeNull();
+    // 16 Nov walk: the hero's quiet meta line says how fresh the list is, on the am/pm clock.
+    expect(screen.getByTestId("ward-leave-hero")).toHaveTextContent(/Updated \d{1,2}:\d{2} [ap]m/u);
   });
 
   it("prints with the browser's own print and says on paper what the list holds", () => {

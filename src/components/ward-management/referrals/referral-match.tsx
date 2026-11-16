@@ -1227,7 +1227,8 @@ export function ReferralMatchView({
                   data-testid="ward-referral-match-local-bed-sought"
                   onClick={handleLocalBedSought}
                 >
-                  Local bed sought, none suitable
+                  {/* 16 Nov walk: an action, so it is not read as the answer when wards fit. */}
+                  Record: no local bed suits
                 </Button>
               )}
             </div>

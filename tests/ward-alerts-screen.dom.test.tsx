@@ -345,6 +345,8 @@ describe("Alerts phone hero (remaining-pages audit ops-14, 13 Oct 2026)", () => 
       const broadcast = hero.getByTestId("ward-alerts-broadcast");
       expect(broadcast).toHaveTextContent("Broadcast alert");
       expect(broadcast.className).not.toBe(next.className);
+      // 16 Nov walk: the hero's quiet meta line says how fresh the list is, on the am/pm clock.
+      expect(screen.getByTestId("ward-alerts-hero")).toHaveTextContent(/Updated \d{1,2}:\d{2} [ap]m/u);
     } finally {
       vi.unstubAllGlobals();
     }

@@ -193,7 +193,7 @@ describe("Governance v10 pass (10 Oct 2026)", () => {
         <GovernanceWorkbench movements={seed.movements} units={seed.units} now={NOW} />
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByRole("radio", { name: /^Form gaps/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /^Forms to chase/ }));
     const table = within(screen.getByRole("region", { name: "Gaps by site" })).getByRole("table");
     const fracs = within(table).getAllByTestId("wf-frac");
     expect(fracs.length).toBeGreaterThan(0);
@@ -345,7 +345,7 @@ describe("Governance phone audit fixes (13 Oct 2026)", () => {
         "No event has been reviewed yet.",
       );
 
-      fireEvent.click(screen.getByRole("radio", { name: /^Form gaps/ }));
+      fireEvent.click(screen.getByRole("radio", { name: /^Forms to chase/ }));
       expect(screen.getByRole("region", { name: "Gaps by site" })).toHaveTextContent("A gap is a form step");
       const firstSite = within(screen.getByRole("region", { name: "Gaps by site" })).getAllByRole("button")[0];
       fireEvent.click(firstSite);

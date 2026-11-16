@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, History as HistoryIcon, MapPin } from "lucide-react";
 import styles from "./ward-bed-dossier-drawer.module.css";
 import type { Unit } from "@/components/ward-management/ward-model";
+import type { EventLogEntry } from "@/components/ward-management/ward-event-log";
 import { bedGlyphTone, eddMovedBadge, type BedItem } from "./ward-bed-tone";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import {
@@ -88,6 +89,23 @@ import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { WardUnder18Notice } from "./ward-under-18-notice";
 
 const roleLabel = (role: keyof typeof WARD_FLOW_ROLE_LABELS) => WARD_FLOW_ROLE_LABELS[role];
+
+/** The one desk whose accepted bed step on this ward landed at `at`, or undefined when none or several did. */
+export function reopenedByRole(
+  log: readonly EventLogEntry[],
+  unitId: string,
+  at: number,
+): keyof typeof WARD_FLOW_ROLE_LABELS | undefined {
+  const roles = new Set(
+    log
+      .filter(
+        (entry) => entry.accepted && entry.type === "SET_BED_CLOSED" && entry.unitId === unitId && entry.now === at,
+      )
+      .map((entry) => entry.role),
+  );
+  const [only] = roles;
+  return roles.size === 1 && only !== undefined ? only : undefined;
+}
 
 interface WardBedDossierDrawerProps {
   selectedBed: number;
@@ -204,12 +222,13 @@ export function WardBedDossierDrawer({
   onSetCriteria,
   onRecordDischargeCheck,
 }: WardBedDossierDrawerProps) {
-  const { admissions, bedReleases, resolvePatientIdentity, movements } = useWardFlowSelect(
-    "admissions",
-    "bedReleases",
-    "resolvePatientIdentity",
-    "movements",
-  );
+  const {
+    admissions,
+    bedReleases,
+    resolvePatientIdentity,
+    movements,
+    eventLog = [],
+  } = useWardFlowSelect("admissions", "bedReleases", "resolvePatientIdentity", "movements", "eventLog");
   const now = useWardFlowClock();
   // Demo-Actions-AC1-3: a desk that can never record a departure (the site bed manager) is not
   // offered "Record that they have left" (DESIGN-SYSTEM.md, Actions; F-54).
@@ -561,7 +580,16 @@ export function WardBedDossierDrawer({
       tone: "warning",
       label: `Bed closed${mark.reason ? `: ${wardClosureReasonLabel(mark.reason)}` : ""}, by ${mark.by}`,
     });
-    if (mark.reopenedAt !== undefined) timeline.push({ at: mark.reopenedAt, tone: "success", label: "Bed reopened" });
+    if (mark.reopenedAt !== undefined) {
+      // 16 Nov walk: name who reopened it, from the step's own log entry. The mark keeps no reopener,
+      // so a reopen this session's log does not hold (or two desks in one minute) stays unnamed.
+      const reopener = reopenedByRole(eventLog, unit.id, mark.reopenedAt);
+      timeline.push({
+        at: mark.reopenedAt,
+        tone: "success",
+        label: reopener ? `Bed reopened, by ${roleLabel(reopener)}` : "Bed reopened",
+      });
+    }
   }
   timeline.sort((left, right) => right.at - left.at);
 

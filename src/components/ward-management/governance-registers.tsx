@@ -582,7 +582,7 @@ function GovernanceSession({
 
   const TAB_LABEL: Record<GovernanceTab, string> = {
     review: "Review",
-    gaps: "Form gaps by site",
+    gaps: "Forms to chase by site",
     audit: "Audit trail",
     registers: "Registers",
     reports: "Reports",
@@ -709,7 +709,7 @@ function GovernanceSession({
                   {
                     id: "refused",
                     value: refusedCount,
-                    label: "refused or stale",
+                    label: "steps not saved",
                     onClick: () => toggleChip("refused"),
                     pressed: chip === "refused",
                   },
@@ -788,7 +788,7 @@ function GovernanceSession({
                   ? [
                       {
                         id: "pattern",
-                        label: adminDesk ? "Patterns" : "Pattern",
+                        label: "Repeat break glass",
                         count: patternCount,
                         pressed: chip === "pattern",
                         onClick: () => toggleChip("pattern"),
@@ -825,7 +825,7 @@ function GovernanceSession({
                 ]
               : [
                   { id: "review", label: "Review", count: toReview.length },
-                  { id: "gaps", label: "Form gaps", count: totalGaps },
+                  { id: "gaps", label: "Forms to chase", count: totalGaps },
                   { id: "audit", label: "Audit trail" },
                   { id: "registers", label: "Registers" },
                   { id: "reports", label: "Reports" },
@@ -867,7 +867,7 @@ function GovernanceSession({
                   items={[
                     { id: "all", label: "All" },
                     { id: "override", label: "Overrides" },
-                    { id: "refused", label: "Refused or stale" },
+                    { id: "refused", label: "Steps not saved" },
                     { id: "access", label: "Record access" },
                   ]}
                 />

@@ -104,6 +104,21 @@ describe("the one transport booking form", () => {
     );
   });
 
+  it("says the transfer is paused, not 'Check them, then save', when not medically cleared (16 Nov walk)", () => {
+    const onSubmit = vi.fn();
+    render(
+      <Harness record={{ ...INVOLUNTARY, medicalClearance: { cleared: false, at: NOW - 30 } }} onSubmit={onSubmit} />,
+    );
+    fireEvent.change(screen.getByTestId(id("provider")), { target: { value: "Ambulance (St John)" } });
+    fireEvent.click(screen.getByTestId(id("escort", "no")));
+    fireEvent.click(screen.getByTestId(id("legal", "involuntary")));
+    const left = screen.getByTestId(id("left"));
+    expect(left).toHaveTextContent("Transfer paused: not medically cleared. Booking waits for re-clearance.");
+    expect(left).not.toHaveTextContent("Check them, then save");
+    fireEvent.click(screen.getByTestId(id("confirm")));
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
   it("saves with a blank estimated time, with the warning in view (W32)", () => {
     const onSubmit = vi.fn();
     render(<Harness record={INVOLUNTARY} onSubmit={onSubmit} />);

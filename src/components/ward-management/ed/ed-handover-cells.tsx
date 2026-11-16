@@ -282,11 +282,14 @@ export function ChecksCell({
         : open === 0
           ? "success"
           : "neutral";
+  // 16 Nov walk: recorded not medically cleared stops the transfer (D-211), so the row's mark says so.
   const summary = revokedNotice
     ? (revokedChip ?? "No order made")
-    : open === 0
-      ? "Checks done"
-      : `${open} ${open === 1 ? "check" : "checks"} open`;
+    : clearance?.cleared === false
+      ? "Transfer paused"
+      : open === 0
+        ? "Checks done"
+        : `${open} ${open === 1 ? "check" : "checks"} open`;
   const describedById = useId();
   return (
     <span className={handover.checks} data-testid={`ward-ed-row-checks-${movementId}`}>
