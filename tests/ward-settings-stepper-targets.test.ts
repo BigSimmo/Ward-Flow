@@ -22,7 +22,11 @@ describe("P089 settings stepper targets", () => {
 describe("a rule value typed as well as stepped (live walk 16 Nov 2026)", () => {
   const bounds = { min: 30, max: 480, step: 30 };
   const words = (minutes: number) =>
-    minutes % 60 === 0 ? `${minutes / 60}h` : minutes < 60 ? `${minutes}m` : `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+    minutes % 60 === 0
+      ? `${minutes / 60}h`
+      : minutes < 60
+        ? `${minutes}m`
+        : `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 
   it("reads the words as shown, a bare number with its unit, and nothing the stepper could not reach", async () => {
     const { parseRuleTyped } = await import("@/components/ward-management/settings/settings-rows");

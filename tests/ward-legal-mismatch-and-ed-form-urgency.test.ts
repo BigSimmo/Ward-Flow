@@ -86,3 +86,15 @@ describe("a recorded legal mismatch is shown, never acted on (D1a-E-2)", () => {
     expect(flaggedStep.tone).toBe(cleanStep.tone);
   });
 });
+
+describe("the Standard day seeds one legal mismatch for the ED board (live walk 16 Nov 2026)", () => {
+  it("is one open journey, a voluntary person accepted to an all-locked ward, as the reducer would flag it", () => {
+    const flagged = state.movements.filter((movement) => hasCurrentLegalMismatch(movement));
+    expect(flagged.map((movement) => movement.id)).toEqual(["WF-028"]);
+    const [movement] = flagged;
+    const ward = state.units.find((candidate) => candidate.id === movement!.acceptedUnitId)!;
+    expect(movement!.legalStatus).toBe("Voluntary");
+    expect(movement!.legalMismatch).toMatchObject({ unitId: ward.id, kind: "voluntary_on_locked_ward" });
+    expect(ward.lockedBeds).toBe(ward.beds);
+  });
+});

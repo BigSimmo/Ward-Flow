@@ -15,7 +15,9 @@ function Controls({ onUndo }: { onUndo: () => void }) {
       <output data-testid="generation">{worldGeneration}</output>
       <button
         type="button"
-        onClick={() => toast.push({ tone: "success", title: "Synthetic step done", undo: { durationMs: 60_000, onUndo } })}
+        onClick={() =>
+          toast.push({ tone: "success", title: "Synthetic step done", undo: { durationMs: 60_000, onUndo } })
+        }
       >
         push undo
       </button>

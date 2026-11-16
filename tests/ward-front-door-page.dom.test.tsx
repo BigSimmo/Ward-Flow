@@ -73,6 +73,8 @@ describe("the public demo's code door", () => {
     fireEvent.change(screen.getByLabelText("Demo code"), { target: { value: "WRONG" } });
     fireEvent.click(screen.getByRole("button", { name: "Open the demo" }));
     expect(await screen.findByText("That demo code is not right.")).toBeVisible();
+    // Live walk 16 Nov 2026: the message is the field's description.
+    expect(screen.getByLabelText("Demo code")).toHaveAccessibleDescription(/That demo code is not right\./u);
     fireEvent.click(screen.getByRole("button", { name: "Open the demo" }));
     expect(await screen.findByText("Wait ten minutes.")).toBeVisible();
     expect(replace).not.toHaveBeenCalled();
