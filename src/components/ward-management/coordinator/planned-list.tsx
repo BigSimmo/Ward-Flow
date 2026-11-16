@@ -225,7 +225,8 @@ function AccessForecastRow({ forecast, now }: { forecast: AccessForecast; now: I
         <p className={styles.who}>
           <span className={styles.nameText}>
             {/* D-198: plain words, no "likely"; the target is the configured ED access target. */}
-            {forecast.total} reach {forecast.target} in ED by tomorrow unless placed
+            {forecast.total} {forecast.total === 1 ? "person reaches" : "people reach"} {forecast.target} in ED by
+            tomorrow unless placed
           </span>
         </p>
         <p className={styles.line}>
@@ -277,7 +278,9 @@ function TomorrowFoot({ now, forecast }: { now: Instant; forecast: AccessForecas
         {forecast ? (
           <div data-testid="home-planned-access-forecast">
             <dt>
-              <b className={styles.figure}>{forecast.total}</b> reach {forecast.target} in ED by tomorrow unless placed
+              <b className={styles.figure}>{forecast.total}</b>{" "}
+              {forecast.total === 1 ? "person reaches" : "people reach"} {forecast.target} in ED by tomorrow unless
+              placed
             </dt>
             <dd>
               by {formatInstantWithDay(forecast.at, now)} · {forecast.atEd} at {forecastEdName(forecast.edId)} ·{" "}

@@ -571,7 +571,7 @@ export function WardHomeTab({
     // The occupant's name is shown on the tile, so a screen reader hears it too.
     const spokenState = [
       stateWord,
-      days ? `${bed.stayDays} days in bed` : "",
+      (bed.stayDays ?? 0) > 1 ? `${bed.stayDays} days in bed` : bed.stayDays === 1 ? "1 day in bed" : "",
       // A tile showing the short CLD chip is read out in full; otherwise the CLD state is added.
       bed.criteriaLedChip && note === bed.criteriaLedChip.label ? bed.criteriaLedChip.phrase : note,
       bed.criteriaLedChip && note !== bed.criteriaLedChip.label ? bed.criteriaLedChip.phrase : "",
@@ -1858,7 +1858,7 @@ export function WardHomeTab({
                   )}
                   <span>
                     {resolvePatientIdentity({ movementId: answer.movementId }).umrn} · {answer.outcome}
-                    {answer.reason ? `, ${declineReasonText(answer.reason)}` : ""}
+                    {answer.reason ? ` · ${declineReasonText(answer.reason)}` : ""}
                   </span>
                 </li>
               ))}

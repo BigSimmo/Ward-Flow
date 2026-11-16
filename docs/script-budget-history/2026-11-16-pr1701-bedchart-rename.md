@@ -8,3 +8,5 @@ Both raises are under the 5 KB a PR may add (D-82). The other screens are under 
 **Why it grew.** The new What's new line ("Ward Flow is now called BedChart ...") is inlined into the shared client bundle with the rest of the What's new list. These two screens were already within 0.1 KB of their limits.
 
 **Trim.** None found for 0.1 KB: the rename itself makes most strings shorter. Issue #1684 keeps the wider trim open.
+
+**After merging main (16 Nov 2026, through #1699).** Main had raised its own limits in the meantime, so this PR's 0.3 KB now sits on top of them: `/bedchart/bed-meeting` 621.1 KB (main 620.8) and `/bedchart/statistics` 670.2 KB (main 669.9). The other screens take main's values under their `/bedchart` names.

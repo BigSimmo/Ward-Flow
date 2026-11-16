@@ -261,13 +261,20 @@ export function HeroQuickChips({ label, items }: { label: string; items: HeroChi
         return (
           <li key={item.id}>
             {item.href ? (
-              <Link href={item.href} className={styles.chip} aria-label={item.ariaLabel} data-testid={item.testId}>
+              <Link
+                href={item.href}
+                className={styles.chip}
+                aria-label={item.ariaLabel}
+                data-testid={item.testId}
+                data-wf-hero-chip=""
+              >
                 {body}
               </Link>
             ) : (
               <button
                 type="button"
                 className={styles.chip}
+                data-wf-hero-chip=""
                 onClick={item.onClick}
                 aria-pressed={item.expanded === undefined ? item.pressed : undefined}
                 aria-expanded={item.expanded}

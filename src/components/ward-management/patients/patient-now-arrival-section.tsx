@@ -2,6 +2,7 @@
 
 // The patient page's arrival-plan section, shown in the Transport sheet while a bed is held or the
 // patient is in transit. Split out of `patient-now-screen.tsx`, which calls it during render.
+import { recordedByWords } from "@/components/ward-management/ward-flow-roles";
 import { CircleAlert, Clock, FileText, FileUp } from "lucide-react";
 import { ARRIVAL_MODE_LABELS } from "@/components/ward-management/ward-model";
 import { OPERATIONAL_DEFAULT_LABEL } from "@/components/ward-management/ward-operational-defaults";
@@ -157,8 +158,10 @@ export function renderArrivalSection(ctx: PatientArrivalSectionContext) {
               {hasArrivalPlan && liveMovement?.arrivalDetails && (
                 <span className={styles.recordedNote}>
                   {liveMovement.arrivalDetails.updatedAt !== undefined
-                    ? `Updated by ${liveMovement.arrivalDetails.updatedBy ?? "not recorded"} at ${clockOn(liveMovement.arrivalDetails.updatedAt, now)}`
-                    : `Recorded by ${liveMovement.arrivalDetails.recordedBy} at ${clockOn(liveMovement.arrivalDetails.recordedAt, now)}`}
+                    ? liveMovement.arrivalDetails.updatedBy === undefined
+                      ? `Updated at ${clockOn(liveMovement.arrivalDetails.updatedAt, now)}`
+                      : `Updated by ${recordedByWords(liveMovement.arrivalDetails.updatedBy)} at ${clockOn(liveMovement.arrivalDetails.updatedAt, now)}`
+                    : `Recorded by ${recordedByWords(liveMovement.arrivalDetails.recordedBy)} at ${clockOn(liveMovement.arrivalDetails.recordedAt, now)}`}
                 </span>
               )}
             </div>
@@ -174,7 +177,7 @@ export function renderArrivalSection(ctx: PatientArrivalSectionContext) {
                     <div key={form.id} className={styles.pulledFormChip}>
                       <span className={styles.formChipName}>{form.formName}</span>
                       <span className={styles.pulledFormChipMeta}>
-                        {uploadedFileLabel(form)} · {clockOn(form.uploadedAt, now)} ({form.uploadedBy})
+                        {uploadedFileLabel(form)} · {clockOn(form.uploadedAt, now)} ({recordedByWords(form.uploadedBy)})
                       </span>
                     </div>
                   ))}

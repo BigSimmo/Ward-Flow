@@ -326,3 +326,10 @@
 .weekend[data-strip] {
   overflow: visible;
 }
+
+/* D-251 (size review 5): on a touch tablet the weekend-prep pills are drawn 36px, the tablet chip size. */
+@media (min-width: 46.5rem) and (pointer: coarse) {
+  .pill.pill {
+    min-height: 36px;
+  }
+}

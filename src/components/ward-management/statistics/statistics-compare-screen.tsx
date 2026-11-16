@@ -1338,7 +1338,9 @@ const WARD_COLUMNS: readonly CompareColumn<WardColumnRow>[] = [
     cell: (statistics) =>
       statistics.averageCompletedStayDays === null
         ? cannotBeFormed("none arrived")
-        : { text: `${statistics.averageCompletedStayDays} days` },
+        : {
+            text: `${statistics.averageCompletedStayDays} ${statistics.averageCompletedStayDays === 1 ? "day" : "days"}`,
+          },
   },
   // Both are genuine counts, so a nought is a measurement and renders as one.
   { header: HELD_UP_ANY_DATE_LABEL, cell: (statistics, words) => count(statistics.readyToLeaveCannot, words) },

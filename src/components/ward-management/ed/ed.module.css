@@ -5757,3 +5757,24 @@
     cursor: auto;
   }
 }
+
+/* D-251 (size review 5): on a touch tablet the ED board filter chips are drawn 36px, the tablet chip size. */
+@media (min-width: 46.5rem) and (pointer: coarse) {
+  .boardChip.boardChip {
+    min-height: 36px;
+  }
+}
+
+/* D-251 (size review 8): on a touch screen a person's name on the ED board reaches a 40px tap area that does not show; the
+   text is drawn exactly as before. Rows here sit further apart than 40px, so covers never overlap. */
+@media (pointer: coarse) {
+  :is(a, button).a2Name {
+    position: relative;
+  }
+
+  :is(a, button).a2Name::after {
+    content: "";
+    position: absolute;
+    inset: -8px 0;
+  }
+}

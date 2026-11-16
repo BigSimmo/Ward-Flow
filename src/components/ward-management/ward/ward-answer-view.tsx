@@ -1654,7 +1654,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                           )}
                           <span>
                             {resolvePatientIdentity({ movementId: answer.movementId }).umrn} · {answer.outcome}
-                            {answer.reason ? `, ${declineReasonLabel(answer.reason)}` : ""}
+                            {answer.reason ? ` · ${declineReasonLabel(answer.reason)}` : ""}
                           </span>
                         </li>
                       ))}
