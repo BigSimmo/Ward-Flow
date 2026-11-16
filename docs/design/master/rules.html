@@ -129,22 +129,69 @@
   <body>
     <main>
       <h1>Rules and lessons</h1>
-      <p>
-        <strong>Historical snapshot (2 November 2026).</strong> Some rules below have since changed, including merging,
-        auto-merge and claims. The current rules are in <code>AGENTS.md</code> and
-        <code>docs/design/lessons/2026-11-02-design-lessons.md</code>; follow those where this page differs.
-      </p>
       <p class="lead">
         Everything Josh has ruled, plus what the screen builds taught us, in one place. Read this before building any
         page. The sources are AGENTS.md, HOW-WE-WORK §6, design-system-v9 §14 and §17, building-ui.md, HANDOVER.md (the
-        question log) and project memory, as at 1 Nov 2026.
+        question log) and project memory, as at 1 Nov 2026. The first section adds the rulings from 13 to 16 Nov 2026
+        (decisions.md D-191 to D-249).
       </p>
       <nav>
-        <a href="#look">Look</a><a href="#controls">Controls</a><a href="#pages">Pages</a><a href="#popups">Pop-ups</a
-        ><a href="#graphs">Graphs</a><a href="#words">Words and safety</a><a href="#build">How to build</a
+        <a href="#new">New, 13 to 16 Nov</a><a href="#look">Look</a><a href="#controls">Controls</a
+        ><a href="#pages">Pages</a><a href="#popups">Pop-ups</a><a href="#graphs">Graphs</a
+        ><a href="#words">Words and safety</a><a href="#build">How to build</a
         ><a href="#lessons">Lessons from the builds</a><a href="#process">Process</a><a href="#talk">Talking to Josh</a>
       </nav>
       <div class="grid">
+        <section id="new">
+          <h2>New, 13 to 16 Nov 2026</h2>
+          <ul>
+            <li>
+              <b class="key">One master, refreshed from main.</b> The master opens every tab on main (16 Nov). When a
+              design PR merges, rebuild the master from main so the two never drift (Josh, 16 Nov).
+            </li>
+            <li>
+              <b class="key">Shared kit parts (D-192).</b> Neutral service tags, no brand colours. Count windows as a
+              quiet word ("Discharges · any date"). Undo says one clock time ("Undo until 10:47") and stays on the row.
+              Every full-screen view carries "Synthetic data". A desk never sees a button it can never use; a reason
+              sits under a button that is unavailable for now.
+            </li>
+            <li>
+              <b class="key">Home, Ward and Capacity (D-191).</b> Bed squares in one pattern on Ward, Capacity and All
+              wards. "Held up" means due by tomorrow everywhere; Discharges keeps its own any-date group. Home loses
+              Waiting on others; the 85% figure reads "In use". Capacity has one hero action, the Bed meeting sheet.
+            </li>
+            <li>
+              <b class="key">Words.</b> "Needs you" (not "Suggested now"), "Next escalation step", "From ward dates"
+              (not "Forecast" or "likely"), "No ward yet" for the first Flow stage (D-192, D-220). No disclaimer phrases
+              such as "as typed" or "not legally checked" (D-218).
+            </li>
+            <li>
+              <b class="key">Tips open on tap (D-224).</b> Every explanatory tip is an &#9432; that opens on tap, click
+              or keyboard and closes with Escape. Never hover-only.
+            </li>
+            <li>
+              <b class="key">Header (D-244, D-248).</b> Help sits left of the search on every desk and width. On a phone
+              every search box and the control beside it are 40px.
+            </li>
+            <li>
+              <b class="key">Phone + sheet (D-247).</b> New triage is a full row under New referral on the coordinator's
+              phone, and the sheet can be edited per person.
+            </li>
+            <li>
+              <b class="key">Toasts.</b> Bottom-right of the work area on desktop on a solid surface; on phone above the
+              pinned bar or dock (D-192).
+            </li>
+            <li>
+              <b class="key">Time.</b> Screens say am/pm; legal times keep the 24-hour clock (D-215, D-243). The clock
+              is named Board time (D-225).
+            </li>
+            <li>
+              <b class="key">Freeze.</b> Nothing merges into main after 22 Nov until after the 27 Nov demo (D-184,
+              D-241). Today's logo stays until after the demo (D-249).
+            </li>
+          </ul>
+        </section>
+
         <section id="look">
           <h2>Look (owner rulings)</h2>
           <ul>
@@ -213,7 +260,10 @@
               saving" and "Keep editing", and focus starts on Keep editing. Never use the browser's confirm, alert or
               prompt.
             </li>
-            <li>Toasts sit <code>--wf-toast-dock-gap</code> above the phone dock.</li>
+            <li>
+              Toasts sit bottom-right on desktop and <code>--wf-toast-dock-gap</code> above the phone dock or pinned bar
+              (D-192).
+            </li>
           </ul>
         </section>
 

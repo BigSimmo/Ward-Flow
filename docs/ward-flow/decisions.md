@@ -2925,4 +2925,11 @@ D-238 is reserved for design Lane D's block (noted in PR #1677). D-239 is reserv
 - **Why:** a logo change touches the tab, home-screen icons, rail and front door just before the demo.
 - **Boundary:** no logo, icon or brand file changes now.
 
-The next free number is D-250.
+## D-255. Capacity chips say "wards", the Discharges heading says "statewide", and the master design is refreshed from main (16 November 2026)
+
+- **Date:** 16 November 2026, about 2:40 PM AWST (06:40 UTC). **Decided by:** Josh, in the catch-up thread: "Yes to all recommendations however consider doing 7 and 6 now maybe?", answering a numbered list of ten issues with one recommendation each. Numbered D-255 by the coordinator because D-250 to D-254 are claimed by other threads.
+- **Decision:** (1) The Capacity highlight chips show their noun on screen: "Any ready 18 wards", "Count old 1 ward", in a quieter ink than the count (option A on the mock-up https://claude.ai/artifact/EakJK3YZuS2NBXTjUzpwoT). (2) The Discharges heading names the whole network "statewide" on every width, matching the header's Statewide chip; it said "all services" on computers. (3) The master design artifact is refreshed from main (versions 27 and 28) and its hub, overview, design system and rules pages are copied into `docs/design/master/`; the Alerts clarity proposal is filed under "Archive, not approved". (4) The 13 November handover is marked as replaced by the 16 November catch-up report.
+- **Why:** the chips count wards, so "Locked ready 6" plus "Open ready 13" can exceed "Any ready 18", which reads as wrong when the counts look like beds. The noun was spoken only to screen readers. The Discharges heading used two different words for the same thing.
+- **Boundary:** wording and design records only. No clinical value, count, rule or saved record changes. Other pages that say "all services" (Statistics, the bed meeting sheet) are unchanged. Synthetic data only.
+
+D-256 is claimed by PR #1700. Check open PRs for the next free number.
