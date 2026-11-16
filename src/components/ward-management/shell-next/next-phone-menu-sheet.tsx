@@ -518,7 +518,13 @@ const MORE_CREATE_ITEMS: readonly CreateItem[] = [
   { key: "form-times", icon: CalendarClock, label: "Form times", meta: "When a form runs out", tool: "form-times" },
   { key: "catchment", icon: MapIcon, label: "Suburb lookup", meta: "Team by suburb or postcode", tool: "catchment" },
   { key: "figures", icon: ChartColumn, label: "Key figures", meta: "Beds, flow and waits", tool: "figures" },
-  { key: "find-patient", icon: UserSearch, label: "Find a patient", meta: "By name, UMRN or place", href: "/ward-flow/search" },
+  {
+    key: "find-patient",
+    icon: UserSearch,
+    label: "Find a patient",
+    meta: "By name, UMRN or place",
+    href: "/ward-flow/search",
+  },
   { key: "broadcast", icon: Megaphone, label: "Broadcast", meta: "To chosen units", href: "/ward-flow/alerts" },
 ];
 
@@ -744,9 +750,7 @@ function CoordinatorCreateSheet({
                   Reset to the standard sheet
                 </button>
               ) : null}
-              {stored !== null && onEditBar ? (
-                <span className={styles.createMoreDot} aria-hidden="true" />
-              ) : null}
+              {stored !== null && onEditBar ? <span className={styles.createMoreDot} aria-hidden="true" /> : null}
               {onEditBar ? (
                 <button
                   type="button"
