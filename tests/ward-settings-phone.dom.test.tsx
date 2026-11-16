@@ -104,7 +104,7 @@ describe("Settings on a phone", () => {
     expect(within(page).queryByRole("button", { name: /Go to a desk/ })).toBeNull();
     expect(within(page).getByRole("combobox", { name: "Find a setting" })).toBeInTheDocument();
 
-    // Settings overhaul (Josh, 16 Nov 2026, D-250): no "On this phone" block and no "Alerts are off"
+    // Settings overhaul (Josh, 16 Nov 2026, D-257): no "On this phone" block and no "Alerts are off"
     // card. Theme and Row density are in Display, Buzz sound in Alerts, and the Alerts row says Off.
     expect(within(page).queryByRole("region", { name: /On this phone/ })).toBeNull();
     expect(within(page).queryByRole("radiogroup", { name: "Theme" })).toBeNull();

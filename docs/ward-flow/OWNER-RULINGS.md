@@ -412,7 +412,7 @@ safe global key across 30 files.
 | `D-247` | `decisions.md`:2907 | D-247. Triage is one tap on the coordinator's phone, and the + sheet can be edited (15 November 2026) |
 | `D-248` | `decisions.md`:2915 | D-248. Phone search boxes are 40px, Help's phone top is trimmed, and Help sits left of search (15 November 2026) |
 | `D-249` | `decisions.md`:2922 | D-249. Keep today's logo until after the demo (15 November 2026) |
-| `D-250` | `decisions.md`:2929 | D-250. Settings is your own settings first, with admin work in Staff access (16 November 2026) |
+| `D-257` | `decisions.md`:2931 | D-257. Settings is your own settings first, with admin work in Staff access (16 November 2026) |
 | `D9-1` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | `D9-2` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
 | `D9-3` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:126 | D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION) |
@@ -964,7 +964,7 @@ safe global key across 30 files.
 - `D-247` — line 2907, heading: "D-247. Triage is one tap on the coordinator's phone, and the + sheet can be edited (15 November 2026)"
 - `D-248` — line 2915, heading: "D-248. Phone search boxes are 40px, Help's phone top is trimmed, and Help sits left of search (15 November 2026)"
 - `D-249` — line 2922, heading: "D-249. Keep today's logo until after the demo (15 November 2026)"
-- `D-250` — line 2929, heading: "D-250. Settings is your own settings first, with admin work in Staff access (16 November 2026)"
+- `D-257` — line 2931, heading: "D-257. Settings is your own settings first, with admin work in Staff access (16 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 

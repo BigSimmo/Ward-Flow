@@ -138,7 +138,7 @@ describe("the settings screen", () => {
     );
   });
 
-  // Codex review on #1392, Settings overhaul (Josh, 16 Nov 2026, D-250): a ward or ED desk keeps its
+  // Codex review on #1392, Settings overhaul (Josh, 16 Nov 2026, D-257): a ward or ED desk keeps its
   // cover in Your desk, so Find still finds it there; roles and Who can change what are Staff access.
   it("finds cover under Your desk, and roles only in Staff access", () => {
     const youDesk = findRedesignSettings("cover", ["alerts", "display", "you"], 7, false).map((e) => e.id);

@@ -264,7 +264,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-247](#d-247-triage-is-one-tap-on-the-coordinators-phone-and-the--sheet-can-be-edited-15-november-2026)                                               | Triage is one tap on the coordinator's phone, and the + sheet can be edited            | Active                                           |
 | [D-248](#d-248-phone-search-boxes-are-40px-helps-phone-top-is-trimmed-and-help-sits-left-of-search-15-november-2026)                                    | Phone search boxes are 40px, Help's phone top is trimmed, and Help sits left of search | Active                                           |
 | [D-249](#d-249-keep-todays-logo-until-after-the-demo-15-november-2026)                                                                                  | Keep today's logo until after the demo                                                 | Active                                           |
-| [D-250](#d-250-settings-is-your-own-settings-first-with-admin-work-in-staff-access-16-november-2026)                                                    | Settings is your own settings first, with admin work in Staff access                   | Active                                           |
+| [D-257](#d-257-settings-is-your-own-settings-first-with-admin-work-in-staff-access-16-november-2026)                                                    | Settings is your own settings first, with admin work in Staff access                   | Active                                           |
 
 ---
 
@@ -2926,7 +2926,9 @@ D-238 is reserved for design Lane D's block (noted in PR #1677). D-239 is reserv
 - **Why:** a logo change touches the tab, home-screen icons, rail and front door just before the demo.
 - **Boundary:** no logo, icon or brand file changes now.
 
-## D-250. Settings is your own settings first, with admin work in Staff access (16 November 2026)
+D-250 is claimed by open PR #1701 (the BedChart rename). D-251 is claimed by open PR #1699 (the UI sweep). D-252 is reserved by other threads (PR #1700, PR #1702 and the handover). D-253 is reserved by other threads (PR #1700, PR #1702 and the handover). D-254 is reserved by other threads (PR #1700, PR #1702 and the handover). D-255 is reserved by other threads (PR #1700, PR #1702 and the handover). D-256 is reserved by other threads (PR #1700, PR #1702 and the handover).
+
+## D-257. Settings is your own settings first, with admin work in Staff access (16 November 2026)
 
 - **Date:** 16 November 2026, 2:40 PM AWST (06:40 UTC). **Decided by:** Josh, in the thread "Overhaul the Settings page": "Yes to all", answering five numbered questions on the review page https://claude.ai/artifact/RyX5RnzHPcRUzLb5sMXWfF, after asking for Settings to be reviewed on every device, especially phone.
 - **Decision:** (1) The phone's "On this phone" block goes. Theme and Row density live in Display, and Buzz sound in Alerts, on every device. The phone page lists the areas in two groups, Settings (Rules, Alerts, Display, Your desk) and Admin (Staff access, Demo tools), and each row's second line says what is set. (2) "Access" becomes "Staff access", an area of its own shown only to the access admin and a statewide coordinator. It holds requests, give role, everyone with a role, the access log and Who can change what. (3) A statewide coordinator's Give cover also sits in Staff access, so Your desk holds only the desk's own details, shift and drafts. A ward or ED desk keeps its cover in Your desk. (4) On a phone, the "Alerts are off" card goes; the Alerts row carries an Off chip instead (Josh: "Alerts are off seems like it doesn't need that much space"). The computer view keeps its alerts line beside Find a setting. (5) Who can change what stays in Staff access, as a stacked list on a phone with no sideways scroll.
@@ -2934,4 +2936,4 @@ D-238 is reserved for design Lane D's block (noted in PR #1677). D-239 is reserv
 - **Replaces:** the 9 November 2026 page-top alerts line on the Settings phone page only, and the 3 November 2026 ST1 placement of roles and cover under You.
 - **Boundary:** layout and wording only. No permission, rule, clinical value or saved record changes: the same desks can do the same things. Synthetic data only.
 
-The next free number is D-251.
+The next free number is D-258.

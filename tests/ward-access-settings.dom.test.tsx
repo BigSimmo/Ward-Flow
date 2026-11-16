@@ -120,7 +120,7 @@ function confirmStepUp() {
 }
 
 describe("the Access tab", () => {
-  // Settings by role (Josh, 3 Nov 2026, ST1), Settings overhaul (Josh, 16 Nov 2026, D-250): a ward or
+  // Settings by role (Josh, 3 Nov 2026, ST1), Settings overhaul (Josh, 16 Nov 2026, D-257): a ward or
   // ED desk asks for cover from Your desk; a desk that manages roles (the access admin and a
   // statewide coordinator) has Staff access, which holds its cover with the roles.
   it("is not offered with the role-access flag off", () => {
