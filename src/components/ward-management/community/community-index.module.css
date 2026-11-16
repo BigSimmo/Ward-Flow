@@ -1102,3 +1102,22 @@
     display: inline;
   }
 }
+
+/* Page scores 16 Nov 2026 (Other prints, +5): print hides the letter rail, so the list used to drop
+ * into the rail's 28px column and printed each team name one letter per line over 14 pages. On
+ * paper the list takes the full width. */
+@media print {
+  .directoryBody {
+    display: block;
+  }
+
+  .azRail,
+  .teamRowGo {
+    display: none;
+  }
+
+  /* The name check reads as one sentence on paper, not two squeezed columns. */
+  .check .readsAlike {
+    display: block !important;
+  }
+}

@@ -2,19 +2,18 @@
 
 Audience: the next Ward Flow chat and Josh. Status: done. The review merged in PR #1502 and the pick-lists were built in PR #1504 (both 8 Nov 2026). Owner: Claude (7 Nov 2026). Synthetic data only.
 
-Original objective: Josh supplied the option lists from the webPSOLIS SSCD "New Triage" form's dropdowns (7 Nov 2026) to add to Ward Flow's triage and risk form. This note reviews them, records the option lists, recommends how each belongs in the form, and hands the build to a new chat. The triage form was built in #1500 (merged 7 Nov 2026, main `6b1352c93`).
+Original objective: Josh supplied the option lists of the webPSOLIS SSCD "New Triage" form's dropdowns (7 Nov 2026) to add to Ward Flow's triage and risk form. This note reviews them, records the option lists, recommends how each belongs in the form, and hands the build to a new chat. The triage form was built in #1500 (merged 7 Nov 2026, main `6b1352c93`).
 
 ## Privacy: read first
 
 Only the dropdown option lists, which are system reference values, are recorded here. No patient or staff information is recorded here or anywhere in Ward Flow.
 
-- Do not ask for, open, copy or commit the original photos.
-- Any further screenshots should show the open dropdown only, cropped or on a test record, with no patient banner, contact details, notes panel or login line.
+- Record only option values. Any further list parts arrive as typed option values, never as images.
 - Ward Flow stays synthetic (AGENTS.md hard rule 1). These values become pick-list options, never records.
 
-## What the photos show
+## The option lists
 
-The PSOLIS form has seven tabs: Details, Problems, Assessment, Action Plan, Participants, Referred On, Additional Information. Values are copied exactly as PSOLIS spells them, including "LIASON". A list marked "partial" scrolled past what the photos show.
+The PSOLIS form has seven tabs: Details, Problems, Assessment, Action Plan, Participants, Referred On, Additional Information. Values are copied exactly as PSOLIS spells them, including "LIASON". A list marked "partial" is incomplete.
 
 ### Program (Details; depends on Stream, here RPH ADULT). Partial
 
@@ -74,14 +73,12 @@ _Historical: this was built in PR #1504 (8 Nov 2026). Remaining gaps are listed 
 
 ## Josh's decisions (7 Nov 2026)
 
-1. **Missing list parts:** build with what we have. The lists the photos show completely are built now. The gaps stay marked in the list file, to fill in when Josh sends the rest:
+1. **Missing list parts:** build with what we have. The complete lists are built now. The gaps stay marked in the list file, to fill in when Josh sends the rest:
    - the label of the referral list, and its item after UNKNOWN;
    - the Venue item after LOCK UP, and the end of the list;
    - the end of the Problems list;
    - the Action plan item after "REFERRED TO COMMUNITY, PRIMARY CARE, NGO ETC", and the end of the list;
    - the full Medium, Purpose, Reason, Consumer present, Associate present and Outcome lists. Until then, the form keeps its current Medium (`HOW`), Purpose and Outcome lists.
-
-   Any later photos must show the open dropdown only, cropped, with no patient on screen.
 
 2. **Save as codes:** yes. Problems, actions, venue and referral type join `RECORD_TRIAGE_SIGNED` as codes checked against their fixed lists, with no typed text (step 5 above).
 3. **Wording:** plain sentence-case labels on screen; Copy and the summary write the exact PSOLIS value.
@@ -93,7 +90,7 @@ _Historical: the build this paste starts is done (PR #1504). For what is left, s
 
 Paste this into a new Ward Flow chat (kept for the record):
 
-> Continue the triage form's PSOLIS pick-lists. Read `docs/ward-flow/handover/2026-11-07-triage-psolis-picklists.md` first, and AGENTS.md. Work on a new branch from Ward Flow `main`. Build the "Recommended way to build it" section following "Josh's decisions": build with the lists we have and leave the marked gaps; save problems, actions, venue and referral type as codes; plain labels on screen with exact PSOLIS values in Copy; Program from the desk with Change. Synthetic data only: do not ask for or use the original photos.
+> Continue the triage form's PSOLIS pick-lists. Read `docs/ward-flow/handover/2026-11-07-triage-psolis-picklists.md` first, and AGENTS.md. Work on a new branch from Ward Flow `main`. Build the "Recommended way to build it" section following "Josh's decisions": build with the lists we have and leave the marked gaps; save problems, actions, venue and referral type as codes; plain labels on screen with exact PSOLIS values in Copy; Program from the desk with Change. Synthetic data only.
 
 Where things are:
 
