@@ -12,12 +12,14 @@
 }
 .handoverHead {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-3);
   padding: var(--wf-s-3) var(--wf-s-4);
   border-bottom: 1px solid var(--wf-line);
 }
 .handoverTitle {
+  flex: 0 0 auto;
   min-width: 0;
   margin-right: auto;
 }
@@ -38,13 +40,23 @@
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   color: var(--wf-ink-3);
 }
+/* 16 Nov live walk: at 1280 the tools squeezed Export and Enlarge to "Expo..." and "Enlar...".
+   The kit buttons keep their size and never shrink; the row wraps instead, right-aligned. */
 .handoverTools {
   display: flex;
+  flex: 1 1 32rem;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--wf-s-2);
+  min-width: 0;
 }
-.handoverSearch {
-  width: 15rem;
+.handoverTools > * {
+  flex-shrink: 0;
+}
+.handoverTools > .handoverSearch {
+  flex: 0 1 15rem;
+  min-width: 10rem;
 }
 .handoverFilters > * {
   border-bottom: 0;

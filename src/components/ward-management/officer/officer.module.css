@@ -177,15 +177,16 @@
 }
 
 .jobsTable th:nth-child(1) {
-  width: 19%;
+  width: 17%;
 }
 
 .jobsTable th:nth-child(3) {
   width: 14%;
 }
 
+/* 16 Nov live walk: 12% cut "Order not uploaded · rule not signed" at 1280. */
 .jobsTable th:nth-child(4) {
-  width: 12%;
+  width: 14%;
 }
 
 .jobsTable th:nth-child(5) {
@@ -2023,6 +2024,25 @@
      wraps under the dots. Hiding it left bare dots, and a title is no help on a touch iPad. It is
      still a warning, never a block (WLQ-5). */
   .formsCell > span:last-child {
+    white-space: normal;
+  }
+}
+
+/* 16 Nov live walk: at 1280 the ETA cell ran "9:27 am 1 h 16 min late" past its edge and the
+   forms line was cut. Above phone width both wrap under their first line; the time itself stays
+   whole. The phone card keeps its own one-line layout. */
+@media (min-width: 46.5rem) {
+  .jobsTable .etaCell {
+    flex-wrap: wrap;
+    row-gap: 0;
+    white-space: normal;
+  }
+
+  .jobsTable .etaCell b {
+    white-space: nowrap;
+  }
+
+  .jobsTable .formsCell > span:last-child {
     white-space: normal;
   }
 }

@@ -65,6 +65,9 @@ export function extrasEntered(extras: PatientExtras): boolean {
 /** The longest text the server accepts in one field; equals `MAX_TEXT` in backend/ward-flow/command-schemas.ts. */
 export const PATIENT_TEXT_LIMIT = 4000;
 
+/** 16 Nov live walk: the Street address box shows its length limit (the box's own maxLength). */
+export const ADDRESS_LIMIT_HELP = `Up to ${PATIENT_TEXT_LIMIT.toLocaleString("en-AU")} characters`;
+
 /** The first optional text field over the server limit, named for a refusal ("Street address is too long"). */
 export function overLimitFieldLabel(extras: PatientExtras): string | undefined {
   for (const fold of FOLDS) {
@@ -378,7 +381,7 @@ export function AddPatientMoreDetails({
                   spec={field}
                   value={extras[field.key] ?? ""}
                   onChange={onExtra(field.key)}
-                  help={field.key === "suburb" ? suburbHelp : undefined}
+                  help={field.key === "suburb" ? suburbHelp : field.key === "address" ? ADDRESS_LIMIT_HELP : undefined}
                 />
               ),
             )}
