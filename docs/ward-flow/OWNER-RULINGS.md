@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/his
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**803 rulings/items extracted, across 43 of 44 files.**
+**804 rulings/items extracted, across 43 of 44 files.**
 **0 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 **1 file(s) recorded as holding no ruling of their own**, each with its reason. See below.
 
@@ -32,7 +32,7 @@ line, in the order discovered — confirm which instance you mean before citing 
 
 ---
 
-## ID index — 553 distinct IDs
+## ID index — 554 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -412,6 +412,7 @@ safe global key across 30 files.
 | `D-247` | `decisions.md`:2906 | D-247. Triage is one tap on the coordinator's phone, and the + sheet can be edited (15 November 2026) |
 | `D-248` | `decisions.md`:2914 | D-248. Phone search boxes are 40px, Help's phone top is trimmed, and Help sits left of search (15 November 2026) |
 | `D-249` | `decisions.md`:2921 | D-249. Keep today's logo until after the demo (15 November 2026) |
+| `D-250` | `decisions.md`:2928 | D-250. The app is renamed BedChart, at bedchart.com and /bedchart addresses (16 November 2026) |
 | `D9-1` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | `D9-2` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
 | `D9-3` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:126 | D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION) |
@@ -720,7 +721,7 @@ safe global key across 30 files.
 
 **Title:** Ward Flow — decision log
 
-241 item(s):
+242 item(s):
 
 - `D-1` — line 270, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 280, heading: "D-2. Railway is disconnected"
@@ -963,6 +964,7 @@ safe global key across 30 files.
 - `D-247` — line 2906, heading: "D-247. Triage is one tap on the coordinator's phone, and the + sheet can be edited (15 November 2026)"
 - `D-248` — line 2914, heading: "D-248. Phone search boxes are 40px, Help's phone top is trimmed, and Help sits left of search (15 November 2026)"
 - `D-249` — line 2921, heading: "D-249. Keep today's logo until after the demo (15 November 2026)"
+- `D-250` — line 2928, heading: "D-250. The app is renamed BedChart, at bedchart.com and /bedchart addresses (16 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 
