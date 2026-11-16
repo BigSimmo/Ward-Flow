@@ -125,7 +125,7 @@ consumers before applying its advice; keep original incident commands/results as
 - [history/search-chrome-behaviour.md](history/search-chrome-behaviour.md) — the inherited shared search-chrome contract (history only, moved 10 November 2026, D-121): composer ownership, phone edge-to-edge dock, hide/reveal reserves
 - [history/mockup-retirement-policy.md](history/mockup-retirement-policy.md) — historical mockup retirement policy
 - [history/design-system-psychsift/README.md](history/design-system-psychsift/README.md) — the inherited PsychSift v2 design system (history only). The current Ward Flow design system is [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md)
-- [brand/brand-mark.md](brand/brand-mark.md) — the mark geometry inherited from PsychSift, still drawn by Ward Flow (`src/lib/brand-mark.ts`); a Ward Flow mark of its own is an owner decision
+- [brand/brand-mark.md](brand/brand-mark.md) — the BedChart mark, the Folded B (D-261): four size masters, colours and where each form goes (`src/lib/brand-mark.ts`)
 
 ### Also catalogued (2026-09-02)
 

@@ -199,6 +199,30 @@
   gap: var(--wf-s-3);
 }
 
+/* The BedChart mark (D-261) in the same frosted glass tile as the front door's. */
+.brandTile {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--wf-r-md);
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 18%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--wf-hero-ink) 14%, transparent),
+    color-mix(in srgb, var(--wf-hero-ink) 5%, transparent)
+  );
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+  --bc-pillow: var(--wf-brand-hero-pillow);
+  --bc-bed: var(--wf-brand-hero-bed);
+}
+
+.brandTile svg {
+  width: 22px;
+  height: 22px;
+}
+
 .wordmark {
   font: 600 var(--wf-fs-15) / 1.2 var(--wf-font);
   letter-spacing: -0.01em;

@@ -1,5 +1,6 @@
 "use client";
 
+import { BrandMark } from "@/components/ward-management/brand-mark";
 import dynamic from "next/dynamic";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
 import Link from "next/link";
@@ -149,21 +150,10 @@ function ExecutiveSignOutRow() {
     </li>
   );
 }
-function ExecutiveMark() {
+function ExecutiveMark({ size = 22 }: { size?: number }) {
   return (
     <span className={rail.brandEmblem} aria-hidden="true">
-      <svg
-        viewBox="0 0 20 20"
-        className={rail.emblemGlyph}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2.25}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M8 3.5v13M3 10h13.5" />
-        <path d="M13 6.5 16.5 10 13 13.5" />
-      </svg>
+      <BrandMark size={size} className={rail.emblemGlyph} />
     </span>
   );
 }
@@ -623,7 +613,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
                     } else setRailOpenPreference(true);
                   }}
                 >
-                  <ExecutiveMark />
+                  <ExecutiveMark size={26} />
                 </button>
               ) : (
                 <Link href={home} className={rail.brandLink} aria-label="Ward Flow WA, home">

@@ -1,192 +1,105 @@
-import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
-import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
 import {
-  BRAND_GLYPH_TRANSFORM,
-  BRAND_GLYPH_TRANSFORM_BARE,
-  BRAND_GLYPH_TRANSFORM_BARE_SMALL,
-  BRAND_GLYPH_TRANSFORM_SMALL,
-  BRAND_POINT,
-  BRAND_POINT_SMALL,
-  BRAND_STROKE_PATH,
-  BRAND_STROKE_PATH_SMALL,
-  brandMarkOptics,
+  BRAND_FIELD,
+  BRAND_MASTERS,
+  BRAND_ON_DARK,
+  BRAND_ON_LIGHT,
+  brandIconSvg,
+  brandMarkInner,
+  pickBrandMaster,
 } from "@/lib/brand-mark";
 
 /**
- * The mark is a construction, not a bitmap, and it does not simply get smaller.
- * Two pieces of its negative space — the 4.2-unit cut between the strokes and
- * the 7.26-unit crescent around the point — close up at 32px and below, which
- * fuses the dot into the S and reads as a heavy blob above an already-thinner
- * lower stroke. That is the top-heavy look; `docs/brand/brand-mark.md`
- * §"Small sizes" specifies a separate optical cut for exactly that range.
- *
- * These tests guard the two ways that can go wrong: the placement arithmetic,
- * and a call site drawing the wrong cut for the size it renders at.
+ * The BedChart mark (D-261) is four optical masters, not one drawing scaled. These tests guard the
+ * size rule, the shared ink box that lets the mark sit in a line of type, the crease being a cut
+ * rather than a painted line, the committed favicon matching the source, and the colours staying
+ * on the v9 tokens.
  */
 
-/** Ink bounding boxes, from docs/brand/brand-mark.md. */
-const INK = { displayWidth: 55.33, chromeWidth: 65.33, height: 100.38 };
-const VIEWBOX = 512;
-/** Two-decimal box figures, so the centre lands within a rounding of 256. */
-const CENTRING_TOLERANCE = 0.01;
+const tokens = readFileSync(new URL("../src/app/ward-flow-v9-tokens.css", import.meta.url), "utf8");
+const darkStart = tokens.indexOf('\n:root[data-theme="dark"],');
+const lightBlock = tokens.slice(0, darkStart);
+const darkBlock = tokens.slice(darkStart);
 
-function parseTransform(transform: string) {
-  const match = /^translate\((-?[\d.]+) (-?[\d.]+)\) scale\(([\d.]+)\)$/.exec(transform);
-  expect(match, `unparseable transform: ${transform}`).not.toBeNull();
-  const [, x, y, scale] = match as RegExpExecArray;
-  return { x: Number(x), y: Number(y), scale: Number(scale) };
+function token(block: string, name: string): string {
+  const match = new RegExp(`${name}:\\s*(#[0-9a-fA-F]{3,8})\\s*;`).exec(block);
+  expect(match, `${name} is not set`).not.toBeNull();
+  return (match as RegExpExecArray)[1].toLowerCase();
 }
 
-describe("the glyph placements all centre their own ink box", () => {
-  it.each([
-    ["BRAND_GLYPH_TRANSFORM (tiled, display)", BRAND_GLYPH_TRANSFORM, INK.displayWidth],
-    ["BRAND_GLYPH_TRANSFORM_SMALL (tiled, chrome)", BRAND_GLYPH_TRANSFORM_SMALL, INK.chromeWidth],
-    ["BRAND_GLYPH_TRANSFORM_BARE (bare, display)", BRAND_GLYPH_TRANSFORM_BARE, INK.displayWidth],
-    ["BRAND_GLYPH_TRANSFORM_BARE_SMALL (bare, chrome)", BRAND_GLYPH_TRANSFORM_BARE_SMALL, INK.chromeWidth],
-  ])("%s lands its centre on 256", (_name, transform, inkWidth) => {
-    const { x, scale } = parseTransform(transform);
-    expect(x + (inkWidth / 2) * scale).toBeCloseTo(VIEWBOX / 2, 1);
-    expect(Math.abs(x + (inkWidth / 2) * scale - VIEWBOX / 2)).toBeLessThan(CENTRING_TOLERANCE * VIEWBOX);
-  });
-});
-
-describe("the bare pair is one construction at two cuts", () => {
-  const display = parseTransform(BRAND_GLYPH_TRANSFORM_BARE);
-  const chrome = parseTransform(BRAND_GLYPH_TRANSFORM_BARE_SMALL);
-
-  it("shares a scale, because only the point's x moves between variants", () => {
-    // BRAND_POINT_SMALL keeps cy and r, so the vertical extent is identical and
-    // the bare scale — which exists to fill the box top to bottom — cannot change.
-    expect(BRAND_POINT_SMALL.cy).toBe(BRAND_POINT.cy);
-    expect(BRAND_POINT_SMALL.r).toBe(BRAND_POINT.r);
-    expect(chrome.scale).toBe(display.scale);
-    expect(chrome.y).toBe(display.y);
+describe("the size masters", () => {
+  it("picks the master by the pixels drawn", () => {
+    expect(pickBrandMaster(16)).toBe("micro");
+    expect(pickBrandMaster(17)).toBe("small");
+    expect(pickBrandMaster(23)).toBe("small");
+    expect(pickBrandMaster(24)).toBe("text");
+    expect(pickBrandMaster(47)).toBe("text");
+    expect(pickBrandMaster(48)).toBe("display");
+    expect(pickBrandMaster(512)).toBe("display");
   });
 
-  it("fills the box top to bottom at that scale", () => {
-    expect(INK.height * display.scale).toBeCloseTo(VIEWBOX, 0);
-  });
-
-  it("shifts left by exactly half the point's travel", () => {
-    // The point moves 10 units out and is the box's right edge, so the box
-    // widens by 10 and its centre by 5.
-    const travel = BRAND_POINT_SMALL.cx - BRAND_POINT.cx;
-    expect(travel).toBe(10);
-    expect(INK.chromeWidth - INK.displayWidth).toBeCloseTo(travel, 1);
-    expect(display.x - chrome.x).toBeCloseTo((travel / 2) * display.scale, 2);
-  });
-
-  it("uses the rule the committed tiled pair already used", () => {
-    // The check that this is the rule actually in use, not one that merely fits.
-    const tiledDisplay = parseTransform(BRAND_GLYPH_TRANSFORM);
-    const tiledChrome = parseTransform(BRAND_GLYPH_TRANSFORM_SMALL);
-    expect(tiledDisplay.x - tiledChrome.x).toBeCloseTo(5 * tiledDisplay.scale, 2);
-  });
-});
-
-describe("the variants are selected as whole sets", () => {
-  // Mixing one variant's point with the other's placement puts the glyph
-  // off-centre; the doc calls that out by name. One selector makes it unreachable.
-  it("pairs each stroke with its own point and placement", () => {
-    expect(brandMarkOptics("display")).toEqual({
-      transform: BRAND_GLYPH_TRANSFORM_BARE,
-      stroke: BRAND_STROKE_PATH,
-      point: BRAND_POINT,
-    });
-    expect(brandMarkOptics("chrome")).toEqual({
-      transform: BRAND_GLYPH_TRANSFORM_BARE_SMALL,
-      stroke: BRAND_STROKE_PATH_SMALL,
-      point: BRAND_POINT_SMALL,
-    });
-  });
-
-  it("keeps the cuts genuinely different", () => {
-    expect(BRAND_STROKE_PATH_SMALL).not.toBe(BRAND_STROKE_PATH);
-    expect(BRAND_POINT_SMALL.cx).toBeGreaterThan(BRAND_POINT.cx);
-  });
-});
-
-/** The brand doc's threshold: "at 32 px and below two things close up". */
-const CHROME_CUT_MAX_PX = 32;
-const REM_PX = 16;
-
-/**
- * Tailwind `h-N` is N/4 rem; a CSS-module class is resolved to its own rule.
- *
- * The module lookup must go through the *specific* import identifier, not every
- * `.module.css` the file imports. `ward-management-navigation.tsx` imports two
- * modules and BOTH define `.brandGlyph`, at 2.5rem and 2rem — an identifier-blind
- * resolver merges them and reports every site there as spanning 32-40px, which
- * is a defect in this helper that reads exactly like a defect in the source.
- */
-function renderedHeightsPx(className: string, sourcePath: string): number[] {
-  const cssModule = /\{\s*(\w+)\.(\w+)\s*\}/.exec(className);
-  if (!cssModule) {
-    return [...className.matchAll(/(?:^|\s|:)h-(\d+)\b/g)].map(([, n]) => (Number(n) / 4) * REM_PX);
-  }
-  const [, identifier, cssClass] = cssModule;
-  const source = readFileSync(sourcePath, "utf8");
-  const importPath = new RegExp(String.raw`import\s+${identifier}\s+from\s+"([^"]*\.module\.css)"`).exec(source)?.[1];
-  if (!importPath) return [];
-  const css = readFileSync(path.resolve(path.dirname(sourcePath), importPath), "utf8");
-  const rule = new RegExp(String.raw`\.${cssClass}\s*\{[^}]*?height:\s*([\d.]+)rem`, "s").exec(css);
-  return rule ? [Number(rule[1]) * REM_PX] : [];
-}
-
-describe("every production call site draws the cut its size needs", () => {
-  const files = execFileSync("git", ["ls-files", "src"], { encoding: "utf8" })
-    .split("\n")
-    .filter((file) => file.endsWith(".tsx") && !/mockups?\b/.test(file));
-
-  const callSites = files.flatMap((file) => {
-    const source = readFileSync(file, "utf8");
-    return [...source.matchAll(/<BrandMark\b([^>]*?)\/>/gs)].map((match) => ({
-      file,
-      attributes: match[1],
-      optical: /optical="chrome"/.test(match[1]) ? "chrome" : "display",
-      heights: renderedHeightsPx(
-        /className=(?:"([^"]*)"|(\{[^}]*\}))/.exec(match[1])?.slice(1).find(Boolean) ?? "",
-        file,
-      ),
-    }));
-  });
-
-  // No production file draws the mark since 15 Oct 2026: its last five call sites were in the old
-  // ClinicalRail sidebar, removed as unused once the Tools sheet (#302) took over its demo controls.
-  // The checks below stay so that a call site added later is held to the same cut rules.
-  it("finds no production call site yet", () => {
-    expect(callSites).toEqual([]);
-  });
-
-  it.each([
-    ["never straddles the threshold, which would need a human decision", "straddle"],
-    ["draws the chrome cut at 32px and below", "chrome"],
-    ["draws the display cut above 32px", "display"],
-  ])("%s", (_name, mode) => {
-    for (const site of callSites) {
-      const smallest = Math.min(...site.heights);
-      const largest = Math.max(...site.heights);
-      if (mode === "straddle") {
-        expect(
-          smallest > CHROME_CUT_MAX_PX || largest <= CHROME_CUT_MAX_PX,
-          `${site.file} renders ${smallest}-${largest}px, spanning the ${CHROME_CUT_MAX_PX}px cut ` +
-            "threshold. One element draws one cut, so pick deliberately rather than by rounding.",
-        ).toBe(true);
-        continue;
-      }
-      if (mode === "chrome" && largest <= CHROME_CUT_MAX_PX) {
-        expect(site.optical, `${site.file} renders at ${largest}px and needs optical="chrome"`).toBe("chrome");
-      }
-      if (mode === "display" && smallest > CHROME_CUT_MAX_PX) {
-        expect(
-          site.optical,
-          `${site.file} renders at ${smallest}px, above the small-cut range; the widened gap is not for it`,
-        ).toBe("display");
-      }
+  it("drops the fold only at micro size", () => {
+    expect(BRAND_MASTERS.micro.flap).toBeNull();
+    for (const name of ["display", "text", "small"] as const) {
+      expect(BRAND_MASTERS[name].flap).toBeTruthy();
+      expect(BRAND_MASTERS[name].crease).toBeGreaterThan(0);
     }
+  });
+
+  it("thickens the crease as the mark gets smaller, so the fold still reads", () => {
+    const { display, text, small } = BRAND_MASTERS;
+    expect(display.crease).toBeLessThan(text.crease);
+    expect(text.crease).toBeLessThan(small.crease);
+  });
+
+  it("centres every master's ink box in its grid", () => {
+    for (const m of Object.values(BRAND_MASTERS)) {
+      expect(m.ink.x + m.ink.width / 2).toBeCloseTo(m.viewBox / 2, 5);
+      expect(m.ink.y + m.ink.height / 2).toBeCloseTo(m.viewBox / 2, 5);
+    }
+  });
+
+  it("puts every micro edge on a whole pixel", () => {
+    const numbers = `${BRAND_MASTERS.micro.pillow} ${BRAND_MASTERS.micro.bed}`.match(/-?\d+(\.\d+)?/g) ?? [];
+    for (const n of numbers) expect(Number(n) * 2, n).toBe(Math.round(Number(n) * 2));
+  });
+});
+
+describe("the crease", () => {
+  it("is cut with a mask, so the mark sits on any ground", () => {
+    const inner = brandMarkInner(BRAND_ON_LIGHT, "display", "t");
+    expect(inner).toContain('<mask id="t"');
+    expect(inner).toContain('stroke="#000"');
+    expect(inner).toContain('mask="url(#t)"');
+  });
+});
+
+describe("the colours", () => {
+  it("stay on the v9 tokens", () => {
+    expect(BRAND_ON_LIGHT.pillow).toBe(token(lightBlock, "--wf-pri-1"));
+    expect(BRAND_ON_LIGHT.bed).toBe(token(lightBlock, "--wf-hero-2"));
+    expect(BRAND_ON_DARK.pillow).toBe(token(darkBlock, "--wf-accent"));
+    expect(BRAND_ON_DARK.bed).toBe(token(darkBlock, "--wf-ink-1"));
+    expect(BRAND_FIELD.light).toBe(token(lightBlock, "--wf-hero-1"));
+    expect(BRAND_FIELD.dark).toBe(token(darkBlock, "--wf-surface"));
+  });
+
+  it("match the in-app brand tokens", () => {
+    expect(token(lightBlock, "--wf-brand-pillow")).toBe(BRAND_ON_LIGHT.pillow);
+    expect(token(lightBlock, "--wf-brand-bed")).toBe(BRAND_ON_LIGHT.bed);
+    expect(token(lightBlock, "--wf-brand-hero-pillow")).toBe(BRAND_ON_DARK.pillow);
+    expect(token(lightBlock, "--wf-brand-hero-bed")).toBe(BRAND_ON_DARK.bed);
+    expect(token(darkBlock, "--wf-brand-pillow")).toBe(BRAND_ON_DARK.pillow);
+    expect(token(darkBlock, "--wf-brand-bed")).toBe(BRAND_ON_DARK.bed);
+  });
+});
+
+describe("the committed browser-tab icon", () => {
+  it("is exactly what brandIconSvg() draws", () => {
+    const committed = readFileSync(new URL("../src/app/icon.svg", import.meta.url), "utf8");
+    expect(committed).toBe(brandIconSvg());
   });
 });

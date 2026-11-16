@@ -4,6 +4,7 @@
 // The wiring is unchanged (the same props, role, test id and words); the layout is the redesign:
 // a calm, full-screen cover in place of the sign-in page's Night entrance.
 
+import { BrandMark, BrandName } from "@/components/ward-management/brand-mark";
 import type { ReactNode, RefObject } from "react";
 import { ArrowRight, Lock } from "lucide-react";
 
@@ -38,7 +39,10 @@ export function IdleLockScreen({
       aria-labelledby="ward-idle-lock-title"
     >
       <div className={styles.top}>
-        <span className={styles.wordmark}>Ward Flow</span>
+        <span className={styles.brandTile} aria-hidden="true">
+          <BrandMark size={22} />
+        </span>
+        <BrandName name="Ward Flow" className={styles.wordmark} />
         <span className={styles.syn}>
           <i aria-hidden="true" />
           Synthetic data

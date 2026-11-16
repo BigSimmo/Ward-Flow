@@ -2925,4 +2925,12 @@ D-238 is reserved for design Lane D's block (noted in PR #1677). D-239 is reserv
 - **Why:** a logo change touches the tab, home-screen icons, rail and front door just before the demo.
 - **Boundary:** no logo, icon or brand file changes now.
 
-The next free number is D-250.
+## D-261. Build the BedChart Folded B logo into the site now (16 November 2026)
+
+- **Date:** 16 November 2026, 6:01 PM AWST (10:01 UTC). **Decided by:** Josh, in chat: "Go ahead and lock this in please and build it now into the site", after the in-app mock-ups (https://claude.ai/artifact/9WMN23qahMHC6g4otymGjT) and the rollout plan (https://claude.ai/artifact/7ZxUbedKoSvr4oSMHm4AXj).
+- **Decision:** The Folded B replaces the inherited S and the rail's cross-and-arrow everywhere: rail, executive chrome, front door, lock screens, favicon, browser-tab icon, app icons, launch screens and the link preview. Four size masters (display, text, small, micro), colours from the v9 kit, a navy app-icon field. Josh's changes on the mock-ups (16 November): the sign-in and lock screens keep the frosted glass tile with its fine border, and the light rail strip shows the bare mark with no dark tile.
+- **Why:** the app is being renamed BedChart, and Josh chose this mark over nine rounds on the logo canvas (https://claude.ai/artifact/USv58P3ySyapNqGCrbHX92).
+- **Supersedes:** D-249 (keep today's logo until after the demo).
+- **Boundary:** the visible name change is PR #1701's, not this one. Josh still plans a staff "what do you see" test and an IP Australia trade mark search before any public use.
+
+The next free number is D-262.

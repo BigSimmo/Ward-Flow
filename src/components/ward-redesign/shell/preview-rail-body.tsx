@@ -2,6 +2,7 @@
 
 // Fork of src/components/ward-management/shell/ward-rail.tsx: the mock-ups' rail, with Josh's 30 Oct 2026 fixes.
 
+import { BrandMark } from "@/components/ward-management/brand-mark";
 import { WardRailFrame } from "@/components/ward-management/shell/ward-chrome-frame";
 
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
@@ -220,23 +221,9 @@ function BedAlertMeter({ percent }: { percent: number }) {
   );
 }
 
-/** The Ward Flow mark: a care cross whose right arm runs on as an arrow, for flow (8 October 2026). */
-function WardFlowMark({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 20 20"
-      className={className}
-      aria-hidden="true"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2.25}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M8 3.5v13M3 10h13.5" />
-      <path d="M13 6.5 16.5 10 13 13.5" />
-    </svg>
-  );
+/** The BedChart mark (D-261), the shared Folded B. 22px beside the name, 26px alone on the closed strip. */
+function WardFlowMark({ className, size = 22 }: { className?: string; size?: number }) {
+  return <BrandMark size={size} className={className} />;
 }
 
 const NO_BED_ALERTS: ServiceBedAlertsSummary = {
@@ -670,7 +657,7 @@ export function PreviewRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
             onClick={(event) => (isTabletLandscape ? openMore(event.currentTarget) : setOpen(true))}
           >
             <span className={styles.brandEmblem} aria-hidden="true">
-              <WardFlowMark className={styles.emblemGlyph} />
+              <WardFlowMark className={styles.emblemGlyph} size={26} />
             </span>
           </button>
         ) : (
