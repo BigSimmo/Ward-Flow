@@ -258,7 +258,7 @@ test.describe("@mockup page-specific statistics insights", () => {
       /statistics\/community\/bentley$/,
     );
     await expectNoPageOverflow(page, "community chart and comparison");
-    await expect(page.getByRole("navigation", { name: "Ward Flow statistics sections" })).toHaveCount(1);
+    await expect(page.getByRole("navigation", { name: "BedChart statistics sections" })).toHaveCount(1);
   });
 });
 

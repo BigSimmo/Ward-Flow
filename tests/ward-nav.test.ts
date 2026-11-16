@@ -156,7 +156,7 @@ const staticRoutes = wardFlowRoutes.filter((entry) => !entry.dynamic).map((entry
 const dynamicRoutes = wardFlowRoutes.filter((entry) => entry.dynamic).map((entry) => entry.route);
 const dynamicPatterns = wardFlowRoutes.filter((entry) => entry.dynamic).map((entry) => routeToPattern(entry.route));
 
-describe("Ward Flow route enumeration (sanity check on the scan itself)", () => {
+describe("BedChart route enumeration (sanity check on the scan itself)", () => {
   it("finds every known page.tsx under src/app/bedchart, both static and dynamic", () => {
     // 22 page.tsx files measured on the merged tree: 18 static + 4 dynamic. Both branches added a
     // route independently and both moved this number to 21 for different routes — Phase 8 for the
@@ -688,7 +688,7 @@ function coverageSentence(route: string) {
   return `${scan?.concreteInstances.size ?? 0} of ${instances ? instances() : 0} instances reachable without state`;
 }
 
-describe("Ward Flow dynamic routes — what links them, and what they leave orphaned (D8, dynamic half)", () => {
+describe("BedChart dynamic routes — what links them, and what they leave orphaned (D8, dynamic half)", () => {
   /**
    * The floor, in the style of the route-enumeration canary above and for the same reason: three
    * of the four assertions below are "this list is empty", and an empty list is what a scan that
@@ -833,7 +833,7 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
    * anywhere is unreachable outright, which needs no argument about how many instances a builder
    * covers, and is the state the board's route shipped in.
    */
-  it("every dynamic Ward Flow route is referenced by at least one link in src/ (referenced — NOT proven reachable)", () => {
+  it("every dynamic BedChart route is referenced by at least one link in src/ (referenced — NOT proven reachable)", () => {
     const unreferenced = dynamicRoutes.filter((route) => {
       const scan = dynamicRouteScans.get(route);
       return (scan?.concreteSites.length ?? 0) === 0 && (scan?.builtSites.length ?? 0) === 0;
@@ -856,7 +856,7 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
     const declaredButUnlinked = unreferenced.filter((route) => WARD_DYNAMIC_ROUTE_INSTANCES.has(route));
     expect(
       unreferenced,
-      `Dynamic Ward Flow route(s) with no href anywhere under src/ — nothing can reach any instance of them.` +
+      `Dynamic BedChart route(s) with no href anywhere under src/ — nothing can reach any instance of them.` +
         (declaredButUnlinked.length
           ? ` DECLARED BUT NOW UNLINKED — these carry a WARD_DYNAMIC_ROUTE_INSTANCES entry, so a route that was` +
             ` wired at some point has lost its href; look for a deleted or renamed link: ${declaredButUnlinked.join(", ")}.`
@@ -869,11 +869,11 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
     ).toEqual([]);
   });
 
-  it("declares, for every dynamic Ward Flow route, the collection whose instances it serves", () => {
+  it("declares, for every dynamic BedChart route, the collection whose instances it serves", () => {
     const undeclared = dynamicRoutes.filter((route) => !WARD_DYNAMIC_ROUTE_INSTANCES.has(route));
     expect(
       undeclared,
-      `Dynamic Ward Flow route(s) with no entry in WARD_DYNAMIC_ROUTE_INSTANCES, so no coverage figure can be computed for them: ${undeclared.join(", ")}`,
+      `Dynamic BedChart route(s) with no entry in WARD_DYNAMIC_ROUTE_INSTANCES, so no coverage figure can be computed for them: ${undeclared.join(", ")}`,
     ).toEqual([]);
     const stale = [...WARD_DYNAMIC_ROUTE_INSTANCES.keys()].filter((route) => !dynamicRoutes.includes(route));
     expect(stale, `WARD_DYNAMIC_ROUTE_INSTANCES entr(ies) for route(s) no longer on disk: ${stale.join(", ")}`).toEqual(
@@ -888,7 +888,7 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
    * that is not a softening: it is the deficiency put on the record as a figure, which is what
    * anyone fixing it has to change.
    */
-  it("every dynamic Ward Flow route names every instance it serves, or records exactly how many it orphans", () => {
+  it("every dynamic BedChart route names every instance it serves, or records exactly how many it orphans", () => {
     const unrecorded = dynamicRoutes
       .map((route) => {
         const linked = dynamicRouteScans.get(route)?.concreteInstances.size ?? 0;
@@ -904,7 +904,7 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
         return undefined;
       })
       .filter((problem): problem is string => problem !== undefined);
-    expect(unrecorded, `Dynamic Ward Flow route coverage problem(s):\n  ${unrecorded.join("\n  ")}`).toEqual([]);
+    expect(unrecorded, `Dynamic BedChart route coverage problem(s):\n  ${unrecorded.join("\n  ")}`).toEqual([]);
   });
 
   it("WARD_DYNAMIC_ROUTE_ORPHANS has no entry for a route that is no longer dynamic, or no longer orphans anything", () => {
@@ -923,7 +923,7 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
   });
 });
 
-describe("Ward Flow navigation — single source (ward-nav.ts)", () => {
+describe("BedChart navigation — single source (ward-nav.ts)", () => {
   // Every destination the rail, the panel and the drawer render, from the one file all three read.
   const navHrefs = new Set([...WARD_VIEWS, ...WARD_NAV].map((item) => item.href));
 
@@ -939,11 +939,11 @@ describe("Ward Flow navigation — single source (ward-nav.ts)", () => {
   // Direction 2: every real STATIC route must appear in WARD_NAV or be recorded as intentionally
   // unlisted with a reason. This is the direction a one-way "is every link real" check cannot
   // see — and its absence is exactly how D8 shipped three boards with no rail entry.
-  it("every static Ward Flow route appears in the navigation or is recorded as intentionally unlisted", () => {
+  it("every static BedChart route appears in the navigation or is recorded as intentionally unlisted", () => {
     const missing = staticRoutes.filter((route) => !navHrefs.has(route) && !WARD_NAV_INTENTIONALLY_UNLISTED.has(route));
     expect(
       missing,
-      `Static Ward Flow route(s) in neither the nav arrays nor WARD_NAV_INTENTIONALLY_UNLISTED: ${missing.join(", ")}`,
+      `Static BedChart route(s) in neither the nav arrays nor WARD_NAV_INTENTIONALLY_UNLISTED: ${missing.join(", ")}`,
     ).toEqual([]);
   });
 
@@ -983,7 +983,7 @@ describe("Ward Flow navigation — single source (ward-nav.ts)", () => {
     for (const [route, reason] of WARD_NAV_INTENTIONALLY_UNLISTED) {
       expect(
         staticRoutes,
-        `${route} is recorded as intentionally unlisted but is no longer a static Ward Flow route`,
+        `${route} is recorded as intentionally unlisted but is no longer a static BedChart route`,
       ).toContain(route);
       expect(reason.trim().length, `${route}'s intentionally-unlisted reason is empty`).toBeGreaterThan(0);
       expect(navHrefs.has(route), `${route} is in both WARD_NAV and WARD_NAV_INTENTIONALLY_UNLISTED — pick one`).toBe(
@@ -1205,13 +1205,13 @@ describe("Ward Flow navigation — single source (ward-nav.ts)", () => {
    * this phase. Phase 7 is adding routes to `WARD_NAV` right now, which is exactly when a new id
    * is most likely to be added without its icon.
    */
-  it("gives every WARD_NAV id an icon in WARD_NAV_ICONS, so no Ward Flow screen throws 'Element type is invalid'", () => {
+  it("gives every WARD_NAV id an icon in WARD_NAV_ICONS, so no BedChart screen throws 'Element type is invalid'", () => {
     const missing = WARD_NAV.filter((item) => !(item.id in WARD_NAV_ICONS)).map((item) => item.id);
     expect(missing, `WARD_NAV id(s) with no icon in WARD_NAV_ICONS: ${missing.join(", ")}`).toEqual([]);
   });
 });
 
-describe("The Ward Flow rail's aria-label is honest for a sandboxed prototype (D11)", () => {
+describe("The BedChart rail's aria-label is honest for a sandboxed prototype (D11)", () => {
   /**
    * Every file that can put a link on a Ward Flow screen's chrome, concatenated: the live rail, the
    * bar, its phone menu, and the data they read. The old `ClinicalRail` sidebar and
@@ -1231,15 +1231,15 @@ describe("The Ward Flow rail's aria-label is honest for a sandboxed prototype (D
   // mentioning forbidden text should still fail loudly, not be stripped into a silent pass).
   const strippedSource = stripSourceComments(source);
 
-  it("no longer claims Ward Flow is a clinical application", () => {
+  it("no longer claims BedChart is a clinical application", () => {
     expect(source).not.toContain("Clinical applications");
   });
 
-  it("labels the rail's own nav for Ward Flow, not for a set of applications", () => {
+  it("labels the rail's own nav for BedChart, not for a set of applications", () => {
     // Comments are stripped before this check: a mutation proved on 2026-09-04 that removing the
     // real `aria-label="Ward Flow"` attribute and leaving only a `//` comment with the same text
     // satisfied the unstripped check.
-    expect(strippedSource).toContain('aria-label="Ward Flow sections"');
+    expect(strippedSource).toContain('aria-label="BedChart sections"');
   });
 
   /**
@@ -1392,7 +1392,7 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/about`, render: () => createElement(AboutDemoScreen) },
 ];
 
-describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on the map)", () => {
+describe("BedChart route/render-map coverage (D8 nav check — sanity check on the map)", () => {
   it("RENDERABLE_ROUTES covers every route the filesystem scan found except the redirect-only stubs, and nothing else", () => {
     const scanned = new Set(wardFlowRoutes.map((entry) => entry.route));
     const mapped = new Set(RENDERABLE_ROUTES.map((entry) => entry.route));
@@ -1518,9 +1518,9 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
  * gave the rail a publication store to read, so both halves are false** — and the mechanical strip
  * that removed the prop left an empty code span mid-sentence, which is the visible tell.
  */
-describe("Every Ward Flow route carries the 'Ward Flow views' in-page nav (D8)", () => {
+describe("Every BedChart route carries the 'BedChart views' in-page nav (D8)", () => {
   for (const entry of RENDERABLE_ROUTES) {
-    it(`renders the Ward Flow views nav on ${entry.route}`, () => {
+    it(`renders the BedChart views nav on ${entry.route}`, () => {
       // `children` in the props object, not positional — `WardFlowProviderProps` declares it
       // required, so the positional form fails the type (TS2769). This file cannot use JSX
       // instead: it is deliberately `.test.ts` so it collects under vitest's "node" project
@@ -1531,10 +1531,10 @@ describe("Every Ward Flow route carries the 'Ward Flow views' in-page nav (D8)",
         children: createElement(Fragment, null, createElement(WardRail, null), entry.render()),
       });
       const markup = renderToStaticMarkup(element);
-      const matches = markup.match(/aria-label="Ward Flow views"/g) ?? [];
+      const matches = markup.match(/aria-label="BedChart views"/g) ?? [];
       expect(
         matches.length,
-        `expected exactly one "Ward Flow views" nav on ${entry.route}, found ${matches.length}`,
+        `expected exactly one "BedChart views" nav on ${entry.route}, found ${matches.length}`,
       ).toBe(1);
     });
   }
@@ -1907,7 +1907,7 @@ describe("WARD_PRIMARY_ACTIONS — Task 7's one-action-per-route contract", () =
   // "The routes named match the real route list rather than a hand-copy" — every route named in
   // WARD_PRIMARY_ACTIONS is checked against `staticRoutes`/`dynamicRoutes`, both derived by walking
   // the real filesystem earlier in this file, never against a second hand-typed array of hrefs.
-  it("every WARD_PRIMARY_ACTIONS route resolves to a real Ward Flow route, never a hand-copy", () => {
+  it("every WARD_PRIMARY_ACTIONS route resolves to a real BedChart route, never a hand-copy", () => {
     const unresolved = WARD_PRIMARY_ACTIONS.filter(
       (entry) => !staticRoutes.includes(entry.route) && !dynamicRoutes.includes(entry.route),
     ).map((entry) => entry.route);

@@ -93,9 +93,9 @@ describe("askHelp", () => {
     if (!paperOnly) return;
     // "last" and "saved" are only in the Handover twin's answer, so its own twin must stand in.
     for (const matches of [
-      askHelp("ward flow down", paperOnly),
+      askHelp("bedchart down", paperOnly),
       askHelp("last", paperOnly),
-      askHelp("Ward Flow down last saved", paperOnly),
+      askHelp("BedChart down last saved", paperOnly),
       closestHowTos("down", paperOnly, 50),
       closestHowTos("last", paperOnly, 50),
     ]) {
@@ -103,7 +103,7 @@ describe("askHelp", () => {
       expect(ids).toContain("downtime-paper");
       expect(ids).not.toContain("downtime");
     }
-    expect(askHelp("ward flow down", "coordinator").map((match) => match.howTo.id)).toContain("downtime");
+    expect(askHelp("bedchart down", "coordinator").map((match) => match.howTo.id)).toContain("downtime");
   });
 
   it("gives the same answers for the same words", () => {

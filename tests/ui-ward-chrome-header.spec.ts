@@ -170,7 +170,7 @@ async function gotoWardChrome(page: Page, path: string = DELAYS_ROUTE): Promise<
     "React's streamed content is still staged, so the whole screen is duplicated in the document",
   ).toHaveCount(0, { timeout: 15_000 });
   await expect(page.getByTestId("ward-bar")).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByRole("region", { name: "Ward Flow data mode" })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "BedChart data mode" })).toHaveCount(0);
 }
 
 function searchInput(page: Page): Locator {

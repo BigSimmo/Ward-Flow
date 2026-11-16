@@ -1667,7 +1667,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     // Dabakarn's own card on the bed map, which reads the unit's live capacity rather than the
     // frozen `allUnits()` list (Critical 1). ---
     await page
-      .getByRole("navigation", { name: "Ward Flow views" })
+      .getByRole("navigation", { name: "BedChart views" })
       .getByRole("link", { name: /^Capacity\b/u })
       .click();
     await expect(page.getByTestId("ward-capacity-screen")).toBeVisible({ timeout: 15_000 });
@@ -1679,7 +1679,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     // Back on Home, a patient whose Placement explains Dabakarn: WF-003, already accepted there,
     // so its eligibility checks are Dabakarn's own.
     await page
-      .getByRole("navigation", { name: "Ward Flow views" })
+      .getByRole("navigation", { name: "BedChart views" })
       .getByRole("link", { name: /^Home\b/u })
       .click();
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });

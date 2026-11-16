@@ -69,7 +69,7 @@ describe("Night entrance sign-in", () => {
       />,
     );
     expect(screen.getByRole("status")).toHaveTextContent("Shared sign-in configuration is unavailable.");
-    expect(screen.getByRole("status")).toHaveTextContent("tell the Ward Flow coordinator");
+    expect(screen.getByRole("status")).toHaveTextContent("tell the BedChart coordinator");
     expect(screen.queryByText("The sign-in service is busy.")).toBeNull();
   });
 

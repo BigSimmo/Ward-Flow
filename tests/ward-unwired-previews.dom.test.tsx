@@ -260,7 +260,7 @@ describe.each(BUILDS)("deleted unwired controls, a %s build", (build) => {
     expect(paging).toHaveLength(0);
   });
 
-  it("extending a legal form says plainly that Ward Flow does not notify the owner", () => {
+  it("extending a legal form says plainly that BedChart does not notify the owner", () => {
     const target = seedWardFlowStateAt(0).movements.find((m) => !m.closure && m.legalForm?.dueAt !== undefined)!;
     render(
       <WardFlowProvider initialNow={1242}>
@@ -268,7 +268,7 @@ describe.each(BUILDS)("deleted unwired controls, a %s build", (build) => {
       </WardFlowProvider>,
     );
     const sheet = screen.getByTestId("ward-legal-extend");
-    expect(sheet).toHaveTextContent(`Ward Flow does not notify the owner. Tell ${target.owner} separately.`);
+    expect(sheet).toHaveTextContent(`BedChart does not notify the owner. Tell ${target.owner} separately.`);
     expect(sheet).not.toHaveTextContent(/not wired in this prototype/iu);
   });
 });

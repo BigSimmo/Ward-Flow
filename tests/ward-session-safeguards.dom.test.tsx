@@ -136,7 +136,7 @@ it("covers the desk with the lock, the product name and the synthetic-data mark 
   const lock = screen.getByRole("dialog", {
     name: `Locked after ${CLINICAL_VALUES.idleLock.value} minutes without use`,
   });
-  expect(lock).toHaveTextContent("Ward Flow");
+  expect(lock).toHaveTextContent("BedChart");
   expect(lock).toHaveTextContent("Synthetic data");
   expect(screen.getAllByRole("button").map((button) => button.textContent)).toEqual(["Carry on"]);
   // Escape does not unlock: only the button does.

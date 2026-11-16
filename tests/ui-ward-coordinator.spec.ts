@@ -53,7 +53,7 @@ async function gotoCoordinator(page: Page) {
   // selected (seen 11 Oct 2026, intermittently). The header no longer has a Prototype pill to wait
   // for (Josh, 30-31 Oct 2026), so wait for the bar itself and for no Data mode bar above the app.
   await expect(page.getByTestId("ward-bar")).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByRole("region", { name: "Ward Flow data mode" })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "BedChart data mode" })).toHaveCount(0);
   // Home v7 (Josh, 22 Oct 2026): Home opens on My list (Needs you since Q340); these journeys read
   // the queue, now the Flow card.
   await showEveryoneWaitingOn(page);
@@ -146,7 +146,7 @@ async function expectNoRegionGridOverflow(page: Page) {
   expect(overflow).toBeLessThanOrEqual(2);
 }
 
-test.describe("@mockup Ward Flow coordinator screen", () => {
+test.describe("@mockup BedChart coordinator screen", () => {
   test.describe.configure({ timeout: 45_000 });
 
   test("presents the five coordination regions", async ({ page }) => {

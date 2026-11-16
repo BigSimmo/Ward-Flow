@@ -30,7 +30,7 @@ describe("page titles match the menu (DA-28)", () => {
   });
 
   it("names Places and Legal forms exactly as the menu does", () => {
-    expect(staticTitle("/bedchart/hub")).toBe("Places — Ward Flow");
-    expect(staticTitle("/bedchart/legal-forms")).toBe("Legal forms — Ward Flow");
+    expect(staticTitle("/bedchart/hub")).toBe("Places — BedChart");
+    expect(staticTitle("/bedchart/legal-forms")).toBe("Legal forms — BedChart");
   });
 });

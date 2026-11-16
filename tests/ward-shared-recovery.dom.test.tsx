@@ -191,7 +191,7 @@ describe("shared recovery within an open sheet", () => {
     expect(screen.getByRole("status").textContent).toBe(
       "Signed in. Connecting to the shared workspace. This can take up to 15 seconds.",
     );
-    expect(screen.getByRole("main", { name: "Opening Ward Flow" }).getAttribute("aria-busy")).toBe("true");
+    expect(screen.getByRole("main", { name: "Opening BedChart" }).getAttribute("aria-busy")).toBe("true");
     // #805: nothing has failed yet, so no Reconnect and no sign-in screen; Sign out stays.
     expect(screen.queryByRole("button", { name: "Reconnect" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Sign in" })).toBeNull();

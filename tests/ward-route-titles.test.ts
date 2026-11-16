@@ -23,7 +23,7 @@ describe("browser tab titles", () => {
   it("names the ward on its board", async () => {
     const unit = knownWardUnit("dn-rph-acute")!;
     const { title } = await boardMetadata(params("unitId", unit.id));
-    expect(title).toBe(`${unit.name} Bed board — Ward Flow`);
+    expect(title).toBe(`${unit.name} Bed board — BedChart`);
   });
 
   it.each([
@@ -32,18 +32,18 @@ describe("browser tab titles", () => {
     ["emergency department", () => edMetadata(params("edId", TYPED))],
   ])("never echoes an unknown %s address into the title", async (_label, read) => {
     const { title, description } = await read();
-    expect(String(title)).toMatch(/not found — Ward Flow$/);
+    expect(String(title)).toMatch(/not found — BedChart$/);
     expect(`${String(title)} ${description ?? ""}`).not.toMatch(/Typed/);
   });
 
   it("still names a known community team", async () => {
     const team = communityTeamById("midland")!;
     const { title } = await communityMetadata(params("teamId", team.id));
-    expect(title).toBe(`${team.name} — Ward Flow`);
+    expect(title).toBe(`${team.name} — BedChart`);
   });
 
   it("tells a movement record apart from a person's page, with no name in either", () => {
-    expect(movementMetadata.title).toBe("Movement record — Ward Flow");
-    expect(personMetadata.title).toBe("Patient — Ward Flow");
+    expect(movementMetadata.title).toBe("Movement record — BedChart");
+    expect(personMetadata.title).toBe("Patient — BedChart");
   });
 });

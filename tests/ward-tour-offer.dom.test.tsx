@@ -43,7 +43,7 @@ describe("P188: the tour is offered, not forced", () => {
     render(<WardTourAutoStart onStart={onStart} />);
     const card = await screen.findByTestId("ward-tour-offer");
     // Nov 2026: three welcome cards come first; the last offers the tour.
-    expect(card.textContent).toMatch(/^Welcome to Ward Flow/u);
+    expect(card.textContent).toMatch(/^Welcome to BedChart/u);
     fireEvent.click(screen.getByTestId("ward-tour-welcome-next"));
     fireEvent.click(screen.getByTestId("ward-tour-welcome-next"));
     // The time follows the desk's tour length on this device (2 Nov 2026), as the first step says.

@@ -81,7 +81,7 @@ describe("act-now notifier", () => {
   it("notifies the coordinator's route of a new act-now alert, once, with no patient name", async () => {
     await renderAt("/bedchart");
     expect(shown).toHaveLength(1);
-    expect(shown[0]).toMatch(/^Ward Flow: act now: .*Synthetic demo data\.$/);
+    expect(shown[0]).toMatch(/^BedChart: act now: .*Synthetic demo data\.$/);
   });
 
   // Device audit (11 Oct 2026): Tasks is the signed-in person's list on every page

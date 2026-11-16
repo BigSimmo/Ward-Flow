@@ -384,7 +384,7 @@ describe("welcome cards before the first-run tour", () => {
     const dialog = await screen.findByTestId("ward-tour-offer");
     expect(dialog.getAttribute("role")).toBe("dialog");
     expect(dialog.dataset.card).toBe("what");
-    expect(screen.getByRole("heading", { name: "Welcome to Ward Flow" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Welcome to BedChart" })).toBeTruthy();
     // No dead Back on the first card; Not now is always there.
     expect(screen.queryByRole("button", { name: "Back" })).toBeNull();
     expect(screen.getByRole("button", { name: "Not now" })).toBeTruthy();

@@ -94,7 +94,8 @@ const BANNED: readonly Banned[] = [
     id: "Ward Flow",
     pattern: /\bWard Flow\b/,
     instead: "BedChart",
-    skip: /^src\/app\/mockups\/|^src\/lib\/local-project-guard\.ts$/,
+    // ward-shared-client.ts compares the backend's own "No Ward Flow role" message; it is never shown.
+    skip: /^src\/app\/mockups\/|^src\/lib\/local-project-guard\.ts$|^src\/components\/ward-management\/ward-shared-client\.ts$/,
   },
   // The ED board mock-up copies under ward-redesign/ stay as drawn (D-91), so this rule skips them.
   { id: "No one", pattern: /\bNo one\b/, instead: "Nobody", skip: /^src\/components\/ward-redesign\// },

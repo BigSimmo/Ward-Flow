@@ -114,7 +114,7 @@ describe("Statistics hero: Export the figures", () => {
     inProvider(<StatisticsWardScreen unitId={unit.id} />);
     const { csv, name } = await exportedCsv(screen.getByTestId("ward-statistics-export"));
     expect(name).toBe(`bedchart-synthetic-${unit.id}-figures.csv`);
-    expect(csv).toContain(`"Ward Flow statistics","${unit.name}"`);
+    expect(csv).toContain(`"BedChart statistics","${unit.name}"`);
     expect(csv).toContain(`"Beds","${unit.beds}"`);
   });
 

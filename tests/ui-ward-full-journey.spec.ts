@@ -186,7 +186,7 @@ async function switchView(page: Page, pick: (drawer: Locator) => Locator | Promi
   await waitForScreen(page, screenTestId);
 }
 
-test.describe("@mockup Ward Flow full journey — referral to discharge planning, one browser window", () => {
+test.describe("@mockup BedChart full journey — referral to discharge planning, one browser window", () => {
   test.describe.configure({ timeout: 120_000 });
 
   /*

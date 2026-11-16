@@ -56,7 +56,7 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
       "Service now",
       "Figures at a glance",
       "Appearance",
-      "Ward Flow Digest",
+      "BedChart Digest",
       "Shift desk",
       "Utilities",
       "Directory",
@@ -316,9 +316,9 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     expect(screen.queryByRole("region", { name: "Do now" })).toBeNull();
     fireEvent.change(search, { target: { value: "zzz" } });
     expect(screen.getByRole("status")).toHaveTextContent("No tool matches “zzz”.");
-    expect(within(screen.getByRole("status")).getByRole("button", { name: "Search Ward Flow" })).toBeTruthy();
+    expect(within(screen.getByRole("status")).getByRole("button", { name: "Search BedChart" })).toBeTruthy();
     // With no header search on the page (Patients is the search), the sheet stays open and says so.
-    fireEvent.click(within(screen.getByRole("status")).getByRole("button", { name: "Search Ward Flow" }));
+    fireEvent.click(within(screen.getByRole("status")).getByRole("button", { name: "Search BedChart" }));
     expect(screen.getByRole("status")).toHaveTextContent("Search is not on this page. Open Patients to search.");
     fireEvent.click(within(screen.getByRole("status")).getByRole("button", { name: "Clear" }));
     expect(search).toHaveValue("");

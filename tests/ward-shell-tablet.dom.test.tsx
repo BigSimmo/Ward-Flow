@@ -89,7 +89,7 @@ describe("tablet landscape (1001px to 1200px)", () => {
       const rail = screen.getByTestId("ward-rail");
       await waitFor(() => expect(rail).toHaveAttribute("data-tablet", "landscape"));
       expect(rail).toHaveAttribute("data-rail", "closed");
-      const views = within(rail).getByRole("navigation", { name: "Ward Flow views" });
+      const views = within(rail).getByRole("navigation", { name: "BedChart views" });
       const groups = Array.from(views.querySelectorAll(":scope > section")).map((section) =>
         section.getAttribute("aria-label"),
       );
@@ -132,7 +132,7 @@ describe("tablet landscape (1001px to 1200px)", () => {
       expect(rail).toHaveAttribute("data-rail", "open");
       expect(within(rail).queryByTestId("ward-rail-tablet-more")).toBeNull();
       expect(within(rail).getByTestId("ward-rail-more")).toHaveAccessibleName("More pages");
-      const views = within(rail).getByRole("navigation", { name: "Ward Flow views" });
+      const views = within(rail).getByRole("navigation", { name: "BedChart views" });
       // B1: one section, the role's own menu; the other groups are one tap away under More.
       expect(views.querySelectorAll(":scope > section")).toHaveLength(1);
     } finally {

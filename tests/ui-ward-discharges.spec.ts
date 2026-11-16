@@ -534,7 +534,7 @@ test.describe("@mockup complete care dossier", () => {
     // opens from its Tasks link, as a ward clinician reaches it.
     await page.goto(`/bedchart/discharges?admissionId=${a.id}`);
     await page.waitForLoadState("networkidle");
-    await expect(page.getByRole("region", { name: "Ward Flow data mode" })).toHaveCount(0);
+    await expect(page.getByRole("region", { name: "BedChart data mode" })).toHaveCount(0);
     await giveOnBehalfReason(page);
     // Drawer review (6 Nov 2026): the drawer's tabs sit in its fixed head, outside the body region.
     const detail = page.getByRole("region", { name: "Selected discharge details" });

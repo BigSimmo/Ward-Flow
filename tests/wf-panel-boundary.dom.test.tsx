@@ -31,10 +31,8 @@ it("shows an error line in place of the failing panel and keeps its siblings", (
   expect(screen.getByText("Other panel")).toBeVisible();
   expect(screen.getByRole("heading", { name: "Board" })).toBeVisible();
   // Our own line names the section and the error type only, never the message.
-  const ours = log.mock.calls
-    .map((call) => String(call[0]))
-    .filter((line) => line.startsWith("Ward Flow panel failed"));
-  expect(ours).toEqual(["Ward Flow panel failed: Transport (Error)"]);
+  const ours = log.mock.calls.map((call) => String(call[0])).filter((line) => line.startsWith("BedChart panel failed"));
+  expect(ours).toEqual(["BedChart panel failed: Transport (Error)"]);
 });
 
 it("draws the panel again after Try again once it can render", () => {

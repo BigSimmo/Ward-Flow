@@ -105,7 +105,7 @@ describe("Report a problem: settings and report text", () => {
     const text = reportText("  The board froze & would not scroll.  ", context);
     expect(text).toBe(
       [
-        "Ward Flow problem report",
+        "BedChart problem report",
         "",
         "What happened:",
         "The board froze & would not scroll.",

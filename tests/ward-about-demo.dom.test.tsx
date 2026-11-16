@@ -70,7 +70,7 @@ describe("About this demo (F-77)", () => {
         <AboutDemoScreen />
       </SharedSessionContext.Provider>,
     );
-    expect(screen.getByRole("heading", { level: 1, name: "About Ward Flow" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "About BedChart" })).toBeInTheDocument();
     const page = screen.getByTestId("ward-about-demo");
     expect(page).not.toHaveTextContent("Nothing you do is saved on a server.");
     expect(page).not.toHaveTextContent("Your demo code");

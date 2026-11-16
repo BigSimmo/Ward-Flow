@@ -27,7 +27,7 @@ describe("one shared statistics navigation", () => {
   ])("keeps the same destinations and exactly one current page on %s", (suffix, label) => {
     routing.pathname = `/bedchart/statistics${suffix}`;
     render(<StatisticsNav />);
-    const nav = within(screen.getByRole("navigation", { name: "Ward Flow statistics sections" }));
+    const nav = within(screen.getByRole("navigation", { name: "BedChart statistics sections" }));
     const links = nav.getAllByRole("link");
     // v6 hero track (7 Oct 2026): short labels, the four unit kinds carrying their counts.
     expect(links.map((link) => link.textContent?.replace(/\d+$/, ""))).toEqual([
@@ -54,7 +54,7 @@ describe("one shared statistics navigation", () => {
   ])("shows the same seven phone chips on %s (phone review F-12)", (suffix, slug, label) => {
     routing.pathname = `/bedchart/statistics${suffix}`;
     render(<StatisticsNav variant="chips" activeSlug={slug} withSamples={false} />);
-    const nav = within(screen.getByRole("navigation", { name: "Ward Flow statistics sections" }));
+    const nav = within(screen.getByRole("navigation", { name: "BedChart statistics sections" }));
     const links = nav.getAllByRole("link");
     expect(links.map((link) => link.textContent?.replace(/\d+$/, ""))).toEqual([
       "Network",

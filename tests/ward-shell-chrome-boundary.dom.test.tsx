@@ -82,7 +82,7 @@ describe("NextShellBoundary", () => {
     await userEvent.tab();
     expect(reload).toHaveFocus();
     const logged = vi.mocked(console.error).mock.calls.map((call) => String(call[0]));
-    expect(logged).toContain("Ward Flow shell failed: The sidebar (Error)");
+    expect(logged).toContain("BedChart shell failed: The sidebar (Error)");
     expect(logged.join(" ")).not.toContain("record text");
   });
 

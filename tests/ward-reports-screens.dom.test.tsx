@@ -381,7 +381,7 @@ describe("read-only report screens", () => {
   it("opens the weekly report on this week so far, with a Weekly tab current", () => {
     inProvider(<WeeklyReportScreen />);
     expect(screen.getByTestId("ward-weekly-range").textContent).toMatch(/^Week: This week so far/u);
-    const nav = within(screen.getByRole("navigation", { name: "Ward Flow statistics sections" }));
+    const nav = within(screen.getByRole("navigation", { name: "BedChart statistics sections" }));
     expect(nav.getByRole("link", { name: "Weekly" })).toHaveAttribute("aria-current", "page");
     chooseWeek(0);
     expect(screen.getByTestId("ward-weekly-range").textContent).toMatch(/^Week: Last full week/u);

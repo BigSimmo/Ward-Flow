@@ -128,7 +128,7 @@ describe("every statistics section page carries the disclaimer", () => {
     // v6: the hero's section track leads with Network, the statistics hub (D-77, change 9).
     const back =
       screen.queryByTestId("ward-statistics-section-back") ??
-      within(screen.getByRole("navigation", { name: "Ward Flow statistics sections" })).getByRole("link", {
+      within(screen.getByRole("navigation", { name: "BedChart statistics sections" })).getByRole("link", {
         name: "Network",
       });
     expect(back.getAttribute("href")).toBe("/bedchart/statistics");

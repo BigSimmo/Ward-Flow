@@ -129,7 +129,7 @@ describe("the worker's caching rule (D-18)", () => {
     expect(rule(request("https://cdn.example/_next/static/chunks/app.js"), ORIGIN)).toBeNull();
   });
 
-  it("takes Ward Flow page loads network first, and ignores a sibling such as ward-flow-digest", () => {
+  it("takes BedChart page loads network first, and ignores a sibling such as ward-flow-digest", () => {
     expect(rule(request("/bedchart", { mode: "navigate" }), ORIGIN)).toBe("navigate");
     expect(rule(request("/bedchart/alerts", { mode: "navigate" }), ORIGIN)).toBe("navigate");
     expect(rule(request("/mockups/ward-flow-digest", { mode: "navigate" }), ORIGIN)).toBeNull();
@@ -215,7 +215,7 @@ describe("worker lifecycle", () => {
     expect(WORKER_SOURCE).toContain("const STATIC_CACHE = `${CACHE_PREFIX}${CACHE_VERSION}-${OFFLINE_PAGE_REVISION}`;");
   });
 
-  it("enables navigation preload and removes older Ward Flow caches only", async () => {
+  it("enables navigation preload and removes older BedChart caches only", async () => {
     const deleted: string[] = [];
     let preload = false;
     const listeners: Record<string, (event: unknown) => void> = {};
@@ -310,7 +310,7 @@ describe("worker lifecycle", () => {
 });
 
 describe("what a push may show (PS-13)", () => {
-  const FALLBACK = { title: "Ward Flow: act now", body: "Open Alerts to review. Synthetic demo data." };
+  const FALLBACK = { title: "BedChart: act now", body: "Open Alerts to review. Synthetic demo data." };
 
   async function shown(data: unknown) {
     const { title, options } = await notified(data);
@@ -436,17 +436,17 @@ describe("what a push may show (PS-13)", () => {
     ["free text", "Synthetic Person Example UM100001 arrived", "Synthetic Person Example UM100001 arrived"],
     [
       "a name inside the template",
-      "Ward Flow: 1 new act now item for Synthetic Person",
+      "BedChart: 1 new act now item for Synthetic Person",
       "Synthetic Person. Open Alerts to review. Synthetic demo data. Call UM100001",
     ],
     [
       "a long site",
-      "Ward Flow: 2 new act now items in bed 2",
+      "BedChart: 2 new act now items in bed 2",
       `${"A".repeat(61)}. Open Alerts to review. Synthetic demo data.`,
     ],
     [
       "a site with other characters",
-      "Ward Flow: 3 new act now items: Synthetic Person",
+      "BedChart: 3 new act now items: Synthetic Person",
       "Ward 4: Synthetic Person, bed 2. Open Alerts to review. Synthetic demo data.",
     ],
   ])("shows the fallback words for %s", async (_label, title, body) => {
@@ -464,7 +464,7 @@ describe("what a push may show (PS-13)", () => {
       body: FALLBACK.body,
     });
     expect(await shown({})).toMatchObject(FALLBACK);
-    const long = `Ward Flow: 1 new act now item${" ".repeat(100)}`;
+    const long = `BedChart: 1 new act now item${" ".repeat(100)}`;
     expect(await shown({ title: long, body: good.body })).toMatchObject({ title: FALLBACK.title });
   });
 });
@@ -476,7 +476,7 @@ describe("the offline page", () => {
     expect(html).not.toMatch(/<script/i);
     expect(html).not.toMatch(/\bon[a-z]+=/i);
     expect(html).toMatch(/<a class="retry" href="">Try again<\/a>/);
-    expect(html).toContain("Ward Flow needs a connection");
+    expect(html).toContain("BedChart needs a connection");
     expect(html).toMatch(/made-up demo data/);
     expect(html).toContain("prefers-color-scheme: dark");
   });

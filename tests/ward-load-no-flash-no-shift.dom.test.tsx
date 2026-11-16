@@ -167,7 +167,7 @@ describe("phone: the hero paints as the band before it is measured", () => {
 
 describe("desktop rail: the server render is the settled render", () => {
   function railItemClasses(container: ParentNode) {
-    return [...container.querySelectorAll('[data-testid="ward-rail"] [aria-label="Ward Flow views"] li')].map(
+    return [...container.querySelectorAll('[data-testid="ward-rail"] [aria-label="BedChart views"] li')].map(
       (item) => `${item.querySelector("a")?.getAttribute("href")} ${item.className}`,
     );
   }

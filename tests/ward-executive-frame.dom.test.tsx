@@ -142,7 +142,7 @@ describe("the executive chrome in the new frame", () => {
     act(() => setCharacterShortcutsEnabled(true));
     fireEvent.keyDown(document.body, { key: "[", ctrlKey: true });
     expect(document.documentElement.getAttribute("data-rail")).toBe(before);
-    fireEvent.keyDown(screen.getByPlaceholderText("Search Ward Flow"), { key: "[" });
+    fireEvent.keyDown(screen.getByPlaceholderText("Search BedChart"), { key: "[" });
     expect(document.documentElement.getAttribute("data-rail")).toBe(before);
     fireEvent.keyDown(document.body, { key: "[" });
     expect(document.documentElement.getAttribute("data-rail")).not.toBe(before);
@@ -154,7 +154,7 @@ describe("the executive chrome in the new frame", () => {
     expect(within(header).queryByRole("button", { name: /^Help for/ })).toBeNull();
     // The visually hidden synthetic mark stays, word for word.
     expect(within(header).getByTitle(/^Patient and flow data are synthetic;/)).toHaveTextContent("Synthetic prototype");
-    expect(within(header).getByPlaceholderText("Search Ward Flow")).toBeInTheDocument();
+    expect(within(header).getByPlaceholderText("Search BedChart")).toBeInTheDocument();
     const alerts = screen.getByTestId("ward-bar-tasks-trigger");
     expect(alerts).toHaveTextContent(/^Alerts0$/);
     expect(within(header).queryByText("Tasks")).toBeNull();
@@ -254,7 +254,7 @@ describe("the executive chrome in the new frame", () => {
     const help = within(header).getByTestId("ward-bar-help-trigger");
     expect(help.tagName).toBe("BUTTON");
     expect(help).toHaveAccessibleName("Help, new");
-    expect(help.nextElementSibling).toContainElement(within(header).getByPlaceholderText("Search Ward Flow"));
+    expect(help.nextElementSibling).toContainElement(within(header).getByPlaceholderText("Search BedChart"));
     fireEvent.click(help);
     opened.stop();
     expect(opened.views).toEqual(["tasks"]);

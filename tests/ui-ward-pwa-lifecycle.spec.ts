@@ -18,7 +18,7 @@ const test = base.extend<{
     const identity = await request.get(new URL("/api/local-project-id", baseURL!).href);
     expect(identity.ok()).toBe(true);
     const project = await identity.json();
-    expect(project.appName).toBe("Ward Flow");
+    expect(project.appName).toBe("BedChart");
     // The real registration is disabled in development. A dev-server pass cannot prove this lane.
     expect(project.localServer.runtimeMode).toBe("production");
     const pwa = await createWardPwaProxy(baseURL!);
@@ -108,14 +108,14 @@ test.describe("real-worker recovery and update ownership @mockup", () => {
       await page.goto(`${pwa.origin}/bedchart/capacity`, {
         waitUntil: "domcontentloaded",
       });
-      await expect(page.getByRole("heading", { name: "Ward Flow needs a connection" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "BedChart needs a connection" })).toBeVisible();
     } finally {
       await context.setOffline(false);
     }
     await page.getByRole("link", { name: "Try again" }).click();
     await ready(page);
     expect(new URL(page.url()).pathname).toBe("/bedchart/capacity");
-    await expect(page.getByRole("heading", { name: "Ward Flow needs a connection" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "BedChart needs a connection" })).toHaveCount(0);
   });
 
   for (const preload of [true, false]) {
@@ -133,7 +133,7 @@ test.describe("real-worker recovery and update ownership @mockup", () => {
         waitUntil: "domcontentloaded",
         timeout: 25_000,
       });
-      await expect(page.getByRole("heading", { name: "Ward Flow needs a connection" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "BedChart needs a connection" })).toBeVisible();
       expect(pwa.state.requests.length).toBeGreaterThan(0);
       expect(pwa.state.requests.some((request) => request.preload)).toBe(preload);
     });
@@ -190,7 +190,7 @@ test.describe("real-worker recovery and update ownership @mockup", () => {
     });
     pwa.state.version = "B";
     await first.evaluate(async () => (await navigator.serviceWorker.ready).update());
-    const update = "New version of Ward Flow ready";
+    const update = "New version of BedChart ready";
     await expect(first.getByText(update, { exact: true })).toBeVisible();
     await expect(second.getByText(update, { exact: true })).toBeVisible();
     await expect(first.locator("html")).toHaveAttribute("data-pwa-document", "first");

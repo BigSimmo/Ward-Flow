@@ -278,7 +278,7 @@ describe("Supabase shared sign-in", () => {
       await screen.findByRole("heading", { name: "Check your email" });
       expect(String(fetcher.mock.calls[0][0])).toContain("/recover?redirect_to=");
       fireEvent.click(screen.getByRole("button", { name: "Back to sign in" }));
-      fireEvent.click(screen.getByRole("button", { name: "Create a Ward Flow account" }));
+      fireEvent.click(screen.getByRole("button", { name: "Create a BedChart account" }));
       fireEvent.change(screen.getByLabelText("Email"), { target: { value: "nominated@example.invalid" } });
       fireEvent.change(screen.getByLabelText("New password"), { target: { value: "synthetic-password" } });
       fireEvent.change(screen.getByLabelText("Confirm new password"), { target: { value: "synthetic-password" } });
@@ -297,7 +297,7 @@ describe("Supabase shared sign-in", () => {
     );
     render(<Probe />);
     expect(await screen.findByRole("button", { name: /^Sign in$/ })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Create a Ward Flow account" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Create a BedChart account" })).toBeNull();
   });
   it("still offers sign-in when the browser blocks session storage (H-0305)", async () => {
     const fetcher = vi.fn(async () => Response.json({}, { status: 400 }));
@@ -783,7 +783,7 @@ describe("sign-out across tabs and the session limit (Audit 5 PS-08, Audit 4 A4-
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
     expect(result.current.signedIn).toBe(false);
-    expect(result.current.error).toBe("Signed out in another Ward Flow tab. Sign in again to carry on.");
+    expect(result.current.error).toBe("Signed out in another BedChart tab. Sign in again to carry on.");
     expect(channels[0].posted).toEqual([]);
     expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
   });

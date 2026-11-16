@@ -66,8 +66,8 @@ describe("ward rail landmarks (P084)", () => {
       renderShell();
       const rail = screen.getByTestId("ward-rail");
       expect(rail.tagName).toBe("ASIDE");
-      expect(rail).toHaveAccessibleName("Ward Flow sections");
-      expect(within(rail).getByRole("navigation", { name: "Ward Flow views" })).toBeInTheDocument();
+      expect(rail).toHaveAccessibleName("BedChart sections");
+      expect(within(rail).getByRole("navigation", { name: "BedChart views" })).toBeInTheDocument();
       expect(document.querySelectorAll("nav nav")).toHaveLength(0);
     } finally {
       media.mockRestore();

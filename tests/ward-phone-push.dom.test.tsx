@@ -88,7 +88,7 @@ describe("the one Alerts switch (S7, 3 Nov 2026)", () => {
     expect(onAlertsChange).not.toHaveBeenCalled();
   });
 
-  it("an iPhone tab says to add Ward Flow to the Home Screen", () => {
+  it("an iPhone tab says to add BedChart to the Home Screen", () => {
     const { row } = alertsPane("install");
     expect(row).toHaveTextContent("Add to Home Screen, then open it there");
   });
@@ -109,10 +109,10 @@ describe("the one Alerts switch (S7, 3 Nov 2026)", () => {
     expect(onAlertsChange).toHaveBeenCalledWith(true);
   });
 
-  it("phone on: checked, says it works with Ward Flow closed, and pressing asks to turn off", () => {
+  it("phone on: checked, says it works with BedChart closed, and pressing asks to turn off", () => {
     const { row, toggle, onAlertsChange } = alertsPane("on", vi.fn(), { permission: "granted" });
     expect(toggle).toBeChecked();
-    expect(row).toHaveTextContent("with Ward Flow closed");
+    expect(row).toHaveTextContent("with BedChart closed");
     fireEvent.click(toggle);
     expect(onAlertsChange).toHaveBeenCalledWith(false);
   });
@@ -120,7 +120,7 @@ describe("the one Alerts switch (S7, 3 Nov 2026)", () => {
   it("an earlier Browser notifications on keeps alerts on", () => {
     const { row, toggle } = alertsPane("local", vi.fn(), { notifications: true, permission: "granted" });
     expect(toggle).toBeChecked();
-    expect(row).toHaveTextContent("Act-now alerts while Ward Flow is open");
+    expect(row).toHaveTextContent("Act-now alerts while BedChart is open");
   });
 
   it("an earlier Phone alerts on keeps alerts on, even with browser notifications off", () => {
@@ -150,7 +150,7 @@ describe("the one Alerts switch (S7, 3 Nov 2026)", () => {
     expect(screen.queryByRole("switch", { name: "Browser notifications" })).toBeNull();
   });
 
-  it("never shows a Ward Flow id, record number or the word for a patient in any state", () => {
+  it("never shows a BedChart id, record number or the word for a patient in any state", () => {
     const states = [...UNAVAILABLE, "off", "on", "limit", "in-use", "error", "error-on"] as PhonePushState[];
     const browsers: { notifications: boolean; permission: NotificationSupport }[] = [
       { notifications: false, permission: "unsupported" },
@@ -239,7 +239,7 @@ describe("usePhonePush", () => {
     expect(hook({ kind: "connected", api: fakeApi() }).result.current[0]).toBe("unsupported");
   });
 
-  it("on an iPhone browser tab, says to add Ward Flow to the Home Screen", () => {
+  it("on an iPhone browser tab, says to add BedChart to the Home Screen", () => {
     vi.spyOn(navigator, "userAgent", "get").mockReturnValue(
       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
     );
@@ -249,7 +249,7 @@ describe("usePhonePush", () => {
   // F-29: iPadOS Safari reports itself as a Mac, so a touch screen marks it as an iPad.
   const MAC_SAFARI =
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15";
-  it("on an iPad browser tab (which reports a Mac), says to add Ward Flow to the Home Screen", () => {
+  it("on an iPad browser tab (which reports a Mac), says to add BedChart to the Home Screen", () => {
     vi.spyOn(navigator, "userAgent", "get").mockReturnValue(MAC_SAFARI);
     Object.defineProperty(navigator, "maxTouchPoints", { value: 5, configurable: true });
     try {
@@ -272,7 +272,7 @@ describe("usePhonePush", () => {
   });
 
   // F-11: a trailing slash left Home (/bedchart) outside the worker's scope.
-  it("registers the worker with a scope that covers Ward Flow Home", () => {
+  it("registers the worker with a scope that covers BedChart Home", () => {
     expect(PHONE_PUSH_SCOPE).toBe("/bedchart");
     expect(PHONE_PUSH_WORKER_URL).toBe("/ward-flow-push-sw.js");
   });
@@ -319,7 +319,7 @@ describe("usePhonePush", () => {
     await waitFor(() => expect(result.current[0]).toBe("denied"));
   });
 
-  it("turns on: asks permission, installs the worker for Ward Flow only and registers the device", async () => {
+  it("turns on: asks permission, installs the worker for BedChart only and registers the device", async () => {
     const browser = installBrowser();
     const api = fakeApi();
     const { result } = hook({ kind: "connected", api });
@@ -929,14 +929,14 @@ function loadWorker(openWindows: string[], { controlled = true } = {}) {
 describe("phone alert service worker", () => {
   const click = (url: string) => ({ notification: { close: () => {}, data: { url } } });
 
-  it("a sibling path such as ward-flow-digest is not Ward Flow: Alerts opens in a new window", async () => {
+  it("a sibling path such as ward-flow-digest is not BedChart: Alerts opens in a new window", async () => {
     const worker = loadWorker(["https://ward.example/mockups/ward-flow-digest"]);
     await worker.fire("notificationclick", click("/mockups/ward-flow-digest"));
     expect(worker.focused).toEqual([]);
     expect(worker.opened).toEqual(["open /bedchart/alerts"]);
   });
 
-  it("an open Ward Flow window is focused and taken to the alert's page", async () => {
+  it("an open BedChart window is focused and taken to the alert's page", async () => {
     const worker = loadWorker(["https://ward.example/bedchart/beds"]);
     await worker.fire("notificationclick", click("/bedchart/alerts"));
     expect(worker.focused).toEqual(["https://ward.example/bedchart/beds"]);
@@ -944,7 +944,7 @@ describe("phone alert service worker", () => {
   });
 
   // F-11: Home open in a window the worker does not control yet is reused, not doubled.
-  it("reuses an uncontrolled Ward Flow window: focuses it and asks the page to open the alert", async () => {
+  it("reuses an uncontrolled BedChart window: focuses it and asks the page to open the alert", async () => {
     const worker = loadWorker(["https://ward.example/bedchart"], { controlled: false });
     await worker.fire("notificationclick", click("/bedchart/alerts"));
     expect(worker.matchAllOptions).toEqual([{ type: "window", includeUncontrolled: true }]);
@@ -953,14 +953,14 @@ describe("phone alert service worker", () => {
     expect(worker.posted).toEqual([{ type: "ward-flow-open", url: "/bedchart/alerts" }]);
   });
 
-  it("shows the server's words, and links only inside Ward Flow", async () => {
+  it("shows the server's words, and links only inside BedChart", async () => {
     const worker = loadWorker([]);
     // A title the server builds (pushPayload); other words are replaced by the fallback (PS-13).
-    const data = { json: () => ({ title: "Ward Flow: 2 new act now items", url: "/mockups/ward-flow-digest" }) };
+    const data = { json: () => ({ title: "BedChart: 2 new act now items", url: "/mockups/ward-flow-digest" }) };
     await worker.fire("push", { data });
     expect(worker.shown).toEqual([
       {
-        title: "Ward Flow: 2 new act now items",
+        title: "BedChart: 2 new act now items",
         options: expect.objectContaining({ tag: "ward-flow-act-now", data: { url: "/bedchart/alerts" } }),
       },
     ]);

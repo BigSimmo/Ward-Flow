@@ -25,7 +25,7 @@ it("admits fictional ED detail and statistics routes on the standard initial ser
 it("uses the fictional department name in server metadata", async () => {
   activateScenarioNetwork("standard");
   expect((await generateMetadata(props("syn-quartz-ed"))).title).toBe(
-    "Fictional Quartz Emergency Department — Ward Flow",
+    "Fictional Quartz Emergency Department — BedChart",
   );
 });
 

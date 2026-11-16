@@ -43,7 +43,7 @@ describe("ward desk QR code (item 42)", () => {
     // Stable across runs and library updates that would change what is printed.
     expect({ size: matrix.size, sha256: digest(matrix.data) }).toMatchInlineSnapshot(`
       {
-        "sha256": "1c6e6a632a69d26d40373c394fa2c7930d7f1e1d6d9d160e2b5ae1027af99a76",
+        "sha256": "c6760c7fe1bea1498869608430efc450280eb73ed8cdccc48cceaa4b352e14d8",
         "size": 41,
       }
     `);

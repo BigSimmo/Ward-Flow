@@ -18,14 +18,14 @@ afterEach(() => {
 });
 
 describe("the /sign-in page", () => {
-  it("simply opens Ward Flow while the front door is off", async () => {
+  it("simply opens BedChart while the front door is off", async () => {
     vi.stubEnv("WARD_FRONT_DOOR", "");
     await expect(SignInPage({ searchParams: Promise.resolve({ next: "/bedchart/ed" }) })).rejects.toThrow(
       /NEXT_REDIRECT/,
     );
   });
 
-  it("shows the door for a safe Ward Flow page while the front door is on", async () => {
+  it("shows the door for a safe BedChart page while the front door is on", async () => {
     vi.stubEnv("WARD_FRONT_DOOR", "required");
     vi.stubEnv("WARD_PASS_SECRET", "s".repeat(48));
     vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "true");
@@ -39,7 +39,7 @@ describe("the /sign-in page", () => {
   it("previews the product, not the sign-in step, when a link is shared (INV-A18-104)", async () => {
     // The sign-in pages keep their own tab title and inherit the app's product preview.
     for (const page of [metadata, wardSignInMetadata]) {
-      expect(page.title).toBe("Sign in — Ward Flow");
+      expect(page.title).toBe("Sign in — BedChart");
       expect(page.openGraph).toBeUndefined();
       expect(page.twitter).toBeUndefined();
     }

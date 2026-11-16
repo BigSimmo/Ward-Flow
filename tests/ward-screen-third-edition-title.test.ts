@@ -38,7 +38,7 @@ describe("the ward route's document title", () => {
 
     for (const unit of walked) {
       const metadata = await generateMetadata({ params: Promise.resolve({ unitId: unit.id }) });
-      expect(metadata.title, `the tab for ${unit.name} does not carry its name`).toBe(`${unit.name} — Ward Flow`);
+      expect(metadata.title, `the tab for ${unit.name} does not carry its name`).toBe(`${unit.name} — BedChart`);
       titles.push(String(metadata.title));
     }
 
@@ -59,6 +59,6 @@ describe("the ward route's document title", () => {
     expect(String(metadata.title), "an unresolvable ward id produced a title that still claims a ward").not.toMatch(
       /—\s*(undefined|null)?\s*$/u,
     );
-    expect(metadata.title, "an unresolvable ward id does not say so in the tab").toBe("Ward not found — Ward Flow");
+    expect(metadata.title, "an unresolvable ward id does not say so in the tab").toBe("Ward not found — BedChart");
   });
 });

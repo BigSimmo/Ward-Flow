@@ -198,9 +198,9 @@ describe("help sheet", () => {
     }
   });
 
-  it("says what to do when Ward Flow is down, on every desk's guide (PR-20)", () => {
+  it("says what to do when BedChart is down, on every desk's guide (PR-20)", () => {
     sheet("desk");
-    expect(screen.getByRole("region", { name: "If Ward Flow is down" }).textContent).toContain(WHEN_IT_IS_DOWN[0]);
+    expect(screen.getByRole("region", { name: "If BedChart is down" }).textContent).toContain(WHEN_IT_IS_DOWN[0]);
   });
 
   it("shows the colour code in Reference, one glyph and meaning per tone", () => {
