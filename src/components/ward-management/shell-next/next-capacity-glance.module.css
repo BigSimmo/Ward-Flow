@@ -467,6 +467,17 @@
   cursor: pointer;
 }
 
+/* UI sweep (16 Nov 2026): a 40px tap band over the 32px link, so the drawn spacing stays. */
+.planLink {
+  position: relative;
+}
+
+.planLink::after {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
+}
+
 .planLink svg {
   width: 14px;
   height: 14px;

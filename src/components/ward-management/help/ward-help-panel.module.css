@@ -328,7 +328,8 @@
 }
 
 .actBody .actGo {
-  background: var(--wf-accent);
+  /* The kit's filled button: in dark the accent is a light blue that white text fails on (1.98:1). */
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
   color: var(--wf-on-accent);
 }
 
@@ -2160,5 +2161,19 @@
     padding: 0;
     overflow: visible;
     mask-image: none;
+  }
+}
+
+/* D-251 (size review 10): on a touch screen the inline Search link reaches a 40px tap area that does not show; the
+   text is drawn exactly as before. Rows here sit further apart than 40px, so covers never overlap. */
+@media (pointer: coarse) {
+  :is(a, button).inlineLink {
+    position: relative;
+  }
+
+  :is(a, button).inlineLink::after {
+    content: "";
+    position: absolute;
+    inset: -12px 0;
   }
 }

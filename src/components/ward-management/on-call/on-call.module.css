@@ -2049,3 +2049,12 @@
   color: var(--wf-hero-ink-3);
   font: 400 var(--wf-fs-12) / 20px var(--wf-font);
 }
+
+/* D-251 (size review 7): on a touch tablet the copy and email buttons are 36px squares (they were 28,
+   beside a 44px star). The icon inside keeps its size. */
+@media (min-width: 46.5rem) and (pointer: coarse) {
+  .iconButton.iconButton {
+    width: 36px;
+    height: 36px;
+  }
+}

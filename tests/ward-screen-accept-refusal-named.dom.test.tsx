@@ -87,7 +87,7 @@ describe("a refused Accept in principle on the ward screen (D-125)", () => {
       </WardFlowProvider>,
     );
     // The answer view's own accept: a READY census square opens the named dialog.
-    fireEvent.click(screen.getAllByRole("button", { name: /^Census square \d+: READY$/u })[0]!);
+    fireEvent.click(screen.getAllByRole("button", { name: /^Census square \d+: Ready$/u })[0]!);
     const dialog = screen.getByRole("dialog", { name: /accept/iu });
     const name = dialog.querySelector("#ward-answer-allocating-movement strong")?.textContent ?? "";
     expect(name).toMatch(/^[^,]+, [^,]+$/u);

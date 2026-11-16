@@ -444,7 +444,11 @@ export function MyListCard({
   );
 
   return (
-    <Card className={styles.needsCard} data-testid="home-my-list" aria-label={`Needs you, ${total} items`}>
+    <Card
+      className={styles.needsCard}
+      data-testid="home-my-list"
+      aria-label={`Needs you, ${total} ${total === 1 ? "item" : "items"}`}
+    >
       {since}
       {body}
       {pull.sheet}

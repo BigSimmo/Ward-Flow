@@ -1599,3 +1599,17 @@
     flex: 1 1 100%;
   }
 }
+
+/* D-251 (size review 8): on a touch screen a person's name reaches a 40px tap area that does not show; the
+   text is drawn exactly as before. Rows here sit further apart than 40px, so covers never overlap. */
+@media (pointer: coarse) {
+  :is(a, button).name {
+    position: relative;
+  }
+
+  :is(a, button).name::after {
+    content: "";
+    position: absolute;
+    inset: -8px 0;
+  }
+}

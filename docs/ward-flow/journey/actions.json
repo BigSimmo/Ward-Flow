@@ -1050,7 +1050,7 @@
         {
           "path": "src/components/ward-management/ward/ward-answer-view.tsx",
           "line": 481,
-          "sha256": "2ede3ca01a9458a9716c9c22cf0609d46b9a4ba66dc9677638097a68c4f580dd"
+          "sha256": "753d82ccb783dbe6b6078c457de8bcb64a3fdde6562500101fcc93ca40ef4956"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -1142,7 +1142,7 @@
         {
           "path": "src/components/ward-management/ward/ward-answer-view.tsx",
           "line": 414,
-          "sha256": "2ede3ca01a9458a9716c9c22cf0609d46b9a4ba66dc9677638097a68c4f580dd"
+          "sha256": "753d82ccb783dbe6b6078c457de8bcb64a3fdde6562500101fcc93ca40ef4956"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
@@ -1864,7 +1864,7 @@
         {
           "path": "src/components/ward-management/ward/ward-answer-view.tsx",
           "line": 489,
-          "sha256": "2ede3ca01a9458a9716c9c22cf0609d46b9a4ba66dc9677638097a68c4f580dd"
+          "sha256": "753d82ccb783dbe6b6078c457de8bcb64a3fdde6562500101fcc93ca40ef4956"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2154,8 +2154,8 @@
         },
         {
           "path": "src/components/ward-management/patients/patient-status-card.tsx",
-          "line": 334,
-          "sha256": "643dea51d8a66fd37cd0a4a0eb6516943322c6c383848cb1f934df4d0fca8cf1"
+          "line": 335,
+          "sha256": "fd2a4148f6f06b6bc49d6656455bcd1206073c9f9486ab47eb97c35fdb377cc7"
         },
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
@@ -4240,7 +4240,7 @@
         {
           "path": "src/components/ward-management/ward/ward-answer-view.tsx",
           "line": 504,
-          "sha256": "2ede3ca01a9458a9716c9c22cf0609d46b9a4ba66dc9677638097a68c4f580dd"
+          "sha256": "753d82ccb783dbe6b6078c457de8bcb64a3fdde6562500101fcc93ca40ef4956"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
