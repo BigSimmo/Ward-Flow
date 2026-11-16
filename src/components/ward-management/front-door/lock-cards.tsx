@@ -1,5 +1,6 @@
 "use client";
 
+import { BrandMark, BrandName } from "@/components/ward-management/brand-mark";
 import type { ReactNode, RefObject } from "react";
 import { ArrowRight, Lock } from "lucide-react";
 
@@ -116,7 +117,10 @@ export function IdleLockScreen({
       aria-labelledby="ward-idle-lock-title"
     >
       <div className={styles.lockTop}>
-        <span className={styles.wordmark}>BedChart</span>
+        <span className={styles.brandTile} aria-hidden="true">
+          <BrandMark size={22} />
+        </span>
+        <BrandName name="BedChart" className={styles.wordmark} />
         <span className={styles.syn}>
           <i aria-hidden="true" />
           Synthetic data

@@ -94,8 +94,8 @@ const APPROVED_SHARED_MODULES = new Map([
   ["@/components/contextual-back-link", "shared back navigation"],
   [
     "@/lib/brand-mark",
-    "the mark's one committed geometry (D-88, 27 October 2026), shared with the app icons. The front " +
-      "door draws it in the navy band's own ink, which the accent-painted BrandMark component cannot.",
+    "the mark's one committed geometry (D-88, 27 October 2026; the BedChart mark since D-261), shared " +
+      "with the app icons. Ward Flow's own BrandMark component draws it in the rail, front door and lock screens.",
   ],
   ["@/lib/form-register", "shared form registration"],
   [
