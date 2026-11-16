@@ -1071,7 +1071,9 @@ export function AddPatientForm() {
                     onChange={(event) => setDraftField("umrn")(event.target.value.replace(/\s+/g, "").toUpperCase())}
                   />
                 </Field>
-                <div className={styles.choiceField}>
+                {/* 16 Nov live walk: a row of its own, so the hint reads in full and the four
+                    choices sit on one line where the width allows. */}
+                <div className={cx(styles.choiceField, styles.spanAll)}>
                   <div className={styles.choiceLabelRow}>
                     <span className={styles.choiceLabel}>Sex</span>
                     <span className={styles.choiceHint}>Wards need it to accept</span>
