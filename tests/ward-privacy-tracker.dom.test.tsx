@@ -1,4 +1,4 @@
-// D-261 (Josh, 16 Nov 2026): the Privacy and data page. It must say nothing is enforced, show each
+// D-260 (Josh, 16 Nov 2026): the Privacy and data page. It must say nothing is enforced, show each
 // check's current status with its evidence, switch to the all-met example, and open only for the
 // desks that open Governance. Reference content only; all data in the app is synthetic.
 import "@testing-library/jest-dom/vitest";
@@ -28,7 +28,7 @@ afterEach(cleanup);
 
 const ALL = [...PRIVACY_SECTIONS.flatMap((s) => s.checks), ...PRIVACY_SIGN_OFFS];
 
-describe("Privacy and data (D-261)", () => {
+describe("Privacy and data (D-260)", () => {
   it("says the requirements are not enforced and not legal advice", () => {
     render(<PrivacyTrackerScreen />);
     expect(screen.getByRole("heading", { level: 1, name: /Privacy and data/ })).toBeInTheDocument();

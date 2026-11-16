@@ -1391,7 +1391,7 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/review`, render: () => createElement(TodaysReviewScreen) },
   { route: `${ROUTE_PREFIX}/night`, render: () => createElement(NightViewScreen) },
   { route: `${ROUTE_PREFIX}/about`, render: () => createElement(AboutDemoScreen) },
-  // D-261 (16 Nov 2026): Privacy and data, the requirements tracker under Reports and reference.
+  // D-260 (16 Nov 2026): Privacy and data, the requirements tracker under Reports and reference.
   { route: `${ROUTE_PREFIX}/privacy`, render: () => createElement(PrivacyTrackerScreen) },
 ];
 
@@ -1500,7 +1500,7 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
     // 48: the Leave page (`/leave`, feature 23), 9 Nov 2026. Moved in both files together.
     // 49: the Night view (`/night`, feature plan item 29), 10 Nov 2026.
     // 50: About this demo (`/about`, F-77, Audit 15 A15-25), 13 Nov 2026. Moved in both files together.
-    // 51: Privacy and data (`/privacy`, D-261), 16 Nov 2026.
+    // 51: Privacy and data (`/privacy`, D-260), 16 Nov 2026.
     expect(RENDERABLE_ROUTES.length).toBe(51);
   });
 });

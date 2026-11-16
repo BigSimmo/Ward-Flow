@@ -400,7 +400,7 @@ export const WARD_NAV: readonly WardNavItem[] = [
    */
   { id: "legal-forms", href: "/ward-flow/legal-forms", label: "Legal forms", group: "board" },
   /*
-   * Privacy and data (D-261, Josh, 16 Nov 2026): where the app stands against the Australian and WA
+   * Privacy and data (D-260, Josh, 16 Nov 2026): where the app stands against the Australian and WA
    * health data rules, check by check, with an example of the finished policy. Reference only:
    * nothing on it is enforced. Opens for the desks that open Governance.
    */

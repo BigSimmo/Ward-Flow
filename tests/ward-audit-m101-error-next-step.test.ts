@@ -26,7 +26,7 @@ const INVENTORY = "docs/ward-flow/evidence/error-message-inventory-2026-11-10.md
 const NO_NEXT_STEP_BASELINE = 103;
 
 const ROOTS = ["src/app", "src/components/wf", "src/components/ward-management"];
-/** Not failure messages: seed narratives, Help and tour text, approved mock-up copies (D-91) and the privacy tracker's evidence lines (D-261). */
+/** Not failure messages: seed narratives, Help and tour text, approved mock-up copies (D-91) and the privacy tracker's evidence lines (D-260). */
 const LEFT_OUT = /mockups|ward-redesign|\/help\/|-seed\.ts$|ward-movements-referrals\.ts$|privacy-tracker-data\.ts$/;
 
 const FAILURE =

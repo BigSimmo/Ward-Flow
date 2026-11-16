@@ -169,7 +169,7 @@ export const WARD_SCREEN_IDS: readonly WardScreenId[] = [
   "settings",
   // F-77 (Audit 15, A15-25): About this demo, a plain facts page every desk can open.
   "about",
-  // D-261 (16 Nov 2026): Privacy and data, the requirements tracker. The desks that open Governance.
+  // D-260 (16 Nov 2026): Privacy and data, the requirements tracker. The desks that open Governance.
   "privacy",
 ];
 

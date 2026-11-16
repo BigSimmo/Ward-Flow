@@ -17,7 +17,7 @@ import {
 import styles from "./privacy-tracker.module.css";
 
 /**
- * D-261 (Josh, 16 Nov 2026): Privacy and data. Where the app stands today against each Australian
+ * D-260 (Josh, 16 Nov 2026): Privacy and data. Where the app stands today against each Australian
  * and WA requirement for patient health data, with the evidence for each status, and a second view
  * of the finished policy written as if every requirement were met. Reference only: nothing here is
  * enforced, the app holds synthetic data, and it is not legal advice. Content lives in
@@ -123,7 +123,7 @@ export function PrivacyTrackerScreen() {
             {example ? (
               <p className={styles.lead}>
                 Ward Flow holds patient information only for bed flow and care coordination. It is hosted in Australia,
-                every access is logged, and every requirement below is shown as met. This is an example of a finished
+                keeps an audit trail, and every requirement below is shown as met. This is an example of a finished
                 policy, not how the app works today.
               </p>
             ) : (

@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     "Where Ward Flow stands against the Australian and WA rules for patient health data, with an example policy. Not enforced; synthetic data only.",
 };
 
-/** D-261 (Josh, 16 Nov 2026): the privacy and data requirements tracker, under Reports and reference. */
+/** D-260 (Josh, 16 Nov 2026): the privacy and data requirements tracker, under Reports and reference. */
 export default function WardPrivacyPage() {
   return <PrivacyTrackerScreen />;
 }

@@ -1,5 +1,5 @@
 /**
- * Privacy and data tracker content (D-261, 16 Nov 2026). Generated from the privacy research in the
+ * Privacy and data tracker content (D-260, 16 Nov 2026). Generated from the privacy research in the
  * project files (patient-data-requirements-checklist.md and current-state-tracker.md); edit both
  * together. Statuses were checked against main 928fa1a8 and the governance papers on 16 Nov 2026.
  * These are intended requirements only: nothing here is enforced, and this is not legal advice.
@@ -51,7 +51,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       },
       {
         lead: "Where they apply",
-        text: "Privacy Act 1988 (Cth) and its breach scheme, My Health Records Act 2012 and Healthcare Identifiers Act 2010.",
+        text: "Privacy Act 1988 (Cth) and its notifiable data incident scheme, My Health Records Act 2012 and Healthcare Identifiers Act 2010.",
       },
       {
         lead: "Also considered",
@@ -95,7 +95,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         text: "Privacy complaints go to the privacy officer, and patients may take them to the WA Information Commissioner.",
       },
       {
-        text: "Since 10 June 2025 people can sue for a serious invasion of privacy (Privacy Act Schedule 2). Serious misuse is treated as a legal risk as well as a breach.",
+        text: "Since 10 June 2025 people can sue for a serious invasion of privacy (Privacy Act Schedule 2). Serious misuse is treated as a legal risk as well as a privacy incident.",
       },
     ],
     checks: [
@@ -151,7 +151,8 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         evidence: "Sign-in shows a synthetic-data warning only. No statement to accept.",
       },
     ],
-    source: "Health Services Act 2016 (WA) s 219–220 · Mental Health Act 2014 (WA) s 576",
+    source:
+      "Health Services Act 2016 (WA) confidentiality offences · Mental Health Act 2014 (WA) confidentiality offence",
   },
   {
     id: "collect",
@@ -270,7 +271,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
     title: "Audit log",
     policy: [
       {
-        text: "Every view and change of a patient record is logged with the user, record, action and time.",
+        text: "Opening or changing a patient record leaves an entry naming the user, record, action and time.",
       },
       {
         text: "The privacy officer can see every record a person opened or changed.",
@@ -293,7 +294,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
     ],
     checks: [
       {
-        name: "Tamper-proof audit log in place",
+        name: "Tamper-proof audit log set up",
         status: "partly",
         evidence:
           "Audit, record access and break glass tables are append-only (migrations 001, 011). The 26 Oct hosted restore drill lost those locks (RETENTION-AND-BACKUP.md).",
@@ -357,7 +358,8 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         evidence: "No provider certificates or assessments held.",
       },
     ],
-    source: "WA Offshoring Position · MP 0140/20 Cloud · My Health Records Act s 77 · APP 8 · ASD IRAP",
+    source:
+      "WA Offshoring Position · MP 0140/20 Cloud · My Health Records Act (data held in Australia) · APP 8 · ASD IRAP",
   },
   {
     id: "security",
@@ -382,7 +384,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         text: "No patient information stays on a device after sign-out.",
       },
       {
-        text: "Critical security fixes are applied within 48 hours. Unsupported software is removed.",
+        text: "Critical security fixes are applied within 2 days. Unsupported software is removed.",
       },
       {
         text: "Security incidents go to the HSS ICT Service Desk, with a plan for escalation to police.",
@@ -391,10 +393,10 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         text: "Where the Privacy Act applies, reasonable steps protect information from misuse, loss and unauthorised access (APP 11).",
       },
       {
-        text: "If a ransom is ever paid, it is reported to the Australian Signals Directorate within 72 hours (Cyber Security Act 2024, businesses with turnover of $3 million or more).",
+        text: "If a ransom is ever paid, it is reported to the Australian Signals Directorate within 3 days (Cyber Security Act 2024, businesses with turnover of $3 million or more).",
       },
       {
-        text: "If a hospital using Ward Flow is a critical hospital under the SOCI Act 2018, Ward Flow sits inside that hospital's risk management program, and serious cyber incidents are reported to ASD (within 12 hours if critical).",
+        text: "If a hospital using Ward Flow is a critical hospital under the SOCI Act 2018, Ward Flow sits inside that hospital's risk management program, and serious cyber incidents are reported to ASD (within half a day if critical).",
       },
     ],
     checks: [
@@ -436,7 +438,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       {
         name: "Ransom payment reporting step in the incident plan",
         status: "notyet",
-        evidence: "No incident plan in repo. Cyber Security Act 2024 s 27: 72 hours.",
+        evidence: "No incident plan in repo. Cyber Security Act 2024 sets a 3-day reporting time.",
       },
       {
         name: "Critical infrastructure (SOCI) status checked with each hospital",
@@ -445,7 +447,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       },
     ],
     source:
-      "MP 0067/17 · ASD Essential Eight · WA Cyber Security Policy · APP 11 · Cyber Security Act 2024 (Cth) s 27 · SOCI Act 2018 (Cth)",
+      "MP 0067/17 · ASD Essential Eight · WA Cyber Security Policy · APP 11 · Cyber Security Act 2024 (Cth) ransomware reporting · SOCI Act 2018 (Cth)",
   },
   {
     id: "sharing",
@@ -492,7 +494,8 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         evidence: "Prototype uses synthetic data only (hard rule 1); no method for real data.",
       },
     ],
-    source: "PRIS Act 2024 (WA) Part 3 and s 177 · HSA s 220 · OAIC De-identification Decision-Making Framework",
+    source:
+      "PRIS Act 2024 (WA) sharing and Aboriginal information provisions · HSA disclosure offence · OAIC De-identification Decision-Making Framework",
   },
   {
     id: "records",
@@ -532,23 +535,23 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
     source: "State Records Act 2000 (WA) · MP 0144/20",
   },
   {
-    id: "breach",
-    title: "Breaches and concerns",
+    id: "incidents",
+    title: "Privacy incidents and concerns",
     policy: [
       {
-        text: "A breach is unauthorised access, use or disclosure, or loss, damage or destruction of information.",
+        text: "A privacy incident is unauthorised access, use or disclosure, or loss, damage or destruction of information.",
       },
       {
-        text: "Anyone who suspects a breach tells the privacy officer straight away using Report a concern. No patient details are typed in.",
+        text: "Anyone who suspects a privacy incident tells the privacy officer straight away using Report a concern. No patient details are typed in.",
       },
       {
-        text: "The privacy officer follows a breach response plan tested every year.",
+        text: "The privacy officer follows an incident response plan tested every year.",
       },
       {
-        text: "Notifiable breaches go to the WA Information Commissioner and the people affected as soon as practicable.",
+        text: "Notifiable privacy incidents go to the WA Information Commissioner and the people affected as soon as practicable.",
       },
       {
-        text: "Where the Privacy Act applies, a suspected breach is assessed within 30 days.",
+        text: "Where the Privacy Act applies, a suspected privacy incident is assessed within 30 days.",
       },
       {
         text: "Security incidents also go to the HSS ICT Service Desk. Patient safety incidents follow the clinical incident policy.",
@@ -556,9 +559,9 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
     ],
     checks: [
       {
-        name: "Breach response plan tested this year",
+        name: "Incident response plan tested this year",
         status: "partly",
-        evidence: "Plan drafted (docs/ward-flow/pilot/breach-plan.md). No drill (G15, B4).",
+        evidence: "Plan drafted in the pilot papers. No drill (G15, B4).",
       },
     ],
     source: "MP 0135/20 · PRIS Act 2024 (WA) · OAIC NDB scheme",
@@ -735,7 +738,7 @@ export const PRIVACY_SIGN_OFFS: readonly PrivacyCheck[] = [
 export const PRIVACY_ROLES: readonly { role: string; duty: string }[] = [
   {
     role: "Privacy officer",
-    duty: "This policy, the PIA, breaches, complaints and break-glass reviews",
+    duty: "This policy, the PIA, privacy incidents, complaints and break-glass reviews",
   },
   {
     role: "Information sharing officer",
