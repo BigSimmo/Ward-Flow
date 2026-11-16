@@ -265,6 +265,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-248](#d-248-phone-search-boxes-are-40px-helps-phone-top-is-trimmed-and-help-sits-left-of-search-15-november-2026)                                    | Phone search boxes are 40px, Help's phone top is trimmed, and Help sits left of search            | Active                                           |
 | [D-249](#d-249-keep-todays-logo-until-after-the-demo-15-november-2026)                                                                                  | Keep today's logo until after the demo                                                            | Active                                           |
 | [D-256](#d-256-the-phones--sheet-and-bottom-bar-can-be-customised-and-the-bar-becomes-a-refined-glass-capsule-16-november-2026)                         | The phone's + sheet and bottom bar can be customised, and the bar becomes a refined glass capsule | Active                                           |
+| [D-257](#d-257-settings-is-your-own-settings-first-with-admin-work-in-staff-access-16-november-2026)                                                    | Settings is your own settings first, with admin work in Staff access                              | Active                                           |
 
 ---
 
@@ -2926,6 +2927,8 @@ D-238 is reserved for design Lane D's block (noted in PR #1677). D-239 is reserv
 - **Why:** a logo change touches the tab, home-screen icons, rail and front door just before the demo.
 - **Boundary:** no logo, icon or brand file changes now.
 
+D-250 is claimed by open PR #1701 (the BedChart rename). D-251 is claimed by open PR #1699 (the UI sweep). D-252 is reserved by other threads (PR #1700, PR #1702 and the handover). D-253 is reserved by other threads (PR #1700, PR #1702 and the handover). D-254 is reserved by other threads (PR #1700, PR #1702 and the handover). D-255 is reserved by other threads (PR #1700, PR #1702 and the handover).
+
 ## D-256. The phone's + sheet and bottom bar can be customised, and the bar becomes a refined glass capsule (16 November 2026)
 
 - **Date:** 16 November 2026, 1:56 PM and 2:36 PM AWST (05:56 and 06:36 UTC). **Decided by:** Josh, in the thread "Expand pinnable Create actions", after asking "Please add more options for editing to pin here. Also allow for change of option for the main action bar also" and for "an even more polished and beautiful and perfected bottom bar". He answered "Yes to your proposed recommendations also" to round 1 of the mock-up, then "Yes to all your recommendations including glass capsule refined" to round 2 (https://claude.ai/artifact/PPJ8mLV4GxUMybBABmpKbD).
@@ -2934,6 +2937,12 @@ D-238 is reserved for design Lane D's block (noted in PR #1677). D-239 is reserv
 - **Replaces:** D-247's "New referral always stays on top". The rest of D-247 stands.
 - **Boundary:** phone navigation and look only (below 46.4375rem). No clinical value, rule, wording of a record, permission or saved record changes; a stored choice cannot open a page the desk may not see. Synthetic data only.
 
-D-250 is claimed by open PR #1701 (the BedChart rename). D-251 is claimed by open PR #1699 (the UI sweep). D-252 is reserved by other threads (the handover, noted in PR #1700). D-253 is reserved by other threads (the handover, noted in PR #1700). D-254 is reserved by other threads (the handover, noted in PR #1700). D-255 is claimed by open PR #1702.
+## D-257. Settings is your own settings first, with admin work in Staff access (16 November 2026)
 
-The next free number is D-257.
+- **Date:** 16 November 2026, 2:40 PM AWST (06:40 UTC). **Decided by:** Josh, in the thread "Overhaul the Settings page": "Yes to all", answering five numbered questions on the review page https://claude.ai/artifact/RyX5RnzHPcRUzLb5sMXWfF, after asking for Settings to be reviewed on every device, especially phone.
+- **Decision:** (1) The phone's "On this phone" block goes. Theme and Row density live in Display, and Buzz sound in Alerts, on every device. The phone page lists the areas in two groups, Settings (Rules, Alerts, Display, Your desk) and Admin (Staff access, Demo tools), and each row's second line says what is set. (2) "Access" becomes "Staff access", an area of its own shown only to the access admin and a statewide coordinator. It holds requests, give role, everyone with a role, the access log and Who can change what. (3) A statewide coordinator's Give cover also sits in Staff access, so Your desk holds only the desk's own details, shift and drafts. A ward or ED desk keeps its cover in Your desk. (4) On a phone, the "Alerts are off" card goes; the Alerts row carries an Off chip instead (Josh: "Alerts are off seems like it doesn't need that much space"). The computer view keeps its alerts line beside Find a setting. (5) Who can change what stays in Staff access, as a stacked list on a phone with no sideways scroll.
+- **Also fixed:** on an iPhone the Settings header cut off the avatar and the role line (Safari counted the avatar's initials as a line of the two-line title). The name now wraps, and role and desk read together. The Find a setting field fills its box, so the whole box takes the tap.
+- **Replaces:** the 9 November 2026 page-top alerts line on the Settings phone page only, and the 3 November 2026 ST1 placement of roles and cover under You.
+- **Boundary:** layout and wording only. No permission, rule, clinical value or saved record changes: the same desks can do the same things. Synthetic data only.
+
+The next free number is D-258.

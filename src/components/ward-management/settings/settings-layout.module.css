@@ -706,8 +706,10 @@
   height: 40px;
 }
 
-/* 16px stops a phone zooming in on focus. */
+/* 16px stops a phone zooming in on focus. The field runs 5px past the 40px box top and bottom
+   (inside its 1px border) for a 48px tap band (Josh, 15 Nov 2026, D-248; UI sweep 16 Nov 2026). */
 .phoneTop > div:last-child input {
+  margin-block: -5px;
   font-size: var(--wf-fs-16);
 }
 
