@@ -84,7 +84,7 @@ const PRINT_NOTICE = "Prototype data, invented records. Not real patients and no
 const STALE_AFTER_MINUTES = CLINICAL_VALUES.downtimePackStale.value;
 /** Item 9 (Josh, 21 Oct 2026): the pack leaves the tab only as paper or a PDF the person saves. */
 const KEEP_A_COPY =
-  "To keep a file, save it as a PDF to your service's approved downtime location. Ward Flow keeps no copy.";
+  "To keep a file, save it as a PDF to your service's approved downtime location. BedChart keeps no copy.";
 /** How long "Taking snapshot" shows before the new time, so the change is seen. */
 const TAKING_MS = 450;
 

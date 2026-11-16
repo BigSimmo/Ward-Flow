@@ -15,7 +15,7 @@ import { expectAccessible, isPhoneLayout } from "./helpers/ward-release-gate";
  * kept (M159, 10 Nov 2026): they land on the desk's home with their panel open, so the panel is
  * scanned too. One seeded person and one seeded movement stand in for the record pages, opened by
  * their coded addresses.
- * The demonstration sign-in page is a sibling of `/ward-flow` with no rail or header, so it is
+ * The demonstration sign-in page is a sibling of `/bedchart` with no rail or header, so it is
  * scanned on its own below (audit UI-8, 19 October 2026). It stays unlinked; this only checks it.
  * Synthetic data only.
  */
@@ -124,8 +124,8 @@ async function expectSidewaysRowsFit(page: Page) {
 
 for (const [route, screenId, destination = route] of ROUTES) {
   test(`axe: ${route || "/"} has no serious or critical violation`, async ({ page }, testInfo) => {
-    const expectedUrl = new URL(`/ward-flow${destination}`, testInfo.project.use.baseURL).href;
-    const response = await page.goto(`/ward-flow${route}`, { waitUntil: "load" });
+    const expectedUrl = new URL(`/bedchart${destination}`, testInfo.project.use.baseURL).href;
+    const response = await page.goto(`/bedchart${route}`, { waitUntil: "load" });
     expect(response, "route navigation must return an HTTP response").not.toBeNull();
     expect(response!.ok(), `route returned HTTP ${response!.status()}`).toBe(true);
     await expect(page).toHaveURL(expectedUrl);
@@ -278,7 +278,7 @@ for (const { desk, access, routes } of DESK_SWEEPS) {
 
     for (const [route, screenId] of routes) {
       test(`axe ${desk} desk: ${route} has no serious or critical violation`, async ({ page }, testInfo) => {
-        const expectedUrl = new URL(`/ward-flow${route}`, testInfo.project.use.baseURL).href;
+        const expectedUrl = new URL(`/bedchart${route}`, testInfo.project.use.baseURL).href;
         await openShell(page, route, screenId);
         await expect(page.getByTestId("ward-access-own-home"), "the desk may open this page").toHaveCount(0);
         await expect(page).toHaveURL(expectedUrl);
@@ -288,8 +288,8 @@ for (const { desk, access, routes } of DESK_SWEEPS) {
   });
 }
 
-/** Routes outside the `/ward-flow` shell: no header, so no header-ready mark to wait for. */
-const UNSHELLED_ROUTES = ["/ward-flow-sign-in"] as const;
+/** Routes outside the `/bedchart` shell: no header, so no header-ready mark to wait for. */
+const UNSHELLED_ROUTES = ["/bedchart-sign-in"] as const;
 
 for (const route of UNSHELLED_ROUTES) {
   test(`axe: ${route} has no serious or critical violation`, async ({ page }, testInfo) => {
@@ -311,7 +311,7 @@ for (const route of UNSHELLED_ROUTES) {
  * results list, headings inside the menu). The search types one letter; no name is typed.
  */
 async function openShell(page: Page, route: string, screenId: string) {
-  await page.goto(`/ward-flow${route}`, { waitUntil: "load" });
+  await page.goto(`/bedchart${route}`, { waitUntil: "load" });
   await expect(page.locator("html[data-wf-bar-ready]")).toHaveCount(1, { timeout: 30_000 });
   await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
   await expect(page.getByTestId(screenId)).toBeVisible({ timeout: 15_000 });

@@ -545,7 +545,7 @@ export function changedOnPullRefusal(value: unknown): string | null {
  *
  * ⚠️ **A TEMPLATE LITERAL TYPE RATHER THAN `string`, AND IT IS A DEFECT FIX RATHER THAN
  * TIDINESS.** The route was `/patients/[patientId]` (now
- * `/ward-flow/movements/[movementId]`) and rendered a MOVEMENT workspace: its parameter
+ * `/bedchart/movements/[movementId]`) and rendered a MOVEMENT workspace: its parameter
  * was called `patientId` (now `movementId`), its component prop was called `patientId` (now
  * `movementId`), and inside it a variable named `patient` is still typed `Movement`. Every
  * identifier involved was a bare `string`, so nothing stopped a real patient id being passed to it

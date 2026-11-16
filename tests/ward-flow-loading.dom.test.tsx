@@ -4,13 +4,13 @@ import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const navigation = vi.hoisted(() => ({ pathname: "/ward-flow/delays" as string | null }));
+const navigation = vi.hoisted(() => ({ pathname: "/bedchart/delays" as string | null }));
 vi.mock("next/navigation", () => ({ usePathname: () => navigation.pathname }));
 
-import WardFlowLoading from "@/app/ward-flow/loading";
+import WardFlowLoading from "@/app/bedchart/loading";
 
 afterEach(() => {
-  navigation.pathname = "/ward-flow/delays";
+  navigation.pathname = "/bedchart/delays";
 });
 
 describe("Ward Flow route loading state", () => {
@@ -24,11 +24,11 @@ describe("Ward Flow route loading state", () => {
 
   // pop-state-loading (Josh, 31 Oct 2026): the blocks take the shape of the page on its way.
   it.each([
-    ["/ward-flow", "home"],
-    ["/ward-flow/", "home"],
-    ["/ward-flow/capacity", "capacity"],
-    ["/ward-flow/waiting", "waiting"],
-    ["/ward-flow/delays", "plain"],
+    ["/bedchart", "home"],
+    ["/bedchart/", "home"],
+    ["/bedchart/capacity", "capacity"],
+    ["/bedchart/waiting", "waiting"],
+    ["/bedchart/delays", "plain"],
     [null, "plain"],
   ])("draws the %s placeholder in the %s shape, hidden from screen readers", (pathname, shape) => {
     navigation.pathname = pathname;

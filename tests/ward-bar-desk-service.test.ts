@@ -11,20 +11,18 @@ describe("header service for a desk held to its own place (#838)", () => {
   const service = unitHealthService(unit)!;
 
   it("shows a ward desk's own service off its ward route", () => {
-    expect(fixedServiceFor("/ward-flow/handover", undefined, units, { kind: "ward", unitIds: [unit.id] })).toBe(
-      service,
-    );
+    expect(fixedServiceFor("/bedchart/handover", undefined, units, { kind: "ward", unitIds: [unit.id] })).toBe(service);
   });
 
   it("shows a service-scoped desk's service", () => {
-    expect(fixedServiceFor("/ward-flow/alerts", undefined, units, { kind: "service", service: "East Metro" })).toBe(
+    expect(fixedServiceFor("/bedchart/alerts", undefined, units, { kind: "service", service: "East Metro" })).toBe(
       "East Metro",
     );
   });
 
   it("leaves a statewide desk on the Service selector", () => {
-    expect(fixedServiceFor("/ward-flow/handover", undefined, units, { kind: "statewide" })).toBeUndefined();
-    expect(fixedServiceFor("/ward-flow/handover", undefined, units)).toBeUndefined();
+    expect(fixedServiceFor("/bedchart/handover", undefined, units, { kind: "statewide" })).toBeUndefined();
+    expect(fixedServiceFor("/bedchart/handover", undefined, units)).toBeUndefined();
   });
 
   it("does not guess when a ward desk spans two services", () => {
@@ -33,7 +31,7 @@ describe("header service for a desk held to its own place (#838)", () => {
       return candidateService !== undefined && candidateService !== service;
     })!;
     expect(
-      fixedServiceFor("/ward-flow/handover", undefined, units, { kind: "ward", unitIds: [unit.id, other.id] }),
+      fixedServiceFor("/bedchart/handover", undefined, units, { kind: "ward", unitIds: [unit.id, other.id] }),
     ).toBeUndefined();
   });
 });

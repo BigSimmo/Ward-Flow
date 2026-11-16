@@ -10,7 +10,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const push = vi.fn();
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/night",
+  usePathname: () => "/bedchart/night",
   useRouter: () => ({ push, replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -24,7 +24,7 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({
-  useTourFacts: () => ({ facts: {}, home: "/ward-flow", deskHome: "/ward-flow" }),
+  useTourFacts: () => ({ facts: {}, home: "/bedchart", deskHome: "/bedchart" }),
 }));
 
 import { screenHelpFor } from "@/components/ward-management/help/ward-help-content";
@@ -74,11 +74,11 @@ describe("Night view page", () => {
   });
 
   it("has its own help and walk round, played only on its page", () => {
-    expect(screenHelpFor("/ward-flow/night", [])?.id).toBe("night");
+    expect(screenHelpFor("/bedchart/night", [])?.id).toBe("night");
     const tour = SCREEN_TOURS.find((each) => each.around === "night")!;
     expect(tour).toBeDefined();
-    expect(walkPlaysHere(tour, "/ward-flow/night")).toBe(true);
-    expect(walkPlaysHere(tour, "/ward-flow")).toBe(false);
+    expect(walkPlaysHere(tour, "/bedchart/night")).toBe(true);
+    expect(walkPlaysHere(tour, "/bedchart")).toBe(false);
   });
 });
 

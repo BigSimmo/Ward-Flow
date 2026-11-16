@@ -82,7 +82,7 @@ const router = vi.hoisted(() => ({ back: vi.fn(), push: vi.fn(), replace: vi.fn(
 vi.mock("next/navigation", () => ({
   // The rail derives its role from the route, so a whole-module mock without a pathname makes
   // `usePathname` undefined and throws at render rather than returning a wrong answer.
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => router,
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -147,7 +147,7 @@ const { JSDOM } = createRequire(import.meta.url)("jsdom") as {
   JSDOM: new (markup: string) => { window: { document: Document } };
 };
 const REPO_ROOT = process.cwd();
-const WARD_FLOW_ROUTES = path.join(REPO_ROOT, "src", "app", "ward-flow");
+const WARD_FLOW_ROUTES = path.join(REPO_ROOT, "src", "app", "bedchart");
 const SHELL_DIR = path.join(REPO_ROOT, "src", "components", "ward-management", "shell");
 const NOW = NOW_ANCHOR;
 
@@ -683,8 +683,8 @@ const BUILDER_ROUTES: readonly {
   {
     name: "signInHref",
     href: signInHref(),
-    route: "/ward-flow-sign-in",
-    targetFile: "src/app/ward-flow-sign-in/page.tsx",
+    route: "/bedchart-sign-in",
+    targetFile: "src/app/bedchart-sign-in/page.tsx",
   },
   { name: "wardStatisticsHref", href: wardStatisticsHref("rph-adult-secure"), route: "statistics/ward/[unitId]" },
   { name: "edStatisticsHref", href: edStatisticsHref("peel-ed"), route: "statistics/ed/[edId]" },
@@ -715,7 +715,7 @@ describe("every href the facade builds lands on a route that exists", () => {
       const [pathOnly] = entry.href.split("?");
       const routeSegments = entry.route.split("/");
       if (entry.targetFile === undefined) {
-        const hrefSegments = pathOnly.replace("/ward-flow/", "").split("/");
+        const hrefSegments = pathOnly.replace("/bedchart/", "").split("/");
         expect(hrefSegments.length, `${entry.name} produced ${pathOnly}, which is not ${entry.route}'s shape`).toBe(
           routeSegments.length,
         );
@@ -739,7 +739,7 @@ describe("every href the facade builds lands on a route that exists", () => {
 
       /*
        * ⚠️ **NOT A REDIRECT STUB.** A route that exists and immediately forwards somewhere else is a
-       * page a link "reaches" and a reader never sees; `/ward-flow/constellation` is exactly
+       * page a link "reaches" and a reader never sees; `/bedchart/constellation` is exactly
        * that shape in this tree, so the case is real rather than theoretical. (The Morning route used
        * to be this example too, until item 41, owner-approved 2026-09-17, deleted it outright rather
        * than leaving it as a redirect stub.)
@@ -779,43 +779,43 @@ function stripComments(source: string): string {
 const EXPECTED_BUILDER_LINES: readonly { readonly name: string; readonly line: string }[] = [
   {
     name: "patientHref",
-    line: "return `/ward-flow/people/${encodeURIComponent(encodeRecordAddress(patientId))}`;",
+    line: "return `/bedchart/people/${encodeURIComponent(encodeRecordAddress(patientId))}`;",
   },
-  { name: "unitHref", line: "return `/ward-flow/ward/${encodeURIComponent(unitId)}`;" },
-  { name: "wardBoardHref", line: "return `/ward-flow/board/${encodeURIComponent(unitId)}`;" },
-  { name: "teamHref", line: "return `/ward-flow/community/${encodeURIComponent(teamId)}`;" },
-  { name: "edHref", line: "return `/ward-flow/ed/${encodeURIComponent(edId)}`;" },
+  { name: "unitHref", line: "return `/bedchart/ward/${encodeURIComponent(unitId)}`;" },
+  { name: "wardBoardHref", line: "return `/bedchart/board/${encodeURIComponent(unitId)}`;" },
+  { name: "teamHref", line: "return `/bedchart/community/${encodeURIComponent(teamId)}`;" },
+  { name: "edHref", line: "return `/bedchart/ed/${encodeURIComponent(edId)}`;" },
   {
     name: "movementHref",
-    line: "return `/ward-flow/movements/${encodeURIComponent(encodeRecordAddress(movementId))}`;",
+    line: "return `/bedchart/movements/${encodeURIComponent(encodeRecordAddress(movementId))}`;",
   },
-  { name: "handoverHref", line: 'return "/ward-flow/handover";' },
-  { name: "settingsHref", line: 'return "/ward-flow/settings";' },
-  { name: "patientSearchHref", line: 'return "/ward-flow/search";' },
-  { name: "officerHref", line: 'return "/ward-flow/transport/officer";' },
-  { name: "onCallHref", line: 'return "/ward-flow/on-call";' },
+  { name: "handoverHref", line: 'return "/bedchart/handover";' },
+  { name: "settingsHref", line: 'return "/bedchart/settings";' },
+  { name: "patientSearchHref", line: 'return "/bedchart/search";' },
+  { name: "officerHref", line: 'return "/bedchart/transport/officer";' },
+  { name: "onCallHref", line: 'return "/bedchart/on-call";' },
   { name: "digestHref", line: 'return "/mockups/ward-flow-digest";' },
-  { name: "signInHref", line: 'return "/ward-flow-sign-in";' },
+  { name: "signInHref", line: 'return "/bedchart-sign-in";' },
   {
     name: "wardStatisticsHref",
-    line: "return `/ward-flow/statistics/ward/${encodeURIComponent(unitId)}`;",
+    line: "return `/bedchart/statistics/ward/${encodeURIComponent(unitId)}`;",
   },
   {
     name: "edStatisticsHref",
-    line: "return `/ward-flow/statistics/ed/${encodeURIComponent(edId)}`;",
+    line: "return `/bedchart/statistics/ed/${encodeURIComponent(edId)}`;",
   },
   {
     name: "serviceStatisticsHref",
-    line: "return `/ward-flow/statistics/service/${encodeURIComponent(serviceId)}`;",
+    line: "return `/bedchart/statistics/service/${encodeURIComponent(serviceId)}`;",
   },
   {
     name: "communityStatisticsHref",
-    line: "return `/ward-flow/statistics/community/${encodeURIComponent(teamId)}`;",
+    line: "return `/bedchart/statistics/community/${encodeURIComponent(teamId)}`;",
   },
-  { name: "raiseReferralHref", line: "return `/ward-flow/referrals/new?${query.toString()}`;" },
+  { name: "raiseReferralHref", line: "return `/bedchart/referrals/new?${query.toString()}`;" },
   {
     name: "dischargeHref",
-    line: "return `/ward-flow/discharges?admissionId=${encodeURIComponent(encodeRecordAddress(admissionId))}`;",
+    line: "return `/bedchart/discharges?admissionId=${encodeURIComponent(encodeRecordAddress(admissionId))}`;",
   },
 ] as const;
 
@@ -828,7 +828,7 @@ const EXPECTED_BUILDER_LINE_TEXT = EXPECTED_BUILDER_LINES.map((entry) => entry.l
  * that cleanup target a scope no browser had registered.
  */
 const FORMER_ADDRESS_LINES = [
-  'export const LEGACY_PWA_SCOPES = ["/mockups/ward-flow", "/mockups/ward-flow/"] as const;',
+  'export const LEGACY_PWA_SCOPES = ["/mockups/ward-flow", "/mockups/ward-flow/", "/ward-flow"] as const;',
 ];
 
 /**
@@ -868,7 +868,7 @@ describe("the shell directory writes a route path in exactly one kind of place",
       for (const line of stripComments(readFileSync(file, "utf8")).split("\n")) {
         // A Ward Flow route itself (the digest still sits under /mockups), not a name that merely
         // contains one (`/ward-flow-push-sw.js`).
-        if (!/(?:(?<![\w./-])|\/mockups)\/ward-flow(?=[/"'`?#]|-sign-in|-digest|$)/u.test(line)) continue;
+        if (!/(?:(?<![\w./-])\/bedchart|\/mockups\/ward-flow)(?=[/"'`?#]|-sign-in|-digest|$)/u.test(line)) continue;
         const trimmed = line.trim();
         if (EXPECTED_BUILDER_LINE_TEXT.includes(trimmed)) found.push(trimmed);
         else if (!FORMER_ADDRESS_LINES.includes(trimmed)) offending.push(`${relative}: ${trimmed}`);

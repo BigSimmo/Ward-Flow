@@ -97,7 +97,7 @@ export function WardContactSheet({
         <span className={styles.status} role="status">
           {said}
         </span>
-        <Link className={styles.link} href="/ward-flow/on-call" data-testid="ward-contact-all">
+        <Link className={styles.link} href="/bedchart/on-call" data-testid="ward-contact-all">
           All contacts
         </Link>
       </div>

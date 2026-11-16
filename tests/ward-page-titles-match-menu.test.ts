@@ -12,7 +12,7 @@ import { WARD_NAV, WARD_VIEWS } from "@/components/ward-management/ward-nav";
  * "Shift handover" under "Handover" passes and "Search hub" under "Places" does not. Home's tab is
  * the app's own name.
  */
-const TAB_IS_APP_NAME = new Set(["/ward-flow"]);
+const TAB_IS_APP_NAME = new Set(["/bedchart"]);
 
 function staticTitle(href: string): string | undefined {
   const file = resolve(process.cwd(), `src/app${href}/page.tsx`);
@@ -30,7 +30,7 @@ describe("page titles match the menu (DA-28)", () => {
   });
 
   it("names Places and Legal forms exactly as the menu does", () => {
-    expect(staticTitle("/ward-flow/hub")).toBe("Places — Ward Flow");
-    expect(staticTitle("/ward-flow/legal-forms")).toBe("Legal forms — Ward Flow");
+    expect(staticTitle("/bedchart/hub")).toBe("Places — BedChart");
+    expect(staticTitle("/bedchart/legal-forms")).toBe("Legal forms — BedChart");
   });
 });

@@ -15,7 +15,7 @@ import { ToastProvider } from "@/components/wf/toast-provider";
  * a second press cannot send the same decision again under a new command id.
  */
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/referrals",
+  usePathname: () => "/bedchart/referrals",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
 }));
 

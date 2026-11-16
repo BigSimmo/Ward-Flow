@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/discharges",
+  usePathname: () => "/bedchart/discharges",
   useRouter: () => ({ push: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -14,7 +14,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({
-  useTourFacts: () => ({ facts: {}, home: "/ward-flow", deskHome: "/ward-flow" }),
+  useTourFacts: () => ({ facts: {}, home: "/bedchart", deskHome: "/bedchart" }),
 }));
 import { HelpFindResults, type HelpFound } from "@/components/ward-management/help/ward-help-find";
 import { setWardAccess, resetWardAccessStoreForTests } from "@/components/ward-management/shell/ward-access-store";
@@ -45,12 +45,12 @@ describe("Help request identity and eligibility", () => {
     expect(await screen.findByTestId("ward-help-search")).toHaveValue("Print the handover sheet");
   });
   it("opens a second Help link at its own answer while Help remains mounted", async () => {
-    window.history.replaceState(null, "", "/ward-flow/discharges#help=clear-held-up-discharge");
+    window.history.replaceState(null, "", "/bedchart/discharges#help=clear-held-up-discharge");
     render(<WardHelpHost />);
     const first = await screen.findByTestId("ward-help-task-answer-clear-held-up-discharge");
     expect(within(first).getByRole("button", { expanded: true })).toBeTruthy();
     act(() => {
-      window.history.replaceState(null, "", "/ward-flow/discharges#help=print-handover");
+      window.history.replaceState(null, "", "/bedchart/discharges#help=print-handover");
       window.dispatchEvent(new HashChangeEvent("hashchange"));
     });
     await waitFor(() =>
@@ -63,10 +63,10 @@ describe("Help request identity and eligibility", () => {
     const row = headerHelpRows("release a pulled bed", "coordinator").items.find(
       (item) => item.id === "howto:release-pulled-bed",
     )!;
-    expect(helpPreviewAnswer(row.id, "coordinator", true, false, "/ward-flow")?.showMe).toBe(true);
+    expect(helpPreviewAnswer(row.id, "coordinator", true, false, "/bedchart")?.showMe).toBe(true);
   });
   it("retains an internally chosen answer after an external task link", async () => {
-    window.history.replaceState(null, "", "/ward-flow/discharges#help=clear-held-up-discharge");
+    window.history.replaceState(null, "", "/bedchart/discharges#help=clear-held-up-discharge");
     render(<WardHelpHost />);
     const field = await screen.findByTestId("ward-help-search");
     fireEvent.change(field, { target: { value: "Print the handover sheet" } });
@@ -87,14 +87,14 @@ describe("Help request identity and eligibility", () => {
       (item) => item.id === "howto:rules",
     )!;
     expect(row.href).toBe("");
-    const scoped = helpPreviewAnswer(row.id, "coordinator", true, false, "/ward-flow", service);
+    const scoped = helpPreviewAnswer(row.id, "coordinator", true, false, "/bedchart", service);
     expect(scoped?.showMe).toBe(false);
     expect(scoped?.steps).toEqual([]);
     headerHelpRows("change pull time limit", "coordinator", statewide);
-    const allowed = helpPreviewAnswer(row.id, "coordinator", true, false, "/ward-flow", statewide);
+    const allowed = helpPreviewAnswer(row.id, "coordinator", true, false, "/bedchart", statewide);
     expect(allowed?.showMe).toBe(true);
     expect(allowed?.steps.length).toBeGreaterThan(0);
-    expect(helpPreviewAnswer(row.id, "coordinator", true, false, "/ward-flow", service)?.steps).toEqual([]);
+    expect(helpPreviewAnswer(row.id, "coordinator", true, false, "/bedchart", service)?.steps).toEqual([]);
   });
   it("omits the ward-only arrival control from a bed-manager Capacity walk", () => {
     const walk = HOW_TOS.find((task) => task.id === "around-capacity")!;

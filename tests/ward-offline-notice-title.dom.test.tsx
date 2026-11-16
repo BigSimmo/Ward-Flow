@@ -20,7 +20,7 @@ describe("P133: offline link notice wording", () => {
     render(
       <ToastProvider offlineNote={WARD_OFFLINE_SAVED_NOTE}>
         <WardOfflineLinks />
-        <a href="/ward-flow/elsewhere">Elsewhere</a>
+        <a href="/bedchart/elsewhere">Elsewhere</a>
       </ToastProvider>,
     );
     const link = screen.getByRole("link", { name: "Elsewhere" });

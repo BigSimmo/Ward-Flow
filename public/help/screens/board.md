@@ -23,6 +23,6 @@ Every bed on one ward, who is in it, who is coming in and who is going out today
 
 - Beds as squares. One square per bed, with how many are ready and any closed.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

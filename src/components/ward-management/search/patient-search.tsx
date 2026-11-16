@@ -144,7 +144,7 @@ import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-l
 // Moved to `patient-search-sections.tsx`; re-exported so existing importers keep working.
 export { ResultsSection };
 
-const PATIENTS_ROUTE = "/ward-flow/search";
+const PATIENTS_ROUTE = "/bedchart/search";
 /**
  * What Back brings back (`use-return-to-place.ts`): the census's tab, filters, order and opened
  * groups. The typed search text and the date of birth are never kept.
@@ -179,7 +179,7 @@ function originDepartmentText(movement: Movement): string {
   return movementOriginLabel(movement, originEd && `${originEd.name} (${originEd.siteCode})`);
 }
 
-const NO_CLINICAL_NOTE = "No clinical note is recorded in Ward Flow.";
+const NO_CLINICAL_NOTE = "No clinical note is recorded in BedChart.";
 
 /** Whole years from the recorded date of birth, or `null` when there is none to read. */
 function recordedAge(patient: Patient | undefined, today: Date): number | null {

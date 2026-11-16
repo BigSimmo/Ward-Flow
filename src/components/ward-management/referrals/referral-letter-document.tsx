@@ -23,7 +23,7 @@ export function ReferralLetterDocument({
       {/* A div, not <header>: app print rules hide page headers. */}
       <div className={styles.head}>
         <div>
-          <p className={styles.eyebrow}>Ward Flow · Synthetic prototype</p>
+          <p className={styles.eyebrow}>BedChart · Synthetic prototype</p>
           <h3 className={styles.title}>{model.title}</h3>
         </div>
         <p className={styles.stamp}>{stamp}</p>

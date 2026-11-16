@@ -85,7 +85,7 @@ it("does not offer a late update after registration has unmounted", async () => 
   });
 
   expect(screen.queryByRole("button", { name: "Reload" })).not.toBeInTheDocument();
-  expect(screen.queryByText("New version of Ward Flow ready")).not.toBeInTheDocument();
+  expect(screen.queryByText("New version of BedChart ready")).not.toBeInTheDocument();
   expect(worker.postMessage).not.toHaveBeenCalled();
 });
 

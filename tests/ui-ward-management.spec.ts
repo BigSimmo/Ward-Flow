@@ -43,7 +43,7 @@ const WARD_WORKSPACE_MODES = workspaceExpression.elements.map((element) => {
 if (new Set(WARD_WORKSPACE_MODES).size !== WARD_WORKSPACE_MODES.length)
   throw new Error("WARD_WORKSPACE_MODES must not contain duplicates");
 
-const PATH = "/ward-flow";
+const PATH = "/bedchart";
 
 /**
  * B1 (Josh, 19 Oct 2026): the rail shows the desk's own short menu and keeps every other page under
@@ -77,7 +77,7 @@ async function expectNoPageOverflow(page: Page) {
  * `document.documentElement` can never report an overflow on the coordinator route — `.screen`
  * sets `overflow: hidden` — so `expectNoPageOverflow` alone cannot catch a track inside the
  * region grid running wider than its box (Task 3 review Important 1). Only meaningful on
- * /ward-flow itself, where the region grid testid exists.
+ * /bedchart itself, where the region grid testid exists.
  */
 async function expectNoRegionGridOverflow(page: Page) {
   const overflow = await page.evaluate(() => {
@@ -89,7 +89,7 @@ async function expectNoRegionGridOverflow(page: Page) {
   expect(overflow).toBeLessThanOrEqual(2);
 }
 
-test.describe("@mockup Ward Flow command view", () => {
+test.describe("@mockup BedChart command view", () => {
   test.describe.configure({ timeout: 45_000 });
 
   // "supports role-aware queue review and human-confirmed destination choice" and "collapses
@@ -119,7 +119,7 @@ test.describe("@mockup Ward Flow command view", () => {
    * than 45 s before failing — worst case about +75 s on a Chromium-only PR shard and about
    * +225 s across the three browsers of verify:release, both well inside those jobs' budgets.
    */
-  test("opens every Ward Flow mode", async ({ page }) => {
+  test("opens every BedChart mode", async ({ page }) => {
     test.setTimeout(120_000);
     await page.setViewportSize({ width: 1440, height: 1024 });
     await gotoWardFlow(page);
@@ -281,7 +281,7 @@ test.describe("@mockup Ward Flow command view", () => {
     await page.setViewportSize({ width: 320, height: 640 });
     await gotoWardFlow(page);
 
-    const nav = page.getByRole("navigation", { name: "Ward Flow views" });
+    const nav = page.getByRole("navigation", { name: "BedChart views" });
     // cc4deaecaf (23 Sept): at 40rem and below "the phone starts with the task" — the views move
     // behind the rail's Menu button, which opens the same "More pages" sheet. The tap-target floor
     // is what this test guards, so open whichever door this width offers, then measure.
@@ -322,7 +322,7 @@ test.describe("@mockup Ward Flow command view", () => {
       // Josh, 8 Nov 2026: the coordinator's dock Capacity tab is a button that opens Capacity at a
       // glance, whose own link opens the full page, so that tab is how a phone reaches Capacity.
       const capacityTab =
-        view.href === "/ward-flow/capacity" ? ['[data-testid="ward-phone-dock-capacity"]:visible'] : [];
+        view.href === "/bedchart/capacity" ? ['[data-testid="ward-phone-dock-capacity"]:visible'] : [];
       const link = page
         .locator(
           [
@@ -459,7 +459,7 @@ test.describe("@mockup Ward Flow command view", () => {
     // b93b3b07e3 (21 Sept) retired the workspace header ("eliminate duplicate headers"), and the
     // 25 Sept ruling keeps that design. With the rail closed, its emblem is what names the app.
     // Since 8 October 2026 (Josh) the closed emblem opens the full rail rather than going Home.
-    const brandOpen = rail.getByRole("button", { name: "Ward Flow, open the menu" });
+    const brandOpen = rail.getByRole("button", { name: "BedChart, open the menu" });
     await expect(
       brandOpen,
       "with the rail closed and the workspace header retired, nothing on screen names the application",
@@ -499,12 +499,12 @@ test.describe("@mockup Ward Flow command view", () => {
   // the "no brand link" count cannot pass on an empty page.
   test("uses the lean bar on phone, with Menu first and no brand link", async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 820 });
-    await page.goto("/ward-flow/queue", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart/queue", { waitUntil: "domcontentloaded" });
 
     const menu = page.getByTestId("ward-bar-phone-menu");
     await expect(menu).toBeVisible({ timeout: 15_000 });
     await expect(
-      page.getByRole("link", { name: "Ward Flow home", exact: true }).filter({ visible: true }),
+      page.getByRole("link", { name: "BedChart home", exact: true }).filter({ visible: true }),
       "the locked phone bar carries no brand link",
     ).toHaveCount(0);
   });

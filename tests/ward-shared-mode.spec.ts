@@ -135,7 +135,7 @@ test("keyboard focus: after a shared save the activated control still has focus"
   // not confirm the ward, so the ward stays first in line. Focus therefore has somewhere to return.
   // (The ward panel's "Ask the ward" is disabled once asked, so it cannot hold focus.) The sign-in
   // lives in this tab's session storage, so a full navigation keeps it.
-  await page.goto("/ward-flow/capacity", { waitUntil: "domcontentloaded" });
+  await page.goto("/bedchart/capacity", { waitUntil: "domcontentloaded" });
   await expect(sharedStatus(page)).toContainText(READY, { timeout: 30_000 });
   const shift = page.getByTestId("ward-capacity-screen").getByRole("region", { name: "Bed counts confirmed" });
   const request = shift.getByRole("button", { name: /^Ask .+ to confirm its beds$/u });
@@ -162,7 +162,7 @@ test("keyboard focus: after a shared save the activated control still has focus"
   await expect.poll(() => request.evaluate((control) => control === document.activeElement)).toBe(true);
 
   // Leave the desk where the other tests expect it (--repeat-each runs them again).
-  await page.goto("/ward-flow", { waitUntil: "domcontentloaded" });
+  await page.goto("/bedchart", { waitUntil: "domcontentloaded" });
   await expect(sharedStatus(page)).toContainText(READY, { timeout: 30_000 });
 });
 

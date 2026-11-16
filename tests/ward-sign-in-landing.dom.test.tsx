@@ -6,7 +6,7 @@ import { act, cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const nav = vi.hoisted(() => ({ pathname: "/ward-flow/capacity", replace: vi.fn() }));
+const nav = vi.hoisted(() => ({ pathname: "/bedchart/capacity", replace: vi.fn() }));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => nav.pathname,
@@ -57,7 +57,7 @@ function signInAs(access: WardAccess, landedOn: string) {
 
 afterEach(() => {
   cleanup();
-  nav.pathname = "/ward-flow/capacity";
+  nav.pathname = "/bedchart/capacity";
   nav.replace.mockReset();
   act(() => {
     setWardFeatureFlagOnDevice("role-access", null);
@@ -67,33 +67,33 @@ afterEach(() => {
 
 describe("a sign-in that lands on a page closed to the new desk", () => {
   it("opens the desk's own home, not the refusal (#804)", () => {
-    signInAs(WARD2, "/ward-flow/capacity");
+    signInAs(WARD2, "/bedchart/capacity");
     renderGate();
-    expect(nav.replace).toHaveBeenCalledWith("/ward-flow/ward/fsh-adult-secure");
+    expect(nav.replace).toHaveBeenCalledWith("/bedchart/ward/fsh-adult-secure");
     expect(screen.getByText("Opening your home")).toHaveAttribute("role", "status");
     expect(screen.queryByText("Not part of your role")).toBeNull();
   });
 
   it("opens the ED desk's own home when landing on bed-meeting with query parameters", () => {
-    nav.pathname = "/ward-flow/bed-meeting";
-    signInAs({ role: "ed", scope: { kind: "ed", edId: "rph-ed" } }, "/ward-flow/bed-meeting?ward=rph-adult");
+    nav.pathname = "/bedchart/bed-meeting";
+    signInAs({ role: "ed", scope: { kind: "ed", edId: "rph-ed" } }, "/bedchart/bed-meeting?ward=rph-adult");
     renderGate();
-    expect(nav.replace).toHaveBeenCalledWith("/ward-flow/ed/rph-ed");
+    expect(nav.replace).toHaveBeenCalledWith("/bedchart/ed/rph-ed");
     expect(screen.getByText("Opening your home")).toHaveAttribute("role", "status");
     expect(screen.queryByText("Not part of your role")).toBeNull();
   });
 
   it("opens the desk's own home when the landed path includes query parameters", () => {
-    nav.pathname = "/ward-flow/capacity";
-    signInAs(WARD2, "/ward-flow/capacity?view=site");
+    nav.pathname = "/bedchart/capacity";
+    signInAs(WARD2, "/bedchart/capacity?view=site");
     renderGate();
-    expect(nav.replace).toHaveBeenCalledWith("/ward-flow/ward/fsh-adult-secure");
+    expect(nav.replace).toHaveBeenCalledWith("/bedchart/ward/fsh-adult-secure");
     expect(screen.getByText("Opening your home")).toHaveAttribute("role", "status");
     expect(screen.queryByText("Not part of your role")).toBeNull();
   });
 
   it("still refuses a closed page the person moves to later", () => {
-    signInAs(WARD2, "/ward-flow/somewhere-else");
+    signInAs(WARD2, "/bedchart/somewhere-else");
     renderGate();
     expect(screen.getByText("Not part of your role")).toBeInTheDocument();
     expect(nav.replace).not.toHaveBeenCalled();

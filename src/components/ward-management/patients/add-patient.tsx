@@ -872,7 +872,7 @@ export function AddPatientForm() {
             actions={
               <Link
                 className={buttonClass({ variant: "onHero", size: "sm" })}
-                href="/ward-flow/search"
+                href="/bedchart/search"
                 aria-label="Cancel and go back to patient search"
                 data-testid="ward-add-patient-cancel"
               >
@@ -903,7 +903,7 @@ export function AddPatientForm() {
                     confirm from the dirty-state guard, never a browser box. */}
                 <Link
                   className={buttonClass({ variant: "onHero", size: "sm" })}
-                  href="/ward-flow/search"
+                  href="/bedchart/search"
                   aria-label="Cancel and go back to patient search"
                   data-testid="ward-add-patient-cancel"
                 >

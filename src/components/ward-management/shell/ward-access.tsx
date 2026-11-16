@@ -832,7 +832,7 @@ function WardRecordViewLog({
 }
 
 /** WF-13 (live test, 4 Nov 2026): a closed page's tab names no ward, ED or team. Unknown and forbidden share it. */
-const CLOSED_TAB_TITLE = "Not part of your role — Ward Flow";
+const CLOSED_TAB_TITLE = "Not part of your role — BedChart";
 
 /**
  * Replaces the address with the desk's own page, so Back does not return to the closed one (DR-06).

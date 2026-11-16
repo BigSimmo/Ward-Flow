@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/alerts",
+  usePathname: () => "/bedchart/alerts",
   useRouter: () => ({ back: vi.fn(), replace: vi.fn(), push: vi.fn() }),
 }));
 

@@ -73,7 +73,7 @@ describe("Ward Flow sign-in page", () => {
     fireEvent.change(await screen.findByLabelText("Username"), { target: { value: " synthetic@example.test " } });
     fireEvent.change(screen.getByLabelText("Password"), { target: { value: "synthetic-password" } });
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
-    await waitFor(() => expect(replace).toHaveBeenCalledWith("/ward-flow"));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/bedchart"));
     expect(auth.signIn).toHaveBeenCalledWith("synthetic@example.test", "synthetic-password");
     // The password goes to the sign-in service only, and the card forgets it straight away.
     expect(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body))).toEqual({ token: "synthetic-token" });
@@ -96,7 +96,7 @@ describe("Ward Flow sign-in page", () => {
   it("goes straight through for a tab that is still signed in", async () => {
     createWardAuth.mockResolvedValue(adapter({ userId: "synthetic-user" }));
     render(<WardFlowSignInScreen />);
-    await waitFor(() => expect(replace).toHaveBeenCalledWith("/ward-flow"));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/bedchart"));
   });
 
   it("shows only the demo on a site with no account sign-in (the public demo, Q203)", async () => {

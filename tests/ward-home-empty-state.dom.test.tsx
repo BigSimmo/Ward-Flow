@@ -8,7 +8,7 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -28,7 +28,7 @@ describe("Home empty state", () => {
           handlers={handlers}
           selectedReferralId={undefined}
           onSelectReferral={vi.fn()}
-          decideHref={(id) => `/ward-flow/referrals?referral=${id}`}
+          decideHref={(id) => `/bedchart/referrals?referral=${id}`}
         />
       </WardFlowProvider>,
     );

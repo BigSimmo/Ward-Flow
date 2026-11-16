@@ -34,9 +34,7 @@ export class NextShellBoundary extends Component<NextShellBoundaryProps, { faile
   }
 
   componentDidCatch(error: unknown) {
-    console.error(
-      `Ward Flow shell failed: ${this.props.label} (${error instanceof Error ? error.name : typeof error})`,
-    );
+    console.error(`BedChart shell failed: ${this.props.label} (${error instanceof Error ? error.name : typeof error})`);
   }
 
   render() {

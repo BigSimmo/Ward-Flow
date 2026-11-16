@@ -6,7 +6,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { createRef, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const route = vi.hoisted(() => ({ pathname: "/ward-flow" }));
+const route = vi.hoisted(() => ({ pathname: "/bedchart" }));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
@@ -61,7 +61,7 @@ function updateABedHref(): string | null {
 
 afterEach(() => {
   installMatchMediaStub(false);
-  route.pathname = "/ward-flow";
+  route.pathname = "/bedchart";
 });
 
 describe("Menu desk wording and Update a bed (shell-2)", () => {
@@ -101,13 +101,13 @@ describe("Create sheet items match the + button's name (shell-5)", () => {
     expect(within(sheet).getByRole("region", { name: "Or record" })).toContainElement(
       within(sheet).getByRole("link", { name: /Add patient/u }),
     );
-    expect(within(sheet).getByRole("link", { name: /Add patient/u })).toHaveAttribute("href", "/ward-flow/people/new");
+    expect(within(sheet).getByRole("link", { name: /Add patient/u })).toHaveAttribute("href", "/bedchart/people/new");
   });
 });
 
 describe("each person keeps their own dock (Q162, Josh 1 Nov 2026)", () => {
   it("keeps the coordinator's Home and Capacity on Transport", () => {
-    route.pathname = "/ward-flow/transport/officer";
+    route.pathname = "/bedchart/transport/officer";
     openMenu();
     const dock = within(screen.getByTestId("ward-phone-dock"));
     expect(dock.getByText("Home")).toBeInTheDocument();
@@ -118,7 +118,7 @@ describe("each person keeps their own dock (Q162, Josh 1 Nov 2026)", () => {
 
 describe("Create sheet asks the access check for Add patient (role access plan v2, D-80)", () => {
   it("offers no Add patient on a desk whose role cannot add one", () => {
-    route.pathname = "/ward-flow/transport/officer";
+    route.pathname = "/bedchart/transport/officer";
     openMenu();
     fireEvent.click(screen.getByTestId("ward-phone-create"));
     const sheet = screen.getByTestId("ward-phone-create-sheet");
@@ -129,8 +129,8 @@ describe("Create sheet asks the access check for Add patient (role access plan v
   // opens a sheet saying so. The new frame (Josh, 30 Oct 2026): with no + and no hump, the dock's
   // tabs share its width evenly instead of leaving blank cells (the officer's dock had an empty slot).
   it.each([
-    ["officer", "/ward-flow/transport/officer", { kind: "jobs" }],
-    ["executive", "/ward-flow", { kind: "statewide" }],
+    ["officer", "/bedchart/transport/officer", { kind: "jobs" }],
+    ["executive", "/bedchart", { kind: "statewide" }],
   ] as const)("shows no + on a signed-in %s desk with nothing to start", (role, pathname, scope) => {
     act(() => {
       setWardFeatureFlagOnDevice("role-access", true);
@@ -158,7 +158,7 @@ describe("Create sheet asks the access check for Add patient (role access plan v
     openMenu();
     fireEvent.click(screen.getByTestId("ward-phone-create"));
     const sheet = screen.getByTestId("ward-phone-create-sheet");
-    expect(within(sheet).getByRole("link", { name: /Add patient/u })).toHaveAttribute("href", "/ward-flow/people/new");
+    expect(within(sheet).getByRole("link", { name: /Add patient/u })).toHaveAttribute("href", "/bedchart/people/new");
   });
 });
 

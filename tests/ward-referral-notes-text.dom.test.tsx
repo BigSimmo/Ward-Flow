@@ -78,7 +78,7 @@ describe("acceptance notes", () => {
     const text = referralAcceptanceNotesText(referral, { patientName: "Synthetic, Person", units: state.units, now })!;
     expect(text.split("\n")).toEqual([
       SYNTHETIC_COPY_LINE,
-      "Ward Flow acceptance: Synthetic, Person.",
+      "BedChart acceptance: Synthetic, Person.",
       `Referral ${referral.id} accepted by ${ward!.name}, ${formatInstantWithDay(accepted.decidedAt!, now)}.`,
       accepted.heldBedNumber === undefined
         ? "Bed: no numbered bed pulled yet."
@@ -110,7 +110,7 @@ describe("transfer notes", () => {
     })!;
     const lines = text.split("\n");
     expect(lines[0]).toBe(SYNTHETIC_COPY_LINE);
-    expect(lines[1]).toBe("Ward Flow transfer: Synthetic, Person.");
+    expect(lines[1]).toBe("BedChart transfer: Synthetic, Person.");
     expect(lines[2]).toBe(`From ${edById(movement.originEdId)!.name} to ${ward.name}.`);
     expect(lines).toContain("Bed: bed 4 pulled.");
     expect(lines).toContain("Transport: Not yet requested.");

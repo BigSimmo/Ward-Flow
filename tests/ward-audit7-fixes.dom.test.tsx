@@ -27,7 +27,7 @@ describe("Back with no history asks before leaving a form (NB-06)", () => {
     const onFallback = vi.fn();
     navigateContextuallyBack(
       r,
-      "/ward-flow/search",
+      "/bedchart/search",
       () => false,
       onFallback,
       () => false,
@@ -40,19 +40,19 @@ describe("Back with no history asks before leaving a form (NB-06)", () => {
     const r = router();
     navigateContextuallyBack(
       r,
-      "/ward-flow/search",
+      "/bedchart/search",
       () => false,
       undefined,
       () => true,
     );
-    expect(r.replace).toHaveBeenCalledWith("/ward-flow/search");
+    expect(r.replace).toHaveBeenCalledWith("/bedchart/search");
   });
 
   it("leaves a history step to the popstate guard", () => {
     const r = router();
     vi.spyOn(window.history, "length", "get").mockReturnValue(3);
     const confirmFallback = vi.fn(() => false);
-    navigateContextuallyBack(r, "/ward-flow/search", () => true, undefined, confirmFallback);
+    navigateContextuallyBack(r, "/bedchart/search", () => true, undefined, confirmFallback);
     expect(r.back).toHaveBeenCalled();
     expect(confirmFallback).not.toHaveBeenCalled();
   });

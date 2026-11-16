@@ -17,6 +17,6 @@ Why each waiting patient is still waiting, grouped by cause.
 9. Today's follow-up. Attention, Escalated and Done today. Open a person to act or to read the reply.
 10. Delay graphs. The waits as graphs: the next hours, where and whose move, and the spread of waits.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

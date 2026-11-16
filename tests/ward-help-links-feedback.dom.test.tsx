@@ -18,13 +18,13 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/discharges",
+  usePathname: () => "/bedchart/discharges",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
 
 vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({
-  useTourFacts: () => ({ facts: {}, home: "/ward-flow", deskHome: "/ward-flow" }),
+  useTourFacts: () => ({ facts: {}, home: "/bedchart", deskHome: "/bedchart" }),
 }));
 
 const phone = vi.hoisted(() => ({ on: false }));
@@ -70,8 +70,8 @@ function renderTasks() {
   return render(
     <HelpTasks
       role="coordinator"
-      home="/ward-flow"
-      pathname="/ward-flow/discharges"
+      home="/bedchart"
+      pathname="/bedchart/discharges"
       screen={undefined}
       onClose={vi.fn()}
       onShowMe={vi.fn()}
@@ -91,18 +91,18 @@ describe("Help links", () => {
     expect(helpLinkTask("#help=")).toBeUndefined();
     expect(helpLinkTask("#rules")).toBeUndefined();
     expect(helpLinkTask("#help=pull-bed&q=smith")).toBeUndefined();
-    expect(helpLinkHref("https://example.test", "/ward-flow/settings#rules", "theme")).toBe(
-      "https://example.test/ward-flow/settings#help=theme",
+    expect(helpLinkHref("https://example.test", "/bedchart/settings#rules", "theme")).toBe(
+      "https://example.test/bedchart/settings#help=theme",
     );
   });
 
   it("opens How to at the linked job, then takes the link off the address", async () => {
-    window.history.replaceState(null, "", "/ward-flow/discharges#help=clear-held-up-discharge");
+    window.history.replaceState(null, "", "/bedchart/discharges#help=clear-held-up-discharge");
     render(<WardHelpHost />);
     const answer = await screen.findByTestId("ward-help-task-answer-clear-held-up-discharge", {}, { timeout: 3000 });
     expect(within(answer).getByRole("button", { expanded: true })).toBeTruthy();
     expect(window.location.hash).toBe("");
-    expect(window.location.pathname).toBe("/ward-flow/discharges");
+    expect(window.location.pathname).toBe("/bedchart/discharges");
   });
 
   it("copies a link to the open job, through the safe clipboard", async () => {
@@ -111,7 +111,7 @@ describe("Help links", () => {
     // The button says so where it was pressed, and a polite live line announces it.
     await screen.findByRole("button", { name: "Link copied" });
     expect(document.querySelector('[aria-live="polite"]')?.textContent).toBe("Link copied");
-    expect(copy.text).toBe(`${window.location.origin}/ward-flow/discharges#help=clear-held-up-discharge`);
+    expect(copy.text).toBe(`${window.location.origin}/bedchart/discharges#help=clear-held-up-discharge`);
   });
 
   it("says so when the link could not be copied", async () => {
@@ -187,8 +187,8 @@ describe("printable guides from Help", () => {
     render(
       <HelpTasks
         role="coordinator"
-        home="/ward-flow"
-        pathname="/ward-flow/discharges"
+        home="/bedchart"
+        pathname="/bedchart/discharges"
         screen={{ ...SCREEN_HELP.discharges, id: "discharges" }}
         onClose={vi.fn()}
         onShowMe={vi.fn()}

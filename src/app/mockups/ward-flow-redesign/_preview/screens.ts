@@ -35,97 +35,97 @@ export type MockupPopup = {
 export const MOCKUP_BASE = "/mockups/ward-flow-redesign";
 
 export const MOCKUP_SCREENS: readonly MockupScreen[] = [
-  { slug: "home", label: "Home", group: "Coordinator", appPath: "/ward-flow" },
-  { slug: "capacity", label: "Capacity", group: "Coordinator", appPath: "/ward-flow/capacity" },
-  { slug: "waiting", label: "Waiting", group: "Coordinator", appPath: "/ward-flow/waiting" },
-  { slug: "movements", label: "Movements", group: "Coordinator", appPath: "/ward-flow/movements" },
-  { slug: "handover", label: "Handover", group: "Coordinator", appPath: "/ward-flow/handover" },
+  { slug: "home", label: "Home", group: "Coordinator", appPath: "/bedchart" },
+  { slug: "capacity", label: "Capacity", group: "Coordinator", appPath: "/bedchart/capacity" },
+  { slug: "waiting", label: "Waiting", group: "Coordinator", appPath: "/bedchart/waiting" },
+  { slug: "movements", label: "Movements", group: "Coordinator", appPath: "/bedchart/movements" },
+  { slug: "handover", label: "Handover", group: "Coordinator", appPath: "/bedchart/handover" },
   {
     slug: "new-referral",
     label: "New referral",
     group: "Coordinator",
-    appPath: "/ward-flow/referrals/new",
-    shellPath: "/ward-flow/referrals",
+    appPath: "/bedchart/referrals/new",
+    shellPath: "/bedchart/referrals",
   },
-  { slug: "discharges", label: "Discharges", group: "Coordinator", appPath: "/ward-flow/discharges" },
-  { slug: "ward", label: "My ward", group: "Desks", appPath: "/ward-flow/ward/rph-adult-secure" },
-  { slug: "ed-board", label: "ED board", group: "Desks", appPath: "/ward-flow/ed/peel-ed" },
-  { slug: "legal-forms", label: "Legal forms", group: "Reference", appPath: "/ward-flow/legal-forms" },
-  { slug: "patient", label: "Patient record", group: "Places and records", appPath: "/ward-flow/people/196zcp24w5t0" },
-  { slug: "add-patient", label: "Add patient", group: "Places and records", appPath: "/ward-flow/people/new" },
+  { slug: "discharges", label: "Discharges", group: "Coordinator", appPath: "/bedchart/discharges" },
+  { slug: "ward", label: "My ward", group: "Desks", appPath: "/bedchart/ward/rph-adult-secure" },
+  { slug: "ed-board", label: "ED board", group: "Desks", appPath: "/bedchart/ed/peel-ed" },
+  { slug: "legal-forms", label: "Legal forms", group: "Reference", appPath: "/bedchart/legal-forms" },
+  { slug: "patient", label: "Patient record", group: "Places and records", appPath: "/bedchart/people/196zcp24w5t0" },
+  { slug: "add-patient", label: "Add patient", group: "Places and records", appPath: "/bedchart/people/new" },
   // Triage and risk: Josh approved the mock-up and it was built into the app on 7 Nov 2026 (D-91), so
   // these entries draw the real screens.
   {
     slug: "triage-risk",
     label: "Triage and risk",
     group: "Places and records",
-    appPath: "/ward-flow/people/196zcp24w5t0/triage",
+    appPath: "/bedchart/people/196zcp24w5t0/triage",
   },
-  { slug: "triage-start", label: "Start a triage", group: "Places and records", appPath: "/ward-flow/triage/new" },
+  { slug: "triage-start", label: "Start a triage", group: "Places and records", appPath: "/bedchart/triage/new" },
   // Q218 (Josh, 2 Nov 2026): the pages with no approved redesign are drawn from main in the newest
   // shell, so the master design no longer shows their older (BL86) content.
-  { slug: "eds", label: "All EDs", group: "Coordinator", appPath: "/ward-flow/ed" },
-  { slug: "referrals", label: "Referrals", group: "Coordinator", appPath: "/ward-flow/referrals" },
-  { slug: "stays", label: "Stays and discharges", group: "Desks", appPath: "/ward-flow/board/rph-adult-secure" },
+  { slug: "eds", label: "All EDs", group: "Coordinator", appPath: "/bedchart/ed" },
+  { slug: "referrals", label: "Referrals", group: "Coordinator", appPath: "/bedchart/referrals" },
+  { slug: "stays", label: "Stays and discharges", group: "Desks", appPath: "/bedchart/board/rph-adult-secure" },
   // The page the Officer job panel pop-up opens over (2 Nov 2026).
-  { slug: "transport", label: "Transport", group: "Desks", appPath: "/ward-flow/transport/officer" },
-  { slug: "patients", label: "Patients", group: "Work and reports", appPath: "/ward-flow/search" },
-  { slug: "wards", label: "All wards", group: "Work and reports", appPath: "/ward-flow/wards" },
-  { slug: "alerts", label: "Alerts", group: "Reference", appPath: "/ward-flow/alerts" },
-  { slug: "out-of-area", label: "Out of area", group: "Reference", appPath: "/ward-flow/out-of-area" },
-  { slug: "on-call", label: "On-call", group: "Reference", appPath: "/ward-flow/on-call" },
-  { slug: "seclusion", label: "Seclusion", group: "Reference", appPath: "/ward-flow/seclusion" },
-  { slug: "governance", label: "Governance", group: "Reference", appPath: "/ward-flow/governance" },
+  { slug: "transport", label: "Transport", group: "Desks", appPath: "/bedchart/transport/officer" },
+  { slug: "patients", label: "Patients", group: "Work and reports", appPath: "/bedchart/search" },
+  { slug: "wards", label: "All wards", group: "Work and reports", appPath: "/bedchart/wards" },
+  { slug: "alerts", label: "Alerts", group: "Reference", appPath: "/bedchart/alerts" },
+  { slug: "out-of-area", label: "Out of area", group: "Reference", appPath: "/bedchart/out-of-area" },
+  { slug: "on-call", label: "On-call", group: "Reference", appPath: "/bedchart/on-call" },
+  { slug: "seclusion", label: "Seclusion", group: "Reference", appPath: "/bedchart/seclusion" },
+  { slug: "governance", label: "Governance", group: "Reference", appPath: "/bedchart/governance" },
   {
     slug: "bed-meeting-tv",
     label: "Bed meeting TV",
     group: "Bed meeting and reports",
-    appPath: "/ward-flow/bed-meeting",
+    appPath: "/bedchart/bed-meeting",
     bare: true,
   },
   {
     slug: "agenda",
     label: "Meeting agenda",
     group: "Bed meeting and reports",
-    appPath: "/ward-flow/bed-meeting/agenda",
+    appPath: "/bedchart/bed-meeting/agenda",
   },
   {
     slug: "downtime",
     label: "Downtime pack",
     group: "Bed meeting and reports",
-    appPath: "/ward-flow/reports/downtime",
+    appPath: "/bedchart/reports/downtime",
   },
   {
     slug: "chronology",
     label: "Patient chronology",
     group: "Bed meeting and reports",
-    appPath: "/ward-flow/reports/chronology",
+    appPath: "/bedchart/reports/chronology",
   },
-  { slug: "places", label: "Places", group: "Places and records", appPath: "/ward-flow/hub" },
-  { slug: "community", label: "Community", group: "Places and records", appPath: "/ward-flow/community" },
+  { slug: "places", label: "Places", group: "Places and records", appPath: "/bedchart/hub" },
+  { slug: "community", label: "Community", group: "Places and records", appPath: "/bedchart/community" },
   {
     slug: "community-team",
     label: "Community team",
     group: "Places and records",
-    appPath: "/ward-flow/community/midland",
+    appPath: "/bedchart/community/midland",
   },
   {
     slug: "ward-answer",
     label: "Ward answer",
     group: "Places and records",
-    appPath: "/ward-flow/ward/rph-adult-secure/answer",
+    appPath: "/bedchart/ward/rph-adult-secure/answer",
   },
-  { slug: "settings", label: "Settings", group: "Places and records", appPath: "/ward-flow/settings" },
-  { slug: "sign-in", label: "Sign in", group: "Places and records", appPath: "/ward-flow-sign-in", bare: true },
-  { slug: "statistics-list", label: "Ward list", group: "Statistics pages", appPath: "/ward-flow/statistics/wards" },
+  { slug: "settings", label: "Settings", group: "Places and records", appPath: "/bedchart/settings" },
+  { slug: "sign-in", label: "Sign in", group: "Places and records", appPath: "/bedchart-sign-in", bare: true },
+  { slug: "statistics-list", label: "Ward list", group: "Statistics pages", appPath: "/bedchart/statistics/wards" },
   {
     slug: "statistics-unit",
     label: "One ward",
     group: "Statistics pages",
-    appPath: "/ward-flow/statistics/ward/fsh-adult-secure",
+    appPath: "/bedchart/statistics/ward/fsh-adult-secure",
   },
-  { slug: "statistics-network", label: "Network", group: "Statistics pages", appPath: "/ward-flow/statistics" },
-  { slug: "ed-department", label: "One ED", group: "Coordinator", appPath: "/ward-flow/ed/fsh-ed" },
+  { slug: "statistics-network", label: "Network", group: "Statistics pages", appPath: "/bedchart/statistics" },
+  { slug: "ed-department", label: "One ED", group: "Coordinator", appPath: "/bedchart/ed/fsh-ed" },
 ];
 
 /** Popups drawn over their page. Each page opens its own; the viewer asks it to on load. */
@@ -233,10 +233,10 @@ export const MOCKUP_POPUPS: readonly MockupPopup[] = [
 
 /** Prefix routes: any address under these opens the one example drawn for them. */
 const PREFIX_SCREENS: readonly (readonly [prefix: string, slug: string])[] = [
-  ["/ward-flow/ward/", "ward"],
-  ["/ward-flow/ed/", "ed-board"],
-  ["/ward-flow/people/", "patient"],
-  ["/ward-flow/movements/", "patient"],
+  ["/bedchart/ward/", "ward"],
+  ["/bedchart/ed/", "ed-board"],
+  ["/bedchart/people/", "patient"],
+  ["/bedchart/movements/", "patient"],
 ];
 
 export function screenBySlug(slug: string): MockupScreen | undefined {
@@ -257,7 +257,7 @@ export function mockupHrefForAppPath(href: string, rolePrefix?: string): string 
   const exact = MOCKUP_SCREENS.find((screen) => screen.appPath === path && !screen.role);
   if (exact) return `${MOCKUP_BASE}/${exact.slug}`;
   // Every person's triage form is drawn as the one triage entry, as every record is drawn as the patient's.
-  if (/^\/ward-flow\/people\/[^/]+\/triage$/u.test(path)) return `${MOCKUP_BASE}/triage-risk`;
+  if (/^\/bedchart\/people\/[^/]+\/triage$/u.test(path)) return `${MOCKUP_BASE}/triage-risk`;
   const prefixed = PREFIX_SCREENS.find(([prefix]) => path.startsWith(prefix));
   return prefixed ? `${MOCKUP_BASE}/${prefixed[1]}` : null;
 }

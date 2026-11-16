@@ -28,7 +28,7 @@ export const FRONT_DOOR_END_COOKIE = "wf_door_end";
 export const FRONT_DOOR_SIGN_IN_PATH = "/sign-in";
 export const ACCOUNT_PASS_HOURS = 12;
 export const DEMO_PASS_HOURS = 8;
-const HOME_PATH = "/ward-flow";
+const HOME_PATH = "/bedchart";
 const MIN_SECRET_LENGTH = 32;
 
 type Env = Record<string, string | undefined>;
@@ -60,7 +60,7 @@ const OPEN_PATHS = new Set([
   FRONT_DOOR_SIGN_IN_PATH,
   // The Ward Flow sign-in page (1 November 2026, Q164 to Q166): the front door's own card, so a
   // signed-out visitor must be able to reach it.
-  "/ward-flow-sign-in",
+  "/bedchart-sign-in",
   "/api/session",
   "/api/health",
   "/api/local-project-id",
@@ -78,7 +78,7 @@ export function isFrontDoorOpenPath(pathname: string): boolean {
 
 /**
  * Where sign-in goes next: a Ward Flow address on this site, never anywhere else. Anything that is
- * not a plain `/ward-flow` path (another site, a protocol-relative `//host`, a backslash trick or a
+ * not a plain `/bedchart` path (another site, a protocol-relative `//host`, a backslash trick or a
  * very long value) falls back to Ward Flow's home, which then opens the role's own home page.
  */
 export function safeNextPath(raw: string | null | undefined): string {

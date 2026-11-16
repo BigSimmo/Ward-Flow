@@ -1335,7 +1335,7 @@ export function WardHomeTab({
               )}
             </section>
             {incoming.length > 0 ? (
-              <Link className={styles.keyLink} href={`/ward-flow/ward/${unit.id}/answer`}>
+              <Link className={styles.keyLink} href={`/bedchart/ward/${unit.id}/answer`}>
                 Answer one by one
               </Link>
             ) : null}

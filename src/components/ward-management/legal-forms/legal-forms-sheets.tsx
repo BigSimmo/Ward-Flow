@@ -129,7 +129,7 @@ export function RequirementsSheet({
           <span className={styles.eyebrow}>Form {current.code}</span>
           <h3 className={styles.reqHead}>{current.title}</h3>
           <p className={styles.note}>{current.tip}</p>
-          <h4 className={styles.sectionHead}>Recorded in Ward Flow</h4>
+          <h4 className={styles.sectionHead}>Recorded in BedChart</h4>
           {records.length > 0 ? (
             <ul className={styles.checkList}>
               {records.map((label) => (
@@ -140,7 +140,7 @@ export function RequirementsSheet({
               ))}
             </ul>
           ) : (
-            <p className={styles.note}>Nothing is recorded for this form in Ward Flow yet.</p>
+            <p className={styles.note}>Nothing is recorded for this form in BedChart yet.</p>
           )}
           <h4 className={styles.sectionHead}>Due time</h4>
           <p className={styles.note} data-testid="ward-legal-requirements-due">
@@ -745,7 +745,7 @@ function ExtendSheetContent({
                 : null}
             </p>
           ) : null}
-          <p className={styles.note}>Ward Flow does not notify the owner. Tell {target.owner} separately.</p>
+          <p className={styles.note}>BedChart does not notify the owner. Tell {target.owner} separately.</p>
         </div>
       ) : null}
     </Sheet>

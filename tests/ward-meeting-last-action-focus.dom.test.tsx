@@ -11,7 +11,7 @@ import { WardFlowProvider, useWardFlowSelect } from "@/components/ward-managemen
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
-vi.mock("next/navigation", () => ({ usePathname: () => "/ward-flow/movements/x" }));
+vi.mock("next/navigation", () => ({ usePathname: () => "/bedchart/movements/x" }));
 
 const subjects: BedMeetingSubject[] = [
   { kind: "movement", id: "WF-009" },

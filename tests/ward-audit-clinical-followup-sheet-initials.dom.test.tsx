@@ -20,7 +20,7 @@ import { resolveSubjectPatient, sheetPatientLabel } from "@/components/ward-mana
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/x",
+  usePathname: () => "/bedchart/x",
   useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
 }));

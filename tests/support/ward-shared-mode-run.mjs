@@ -397,7 +397,7 @@ async function startNext({ runId, runRoot, port, apiBaseUrl }) {
         identity.appName === appName &&
         identity.projectId === localProjectId(projectRoot) &&
         identity.localServer?.safeLocalOrigin === true &&
-        (await fetch(`${baseUrl}/ward-flow`)).ok
+        (await fetch(`${baseUrl}/bedchart`)).ok
       )
         return baseUrl;
     } catch {

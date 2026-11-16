@@ -221,7 +221,7 @@ export function MovementDrawer({
     movement.acceptedUnitId === undefined
       ? undefined
       : units.find((candidate) => candidate.id === movement.acceptedUnitId);
-  const acceptedBoard = accepted && canOpen(`/ward-flow/board/${accepted.id}`) ? accepted : undefined;
+  const acceptedBoard = accepted && canOpen(`/bedchart/board/${accepted.id}`) ? accepted : undefined;
   const acceptedSite = accepted ? siteByCode(accepted.siteCode)?.name : undefined;
   // Owner, 26 Sept 2026: the patient's name, not the WF journey number. D-39: the UMRN.
   const subject = resolveSubjectPatient(movement, { patients, referrals });
@@ -432,7 +432,7 @@ export function MovementDrawer({
         </Link>
         {acceptedBoard ? (
           <Link
-            href={`/ward-flow/board/${acceptedBoard.id}`}
+            href={`/bedchart/board/${acceptedBoard.id}`}
             className={buttonClass({ variant: "sec", size: "sm" })}
             title={`Open ${acceptedBoard.name} Bed board`}
           >
@@ -806,7 +806,7 @@ function MovementPhoneSheet({
 }) {
   // INV-CM (14 Nov 2026): "Ward board" shows only when this desk may open that board.
   const canOpen = useCanOpenHref();
-  const acceptedBoard = accepted && canOpen(`/ward-flow/board/${accepted.id}`) ? accepted : undefined;
+  const acceptedBoard = accepted && canOpen(`/bedchart/board/${accepted.id}`) ? accepted : undefined;
   const router = useRouter();
   const step = open ? movementNextStep(movement) : undefined;
   const target = step && step.kind !== "wait" ? nextStepTarget(step, movement.id) : undefined;
@@ -914,7 +914,7 @@ function MovementPhoneSheet({
             {open ? <PullNowButton movement={movement} /> : null}
             {acceptedBoard ? (
               <Link
-                href={`/ward-flow/board/${acceptedBoard.id}`}
+                href={`/bedchart/board/${acceptedBoard.id}`}
                 className={buttonClass({ variant: "sec", size: "sm" })}
                 title={`Open ${acceptedBoard.name} Bed board`}
               >

@@ -25,18 +25,18 @@ describe("go-to keys (G then a letter)", () => {
 
   it("opens the page for the letter after G", () => {
     const navigate = vi.fn();
-    expect(goToPageForShortcut(key("g"), () => true, navigate, "/ward-flow/command", 1_000)).toBe(true);
+    expect(goToPageForShortcut(key("g"), () => true, navigate, "/bedchart/command", 1_000)).toBe(true);
     const letter = key("e");
-    expect(goToPageForShortcut(letter, () => true, navigate, "/ward-flow/command", 1_500)).toBe(true);
-    expect(navigate).toHaveBeenCalledWith("/ward-flow/ed");
+    expect(goToPageForShortcut(letter, () => true, navigate, "/bedchart/command", 1_500)).toBe(true);
+    expect(navigate).toHaveBeenCalledWith("/bedchart/ed");
     expect(letter.defaultPrevented).toBe(true);
   });
 
   it("sends H to this desk's own Home", () => {
     const navigate = vi.fn();
-    goToPageForShortcut(key("g"), () => true, navigate, "/ward-flow/wards/home", 0);
-    goToPageForShortcut(key("h"), () => true, navigate, "/ward-flow/wards/home", 10);
-    expect(navigate).toHaveBeenCalledWith("/ward-flow/wards/home");
+    goToPageForShortcut(key("g"), () => true, navigate, "/bedchart/wards/home", 0);
+    goToPageForShortcut(key("h"), () => true, navigate, "/bedchart/wards/home", 10);
+    expect(navigate).toHaveBeenCalledWith("/bedchart/wards/home");
   });
 
   it("leaves the letter alone when G was too long ago, the page is closed to this login, or shortcuts are off", () => {
@@ -62,54 +62,54 @@ describe("My views", () => {
   afterEach(() => window.localStorage.clear());
 
   it("saves only the app's main screens, never a patient's page", () => {
-    expect(savableView("/ward-flow/people/P-123", "")).toBeNull();
-    expect(savableView("/ward-flow/waiting", "")).not.toBeNull();
+    expect(savableView("/bedchart/people/P-123", "")).toBeNull();
+    expect(savableView("/bedchart/waiting", "")).not.toBeNull();
   });
 
   it("drops free-text parts of the address and keeps filters in a fixed order", () => {
-    const view = savableView("/ward-flow/waiting", "?view=form&q=Smith&ward=W1&name=John");
-    expect(view?.href).toBe("/ward-flow/waiting?view=form&ward=W1");
+    const view = savableView("/bedchart/waiting", "?view=form&q=Smith&ward=W1&name=John");
+    expect(view?.href).toBe("/bedchart/waiting?view=form&ward=W1");
     expect(view?.title).toMatch(/filtered$/u);
     expect(view?.href).not.toMatch(/Smith|John/u);
   });
 
   it("drops every address part that points at one record, keeping only list filters", () => {
-    const referral = savableView("/ward-flow/referrals", "?referral=R-12&tab=open");
-    expect(referral?.href).toBe("/ward-flow/referrals?tab=open");
-    const forms = savableView("/ward-flow/legal-forms", "?movement=M-1&record=1&admission=A-2&view=seclusion");
-    expect(forms?.href).toBe("/ward-flow/legal-forms?view=seclusion");
+    const referral = savableView("/bedchart/referrals", "?referral=R-12&tab=open");
+    expect(referral?.href).toBe("/bedchart/referrals?tab=open");
+    const forms = savableView("/bedchart/legal-forms", "?movement=M-1&record=1&admission=A-2&view=seclusion");
+    expect(forms?.href).toBe("/bedchart/legal-forms?view=seclusion");
     const waiting = savableView(
-      "/ward-flow/waiting",
+      "/bedchart/waiting",
       "?patientId=P-9&alert=X&job=J&open=1&selected=2&show=severe&ed=E1&wait=12h",
     );
-    expect(waiting?.href).toBe("/ward-flow/waiting?ed=E1&show=severe&wait=12h");
-    expect(savableView("/ward-flow/referrals", "?referral=R-12")).toEqual({
+    expect(waiting?.href).toBe("/bedchart/waiting?ed=E1&show=severe&wait=12h");
+    expect(savableView("/bedchart/referrals", "?referral=R-12")).toEqual({
       title: "Referrals",
-      href: "/ward-flow/referrals",
+      href: "/bedchart/referrals",
     });
-    expect(savableView("/ward-flow/waiting", "?ward=a%20b%20c")?.href).toBe("/ward-flow/waiting");
+    expect(savableView("/bedchart/waiting", "?ward=a%20b%20c")?.href).toBe("/bedchart/waiting");
   });
 
   it("toggles a view on and off, numbers repeats and keeps at most the limit", () => {
-    expect(toggleSavedView({ title: "Waiting", href: "/ward-flow/waiting" })).toBe(true);
-    expect(toggleSavedView({ title: "Waiting", href: "/ward-flow/waiting?view=form" })).toBe(true);
+    expect(toggleSavedView({ title: "Waiting", href: "/bedchart/waiting" })).toBe(true);
+    expect(toggleSavedView({ title: "Waiting", href: "/bedchart/waiting?view=form" })).toBe(true);
     expect(readSavedViews().map((view) => view.title)).toEqual(["Waiting (2)", "Waiting"]);
-    expect(toggleSavedView({ title: "Waiting", href: "/ward-flow/waiting" })).toBe(false);
+    expect(toggleSavedView({ title: "Waiting", href: "/bedchart/waiting" })).toBe(false);
     expect(readSavedViews()).toHaveLength(1);
-    expect(toggleSavedView({ title: "Waiting", href: "/ward-flow/waiting?view=form" })).toBe(false);
+    expect(toggleSavedView({ title: "Waiting", href: "/bedchart/waiting?view=form" })).toBe(false);
     expect(readSavedViews()).toHaveLength(0);
     for (let index = 0; index < SAVED_VIEW_LIMIT + 3; index += 1)
-      toggleSavedView({ title: "ED", href: `/ward-flow/ed?ed=${index}` });
+      toggleSavedView({ title: "ED", href: `/bedchart/ed?ed=${index}` });
     expect(readSavedViews()).toHaveLength(SAVED_VIEW_LIMIT);
   });
 
   it("numbers a repeat with the first number no saved view holds", () => {
-    toggleSavedView({ title: "Waiting", href: "/ward-flow/waiting" });
-    toggleSavedView({ title: "Waiting", href: "/ward-flow/waiting?show=severe" });
-    toggleSavedView({ title: "Waiting", href: "/ward-flow/waiting?wait=8h" });
+    toggleSavedView({ title: "Waiting", href: "/bedchart/waiting" });
+    toggleSavedView({ title: "Waiting", href: "/bedchart/waiting?show=severe" });
+    toggleSavedView({ title: "Waiting", href: "/bedchart/waiting?wait=8h" });
     expect(readSavedViews().map((view) => view.title)).toEqual(["Waiting (3)", "Waiting (2)", "Waiting"]);
-    toggleSavedView({ title: "Waiting", href: "/ward-flow/waiting?show=severe" });
-    toggleSavedView({ title: "Waiting", href: "/ward-flow/waiting?wait=12h" });
+    toggleSavedView({ title: "Waiting", href: "/bedchart/waiting?show=severe" });
+    toggleSavedView({ title: "Waiting", href: "/bedchart/waiting?wait=12h" });
     expect(readSavedViews().map((view) => view.title)).toEqual(["Waiting (2)", "Waiting (3)", "Waiting"]);
   });
 

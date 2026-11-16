@@ -183,7 +183,7 @@ function WardHelpSheetView({
       bodyClassName={`${barStyles.drawerBody} ${styles.body}`}
       footer={
         <div className={barStyles.drawerFoot}>
-          <span>Ward Flow guide · nothing typed here is saved</span>
+          <span>BedChart guide · nothing typed here is saved</span>
           {/* Mock-up: the date opens What's new, so it does something rather than repeat that tab. A
               phone has the room for one line only, and the What's new tab sits at the top. */}
           {latest && view !== "new" && !phone ? (
@@ -273,7 +273,7 @@ function WardHelpSheetView({
             </div>
             <PointList heading="Good to know" points={guide.limits} />
             <PointList heading="Is it saved?" points={SAVED_OR_NOT} />
-            <PointList heading="If Ward Flow is down" points={WHEN_IT_IS_DOWN} testId="ward-help-downtime" />
+            <PointList heading="If BedChart is down" points={WHEN_IT_IS_DOWN} testId="ward-help-downtime" />
           </section>
         ) : null}
 

@@ -914,7 +914,7 @@ describe("the statewide capacity table the ED page links to says which ready bed
     renderEd();
     expect(within(screen.getByTestId("ward-ed-elsewhere")).getByRole("link", { name: /capacity/iu })).toHaveAttribute(
       "href",
-      "/ward-flow/capacity",
+      "/bedchart/capacity",
     );
     cleanup();
     renderCapacity();

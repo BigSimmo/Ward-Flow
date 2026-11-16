@@ -15,7 +15,7 @@ import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/w
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
-const navigation = vi.hoisted(() => ({ path: "/ward-flow", push: vi.fn() }));
+const navigation = vi.hoisted(() => ({ path: "/bedchart", push: vi.fn() }));
 vi.mock("next/navigation", () => ({
   usePathname: () => navigation.path,
   useRouter: () => ({ push: navigation.push, replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
@@ -44,7 +44,7 @@ function renderShell() {
 }
 
 beforeEach(() => {
-  navigation.path = "/ward-flow";
+  navigation.path = "/bedchart";
   navigation.push.mockImplementation((path: string) => {
     navigation.path = path;
   });
@@ -92,7 +92,7 @@ describe("Viewing as bar", () => {
     expect(desk.parentElement).toHaveAttribute("title", expect.stringMatching(/^Viewing as .+ · Nurse in charge$/u));
     fireEvent.click(within(bar).getByRole("button", { name: "Back to coordinator" }));
     expect(screen.getByTestId("role")).toHaveTextContent("coordinator");
-    expect(navigation.push).toHaveBeenLastCalledWith("/ward-flow");
+    expect(navigation.push).toHaveBeenLastCalledWith("/bedchart");
     expect(screen.queryByTestId("ward-viewing-as-bar")).toBeNull();
   });
 

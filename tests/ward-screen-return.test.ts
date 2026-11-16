@@ -16,21 +16,21 @@ const places: PlaceLookup = {
 };
 describe("safe sign-in return", () => {
   it("keeps a screen but strips queries, hashes and all record addresses", () => {
-    expect(safeScreenReturn("/ward-flow/alerts?person=SYNTHETIC_PRIVATE_SENTINEL#row")).toBe("/ward-flow/alerts");
+    expect(safeScreenReturn("/bedchart/alerts?person=SYNTHETIC_PRIVATE_SENTINEL#row")).toBe("/bedchart/alerts");
     for (const path of [
-      "https://foreign.invalid/ward-flow",
-      "//foreign.invalid/ward-flow",
-      "/ward-flow/patients/private",
-      "/ward-flow/movements/private",
-      "/ward-flow/ed/%2fprivate",
-      "/ward-flow/unknown",
+      "https://foreign.invalid/bedchart",
+      "//foreign.invalid/bedchart",
+      "/bedchart/patients/private",
+      "/bedchart/movements/private",
+      "/bedchart/ed/%2fprivate",
+      "/bedchart/unknown",
     ])
       expect(safeScreenReturn(path)).toBeUndefined();
   });
   it("rechecks the destination against the newly authenticated desk", () => {
     const access = { role: "ward" as const, scope: { kind: "ward" as const, unitIds: ["synthetic-ward"] } };
-    expect(authorisedScreenReturn("/ward-flow/capacity", access, places)).toBe("/ward-flow/ward/synthetic-ward");
-    expect(authorisedScreenReturn("/ward-flow/ward/other-ward", access, places)).toBe("/ward-flow/ward/synthetic-ward");
+    expect(authorisedScreenReturn("/bedchart/capacity", access, places)).toBe("/bedchart/ward/synthetic-ward");
+    expect(authorisedScreenReturn("/bedchart/ward/other-ward", access, places)).toBe("/bedchart/ward/synthetic-ward");
   });
 });
 
@@ -51,14 +51,14 @@ describe("remembered sign-out return", () => {
   it("does not bring back a return that its session storage no longer holds", () => {
     const held = storage();
     vi.stubGlobal("sessionStorage", held);
-    rememberScreenReturn("/ward-flow/alerts");
+    rememberScreenReturn("/bedchart/alerts");
     held.data.clear();
     expect(takeScreenReturn()).toBeUndefined();
   });
   it("keeps the return in memory only when storage could not hold it, and gives it once", () => {
     vi.stubGlobal("sessionStorage", storage(true));
-    rememberScreenReturn("/ward-flow/alerts?person=SYNTHETIC#row");
-    expect(takeScreenReturn()).toBe("/ward-flow/alerts");
+    rememberScreenReturn("/bedchart/alerts?person=SYNTHETIC#row");
+    expect(takeScreenReturn()).toBe("/bedchart/alerts");
     expect(takeScreenReturn()).toBeUndefined();
   });
 });

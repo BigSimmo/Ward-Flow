@@ -187,7 +187,7 @@ export function WardActNowNotifier() {
       // Ward and count only: never a patient. Tap opens the ward.
       const ward = units.find((unit) => unit.id === only.unitId)?.name ?? "A ward";
       const body = wards.length === 1 ? `${ward} asked for more staff` : `${wards.length} wards asked for more staff`;
-      const notification = new window.Notification("Ward Flow: staff requested", {
+      const notification = new window.Notification("BedChart: staff requested", {
         body: `${body}. Synthetic demo data.`,
         tag: "ward-flow-staff",
       });

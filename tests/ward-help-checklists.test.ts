@@ -54,11 +54,11 @@ describe("guided checklists (Josh, 2 Nov 2026, approved word for word)", () => {
       ],
       [
         "downtime",
-        "If Ward Flow is down",
+        "If BedChart is down",
         [
           "Tell the bed coordinator on shift. They decide when everyone switches to paper.",
           "Use the printed Downtime pack: beds by ward, the ED queue, pending moves and legal forms.",
-          "Work from paper and the phone until the coordinator says Ward Flow is back.",
+          "Work from paper and the phone until the coordinator says BedChart is back.",
           "Then record what happened in the meantime.",
         ],
       ],
@@ -101,7 +101,7 @@ describe("guided checklists (Josh, 2 Nov 2026, approved word for word)", () => {
     for (const step of CHECKLISTS.flatMap((checklist) => checklist.steps)) {
       if (step.showMe) expect(HOW_TO_IDS.has(step.showMe), step.showMe).toBe(true);
       if (step.go) {
-        const opens = EVERY_LOGIN.some((role) => howToHref(step.go, role, "/ward-flow") !== undefined);
+        const opens = EVERY_LOGIN.some((role) => howToHref(step.go, role, "/bedchart") !== undefined);
         expect(opens, step.go).toBe(true);
       }
     }
@@ -120,7 +120,7 @@ describe("guided checklists (Josh, 2 Nov 2026, approved word for word)", () => {
         const source = CHECKLISTS.find((each) => each.id === checklist.id);
         expect(checklist.steps.map((step) => step.text)).toEqual(source?.steps.map((step) => step.text));
         for (const step of checklist.steps) {
-          if (step.go) expect(howToHref(step.go, role, "/ward-flow")).toBeDefined();
+          if (step.go) expect(howToHref(step.go, role, "/bedchart")).toBeDefined();
         }
       }
     }

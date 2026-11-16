@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 const sent = vi.hoisted(() => [] as Record<string, unknown>[]);
-vi.mock("next/navigation", () => ({ usePathname: () => "/ward-flow/waiting", useRouter: () => ({ push: vi.fn() }) }));
+vi.mock("next/navigation", () => ({ usePathname: () => "/bedchart/waiting", useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("@/components/ward-management/ward-flow-reducer", async (original) => {
   const actual = await original<typeof import("@/components/ward-management/ward-flow-reducer")>();
   return {
@@ -151,7 +151,7 @@ describe("Waiting drawer footer pop-ups", () => {
     openPerson(fromEd.id);
     fireEvent.click(screen.getByTestId(`delays-foot-coordinator-${fromEd.id}`));
     const menu = screen.getByRole("dialog", { name: "Coordinator actions" });
-    expect(within(menu).getByRole("link", { name: /Open on coordinator Home/u })).toHaveAttribute("href", "/ward-flow");
+    expect(within(menu).getByRole("link", { name: /Open on coordinator Home/u })).toHaveAttribute("href", "/bedchart");
     expect(within(menu).getByRole("button", { name: /Find a bed/u })).toBeInTheDocument();
     fireEvent.click(within(menu).getByRole("button", { name: /Wards that could take them/u }));
     expect(screen.queryByRole("dialog", { name: "Coordinator actions" })).toBeNull();

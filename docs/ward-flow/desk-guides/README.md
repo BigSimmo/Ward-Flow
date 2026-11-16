@@ -1,4 +1,4 @@
-# Ward Flow desk guides
+# BedChart desk guides
 
 <!-- last-checked: 2026-11-10 -->
 
@@ -34,7 +34,7 @@ For every desk:
 | Why can't I open this?                     | [why-cant-i.md](why-cant-i.md)             |
 
 > [!NOTE]
-> **Eight staff accounts, nine desks:** The eight staff desks have individual accounts seeded in Supabase (`*@stoicable.com`). The ninth desk (Bed meeting TV board) is a shared kiosk display opened from Capacity or direct URL `/ward-flow/bed-meeting`. It requires no dedicated account; sign in using a Coordinator or Site Bed Manager account. TV Unlock requires the account's password.
+> **Eight staff accounts, nine desks:** The eight staff desks have individual accounts seeded in Supabase (`*@stoicable.com`). The ninth desk (Bed meeting TV board) is a shared kiosk display opened from Capacity or direct URL `/bedchart/bed-meeting`. It requires no dedicated account; sign in using a Coordinator or Site Bed Manager account. TV Unlock requires the account's password.
 
 ## Where these come from
 
@@ -52,7 +52,7 @@ For every desk:
   ([definition of done](../definition-of-done.md)).
 - Keep each guide to one printed page. Use the app's own words for buttons and screens.
 - Never add risk scores, suggested wards, automatic placement, queue re-sorting, computed legal
-  times or patient details. Ward Flow does none of these.
+  times or patient details. BedChart does none of these.
 - A bed kept for an incoming patient is **Pulled**, with a pull time limit. "Held" is only for a
   patient's own bed while they are on leave or absent.
 

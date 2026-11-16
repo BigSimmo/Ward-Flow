@@ -107,7 +107,7 @@ export const LATE_JOBS: readonly HowTo[] = [
     go: "wards",
     showMe: [
       {
-        target: { sel: '#main-content a[href^="/ward-flow/ward/"]' },
+        target: { sel: '#main-content a[href^="/bedchart/ward/"]' },
         title: "Open the ward",
         body: "Open the ward you want from the list.",
       },
@@ -308,7 +308,7 @@ export const LATE_JOBS: readonly HowTo[] = [
     title: "How form times and warnings work",
     keywords: "mha legal form time expiry due calculate detention",
     answer:
-      "Type each form time from the paper form. Ward Flow shows that time and warns before it, using the form warnings in Settings.",
+      "Type each form time from the paper form. BedChart shows that time and warns before it, using the form warnings in Settings.",
     desks: EVERY_DESK,
   },
   {
@@ -323,7 +323,7 @@ export const LATE_JOBS: readonly HowTo[] = [
   {
     id: "downtime",
     topic: "Handover and reports",
-    title: "What to do if Ward Flow is down",
+    title: "What to do if BedChart is down",
     keywords: "down offline outage paper downtime not working broken support help",
     answer:
       "Switch to the paper process. The downtime pack on Handover prints what you need; print it before you need it. The app shows when it last saved, and says so when it is offline.",
@@ -332,7 +332,7 @@ export const LATE_JOBS: readonly HowTo[] = [
     computerOnly: true,
     showMe: [
       {
-        target: { sel: '#main-content a[href="/ward-flow/reports/downtime"]' },
+        target: { sel: '#main-content a[href="/bedchart/reports/downtime"]' },
         title: "Downtime pack",
         body: "Print it before you need it.",
       },
@@ -342,10 +342,10 @@ export const LATE_JOBS: readonly HowTo[] = [
     // The same question for a login that cannot open Handover, so no answer sends it there.
     id: "downtime-paper",
     topic: "Handover and reports",
-    title: "What to do if Ward Flow is down",
+    title: "What to do if BedChart is down",
     keywords: "down offline outage paper downtime not working broken support help",
     answer:
-      "Tell the bed coordinator on shift, who decides when everyone switches to paper and keeps the printed downtime pack. Work from paper until the coordinator says Ward Flow is back.",
+      "Tell the bed coordinator on shift, who decides when everyone switches to paper and keeps the printed downtime pack. Work from paper until the coordinator says BedChart is back.",
     desks: EVERY_LOGIN.filter((role) => !deskOpens(role, "handover")),
   },
   {
@@ -354,7 +354,7 @@ export const LATE_JOBS: readonly HowTo[] = [
     title: "Take the tour again",
     keywords: "tour tutorial guide walkthrough learn start",
     answer:
-      "Open Help. Under Learn Ward Flow, Tour of your desk shows its chapters: press Start, or Resume where you stopped. Show me around this screen, at the top of Help, walks the screen you are on.",
+      "Open Help. Under Learn BedChart, Tour of your desk shows its chapters: press Start, or Resume where you stopped. Show me around this screen, at the top of Help, walks the screen you are on.",
     desks: EVERY_DESK,
     showMe: [
       {

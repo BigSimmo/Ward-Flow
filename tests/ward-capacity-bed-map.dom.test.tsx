@@ -256,7 +256,7 @@ describe("Capacity bed map — the network's whole bed supply, one square per be
     const drawer = screen.getByTestId("ward-capacity-ward-drawer");
     expect(within(drawer).getByRole("link", { name: "Open ward" })).toHaveAttribute(
       "href",
-      `/ward-flow/ward/${ward.unit.id}`,
+      `/bedchart/ward/${ward.unit.id}`,
     );
   });
 });

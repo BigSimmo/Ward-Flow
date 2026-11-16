@@ -91,7 +91,7 @@ async function fillTriage(page: Page) {
 test.describe("@mockup triage and risk", () => {
   test("New, then Triage, opens a blank form that signs to the patient record", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/ward-flow", { waitUntil: "load" });
+    await page.goto("/bedchart", { waitUntil: "load" });
 
     const newButton = page.getByTestId("ward-bar-primary-action");
     await expect(newButton).toHaveText("New");
@@ -106,9 +106,9 @@ test.describe("@mockup triage and risk", () => {
 
     await newButton.click();
     await page.getByTestId("ward-new-triage").click();
-    await expect(page).toHaveURL(/\/ward-flow\/triage\/new$/);
+    await expect(page).toHaveURL(/\/bedchart\/triage\/new$/);
     await pickPerson(page);
-    await expect(page).toHaveURL(/\/ward-flow\/people\/[^/]+\/triage$/);
+    await expect(page).toHaveURL(/\/bedchart\/people\/[^/]+\/triage$/);
     await expect(page.getByTestId("triage-risk-page")).toBeVisible();
     // Nothing clinical pre-selected: only the two layout switches are set. Scoped to the form, so
     // the rail's Theme radio group (PR E, review E-11) is not counted as a clinical answer.
@@ -126,7 +126,7 @@ test.describe("@mockup triage and risk", () => {
     await expect(page.getByTestId("triage-signed-tag")).toContainText("by Bed coordinator");
 
     await page.getByTestId("triage-signed").getByRole("link", { name: "Open patient record" }).click();
-    await expect(page).toHaveURL(/\/ward-flow\/people\/[^/]+$/);
+    await expect(page).toHaveURL(/\/bedchart\/people\/[^/]+$/);
     const card = page.getByTestId("patient-triage-card");
     await expect(card).toContainText("Signed ");
     await expect(card).toContainText("Urgency C, within 12 hours");
@@ -138,12 +138,12 @@ test.describe("@mockup triage and risk", () => {
 
   test("the phone's Create sheet offers New triage beside New referral", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/ward-flow", { waitUntil: "load" });
+    await page.goto("/bedchart", { waitUntil: "load" });
     await page.getByTestId("ward-phone-create").click();
     const sheet = page.getByTestId("ward-phone-create-sheet");
     await expect(sheet.getByTestId("ward-phone-create-referral")).toBeVisible();
     await sheet.getByTestId("ward-phone-create-triage").click();
-    await expect(page).toHaveURL(/\/ward-flow\/triage\/new$/);
+    await expect(page).toHaveURL(/\/bedchart\/triage\/new$/);
     await expect(page.getByTestId("triage-start")).toBeVisible();
   });
 });

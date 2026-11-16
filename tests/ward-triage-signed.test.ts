@@ -82,12 +82,12 @@ describe("RECORD_TRIAGE_SIGNED — who may sign", () => {
       expect(ROLE_SCREENS[role]["triage-new"]).toBeUndefined();
       expect(ROLE_SCREENS[role].triage).toBeUndefined();
     }
-    expect(screenForPath("/ward-flow/triage/new")).toEqual({ screen: "triage-new" });
-    expect(screenForPath("/ward-flow/people/PT-001/triage")).toEqual({ screen: "triage", patientId: "PT-001" });
+    expect(screenForPath("/bedchart/triage/new")).toEqual({ screen: "triage-new" });
+    expect(screenForPath("/bedchart/people/PT-001/triage")).toEqual({ screen: "triage", patientId: "PT-001" });
     // The form route keeps the person, so the access gate checks the person as on the record.
     const places = wardPlaceLookup(seed.units);
     const officer = { role: "officer", scope: { kind: "jobs" } } as const;
-    expect(screenDecision(officer, screenForPath("/ward-flow/triage/new"), places).open).toBe(false);
+    expect(screenDecision(officer, screenForPath("/bedchart/triage/new"), places).open).toBe(false);
   });
 });
 

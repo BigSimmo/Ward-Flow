@@ -28,12 +28,12 @@ function readmissionDetailText(flag: ShownFlag, dayZero: Date): string {
 }
 
 /**
- * The ED index (`/ward-flow/ed`, every emergency department listed). `wardChromeRole`
+ * The ED index (`/bedchart/ed`, every emergency department listed). `wardChromeRole`
  * deliberately gives it the coordinator's chrome, as All wards has: only `/ed/[edId]` is an ED
  * desk, and the header, desk, nav counts, search and role switcher all read that answer. It is
  * still an ED screen, so the flag is hidden there here rather than by changing the chrome role.
  */
-const ED_INDEX_PATH = /\/ward-flow\/ed\/?$/u;
+const ED_INDEX_PATH = /\/bedchart\/ed\/?$/u;
 
 /** Whether the flag shows on this route: the coordinator's routes only, never the ED index. */
 export function readmissionFlagVisibleOn(pathname: string): boolean {

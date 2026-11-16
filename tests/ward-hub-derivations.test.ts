@@ -183,7 +183,7 @@ describe("groupedResults — sections cut from the given results, never the whol
       id: "test-unplaced-ward",
       kind: "ward",
       name: "Test Unplaced Ward",
-      href: "/ward-flow/ward/test-unplaced-ward",
+      href: "/bedchart/ward/test-unplaced-ward",
       service: "Nonexistent Region",
     };
 

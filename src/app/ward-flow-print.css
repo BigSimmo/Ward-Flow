@@ -566,7 +566,7 @@
 
 @page shared-clinical-output {
   @bottom-left {
-    content: "Ward Flow · synthetic prototype · not a medical record";
+    content: "BedChart · synthetic prototype · not a medical record";
     font: 7pt / 1 sans-serif;
     color: var(--wf-print-muted);
   }

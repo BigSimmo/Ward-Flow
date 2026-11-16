@@ -3,7 +3,7 @@
 // kept here so `referral-board.tsx` stays readable. Every piece is for `access.role === "community"`
 // only; the coordinator and the other desks never reach it.
 //
-// Permissions are unchanged. On /ward-flow/referrals today a community desk takes a referral for
+// Permissions are unchanged. On /bedchart/referrals today a community desk takes a referral for
 // itself, logs a call, adds a correction and withdraws a referral it sent (all in its own role),
 // and answers a referral's community arm. Those stay; this file adds wording and a link only.
 

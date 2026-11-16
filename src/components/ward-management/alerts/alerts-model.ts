@@ -314,24 +314,23 @@ export type AlertAction =
   { kind: "link"; label: string; href: string; bookingsUnitId?: string } | { kind: "release"; label: string };
 
 export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAction {
-  const patientHref = subject.patientHref ?? "/ward-flow/movements";
+  const patientHref = subject.patientHref ?? "/bedchart/movements";
   // H-0975 (workflow-speed audit WS-10, 26 Oct 2026): a movement row opens its own movement.
-  const ownMovementHref = item.movementId ? movementHref(item.movementId) : "/ward-flow/movements";
+  const ownMovementHref = item.movementId ? movementHref(item.movementId) : "/bedchart/movements";
   // Q260 review (#1296): an accepted referral with no bed pulled is pulled on the Alerts screen.
-  if (isAcceptedPullRow(item.id))
-    return { kind: "link", label: "Pull the bed", href: item.href ?? "/ward-flow/alerts" };
+  if (isAcceptedPullRow(item.id)) return { kind: "link", label: "Pull the bed", href: item.href ?? "/bedchart/alerts" };
   switch (alertKindOf(item.id)) {
     case "awol":
       return { kind: "link", label: "Open patient", href: item.href ?? patientHref };
     case "legal":
-      return { kind: "link", label: "Open forms", href: "/ward-flow/legal-forms" };
+      return { kind: "link", label: "Open forms", href: "/bedchart/legal-forms" };
     case "declines":
       // A14-13 (Audit 14): this used to link to Home, so pressed on Home the panel closed and nothing
       // else happened. It opens that person's Patient page with its Ask wards list open instead.
       return {
         kind: "link",
         label: "Find a bed",
-        href: item.movementId ? askWardsHref(item.movementId) : "/ward-flow/movements",
+        href: item.movementId ? askWardsHref(item.movementId) : "/bedchart/movements",
       };
     case "unsuitable":
       return { kind: "link", label: "Review", href: patientHref };
@@ -350,16 +349,16 @@ export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAct
         label: "Open bookings",
         href: item.plannedAdmission?.unitId
           ? `${unitHref(item.plannedAdmission.unitId)}?bookings=1`
-          : (item.href ?? "/ward-flow/capacity"),
+          : (item.href ?? "/bedchart/capacity"),
         ...(item.plannedAdmission?.unitId ? { bookingsUnitId: item.plannedAdmission.unitId } : {}),
       };
     case "duplicate":
-      return { kind: "link", label: "Open oldest request", href: item.href ?? "/ward-flow/referrals" };
+      return { kind: "link", label: "Open oldest request", href: item.href ?? "/bedchart/referrals" };
     case "reminder":
       // R-HOME-10: the referral to chase, or the Leave board where the bed is opened.
       return item.id.startsWith(INBOX_CATEGORIES.leave_bed_reminder.idPrefix)
-        ? { kind: "link", label: "Open leave", href: item.href ?? "/ward-flow/leave" }
-        : { kind: "link", label: "Chase the ward", href: item.href ?? "/ward-flow/referrals" };
+        ? { kind: "link", label: "Open leave", href: item.href ?? "/bedchart/leave" }
+        : { kind: "link", label: "Chase the ward", href: item.href ?? "/bedchart/referrals" };
     case "pullnow":
       // Audit M2: the journey, where the Pull now and its answers are, to chase the ward.
       return { kind: "link", label: "Chase the ward", href: ownMovementHref };
@@ -370,7 +369,7 @@ export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAct
         : { kind: "link", label: "Record notifications", href: patientHref };
     default:
       if (item.id.includes("referral-decision")) {
-        return { kind: "link", label: "Open referral", href: "/ward-flow/referrals" };
+        return { kind: "link", label: "Open referral", href: "/bedchart/referrals" };
       }
       if (item.id.includes("transport-booked")) {
         return { kind: "link", label: "Book transport", href: ownMovementHref };

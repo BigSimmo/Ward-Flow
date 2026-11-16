@@ -7,7 +7,7 @@ import { createRef, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -66,7 +66,7 @@ describe("triage on the coordinator's phone (D-247)", () => {
     renderPhoneMenu();
     act(() => openWardMenu(null));
     const triage = await screen.findByRole("link", { name: /^Start a triage/u }, { timeout: 15_000 });
-    expect(triage).toHaveAttribute("href", "/ward-flow/triage/new");
+    expect(triage).toHaveAttribute("href", "/bedchart/triage/new");
     const referrals = screen.getByRole("link", { name: /^Referrals/u });
     expect(referrals.closest("li")?.nextElementSibling).toContainElement(triage);
   });
@@ -84,7 +84,7 @@ describe("triage on the coordinator's phone (D-247)", () => {
     renderPhoneMenu();
     act(() => openWardMenu(null));
     const triage = await screen.findByRole("link", { name: /^Start a triage/u }, { timeout: 15_000 });
-    expect(triage).toHaveAttribute("href", "/ward-flow/triage/new");
+    expect(triage).toHaveAttribute("href", "/bedchart/triage/new");
   });
 
   it("names triage on the + and leads its sheet with a New triage row", async () => {
@@ -96,7 +96,7 @@ describe("triage on the coordinator's phone (D-247)", () => {
     const rows = within(within(sheet).getByTestId("ward-phone-create-coordinator")).getAllByRole("listitem");
     const triage = within(sheet).getByTestId("ward-phone-create-triage");
     expect(rows[0]).toContainElement(triage);
-    expect(triage).toHaveAttribute("href", "/ward-flow/triage/new");
+    expect(triage).toHaveAttribute("href", "/bedchart/triage/new");
     expect(triage).toHaveTextContent(/New triage \d+ awaiting triage/u);
     expect(within(sheet).getAllByRole("link", { name: /New triage/u })).toHaveLength(1);
   });
@@ -228,7 +228,7 @@ describe("Customise the + sheet (Josh, 16 Nov 2026)", () => {
     fireEvent.click(within(sheet).getByTestId("ward-phone-create-edit"));
     expect(pinnedLabels(sheet)[0]).toMatch(/^New referral/u);
     const triage = within(sheet).getByTestId("ward-phone-create-triage");
-    expect(triage).toHaveAttribute("href", "/ward-flow/triage/new");
+    expect(triage).toHaveAttribute("href", "/bedchart/triage/new");
     expect(triage.closest("ul")).toBeNull();
     expect(parseCreateSheet(window.localStorage.getItem(CREATE_SHEET_STORAGE_KEY))?.primary).toBe("triage");
   });

@@ -6,7 +6,7 @@
 @media print {
   /* A streamed route may still be hidden before hydration. Refuse an incomplete copy visibly. */
   :global(html):has(.sheet:not([data-print-ready])) :global(body)::before {
-    content: "Ward Flow is still loading. Wait until the ward screen is ready, then print again.";
+    content: "BedChart is still loading. Wait until the ward screen is ready, then print again.";
     display: block;
     padding: 20pt;
     color: CanvasText;

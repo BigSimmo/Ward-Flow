@@ -71,7 +71,7 @@ describe("A14-13: Find a bed on a declined alert goes to that person's Ask wards
     expect(action).toMatchObject({ kind: "link", label: "Find a bed" });
     expect(action.kind === "link" ? action.href : "").toBe(askWardsHref("WF-003"));
     expect(askWardsHref("WF-003")).toBe(`${movementHref("WF-003")}?taskAction=refer`);
-    expect(action.kind === "link" ? action.href : "").not.toBe("/ward-flow");
+    expect(action.kind === "link" ? action.href : "").not.toBe("/bedchart");
   });
 });
 

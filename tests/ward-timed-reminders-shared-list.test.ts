@@ -70,7 +70,7 @@ describe("timed reminders are on the shared alert list (R-HOME-10)", () => {
     expect(alertActionFor(leave!, {} as AlertSubject)).toMatchObject({
       kind: "link",
       label: "Open leave",
-      href: "/ward-flow/leave",
+      href: "/bedchart/leave",
     });
   });
 });

@@ -81,15 +81,15 @@ function more(
  * test keeps this in step with). Written out so the tour does not load the how-to list with it.
  */
 export const TOUR_CHECKLISTS: Readonly<Record<TourRole, readonly string[]>> = {
-  coordinator: ["Getting started", "Start of shift", "Handover", "Bed meeting", "If Ward Flow is down"],
-  ward: ["Getting started", "Handover", "If Ward Flow is down"],
-  ed: ["Getting started", "Handover", "If Ward Flow is down"],
-  community: ["Getting started", "If Ward Flow is down"],
-  officer: ["Getting started", "If Ward Flow is down"],
-  bed_manager: ["Getting started", "Handover", "If Ward Flow is down"],
+  coordinator: ["Getting started", "Start of shift", "Handover", "Bed meeting", "If BedChart is down"],
+  ward: ["Getting started", "Handover", "If BedChart is down"],
+  ed: ["Getting started", "Handover", "If BedChart is down"],
+  community: ["Getting started", "If BedChart is down"],
+  officer: ["Getting started", "If BedChart is down"],
+  bed_manager: ["Getting started", "Handover", "If BedChart is down"],
   // The executive and the access admin record no shift work, so they have no shift lists.
-  executive: ["Getting started", "If Ward Flow is down"],
-  admin: ["Getting started", "If Ward Flow is down"],
+  executive: ["Getting started", "If BedChart is down"],
+  admin: ["Getting started", "If BedChart is down"],
 };
 
 /** Desks with ward work of their own to practise: a bed request through to arrival. */
@@ -175,7 +175,7 @@ const BOARD_TIME_STEP = more(
   "board-time",
   BOARD_TIME,
   "Synthetic figures",
-  "Every figure in Ward Flow is synthetic, from a demo. The clock at the top of the menu is the demo's own board time.",
+  "Every figure in BedChart is synthetic, from a demo. The clock at the top of the menu is the demo's own board time.",
 );
 
 /** The desktop's extra steps, or a tablet's, where the side menu is behind the bar's Menu button. */
@@ -533,7 +533,7 @@ const TRY_A_DESK: Further = {
   desk: "account",
   title: "See another desk",
   body: (where) =>
-    `In the demo, Try another desk (demo), ${where}, shows Ward Flow as another role sees it. Switch back the same way.`,
+    `In the demo, Try another desk (demo), ${where}, shows BedChart as another role sees it. Switch back the same way.`,
 };
 
 const FURTHER: Readonly<Record<TourRole, readonly Further[]>> = {

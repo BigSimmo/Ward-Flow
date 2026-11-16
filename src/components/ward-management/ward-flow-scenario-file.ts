@@ -63,8 +63,8 @@ export type ScenarioFileBuild = { ok: true; json: string; fileName: string } | {
 export type ScenarioFileRead =
   { ok: true; state: WardFlowState; now: Instant; dayZero?: Date } | { ok: false; reason: string };
 
-const NOT_A_SCENARIO = "This file is not a Ward Flow demo scenario.";
-const WRONG_VERSION = "This scenario was saved by a different version of Ward Flow and cannot be loaded safely.";
+const NOT_A_SCENARIO = "This file is not a BedChart demo scenario.";
+const WRONG_VERSION = "This scenario was saved by a different version of BedChart and cannot be loaded safely.";
 const DAMAGED = "This scenario file is damaged or incomplete, so nothing was loaded.";
 
 function pad(value: number): string {
@@ -117,7 +117,7 @@ export function buildScenarioFile(
   // Perth wall time, whatever the device's zone (Audit 1, TM-2, Josh 20 Oct).
   const perth = new Date(savedAt.getTime() + wardZoneOffsetMs(savedAt.getTime()));
   const stamp = `${perth.getUTCFullYear()}-${pad(perth.getUTCMonth() + 1)}-${pad(perth.getUTCDate())}-${pad(perth.getUTCHours())}${pad(perth.getUTCMinutes())}`;
-  return { ok: true, json, fileName: `ward-flow-scenario-${stamp}.json` };
+  return { ok: true, json, fileName: `bedchart-scenario-${stamp}.json` };
 }
 
 /**

@@ -37,7 +37,7 @@ vi.mock("@/components/ward-management/statistics/executive-statistics-context", 
 vi.mock("@/components/ward-management/ward-clipboard", () => ({ copyTextToClipboard: browser.copy }));
 vi.mock("@/components/ward-management/ward-download", () => ({ downloadBlob: browser.download }));
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/settings",
+  usePathname: () => "/bedchart/settings",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -108,7 +108,7 @@ beforeEach(() => {
   report.available = true;
   mode.phone = false;
   setWardFeatureFlagOnDevice("role-access", false);
-  window.history.replaceState({}, "", "/ward-flow/settings");
+  window.history.replaceState({}, "", "/bedchart/settings");
 });
 afterEach(() => {
   applyAppearance("auto");

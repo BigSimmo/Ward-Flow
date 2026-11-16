@@ -12,8 +12,8 @@
 export const WARD_LOADING_SLOW_MS = 15_000;
 export const WARD_LOADING_SLOW_ATTRIBUTE = "data-wf-load-slow";
 /**
- * The note's Reload button (app/ward-flow/layout.tsx) and the slow page change's Try again button
- * (app/ward-flow/loading.tsx, Q275): a click on either reloads the page. The listener stays for the
+ * The note's Reload button (app/bedchart/layout.tsx) and the slow page change's Try again button
+ * (app/bedchart/loading.tsx, Q275): a click on either reloads the page. The listener stays for the
  * whole visit, so it also serves page changes made after the code has loaded.
  */
 const WARD_LOADING_RELOAD_ATTRIBUTE = "data-wf-loading-reload";

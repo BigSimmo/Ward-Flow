@@ -11,7 +11,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/referrals",
+  usePathname: () => "/bedchart/referrals",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
 }));
 

@@ -12,6 +12,6 @@ One patient's events in time order, for a post-incident review, ready to print o
 4. Open a chronology. Choose a person to open their events in time order, with Print and CSV.
 5. What it holds. Records, the audit trail where your desk may see it, and this session's log. Times are as recorded, never worked out.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

@@ -6,7 +6,7 @@ import { BellRing } from "lucide-react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/discharges",
+  usePathname: () => "/bedchart/discharges",
   useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));

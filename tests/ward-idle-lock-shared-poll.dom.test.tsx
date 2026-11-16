@@ -20,7 +20,7 @@ const POLL_MS = 3_000;
 
 vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/navigation")>()),
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
 }));
 
 beforeEach(() => {

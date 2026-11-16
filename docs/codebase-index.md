@@ -8,7 +8,7 @@ governs appearance; current engine/source/tests govern behaviour. Start with the
 
 | Area               | Current source and scope                                                                                                                                                                                                                                  |
 | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Routes             | `src/app/ward-flow/`: coordinator root [page.tsx](../src/app/ward-flow/page.tsx), unit board [board/[unitId]/page.tsx](../src/app/ward-flow/board/%5BunitId%5D/page.tsx), [handover/page.tsx](../src/app/ward-flow/handover/page.tsx)                     |
+| Routes             | `src/app/bedchart/`: coordinator root [page.tsx](../src/app/bedchart/page.tsx), unit board [board/[unitId]/page.tsx](../src/app/bedchart/board/%5BunitId%5D/page.tsx), [handover/page.tsx](../src/app/bedchart/handover/page.tsx)                         |
 | Engine and screens | `src/components/ward-management/`: [provider](../src/components/ward-management/ward-flow-provider.tsx), [reducer](../src/components/ward-management/ward-flow-reducer.ts) and role-specific screen modules                                               |
 | Clock              | The provider reads elapsed wall-clock time and ticks at minute boundaries while visible, with visibility catch-up; controlled initial/test clocks are separate                                                                                            |
 | Backend            | [backend/ward-flow](../backend/ward-flow/README.md): opt-in shared commands with server-resolved roles and scopes, restricted audit and access management. Provider in [DATABASE.md](ward-flow/DATABASE.md); local source does not prove hosted readiness |
@@ -37,8 +37,8 @@ governs appearance; current engine/source/tests govern behaviour. Start with the
 
 ## Ward route groups
 
-- `/ward-flow`: the Ward Flow prototype routes under `src/app/ward-flow/`.
-- `/ward-flow-sign-in`: synthetic role picker under `src/app/ward-flow-sign-in/`.
+- `/bedchart`: the Ward Flow prototype routes under `src/app/bedchart/`.
+- `/bedchart-sign-in`: synthetic role picker under `src/app/bedchart-sign-in/`.
 - `/sign-in`: the front door's own sign-in page under `src/app/sign-in/`, live only while `WARD_FRONT_DOOR=required` (see `src/lib/front-door-pass.ts`).
 - `/mockups`: retained digest mockup under `src/app/mockups/`.
 - `/icons`: dynamic icon/OG support under `src/app/icons/`; exempt from product-route coverage.

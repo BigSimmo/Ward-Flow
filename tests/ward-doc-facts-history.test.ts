@@ -65,7 +65,7 @@ it("check and write reject an offending file and preserve its exact bytes", () =
       'const d = env.WARD_DATABASE_PROVIDER || "supabase"; env.WARD_AUTH_PROVIDER || "supabase";',
     );
     put("backend/ward-flow/migrations/001-a.sql", "");
-    put("src/app/ward-flow/page.tsx", "");
+    put("src/app/bedchart/page.tsx", "");
     put("src/app/page.tsx", "");
     put("docs/ward-flow/decisions.md", "## D-1. First\n");
     put("package.json", JSON.stringify({ engines: { node: ">=24" } }));

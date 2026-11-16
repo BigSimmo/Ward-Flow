@@ -226,13 +226,13 @@ still unverified.
 That build's five phone budgets were measured using the repository's `routeKb` implementation
 against a separately started, identity-verified, owned production server. All limits are unchanged:
 
-| Route                              | Final demo, KiB gzip | Limit |
-| ---------------------------------- | -------------------: | ----: |
-| `/ward-flow`                       |              549.582 | 550.3 |
-| `/ward-flow/referrals`             |              554.811 | 555.6 |
-| `/ward-flow/ed`                    |              503.786 | 516.1 |
-| `/ward-flow/ward/rph-adult-secure` |              581.107 | 582.5 |
-| `/ward-flow/movements/WF-001`      |              610.537 | 610.9 |
+| Route                             | Final demo, KiB gzip | Limit |
+| --------------------------------- | -------------------: | ----: |
+| `/bedchart`                       |              549.582 | 550.3 |
+| `/bedchart/referrals`             |              554.811 | 555.6 |
+| `/bedchart/ed`                    |              503.786 | 516.1 |
+| `/bedchart/ward/rph-adult-secure` |              581.107 | 582.5 |
+| `/bedchart/movements/WF-001`      |              610.537 | 610.9 |
 
 The JSON is `final-demo-phone-budgets.json` in the private task directory. This is a fresh final demo
 measurement; shared-mode sizes and the broader 45-route inventory above remain dated 4 November
@@ -294,13 +294,13 @@ and both PNG previews. Physical printing remains unverified.
 The same fresh build passed all five phone script budgets using the repository's measurement
 implementation and an identity-verified owned production server:
 
-| Route                              | Integrated demo, KiB gzip | Target main limit |
-| ---------------------------------- | ------------------------: | ----------------: |
-| `/ward-flow`                       |                   552.142 |             554.1 |
-| `/ward-flow/referrals`             |                   556.925 |             558.9 |
-| `/ward-flow/ed`                    |                   506.399 |             516.1 |
-| `/ward-flow/ward/rph-adult-secure` |                   583.737 |             585.1 |
-| `/ward-flow/movements/WF-001`      |                   613.124 |             614.7 |
+| Route                             | Integrated demo, KiB gzip | Target main limit |
+| --------------------------------- | ------------------------: | ----------------: |
+| `/bedchart`                       |                   552.142 |             554.1 |
+| `/bedchart/referrals`             |                   556.925 |             558.9 |
+| `/bedchart/ed`                    |                   506.399 |             516.1 |
+| `/bedchart/ward/rph-adult-secure` |                   583.737 |             585.1 |
+| `/bedchart/movements/WF-001`      |                   613.124 |             614.7 |
 
 These limits were inherited from the target `main`; this task did not raise them. The private
 measurement is `pr-demo-phone-budgets.json`. The measurement server was stopped. This supersedes

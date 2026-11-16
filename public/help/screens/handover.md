@@ -27,10 +27,10 @@ A point-in-time handover sheet for the next shift, ready to print.
 
 - Hand over to the next shift. Open Handover. Read Act now first, then what is due before the next handover. Work through Before you sign: each line has its own button where something needs doing. Then press Sign off. Undo sign-off takes it back if it was a mistake.
 - Print the handover sheet. Open Handover and choose Print handover. Choose what to include, the paper (A4 landscape or portrait) and any highlight, review the pages, then press Print or save PDF. Back to handover returns without printing.
-- What to do if Ward Flow is down. Switch to the paper process. The downtime pack on Handover prints what you need; print it before you need it. The app shows when it last saved, and says so when it is offline.
+- What to do if BedChart is down. Switch to the paper process. The downtime pack on Handover prints what you need; print it before you need it. The app shows when it last saved, and says so when it is offline.
 - Sign off the site handover. On Handover, the Site handover card shows each ward's sign-off, read only, and the checks before you sign, each with a link to where it is done. Press Sign off at (the time shown) when the checks allow. Undo sign-off shows afterwards.
 - Undo a handover sign-off. On Handover, open the sign-off panel; once signed it reads Signed off at, with the time. Press Undo sign-off. A site bed manager presses Undo sign-off on the Site handover card. A coordinator who signed as cover cannot undo a site sign-off.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

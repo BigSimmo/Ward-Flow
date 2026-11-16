@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render, screen, within } from "@testing-librar
 import { afterEach, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/ward/gry-adult-secure/answer",
+  usePathname: () => "/bedchart/ward/gry-adult-secure/answer",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));

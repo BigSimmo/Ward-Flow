@@ -2,7 +2,7 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, render, renderHook, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const nav = vi.hoisted(() => ({ pathname: "/ward-flow/people/WF-005" }));
+const nav = vi.hoisted(() => ({ pathname: "/bedchart/people/WF-005" }));
 vi.mock("next/navigation", () => ({
   usePathname: () => nav.pathname,
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
@@ -40,7 +40,7 @@ afterEach(() => {
   cleanup();
   setWardAccess(STATEWIDE_COORDINATOR);
   setWardFeatureFlagOnDevice("role-access", null);
-  nav.pathname = "/ward-flow/people/WF-005";
+  nav.pathname = "/bedchart/people/WF-005";
 });
 
 describe("F-54: a control this desk can never use is left out, not greyed", () => {
@@ -54,7 +54,7 @@ describe("F-54: a control this desk can never use is left out, not greyed", () =
   });
 
   it("the coordinator, who can switch desk, still sees the greyed control with its reason", () => {
-    nav.pathname = "/ward-flow/community/midland";
+    nav.pathname = "/bedchart/community/midland";
     const { result } = renderHook(() => useRoleGate());
     const gate = result.current("UPDATE_EXPECTED_DISCHARGE");
     // The community route gives the community role, which may not; the coordinator can switch desk.

@@ -60,7 +60,7 @@ import { fieldsMatchEveryWord } from "@/components/ward-management/search/search
  * works out an order length, a review time, a running total or any other legal limit (R5, D-93). The
  * legal register (Forms 10 and 11 series) stays in the health service's own system.
  */
-export const SECLUSION_GOVERNANCE_HREF = "/ward-flow/governance?tab=registers";
+export const SECLUSION_GOVERNANCE_HREF = "/bedchart/governance?tab=registers";
 
 /** The ward desk that marked the room: the role label "Nurse in charge" names its ward. */
 function markedBy(by: string, ward: string): string {

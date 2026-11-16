@@ -16,7 +16,7 @@ import {
 import { releasedCountText } from "@/components/ward-management/statistics/statistics-small-numbers";
 import styles from "./ward-tool-figures.module.css";
 
-const STATISTICS_HREF = "/ward-flow/statistics";
+const STATISTICS_HREF = "/bedchart/statistics";
 
 /**
  * Tools mock-up Q321, Figures. Forked from the live `NetworkFigures`: four headline figures in a

@@ -20,7 +20,7 @@ const orderButton = (name: "By hold-up" | "Longest wait") => screen.getByRole("t
 
 describe("the Delays board keeps its filters and order in the address", () => {
   it("writes a filter to the address, and a reload opens with it on", () => {
-    window.history.replaceState(null, "", "/ward-flow/waiting");
+    window.history.replaceState(null, "", "/bedchart/waiting");
     renderBoard();
     fireEvent.click(screen.getByTestId("delays-owner-wards"));
     expect(new URLSearchParams(window.location.search).get("owner")).toBe("wards");
@@ -31,7 +31,7 @@ describe("the Delays board keeps its filters and order in the address", () => {
   });
 
   it("takes two quick taps in order, so the second is never overruled by the first", () => {
-    window.history.replaceState(null, "", "/ward-flow/waiting");
+    window.history.replaceState(null, "", "/bedchart/waiting");
     renderBoard();
     fireEvent.click(screen.getByTestId("delays-owner-yours"));
     fireEvent.click(screen.getByTestId("delays-owner-wards"));
@@ -41,7 +41,7 @@ describe("the Delays board keeps its filters and order in the address", () => {
   });
 
   it("opens a shared link's order, and writes the viewer's own choice", () => {
-    window.history.replaceState(null, "", "/ward-flow/waiting?order=blocker");
+    window.history.replaceState(null, "", "/bedchart/waiting?order=blocker");
     renderBoard();
     expect(orderButton("By hold-up")).toHaveAttribute("aria-selected", "true");
     fireEvent.click(orderButton("Longest wait"));
@@ -50,7 +50,7 @@ describe("the Delays board keeps its filters and order in the address", () => {
 
   it("writes the order with a filter, so a copied link opens in the sender's order", () => {
     window.localStorage.setItem("ward_flow_delays_order", "blocker");
-    window.history.replaceState(null, "", "/ward-flow/waiting");
+    window.history.replaceState(null, "", "/bedchart/waiting");
     renderBoard();
     expect(window.location.search).toBe("");
     fireEvent.click(screen.getByTestId("delays-owner-wards"));
@@ -59,7 +59,7 @@ describe("the Delays board keeps its filters and order in the address", () => {
   });
 
   it("clearing the last filter from a link leaves the address bare", () => {
-    window.history.replaceState(null, "", "/ward-flow/waiting?owner=wards");
+    window.history.replaceState(null, "", "/bedchart/waiting?owner=wards");
     renderBoard();
     expect(pressed("delays-owner-wards")).toBe("true");
     fireEvent.click(screen.getByTestId("delays-owner-wards"));
@@ -68,18 +68,18 @@ describe("the Delays board keeps its filters and order in the address", () => {
   });
 
   it("follows the address when it changes underneath (Back, Forward, a link)", async () => {
-    window.history.replaceState(null, "", "/ward-flow/waiting");
+    window.history.replaceState(null, "", "/bedchart/waiting");
     renderBoard();
     expect(pressed("delays-owner-yours")).toBe("false");
     await act(async () => {
-      window.history.replaceState(null, "", "/ward-flow/waiting?owner=yours");
+      window.history.replaceState(null, "", "/bedchart/waiting?owner=yours");
       window.dispatchEvent(new PopStateEvent("popstate"));
     });
     expect(pressed("delays-owner-yours")).toBe("true");
   });
 
   it("never writes typed search text, and keeps the address's other keys", () => {
-    window.history.replaceState(null, "", "/ward-flow/waiting?from=queue");
+    window.history.replaceState(null, "", "/bedchart/waiting?from=queue");
     renderBoard();
     fireEvent.change(screen.getAllByRole("searchbox", { name: "Find a person or ED" })[0]!, {
       target: { value: "Smith" },
@@ -92,10 +92,10 @@ describe("the Delays board keeps its filters and order in the address", () => {
 
 describe("replaceSearchParams", () => {
   it("sets and removes keys in place, keeping the path, the hash and history", () => {
-    window.history.replaceState(null, "", "/ward-flow/waiting?from=queue&owner=ed#list");
+    window.history.replaceState(null, "", "/bedchart/waiting?from=queue&owner=ed#list");
     const before = window.history.length;
     replaceSearchParams({ owner: null, quiet: "1" });
-    expect(window.location.pathname).toBe("/ward-flow/waiting");
+    expect(window.location.pathname).toBe("/bedchart/waiting");
     expect(window.location.search).toBe("?from=queue&quiet=1");
     expect(window.location.hash).toBe("#list");
     expect(window.history.length).toBe(before);

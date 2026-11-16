@@ -17,7 +17,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const route = { pathname: "/ward-flow/handover" };
+const route = { pathname: "/bedchart/handover" };
 const push = vi.hoisted(() => vi.fn());
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
@@ -26,7 +26,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({
-  useTourFacts: () => ({ facts: {}, home: "/ward-flow", deskHome: "/ward-flow" }),
+  useTourFacts: () => ({ facts: {}, home: "/bedchart", deskHome: "/bedchart" }),
 }));
 
 const phone = vi.hoisted(() => ({ on: false }));
@@ -43,7 +43,7 @@ import { tasksForDesk } from "@/components/ward-management/help/ward-help-task-l
 import { HELP_USED_STORAGE_KEY, recordHowToUsed } from "@/components/ward-management/help/ward-help-usage";
 
 afterEach(() => {
-  route.pathname = "/ward-flow/handover";
+  route.pathname = "/bedchart/handover";
   phone.on = false;
   push.mockClear();
   window.localStorage.clear();
@@ -56,14 +56,14 @@ function renderTasks(props: Partial<Parameters<typeof HelpTasks>[0]> = {}) {
   const view = render(
     <HelpTasks
       role="coordinator"
-      home="/ward-flow"
+      home="/bedchart"
       pathname={route.pathname}
-      screen={route.pathname === "/ward-flow/handover" ? HANDOVER : undefined}
+      screen={route.pathname === "/bedchart/handover" ? HANDOVER : undefined}
       onClose={vi.fn()}
       onShowMe={vi.fn()}
       onTour={vi.fn()}
       onSearch={vi.fn()}
-      screenName={(href) => (href === "/ward-flow/movements" ? "Movements" : "that screen")}
+      screenName={(href) => (href === "/bedchart/movements" ? "Movements" : "that screen")}
       showMeOn
       {...props}
     />,
@@ -147,7 +147,7 @@ describe("How do I… task list", () => {
   });
 
   it("draws no On this screen card on a page Help has nothing for", () => {
-    route.pathname = "/ward-flow/somewhere-else";
+    route.pathname = "/bedchart/somewhere-else";
     renderTasks({ pathname: route.pathname, screen: undefined });
     expect(screen.queryByTestId("ward-help-tasks-here")).toBeNull();
     expect(screen.getByTestId("ward-help-tour-row")).toBeTruthy();
@@ -179,7 +179,7 @@ describe("How do I… task list", () => {
     ).length;
     expect(pullSteps).toBeGreaterThan(2);
     expect(within(row).getAllByRole("listitem")).toHaveLength(pullSteps);
-    expect(within(row).getByTestId("ward-help-task-go").getAttribute("href")).toBe("/ward-flow/movements");
+    expect(within(row).getByTestId("ward-help-task-go").getAttribute("href")).toBe("/bedchart/movements");
     expect(within(row).getByTestId("ward-help-task-go").textContent).toContain("Go to Movements");
     fireEvent.click(within(row).getByTestId("ward-help-task-show-me"));
     expect(onShowMe).toHaveBeenCalledWith("pull-bed");
@@ -197,10 +197,10 @@ describe("How do I… task list", () => {
   });
 
   it("keeps Go to another Settings tab while Help is open on Settings", () => {
-    route.pathname = "/ward-flow/settings";
+    route.pathname = "/bedchart/settings";
     renderTasks({ openTask: "theme", showMeOn: false, screen: undefined });
     const row = screen.getByTestId("ward-help-task-answer-theme");
-    expect(within(row).getByTestId("ward-help-task-go").getAttribute("href")).toBe("/ward-flow/settings#display");
+    expect(within(row).getByTestId("ward-help-task-go").getAttribute("href")).toBe("/bedchart/settings#display");
   });
 
   it("tells a phone that a computer-only task is done on a computer, instead of offering Show me", () => {
@@ -217,7 +217,7 @@ describe("How do I… task list", () => {
   });
 
   it("does not list a task on a screen this desk cannot open, and answers it another way", () => {
-    renderTasks({ role: "executive", home: "/ward-flow/statistics", screen: undefined });
+    renderTasks({ role: "executive", home: "/bedchart/statistics", screen: undefined });
     expect(screen.queryByTestId("ward-help-task-answer-downtime")).toBeNull();
     const row = screen.getByTestId("ward-help-task-answer-downtime-paper");
     open(row, /./);
@@ -339,7 +339,7 @@ describe("Search Help in the sheet", () => {
   });
 
   it("opens another Settings tab by fragment while Help is open on Settings", () => {
-    route.pathname = "/ward-flow/settings";
+    route.pathname = "/bedchart/settings";
     sheet();
     const field = screen.getByRole("combobox", { name: "Search Help" });
     fireEvent.change(field, { target: { value: "ED wait target" } });

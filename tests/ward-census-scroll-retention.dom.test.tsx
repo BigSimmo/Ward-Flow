@@ -24,7 +24,7 @@ import {
   useReturnToPlace,
 } from "@/components/ward-management/use-return-to-place";
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/search",
+  usePathname: () => "/bedchart/search",
   useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
 }));
@@ -279,7 +279,7 @@ describe("unrestored query choices never replay row offsets into the default cen
             <PatientSearchPage />
           </WardFlowProvider>,
         );
-      navigate("/ward-flow/search");
+      navigate("/bedchart/search");
       const view = mount();
       if (choice === "query")
         fireEvent.change(screen.getByTestId("ward-patient-typeahead-input"), { target: { value: "a" } });
@@ -290,8 +290,8 @@ describe("unrestored query choices never replay row offsets into the default cen
       region().scrollLeft = 39;
       fireEvent.scroll(region());
       view.unmount();
-      navigate("/ward-flow/capacity");
-      navigate("/ward-flow/search", true);
+      navigate("/bedchart/capacity");
+      navigate("/bedchart/search", true);
       mount();
       expect(region().scrollTop).toBe(0);
       expect(region().scrollLeft).toBe(0);

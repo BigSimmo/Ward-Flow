@@ -2,7 +2,7 @@ import "@testing-library/jest-dom/vitest";
 import { act, cleanup, render, renderHook, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const nav = vi.hoisted(() => ({ pathname: "/ward-flow/bed-meeting" }));
+const nav = vi.hoisted(() => ({ pathname: "/bedchart/bed-meeting" }));
 vi.mock("next/navigation", () => ({
   usePathname: () => nav.pathname,
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),

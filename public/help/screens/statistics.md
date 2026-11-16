@@ -23,8 +23,8 @@ Counts and waits for the network, a service or a ward, worked out from the recor
 
 - See the statistics. Open Statistics for the network's trends. Choose a view: Network, Compare, Services, Wards, EDs, Teams or Weekly. On a computer, Export downloads the figures at the top of the page. Every figure is from synthetic records.
 - Compare wards in the statistics. Open Statistics, then Compare. On a computer, choose a measure for the ward and ED charts, and Pin a ward to set up to three beside the network. On a phone, choose Wards or EDs and a measure, then Compare two wards. Every figure is from synthetic records.
-- Read the weekly report. Open Statistics, then Weekly. Choose the week, then read Pilot measures (the four agreed measures; the two counted outside Ward Flow say so), Where the time goes, Supporting figures and Pressure this week. How this is counted explains each one. Print prints the report.
+- Read the weekly report. Open Statistics, then Weekly. Choose the week, then read Pilot measures (the four agreed measures; the two counted outside BedChart say so), Where the time goes, Supporting figures and Pressure this week. How this is counted explains each one. Print prints the report.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

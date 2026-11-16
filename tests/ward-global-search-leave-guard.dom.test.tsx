@@ -18,7 +18,7 @@ vi.mock("next/link", () => ({
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useSearchParams: () => new URLSearchParams(),
 }));
 
@@ -50,11 +50,11 @@ function openCommands() {
 }
 
 const COMMANDS = [
-  ["ward-global-search-cmd-desk-coordinator", "/ward-flow"],
-  ["ward-global-search-cmd-desk-ward", "/ward-flow/wards"],
-  ["ward-global-search-cmd-desk-ed", "/ward-flow/ed"],
-  ["ward-global-search-cmd-desk-officer", "/ward-flow/transport/officer"],
-  ["ward-global-search-cmd-handover", "/ward-flow/handover"],
+  ["ward-global-search-cmd-desk-coordinator", "/bedchart"],
+  ["ward-global-search-cmd-desk-ward", "/bedchart/wards"],
+  ["ward-global-search-cmd-desk-ed", "/bedchart/ed"],
+  ["ward-global-search-cmd-desk-officer", "/bedchart/transport/officer"],
+  ["ward-global-search-cmd-handover", "/bedchart/handover"],
 ] as const;
 
 describe("global search quick commands respect the unsaved-changes guard", () => {
@@ -75,7 +75,7 @@ describe("global search quick commands respect the unsaved-changes guard", () =>
     expect(onNavigate).not.toHaveBeenCalled();
     fireEvent.click(screen.getByTestId("ward-global-search-cmd-handover"));
     fireEvent.click(await screen.findByRole("button", { name: "Leave without saving" }));
-    await waitFor(() => expect(onNavigate).toHaveBeenCalledExactlyOnceWith("/ward-flow/handover"));
+    await waitFor(() => expect(onNavigate).toHaveBeenCalledExactlyOnceWith("/bedchart/handover"));
   });
 
   for (const [testId, href] of COMMANDS) {

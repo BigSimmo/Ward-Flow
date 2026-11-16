@@ -25,7 +25,7 @@ import { edById, edShortName, siteByCode } from "@/components/ward-management/wa
 import type { TourFacts, TourRole } from "./ward-tour-steps";
 import { resolveTourHome } from "./ward-tour-home";
 
-const COMMUNITY_ROUTE = /\/ward-flow\/community\/([^/?#]+)/;
+const COMMUNITY_ROUTE = /\/bedchart\/community\/([^/?#]+)/;
 
 /**
  * The signed-in desk's place and the figures its home screen shows, for the tour's words, and the

@@ -23,6 +23,6 @@ The register of everyone, found by record number, place, stage or owner.
 
 - Remove a patient record added in error. Open the patient, then their Details tab, and find the Record added in error card. Choose why it should go, press Archive this record, then Archive record to confirm. The record leaves every list and only the audit trail shows it. Undo shows straight after.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

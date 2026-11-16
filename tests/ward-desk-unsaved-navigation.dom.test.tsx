@@ -15,7 +15,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const navigation = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/settings",
+  usePathname: () => "/bedchart/settings",
   useRouter: () => ({ push: navigation.push, replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));

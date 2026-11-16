@@ -129,7 +129,7 @@ test("Community referral: a community team refers from its own desk, the ward it
   const unitName = unit!.name;
 
   // --- The community team's own desk: the one typed URL. ---
-  await page.goto(`/ward-flow/community/${TEAM_ID}`, { waitUntil: "load" });
+  await page.goto(`/bedchart/community/${TEAM_ID}`, { waitUntil: "load" });
   await waitForScreen(page, "ward-community-screen");
   await plantSentinel(page);
   const teamUrl = page.url();
@@ -261,7 +261,7 @@ test("Community referral: a community team refers from its own desk, the ward it
   await expect(placement).toHaveCount(0);
 
   // --- The Referral board: queued, no transport asked for, and the asked ward accepts it. ---
-  await goViaNav(page, "/ward-flow/referrals", "ward-referral-board-screen");
+  await goViaNav(page, "/bedchart/referrals", "ward-referral-board-screen");
   const boardEntry = page
     .locator(
       `[data-testid="ward-referral-board-row-${referralId}"], [data-testid="ward-referral-board-card-select-${referralId}"]`,
@@ -325,7 +325,7 @@ test("Community referral: a community team refers from its own desk, the ward it
 
   // --- The coordinator's board shows the ward's answer. ---
   await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
-  await goViaNav(page, "/ward-flow/referrals", "ward-referral-board-screen");
+  await goViaNav(page, "/bedchart/referrals", "ward-referral-board-screen");
   await page
     .getByTestId("ward-referral-board-screen")
     .getByRole("tab", { name: /^History/u })
@@ -383,7 +383,7 @@ test("Community referral: a community team refers from its own desk, the ward it
 
   // The coordinator's Movements board names the team as where the journey starts.
   await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
-  await goViaNav(page, "/ward-flow/movements", "ward-movements-page");
+  await goViaNav(page, "/bedchart/movements", "ward-movements-page");
   // The worklist search reads the origin as the board names it: exactly this journey matches.
   const board = page.getByTestId("ward-movements-page");
   await board.getByRole("searchbox", { name: "Find movements by name, UMRN or ED" }).fill(`${teamName} (community)`);

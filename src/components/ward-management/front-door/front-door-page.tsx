@@ -51,7 +51,7 @@ function AccountDoor({
   if (phase !== "ready")
     return (
       <FrontDoorStatus
-        title="Opening Ward Flow"
+        title="Opening BedChart"
         status={
           phase === "checking"
             ? "Checking your sign-in. This usually takes a few seconds."
@@ -77,7 +77,7 @@ function DemoCodeDoor({ next }: { next: string }) {
   const [problem, setProblem] = useState<{ title: string; body: string } | null>(null);
   const codeRef = useRef<HTMLInputElement>(null);
   return (
-    <DoorScreen label="Ward Flow demo" note={problem !== null} focusTarget={codeRef} demo>
+    <DoorScreen label="BedChart demo" note={problem !== null} focusTarget={codeRef} demo>
       <div className={styles.card}>
         <form
           className={styles.form}

@@ -13,7 +13,7 @@ import { NextBarMount } from "@/components/ward-redesign/shell-next/next-bar";
 import { NextRail } from "@/components/ward-redesign/shell-next/next-rail";
 import { WardGround } from "@/components/ward-management/ward-shell";
 
-import layoutStyles from "../../../ward-flow/ward-flow-layout.module.css";
+import layoutStyles from "../../../bedchart/ward-flow-layout.module.css";
 import { mockupHrefForAppPath } from "./screens";
 
 const NOT_DRAWN = "That page is not drawn in this mock-up.";

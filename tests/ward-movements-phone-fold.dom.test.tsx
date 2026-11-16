@@ -80,14 +80,14 @@ describe("Movements phone groups fold", () => {
   });
 
   it("Back from a movement keeps a group opened with Show N more", () => {
-    window.history.pushState(null, "", "/ward-flow/movements");
+    window.history.pushState(null, "", "/bedchart/movements");
     const first = renderMovements();
     const { moreName, more } = openBiggestGroup();
     fireEvent.click(more);
     first.unmount();
-    window.history.pushState(null, "", "/ward-flow/people/P-1");
+    window.history.pushState(null, "", "/bedchart/people/P-1");
 
-    window.history.replaceState(null, "", "/ward-flow/movements");
+    window.history.replaceState(null, "", "/bedchart/movements");
     window.dispatchEvent(new PopStateEvent("popstate"));
     renderMovements();
     expect(screen.queryByRole("button", { name: moreName })).toBeNull();

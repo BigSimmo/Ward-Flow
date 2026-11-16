@@ -16,6 +16,6 @@ The transport officer's jobs: who is moving, where and when.
 8. Jobs. Late or delayed jobs first, then forms to upload, then furthest along.
 9. The next step. Each job's button is its next stage, such as En route or Arrived at ward. It is recorded with the time.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

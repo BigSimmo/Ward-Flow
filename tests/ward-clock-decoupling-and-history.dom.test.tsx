@@ -9,7 +9,7 @@ import { NextBarMount as WardBar } from "@/components/ward-management/shell-next
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
 }));
 
@@ -122,7 +122,7 @@ describe("Issue 3: Shell drawer history sync", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardBar />
-        <Link href="/ward-flow/ed" onClick={(event) => event.preventDefault()}>
+        <Link href="/bedchart/ed" onClick={(event) => event.preventDefault()}>
           Synthetic pending page
         </Link>
       </WardFlowProvider>,

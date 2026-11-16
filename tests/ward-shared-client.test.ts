@@ -1589,9 +1589,9 @@ describe("H-0731: the TV board names itself on workspace reads", () => {
       },
     });
     try {
-      vi.stubGlobal("location", { pathname: "/ward-flow/bed-meeting" });
+      vi.stubGlobal("location", { pathname: "/bedchart/bed-meeting" });
       await client.refresh();
-      vi.stubGlobal("location", { pathname: "/ward-flow/ward" });
+      vi.stubGlobal("location", { pathname: "/bedchart/ward" });
       await client.refresh();
     } finally {
       vi.unstubAllGlobals();

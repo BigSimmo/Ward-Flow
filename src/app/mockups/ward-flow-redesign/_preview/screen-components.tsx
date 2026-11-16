@@ -122,7 +122,7 @@ const LEGAL_FORMS_POPUPS = {
 } as const;
 // The patient record is built into the app (lane L, 31 Oct 2026). Its slug stays as the backdrop the
 // Medical clearance pop-up draws over: the real screen, opened on the sample record's coded address
-// `/ward-flow/people/196zcp24w5t0` and resolved the same way the route does.
+// `/bedchart/people/196zcp24w5t0` and resolved the same way the route does.
 const PatientNowBackdrop = dynamic<MockupPageProps>(
   withLoadRetry(() =>
     Promise.all([

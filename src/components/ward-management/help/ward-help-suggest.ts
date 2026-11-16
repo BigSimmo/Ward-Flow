@@ -187,7 +187,7 @@ const reachable = new Map<WardTourRole, ReadonlySet<string>>();
 function screensFor(role: WardTourRole): ReadonlySet<string> {
   let screens = reachable.get(role);
   if (!screens) {
-    screens = new Set(Object.keys(SCREEN_HELP).filter((id) => howToHref(id, role, "/ward-flow") !== undefined));
+    screens = new Set(Object.keys(SCREEN_HELP).filter((id) => howToHref(id, role, "/bedchart") !== undefined));
     reachable.set(role, screens);
   }
   return screens;

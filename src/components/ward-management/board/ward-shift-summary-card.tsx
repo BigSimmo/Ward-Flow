@@ -67,7 +67,7 @@ export function WardShiftSummaryCard({ unit, now }: { unit: Pick<Unit, "id" | "n
           </div>
         ))}
       </dl>
-      <p className={styles.note}>Counts recorded in Ward Flow this shift.</p>
+      <p className={styles.note}>Counts recorded in BedChart this shift.</p>
     </Card>
   );
 }

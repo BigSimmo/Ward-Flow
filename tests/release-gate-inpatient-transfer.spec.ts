@@ -62,7 +62,7 @@ test.describe.configure({ timeout: 240_000 });
 async function openBedBoardFromWards(page: Page, unitName: string, unitId: string): Promise<void> {
   // The Wards index belongs to the coordinator; a ward desk cannot navigate to it.
   await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
-  await goViaNav(page, "/ward-flow/wards", "ward-index");
+  await goViaNav(page, "/bedchart/wards", "ward-index");
   if (isPhoneLayout(page)) {
     await page
       .getByRole("region", { name: "Wards", exact: true })
@@ -78,14 +78,14 @@ async function openBedBoardFromWards(page: Page, unitName: string, unitId: strin
       .click();
     await page.getByRole("dialog").getByRole("link", { name: "Bed board", exact: true }).click();
   }
-  await page.waitForURL(`**/ward-flow/board/${unitId}`);
+  await page.waitForURL(`**/bedchart/board/${unitId}`);
   await waitForScreen(page, "ward-board");
 }
 
 /** As the coordinator: the Out of area page, this person's return plan, on either layout. */
 async function openReturnPlan(page: Page, admissionId: string) {
   await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
-  await goViaNav(page, "/ward-flow/out-of-area", "ward-out-of-area-board");
+  await goViaNav(page, "/bedchart/out-of-area", "ward-out-of-area-board");
   if (isPhoneLayout(page)) {
     // The phone lists people as cards, opening on those who need the coordinator; Everyone lists
     // the whole register. A card opens a summary sheet, and the plan opens from it.
@@ -110,7 +110,7 @@ async function openReturnPlan(page: Page, admissionId: string) {
  */
 async function expectOutOfAreaNotRecorded(page: Page, admissionId: string): Promise<void> {
   await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
-  await goViaNav(page, "/ward-flow/out-of-area", "ward-out-of-area-board");
+  await goViaNav(page, "/bedchart/out-of-area", "ward-out-of-area-board");
   // The page's own counts, on both layouts.
   await expect(page.getByTestId("ward-out-of-area-count-people")).toHaveText(
     "0 people are recorded as being in a bed far from home.",
@@ -167,7 +167,7 @@ async function followOpenMovement(page: Page, recorded: Locator): Promise<string
 /** The coordinator's capacity board, reached through the coordinator desk and its navigation. */
 async function openCapacityBoard(page: Page) {
   await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
-  await goViaNav(page, "/ward-flow/capacity", "ward-capacity-screen");
+  await goViaNav(page, "/bedchart/capacity", "ward-capacity-screen");
 }
 
 test("Inpatient transfer: a stay on one ward is referred, accepted and held at another, moved, and the sending bed frees", async ({
@@ -182,7 +182,7 @@ test("Inpatient transfer: a stay on one ward is referred, accepted and held at a
   const sendingName = unitById(sendingUnitId)!.name;
 
   // The coordinator's capacity board before anything moves.
-  await page.goto("/ward-flow/capacity", { waitUntil: "load" });
+  await page.goto("/bedchart/capacity", { waitUntil: "load" });
   await waitForScreen(page, "ward-capacity-screen");
   await plantSentinel(page);
   const sendingCapacityReadyBefore = await capacityReady(page, sendingUnitId, sendingName);

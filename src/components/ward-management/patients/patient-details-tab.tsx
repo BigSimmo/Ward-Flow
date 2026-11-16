@@ -313,7 +313,7 @@ export function PatientDetailsTab({
   const teamLink = (name: string) => {
     const slug = communityTeamSlug(name);
     return communityTeamById(slug) ? (
-      <Link className={styles.link} href={`/ward-flow/community/${slug}`}>
+      <Link className={styles.link} href={`/bedchart/community/${slug}`}>
         {name}
       </Link>
     ) : (

@@ -172,7 +172,7 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     for (const unit of allUnits()) {
       expect(screen.getByTestId(`ward-index-link-${unit.id}`), `missing a card/link for ${unit.id}`).toHaveAttribute(
         "href",
-        `/ward-flow/ward/${unit.id}`,
+        `/bedchart/ward/${unit.id}`,
       );
     }
   });
@@ -219,7 +219,7 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     expect(within(drawer).getByRole("region", { name: "Ward profile" })).toBeInTheDocument();
     expect(within(drawer).getByRole("link", { name: "Bed board" })).toHaveAttribute(
       "href",
-      "/ward-flow/board/fsh-adult-secure",
+      "/bedchart/board/fsh-adult-secure",
     );
   });
 

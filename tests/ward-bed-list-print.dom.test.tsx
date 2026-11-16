@@ -7,7 +7,7 @@ import { WardBedListPrint as ImmediateWardPrint } from "@/components/ward-manage
 import type { WardScreenBed } from "@/components/ward-management/ward/ward-screen-derivations";
 import { NOW_ANCHOR, unitById } from "@/components/ward-management/ward-sites";
 
-vi.mock("next/navigation", () => ({ usePathname: () => "/ward-flow/ward/rph-adult-secure" }));
+vi.mock("next/navigation", () => ({ usePathname: () => "/bedchart/ward/rph-adult-secure" }));
 
 /**
  * Tier 1 item 9 (Josh, 4 Nov 2026): the Ward page's printed bed list. Synthetic beds, only the fields

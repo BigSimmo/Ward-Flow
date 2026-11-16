@@ -16,7 +16,7 @@ import { ToastProvider } from "@/components/wf";
  * Wave 4 Home (D-191, 13 Nov 2026; Home notes items 1, 4, 6, 7). Synthetic seed data only.
  */
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -138,7 +138,7 @@ describe("Needs you card (notes items 6 and 7)", () => {
           handlers={{ selectedId: undefined, onSelect: vi.fn(), onRelease: vi.fn(), onReturn: vi.fn() }}
           selectedReferralId={undefined}
           onSelectReferral={vi.fn()}
-          decideHref={(id) => `/ward-flow/referrals?referral=${id}`}
+          decideHref={(id) => `/bedchart/referrals?referral=${id}`}
         />
       </WardFlowProvider>,
     );

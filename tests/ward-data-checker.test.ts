@@ -94,7 +94,7 @@ function consistentData(overrides: AnyRecord = {}) {
       {
         unitId: "rph-adult-secure",
         where: "Navigation menu",
-        detail: "/ward-flow/ward/rph-adult-secure",
+        detail: "/bedchart/ward/rph-adult-secure",
         label: "Ward — Ward 2K",
         file: "src/components/ward-management/ward-nav.ts",
       },
@@ -103,7 +103,7 @@ function consistentData(overrides: AnyRecord = {}) {
       {
         edId: "rph-ed",
         where: "Navigation menu",
-        detail: "/ward-flow/ed/rph-ed",
+        detail: "/bedchart/ed/rph-ed",
         file: "src/components/ward-management/ward-nav.ts",
       },
     ],
@@ -486,10 +486,10 @@ describe("check 9 (added) — the network's own ids and nesting are coherent", (
 describe("reading the nav links the checks walk", () => {
   it("turns nav links into the ward and department references the checks walk", () => {
     const { unitReferences, edReferences } = navReferences([
-      { id: "ward", href: "/ward-flow/ward/rph-adult-secure", label: "Ward — Ward 2K" },
-      { id: "board", href: "/ward-flow/board/rph-adult-secure", label: "Ward board — Ward 2K" },
-      { id: "ed", href: "/ward-flow/ed/peel-ed", label: "Emergency department" },
-      { id: "handover", href: "/ward-flow/handover", label: "Handover" },
+      { id: "ward", href: "/bedchart/ward/rph-adult-secure", label: "Ward — Ward 2K" },
+      { id: "board", href: "/bedchart/board/rph-adult-secure", label: "Ward board — Ward 2K" },
+      { id: "ed", href: "/bedchart/ed/peel-ed", label: "Emergency department" },
+      { id: "handover", href: "/bedchart/handover", label: "Handover" },
     ]);
     expect(unitReferences.map((entry: { unitId: string }) => entry.unitId)).toEqual([
       "rph-adult-secure",

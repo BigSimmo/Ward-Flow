@@ -16,7 +16,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const route = { pathname: "/ward-flow" };
+const route = { pathname: "/bedchart" };
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
@@ -47,7 +47,7 @@ function renderSection() {
 }
 
 beforeEach(() => {
-  route.pathname = "/ward-flow";
+  route.pathname = "/bedchart";
   resetMyWardsForTests();
 });
 
@@ -80,8 +80,8 @@ describe("My wards store", () => {
   });
 
   it("reads the ward from a ward page address only", () => {
-    expect(wardIdFromPath(`/ward-flow/ward/${first.id}/answer`)).toBe(first.id);
-    expect(wardIdFromPath("/ward-flow/wards")).toBeUndefined();
+    expect(wardIdFromPath(`/bedchart/ward/${first.id}/answer`)).toBe(first.id);
+    expect(wardIdFromPath("/bedchart/wards")).toBeUndefined();
   });
 });
 
@@ -102,11 +102,11 @@ describe("My wards section", () => {
   });
 
   it("offers Pin this ward on a ward page, then lists the ward with a remove button", () => {
-    route.pathname = `/ward-flow/ward/${first.id}`;
+    route.pathname = `/bedchart/ward/${first.id}`;
     renderSection();
     fireEvent.click(screen.getByRole("button", { name: `Pin this ward, ${first.name}, to My wards` }));
     const link = screen.getByRole("link", { name: first.name });
-    expect(link.getAttribute("href")).toBe(`/ward-flow/ward/${first.id}`);
+    expect(link.getAttribute("href")).toBe(`/bedchart/ward/${first.id}`);
     expect(link.getAttribute("aria-current")).toBe("page");
     expect(screen.queryByTestId("ward-my-wards-pin")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: `Remove ${first.name} from My wards` }));
@@ -117,7 +117,7 @@ describe("My wards section", () => {
     act(() => {
       for (const unit of units.slice(1, MY_WARDS_LIMIT + 1)) toggleMyWard(unit.id);
     });
-    route.pathname = `/ward-flow/ward/${first.id}`;
+    route.pathname = `/bedchart/ward/${first.id}`;
     renderSection();
     expect(screen.queryByTestId("ward-my-wards-pin")).toBeNull();
     expect(screen.getByTestId("ward-my-wards-full").textContent).toBe(
@@ -126,7 +126,7 @@ describe("My wards section", () => {
   });
 
   it("drops the pins from a mounted section when the session ends", () => {
-    route.pathname = `/ward-flow/ward/${first.id}`;
+    route.pathname = `/bedchart/ward/${first.id}`;
     renderSection();
     fireEvent.click(screen.getByTestId("ward-my-wards-pin"));
     expect(screen.getByRole("link", { name: first.name })).toBeInTheDocument();

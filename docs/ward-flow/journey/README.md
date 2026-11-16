@@ -184,6 +184,10 @@ Every person, ward and figure named anywhere in it is invented.
 
 </details>
 
+## BedChart rename — 16 Nov 2026 (`claude/project-thread-wrpgfx`)
+
+The source digests for every reviewed screen were re-reviewed after the rename to BedChart (D-250): the edits change only on-screen text ("Ward Flow" to "BedChart") and route strings (`/ward-flow` to `/bedchart`). Every event dispatch, role, line count and cited line is unchanged.
+
 ## Close tap area — 16 Nov 2026 (`claude/project-thread-f0ffc4`)
 
 The source digest for `hub/hub-screen.tsx` was re-reviewed after a class-only edit: the At a glance close became a kit icon-only button for its 48px phone tap area. The `REQUEST_CAPACITY_REFRESH` dispatch, its role and the cited line 725 are unchanged.

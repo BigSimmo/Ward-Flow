@@ -25,6 +25,6 @@ Who answers each on-call line now, for hospitals, teams and state lines.
 - Find who is on call. Open On-call and search by role, hospital, ward, team or number. A line opens on who answers now, with Copy number, and If no answer names who to try next. Use Cover at for a later time, and star a line to keep it under Mine.
 - Record that an on-call number was checked. Open On-call and choose the entry. Its card ends with when the number was last checked and who keeps it up to date. Once you have checked the number is right, press Mark checked now. It then reads Check recorded.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

@@ -145,11 +145,11 @@ describe("Ready beds by road time", () => {
 
   it("links each row to its ward when the rail that would show the selection is hidden (phone)", () => {
     const onSelectUnit = vi.fn();
-    const { card } = renderCard(rows, departments[0]?.id, onSelectUnit, (unitId) => `/ward-flow/ward/${unitId}`);
+    const { card } = renderCard(rows, departments[0]?.id, onSelectUnit, (unitId) => `/bedchart/ward/${unitId}`);
     const list = within(card).getByRole("list");
     expect(within(list).queryAllByRole("button")).toEqual([]);
     const links = within(list).getAllByRole("link");
     expect(links.length).toBeGreaterThan(0);
-    for (const link of links) expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/ward\/./u);
+    for (const link of links) expect(link.getAttribute("href")).toMatch(/^\/bedchart\/ward\/./u);
   });
 });

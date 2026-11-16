@@ -9,7 +9,7 @@ import { isOpen } from "@/components/ward-management/ward-derivations";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
-  usePathname: () => "/ward-flow/handover",
+  usePathname: () => "/bedchart/handover",
   useSearchParams: () => new URLSearchParams(),
 }));
 vi.mock("next/link", () => ({

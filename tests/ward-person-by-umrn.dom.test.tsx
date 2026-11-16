@@ -4,7 +4,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/people/UM999999",
+  usePathname: () => "/bedchart/people/UM999999",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -38,7 +38,7 @@ describe("PersonByUmrn", () => {
     expect(screen.getByText(/Nobody with UMRN UM999999\./u)).toBeInTheDocument();
     const link = screen.getByRole("link", { name: "Search patients for UM999999" });
     // The UMRN never goes into the link; it is handed to the search in memory on click.
-    expect(link).toHaveAttribute("href", "/ward-flow/search");
+    expect(link).toHaveAttribute("href", "/bedchart/search");
     fireEvent.click(link);
     expect(takeHandedOffPatientSearchText()).toBe("UM999999");
     expect(screen.queryByText(/is not a person/u)).toBeNull();

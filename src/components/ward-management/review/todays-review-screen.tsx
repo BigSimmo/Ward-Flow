@@ -59,9 +59,9 @@ const TAGS: Record<ReviewEvent["kind"], { label: string; tone: WfTone }> = {
 const NONE_EVENTS: readonly AuditEvent[] = [];
 const NONE_REVIEWS: readonly AuditReview[] = [];
 
-const BED_MEETING_HREF = "/ward-flow/bed-meeting/agenda";
-const HANDOVER_HREF = "/ward-flow/handover";
-const ALERTS_HREF = "/ward-flow/alerts";
+const BED_MEETING_HREF = "/bedchart/bed-meeting/agenda";
+const HANDOVER_HREF = "/bedchart/handover";
+const ALERTS_HREF = "/bedchart/alerts";
 
 const unitName = (units: readonly Unit[], id: string) => units.find((unit) => unit.id === id)?.name ?? "A ward";
 const declineReasonText = (reason: string | undefined) =>
@@ -441,7 +441,7 @@ export function TodaysReviewScreen() {
 
       <p className={styles.footNote}>
         <StatusGlyph tone="info" size={9} /> Marking an override reviewed is kept with the governance record, with the
-        coordinator role and time. Full history is in <Link href="/ward-flow/governance">Governance</Link>.
+        coordinator role and time. Full history is in <Link href="/bedchart/governance">Governance</Link>.
       </p>
 
       <WardPrototypeFooter testId="ward-todays-review-footer" />

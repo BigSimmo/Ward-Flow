@@ -19,6 +19,6 @@ The bed meeting's agenda, built from fixed rules, and the actions agreed at earl
 11. Add an action. Action on a row records what was agreed for that person, with an owner and when it is due.
 12. Referrals awaiting decision. Referrals still waiting for a decision. Copy puts the list on the clipboard.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

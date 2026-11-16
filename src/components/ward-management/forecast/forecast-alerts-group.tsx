@@ -82,7 +82,7 @@ function ForecastAlertRow({ alert, now, readOnly }: { alert: ForecastAlert; now:
       return row(
         `${BED_KIND_LABEL[alert.id]} short tomorrow`,
         `Likely ${kindRangeWord(alert.likely)}, at worst ${kindRangeWord(alert.low)}. Alert set at ${bedsWord(alert.threshold)} or more short (Settings).`,
-        "/ward-flow/capacity",
+        "/bedchart/capacity",
         "See forecast",
       );
     case "ed_access_risk":
@@ -98,7 +98,7 @@ function ForecastAlertRow({ alert, now, readOnly }: { alert: ForecastAlert; now:
       return row(
         "Forecast got worse",
         `Tomorrow moved from ${kindRangeWord(alert.from)} to ${kindRangeWord(alert.to)} since you looked at ${formatInstantWithDay(alert.since, now)}. Alert set at a drop of ${bedsWord(alert.threshold)} or more (Settings).`,
-        "/ward-flow/capacity",
+        "/bedchart/capacity",
         "See forecast",
       );
   }

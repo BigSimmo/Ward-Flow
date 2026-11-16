@@ -30,7 +30,7 @@ function rejectUnhandled(reason: unknown) {
 }
 
 it("sends none of a thrown error's text, the real address or the query", () => {
-  window.history.replaceState(null, "", "/ward-flow/people/SYN-0042/triage?q=Test+Patient+Alpha#Alpha");
+  window.history.replaceState(null, "", "/bedchart/people/SYN-0042/triage?q=Test+Patient+Alpha#Alpha");
   window.sessionStorage.setItem(
     "wardflow:access-desk-v1",
     JSON.stringify({ role: "ward", scope: { kind: "ward", id: "SYN-W1" } }),
@@ -44,7 +44,7 @@ it("sends none of a thrown error's text, the real address or the query", () => {
   const body = send.mock.calls[0][0] as string;
   expect(JSON.parse(body)).toEqual({
     type: "TypeError",
-    route: "/ward-flow/people/[id]/triage",
+    route: "/bedchart/people/[id]/triage",
     release: "abc123",
     role: "ward",
   });
@@ -82,9 +82,9 @@ it("sends each type on each screen once, and at most a few a minute", () => {
 });
 
 it("turns ids into [id] and keeps fixed segments", () => {
-  expect(routeTemplate("/ward-flow/ward/SYN-U1/answer")).toBe("/ward-flow/ward/[id]/answer");
-  expect(routeTemplate("/ward-flow/people/new")).toBe("/ward-flow/people/new");
-  expect(routeTemplate("/ward-flow/statistics/ed/SYN-E2")).toBe("/ward-flow/statistics/ed/[id]");
-  expect(routeTemplate("/ward-flow/community/")).toBe("/ward-flow/community");
+  expect(routeTemplate("/bedchart/ward/SYN-U1/answer")).toBe("/bedchart/ward/[id]/answer");
+  expect(routeTemplate("/bedchart/people/new")).toBe("/bedchart/people/new");
+  expect(routeTemplate("/bedchart/statistics/ed/SYN-E2")).toBe("/bedchart/statistics/ed/[id]");
+  expect(routeTemplate("/bedchart/community/")).toBe("/bedchart/community");
   expect(routeTemplate("/")).toBe("/");
 });

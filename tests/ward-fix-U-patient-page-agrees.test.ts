@@ -113,7 +113,7 @@ describe("A9-25: the patient page agrees with the board", () => {
       liveMovementId: undefined,
     });
     expect(notice?.sentence).toBe(DUPLICATE_SENTENCES[0]);
-    expect(notice?.href).toContain("/ward-flow/people/");
+    expect(notice?.href).toContain("/bedchart/people/");
     // An open referral keeps the form's own sentence and link.
     expect(
       openRequestNotice({
@@ -124,7 +124,7 @@ describe("A9-25: the patient page agrees with the board", () => {
         originSiteCode: "JHC",
         liveMovementId: undefined,
       }),
-    ).toEqual({ sentence: "S", href: "/ward-flow/referrals" });
+    ).toEqual({ sentence: "S", href: "/bedchart/referrals" });
     // The journey the form was opened on is not a second request for itself.
     expect(
       openRequestNotice({

@@ -230,7 +230,7 @@ describe("Task 2 — Referral drawer patient sex retention, dirty guards, and se
 
   it("guards unsaved rule edits in SettingsScreen on beforeunload", () => {
     // The rule editor is the coordinator's (Settings by login, 31 Oct 2026), so open Settings there.
-    route.pathname = "/ward-flow/settings";
+    route.pathname = "/bedchart/settings";
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <SettingsScreen />

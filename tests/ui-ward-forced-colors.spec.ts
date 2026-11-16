@@ -113,7 +113,7 @@ async function open(page: Page, path: string): Promise<void> {
  * match the claim it is taken to support.
  */
 test("@mockup forced colours is actually active, or nothing below means anything", async ({ page }) => {
-  await open(page, "/ward-flow/ward/rph-adult-secure");
+  await open(page, "/bedchart/ward/rph-adult-secure");
   const active = await page.evaluate(() => window.matchMedia("(forced-colors: active)").matches);
   expect(active, "forced-colors emulation did not apply; the assertions in this file are vacuous").toBe(true);
 });
@@ -121,7 +121,7 @@ test("@mockup forced colours is actually active, or nothing below means anything
 // The wave 4 Ward page (PR #1659) draws no WardPanel or WardChip, so these three checks read the
 // screens that still do: Movements has panels and chips, Search has panels with headers.
 test("@mockup a panel's border survives forced colours", async ({ page }) => {
-  await open(page, "/ward-flow/movements");
+  await open(page, "/bedchart/movements");
   const panel = await measure(page, '[data-ward-primitive="panel"]', "border");
 
   expect(panel.found, "no panel on this screen — the assertion below would be vacuous").toBeGreaterThan(0);
@@ -133,7 +133,7 @@ test("@mockup a panel's border survives forced colours", async ({ page }) => {
 });
 
 test("@mockup a chip's border survives forced colours, and its words carry the state either way", async ({ page }) => {
-  await open(page, "/ward-flow/movements");
+  await open(page, "/bedchart/movements");
   const chip = await measure(page, '[data-ward-primitive="chip"]', "border");
 
   expect(chip.found, "no chip on this screen — the assertion below would be vacuous").toBeGreaterThan(0);
@@ -174,7 +174,7 @@ test("@mockup a chip's border survives forced colours, and its words carry the s
  * the message says which colours, so the fix arrives with evidence attached.
  */
 test("@mockup a panel's outline and its header rule agree under forced colours", async ({ page }) => {
-  await open(page, "/ward-flow/search");
+  await open(page, "/bedchart/search");
 
   const pair = await page.evaluate(() => {
     const panel = document.querySelector('[data-ward-primitive="panel"]');
@@ -223,7 +223,7 @@ test("@mockup a panel's outline and its header rule agree under forced colours",
  */
 test("@mockup printing the patient search keeps every census row on the sheet", async ({ page }) => {
   await page.setViewportSize({ width: 794, height: 1123 }); // A4 portrait at 96dpi
-  await page.goto("/ward-flow/search", { waitUntil: "load" });
+  await page.goto("/bedchart/search", { waitUntil: "load" });
   await page.waitForLoadState("networkidle");
   await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
 
@@ -308,7 +308,7 @@ test("@mockup a figure's value is readable under forced colours", async ({ page 
   //
   // ⚠️ **RETARGETED AGAIN** (locked community design, Josh 1 Nov 2026): the team page's figure strip
   // is gone, replaced by the hero's at-a-glance strip, whose bold values are now the page's figures.
-  await open(page, "/ward-flow/community/midland");
+  await open(page, "/bedchart/community/midland");
   const figure = await measure(page, '[data-testid="ward-community-glance"] b', "text");
 
   expect(figure.found, "no figure on this screen — the assertion below would be vacuous").toBeGreaterThan(0);

@@ -19,6 +19,6 @@ Every ward's beds in use, stay so far and discharges held up.
 
 - Amber dot. Says what an amber dot on a ward means.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

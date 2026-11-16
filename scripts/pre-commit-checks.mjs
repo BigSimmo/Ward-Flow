@@ -596,7 +596,7 @@ export function signOutConflicts(staged, signOutText, currentBranch, currentWork
 }
 
 const WARD_SIGNOUT_PATH =
-  /^(?:src\/components\/ward-management\/|src\/app\/ward-flow\/|docs\/ward-flow\/|scripts\/ward-flow\/|scripts\/run-ward-tests\.mjs$|tests\/(?:helpers\/|ui-)?ward-[^/]+$)/;
+  /^(?:src\/components\/ward-management\/|src\/app\/bedchart\/|docs\/bedchart\/|scripts\/bedchart\/|scripts\/run-ward-tests\.mjs$|tests\/(?:helpers\/|ui-)?ward-[^/]+$)/;
 
 /**
  * Ward files staged without an active sign-out owned by this branch or worktree.

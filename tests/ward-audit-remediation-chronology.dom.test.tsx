@@ -6,7 +6,7 @@ import { patientIdsWithRecords } from "@/components/ward-management/reports/pati
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-vi.mock("next/navigation", () => ({ usePathname: () => "/ward-flow/reports/chronology" }));
+vi.mock("next/navigation", () => ({ usePathname: () => "/bedchart/reports/chronology" }));
 describe("chronology subject changes", () => {
   it("resets an earlier event search when an Activity link selects another subject", () => {
     const state = seedWardFlowState();

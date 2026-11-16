@@ -43,8 +43,8 @@ it("selects drawing checks from the actual design directory and verification onl
 });
 it("checks the screen map when any of its three route source trees changes", () => {
   for (const file of [
-    "src/app/ward-flow/coordinator/page.tsx",
-    "src/app/ward-flow-sign-in/page.tsx",
+    "src/app/bedchart/coordinator/page.tsx",
+    "src/app/bedchart-sign-in/page.tsx",
     "src/app/mockups/ward-flow-digest/page.tsx",
   ]) {
     expect(selectedDocChecks([file], true), file).toContain("scripts/ward-flow/screen-map.mjs");

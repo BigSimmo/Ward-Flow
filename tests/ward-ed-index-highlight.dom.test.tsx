@@ -129,9 +129,9 @@ describe("All EDs — v10 pass 3: RowSpark, preview and service bars", () => {
     // The preview body loads lazily (phone script budget), so wait for it to draw.
     const body = await screen.findByTestId("ed-index-preview-body");
     expect(within(body).getByText("Waiting, longest first")).toBeInTheDocument();
-    expect(screen.getByTestId("ed-index-preview-enter")).toHaveAttribute("href", "/ward-flow/ed/arm-ed");
+    expect(screen.getByTestId("ed-index-preview-enter")).toHaveAttribute("href", "/bedchart/ed/arm-ed");
     fireEvent.click(screen.getByRole("button", { name: "Next ED" }));
-    expect(screen.getByTestId("ed-index-preview-enter")).not.toHaveAttribute("href", "/ward-flow/ed/arm-ed");
+    expect(screen.getByTestId("ed-index-preview-enter")).not.toHaveAttribute("href", "/bedchart/ed/arm-ed");
   });
 
   it("opens on Waiting by ED, whose bars open that ED's preview", async () => {
@@ -139,7 +139,7 @@ describe("All EDs — v10 pass 3: RowSpark, preview and service bars", () => {
     expect(screen.getByRole("heading", { name: "Waiting by ED" })).toBeInTheDocument();
     fireEvent.click(screen.getByTestId("ed-index-ed-bar-arm-ed"));
     await screen.findByTestId("ed-index-preview-body");
-    expect(screen.getByTestId("ed-index-preview-enter")).toHaveAttribute("href", "/ward-flow/ed/arm-ed");
+    expect(screen.getByTestId("ed-index-preview-enter")).toHaveAttribute("href", "/bedchart/ed/arm-ed");
   });
 
   it("switches to Waiting by service, whose bars filter to one service and clear again", () => {
@@ -171,7 +171,7 @@ describe("All EDs — v10 pass 3: RowSpark, preview and service bars", () => {
     for (let step = 0; step < shownIds.length + 1; step += 1) {
       fireEvent.click(screen.getByRole("button", { name: "Next ED" }));
       const href = screen.getByTestId("ed-index-preview-enter").getAttribute("href") ?? "";
-      expect(shownIds).toContain(href.replace("/ward-flow/ed/", ""));
+      expect(shownIds).toContain(href.replace("/bedchart/ed/", ""));
     }
   });
 });
@@ -202,7 +202,7 @@ describe("All EDs — design review (Josh, 31 Oct 2026): title count and the nob
     for (const entry of clear) {
       expect(line).toContainElement(entry);
       const id = entry.getAttribute("data-testid")!.replace("ed-index-clear-", "");
-      expect(within(entry).getByRole("link", { name: /^Enter / })).toHaveAttribute("href", `/ward-flow/ed/${id}`);
+      expect(within(entry).getByRole("link", { name: /^Enter / })).toHaveAttribute("href", `/bedchart/ed/${id}`);
       expect(screen.queryByTestId(`ed-index-card-${id}`)).not.toBeInTheDocument();
     }
     // Every card has someone waiting, and reads the chip's own words for forms.

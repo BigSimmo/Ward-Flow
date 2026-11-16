@@ -58,8 +58,8 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
   devIndicators: false,
   // A15-21 (Josh, 13 Nov 2026): no `redirects()` here. Next runs them before the proxy, so their
-  // answers skipped the front door and the security headers. The old /ward-flow/patients and
-  // /ward-flow/transport addresses forward from the proxy's list (src/proxy.ts) instead.
+  // answers skipped the front door and the security headers. The old /bedchart/patients and
+  // /bedchart/transport addresses forward from the proxy's list (src/proxy.ts) instead.
   // Fix list 7.3: the React Compiler memoises screens on the inputs it can see. Screens take the
   // warnings and the scenario's wards as inputs (`useDueSoonThresholds()`, `useWardNetwork()`), and
   // tests/ward-compiler-inputs.test.ts stops anything reading them from module-wide values again.
@@ -203,15 +203,15 @@ const nextConfig: NextConfig = {
       // in their address never leaves in a Referer header. Must stay after "/(.*)":
       // Next lets the later rule win for the same header.
       {
-        source: "/ward-flow/people/:path*",
+        source: "/bedchart/people/:path*",
         headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
       },
       {
-        source: "/ward-flow/reports/:path*",
+        source: "/bedchart/reports/:path*",
         headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
       },
       {
-        source: "/ward-flow/movements/:path*",
+        source: "/bedchart/movements/:path*",
         headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
       },
       {
@@ -226,11 +226,11 @@ const nextConfig: NextConfig = {
         // Ward Flow left /mockups on 19 October 2026 and keeps the same header there: a synthetic
         // demonstration that must never be indexed. The root layout's robots metadata says the
         // same in the page itself.
-        source: "/ward-flow/:path*",
+        source: "/bedchart/:path*",
         headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
       },
       {
-        source: "/ward-flow-sign-in",
+        source: "/bedchart-sign-in",
         headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
       },
       {
@@ -244,7 +244,7 @@ const nextConfig: NextConfig = {
         // PWA plan item 7: the service worker and the manifest are always revalidated, so a new
         // version reaches an installed app on its next load rather than after a day of HTTP cache.
         // No Service-Worker-Allowed header: the worker sits at the root, so it may already control
-        // its /ward-flow scope.
+        // its /bedchart scope.
         source: "/ward-flow-push-sw.js",
         headers: [{ key: "Cache-Control", value: "no-cache" }],
       },

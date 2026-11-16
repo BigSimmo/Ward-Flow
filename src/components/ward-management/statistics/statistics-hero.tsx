@@ -154,7 +154,7 @@ export function downloadStatisticsFigures(
   zone?: ClockZoneLabel,
 ) {
   downloadCsv(
-    `ward-flow-synthetic-${exportFigures.stem}-figures.csv`,
+    `bedchart-synthetic-${exportFigures.stem}-figures.csv`,
     // The sheet moment every other export is stamped with (time audit D13, 13 Nov 2026).
     statisticsExportLines(exportFigures, formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone })),
   );

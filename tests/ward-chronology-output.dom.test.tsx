@@ -5,7 +5,7 @@ import { afterEach, expect, it, vi } from "vitest";
 vi.mock("next/link", () => ({
   default: ({ children, href }: { children: ReactNode; href: string }) => <a href={href}>{children}</a>,
 }));
-vi.mock("next/navigation", () => ({ usePathname: () => "/ward-flow/reports/chronology" }));
+vi.mock("next/navigation", () => ({ usePathname: () => "/bedchart/reports/chronology" }));
 
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";

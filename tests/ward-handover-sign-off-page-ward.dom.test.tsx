@@ -11,7 +11,7 @@ import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/handover",
+  usePathname: () => "/bedchart/handover",
   useSearchParams: () => new URLSearchParams(window.location.search),
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
 }));
@@ -32,7 +32,7 @@ function Probe() {
 }
 
 function renderAtDesk(access: WardAccess, search = "") {
-  window.history.replaceState(null, "", `/ward-flow/handover${search}`);
+  window.history.replaceState(null, "", `/bedchart/handover${search}`);
   setWardFeatureFlagOnDevice("role-access", true);
   setWardAccess(access);
   render(

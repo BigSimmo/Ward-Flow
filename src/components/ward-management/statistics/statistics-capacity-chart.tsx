@@ -309,7 +309,7 @@ function CapacityChartView({
         row.onLeave,
       ]),
     ];
-    downloadCsv("ward-flow-synthetic-capacity.csv", lines, {
+    downloadCsv("bedchart-synthetic-capacity.csv", lines, {
       asAt,
       scope: `Capacity ${scopeLabel}; all matching rows; ${service === "all" ? "all services highlighted" : `${service} highlighted`}${overOnly ? `, only rows at or above the ${alertLine}% alert line` : ""}; grouped by ${groupBy}`,
     });
@@ -363,7 +363,7 @@ function CapacityChartView({
       </dl>
       <div className={styles.wardList}>
         {selected.units.map((unit) => {
-          const href = `/ward-flow/statistics/ward/${encodeURIComponent(unit.id)}`;
+          const href = `/bedchart/statistics/ward/${encodeURIComponent(unit.id)}`;
           return canOpen(href) ? (
             <Link key={unit.id} href={href}>
               <span>{unit.name}</span>

@@ -64,55 +64,55 @@ export function WardSearchCommands({
             <kbd className={styles.hintKbd}>+15m</kbd>
           </button>
         ) : null}
-        {canOpenHref("/ward-flow") ? (
+        {canOpenHref("/bedchart") ? (
           <button
             type="button"
             className={styles.commandBtn}
             disabled={!resultsCurrent}
             data-testid="ward-global-search-cmd-desk-coordinator"
-            onClick={() => onSwitchDesk("coordinator", "/ward-flow")}
+            onClick={() => onSwitchDesk("coordinator", "/bedchart")}
           >
             <span className={styles.commandLabel}>Switch to Coordinator desk</span>
             <kbd className={styles.hintKbd}>Coordinator</kbd>
           </button>
         ) : null}
-        {canOpenHref("/ward-flow/wards") ? (
+        {canOpenHref("/bedchart/wards") ? (
           <button
             type="button"
             className={styles.commandBtn}
             disabled={!resultsCurrent}
             data-testid="ward-global-search-cmd-desk-ward"
-            onClick={() => onSwitchDesk("ward", "/ward-flow/wards")}
+            onClick={() => onSwitchDesk("ward", "/bedchart/wards")}
           >
             <span className={styles.commandLabel}>Switch to Ward desk</span>
             <kbd className={styles.hintKbd}>Ward</kbd>
           </button>
         ) : null}
-        {canOpenHref("/ward-flow/ed") ? (
+        {canOpenHref("/bedchart/ed") ? (
           <button
             type="button"
             className={styles.commandBtn}
             disabled={!resultsCurrent}
             data-testid="ward-global-search-cmd-desk-ed"
-            onClick={() => onSwitchDesk("ed", "/ward-flow/ed")}
+            onClick={() => onSwitchDesk("ed", "/bedchart/ed")}
           >
             <span className={styles.commandLabel}>Switch to ED desk</span>
             <kbd className={styles.hintKbd}>ED</kbd>
           </button>
         ) : null}
-        {canOpenHref("/ward-flow/transport/officer") ? (
+        {canOpenHref("/bedchart/transport/officer") ? (
           <button
             type="button"
             className={styles.commandBtn}
             disabled={!resultsCurrent}
             data-testid="ward-global-search-cmd-desk-officer"
-            onClick={() => onSwitchDesk("officer", "/ward-flow/transport/officer")}
+            onClick={() => onSwitchDesk("officer", "/bedchart/transport/officer")}
           >
             <span className={styles.commandLabel}>Switch to Transport desk</span>
             <kbd className={styles.hintKbd}>Transport</kbd>
           </button>
         ) : null}
-        {canOpenHref("/ward-flow/handover") ? (
+        {canOpenHref("/bedchart/handover") ? (
           <button
             type="button"
             className={styles.commandBtn}

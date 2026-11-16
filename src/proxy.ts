@@ -39,7 +39,7 @@ import { buildContentSecurityPolicy, resolveRuntimeFlags, resolveSharedWorkspace
 //      19 October 2026, so today the headers are only ever stripped. There is
 //      no sign-in gate behind the marker: the developer key was removed on
 //      28 September 2026 at the owner's request, and Ward Flow is a public
-//      synthetic-data prototype (see src/app/ward-flow/layout.tsx).
+//      synthetic-data prototype (see src/app/bedchart/layout.tsx).
 //   4. The front door (Josh, 27 October 2026). Off unless the hosted switch
 //      `WARD_FRONT_DOOR=required` is set. Then every page and API answers only to
 //      a browser holding a signed pass (`@/lib/front-door-pass`): a page sends
@@ -58,27 +58,27 @@ const staticRouteRedirects: Record<string, string> = {
   // redirects to Home so historical deep-links match the page backstops
   // (PR #2303). The redirects moved with Ward Flow, first into
   // /mockups/ward-flow and then, on 19 October 2026, out to /ward-flow.
-  "/ward-flow/constellation": "/ward-flow",
-  "/ward-flow/network": "/ward-flow",
+  "/bedchart/constellation": "/bedchart",
+  "/bedchart/network": "/bedchart",
   // Device sweep A10 (Josh, 26 Oct 2026, decision A33): the other alias pages forwarded only after
   // the app shell had loaded, so the redirect was a second full page load and showed the "Restored
   // the last successful save" notice when nothing had failed. Forwarding here never renders the shell.
-  "/ward-flow/command": "/ward-flow",
-  "/ward-flow/queue": "/ward-flow/waiting",
-  "/ward-flow/escalation": "/ward-flow/waiting",
-  "/ward-flow/exceptions": "/ward-flow/waiting",
-  "/ward-flow/delays": "/ward-flow/waiting",
-  "/ward-flow/statistics/overview": "/ward-flow/statistics",
-  // /ward-flow/patients was never a route: the patient finder is /ward-flow/search. People type it,
+  "/bedchart/command": "/bedchart",
+  "/bedchart/queue": "/bedchart/waiting",
+  "/bedchart/escalation": "/bedchart/waiting",
+  "/bedchart/exceptions": "/bedchart/waiting",
+  "/bedchart/delays": "/bedchart/waiting",
+  "/bedchart/statistics/overview": "/bedchart/statistics",
+  // /bedchart/patients was never a route: the patient finder is /bedchart/search. People type it,
   // so it goes there rather than to a Page not found.
-  "/ward-flow/patients": "/ward-flow/search",
-  // The old /ward-flow/transport address (MERGE 03, shell-19) goes to the officer's page here,
+  "/bedchart/patients": "/bedchart/search",
+  // The old /bedchart/transport address (MERGE 03, shell-19) goes to the officer's page here,
   // before any render: its page.tsx redirect() ran after loading.tsx had streamed, so a phone saw
   // the placeholder for seconds first (phone load audit, 10 Nov 2026). page.tsx stays as the
   // backstop the redirect-stub guards read. A15-21 (13 Nov 2026): both lived in next.config.ts
   // `redirects()`, which Next runs before this proxy, so they answered before the door with no
   // security headers.
-  "/ward-flow/transport": "/ward-flow/transport/officer",
+  "/bedchart/transport": "/bedchart/transport/officer",
 };
 
 /**
@@ -88,9 +88,29 @@ const staticRouteRedirects: Record<string, string> = {
  * reference, not a screen, so it stays where it is.
  */
 const movedPrefixes = [
-  ["/mockups/ward-flow-sign-in", "/ward-flow-sign-in"],
-  ["/mockups/ward-flow", "/ward-flow"],
+  ["/mockups/ward-flow-sign-in", "/bedchart-sign-in"],
+  ["/mockups/ward-flow", "/bedchart"],
+  // D-250 (Josh, 16 Nov 2026): the app is BedChart, so its addresses moved from /ward-flow to
+  // /bedchart. Old links, bookmarks, installed apps and sign-in emails forward the same way.
+  ["/ward-flow-sign-in", "/bedchart-sign-in"],
+  ["/ward-flow", "/bedchart"],
 ] as const;
+
+/**
+ * D-250 (Josh, 16 Nov 2026): the signed-in site's one address is https://bedchart.com, the only
+ * website the shared backend accepts (`WARD_ALLOWED_ORIGIN`). Its other names forward there, path
+ * and query intact, so a save from them is never refused. The public demo's own address is not
+ * listed and keeps working where it is.
+ */
+export const CANONICAL_HOST = "bedchart.com";
+const FORWARDED_HOSTS = new Set(["www.bedchart.com", "ward-flow-shared-production.up.railway.app"]);
+
+/** The https://bedchart.com address for a request to one of its other names, or null. */
+export function canonicalHostTarget(host: string | null, pathname: string, search: string): string | null {
+  const name = (host ?? "").toLowerCase().replace(/:\d+$/, "");
+  if (!FORWARDED_HOSTS.has(name)) return null;
+  return `https://${CANONICAL_HOST}${pathname}${search}`;
+}
 
 /** The new address for a path under a moved prefix, or null. */
 export function movedRouteTarget(pathname: string): string | null {
@@ -110,6 +130,8 @@ const sharedOrigins = resolveSharedWorkspaceOrigins();
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const canonical = canonicalHostTarget(request.headers.get("host"), pathname, request.nextUrl.search);
+  if (canonical) return NextResponse.redirect(canonical, 308);
 
   // A fresh, unguessable nonce per request (see Next.js CSP guide). Buffer+base64
   // matches the documented pattern and keeps the value header-safe.
@@ -243,13 +265,13 @@ export async function frontDoorVerdict(
   const url = request.nextUrl.clone();
   url.pathname = FRONT_DOOR_SIGN_IN_PATH;
   url.search = "";
-  if (pathname === "/ward-flow" || pathname.startsWith("/ward-flow/")) {
-    // SEC-2: a recovery link returns to /ward-flow with its code in the query. The sign-in page
+  if (pathname === "/bedchart" || pathname.startsWith("/bedchart/")) {
+    // SEC-2: a recovery link returns to /bedchart with its code in the query. The sign-in page
     // takes it from its own address, so it rides there and never inside `next`.
     let rest = search;
     const target = new URLSearchParams(search);
     const link = ["code", "error", "error_code", "error_description"].filter((key) => target.has(key));
-    if (pathname === "/ward-flow" && link.length) {
+    if (pathname === "/bedchart" && link.length) {
       for (const key of link) {
         url.searchParams.set(key, target.get(key)!);
         target.delete(key);

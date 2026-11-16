@@ -24,7 +24,7 @@ npm run ensure
 ```
 
 `npm run ensure` starts or reuses this checkout's dev server and **prints the URL**. Open
-`<printed-origin>/ward-flow`.
+`<printed-origin>/bedchart`.
 
 ### Port rules
 
@@ -42,7 +42,7 @@ npm run ensure
 
 A local dev build has role access switched off, so every page opens as the whole-network
 coordinator and the first-run tour never starts by itself. To try a desk the way the live site
-works, open `<printed-origin>/ward-flow?flags=role-access:on` once. The flag stays on in that
+works, open `<printed-origin>/bedchart?flags=role-access:on` once. The flag stays on in that
 browser until you open `?flags=role-access:off`. Then pick a desk with **Go to a desk**. Help's
 **Take the tour** replays any desk's tour at any time.
 

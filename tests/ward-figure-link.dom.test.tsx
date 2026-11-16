@@ -25,7 +25,7 @@ describe("FigureLink (kit rule a, 3 Nov 2026)", () => {
   it("links the same live value to the owning page, named figure first", () => {
     render(<FigureLink value={12} label="waiting" owner={PAGE_OWNERS.waiting} />);
     const link = screen.getByRole("link", { name: "12 waiting, open Waiting" });
-    expect(link.getAttribute("href")).toBe("/ward-flow/waiting");
+    expect(link.getAttribute("href")).toBe("/bedchart/waiting");
     expect(link.textContent).toBe("12 waiting");
     expect(link.getAttribute("data-owner")).toBe("Waiting");
   });
@@ -33,7 +33,7 @@ describe("FigureLink (kit rule a, 3 Nov 2026)", () => {
   it("puts a scope label in the name and beside the figure", () => {
     render(<FigureLink value={3} label="held-up releases" owner={PAGE_OWNERS.discharges} scope="Network-wide" />);
     const link = screen.getByRole("link", { name: "3 held-up releases, Network-wide, open Discharges" });
-    expect(link.getAttribute("href")).toBe("/ward-flow/discharges");
+    expect(link.getAttribute("href")).toBe("/bedchart/discharges");
     expect(screen.getByText("Network-wide")).toBeTruthy();
   });
 

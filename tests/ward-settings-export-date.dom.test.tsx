@@ -3,7 +3,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/settings",
+  usePathname: () => "/bedchart/settings",
   useRouter: () => ({ push: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -36,5 +36,5 @@ it("names the rules export for the Perth date during the first eight hours", () 
   // Settings by role (Josh, 3 Nov 2026, ST1): the rules file sits in the coordinator's Rules section.
   fireEvent.click(within(document.getElementById("settings-section-rules")!).getByTestId("btn-export-config"));
   expect(click).toHaveBeenCalledTimes(1);
-  expect(filename).toBe("ward-flow-rules-2026-10-16.json");
+  expect(filename).toBe("bedchart-rules-2026-10-16.json");
 });

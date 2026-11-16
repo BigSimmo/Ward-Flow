@@ -246,7 +246,7 @@ describe("audit 6: a person marked absent without leave reaches every screen aft
     }
   });
 
-  it("ward board (/ward-flow/board/[unitId]): the tile and person panel say Absent without leave (D-115 item 4)", () => {
+  it("ward board (/bedchart/board/[unitId]): the tile and person panel say Absent without leave (D-115 item 4)", () => {
     const { after, stay, unit } = markMissing();
     const tiles = buildTiles(unit, after.admissions, after.bedReleases, NOW, { leaveBeds: after.leaveBeds });
     const tile = tiles.find((candidate) => candidate.key === stay.id);

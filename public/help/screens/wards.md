@@ -21,6 +21,6 @@ Every ward, grouped by health service, each opening its own ward screen.
 
 - Pin a ward to my menu. Open the ward, then in the side menu choose Pin this ward. It stays under My wards on this device.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

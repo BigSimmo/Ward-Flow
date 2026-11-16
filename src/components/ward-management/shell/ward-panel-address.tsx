@@ -1,14 +1,14 @@
 "use client";
 
 /**
- * WF-42 (Josh, 5 Nov 2026): `/ward-flow/activity` and `/ward-flow/help` are not pages. Activity and
+ * WF-42 (Josh, 5 Nov 2026): `/bedchart/activity` and `/bedchart/help` are not pages. Activity and
  * Help are shell panels, so a typed or old address lands on the desk's own home (`homeHrefFor`)
  * with that panel open, for every desk, never on the closed screen.
  */
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-import { HeldDeskLoading } from "@/app/ward-flow/loading-status";
+import { HeldDeskLoading } from "@/app/bedchart/loading-status";
 import { useDeskHomeHref } from "@/components/ward-management/shell/ward-access";
 
 /**

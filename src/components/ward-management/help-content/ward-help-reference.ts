@@ -32,7 +32,7 @@ export const COMMON_QUESTIONS = [
       ][index] ?? "Is it saved?",
     answer,
   })),
-  { question: "What if Ward Flow is down?", answer: WHEN_IT_IS_DOWN.join(" ") },
+  { question: "What if BedChart is down?", answer: WHEN_IT_IS_DOWN.join(" ") },
   ...Object.values(SCREEN_HELP).flatMap((screen) => screen.questions ?? []),
 ].filter((item, index, all) => all.findIndex((other) => other.question === item.question) === index);
 
@@ -81,7 +81,7 @@ export const TOUCH_HELP: readonly { title: string; text: string; devices: readon
   },
   {
     title: "Pinch to zoom",
-    text: "Pinch to make the page bigger, as in any browser. Ward Flow never blocks it. For larger text everywhere, use your device's text size.",
+    text: "Pinch to make the page bigger, as in any browser. BedChart never blocks it. For larger text everywhere, use your device's text size.",
     devices: ["phone", "tablet"],
   },
   {

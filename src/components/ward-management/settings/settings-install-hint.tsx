@@ -48,7 +48,7 @@ export function SettingsInstallHint() {
   return (
     <SettingRow
       setting="install"
-      title="Install Ward Flow"
+      title="Install BedChart"
       sub="Opens on its own, like an app"
       testId="setting-install-row"
     >

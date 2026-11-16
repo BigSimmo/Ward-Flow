@@ -13,7 +13,7 @@ const desk = vi.hoisted(() => ({
 }));
 const push = vi.hoisted(() => vi.fn());
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/referrals",
+  usePathname: () => "/bedchart/referrals",
   useRouter: () => ({ push, replace: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -138,11 +138,11 @@ describe("Referrals, coordinator desk is unchanged by the ED branches", () => {
     // Page tops (Josh, 9 Nov 2026): the bed meeting agenda is the slate's first quick chip, a link.
     expect(within(hero).getByRole("link", { name: /Bed meeting/ })).toHaveAttribute(
       "href",
-      "/ward-flow/bed-meeting/agenda#agenda-referrals",
+      "/bedchart/bed-meeting/agenda#agenda-referrals",
     );
     // R5 fold (Josh, 3 Nov 2026): M still opens the agenda at its referrals.
     push.mockClear();
     fireEvent.keyDown(window, { key: "m" });
-    expect(push).toHaveBeenCalledWith("/ward-flow/bed-meeting/agenda#agenda-referrals");
+    expect(push).toHaveBeenCalledWith("/bedchart/bed-meeting/agenda#agenda-referrals");
   });
 });

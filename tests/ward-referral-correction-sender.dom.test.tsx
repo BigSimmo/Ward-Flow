@@ -9,7 +9,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /** D-80: only the desk that sent a referral adds a correction, and it adds it in its own name. */
-let pathname = "/ward-flow/referrals";
+let pathname = "/bedchart/referrals";
 vi.mock("next/navigation", () => ({
   usePathname: () => pathname,
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
@@ -71,11 +71,11 @@ function setup() {
 
 describe("referral corrections", () => {
   beforeEach(() => {
-    pathname = "/ward-flow/referrals";
+    pathname = "/bedchart/referrals";
   });
 
   it("offers a ward answering a community referral no correction control", () => {
-    pathname = `/ward-flow/ward/${WARD.id}`;
+    pathname = `/bedchart/ward/${WARD.id}`;
     setup();
     expect(screen.getByTestId("ward-referral-history-and-corrections")).toBeInTheDocument();
     expect(screen.queryByTestId("ward-referral-correction-controls")).not.toBeInTheDocument();

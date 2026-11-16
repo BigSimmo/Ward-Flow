@@ -48,7 +48,7 @@ export type HelpSearchResult = {
 
 /** Owner-approved reply to a clinical question (Josh, 27 Oct 2026, "wording A"). */
 export const CLINICAL_REPLY =
-  "Help covers how to use Ward Flow, not clinical decisions. For clinical questions, please use your clinical guidelines or speak to the treating team.";
+  "Help covers how to use BedChart, not clinical decisions. For clinical questions, please use your clinical guidelines or speak to the treating team.";
 
 /**
  * Questions that ask for a clinical decision rather than how to use a screen. Kept narrow, so app
@@ -202,8 +202,8 @@ function buildIndex(glossary: readonly GlossaryTerm[]): readonly Entry[] {
   );
   entries.push(
     entry(
-      { key: "guide:downtime", group: "Guides", title: "If Ward Flow is down", detail: WHEN_IT_IS_DOWN.join(" ") },
-      "If Ward Flow is down downtime offline paper",
+      { key: "guide:downtime", group: "Guides", title: "If BedChart is down", detail: WHEN_IT_IS_DOWN.join(" ") },
+      "If BedChart is down downtime offline paper",
       WHEN_IT_IS_DOWN.join(" "),
     ),
   );

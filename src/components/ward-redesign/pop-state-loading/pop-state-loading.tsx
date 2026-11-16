@@ -13,9 +13,9 @@ type Shape = "home" | "capacity" | "waiting" | "plain";
 /** Which page the placeholder stands in for, read from the app path the shell is drawn for. */
 function shapeOf(pathname: string): Shape {
   const path = pathname.replace(/\/+$/u, "");
-  if (path === "/ward-flow") return "home";
-  if (path === "/ward-flow/capacity") return "capacity";
-  if (path === "/ward-flow/waiting") return "waiting";
+  if (path === "/bedchart") return "home";
+  if (path === "/bedchart/capacity") return "capacity";
+  if (path === "/bedchart/waiting") return "waiting";
   return "plain";
 }
 
@@ -94,7 +94,7 @@ function PlainShape() {
 
 /**
  * The Loading mock-up: what a page shows inside the shell while its page code arrives. Built from the
- * shared placeholder (`src/app/ward-flow/loading.tsx`): the same "Loading page" status, `aria-busy`
+ * shared placeholder (`src/app/bedchart/loading.tsx`): the same "Loading page" status, `aria-busy`
  * main and pulsing blocks. Over Home, Capacity and Waiting the blocks take that page's shape, so
  * nothing jumps when the page lands; every other page keeps today's plain two blocks. The page is
  * not drawn: the state stands in its place, as the real placeholder does.

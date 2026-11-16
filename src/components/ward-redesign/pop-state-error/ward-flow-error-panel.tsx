@@ -9,7 +9,7 @@ import styles from "./ward-flow-error-panel.module.css";
 import { isChunkLoadError, useReloadWhenOnline } from "@/components/ward-management/ward-chunk-load-error";
 
 /**
- * PREVIEW FORK of `src/app/ward-flow/ward-flow-error-panel.tsx` (the state-error mock-up). The logic
+ * PREVIEW FORK of `src/app/bedchart/ward-flow-error-panel.tsx` (the state-error mock-up). The logic
  * and every word are the original's; the look moves from the host app's Tailwind tokens onto the
  * Ward Flow `--wf-*` tokens and the wf kit `Button` (one filled action, Try again). Two preview-only
  * changes are marked below: no console line (nothing really failed) and a `showDetail` prop.

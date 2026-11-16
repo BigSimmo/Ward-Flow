@@ -35,7 +35,7 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import type { Patient, PatientId } from "@/components/ward-management/ward-patients";
 
 /** Said wherever this screen has a heading for a fact that no Ward Flow record holds. */
-export const NOT_RECORDED_IN_WARD_FLOW = "Not recorded in Ward Flow";
+export const NOT_RECORDED_IN_WARD_FLOW = "Not recorded in BedChart";
 
 export type TransportDraftState = TransportBookingAnswers;
 

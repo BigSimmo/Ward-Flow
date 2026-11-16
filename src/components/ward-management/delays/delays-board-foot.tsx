@@ -101,7 +101,7 @@ export function CoordinatorFootMenu({
               </button>
             ) : null}
           </div>
-          <Link className={styles.pageLink} href="/ward-flow" onClick={onOpenHome}>
+          <Link className={styles.pageLink} href="/bedchart" onClick={onOpenHome}>
             Open on coordinator Home
             <ArrowUpRight size={14} aria-hidden="true" />
           </Link>
