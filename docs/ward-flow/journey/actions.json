@@ -4355,7 +4355,7 @@
         {
           "path": "src/components/ward-management/hub/hub-screen.tsx",
           "line": 725,
-          "sha256": "b5a3c4d74ede5724888665c75daf3268b21786bdefacbe91297a91bdf18a63a4"
+          "sha256": "09065251411644e6c2aefd163f99e38e1f0d3389e907d649f4c2a96ce240276e"
         },
         {
           "path": "src/components/ward-management/capacity/capacity-ward-drawer.tsx",

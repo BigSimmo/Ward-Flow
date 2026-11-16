@@ -127,7 +127,7 @@ describe("Figures in the Tools sheet", () => {
     const tools = await openTools();
     openToolRow(tools, "figures");
     fireEvent.click(within(tools).getByRole("button", { name: /^close$/i }));
-    // Closing steps Back through the drawer's own history entry; the sheet stays until popstate.
+    // Closing shuts the sheet at once, then steps Back through the drawer's own history entry.
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
 });
