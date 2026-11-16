@@ -10,3 +10,10 @@
   width: 36px;
   padding: 0;
 }
+
+/* UI sweep (16 Nov 2026): the phone's 40px control rule; the chips are 40px tall there already. */
+@media (max-width: 46.4375rem) {
+  .square.square {
+    width: 40px;
+  }
+}

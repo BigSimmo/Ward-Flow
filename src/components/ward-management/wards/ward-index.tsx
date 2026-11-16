@@ -550,7 +550,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                           ? {
                               id: "with-ready",
                               value: wardsWithReady,
-                              label: wardsWithReady === 1 ? "ward with a ready bed" : "wards with a ready bed",
+                              label: wardsWithReady === 1 ? "Ward with a ready bed" : "Wards with a ready bed",
                               pressed: status === "has-ready",
                               onClick: () => setStatus(status === "has-ready" ? "all" : "has-ready"),
                               testId: "ward-index-figure-with-ready",

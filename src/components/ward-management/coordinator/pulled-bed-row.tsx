@@ -43,7 +43,7 @@ export function PulledBedRow({
       size="sm"
       variant="ghost"
       // Review FA-10: the name starts with the words on the button, then says whose pull it is.
-      aria-label={`Undo pull · until ${until}, ${pulled.name}`}
+      aria-label={`Undo pull · until ${until} for ${pulled.name}`}
       onClick={() => onUndo(pulled)}
       data-testid="pulled-row-undo"
     >

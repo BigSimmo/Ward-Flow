@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import { ChevronDown, ChevronRight, Search } from "lucide-react";
 
-import { Button, Card, CardHead, FilterChip, SrOnly, durMinutes } from "@/components/wf";
+import { Button, Card, CardHead, FilterChip, durMinutes } from "@/components/wf";
 import {
   BedSquares,
   BedSquaresKey,
@@ -69,8 +69,8 @@ export function BedMapHighlights({
   return (
     <div className={className} role="group" aria-label="Highlight wards">
       {HIGHLIGHTS.map((entry) => {
-        // Wave 4 (D-191): the label and a mono count of wards ("Any ready 19"); the noun is still
-        // spoken, so the count is never read as the hero's bed counts.
+        // Wave 4 (D-191): the label and a mono count of wards ("Any ready 19 wards"). The noun shows,
+        // so the count is never read as the hero's bed counts (UI sweep, 16 Nov 2026).
         const wards = wardsMatching(entry);
         return (
           <FilterChip
@@ -79,7 +79,7 @@ export function BedMapHighlights({
             onPressedChange={(pressed) => onHighlight(pressed ? entry.id : null)}
           >
             <span className={styles.chipWords}>
-              {entry.label} <b className={styles.chipN}>{wards}</b> <SrOnly>{wards === 1 ? "ward" : "wards"}</SrOnly>
+              {entry.label} <b className={styles.chipN}>{wards}</b> {wards === 1 ? "ward" : "wards"}
             </span>
           </FilterChip>
         );
@@ -214,7 +214,9 @@ export function BedMapCards({
                   <span className={styles.mapGroupName}>
                     <SpelledCodes text={group.service} />
                   </span>
-                  <span className={styles.muted}>{group.wards.length} wards</span>
+                  <span className={styles.muted}>
+                    {group.wards.length} {group.wards.length === 1 ? "ward" : "wards"}
+                  </span>
                   <span className={styles.mapGroupFigures}>
                     <b>{ready}</b> ready · <b>{beds ? Math.round((inUse / beds) * 100) : 0}%</b> in use · {closed}{" "}
                     closed

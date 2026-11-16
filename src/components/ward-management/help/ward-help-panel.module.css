@@ -328,7 +328,8 @@
 }
 
 .actBody .actGo {
-  background: var(--wf-accent);
+  /* The kit's filled button: in dark the accent is a light blue that white text fails on (1.98:1). */
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
   color: var(--wf-on-accent);
 }
 

@@ -429,6 +429,17 @@
   color: var(--wf-ink-off);
 }
 
+/* UI sweep (16 Nov 2026): the "Moved ×" dismiss is a button drawn 18px tall; a 40px tap band. */
+button.groupCount {
+  position: relative;
+}
+
+button.groupCount::after {
+  content: "";
+  position: absolute;
+  inset: -11px -4px;
+}
+
 .showMore {
   display: flex;
   align-items: center;

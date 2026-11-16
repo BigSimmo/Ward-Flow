@@ -64,7 +64,7 @@ export function PhoneOverview({
           id="phone-check"
           title={
             <span className={styles.countTitle}>
-              <b className={styles.countN}>{toCheck.length}</b> Wards to check
+              <b className={styles.countN}>{toCheck.length}</b> {toCheck.length === 1 ? "Ward" : "Wards"} to check
               <WindowWord word="now" />
             </span>
           }

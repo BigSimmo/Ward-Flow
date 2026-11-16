@@ -709,6 +709,20 @@ a.cellBody {
   }
 }
 
+/* UI sweep (16 Nov 2026): on a tablet or desktop "Ask" is drawn 18px tall; a tap band brings it to
+   40px without moving the pill's words. */
+@media (min-width: 46.5rem) {
+  .pillAction {
+    position: relative;
+  }
+
+  .pillAction::after {
+    content: "";
+    position: absolute;
+    inset: -11px -8px;
+  }
+}
+
 /* Tablet and desktop: the act row (or the chips) beside the figures. */
 @media (min-width: 46.5rem) {
   .answer {
