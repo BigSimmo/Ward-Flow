@@ -58,7 +58,7 @@ demo code out for up to 10 minutes, and a shared venue network counts as one add
    its foot. Tools then shows **Scenario and clock**, with **Demo clock** and **Reset demo** at the top of the panel and
    **Scenario** below them. Check the scenario is **Standard day**, and pick it first if it is not:
    Reset demo reloads whichever scenario is loaded. Check **Worked examples** shows the button **Hide
-   worked examples** (they are on for the demo). If it says **Show worked examples**, press it, then
+   worked examples** (the demo needs them on; a fresh browser starts with them off). If it says **Show worked examples**, press it, then
    **Show worked examples** in the box. Reset demo keeps them on. Press **Reset demo**, then **Reset
    demo** again in the "Reset the demo?" box. Press **Esc**.
 5. Touch the app within 15 minutes of starting, and click somewhere harmless now and then while you
@@ -127,7 +127,7 @@ recorded yet.
 
 **Screen:** **Capacity** in the left-hand menu.
 
-**Do:** point to the title "Beds ready and short" and the four figures beneath it: "Ready · now",
+**Do:** point to the title "Capacity" and the four figures beneath it: "Ready · now",
 "Need a bed · now", "Short · now" and "In use · now". Point to the pill "… of … counts confirmed ·
 since …", which names a ward still to confirm and the time it last did. Note the beds-ready number
 beside **Capacity** in the left-hand menu: you will come back to it in Act 3. Then point to the band
@@ -147,8 +147,8 @@ waiting · … fit".
 > Below that is where the pressure is: for each kind of bed, how many people are waiting against
 > how many beds of that kind are ready."
 
-**Do:** press **Bed meeting sheet**. Show the sheet ("Bed meeting sheet · all services": Ready · now,
-Short · now, Discharges · today, Waiting in ED · now, then the lists, including **Held up · by
+**Do:** press **Bed meeting sheet**. Show the sheet ("Bed meeting sheet · All services, 304 beds": Ready · now,
+Short · now, Expected to leave · today, Waiting in ED · now, then the lists, including **Held up · by
 tomorrow**), point to **Print sheet** (do not press it in front of the audience), then press
 **Close**.
 
@@ -224,7 +224,7 @@ to travel** and **Transport** ("Needs the bed pulled").
 **Do:** in the **Queue** list, open **Coldharbour, Cyril**, the last row (not the rows above him,
 such as Vallowen, Orla, whose referral names one ward). His referral opens on the **Place** tab.
 Scroll down inside the panel and point to the three groups: **Fits, bed ready**, **Fits, no bed
-now** and **Needs review**. Each ward reads "Travel time not recorded": the prototype holds no
+now** and **Needs a recorded reason**. Each ward reads "Travel time not recorded": the prototype holds no
 travel times, so do not quote any. Choose a ward under **Fits, bed ready** to show that **Accept at
 …** only appears after a person chooses (until then the button reads "Choose a ward first"); a ward
 in the other two groups shows **Clinical override for …** instead. Do not press Accept. Press
@@ -247,7 +247,7 @@ Press **Esc**.
 > "Dabakarn has a bed, so the coordinator pulls it for Keira. Two clicks, so it can't happen by
 > accident, and there's an Undo."
 
-**Do:** point to the **Bed** row ("Bed pulled, 4h 00m left"), **Placement steps** (step 4 of seven
+**Do:** point to the **Bed** row ("Bed pulled, 4 h 00 min left"), **Placement steps** (step 4 of seven
 is now lit), and the number beside **Capacity** in the left-hand menu, which has dropped by one.
 
 **Say:**
@@ -318,8 +318,8 @@ choose **Paper copy sighted** and press **Mark moving, record reason**.
 
 **Screen:** still Keira's page, **Destination and placement** panel.
 
-**Do:** press **Confirm arrival · receiving ward**. A check asks "Confirm arrival for Keira
-Pellingworth?" and shows her name and UMRN to check against the person. Press **Confirm arrival**.
+**Do:** press **Confirm arrival · receiving ward**. A check, "Confirm arrival at Dabakarn", shows her name,
+UMRN, date of birth and where she is coming from, to check against her wristband. Press **Confirm arrival**.
 Press **Esc**, and point to "Arrived · transfer complete" on her page.
 
 **Say:**
