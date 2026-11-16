@@ -131,6 +131,11 @@
   inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
 }
 
+/* The row's own padding holds that hit band, so the sideways row never scrolls up and down. */
+.chipNav {
+  padding-block: var(--wf-phone-pill-hit);
+}
+
 .chip[aria-current="page"] {
   border: 1px solid var(--wf-accent);
   padding: 0 12px;
