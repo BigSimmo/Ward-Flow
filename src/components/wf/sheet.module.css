@@ -61,7 +61,9 @@
   cursor: pointer;
 }
 
-:where(.close):hover {
+/* :active too, so a tap on a phone (no hover) shows at once that the close was taken. */
+:where(.close):hover,
+:where(.close):active {
   background: var(--wf-hover);
 }
 
