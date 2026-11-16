@@ -263,13 +263,14 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-246](#d-246-the-server-raises-late-arrival-notices-on-its-own-15-november-2026)                                                                      | The server raises late-arrival notices on its own                                                 | Active                                           |
 | [D-247](#d-247-triage-is-one-tap-on-the-coordinators-phone-and-the--sheet-can-be-edited-15-november-2026)                                               | Triage is one tap on the coordinator's phone, and the + sheet can be edited                       | Active                                           |
 | [D-248](#d-248-phone-search-boxes-are-40px-helps-phone-top-is-trimmed-and-help-sits-left-of-search-15-november-2026)                                    | Phone search boxes are 40px, Help's phone top is trimmed, and Help sits left of search            | Active                                           |
-| [D-249](#d-249-keep-todays-logo-until-after-the-demo-15-november-2026)                                                                                  | Keep today's logo until after the demo                                                            | Active                                           |
+| [D-249](#d-249-keep-todays-logo-until-after-the-demo-15-november-2026)                                                                                  | Keep today's logo until after the demo                                                            | Replaced by D-261                                |
 | [D-251](#d-251-ui-sweep-follow-ups-tags-wrap-the-ed-strip-scrolls-enough-one-wording-show-more-16-november-2026)                                        | UI sweep follow-ups and per-family control sizes                                                  | Active                                           |
 | [D-252](#d-252-capacity-chips-say-wards-the-discharges-heading-says-statewide-and-the-master-design-is-refreshed-from-main-16-november-2026)            | Capacity chips say "wards"; Discharges heading says "statewide"                                   | Active                                           |
 | [D-256](#d-256-the-phones--sheet-and-bottom-bar-can-be-customised-and-the-bar-becomes-a-refined-glass-capsule-16-november-2026)                         | The phone's + sheet and bottom bar can be customised, and the bar becomes a refined glass capsule | Active                                           |
 | [D-257](#d-257-settings-is-your-own-settings-first-with-admin-work-in-staff-access-16-november-2026)                                                    | Settings is your own settings first, with admin work in Staff access                              | Active                                           |
 | [D-258](#d-258-no-clock-in-the-header-a-wider-search-and-service-colour-dots-16-november-2026)                                                          | No clock in the header, a wider search and service colour dots                                    | Active                                           |
 | [D-259](#d-259-the-demo-script-matches-the-screen-words-after-the-16-november-walk-16-november-2026)                                                    | The demo script matches the screen words after the 16 November walk                               | Active                                           |
+| [D-261](#d-261-build-the-bedchart-folded-b-logo-into-the-site-now-16-november-2026)                                                                     | Build the BedChart Folded B logo into the site now                                                | Active                                           |
 
 ---
 
@@ -2931,7 +2932,7 @@ D-238 is reserved for design Lane D's block (noted in PR #1677). D-239 is reserv
 - **Why:** a logo change touches the tab, home-screen icons, rail and front door just before the demo.
 - **Boundary:** no logo, icon or brand file changes now.
 
-D-250 is claimed by open PR #1701 (the BedChart rename). D-253 is reserved by other threads (PR #1700, PR #1702 and the handover). D-254 is reserved by other threads (PR #1700, PR #1702 and the handover). D-255 is reserved by other threads (PR #1700, PR #1702 and the handover).
+D-250 is claimed by open PR #1701 (the BedChart rename). D-253 is reserved by other threads (PR #1700, PR #1702 and the handover). D-254 is reserved by other threads (PR #1700, PR #1702 and the handover). D-255 is reserved by other threads (PR #1700, PR #1702 and the handover). D-260 is claimed by open PR #1707 (the Privacy and data page).
 
 ## D-251. UI sweep follow-ups: tags wrap, the ED strip scrolls, "Enough", one wording, Show more (16 November 2026)
 
