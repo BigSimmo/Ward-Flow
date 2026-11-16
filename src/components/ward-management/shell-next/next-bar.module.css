@@ -176,6 +176,20 @@
   padding: 0;
 }
 
+/* Where the open search takes over the whole bar (phone and tablet portrait), Help steps aside so
+   it never shows through the see-through field (Josh, 16 Nov 2026). Wider bars keep it beside. */
+@container ward-bar (max-width: 743px) {
+  .searchPair:has([data-testid="ward-global-search"][data-open]) .helpBeside {
+    visibility: hidden;
+  }
+}
+
+@media (min-width: 46.5rem) and (max-width: 62.5rem) {
+  .searchPair:has([data-testid="ward-global-search"][data-open]) .helpBeside {
+    visibility: hidden;
+  }
+}
+
 @media (min-width: 46.5rem) and (max-width: 62.5rem) {
   .searchPair.searchPair.searchPair {
     width: auto;
