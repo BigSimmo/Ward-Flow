@@ -1179,7 +1179,7 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   {
     term: "Board time",
     meaning:
-      "The demo's own clock, which every screen works from. It starts at the sample day's time and runs on from there, so it is not the real time. It opens the demo controls.",
+      "The demo's own clock, which every screen works from. It starts at the sample day's time and runs on from there, so it is not the real time. It shows at the top of the menu; Tools, then Demo, holds its controls.",
   },
   {
     term: "Constant observation",
@@ -1195,7 +1195,7 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   },
   { term: "Activity", meaning: "The header drawer of recent changes and notices. Shift+A opens it." },
   { term: "Synthetic", meaning: "Invented. Every patient, bed figure and record in Ward Flow is made up." },
-  { term: "Demo", meaning: "The Demo panel: scenario, clock and reset for the invented data. Board time opens it." },
+  { term: "Demo", meaning: "The Demo panel: scenario, clock and reset for the invented data. Tools opens it." },
   {
     term: "Tentative diagnosis",
     meaning: "A broad ICD-10-AM Chapter V block chosen from a fixed list. It is never a confirmed diagnosis.",

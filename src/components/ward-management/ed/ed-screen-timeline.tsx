@@ -163,7 +163,7 @@ export function edDepartmentTimelineEvents({
       });
     }
     if (m.legalFormReceivedAt && now - m.legalFormReceivedAt <= 24 * 60) {
-      const formCode = currentLegalPosition(m).formWords ?? "Legal Form";
+      const formCode = currentLegalPosition(m).formWords ?? "Legal form";
       const formFull = m.legalForm ? legalFormName(m.legalForm) : "Statutory form received";
       timelineEvents.push({
         id: `form-${m.id}-${m.legalFormReceivedAt}`,

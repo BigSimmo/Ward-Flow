@@ -54,11 +54,11 @@ demo code out for up to 10 minutes, and a shared venue network counts as one add
    Act 2 had the least room, so trim your own words there first. The first time you open Keira's
    page and Dabakarn's page, a **Tip** card appears at the lower right. Press **Turn off tips**
    during the rehearsal so none appear in the real run.
-4. As the audience sits down (not earlier), press the **Board time** clock in the header. **Tools**
-   opens at **Scenario and clock**, with **Demo clock** and **Reset demo** at the top of the panel and
+4. As the audience sits down (not earlier), open **Tools** (the spanner at the top right) and press **Board time** at
+   its foot. Tools then shows **Scenario and clock**, with **Demo clock** and **Reset demo** at the top of the panel and
    **Scenario** below them. Check the scenario is **Standard day**, and pick it first if it is not:
    Reset demo reloads whichever scenario is loaded. Check **Worked examples** shows the button **Hide
-   worked examples** (they are on for the demo). If it says **Show worked examples**, press it, then
+   worked examples** (the demo needs them on; a fresh browser starts with them off). If it says **Show worked examples**, press it, then
    **Show worked examples** in the box. Reset demo keeps them on. Press **Reset demo**, then **Reset
    demo** again in the "Reset the demo?" box. Press **Esc**.
 5. Touch the app within 15 minutes of starting, and click somewhere harmless now and then while you
@@ -98,7 +98,7 @@ If something goes wrong after the bed pull: press **Undo** on the "Bed pulled" m
 ends "Undo until" and a clock time five minutes after the pull, and stays until then unless you
 close it with its **X**. Until that time, the **Destination and placement** panel also keeps **Undo
 pull** under its "Bed pulled · … left" line. After that, press the **Destination** row, **Release bed
-pull**, choose **Pull made in error**, then **Release pull**. Or press the **Board time** clock,
+pull**, choose **Pull made in error**, then **Release pull**. Or open **Tools** and press **Board time** at its foot,
 **Reset demo**, and start again from Act 2. Acts 1 and 2 change nothing.
 
 If the code screen says "Too many tries", someone on the same network has typed wrong codes. A
@@ -127,7 +127,7 @@ recorded yet.
 
 **Screen:** **Capacity** in the left-hand menu.
 
-**Do:** point to the title "Beds ready and short" and the four figures beneath it: "Ready · now",
+**Do:** point to the title "Capacity" and the four figures beneath it: "Ready · now",
 "Need a bed · now", "Short · now" and "In use · now". Point to the pill "… of … counts confirmed ·
 since …", which names a ward still to confirm and the time it last did. Note the beds-ready number
 beside **Capacity** in the left-hand menu: you will come back to it in Act 3. Then point to the band
@@ -147,8 +147,8 @@ waiting · … fit".
 > Below that is where the pressure is: for each kind of bed, how many people are waiting against
 > how many beds of that kind are ready."
 
-**Do:** press **Bed meeting sheet**. Show the sheet ("Bed meeting sheet · all services": Ready · now,
-Short · now, Discharges · today, Waiting in ED · now, then the lists, including **Held up · by
+**Do:** press **Bed meeting sheet**. Show the sheet ("Bed meeting sheet · All services, 304 beds": Ready · now,
+Short · now, Expected to leave · today, Waiting in ED · now, then the lists, including **Held up · by
 tomorrow**), point to **Print sheet** (do not press it in front of the audience), then press
 **Close**.
 
@@ -224,7 +224,7 @@ to travel** and **Transport** ("Needs the bed pulled").
 **Do:** in the **Queue** list, open **Coldharbour, Cyril**, the last row (not the rows above him,
 such as Vallowen, Orla, whose referral names one ward). His referral opens on the **Place** tab.
 Scroll down inside the panel and point to the three groups: **Fits, bed ready**, **Fits, no bed
-now** and **Needs review**. Each ward reads "Travel time not recorded": the prototype holds no
+now** and **Needs a recorded reason**. Each ward reads "Travel time not recorded": the prototype holds no
 travel times, so do not quote any. Choose a ward under **Fits, bed ready** to show that **Accept at
 …** only appears after a person chooses (until then the button reads "Choose a ward first"); a ward
 in the other two groups shows **Clinical override for …** instead. Do not press Accept. Press
@@ -247,7 +247,7 @@ Press **Esc**.
 > "Dabakarn has a bed, so the coordinator pulls it for Keira. Two clicks, so it can't happen by
 > accident, and there's an Undo."
 
-**Do:** point to the **Bed** row ("Bed pulled, 4h 00m left"), **Placement steps** (step 4 of seven
+**Do:** point to the **Bed** row ("Bed pulled, 4 h 00 min left"), **Placement steps** (step 4 of seven
 is now lit), and the number beside **Capacity** in the left-hand menu, which has dropped by one.
 
 **Say:**
@@ -256,7 +256,7 @@ is now lit), and the number beside **Capacity** in the left-hand menu, which has
 > by one. When the limit runs out, the pull does not release itself: the page says it has expired
 > and a person decides."
 
-**Optional (demo clock):** press the **Board time** clock and press **+1 hour** next to **Demo
+**Optional (demo clock):** open **Tools**, press **Board time** at its foot, then press **+1 hour** next to **Demo
 clock**. Close Tools with **Esc**. The pull time left has gone down by an hour. Say: "This is a demo
 control only, to show time passing. The clock in a real deployment would be the real one."
 
@@ -318,8 +318,8 @@ choose **Paper copy sighted** and press **Mark moving, record reason**.
 
 **Screen:** still Keira's page, **Destination and placement** panel.
 
-**Do:** press **Confirm arrival · receiving ward**. A check asks "Confirm arrival for Keira
-Pellingworth?" and shows her name and UMRN to check against the person. Press **Confirm arrival**.
+**Do:** press **Confirm arrival · receiving ward**. A check, "Confirm arrival at Dabakarn", shows her name,
+UMRN, date of birth and where she is coming from, to check against her wristband. Press **Confirm arrival**.
 Press **Esc**, and point to "Arrived · transfer complete" on her page.
 
 **Say:**
@@ -373,7 +373,7 @@ figure and the **Seclusion rooms** list.
 > they were typed. It works out no order length, no review time and no legal limit. The legal
 > register stays in the health service's own system."
 
-**C. The demo clock.** If you skipped it in Act 3, press the **Board time** clock and show **Demo
+**C. The demo clock.** If you skipped it in Act 3, open **Tools**, press **Board time** at its foot, and show **Demo
 clock** with **+15 min** and **+1 hour**, and the **Scenario** list. Close with **Esc**.
 
 > "For a demonstration we can move time forward or load a different day, like a surge. It only
@@ -593,5 +593,5 @@ Things that happen without a wrong press:
 | 6   | Graylands Adult Secure; More, Legal forms; clock | Loxbury, Saoirse, Esc; Seclusion tab; Board time, Demo clock                                                                                                      |
 | -   | Home                                             | -                                                                                                                                                                 |
 
-Before every run, as the audience sits down: **Board time** clock, **Reset demo**, confirm. Avoid
+Before every run, as the audience sits down: **Tools**, **Board time**, **Reset demo**, confirm. Avoid
 reloads and typed addresses; if "Part of this page did not load" appears, press **Reload page**.

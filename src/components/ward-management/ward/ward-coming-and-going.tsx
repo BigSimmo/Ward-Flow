@@ -123,8 +123,15 @@ function needsALookNote({
   heldUpPastDate?: number;
 }): string {
   const held = heldUpPastDate > 0 ? `${heldUp} held up, ${heldUpPastDate} of them past date` : `${heldUp} held up`;
+  const restPastDate = pastDate - heldUpPastDate;
   // Audit G: "more" once part of Past date sits in the held-up figure, so one label never shows two numbers.
-  return `${held} · ${pastDate - heldUpPastDate}${heldUpPastDate > 0 ? " more" : ""} past date`;
+  // A part with nothing in it is left out, so the note never reads "0 past date" (UI sweep, 16 Nov 2026).
+  return [
+    heldUp > 0 ? held : "",
+    restPastDate > 0 ? `${restPastDate}${heldUpPastDate > 0 ? " more" : ""} past date` : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
 }
 
 export function WardComingAndGoing(props: ComingAndGoingProps) {

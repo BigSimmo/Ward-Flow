@@ -3624,3 +3624,10 @@
       calc(-1 * var(--wf-s-4)) 0 0 var(--wf-canvas);
   }
 }
+
+/* D-251 (size review 5): on a touch tablet the team page tabs are drawn 36px, the tablet chip size. */
+@media (min-width: 46.5rem) and (pointer: coarse) {
+  .tabBtn.tabBtn {
+    min-height: 36px;
+  }
+}

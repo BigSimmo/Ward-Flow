@@ -68,7 +68,7 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
       );
 
       const bedButtons = screen.getAllByRole("button", {
-        name: /^Census square \d+: (READY|Pulled|Closed|Inpatient)$/,
+        name: /^Census square \d+: (Ready|Pulled|Closed|Occupied)$/,
       });
       expect(bedButtons.length).toBe(unit.beds);
 
@@ -76,8 +76,8 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
         expect(btn).toHaveAttribute("type", "button");
       }
 
-      const readyBeds = bedButtons.filter((btn) => btn.getAttribute("aria-label")?.includes("READY"));
-      const nonReadyBeds = bedButtons.filter((btn) => !btn.getAttribute("aria-label")?.includes("READY"));
+      const readyBeds = bedButtons.filter((btn) => btn.getAttribute("aria-label")?.includes(": Ready"));
+      const nonReadyBeds = bedButtons.filter((btn) => !btn.getAttribute("aria-label")?.includes(": Ready"));
 
       expect(readyBeds.length).toBeGreaterThan(0);
       for (const readyBed of readyBeds) {
