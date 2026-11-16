@@ -106,6 +106,6 @@ export const WARD_NAV_ICONS: Record<WardNavId, LucideIcon> = {
   "legal-forms": FileBadge,
   // A presentation screen: the one destination meant to be read from across a meeting room.
   "bed-meeting": Presentation,
-  // A padlock: the privacy and data rules page (D-259). Governance keeps the shield.
+  // A padlock: the privacy and data rules page (D-261). Governance keeps the shield.
   privacy: LockKeyhole,
 };

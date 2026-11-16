@@ -2953,12 +2953,12 @@ D-250 is claimed by open PR #1701 (the BedChart rename). D-251 is claimed by ope
 - **Replaces:** the 9 November 2026 page-top alerts line on the Settings phone page only, and the 3 November 2026 ST1 placement of roles and cover under You.
 - **Boundary:** layout and wording only. No permission, rule, clinical value or saved record changes: the same desks can do the same things. Synthetic data only.
 
-D-258 is reserved by another thread.
+D-258 is reserved by another thread. D-259 is claimed by PR #1706 (the demo script). D-260 is reserved for the logo build.
 
-## D-259. A Privacy and data page tracks the Australian and WA health data rules (16 November 2026)
+## D-261. A Privacy and data page tracks the Australian and WA health data rules (16 November 2026)
 
-- **Date:** 16 November 2026, 5:27 PM AWST (09:27 UTC). **Decided by:** Josh, in the thread "List patient data requirements for WA": "Go ahead and build for me please and keep track of if I meet these in the current state and add anything missing" (08:59 UTC), then "build this as recommended" (09:27 UTC) and "ensure it is grounded in all the Australian requirements for this app for managing health care data" (09:27 UTC). Numbered D-259 by the coordinator.
+- **Date:** 16 November 2026, 5:27 PM AWST (09:27 UTC). **Decided by:** Josh, in the thread "List patient data requirements for WA": "Go ahead and build for me please and keep track of if I meet these in the current state and add anything missing" (08:59 UTC), then "build this as recommended" (09:27 UTC) and "ensure it is grounded in all the Australian requirements for this app for managing health care data" (09:27 UTC). Numbered D-261 by the coordinator.
 - **Decision:** (1) A signed-in page, Privacy and data (`/ward-flow/privacy`), sits under Reports and reference beside Governance, for the desks that open Governance (bed coordinator and access admin). (2) It lists 57 checks in 15 areas plus sign-off, each with today's status (Met, Partly, Not yet) and the evidence for it, checked against main 928fa1a8 on 16 Nov 2026: 6 met, 18 partly, 33 not yet. (3) A second view shows the example policy as if every check were met. (4) The checks cover the WA PRIS Act 2024, Health Services Act 2016, Mental Health Act 2014, State Records Act 2000, FOI Act 1992 and WA Health policies, and the Commonwealth Privacy Act 1988 (APPs 1, 3, 5, 8, 11 to 13, the breach scheme and the Schedule 2 privacy tort), Cyber Security Act 2024, SOCI Act 2018, My Health Records Act 2012, Healthcare Identifiers Act 2010, TGA rules and the NSQHS Standards.
 - **Boundary:** reference only. Nothing on the page is enforced, the app holds synthetic data only, and it is not legal advice. No permission, rule, clinical value or saved record changes. The research and sources live in the project's privacy checklist and tracker files.
 
-The next free number is D-260.
+The next free number is D-262.

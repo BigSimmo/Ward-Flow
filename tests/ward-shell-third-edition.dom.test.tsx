@@ -170,7 +170,7 @@ describe("assertion 1 — owner-selected rail destinations", () => {
     // (22 until the Network screen was retired on 19 Oct 2026, and 22 again with Seclusion on 21 Oct 2026.)
     // P116 (Josh, 27 Oct 2026): 21, because the coordinator's Alerts lives in the header bell only.
     // 18 since Community, New referral and Seclusion left the sidebar (Josh, 3 Nov 2026).
-    // 19 with Privacy and data under Reports and reference (D-259, 16 Nov 2026).
+    // 19 with Privacy and data under Reports and reference (D-261, 16 Nov 2026).
     expect(links).toHaveLength(19);
     const groups = [
       ["Today", ["Bed meeting TV"]],

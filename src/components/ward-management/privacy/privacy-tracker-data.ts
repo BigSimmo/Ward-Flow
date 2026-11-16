@@ -1,5 +1,5 @@
 /**
- * Privacy and data tracker content (D-259, 16 Nov 2026). Generated from the privacy research in the
+ * Privacy and data tracker content (D-261, 16 Nov 2026). Generated from the privacy research in the
  * project files (patient-data-requirements-checklist.md and current-state-tracker.md); edit both
  * together. Statuses were checked against main 928fa1a8 and the governance papers on 16 Nov 2026.
  * These are intended requirements only: nothing here is enforced, and this is not legal advice.

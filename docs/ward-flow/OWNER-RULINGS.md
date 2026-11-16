@@ -415,7 +415,7 @@ safe global key across 30 files.
 | `D-252` | `decisions.md`:2933 | D-252. Capacity chips say "wards", the Discharges heading says "statewide", and the master design is refreshed from main (16 November 2026) |
 | `D-256` | `decisions.md`:2940 | D-256. The phone's + sheet and bottom bar can be customised, and the bar becomes a refined glass capsule (16 November 2026) |
 | `D-257` | `decisions.md`:2948 | D-257. Settings is your own settings first, with admin work in Staff access (16 November 2026) |
-| `D-259` | `decisions.md`:2958 | D-259. A Privacy and data page tracks the Australian and WA health data rules (16 November 2026) |
+| `D-261` | `decisions.md`:2958 | D-261. A Privacy and data page tracks the Australian and WA health data rules (16 November 2026) |
 | `D9-1` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | `D9-2` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
 | `D9-3` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:126 | D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION) |
@@ -970,7 +970,7 @@ safe global key across 30 files.
 - `D-252` — line 2933, heading: "D-252. Capacity chips say "wards", the Discharges heading says "statewide", and the master design is refreshed from main (16 November 2026)"
 - `D-256` — line 2940, heading: "D-256. The phone's + sheet and bottom bar can be customised, and the bar becomes a refined glass capsule (16 November 2026)"
 - `D-257` — line 2948, heading: "D-257. Settings is your own settings first, with admin work in Staff access (16 November 2026)"
-- `D-259` — line 2958, heading: "D-259. A Privacy and data page tracks the Australian and WA health data rules (16 November 2026)"
+- `D-261` — line 2958, heading: "D-261. A Privacy and data page tracks the Australian and WA health data rules (16 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 
